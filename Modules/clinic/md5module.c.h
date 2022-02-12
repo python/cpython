@@ -86,7 +86,10 @@ _md5_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "md5", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "md5",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *string = NULL;
@@ -119,4 +122,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e5dac1237beb2788 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9046fbb93717068d input=a9049054013a1b77]*/

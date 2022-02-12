@@ -96,7 +96,10 @@ _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *const *args, Py_
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "max_length", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "decompress", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "decompress",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
@@ -172,7 +175,10 @@ _lzma_LZMADecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs
 {
     int return_value = -1;
     static const char * const _keywords[] = {"format", "memlimit", "filters", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "LZMADecompressor", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "LZMADecompressor",
+    };
     PyObject *argsbuf[3];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -286,4 +292,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=bce20bac13b0f252 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=03439f5077d2c3b3 input=a9049054013a1b77]*/

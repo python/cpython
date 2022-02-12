@@ -35,7 +35,10 @@ builtin___import__(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", "globals", "locals", "fromlist", "level", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "__import__", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__import__",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *name;
@@ -254,7 +257,10 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", "_feature_version", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "compile", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compile",
+    };
     PyObject *argsbuf[7];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     PyObject *source;
@@ -433,7 +439,10 @@ builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", "", "closure", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "exec", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "exec",
+    };
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *source;
@@ -744,7 +753,10 @@ builtin_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"base", "exp", "mod", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "pow", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "pow",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *base;
@@ -795,7 +807,10 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sep", "end", "file", "flush", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "print", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "print",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *__clinic_args = NULL;
@@ -911,7 +926,10 @@ builtin_round(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"number", "ndigits", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "round", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "round",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *number;
@@ -954,7 +972,10 @@ builtin_sum(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "start", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sum", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sum",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *iterable;
@@ -1045,4 +1066,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a2c5c53e8aead7c3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0fe456a4cc474f5f input=a9049054013a1b77]*/

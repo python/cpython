@@ -53,7 +53,10 @@ _queue_SimpleQueue_put(simplequeueobject *self, PyObject *const *args, Py_ssize_
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"item", "block", "timeout", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "put", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "put",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *item;
@@ -105,7 +108,10 @@ _queue_SimpleQueue_put_nowait(simplequeueobject *self, PyObject *const *args, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"item", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "put_nowait", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "put_nowait",
+    };
     PyObject *argsbuf[1];
     PyObject *item;
 
@@ -146,7 +152,10 @@ _queue_SimpleQueue_get(simplequeueobject *self, PyTypeObject *cls, PyObject *con
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"block", "timeout", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "get", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int block = 1;
@@ -257,4 +266,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=88ec8033aeb7241c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=47bfc280803eded2 input=a9049054013a1b77]*/

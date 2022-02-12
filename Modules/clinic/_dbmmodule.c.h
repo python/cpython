@@ -60,7 +60,10 @@ _dbm_dbm_get(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {"s#|O:get", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .format = "s#|O:get",
+        .keywords = _keywords,
+    };
     const char *key;
     Py_ssize_t key_length;
     PyObject *default_value = Py_None;
@@ -95,7 +98,10 @@ _dbm_dbm_setdefault(dbmobject *self, PyTypeObject *cls, PyObject *const *args, P
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {"s#|O:setdefault", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .format = "s#|O:setdefault",
+        .keywords = _keywords,
+    };
     const char *key;
     Py_ssize_t key_length;
     PyObject *default_value = NULL;
@@ -172,4 +178,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5798278a05032d0e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d0e02ec0ecf6a3e7 input=a9049054013a1b77]*/

@@ -155,7 +155,10 @@ array_array_extend(arrayobject *self, PyTypeObject *cls, PyObject *const *args, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "extend", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "extend",
+    };
     PyObject *argsbuf[1];
     PyObject *bb;
 
@@ -298,7 +301,10 @@ array_array_fromfile(arrayobject *self, PyTypeObject *cls, PyObject *const *args
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "fromfile", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "fromfile",
+    };
     PyObject *argsbuf[2];
     PyObject *f;
     Py_ssize_t n;
@@ -343,7 +349,10 @@ array_array_tofile(arrayobject *self, PyTypeObject *cls, PyObject *const *args, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "tofile", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "tofile",
+    };
     PyObject *argsbuf[1];
     PyObject *f;
 
@@ -585,7 +594,10 @@ array_array___reduce_ex__(arrayobject *self, PyTypeObject *cls, PyObject *const 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "__reduce_ex__", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__reduce_ex__",
+    };
     PyObject *argsbuf[1];
     PyObject *value;
 
@@ -630,4 +642,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=85a5fec90d9615b9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=626a80876e3d3ac2 input=a9049054013a1b77]*/

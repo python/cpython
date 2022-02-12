@@ -27,7 +27,10 @@ _bisect_bisect_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"a", "x", "lo", "hi", "key", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "bisect_right", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "bisect_right",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *a;
@@ -110,7 +113,10 @@ _bisect_insort_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"a", "x", "lo", "hi", "key", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "insort_right", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "insort_right",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *a;
@@ -190,7 +196,10 @@ _bisect_bisect_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"a", "x", "lo", "hi", "key", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "bisect_left", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "bisect_left",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *a;
@@ -273,7 +282,10 @@ _bisect_insort_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"a", "x", "lo", "hi", "key", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "insort_left", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "insort_left",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *a;
@@ -327,4 +339,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ee8c32ff8d3d1fac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1d4a68234e627f3f input=a9049054013a1b77]*/

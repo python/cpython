@@ -18,7 +18,10 @@ module___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"name", "doc", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "module", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "module",
+    };
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -48,4 +51,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=680276bc3a496d7a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=af17291dfc03c28d input=a9049054013a1b77]*/

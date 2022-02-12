@@ -403,7 +403,10 @@ _io_BufferedReader___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"raw", "buffer_size", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "BufferedReader", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "BufferedReader",
+    };
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -457,7 +460,10 @@ _io_BufferedWriter___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"raw", "buffer_size", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "BufferedWriter", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "BufferedWriter",
+    };
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -604,7 +610,10 @@ _io_BufferedRandom___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"raw", "buffer_size", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "BufferedRandom", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "BufferedRandom",
+    };
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -638,4 +647,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=820461c6b0e29e48 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=754db81342b9ceb7 input=a9049054013a1b77]*/

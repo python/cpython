@@ -20,7 +20,10 @@ warnings_warn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"message", "category", "stacklevel", "source", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "warn", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "warn",
+    };
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *message;
@@ -89,7 +92,10 @@ warnings_warn_explicit(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"message", "category", "filename", "lineno", "module", "registry", "module_globals", "source", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "warn_explicit", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "warn_explicit",
+    };
     PyObject *argsbuf[8];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
     PyObject *message;
@@ -147,4 +153,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=596b370838b95386 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=11db61a2a072508b input=a9049054013a1b77]*/

@@ -23,7 +23,10 @@ py_blake2b_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "digest_size", "key", "salt", "person", "fanout", "depth", "leaf_size", "node_offset", "node_depth", "inner_size", "last_node", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "blake2b", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "blake2b",
+    };
     PyObject *argsbuf[13];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -247,4 +250,4 @@ _blake2_blake2b_hexdigest(BLAKE2bObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2b_hexdigest_impl(self);
 }
-/*[clinic end generated code: output=10eb47aba77f192d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bc40a611c592002c input=a9049054013a1b77]*/

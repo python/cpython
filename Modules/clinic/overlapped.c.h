@@ -447,7 +447,10 @@ _overlapped_Overlapped(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"event", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "Overlapped", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Overlapped",
+    };
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -1225,4 +1228,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=edd05b7a6c9c3aac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d7338f7c0aed2507 input=a9049054013a1b77]*/

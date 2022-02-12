@@ -969,7 +969,10 @@ class CLanguage(Language):
                 argname_fmt = 'args[%d]'
                 declarations = normalize_snippet("""
                     static const char * const _keywords[] = {{{keywords} NULL}};
-                    static _PyArg_Parser _parser = {{NULL, _keywords, "{name}", 0}};
+                    static _PyArg_Parser _parser = {{
+                        .keywords = _keywords,
+                        .fname = "{name}",
+                    }};
                     PyObject *argsbuf[%s];
                     """ % len(converters))
                 if has_optional_kw:
@@ -988,7 +991,10 @@ class CLanguage(Language):
                 argname_fmt = 'fastargs[%d]'
                 declarations = normalize_snippet("""
                     static const char * const _keywords[] = {{{keywords} NULL}};
-                    static _PyArg_Parser _parser = {{NULL, _keywords, "{name}", 0}};
+                    static _PyArg_Parser _parser = {{
+                        .keywords = _keywords,
+                        .fname = "{name}",
+                    }};
                     PyObject *argsbuf[%s];
                     PyObject * const *fastargs;
                     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -1069,9 +1075,13 @@ class CLanguage(Language):
                 if add_label:
                     parser_code.append("%s:" % add_label)
             else:
-                declarations = (
-                    'static const char * const _keywords[] = {{{keywords} NULL}};\n'
-                    'static _PyArg_Parser _parser = {{"{format_units}:{name}", _keywords, 0}};')
+                declarations = normalize_snippet("""
+                    static const char * const _keywords[] = {{{keywords} NULL}};
+                    static _PyArg_Parser _parser = {{
+                        .format = "{format_units}:{name}",
+                        .keywords = _keywords,
+                    }};
+                    """)
                 if not new_or_init:
                     parser_code = [normalize_snippet("""
                         if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser{parse_arguments_comma}

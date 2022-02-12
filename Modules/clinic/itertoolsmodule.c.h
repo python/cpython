@@ -55,7 +55,10 @@ itertools_groupby(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "key", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "groupby", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "groupby",
+    };
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -378,7 +381,10 @@ itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "r", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "combinations", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "combinations",
+    };
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -426,7 +432,10 @@ itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "r", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "combinations_with_replacement", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "combinations_with_replacement",
+    };
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -473,7 +482,10 @@ itertools_permutations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "r", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "permutations", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "permutations",
+    };
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -512,7 +524,10 @@ itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "func", "initial", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "accumulate", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "accumulate",
+    };
     PyObject *argsbuf[3];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -564,7 +579,10 @@ itertools_compress(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "selectors", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "compress", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compress",
+    };
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -639,7 +657,10 @@ itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"start", "step", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "count", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "count",
+    };
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -667,4 +688,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=659251a811ff89ed input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bccde2b6f92073b3 input=a9049054013a1b77]*/

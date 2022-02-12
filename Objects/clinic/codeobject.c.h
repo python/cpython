@@ -187,7 +187,10 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"co_argcount", "co_posonlyargcount", "co_kwonlyargcount", "co_nlocals", "co_stacksize", "co_flags", "co_firstlineno", "co_code", "co_consts", "co_names", "co_varnames", "co_freevars", "co_cellvars", "co_filename", "co_name", "co_qualname", "co_linetable", "co_exceptiontable", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "replace", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "replace",
+    };
     PyObject *argsbuf[18];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int co_argcount = self->co_argcount;
@@ -419,7 +422,10 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"oparg", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "_varname_from_oparg", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_varname_from_oparg",
+    };
     PyObject *argsbuf[1];
     int oparg;
 
@@ -436,4 +442,4 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9c521b6c79f90ff7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0806598f3c124a82 input=a9049054013a1b77]*/

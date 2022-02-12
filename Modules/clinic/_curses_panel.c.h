@@ -164,7 +164,10 @@ _curses_panel_panel_move(PyCursesPanelObject *self, PyTypeObject *cls, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "move", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "move",
+    };
     PyObject *argsbuf[2];
     int y;
     int x;
@@ -224,7 +227,10 @@ _curses_panel_panel_replace(PyCursesPanelObject *self, PyTypeObject *cls, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "replace", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "replace",
+    };
     PyObject *argsbuf[1];
     PyCursesWindowObject *win;
 
@@ -261,7 +267,10 @@ _curses_panel_panel_set_userptr(PyCursesPanelObject *self, PyTypeObject *cls, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "set_userptr", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_userptr",
+    };
     PyObject *argsbuf[1];
     PyObject *obj;
 
@@ -383,4 +392,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=c471aed62bc31e79 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8ddf0d96c016bacb input=a9049054013a1b77]*/

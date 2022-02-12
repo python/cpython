@@ -28,7 +28,10 @@ func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"code", "globals", "name", "argdefs", "closure", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "function", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "function",
+    };
     PyObject *argsbuf[5];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -75,4 +78,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3d96afa3396e5c82 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1433f36cfd498c22 input=a9049054013a1b77]*/

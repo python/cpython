@@ -19,7 +19,10 @@ pysqlite_complete_statement(PyObject *module, PyObject *const *args, Py_ssize_t 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"statement", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "complete_statement", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "complete_statement",
+    };
     PyObject *argsbuf[1];
     const char *statement;
 
@@ -182,4 +185,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d7f142e9a7a80468 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=47aa91237d1f837b input=a9049054013a1b77]*/

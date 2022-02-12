@@ -21,7 +21,10 @@ grp_getgrgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"id", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "getgrgid", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "getgrgid",
+    };
     PyObject *argsbuf[1];
     PyObject *id;
 
@@ -55,7 +58,10 @@ grp_getgrnam(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "getgrnam", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "getgrnam",
+    };
     PyObject *argsbuf[1];
     PyObject *name;
 
@@ -97,4 +103,4 @@ grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=ba680465f71ed779 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aa000641a0d3f7a7 input=a9049054013a1b77]*/

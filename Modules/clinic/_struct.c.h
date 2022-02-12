@@ -21,7 +21,10 @@ Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"format", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "Struct", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Struct",
+    };
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -104,7 +107,10 @@ Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"buffer", "offset", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "unpack_from", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "unpack_from",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer buffer = {NULL, NULL};
@@ -286,7 +292,10 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "buffer", "offset", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "unpack_from", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "unpack_from",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyStructObject *s_object = NULL;
@@ -376,4 +385,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=2065c9b007be631c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b45fe09cca8bba6d input=a9049054013a1b77]*/

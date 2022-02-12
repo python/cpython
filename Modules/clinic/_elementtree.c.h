@@ -169,7 +169,10 @@ _elementtree_Element_find(ElementObject *self, PyObject *const *args, Py_ssize_t
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "namespaces", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "find", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "find",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *path;
@@ -209,7 +212,10 @@ _elementtree_Element_findtext(ElementObject *self, PyObject *const *args, Py_ssi
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "default", "namespaces", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "findtext", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "findtext",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *path;
@@ -255,7 +261,10 @@ _elementtree_Element_findall(ElementObject *self, PyObject *const *args, Py_ssiz
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "namespaces", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "findall", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "findall",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *path;
@@ -294,7 +303,10 @@ _elementtree_Element_iterfind(ElementObject *self, PyObject *const *args, Py_ssi
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "namespaces", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "iterfind", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "iterfind",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *path;
@@ -333,7 +345,10 @@ _elementtree_Element_get(ElementObject *self, PyObject *const *args, Py_ssize_t 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "default", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "get", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *key;
@@ -371,7 +386,10 @@ _elementtree_Element_iter(ElementObject *self, PyObject *const *args, Py_ssize_t
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"tag", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "iter", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "iter",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *tag = Py_None;
@@ -591,7 +609,10 @@ _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwar
 {
     int return_value = -1;
     static const char * const _keywords[] = {"element_factory", "comment_factory", "pi_factory", "insert_comments", "insert_pis", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "TreeBuilder", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "TreeBuilder",
+    };
     PyObject *argsbuf[5];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -802,7 +823,10 @@ _elementtree_XMLParser___init__(PyObject *self, PyObject *args, PyObject *kwargs
 {
     int return_value = -1;
     static const char * const _keywords[] = {"target", "encoding", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "XMLParser", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "XMLParser",
+    };
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -915,4 +939,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3fd6fa2ce1aeca76 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=752951dd4c5c2852 input=a9049054013a1b77]*/

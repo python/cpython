@@ -74,7 +74,10 @@ _testmultiphase_StateAccessType_increment_count_clinic(StateAccessTypeObject *se
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"n", "twice", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "increment_count_clinic", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "increment_count_clinic",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int n = 1;
@@ -133,4 +136,4 @@ _testmultiphase_StateAccessType_get_count(StateAccessTypeObject *self, PyTypeObj
     }
     return _testmultiphase_StateAccessType_get_count_impl(self, cls);
 }
-/*[clinic end generated code: output=48739d81c3834078 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=837c77559039b4b3 input=a9049054013a1b77]*/

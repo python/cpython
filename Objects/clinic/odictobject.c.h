@@ -19,7 +19,10 @@ OrderedDict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "value", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "fromkeys", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "fromkeys",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *seq;
@@ -61,7 +64,10 @@ OrderedDict_setdefault(PyODictObject *self, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "default", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "setdefault", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "setdefault",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *key;
@@ -104,7 +110,10 @@ OrderedDict_pop(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "default", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "pop", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "pop",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *key;
@@ -145,7 +154,10 @@ OrderedDict_popitem(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"last", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "popitem", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "popitem",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int last = 1;
@@ -187,7 +199,10 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject *const *args, Py_ssize_t n
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "last", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "move_to_end", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "move_to_end",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *key;
@@ -211,4 +226,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4182a5dab66963d0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e9da2a6f90864724 input=a9049054013a1b77]*/

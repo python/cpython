@@ -88,7 +88,10 @@ winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *const *args, Py_ssize_t n
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"exc_type", "exc_value", "traceback", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "__exit__", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__exit__",
+    };
     PyObject *argsbuf[3];
     PyObject *exc_type;
     PyObject *exc_value;
@@ -287,7 +290,10 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "CreateKeyEx", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "CreateKeyEx",
+    };
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     HKEY key;
@@ -441,7 +447,10 @@ winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "sub_key", "access", "reserved", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "DeleteKeyEx", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "DeleteKeyEx",
+    };
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     HKEY key;
@@ -822,7 +831,10 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "OpenKey", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "OpenKey",
+    };
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     HKEY key;
@@ -912,7 +924,10 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "OpenKeyEx", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "OpenKeyEx",
+    };
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     HKEY key;
@@ -1458,4 +1473,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3faa63af6fd1653c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9407f9bd67d6349c input=a9049054013a1b77]*/

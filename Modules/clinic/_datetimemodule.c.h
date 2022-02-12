@@ -23,7 +23,10 @@ iso_calendar_date_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"year", "week", "weekday", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "IsoCalendarDate", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "IsoCalendarDate",
+    };
     PyObject *argsbuf[3];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -75,7 +78,10 @@ datetime_datetime_now(PyTypeObject *type, PyObject *const *args, Py_ssize_t narg
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"tz", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "now", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "now",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *tz = Py_None;
@@ -94,4 +100,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1a3da7479e443e17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=05ba8503c8f9ef77 input=a9049054013a1b77]*/

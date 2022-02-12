@@ -194,7 +194,10 @@ _imp_find_frozen(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "withdata", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "find_frozen", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "find_frozen",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *name;
@@ -527,7 +530,10 @@ _imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "source", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "source_hash", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "source_hash",
+    };
     PyObject *argsbuf[2];
     long key;
     Py_buffer source = {NULL, NULL};
@@ -565,4 +571,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=8d0f4305b1d0714b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=50754b88a64d5232 input=a9049054013a1b77]*/

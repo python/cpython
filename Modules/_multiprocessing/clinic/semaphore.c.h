@@ -22,7 +22,10 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"block", "timeout", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "acquire", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "acquire",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int blocking = 1;
@@ -96,7 +99,10 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"block", "timeout", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "acquire", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "acquire",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int blocking = 1;
@@ -161,7 +167,10 @@ _multiprocessing_SemLock(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"kind", "value", "maxvalue", "name", "unlink", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "SemLock", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "SemLock",
+    };
     PyObject *argsbuf[5];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -467,4 +476,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=64ba32544811c9e6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6fe59c01f0192237 input=a9049054013a1b77]*/

@@ -107,7 +107,10 @@ _winapi_ConnectNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nar
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "overlapped", NULL};
-    static _PyArg_Parser _parser = {"" F_HANDLE "|i:ConnectNamedPipe", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .format = "" F_HANDLE "|i:ConnectNamedPipe",
+        .keywords = _keywords,
+    };
     HANDLE handle;
     int use_overlapped = 0;
 
@@ -837,7 +840,10 @@ _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"locale", "flags", "src", NULL};
-    static _PyArg_Parser _parser = {"O&kO&:LCMapStringEx", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .format = "O&kO&:LCMapStringEx",
+        .keywords = _keywords,
+    };
     LPCWSTR locale;
     DWORD flags;
     LPCWSTR src;
@@ -874,7 +880,10 @@ _winapi_ReadFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "size", "overlapped", NULL};
-    static _PyArg_Parser _parser = {"" F_HANDLE "k|i:ReadFile", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .format = "" F_HANDLE "k|i:ReadFile",
+        .keywords = _keywords,
+    };
     HANDLE handle;
     DWORD size;
     int use_overlapped = 0;
@@ -1099,7 +1108,10 @@ _winapi_WriteFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "buffer", "overlapped", NULL};
-    static _PyArg_Parser _parser = {"" F_HANDLE "O|i:WriteFile", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .format = "" F_HANDLE "O|i:WriteFile",
+        .keywords = _keywords,
+    };
     HANDLE handle;
     PyObject *buffer;
     int use_overlapped = 0;
@@ -1148,7 +1160,10 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", NULL};
-    static _PyArg_Parser _parser = {"" F_HANDLE ":GetFileType", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .format = "" F_HANDLE ":GetFileType",
+        .keywords = _keywords,
+    };
     HANDLE handle;
     DWORD _return_value;
 
@@ -1187,7 +1202,10 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"on_type_read", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "_mimetypes_read_windows_registry", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_mimetypes_read_windows_registry",
+    };
     PyObject *argsbuf[1];
     PyObject *on_type_read;
 
@@ -1201,4 +1219,4 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6cdefec63a1d7f12 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b91cda784138f541 input=a9049054013a1b77]*/

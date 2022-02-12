@@ -20,7 +20,10 @@ _opcode_stack_effect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", "jump", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "stack_effect", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "stack_effect",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     int opcode;
@@ -74,4 +77,4 @@ _opcode_get_specialization_stats(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _opcode_get_specialization_stats_impl(module);
 }
-/*[clinic end generated code: output=b904260bf022f953 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6184034c98725c31 input=a9049054013a1b77]*/

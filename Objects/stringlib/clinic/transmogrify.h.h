@@ -21,7 +21,10 @@ stringlib_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"tabsize", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "expandtabs", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "expandtabs",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int tabsize = 8;
@@ -249,4 +252,4 @@ stringlib_zfill(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=46d058103bffedf7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cb6ac0eb2ce36c9c input=a9049054013a1b77]*/

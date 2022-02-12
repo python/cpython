@@ -24,7 +24,10 @@ winsound_PlaySound(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sound", "flags", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "PlaySound", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "PlaySound",
+    };
     PyObject *argsbuf[2];
     PyObject *sound;
     int flags;
@@ -67,7 +70,10 @@ winsound_Beep(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"frequency", "duration", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "Beep", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Beep",
+    };
     PyObject *argsbuf[2];
     int frequency;
     int duration;
@@ -109,7 +115,10 @@ winsound_MessageBeep(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"type", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "MessageBeep", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "MessageBeep",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int type = MB_OK;
@@ -131,4 +140,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b7e53fab4f26aeaf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=30be8564eec797c9 input=a9049054013a1b77]*/

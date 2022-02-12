@@ -38,7 +38,10 @@ os_stat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "stat", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "stat",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("stat", "path", 0, 1);
@@ -97,7 +100,10 @@ os_lstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "lstat", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "lstat",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("lstat", "path", 0, 0);
@@ -170,7 +176,10 @@ os_access(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "dir_fd", "effective_ids", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "access", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "access",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("access", "path", 0, 0);
@@ -307,7 +316,10 @@ os_chdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "chdir", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "chdir",
+    };
     PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("chdir", "path", 0, PATH_HAVE_FCHDIR);
 
@@ -349,7 +361,10 @@ os_fchdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "fchdir", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "fchdir",
+    };
     PyObject *argsbuf[1];
     int fd;
 
@@ -406,7 +421,10 @@ os_chmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "dir_fd", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "chmod", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "chmod",
+    };
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("chmod", "path", 0, PATH_HAVE_FCHMOD);
@@ -471,7 +489,10 @@ os_fchmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "mode", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "fchmod", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "fchmod",
+    };
     PyObject *argsbuf[2];
     int fd;
     int mode;
@@ -518,7 +539,10 @@ os_lchmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "lchmod", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "lchmod",
+    };
     PyObject *argsbuf[2];
     path_t path = PATH_T_INITIALIZE("lchmod", "path", 0, 0);
     int mode;
@@ -571,7 +595,10 @@ os_chflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "flags", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "chflags", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "chflags",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("chflags", "path", 0, 0);
@@ -631,7 +658,10 @@ os_lchflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "flags", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "lchflags", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "lchflags",
+    };
     PyObject *argsbuf[2];
     path_t path = PATH_T_INITIALIZE("lchflags", "path", 0, 0);
     unsigned long flags;
@@ -678,7 +708,10 @@ os_chroot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "chroot", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "chroot",
+    };
     PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("chroot", "path", 0, 0);
 
@@ -719,7 +752,10 @@ os_fsync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "fsync", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "fsync",
+    };
     PyObject *argsbuf[1];
     int fd;
 
@@ -779,7 +815,10 @@ os_fdatasync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "fdatasync", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "fdatasync",
+    };
     PyObject *argsbuf[1];
     int fd;
 
@@ -842,7 +881,10 @@ os_chown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "uid", "gid", "dir_fd", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "chown", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "chown",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     path_t path = PATH_T_INITIALIZE("chown", "path", 0, PATH_HAVE_FCHOWN);
@@ -912,7 +954,10 @@ os_fchown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "uid", "gid", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "fchown", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "fchown",
+    };
     PyObject *argsbuf[3];
     int fd;
     uid_t uid;
@@ -962,7 +1007,10 @@ os_lchown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "uid", "gid", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "lchown", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "lchown",
+    };
     PyObject *argsbuf[3];
     path_t path = PATH_T_INITIALIZE("lchown", "path", 0, 0);
     uid_t uid;
@@ -1059,7 +1107,10 @@ os_link(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "link", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "link",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t src = PATH_T_INITIALIZE("link", "src", 0, 0);
@@ -1143,7 +1194,10 @@ os_listdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "listdir", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "listdir",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     path_t path = PATH_T_INITIALIZE("listdir", "path", 1, PATH_HAVE_FDOPENDIR);
@@ -1254,7 +1308,10 @@ os__getvolumepathname(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "_getvolumepathname", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_getvolumepathname",
+    };
     PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("_getvolumepathname", "path", 0, 0);
 
@@ -1295,7 +1352,10 @@ os__path_splitroot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "_path_splitroot", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_splitroot",
+    };
     PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("_path_splitroot", "path", 0, 0);
 
@@ -1334,7 +1394,10 @@ os__path_normpath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "_path_normpath", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_normpath",
+    };
     PyObject *argsbuf[1];
     PyObject *path;
 
@@ -1373,7 +1436,10 @@ os_mkdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "mkdir", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "mkdir",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("mkdir", "path", 0, 0);
@@ -1467,7 +1533,10 @@ os_getpriority(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"which", "who", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "getpriority", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "getpriority",
+    };
     PyObject *argsbuf[2];
     int which;
     int who;
@@ -1511,7 +1580,10 @@ os_setpriority(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"which", "who", "priority", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "setpriority", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "setpriority",
+    };
     PyObject *argsbuf[3];
     int which;
     int who;
@@ -1565,7 +1637,10 @@ os_rename(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "rename", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "rename",
+    };
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t src = PATH_T_INITIALIZE("rename", "src", 0, 0);
@@ -1633,7 +1708,10 @@ os_replace(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "replace", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "replace",
+    };
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t src = PATH_T_INITIALIZE("replace", "src", 0, 0);
@@ -1699,7 +1777,10 @@ os_rmdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "rmdir", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "rmdir",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("rmdir", "path", 0, 0);
@@ -1747,7 +1828,10 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"command", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "system", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "system",
+    };
     PyObject *argsbuf[1];
     const Py_UNICODE *command;
     long _return_value;
@@ -1798,7 +1882,10 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"command", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "system", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "system",
+    };
     PyObject *argsbuf[1];
     PyObject *command = NULL;
     long _return_value;
@@ -1879,7 +1966,10 @@ os_unlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "unlink", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "unlink",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("unlink", "path", 0, 0);
@@ -1930,7 +2020,10 @@ os_remove(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "remove", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "remove",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("remove", "path", 0, 0);
@@ -2025,7 +2118,10 @@ os_utime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "times", "ns", "dir_fd", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "utime", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "utime",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("utime", "path", 0, PATH_UTIME_HAVE_FD);
@@ -2099,7 +2195,10 @@ os__exit(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "_exit", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_exit",
+    };
     PyObject *argsbuf[1];
     int status;
 
@@ -2187,7 +2286,10 @@ os_execve(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "argv", "env", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "execve", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "execve",
+    };
     PyObject *argsbuf[3];
     path_t path = PATH_T_INITIALIZE("execve", "path", 0, PATH_HAVE_FEXECVE);
     PyObject *argv;
@@ -2259,7 +2361,10 @@ os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsid", "setsigmask", "setsigdef", "scheduler", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "posix_spawn", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "posix_spawn",
+    };
     PyObject *argsbuf[10];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     path_t path = PATH_T_INITIALIZE("posix_spawn", "path", 0, 0);
@@ -2386,7 +2491,10 @@ os_posix_spawnp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsid", "setsigmask", "setsigdef", "scheduler", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "posix_spawnp", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "posix_spawnp",
+    };
     PyObject *argsbuf[10];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     path_t path = PATH_T_INITIALIZE("posix_spawnp", "path", 0, 0);
@@ -2606,7 +2714,10 @@ os_register_at_fork(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"before", "after_in_child", "after_in_parent", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "register_at_fork", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "register_at_fork",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *before = NULL;
@@ -2709,7 +2820,10 @@ os_sched_get_priority_max(PyObject *module, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"policy", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sched_get_priority_max", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sched_get_priority_max",
+    };
     PyObject *argsbuf[1];
     int policy;
 
@@ -2748,7 +2862,10 @@ os_sched_get_priority_min(PyObject *module, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"policy", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sched_get_priority_min", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sched_get_priority_min",
+    };
     PyObject *argsbuf[1];
     int policy;
 
@@ -2820,7 +2937,10 @@ os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sched_priority", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sched_param", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sched_param",
+    };
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -3489,7 +3609,10 @@ os_getpgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"pid", NULL};
-    static _PyArg_Parser _parser = {"" _Py_PARSE_PID ":getpgid", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .format = "" _Py_PARSE_PID ":getpgid",
+        .keywords = _keywords,
+    };
     pid_t pid;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
@@ -3950,7 +4073,10 @@ os_wait3(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"options", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "wait3", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "wait3",
+    };
     PyObject *argsbuf[1];
     int options;
 
@@ -3992,7 +4118,10 @@ os_wait4(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"pid", "options", NULL};
-    static _PyArg_Parser _parser = {"" _Py_PARSE_PID "i:wait4", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .format = "" _Py_PARSE_PID "i:wait4",
+        .keywords = _keywords,
+    };
     pid_t pid;
     int options;
 
@@ -4176,7 +4305,10 @@ os_pidfd_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"pid", "flags", NULL};
-    static _PyArg_Parser _parser = {"" _Py_PARSE_PID "|O&:pidfd_open", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .format = "" _Py_PARSE_PID "|O&:pidfd_open",
+        .keywords = _keywords,
+    };
     pid_t pid;
     unsigned int flags = 0;
 
@@ -4217,7 +4349,10 @@ os_readlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "readlink", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "readlink",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("readlink", "path", 0, 0);
@@ -4278,7 +4413,10 @@ os_symlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"src", "dst", "target_is_directory", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "symlink", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "symlink",
+    };
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t src = PATH_T_INITIALIZE("symlink", "src", 0, 0);
@@ -4528,7 +4666,10 @@ os_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "flags", "mode", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "open", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "open",
+    };
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("open", "path", 0, 0);
@@ -4598,7 +4739,10 @@ os_close(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "close", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "close",
+    };
     PyObject *argsbuf[1];
     int fd;
 
@@ -4704,7 +4848,10 @@ os_dup2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "fd2", "inheritable", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "dup2", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "dup2",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     int fd;
@@ -5133,7 +5280,10 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"out_fd", "in_fd", "offset", "count", "headers", "trailers", "flags", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sendfile", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sendfile",
+    };
     PyObject *argsbuf[7];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
     int out_fd;
@@ -5212,7 +5362,10 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"out_fd", "in_fd", "offset", "count", "headers", "trailers", "flags", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sendfile", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sendfile",
+    };
     PyObject *argsbuf[7];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
     int out_fd;
@@ -5298,7 +5451,10 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"out_fd", "in_fd", "offset", "count", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sendfile", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sendfile",
+    };
     PyObject *argsbuf[4];
     int out_fd;
     int in_fd;
@@ -5403,7 +5559,10 @@ os_fstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "fstat", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "fstat",
+    };
     PyObject *argsbuf[1];
     int fd;
 
@@ -5732,7 +5891,10 @@ os_copy_file_range(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"src", "dst", "count", "offset_src", "offset_dst", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "copy_file_range", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "copy_file_range",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     int src;
@@ -5823,7 +5985,10 @@ os_splice(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"src", "dst", "count", "offset_src", "offset_dst", "flags", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "splice", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "splice",
+    };
     PyObject *argsbuf[6];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     int src;
@@ -5908,7 +6073,10 @@ os_mkfifo(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "mkfifo", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "mkfifo",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("mkfifo", "path", 0, 0);
@@ -5985,7 +6153,10 @@ os_mknod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "device", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "mknod", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "mknod",
+    };
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("mknod", "path", 0, 0);
@@ -6217,7 +6388,10 @@ os_truncate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "length", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "truncate", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "truncate",
+    };
     PyObject *argsbuf[2];
     path_t path = PATH_T_INITIALIZE("truncate", "path", 0, PATH_HAVE_FTRUNCATE);
     Py_off_t length;
@@ -6595,7 +6769,10 @@ os_WIFCONTINUED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "WIFCONTINUED", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "WIFCONTINUED",
+    };
     PyObject *argsbuf[1];
     int status;
     int _return_value;
@@ -6639,7 +6816,10 @@ os_WIFSTOPPED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "WIFSTOPPED", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "WIFSTOPPED",
+    };
     PyObject *argsbuf[1];
     int status;
     int _return_value;
@@ -6683,7 +6863,10 @@ os_WIFSIGNALED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "WIFSIGNALED", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "WIFSIGNALED",
+    };
     PyObject *argsbuf[1];
     int status;
     int _return_value;
@@ -6727,7 +6910,10 @@ os_WIFEXITED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "WIFEXITED", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "WIFEXITED",
+    };
     PyObject *argsbuf[1];
     int status;
     int _return_value;
@@ -6771,7 +6957,10 @@ os_WEXITSTATUS(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "WEXITSTATUS", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "WEXITSTATUS",
+    };
     PyObject *argsbuf[1];
     int status;
     int _return_value;
@@ -6815,7 +7004,10 @@ os_WTERMSIG(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "WTERMSIG", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "WTERMSIG",
+    };
     PyObject *argsbuf[1];
     int status;
     int _return_value;
@@ -6859,7 +7051,10 @@ os_WSTOPSIG(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "WSTOPSIG", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "WSTOPSIG",
+    };
     PyObject *argsbuf[1];
     int status;
     int _return_value;
@@ -6941,7 +7136,10 @@ os_statvfs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "statvfs", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "statvfs",
+    };
     PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("statvfs", "path", 0, PATH_HAVE_FSTATVFS);
 
@@ -6982,7 +7180,10 @@ os__getdiskusage(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "_getdiskusage", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_getdiskusage",
+    };
     PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("_getdiskusage", "path", 0, 0);
 
@@ -7072,7 +7273,10 @@ os_pathconf(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "name", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "pathconf", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "pathconf",
+    };
     PyObject *argsbuf[2];
     path_t path = PATH_T_INITIALIZE("pathconf", "path", 0, PATH_HAVE_FPATHCONF);
     int name;
@@ -7238,7 +7442,10 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"filepath", "operation", "arguments", "cwd", "show_cmd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "startfile", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "startfile",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t filepath = PATH_T_INITIALIZE("startfile", "filepath", 0, 0);
@@ -7359,7 +7566,10 @@ os_device_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "device_encoding", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "device_encoding",
+    };
     PyObject *argsbuf[1];
     int fd;
 
@@ -7530,7 +7740,10 @@ os_getxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "attribute", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "getxattr", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "getxattr",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("getxattr", "path", 0, 1);
@@ -7594,7 +7807,10 @@ os_setxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "attribute", "value", "flags", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "setxattr", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "setxattr",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     path_t path = PATH_T_INITIALIZE("setxattr", "path", 0, 1);
@@ -7683,7 +7899,10 @@ os_removexattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "attribute", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "removexattr", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "removexattr",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("removexattr", "path", 0, 1);
@@ -7746,7 +7965,10 @@ os_listxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "listxattr", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "listxattr",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     path_t path = PATH_T_INITIALIZE("listxattr", "path", 1, 1);
@@ -7841,7 +8063,10 @@ os_memfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", "flags", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "memfd_create", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "memfd_create",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *name = NULL;
@@ -7892,7 +8117,10 @@ os_eventfd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"initval", "flags", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "eventfd", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "eventfd",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     unsigned int initval;
@@ -7940,7 +8168,10 @@ os_eventfd_read(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "eventfd_read", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "eventfd_read",
+    };
     PyObject *argsbuf[1];
     int fd;
 
@@ -7978,7 +8209,10 @@ os_eventfd_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "value", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "eventfd_write", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "eventfd_write",
+    };
     PyObject *argsbuf[2];
     int fd;
     unsigned long long value;
@@ -8345,7 +8579,10 @@ os_DirEntry_stat(DirEntry *self, PyTypeObject *defining_class, PyObject *const *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "stat", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "stat",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int follow_symlinks = 1;
@@ -8386,7 +8623,10 @@ os_DirEntry_is_dir(DirEntry *self, PyTypeObject *defining_class, PyObject *const
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "is_dir", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_dir",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int follow_symlinks = 1;
@@ -8432,7 +8672,10 @@ os_DirEntry_is_file(DirEntry *self, PyTypeObject *defining_class, PyObject *cons
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "is_file", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_file",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int follow_symlinks = 1;
@@ -8519,7 +8762,10 @@ os_scandir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "scandir", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "scandir",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     path_t path = PATH_T_INITIALIZE("scandir", "path", 1, PATH_HAVE_FDOPENDIR);
@@ -8565,7 +8811,10 @@ os_fspath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "fspath", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "fspath",
+    };
     PyObject *argsbuf[1];
     PyObject *path;
 
@@ -8599,7 +8848,10 @@ os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"size", "flags", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "getrandom", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "getrandom",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_ssize_t size;
@@ -8663,7 +8915,10 @@ os__add_dll_directory(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "_add_dll_directory", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_add_dll_directory",
+    };
     PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("_add_dll_directory", "path", 0, 0);
 
@@ -8708,7 +8963,10 @@ os__remove_dll_directory(PyObject *module, PyObject *const *args, Py_ssize_t nar
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"cookie", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "_remove_dll_directory", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_remove_dll_directory",
+    };
     PyObject *argsbuf[1];
     PyObject *cookie;
 
@@ -8756,7 +9014,10 @@ os_waitstatus_to_exitcode(PyObject *module, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "waitstatus_to_exitcode", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "waitstatus_to_exitcode",
+    };
     PyObject *argsbuf[1];
     PyObject *status_obj;
 
@@ -9360,4 +9621,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=c22a8b6de4a0ccb7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b6ad892f5f0027af input=a9049054013a1b77]*/

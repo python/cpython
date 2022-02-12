@@ -163,7 +163,10 @@ _gdbm_gdbm_nextkey(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, P
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"s#:nextkey", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .format = "s#:nextkey",
+        .keywords = _keywords,
+    };
     const char *key;
     Py_ssize_t key_length;
 
@@ -305,4 +308,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=617117d16956ac4d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=72fc0760a23d6314 input=a9049054013a1b77]*/

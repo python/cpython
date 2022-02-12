@@ -134,7 +134,10 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"file", "mode", "buffering", "encoding", "errors", "newline", "closefd", "opener", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "open", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "open",
+    };
     PyObject *argsbuf[8];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *file;
@@ -334,7 +337,10 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "open_code", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "open_code",
+    };
     PyObject *argsbuf[1];
     PyObject *path;
 
@@ -355,4 +361,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c4d7e4ef878985f8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0c2bfe951b958370 input=a9049054013a1b77]*/

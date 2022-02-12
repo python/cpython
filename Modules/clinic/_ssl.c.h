@@ -349,7 +349,10 @@ _ssl__SSLSocket_get_channel_binding(PySSLSocket *self, PyObject *const *args, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"cb_type", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "get_channel_binding", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get_channel_binding",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *cb_type = "tls-unique";
@@ -532,7 +535,10 @@ _ssl__SSLContext_load_cert_chain(PySSLContext *self, PyObject *const *args, Py_s
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"certfile", "keyfile", "password", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "load_cert_chain", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "load_cert_chain",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *certfile;
@@ -580,7 +586,10 @@ _ssl__SSLContext_load_verify_locations(PySSLContext *self, PyObject *const *args
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"cafile", "capath", "cadata", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "load_verify_locations", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "load_verify_locations",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *cafile = Py_None;
@@ -641,7 +650,10 @@ _ssl__SSLContext__wrap_socket(PySSLContext *self, PyObject *const *args, Py_ssiz
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sock", "server_side", "server_hostname", "owner", "session", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "_wrap_socket", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_wrap_socket",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *sock;
@@ -710,7 +722,10 @@ _ssl__SSLContext__wrap_bio(PySSLContext *self, PyObject *const *args, Py_ssize_t
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"incoming", "outgoing", "server_side", "server_hostname", "owner", "session", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "_wrap_bio", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_wrap_bio",
+    };
     PyObject *argsbuf[6];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     PySSLMemoryBIO *incoming;
@@ -854,7 +869,10 @@ _ssl__SSLContext_get_ca_certs(PySSLContext *self, PyObject *const *args, Py_ssiz
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"binary_form", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "get_ca_certs", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get_ca_certs",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int binary_form = 0;
@@ -1151,7 +1169,10 @@ _ssl_txt2obj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"txt", "name", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "txt2obj", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "txt2obj",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     const char *txt;
@@ -1241,7 +1262,10 @@ _ssl_enum_certificates(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"store_name", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "enum_certificates", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "enum_certificates",
+    };
     PyObject *argsbuf[1];
     const char *store_name;
 
@@ -1294,7 +1318,10 @@ _ssl_enum_crls(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"store_name", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "enum_crls", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "enum_crls",
+    };
     PyObject *argsbuf[1];
     const char *store_name;
 
@@ -1330,4 +1357,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=9d806f8ff4a06ed3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de367f272cd976bc input=a9049054013a1b77]*/

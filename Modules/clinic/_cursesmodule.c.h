@@ -2679,7 +2679,10 @@ _curses_setupterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"term", "fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "setupterm", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "setupterm",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *term = NULL;
@@ -4284,4 +4287,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=1e2a8a160a0fe811 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=27ace478a3894a56 input=a9049054013a1b77]*/

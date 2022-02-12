@@ -10,7 +10,10 @@ mappingproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"mapping", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "mappingproxy", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "mappingproxy",
+    };
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -73,7 +76,10 @@ property_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"fget", "fset", "fdel", "doc", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "property", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "property",
+    };
     PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -115,4 +121,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=916624e717862abc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4085b6538bdbca17 input=a9049054013a1b77]*/

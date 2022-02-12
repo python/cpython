@@ -167,7 +167,10 @@ list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "reverse", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sort", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sort",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *keyfunc = Py_None;
@@ -353,4 +356,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=eab97a76b1568a03 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3517a9a2741422c9 input=a9049054013a1b77]*/

@@ -25,7 +25,10 @@ _io_IncrementalNewlineDecoder___init__(PyObject *self, PyObject *args, PyObject 
 {
     int return_value = -1;
     static const char * const _keywords[] = {"decoder", "translate", "errors", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "IncrementalNewlineDecoder", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "IncrementalNewlineDecoder",
+    };
     PyObject *argsbuf[3];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -71,7 +74,10 @@ _io_IncrementalNewlineDecoder_decode(nldecoder_object *self, PyObject *const *ar
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"input", "final", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "decode", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "decode",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *input;
@@ -183,7 +189,10 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"buffer", "encoding", "errors", "newline", "line_buffering", "write_through", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "TextIOWrapper", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "TextIOWrapper",
+    };
     PyObject *argsbuf[6];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -298,7 +307,10 @@ _io_TextIOWrapper_reconfigure(textio *self, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"encoding", "errors", "newline", "line_buffering", "write_through", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "reconfigure", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "reconfigure",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *encoding = Py_None;
@@ -671,4 +683,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=bb78b568b24759d6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=11c2a0f766774c11 input=a9049054013a1b77]*/

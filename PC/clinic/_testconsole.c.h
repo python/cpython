@@ -22,7 +22,10 @@ _testconsole_write_input(PyObject *module, PyObject *const *args, Py_ssize_t nar
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"file", "s", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "write_input", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "write_input",
+    };
     PyObject *argsbuf[2];
     PyObject *file;
     PyBytesObject *s;
@@ -64,7 +67,10 @@ _testconsole_read_output(PyObject *module, PyObject *const *args, Py_ssize_t nar
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"file", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "read_output", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "read_output",
+    };
     PyObject *argsbuf[1];
     PyObject *file;
 
@@ -88,4 +94,4 @@ exit:
 #ifndef _TESTCONSOLE_READ_OUTPUT_METHODDEF
     #define _TESTCONSOLE_READ_OUTPUT_METHODDEF
 #endif /* !defined(_TESTCONSOLE_READ_OUTPUT_METHODDEF) */
-/*[clinic end generated code: output=6e9f8b0766eb5a0e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d173917269773103 input=a9049054013a1b77]*/

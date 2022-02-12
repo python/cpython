@@ -16,7 +16,10 @@ py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sha3_224", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sha3_224",
+    };
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -164,4 +167,4 @@ _sha3_shake_128_hexdigest(SHA3object *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c8a97b34e80def62 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=04b8ce598d5fddf1 input=a9049054013a1b77]*/

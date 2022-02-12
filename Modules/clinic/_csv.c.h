@@ -41,7 +41,10 @@ _csv_unregister_dialect(PyObject *module, PyObject *const *args, Py_ssize_t narg
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "unregister_dialect", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "unregister_dialect",
+    };
     PyObject *argsbuf[1];
     PyObject *name;
 
@@ -75,7 +78,10 @@ _csv_get_dialect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "get_dialect", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get_dialect",
+    };
     PyObject *argsbuf[1];
     PyObject *name;
 
@@ -112,7 +118,10 @@ _csv_field_size_limit(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"new_limit", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "field_size_limit", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "field_size_limit",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *new_limit = NULL;
@@ -131,4 +140,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6235abc491b02188 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dc39e150c5489458 input=a9049054013a1b77]*/

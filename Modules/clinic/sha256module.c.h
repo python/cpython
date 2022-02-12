@@ -86,7 +86,10 @@ _sha256_sha256(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sha256", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sha256",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *string = NULL;
@@ -137,7 +140,10 @@ _sha256_sha224(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sha224", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sha224",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *string = NULL;
@@ -170,4 +176,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=58b48051890d3fde input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ba037cd5991ed407 input=a9049054013a1b77]*/

@@ -19,7 +19,10 @@ sys_addaudithook(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"hook", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "addaudithook", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "addaudithook",
+    };
     PyObject *argsbuf[1];
     PyObject *hook;
 
@@ -426,7 +429,10 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"depth", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "set_coroutine_origin_tracking_depth", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_coroutine_origin_tracking_depth",
+    };
     PyObject *argsbuf[1];
     int depth;
 
@@ -1118,4 +1124,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=41122dae1bb7158c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=471ea64b8d8825ad input=a9049054013a1b77]*/

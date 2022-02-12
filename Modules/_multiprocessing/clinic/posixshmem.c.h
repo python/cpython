@@ -22,7 +22,10 @@ _posixshmem_shm_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "flags", "mode", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "shm_open", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "shm_open",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *path;
@@ -89,7 +92,10 @@ _posixshmem_shm_unlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "shm_unlink", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "shm_unlink",
+    };
     PyObject *argsbuf[1];
     PyObject *path;
 
@@ -120,4 +126,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=a6db931a47d36e1b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c7b7a73469757847 input=a9049054013a1b77]*/

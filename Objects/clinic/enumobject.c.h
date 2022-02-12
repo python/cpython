@@ -25,7 +25,10 @@ enum_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "start", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "enumerate", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "enumerate",
+    };
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -78,4 +81,4 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a3937b6b33499560 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea60be9bdeb2b8ae input=a9049054013a1b77]*/

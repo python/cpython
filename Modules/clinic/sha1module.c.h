@@ -86,7 +86,10 @@ _sha1_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sha1", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sha1",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *string = NULL;
@@ -119,4 +122,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=322d77ba0a4282fc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=631957de4c30f983 input=a9049054013a1b77]*/

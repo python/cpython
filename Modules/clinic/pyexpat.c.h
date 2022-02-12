@@ -22,7 +22,10 @@ pyexpat_xmlparser_Parse(xmlparseobject *self, PyTypeObject *cls, PyObject *const
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "Parse", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Parse",
+    };
     PyObject *argsbuf[2];
     PyObject *data;
     int isfinal = 0;
@@ -64,7 +67,10 @@ pyexpat_xmlparser_ParseFile(xmlparseobject *self, PyTypeObject *cls, PyObject *c
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "ParseFile", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "ParseFile",
+    };
     PyObject *argsbuf[1];
     PyObject *file;
 
@@ -176,7 +182,10 @@ pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyTypeObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "ExternalEntityParserCreate", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "ExternalEntityParserCreate",
+    };
     PyObject *argsbuf[2];
     const char *context;
     const char *encoding = NULL;
@@ -283,7 +292,10 @@ pyexpat_xmlparser_UseForeignDTD(xmlparseobject *self, PyTypeObject *cls, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "UseForeignDTD", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "UseForeignDTD",
+    };
     PyObject *argsbuf[1];
     int flag = 1;
 
@@ -326,7 +338,10 @@ pyexpat_ParserCreate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"encoding", "namespace_separator", "intern", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "ParserCreate", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "ParserCreate",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *encoding = NULL;
@@ -425,4 +440,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=3e333b89da3aa58c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5ea99edc4406ace9 input=a9049054013a1b77]*/

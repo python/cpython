@@ -84,7 +84,10 @@ EVPXOF_digest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"length", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "digest", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "digest",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t length;
 
@@ -131,7 +134,10 @@ EVPXOF_hexdigest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"length", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "hexdigest", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "hexdigest",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t length;
 
@@ -182,7 +188,10 @@ EVP_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", "string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "new", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "new",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *name_obj;
@@ -236,7 +245,10 @@ _hashlib_openssl_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_md5", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "openssl_md5",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -288,7 +300,10 @@ _hashlib_openssl_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_sha1", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "openssl_sha1",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -340,7 +355,10 @@ _hashlib_openssl_sha224(PyObject *module, PyObject *const *args, Py_ssize_t narg
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_sha224", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "openssl_sha224",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -392,7 +410,10 @@ _hashlib_openssl_sha256(PyObject *module, PyObject *const *args, Py_ssize_t narg
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_sha256", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "openssl_sha256",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -444,7 +465,10 @@ _hashlib_openssl_sha384(PyObject *module, PyObject *const *args, Py_ssize_t narg
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_sha384", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "openssl_sha384",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -496,7 +520,10 @@ _hashlib_openssl_sha512(PyObject *module, PyObject *const *args, Py_ssize_t narg
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_sha512", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "openssl_sha512",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -550,7 +577,10 @@ _hashlib_openssl_sha3_224(PyObject *module, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_sha3_224", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "openssl_sha3_224",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -606,7 +636,10 @@ _hashlib_openssl_sha3_256(PyObject *module, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_sha3_256", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "openssl_sha3_256",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -662,7 +695,10 @@ _hashlib_openssl_sha3_384(PyObject *module, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_sha3_384", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "openssl_sha3_384",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -718,7 +754,10 @@ _hashlib_openssl_sha3_512(PyObject *module, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_sha3_512", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "openssl_sha3_512",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -774,7 +813,10 @@ _hashlib_openssl_shake_128(PyObject *module, PyObject *const *args, Py_ssize_t n
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_shake_128", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "openssl_shake_128",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -830,7 +872,10 @@ _hashlib_openssl_shake_256(PyObject *module, PyObject *const *args, Py_ssize_t n
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_shake_256", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "openssl_shake_256",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -886,7 +931,10 @@ pbkdf2_hmac(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"hash_name", "password", "salt", "iterations", "dklen", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "pbkdf2_hmac", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "pbkdf2_hmac",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
     const char *hash_name;
@@ -972,7 +1020,10 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"password", "salt", "n", "r", "p", "maxmem", "dklen", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "scrypt", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "scrypt",
+    };
     PyObject *argsbuf[7];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer password = {NULL, NULL};
@@ -1088,7 +1139,10 @@ _hashlib_hmac_singleshot(PyObject *module, PyObject *const *args, Py_ssize_t nar
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "msg", "digest", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "hmac_digest", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "hmac_digest",
+    };
     PyObject *argsbuf[3];
     Py_buffer key = {NULL, NULL};
     Py_buffer msg = {NULL, NULL};
@@ -1146,7 +1200,10 @@ _hashlib_hmac_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "msg", "digestmod", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "hmac_new", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "hmac_new",
+    };
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer key = {NULL, NULL};
@@ -1221,7 +1278,10 @@ _hashlib_HMAC_update(HMACobject *self, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"msg", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "update", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "update",
+    };
     PyObject *argsbuf[1];
     PyObject *msg;
 
@@ -1385,4 +1445,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=69f2374071bff707 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7f18c32fdd7e537e input=a9049054013a1b77]*/

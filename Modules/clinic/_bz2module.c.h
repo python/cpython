@@ -96,7 +96,10 @@ _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "max_length", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "decompress", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "decompress",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
@@ -139,4 +142,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=a1175204a414fe2a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=53b231ee6ed77d97 input=a9049054013a1b77]*/

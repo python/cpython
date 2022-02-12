@@ -187,7 +187,10 @@ pysqlite_cursor_fetchmany(pysqlite_Cursor *self, PyObject *const *args, Py_ssize
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"size", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "fetchmany", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "fetchmany",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int maxrows = self->arraysize;
@@ -289,4 +292,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=2b9c6a3ca8a8caff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ffbeaed2ea935e33 input=a9049054013a1b77]*/

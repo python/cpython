@@ -89,7 +89,10 @@ gc_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"generation", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "collect", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "collect",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int generation = NUM_GENERATIONS - 1;
@@ -243,7 +246,10 @@ gc_get_objects(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"generation", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "get_objects", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get_objects",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     Py_ssize_t generation = -1;
@@ -372,4 +378,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=71f7136d6e3f2323 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=08799dbb18f0cfad input=a9049054013a1b77]*/

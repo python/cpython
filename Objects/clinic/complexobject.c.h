@@ -103,7 +103,10 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"real", "imag", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "complex", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "complex",
+    };
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -131,4 +134,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6d85094ace15677e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8893cf77907b128a input=a9049054013a1b77]*/

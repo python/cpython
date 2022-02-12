@@ -14,7 +14,10 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"database", "timeout", "detect_types", "isolation_level", "check_same_thread", "factory", "cached_statements", "uri", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "Connection", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Connection",
+    };
     PyObject *argsbuf[8];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -120,7 +123,10 @@ pysqlite_connection_cursor(pysqlite_Connection *self, PyObject *const *args, Py_
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"factory", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "cursor", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "cursor",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *factory = NULL;
@@ -169,7 +175,10 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", "", "readonly", "name", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "blobopen", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "blobopen",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     const char *table;
@@ -324,7 +333,10 @@ pysqlite_connection_create_function(pysqlite_Connection *self, PyTypeObject *cls
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", "narg", "func", "deterministic", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "create_function", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "create_function",
+    };
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     const char *name;
@@ -398,7 +410,10 @@ create_window_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *c
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", "", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "create_window_function", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "create_window_function",
+    };
     PyObject *argsbuf[3];
     const char *name;
     int num_params;
@@ -454,7 +469,10 @@ pysqlite_connection_create_aggregate(pysqlite_Connection *self, PyTypeObject *cl
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", "n_arg", "aggregate_class", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "create_aggregate", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "create_aggregate",
+    };
     PyObject *argsbuf[3];
     const char *name;
     int n_arg;
@@ -507,7 +525,10 @@ pysqlite_connection_set_authorizer(pysqlite_Connection *self, PyTypeObject *cls,
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"authorizer_callback", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "set_authorizer", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_authorizer",
+    };
     PyObject *argsbuf[1];
     PyObject *callable;
 
@@ -541,7 +562,10 @@ pysqlite_connection_set_progress_handler(pysqlite_Connection *self, PyTypeObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"progress_handler", "n", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "set_progress_handler", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_progress_handler",
+    };
     PyObject *argsbuf[2];
     PyObject *callable;
     int n;
@@ -580,7 +604,10 @@ pysqlite_connection_set_trace_callback(pysqlite_Connection *self, PyTypeObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"trace_callback", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "set_trace_callback", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_trace_callback",
+    };
     PyObject *argsbuf[1];
     PyObject *callable;
 
@@ -816,7 +843,10 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *const *args, Py_
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "backup", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "backup",
+    };
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     pysqlite_Connection *target;
@@ -907,7 +937,10 @@ pysqlite_connection_create_collation(pysqlite_Connection *self, PyTypeObject *cl
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "create_collation", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "create_collation",
+    };
     PyObject *argsbuf[2];
     const char *name;
     PyObject *callable;
@@ -963,7 +996,10 @@ serialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "serialize", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "serialize",
+    };
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *name = "main";
@@ -1029,7 +1065,10 @@ deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "name", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "deserialize", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "deserialize",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
@@ -1237,4 +1276,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=8818c1c3ec9425aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=922dea58403eae76 input=a9049054013a1b77]*/

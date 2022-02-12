@@ -523,7 +523,10 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sizehint", "flags", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "epoll", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "epoll",
+    };
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -666,7 +669,10 @@ select_epoll_register(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "eventmask", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "register", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "register",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     int fd;
@@ -720,7 +726,10 @@ select_epoll_modify(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t narg
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "eventmask", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "modify", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "modify",
+    };
     PyObject *argsbuf[2];
     int fd;
     unsigned int eventmask;
@@ -766,7 +775,10 @@ select_epoll_unregister(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "unregister", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "unregister",
+    };
     PyObject *argsbuf[1];
     int fd;
 
@@ -814,7 +826,10 @@ select_epoll_poll(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs,
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"timeout", "maxevents", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "poll", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "poll",
+    };
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *timeout_obj = Py_None;
@@ -1189,4 +1204,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=e77cc5c8a6c77860 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=52dbe315b8cda088 input=a9049054013a1b77]*/
