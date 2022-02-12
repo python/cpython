@@ -15,6 +15,8 @@ class list "PyListObject *" "&PyList_Type"
 
 #include "clinic/listobject.c.h"
 
+static PyObject *indexerr = NULL;
+
 #if PyList_MAXFREELIST > 0
 static struct _Py_list_state *
 get_list_state(void)
@@ -123,6 +125,10 @@ _PyList_Fini(PyInterpreterState *interp)
     struct _Py_list_state *state = &interp->list;
     state->numfree = -1;
 #endif
+
+    if (_Py_IsMainInterpreter(interp)) {
+        Py_CLEAR(indexerr);
+    }
 }
 
 /* Print summary info about the state of the optimized allocator */
@@ -223,8 +229,6 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
     */
     return (size_t) i < (size_t) limit;
 }
-
-static PyObject *indexerr = NULL;
 
 PyObject *
 PyList_GetItem(PyObject *op, Py_ssize_t i)
@@ -2858,8 +2862,7 @@ list_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    assert(PyType_Check(type));
-    PyObject *list = PyType_GenericAlloc((PyTypeObject *)type, 0);
+    PyObject *list = PyType_GenericAlloc(_PyType_CAST(type), 0);
     if (list == NULL) {
         return NULL;
     }
@@ -3502,25 +3505,25 @@ listreviter_setstate(listreviterobject *it, PyObject *state)
 static PyObject *
 listiter_reduce_general(void *_it, int forward)
 {
-    _Py_IDENTIFIER(iter);
-    _Py_IDENTIFIER(reversed);
     PyObject *list;
 
     /* the objects are not the same, index is of different types! */
     if (forward) {
         listiterobject *it = (listiterobject *)_it;
-        if (it->it_seq)
-            return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
+        if (it->it_seq) {
+            return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
                                  it->it_seq, it->it_index);
+        }
     } else {
         listreviterobject *it = (listreviterobject *)_it;
-        if (it->it_seq)
-            return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_reversed),
+        if (it->it_seq) {
+            return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(reversed)),
                                  it->it_seq, it->it_index);
+        }
     }
     /* empty iterator, create an empty list */
     list = PyList_New(0);
     if (list == NULL)
         return NULL;
-    return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(iter)), list);
 }

@@ -537,6 +537,9 @@
 /* Define to 1 if you have the `getresuid' function. */
 #undef HAVE_GETRESUID
 
+/* Define to 1 if you have the `getrusage' function. */
+#undef HAVE_GETRUSAGE
+
 /* Define to 1 if you have the `getsid' function. */
 #undef HAVE_GETSID
 
@@ -771,6 +774,9 @@
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
+
+/* Define to 1 if you have the <netcan/can.h> header file. */
+#undef HAVE_NETCAN_CAN_H
 
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
@@ -1724,11 +1730,6 @@
 
 /* Define on FreeBSD to activate all library features */
 #undef __BSD_VISIBLE
-
-/* Define to 1 if type `char' is unsigned and you are not using gcc.  */
-#ifndef __CHAR_UNSIGNED__
-# undef __CHAR_UNSIGNED__
-#endif
 
 /* Define to 'long' if <time.h> doesn't define. */
 #undef clock_t

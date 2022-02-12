@@ -897,15 +897,19 @@ id(42)
     # to suppress these. See also the comment in DebuggerTests.get_stack_trace
     def test_pycfunction(self):
         'Verify that "py-bt" displays invocations of PyCFunction instances'
+        # bpo-46600: If the compiler inlines _null_to_none() in meth_varargs()
+        # (ex: clang -Og), _null_to_none() is the frame #1. Otherwise,
+        # meth_varargs() is the frame #1.
+        expected_frame = r'#(1|2)'
         # Various optimizations multiply the code paths by which these are
         # called, so test a variety of calling conventions.
-        for func_name, args, expected_frame in (
-            ('meth_varargs', '', 1),
-            ('meth_varargs_keywords', '', 1),
-            ('meth_o', '[]', 1),
-            ('meth_noargs', '', 1),
-            ('meth_fastcall', '', 1),
-            ('meth_fastcall_keywords', '', 1),
+        for func_name, args in (
+            ('meth_varargs', ''),
+            ('meth_varargs_keywords', ''),
+            ('meth_o', '[]'),
+            ('meth_noargs', ''),
+            ('meth_fastcall', ''),
+            ('meth_fastcall_keywords', ''),
         ):
             for obj in (
                 '_testcapi',
@@ -945,10 +949,9 @@ id(42)
                         # defined.' message in stderr.
                         ignore_stderr=True,
                     )
-                    self.assertIn(
-                        f'#{expected_frame} <built-in method {func_name}',
-                        gdb_output,
-                    )
+                    regex = expected_frame
+                    regex += re.escape(f' <built-in method {func_name}')
+                    self.assertRegex(gdb_output, regex)
 
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")

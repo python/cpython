@@ -817,7 +817,7 @@ tuple_vectorcall(PyObject *type, PyObject * const*args,
     }
 
     if (nargs) {
-        return tuple_new_impl((PyTypeObject *)type, args[0]);
+        return tuple_new_impl(_PyType_CAST(type), args[0]);
     }
     else {
         return tuple_get_empty();
@@ -1193,12 +1193,11 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 tupleiter_reduce(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     if (it->it_seq)
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
                              it->it_seq, it->it_index);
     else
-        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
 }
 
 static PyObject *

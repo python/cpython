@@ -12,6 +12,7 @@
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pymath.h"        // _Py_ADJUST_ERANGE1()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
 
 #include <ctype.h>
 #include <float.h>
@@ -1685,7 +1686,7 @@ float_vectorcall(PyObject *type, PyObject * const*args,
     }
 
     PyObject *x = nargs >= 1 ? args[0] : NULL;
-    return float_new_impl((PyTypeObject *)type, x);
+    return float_new_impl(_PyType_CAST(type), x);
 }
 
 
@@ -2080,6 +2081,14 @@ _PyFloat_Fini(PyInterpreterState *interp)
     struct _Py_float_state *state = &interp->float_state;
     state->numfree = -1;
 #endif
+}
+
+void
+_PyFloat_FiniType(PyInterpreterState *interp)
+{
+    if (_Py_IsMainInterpreter(interp)) {
+        _PyStructSequence_FiniType(&FloatInfoType);
+    }
 }
 
 /* Print summary info about the state of the optimized allocator */

@@ -38,15 +38,14 @@ information on defining exceptions is available in the Python Tutorial under
 Exception context
 -----------------
 
-When raising (or re-raising) an exception in an :keyword:`except` or
-:keyword:`finally` clause
-:attr:`__context__` is automatically set to the last exception caught; if the
-new exception is not handled the traceback that is eventually displayed will
-include the originating exception(s) and the final exception.
+When raising a new exception while another exception
+is already being handled, the new exception's
+:attr:`__context__` attribute is automatically set to the handled
+exception.  An exception may be handled when an :keyword:`except` or
+:keyword:`finally` clause, or a :keyword:`with` statement, is used.
 
-When raising a new exception (rather than using a bare ``raise`` to re-raise
-the exception currently being handled), the implicit exception context can be
-supplemented with an explicit cause by using :keyword:`from<raise>` with
+This implicit exception context can be
+supplemented with an explicit cause by using :keyword:`!from` with
 :keyword:`raise`::
 
    raise new_exc from original_exc
@@ -878,48 +877,72 @@ their subgroups based on the types of the contained exceptions.
    raises a :exc:`TypeError` if any contained exception is not an
    :exc:`Exception` subclass.
 
+   .. attribute:: message
+
+       The ``msg`` argument to the constructor. This is a read-only attribute.
+
+   .. attribute:: exceptions
+
+       A tuple of the exceptions in the ``excs`` sequence given to the
+       constructor. This is a read-only attribute.
+
    .. method:: subgroup(condition)
 
-   Returns an exception group that contains only the exceptions from the
-   current group that match *condition*, or ``None`` if the result is empty.
+      Returns an exception group that contains only the exceptions from the
+      current group that match *condition*, or ``None`` if the result is empty.
 
-   The condition can be either a function that accepts an exception and returns
-   true for those that should be in the subgroup, or it can be an exception type
-   or a tuple of exception types, which is used to check for a match using the
-   same check that is used in an ``except`` clause.
+      The condition can be either a function that accepts an exception and returns
+      true for those that should be in the subgroup, or it can be an exception type
+      or a tuple of exception types, which is used to check for a match using the
+      same check that is used in an ``except`` clause.
 
-   The nesting structure of the current exception is preserved in the result,
-   as are the values of its :attr:`message`, :attr:`__traceback__`,
-   :attr:`__cause__`, :attr:`__context__` and :attr:`__note__` fields.
-   Empty nested groups are omitted from the result.
+      The nesting structure of the current exception is preserved in the result,
+      as are the values of its :attr:`message`, :attr:`__traceback__`,
+      :attr:`__cause__`, :attr:`__context__` and :attr:`__note__` fields.
+      Empty nested groups are omitted from the result.
 
-   The condition is checked for all exceptions in the nested exception group,
-   including the top-level and any nested exception groups. If the condition is
-   true for such an exception group, it is included in the result in full.
+      The condition is checked for all exceptions in the nested exception group,
+      including the top-level and any nested exception groups. If the condition is
+      true for such an exception group, it is included in the result in full.
 
    .. method:: split(condition)
 
-   Like :meth:`subgroup`, but returns the pair ``(match, rest)`` where ``match``
-   is ``subgroup(condition)`` and ``rest`` is the remaining non-matching
-   part.
+      Like :meth:`subgroup`, but returns the pair ``(match, rest)`` where ``match``
+      is ``subgroup(condition)`` and ``rest`` is the remaining non-matching
+      part.
 
    .. method:: derive(excs)
 
-   Returns an exception group with the same :attr:`message`,
-   :attr:`__traceback__`, :attr:`__cause__`, :attr:`__context__`
-   and :attr:`__note__` but which wraps the exceptions in ``excs``.
+      Returns an exception group with the same :attr:`message`,
+      :attr:`__traceback__`, :attr:`__cause__`, :attr:`__context__`
+      and :attr:`__note__` but which wraps the exceptions in ``excs``.
 
-   This method is used by :meth:`subgroup` and :meth:`split`. A
-   subclass needs to override it in order to make :meth:`subgroup`
-   and :meth:`split` return instances of the subclass rather
-   than :exc:`ExceptionGroup`. ::
+      This method is used by :meth:`subgroup` and :meth:`split`. A
+      subclass needs to override it in order to make :meth:`subgroup`
+      and :meth:`split` return instances of the subclass rather
+      than :exc:`ExceptionGroup`. ::
 
-      >>> class MyGroup(ExceptionGroup):
-      ...     def derive(self, exc):
-      ...         return MyGroup(self.message, exc)
-      ...
-      >>> MyGroup("eg", [ValueError(1), TypeError(2)]).split(TypeError)
-      (MyGroup('eg', [TypeError(2)]), MyGroup('eg', [ValueError(1)]))
+         >>> class MyGroup(ExceptionGroup):
+         ...     def derive(self, exc):
+         ...         return MyGroup(self.message, exc)
+         ...
+         >>> MyGroup("eg", [ValueError(1), TypeError(2)]).split(TypeError)
+         (MyGroup('eg', [TypeError(2)]), MyGroup('eg', [ValueError(1)]))
+
+   Note that :exc:`BaseExceptionGroup` defines :meth:`__new__`, so
+   subclasses that need a different constructor signature need to
+   override that rather than :meth:`__init__`. For example, the following
+   defines an exception group subclass which accepts an exit_code and
+   and constructs the group's message from it. ::
+
+      class Errors(ExceptionGroup):
+         def __new__(cls, errors, exit_code):
+            self = super().__new__(Errors, f"exit code: {exit_code}", errors)
+            self.exit_code = exit_code
+            return self
+
+         def derive(self, excs):
+            return Errors(excs, self.exit_code)
 
    .. versionadded:: 3.11
 

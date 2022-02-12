@@ -255,6 +255,7 @@ class UTF8ModeTests(unittest.TestCase):
     @unittest.skipIf(MS_WINDOWS,
                      "os.device_encoding() doesn't implement "
                      "the UTF-8 Mode on Windows")
+    @support.requires_subprocess()
     def test_device_encoding(self):
         # Use stdout as TTY
         if not sys.stdout.isatty():

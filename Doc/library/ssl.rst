@@ -2081,7 +2081,7 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.6
       :attr:`SSLContext.verify_mode` returns :class:`VerifyMode` enum:
 
-         >>> ssl.create_default_context().verify_mode
+         >>> ssl.create_default_context().verify_mode  # doctest: +SKIP
          <VerifyMode.CERT_REQUIRED: 2>
 
 .. index:: single: certificates

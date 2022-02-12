@@ -71,7 +71,11 @@ OMIT_FILES = (
     "smtplib.py",
     "socketserver.py",
     "telnetlib.py",
-    "urllib/",
+    # keep urllib.parse for pydoc
+    "urllib/error.py",
+    "urllib/request.py",
+    "urllib/response.py",
+    "urllib/robotparser.py",
     "wsgiref/",
     "xmlrpc/",
     # dbm / gdbm
