@@ -874,8 +874,8 @@ Porting to Python 3.11
       #endif
 
   Or use `the pythoncapi_compat project
-  <https://github.com/pythoncapi/pythoncapi_compat>`__ to get these functions
-  on old Python functions.
+  <https://github.com/pythoncapi/pythoncapi_compat>`__ to get these APIs
+  on older Python versions.
 
 * Changes of the :c:type:`PyThreadState` structure members:
 
