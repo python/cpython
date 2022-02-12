@@ -178,8 +178,8 @@ class TaskGroup:
         self._tasks.add(task)
         return task
 
-    # In Python 3.8 Tasks propagate all exceptions correctly,
-    # except for KeybaordInterrupt and SystemExit which are
+    # Since Python 3.8 Tasks propagate all exceptions correctly,
+    # except for KeyboardInterrupt and SystemExit which are
     # still considered special.
 
     def _is_base_error(self, exc: BaseException) -> bool:

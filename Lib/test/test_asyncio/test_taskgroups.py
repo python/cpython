@@ -562,7 +562,11 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
     async def _test_taskgroup_21(self):
         # This test doesn't work as asyncio, currently, doesn't
-        # know how to handle BaseExceptions.
+        # correctly propagate KeyboardInterrupt (or SystemExit) --
+        # those cause the event loop itself to crash.
+        # (Compare to the previous (passing) test -- that one raises
+        # a plain exception but raises KeyboardInterrupt in nested();
+        # this test does it the other way around.)
 
         async def crash_soon():
             await asyncio.sleep(0.1)
