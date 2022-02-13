@@ -274,7 +274,7 @@ int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT 
 int _Py_Specialize_CallNoKw(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     PyObject *kwnames, SpecializedCacheEntry *cache, PyObject *builtins);
 void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                             SpecializedCacheEntry *cache);
+                             SpecializedCacheEntry *cache, PyObject **locals);
 void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 
 /* Deallocator function for static codeobjects used in deepfreeze.py */

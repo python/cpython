@@ -1737,7 +1737,7 @@ _Py_Specialize_CallNoKw(
 
 void
 _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                        SpecializedCacheEntry *cache)
+                        SpecializedCacheEntry *cache, PyObject **locals)
 {
     _PyAdaptiveEntry *adaptive = &cache->adaptive;
     switch (adaptive->original_oparg) {
@@ -1748,7 +1748,10 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 goto failure;
             }
             if (PyUnicode_CheckExact(lhs)) {
-                if (_Py_OPCODE(instr[1]) == STORE_FAST && Py_REFCNT(lhs) == 2) {
+                _Py_CODEUNIT next_instr = instr[1];
+                bool to_store = (_Py_OPCODE(next_instr) == STORE_FAST ||
+                                 _Py_OPCODE(next_instr) == STORE_FAST__LOAD_FAST);
+                if (to_store && locals[_Py_OPARG(next_instr)] == lhs) {
                     *instr = _Py_MAKECODEUNIT(BINARY_OP_INPLACE_ADD_UNICODE,
                                               _Py_OPARG(*instr));
                     goto success;

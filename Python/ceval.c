@@ -2020,7 +2020,8 @@ handle_eval_breaker:
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             int next_oparg = _Py_OPARG(*next_instr);
-            assert(_Py_OPCODE(*next_instr) == STORE_FAST);
+            assert(_Py_OPCODE(*next_instr) == STORE_FAST ||
+                   _Py_OPCODE(*next_instr) == STORE_FAST__LOAD_FAST);
             /* In the common case, there are 2 references to the value
             * stored in 'variable' when the v = v + ... is performed: one
             * on the value stack (in 'v') and one still stored in the
@@ -5259,7 +5260,7 @@ handle_eval_breaker:
                 PyObject *lhs = SECOND();
                 PyObject *rhs = TOP();
                 next_instr--;
-                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, cache);
+                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, cache, &GETLOCAL(0));
                 DISPATCH();
             }
             else {
