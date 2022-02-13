@@ -1,1 +1,1 @@
-Fixes dis behavior on bytecode arguments which overflow to support negative args
+Fix :mod:`dis` behavior on negative jump offsets.
