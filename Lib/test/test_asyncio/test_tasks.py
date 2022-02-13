@@ -496,6 +496,25 @@ class BaseTaskTests:
         # This also distinguishes from the initial has_cycle=None.
         self.assertEqual(has_cycle, False)
 
+    def test___cancel_requested__(self):
+        loop = asyncio.new_event_loop()
+
+        async def task():
+            await asyncio.sleep(10)
+            return 12
+
+        try:
+            t = self.new_task(loop, task())
+            self.assertFalse(t.__cancel_requested__)
+            self.assertTrue(t.cancel())
+            self.assertTrue(t.__cancel_requested__)
+            self.assertFalse(t.cancel())
+
+            with self.assertRaises(asyncio.CancelledError):
+                loop.run_until_complete(t)
+        finally:
+            loop.close()
+
     def test_cancel(self):
 
         def gen():

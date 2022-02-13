@@ -2506,8 +2506,8 @@ static PyGetSetDef TaskType_getsetlist[] = {
     {"_must_cancel", (getter)TaskObj_get_must_cancel, NULL, NULL},
     {"_coro", (getter)TaskObj_get_coro, NULL, NULL},
     {"_fut_waiter", (getter)TaskObj_get_fut_waiter, NULL, NULL},
-    {"__task_cancel_requested__", (getter)TaskObj_get_cancel_requested,
-                                  (setter)TaskObj_set_cancel_requested, NULL},
+    {"__cancel_requested__", (getter)TaskObj_get_cancel_requested,
+                             (setter)TaskObj_set_cancel_requested, NULL},
     {NULL} /* Sentinel */
 };
 
