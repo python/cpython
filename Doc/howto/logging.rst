@@ -832,10 +832,11 @@ libraries, then the logger name specified can be 'orgname.foo' rather than
 just 'foo'.
 
 .. note:: It is strongly advised that you *do not log to the root logger*
-   in your library. Instead, use a logger with a unique and easily identifiable 
-   name, such as `__name__`. This can avoid writing to the a logger that's used 
-   by other libraries or the application, which will make it difficult for the 
-   application developer to configure handlers.
+   in your library. Instead, use a logger with a unique and easily 
+   identifiable name, such as your library's ``__name__``. This can avoid 
+   writing to a logger that's used by other libraries or the application, 
+   which will make it difficult for the application developer to configure 
+   handlers.
 
 .. note:: It is strongly advised that you *do not add any handlers other
    than* :class:`~logging.NullHandler` *to your library's loggers*. This is
