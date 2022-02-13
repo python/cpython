@@ -91,6 +91,7 @@ typedef struct {
     PyObject *task_context;
     int task_must_cancel;
     int task_log_destroy_pending;
+    int task_cancel_requested;
 } TaskObj;
 
 typedef struct {
@@ -2039,6 +2040,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     Py_CLEAR(self->task_fut_waiter);
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
+    self->task_cancel_requested = 0;
     Py_INCREF(coro);
     Py_XSETREF(self->task_coro, coro);
 
@@ -2141,6 +2143,32 @@ TaskObj_get_fut_waiter(TaskObj *task, void *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+TaskObj_get_cancel_requested(TaskObj *task, void *Py_UNUSED(ignored))
+{
+    if (task->task_cancel_requested) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
+}
+
+static int
+TaskObj_set_cancel_requested(TaskObj *task, PyObject *val, void *Py_UNUSED(ignored))
+{
+    if (val == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
+    int is_true = PyObject_IsTrue(val);
+    if (is_true < 0) {
+        return -1;
+    }
+    task->task_cancel_requested = is_true;
+    return 0;
+}
+
 /*[clinic input]
 _asyncio.Task._make_cancelled_error
 
@@ -2204,6 +2232,11 @@ _asyncio_Task_cancel_impl(TaskObj *self, PyObject *msg)
     if (self->task_state != STATE_PENDING) {
         Py_RETURN_FALSE;
     }
+
+    if (self->task_cancel_requested) {
+        Py_RETURN_FALSE;
+    }
+    self->task_cancel_requested = 1;
 
     if (self->task_fut_waiter) {
         PyObject *res;
@@ -2473,6 +2506,8 @@ static PyGetSetDef TaskType_getsetlist[] = {
     {"_must_cancel", (getter)TaskObj_get_must_cancel, NULL, NULL},
     {"_coro", (getter)TaskObj_get_coro, NULL, NULL},
     {"_fut_waiter", (getter)TaskObj_get_fut_waiter, NULL, NULL},
+    {"__task_cancel_requested__", (getter)TaskObj_get_cancel_requested,
+                                  (setter)TaskObj_set_cancel_requested, NULL},
     {NULL} /* Sentinel */
 };
 

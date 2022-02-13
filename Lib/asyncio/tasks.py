@@ -109,6 +109,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         self._fut_waiter = None
         self._coro = coro
         self._context = contextvars.copy_context()
+        self.__cancel_requested__ = False
 
         self._loop.call_soon(self.__step, context=self._context)
         _register_task(self)
@@ -201,6 +202,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         self._log_traceback = False
         if self.done():
             return False
+        if self.__cancel_requested__:
+            # Cancel was requested by previous task.cancel() call
+            return False
+        self.__cancel_requested__ = True
         if self._fut_waiter is not None:
             if self._fut_waiter.cancel(msg=msg):
                 # Leave self._fut_waiter; it may be a Task that
@@ -634,7 +639,7 @@ def _ensure_future(coro_or_future, *, loop=None):
         loop = events._get_event_loop(stacklevel=4)
     try:
         return loop.create_task(coro_or_future)
-    except RuntimeError: 
+    except RuntimeError:
         if not called_wrap_awaitable:
             coro_or_future.close()
         raise
