@@ -812,7 +812,7 @@ _elementtree_XMLParser___init__(PyObject *self, PyObject *args, PyObject *kwargs
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
-    PyObject *target = NULL;
+    PyObject *target = Py_None;
     const char *encoding = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 0, 0, argsbuf);
@@ -920,4 +920,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b7f6a32462fc42a9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=18ddc3c84139443d input=a9049054013a1b77]*/
