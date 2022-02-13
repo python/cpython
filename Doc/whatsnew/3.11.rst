@@ -231,7 +231,7 @@ fractions
 IDLE and idlelib
 ----------------
 
-* IDLE now applies syntax highlighting to `.pyi` files. (Contributed by Alex
+* Apply syntax highlighting to `.pyi` files. (Contributed by Alex
   Waygood and Terry Jan Reedy in :issue:`45447`.)
 
 inspect
