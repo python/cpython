@@ -2019,7 +2019,6 @@ handle_eval_breaker:
             PyObject *right = TOP();
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
-            DEOPT_IF(Py_REFCNT(left) != 2, BINARY_OP);
             int next_oparg = _Py_OPARG(*next_instr);
             assert(_Py_OPCODE(*next_instr) == STORE_FAST);
             /* In the common case, there are 2 references to the value
