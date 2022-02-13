@@ -428,7 +428,7 @@ character of ``'0'`` with an *alignment* type of ``'='``.
    Preceding the *width* field by ``'0'`` no longer affects the default
    alignment for strings.
 
-The *precision* is an integer indicating how many digits should be
+The *precision* is a decimal integer indicating how many digits should be
 displayed after the decimal point for presentation types
 ``'f'`` and ``'F'``, or before and after the decimal point for presentation
 types ``'g'`` or ``'G'``.  For string presentation types the field
