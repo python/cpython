@@ -1129,7 +1129,7 @@ error:
 }
 
 static int
-print_exception_note(struct exception_print_context *ctx, PyObject *value)
+print_exception_notes(struct exception_print_context *ctx, PyObject *value)
 {
     PyObject *f = ctx->file;
 
@@ -1137,41 +1137,47 @@ print_exception_note(struct exception_print_context *ctx, PyObject *value)
         return 0;
     }
 
-    PyObject *note = PyObject_GetAttr(value, &_Py_ID(__note__));
-    if (note == NULL) {
+    PyObject *notes = PyObject_GetAttr(value, &_Py_ID(__notes__));
+    if (notes == NULL) {
         return -1;
     }
-    if (!PyUnicode_Check(note)) {
-        Py_DECREF(note);
+    if (!PyTuple_Check(notes)) {
+        Py_DECREF(notes);
         return 0;
     }
+    Py_ssize_t num_notes = PyTuple_GET_SIZE(notes);
+    PyObject *lines = NULL;
+    for (Py_ssize_t ni = 0; ni < num_notes; ni++) {
+        PyObject *note = PyTuple_GET_ITEM(notes, ni);
+        assert(PyUnicode_Check(note));
+        lines = PyUnicode_Splitlines(note, 1);
+        if (lines == NULL) {
+            Py_DECREF(notes);
+            return -1;
+        }
 
-    PyObject *lines = PyUnicode_Splitlines(note, 1);
-    Py_DECREF(note);
-
-    if (lines == NULL) {
-        return -1;
-    }
-
-    Py_ssize_t n = PyList_GET_SIZE(lines);
-    for (Py_ssize_t i = 0; i < n; i++) {
-        PyObject *line = PyList_GET_ITEM(lines, i);
-        assert(PyUnicode_Check(line));
-        if (write_indented_margin(ctx, f) < 0) {
+        Py_ssize_t n = PyList_GET_SIZE(lines);
+        for (Py_ssize_t i = 0; i < n; i++) {
+            PyObject *line = PyList_GET_ITEM(lines, i);
+            assert(PyUnicode_Check(line));
+            if (write_indented_margin(ctx, f) < 0) {
+                goto error;
+            }
+            if (PyFile_WriteObject(line, f, Py_PRINT_RAW) < 0) {
+                goto error;
+            }
+        }
+        if (PyFile_WriteString("\n", f) < 0) {
             goto error;
         }
-        if (PyFile_WriteObject(line, f, Py_PRINT_RAW) < 0) {
-            goto error;
-        }
-    }
-    if (PyFile_WriteString("\n", f) < 0) {
-        goto error;
+        Py_CLEAR(lines);
     }
 
-    Py_DECREF(lines);
+    Py_DECREF(notes);
     return 0;
 error:
-    Py_DECREF(lines);
+    Py_XDECREF(lines);
+    Py_DECREF(notes);
     return -1;
 }
 
@@ -1206,7 +1212,7 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
     if (PyFile_WriteString("\n", f) < 0) {
         goto error;
     }
-    if (print_exception_note(ctx, value) < 0) {
+    if (print_exception_notes(ctx, value) < 0) {
         goto error;
     }
 

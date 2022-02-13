@@ -129,7 +129,7 @@ IDENTIFIERS = [
     '__newobj__',
     '__newobj_ex__',
     '__next__',
-    '__note__',
+    '__notes__',
     '__or__',
     '__origin__',
     '__package__',

@@ -538,26 +538,40 @@ class ExceptionTests(unittest.TestCase):
                                              'pickled "%r", attribute "%s' %
                                              (e, checkArgName))
 
-    def test_note(self):
+    def test_notes(self):
         for e in [BaseException(1), Exception(2), ValueError(3)]:
             with self.subTest(e=e):
-                self.assertIsNone(e.__note__)
-                e.__note__ = "My Note"
-                self.assertEqual(e.__note__, "My Note")
+                self.assertEqual(e.__notes__, ())
+                e.add_note("My Note")
+                self.assertEqual(e.__notes__, ("My Note",))
 
                 with self.assertRaises(TypeError):
-                    e.__note__ = 42
-                self.assertEqual(e.__note__, "My Note")
+                    e.add_note(42)
+                self.assertEqual(e.__notes__, ("My Note",))
 
-                e.__note__ = "Your Note"
-                self.assertEqual(e.__note__, "Your Note")
+                e.add_note("Your Note")
+                self.assertEqual(e.__notes__, ("My Note", "Your Note"))
 
-                with self.assertRaises(TypeError):
-                    del e.__note__
-                self.assertEqual(e.__note__, "Your Note")
+                with self.assertRaises(AttributeError):
+                    e.__notes__ = ("NewNote",)
+                self.assertEqual(e.__notes__, ("My Note", "Your Note"))
 
-                e.__note__ = None
-                self.assertIsNone(e.__note__)
+                with self.assertRaises(AttributeError):
+                    del e.__notes__
+                self.assertEqual(e.__notes__, ("My Note", "Your Note"))
+
+                e.add_note("Our Note", replace=True)
+                self.assertEqual(e.__notes__, ("Our Note",))
+
+                e.add_note("Our Final Note", replace=False)
+                self.assertEqual(e.__notes__, ("Our Note", "Our Final Note"))
+
+                e.add_note(None, replace=False)
+                self.assertEqual(e.__notes__, ("Our Note", "Our Final Note"))
+
+                e.add_note(None, replace=True)
+                self.assertEqual(e.__notes__, ())
+
 
     def testWithTraceback(self):
         try:
