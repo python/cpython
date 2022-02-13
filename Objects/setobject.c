@@ -1901,7 +1901,7 @@ PyDoc_STRVAR(discard_doc,
 "Remove an element from a set if it is a member.\n\
 \n\
 Unlike set.remove(), the discard() method does not raise\n\
-an exception if the element is not a member of the set.");
+an exception when an element is missing from the set.");
 
 static PyObject *
 set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
