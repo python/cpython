@@ -322,15 +322,15 @@ class _PropertyUnreachableAttribute:
         cls.obj = cls.cls()
 
     def test_get_property(self):
-        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("unreadable attribute")):
+        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("unreadable property")):
             self.obj.foo
 
     def test_set_property(self):
-        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("can't set attribute")):
+        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("no setter was defined for property")):
             self.obj.foo = None
 
     def test_del_property(self):
-        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("can't delete attribute")):
+        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("no deleter was defined for property")):
             del self.obj.foo
 
 

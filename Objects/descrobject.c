@@ -1586,9 +1586,9 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     propertyobject *gs = (propertyobject *)self;
     if (gs->prop_get == NULL) {
         if (gs->prop_name != NULL) {
-            PyErr_Format(PyExc_AttributeError, "unreadable attribute %R", gs->prop_name);
+            PyErr_Format(PyExc_AttributeError, "unreadable property %R", gs->prop_name);
         } else {
-            PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
+            PyErr_SetString(PyExc_AttributeError, "unreadable property");
         }
 
         return NULL;
@@ -1614,15 +1614,15 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
         if (gs->prop_name != NULL) {
             PyErr_Format(PyExc_AttributeError,
                         value == NULL ?
-                        "can't delete attribute %R" :
-                        "can't set attribute %R",
+                        "no deleter was defined for property %R" :
+                        "no setter was defined for property %R",
                         gs->prop_name);
         }
         else {
             PyErr_SetString(PyExc_AttributeError,
                             value == NULL ?
-                            "can't delete attribute" :
-                            "can't set attribute");
+                            "no deleter was defined for property" :
+                            "no setter was defined for property");
         }
         return -1;
     }
