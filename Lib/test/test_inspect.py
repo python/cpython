@@ -282,7 +282,7 @@ class TestPredicates(IsTestBase):
         # type
         self.assertFalse(inspect.isroutine(type))
         self.assertFalse(inspect.isroutine(int))
-        self.assertFalse(inspect.isroutine(type('some_class', () {})))
+        self.assertFalse(inspect.isroutine(type('some_class', (), {})))
 
     def test_isclass(self):
         self.istest(inspect.isclass, 'mod.StupidGit')
