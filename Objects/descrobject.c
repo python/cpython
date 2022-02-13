@@ -1485,6 +1485,7 @@ typedef struct {
     PyObject *prop_del;
     PyObject *prop_doc;
     PyObject *prop_name;
+    PyObject *owner_name;
     int getter_doc;
 } propertyobject;
 
@@ -1544,10 +1545,14 @@ property_set_name(PyObject *self, PyObject *args) {
     }
 
     propertyobject *prop = (propertyobject *)self;
+    PyObject *owner_name = PyObject_GetAttrString(PyTuple_GET_ITEM(args, 0), "__name__");
     PyObject *name = PyTuple_GET_ITEM(args, 1);
 
     Py_XINCREF(name);
     Py_XSETREF(prop->prop_name, name);
+
+    Py_XINCREF(owner_name);
+    Py_XSETREF(prop->owner_name, owner_name);
 
     Py_RETURN_NONE;
 }
@@ -1572,6 +1577,7 @@ property_dealloc(PyObject *self)
     Py_XDECREF(gs->prop_del);
     Py_XDECREF(gs->prop_doc);
     Py_XDECREF(gs->prop_name);
+    Py_XDECREF(gs->owner_name);
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -1585,10 +1591,15 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 
     propertyobject *gs = (propertyobject *)self;
     if (gs->prop_get == NULL) {
-        if (gs->prop_name != NULL) {
-            PyErr_Format(PyExc_AttributeError, "unreadable property %R", gs->prop_name);
+        if (gs->prop_name != NULL && gs->owner_name != NULL) {
+            PyErr_Format(PyExc_AttributeError,
+                         "property %R originating from %R has no getter",
+                         gs->prop_name,
+                         gs->owner_name);
+        } else if (gs->prop_name != NULL) {
+            PyErr_Format(PyExc_AttributeError, "property %R has no getter", gs->prop_name);
         } else {
-            PyErr_SetString(PyExc_AttributeError, "unreadable property");
+            PyErr_SetString(PyExc_AttributeError, "property has no getter");
         }
 
         return NULL;
@@ -1611,18 +1622,26 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
     }
 
     if (func == NULL) {
-        if (gs->prop_name != NULL) {
+        if (gs->prop_name != NULL && gs->owner_name != NULL) {
             PyErr_Format(PyExc_AttributeError,
                         value == NULL ?
-                        "no deleter was defined for property %R" :
-                        "no setter was defined for property %R",
-                        gs->prop_name);
+                        "property %R originating from %R has no deleter" :
+                        "property %R originating from %R has no setter",
+                        gs->prop_name,
+                        gs->owner_name);
+        }
+        else if (gs->prop_name != NULL) {
+            PyErr_Format(PyExc_AttributeError,
+                         value == NULL ?
+                         "property %R has no deleter" :
+                         "property %R has no setter",
+                         gs->prop_name);
         }
         else {
             PyErr_SetString(PyExc_AttributeError,
                             value == NULL ?
-                            "no deleter was defined for property" :
-                            "no setter was defined for property");
+                            "property has no deleter" :
+                            "property has no setter");
         }
         return -1;
     }
@@ -1680,6 +1699,9 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
 
     Py_XINCREF(pold->prop_name);
     Py_XSETREF(((propertyobject *) new)->prop_name, pold->prop_name);
+
+    Py_XINCREF(pold->owner_name);
+    Py_XSETREF(((propertyobject *) new)->owner_name, pold->owner_name);
     return new;
 }
 

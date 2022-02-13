@@ -314,35 +314,35 @@ class _PropertyUnreachableAttribute:
     obj = None
     cls = None
 
-    def _format_exc_msg(self, msg):
-        return self.msg_format.format(msg)
+    def _format_exc_msg(self, *msg):
+        return self.msg_format.format(*msg)
 
     @classmethod
     def setUpClass(cls):
         cls.obj = cls.cls()
 
     def test_get_property(self):
-        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("unreadable property")):
+        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("has no getter")):
             self.obj.foo
 
     def test_set_property(self):
-        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("no setter was defined for property")):
+        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("has no setter")):
             self.obj.foo = None
 
     def test_del_property(self):
-        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("no deleter was defined for property")):
+        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("has no deleter")):
             del self.obj.foo
 
 
 class PropertyUnreachableAttributeWithName(_PropertyUnreachableAttribute, unittest.TestCase):
-    msg_format = "^{} 'foo'$"
+    msg_format = "^property 'foo' originating from 'cls' {}$"
 
     class cls:
         foo = property()
 
 
 class PropertyUnreachableAttributeNoName(_PropertyUnreachableAttribute, unittest.TestCase):
-    msg_format = "^{}$"
+    msg_format = "^property {}$"
 
     class cls:
         pass
