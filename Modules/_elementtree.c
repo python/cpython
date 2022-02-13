@@ -2074,17 +2074,7 @@ static PySequenceMethods element_as_sequence = {
 };
 
 static PyNumberMethods element_as_number = {
-    0,                                  /* nb_add */
-    0,                                  /* nb_subtract */
-    0,                                  /* nb_multiply */
-    0,                                  /* nb_remainder */
-    0,                                  /* nb_divmod */
-    0,                                  /* nb_power */
-    0,                                  /* nb_negative */
-    0,                                  /* nb_positive */
-    0,                                  /* nb_absolute */
-    element_bool,                       /* nb_bool */
-    0,                                  /* nb_invert */
+    .nb_bool = element_bool,
 };
 
 /******************************* Element iterator ****************************/
