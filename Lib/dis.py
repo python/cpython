@@ -518,36 +518,7 @@ disco = disassemble                     # XXX For backwards compatibility
 
 
 def _unpack_opargs(code):
-
-    # When the ctypes import is at the top level, the tests raise an error, so it is imported inline:
-    # Traceback (most recent call last):
-    #   File "<frozen runpy>", line 198, in _run_module_as_main
-    #   File "<frozen runpy>", line 88, in _run_code
-    #   File "/home/runner/work/cpython/cpython/Lib/sysconfig.py", line 810, in <module>
-    #     _main()
-    #     ^^^^^^^
-    #   File "/home/runner/work/cpython/cpython/Lib/sysconfig.py", line 798, in _main
-    #     _generate_posix_vars()
-    #     ^^^^^^^^^^^^^^^^^^^^^^
-    #   File "/home/runner/work/cpython/cpython/Lib/sysconfig.py", line 418, in _generate_posix_vars
-    #     import pprint
-    #     ^^^^^^^^^^^^^
-    #   File "/home/runner/work/cpython/cpython/Lib/pprint.py", line 38, in <module>
-    #     import dataclasses as _dataclasses
-    #     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    #   File "/home/runner/work/cpython/cpython/Lib/dataclasses.py", line 5, in <module>
-    #     import inspect
-    #     ^^^^^^^^^^^^^^
-    #   File "/home/runner/work/cpython/cpython/Lib/inspect.py", line 137, in <module>
-    #     import dis
-    #     ^^^^^^^^^^
-    #   File "/home/runner/work/cpython/cpython/Lib/dis.py", line 7, in <module>
-    #     import ctypes
-    #     ^^^^^^^^^^^^^
-    #   File "/home/runner/work/cpython/cpython/Lib/ctypes/__init__.py", line 8, in <module>
-    #     from _ctypes import Union, Structure, Array
-    #     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    # ModuleNotFoundError: No module named '_ctypes'
+    # Can't import ctypes at the top level because it's unavailable in some tests that need dis
     import ctypes
     # The number of bits in a signed int
     c_int_bit_size = ctypes.sizeof(ctypes.c_int()) * 8
