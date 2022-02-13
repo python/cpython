@@ -43,7 +43,7 @@ COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
 # This should never be removed, see rationale in:
 # https://bugs.python.org/issue43743#msg393429
 # senfile on solaris systems is capable of copying on regular file descriptors.
-_USE_CP_SENDFILE = hasattr(os, "sendfile") and (sys.platform.startswith("linux") or sys.platform.startswith("sunos"))
+_USE_CP_SENDFILE = hasattr(os, "sendfile") and sys.platform.startswith(("linux", "sunos"))
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
 # CMD defaults in Windows 10

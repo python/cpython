@@ -1,1 +1,1 @@
-Enabling ``os.sendfile`` on shlib on Solaris based systems.
+Enable use of :func:`os.sendfile` in :mod:`shlib` on Solaris based systems.
