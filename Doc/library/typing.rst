@@ -1389,7 +1389,7 @@ These are not used in annotations. They are building blocks for declaring types.
    ``Point2D.__optional_keys__``.
    To allow using this feature with older versions of Python that do not
    support :pep:`526`, ``TypedDict`` can be created using a functional form:
-   
+
    * Using a literal :class:`dict` as the second argument::
 
       Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
