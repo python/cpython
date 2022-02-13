@@ -121,6 +121,7 @@ __all__ = [
     "ismemberdescriptor",
     "ismethod",
     "ismethoddescriptor",
+    "ismethodwrapper",
     "ismodule",
     "isroutine",
     "istraceback",
