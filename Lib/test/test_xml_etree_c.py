@@ -234,27 +234,6 @@ class SizeofTest(unittest.TestCase):
         self.check_sizeof(e, self.elementsize + self.extra +
                              struct.calcsize('8P'))
 
-
-@unittest.skipUnless(cET, 'requires _elementtree')
-@support.cpython_only
-class BoolTest(unittest.TestCase):
-    def test_warning(self):
-        e = cET.fromstring('<a style="new"></a>')
-        msg = (
-            r"The behavior of this method will change in future versions.  "
-            r"Use specific 'len\(elem\)' or 'elem is not None' test instead.")
-        with self.assertWarnsRegex(FutureWarning, msg):
-            result = bool(e)
-        # Emulate prior behavior for now
-        self.assertIs(result, False)
-
-        # Element with children
-        cET.SubElement(e, 'b')
-        with self.assertWarnsRegex(FutureWarning, msg):
-            new_result = bool(e)
-        self.assertIs(new_result, True)
-
-
 def test_main():
     from test import test_xml_etree
 
@@ -264,7 +243,6 @@ def test_main():
         TestAliasWorking,
         TestAcceleratorImported,
         SizeofTest,
-        BoolTest,
         )
 
     # Run the same test suite as the Python module

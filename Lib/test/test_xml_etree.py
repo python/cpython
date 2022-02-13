@@ -3909,6 +3909,24 @@ class NoAcceleratorTest(unittest.TestCase):
         self.assertIsInstance(pyET.Element.__init__, types.FunctionType)
         self.assertIsInstance(pyET.XMLParser.__init__, types.FunctionType)
 
+# --------------------------------------------------------------------
+
+class BoolTest(unittest.TestCase):
+    def test_warning(self):
+        e = ET.fromstring('<a style="new"></a>')
+        msg = (
+            r"The behavior of this method will change in future versions.  "
+            r"Use specific 'len\(elem\)' or 'elem is not None' test instead.")
+        with self.assertWarnsRegex(FutureWarning, msg):
+            result = bool(e)
+        # Emulate prior behavior for now
+        self.assertIs(result, False)
+
+        # Element with children
+        ET.SubElement(e, 'b')
+        with self.assertWarnsRegex(FutureWarning, msg):
+            new_result = bool(e)
+        self.assertIs(new_result, True)
 
 # --------------------------------------------------------------------
 
@@ -4175,6 +4193,7 @@ def test_main(module=None):
         XMLPullParserTest,
         BugsTest,
         KeywordArgsTest,
+        BoolTest,
         C14NTest,
         ]
 
