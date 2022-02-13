@@ -1418,6 +1418,78 @@ Corner-cases that used to crash:
     ...     ...
     Traceback (most recent call last):
     SyntaxError: positional patterns follow keyword patterns
+
+Uses of the star operator which should fail:
+
+    >>> A[:*b]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> A[:*b] = 1
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> del A[:*b]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
+    >>> A[*b:]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> A[*b:] = 1
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> del A[*b:]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
+    >>> A[*b:*b]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> A[*b:*b] = 1
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> del A[*b:*b]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
+    >>> A[**b]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> A[**b] = 1
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> del A[**b]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
+    >>> def f6(x: *b): pass
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> def f7(x: *b = 1): pass
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
+    >>> x: *b
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> x: *b = 1
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
 """
 
 import re

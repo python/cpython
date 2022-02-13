@@ -250,61 +250,7 @@ Starring an expression (rather than a name) in a slice
     A[(1, 2, 3, 1, 2, 3)]=1
     >>> del A[*returns_list(), *returns_list()]; A
     delA[(1, 2, 3, 1, 2, 3)]
-
-Slices that should fail
-
-    >>> A[:*b]
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
-    >>> A[:*b] = 1
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
-    >>> del A[:*b]
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
     
-    >>> A[*b:]
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
-    >>> A[*b:] = 1
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
-    >>> del A[*b:]
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
-    
-    >>> A[*b:*b]
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
-    >>> A[*b:*b] = 1
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
-    >>> del A[*b:*b]
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
-    
-    >>> A[**b]
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
-    >>> A[**b] = 1
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
-    >>> del A[**b]
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
-
 *args annotated as starred expression
 
     >>> def f1(*args: *b): pass
@@ -324,25 +270,6 @@ Slices that should fail
     {'args': StarredB, 'arg1': <class 'int'>}
 
     >>> def f5(*args: *b = (1,)): pass
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
-
-Other uses of starred expressions as annotations should fail
-
-    >>> def f6(x: *b): pass
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
-    >>> def f7(x: *b = 1): pass
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
-    >>> x: *b
-    Traceback (most recent call last):
-        ...
-    SyntaxError: invalid syntax
-    >>> x: *b = 1
     Traceback (most recent call last):
         ...
     SyntaxError: invalid syntax
