@@ -5,31 +5,7 @@ import warnings
 from .case import TestCase
 
 
-class IsolatedAsyncioTestCase(TestCase):
-    # Names intentionally have a long prefix
-    # to reduce a chance of clashing with user-defined attributes
-    # from inherited test case
-    #
-    # The class doesn't call loop.run_until_complete(self.setUp()) and family
-    # but uses a different approach:
-    # 1. create a long-running task that reads self.setUp()
-    #    awaitable from queue along with a future
-    # 2. await the awaitable object passing in and set the result
-    #    into the future object
-    # 3. Outer code puts the awaitable and the future object into a queue
-    #    with waiting for the future
-    # The trick is necessary because every run_until_complete() call
-    # creates a new task with embedded ContextVar context.
-    # To share contextvars between setUp(), test and tearDown() we need to execute
-    # them inside the same task.
-
-    # Note: the test case modifies event loop policy if the policy was not instantiated
-    # yet.
-    # asyncio.get_event_loop_policy() creates a default policy on demand but never
-    # returns None
-    # I believe this is not an issue in user level tests but python itself for testing
-    # should reset a policy in every test module
-    # by calling asyncio.set_event_loop_policy(None) in tearDownModule()
+class _AsyncioMixin:
 
     def __init__(self, methodName='runTest'):
         super().__init__(methodName)
@@ -111,6 +87,51 @@ class IsolatedAsyncioTestCase(TestCase):
                     fut.set_exception(ex)
 
     def _setupAsyncioLoop(self):
+        raise NotImplementedError
+
+    def _tearDownAsyncioLoop(self):
+        raise NotImplementedError
+
+    def run(self, result=None):
+        self._setupAsyncioLoop()
+        try:
+            return super().run(result)
+        finally:
+            self._tearDownAsyncioLoop()
+
+    def debug(self):
+        self._setupAsyncioLoop()
+        super().debug()
+        self._tearDownAsyncioLoop()
+
+
+class IsolatedAsyncioTestCase(_AsyncioMixin, TestCase):
+    # Names intentionally have a long prefix
+    # to reduce a chance of clashing with user-defined attributes
+    # from inherited test case
+    #
+    # The class doesn't call loop.run_until_complete(self.setUp()) and family
+    # but uses a different approach:
+    # 1. create a long-running task that reads self.setUp()
+    #    awaitable from queue along with a future
+    # 2. await the awaitable object passing in and set the result
+    #    into the future object
+    # 3. Outer code puts the awaitable and the future object into a queue
+    #    with waiting for the future
+    # The trick is necessary because every run_until_complete() call
+    # creates a new task with embedded ContextVar context.
+    # To share contextvars between setUp(), test and tearDown() we need to execute
+    # them inside the same task.
+
+    # Note: the test case modifies event loop policy if the policy was not instantiated
+    # yet.
+    # asyncio.get_event_loop_policy() creates a default policy on demand but never
+    # returns None
+    # I believe this is not an issue in user level tests but python itself for testing
+    # should reset a policy in every test module
+    # by calling asyncio.set_event_loop_policy(None) in tearDownModule()
+
+    def _setupAsyncioLoop(self):
         assert self._asyncioTestLoop is None, 'asyncio test loop already initialized'
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -153,18 +174,6 @@ class IsolatedAsyncioTestCase(TestCase):
         finally:
             asyncio.set_event_loop(None)
             loop.close()
-
-    def run(self, result=None):
-        self._setupAsyncioLoop()
-        try:
-            return super().run(result)
-        finally:
-            self._tearDownAsyncioLoop()
-
-    def debug(self):
-        self._setupAsyncioLoop()
-        super().debug()
-        self._tearDownAsyncioLoop()
 
     def __del__(self):
         if self._asyncioTestLoop is not None:
