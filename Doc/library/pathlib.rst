@@ -821,6 +821,8 @@ call fails (for example because the path doesn't exist).
    Return the name of the group owning the file.  :exc:`KeyError` is raised
    if the file's gid isn't found in the system database.
 
+   .. availability:: Unix.
+
 
 .. method:: Path.is_dir()
 
@@ -847,7 +849,9 @@ call fails (for example because the path doesn't exist).
    function checks whether *path*'s parent, :file:`path/..`, is on a different
    device than *path*, or whether :file:`path/..` and *path* point to the same
    i-node on the same device --- this should detect mount points for all Unix
-   and POSIX variants.  Not implemented on Windows.
+   and POSIX variants.
+
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -970,6 +974,8 @@ call fails (for example because the path doesn't exist).
 
    Return the name of the user owning the file.  :exc:`KeyError` is raised
    if the file's uid isn't found in the system database.
+
+   .. availability:: Unix.
 
 
 .. method:: Path.read_bytes()

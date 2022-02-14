@@ -1004,27 +1004,6 @@ class Path(PurePath):
         """
         return os.stat(self, follow_symlinks=follow_symlinks)
 
-    def owner(self):
-        """
-        Return the login name of the file owner.
-        """
-        try:
-            import pwd
-            return pwd.getpwuid(self.stat().st_uid).pw_name
-        except ImportError:
-            raise NotImplementedError("Path.owner() is unsupported on this system")
-
-    def group(self):
-        """
-        Return the group name of the file gid.
-        """
-
-        try:
-            import grp
-            return grp.getgrgid(self.stat().st_gid).gr_name
-        except ImportError:
-            raise NotImplementedError("Path.group() is unsupported on this system")
-
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
@@ -1267,25 +1246,6 @@ class Path(PurePath):
             # Non-encodable path
             return False
 
-    def is_mount(self):
-        """
-        Check if this path is a POSIX mount point
-        """
-        # Need to exist and be a dir
-        if not self.exists() or not self.is_dir():
-            return False
-
-        try:
-            parent_dev = self.parent.stat().st_dev
-        except OSError:
-            return False
-
-        dev = self.stat().st_dev
-        if dev != parent_dev:
-            return True
-        ino = self.stat().st_ino
-        parent_ino = self.parent.stat().st_ino
-        return ino == parent_ino
 
     def is_symlink(self):
         """
@@ -1387,6 +1347,41 @@ class PosixPath(Path, PurePosixPath):
     """
     __slots__ = ()
 
+    def owner(self):
+        """
+        Return the login name of the file owner.
+        """
+        import pwd
+        return pwd.getpwuid(self.stat().st_uid).pw_name
+
+    def group(self):
+        """
+        Return the group name of the file gid.
+        """
+        import grp
+        return grp.getgrgid(self.stat().st_gid).gr_name
+
+    def is_mount(self):
+        """
+        Check if this path is a POSIX mount point
+        """
+        # Need to exist and be a dir
+        if not self.exists() or not self.is_dir():
+            return False
+
+        try:
+            parent_dev = self.parent.stat().st_dev
+        except OSError:
+            return False
+
+        dev = self.stat().st_dev
+        if dev != parent_dev:
+            return True
+        ino = self.stat().st_ino
+        parent_ino = self.parent.stat().st_ino
+        return ino == parent_ino
+
+
 class WindowsPath(Path, PureWindowsPath):
     """Path subclass for Windows systems.
 
@@ -1394,5 +1389,29 @@ class WindowsPath(Path, PureWindowsPath):
     """
     __slots__ = ()
 
+    def owner(self):
+        """
+        Return the login name of the file owner.
+        """
+        warnings.warn("pathlib.WindowsPath.owner() is deprecated and "
+                      "scheduled for removal in Python 3.13.",
+                      DeprecationWarning, stacklevel=2)
+        raise NotImplementedError("Path.owner() is unsupported on this system")
+
+    def group(self):
+        """
+        Return the group name of the file gid.
+        """
+        warnings.warn("pathlib.WindowsPath.group() is deprecated and "
+                      "scheduled for removal in Python 3.13.",
+                      DeprecationWarning, stacklevel=2)
+        raise NotImplementedError("Path.group() is unsupported on this system")
+
     def is_mount(self):
+        """
+        Check if this path is a POSIX mount point
+        """
+        warnings.warn("pathlib.WindowsPath.is_mount() is deprecated and "
+                      "scheduled for removal in Python 3.13.",
+                      DeprecationWarning, stacklevel=2)
         raise NotImplementedError("Path.is_mount() is unsupported on this system")

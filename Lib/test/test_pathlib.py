@@ -1363,13 +1363,21 @@ class WindowsPathAsPureTest(PureWindowsPathTest):
 
     def test_owner(self):
         P = self.cls
-        with self.assertRaises(NotImplementedError):
-            P('c:/').owner()
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(NotImplementedError):
+                P('c:/').owner()
 
     def test_group(self):
         P = self.cls
-        with self.assertRaises(NotImplementedError):
-            P('c:/').group()
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(NotImplementedError):
+                P('c:/').group()
+
+    def test_is_mount(self):
+        P = self.cls
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(NotImplementedError):
+                P('c:/').is_mount()
 
 
 class _BasePathTest(object):
