@@ -882,9 +882,10 @@ class _AbstractPath(PurePath, ABC):
         raise NotImplementedError
 
     def _scandir(self):
-        # bpo-24132: a future version of pathlib will support subclassing of
-        # pathlib.Path to customize how the filesystem is accessed. This
-        # includes scandir(), which is used to implement glob().
+        # This method is used to implement glob(). It yields os.DirEntry-like
+        # objects with some stat() data pre-cached. As the AbstractPath API is
+        # a superset of the DirEntry API, the default implementation forwards
+        # to iterdir() as a convenience.
         return self.iterdir()
 
     def glob(self, pattern):
