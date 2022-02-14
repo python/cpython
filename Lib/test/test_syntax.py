@@ -1482,6 +1482,11 @@ Uses of the star operator which should fail:
         ...
     SyntaxError: invalid syntax
 
+    >>> def f8(**kwargs: *a): pass
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
     >>> x: *b
     Traceback (most recent call last):
         ...
