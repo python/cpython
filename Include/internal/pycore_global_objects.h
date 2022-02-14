@@ -40,6 +40,8 @@ struct _Py_global_objects {
         } bytes_characters[256];
 
         struct _Py_global_strings strings;
+
+        PyTupleObject tuple_empty;
     } singletons;
 };
 

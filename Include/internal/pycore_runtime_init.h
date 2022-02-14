@@ -933,6 +933,10 @@ extern "C" {
                 INIT_ID(zipimporter), \
             }, \
         }, \
+        \
+        .tuple_empty = { \
+            _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0) \
+        }, \
     }, \
 }
 /* End auto-generated code */

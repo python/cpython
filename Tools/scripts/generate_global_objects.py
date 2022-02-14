@@ -441,6 +441,9 @@ def generate_runtime_init():
                         for name in sorted(IDENTIFIERS):
                             assert name.isidentifier(), name
                             printer.write(f'INIT_ID({name}),')
+                printer.write('')
+                with printer.block('.tuple_empty =', ','):
+                    printer.write('_PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0)')
         printer.write(END)
         printer.write(after)
 
