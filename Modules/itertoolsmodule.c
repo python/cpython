@@ -2931,7 +2931,7 @@ static PyObject *
 itertools_combinations_with_replacement_impl(PyTypeObject *type,
                                              PyObject *iterable,
                                              Py_ssize_t r)
-/*[clinic end generated code: output=48b26856d4e659ca input=dc2a8c7ba785fad7]*/
+/*[clinic end generated code: output=48b26856d4e659ca input=1dc58e82a0878fdc]*/
 {
     cwrobject *co;
     Py_ssize_t n;
