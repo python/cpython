@@ -1463,17 +1463,17 @@ class property(object):
         if inst is None:
             return self
         if self.__get is None:
-            raise AttributeError, "unreadable attribute"
+            raise AttributeError, "property has no getter"
         return self.__get(inst)
 
     def __set__(self, inst, value):
         if self.__set is None:
-            raise AttributeError, "can't set attribute"
+            raise AttributeError, "property has no setter"
         return self.__set(inst, value)
 
     def __delete__(self, inst):
         if self.__del is None:
-            raise AttributeError, "can't delete attribute"
+            raise AttributeError, "property has no deleter"
         return self.__del(inst)
 
 */

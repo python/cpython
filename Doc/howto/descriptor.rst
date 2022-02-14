@@ -991,17 +991,17 @@ here is a pure Python equivalent:
             if obj is None:
                 return self
             if self.fget is None:
-                raise AttributeError(f'unreadable property {self._name}')
+                raise AttributeError(f"property '{self._name}' has no getter")
             return self.fget(obj)
 
         def __set__(self, obj, value):
             if self.fset is None:
-                raise AttributeError(f"no setter was defined for property {self._name}")
+                raise AttributeError(f"property '{self._name}' has no setter")
             self.fset(obj, value)
 
         def __delete__(self, obj):
             if self.fdel is None:
-                raise AttributeError(f"no deleter was defined for property {self._name}")
+                raise AttributeError(f"property '{self._name}' has no deleter")
             self.fdel(obj)
 
         def getter(self, fget):
