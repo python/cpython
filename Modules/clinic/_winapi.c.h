@@ -108,8 +108,8 @@ _winapi_ConnectNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "overlapped", NULL};
     static _PyArg_Parser _parser = {
-        .format = "" F_HANDLE "|i:ConnectNamedPipe",
         .keywords = _keywords,
+        .format = "" F_HANDLE "|i:ConnectNamedPipe",
     };
     HANDLE handle;
     int use_overlapped = 0;
@@ -841,8 +841,8 @@ _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"locale", "flags", "src", NULL};
     static _PyArg_Parser _parser = {
-        .format = "O&kO&:LCMapStringEx",
         .keywords = _keywords,
+        .format = "O&kO&:LCMapStringEx",
     };
     LPCWSTR locale;
     DWORD flags;
@@ -881,8 +881,8 @@ _winapi_ReadFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "size", "overlapped", NULL};
     static _PyArg_Parser _parser = {
-        .format = "" F_HANDLE "k|i:ReadFile",
         .keywords = _keywords,
+        .format = "" F_HANDLE "k|i:ReadFile",
     };
     HANDLE handle;
     DWORD size;
@@ -1109,8 +1109,8 @@ _winapi_WriteFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "buffer", "overlapped", NULL};
     static _PyArg_Parser _parser = {
-        .format = "" F_HANDLE "O|i:WriteFile",
         .keywords = _keywords,
+        .format = "" F_HANDLE "O|i:WriteFile",
     };
     HANDLE handle;
     PyObject *buffer;
@@ -1161,8 +1161,8 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", NULL};
     static _PyArg_Parser _parser = {
-        .format = "" F_HANDLE ":GetFileType",
         .keywords = _keywords,
+        .format = "" F_HANDLE ":GetFileType",
     };
     HANDLE handle;
     DWORD _return_value;
@@ -1219,4 +1219,4 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b91cda784138f541 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7cfa84e8340bd064 input=a9049054013a1b77]*/

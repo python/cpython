@@ -521,30 +521,15 @@ def strip_leading_and_trailing_blank_lines(s):
     return '\n'.join(lines)
 
 
-def strip_blank_lines(s):
-    lines = s.split('\n')
-    i = 0
-    while i < len(lines):
-        line = lines[i]
-        if line.strip():
-            i += 1
-        else:
-            del lines[i]
-    return '\n'.join(lines)
-
-
 @functools.lru_cache()
-def normalize_snippet(s, *, indent=0, stripblank=False):
+def normalize_snippet(s, *, indent=0):
     """
     Reformats s:
         * removes leading and trailing blank lines
         * ensures that it does not end with a newline
         * dedents so the first nonwhite character on any line is at column "indent"
     """
-    if stripblank:
-        s = strip_blank_lines(s)
-    else:
-        s = strip_leading_and_trailing_blank_lines(s)
+    s = strip_leading_and_trailing_blank_lines(s)
     s = textwrap.dedent(s)
     if indent:
         s = textwrap.indent(s, ' ' * indent)
@@ -561,12 +546,11 @@ def declare_parser(*, hasformat=False):
     declarations = """
         static const char * const _keywords[] = {{{keywords} NULL}};
         static _PyArg_Parser _parser = {{
-            %s
             .keywords = _keywords,
             %s
         }};
-        """ % (format_, fname)
-    return normalize_snippet(declarations, stripblank=True)
+        """ % (format_ or fname)
+    return normalize_snippet(declarations)
 
 
 def wrap_declarations(text, length=78):

@@ -3610,8 +3610,8 @@ os_getpgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"pid", NULL};
     static _PyArg_Parser _parser = {
-        .format = "" _Py_PARSE_PID ":getpgid",
         .keywords = _keywords,
+        .format = "" _Py_PARSE_PID ":getpgid",
     };
     pid_t pid;
 
@@ -4119,8 +4119,8 @@ os_wait4(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"pid", "options", NULL};
     static _PyArg_Parser _parser = {
-        .format = "" _Py_PARSE_PID "i:wait4",
         .keywords = _keywords,
+        .format = "" _Py_PARSE_PID "i:wait4",
     };
     pid_t pid;
     int options;
@@ -4306,8 +4306,8 @@ os_pidfd_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"pid", "flags", NULL};
     static _PyArg_Parser _parser = {
-        .format = "" _Py_PARSE_PID "|O&:pidfd_open",
         .keywords = _keywords,
+        .format = "" _Py_PARSE_PID "|O&:pidfd_open",
     };
     pid_t pid;
     unsigned int flags = 0;
@@ -9621,4 +9621,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=b6ad892f5f0027af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9323449f56fa6303 input=a9049054013a1b77]*/
