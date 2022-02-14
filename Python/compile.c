@@ -7530,6 +7530,11 @@ normalize_jumps(struct assembler *a)
                 last->i_opcode = JUMP_FORWARD;
             }
         }
+        if (last->i_opcode == JUMP_FORWARD) {
+            if (last->i_target->b_visited) {
+                last->i_opcode = JUMP_ABSOLUTE;
+            }
+        }
     }
 }
 
