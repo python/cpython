@@ -1935,6 +1935,20 @@ success:
     adaptive->counter = initial_counter_value();
 }
 
+#ifdef Py_STATS
+static int
+unpack_sequence_fail_kind(PyObject *seq)
+{
+    if (PySequence_Check(seq)) {
+        return SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE;
+    }
+    if (PyIter_Check(seq)) {
+        return SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR;
+    }
+    return SPEC_FAIL_OTHER;
+}
+#endif
+
 void
 _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                               SpecializedCacheEntry *cache)
@@ -1961,17 +1975,7 @@ _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
         *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_LIST, _Py_OPARG(*instr));
         goto success;
     }
-    if (PyIter_Check(seq)) {
-        SPECIALIZATION_FAIL(UNPACK_SEQUENCE,
-                            SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR);
-    }
-    else if (PySequence_Check(seq)) {
-        SPECIALIZATION_FAIL(UNPACK_SEQUENCE,
-                            SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE);
-    }
-    else {
-        SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_OTHER);
-    }
+    SPECIALIZATION_FAIL(UNPACK_SEQUENCE, unpack_sequence_fail_kind(seq));
 failure:
     STAT_INC(UNPACK_SEQUENCE, failure);
     cache_backoff(adaptive);
