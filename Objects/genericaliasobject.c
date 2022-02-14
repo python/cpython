@@ -644,6 +644,7 @@ static PyNumberMethods ga_as_number = {
 static PyObject *
 ga_iternext(gaiterobject *gi) {
     if (gi->obj == NULL) {
+        PyErr_SetNone(PyExc_StopIteration);
         return NULL;
     }
     gaobject *alias = (gaobject *)gi->obj;
@@ -670,6 +671,13 @@ ga_iter_traverse(gaiterobject *gi, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+ga_iter_clear(PyObject *self) {
+    gaiterobject *gi = (gaiterobject *)self;
+    Py_CLEAR(gi->obj);
+    return 0;
+}
+
 static PyTypeObject Py_GenericAliasIterType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "generic_alias_iterator",
@@ -678,14 +686,16 @@ static PyTypeObject Py_GenericAliasIterType = {
     .tp_iternext = (iternextfunc)ga_iternext,
     .tp_traverse = (traverseproc)ga_iter_traverse,
     .tp_dealloc = (destructor)ga_iter_dealloc,
+    .tp_clear = (inquiry)ga_iter_clear,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
 };
 
 static PyObject *
 ga_iter(PyObject *self) {
     gaiterobject *gi = PyObject_GC_New(gaiterobject, &Py_GenericAliasIterType);
-    if (gi == NULL)
+    if (gi == NULL) {
         return NULL;
+    }
     gi->obj = Py_NewRef(self);
     PyObject_GC_Track(gi);
     return (PyObject *)gi;
