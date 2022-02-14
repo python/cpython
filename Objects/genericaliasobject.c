@@ -659,14 +659,24 @@ ga_iternext(gaiterobject *gi) {
 static void
 ga_iter_dealloc(gaiterobject *gi) {
     PyObject_GC_UnTrack(gi);
+    Py_XDECREF(gi->obj);
     PyObject_GC_Del(gi);
+}
+
+static int
+ga_iter_traverse(gaiterobject *gi, visitproc visit, void *arg)
+{
+    Py_VISIT(gi->obj);
+    return 0;
 }
 
 static PyTypeObject Py_GenericAliasIterType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "generic_alias_iter",
+    .tp_name = "generic_alias_iterator",
     .tp_basicsize = sizeof(gaiterobject),
+    .tp_iter = PyObject_SelfIter,
     .tp_iternext = (iternextfunc)ga_iternext,
+    .tp_traverse = (traverseproc)ga_iter_traverse,
     .tp_dealloc = (destructor)ga_iter_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
 };
