@@ -78,7 +78,6 @@ class TaskGroup:
         if self._parent_task is None:
             raise RuntimeError(
                 f'TaskGroup {self!r} cannot determine the parent task')
-        self._patch_task(self._parent_task)
 
         return self
 
@@ -95,7 +94,7 @@ class TaskGroup:
             if self._parent_cancel_requested:
                 # Only if we did request task to cancel ourselves
                 # we mark it as no longer cancelled.
-                self._parent_task.__cancel_requested__ = False
+                self._parent_task.uncancel()
             else:
                 propagate_cancellation_error = et
 
@@ -186,26 +185,6 @@ class TaskGroup:
         assert isinstance(exc, BaseException)
         return isinstance(exc, (SystemExit, KeyboardInterrupt))
 
-    def _patch_task(self, task):
-        # In the future we'll need proper API on asyncio.Task to
-        # make TaskGroups possible. We need to be able to access
-        # information about task cancellation, more specifically,
-        # we need a flag to say if a task was cancelled or not.
-        # We also need to be able to flip that flag.
-
-        def _task_cancel(self, msg=None):
-            self.__cancel_requested__ = True
-            return asyncio.Task.cancel(self, msg)
-
-        if hasattr(task, '__cancel_requested__'):
-            return
-
-        task.__cancel_requested__ = False
-        # confirm that we were successful at adding the new attribute:
-        assert not task.__cancel_requested__
-
-        task.cancel = types.MethodType(_task_cancel, task)
-
     def _abort(self):
         self._aborting = True
 
@@ -244,7 +223,7 @@ class TaskGroup:
             return
 
         self._abort()
-        if not self._parent_task.__cancel_requested__:
+        if not self._parent_task.cancelling():
             # If parent task *is not* being cancelled, it means that we want
             # to manually cancel it to abort whatever is being run right now
             # in the TaskGroup.  But we want to mark parent task as
