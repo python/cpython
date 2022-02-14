@@ -5,7 +5,7 @@ import re
 import sys
 
 
-assert os.path.isabs(__file__), __file__
+__file__ = os.path.abspath(__file__)
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 INTERNAL = os.path.join(ROOT, 'Include', 'internal')
 
