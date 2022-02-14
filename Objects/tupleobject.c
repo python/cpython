@@ -100,43 +100,11 @@ tuple_alloc(Py_ssize_t size)
     return op;
 }
 
-static int
-tuple_create_empty_tuple_singleton(struct _Py_tuple_state *state)
-{
-#if PyTuple_MAXSAVESIZE > 0
-    assert(state->free_list[0] == NULL);
-
-    PyTupleObject *op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, 0);
-    if (op == NULL) {
-        return -1;
-    }
-    // The empty tuple singleton is not tracked by the GC.
-    // It does not contain any Python object.
-
-    state->free_list[0] = op;
-    state->numfree[0]++;
-
-    assert(state->numfree[0] == 1);
-#endif
-    return 0;
-}
-
-
 static PyObject *
 tuple_get_empty(void)
 {
 #if PyTuple_MAXSAVESIZE > 0
-    struct _Py_tuple_state *state = get_tuple_state();
-    PyTupleObject *op = state->free_list[0];
-    // tuple_get_empty() must not be called before _PyTuple_Init()
-    // or after _PyTuple_Fini()
-    assert(op != NULL);
-#ifdef Py_DEBUG
-    assert(state->numfree[0] != -1);
-#endif
-
-    Py_INCREF(op);
-    return (PyObject *) op;
+    return (PyObject *)&_Py_SINGLETON(tuple_empty);
 #else
     return PyTuple_New(0);
 #endif
@@ -289,19 +257,11 @@ tupledealloc(PyTupleObject *op)
             goto done; /* return */
         }
 #endif
+        Py_TYPE(op)->tp_free((PyObject *)op);
     }
-#if defined(Py_DEBUG) && PyTuple_MAXSAVESIZE > 0
     else {
         assert(len == 0);
-        struct _Py_tuple_state *state = get_tuple_state();
-        // The empty tuple singleton must only be deallocated by
-        // _PyTuple_Fini(): not before, not after
-        if (op == state->free_list[0] && state->numfree[0] != 0) {
-            _Py_FatalRefcountError("deallocating the empty tuple singleton");
-        }
     }
-#endif
-    Py_TYPE(op)->tp_free((PyObject *)op);
 
 #if PyTuple_MAXSAVESIZE > 0
 done:
@@ -1078,19 +1038,7 @@ _PyTuple_ClearFreeList(PyInterpreterState *interp)
             PyObject_GC_Del(q);
         }
     }
-    // the empty tuple singleton is only cleared by _PyTuple_Fini()
 #endif
-}
-
-
-PyStatus
-_PyTuple_InitGlobalObjects(PyInterpreterState *interp)
-{
-    struct _Py_tuple_state *state = &interp->tuple;
-    if (tuple_create_empty_tuple_singleton(state) < 0) {
-        return _PyStatus_NO_MEMORY();
-    }
-    return _PyStatus_OK();
 }
 
 
@@ -1116,18 +1064,6 @@ void
 _PyTuple_Fini(PyInterpreterState *interp)
 {
 #if PyTuple_MAXSAVESIZE > 0
-    struct _Py_tuple_state *state = &interp->tuple;
-    // The empty tuple singleton must not be tracked by the GC
-    assert(!_PyObject_GC_IS_TRACKED(state->free_list[0]));
-
-#ifdef Py_DEBUG
-    state->numfree[0] = 0;
-#endif
-    Py_CLEAR(state->free_list[0]);
-#ifdef Py_DEBUG
-    state->numfree[0] = -1;
-#endif
-
     _PyTuple_ClearFreeList(interp);
 #endif
 }
