@@ -411,6 +411,24 @@ class BaseTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             Bad(list, int, bad=int)
 
+    def test_iter_creates_starred_tuple(self):
+        t = tuple[int, str]
+        iter_t = iter(t)
+        x = next(iter_t)
+        self.assertEqual(repr(x), '*tuple[int, str]')
+
+    def test_calling_next_twice_raises_stopiteration(self):
+        t = tuple[int, str]
+        iter_t = iter(t)
+        next(iter_t)
+        with self.assertRaises(StopIteration):
+            next(iter_t)
+
+    def test_del_iter(self):
+        t = tuple[int, str]
+        iter_x = iter(t)
+        del iter_x
+
 
 if __name__ == "__main__":
     unittest.main()
