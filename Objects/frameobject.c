@@ -20,15 +20,6 @@ static PyMemberDef frame_memberlist[] = {
     {NULL}      /* Sentinel */
 };
 
-#if PyFrame_MAXFREELIST > 0
-static struct _Py_frame_state *
-get_frame_state(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->frame;
-}
-#endif
-
 
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
@@ -779,11 +770,11 @@ PyTypeObject PyFrame_Type = {
     0,                                          /* tp_dict */
 };
 
-_Py_IDENTIFIER(__builtins__);
-
 static void
 init_frame(InterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
+    /* _PyFrame_InitializeSpecials consumes reference to func */
+    Py_INCREF(func);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
     for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
@@ -1081,7 +1072,7 @@ PyFrame_GetBack(PyFrameObject *frame)
 PyObject*
 _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
 {
-    PyObject *builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
+    PyObject *builtins = PyDict_GetItemWithError(globals, &_Py_ID(__builtins__));
     if (builtins) {
         if (PyModule_Check(builtins)) {
             builtins = _PyModule_GetDict(builtins);

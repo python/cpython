@@ -16,7 +16,7 @@ def _unpack_hexversion():
         hexversion = int(os.getenv("PYTHON_HEXVERSION"), 16)
     except (TypeError, ValueError):
         hexversion = sys.hexversion
-    return struct.pack(">i", sys.hexversion)
+    return struct.pack(">i", hexversion)
 
 
 def _get_suffix(field4):

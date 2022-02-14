@@ -10,6 +10,8 @@ module instead.
 
 #define MODULE_VERSION "1.0"
 
+#define NEEDS_PY_IDENTIFIER
+
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 #include <stdbool.h>
@@ -372,7 +374,7 @@ static char *dialect_kws[] = {
 static _csvstate *
 _csv_state_from_type(PyTypeObject *type, const char *name)
 {
-    PyObject *module = _PyType_GetModuleByDef(type, &_csvmodule);
+    PyObject *module = PyType_GetModuleByDef(type, &_csvmodule);
     if (module == NULL) {
         return NULL;
     }

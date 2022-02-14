@@ -42,7 +42,7 @@ get_ssl_state(PyObject *module)
 }
 
 #define get_state_type(type) \
-    (get_ssl_state(_PyType_GetModuleByDef(type, &_sslmodule_def)))
+    (get_ssl_state(PyType_GetModuleByDef(type, &_sslmodule_def)))
 #define get_state_ctx(c) (((PySSLContext *)(c))->state)
 #define get_state_sock(s) (((PySSLSocket *)(s))->ctx->state)
 #define get_state_obj(o) ((_sslmodulestate *)PyType_GetModuleState(Py_TYPE(o)))

@@ -1850,8 +1850,10 @@ class _BasePathTest(object):
         it = p.iterdir()
         it2 = p.iterdir()
         next(it2)
-        with p:
-            pass
+        # bpo-46556: path context managers are deprecated in Python 3.11.
+        with self.assertWarns(DeprecationWarning):
+            with p:
+                pass
         # Using a path as a context manager is a no-op, thus the following
         # operations should still succeed after the context manage exits.
         next(it)
@@ -1859,8 +1861,9 @@ class _BasePathTest(object):
         p.exists()
         p.resolve()
         p.absolute()
-        with p:
-            pass
+        with self.assertWarns(DeprecationWarning):
+            with p:
+                pass
 
     def test_chmod(self):
         p = self.cls(BASE) / 'fileA'
@@ -2449,15 +2452,6 @@ class _BasePathTest(object):
     @os_helper.skip_unless_symlink
     def test_complex_symlinks_relative_dot_dot(self):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
-
-    def test_class_getitem(self):
-        from types import GenericAlias
-
-        alias = self.cls[str]
-        self.assertIsInstance(alias, GenericAlias)
-        self.assertIs(alias.__origin__, self.cls)
-        self.assertEqual(alias.__args__, (str,))
-        self.assertEqual(alias.__parameters__, ())
 
 
 class PathTest(_BasePathTest, unittest.TestCase):
