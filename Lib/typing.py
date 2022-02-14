@@ -787,7 +787,13 @@ def _is_typevar_like(x):
 
 
 class _BoundVarianceMixin:
-    """Mixin giving __init__ bound and variance arguments."""
+    """Mixin giving __init__ bound and variance arguments.
+
+    This is used by TypeVar and ParamSpec, which both employ the notions of
+    a type 'bound' (restricting type arguments to be a subtype of some
+    specified type) and type 'variance' (determining subtype relations between
+    generic types).
+    """
     def __init__(self, bound, covariant, contravariant):
         """Used to setup TypeVars and ParamSpec's bound, covariant and
         contravariant attributes.
