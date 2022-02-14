@@ -866,8 +866,8 @@ class Path(PurePath):
             cls = WindowsPath if os.name == 'nt' else PosixPath
         self = cls._from_parts(args)
         if not self._flavour.is_supported:
-            raise NotImplementedError("cannot instantiate %r on your system"
-                                      % (cls.__name__,))
+            raise TypeError("cannot instantiate %r on your system"
+                            % (cls.__name__,))
         return self
 
     def _make_child_relpath(self, part):

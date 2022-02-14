@@ -1,0 +1,3 @@
+Attempting to construct a :class:`pathlib.PosixPath` object on Windows, or
+vice-versa, now raises :exc:`TypeError`. Previously it raised
+:exc:`NotImplementedError`.

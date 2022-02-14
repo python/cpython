@@ -2464,9 +2464,9 @@ class PathTest(_BasePathTest, unittest.TestCase):
 
     def test_unsupported_flavour(self):
         if os.name == 'nt':
-            self.assertRaises(NotImplementedError, pathlib.PosixPath)
+            self.assertRaises(TypeError, pathlib.PosixPath)
         else:
-            self.assertRaises(NotImplementedError, pathlib.WindowsPath)
+            self.assertRaises(TypeError, pathlib.WindowsPath)
 
     def test_glob_empty_pattern(self):
         p = self.cls()

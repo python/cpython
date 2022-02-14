@@ -673,7 +673,7 @@ bugs or failures in your application)::
      File "<stdin>", line 1, in <module>
      File "pathlib.py", line 798, in __new__
        % (cls.__name__,))
-   NotImplementedError: cannot instantiate 'WindowsPath' on your system
+   TypeError: cannot instantiate 'WindowsPath' on your system
 
 
 Methods
