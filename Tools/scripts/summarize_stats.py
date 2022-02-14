@@ -6,6 +6,8 @@ import collections
 import os.path
 import opcode
 from datetime import date
+import itertools
+import argparse
 
 if os.name == "nt":
     DEFAULT_DIR = "c:\\temp\\py_stats\\"
@@ -80,7 +82,7 @@ def gather_stats():
             for line in fd:
                 key, value = line.split(":")
                 key = key.strip()
-                value = int(value.strip())
+                value = int(value)
                 stats[key] += value
     return stats
 
@@ -268,14 +270,42 @@ def emit_object_stats(stats):
                 rows.append((label, value, materialize))
         emit_table(("",  "Count:", "Ratio:"), rows)
 
+def get_total(opcode_stats):
+    total = 0
+    for opcode_stat in opcode_stats:
+        if "execution_count" in opcode_stat:
+            total += opcode_stat['execution_count']
+    return total
+
+def emit_pair_counts(opcode_stats, total):
+    with Section("Pair counts", summary="Pair counts for top 100 pairs"):
+        pair_counts = []
+        for i, opcode_stat in enumerate(opcode_stats):
+            if i == 0:
+                continue
+            for key, value in opcode_stat.items():
+                if key.startswith("pair_count"):
+                    x, _, _ = key[11:].partition("]")
+                    if value:
+                        pair_counts.append((value, (i, int(x))))
+        pair_counts.sort(reverse=True)
+        cumulative = 0
+        rows = []
+        for (count, pair) in itertools.islice(pair_counts, 100):
+            i, j = pair
+            cumulative += count
+            rows.append((opname[i] + " " + opname[j], count, f"{100*count/total:0.1f}%",
+                        f"{100*cumulative/total:0.1f}%"))
+        emit_table(("Pair", "Count:", "Self:", "Cumulative:"),
+            rows
+        )
+
 def main():
     stats = gather_stats()
     opcode_stats = extract_opcode_stats(stats)
-    total = 0
-    for i, opcode_stat in enumerate(opcode_stats):
-        if "execution_count" in opcode_stat:
-            total += opcode_stat['execution_count']
+    total = get_total(opcode_stats)
     emit_execution_counts(opcode_stats, total)
+    emit_pair_counts(opcode_stats, total)
     emit_specialization_stats(opcode_stats)
     emit_specialization_overview(opcode_stats, total)
     emit_call_stats(stats)
