@@ -1075,6 +1075,9 @@ class Path(PurePath):
         Return the path to which the symbolic link points.
         """
         if not hasattr(os, "readlink"):
+            warnings.warn("From Python 3.13, pathlib.Path.readlink() will "
+                          "not be available in builds lacking os.readlink().",
+                          DeprecationWarning, stacklevel=2)
             raise NotImplementedError("os.readlink() not available on this system")
         return self._from_parts((os.readlink(self),))
 
@@ -1186,6 +1189,9 @@ class Path(PurePath):
         Note the order of arguments (link, target) is the reverse of os.symlink.
         """
         if not hasattr(os, "symlink"):
+            warnings.warn("From Python 3.13, pathlib.Path.symlink_to() will "
+                          "not be available in builds lacking os.symlink().",
+                          DeprecationWarning, stacklevel=2)
             raise NotImplementedError("os.symlink() not available on this system")
         os.symlink(target, self, target_is_directory)
 
@@ -1196,6 +1202,9 @@ class Path(PurePath):
         Note the order of arguments (self, target) is the reverse of os.link's.
         """
         if not hasattr(os, "link"):
+            warnings.warn("From Python 3.13, pathlib.Path.hardlink_to() will "
+                          "not be available in builds lacking os.link().",
+                          DeprecationWarning, stacklevel=2)
             raise NotImplementedError("os.link() not available on this system")
         os.link(target, self)
 

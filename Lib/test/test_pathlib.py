@@ -2012,8 +2012,27 @@ class _BasePathTest(object):
         p = P / 'fileA'
         # linking to another path.
         q = P / 'dirA' / 'fileAA'
-        with self.assertRaises(NotImplementedError):
-            p.link_to(q)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(NotImplementedError):
+                p.link_to(q)
+
+    @unittest.skipIf(hasattr(os, "symlink"), "os.symlink() is present")
+    def test_symlink_to_not_implemented(self):
+        P = self.cls(BASE)
+        p = P / 'fileA'
+        # linking to another path.
+        q = P / 'dirA' / 'fileAA'
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(NotImplementedError):
+                p.symlink_to(q)
+
+    @unittest.skipIf(hasattr(os, "readlink"), "os.readlink() is present")
+    def test_readlink_not_implemented(self):
+        P = self.cls(BASE)
+        p = P / 'fileA'
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(NotImplementedError):
+                p.readlink()
 
     def test_rename(self):
         P = self.cls(BASE)

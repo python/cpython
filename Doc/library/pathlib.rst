@@ -1011,6 +1011,8 @@ call fails (for example because the path doesn't exist).
       >>> p.readlink()
       PosixPath('setup.py')
 
+   .. availability:: Unix, Windows.
+
    .. versionadded:: 3.9
 
 
@@ -1152,6 +1154,8 @@ call fails (for example because the path doesn't exist).
       The order of arguments (link, target) is the reverse
       of :func:`os.symlink`'s.
 
+   .. availability:: Unix, Windows.
+
 .. method:: Path.hardlink_to(target)
 
    Make this path a hard link to the same file as *target*.
@@ -1161,6 +1165,8 @@ call fails (for example because the path doesn't exist).
       of :func:`os.link`'s.
 
    .. versionadded:: 3.10
+
+   .. availability:: Unix, Windows.
 
 .. method:: Path.link_to(target)
 
@@ -1172,6 +1178,8 @@ call fails (for example because the path doesn't exist).
       the implication of the function and argument names. The argument order
       (target, link) is the reverse of :func:`Path.symlink_to` and
       :func:`Path.hardlink_to`, but matches that of :func:`os.link`.
+
+   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.8
 
