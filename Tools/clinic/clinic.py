@@ -520,19 +520,53 @@ def strip_leading_and_trailing_blank_lines(s):
         del lines[0]
     return '\n'.join(lines)
 
+
+def strip_blank_lines(s):
+    lines = s.split('\n')
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line.strip():
+            i += 1
+        else:
+            del lines[i]
+    return '\n'.join(lines)
+
+
 @functools.lru_cache()
-def normalize_snippet(s, *, indent=0):
+def normalize_snippet(s, *, indent=0, stripblank=False):
     """
     Reformats s:
         * removes leading and trailing blank lines
         * ensures that it does not end with a newline
         * dedents so the first nonwhite character on any line is at column "indent"
     """
-    s = strip_leading_and_trailing_blank_lines(s)
+    if stripblank:
+        s = strip_blank_lines(s)
+    else:
+        s = strip_leading_and_trailing_blank_lines(s)
     s = textwrap.dedent(s)
     if indent:
         s = textwrap.indent(s, ' ' * indent)
     return s
+
+
+def declare_parser(*, hasformat=False):
+    if hasformat:
+        fname = ''
+        format_ = '.format = "{format_units}:{name}",'
+    else:
+        fname = '.fname = "{name}",'
+        format_ = ''
+    declarations = """
+        static const char * const _keywords[] = {{{keywords} NULL}};
+        static _PyArg_Parser _parser = {{
+            %s
+            .keywords = _keywords,
+            %s
+        }};
+        """ % (format_, fname)
+    return normalize_snippet(declarations, stripblank=True)
 
 
 def wrap_declarations(text, length=78):
@@ -967,14 +1001,8 @@ class CLanguage(Language):
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = parser_prototype_fastcall_keywords
                 argname_fmt = 'args[%d]'
-                declarations = normalize_snippet("""
-                    static const char * const _keywords[] = {{{keywords} NULL}};
-                    static _PyArg_Parser _parser = {{
-                        .keywords = _keywords,
-                        .fname = "{name}",
-                    }};
-                    PyObject *argsbuf[%s];
-                    """ % len(converters))
+                declarations = declare_parser()
+                declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                 if has_optional_kw:
                     pre_buffer = "0" if vararg != NO_VARARG else "nargs"
                     declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (pre_buffer, min_pos + min_kw_only)
@@ -989,16 +1017,10 @@ class CLanguage(Language):
                 flags = "METH_VARARGS|METH_KEYWORDS"
                 parser_prototype = parser_prototype_keyword
                 argname_fmt = 'fastargs[%d]'
-                declarations = normalize_snippet("""
-                    static const char * const _keywords[] = {{{keywords} NULL}};
-                    static _PyArg_Parser _parser = {{
-                        .keywords = _keywords,
-                        .fname = "{name}",
-                    }};
-                    PyObject *argsbuf[%s];
-                    PyObject * const *fastargs;
-                    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-                    """ % len(converters))
+                declarations = declare_parser()
+                declarations += "\nPyObject *argsbuf[%s];" % len(converters)
+                declarations += "\nPyObject * const *fastargs;"
+                declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
                 if has_optional_kw:
                     declarations += "\nPy_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (min_pos + min_kw_only)
                 parser_code = [normalize_snippet("""
@@ -1075,13 +1097,7 @@ class CLanguage(Language):
                 if add_label:
                     parser_code.append("%s:" % add_label)
             else:
-                declarations = normalize_snippet("""
-                    static const char * const _keywords[] = {{{keywords} NULL}};
-                    static _PyArg_Parser _parser = {{
-                        .format = "{format_units}:{name}",
-                        .keywords = _keywords,
-                    }};
-                    """)
+                declarations = declare_parser(hasformat=True)
                 if not new_or_init:
                     parser_code = [normalize_snippet("""
                         if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser{parse_arguments_comma}
