@@ -76,6 +76,10 @@ def _default_chunk_size():
     with open(__file__, "r", encoding="latin-1") as f:
         return f._CHUNK_SIZE
 
+requires_alarm = unittest.skipUnless(
+    hasattr(signal, "alarm"), "test requires signal.alarm()"
+)
+
 
 class MockRawIOWithoutRead:
     """A RawIO implementation without read(), so as to exercise the default
@@ -4435,12 +4439,15 @@ class SignalsTest(unittest.TestCase):
                 if e.errno != errno.EBADF:
                     raise
 
+    @requires_alarm
     def test_interrupted_write_unbuffered(self):
         self.check_interrupted_write(b"xy", b"xy", mode="wb", buffering=0)
 
+    @requires_alarm
     def test_interrupted_write_buffered(self):
         self.check_interrupted_write(b"xy", b"xy", mode="wb")
 
+    @requires_alarm
     def test_interrupted_write_text(self):
         self.check_interrupted_write("xy", b"xy", mode="w", encoding="ascii")
 
@@ -4472,9 +4479,11 @@ class SignalsTest(unittest.TestCase):
             wio.close()
             os.close(r)
 
+    @requires_alarm
     def test_reentrant_write_buffered(self):
         self.check_reentrant_write(b"xy", mode="wb")
 
+    @requires_alarm
     def test_reentrant_write_text(self):
         self.check_reentrant_write("xy", mode="w", encoding="ascii")
 
@@ -4502,10 +4511,12 @@ class SignalsTest(unittest.TestCase):
             os.close(w)
             os.close(r)
 
+    @requires_alarm
     def test_interrupted_read_retry_buffered(self):
         self.check_interrupted_read_retry(lambda x: x.decode('latin1'),
                                           mode="rb")
 
+    @requires_alarm
     def test_interrupted_read_retry_text(self):
         self.check_interrupted_read_retry(lambda x: x,
                                           mode="r", encoding="latin1")
@@ -4578,9 +4589,11 @@ class SignalsTest(unittest.TestCase):
                 if e.errno != errno.EBADF:
                     raise
 
+    @requires_alarm
     def test_interrupted_write_retry_buffered(self):
         self.check_interrupted_write_retry(b"x", mode="wb")
 
+    @requires_alarm
     def test_interrupted_write_retry_text(self):
         self.check_interrupted_write_retry("x", mode="w", encoding="latin1")
 

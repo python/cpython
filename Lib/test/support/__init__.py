@@ -1278,6 +1278,8 @@ def reap_children():
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
         return
+    elif not has_subprocess_support:
+        return
 
     # Reap all our dead child processes so we don't leave zombies around.
     # These hog resources and might be causing some of the buildbots to die.
@@ -1419,7 +1421,7 @@ def skip_if_buggy_ucrt_strfptime(test):
     global _buggy_ucrt
     if _buggy_ucrt is None:
         if(sys.platform == 'win32' and
-                locale.getdefaultlocale()[1]  == 'cp65001' and
+                locale.getpreferredencoding(False)  == 'cp65001' and
                 time.localtime().tm_zone == ''):
             _buggy_ucrt = True
         else:

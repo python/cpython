@@ -1,0 +1,2 @@
+Opcode pair stats are now gathered with ``--enable-pystats``. Defining
+``DYNAMIC_EXECUTION_PROFILE`` or  ``DXPAIRS`` no longer has any effect.

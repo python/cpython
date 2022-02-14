@@ -101,6 +101,7 @@ bytes(cdata)
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
+#define NEEDS_PY_IDENTIFIER
 
 #define PY_SSIZE_T_CLEAN
 
@@ -2382,7 +2383,6 @@ converters_from_argtypes(PyObject *ob)
     _Py_IDENTIFIER(from_param);
     PyObject *converters;
     Py_ssize_t i;
-    Py_ssize_t nArgs;
 
     ob = PySequence_Tuple(ob); /* new reference */
     if (!ob) {
@@ -2391,7 +2391,15 @@ converters_from_argtypes(PyObject *ob)
         return NULL;
     }
 
-    nArgs = PyTuple_GET_SIZE(ob);
+    Py_ssize_t nArgs = PyTuple_GET_SIZE(ob);
+    if (nArgs > CTYPES_MAX_ARGCOUNT) {
+        Py_DECREF(ob);
+        PyErr_Format(PyExc_ArgError,
+                     "_argtypes_ has too many arguments (%zi), maximum is %i",
+                     nArgs, CTYPES_MAX_ARGCOUNT);
+        return NULL;
+    }
+
     converters = PyTuple_New(nArgs);
     if (!converters) {
         Py_DECREF(ob);
