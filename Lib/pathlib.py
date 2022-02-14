@@ -942,7 +942,7 @@ class Path(PurePath):
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
         if drv or root:
-            raise NotImplementedError("Non-relative patterns are unsupported")
+            raise ValueError("Unacceptable pattern: {!r}".format(pattern))
         selector = _make_selector(tuple(pattern_parts), self._flavour)
         for p in selector.select_from(self):
             yield p
@@ -955,7 +955,7 @@ class Path(PurePath):
         sys.audit("pathlib.Path.rglob", self, pattern)
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
         if drv or root:
-            raise NotImplementedError("Non-relative patterns are unsupported")
+            raise ValueError("Unacceptable pattern: {!r}".format(pattern))
         selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour)
         for p in selector.select_from(self):
             yield p

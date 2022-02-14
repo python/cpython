@@ -2473,6 +2473,11 @@ class PathTest(_BasePathTest, unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
             list(p.glob(''))
 
+    def test_glob_absolute_pattern(self):
+        p = self.cls()
+        with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
+            list(p.glob('/'))
+
 
 @only_posix
 class PosixPathTest(_BasePathTest, unittest.TestCase):
