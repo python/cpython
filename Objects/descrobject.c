@@ -1590,7 +1590,8 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
                          "property %R in object of type %R has no getter",
                          gs->prop_name,
                          PyType_GetQualName(Py_TYPE(obj)));
-        } else {
+        }
+        else {
             PyErr_Format(PyExc_AttributeError,
                          "property in object of type %R has no getter",
                          PyType_GetQualName(Py_TYPE(obj)));
@@ -1623,13 +1624,15 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
                         "property %R in object of type %R has no setter",
                         gs->prop_name,
                         PyType_GetQualName(Py_TYPE(obj)));
-        } else if (obj != NULL) {
+        }
+        else if (obj != NULL) {
             PyErr_Format(PyExc_AttributeError,
                             value == NULL ?
                             "property in object of type %R has no deleter" :
                             "property in object of type %R has no setter",
                             PyType_GetQualName(Py_TYPE(obj)));
-        } else {
+        }
+        else {
             PyErr_SetString(PyExc_AttributeError,
                          value == NULL ?
                          "property has no deleter" :
