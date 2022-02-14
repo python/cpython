@@ -622,7 +622,7 @@ procedure can be used to obtain a better constant for a given platform (see
 The method executes the number of Python calls given by the argument, directly
 and again under the profiler, measuring the time for both. It then computes the
 hidden overhead per profiler event, and returns that as a float.  For example,
-on a 1.8Ghz Intel Core i5 running Mac OS X, and using Python's time.process_time() as
+on a 1.8Ghz Intel Core i5 running macOS, and using Python's time.process_time() as
 the timer, the magical number is about 4.04e-6.
 
 The object of this exercise is to get a fairly consistent result. If your

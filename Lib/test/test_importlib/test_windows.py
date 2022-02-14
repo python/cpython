@@ -1,14 +1,14 @@
-from . import util as test_util
+from test.test_importlib import util as test_util
 machinery = test_util.import_importlib('importlib.machinery')
 
 import os
 import re
 import sys
 import unittest
-from test import support
+import warnings
 from test.support import import_helper
 from contextlib import contextmanager
-from .util import temp_module
+from test.test_importlib.util import temp_module
 
 import_helper.import_module('winreg', required_on=['win'])
 from winreg import (
@@ -60,17 +60,28 @@ def setup_module(machinery, name, path=None):
         root = machinery.WindowsRegistryFinder.REGISTRY_KEY
     key = root.format(fullname=name,
                       sys_version='%d.%d' % sys.version_info[:2])
+    base_key = "Software\\Python\\PythonCore\\{}.{}".format(
+        sys.version_info.major, sys.version_info.minor)
+    assert key.casefold().startswith(base_key.casefold()), (
+        "expected key '{}' to start with '{}'".format(key, base_key))
     try:
         with temp_module(name, "a = 1") as location:
+            try:
+                OpenKey(HKEY_CURRENT_USER, base_key)
+                if machinery.WindowsRegistryFinder.DEBUG_BUILD:
+                    delete_key = os.path.dirname(key)
+                else:
+                    delete_key = key
+            except OSError:
+                delete_key = base_key
             subkey = CreateKey(HKEY_CURRENT_USER, key)
             if path is None:
                 path = location + ".py"
             SetValue(subkey, "", REG_SZ, path)
             yield
     finally:
-        if machinery.WindowsRegistryFinder.DEBUG_BUILD:
-            key = os.path.dirname(key)
-        delete_registry_tree(HKEY_CURRENT_USER, key)
+        if delete_key:
+            delete_registry_tree(HKEY_CURRENT_USER, delete_key)
 
 
 @unittest.skipUnless(sys.platform.startswith('win'), 'requires Windows')
@@ -84,19 +95,25 @@ class WindowsRegistryFinderTests:
         self.assertIs(spec, None)
 
     def test_find_module_missing(self):
-        loader = self.machinery.WindowsRegistryFinder.find_module('spam')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            loader = self.machinery.WindowsRegistryFinder.find_module('spam')
         self.assertIs(loader, None)
 
     def test_module_found(self):
         with setup_module(self.machinery, self.test_module):
-            loader = self.machinery.WindowsRegistryFinder.find_module(self.test_module)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                loader = self.machinery.WindowsRegistryFinder.find_module(self.test_module)
             spec = self.machinery.WindowsRegistryFinder.find_spec(self.test_module)
             self.assertIsNot(loader, None)
             self.assertIsNot(spec, None)
 
     def test_module_not_found(self):
         with setup_module(self.machinery, self.test_module, path="."):
-            loader = self.machinery.WindowsRegistryFinder.find_module(self.test_module)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                loader = self.machinery.WindowsRegistryFinder.find_module(self.test_module)
             spec = self.machinery.WindowsRegistryFinder.find_spec(self.test_module)
             self.assertIsNone(loader)
             self.assertIsNone(spec)
@@ -171,3 +188,6 @@ class WindowsBootstrapPathTests(unittest.TestCase):
         self.check_join("C:", "C:", "")
         self.check_join("//Server/Share\\", "//Server/Share/", "")
         self.check_join("//Server/Share\\", "//Server/Share", "")
+
+if __name__ == '__main__':
+    unittest.main()

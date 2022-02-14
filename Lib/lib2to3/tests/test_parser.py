@@ -20,6 +20,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import test.support
 import unittest
 
 # Local imports
@@ -61,6 +62,9 @@ class TestPgen2Caching(support.TestCase):
             shutil.rmtree(tmpdir)
 
     @unittest.skipIf(sys.executable is None, 'sys.executable required')
+    @unittest.skipIf(
+        sys.platform == 'emscripten', 'requires working subprocess'
+    )
     def test_load_grammar_from_subprocess(self):
         tmpdir = tempfile.mkdtemp()
         tmpsubdir = os.path.join(tmpdir, 'subdir')
@@ -200,19 +204,26 @@ class TestAsyncAwait(GrammarTest):
         self.validate("""await = 1""")
         self.validate("""def async(): pass""")
 
-    def test_async_with(self):
+    def test_async_for(self):
         self.validate("""async def foo():
                              async for a in b: pass""")
 
-        self.invalid_syntax("""def foo():
-                                   async for a in b: pass""")
-
-    def test_async_for(self):
+    def test_async_with(self):
         self.validate("""async def foo():
                              async with a: pass""")
 
         self.invalid_syntax("""def foo():
                                    async with a: pass""")
+
+    def test_async_generator(self):
+        self.validate(
+            """async def foo():
+                   return (i * 2 async for i in arange(42))"""
+        )
+        self.validate(
+            """def foo():
+                   return (i * 2 async for i in arange(42))"""
+        )
 
 
 class TestRaiseChanges(GrammarTest):
@@ -579,25 +590,31 @@ class TestParserIdempotency(support.TestCase):
 
     """A cut-down version of pytree_idempotency.py."""
 
+    def parse_file(self, filepath):
+        if test.support.verbose:
+            print(f"Parse file: {filepath}")
+        with open(filepath, "rb") as fp:
+            encoding = tokenize.detect_encoding(fp.readline)[0]
+        self.assertIsNotNone(encoding,
+                             "can't detect encoding for %s" % filepath)
+        with open(filepath, "r", encoding=encoding) as fp:
+            source = fp.read()
+        try:
+            tree = driver.parse_string(source)
+        except ParseError:
+            try:
+                tree = driver_no_print_statement.parse_string(source)
+            except ParseError as err:
+                self.fail('ParseError on file %s (%s)' % (filepath, err))
+        new = str(tree)
+        if new != source:
+            print(diff_texts(source, new, filepath))
+            self.fail("Idempotency failed: %s" % filepath)
+
     def test_all_project_files(self):
         for filepath in support.all_project_files():
-            with open(filepath, "rb") as fp:
-                encoding = tokenize.detect_encoding(fp.readline)[0]
-            self.assertIsNotNone(encoding,
-                                 "can't detect encoding for %s" % filepath)
-            with open(filepath, "r", encoding=encoding) as fp:
-                source = fp.read()
-            try:
-                tree = driver.parse_string(source)
-            except ParseError:
-                try:
-                    tree = driver_no_print_statement.parse_string(source)
-                except ParseError as err:
-                    self.fail('ParseError on file %s (%s)' % (filepath, err))
-            new = str(tree)
-            if new != source:
-                print(diff_texts(source, new, filepath))
-                self.fail("Idempotency failed: %s" % filepath)
+            with self.subTest(filepath=filepath):
+                self.parse_file(filepath)
 
     def test_extended_unpacking(self):
         driver.parse_string("a, *b, c = x\n")

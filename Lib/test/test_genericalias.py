@@ -2,6 +2,7 @@
 
 import unittest
 import pickle
+import copy
 from collections import (
     defaultdict, deque, OrderedDict, Counter, UserDict, UserList
 )
@@ -12,6 +13,7 @@ from contextlib import AbstractContextManager, AbstractAsyncContextManager
 from contextvars import ContextVar, Token
 from dataclasses import Field
 from functools import partial, partialmethod, cached_property
+from graphlib import TopologicalSorter
 from mailbox import Mailbox, _PartialFile
 try:
     import ctypes
@@ -22,14 +24,20 @@ from filecmp import dircmp
 from fileinput import FileInput
 from itertools import chain
 from http.cookies import Morsel
-from multiprocessing.managers import ValueProxy
-from multiprocessing.pool import ApplyResult
+try:
+    from multiprocessing.managers import ValueProxy
+    from multiprocessing.pool import ApplyResult
+    from multiprocessing.queues import SimpleQueue as MPSimpleQueue
+except ImportError:
+    # _multiprocessing module is optional
+    ValueProxy = None
+    ApplyResult = None
+    MPSimpleQueue = None
 try:
     from multiprocessing.shared_memory import ShareableList
 except ImportError:
     # multiprocessing.shared_memory is not available on e.g. Android
     ShareableList = None
-from multiprocessing.queues import SimpleQueue as MPSimpleQueue
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType, AsyncGeneratorType
@@ -55,6 +63,7 @@ class BaseTest(unittest.TestCase):
                      OrderedDict, Counter, UserDict, UserList,
                      Pattern, Match,
                      partial, partialmethod, cached_property,
+                     TopologicalSorter,
                      AbstractContextManager, AbstractAsyncContextManager,
                      Awaitable, Coroutine,
                      AsyncIterable, AsyncIterator,
@@ -76,13 +85,14 @@ class BaseTest(unittest.TestCase):
                      Queue, SimpleQueue,
                      _AssertRaisesContext,
                      SplitResult, ParseResult,
-                     ValueProxy, ApplyResult,
                      WeakSet, ReferenceType, ref,
-                     ShareableList, MPSimpleQueue,
+                     ShareableList,
                      Future, _WorkItem,
                      Morsel]
     if ctypes is not None:
         generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
+    if ValueProxy is not None:
+        generic_types.extend((ValueProxy, ApplyResult, MPSimpleQueue))
 
     def test_subscriptable(self):
         for t in self.generic_types:
@@ -270,11 +280,30 @@ class BaseTest(unittest.TestCase):
 
     def test_pickle(self):
         alias = GenericAlias(list, T)
-        s = pickle.dumps(alias)
-        loaded = pickle.loads(s)
-        self.assertEqual(alias.__origin__, loaded.__origin__)
-        self.assertEqual(alias.__args__, loaded.__args__)
-        self.assertEqual(alias.__parameters__, loaded.__parameters__)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(alias, proto)
+            loaded = pickle.loads(s)
+            self.assertEqual(loaded.__origin__, alias.__origin__)
+            self.assertEqual(loaded.__args__, alias.__args__)
+            self.assertEqual(loaded.__parameters__, alias.__parameters__)
+
+    def test_copy(self):
+        class X(list):
+            def __copy__(self):
+                return self
+            def __deepcopy__(self, memo):
+                return self
+
+        for origin in list, deque, X:
+            alias = GenericAlias(origin, T)
+            copied = copy.copy(alias)
+            self.assertEqual(copied.__origin__, alias.__origin__)
+            self.assertEqual(copied.__args__, alias.__args__)
+            self.assertEqual(copied.__parameters__, alias.__parameters__)
+            copied = copy.deepcopy(alias)
+            self.assertEqual(copied.__origin__, alias.__origin__)
+            self.assertEqual(copied.__args__, alias.__args__)
+            self.assertEqual(copied.__parameters__, alias.__parameters__)
 
     def test_union(self):
         a = typing.Union[list[int], list[str]]
@@ -317,79 +346,6 @@ class BaseTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             Bad(list, int, bad=int)
 
-    def test_abc_callable(self):
-        # A separate test is needed for Callable since it uses a subclass of
-        # GenericAlias.
-        alias = Callable[[int, str], float]
-        with self.subTest("Testing subscription"):
-            self.assertIs(alias.__origin__, Callable)
-            self.assertEqual(alias.__args__, (int, str, float))
-            self.assertEqual(alias.__parameters__, ())
-
-        with self.subTest("Testing instance checks"):
-            self.assertIsInstance(alias, GenericAlias)
-
-        with self.subTest("Testing weakref"):
-            self.assertEqual(ref(alias)(), alias)
-
-        with self.subTest("Testing pickling"):
-            s = pickle.dumps(alias)
-            loaded = pickle.loads(s)
-            self.assertEqual(alias.__origin__, loaded.__origin__)
-            self.assertEqual(alias.__args__, loaded.__args__)
-            self.assertEqual(alias.__parameters__, loaded.__parameters__)
-
-        with self.subTest("Testing TypeVar substitution"):
-            C1 = Callable[[int, T], T]
-            C2 = Callable[[K, T], V]
-            C3 = Callable[..., T]
-            self.assertEqual(C1[str], Callable[[int, str], str])
-            self.assertEqual(C2[int, float, str], Callable[[int, float], str])
-            self.assertEqual(C3[int], Callable[..., int])
-
-            # multi chaining
-            C4 = C2[int, V, str]
-            self.assertEqual(repr(C4).split(".")[-1], "Callable[[int, ~V], str]")
-            self.assertEqual(repr(C4[dict]).split(".")[-1], "Callable[[int, dict], str]")
-            self.assertEqual(C4[dict], Callable[[int, dict], str])
-
-        with self.subTest("Testing type erasure"):
-            class C1(Callable):
-                def __call__(self):
-                    return None
-            a = C1[[int], T]
-            self.assertIs(a().__class__, C1)
-            self.assertEqual(a().__orig_class__, C1[[int], T])
-
-        # bpo-42195
-        with self.subTest("Testing collections.abc.Callable's consistency "
-                          "with typing.Callable"):
-            c1 = typing.Callable[[int, str], dict]
-            c2 = Callable[[int, str], dict]
-            self.assertEqual(c1.__args__, c2.__args__)
-            self.assertEqual(hash(c1.__args__), hash(c2.__args__))
-
-        with self.subTest("Testing ParamSpec uses"):
-            P = typing.ParamSpec('P')
-            C1 = Callable[P, T]
-            # substitution
-            self.assertEqual(C1[int, str], Callable[[int], str])
-            self.assertEqual(C1[[int, str], str], Callable[[int, str], str])
-            self.assertEqual(repr(C1).split(".")[-1], "Callable[~P, ~T]")
-            self.assertEqual(repr(C1[int, str]).split(".")[-1], "Callable[[int], str]")
-
-            C2 = Callable[P, int]
-            # special case in PEP 612 where
-            # X[int, str, float] == X[[int, str, float]]
-            self.assertEqual(C2[int, str, float], C2[[int, str, float]])
-            self.assertEqual(repr(C2).split(".")[-1], "Callable[~P, int]")
-            self.assertEqual(repr(C2[int, str]).split(".")[-1], "Callable[[int, str], int]")
-
-        with self.subTest("Testing Concatenate uses"):
-            P = typing.ParamSpec('P')
-            C1 = Callable[typing.Concatenate[int, P], int]
-            self.assertEqual(repr(C1), "collections.abc.Callable"
-                                       "[typing.Concatenate[int, ~P], int]")
 
 if __name__ == "__main__":
     unittest.main()

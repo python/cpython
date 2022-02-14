@@ -953,6 +953,20 @@ The documentation shows a typical use to define a managed attribute ``x``:
         def delx(self): del self.__x
         x = property(getx, setx, delx, "I'm the 'x' property.")
 
+.. doctest::
+    :hide:
+
+    >>> C.x.__doc__
+    "I'm the 'x' property."
+    >>> c.x = 2.71828
+    >>> c.x
+    2.71828
+    >>> del c.x
+    >>> c.x
+    Traceback (most recent call last):
+      ...
+    AttributeError: 'C' object has no attribute '_C__x'
+
 To see how :func:`property` is implemented in terms of the descriptor protocol,
 here is a pure Python equivalent:
 
@@ -1250,6 +1264,9 @@ Using the non-data descriptor protocol, a pure Python version of
         def __get__(self, obj, objtype=None):
             return self.f
 
+        def __call__(self, *args, **kwds):
+            return self.f(*args, **kwds)
+
 .. testcode::
     :hide:
 
@@ -1258,6 +1275,8 @@ Using the non-data descriptor protocol, a pure Python version of
         def f(x):
             return x * 10
 
+    wrapped_ord = StaticMethod(ord)
+
 .. doctest::
     :hide:
 
@@ -1265,6 +1284,8 @@ Using the non-data descriptor protocol, a pure Python version of
     30
     >>> E_sim().f(3)
     30
+    >>> wrapped_ord('A')
+    65
 
 
 Class methods
@@ -1329,8 +1350,8 @@ Using the non-data descriptor protocol, a pure Python version of
         def __get__(self, obj, cls=None):
             if cls is None:
                 cls = type(obj)
-            if hasattr(obj, '__get__'):
-                return self.f.__get__(cls)
+            if hasattr(type(self.f), '__get__'):
+                return self.f.__get__(cls, cls)
             return MethodType(self.f, cls)
 
 .. testcode::
@@ -1341,6 +1362,12 @@ Using the non-data descriptor protocol, a pure Python version of
         @ClassMethod
         def cm(cls, x, y):
             return (cls, x, y)
+
+        @ClassMethod
+        @property
+        def __doc__(cls):
+            return f'A doc for {cls.__name__!r}'
+
 
 .. doctest::
     :hide:
@@ -1353,9 +1380,15 @@ Using the non-data descriptor protocol, a pure Python version of
     >>> t.cm(11, 22)
     (<class 'T'>, 11, 22)
 
-The code path for ``hasattr(obj, '__get__')`` was added in Python 3.9 and
-makes it possible for :func:`classmethod` to support chained decorators.
-For example, a classmethod and property could be chained together:
+    # Check the alternate path for chained descriptors
+    >>> T.__doc__
+    "A doc for 'T'"
+
+
+The code path for ``hasattr(type(self.f), '__get__')`` was added in
+Python 3.9 and makes it possible for :func:`classmethod` to support
+chained decorators.  For example, a classmethod and property could be
+chained together:
 
 .. testcode::
 
@@ -1511,7 +1544,7 @@ variables:
         'Simulate how the type metaclass adds member objects for slots'
 
         def __new__(mcls, clsname, bases, mapping):
-            'Emuluate type_new() in Objects/typeobject.c'
+            'Emulate type_new() in Objects/typeobject.c'
             # type_new() calls PyTypeReady() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
             for offset, name in enumerate(slot_names):

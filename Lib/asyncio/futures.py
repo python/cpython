@@ -8,6 +8,7 @@ import concurrent.futures
 import contextvars
 import logging
 import sys
+from types import GenericAlias
 
 from . import base_futures
 from . import events
@@ -76,7 +77,7 @@ class Future:
         the default event loop.
         """
         if loop is None:
-            self._loop = events.get_event_loop()
+            self._loop = events._get_event_loop()
         else:
             self._loop = loop
         self._callbacks = []
@@ -106,8 +107,7 @@ class Future:
             context['source_traceback'] = self._source_traceback
         self._loop.call_exception_handler(context)
 
-    def __class_getitem__(cls, type):
-        return cls
+    __class_getitem__ = classmethod(GenericAlias)
 
     @property
     def _log_traceback(self):
@@ -408,7 +408,7 @@ def wrap_future(future, *, loop=None):
     assert isinstance(future, concurrent.futures.Future), \
         f'concurrent.futures.Future is expected, got {future!r}'
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events._get_event_loop()
     new_future = loop.create_future()
     _chain_future(future, new_future)
     return new_future

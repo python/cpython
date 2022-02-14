@@ -165,9 +165,13 @@ of available options is shown below.
 | CompileAll                | Compile all ``.py`` files to         | 0                        |
 |                           | ``.pyc``.                            |                          |
 +---------------------------+--------------------------------------+--------------------------+
-| PrependPath               | Add install and Scripts directories  | 0                        |
-|                           | to :envvar:`PATH` and ``.PY`` to     |                          |
-|                           | :envvar:`PATHEXT`                    |                          |
+| PrependPath               | Prepend install and Scripts          | 0                        |
+|                           | directories  to :envvar:`PATH` and   |                          |
+|                           | add ``.PY`` to :envvar:`PATHEXT`     |                          |
++---------------------------+--------------------------------------+--------------------------+
+| AppendPath                | Append install and Scripts           | 0                        |
+|                           | directories  to :envvar:`PATH` and   |                          |
+|                           | add ``.PY`` to :envvar:`PATHEXT`     |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Shortcuts                 | Create shortcuts for the interpreter,| 1                        |
 |                           | documentation and IDLE if installed. |                          |
@@ -1106,7 +1110,7 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 cx_Freeze
 ---------
 
-`cx_Freeze <https://anthony-tuininga.github.io/cx_Freeze/>`_ is a :mod:`distutils`
+`cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ is a :mod:`distutils`
 extension (see :ref:`extending-distutils`) which wraps Python scripts into
 executable Windows programs (:file:`{*}.exe` files).  When you have done this,
 you can distribute your application without requiring your users to install

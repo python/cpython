@@ -21,6 +21,14 @@ Python/ceval.c                @markshannon
 Python/compile.c              @markshannon
 Python/ast_opt.c              @isidentical
 
+# Exceptions
+Lib/traceback.py              @iritkatriel
+Lib/test/test_except*.py      @iritkatriel
+Lib/test/test_traceback.py    @iritkatriel
+Objects/exceptions.c          @iritkatriel
+Python/traceback.c            @iritkatriel
+Python/pythonrun.c            @iritkatriel
+
 # Hashing
 **/*hashlib*                  @python/crypto-team @tiran
 **/*pyhash*                   @python/crypto-team @tiran
@@ -53,11 +61,11 @@ Python/ast_opt.c              @isidentical
 
 
 # SSL
-**/*ssl*                      @python/crypto-team @tiran
-**/*.pem                      @python/crypto-team @tiran
+**/*ssl*                      @python/crypto-team
+**/*.pem                      @python/crypto-team
 
 # CSPRNG
-Python/bootstrap_hash.c       @python/crypto-team @tiran
+Python/bootstrap_hash.c       @python/crypto-team
 
 # Dates and times
 **/*datetime*                 @pganssle @abalkin
@@ -128,7 +136,7 @@ Lib/ast.py                    @isidentical
 
 **/*idlelib*                  @terryjreedy
 
-**/*typing*                   @gvanrossum @ilevkivskyi
+**/*typing*                   @gvanrossum @Fidget-Spinner
 
 **/*asyncore                  @giampaolo
 **/*asynchat                  @giampaolo

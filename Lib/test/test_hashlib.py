@@ -48,11 +48,14 @@ else:
     builtin_hashlib = None
 
 try:
-    from _hashlib import HASH, HASHXOF, openssl_md_meth_names
+    from _hashlib import HASH, HASHXOF, openssl_md_meth_names, get_fips_mode
 except ImportError:
     HASH = None
     HASHXOF = None
     openssl_md_meth_names = frozenset()
+
+    def get_fips_mode():
+        return 0
 
 try:
     import _blake2
@@ -192,10 +195,7 @@ class HashLibTestCase(unittest.TestCase):
 
     @property
     def is_fips_mode(self):
-        if hasattr(self._hashlib, "get_fips_mode"):
-            return self._hashlib.get_fips_mode()
-        else:
-            return None
+        return get_fips_mode()
 
     def test_hash_array(self):
         a = array.array("b", range(10))
@@ -901,17 +901,40 @@ class HashLibTestCase(unittest.TestCase):
         if fips_mode is not None:
             self.assertIsInstance(fips_mode, int)
 
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        for algorithm, constructors in self.constructors_to_test.items():
+            if algorithm.startswith(("sha3_", "shake", "blake")):
+                # _sha3 and _blake types can be instantiated
+                continue
+            # all other types have DISALLOW_INSTANTIATION
+            for constructor in constructors:
+                # In FIPS mode some algorithms are not available raising ValueError
+                try:
+                    h = constructor()
+                except ValueError:
+                    continue
+                with self.subTest(constructor=constructor):
+                    support.check_disallow_instantiation(self, type(h))
+
     @unittest.skipUnless(HASH is not None, 'need _hashlib')
-    def test_internal_types(self):
+    def test_hash_disallow_instantiation(self):
         # internal types like _hashlib.HASH are not constructable
-        with self.assertRaisesRegex(
-            TypeError, "cannot create 'HASH' instance"
-        ):
-            HASH()
-        with self.assertRaisesRegex(
-            TypeError, "cannot create 'HASHXOF' instance"
-        ):
-            HASHXOF()
+        support.check_disallow_instantiation(self, HASH)
+        support.check_disallow_instantiation(self, HASHXOF)
+
+    def test_readonly_types(self):
+        for algorithm, constructors in self.constructors_to_test.items():
+            # all other types have DISALLOW_INSTANTIATION
+            for constructor in constructors:
+                # In FIPS mode some algorithms are not available raising ValueError
+                try:
+                    hash_type = type(constructor())
+                except ValueError:
+                    continue
+                with self.subTest(hash_type=hash_type):
+                    with self.assertRaisesRegex(TypeError, "immutable type"):
+                        hash_type.value = False
 
 
 class KDFTests(unittest.TestCase):
@@ -994,7 +1017,7 @@ class KDFTests(unittest.TestCase):
                     self.assertEqual(out, expected,
                                      (digest_name, password, salt, rounds))
 
-        with self.assertRaisesRegex(ValueError, 'unsupported hash type'):
+        with self.assertRaisesRegex(ValueError, '.*unsupported.*'):
             pbkdf2('unknown', b'pass', b'salt', 1)
 
         if 'sha1' in supported:
@@ -1034,6 +1057,7 @@ class KDFTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(hashlib, 'scrypt'),
                      '   test requires OpenSSL > 1.1')
+    @unittest.skipIf(get_fips_mode(), reason="scrypt is blocked in FIPS mode")
     def test_scrypt(self):
         for password, salt, n, r, p, expected in self.scrypt_test_vectors:
             result = hashlib.scrypt(password, salt=salt, n=n, r=r, p=p)

@@ -28,7 +28,14 @@ def abstractmethod(funcobj):
 class abstractclassmethod(classmethod):
     """A decorator indicating abstract classmethods.
 
-    Deprecated, use 'classmethod' with 'abstractmethod' instead.
+    Deprecated, use 'classmethod' with 'abstractmethod' instead:
+
+        class C(ABC):
+            @classmethod
+            @abstractmethod
+            def my_abstract_classmethod(cls, ...):
+                ...
+
     """
 
     __isabstractmethod__ = True
@@ -41,7 +48,14 @@ class abstractclassmethod(classmethod):
 class abstractstaticmethod(staticmethod):
     """A decorator indicating abstract staticmethods.
 
-    Deprecated, use 'staticmethod' with 'abstractmethod' instead.
+    Deprecated, use 'staticmethod' with 'abstractmethod' instead:
+
+        class C(ABC):
+            @staticmethod
+            @abstractmethod
+            def my_abstract_staticmethod(...):
+                ...
+
     """
 
     __isabstractmethod__ = True
@@ -54,7 +68,14 @@ class abstractstaticmethod(staticmethod):
 class abstractproperty(property):
     """A decorator indicating abstract properties.
 
-    Deprecated, use 'property' with 'abstractmethod' instead.
+    Deprecated, use 'property' with 'abstractmethod' instead:
+
+        class C(ABC):
+            @property
+            @abstractmethod
+            def my_abstract_property(self):
+                ...
+
     """
 
     __isabstractmethod__ = True

@@ -196,30 +196,10 @@ the built-in function :func:`range` returns an iterator of integers suitable to
 emulate the effect of Pascal's ``for i := a to b do``; e.g., ``list(range(3))``
 returns the list ``[0, 1, 2]``.
 
-.. note::
-
-   .. index::
-      single: loop; over mutable sequence
-      single: mutable sequence; loop over
-
-   There is a subtlety when the sequence is being modified by the loop (this can
-   only occur for mutable sequences, e.g. lists).  An internal counter is used
-   to keep track of which item is used next, and this is incremented on each
-   iteration.  When this counter has reached the length of the sequence the loop
-   terminates.  This means that if the suite deletes the current (or a previous)
-   item from the sequence, the next item will be skipped (since it gets the
-   index of the current item which has already been treated).  Likewise, if the
-   suite inserts an item in the sequence before the current item, the current
-   item will be treated again the next time through the loop. This can lead to
-   nasty bugs that can be avoided by making a temporary copy using a slice of
-   the whole sequence, e.g., ::
-
-      for x in a[:]:
-          if x < 0: a.remove(x)
-
 
 .. _try:
 .. _except:
+.. _except_star:
 .. _finally:
 
 The :keyword:`!try` statement
@@ -237,12 +217,16 @@ The :keyword:`try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
 
 .. productionlist:: python-grammar
-   try_stmt: `try1_stmt` | `try2_stmt`
+   try_stmt: `try1_stmt` | `try2_stmt` | `try3_stmt`
    try1_stmt: "try" ":" `suite`
             : ("except" [`expression` ["as" `identifier`]] ":" `suite`)+
             : ["else" ":" `suite`]
             : ["finally" ":" `suite`]
    try2_stmt: "try" ":" `suite`
+            : ("except" "*" `expression` ["as" `identifier`] ":" `suite`)+
+            : ["else" ":" `suite`]
+            : ["finally" ":" `suite`]
+   try3_stmt: "try" ":" `suite`
             : "finally" ":" `suite`
 
 
@@ -254,7 +238,7 @@ is found that matches the exception.  An expression-less except clause, if
 present, must be last; it matches any exception.  For an except clause with an
 expression, that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
-compatible with an exception if it is the class or a base class of the exception
+compatible with an exception if the object is the class or a base class of the exception
 object, or a tuple containing an item that is the class or a base class of
 the exception object.
 
@@ -324,6 +308,47 @@ when leaving an exception handler::
    (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
    >>> print(sys.exc_info())
    (None, None, None)
+
+.. index::
+   keyword: except_star
+
+The :keyword:`except*<except_star>` clause(s) are used for handling
+:exc:`ExceptionGroup`\ s. The exception type for matching is interpreted as in
+the case of :keyword:`except`, but in the case of exception groups we can have
+partial matches when the type matches some of the exceptions in the group.
+This means that multiple except* clauses can execute, each handling part of
+the exception group. Each clause executes once and handles an exception group
+of all matching exceptions.  Each exception in the group is handled by at most
+one except* clause, the first that matches it. ::
+
+   >>> try:
+   ...     raise ExceptionGroup("eg",
+   ...         [ValueError(1), TypeError(2), OSError(3), OSError(4)])
+   ... except* TypeError as e:
+   ...     print(f'caught {type(e)} with nested {e.exceptions}')
+   ... except* OSError as e:
+   ...     print(f'caught {type(e)} with nested {e.exceptions}')
+   ...
+   caught <class 'ExceptionGroup'> with nested (TypeError(2),)
+   caught <class 'ExceptionGroup'> with nested (OSError(3), OSError(4))
+     + Exception Group Traceback (most recent call last):
+     |   File "<stdin>", line 2, in <module>
+     | ExceptionGroup: eg
+     +-+---------------- 1 ----------------
+       | ValueError: 1
+       +------------------------------------
+   >>>
+
+   Any remaining exceptions that were not handled by any except* clause
+   are re-raised at the end, combined into an exception group along with
+   all exceptions that were raised from within except* clauses.
+
+   An except* clause must have a matching type, and this type cannot be a
+   subclass of :exc:`BaseExceptionGroup`. It is not possible to mix except
+   and except* in the same :keyword:`try`. :keyword:`break`,
+   :keyword:`continue` and :keyword:`return` cannot appear in an except*
+   clause.
+
 
 .. index::
    keyword: else
@@ -418,8 +443,8 @@ usage patterns to be encapsulated for convenient reuse.
 
 The execution of the :keyword:`with` statement with one "item" proceeds as follows:
 
-#. The context expression (the expression given in the :token:`with_item`) is
-   evaluated to obtain a context manager.
+#. The context expression (the expression given in the
+   :token:`~python-grammar:with_item`) is evaluated to obtain a context manager.
 
 #. The context manager's :meth:`__enter__` is loaded for later use.
 
@@ -585,8 +610,8 @@ Here's an overview of the logical flow of a match statement:
 #. If the pattern succeeds, the corresponding guard (if present) is evaluated. In
    this case all name bindings are guaranteed to have happened.
 
-   * If the guard evaluates as truthy or missing, the ``block`` inside ``case_block`` is
-     executed.
+   * If the guard evaluates as true or is missing, the ``block`` inside
+     ``case_block`` is executed.
 
    * Otherwise, the next ``case_block`` is attempted as described above.
 
@@ -637,10 +662,10 @@ The logical flow of a ``case`` block with a ``guard`` follows:
 
 #. If the pattern succeeded, evaluate the ``guard``.
 
-   * If the ``guard`` condition evaluates to "truthy", the case block is
+   * If the ``guard`` condition evaluates as true, the case block is
      selected.
 
-   * If the ``guard`` condition evaluates to "falsy", the case block is not
+   * If the ``guard`` condition evaluates as false, the case block is not
      selected.
 
    * If the ``guard`` raises an exception during evaluation, the exception
@@ -797,7 +822,8 @@ Syntax:
    capture_pattern: !'_' NAME
 
 A single underscore ``_`` is not a capture pattern (this is what ``!'_'``
-expresses). And is instead treated as a :token:`wildcard_pattern`.
+expresses). It is instead treated as a
+:token:`~python-grammar:wildcard_pattern`.
 
 In a given pattern, a given name can only be bound once.  E.g.
 ``case x, x: ...`` is invalid while ``case [x] | x: ...`` is allowed.
@@ -820,7 +846,9 @@ and binds no name.  Syntax:
 .. productionlist:: python-grammar
    wildcard_pattern: '_'
 
-``_`` is a :ref:`soft keyword <soft-keywords>`.
+``_`` is a :ref:`soft keyword <soft-keywords>` within any pattern,
+but only within patterns.  It is an identifier, as usual, even within
+``match`` subject expressions, ``guard``\ s, and ``case`` blocks.
 
 In simple terms, ``_`` will always succeed.
 
@@ -898,8 +926,8 @@ sequence pattern.
 The following is the logical flow for matching a sequence pattern against a
 subject value:
 
-#. If the subject value is not an instance of a
-   :class:`collections.abc.Sequence` the sequence pattern fails.
+#. If the subject value is not a sequence [#]_, the sequence pattern
+   fails.
 
 #. If the subject value is an instance of ``str``, ``bytes`` or ``bytearray``
    the sequence pattern fails.
@@ -941,7 +969,7 @@ subject value:
 In simple terms ``[P1, P2, P3,`` ... ``, P<N>]`` matches only if all the following
 happens:
 
-* ``isinstance(<subject>, collections.abc.Sequence)``
+* check ``<subject>`` is a sequence
 * ``len(subject) == <N>``
 * ``P1`` matches ``<subject>[0]`` (note that this match can also bind names)
 * ``P2`` matches ``<subject>[1]`` (note that this match can also bind names)
@@ -966,22 +994,22 @@ Syntax:
 At most one double star pattern may be in a mapping pattern.  The double star
 pattern must be the last subpattern in the mapping pattern.
 
-Duplicate key values in mapping patterns are disallowed. (If all key patterns
-are literal patterns this is considered a syntax error; otherwise this is a
-runtime error and will raise :exc:`ValueError`.)
+Duplicate keys in mapping patterns are disallowed. Duplicate literal keys will
+raise a :exc:`SyntaxError`. Two keys that otherwise have the same value will
+raise a :exc:`ValueError` at runtime.
 
 The following is the logical flow for matching a mapping pattern against a
 subject value:
 
-#. If the subject value is not an instance of :class:`collections.abc.Mapping`,
-   the mapping pattern fails.
+#. If the subject value is not a mapping [#]_,the mapping pattern fails.
 
 #. If every key given in the mapping pattern is present in the subject mapping,
    and the pattern for each key matches the corresponding item of the subject
    mapping, the mapping pattern succeeds.
 
 #. If duplicate keys are detected in the mapping pattern, the pattern is
-   considered invalid and :exc:`ValueError` is raised.
+   considered invalid. A :exc:`SyntaxError` is raised for duplicate literal
+   values; or a :exc:`ValueError` for named keys of the same value.
 
 .. note:: Key-value pairs are matched using the two-argument form of the mapping
    subject's ``get()`` method.  Matched key-value pairs must already be present
@@ -991,7 +1019,7 @@ subject value:
 In simple terms ``{KEY1: P1, KEY2: P2, ... }`` matches only if all the following
 happens:
 
-* ``isinstance(<subject>, collections.abc.Mapping)``
+* check ``<subject>`` is a mapping
 * ``KEY1 in <subject>``
 * ``P1`` matches ``<subject>[KEY1]``
 * ... and so on for the corresponding KEY/pattern pair.
@@ -1015,7 +1043,7 @@ A class pattern represents a class and its positional and keyword arguments
 
 The same keyword should not be repeated in class patterns.
 
-The following is the logical flow for matching a mapping pattern against a
+The following is the logical flow for matching a class pattern against a
 subject value:
 
 #. If ``name_or_attr`` is not an instance of the builtin :class:`type` , raise
@@ -1053,7 +1081,7 @@ subject value:
    patterns using the :data:`~object.__match_args__` attribute on the class
    ``name_or_attr`` before matching:
 
-   I. The equivalent of ``getattr(cls, "__match_args__", ()))`` is called.
+   I. The equivalent of ``getattr(cls, "__match_args__", ())`` is called.
 
       * If this raises an exception, the exception bubbles up.
 
@@ -1180,9 +1208,9 @@ is roughly equivalent to ::
 except that the original function is not temporarily bound to the name ``func``.
 
 .. versionchanged:: 3.9
-   Functions may be decorated with any valid :token:`assignment_expression`.
-   Previously, the grammar was much more restrictive; see :pep:`614` for
-   details.
+   Functions may be decorated with any valid
+   :token:`~python-grammar:assignment_expression`. Previously, the grammar was
+   much more restrictive; see :pep:`614` for details.
 
 .. index::
    triple: default; parameter; value
@@ -1244,9 +1272,13 @@ following the parameter name.  Any parameter may have an annotation, even those 
 ``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression.  The presence of annotations does not change the
-semantics of a function.  The annotation values are available as string values
-in a dictionary keyed by the parameters' names in the :attr:`__annotations__`
-attribute of the function object.
+semantics of a function.  The annotation values are available as values of
+a dictionary keyed by the parameters' names in the :attr:`__annotations__`
+attribute of the function object.  If the ``annotations`` import from
+:mod:`__future__` is used, annotations are preserved as strings at runtime which
+enables postponed evaluation.  Otherwise, they are evaluated when the function
+definition is executed.  In this case annotations may be evaluated in
+a different order than they appear in the source code.
 
 .. index:: pair: lambda; expression
 
@@ -1354,9 +1386,9 @@ The evaluation rules for the decorator expressions are the same as for function
 decorators.  The result is then bound to the class name.
 
 .. versionchanged:: 3.9
-   Classes may be decorated with any valid :token:`assignment_expression`.
-   Previously, the grammar was much more restrictive; see :pep:`614` for
-   details.
+   Classes may be decorated with any valid
+   :token:`~python-grammar:assignment_expression`. Previously, the grammar was
+   much more restrictive; see :pep:`614` for details.
 
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a
@@ -1519,6 +1551,35 @@ body of a coroutine function.
 .. [#] The exception is propagated to the invocation stack unless
    there is a :keyword:`finally` clause which happens to raise another
    exception. That new exception causes the old one to be lost.
+
+.. [#] In pattern matching, a sequence is defined as one of the following:
+
+      * a class that inherits from :class:`collections.abc.Sequence`
+      * a Python class that has been registered as :class:`collections.abc.Sequence`
+      * a builtin class that has its (CPython) :data:`Py_TPFLAGS_SEQUENCE` bit set
+      * a class that inherits from any of the above
+
+   The following standard library classes are sequences:
+
+      * :class:`array.array`
+      * :class:`collections.deque`
+      * :class:`list`
+      * :class:`memoryview`
+      * :class:`range`
+      * :class:`tuple`
+
+   .. note:: Subject values of type ``str``, ``bytes``, and ``bytearray``
+      do not match sequence patterns.
+
+.. [#] In pattern matching, a mapping is defined as one of the following:
+
+      * a class that inherits from :class:`collections.abc.Mapping`
+      * a Python class that has been registered as :class:`collections.abc.Mapping`
+      * a builtin class that has its (CPython) :data:`Py_TPFLAGS_MAPPING` bit set
+      * a class that inherits from any of the above
+
+   The standard library classes :class:`dict` and :class:`types.MappingProxyType`
+   are mappings.
 
 .. [#] A string literal appearing as the first statement in the function body is
    transformed into the function's ``__doc__`` attribute and therefore the

@@ -1,10 +1,18 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+// windows.h must be included before pycore internal headers
+#ifdef MS_WIN32
+#  include <windows.h>
+#endif
+
 #include "pycore_bitutils.h"      // _Py_bswap32()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_floatobject.h"   // _PyFloat_Pack8()
 
 #include <ffi.h>
-#ifdef MS_WIN32
-#include <windows.h>
-#endif
 #include "ctypes.h"
 
 
@@ -35,7 +43,7 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
  * Expects the size, index and offset for the current field in *psize and
  * *poffset, stores the total size so far in *psize, the offset for the next
  * field in *poffset, the alignment requirements for the current field in
- * *palign, and returns a field desriptor for this field.
+ * *palign, and returns a field descriptor for this field.
  */
 /*
  * bitfields extension:
@@ -61,7 +69,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 #define CONT_BITFIELD 2
 #define EXPAND_BITFIELD 3
 
-    self = (CFieldObject *)_PyObject_CallNoArg((PyObject *)&PyCField_Type);
+    self = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
     if (self == NULL)
         return NULL;
     dict = PyType_stgdict(desc);
@@ -71,18 +79,6 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         Py_DECREF(self);
         return NULL;
     }
-
-#ifndef MS_WIN32
-    /* if we have a packed bitfield, calculate the minimum number of bytes we
-    need to fit it. otherwise use the specified size. */
-    if (pack && bitsize) {
-        size = (bitsize - 1) / 8 + 1;
-    } else
-#endif
-        size = dict->size;
-
-    proto = desc;
-
     if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
 #ifdef MS_WIN32
@@ -99,9 +95,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     } else if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
         && dict->size * 8 >= *pfield_size
-        /* if this is a packed bitfield, always expand it.
-           otherwise calculate if we need to expand it. */
-        && (((*pbitofs + bitsize) <= dict->size * 8) || pack)) {
+        && (*pbitofs + bitsize) <= dict->size * 8) {
         /* expand bit field */
         fieldtype = EXPAND_BITFIELD;
 #endif
@@ -109,15 +103,16 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         /* start new bitfield */
         fieldtype = NEW_BITFIELD;
         *pbitofs = 0;
-        /* use our calculated size (size) instead of type size (dict->size),
-           which can be different for packed bitfields */
-        *pfield_size = size * 8;
+        *pfield_size = dict->size * 8;
     } else {
         /* not a bit field */
         fieldtype = NO_BITFIELD;
         *pbitofs = 0;
         *pfield_size = 0;
     }
+
+    size = dict->size;
+    proto = desc;
 
     /*  Field descriptors for 'c_char * n' are be scpecial cased to
         return a Python string instead of an Array object instance...
@@ -183,16 +178,10 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         break;
 
     case EXPAND_BITFIELD:
-        /* increase the size if it is a packed bitfield.
-           EXPAND_BITFIELD should not be selected for non-packed fields if the
-           current size isn't already enough. */
-        if (pack)
-            size = (*pbitofs + bitsize - 1) / 8 + 1;
+        *poffset += dict->size - *pfield_size/8;
+        *psize += dict->size - *pfield_size/8;
 
-        *poffset += size - *pfield_size/8;
-        *psize += size - *pfield_size/8;
-
-        *pfield_size = size * 8;
+        *pfield_size = dict->size * 8;
 
         if (big_endian)
             self->size = (bitsize << 16) + *pfield_size - *pbitofs - bitsize;
@@ -1341,6 +1330,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     PyObject *keep;
     wchar_t *buffer;
+    Py_ssize_t bsize;
 
     if (value == Py_None) {
         *(wchar_t **)ptr = NULL;
@@ -1364,7 +1354,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 
     /* We must create a wchar_t* buffer from the unicode object,
        and keep it alive */
-    buffer = PyUnicode_AsWideCharString(value, NULL);
+    buffer = PyUnicode_AsWideCharString(value, &bsize);
     if (!buffer)
         return NULL;
     keep = PyCapsule_New(buffer, CTYPES_CFIELD_CAPSULE_NAME_PYMEM, pymem_destructor);

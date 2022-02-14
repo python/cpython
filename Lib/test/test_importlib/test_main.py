@@ -19,6 +19,7 @@ from importlib.metadata import (
     distributions,
     entry_points,
     metadata,
+    packages_distributions,
     version,
 )
 
@@ -125,7 +126,7 @@ class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
         metadata_dir.mkdir()
         metadata = metadata_dir / 'METADATA'
         with metadata.open('w', encoding='utf-8') as fp:
-            fp.write('Description: pôrˈtend\n')
+            fp.write('Description: pôrˈtend')
         return 'portend'
 
     @staticmethod
@@ -145,7 +146,7 @@ class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
 
                 pôrˈtend
                 """
-                ).lstrip()
+                ).strip()
             )
         return 'portend'
 
@@ -157,7 +158,7 @@ class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
     def test_metadata_loads_egg_info(self):
         pkg_name = self.pkg_with_non_ascii_description_egg_info(self.site_dir)
         meta = metadata(pkg_name)
-        assert meta.get_payload() == 'pôrˈtend\n'
+        assert meta['Description'] == 'pôrˈtend'
 
 
 class DiscoveryTests(fixtures.EggInfoPkg, fixtures.DistInfoPkg, unittest.TestCase):
@@ -203,7 +204,7 @@ class InaccessibleSysPath(fixtures.OnSysPath, ffs.TestCase):
     site_dir = '/access-denied'
 
     def setUp(self):
-        super(InaccessibleSysPath, self).setUp()
+        super().setUp()
         self.setUpPyfakefs()
         self.fs.create_dir(self.site_dir, perm_bits=000)
 
@@ -217,12 +218,20 @@ class InaccessibleSysPath(fixtures.OnSysPath, ffs.TestCase):
 
 class TestEntryPoints(unittest.TestCase):
     def __init__(self, *args):
-        super(TestEntryPoints, self).__init__(*args)
-        self.ep = importlib.metadata.EntryPoint('name', 'value', 'group')
+        super().__init__(*args)
+        self.ep = importlib.metadata.EntryPoint(
+            name='name', value='value', group='group'
+        )
 
     def test_entry_point_pickleable(self):
         revived = pickle.loads(pickle.dumps(self.ep))
         assert revived == self.ep
+
+    def test_positional_args(self):
+        """
+        Capture legacy (namedtuple) construction, discouraged.
+        """
+        EntryPoint('name', 'value', 'group')
 
     def test_immutable(self):
         """EntryPoints should be immutable"""
@@ -254,8 +263,8 @@ class TestEntryPoints(unittest.TestCase):
         # EntryPoint objects are sortable, but result is undefined.
         sorted(
             [
-                EntryPoint('b', 'val', 'group'),
-                EntryPoint('a', 'val', 'group'),
+                EntryPoint(name='b', value='val', group='group'),
+                EntryPoint(name='a', value='val', group='group'),
             ]
         )
 
@@ -271,3 +280,38 @@ class FileSystem(
             prefix=self.site_dir,
         )
         list(distributions())
+
+
+class PackagesDistributionsPrebuiltTest(fixtures.ZipFixtures, unittest.TestCase):
+    def test_packages_distributions_example(self):
+        self._fixture_on_path('example-21.12-py3-none-any.whl')
+        assert packages_distributions()['example'] == ['example']
+
+    def test_packages_distributions_example2(self):
+        """
+        Test packages_distributions on a wheel built
+        by trampolim.
+        """
+        self._fixture_on_path('example2-1.0.0-py3-none-any.whl')
+        assert packages_distributions()['example2'] == ['example2']
+
+
+class PackagesDistributionsTest(
+    fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase
+):
+    def test_packages_distributions_neither_toplevel_nor_files(self):
+        """
+        Test a package built without 'top-level.txt' or a file list.
+        """
+        fixtures.build_files(
+            {
+                'trim_example-1.0.0.dist-info': {
+                    'METADATA': """
+                Name: trim_example
+                Version: 1.0.0
+                """,
+                }
+            },
+            prefix=self.site_dir,
+        )
+        packages_distributions()

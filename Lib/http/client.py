@@ -70,10 +70,12 @@ Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 
 import email.parser
 import email.message
+import errno
 import http
 import io
 import re
 import socket
+import sys
 import collections.abc
 from urllib.parse import urlsplit
 
@@ -201,15 +203,11 @@ class HTTPMessage(email.message.Message):
                 lst.append(line)
         return lst
 
-def parse_headers(fp, _class=HTTPMessage):
-    """Parses only RFC2822 headers from a file pointer.
+def _read_headers(fp):
+    """Reads potential header lines into a list from a file pointer.
 
-    email Parser wants to see strings rather than bytes.
-    But a TextIOWrapper around self.rfile would buffer too many bytes
-    from the stream, bytes which we later need to read as bytes.
-    So we read the correct bytes here, as bytes, for email Parser
-    to parse.
-
+    Length of line is limited by _MAXLINE, and number of
+    headers is limited by _MAXHEADERS.
     """
     headers = []
     while True:
@@ -221,6 +219,19 @@ def parse_headers(fp, _class=HTTPMessage):
             raise HTTPException("got more than %d headers" % _MAXHEADERS)
         if line in (b'\r\n', b'\n', b''):
             break
+    return headers
+
+def parse_headers(fp, _class=HTTPMessage):
+    """Parses only RFC2822 headers from a file pointer.
+
+    email Parser wants to see strings rather than bytes.
+    But a TextIOWrapper around self.rfile would buffer too many bytes
+    from the stream, bytes which we later need to read as bytes.
+    So we read the correct bytes here, as bytes, for email Parser
+    to parse.
+
+    """
+    headers = _read_headers(fp)
     hstring = b''.join(headers).decode('iso-8859-1')
     return email.parser.Parser(_class=_class).parsestr(hstring)
 
@@ -308,15 +319,10 @@ class HTTPResponse(io.BufferedIOBase):
             if status != CONTINUE:
                 break
             # skip the header from the 100 response
-            while True:
-                skip = self.fp.readline(_MAXLINE + 1)
-                if len(skip) > _MAXLINE:
-                    raise LineTooLong("header line")
-                skip = skip.strip()
-                if not skip:
-                    break
-                if self.debuglevel > 0:
-                    print("header:", skip)
+            skipped_headers = _read_headers(self.fp)
+            if self.debuglevel > 0:
+                print("headers:", skipped_headers)
+            del skipped_headers
 
         self.code = self.status = status
         self.reason = reason.strip()
@@ -587,8 +593,8 @@ class HTTPResponse(io.BufferedIOBase):
                     amt -= chunk_left
                 self.chunk_left = 0
             return b''.join(value)
-        except IncompleteRead:
-            raise IncompleteRead(b''.join(value))
+        except IncompleteRead as exc:
+            raise IncompleteRead(b''.join(value)) from exc
 
     def _readinto_chunked(self, b):
         assert self.chunked != _UNKNOWN
@@ -931,9 +937,15 @@ class HTTPConnection:
 
     def connect(self):
         """Connect to the host and port specified in __init__."""
+        sys.audit("http.client.connect", self, self.host, self.port)
         self.sock = self._create_connection(
             (self.host,self.port), self.timeout, self.source_address)
-        self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        # Might fail in OSs that don't implement TCP_NODELAY
+        try:
+             self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        except OSError as e:
+            if e.errno != errno.ENOPROTOOPT:
+                raise
 
         if self._tunnel_host:
             self._tunnel()
@@ -978,8 +990,10 @@ class HTTPConnection:
                     break
                 if encode:
                     datablock = datablock.encode("iso-8859-1")
+                sys.audit("http.client.send", self, datablock)
                 self.sock.sendall(datablock)
             return
+        sys.audit("http.client.send", self, data)
         try:
             self.sock.sendall(data)
         except TypeError:

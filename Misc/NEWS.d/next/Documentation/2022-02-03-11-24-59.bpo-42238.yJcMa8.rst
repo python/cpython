@@ -1,0 +1,2 @@
+``Doc/tools/rstlint.py`` has moved to its own repository and is now packaged
+on PyPI as ``sphinx-lint``.

@@ -3,6 +3,11 @@
 #include <float.h>                // DBL_MAX_10_EXP
 #include <stdbool.h>
 
+/* This limited unparser is used to convert annotations back to strings
+ * during compilation rather than being a full AST unparser.
+ * See ast.unparse for a full unparser (written in Python)
+ */
+
 static PyObject *_str_open_br;
 static PyObject *_str_dbl_open_br;
 static PyObject *_str_close_br;
@@ -912,11 +917,11 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
         return append_ast_tuple(writer, e, level);
     case NamedExpr_kind:
         return append_named_expr(writer, e, level);
-    default:
-        PyErr_SetString(PyExc_SystemError,
-                        "unknown expression kind");
-        return -1;
+    // No default so compiler emits a warning for unhandled cases
     }
+    PyErr_SetString(PyExc_SystemError,
+                    "unknown expression kind");
+    return -1;
 }
 
 static int

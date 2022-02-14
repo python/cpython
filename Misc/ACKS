@@ -140,6 +140,7 @@ Bas van Beek
 Ian Beer
 Stefan Behnel
 Reimer Behrends
+Maxime Bélanger
 Ben Bell
 Thomas Bellman
 John Belmonte
@@ -226,6 +227,7 @@ Tom Bridgman
 Anthony Briggs
 Keith Briggs
 Tobias Brink
+Miguel Brito
 Dillon Brock
 Richard Brodie
 Michael Broghton
@@ -304,6 +306,7 @@ Mitch Chapman
 Matt Chaput
 William Chargin
 Yogesh Chaudhari
+Gautam Chaudhuri
 David Chaum
 Nicolas Chauvat
 Jerry Chen
@@ -362,6 +365,7 @@ Mircea Cosbuc
 David Costanzo
 Scott Cotton
 Greg Couch
+FX Coudert
 David Cournapeau
 Julien Courteau
 Steve Cousins
@@ -388,7 +392,7 @@ Brian Curtin
 Jason Curtis
 Hakan Celik
 Paul Dagnelie
-Florian Dahlitz 
+Florian Dahlitz
 Lisandro Dalcin
 Darren Dale
 Andrew Dalke
@@ -396,6 +400,8 @@ Lars Damerow
 Evan Dandrea
 Eric Daniel
 Scott David Daniels
+Derzsi Dániel
+Lawrence D'Anna
 Ben Darnell
 Kushal Das
 Jonathan Dasteel
@@ -580,6 +586,7 @@ Quentin Gallet-Gilles
 Riccardo Attilio Galli
 Raymund Galvin
 Nitin Ganatra
+Soumendra Ganguly (गङ्गोपाध्याय)
 Fred Gansevles
 Paul Ganssle
 Lars Marius Garshol
@@ -638,6 +645,7 @@ Andrea Griffini
 Duncan Grisby
 Olivier Grisel
 Fabian Groffen
+Linus Groh
 Eric Groo
 Daniel Andrade Groppe
 Dag Gruneau
@@ -694,6 +702,7 @@ Michael Haubenwallner
 Janko Hauser
 Flavian Hautbois
 Rycharde Hawkes
+Yahor Harunovich
 Ben Hayden
 Jochen Hayek
 Tim Heaney
@@ -722,6 +731,7 @@ Kevan Heydon
 Wouter van Heyst
 Kelsey Hightower
 Jason Hildebrand
+Ryan Hileman
 Aaron Hill
 Joel Hillacre
 Richie Hindle
@@ -730,6 +740,7 @@ David Hobley
 Tim Hochberg
 Benjamin Hodgson
 Joerg-Cyril Hoehle
+Douwe Hoekstra
 Gregor Hoffleit
 Chris Hoffman
 Tim Hoffmann
@@ -773,6 +784,7 @@ Christian Hudon
 Benoît Hudson
 Lawrence Hudson
 Michael Hudson
+Roberto Hueso Gomez
 Jim Hugunin
 Greg Humphreys
 Chris Hunt
@@ -786,6 +798,7 @@ Fredrik Håård
 Florian Höch
 Oleg Höfling
 Robert Hölzl
+Stefan Hölzl
 Catalin Iacob
 Mihai Ibanescu
 Ali Ikinci
@@ -962,6 +975,7 @@ Andrew Kuchling
 Jakub Kuczys
 Dave Kuhlman
 Jon Kuhn
+Andrei Kulakov
 Ilya Kulakov
 Upendra Kumar
 Toshio Kuratomi
@@ -1104,6 +1118,7 @@ Vincent Marchetti
 David Marek
 Doug Marien
 Sven Marnach
+John Marshall
 Alex Martelli
 Dennis Mårtensson
 Anthony Martin
@@ -1178,6 +1193,7 @@ Julien Miotte
 Andrii V. Mishkovskyi
 Dom Mitchell
 Dustin J. Mitchell
+Gideon Mitchell
 Tim Mitchell
 Zubin Mithra
 Florian Mladitsch
@@ -1289,6 +1305,7 @@ Peter Otten
 Michael Otteneder
 Richard Oudkerk
 Russel Owen
+Noah Oxer
 Joonas Paalasmaa
 Yaroslav Pankovych
 Martin Packman
@@ -1407,6 +1424,7 @@ Jérôme Radix
 Burton Radons
 Abhilash Raj
 Shorya Raj
+Ajith Ramachandran
 Dhushyanth Ramasamy
 Ashwin Ramaswami
 Jeff Ramnani
@@ -1451,6 +1469,7 @@ Vlad Riscutia
 Wes Rishel
 Daniel Riti
 Juan M. Bello Rivas
+Llandy Riveron Del Risco
 Mohd Sanad Zaki Rizvi
 Davide Rizzo
 Anthony Roach
@@ -1507,6 +1526,7 @@ Mark Russell
 Rusty Russell
 Nick Russo
 James Rutherford
+Eli Rykoff
 Chris Ryland
 Bernt Røskar Brenna
 Constantina S.
@@ -1607,6 +1627,7 @@ Yue Shuaijie
 Jaysinh Shukla
 Terrel Shumway
 Eric Siegerman
+Reilly Tucker Siemens
 Paul Sijben
 SilentGhost
 Tim Silk
@@ -1627,6 +1648,7 @@ J. Sipprell
 Ngalim Siregar
 Kragen Sitaker
 Kaartic Sivaraam
+Stanisław Skonieczny
 Roman Skurikhin
 Ville Skyttä
 Michael Sloan
@@ -1645,6 +1667,7 @@ Ryan Smith-Roberts
 Rafal Smotrzyk
 Josh Snider
 Eric Snow
+Nikita Sobolev
 Dirk Soede
 Nir Soffer
 Paul Sokolovsky
@@ -1652,6 +1675,7 @@ Evgeny Sologubov
 Cody Somerville
 Anthony Sottile
 Edoardo Spadolini
+Tom Sparrow
 Geoffrey Spear
 Clay Spence
 Stefan Sperling
@@ -1811,6 +1835,7 @@ Andi Vajda
 Case Van Horsen
 John Mark Vandenberg
 Kyle VanderBeek
+Wm. Keith van der Meulen
 Eric N. Vander Weele
 Andrew Vant
 Atul Varma
@@ -1835,6 +1860,7 @@ Kurt Vile
 Norman Vine
 Pauli Virtanen
 Frank Visser
+Jeremiah Vivian (Pascual)
 Johannes Vogel
 Michael Vogt
 Radu Voicilas
@@ -1864,6 +1890,7 @@ Bob Watson
 Colin Watson
 David Watson
 Aaron Watters
+Alex Waygood
 Henrik Weber
 Leon Weber
 Steve Weber
@@ -1926,6 +1953,7 @@ David Wolever
 Klaus-Juergen Wolf
 Dan Wolfe
 Richard Wolff
+Tymoteusz Wołodźko
 Adam Woodbeck
 William Woodruff
 Steven Work
@@ -1940,6 +1968,7 @@ Doug Wyatt
 Xiang Zhang
 Robert Xiao
 Florent Xicluna
+Xinhang Xu
 Arnon Yaari
 Alakshendra Yadav
 Hirokazu Yamamoto

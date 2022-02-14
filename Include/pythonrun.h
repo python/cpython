@@ -16,7 +16,6 @@ PyAPI_FUNC(void) PyErr_Display(PyObject *, PyObject *, PyObject *);
 
 /* Stuff with no proper home (yet) */
 PyAPI_DATA(int) (*PyOS_InputHook)(void);
-PyAPI_DATA(char) *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *);
 
 /* Stack size, in "pointers" (so we get extra safety margins
    on 64-bit platforms).  On a 32-bit platform, this translates
@@ -35,7 +34,7 @@ PyAPI_FUNC(int) PyOS_CheckStack(void);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_PYTHONRUN_H
-#  include  "cpython/pythonrun.h"
+#  include "cpython/pythonrun.h"
 #  undef Py_CPYTHON_PYTHONRUN_H
 #endif
 

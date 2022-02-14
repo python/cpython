@@ -54,6 +54,8 @@
 
  */
 
+#define NEEDS_PY_IDENTIFIER
+
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 
@@ -530,8 +532,8 @@ PyCArg_repr(PyCArgObject *self)
         }
 
 /* Hm, are these 'z' and 'Z' codes useful at all?
-   Shouldn't they be replaced by the functionality of c_string
-   and c_wstring ?
+   Shouldn't they be replaced by the functionality of create_string_buffer()
+   and c_wstring() ?
 */
     case 'z':
     case 'Z':
@@ -826,7 +828,7 @@ static int _call_function_pointer(int flags,
         cc = FFI_STDCALL;
 #endif
 
-#   if USING_APPLE_OS_LIBFFI
+#   ifdef USING_APPLE_OS_LIBFFI
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
 #   elif HAVE_FFI_PREP_CIF_VAR
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME true
@@ -834,7 +836,7 @@ static int _call_function_pointer(int flags,
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME false
 #   endif
 
-    /* Even on Apple-arm64 the calling convention for variadic functions conincides
+    /* Even on Apple-arm64 the calling convention for variadic functions coincides
      * with the standard calling convention in the case that the function called
      * only with its fixed arguments.   Thus, we do not need a special flag to be
      * set on variadic functions.   We treat a function as variadic if it is called
@@ -1119,14 +1121,6 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 #endif
 
 /*
- * bpo-13097: Max number of arguments _ctypes_callproc will accept.
- *
- * This limit is enforced for the `alloca()` call in `_ctypes_callproc`,
- * to avoid allocating a massive buffer on the stack.
- */
-#define CTYPES_MAX_ARGCOUNT 1024
-
-/*
  * Requirements, must be ensured by the caller:
  * - argtuple is tuple of arguments
  * - argtypes is either NULL, or a tuple of the same size as argtuple
@@ -1168,11 +1162,7 @@ PyObject *_ctypes_callproc(PPROC pProc,
         return NULL;
     }
 
-    args = (struct argument *)alloca(sizeof(struct argument) * argcount);
-    if (!args) {
-        PyErr_NoMemory();
-        return NULL;
-    }
+    args = alloca(sizeof(struct argument) * argcount);
     memset(args, 0, sizeof(struct argument) * argcount);
     argtype_count = argtypes ? PyTuple_GET_SIZE(argtypes) : 0;
 #ifdef MS_WIN32
@@ -1442,14 +1432,37 @@ copy_com_pointer(PyObject *self, PyObject *args)
     return r;
 }
 #else
-
+#ifdef __APPLE__
 #ifdef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
+#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
+    __builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+#else
+// Support the deprecated case of compiling on an older macOS version
+static void *libsystem_b_handle;
+static bool (*_dyld_shared_cache_contains_path)(const char *path);
+
+__attribute__((constructor)) void load_dyld_shared_cache_contains_path(void) {
+    libsystem_b_handle = dlopen("/usr/lib/libSystem.B.dylib", RTLD_LAZY);
+    if (libsystem_b_handle != NULL) {
+        _dyld_shared_cache_contains_path = dlsym(libsystem_b_handle, "_dyld_shared_cache_contains_path");
+    }
+}
+
+__attribute__((destructor)) void unload_dyld_shared_cache_contains_path(void) {
+    if (libsystem_b_handle != NULL) {
+        dlclose(libsystem_b_handle);
+    }
+}
+#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
+    _dyld_shared_cache_contains_path != NULL
+#endif
+
 static PyObject *py_dyld_shared_cache_contains_path(PyObject *self, PyObject *args)
 {
      PyObject *name, *name2;
      char *name_str;
 
-     if (__builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)) {
+     if (HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME) {
          int r;
 
          if (!PyArg_ParseTuple(args, "O", &name))
@@ -1992,7 +2005,7 @@ PyMethodDef _ctypes_module_methods[] = {
     {"dlclose", py_dl_close, METH_VARARGS, "dlclose a library"},
     {"dlsym", py_dl_sym, METH_VARARGS, "find symbol in shared library"},
 #endif
-#ifdef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
+#ifdef __APPLE__
      {"_dyld_shared_cache_contains_path", py_dyld_shared_cache_contains_path, METH_VARARGS, "check if path is in the shared cache"},
 #endif
     {"alignment", align_func, METH_O, alignment_doc},

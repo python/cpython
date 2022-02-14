@@ -96,11 +96,13 @@ Save Copy As...
 Print Window
    Print the current window to the default printer.
 
-Close
-   Close the current window (ask to save if unsaved).
+Close Window
+   Close the current window (if an unsaved editor, ask to save; if an unsaved
+   Shell, ask to quit execution).  Calling ``exit()`` or ``close()`` in the Shell
+   window also closes Shell.  If this is the only window, also exit IDLE.
 
-Exit
-   Close all windows and quit IDLE (ask to save unsaved windows).
+Exit IDLE
+   Close all windows and quit IDLE (ask to save unsaved edit windows).
 
 Edit menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -518,7 +520,7 @@ and not restarting the Shell thereafter.  This is especially useful
 after adding imports at the top of a file.  This also increases
 possible attribute completions.
 
-Completion boxes intially exclude names beginning with '_' or, for
+Completion boxes initially exclude names beginning with '_' or, for
 modules, not included in '__all__'.  The hidden names can be accessed
 by typing '_' after '.', either before or after the box is opened.
 
@@ -612,6 +614,12 @@ user error.  For Python code, at the shell prompt or in an editor, these are
 keywords, builtin class and function names, names following ``class`` and
 ``def``, strings, and comments. For any text window, these are the cursor (when
 present), found text (when possible), and selected text.
+
+IDLE also highlights the :ref:`soft keywords <soft-keywords>` :keyword:`match`,
+:keyword:`case <match>`, and :keyword:`_ <wildcard-patterns>` in
+pattern-matching statements. However, this highlighting is not perfect and
+will be incorrect in some rare cases, including some ``_``-s in ``case``
+patterns.
 
 Text coloring is done in the background, so uncolorized text is occasionally
 visible.  To change the color scheme, use the Configure IDLE dialog
@@ -863,7 +871,7 @@ Running without a subprocess
 
 By default, IDLE executes user code in a separate subprocess via a socket,
 which uses the internal loopback interface.  This connection is not
-externally visible and no data is sent to or received from the Internet.
+externally visible and no data is sent to or received from the internet.
 If firewall software complains anyway, you can ignore it.
 
 If the attempt to make the socket connection fails, Idle will notify you.

@@ -187,6 +187,7 @@ class BaseServer:
     - address_family
     - socket_type
     - allow_reuse_address
+    - allow_reuse_port
 
     Instance variables:
 
@@ -425,6 +426,7 @@ class TCPServer(BaseServer):
     - socket_type
     - request_queue_size (only for stream sockets)
     - allow_reuse_address
+    - allow_reuse_port
 
     Instance variables:
 
@@ -441,6 +443,8 @@ class TCPServer(BaseServer):
     request_queue_size = 5
 
     allow_reuse_address = False
+
+    allow_reuse_port = False
 
     def __init__(self, server_address, RequestHandlerClass, bind_and_activate=True):
         """Constructor.  May be extended, do not override."""
@@ -463,6 +467,8 @@ class TCPServer(BaseServer):
         """
         if self.allow_reuse_address:
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if self.allow_reuse_port:
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.socket.bind(self.server_address)
         self.server_address = self.socket.getsockname()
 
@@ -518,6 +524,8 @@ class UDPServer(TCPServer):
     """UDP server class."""
 
     allow_reuse_address = False
+
+    allow_reuse_port = False
 
     socket_type = socket.SOCK_DGRAM
 

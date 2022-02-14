@@ -70,6 +70,14 @@ and work with streams:
 
       The *ssl_handshake_timeout* parameter.
 
+   .. deprecated-removed:: 3.8 3.10
+
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
+
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
                           port=None, *, limit=None, \
                           family=socket.AF_UNSPEC, \
@@ -100,6 +108,13 @@ and work with streams:
 
       The *ssl_handshake_timeout* and *start_serving* parameters.
 
+   .. deprecated-removed:: 3.8 3.10
+
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
 
 .. rubric:: Unix Sockets
 
@@ -124,6 +139,13 @@ and work with streams:
 
       The *path* parameter can now be a :term:`path-like object`
 
+   .. deprecated-removed:: 3.8 3.10
+
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
                           *, limit=None, sock=None, backlog=100, ssl=None, \
@@ -144,6 +166,13 @@ and work with streams:
    .. versionchanged:: 3.7
 
       The *path* parameter can now be a :term:`path-like object`.
+
+   .. deprecated-removed:: 3.8 3.10
+
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
 
 
 StreamReader
@@ -323,6 +352,7 @@ TCP echo client using the :func:`asyncio.open_connection` function::
 
         print(f'Send: {message!r}')
         writer.write(message.encode())
+        await writer.drain()
 
         data = await reader.read(100)
         print(f'Received: {data.decode()!r}')
@@ -366,8 +396,8 @@ TCP echo server using the :func:`asyncio.start_server` function::
         server = await asyncio.start_server(
             handle_echo, '127.0.0.1', 8888)
 
-        addr = server.sockets[0].getsockname()
-        print(f'Serving on {addr}')
+        addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
+        print(f'Serving on {addrs}')
 
         async with server:
             await server.serve_forever()

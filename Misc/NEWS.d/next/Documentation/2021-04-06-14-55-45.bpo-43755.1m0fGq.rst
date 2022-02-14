@@ -1,3 +1,0 @@
-Update documentation to reflect that unparenthesized lambda expressions can
-no longer be the expression part in an ``if`` clause in comprehensions and
-generator expressions since Python 3.9.

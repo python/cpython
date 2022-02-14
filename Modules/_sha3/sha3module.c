@@ -15,8 +15,12 @@
  *
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
-#include "pystrhex.h"
+#include "pycore_strhex.h"        // _Py_strhex()
 #include "../hashlib.h"
 
 /* **************************************************************************
@@ -53,6 +57,8 @@
   typedef uint64_t UINT64;
   typedef unsigned char UINT8;
 #endif
+// kcp/KeccakP-1600-opt64.c doesn't need to define UINT8
+#define NOT_PYTHON 0
 
 /* replacement for brg_endian.h */
 #define IS_LITTLE_ENDIAN 1234
@@ -62,6 +68,11 @@
 #endif
 #if PY_BIG_ENDIAN
 #define PLATFORM_BYTE_ORDER IS_BIG_ENDIAN
+#endif
+
+/* Prevent bus errors on platforms requiring aligned accesses such ARM. */
+#if defined(HAVE_ALIGNED_REQUIRED) && !defined(NO_MISALIGNED_ACCESSES)
+#define NO_MISALIGNED_ACCESSES
 #endif
 
 /* mangle names */
@@ -525,7 +536,7 @@ static PyGetSetDef SHA3_getseters[] = {
     static PyType_Spec type_spec_obj = { \
         .name = "_sha3." type_name, \
         .basicsize = sizeof(SHA3object), \
-        .flags = Py_TPFLAGS_DEFAULT, \
+        .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE, \
         .slots = type_slots \
     }
 

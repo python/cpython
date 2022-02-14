@@ -1,1 +1,0 @@
-Fixed processing of a dataclass that inherits from a frozen dataclass with no fields.  It is now correctly detected as an error.
