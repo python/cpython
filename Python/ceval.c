@@ -2019,9 +2019,9 @@ handle_eval_breaker:
             PyObject *right = TOP();
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
-            int next_oparg = _Py_OPARG(*next_instr);
             assert(_Py_OPCODE(*next_instr) == STORE_FAST ||
                    _Py_OPCODE(*next_instr) == STORE_FAST__LOAD_FAST);
+            int next_oparg = _Py_OPARG(*next_instr);
             /* In the common case, there are 2 references to the value
             * stored in 'variable' when the v = v + ... is performed: one
             * on the value stack (in 'v') and one still stored in the
@@ -2032,7 +2032,8 @@ handle_eval_breaker:
             DEOPT_IF(var != left, BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             GETLOCAL(next_oparg) = NULL;
-            Py_DECREF(left);
+            assert(Py_REFCNT(var) >= 2);
+            Py_DECREF(left); // XXX: We don't need the dealloc branch here
             STACK_SHRINK(1);
             PyUnicode_Append(&TOP(), right);
             Py_DECREF(right);
