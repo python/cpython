@@ -15,15 +15,6 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
 from types import GenericAlias
 
-try:
-    import pwd
-except ImportError:
-    pwd = None
-try:
-    import grp
-except ImportError:
-    grp = None
-
 
 __all__ = [
     "PurePath", "PurePosixPath", "PureWindowsPath",
@@ -875,35 +866,6 @@ class _AbstractPath(PurePath, ABC):
     """
     __slots__ = ()
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, t, v, tb):
-        # https://bugs.python.org/issue39682
-        # In previous versions of pathlib, this method marked this path as
-        # closed; subsequent attempts to perform I/O would raise an IOError.
-        # This functionality was never documented, and had the effect of
-        # making Path objects mutable, contrary to PEP 428. In Python 3.9 the
-        # _closed attribute was removed, and this method made a no-op.
-        # This method and __enter__()/__exit__() should be deprecated and
-        # removed in the future.
-        pass
-
-    # Public API
-
-    @classmethod
-    def cwd(cls):
-        """Return a new path pointing to the current working directory
-        (as returned by os.getcwd()).
-        """
-        raise NotImplementedError
-
-    @classmethod
-    def home(cls):
-        """Return a new path pointing to the user's home directory (as
-        returned by os.path.expanduser('~')).
-        """
-        return cls("~").expanduser()
 
     def samefile(self, other_path):
         """Return whether other_path is the same or not as this file
@@ -956,40 +918,11 @@ class _AbstractPath(PurePath, ABC):
         for p in selector.select_from(self):
             yield p
 
-    def absolute(self):
-        """Return an absolute version of this path by prepending the current
-        working directory. No normalization or symlink resolution is performed.
-
-        Use resolve() to get the canonical path to a file.
-        """
-        if self.is_absolute():
-            return self
-        return self._from_parts([self.cwd()] + self._parts)
-
-    def resolve(self, strict=False):
-        """
-        Make the path absolute, resolving all symlinks on the way and also
-        normalizing it.
-        """
-        raise NotImplementedError
-
     @abstractmethod
     def stat(self, *, follow_symlinks=True):
         """
         Return the result of the stat() system call on this path, like
         os.stat() does.
-        """
-        raise NotImplementedError
-
-    def owner(self):
-        """
-        Return the login name of the file owner.
-        """
-        raise NotImplementedError
-
-    def group(self):
-        """
-        Return the group name of the file gid.
         """
         raise NotImplementedError
 
@@ -1037,113 +970,12 @@ class _AbstractPath(PurePath, ABC):
         with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
-    def readlink(self):
-        """
-        Return the path to which the symbolic link points.
-        """
-        raise NotImplementedError
-
-    def touch(self, mode=0o666, exist_ok=True):
-        """
-        Create this file with the given access mode, if it doesn't exist.
-        """
-        raise NotImplementedError
-
-    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
-        """
-        Create a new directory at this given path.
-        """
-        raise NotImplementedError
-
-    def chmod(self, mode, *, follow_symlinks=True):
-        """
-        Change the permissions of the path, like os.chmod().
-        """
-        raise NotImplementedError
-
-    def lchmod(self, mode):
-        """
-        Like chmod(), except if the path points to a symlink, the symlink's
-        permissions are changed, rather than its target's.
-        """
-        self.chmod(mode, follow_symlinks=False)
-
-    def unlink(self, missing_ok=False):
-        """
-        Remove this file or link.
-        If the path is a directory, use rmdir() instead.
-        """
-        raise NotImplementedError
-
-    def rmdir(self):
-        """
-        Remove this directory.  The directory must be empty.
-        """
-        raise NotImplementedError
-
     def lstat(self):
         """
         Like stat(), except if the path points to a symlink, the symlink's
         status information is returned, rather than its target's.
         """
         return self.stat(follow_symlinks=False)
-
-    def rename(self, target):
-        """
-        Rename this path to the target path.
-
-        The target path may be absolute or relative. Relative paths are
-        interpreted relative to the current working directory, *not* the
-        directory of the Path object.
-
-        Returns the new Path instance pointing to the target path.
-        """
-        raise NotImplementedError
-
-    def replace(self, target):
-        """
-        Rename this path to the target path, overwriting if that path exists.
-
-        The target path may be absolute or relative. Relative paths are
-        interpreted relative to the current working directory, *not* the
-        directory of the Path object.
-
-        Returns the new Path instance pointing to the target path.
-        """
-        raise NotImplementedError
-
-    def symlink_to(self, target, target_is_directory=False):
-        """
-        Make this path a symlink pointing to the target path.
-        Note the order of arguments (link, target) is the reverse of os.symlink.
-        """
-        raise NotImplementedError
-
-    def hardlink_to(self, target):
-        """
-        Make this path a hard link pointing to the same file as *target*.
-
-        Note the order of arguments (self, target) is the reverse of os.link's.
-        """
-        raise NotImplementedError
-
-    def link_to(self, target):
-        """
-        Make the target path a hard link pointing to this path.
-
-        Note this function does not make this path a hard link to *target*,
-        despite the implication of the function and argument names. The order
-        of arguments (target, link) is the reverse of Path.symlink_to, but
-        matches that of os.link.
-
-        Deprecated since Python 3.10 and scheduled for removal in Python 3.12.
-        Use `hardlink_to()` instead.
-        """
-        warnings.warn("pathlib.Path.link_to() is deprecated and is scheduled "
-                      "for removal in Python 3.12. "
-                      "Use pathlib.Path.hardlink_to() instead.",
-                      DeprecationWarning, stacklevel=2)
-        self.__class__(target).hardlink_to(self)
 
     # Convenience functions for querying the stat results
 
@@ -1294,12 +1126,6 @@ class _AbstractPath(PurePath, ABC):
             # Non-encodable path
             return False
 
-    def expanduser(self):
-        """ Return a new path with expanded ~ and ~user constructs
-        (as returned by os.path.expanduser)
-        """
-        raise NotImplementedError
-
 
 class Path(_AbstractPath):
     """PurePath subclass that can make system calls.
@@ -1321,9 +1147,35 @@ class Path(_AbstractPath):
                                       % (cls.__name__,))
         return self
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, t, v, tb):
+        # https://bugs.python.org/issue39682
+        # In previous versions of pathlib, this method marked this path as
+        # closed; subsequent attempts to perform I/O would raise an IOError.
+        # This functionality was never documented, and had the effect of
+        # making Path objects mutable, contrary to PEP 428. In Python 3.9 the
+        # _closed attribute was removed, and this method made a no-op.
+        # This method and __enter__()/__exit__() should be deprecated and
+        # removed in the future.
+        pass
+
+    # Public API
+
     @classmethod
     def cwd(cls):
+        """Return a new path pointing to the current working directory
+        (as returned by os.getcwd()).
+        """
         return cls(os.getcwd())
+
+    @classmethod
+    def home(cls):
+        """Return a new path pointing to the user's home directory (as
+        returned by os.path.expanduser('~')).
+        """
+        return cls("~").expanduser()
 
     def iterdir(self):
         for name in os.listdir(self):
@@ -1332,7 +1184,22 @@ class Path(_AbstractPath):
     def _scandir(self):
         return os.scandir(self)
 
+    def absolute(self):
+        """Return an absolute version of this path by prepending the current
+        working directory. No normalization or symlink resolution is performed.
+
+        Use resolve() to get the canonical path to a file.
+        """
+        if self.is_absolute():
+            return self
+        return self._from_parts([self.cwd()] + self._parts)
+
     def resolve(self, strict=False):
+        """
+        Make the path absolute, resolving all symlinks on the way and also
+        normalizing it.
+        """
+
         def check_eloop(e):
             winerror = getattr(e, 'winerror', 0)
             if e.errno == ELOOP or winerror == _WINERROR_CANT_RESOLVE_FILENAME:
@@ -1357,13 +1224,26 @@ class Path(_AbstractPath):
     def stat(self, *, follow_symlinks=True):
         return os.stat(self, follow_symlinks=follow_symlinks)
 
-    if hasattr(pwd, 'getpwuid'):
-        def owner(self):
+    def owner(self):
+        """
+        Return the login name of the file owner.
+        """
+        try:
+            import pwd
             return pwd.getpwuid(self.stat().st_uid).pw_name
+        except ImportError:
+            raise NotImplementedError("Path.owner() is unsupported on this system")
 
-    if hasattr(grp, 'getgrgid'):
-        def group(self):
+    def group(self):
+        """
+        Return the group name of the file gid.
+        """
+
+        try:
+            import grp
             return grp.getgrgid(self.stat().st_gid).gr_name
+        except ImportError:
+            raise NotImplementedError("Path.group() is unsupported on this system")
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -1371,11 +1251,19 @@ class Path(_AbstractPath):
             encoding = io.text_encoding(encoding)
         return io.open(self, mode, buffering, encoding, errors, newline)
 
-    if hasattr(os, 'readlink'):
-        def readlink(self):
-            return self._from_parts((os.readlink(self),))
+    def readlink(self):
+        """
+        Return the path to which the symbolic link points.
+        """
+        if not hasattr(os, "readlink"):
+            raise NotImplementedError("os.readlink() not available on this system")
+        return self._from_parts((os.readlink(self),))
 
     def touch(self, mode=0o666, exist_ok=True):
+        """
+        Create this file with the given access mode, if it doesn't exist.
+        """
+
         if exist_ok:
             # First try to bump modification time
             # Implementation note: GNU touch uses the UTIME_NOW option of
@@ -1394,6 +1282,9 @@ class Path(_AbstractPath):
         os.close(fd)
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
         try:
             os.mkdir(self, mode)
         except FileNotFoundError:
@@ -1408,9 +1299,23 @@ class Path(_AbstractPath):
                 raise
 
     def chmod(self, mode, *, follow_symlinks=True):
+        """
+        Change the permissions of the path, like os.chmod().
+        """
         os.chmod(self, mode, follow_symlinks=follow_symlinks)
 
+    def lchmod(self, mode):
+        """
+        Like chmod(), except if the path points to a symlink, the symlink's
+        permissions are changed, rather than its target's.
+        """
+        self.chmod(mode, follow_symlinks=False)
+
     def unlink(self, missing_ok=False):
+        """
+        Remove this file or link.
+        If the path is a directory, use rmdir() instead.
+        """
         try:
             os.unlink(self)
         except FileNotFoundError:
@@ -1418,25 +1323,78 @@ class Path(_AbstractPath):
                 raise
 
     def rmdir(self):
+        """
+        Remove this directory.  The directory must be empty.
+        """
         os.rmdir(self)
 
     def rename(self, target):
+        """
+        Rename this path to the target path.
+
+        The target path may be absolute or relative. Relative paths are
+        interpreted relative to the current working directory, *not* the
+        directory of the Path object.
+
+        Returns the new Path instance pointing to the target path.
+        """
         os.rename(self, target)
         return self.__class__(target)
 
     def replace(self, target):
+        """
+        Rename this path to the target path, overwriting if that path exists.
+
+        The target path may be absolute or relative. Relative paths are
+        interpreted relative to the current working directory, *not* the
+        directory of the Path object.
+
+        Returns the new Path instance pointing to the target path.
+        """
         os.replace(self, target)
         return self.__class__(target)
 
-    if hasattr(os, 'symlink'):
-        def symlink_to(self, target, target_is_directory=False):
-            os.symlink(target, self, target_is_directory)
+    def symlink_to(self, target, target_is_directory=False):
+        """
+        Make this path a symlink pointing to the target path.
+        Note the order of arguments (link, target) is the reverse of os.symlink.
+        """
+        if not hasattr(os, "symlink"):
+            raise NotImplementedError("os.symlink() not available on this system")
+        os.symlink(target, self, target_is_directory)
 
-    if hasattr(os, 'link'):
-        def hardlink_to(self, target):
-            os.link(target, self)
+    def hardlink_to(self, target):
+        """
+        Make this path a hard link pointing to the same file as *target*.
+
+        Note the order of arguments (self, target) is the reverse of os.link's.
+        """
+        if not hasattr(os, "link"):
+            raise NotImplementedError("os.link() not available on this system")
+        os.link(target, self)
+
+    def link_to(self, target):
+        """
+        Make the target path a hard link pointing to this path.
+
+        Note this function does not make this path a hard link to *target*,
+        despite the implication of the function and argument names. The order
+        of arguments (target, link) is the reverse of Path.symlink_to, but
+        matches that of os.link.
+
+        Deprecated since Python 3.10 and scheduled for removal in Python 3.12.
+        Use `hardlink_to()` instead.
+        """
+        warnings.warn("pathlib.Path.link_to() is deprecated and is scheduled "
+                      "for removal in Python 3.12. "
+                      "Use pathlib.Path.hardlink_to() instead.",
+                      DeprecationWarning, stacklevel=2)
+        self.__class__(target).hardlink_to(self)
 
     def expanduser(self):
+        """ Return a new path with expanded ~ and ~user constructs
+        (as returned by os.path.expanduser)
+        """
         if (not (self._drv or self._root) and
             self._parts and self._parts[0][:1] == '~'):
             homedir = os.path.expanduser(self._parts[0])
