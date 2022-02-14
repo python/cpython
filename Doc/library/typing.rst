@@ -1465,9 +1465,6 @@ These are not used in annotations. They are building blocks for declaring types.
 
       assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
-   The type info for introspection can be accessed via ``Point2D.__annotations__``,
-   ``Point2D.__total__``, ``Point2D.__required_keys__``, and
-   ``Point2D.__optional_keys__``.
    To allow using this feature with older versions of Python that do not
    support :pep:`526`, ``TypedDict`` supports two additional equivalent
    syntactic forms::
@@ -1487,6 +1484,54 @@ These are not used in annotations. They are building blocks for declaring types.
    omitted. A type checker is only expected to support a literal ``False`` or
    ``True`` as the value of the ``total`` argument. ``True`` is the default,
    and makes all items defined in the class body required.
+
+   The type info for introspection can be accessed via ``Point2D.__annotations__``,
+   ``Point2D.__total__``, ``Point2D.__required_keys__``, and
+   ``Point2D.__optional_keys__``.
+
+   ``Point2D.__annotations__`` gives a dict maps the field names to the field types::
+
+      >>> Point2D.__annotations__
+      {'x': int, 'y': int}
+
+   ``Point2D.__total__`` gives the value of the ``total`` argument, ``Point2D.__required_keys__``
+   and ``Point2D.__optional_keys__`` return ``frozenset`` objects containing
+   required and optional keys respectively::
+
+      >>> class Point2D(TypedDict): ...
+      ...
+      >>> Point2D.__total__
+      True
+      >>> Point2D.__required_keys__
+      frozenset({'x', 'y'})
+      >>> Point2D.__optional_keys__
+      frozenset()
+
+   If the ``total`` argument is set to ``False`` then all keys in the class body are optional::
+
+      >>> class Point2D(TypedDict, total=False): ...
+      ...
+      >>> Point2D.__total__
+      False
+      >>> Point2D.__required_keys__
+      frozenset()
+      >>> Point2D.__optional_keys__
+      frozenset({'x', 'y'})
+
+   It is possible for a ``TypedDict`` type to inherit from one or more TypedDict types
+   using the class-based syntax.
+   Usage::
+
+      class Point3D(Point2D):
+         z: int
+
+   Now the ``Point3D`` has three items: ``x``, ``y`` and ``z``. It is equivalent to this
+   definition::
+
+      class Point3D(TypedDict):
+         x: int
+         y: int
+         z: int
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
