@@ -314,8 +314,8 @@ class _PropertyUnreachableAttribute:
     obj = None
     cls = None
 
-    def _format_exc_msg(self, *msg):
-        return self.msg_format.format(*msg)
+    def _format_exc_msg(self, msg):
+        return self.msg_format.format(msg)
 
     @classmethod
     def setUpClass(cls):
@@ -335,14 +335,14 @@ class _PropertyUnreachableAttribute:
 
 
 class PropertyUnreachableAttributeWithName(_PropertyUnreachableAttribute, unittest.TestCase):
-    msg_format = "^property 'foo' in object of type 'PropertyUnreachableAttributeWithName.cls' {}$"
+    msg_format = r"^property 'foo' in object of type 'PropertyUnreachableAttributeWithName\.cls' {}$"
 
     class cls:
         foo = property()
 
 
 class PropertyUnreachableAttributeNoName(_PropertyUnreachableAttribute, unittest.TestCase):
-    msg_format = "^property in object of type 'PropertyUnreachableAttributeNoName.cls' {}$"
+    msg_format = "^property in object of type 'PropertyUnreachableAttributeNoName\.cls' {}$"
 
     class cls:
         pass
