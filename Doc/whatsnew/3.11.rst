@@ -228,6 +228,12 @@ fractions
   (Contributed by Mark Dickinson in :issue:`44547`.)
 
 
+IDLE and idlelib
+----------------
+
+* Apply syntax highlighting to `.pyi` files. (Contributed by Alex
+  Waygood and Terry Jan Reedy in :issue:`45447`.)
+
 inspect
 -------
 * Add :func:`inspect.getmembers_static`: return all members without

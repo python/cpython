@@ -2862,6 +2862,8 @@ class ForwardRefTests(BaseTestCase):
 
     def test_forward_repr(self):
         self.assertEqual(repr(List['int']), "typing.List[ForwardRef('int')]")
+        self.assertEqual(repr(List[ForwardRef('int', module='mod')]), 
+                         "typing.List[ForwardRef('int', module='mod')]")	
 
     def test_union_forward(self):
 
