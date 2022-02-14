@@ -544,11 +544,41 @@ def declare_parser(*, hasformat=False):
         fname = '.fname = "{name}",'
         format_ = ''
     declarations = """
-        static const char * const _keywords[] = {{{keywords} NULL}};
+        #define NUM_KEYWORDS {num_keywords}
+        #if NUM_KEYWORDS == 0
+
+        #  ifdef Py_BUILD_CORE
+        #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+        #  else
+        #    define KWTUPLE NULL
+        #  endif
+
+        #else  // NUM_KEYWORDS != 0
+        #  ifdef Py_BUILD_CORE
+
+        static struct {{
+            PyGC_Head _this_is_not_used;
+            PyObject_VAR_HEAD
+            PyObject *ob_item[NUM_KEYWORDS];
+        }} _kwtuple = {{
+            .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+            .ob_item = {{ {keywords_py} }},
+        }};
+        #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+        #  else  // !Py_BUILD_CORE
+        #    define KWTUPLE NULL
+        #  endif  // !Py_BUILD_CORE
+        #endif  // NUM_KEYWORDS != 0
+        #undef NUM_KEYWORDS
+
+        static const char * const _keywords[] = {{{keywords_c} NULL}};
         static _PyArg_Parser _parser = {{
             .keywords = _keywords,
             %s
+            .kwtuple = KWTUPLE,
         }};
+        #undef KWTUPLE
         """ % (format_ or fname)
     return normalize_snippet(declarations)
 
@@ -1404,7 +1434,11 @@ class CLanguage(Language):
         template_dict['declarations'] = format_escape("\n".join(data.declarations))
         template_dict['initializers'] = "\n\n".join(data.initializers)
         template_dict['modifications'] = '\n\n'.join(data.modifications)
-        template_dict['keywords'] = ' '.join('"' + k + '",' for k in data.keywords)
+        template_dict['keywords_c'] = ' '.join('"' + k + '",' for k in data.keywords)
+        template_dict['num_keywords'] = len(data.keywords)
+        template_dict['keywords_py'] = ' '.join(
+                '&_Py_ID(' + k + '),' if k else '&_Py_STR(empty),'
+                for k in data.keywords)
         template_dict['format_units'] = ''.join(data.format_units)
         template_dict['parse_arguments'] = ', '.join(data.parse_arguments)
         if data.parse_arguments:

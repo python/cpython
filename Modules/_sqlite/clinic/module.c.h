@@ -18,11 +18,41 @@ static PyObject *
 pysqlite_complete_statement(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #define NUM_KEYWORDS 1
+    #if NUM_KEYWORDS == 0
+
+    #  ifdef Py_BUILD_CORE
+    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #  else
+    #    define KWTUPLE NULL
+    #  endif
+
+    #else  // NUM_KEYWORDS != 0
+    #  ifdef Py_BUILD_CORE
+
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(statement), },
+    };
+    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #  else  // !Py_BUILD_CORE
+    #    define KWTUPLE NULL
+    #  endif  // !Py_BUILD_CORE
+    #endif  // NUM_KEYWORDS != 0
+    #undef NUM_KEYWORDS
+
     static const char * const _keywords[] = {"statement", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "complete_statement",
+        .kwtuple = KWTUPLE,
     };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     const char *statement;
 
@@ -185,4 +215,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=47aa91237d1f837b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=138cf82c3b333ef3 input=a9049054013a1b77]*/

@@ -1978,21 +1978,21 @@ parser_init(struct _PyArg_Parser *parser)
 {
     const char * const *keywords;
     const char *fname, *custommsg;
-    int len, pos, min, max;
+    int len, pos, min, max, owned;
     PyObject *kwtuple;
 
     keywords = parser->keywords;
     assert(keywords != NULL);
 
     if (parser->initialized) {
+        assert(parser->kwtuple != NULL);
         return 1;
     }
     assert(parser->pos == 0 &&
            (parser->format == NULL || parser->fname == NULL) &&
            parser->custom_msg == NULL &&
            parser->min == 0 &&
-           parser->max == 0 &&
-           parser->kwtuple == NULL);
+           parser->max == 0);
 
     if (scan_keywords(keywords, &len, &pos) < 0) {
         return 0;
@@ -2001,9 +2001,16 @@ parser_init(struct _PyArg_Parser *parser)
                                        &fname, &custommsg, &min, &max) < 0) {
         return 0;
     }
-    kwtuple = new_kwtuple(keywords, len, pos);
+    kwtuple = parser->kwtuple;
     if (kwtuple == NULL) {
-        return 0;
+        kwtuple = new_kwtuple(keywords, len, pos);
+        if (kwtuple == NULL) {
+            return 0;
+        }
+        owned = 1;
+    }
+    else {
+        owned = 0;
     }
 
     parser->pos = pos;
@@ -2012,7 +2019,7 @@ parser_init(struct _PyArg_Parser *parser)
     parser->min = min;
     parser->max = max;
     parser->kwtuple = kwtuple;
-    parser->initialized = 1;
+    parser->initialized = owned ? 1 : -1;
 
     assert(parser->next == NULL);
     parser->next = static_arg_parsers;
@@ -2023,7 +2030,9 @@ parser_init(struct _PyArg_Parser *parser)
 static void
 parser_clear(struct _PyArg_Parser *parser)
 {
-    Py_CLEAR(parser->kwtuple);
+    if (parser->initialized == 1) {
+        Py_CLEAR(parser->kwtuple);
+    }
 }
 
 static PyObject*
