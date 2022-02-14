@@ -6448,11 +6448,11 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     PyObject *hobj = NULL;
     PyObject *pobj = (PyObject *)NULL;
     char pbuf[30];
-    const char *hptr, *pptr;
+    struct maybe_idna host = {NULL, NULL};
+    const char *pptr;
     int family, socktype, protocol, flags;
     int error;
     PyObject *all = (PyObject *)NULL;
-    PyObject *idna = NULL;
 
     socktype = protocol = flags = 0;
     family = AF_UNSPEC;
@@ -6462,18 +6462,8 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         return NULL;
     }
     if (hobj == Py_None) {
-        hptr = NULL;
-    } else if (PyUnicode_Check(hobj)) {
-        idna = PyUnicode_AsEncodedString(hobj, "idna", NULL);
-        if (!idna)
-            return NULL;
-        assert(PyBytes_Check(idna));
-        hptr = PyBytes_AS_STRING(idna);
-    } else if (PyBytes_Check(hobj)) {
-        hptr = PyBytes_AsString(hobj);
-    } else {
-        PyErr_SetString(PyExc_TypeError,
-                        "getaddrinfo() argument 1 must be string or None");
+        /* use the NULL value of host.buf */
+    } else if (!idna_converter(hobj, &host)) {
         return NULL;
     }
     if (PyLong_CheckExact(pobj)) {
@@ -6515,7 +6505,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     hints.ai_protocol = protocol;
     hints.ai_flags = flags;
     Py_BEGIN_ALLOW_THREADS
-    error = getaddrinfo(hptr, pptr, &hints, &res0);
+    error = getaddrinfo(host.buf, pptr, &hints, &res0);
     Py_END_ALLOW_THREADS
     if (error) {
         set_gaierror(error);
@@ -6545,13 +6535,13 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         }
         Py_DECREF(single);
     }
-    Py_XDECREF(idna);
+    idna_cleanup(&host);
     if (res0)
         freeaddrinfo(res0);
     return all;
  err:
     Py_XDECREF(all);
-    Py_XDECREF(idna);
+    idna_cleanup(&host);
     if (res0)
         freeaddrinfo(res0);
     return (PyObject *)NULL;
