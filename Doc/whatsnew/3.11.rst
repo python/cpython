@@ -228,6 +228,12 @@ fractions
   (Contributed by Mark Dickinson in :issue:`44547`.)
 
 
+IDLE and idlelib
+----------------
+
+* Apply syntax highlighting to `.pyi` files. (Contributed by Alex
+  Waygood and Terry Jan Reedy in :issue:`45447`.)
+
 inspect
 -------
 * Add :func:`inspect.getmembers_static`: return all members without
@@ -708,6 +714,11 @@ New Features
 
   (Contributed by Christian Heimes in :issue:`45459`.)
 
+* Added the :c:data:`PyType_GetModuleByDef` function, used to get the module
+  in which a method was defined, in cases where this information is not
+  available directly (via :c:type:`PyCMethod`).
+  (Contributed by Petr Viktorin in :issue:`46613`.)
+
 
 Porting to Python 3.11
 ----------------------
@@ -869,8 +880,8 @@ Porting to Python 3.11
       #endif
 
   Or use `the pythoncapi_compat project
-  <https://github.com/pythoncapi/pythoncapi_compat>`__ to get these functions
-  on old Python functions.
+  <https://github.com/pythoncapi/pythoncapi_compat>`__ to get these APIs
+  on older Python versions.
 
 * Changes of the :c:type:`PyThreadState` structure members:
 

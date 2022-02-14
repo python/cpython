@@ -177,13 +177,13 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
 {
     /* Mark some opcodes as specializable for stats,
      * even though we don't specialize them yet. */
-    fprintf(out, "    opcode[%d].specializable : 1\n", FOR_ITER);
-    fprintf(out, "    opcode[%d].specializable : 1\n", PRECALL_FUNCTION);
-    fprintf(out, "    opcode[%d].specializable : 1\n", PRECALL_METHOD);
-    fprintf(out, "    opcode[%d].specializable : 1\n", UNPACK_SEQUENCE);
+    fprintf(out, "opcode[%d].specializable : 1\n", FOR_ITER);
+    fprintf(out, "opcode[%d].specializable : 1\n", PRECALL_FUNCTION);
+    fprintf(out, "opcode[%d].specializable : 1\n", PRECALL_METHOD);
+    fprintf(out, "opcode[%d].specializable : 1\n", UNPACK_SEQUENCE);
     for (int i = 0; i < 256; i++) {
         if (adaptive_opcodes[i]) {
-            fprintf(out, "    opcode[%d].specializable : 1\n", i);
+            fprintf(out, "opcode[%d].specializable : 1\n", i);
         }
         PRINT_STAT(i, specialization.success);
         PRINT_STAT(i, specialization.failure);
@@ -197,6 +197,12 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
             if (val) {
                 fprintf(out, "    opcode[%d].specialization.failure_kinds[%d] : %"
                     PRIu64 "\n", i, j, val);
+            }
+        }
+        for(int j = 0; j < 256; j++) {
+            if (stats[i].pair_count[j]) {
+                fprintf(out, "opcode[%d].pair_count[%d] : %" PRIu64 "\n",
+                        i, j, stats[i].pair_count[j]);
             }
         }
     }
@@ -1974,7 +1980,7 @@ int
     if (PyAsyncGen_CheckExact(iter)) {
         return SPEC_FAIL_FOR_ITER_ASYNC_GENERATOR;
     }
-    PyTypeObject *t = _Py_TYPE(iter);
+    PyTypeObject *t = Py_TYPE(iter);
     if (t == &PyListIter_Type) {
         return SPEC_FAIL_FOR_ITER_LIST;
     }

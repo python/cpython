@@ -106,6 +106,28 @@ Objects/unionobject.c	-	_Py_UnionType	-
 Objects/weakrefobject.c	-	_PyWeakref_CallableProxyType	-
 Objects/weakrefobject.c	-	_PyWeakref_ProxyType	-
 Objects/weakrefobject.c	-	_PyWeakref_RefType	-
+Python/bltinmodule.c	-	PyFilter_Type	-
+Python/bltinmodule.c	-	PyMap_Type	-
+Python/bltinmodule.c	-	PyZip_Type	-
+Python/context.c	-	PyContextToken_Type	-
+Python/context.c	-	PyContextVar_Type	-
+Python/context.c	-	PyContext_Type	-
+Python/context.c	-	_PyContextTokenMissing_Type	-
+Python/errors.c	-	UnraisableHookArgsType	-
+Python/hamt.c	-	_PyHamtItems_Type	-
+Python/hamt.c	-	_PyHamtKeys_Type	-
+Python/hamt.c	-	_PyHamtValues_Type	-
+Python/hamt.c	-	_PyHamt_ArrayNode_Type	-
+Python/hamt.c	-	_PyHamt_BitmapNode_Type	-
+Python/hamt.c	-	_PyHamt_CollisionNode_Type	-
+Python/hamt.c	-	_PyHamt_Type	-
+Python/symtable.c	-	PySTEntry_Type	-
+Python/sysmodule.c	-	AsyncGenHooksType	-
+Python/sysmodule.c	-	FlagsType	-
+Python/sysmodule.c	-	Hash_InfoType	-
+Python/sysmodule.c	-	VersionInfoType	-
+Python/thread.c	-	ThreadInfoType	-
+Python/traceback.c	-	PyTraceBack_Type	-
 
 #-----------------------
 # builtin exception types
@@ -306,12 +328,20 @@ Python/compile.c	compiler_visit_annotations	return_str	-
 Python/import.c	PyImport_Import	builtins_str	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/import.c	PyImport_Import	import_str	-
+Python/symtable.c	-	__class__	-
+Python/symtable.c	-	_annotation	-
+Python/symtable.c	-	dictcomp	-
+Python/symtable.c	-	genexpr	-
+Python/symtable.c	-	lambda	-
+Python/symtable.c	-	listcomp	-
+Python/symtable.c	-	setcomp	-
+Python/symtable.c	-	top	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/sysmodule.c	-	whatstrings	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/sysmodule.c	sys_displayhook	newline	-
 
-# _PyArg_Parser
+# _PyArg_Parser (holds tuple of strings)
 Objects/clinic/bytearrayobject.c.h	bytearray___init__	_parser	-
 Objects/clinic/bytearrayobject.c.h	bytearray_decode	_parser	-
 Objects/clinic/bytearrayobject.c.h	bytearray_hex	_parser	-
@@ -367,6 +397,9 @@ Python/clinic/sysmodule.c.h	sys_addaudithook	_parser	-
 Python/clinic/sysmodule.c.h	sys_set_coroutine_origin_tracking_depth	_parser	-
 Python/clinic/traceback.c.h	tb_new	_parser	-
 
+# holds strings
+Objects/typeobject.c	-	slotdefs	-
+
 # other
 Objects/typeobject.c	-	method_cache	-
 Objects/unicodeobject.c	-	_string_module	-
@@ -400,29 +433,73 @@ Python/import.c	-	extensions	-
 # global non-objects to fix in core code
 
 #-----------------------
-# initialized once
+# initialized/set once
 
 # pre-allocated buffer
 Modules/getbuildinfo.c	Py_GetBuildInfo	buildinfo	-
 
 # during init
+Objects/typeobject.c	-	slotdefs_initialized	-
+Objects/unicodeobject.c	-	bloom_linebreak	-
 Parser/parser.c	-	Py_DebugFlag	-
+Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
+Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
+Python/pyhash.c	-	_Py_HashSecret	-
+Python/pylifecycle.c	-	runtime_initialized	-
+Python/sysmodule.c	-	_PySys_ImplCacheTag	-
+Python/sysmodule.c	-	_PySys_ImplName	-
+Python/sysmodule.c	-	_preinit_warnoptions	-
+Python/sysmodule.c	-	_preinit_xoptions	-
+Python/thread.c	-	thread_debug	-
+Python/thread.c	-	initialized	-
 
-# other
-Objects/codeobject.c	PyCode_NewEmpty	nulltuple	-
+# lazy
+Objects/floatobject.c	-	double_format	-
+Objects/floatobject.c	-	float_format	-
+Objects/floatobject.c	-	detected_double_format	-
+Objects/floatobject.c	-	detected_float_format	-
 Objects/longobject.c	PyLong_FromString	log_base_BASE	-
 Objects/longobject.c	PyLong_FromString	convwidth_base	-
 Objects/longobject.c	PyLong_FromString	convmultmax_base	-
-Objects/typeobject.c	-	slotdefs	-
-Objects/typeobject.c	-	slotdefs_initialized	-
-Objects/unicodeobject.c	-	bloom_linebreak	-
 Objects/unicodeobject.c	-	ucnhash_capi	-
 Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
-Parser/pegen.c	_PyPegen_dummy_name	cache	-
+Python/dtoa.c	-	p5s	-
+Python/fileutils.c	-	force_ascii	-
+Python/fileutils.c	set_inheritable	ioctl_works	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/import.c	-	import_lock	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/import.c	import_find_and_load	header	-
+Python/specialize.c	-	_list_append	-
+
+#-----------------------
+# unlikely to change after init (or main thread)
+
+# through C-API
+Python/frozen.c	-	PyImport_FrozenModules	-
+Python/frozen.c	-	_PyImport_FrozenAliases	-
+Python/frozen.c	-	_PyImport_FrozenBootstrap	-
+Python/frozen.c	-	_PyImport_FrozenStdlib	-
+Python/frozen.c	-	_PyImport_FrozenTest	-
+Python/import.c	-	inittab_copy	-
+Python/import.c	-	PyImport_Inittab	-
+Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
+Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
+Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-
+Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	-
+
+# REPL
+Parser/myreadline.c	-	_PyOS_ReadlineLock	-
+Parser/myreadline.c	-	_PyOS_ReadlineTState	-
+Parser/myreadline.c	-	PyOS_InputHook	-
+Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
+
+# handling C argv
+Python/getopt.c	-	_PyOS_optarg	-
+Python/getopt.c	-	_PyOS_opterr	-
+Python/getopt.c	-	_PyOS_optind	-
+Python/getopt.c	-	opt_ptr	-
+Python/pathconfig.c	-	_Py_path_config	-
 
 #-----------------------
 # state
@@ -444,20 +521,22 @@ Objects/obmalloc.c	-	unused_arena_objects	-
 Objects/obmalloc.c	-	usable_arenas	-
 Objects/obmalloc.c	new_arena	debug_stats	-
 
-# REPL
-Parser/myreadline.c	-	_PyOS_ReadlineLock	-
-Parser/myreadline.c	-	_PyOS_ReadlineTState	-
-Parser/myreadline.c	-	PyOS_InputHook	-
-Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
+# pre-allocated memory
+Python/dtoa.c	-	freelist	-
+Python/dtoa.c	-	private_mem	-
+
+# local buffer
+Python/getversion.c	Py_GetVersion	version	-
+Python/suggestions.c	levenshtein_distance	buffer	-
+
+# linked list
+Python/dtoa.c	-	pmem_next	-
+Python/getargs.c	-	static_arg_parsers	-
 
 # other
 Objects/dictobject.c	-	_pydict_global_version	-
 Objects/dictobject.c	-	next_dict_keys_version	-
 Objects/dictobject.c	-	pydict_global_version	-
-Objects/floatobject.c	-	double_format	-
-Objects/floatobject.c	-	float_format	-
-Objects/floatobject.c	-	detected_double_format	-
-Objects/floatobject.c	-	detected_float_format	-
 Objects/funcobject.c	-	next_func_version	-
 Objects/moduleobject.c	-	max_module_number	-
 Objects/object.c	-	_Py_RefTotal	-
@@ -480,10 +559,14 @@ Python/import.c	-	import_lock_thread	-
 Python/import.c	import_find_and_load	accumulated	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/import.c	import_find_and_load	import_level	-
+Python/modsupport.c	-	_Py_PackageContext	-
+Python/pyfpe.c	-	PyFPE_counter	-
+Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/pylifecycle.c	-	_Py_UnhandledKeyboardInterrupt	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/pylifecycle.c	fatal_error	reentrant	-
+Python/specialize.c	-	_Py_QuickenedCount	-
 
 
 ##################################

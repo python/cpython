@@ -3714,13 +3714,9 @@ PyType_GetModuleState(PyTypeObject *type)
 
 /* Get the module of the first superclass where the module has the
  * given PyModuleDef.
- * Implemented by walking the MRO, is relatively slow.
- *
- * This is internal API for experimentation within stdlib. Discussion:
- * https://mail.python.org/archives/list/capi-sig@python.org/thread/T3P2QNLNLBRFHWSKYSTPMVEIL2EEKFJU/
  */
 PyObject *
-_PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
+PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
 {
     assert(PyType_Check(type));
 
@@ -3749,7 +3745,7 @@ _PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
 
     PyErr_Format(
         PyExc_TypeError,
-        "_PyType_GetModuleByDef: No superclass of '%s' has the given module",
+        "PyType_GetModuleByDef: No superclass of '%s' has the given module",
         type->tp_name);
     return NULL;
 }
