@@ -1820,7 +1820,7 @@ for ``None``.  This reads like plain English in code and avoids confusion with
 other objects that may have boolean values that evaluate to false.
 
 2) Detecting optional arguments can be tricky when ``None`` is a valid input
-value.  In those situations, you can create an singleton sentinel object
+value.  In those situations, you can create a singleton sentinel object
 guaranteed to be distinct from other objects.  For example, here is how
 to implement a method that behaves like :meth:`dict.pop`::
 
