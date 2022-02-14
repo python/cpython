@@ -610,6 +610,11 @@ initial_counter_value(void) {
 #define SPEC_FAIL_FOR_ITER_DICT_VALUES 22
 #define SPEC_FAIL_FOR_ITER_ENUMERATE 23
 
+// UNPACK_SEQUENCE
+
+#define SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR 8
+#define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 9
+
 
 static int
 specialize_module_load_attr(
@@ -1956,7 +1961,17 @@ _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
         *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_LIST, _Py_OPARG(*instr));
         goto success;
     }
-    SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_OTHER);
+    if (PyIter_Check(seq)) {
+        SPECIALIZATION_FAIL(UNPACK_SEQUENCE,
+                            SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR);
+    }
+    else if (PySequence_Check(seq)) {
+        SPECIALIZATION_FAIL(UNPACK_SEQUENCE,
+                            SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE);
+    }
+    else {
+        SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_OTHER);
+    }
 failure:
     STAT_INC(UNPACK_SEQUENCE, failure);
     cache_backoff(adaptive);
