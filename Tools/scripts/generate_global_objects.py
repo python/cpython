@@ -114,7 +114,7 @@ IDENTIFIERS = [
 # helpers
 
 def iter_identifiers():
-    regex = re.compile(r'^.*_Py_ID\((\w+)\)')
+    regex = re.compile(r'\b_Py_ID\((\w+)\)')
     for dirname, _, files in os.walk(ROOT):
         if os.path.relpath(dirname, ROOT).startswith('Include'):
             continue
@@ -124,8 +124,7 @@ def iter_identifiers():
             filename = os.path.join(dirname, name)
             with open(os.path.join(filename), encoding='utf-8') as infile:
                 for line in infile:
-                    m = regex.match(line)
-                    if m:
+                    for m in regex.finditer(line):
                         identifier, = m.groups()
                         yield identifier, filename, line
 
