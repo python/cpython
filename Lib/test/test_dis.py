@@ -705,7 +705,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_test(code_bug_45757, dis_bug_45757)
 
     def test_bug_46724(self):
-        # Test that overflow operargs wrap
+        # Test that negative operargs are handled properly
         self.do_disassembly_test(bug46724, dis_bug46724)
 
     def test_big_linenos(self):
