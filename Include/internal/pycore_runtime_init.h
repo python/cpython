@@ -934,7 +934,7 @@ extern "C" {
         }, \
         \
         .tuple_empty = { \
-            .ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0) \
+            _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0) \
         }, \
     }, \
 }
