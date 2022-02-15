@@ -912,16 +912,6 @@ static PyMappingMethods tuple_as_mapping = {
 
 static PyObject *tuple_iter(PyObject *seq);
 
-static int
-tuple_is_gc(PyObject *op)
-{
-    // Global objects are never GC.
-    if (op == tuple_get_empty()) {
-        return 0;
-    }
-    return 1;
-}
-
 PyTypeObject PyTuple_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "tuple",
@@ -965,7 +955,6 @@ PyTypeObject PyTuple_Type = {
     tuple_new,                                  /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = tuple_vectorcall,
-    .tp_is_gc = tuple_is_gc,
 };
 
 /* The following function breaks the notion that tuples are immutable:
