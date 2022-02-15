@@ -100,7 +100,7 @@ tuple_alloc(Py_ssize_t size)
     return op;
 }
 
-static PyObject *
+static inline PyObject *
 tuple_get_empty(void)
 {
 #if PyTuple_MAXSAVESIZE > 0
