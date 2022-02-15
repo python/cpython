@@ -14,7 +14,6 @@ typedef struct {
     PyObject *parameters;
     PyObject* weakreflist;
     // Whether we're a starred type, e.g. *tuple[int].
-    // Only supported for `tuple`.
     bool starred;
 } gaobject;
 
@@ -648,13 +647,13 @@ ga_iternext(gaiterobject *gi) {
         return NULL;
     }
     gaobject *alias = (gaobject *)gi->obj;
-    PyObject *starred_tuple = Py_GenericAlias(alias->origin, alias->args);
-    if (starred_tuple == NULL) {
+    PyObject *starred_alias = Py_GenericAlias(alias->origin, alias->args);
+    if (starred_alias == NULL) {
         return NULL;
     }
-    ((gaobject *)starred_tuple)->starred = true;
+    ((gaobject *)starred_alias)->starred = true;
     Py_SETREF(gi->obj, NULL);
-    return starred_tuple;
+    return starred_alias;
 }
 
 static void
