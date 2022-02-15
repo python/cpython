@@ -128,6 +128,8 @@ typedef struct basicblock_ {
     unsigned b_nofallthrough : 1;
     /* Basic block exits scope (it ends with a return or raise) */
     unsigned b_exit : 1;
+    /* Used by compiler passes to mark whether they have visited a basic block. */
+    unsigned b_visited : 1;
     /* depth of stack upon entry of block, computed by stackdepth() */
     int b_startdepth;
     /* instruction offset for block, computed by assemble_jump_offsets() */
@@ -6702,6 +6704,31 @@ assemble_emit(struct assembler *a, struct instr *i)
 }
 
 static void
+normalize_jumps(struct assembler *a)
+{
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        b->b_visited = 0;
+    }
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        b->b_visited = 1;
+        if (b->b_iused == 0) {
+            continue;
+        }
+        struct instr *last = &b->b_instr[b->b_iused-1];
+        if (last->i_opcode == JUMP_ABSOLUTE) {
+            if (last->i_target->b_visited == 0) {
+                last->i_opcode = JUMP_FORWARD;
+            }
+        }
+        if (last->i_opcode == JUMP_FORWARD) {
+            if (last->i_target->b_visited == 1) {
+                last->i_opcode = JUMP_ABSOLUTE;
+            }
+        }
+    }
+}
+
+static void
 assemble_jump_offsets(struct assembler *a, struct compiler *c)
 {
     basicblock *b;
@@ -7137,6 +7164,10 @@ assemble(struct compiler *c, int addNone)
     }
     propagate_line_numbers(&a);
     guarantee_lineno_for_exits(&a, c->u->u_firstlineno);
+
+    /* Order of basic blocks must have been determined by now */
+    normalize_jumps(&a);
+
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
 
