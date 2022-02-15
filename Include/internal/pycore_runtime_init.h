@@ -644,12 +644,6 @@ extern "C" {
         \
         .strings = { \
             .literals = { \
-                INIT_STR(empty, ""), \
-                INIT_STR(dot, "."), \
-                INIT_STR(comma_sep, ", "), \
-                INIT_STR(percent, "%"), \
-                INIT_STR(dbl_percent, "%%"), \
-                \
                 INIT_STR(anon_dictcomp, "<dictcomp>"), \
                 INIT_STR(anon_genexpr, "<genexpr>"), \
                 INIT_STR(anon_lambda, "<lambda>"), \
@@ -657,7 +651,12 @@ extern "C" {
                 INIT_STR(anon_module, "<module>"), \
                 INIT_STR(anon_setcomp, "<setcomp>"), \
                 INIT_STR(anon_string, "<string>"), \
+                INIT_STR(comma_sep, ", "), \
+                INIT_STR(dbl_percent, "%%"), \
+                INIT_STR(dot, "."), \
                 INIT_STR(dot_locals, ".<locals>"), \
+                INIT_STR(empty, ""), \
+                INIT_STR(percent, "%"), \
             }, \
             .identifiers = { \
                 INIT_ID(Py_Repr), \

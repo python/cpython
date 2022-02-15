@@ -174,13 +174,13 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
 {
     /* Mark some opcodes as specializable for stats,
      * even though we don't specialize them yet. */
-    fprintf(out, "    opcode[%d].specializable : 1\n", FOR_ITER);
-    fprintf(out, "    opcode[%d].specializable : 1\n", PRECALL_FUNCTION);
-    fprintf(out, "    opcode[%d].specializable : 1\n", PRECALL_METHOD);
-    fprintf(out, "    opcode[%d].specializable : 1\n", UNPACK_SEQUENCE);
+    fprintf(out, "opcode[%d].specializable : 1\n", FOR_ITER);
+    fprintf(out, "opcode[%d].specializable : 1\n", PRECALL_FUNCTION);
+    fprintf(out, "opcode[%d].specializable : 1\n", PRECALL_METHOD);
+    fprintf(out, "opcode[%d].specializable : 1\n", UNPACK_SEQUENCE);
     for (int i = 0; i < 256; i++) {
         if (adaptive_opcodes[i]) {
-            fprintf(out, "    opcode[%d].specializable : 1\n", i);
+            fprintf(out, "opcode[%d].specializable : 1\n", i);
         }
         PRINT_STAT(i, specialization.success);
         PRINT_STAT(i, specialization.failure);
@@ -194,6 +194,12 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
             if (val) {
                 fprintf(out, "    opcode[%d].specialization.failure_kinds[%d] : %"
                     PRIu64 "\n", i, j, val);
+            }
+        }
+        for(int j = 0; j < 256; j++) {
+            if (stats[i].pair_count[j]) {
+                fprintf(out, "opcode[%d].pair_count[%d] : %" PRIu64 "\n",
+                        i, j, stats[i].pair_count[j]);
             }
         }
     }
@@ -602,8 +608,26 @@ initial_counter_value(void) {
 #define SPEC_FAIL_FOR_ITER_ENUMERATE 23
 
 /* UNPACK_SEQUENCE */
-#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE 10
-#define SPEC_FAIL_UNPACK_SEQUENCE_LIST 11
+#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_0 9
+#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_1 10
+#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_2 11
+#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_3 12
+#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_4 13
+#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_N 14
+
+#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_0 15
+#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_1 16
+#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_2 17
+#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_3 18
+#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_4 19
+#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_N 20
+
+#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_0 21
+#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_1 22
+#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_2 23
+#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_3 24
+#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_4 25
+#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_N 26
 
 
 static int
@@ -1978,15 +2002,19 @@ int
 }
 
 int
-_PySpecialization_ClassifySequence(PyObject *seq)
+_PySpecialization_ClassifySequence(PyObject *seq, int n)
 {
+    assert(n >= 0);
+    if (n > 4) {
+        n = 5;
+    }
     if (PyTuple_CheckExact(seq)) {
-        return SPEC_FAIL_UNPACK_SEQUENCE_TUPLE;
+        return SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_0 + n;
     }
     if (PyList_CheckExact(seq)) {
-        return SPEC_FAIL_UNPACK_SEQUENCE_LIST;
+        return SPEC_FAIL_UNPACK_SEQUENCE_LIST_0 + n;
     }
-    return SPEC_FAIL_OTHER;
+    return SPEC_FAIL_UNPACK_SEQUENCE_OTHER_0 + n;
 }
 
 int
