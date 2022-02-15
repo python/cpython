@@ -517,9 +517,9 @@ disco = disassemble                     # XXX For backwards compatibility
 
 
 # Rely on C `int` being 32 bits for oparg
-INT_BITS = 32
+_INT_BITS = 32
 # Maximum value for a c int
-INT_MAX = 2 ** (INT_BITS - 1)
+_INT_MAX = 2 ** (_INT_BITS - 1)
 
 def _unpack_opargs(code):
     extended_arg = 0
