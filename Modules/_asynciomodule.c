@@ -1,6 +1,7 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
+#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()

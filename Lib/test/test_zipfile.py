@@ -21,8 +21,10 @@ from random import randint, random, randbytes
 
 from test.support import script_helper
 from test.support import (findfile, requires_zlib, requires_bz2,
-                          requires_lzma, captured_stdout)
-from test.support.os_helper import TESTFN, unlink, rmtree, temp_dir, temp_cwd
+                          requires_lzma, captured_stdout, requires_subprocess)
+from test.support.os_helper import (
+    TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count
+)
 
 
 TESTFN2 = TESTFN + "2"
@@ -2539,14 +2541,14 @@ class TestsWithMultipleOpens(unittest.TestCase):
     def test_many_opens(self):
         # Verify that read() and open() promptly close the file descriptor,
         # and don't rely on the garbage collector to free resources.
+        startcount = fd_count()
         self.make_test_archive(TESTFN2)
         with zipfile.ZipFile(TESTFN2, mode="r") as zipf:
             for x in range(100):
                 zipf.read('ones')
                 with zipf.open('ones') as zopen1:
                     pass
-        with open(os.devnull, "rb") as f:
-            self.assertLess(f.fileno(), 100)
+        self.assertEqual(startcount, fd_count())
 
     def test_write_while_reading(self):
         with zipfile.ZipFile(TESTFN2, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -2771,6 +2773,7 @@ class TestExecutablePrependedZip(unittest.TestCase):
     @unittest.skipUnless(sys.executable, 'sys.executable required.')
     @unittest.skipUnless(os.access('/bin/bash', os.X_OK),
                          'Test relies on #!/bin/bash working.')
+    @requires_subprocess()
     def test_execute_zip2(self):
         output = subprocess.check_output([self.exe_zip, sys.executable])
         self.assertIn(b'number in executable: 5', output)
@@ -2778,6 +2781,7 @@ class TestExecutablePrependedZip(unittest.TestCase):
     @unittest.skipUnless(sys.executable, 'sys.executable required.')
     @unittest.skipUnless(os.access('/bin/bash', os.X_OK),
                          'Test relies on #!/bin/bash working.')
+    @requires_subprocess()
     def test_execute_zip64(self):
         output = subprocess.check_output([self.exe_zip64, sys.executable])
         self.assertIn(b'number in executable: 5', output)

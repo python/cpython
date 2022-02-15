@@ -962,7 +962,7 @@ _PyTime_GetSystemClockWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
 }
 
 
-#if __APPLE__
+#ifdef __APPLE__
 static int
 py_mach_timebase_info(_PyTime_t *pnumer, _PyTime_t *pdenom, int raise)
 {

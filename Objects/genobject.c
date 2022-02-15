@@ -320,7 +320,6 @@ static int
 gen_close_iter(PyObject *yf)
 {
     PyObject *retval = NULL;
-    _Py_IDENTIFIER(close);
 
     if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
         retval = gen_close((PyGenObject *)yf, NULL);
@@ -329,7 +328,7 @@ gen_close_iter(PyObject *yf)
     }
     else {
         PyObject *meth;
-        if (_PyObject_LookupAttrId(yf, &PyId_close, &meth) < 0) {
+        if (_PyObject_LookupAttr(yf, &_Py_ID(close), &meth) < 0) {
             PyErr_WriteUnraisable(yf);
         }
         if (meth) {
@@ -353,7 +352,7 @@ _PyGen_yf(PyGenObject *gen)
         PyObject *bytecode = gen->gi_code->co_code;
         unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
 
-        if (frame->f_lasti < 0) {
+        if (frame->f_lasti < 1) {
             /* Return immediately if the frame didn't start yet. SEND
                always come after LOAD_CONST: a code object should not start
                with SEND */
@@ -361,7 +360,7 @@ _PyGen_yf(PyGenObject *gen)
             return NULL;
         }
 
-        if (code[frame->f_lasti*sizeof(_Py_CODEUNIT)] != SEND || frame->stacktop < 0)
+        if (code[(frame->f_lasti-1)*sizeof(_Py_CODEUNIT)] != SEND || frame->stacktop < 0)
             return NULL;
         yf = _PyFrame_StackPeek(frame);
         Py_INCREF(yf);
@@ -417,7 +416,6 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
            PyObject *typ, PyObject *val, PyObject *tb)
 {
     PyObject *yf = _PyGen_yf(gen);
-    _Py_IDENTIFIER(throw);
 
     if (yf) {
         InterpreterFrame *frame = (InterpreterFrame *)gen->gi_iframe;
@@ -462,7 +460,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
             PyObject *meth;
-            if (_PyObject_LookupAttrId(yf, &PyId_throw, &meth) < 0) {
+            if (_PyObject_LookupAttr(yf, &_Py_ID(throw), &meth) < 0) {
                 Py_DECREF(yf);
                 return NULL;
             }
@@ -488,6 +486,8 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             assert(frame->f_lasti >= 0);
             PyObject *bytecode = gen->gi_code->co_code;
             unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
+            /* Backup to SEND */
+            frame->f_lasti--;
             assert(code[frame->f_lasti*sizeof(_Py_CODEUNIT)] == SEND);
             int jump = code[frame->f_lasti*sizeof(_Py_CODEUNIT)+1];
             frame->f_lasti += jump;
