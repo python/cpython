@@ -219,43 +219,20 @@ dis_bug_45757 = """\
        RETURN_VALUE
 """
 
-# Result of compile("while not (a < b < c):\n    pass", "", "exec").co_code
-# but added as constant to make agnostic to compile behavior
-bug46724 = b'\x97\x00e\x00e\x01c\x02x\x02k\x00r\x0be\x02k\x00s\x1dn\x01\x01\x00\t\x00e\x00e\x01c\x02x\x02k\x00r\x18e\x02k\x00r\x0cd\x00S\x00\x01\x00\x90\xff\x90\xff\x90\xffn\xefd\x00S\x00'
+# [255, 255, 255, 252] is -4 in a 4 byte signed integer
+bug46724 = bytes([
+    144, 255, # EXTENDED_ARG
+    144, 255,
+    144, 255,
+    110, 252, # JUMP_FORWARD
+])
 
 
 dis_bug46724 = """\
-          0 RESUME                   0
-          2 LOAD_NAME                0
-          4 LOAD_NAME                1
-          6 SWAP                     2
-          8 COPY                     2
-         10 COMPARE_OP               0 (<)
-         12 POP_JUMP_IF_FALSE       11 (to 22)
-         14 LOAD_NAME                2
-         16 COMPARE_OP               0 (<)
-         18 POP_JUMP_IF_TRUE        29 (to 58)
-         20 JUMP_FORWARD             1 (to 24)
-    >>   22 POP_TOP
-    >>   24 NOP
-         26 LOAD_NAME                0
-         28 LOAD_NAME                1
-         30 SWAP                     2
-         32 COPY                     2
-         34 COMPARE_OP               0 (<)
-         36 POP_JUMP_IF_FALSE       24 (to 48)
-         38 LOAD_NAME                2
-         40 COMPARE_OP               0 (<)
-         42 POP_JUMP_IF_FALSE       12 (to 24)
-         44 LOAD_CONST               0
-         46 RETURN_VALUE
-    >>   48 POP_TOP
-         50 EXTENDED_ARG           255
-         52 EXTENDED_ARG         65535
-         54 EXTENDED_ARG         16777215
-         56 JUMP_FORWARD           -17 (to 24)
-    >>   58 LOAD_CONST               0
-         60 RETURN_VALUE
+    >>    0 EXTENDED_ARG           255
+          2 EXTENDED_ARG         65535
+          4 EXTENDED_ARG         16777215
+          6 JUMP_FORWARD            -4 (to 0)
 """
 
 _BIG_LINENO_FORMAT = """\
