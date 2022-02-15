@@ -25,6 +25,8 @@ TypeError: 42
 """
         )
             self.assertEqual(tb, expected)
+            else: 
+                self.fail('TypeError not raised')
 
         
     async def test_recursive_repr_for_pending_tasks(self):
