@@ -9,10 +9,6 @@ def tearDownModule():
     asyncio.set_event_loop_policy(None)
 
 
-def tearDownModule():
-    asyncio.set_event_loop_policy(None)
-
-
 class FutureTests(unittest.IsolatedAsyncioTestCase):
     maxDiff = None
 
