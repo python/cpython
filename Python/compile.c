@@ -667,6 +667,7 @@ compiler_set_qualname(struct compiler *c)
                 || parent->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION
                 || parent->u_scope_type == COMPILER_SCOPE_LAMBDA)
             {
+                _Py_DECLARE_STR(dot_locals, ".<locals>");
                 base = PyUnicode_Concat(parent->u_qualname,
                                         &_Py_STR(dot_locals));
                 if (base == NULL)
@@ -2022,6 +2023,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
 {
     PyCodeObject *co;
     int addNone = 1;
+    _Py_DECLARE_STR(anon_module, "<module>");
     if (!compiler_enter_scope(c, &_Py_STR(anon_module), COMPILER_SCOPE_MODULE,
                               mod, 1)) {
         return NULL;
@@ -2876,6 +2878,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         return 0;
     }
 
+    _Py_DECLARE_STR(anon_lambda, "<lambda>");
     if (!compiler_enter_scope(c, &_Py_STR(anon_lambda), COMPILER_SCOPE_LAMBDA,
                               (void *)e, e->lineno)) {
         return 0;
@@ -5347,6 +5350,7 @@ static int
 compiler_genexp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == GeneratorExp_kind);
+    _Py_DECLARE_STR(anon_genexpr, "<genexpr>");
     return compiler_comprehension(c, e, COMP_GENEXP, &_Py_STR(anon_genexpr),
                                   e->v.GeneratorExp.generators,
                                   e->v.GeneratorExp.elt, NULL);
@@ -5356,6 +5360,7 @@ static int
 compiler_listcomp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == ListComp_kind);
+    _Py_DECLARE_STR(anon_listcomp, "<listcomp>");
     return compiler_comprehension(c, e, COMP_LISTCOMP, &_Py_STR(anon_listcomp),
                                   e->v.ListComp.generators,
                                   e->v.ListComp.elt, NULL);
@@ -5365,6 +5370,7 @@ static int
 compiler_setcomp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == SetComp_kind);
+    _Py_DECLARE_STR(anon_setcomp, "<setcomp>");
     return compiler_comprehension(c, e, COMP_SETCOMP, &_Py_STR(anon_setcomp),
                                   e->v.SetComp.generators,
                                   e->v.SetComp.elt, NULL);
@@ -5375,6 +5381,7 @@ static int
 compiler_dictcomp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == DictComp_kind);
+    _Py_DECLARE_STR(anon_dictcomp, "<dictcomp>");
     return compiler_comprehension(c, e, COMP_DICTCOMP, &_Py_STR(anon_dictcomp),
                                   e->v.DictComp.generators,
                                   e->v.DictComp.key, e->v.DictComp.value);
