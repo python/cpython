@@ -506,8 +506,10 @@ class BaseTaskTests:
         try:
             t = self.new_task(loop, task())
             self.assertFalse(t.cancelling())
+            self.assertNotIn(" cancelling ", repr(t))
             self.assertTrue(t.cancel())
             self.assertTrue(t.cancelling())
+            self.assertIn(" cancelling ", repr(t))
             self.assertFalse(t.cancel())
 
             with self.assertRaises(asyncio.CancelledError):
@@ -529,7 +531,9 @@ class BaseTaskTests:
             t = self.new_task(loop, task())
             loop.run_until_complete(asyncio.sleep(0.01))
             self.assertTrue(t.cancel())  # Cancel first sleep
+            self.assertIn(" cancelling ", repr(t))
             loop.run_until_complete(asyncio.sleep(0.01))
+            self.assertNotIn(" cancelling ", repr(t))  # after .uncancel()
             self.assertTrue(t.cancel())  # Cancel second sleep
 
             with self.assertRaises(asyncio.CancelledError):
