@@ -29,7 +29,7 @@ can be customized by end users easily.
 .. note::
 
    This library does *not* interpret or write the value-type prefixes used in
-   the Windows Registry extended version of INI syntax.
+   the Windows Registry extended version of INI syntax. 
 
 .. seealso::
 
@@ -266,6 +266,9 @@ in which case the key/value delimiter may also be left
 out.  Values can also span multiple lines, as long as they are indented deeper
 than the first line of the value.  Depending on the parser's mode, blank lines
 may be treated as parts of multiline values or ignored.
+
+By default,  a legal section name can be any string that does not contain '\\n' or ']'.  
+To change this, see :attr:`ConfigParser.SECTCRE`.
 
 Configuration files may include comments, prefixed by specific
 characters (``#`` and ``;`` by default [1]_).  Comments may appear on
