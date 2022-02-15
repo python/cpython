@@ -421,12 +421,15 @@ class TypeVarTupleTests(BaseTestCase):
         with self.assertRaises(TypeError):
             class C(Unpack[Ts]): pass
 
-    def test_variadic_class_accepts_arbitrary_number_of_parameters(self):
+    def test_variadic_class_args_are_correct(self):
         Ts = TypeVarTuple('Ts')
-        class C(Generic[Unpack[Ts]]): pass
-        C[()]
-        C[int]
-        C[int, str]
+        class A(Generic[Unpack[Ts]]): pass
+        B = A[()]
+        self.assertEqual(B.__args__, ())
+        C = A[int]
+        self.assertEqual(C.__args__, (int,))
+        D = A[int, str]
+        self.assertEqual(D.__args__, (int, str))
 
     def test_variadic_class_with_duplicate_typevartuples_fails(self):
         Ts1 = TypeVarTuple('Ts1')
