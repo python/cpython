@@ -3,13 +3,15 @@
 
 __all__ = ["TaskGroup"]
 
-import asyncio
 import itertools
 import textwrap
 import traceback
 import types
 import weakref
 
+from . import events
+from . import exceptions
+from . import tasks
 
 class TaskGroup:
 
@@ -56,9 +58,9 @@ class TaskGroup:
         self._entered = True
 
         if self._loop is None:
-            self._loop = asyncio.get_running_loop()
+            self._loop = events.get_running_loop()
 
-        self._parent_task = asyncio.current_task(self._loop)
+        self._parent_task = tasks.current_task(self._loop)
         if self._parent_task is None:
             raise RuntimeError(
                 f'TaskGroup {self!r} cannot determine the parent task')
@@ -74,7 +76,7 @@ class TaskGroup:
                 self._base_error is None):
             self._base_error = exc
 
-        if et is asyncio.CancelledError:
+        if et is exceptions.CancelledError:
             if self._parent_cancel_requested:
                 # Only if we did request task to cancel ourselves
                 # we mark it as no longer cancelled.
@@ -89,7 +91,7 @@ class TaskGroup:
             #        g.create_task(...)
             #        await ...  # <- CancelledError
             #
-            if et is asyncio.CancelledError:
+            if et is exceptions.CancelledError:
                 propagate_cancellation_error = et
 
             # or there's an exception in "async with":
@@ -110,7 +112,7 @@ class TaskGroup:
 
             try:
                 await self._on_completed_fut
-            except asyncio.CancelledError as ex:
+            except exceptions.CancelledError as ex:
                 if not self._aborting:
                     # Our parent task is being cancelled:
                     #
@@ -137,7 +139,7 @@ class TaskGroup:
             # request now.
             raise propagate_cancellation_error
 
-        if et is not None and et is not asyncio.CancelledError:
+        if et is not None and et is not exceptions.CancelledError:
             self._errors.append(exc)
 
         if self._errors:
