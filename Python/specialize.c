@@ -1846,8 +1846,7 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 goto success;
             }
             if (PyLong_CheckExact(lhs)) {
-                *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_INT,
-                                          _Py_OPARG(*instr));
+                *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_INT, _Py_OPARG(*instr));
                 goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
@@ -1890,10 +1889,11 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
             break;
 #ifndef Py_STATS
         default:
-            // These operators don't have any specializations. Convert them back
-            // to BINARY_OP to avoid repeated failed specialization attempts.
-            // (Skip this when collecting stats, though, to get accurate hit
-            // counts for unadaptive version and each of the failure types).
+            // These operators don't have any available specializations. Rather
+            // than repeatedly attempting to specialize them, just convert them
+            // back to BINARY_OP (unless we're collecting stats, where it's more
+            // important to get accurate hit counts for the unadaptive version
+            // and each of the different failure types):
             *instr = _Py_MAKECODEUNIT(BINARY_OP, adaptive->original_oparg);
             return;
 #endif
