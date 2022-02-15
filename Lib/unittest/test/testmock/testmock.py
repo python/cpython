@@ -325,6 +325,20 @@ class MockTest(unittest.TestCase):
             "call_args_list not set")
 
 
+    def test_not_called_descriptor_protocol(self):
+        import types
+        class A:
+            @property
+            def name(self):
+                raise NotImplementedError
+            @types.DynamicClassAttribute
+            def eggs(self):
+                raise NotImplementedError
+
+        self.assertIsInstance(Mock(spec=A), A)
+        self.assertIsInstance(Mock(spec=A()), A)
+
+
     def test_call_args_comparison(self):
         mock = Mock()
         mock()

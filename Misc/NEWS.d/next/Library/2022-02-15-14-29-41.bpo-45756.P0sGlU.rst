@@ -1,0 +1,2 @@
+Fix :mod:`unittest.mock` triggers dynamic lookup via the descriptor
+protocol. Patch by Weipeng Hong.
