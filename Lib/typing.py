@@ -231,58 +231,16 @@ def _collect_type_vars(types_, typevar_types=None):
     return tuple(tvars)
 
 
-def _check_type_parameter_count(cls, type_params):
-    """Checks whether number of type parameters to a generic class is correct.
-
-    This function uses introspection on `cls` to determine the expected number
-    of type parameters, and gives a nice error message in case of count
-    mismatch.
+def _check_generic(cls, parameters, elen):
+    """Check correct count for parameters of a generic cls (internal helper).
+    This gives a nice error message in case of count mismatch.
     """
-    actual_num_type_params = len(type_params)
-
-    # First, can we determine the exact number of type parameters expected?
-
-    if isinstance(cls, _SpecialGenericAlias):
-        # For types like List and Tuple, we know exactly how many parameters
-        # to expect.
-        expected_num_type_params = cls._nparams
-    elif all(isinstance(p, (TypeVar, ParamSpec)) for p in cls.__parameters__):
-        # If all type variables are `TypeVar` or `ParamSpec`, the number
-        # of them should exactly match the number of type variables.
-        expected_num_type_params = len(cls.__parameters__)
-    else:
-        expected_num_type_params = None
-
-    if expected_num_type_params is not None:
-        if expected_num_type_params == 0:
-            raise TypeError(f"{cls} is not a generic class")
-        if actual_num_type_params > expected_num_type_params:
-            error = "Too many"
-        elif actual_num_type_params < expected_num_type_params:
-            error = "Too few"
-        else:
-            return
-        msg = (f"{error} arguments for {cls}; "
-               f"actual {actual_num_type_params}, "
-               f"expected {expected_num_type_params}")
-        raise TypeError(msg)
-
-    # Second, if we can't determine the exact number of type parameters
-    # expected, can we determine the minimum number of type parameters expected?
-
-    if any(isinstance(p, TypeVarTuple) for p in cls.__parameters__):
-        min_num_type_params = len([
-            p for p in cls.__parameters__
-            if isinstance(p, (TypeVar, ParamSpec))
-        ])
-        if actual_num_type_params >= min_num_type_params:
-            return
-        else:
-            raise TypeError(f"Too few parameters for {cls}; "
-                            f"actual {actual_num_type_params}, "
-                            f"expected at least {min_num_type_params}")
-
-    raise TypeError(f"Couldn't determine type parameter requirements for {cls}")
+    if not elen:
+        raise TypeError(f"{cls} is not a generic class")
+    alen = len(parameters)
+    if alen != elen:
+        raise TypeError(f"Too {'many' if alen > elen else 'few'} arguments for {cls};"
+                        f" actual {alen}, expected {elen} " + str(parameters))
 
 
 def _prepare_paramspec_params(cls, params):
@@ -295,7 +253,7 @@ def _prepare_paramspec_params(cls, params):
         assert isinstance(cls.__parameters__[0], ParamSpec)
         return (params,)
     else:
-        _check_type_parameter_count(cls, params)
+        _check_generic(cls, params, len(cls.__parameters__))
         _params = []
         # Convert lists to tuples to help other libraries cache the results.
         for p, tvar in zip(params, cls.__parameters__):
@@ -1395,8 +1353,11 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         if (self._paramspec_tvars
                 and any(isinstance(t, ParamSpec) for t in self.__parameters__)):
             args = _prepare_paramspec_params(self, args)
-        else:
-            _check_type_parameter_count(self, args)
+        elif not any(isinstance(p, TypeVarTuple) for p in self.__parameters__):
+            # We only run this if there are no TypeVarTuples, because we
+            # don't check variadic generic arity at runtime (to reduce
+            # complexity of typing.py).
+            _check_generic(self, args, len(self.__parameters__))
 
         new_args = self._determine_new_args(args)
         r = self.copy_with(new_args)
@@ -1536,7 +1497,7 @@ class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
             params = (params,)
         msg = "Parameters to generic types must be types."
         params = tuple(_type_check(p, msg) for p in params)
-        _check_type_parameter_count(self, params)
+        _check_generic(self, params, self._nparams)
         return self.copy_with(params)
 
     def copy_with(self, params):
@@ -1801,8 +1762,11 @@ class Generic:
             # Subscripting a regular Generic subclass.
             if any(isinstance(t, ParamSpec) for t in cls.__parameters__):
                 params = _prepare_paramspec_params(cls, params)
-            else:
-                _check_type_parameter_count(cls, params)
+            elif not any(isinstance(p, TypeVarTuple) for p in cls.__parameters__):
+                # We only run this if there are no TypeVarTuples, because we
+                # don't check variadic generic arity at runtime (to reduce
+                # complexity of typing.py).
+                _check_generic(cls, params, len(cls.__parameters__))
         return _GenericAlias(
             cls, params,
             _typevar_types=(TypeVar, TypeVarTuple, ParamSpec),
