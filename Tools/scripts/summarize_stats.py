@@ -42,10 +42,13 @@ def print_specialization_stats(name, family_stats, defines):
                 label = key[len("specialization."):]
             elif key == "execution_count":
                 label = "unquickened"
+            elif key in ("specialization.success",  "specialization.failure", "specializable"):
+                continue
+            elif key.startswith("pair"):
+                continue
             else:
                 label = key
-            if key not in ("specialization.success",  "specialization.failure", "specializable"):
-                rows.append((f"{label:>12}", f"{family_stats[key]:>12}", f"{100*family_stats[key]/total:0.1f}%"))
+            rows.append((f"{label:>12}", f"{family_stats[key]:>12}", f"{100*family_stats[key]/total:0.1f}%"))
         emit_table(("Kind", "Count", "Ratio"), rows)
         print_title("Specialization attempts", 4)
         total_attempts = 0
