@@ -516,18 +516,12 @@ def _disassemble_str(source, **kwargs):
 disco = disassemble                     # XXX For backwards compatibility
 
 
+# Rely on C `int` being 32 bits for oparg
+INT_BITS = 32
+# Maximum value for a c int
+INT_MAX = 2 ** (INT_BITS - 1)
 
 def _unpack_opargs(code):
-    # Can't import ctypes at the top level because it's unavailable in some tests that need dis
-    import ctypes
-    # The number of bits in a signed int
-    c_int_bit_size = ctypes.sizeof(ctypes.c_int()) * 8
-    # The maximum value that can be stored in a signed int
-    c_int_upper_limit = (2 ** (c_int_bit_size - 1)) - 1
-    # The number of values that can be stored in a signed int
-    c_int_length = 2 ** c_int_bit_size
-
-
     extended_arg = 0
     for i in range(0, len(code), 2):
         op = code[i]
@@ -536,9 +530,9 @@ def _unpack_opargs(code):
             extended_arg = (arg << 8) if op == EXTENDED_ARG else 0
             # The oparg is stored as a signed integer
             # If the value exceeds its upper limit, it will overflow and wrap
-            # This makes the dis output match the current behavior of the interpreter
-            if extended_arg > c_int_upper_limit:
-                extended_arg -= c_int_length
+            # to a negative integer
+            if extended_arg >= INT_MAX:
+                extended_arg -= 2 * INT_MAX
         else:
             arg = None
             extended_arg = 0
