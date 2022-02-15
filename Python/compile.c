@@ -6702,6 +6702,11 @@ assemble_emit(struct assembler *a, struct instr *i)
 }
 
 static void
+        if (last->i_opcode == JUMP_FORWARD) {
+            if (last->i_target->b_visited == 1) {
+                last->i_opcode = JUMP_ABSOLUTE;
+            }
+        }
 assemble_jump_offsets(struct assembler *a, struct compiler *c)
 {
     basicblock *b;
