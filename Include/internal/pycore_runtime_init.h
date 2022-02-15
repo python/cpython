@@ -667,7 +667,6 @@ extern "C" {
                 INIT_ID(__abc_tpflags__), \
                 INIT_ID(__abs__), \
                 INIT_ID(__abstractmethods__), \
-                INIT_ID(__adapt__), \
                 INIT_ID(__add__), \
                 INIT_ID(__aenter__), \
                 INIT_ID(__aexit__), \
@@ -689,7 +688,6 @@ extern "C" {
                 INIT_ID(__class_getitem__), \
                 INIT_ID(__classcell__), \
                 INIT_ID(__complex__), \
-                INIT_ID(__conform__), \
                 INIT_ID(__contains__), \
                 INIT_ID(__copy__), \
                 INIT_ID(__del__), \
@@ -820,7 +818,6 @@ extern "C" {
                 INIT_ID(_handle_fromlist), \
                 INIT_ID(_initializing), \
                 INIT_ID(_is_text_encoding), \
-                INIT_ID(_iterdump), \
                 INIT_ID(_lock_unlock_module), \
                 INIT_ID(_showwarnmsg), \
                 INIT_ID(_shutdown), \
@@ -839,7 +836,6 @@ extern "C" {
                 INIT_ID(code), \
                 INIT_ID(copy), \
                 INIT_ID(copyreg), \
-                INIT_ID(cursor), \
                 INIT_ID(decode), \
                 INIT_ID(default), \
                 INIT_ID(defaultaction), \
@@ -852,15 +848,11 @@ extern "C" {
                 INIT_ID(end_offset), \
                 INIT_ID(errors), \
                 INIT_ID(excepthook), \
-                INIT_ID(execute), \
-                INIT_ID(executemany), \
-                INIT_ID(executescript), \
                 INIT_ID(extend), \
                 INIT_ID(filename), \
                 INIT_ID(fileno), \
                 INIT_ID(fillvalue), \
                 INIT_ID(filters), \
-                INIT_ID(finalize), \
                 INIT_ID(find_class), \
                 INIT_ID(flush), \
                 INIT_ID(get), \
@@ -931,7 +923,6 @@ extern "C" {
                 INIT_ID(threading), \
                 INIT_ID(throw), \
                 INIT_ID(unraisablehook), \
-                INIT_ID(upper), \
                 INIT_ID(values), \
                 INIT_ID(version), \
                 INIT_ID(warnings), \
