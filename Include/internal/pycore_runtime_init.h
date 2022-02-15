@@ -820,6 +820,7 @@ extern "C" {
                 INIT_ID(_handle_fromlist), \
                 INIT_ID(_initializing), \
                 INIT_ID(_is_text_encoding), \
+                INIT_ID(_iterdump), \
                 INIT_ID(_lock_unlock_module), \
                 INIT_ID(_showwarnmsg), \
                 INIT_ID(_shutdown), \
@@ -838,6 +839,7 @@ extern "C" {
                 INIT_ID(code), \
                 INIT_ID(copy), \
                 INIT_ID(copyreg), \
+                INIT_ID(cursor), \
                 INIT_ID(decode), \
                 INIT_ID(default), \
                 INIT_ID(defaultaction), \
@@ -850,11 +852,15 @@ extern "C" {
                 INIT_ID(end_offset), \
                 INIT_ID(errors), \
                 INIT_ID(excepthook), \
+                INIT_ID(execute), \
+                INIT_ID(executemany), \
+                INIT_ID(executescript), \
                 INIT_ID(extend), \
                 INIT_ID(filename), \
                 INIT_ID(fileno), \
                 INIT_ID(fillvalue), \
                 INIT_ID(filters), \
+                INIT_ID(finalize), \
                 INIT_ID(find_class), \
                 INIT_ID(flush), \
                 INIT_ID(get), \
@@ -925,6 +931,7 @@ extern "C" {
                 INIT_ID(threading), \
                 INIT_ID(throw), \
                 INIT_ID(unraisablehook), \
+                INIT_ID(upper), \
                 INIT_ID(values), \
                 INIT_ID(version), \
                 INIT_ID(warnings), \
