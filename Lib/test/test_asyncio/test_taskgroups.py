@@ -388,7 +388,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         async def runner():
             async with taskgroups.TaskGroup(name='g1') as g1:
-                g1.create_task(crash_after(0.2))
+                g1.create_task(crash_after(10))
 
                 async with taskgroups.TaskGroup(name='g2') as g2:
                     g2.create_task(crash_after(0.1))
@@ -397,7 +397,6 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ExceptionGroup) as cm:
             await r
 
-        # TODO(guido): Check that the nested exception group is expected
         self.assertEqual(get_error_types(cm.exception), {ExceptionGroup})
         self.assertEqual(get_error_types(cm.exception.exceptions[0]), {ValueError})
 
