@@ -531,8 +531,8 @@ def _unpack_opargs(code):
             # The oparg is stored as a signed integer
             # If the value exceeds its upper limit, it will overflow and wrap
             # to a negative integer
-            if extended_arg >= INT_MAX:
-                extended_arg -= 2 * INT_MAX
+            if extended_arg >= _INT_MAX:
+                extended_arg -= 2 * _INT_MAX
         else:
             arg = None
             extended_arg = 0
