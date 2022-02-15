@@ -26,10 +26,10 @@ class FutureTests(unittest.IsolatedAsyncioTestCase):
                 tb = traceback.format_exc()
                 expected = dedent(f"""\
                     Traceback (most recent call last):
-                      File "{__file__}", line 20, in test_future_traceback
+                      File "{__file__}", line 24, in test_future_traceback
                         await future
                         ^^^^^^^^^^^^
-                      File "{__file__}", line 15, in raise_exc
+                      File "{__file__}", line 19, in raise_exc
                         raise TypeError(42)
                         ^^^^^^^^^^^^^^^^^^^
                     TypeError: 42
