@@ -1851,7 +1851,7 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
-                *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_FLOAT, 
+                *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_FLOAT,
                                           _Py_OPARG(*instr));
                 goto success;
             }
@@ -1867,7 +1867,7 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
-                *instr = _Py_MAKECODEUNIT(BINARY_OP_MULTIPLY_FLOAT, 
+                *instr = _Py_MAKECODEUNIT(BINARY_OP_MULTIPLY_FLOAT,
                                           _Py_OPARG(*instr));
                 goto success;
             }
@@ -1878,12 +1878,12 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 break;
             }
             if (PyLong_CheckExact(lhs)) {
-                *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_INT, 
+                *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_INT,
                                           _Py_OPARG(*instr));
                 goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
-                *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_FLOAT, 
+                *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_FLOAT,
                                           _Py_OPARG(*instr));
                 goto success;
             }
