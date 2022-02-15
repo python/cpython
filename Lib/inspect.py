@@ -511,12 +511,7 @@ def isbuiltin(object):
     return isinstance(object, types.BuiltinFunctionType)
 
 def ismethodwrapper(object):
-    """Return true if the object is a method wrapper.
-
-    For example;
-
-    >>> ismethodwrapper(object().__str__)
-    ... True"""
+    """Return true if the object is a method wrapper."""
     return isinstance(object, types.MethodWrapperType)
 
 def isroutine(object):
