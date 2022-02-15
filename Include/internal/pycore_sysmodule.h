@@ -18,6 +18,8 @@ PyAPI_FUNC(int) _PySys_Audit(
    PyAPI_FUNC() to not export the symbol. */
 extern void _PySys_ClearAuditHooks(PyThreadState *tstate);
 
+PyAPI_FUNC(int) _PySys_SetAttr(PyObject *, PyObject *);
+
 #ifdef __cplusplus
 }
 #endif

@@ -116,6 +116,10 @@ PyObject_CallMethodOneArg(PyObject *self, PyObject *name, PyObject *arg)
            2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
 
+PyAPI_FUNC(PyObject *) _PyObject_CallMethod(PyObject *obj,
+                                            PyObject *name,
+                                            const char *format, ...);
+
 /* Like PyObject_CallMethod(), but expect a _Py_Identifier*
    as the method name. */
 PyAPI_FUNC(PyObject *) _PyObject_CallMethodId(PyObject *obj,

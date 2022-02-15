@@ -68,6 +68,8 @@ annotations. These include:
      *Introducing* :data:`TypeAlias`
 * :pep:`647`: User-Defined Type Guards
      *Introducing* :data:`TypeGuard`
+* :pep:`673`: Self type
+    *Introducing* :data:`Self`
 
 .. _type-aliases:
 
@@ -572,6 +574,34 @@ These can be used as types in annotations and do not support ``[]``.
    * Every type is compatible with :data:`Any`.
    * :data:`Any` is compatible with every type.
 
+.. data:: Never
+
+   The `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
+   a type that has no members.
+
+   This can be used to define a function that should never be
+   called, or a function that never returns::
+
+     from typing import Never
+
+     def never_call_me(arg: Never) -> None:
+         pass
+
+     def int_or_str(arg: int | str) -> None:
+         never_call_me(arg)  # type checker error
+         match arg:
+             case int():
+                 print("It's an int")
+             case str():
+                 print("It's a str")
+             case _:
+                 never_call_me(arg)  # ok, arg is of type Never
+
+   .. versionadded:: 3.11
+
+      On older Python versions, :data:`NoReturn` may be used to express the
+      same concept. ``Never`` was added to make the intended meaning more explicit.
+
 .. data:: NoReturn
 
    Special type indicating that a function never returns.
@@ -582,8 +612,59 @@ These can be used as types in annotations and do not support ``[]``.
       def stop() -> NoReturn:
           raise RuntimeError('no way')
 
+   ``NoReturn`` can also be used as a
+   `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_, a type that
+   has no values. Starting in Python 3.11, the :data:`Never` type should
+   be used for this concept instead. Type checkers should treat the two
+   equivalently.
+
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
+
+.. data:: Self
+
+   Special type to represent the current enclosed class.
+   For example::
+
+      from typing import Self
+
+      class Foo:
+         def returns_self(self) -> Self:
+            ...
+            return self
+
+
+   This annotation is semantically equivalent to the following,
+   albeit in a more succinct fashion::
+
+      from typing import TypeVar
+
+      Self = TypeVar("Self", bound="Foo")
+
+      class Foo:
+         def returns_self(self: Self) -> Self:
+            ...
+            return self
+
+   In general if something currently follows the pattern of::
+
+      class Foo:
+         def return_self(self) -> "Foo":
+            ...
+            return self
+
+   You should use use :data:`Self` as calls to ``SubclassOfFoo.returns_self`` would have
+   ``Foo`` as the return type and not ``SubclassOfFoo``.
+
+   Other common use cases include:
+
+      - :class:`classmethod`\s that are used as alternative constructors and return instances
+        of the ``cls`` parameter.
+      - Annotating an :meth:`object.__enter__` method which returns self.
+
+   For more information, see :pep:`673`.
+
+   .. versionadded:: 3.11
 
 .. data:: TypeAlias
 
@@ -1931,6 +2012,28 @@ Functions and decorators
    signals that the return value has the designated type, but at
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
+
+.. function:: assert_never(arg, /)
+
+   Assert to the type checker that a line of code is unreachable.
+
+   Example::
+
+       def int_or_str(arg: int | str) -> None:
+           match arg:
+               case int():
+                   print("It's an int")
+               case str():
+                   print("It's a str")
+               case _ as unreachable:
+                   assert_never(unreachable)
+
+   If a type checker finds that a call to ``assert_never()`` is
+   reachable, it will emit an error.
+
+   At runtime, this throws an exception when called.
+
+   .. versionadded:: 3.11
 
 .. function:: reveal_type(obj)
 

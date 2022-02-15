@@ -92,7 +92,6 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 {
     PyObject *hint, *result;
     Py_ssize_t res;
-    _Py_IDENTIFIER(__length_hint__);
     if (_PyObject_HasLen(o)) {
         res = PyObject_Length(o);
         if (res < 0) {
@@ -107,7 +106,7 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
             return res;
         }
     }
-    hint = _PyObject_LookupSpecial(o, &PyId___length_hint__);
+    hint = _PyObject_LookupSpecial(o, &_Py_ID(__length_hint__));
     if (hint == NULL) {
         if (PyErr_Occurred()) {
             return -1;
@@ -177,14 +176,13 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 
     if (PyType_Check(o)) {
         PyObject *meth, *result;
-        _Py_IDENTIFIER(__class_getitem__);
 
         // Special case type[int], but disallow other types so str[int] fails
         if ((PyTypeObject*)o == &PyType_Type) {
             return Py_GenericAlias(o, key);
         }
 
-        if (_PyObject_LookupAttrId(o, &PyId___class_getitem__, &meth) < 0) {
+        if (_PyObject_LookupAttr(o, &_Py_ID(__class_getitem__), &meth) < 0) {
             return NULL;
         }
         if (meth) {
@@ -770,7 +768,6 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
     PyObject *meth;
     PyObject *empty = NULL;
     PyObject *result = NULL;
-    _Py_IDENTIFIER(__format__);
 
     if (format_spec != NULL && !PyUnicode_Check(format_spec)) {
         PyErr_Format(PyExc_SystemError,
@@ -797,7 +794,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
     }
 
     /* Find the (unbound!) __format__ method */
-    meth = _PyObject_LookupSpecial(obj, &PyId___format__);
+    meth = _PyObject_LookupSpecial(obj, &_Py_ID(__format__));
     if (meth == NULL) {
         PyThreadState *tstate = _PyThreadState_GET();
         if (!_PyErr_Occurred(tstate)) {
@@ -1520,7 +1517,6 @@ PyNumber_Long(PyObject *o)
     PyNumberMethods *m;
     PyObject *trunc_func;
     Py_buffer view;
-    _Py_IDENTIFIER(__trunc__);
 
     if (o == NULL) {
         return null_error();
@@ -1562,7 +1558,7 @@ PyNumber_Long(PyObject *o)
     if (m && m->nb_index) {
         return PyNumber_Index(o);
     }
-    trunc_func = _PyObject_LookupSpecial(o, &PyId___trunc__);
+    trunc_func = _PyObject_LookupSpecial(o, &_Py_ID(__trunc__));
     if (trunc_func) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "The delegation of int() to __trunc__ is deprecated.", 1)) {
@@ -2406,12 +2402,12 @@ PyMapping_HasKey(PyObject *o, PyObject *key)
    a helper for PyMapping_Keys(), PyMapping_Items() and PyMapping_Values().
  */
 static PyObject *
-method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
+method_output_as_list(PyObject *o, PyObject *meth)
 {
     PyObject *it, *result, *meth_output;
 
     assert(o != NULL);
-    meth_output = _PyObject_CallMethodIdNoArgs(o, meth_id);
+    meth_output = PyObject_CallMethodNoArgs(o, meth);
     if (meth_output == NULL || PyList_CheckExact(meth_output)) {
         return meth_output;
     }
@@ -2422,7 +2418,7 @@ method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
             _PyErr_Format(tstate, PyExc_TypeError,
                           "%.200s.%U() returned a non-iterable (type %.200s)",
                           Py_TYPE(o)->tp_name,
-                          _PyUnicode_FromId(meth_id),
+                          meth,
                           Py_TYPE(meth_output)->tp_name);
         }
         Py_DECREF(meth_output);
@@ -2437,43 +2433,37 @@ method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
 PyObject *
 PyMapping_Keys(PyObject *o)
 {
-    _Py_IDENTIFIER(keys);
-
     if (o == NULL) {
         return null_error();
     }
     if (PyDict_CheckExact(o)) {
         return PyDict_Keys(o);
     }
-    return method_output_as_list(o, &PyId_keys);
+    return method_output_as_list(o, &_Py_ID(keys));
 }
 
 PyObject *
 PyMapping_Items(PyObject *o)
 {
-    _Py_IDENTIFIER(items);
-
     if (o == NULL) {
         return null_error();
     }
     if (PyDict_CheckExact(o)) {
         return PyDict_Items(o);
     }
-    return method_output_as_list(o, &PyId_items);
+    return method_output_as_list(o, &_Py_ID(items));
 }
 
 PyObject *
 PyMapping_Values(PyObject *o)
 {
-    _Py_IDENTIFIER(values);
-
     if (o == NULL) {
         return null_error();
     }
     if (PyDict_CheckExact(o)) {
         return PyDict_Values(o);
     }
-    return method_output_as_list(o, &PyId_values);
+    return method_output_as_list(o, &_Py_ID(values));
 }
 
 /* isinstance(), issubclass() */
@@ -2505,10 +2495,9 @@ PyMapping_Values(PyObject *o)
 static PyObject *
 abstract_get_bases(PyObject *cls)
 {
-    _Py_IDENTIFIER(__bases__);
     PyObject *bases;
 
-    (void)_PyObject_LookupAttrId(cls, &PyId___bases__, &bases);
+    (void)_PyObject_LookupAttr(cls, &_Py_ID(__bases__), &bases);
     if (bases != NULL && !PyTuple_Check(bases)) {
         Py_DECREF(bases);
         return NULL;
@@ -2589,11 +2578,10 @@ object_isinstance(PyObject *inst, PyObject *cls)
 {
     PyObject *icls;
     int retval;
-    _Py_IDENTIFIER(__class__);
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
         if (retval == 0) {
-            retval = _PyObject_LookupAttrId(inst, &PyId___class__, &icls);
+            retval = _PyObject_LookupAttr(inst, &_Py_ID(__class__), &icls);
             if (icls != NULL) {
                 if (icls != (PyObject *)(Py_TYPE(inst)) && PyType_Check(icls)) {
                     retval = PyType_IsSubtype(
@@ -2611,7 +2599,7 @@ object_isinstance(PyObject *inst, PyObject *cls)
         if (!check_class(cls,
             "isinstance() arg 2 must be a type, a tuple of types, or a union"))
             return -1;
-        retval = _PyObject_LookupAttrId(inst, &PyId___class__, &icls);
+        retval = _PyObject_LookupAttr(inst, &_Py_ID(__class__), &icls);
         if (icls != NULL) {
             retval = abstract_issubclass(icls, cls);
             Py_DECREF(icls);
@@ -2624,8 +2612,6 @@ object_isinstance(PyObject *inst, PyObject *cls)
 static int
 object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls)
 {
-    _Py_IDENTIFIER(__instancecheck__);
-
     /* Quick test for an exact match */
     if (Py_IS_TYPE(inst, (PyTypeObject *)cls)) {
         return 1;
@@ -2656,7 +2642,7 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
         return r;
     }
 
-    PyObject *checker = _PyObject_LookupSpecial(cls, &PyId___instancecheck__);
+    PyObject *checker = _PyObject_LookupSpecial(cls, &_Py_ID(__instancecheck__));
     if (checker != NULL) {
         if (_Py_EnterRecursiveCall(tstate, " in __instancecheck__")) {
             Py_DECREF(checker);
@@ -2715,7 +2701,6 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
 static int
 object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
 {
-    _Py_IDENTIFIER(__subclasscheck__);
     PyObject *checker;
 
     /* We know what type's __subclasscheck__ does. */
@@ -2744,7 +2729,7 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
         return r;
     }
 
-    checker = _PyObject_LookupSpecial(cls, &PyId___subclasscheck__);
+    checker = _PyObject_LookupSpecial(cls, &_Py_ID(__subclasscheck__));
     if (checker != NULL) {
         int ok = -1;
         if (_Py_EnterRecursiveCall(tstate, " in __subclasscheck__")) {
@@ -2879,7 +2864,6 @@ PyIter_Next(PyObject *iter)
 PySendResult
 PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
 {
-    _Py_IDENTIFIER(send);
     assert(arg != NULL);
     assert(result != NULL);
     if (Py_TYPE(iter)->tp_as_async && Py_TYPE(iter)->tp_as_async->am_send) {
@@ -2891,7 +2875,7 @@ PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
         *result = Py_TYPE(iter)->tp_iternext(iter);
     }
     else {
-        *result = _PyObject_CallMethodIdOneArg(iter, &PyId_send, arg);
+        *result = PyObject_CallMethodOneArg(iter, &_Py_ID(send), arg);
     }
     if (*result != NULL) {
         return PYGEN_NEXT;

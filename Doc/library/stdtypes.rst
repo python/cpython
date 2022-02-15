@@ -4997,10 +4997,6 @@ list is non-exhaustive.
 * :class:`functools.cached_property`
 * :class:`functools.partialmethod`
 * :class:`os.PathLike`
-* :class:`pathlib.Path`
-* :class:`pathlib.PurePath`
-* :class:`pathlib.PurePosixPath`
-* :class:`pathlib.PureWindowsPath`
 * :class:`queue.LifoQueue`
 * :class:`queue.Queue`
 * :class:`queue.PriorityQueue`

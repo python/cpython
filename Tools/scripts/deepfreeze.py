@@ -279,6 +279,7 @@ class Printer:
             self.write(f".co_cellvars = {co_cellvars},")
             self.write(f".co_freevars = {co_freevars},")
         self.deallocs.append(f"_PyStaticCode_Dealloc(&{name});")
+        self.patchups.append(f"_PyStaticCode_InternStrings(&{name});")
         return f"& {name}.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:

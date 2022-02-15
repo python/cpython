@@ -74,7 +74,7 @@ extern struct PyModuleDef _sqlite3module;
 static inline pysqlite_state *
 pysqlite_get_state_by_type(PyTypeObject *tp)
 {
-    PyObject *module = _PyType_GetModuleByDef(tp, &_sqlite3module);
+    PyObject *module = PyType_GetModuleByDef(tp, &_sqlite3module);
     assert(module != NULL);
     return pysqlite_get_state(module);
 }

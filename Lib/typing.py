@@ -5,7 +5,7 @@ At large scale, the structure of the module is following:
 * Imports and exports, all public names should be explicitly added to __all__.
 * Internal helper functions: these should never be used in code outside this module.
 * _SpecialForm and its instances (special forms):
-  Any, NoReturn, ClassVar, Union, Optional, Concatenate, Unpack
+  Any, NoReturn, Never, ClassVar, Union, Optional, Concatenate, Unpack
 * Classes whose instances can be type arguments in addition to types:
   ForwardRef, TypeVar and ParamSpec
 * The core of internal generics API: _GenericAlias and _VariadicGenericAlias, the latter is
@@ -118,12 +118,14 @@ __all__ = [
 
     # One-off things.
     'AnyStr',
+    'assert_never',
     'cast',
     'final',
     'get_args',
     'get_origin',
     'get_type_hints',
     'is_typeddict',
+    'Never',
     'NewType',
     'no_type_check',
     'no_type_check_decorator',
@@ -133,6 +135,7 @@ __all__ = [
     'ParamSpecKwargs',
     'reveal_type',
     'runtime_checkable',
+    'Self',
     'Text',
     'TYPE_CHECKING',
     'TypeAlias',
@@ -176,7 +179,7 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
-    if arg in (Any, NoReturn, ClassVar, Final, TypeAlias):
+    if arg in (Any, NoReturn, Never, Self, ClassVar, Final, TypeAlias):
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
@@ -444,10 +447,62 @@ def NoReturn(self, parameters):
       def stop() -> NoReturn:
           raise Exception('no way')
 
-    This type is invalid in other positions, e.g., ``List[NoReturn]``
-    will fail in static type checkers.
+    NoReturn can also be used as a bottom type, a type that
+    has no values. Starting in Python 3.11, the Never type should
+    be used for this concept instead. Type checkers should treat the two
+    equivalently.
+
     """
     raise TypeError(f"{self} is not subscriptable")
+
+# This is semantically identical to NoReturn, but it is implemented
+# separately so that type checkers can distinguish between the two
+# if they want.
+@_SpecialForm
+def Never(self, parameters):
+    """The bottom type, a type that has no members.
+
+    This can be used to define a function that should never be
+    called, or a function that never returns::
+
+        from typing import Never
+
+        def never_call_me(arg: Never) -> None:
+            pass
+
+        def int_or_str(arg: int | str) -> None:
+            never_call_me(arg)  # type checker error
+            match arg:
+                case int():
+                    print("It's an int")
+                case str():
+                    print("It's a str")
+                case _:
+                    never_call_me(arg)  # ok, arg is of type Never
+
+    """
+    raise TypeError(f"{self} is not subscriptable")
+
+
+@_SpecialForm
+def Self(self, parameters):
+    """Used to spell the type of "self" in classes.
+
+    Example::
+
+      from typing import Self
+
+      class Foo:
+          def returns_self(self) -> Self:
+              ...
+              return self
+
+    This is especially useful for:
+        - classmethods that are used as alternative constructors
+        - annotating an `__enter__` method which returns self
+    """
+    raise TypeError(f"{self} is not subscriptable")
+
 
 @_SpecialForm
 def ClassVar(self, parameters):
@@ -728,7 +783,11 @@ class ForwardRef(_Final, _root=True):
         return Union[other, self]
 
     def __repr__(self):
-        return f'ForwardRef({self.__forward_arg__!r})'
+        if self.__forward_module__ is None:
+            module_repr = ''
+        else:
+            module_repr = f', module={self.__forward_module__!r}'
+        return f'ForwardRef({self.__forward_arg__!r}{module_repr})'
 
 
 def _is_unpacked_typevartuple(x):
@@ -894,6 +953,11 @@ class ParamSpecArgs(_Final, _Immutable, _root=True):
     def __repr__(self):
         return f"{self.__origin__.__name__}.args"
 
+    def __eq__(self, other):
+        if not isinstance(other, ParamSpecArgs):
+            return NotImplemented
+        return self.__origin__ == other.__origin__
+
 
 class ParamSpecKwargs(_Final, _Immutable, _root=True):
     """The kwargs for a ParamSpec object.
@@ -912,6 +976,11 @@ class ParamSpecKwargs(_Final, _Immutable, _root=True):
 
     def __repr__(self):
         return f"{self.__origin__.__name__}.kwargs"
+
+    def __eq__(self, other):
+        if not isinstance(other, ParamSpecKwargs):
+            return NotImplemented
+        return self.__origin__ == other.__origin__
 
 
 class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _root=True):
@@ -2387,6 +2456,29 @@ def is_typeddict(tp):
         is_typeddict(Union[list, str])  # => False
     """
     return isinstance(tp, _TypedDictMeta)
+
+
+def assert_never(arg: Never, /) -> Never:
+    """Statically assert that a line of code is unreachable.
+
+    Example::
+
+        def int_or_str(arg: int | str) -> None:
+            match arg:
+                case int():
+                    print("It's an int")
+                case str():
+                    print("It's a str")
+                case _:
+                    assert_never(arg)
+
+    If a type checker finds that a call to assert_never() is
+    reachable, it will emit an error.
+
+    At runtime, this throws an exception when called.
+
+    """
+    raise AssertionError("Expected code to be unreachable")
 
 
 def no_type_check(arg):

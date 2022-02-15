@@ -43,7 +43,7 @@ The following functions are provided:
 
 
 .. function:: bisect_right(a, x, lo=0, hi=len(a), *, key=None)
-              bisect(a, x, lo=0, hi=len(a))
+              bisect(a, x, lo=0, hi=len(a), *, key=None)
 
    Similar to :func:`bisect_left`, but returns an insertion point which comes
    after (to the right of) any existing entries of *x* in *a*.
@@ -80,7 +80,7 @@ The following functions are provided:
 
 
 .. function:: insort_right(a, x, lo=0, hi=len(a), *, key=None)
-              insort(a, x, lo=0, hi=len(a))
+              insort(a, x, lo=0, hi=len(a), *, key=None)
 
    Similar to :func:`insort_left`, but inserting *x* in *a* after any existing
    entries of *x*.

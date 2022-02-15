@@ -6,6 +6,7 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
+#define NEEDS_PY_IDENTIFIER
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -66,7 +67,7 @@ get_array_state(PyObject *module)
 }
 
 #define find_array_state_by_type(tp) \
-    (get_array_state(_PyType_GetModuleByDef(tp, &arraymodule)))
+    (get_array_state(PyType_GetModuleByDef(tp, &arraymodule)))
 #define get_array_state_by_class(cls) \
     (get_array_state(PyType_GetModule(cls)))
 
