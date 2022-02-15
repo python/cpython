@@ -21,7 +21,6 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "module.h"
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"

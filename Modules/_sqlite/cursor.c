@@ -22,6 +22,7 @@
  */
 
 #include "cursor.h"
+#include "module.h"
 #include "util.h"
 
 #define clinic_state() (pysqlite_get_state_by_type(Py_TYPE(self)))
