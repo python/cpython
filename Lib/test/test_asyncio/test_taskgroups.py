@@ -26,9 +26,6 @@ def get_error_types(eg):
 
 class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
-    async def asyncSetUp(self):
-        self.loop = asyncio.get_event_loop()
-
     async def test_taskgroup_01(self):
 
         async def foo1():
@@ -115,7 +112,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             NUM += 10
 
         with self.assertRaises(ExceptionGroup) as cm:
-            await self.loop.create_task(runner())
+            await asyncio.create_task(runner())
 
         self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
 
@@ -161,7 +158,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         # The 3 foo1 sub tasks can be racy when the host is busy - if the
         # cancellation happens in the middle, we'll see partial sub errors here
         with self.assertRaises(ExceptionGroup) as cm:
-            await self.loop.create_task(runner())
+            await asyncio.create_task(runner())
 
         self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
         self.assertEqual(NUM, 0)
@@ -185,7 +182,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 for _ in range(5):
                     g.create_task(foo())
 
-        r = self.loop.create_task(runner())
+        r = asyncio.create_task(runner())
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
@@ -219,7 +216,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                     NUM += 10
                     raise
 
-        r = self.loop.create_task(runner())
+        r = asyncio.create_task(runner())
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
@@ -245,7 +242,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 except asyncio.CancelledError:
                     raise
 
-        r = self.loop.create_task(runner())
+        r = asyncio.create_task(runner())
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
@@ -329,7 +326,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                     except asyncio.CancelledError:
                         raise
 
-        r = self.loop.create_task(runner())
+        r = asyncio.create_task(runner())
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
@@ -356,7 +353,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                     except asyncio.CancelledError:
                         raise
 
-        r = self.loop.create_task(runner())
+        r = asyncio.create_task(runner())
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
@@ -377,7 +374,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 async with taskgroups.TaskGroup(name='g2') as g2:
                     g2.create_task(crash_after(0.2))
 
-        r = self.loop.create_task(runner())
+        r = asyncio.create_task(runner())
         with self.assertRaises(ExceptionGroup) as cm:
             await r
 
@@ -396,7 +393,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 async with taskgroups.TaskGroup(name='g2') as g2:
                     g2.create_task(crash_after(0.1))
 
-        r = self.loop.create_task(runner())
+        r = asyncio.create_task(runner())
         with self.assertRaises(ExceptionGroup) as cm:
             await r
 
@@ -419,7 +416,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                     await asyncio.sleep(0.5)
                     raise
 
-        r = self.loop.create_task(runner())
+        r = asyncio.create_task(runner())
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
@@ -443,10 +440,10 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                     raise
 
         async def runner():
-            t = self.loop.create_task(nested_runner())
+            t = asyncio.create_task(nested_runner())
             await t
 
-        r = self.loop.create_task(runner())
+        r = asyncio.create_task(runner())
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
@@ -466,7 +463,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                     NUM += 10
                     raise
 
-        r = self.loop.create_task(runner())
+        r = asyncio.create_task(runner())
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
@@ -490,7 +487,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                     # this weird case.
                     raise MyExc
 
-        r = self.loop.create_task(runner())
+        r = asyncio.create_task(runner())
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
@@ -521,7 +518,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 g.create_task(crash_soon())
                 await nested()
 
-        r = self.loop.create_task(runner())
+        r = asyncio.create_task(runner())
         try:
             await r
         except ExceptionGroup as t:
@@ -634,7 +631,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 g.create_task(foo1())
                 g.create_task(foo2())
 
-        r = self.loop.create_task(runner())
+        r = asyncio.create_task(runner())
         await asyncio.sleep(0.05)
         r.cancel()
 
