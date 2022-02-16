@@ -100,24 +100,28 @@ IDENTIFIERS = [
 #######################################
 # helpers
 
+def iter_files():
+    for name in ('Modules', 'Objects', 'Parser', 'PC', 'Programs', 'Python'):
+        root = os.path.join(ROOT, name)
+        for dirname, _, files in os.walk(root):
+            for name in files:
+                if not name.endswith(('.c', '.h')):
+                    continue
+                yield os.path.join(dirname, name)
+
+
 def iter_global_strings():
     id_regex = re.compile(r'\b_Py_ID\((\w+)\)')
     str_regex = re.compile(r'\b_Py_DECLARE_STR\((\w+), "(.*?)"\)')
-    for dirname, _, files in os.walk(ROOT):
-        if os.path.relpath(dirname, ROOT).startswith('Include'):
-            continue
-        for name in files:
-            if not name.endswith(('.c', '.h')):
-                continue
-            filename = os.path.join(dirname, name)
-            with open(os.path.join(filename), encoding='utf-8') as infile:
-                for lno, line in enumerate(infile, 1):
-                    for m in id_regex.finditer(line):
-                        identifier, = m.groups()
-                        yield identifier, None, filename, lno, line
-                    for m in str_regex.finditer(line):
-                        varname, string = m.groups()
-                        yield varname, string, filename, lno, line
+    for filename in iter_files():
+        with open(filename, encoding='utf-8') as infile:
+            for lno, line in enumerate(infile, 1):
+                for m in id_regex.finditer(line):
+                    identifier, = m.groups()
+                    yield identifier, None, filename, lno, line
+                for m in str_regex.finditer(line):
+                    varname, string = m.groups()
+                    yield varname, string, filename, lno, line
 
 def iter_to_marker(lines, marker):
     for line in lines:
