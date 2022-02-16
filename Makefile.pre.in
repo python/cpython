@@ -2436,9 +2436,6 @@ patchcheck: @DEF_MAKE_RULE@
 check-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --all $(srcdir)/Misc/stable_abi.txt
 
-check-global-objects: all
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/generate_global_objects.py --check
-
 .PHONY: update-config
 update-config:
 	curl -sL -o config.guess 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD'
