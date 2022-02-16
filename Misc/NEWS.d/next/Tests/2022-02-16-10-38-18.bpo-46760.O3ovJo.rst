@@ -1,0 +1,2 @@
+Remove bytecode offsets from expected values in test.test_dis module.
+Reduces the obstacles to modifying the VM or compiler.

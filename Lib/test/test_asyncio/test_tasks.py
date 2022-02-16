@@ -496,6 +496,51 @@ class BaseTaskTests:
         # This also distinguishes from the initial has_cycle=None.
         self.assertEqual(has_cycle, False)
 
+
+    def test_cancelling(self):
+        loop = asyncio.new_event_loop()
+
+        async def task():
+            await asyncio.sleep(10)
+
+        try:
+            t = self.new_task(loop, task())
+            self.assertFalse(t.cancelling())
+            self.assertNotIn(" cancelling ", repr(t))
+            self.assertTrue(t.cancel())
+            self.assertTrue(t.cancelling())
+            self.assertIn(" cancelling ", repr(t))
+            self.assertFalse(t.cancel())
+
+            with self.assertRaises(asyncio.CancelledError):
+                loop.run_until_complete(t)
+        finally:
+            loop.close()
+
+    def test_uncancel(self):
+        loop = asyncio.new_event_loop()
+
+        async def task():
+            try:
+                await asyncio.sleep(10)
+            except asyncio.CancelledError:
+                asyncio.current_task().uncancel()
+                await asyncio.sleep(10)
+
+        try:
+            t = self.new_task(loop, task())
+            loop.run_until_complete(asyncio.sleep(0.01))
+            self.assertTrue(t.cancel())  # Cancel first sleep
+            self.assertIn(" cancelling ", repr(t))
+            loop.run_until_complete(asyncio.sleep(0.01))
+            self.assertNotIn(" cancelling ", repr(t))  # after .uncancel()
+            self.assertTrue(t.cancel())  # Cancel second sleep
+
+            with self.assertRaises(asyncio.CancelledError):
+                loop.run_until_complete(t)
+        finally:
+            loop.close()
+
     def test_cancel(self):
 
         def gen():
