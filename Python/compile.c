@@ -4730,7 +4730,9 @@ compiler_call(struct compiler *c, expr_ty e)
     if (!check_caller(c, e->v.Call.func)) {
         return 0;
     }
+    SET_LOC(c, e->v.Call.func);
     ADDOP(c, PUSH_NULL);
+    SET_LOC(c, e);
     VISIT(c, expr, e->v.Call.func);
     return compiler_call_helper(c, 0,
                                 e->v.Call.args,
