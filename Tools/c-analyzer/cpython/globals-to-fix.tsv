@@ -283,10 +283,6 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/ast_unparse.c	-	_str_replace_inf	-
 # XXX This should have been found by the analyzer but wasn't:
-Python/import.c	PyImport_Import	builtins_str	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/import.c	PyImport_Import	import_str	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/sysmodule.c	-	whatstrings	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/sysmodule.c	sys_displayhook	newline	-
