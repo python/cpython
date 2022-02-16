@@ -1456,7 +1456,7 @@ attributes stored in ``__slots__``:
     >>> mark.dept = 'Space Pirate'
     Traceback (most recent call last):
         ...
-    AttributeError: no setter was defined for property
+    AttributeError: property 'dept' of 'Immutable' object has no setter
     >>> mark.location = 'Mars'
     Traceback (most recent call last):
         ...
