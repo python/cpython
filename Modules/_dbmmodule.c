@@ -37,7 +37,6 @@
 typedef struct {
     PyTypeObject *dbm_type;
     PyObject *dbm_error;
-    PyObject *str_close;
 } _dbm_state;
 
 static inline _dbm_state*
@@ -396,9 +395,7 @@ dbm__enter__(PyObject *self, PyObject *args)
 static PyObject *
 dbm__exit__(PyObject *self, PyObject *args)
 {
-    _dbm_state *state = PyType_GetModuleState(Py_TYPE(self));
-    assert(state != NULL);
-    return PyObject_CallMethodNoArgs(self, state->str_close);
+    return _dbm_dbm_close_impl((dbmobject *)self);
 }
 
 static PyMethodDef dbm_methods[] = {
@@ -527,12 +524,6 @@ _dbm_exec(PyObject *module)
     if (PyModule_AddType(module, (PyTypeObject *)state->dbm_error) < 0) {
         return -1;
     }
-
-    PyObject *str_close = PyUnicode_InternFromString("close");
-    if (str_close == NULL) {
-        return -1;
-    }
-    state->str_close = str_close;
     return 0;
 }
 
@@ -542,7 +533,6 @@ _dbm_module_traverse(PyObject *module, visitproc visit, void *arg)
     _dbm_state *state = get_dbm_state(module);
     Py_VISIT(state->dbm_error);
     Py_VISIT(state->dbm_type);
-    Py_VISIT(state->str_close);
     return 0;
 }
 
@@ -552,7 +542,6 @@ _dbm_module_clear(PyObject *module)
     _dbm_state *state = get_dbm_state(module);
     Py_CLEAR(state->dbm_error);
     Py_CLEAR(state->dbm_type);
-    Py_CLEAR(state->str_close);
     return 0;
 }
 

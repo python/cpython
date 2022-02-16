@@ -20,7 +20,6 @@ extern const char * gdbm_strerror(gdbm_error);
 typedef struct {
     PyTypeObject *gdbm_type;
     PyObject *gdbm_error;
-    PyObject *str_close;
 } _gdbm_state;
 
 static inline _gdbm_state*
@@ -545,9 +544,7 @@ gdbm__enter__(PyObject *self, PyObject *args)
 static PyObject *
 gdbm__exit__(PyObject *self, PyObject *args)
 {
-    _gdbm_state *state = PyType_GetModuleState(Py_TYPE(self));
-    assert(state != NULL);
-    return PyObject_CallMethodNoArgs(self, state->str_close);
+    return _gdbm_gdbm_close_impl((gdbmobject *)self);
 }
 
 static PyMethodDef gdbm_methods[] = {
@@ -741,11 +738,6 @@ _gdbm_exec(PyObject *module)
         return -1;
     }
 #endif
-    PyObject *str_close = PyUnicode_InternFromString("close");
-    if (str_close == NULL) {
-        return -1;
-    }
-    state->str_close = str_close;
     return 0;
 }
 
@@ -755,7 +747,6 @@ _gdbm_module_traverse(PyObject *module, visitproc visit, void *arg)
     _gdbm_state *state = get_gdbm_state(module);
     Py_VISIT(state->gdbm_error);
     Py_VISIT(state->gdbm_type);
-    Py_VISIT(state->str_close);
     return 0;
 }
 
@@ -765,7 +756,6 @@ _gdbm_module_clear(PyObject *module)
     _gdbm_state *state = get_gdbm_state(module);
     Py_CLEAR(state->gdbm_error);
     Py_CLEAR(state->gdbm_type);
-    Py_CLEAR(state->str_close);
     return 0;
 }
 
