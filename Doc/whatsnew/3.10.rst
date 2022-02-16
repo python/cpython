@@ -1514,7 +1514,6 @@ Add a :class:`~xml.sax.handler.LexicalHandler` class to the
 :mod:`xml.sax.handler` module.
 (Contributed by Jonathan Gossage and Zackery Spytz in :issue:`35018`.)
 
-
 zipimport
 ---------
 Add methods related to :pep:`451`: :meth:`~zipimport.zipimporter.find_spec`,
@@ -1524,7 +1523,6 @@ Add methods related to :pep:`451`: :meth:`~zipimport.zipimporter.find_spec`,
 
 Add :meth:`~zipimport.zipimporter.invalidate_caches` method.
 (Contributed by Desmond Cheong in :issue:`14678`.)
-=======
 
 
 Optimizations
