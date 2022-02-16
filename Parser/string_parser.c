@@ -670,7 +670,7 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
             /* Don't get out of the loop for these, if they're single
                chars (not part of 2-char tokens). If by themselves, they
                don't end an expression (unlike say '!'). */
-            if (ch == '=' || ch == '>' || ch == '<') {
+            if (ch == '>' || ch == '<') {
                 continue;
             }
 
