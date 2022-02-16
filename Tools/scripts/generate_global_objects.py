@@ -101,13 +101,13 @@ IDENTIFIERS = [
 # helpers
 
 def iter_files():
-    for dirname, _, files in os.walk(ROOT):
-        if os.path.relpath(dirname, ROOT).startswith('Include'):
-            continue
-        for name in files:
-            if not name.endswith(('.c', '.h')):
-                continue
-            yield os.path.join(dirname, name)
+    for name in ('Modules', 'Objects', 'Parser', 'PC', 'Programs', 'Python'):
+        root = os.path.join(ROOT, name)
+        for dirname, _, files in os.walk(root):
+            for name in files:
+                if not name.endswith(('.c', '.h')):
+                    continue
+                yield os.path.join(dirname, name)
 
 
 def iter_global_strings():
