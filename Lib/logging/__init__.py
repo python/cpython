@@ -2023,6 +2023,11 @@ def basicConfig(**kwargs):
             for h in root.handlers[:]:
                 root.removeHandler(h)
                 h.close()
+        else:
+            if basicConfig.has_been_called and root.handlers:
+                import warnings
+                warnings.warn("Duplicate call to basicConfig will have no effect")
+        basicConfig.has_been_called = True
         if len(root.handlers) == 0:
             handlers = kwargs.pop("handlers", None)
             if handlers is None:
@@ -2066,6 +2071,8 @@ def basicConfig(**kwargs):
                 raise ValueError('Unrecognised argument(s): %s' % keys)
     finally:
         _releaseLock()
+
+basicConfig.has_been_called = False
 
 #---------------------------------------------------------------------------
 # Utility functions at module level.
