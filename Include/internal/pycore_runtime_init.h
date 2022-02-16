@@ -659,8 +659,10 @@ extern "C" {
                 INIT_STR(percent, "%"), \
             }, \
             .identifiers = { \
+                INIT_ID(False), \
                 INIT_ID(Py_Repr), \
                 INIT_ID(TextIOWrapper), \
+                INIT_ID(True), \
                 INIT_ID(WarningMessage), \
                 INIT_ID(_), \
                 INIT_ID(__IOBase_closed), \

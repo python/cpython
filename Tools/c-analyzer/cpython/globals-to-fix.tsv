@@ -280,8 +280,6 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 # cached - initialized once
 
 # manually cached PyUnicodeObject
-Objects/boolobject.c	-	false_str	-
-Objects/boolobject.c	-	true_str	-
 Objects/classobject.c	method_get_doc	docstr	-
 Objects/classobject.c	instancemethod_get_doc	docstr	-
 Objects/codeobject.c	PyCode_NewEmpty	emptystring	-
