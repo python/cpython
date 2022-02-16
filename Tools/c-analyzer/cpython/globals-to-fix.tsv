@@ -281,10 +281,6 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 
 # manually cached PyUnicodeObject
 # XXX This should have been found by the analyzer but wasn't:
-Python/_warnings.c	is_internal_frame	bootstrap_string	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/_warnings.c	is_internal_frame	importlib_string	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/ast_unparse.c	-	_str_close_br	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/ast_unparse.c	-	_str_dbl_close_br	-

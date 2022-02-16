@@ -813,6 +813,7 @@ extern "C" {
                 INIT_ID(__xor__), \
                 INIT_ID(_abc_impl), \
                 INIT_ID(_blksize), \
+                INIT_ID(_bootstrap), \
                 INIT_ID(_dealloc_warn), \
                 INIT_ID(_finalizing), \
                 INIT_ID(_find_and_load), \

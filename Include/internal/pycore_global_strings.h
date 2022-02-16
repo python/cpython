@@ -198,6 +198,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__xor__)
         STRUCT_FOR_ID(_abc_impl)
         STRUCT_FOR_ID(_blksize)
+        STRUCT_FOR_ID(_bootstrap)
         STRUCT_FOR_ID(_dealloc_warn)
         STRUCT_FOR_ID(_finalizing)
         STRUCT_FOR_ID(_find_and_load)
