@@ -609,9 +609,6 @@ Modules/signalmodule.c	-	ItimerError	-
 #-----------------------
 # cached - initialized once
 
-# manually cached PyUnicodeOjbect
-Modules/_threadmodule.c	-	str_dict	-
-
 # _PyArg_Parser
 Modules/clinic/_codecsmodule.c.h	_codecs_decode	_parser	-
 Modules/clinic/_codecsmodule.c.h	_codecs_encode	_parser	-
