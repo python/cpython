@@ -4513,7 +4513,7 @@ handle_eval_breaker:
             int nargs = oparg + is_method;
             /* Move ownership of reference from stack to call_shape
              * and make sure that NULL is cleared from stack */
-            call_shape.callable = PEEK(nargs + 1);
+            PyObject *function = PEEK(nargs + 1);
             call_shape.postcall_shrink = 2-is_method;
 
             call_shape.total_args = nargs;
@@ -4523,9 +4523,23 @@ handle_eval_breaker:
             SpecializationStats *stats =
                 &_py_stats.opcode_stats[PRECALL].specialization;
             stats->failure++;
-            int kind = _PySpecialization_ClassifyCallable(call_shape.callable);
+            int kind = _PySpecialization_ClassifyCallable(function);
             stats->failure_kinds[kind]++;
 #endif
+            if (!is_method && Py_TYPE(function) == &PyMethod_Type) {
+                PyObject *meth = ((PyMethodObject *)function)->im_func;
+                PyObject *self = ((PyMethodObject *)function)->im_self;
+                Py_INCREF(meth);
+                Py_INCREF(self);
+                PEEK(oparg+1) = self;
+                PEEK(oparg+2) = meth;
+                Py_DECREF(function);
+                function = meth;
+                call_shape.total_args++;
+                call_shape.postcall_shrink--;
+            }
+            call_shape.callable = function;
+
             DISPATCH();
         }
 
@@ -4542,18 +4556,6 @@ handle_eval_breaker:
                 || (oparg != 0 && oparg == PyTuple_GET_SIZE(call_shape.kwnames)));
         call_function:
             function = call_shape.callable;
-            if (Py_TYPE(function) == &PyMethod_Type) {
-                PyObject *meth = ((PyMethodObject *)function)->im_func;
-                PyObject *self = ((PyMethodObject *)function)->im_self;
-                Py_INCREF(meth);
-                Py_INCREF(self);
-                PEEK(call_shape.total_args + 1) = self;
-                Py_DECREF(function);
-                function = meth;
-                call_shape.total_args++;
-                assert(call_shape.postcall_shrink >= 1);
-                call_shape.postcall_shrink--;
-            }
             int total_args = call_shape.total_args;
             int positional_args = total_args - oparg;
             // Check if the call can be inlined or not
