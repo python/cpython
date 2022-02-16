@@ -571,20 +571,21 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
         goto failed;
     }
 
+#define emptystring (PyObject *)&_Py_SINGLETON(bytes_empty)
     struct _PyCodeConstructor con = {
         .filename = filename_ob,
         .name = funcname_ob,
         .qualname = funcname_ob,
-        .code = &_Py_STR(empty),
+        .code = emptystring,
         .firstlineno = firstlineno,
-        .linetable = &_Py_STR(empty),
-        .endlinetable = &_Py_STR(empty),
-        .columntable = &_Py_STR(empty),
+        .linetable = emptystring,
+        .endlinetable = emptystring,
+        .columntable = emptystring,
         .consts = nulltuple,
         .names = nulltuple,
         .localsplusnames = nulltuple,
-        .localspluskinds = &_Py_STR(empty),
-        .exceptiontable = &_Py_STR(empty),
+        .localspluskinds = emptystring,
+        .exceptiontable = emptystring,
     };
     result = _PyCode_New(&con);
 
