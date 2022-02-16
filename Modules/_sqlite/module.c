@@ -593,8 +593,6 @@ module_traverse(PyObject *module, visitproc visit, void *arg)
     // Interned strings
     Py_VISIT(state->str___adapt__);
     Py_VISIT(state->str___conform__);
-    Py_VISIT(state->str_execute);
-    Py_VISIT(state->str_executemany);
     Py_VISIT(state->str_executescript);
     Py_VISIT(state->str_finalize);
     Py_VISIT(state->str_upper);
@@ -634,8 +632,6 @@ module_clear(PyObject *module)
     // Interned strings
     Py_CLEAR(state->str___adapt__);
     Py_CLEAR(state->str___conform__);
-    Py_CLEAR(state->str_execute);
-    Py_CLEAR(state->str_executemany);
     Py_CLEAR(state->str_executescript);
     Py_CLEAR(state->str_finalize);
     Py_CLEAR(state->str_upper);
@@ -722,8 +718,6 @@ module_exec(PyObject *module)
     /* Add interned strings */
     ADD_INTERNED(state, __adapt__);
     ADD_INTERNED(state, __conform__);
-    ADD_INTERNED(state, execute);
-    ADD_INTERNED(state, executemany);
     ADD_INTERNED(state, executescript);
     ADD_INTERNED(state, finalize);
     ADD_INTERNED(state, upper);

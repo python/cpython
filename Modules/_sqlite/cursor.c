@@ -454,7 +454,7 @@ get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
     return PyObject_Vectorcall(cache, args + 1, nargsf, NULL);
 }
 
-static PyObject *
+PyObject *
 _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation, PyObject* second_argument)
 {
     PyObject* parameters_list = NULL;

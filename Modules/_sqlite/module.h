@@ -62,8 +62,6 @@ typedef struct {
     /* Pointers to interned strings */
     PyObject *str___adapt__;
     PyObject *str___conform__;
-    PyObject *str_execute;
-    PyObject *str_executemany;
     PyObject *str_executescript;
     PyObject *str_finalize;
     PyObject *str_upper;

@@ -128,6 +128,7 @@ static void free_callback_context(callback_context *ctx);
 static void set_callback_context(callback_context **ctx_pp,
                                  callback_context *ctx);
 static void connection_close(pysqlite_Connection *self);
+PyObject *_pysqlite_query_execute(pysqlite_Cursor *, int, PyObject *, PyObject *);
 
 static PyObject *
 new_statement_cache(pysqlite_Connection *self, pysqlite_state *state,
@@ -1436,8 +1437,7 @@ pysqlite_connection_execute_impl(pysqlite_Connection *self, PyObject *sql,
         goto error;
     }
 
-    PyObject *meth = self->state->str_execute;  // borrowed ref.
-    result = PyObject_CallMethodObjArgs(cursor, meth, sql, parameters, NULL);
+    result = _pysqlite_query_execute((pysqlite_Cursor *)cursor, 0, sql, parameters);
     if (!result) {
         Py_CLEAR(cursor);
     }
@@ -1470,8 +1470,7 @@ pysqlite_connection_executemany_impl(pysqlite_Connection *self,
         goto error;
     }
 
-    PyObject *meth = self->state->str_executemany;  // borrowed ref.
-    result = PyObject_CallMethodObjArgs(cursor, meth, sql, parameters, NULL);
+    result = _pysqlite_query_execute((pysqlite_Cursor *)cursor, 1, sql, parameters);
     if (!result) {
         Py_CLEAR(cursor);
     }
