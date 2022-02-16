@@ -553,16 +553,11 @@ PyCode_New(int argcount, int kwonlyargcount,
 PyCodeObject *
 PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 {
-    PyObject *emptystring = NULL;
     PyObject *nulltuple = NULL;
     PyObject *filename_ob = NULL;
     PyObject *funcname_ob = NULL;
     PyCodeObject *result = NULL;
 
-    emptystring = PyBytes_FromString("");
-    if (emptystring == NULL) {
-        goto failed;
-    }
     nulltuple = PyTuple_New(0);
     if (nulltuple == NULL) {
         goto failed;
@@ -580,21 +575,20 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
         .filename = filename_ob,
         .name = funcname_ob,
         .qualname = funcname_ob,
-        .code = emptystring,
+        .code = &_Py_STR(empty),
         .firstlineno = firstlineno,
-        .linetable = emptystring,
-        .endlinetable = emptystring,
-        .columntable = emptystring,
+        .linetable = &_Py_STR(empty),
+        .endlinetable = &_Py_STR(empty),
+        .columntable = &_Py_STR(empty),
         .consts = nulltuple,
         .names = nulltuple,
         .localsplusnames = nulltuple,
-        .localspluskinds = emptystring,
-        .exceptiontable = emptystring,
+        .localspluskinds = &_Py_STR(empty),
+        .exceptiontable = &_Py_STR(empty),
     };
     result = _PyCode_New(&con);
 
 failed:
-    Py_XDECREF(emptystring);
     Py_XDECREF(nulltuple);
     Py_XDECREF(funcname_ob);
     Py_XDECREF(filename_ob);

@@ -280,7 +280,6 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 # cached - initialized once
 
 # manually cached PyUnicodeObject
-Objects/codeobject.c	PyCode_NewEmpty	emptystring	-
 Objects/exceptions.c	_check_for_legacy_statements	print_prefix	-
 Objects/exceptions.c	_check_for_legacy_statements	exec_prefix	-
 Objects/funcobject.c	PyFunction_NewWithQualName	__name__	-
