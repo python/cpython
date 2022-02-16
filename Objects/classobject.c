@@ -319,13 +319,6 @@ method_traverse(PyMethodObject *im, visitproc visit, void *arg)
     return 0;
 }
 
-static PyObject *
-method_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
-{
-    Py_INCREF(meth);
-    return meth;
-}
-
 PyTypeObject PyMethod_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "method",
@@ -360,7 +353,7 @@ PyTypeObject PyMethod_Type = {
     method_getset,                              /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
-    method_descr_get,                           /* tp_descr_get */
+    0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
