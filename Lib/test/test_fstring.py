@@ -1055,7 +1055,6 @@ x = (
                              "f'{'",
                              "f'x{<'",  # See bpo-46762.
                              "f'x{>'",
-                             "f'x{='",
                              ])
 
         # But these are just normal strings.
