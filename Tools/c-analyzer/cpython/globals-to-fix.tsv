@@ -610,33 +610,6 @@ Modules/signalmodule.c	-	ItimerError	-
 # cached - initialized once
 
 # manually cached PyUnicodeOjbect
-Modules/_io/_iomodule.c	-	_PyIO_str_close	-
-Modules/_io/_iomodule.c	-	_PyIO_str_closed	-
-Modules/_io/_iomodule.c	-	_PyIO_str_decode	-
-Modules/_io/_iomodule.c	-	_PyIO_str_encode	-
-Modules/_io/_iomodule.c	-	_PyIO_str_fileno	-
-Modules/_io/_iomodule.c	-	_PyIO_str_flush	-
-Modules/_io/_iomodule.c	-	_PyIO_str_getstate	-
-Modules/_io/_iomodule.c	-	_PyIO_str_isatty	-
-Modules/_io/_iomodule.c	-	_PyIO_str_locale	-
-Modules/_io/_iomodule.c	-	_PyIO_str_newlines	-
-Modules/_io/_iomodule.c	-	_PyIO_str_nl	-
-Modules/_io/_iomodule.c	-	_PyIO_str_peek	-
-Modules/_io/_iomodule.c	-	_PyIO_str_read	-
-Modules/_io/_iomodule.c	-	_PyIO_str_read1	-
-Modules/_io/_iomodule.c	-	_PyIO_str_readable	-
-Modules/_io/_iomodule.c	-	_PyIO_str_readall	-
-Modules/_io/_iomodule.c	-	_PyIO_str_readinto	-
-Modules/_io/_iomodule.c	-	_PyIO_str_readline	-
-Modules/_io/_iomodule.c	-	_PyIO_str_reset	-
-Modules/_io/_iomodule.c	-	_PyIO_str_seek	-
-Modules/_io/_iomodule.c	-	_PyIO_str_seekable	-
-Modules/_io/_iomodule.c	-	_PyIO_str_setstate	-
-Modules/_io/_iomodule.c	-	_PyIO_str_tell	-
-Modules/_io/_iomodule.c	-	_PyIO_str_truncate	-
-Modules/_io/_iomodule.c	-	_PyIO_str_writable	-
-Modules/_io/_iomodule.c	-	_PyIO_str_write	-
-Modules/_io/_iomodule.c	-	_PyIO_empty_str	-
 Modules/_threadmodule.c	-	str_dict	-
 Modules/_tracemalloc.c	-	unknown_filename	-
 

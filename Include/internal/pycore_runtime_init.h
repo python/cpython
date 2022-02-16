@@ -847,6 +847,7 @@ extern "C" {
                 INIT_ID(call), \
                 INIT_ID(clear), \
                 INIT_ID(close), \
+                INIT_ID(closed), \
                 INIT_ID(code), \
                 INIT_ID(copy), \
                 INIT_ID(copyreg), \
@@ -858,6 +859,7 @@ extern "C" {
                 INIT_ID(dispatch_table), \
                 INIT_ID(displayhook), \
                 INIT_ID(enable), \
+                INIT_ID(encode), \
                 INIT_ID(encoding), \
                 INIT_ID(end_lineno), \
                 INIT_ID(end_offset), \
@@ -875,6 +877,7 @@ extern "C" {
                 INIT_ID(get), \
                 INIT_ID(get_source), \
                 INIT_ID(getattr), \
+                INIT_ID(getstate), \
                 INIT_ID(ignore), \
                 INIT_ID(importlib), \
                 INIT_ID(inf), \
@@ -893,6 +896,7 @@ extern "C" {
                 INIT_ID(lineno), \
                 INIT_ID(listcomp), \
                 INIT_ID(little), \
+                INIT_ID(locale), \
                 INIT_ID(match), \
                 INIT_ID(metaclass), \
                 INIT_ID(mode), \
@@ -903,6 +907,7 @@ extern "C" {
                 INIT_ID(n_sequence_fields), \
                 INIT_ID(n_unnamed_fields), \
                 INIT_ID(name), \
+                INIT_ID(newlines), \
                 INIT_ID(obj), \
                 INIT_ID(offset), \
                 INIT_ID(onceregistry), \
@@ -947,6 +952,7 @@ extern "C" {
                 INIT_ID(threading), \
                 INIT_ID(throw), \
                 INIT_ID(top), \
+                INIT_ID(truncate), \
                 INIT_ID(unraisablehook), \
                 INIT_ID(values), \
                 INIT_ID(version), \
