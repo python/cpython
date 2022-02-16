@@ -540,8 +540,10 @@ Pure paths provide the following methods and properties:
 
 .. method:: PurePath.relative_to(*other)
 
-   Compute a version of this path relative to the path represented by
-   *other*.  If it's impossible, ValueError is raised::
+   Return the relative path to another path identified by *other*, each
+   element of *other* can be either a string representing a path segment,
+   or another path object implementing the :class:`PurePath`(or a subclass
+   of :class:`PurePath`). If the operation is impossible, ValueError is raised::
 
       >>> p = PurePosixPath('/etc/passwd')
       >>> p.relative_to('/')
@@ -554,6 +556,19 @@ Pure paths provide the following methods and properties:
         File "pathlib.py", line 694, in relative_to
           .format(str(self), str(formatted)))
       ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other absolute.
+
+   If *other* contains more than one element, rules for concatenation of
+   all elements is similarly to :class:`PurePath`::
+
+      >>> p = PurePosixPath('/tmp/foo/bar')
+      >>> p.relative_to('/tmp', 'foo')
+      PurePosixPath('bar')
+      >>> p.relative_to('/tmp', 'bar')
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        File "pathlib.py", line 816, in relative_to
+          raise ValueError("{!r} is not in the subpath of {!r}"
+      ValueError: '/tmp/foo/bar' is not in the subpath of '/tmp/bar' OR one path is relative and the other is absolute.
 
    NOTE: This function is part of :class:`PurePath` and works with strings. It does not check or access the underlying file structure.
 
