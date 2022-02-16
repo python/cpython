@@ -816,6 +816,7 @@ extern "C" {
                 INIT_ID(__weakref__), \
                 INIT_ID(__xor__), \
                 INIT_ID(_abc_impl), \
+                INIT_ID(_annotation), \
                 INIT_ID(_blksize), \
                 INIT_ID(_bootstrap), \
                 INIT_ID(_dealloc_warn), \
@@ -847,6 +848,7 @@ extern "C" {
                 INIT_ID(decode), \
                 INIT_ID(default), \
                 INIT_ID(defaultaction), \
+                INIT_ID(dictcomp), \
                 INIT_ID(difference_update), \
                 INIT_ID(dispatch_table), \
                 INIT_ID(displayhook), \
@@ -863,6 +865,7 @@ extern "C" {
                 INIT_ID(filters), \
                 INIT_ID(find_class), \
                 INIT_ID(flush), \
+                INIT_ID(genexpr), \
                 INIT_ID(get), \
                 INIT_ID(get_source), \
                 INIT_ID(getattr), \
@@ -875,11 +878,13 @@ extern "C" {
                 INIT_ID(iter), \
                 INIT_ID(join), \
                 INIT_ID(keys), \
+                INIT_ID(lambda), \
                 INIT_ID(last_traceback), \
                 INIT_ID(last_type), \
                 INIT_ID(last_value), \
                 INIT_ID(latin1), \
                 INIT_ID(lineno), \
+                INIT_ID(listcomp), \
                 INIT_ID(little), \
                 INIT_ID(match), \
                 INIT_ID(metaclass), \
@@ -921,6 +926,7 @@ extern "C" {
                 INIT_ID(seek), \
                 INIT_ID(seekable), \
                 INIT_ID(send), \
+                INIT_ID(setcomp), \
                 INIT_ID(setstate), \
                 INIT_ID(sort), \
                 INIT_ID(stderr), \
@@ -932,6 +938,7 @@ extern "C" {
                 INIT_ID(text), \
                 INIT_ID(threading), \
                 INIT_ID(throw), \
+                INIT_ID(top), \
                 INIT_ID(unraisablehook), \
                 INIT_ID(values), \
                 INIT_ID(version), \

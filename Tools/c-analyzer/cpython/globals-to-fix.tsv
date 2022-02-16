@@ -286,14 +286,6 @@ Python/ast_unparse.c	-	_str_replace_inf	-
 Python/import.c	PyImport_Import	builtins_str	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/import.c	PyImport_Import	import_str	-
-Python/symtable.c	-	__class__	-
-Python/symtable.c	-	_annotation	-
-Python/symtable.c	-	dictcomp	-
-Python/symtable.c	-	genexpr	-
-Python/symtable.c	-	lambda	-
-Python/symtable.c	-	listcomp	-
-Python/symtable.c	-	setcomp	-
-Python/symtable.c	-	top	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/sysmodule.c	-	whatstrings	-
 # XXX This should have been found by the analyzer but wasn't:
