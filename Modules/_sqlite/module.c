@@ -185,12 +185,12 @@ pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
     PyObject* retval = NULL;
 
     /* convert the name to upper case */
-    name = PyObject_CallMethodNoArgs(orig_name, &_Py_ID(upper));
+    pysqlite_state *state = pysqlite_get_state(module);
+    name = PyObject_CallMethodNoArgs(orig_name, state->str_upper);
     if (!name) {
         goto error;
     }
 
-    pysqlite_state *state = pysqlite_get_state(module);
     if (PyDict_SetItem(state->converters, name, callable) != 0) {
         goto error;
     }
@@ -590,6 +590,15 @@ module_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->lru_cache);
     Py_VISIT(state->psyco_adapters);
 
+    // Interned strings
+    Py_VISIT(state->str___adapt__);
+    Py_VISIT(state->str___conform__);
+    Py_VISIT(state->str_execute);
+    Py_VISIT(state->str_executemany);
+    Py_VISIT(state->str_executescript);
+    Py_VISIT(state->str_finalize);
+    Py_VISIT(state->str_upper);
+
     return 0;
 }
 
@@ -622,6 +631,15 @@ module_clear(PyObject *module)
     Py_CLEAR(state->lru_cache);
     Py_CLEAR(state->psyco_adapters);
 
+    // Interned strings
+    Py_CLEAR(state->str___adapt__);
+    Py_CLEAR(state->str___conform__);
+    Py_CLEAR(state->str_execute);
+    Py_CLEAR(state->str_executemany);
+    Py_CLEAR(state->str_executescript);
+    Py_CLEAR(state->str_finalize);
+    Py_CLEAR(state->str_upper);
+
     return 0;
 }
 
@@ -645,6 +663,15 @@ do {                                                                   \
         goto error;                                                    \
     }                                                                  \
     ADD_TYPE(module, (PyTypeObject *)state->exc);                      \
+} while (0)
+
+#define ADD_INTERNED(state, string)                      \
+do {                                                     \
+    PyObject *tmp = PyUnicode_InternFromString(#string); \
+    if (tmp == NULL) {                                   \
+        goto error;                                      \
+    }                                                    \
+    state->str_ ## string = tmp;                         \
 } while (0)
 
 static int
@@ -691,6 +718,15 @@ module_exec(PyObject *module)
     ADD_EXCEPTION(module, state, IntegrityError, state->DatabaseError);
     ADD_EXCEPTION(module, state, DataError, state->DatabaseError);
     ADD_EXCEPTION(module, state, NotSupportedError, state->DatabaseError);
+
+    /* Add interned strings */
+    ADD_INTERNED(state, __adapt__);
+    ADD_INTERNED(state, __conform__);
+    ADD_INTERNED(state, execute);
+    ADD_INTERNED(state, executemany);
+    ADD_INTERNED(state, executescript);
+    ADD_INTERNED(state, finalize);
+    ADD_INTERNED(state, upper);
 
     /* Set error constants */
     if (add_error_constants(module) < 0) {

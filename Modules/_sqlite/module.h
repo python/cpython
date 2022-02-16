@@ -23,15 +23,8 @@
 
 #ifndef PYSQLITE_MODULE_H
 #define PYSQLITE_MODULE_H
-
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
-#endif
-
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-
-#include "pycore_runtime.h" // _Py_ID()
 
 #define PYSQLITE_VERSION "2.6.0"
 #define MODULE_NAME "sqlite3"
@@ -65,6 +58,15 @@ typedef struct {
     PyTypeObject *PrepareProtocolType;
     PyTypeObject *RowType;
     PyTypeObject *StatementType;
+
+    /* Pointers to interned strings */
+    PyObject *str___adapt__;
+    PyObject *str___conform__;
+    PyObject *str_execute;
+    PyObject *str_executemany;
+    PyObject *str_executescript;
+    PyObject *str_finalize;
+    PyObject *str_upper;
 } pysqlite_state;
 
 extern pysqlite_state pysqlite_global_state;
