@@ -282,10 +282,6 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 # manually cached PyUnicodeObject
 # XXX This should have been found by the analyzer but wasn't:
 Python/ast_unparse.c	-	_str_replace_inf	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/sysmodule.c	-	whatstrings	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/sysmodule.c	sys_displayhook	newline	-
 
 # _PyArg_Parser (holds tuple of strings)
 Objects/clinic/bytearrayobject.c.h	bytearray___init__	_parser	-

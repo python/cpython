@@ -660,6 +660,7 @@ extern "C" {
                 INIT_STR(dot_locals, ".<locals>"), \
                 INIT_STR(empty, ""), \
                 INIT_STR(list_err, "list index out of range"), \
+                INIT_STR(newline, "\n"), \
                 INIT_STR(open_br, "{"), \
                 INIT_STR(percent, "%"), \
             }, \
@@ -840,6 +841,10 @@ extern "C" {
                 INIT_ID(big), \
                 INIT_ID(buffer), \
                 INIT_ID(builtins), \
+                INIT_ID(c_call), \
+                INIT_ID(c_exception), \
+                INIT_ID(c_return), \
+                INIT_ID(call), \
                 INIT_ID(clear), \
                 INIT_ID(close), \
                 INIT_ID(code), \
@@ -858,6 +863,7 @@ extern "C" {
                 INIT_ID(end_offset), \
                 INIT_ID(errors), \
                 INIT_ID(excepthook), \
+                INIT_ID(exception), \
                 INIT_ID(extend), \
                 INIT_ID(filename), \
                 INIT_ID(fileno), \
@@ -883,6 +889,7 @@ extern "C" {
                 INIT_ID(last_type), \
                 INIT_ID(last_value), \
                 INIT_ID(latin1), \
+                INIT_ID(line), \
                 INIT_ID(lineno), \
                 INIT_ID(listcomp), \
                 INIT_ID(little), \
@@ -899,6 +906,7 @@ extern "C" {
                 INIT_ID(obj), \
                 INIT_ID(offset), \
                 INIT_ID(onceregistry), \
+                INIT_ID(opcode), \
                 INIT_ID(open), \
                 INIT_ID(parent), \
                 INIT_ID(partial), \
