@@ -611,7 +611,6 @@ Modules/signalmodule.c	-	ItimerError	-
 
 # manually cached PyUnicodeOjbect
 Modules/_threadmodule.c	-	str_dict	-
-Modules/_tracemalloc.c	-	unknown_filename	-
 
 # _PyArg_Parser
 Modules/clinic/_codecsmodule.c.h	_codecs_decode	_parser	-

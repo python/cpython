@@ -651,6 +651,7 @@ extern "C" {
                 INIT_STR(anon_module, "<module>"), \
                 INIT_STR(anon_setcomp, "<setcomp>"), \
                 INIT_STR(anon_string, "<string>"), \
+                INIT_STR(anon_unknown, "<unknown>"), \
                 INIT_STR(close_br, "}"), \
                 INIT_STR(comma_sep, ", "), \
                 INIT_STR(dbl_close_br, "}}"), \
