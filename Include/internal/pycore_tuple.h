@@ -22,8 +22,8 @@ extern void _PyTuple_Fini(PyInterpreterState *);
 #ifndef WITH_FREELISTS
 // without freelists
 // for tuples only store empty tuple singleton
-#  define PyTuple_MAXSAVESIZE 1
-#  define PyTuple_MAXFREELIST 1
+#  define PyTuple_MAXSAVESIZE 0
+#  define PyTuple_MAXFREELIST 0
 #endif
 
 /* Speed optimization to avoid frequent malloc/free of small tuples */
@@ -38,11 +38,10 @@ extern void _PyTuple_Fini(PyInterpreterState *);
 
 struct _Py_tuple_state {
 #if PyTuple_MAXSAVESIZE > 0
-    /* Entries 1 up to PyTuple_MAXSAVESIZE are free lists,
-       entry 0 is the empty tuple () of which at most one instance
-       will be allocated. */
-    PyTupleObject *free_list[PyTuple_MAXSAVESIZE];
-    int numfree[PyTuple_MAXSAVESIZE];
+    /* Each entry up to PyTuple_MAXSAVESIZE is a free list.
+       The empty tuple is handled separately, hence declaring one fewer. */
+    PyTupleObject *free_list[PyTuple_MAXSAVESIZE - 1];
+    int numfree[PyTuple_MAXSAVESIZE - 1];
 #endif
 };
 
