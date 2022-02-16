@@ -283,24 +283,6 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/ast_unparse.c	-	_str_replace_inf	-
 # XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	-	__annotations__	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	-	__doc__	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	compiler_dictcomp	name	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	compiler_from_import	empty_string	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	compiler_genexp	name	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	compiler_lambda	name	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	compiler_listcomp	name	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	compiler_setcomp	name	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/compile.c	compiler_visit_annotations	return_str	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/import.c	PyImport_Import	builtins_str	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/import.c	PyImport_Import	import_str	-

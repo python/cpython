@@ -258,6 +258,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(isatty)
         STRUCT_FOR_ID(items)
         STRUCT_FOR_ID(iter)
+        STRUCT_FOR_ID(join)
         STRUCT_FOR_ID(keys)
         STRUCT_FOR_ID(last_traceback)
         STRUCT_FOR_ID(last_type)

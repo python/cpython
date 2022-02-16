@@ -873,6 +873,7 @@ extern "C" {
                 INIT_ID(isatty), \
                 INIT_ID(items), \
                 INIT_ID(iter), \
+                INIT_ID(join), \
                 INIT_ID(keys), \
                 INIT_ID(last_traceback), \
                 INIT_ID(last_type), \
