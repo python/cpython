@@ -653,8 +653,8 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
                    (ch == '!' || ch == ':' || ch == '}' ||
                     ch == '=' || ch == '>' || ch == '<')) {
             /* See if there's a next character. */
-            if (*str + 1 < end) {
-                char next = *(*str + 1);
+            if (*str+1 < end) {
+                char next = *(*str+1);
 
                 /* For "!=". since '=' is not an allowed conversion character,
                    nothing is lost in this test. */
@@ -698,10 +698,10 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
         }
     }
     expr_end = *str;
-    /* If we leave this loop in a string or with mismatched parens, we
-       don't care. We'll get a syntax error when compiling the
-       expression. But, we can produce a better error message, so
-       let's just do that.*/
+    /* If we leave the above loop in a string or with mismatched parens, we
+       don't really care. We'll get a syntax error when compiling the
+       expression. But, we can produce a better error message, so let's just
+       do that.*/
     if (quote_char) {
         RAISE_SYNTAX_ERROR("f-string: unterminated string");
         goto error;
