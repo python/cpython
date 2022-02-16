@@ -281,16 +281,6 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 
 # manually cached PyUnicodeObject
 # XXX This should have been found by the analyzer but wasn't:
-Python/ast_unparse.c	-	_str_close_br	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/ast_unparse.c	-	_str_dbl_close_br	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/ast_unparse.c	-	_str_dbl_open_br	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/ast_unparse.c	-	_str_inf	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/ast_unparse.c	-	_str_open_br	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/ast_unparse.c	-	_str_replace_inf	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/compile.c	-	__annotations__	-

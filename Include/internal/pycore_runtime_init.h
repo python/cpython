@@ -651,12 +651,16 @@ extern "C" {
                 INIT_STR(anon_module, "<module>"), \
                 INIT_STR(anon_setcomp, "<setcomp>"), \
                 INIT_STR(anon_string, "<string>"), \
+                INIT_STR(close_br, "}"), \
                 INIT_STR(comma_sep, ", "), \
+                INIT_STR(dbl_close_br, "}}"), \
+                INIT_STR(dbl_open_br, "{{"), \
                 INIT_STR(dbl_percent, "%%"), \
                 INIT_STR(dot, "."), \
                 INIT_STR(dot_locals, ".<locals>"), \
                 INIT_STR(empty, ""), \
                 INIT_STR(list_err, "list index out of range"), \
+                INIT_STR(open_br, "{"), \
                 INIT_STR(percent, "%"), \
             }, \
             .identifiers = { \
@@ -864,6 +868,7 @@ extern "C" {
                 INIT_ID(getattr), \
                 INIT_ID(ignore), \
                 INIT_ID(importlib), \
+                INIT_ID(inf), \
                 INIT_ID(intersection), \
                 INIT_ID(isatty), \
                 INIT_ID(items), \
