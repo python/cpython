@@ -21,8 +21,6 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#define NEEDS_PY_IDENTIFIER
-
 #include "module.h"
 #include "structmember.h"         // PyMemberDef
 #include "connection.h"
@@ -125,13 +123,12 @@ class _sqlite3.Connection "pysqlite_Connection *" "clinic_state()->ConnectionTyp
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=67369db2faf80891]*/
 
-_Py_IDENTIFIER(cursor);
-
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 static void free_callback_context(callback_context *ctx);
 static void set_callback_context(callback_context **ctx_pp,
                                  callback_context *ctx);
 static void connection_close(pysqlite_Connection *self);
+PyObject *_pysqlite_query_execute(pysqlite_Cursor *, int, PyObject *, PyObject *);
 
 static PyObject *
 new_statement_cache(pysqlite_Connection *self, pysqlite_state *state,
@@ -782,7 +779,6 @@ final_callback(sqlite3_context *context)
 
     PyObject* function_result;
     PyObject** aggregate_instance;
-    _Py_IDENTIFIER(finalize);
     int ok;
     PyObject *exception, *value, *tb;
 
@@ -801,8 +797,10 @@ final_callback(sqlite3_context *context)
     /* Keep the exception (if any) of the last call to step() */
     PyErr_Fetch(&exception, &value, &tb);
 
-    function_result = _PyObject_CallMethodIdNoArgs(*aggregate_instance, &PyId_finalize);
-
+    callback_context *ctx = (callback_context *)sqlite3_user_data(context);
+    assert(ctx != NULL);
+    function_result = PyObject_CallMethodNoArgs(*aggregate_instance,
+                                                ctx->state->str_finalize);
     Py_DECREF(*aggregate_instance);
 
     ok = 0;
@@ -1432,16 +1430,14 @@ pysqlite_connection_execute_impl(pysqlite_Connection *self, PyObject *sql,
                                  PyObject *parameters)
 /*[clinic end generated code: output=5be05ae01ee17ee4 input=fbd17c75c7140271]*/
 {
-    _Py_IDENTIFIER(execute);
-    PyObject* cursor = 0;
     PyObject* result = 0;
 
-    cursor = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_cursor);
+    PyObject *cursor = pysqlite_connection_cursor_impl(self, NULL);
     if (!cursor) {
         goto error;
     }
 
-    result = _PyObject_CallMethodIdObjArgs(cursor, &PyId_execute, sql, parameters, NULL);
+    result = _pysqlite_query_execute((pysqlite_Cursor *)cursor, 0, sql, parameters);
     if (!result) {
         Py_CLEAR(cursor);
     }
@@ -1467,17 +1463,14 @@ pysqlite_connection_executemany_impl(pysqlite_Connection *self,
                                      PyObject *sql, PyObject *parameters)
 /*[clinic end generated code: output=776cd2fd20bfe71f input=4feab80659ffc82b]*/
 {
-    _Py_IDENTIFIER(executemany);
-    PyObject* cursor = 0;
     PyObject* result = 0;
 
-    cursor = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_cursor);
+    PyObject *cursor = pysqlite_connection_cursor_impl(self, NULL);
     if (!cursor) {
         goto error;
     }
 
-    result = _PyObject_CallMethodIdObjArgs(cursor, &PyId_executemany, sql,
-                                           parameters, NULL);
+    result = _pysqlite_query_execute((pysqlite_Cursor *)cursor, 1, sql, parameters);
     if (!result) {
         Py_CLEAR(cursor);
     }
@@ -1502,17 +1495,15 @@ pysqlite_connection_executescript(pysqlite_Connection *self,
                                   PyObject *script_obj)
 /*[clinic end generated code: output=4c4f9d77aa0ae37d input=b27ae5c24ffb8b43]*/
 {
-    _Py_IDENTIFIER(executescript);
-    PyObject* cursor = 0;
     PyObject* result = 0;
 
-    cursor = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_cursor);
+    PyObject *cursor = pysqlite_connection_cursor_impl(self, NULL);
     if (!cursor) {
         goto error;
     }
 
-    result = _PyObject_CallMethodIdObjArgs(cursor, &PyId_executescript,
-                                           script_obj, NULL);
+    PyObject *meth = self->state->str_executescript;  // borrowed ref.
+    result = PyObject_CallMethodObjArgs(cursor, meth, script_obj, NULL);
     if (!result) {
         Py_CLEAR(cursor);
     }
@@ -1620,7 +1611,6 @@ static PyObject *
 pysqlite_connection_iterdump_impl(pysqlite_Connection *self)
 /*[clinic end generated code: output=586997aaf9808768 input=53bc907cb5eedb85]*/
 {
-    _Py_IDENTIFIER(_iterdump);
     PyObject* retval = NULL;
     PyObject* module = NULL;
     PyObject* module_dict;
@@ -1640,7 +1630,12 @@ pysqlite_connection_iterdump_impl(pysqlite_Connection *self)
         goto finally;
     }
 
-    pyfn_iterdump = _PyDict_GetItemIdWithError(module_dict, &PyId__iterdump);
+    PyObject *meth = PyUnicode_InternFromString("_iterdump");
+    if (meth == NULL) {
+        goto finally;
+    }
+    pyfn_iterdump = PyDict_GetItemWithError(module_dict, meth);
+    Py_DECREF(meth);
     if (!pyfn_iterdump) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(self->OperationalError,

@@ -276,6 +276,8 @@ int _Py_Specialize_CallNoKw(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
 void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                              SpecializedCacheEntry *cache);
 void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
+void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
+                                   SpecializedCacheEntry *cache);
 
 /* Deallocator function for static codeobjects used in deepfreeze.py */
 void _PyStaticCode_Dealloc(PyCodeObject *co);
