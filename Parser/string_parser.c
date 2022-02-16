@@ -653,8 +653,8 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
                    (ch == '!' || ch == ':' || ch == '}' ||
                     ch == '=' || ch == '>' || ch == '<')) {
             /* See if there's a next character. */
-            if (*str+1 < end) {
-                char next = *(*str+1);
+            if (*str + 1 < end) {
+                char next = *(*str + 1);
 
                 /* For "!=". since '=' is not an allowed conversion character,
                    nothing is lost in this test. */
@@ -666,12 +666,12 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
                     *str += 1;
                     continue;
                 }
-                /* Don't get out of the loop for these, if they're single
-                   chars (not part of 2-char tokens). If by themselves, they
-                   don't end an expression (unlike say '!'). */
-                if (ch == '>' || ch == '<') {
-                    continue;
-                }
+            }
+            /* Don't get out of the loop for these, if they're single
+               chars (not part of 2-char tokens). If by themselves, they
+               don't end an expression (unlike say '!'). */
+            if (ch == '=' || ch == '>' || ch == '<') {
+                continue;
             }
 
             /* Normal way out of this loop. */
