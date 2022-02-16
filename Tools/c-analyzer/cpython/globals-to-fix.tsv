@@ -282,7 +282,6 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 # manually cached PyUnicodeObject
 Objects/funcobject.c	PyFunction_NewWithQualName	__name__	-
 Objects/listobject.c	-	indexerr	-
-Objects/typeobject.c	object___reduce_ex___impl	objreduce	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/_warnings.c	is_internal_frame	bootstrap_string	-
 # XXX This should have been found by the analyzer but wasn't:
@@ -395,6 +394,7 @@ Objects/typeobject.c	-	slotdefs	-
 
 # other
 Objects/typeobject.c	-	method_cache	-
+Objects/typeobject.c	object___reduce_ex___impl	objreduce	-
 Objects/unicodeobject.c	-	_string_module	-
 Objects/unicodeobject.c	-	interned	-
 Objects/unicodeobject.c	-	static_strings	-
