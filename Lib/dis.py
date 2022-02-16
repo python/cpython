@@ -518,8 +518,8 @@ disco = disassemble                     # XXX For backwards compatibility
 
 # Rely on C `int` being 32 bits for oparg
 _INT_BITS = 32
-# Maximum value for a c int
-_INT_MAX = 2 ** (_INT_BITS - 1)
+# Value for c int when it overflows
+_INT_OVERFLOW = 2 ** (_INT_BITS - 1)
 
 def _unpack_opargs(code):
     extended_arg = 0
@@ -531,8 +531,8 @@ def _unpack_opargs(code):
             # The oparg is stored as a signed integer
             # If the value exceeds its upper limit, it will overflow and wrap
             # to a negative integer
-            if extended_arg >= _INT_MAX:
-                extended_arg -= 2 * _INT_MAX
+            if extended_arg >= _INT_OVERFLOW:
+                extended_arg -= 2 * _INT_OVERFLOW
         else:
             arg = None
             extended_arg = 0
