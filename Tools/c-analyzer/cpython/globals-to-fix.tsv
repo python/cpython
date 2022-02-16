@@ -280,7 +280,6 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 # cached - initialized once
 
 # manually cached PyUnicodeObject
-Objects/listobject.c	-	indexerr	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/_warnings.c	is_internal_frame	bootstrap_string	-
 # XXX This should have been found by the analyzer but wasn't:

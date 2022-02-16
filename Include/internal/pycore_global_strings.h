@@ -40,6 +40,7 @@ struct _Py_global_strings {
         STRUCT_FOR_STR(dot, ".")
         STRUCT_FOR_STR(dot_locals, ".<locals>")
         STRUCT_FOR_STR(empty, "")
+        STRUCT_FOR_STR(list_err, "list index out of range")
         STRUCT_FOR_STR(percent, "%")
     } literals;
 

@@ -656,6 +656,7 @@ extern "C" {
                 INIT_STR(dot, "."), \
                 INIT_STR(dot_locals, ".<locals>"), \
                 INIT_STR(empty, ""), \
+                INIT_STR(list_err, "list index out of range"), \
                 INIT_STR(percent, "%"), \
             }, \
             .identifiers = { \
