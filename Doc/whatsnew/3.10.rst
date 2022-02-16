@@ -1223,9 +1223,6 @@ now call :func:`inspect.get_annotations` to retrieve annotations. This means
 also now un-stringize stringized annotations.
 (Contributed by Larry Hastings in :issue:`43817`.)
 
-Add :func:`inspect.ismethodwrapper` for checking if the type of an object is a
-:class:`~types.MethodWrapperType`. (Contributed by Hakan Çelik in :issue:`29418`.)
-
 linecache
 ---------
 
