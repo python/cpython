@@ -100,8 +100,6 @@ jobs:
         run: make smelly
       - name: Check limited ABI symbols
         run: make check-limited-abi
-      - name: Check global objects
-        run: make check-global-objects
 
   build_win32:
     name: 'Windows (x86)'
