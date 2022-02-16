@@ -51,6 +51,7 @@ static uint8_t adaptive_opcodes[256] = {
     [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
     [BINARY_OP] = BINARY_OP_ADAPTIVE,
     [COMPARE_OP] = COMPARE_OP_ADAPTIVE,
+    [UNPACK_SEQUENCE] = UNPACK_SEQUENCE_ADAPTIVE,
 };
 
 /* The number of cache entries required for a "family" of instructions. */
@@ -64,6 +65,7 @@ static uint8_t cache_requirements[256] = {
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [BINARY_OP] = 1,  // _PyAdaptiveEntry
     [COMPARE_OP] = 1, /* _PyAdaptiveEntry */
+    [UNPACK_SEQUENCE] = 1,  // _PyAdaptiveEntry
 };
 
 Py_ssize_t _Py_QuickenedCount = 0;
@@ -155,6 +157,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, CALL, "call");
     err += add_stat_dict(stats, BINARY_OP, "binary_op");
     err += add_stat_dict(stats, COMPARE_OP, "compare_op");
+    err += add_stat_dict(stats, UNPACK_SEQUENCE, "unpack_sequence");
     if (err < 0) {
         Py_DECREF(stats);
         return NULL;
@@ -607,27 +610,10 @@ initial_counter_value(void) {
 #define SPEC_FAIL_FOR_ITER_DICT_VALUES 22
 #define SPEC_FAIL_FOR_ITER_ENUMERATE 23
 
-/* UNPACK_SEQUENCE */
-#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_0 9
-#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_1 10
-#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_2 11
-#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_3 12
-#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_4 13
-#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_N 14
+// UNPACK_SEQUENCE
 
-#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_0 15
-#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_1 16
-#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_2 17
-#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_3 18
-#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_4 19
-#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_N 20
-
-#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_0 21
-#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_1 22
-#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_2 23
-#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_3 24
-#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_4 25
-#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_N 26
+#define SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR 8
+#define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 9
 
 
 static int
@@ -1950,6 +1936,56 @@ success:
 }
 
 #ifdef Py_STATS
+static int
+unpack_sequence_fail_kind(PyObject *seq)
+{
+    if (PySequence_Check(seq)) {
+        return SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE;
+    }
+    if (PyIter_Check(seq)) {
+        return SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR;
+    }
+    return SPEC_FAIL_OTHER;
+}
+#endif
+
+void
+_Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
+                              SpecializedCacheEntry *cache)
+{
+    _PyAdaptiveEntry *adaptive = &cache->adaptive;
+    if (PyTuple_CheckExact(seq)) {
+        if (PyTuple_GET_SIZE(seq) != adaptive->original_oparg) {
+            SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
+            goto failure;
+        }
+        if (PyTuple_GET_SIZE(seq) == 2) {
+            *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_TWO_TUPLE,
+                                      _Py_OPARG(*instr));
+            goto success;
+        }
+        *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_TUPLE, _Py_OPARG(*instr));
+        goto success;
+    }
+    if (PyList_CheckExact(seq)) {
+        if (PyList_GET_SIZE(seq) != adaptive->original_oparg) {
+            SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
+            goto failure;
+        }
+        *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_LIST, _Py_OPARG(*instr));
+        goto success;
+    }
+    SPECIALIZATION_FAIL(UNPACK_SEQUENCE, unpack_sequence_fail_kind(seq));
+failure:
+    STAT_INC(UNPACK_SEQUENCE, failure);
+    cache_backoff(adaptive);
+    return;
+success:
+    STAT_INC(UNPACK_SEQUENCE, success);
+    adaptive->counter = initial_counter_value();
+}
+
+#ifdef Py_STATS
 
 int
  _PySpecialization_ClassifyIterator(PyObject *iter)
@@ -1999,22 +2035,6 @@ int
         return SPEC_FAIL_FOR_ITER_ITERTOOLS;
     }
     return SPEC_FAIL_OTHER;
-}
-
-int
-_PySpecialization_ClassifySequence(PyObject *seq, int n)
-{
-    assert(n >= 0);
-    if (n > 4) {
-        n = 5;
-    }
-    if (PyTuple_CheckExact(seq)) {
-        return SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_0 + n;
-    }
-    if (PyList_CheckExact(seq)) {
-        return SPEC_FAIL_UNPACK_SEQUENCE_LIST_0 + n;
-    }
-    return SPEC_FAIL_UNPACK_SEQUENCE_OTHER_0 + n;
 }
 
 int
