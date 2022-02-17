@@ -2569,9 +2569,8 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
 
     The type info can be accessed via the Point2D.__annotations__ dict, and
     the Point2D.__required_keys__ and Point2D.__optional_keys__ frozensets.
-    TypedDict supports two additional equivalent forms::
+    TypedDict supports an additional equivalent form::
 
-        Point2D = TypedDict('Point2D', x=int, y=int, label=str)
         Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
 
     By default, all keys must be present in a TypedDict. It is possible
@@ -2587,14 +2586,22 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
     the total argument. True is the default, and makes all items defined in the
     class body be required.
 
-    The class syntax is only supported in Python 3.6+, while two other
-    syntax forms work for Python 2.7 and 3.2+
+    The class syntax is only supported in Python 3.6+, while the other
+    syntax form works for Python 2.7 and 3.2+
     """
     if fields is None:
         fields = kwargs
     elif kwargs:
         raise TypeError("TypedDict takes either a dict or keyword arguments,"
                         " but not both")
+    if kwargs:
+        warnings.warn(
+            "The kwargs-based syntax for TypedDict definitions is deprecated "
+            "in Python 3.11, will be removed in Python 3.13, and may not be "
+            "understood by third-party type checkers.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     ns = {'__annotations__': dict(fields)}
     module = _caller()
