@@ -1020,7 +1020,7 @@ positionsiter_next(positionsiterator* pi)
 
 static PyTypeObject PositionsIterator = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "poisitions_iterator",              /* tp_name */
+    "positions_iterator",               /* tp_name */
     sizeof(positionsiterator),          /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
