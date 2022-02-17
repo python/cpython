@@ -447,6 +447,53 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_asyncio_Task_cancelling__doc__,
+"cancelling($self, /)\n"
+"--\n"
+"\n"
+"Return True if the task is in the process of being cancelled.\n"
+"\n"
+"This is set once .cancel() is called\n"
+"and remains set until .uncancel() is called.\n"
+"\n"
+"As long as this flag is set, further .cancel() calls will be ignored,\n"
+"until .uncancel() is called to reset it.");
+
+#define _ASYNCIO_TASK_CANCELLING_METHODDEF    \
+    {"cancelling", (PyCFunction)_asyncio_Task_cancelling, METH_NOARGS, _asyncio_Task_cancelling__doc__},
+
+static PyObject *
+_asyncio_Task_cancelling_impl(TaskObj *self);
+
+static PyObject *
+_asyncio_Task_cancelling(TaskObj *self, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_Task_cancelling_impl(self);
+}
+
+PyDoc_STRVAR(_asyncio_Task_uncancel__doc__,
+"uncancel($self, /)\n"
+"--\n"
+"\n"
+"Reset the flag returned by cancelling().\n"
+"\n"
+"This should be used by tasks that catch CancelledError\n"
+"and wish to continue indefinitely until they are cancelled again.\n"
+"\n"
+"Returns the previous value of the flag.");
+
+#define _ASYNCIO_TASK_UNCANCEL_METHODDEF    \
+    {"uncancel", (PyCFunction)_asyncio_Task_uncancel, METH_NOARGS, _asyncio_Task_uncancel__doc__},
+
+static PyObject *
+_asyncio_Task_uncancel_impl(TaskObj *self);
+
+static PyObject *
+_asyncio_Task_uncancel(TaskObj *self, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_Task_uncancel_impl(self);
+}
+
 PyDoc_STRVAR(_asyncio_Task_get_stack__doc__,
 "get_stack($self, /, *, limit=None)\n"
 "--\n"
@@ -669,6 +716,45 @@ _asyncio_get_event_loop(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _asyncio_get_event_loop_impl(module);
 }
 
+PyDoc_STRVAR(_asyncio__get_event_loop__doc__,
+"_get_event_loop($module, /, stacklevel=3)\n"
+"--\n"
+"\n");
+
+#define _ASYNCIO__GET_EVENT_LOOP_METHODDEF    \
+    {"_get_event_loop", (PyCFunction)(void(*)(void))_asyncio__get_event_loop, METH_FASTCALL|METH_KEYWORDS, _asyncio__get_event_loop__doc__},
+
+static PyObject *
+_asyncio__get_event_loop_impl(PyObject *module, int stacklevel);
+
+static PyObject *
+_asyncio__get_event_loop(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"stacklevel", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_get_event_loop", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int stacklevel = 3;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    stacklevel = _PyLong_AsInt(args[0]);
+    if (stacklevel == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = _asyncio__get_event_loop_impl(module, stacklevel);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_asyncio_get_running_loop__doc__,
 "get_running_loop($module, /)\n"
 "--\n"
@@ -832,4 +918,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d0fc522bcbff9d61 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c02708a9d6a774cc input=a9049054013a1b77]*/

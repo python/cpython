@@ -22,13 +22,13 @@ Dictionary Objects
 .. c:function:: int PyDict_Check(PyObject *p)
 
    Return true if *p* is a dict object or an instance of a subtype of the dict
-   type.
+   type.  This function always succeeds.
 
 
 .. c:function:: int PyDict_CheckExact(PyObject *p)
 
    Return true if *p* is a dict object, but not an instance of a subtype of
-   the dict type.
+   the dict type.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyDict_New()

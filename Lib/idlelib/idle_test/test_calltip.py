@@ -10,7 +10,7 @@ from idlelib.idle_test.mock_tk import Text
 
 
 # Test Class TC is used in multiple get_argspec test methods
-class TC():
+class TC:
     'doc'
     tip = "(ai=None, *b)"
     def __init__(self, ai=None, *b): 'doc'
@@ -106,7 +106,7 @@ subclasses to override in order to tweak the default behaviour.
 If you want to completely replace the main wrapping algorithm,
 you\'ll probably have to override _wrap_chunks().''')
 
-    def test_properly_formated(self):
+    def test_properly_formatted(self):
 
         def foo(s='a'*100):
             pass
@@ -268,7 +268,7 @@ class Get_entityTest(unittest.TestCase):
 # open_calltip is about half the code; the others are fairly trivial.
 # The default mocks are what are needed for open_calltip.
 
-class mock_Shell():
+class mock_Shell:
     "Return mock sufficient to pass to hyperparser."
     def __init__(self, text):
         text.tag_prevrange = Mock(return_value=None)

@@ -13,6 +13,11 @@ PyAPI_FUNC(int) PyRun_AnyFileExFlags(
     const char *filename,       /* decoded from the filesystem encoding */
     int closeit,
     PyCompilerFlags *flags);
+PyAPI_FUNC(int) _PyRun_AnyFileObject(
+    FILE *fp,
+    PyObject *filename,
+    int closeit,
+    PyCompilerFlags *flags);
 PyAPI_FUNC(int) PyRun_SimpleFileExFlags(
     FILE *fp,
     const char *filename,       /* decoded from the filesystem encoding */
@@ -29,6 +34,10 @@ PyAPI_FUNC(int) PyRun_InteractiveOneObject(
 PyAPI_FUNC(int) PyRun_InteractiveLoopFlags(
     FILE *fp,
     const char *filename,       /* decoded from the filesystem encoding */
+    PyCompilerFlags *flags);
+PyAPI_FUNC(int) _PyRun_InteractiveLoopObject(
+    FILE *fp,
+    PyObject *filename,
     PyCompilerFlags *flags);
 
 
@@ -67,17 +76,6 @@ PyAPI_FUNC(const char *) _Py_SourceAsString(
     const char *what,
     PyCompilerFlags *cf,
     PyObject **cmd_copy);
-
-PyAPI_FUNC(struct symtable *) Py_SymtableStringObject(
-    const char *str,
-    PyObject *filename,
-    int start);
-
-PyAPI_FUNC(struct symtable *) _Py_SymtableStringObjectFlags(
-    const char *str,
-    PyObject *filename,
-    int start,
-    PyCompilerFlags *flags);
 
 
 /* A function flavor is also exported by libpython. It is required when
@@ -120,3 +118,4 @@ PyAPI_FUNC(PyObject *) PyRun_FileFlags(FILE *fp, const char *p, int s, PyObject 
 /* Stuff with no proper home (yet) */
 PyAPI_FUNC(char *) PyOS_Readline(FILE *, FILE *, const char *);
 PyAPI_DATA(PyThreadState*) _PyOS_ReadlineTState;
+PyAPI_DATA(char) *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *);

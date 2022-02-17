@@ -11,8 +11,8 @@ option.  The OpenerDirector is a composite object that invokes the
 Handlers needed to open the requested URL.  For example, the
 HTTPHandler performs HTTP GET and POST requests and deals with
 non-error returns.  The HTTPRedirectHandler automatically deals with
-HTTP 301, 302, 303 and 307 redirect errors, and the HTTPDigestAuthHandler
-deals with digest authentication.
+HTTP 301, 302, 303, 307, and 308 redirect errors, and the
+HTTPDigestAuthHandler deals with digest authentication.
 
 urlopen(url, data=None) -- Basic usage is the same as original
 urllib.  pass the url and optionally data to post to an HTTP URL, and
@@ -64,7 +64,7 @@ opener = urllib.request.build_opener(proxy_support, authinfo,
 # install it
 urllib.request.install_opener(opener)
 
-f = urllib.request.urlopen('http://www.python.org/')
+f = urllib.request.urlopen('https://www.python.org/')
 """
 
 # XXX issues:
@@ -661,7 +661,7 @@ class HTTPRedirectHandler(BaseHandler):
         but another Handler might.
         """
         m = req.get_method()
-        if (not (code in (301, 302, 303, 307) and m in ("GET", "HEAD")
+        if (not (code in (301, 302, 303, 307, 308) and m in ("GET", "HEAD")
             or code in (301, 302, 303) and m == "POST")):
             raise HTTPError(req.full_url, code, msg, headers, fp)
 
@@ -748,7 +748,7 @@ class HTTPRedirectHandler(BaseHandler):
 
         return self.parent.open(new, timeout=req.timeout)
 
-    http_error_301 = http_error_303 = http_error_307 = http_error_302
+    http_error_301 = http_error_303 = http_error_307 = http_error_308 = http_error_302
 
     inf_msg = "The HTTP server returned a redirect error that would " \
               "lead to an infinite loop.\n" \
@@ -773,7 +773,11 @@ def _parse_proxy(proxy):
             raise ValueError("proxy URL with no authority: %r" % proxy)
         # We have an authority, so for RFC 3986-compliant URLs (by ss 3.
         # and 3.3.), path is empty or starts with '/'
-        end = r_scheme.find("/", 2)
+        if '@' in r_scheme:
+            host_separator = r_scheme.find('@')
+            end = r_scheme.find("/", host_separator)
+        else:
+            end = r_scheme.find("/", 2)
         if end == -1:
             end = None
         authority = r_scheme[2:end]
@@ -941,7 +945,7 @@ class AbstractBasicAuthHandler:
     # (single quotes are a violation of the RFC, but appear in the wild)
     rx = re.compile('(?:^|,)'   # start of the string or ','
                     '[ \t]*'    # optional whitespaces
-                    '([^ \t]+)' # scheme like "Basic"
+                    '([^ \t,]+)' # scheme like "Basic"
                     '[ \t]+'    # mandatory whitespaces
                     # realm=xxx
                     # realm='xxx'
@@ -2204,6 +2208,13 @@ class FancyURLopener(URLopener):
         """Error 307 -- relocated, but turn POST into error."""
         if data is None:
             return self.http_error_302(url, fp, errcode, errmsg, headers, data)
+        else:
+            return self.http_error_default(url, fp, errcode, errmsg, headers)
+
+    def http_error_308(self, url, fp, errcode, errmsg, headers, data=None):
+        """Error 308 -- relocated, but turn POST into error."""
+        if data is None:
+            return self.http_error_301(url, fp, errcode, errmsg, headers, data)
         else:
             return self.http_error_default(url, fp, errcode, errmsg, headers)
 

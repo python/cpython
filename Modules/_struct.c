@@ -3,9 +3,15 @@
 /* New version supporting byte order, alignment and size options,
    character strings, and unsigned numbers */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_floatobject.h"   // _PyFloat_Unpack2()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 #include <ctype.h>
 
@@ -24,7 +30,7 @@ typedef struct {
 static inline _structmodulestate*
 get_struct_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_structmodulestate *)state;
 }
@@ -32,7 +38,7 @@ get_struct_state(PyObject *module)
 static struct PyModuleDef _structmodule;
 
 #define get_struct_state_structinst(self) \
-    (get_struct_state(_PyType_GetModuleByDef(Py_TYPE(self), &_structmodule)))
+    (get_struct_state(PyType_GetModuleByDef(Py_TYPE(self), &_structmodule)))
 #define get_struct_state_iterinst(self) \
     (get_struct_state(PyType_GetModule(Py_TYPE(self))))
 
@@ -588,9 +594,9 @@ np_short(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     if (get_long(state, v, &x) < 0)
         return -1;
     if (x < SHRT_MIN || x > SHRT_MAX) {
-        PyErr_SetString(state->StructError,
-                        "short format requires " Py_STRINGIFY(SHRT_MIN)
-                        " <= number <= " Py_STRINGIFY(SHRT_MAX));
+        PyErr_Format(state->StructError,
+                     "short format requires %d <= number <= %d",
+                     (int)SHRT_MIN, (int)SHRT_MAX);
         return -1;
     }
     y = (short)x;
@@ -606,9 +612,9 @@ np_ushort(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     if (get_long(state, v, &x) < 0)
         return -1;
     if (x < 0 || x > USHRT_MAX) {
-        PyErr_SetString(state->StructError,
-                        "ushort format requires 0 <= number <= "
-                        Py_STRINGIFY(USHRT_MAX));
+        PyErr_Format(state->StructError,
+                     "ushort format requires 0 <= number <= %u",
+                     (unsigned int)USHRT_MAX);
         return -1;
     }
     y = (unsigned short)x;
@@ -1442,8 +1448,7 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = alloc_func(type, 0);
     if (self != NULL) {
         PyStructObject *s = (PyStructObject*)self;
-        Py_INCREF(Py_None);
-        s->s_format = Py_None;
+        s->s_format = Py_NewRef(Py_None);
         s->s_codes = NULL;
         s->s_size = -1;
         s->s_len = -1;
@@ -1475,7 +1480,6 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
         if (format == NULL)
             return -1;
     }
-    /* XXX support buffer interface, too */
     else {
         Py_INCREF(format);
     }
@@ -2060,8 +2064,6 @@ static PyMemberDef s_members[] = {
     {"__weaklistoffset__", T_PYSSIZET, offsetof(PyStructObject, weakreflist), READONLY},
     {NULL}  /* sentinel */
 };
-
-#define OFF(x) offsetof(PyStructObject, x)
 
 static PyGetSetDef s_getsetlist[] = {
     {"format", (getter)s_get_format, (setter)NULL, "struct format string", NULL},

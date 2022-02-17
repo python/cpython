@@ -1,3 +1,0 @@
-Fix encoding name when running a ``.pyc`` file on Windows:
-:c:func:`PyRun_SimpleFileExFlags()` now uses the correct encoding to decode
-the filename.

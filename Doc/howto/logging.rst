@@ -684,7 +684,6 @@ Here is the logging.conf file:
 
     [formatter_simpleFormatter]
     format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
-    datefmt=
 
 The output is nearly identical to that of the non-config-file-based example:
 

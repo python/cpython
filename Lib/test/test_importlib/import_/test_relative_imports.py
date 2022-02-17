@@ -1,5 +1,5 @@
 """Test relative imports (PEP 328)."""
-from .. import util
+from test.test_importlib import util
 import unittest
 import warnings
 

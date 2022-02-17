@@ -125,7 +125,7 @@ class FlowControlMixin(protocols.Protocol):
 
     def __init__(self, loop=None):
         if loop is None:
-            self._loop = events.get_event_loop()
+            self._loop = events._get_event_loop(stacklevel=4)
         else:
             self._loop = loop
         self._paused = False
@@ -283,9 +283,13 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
     def __del__(self):
         # Prevent reports about unhandled exceptions.
         # Better than self._closed._log_traceback = False hack
-        closed = self._closed
-        if closed.done() and not closed.cancelled():
-            closed.exception()
+        try:
+            closed = self._closed
+        except AttributeError:
+            pass  # failed constructor
+        else:
+            if closed.done() and not closed.cancelled():
+                closed.exception()
 
 
 class StreamWriter:
@@ -381,7 +385,7 @@ class StreamReader:
 
         self._limit = limit
         if loop is None:
-            self._loop = events.get_event_loop()
+            self._loop = events._get_event_loop()
         else:
             self._loop = loop
         self._buffer = bytearray()

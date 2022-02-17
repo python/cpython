@@ -15,7 +15,7 @@
 --------------
 
 The :mod:`smtplib` module defines an SMTP client session object that can be used
-to send mail to any Internet machine with an SMTP or ESMTP listener daemon.  For
+to send mail to any internet machine with an SMTP or ESMTP listener daemon.  For
 details of SMTP and ESMTP operation, consult :rfc:`821` (Simple Mail Transfer
 Protocol) and :rfc:`1869` (SMTP Service Extensions).
 

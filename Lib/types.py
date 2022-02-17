@@ -52,11 +52,9 @@ ModuleType = type(sys)
 
 try:
     raise TypeError
-except TypeError:
-    tb = sys.exc_info()[2]
-    TracebackType = type(tb)
-    FrameType = type(tb.tb_frame)
-    tb = None; del tb
+except TypeError as exc:
+    TracebackType = type(exc.__traceback__)
+    FrameType = type(exc.__traceback__.tb_frame)
 
 # For Jython, the following two types are identical
 GetSetDescriptorType = type(FunctionType.__code__)
@@ -82,7 +80,7 @@ def resolve_bases(bases):
     updated = False
     shift = 0
     for i, base in enumerate(bases):
-        if isinstance(base, type):
+        if isinstance(base, type) and not isinstance(base, GenericAlias):
             continue
         if not hasattr(base, "__mro_entries__"):
             continue
@@ -155,7 +153,12 @@ class DynamicClassAttribute:
     class's __getattr__ method; this is done by raising AttributeError.
 
     This allows one to have properties active on an instance, and have virtual
-    attributes on the class with the same name (see Enum for an example).
+    attributes on the class with the same name.  (Enum used this between Python
+    versions 3.4 - 3.9 .)
+
+    Subclass from this to use a different method of accessing virtual attributes
+    and still be treated properly by the inspect module. (Enum uses this since
+    Python 3.10 .)
 
     """
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
@@ -292,9 +295,8 @@ def coroutine(func):
 
     return wrapped
 
-
 GenericAlias = type(list[int])
-Union = type(int | str)
+UnionType = type(int | str)
 
 EllipsisType = type(Ellipsis)
 NoneType = type(None)

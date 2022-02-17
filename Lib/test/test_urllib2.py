@@ -1163,7 +1163,7 @@ class HandlerTests(unittest.TestCase):
         o = h.parent = MockOpener()
 
         # ordinary redirect behaviour
-        for code in 301, 302, 303, 307:
+        for code in 301, 302, 303, 307, 308:
             for data in None, "blah\nblah\n":
                 method = getattr(h, "http_error_%s" % code)
                 req = Request(from_url, data)
@@ -1176,8 +1176,8 @@ class HandlerTests(unittest.TestCase):
                     method(req, MockFile(), code, "Blah",
                            MockHeaders({"location": to_url}))
                 except urllib.error.HTTPError:
-                    # 307 in response to POST requires user OK
-                    self.assertEqual(code, 307)
+                    # 307 and 308 in response to POST require user OK
+                    self.assertIn(code, (307, 308))
                     self.assertIsNotNone(data)
                 self.assertEqual(o.req.get_full_url(), to_url)
                 try:
@@ -1788,22 +1788,6 @@ class MiscTests(unittest.TestCase):
         self.opener_has_handler(o, MyHTTPHandler)
         self.opener_has_handler(o, MyOtherHTTPHandler)
 
-    @unittest.skipUnless(support.is_resource_enabled('network'),
-                         'test requires network access')
-    def test_issue16464(self):
-        with socket_helper.transient_internet("http://www.example.com/"):
-            opener = urllib.request.build_opener()
-            request = urllib.request.Request("http://www.example.com/")
-            self.assertEqual(None, request.data)
-
-            opener.open(request, "1".encode("us-ascii"))
-            self.assertEqual(b"1", request.data)
-            self.assertEqual("1", request.get_header("Content-length"))
-
-            opener.open(request, "1234567890".encode("us-ascii"))
-            self.assertEqual(b"1234567890", request.data)
-            self.assertEqual("10", request.get_header("Content-length"))
-
     def test_HTTPError_interface(self):
         """
         Issue 13211 reveals that HTTPError didn't implement the URLError
@@ -1851,8 +1835,16 @@ class MiscTests(unittest.TestCase):
              ('ftp', 'joe', 'password', 'proxy.example.com')),
             # Test for no trailing '/' case
             ('http://joe:password@proxy.example.com',
-             ('http', 'joe', 'password', 'proxy.example.com'))
+             ('http', 'joe', 'password', 'proxy.example.com')),
+            # Testcases with '/' character in username, password
+            ('http://user/name:password@localhost:22',
+             ('http', 'user/name', 'password', 'localhost:22')),
+            ('http://username:pass/word@localhost:22',
+             ('http', 'username', 'pass/word', 'localhost:22')),
+            ('http://user/name:pass/word@localhost:22',
+             ('http', 'user/name', 'pass/word', 'localhost:22')),
         ]
+
 
         for tc, expected in parse_proxy_test_cases:
             self.assertEqual(_parse_proxy(tc), expected)

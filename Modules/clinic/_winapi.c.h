@@ -1148,4 +1148,40 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1f10e03f64ff9777 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi__mimetypes_read_windows_registry__doc__,
+"_mimetypes_read_windows_registry($module, /, on_type_read)\n"
+"--\n"
+"\n"
+"Optimized function for reading all known MIME types from the registry.\n"
+"\n"
+"*on_type_read* is a callable taking *type* and *ext* arguments, as for\n"
+"MimeTypes.add_type.");
+
+#define _WINAPI__MIMETYPES_READ_WINDOWS_REGISTRY_METHODDEF    \
+    {"_mimetypes_read_windows_registry", (PyCFunction)(void(*)(void))_winapi__mimetypes_read_windows_registry, METH_FASTCALL|METH_KEYWORDS, _winapi__mimetypes_read_windows_registry__doc__},
+
+static PyObject *
+_winapi__mimetypes_read_windows_registry_impl(PyObject *module,
+                                              PyObject *on_type_read);
+
+static PyObject *
+_winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"on_type_read", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_mimetypes_read_windows_registry", 0};
+    PyObject *argsbuf[1];
+    PyObject *on_type_read;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    on_type_read = args[0];
+    return_value = _winapi__mimetypes_read_windows_registry_impl(module, on_type_read);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=ac3623be6e42017c input=a9049054013a1b77]*/

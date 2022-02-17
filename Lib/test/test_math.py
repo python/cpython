@@ -1,7 +1,7 @@
 # Python test set -- math module
 # XXXX Should not do tests around zero only
 
-from test.support import run_unittest, verbose, requires_IEEE_754
+from test.support import verbose, requires_IEEE_754
 from test import support
 import unittest
 import itertools
@@ -130,7 +130,7 @@ def parse_mtestfile(fname):
       id fn arg -> expected [flag]*
 
     """
-    with open(fname) as fp:
+    with open(fname, encoding="utf-8") as fp:
         for line in fp:
             # strip comments, and skip blank lines
             if '--' in line:
@@ -153,7 +153,7 @@ def parse_testfile(fname):
     Empty lines or lines starting with -- are ignored
     yields id, fn, arg_real, arg_imag, exp_real, exp_imag
     """
-    with open(fname) as fp:
+    with open(fname, encoding="utf-8") as fp:
         for line in fp:
             # skip comment lines and blank lines
             if line.startswith('--') or not line.strip():
@@ -377,6 +377,22 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.atan2(NAN, INF)))
         self.assertTrue(math.isnan(math.atan2(NAN, NAN)))
 
+    def testCbrt(self):
+        self.assertRaises(TypeError, math.cbrt)
+        self.ftest('cbrt(0)', math.cbrt(0), 0)
+        self.ftest('cbrt(1)', math.cbrt(1), 1)
+        self.ftest('cbrt(8)', math.cbrt(8), 2)
+        self.ftest('cbrt(0.0)', math.cbrt(0.0), 0.0)
+        self.ftest('cbrt(-0.0)', math.cbrt(-0.0), -0.0)
+        self.ftest('cbrt(1.2)', math.cbrt(1.2), 1.062658569182611)
+        self.ftest('cbrt(-2.6)', math.cbrt(-2.6), -1.375068867074141)
+        self.ftest('cbrt(27)', math.cbrt(27), 3)
+        self.ftest('cbrt(-1)', math.cbrt(-1), -1)
+        self.ftest('cbrt(-27)', math.cbrt(-27), -3)
+        self.assertEqual(math.cbrt(INF), INF)
+        self.assertEqual(math.cbrt(NINF), NINF)
+        self.assertTrue(math.isnan(math.cbrt(NAN)))
+
     def testCeil(self):
         self.assertRaises(TypeError, math.ceil)
         self.assertEqual(int, type(math.ceil(0.5)))
@@ -484,6 +500,17 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.exp(NINF), 0.)
         self.assertTrue(math.isnan(math.exp(NAN)))
         self.assertRaises(OverflowError, math.exp, 1000000)
+
+    def testExp2(self):
+        self.assertRaises(TypeError, math.exp2)
+        self.ftest('exp2(-1)', math.exp2(-1), 0.5)
+        self.ftest('exp2(0)', math.exp2(0), 1)
+        self.ftest('exp2(1)', math.exp2(1), 2)
+        self.ftest('exp2(2.3)', math.exp2(2.3), 4.924577653379665)
+        self.assertEqual(math.exp2(INF), INF)
+        self.assertEqual(math.exp2(NINF), 0.)
+        self.assertTrue(math.isnan(math.exp2(NAN)))
+        self.assertRaises(OverflowError, math.exp2, 1000000)
 
     def testFabs(self):
         self.assertRaises(TypeError, math.fabs)
@@ -1214,7 +1241,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.pow, 0., -2.)
         self.assertRaises(ValueError, math.pow, 0., -2.3)
         self.assertRaises(ValueError, math.pow, 0., -3.)
-        self.assertRaises(ValueError, math.pow, 0., NINF)
+        self.assertEqual(math.pow(0., NINF), INF)
         self.assertTrue(math.isnan(math.pow(0., NAN)))
 
         # pow(INF, x)
@@ -1240,7 +1267,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.pow, -0., -2.)
         self.assertRaises(ValueError, math.pow, -0., -2.3)
         self.assertRaises(ValueError, math.pow, -0., -3.)
-        self.assertRaises(ValueError, math.pow, -0., NINF)
+        self.assertEqual(math.pow(-0., NINF), INF)
         self.assertTrue(math.isnan(math.pow(-0., NAN)))
 
         # pow(NINF, x)
@@ -1499,6 +1526,10 @@ class MathTests(unittest.TestCase):
     def testSqrt(self):
         self.assertRaises(TypeError, math.sqrt)
         self.ftest('sqrt(0)', math.sqrt(0), 0)
+        self.ftest('sqrt(0)', math.sqrt(0.0), 0.0)
+        self.ftest('sqrt(2.5)', math.sqrt(2.5), 1.5811388300841898)
+        self.ftest('sqrt(0.25)', math.sqrt(0.25), 0.5)
+        self.ftest('sqrt(25.25)', math.sqrt(25.25), 5.024937810560445)
         self.ftest('sqrt(1)', math.sqrt(1), 1)
         self.ftest('sqrt(4)', math.sqrt(4), 2)
         self.assertEqual(math.sqrt(INF), INF)
@@ -1783,16 +1814,22 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, prod)
         self.assertRaises(TypeError, prod, 42)
         self.assertRaises(TypeError, prod, ['a', 'b', 'c'])
-        self.assertRaises(TypeError, prod, ['a', 'b', 'c'], '')
-        self.assertRaises(TypeError, prod, [b'a', b'c'], b'')
+        self.assertRaises(TypeError, prod, ['a', 'b', 'c'], start='')
+        self.assertRaises(TypeError, prod, [b'a', b'c'], start=b'')
         values = [bytearray(b'a'), bytearray(b'b')]
-        self.assertRaises(TypeError, prod, values, bytearray(b''))
+        self.assertRaises(TypeError, prod, values, start=bytearray(b''))
         self.assertRaises(TypeError, prod, [[1], [2], [3]])
         self.assertRaises(TypeError, prod, [{2:3}])
-        self.assertRaises(TypeError, prod, [{2:3}]*2, {2:3})
-        self.assertRaises(TypeError, prod, [[1], [2], [3]], [])
+        self.assertRaises(TypeError, prod, [{2:3}]*2, start={2:3})
+        self.assertRaises(TypeError, prod, [[1], [2], [3]], start=[])
+
+        # Some odd cases
+        self.assertEqual(prod([2, 3], start='ab'), 'abababababab')
+        self.assertEqual(prod([2, 3], start=[1, 2]), [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2])
+        self.assertEqual(prod([], start={2: 3}), {2:3})
+
         with self.assertRaises(TypeError):
-            prod([10, 20], [30, 40])     # start is a keyword-only argument
+            prod([10, 20], 1)     # start is a keyword-only argument
 
         self.assertEqual(prod([0, 1, 2, 3]), 0)
         self.assertEqual(prod([1, 0, 2, 3]), 0)
@@ -1852,8 +1889,8 @@ class MathTests(unittest.TestCase):
         perm = math.perm
         factorial = math.factorial
         # Test if factorial definition is satisfied
-        for n in range(100):
-            for k in range(n + 1):
+        for n in range(500):
+            for k in (range(n + 1) if n < 100 else range(30) if n < 200 else range(10)):
                 self.assertEqual(perm(n, k),
                                  factorial(n) // factorial(n - k))
 
@@ -1916,8 +1953,8 @@ class MathTests(unittest.TestCase):
         comb = math.comb
         factorial = math.factorial
         # Test if factorial definition is satisfied
-        for n in range(100):
-            for k in range(n + 1):
+        for n in range(500):
+            for k in (range(n + 1) if n < 100 else range(30) if n < 200 else range(10)):
                 self.assertEqual(comb(n, k), factorial(n)
                     // (factorial(k) * factorial(n - k)))
 
@@ -2205,13 +2242,10 @@ class IsCloseTests(unittest.TestCase):
         self.assertAllNotClose(fraction_examples, rel_tol=1e-9)
 
 
-def test_main():
+def load_tests(loader, tests, pattern):
     from doctest import DocFileSuite
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(MathTests))
-    suite.addTest(unittest.makeSuite(IsCloseTests))
-    suite.addTest(DocFileSuite("ieee754.txt"))
-    run_unittest(suite)
+    tests.addTest(DocFileSuite("ieee754.txt"))
+    return tests
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

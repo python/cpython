@@ -19,7 +19,6 @@ __all__ = ['build',
            'bdist',
            'bdist_dumb',
            'bdist_rpm',
-           'bdist_wininst',
            'check',
            'upload',
            # These two are reserved for future use:

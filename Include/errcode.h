@@ -30,6 +30,7 @@ extern "C" {
 #define E_EOLS          24      /* EOL in single-quoted string */
 #define E_LINECONT      25      /* Unexpected characters after a line continuation */
 #define E_BADSINGLE     27      /* Ill-formed single statement input */
+#define E_INTERACT_STOP 28      /* Interactive mode stopped tokenization */
 
 #ifdef __cplusplus
 }

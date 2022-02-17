@@ -4,9 +4,9 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytes_methods.h"
-#include "pycore_object.h"
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_strhex.h"        // _Py_strhex_with_sep()
 #include "bytesobject.h"
-#include "pystrhex.h"
 
 /*[clinic input]
 class bytearray "PyByteArrayObject *" "&PyByteArray_Type"
@@ -321,6 +321,7 @@ bytearray_repeat(PyByteArrayObject *self, Py_ssize_t count)
     PyByteArrayObject *result;
     Py_ssize_t mysize;
     Py_ssize_t size;
+    const char *buf;
 
     if (count < 0)
         count = 0;
@@ -329,13 +330,14 @@ bytearray_repeat(PyByteArrayObject *self, Py_ssize_t count)
         return PyErr_NoMemory();
     size = mysize * count;
     result = (PyByteArrayObject *)PyByteArray_FromStringAndSize(NULL, size);
+    buf = PyByteArray_AS_STRING(self);
     if (result != NULL && size != 0) {
         if (mysize == 1)
-            memset(result->ob_bytes, self->ob_bytes[0], size);
+            memset(result->ob_bytes, buf[0], size);
         else {
             Py_ssize_t i;
             for (i = 0; i < count; i++)
-                memcpy(result->ob_bytes + i*mysize, self->ob_bytes, mysize);
+                memcpy(result->ob_bytes + i*mysize, buf, mysize);
         }
     }
     return (PyObject *)result;
@@ -1072,6 +1074,7 @@ bytearray_dealloc(PyByteArrayObject *self)
 /* -------------------------------------------------------------------- */
 /* Methods */
 
+#define STRINGLIB_IS_UNICODE 0
 #define FASTSEARCH fastsearch
 #define STRINGLIB(F) stringlib_##F
 #define STRINGLIB_CHAR char
@@ -1734,6 +1737,11 @@ bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
     }
     Py_DECREF(it);
 
+    if (PyErr_Occurred()) {
+        Py_DECREF(bytearray_obj);
+        return NULL;
+    }
+
     /* Resize down to exact size. */
     if (PyByteArray_Resize((PyObject *)bytearray_obj, len) < 0) {
         Py_DECREF(bytearray_obj);
@@ -1746,10 +1754,7 @@ bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
     }
     Py_DECREF(bytearray_obj);
 
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
-
+    assert(!PyErr_Occurred());
     Py_RETURN_NONE;
 }
 
@@ -2107,10 +2112,9 @@ static PyObject *
 _common_reduce(PyByteArrayObject *self, int proto)
 {
     PyObject *dict;
-    _Py_IDENTIFIER(__dict__);
     char *buf;
 
-    if (_PyObject_LookupAttrId((PyObject *)self, &PyId___dict__, &dict) < 0) {
+    if (_PyObject_LookupAttr((PyObject *)self, &_Py_ID(__dict__), &dict) < 0) {
         return NULL;
     }
     if (dict == NULL) {
@@ -2333,7 +2337,8 @@ PyTypeObject PyByteArray_Type = {
     PyObject_GenericGetAttr,            /* tp_getattro */
     0,                                  /* tp_setattro */
     &bytearray_as_buffer,               /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+        _Py_TPFLAGS_MATCH_SELF,       /* tp_flags */
     bytearray_doc,                      /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
@@ -2422,12 +2427,11 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 bytearrayiter_reduce(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
                              it->it_seq, it->it_index);
     } else {
-        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
     }
 }
 

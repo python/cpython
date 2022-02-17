@@ -16,9 +16,11 @@ AUDIT_TESTS_PY = support.findfile("audit-tests.py")
 
 
 class AuditTest(unittest.TestCase):
+
+    @support.requires_subprocess()
     def do_test(self, *args):
         with subprocess.Popen(
-            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
+            [sys.executable, "-Xutf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -29,10 +31,11 @@ class AuditTest(unittest.TestCase):
             if p.returncode:
                 self.fail("".join(p.stderr))
 
+    @support.requires_subprocess()
     def run_python(self, *args):
         events = []
         with subprocess.Popen(
-            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
+            [sys.executable, "-Xutf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -53,6 +56,11 @@ class AuditTest(unittest.TestCase):
 
     def test_block_add_hook_baseexception(self):
         self.do_test("test_block_add_hook_baseexception")
+
+    def test_marshal(self):
+        import_helper.import_module("marshal")
+
+        self.do_test("test_marshal")
 
     def test_pickle(self):
         import_helper.import_module("pickle")
@@ -117,6 +125,56 @@ class AuditTest(unittest.TestCase):
         self.assertEqual(events[1][0], "socket.__new__")
         self.assertEqual(events[2][0], "socket.bind")
         self.assertTrue(events[2][2].endswith("('127.0.0.1', 8080)"))
+
+    def test_gc(self):
+        returncode, events, stderr = self.run_python("test_gc")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        self.assertEqual(
+            [event[0] for event in events],
+            ["gc.get_objects", "gc.get_referrers", "gc.get_referents"]
+        )
+
+
+    def test_http(self):
+        import_helper.import_module("http.client")
+        returncode, events, stderr = self.run_python("test_http_client")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        self.assertEqual(events[0][0], "http.client.connect")
+        self.assertEqual(events[0][2], "www.python.org 80")
+        self.assertEqual(events[1][0], "http.client.send")
+        if events[1][2] != '[cannot send]':
+            self.assertIn('HTTP', events[1][2])
+
+
+    def test_sqlite3(self):
+        try:
+            import sqlite3
+        except ImportError:
+            return
+        returncode, events, stderr = self.run_python("test_sqlite3")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [ev[0] for ev in events]
+        expected = ["sqlite3.connect", "sqlite3.connect/handle"] * 2
+
+        if hasattr(sqlite3.Connection, "enable_load_extension"):
+            expected += [
+                "sqlite3.enable_load_extension",
+                "sqlite3.load_extension",
+            ]
+        self.assertEqual(actual, expected)
+
 
 if __name__ == "__main__":
     unittest.main()
