@@ -326,13 +326,16 @@ sys
 sysconfig
 ---------
 
-* A new *venv* :ref:`installation scheme <installation_paths>` was added
-  and is used when Python creates new virtual environments or when it
+* Two new :ref:`installation schemes <installation_paths>`
+  (*posix_venv* and *nt_venv*) were added and are used when Python creates
+  new virtual environments or when it
   is running from a virtual environment.
+  To determine what installation scheme is suitable for the platform Python
+  currently runs on, :func:`sysconfig.get_venv_scheme` was added.
   This is useful for downstream distributors who modify
   :func:`sysconfig.get_preferred_scheme`.
-  Third party code that creates new virtual environments should use this new
-  *venv* installation scheme to determine the paths, as does :mod:`venv`.
+  Third party code that creates new virtual environments should use the new
+  installation scheme to determine the paths, as does :mod:`venv`.
   (Contributed by Miro Hrončok in :issue:`45413`.)
 
 
@@ -373,8 +376,8 @@ unicodedata
 venv
 ----
 
-* When new Python virtual environments are created,
-  the *venv* :ref:`sysconfig installation scheme <installation_paths>` is used
+* When new Python virtual environments are created, the *posix_venv*/*nt_venv*
+  :ref:`sysconfig installation scheme <installation_paths>` is used
   to determine the paths inside the environment.
   When Python runs in a virtual environment, the same installation scheme
   is the default.

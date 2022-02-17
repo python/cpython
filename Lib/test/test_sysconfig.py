@@ -139,36 +139,49 @@ class TestSysConfig(unittest.TestCase):
         self.assertIsInstance(schemes, dict)
         self.assertEqual(set(schemes), expected_schemes)
 
-    def test_venv_scheme(self):
+    def test_posix_venv_scheme(self):
         # The following directories were hardcoded in the venv module
-        # before bpo-45413, here we assert the venv scheme does not regress
-        if sys.platform == 'win32':
-            binpath = 'Scripts'
-            incpath = 'Include'
-            libpath = os.path.join('Lib', 'site-packages')
-        else:
-            binpath = 'bin'
-            incpath = 'include'
-            libpath = os.path.join('lib',
-                                   'python%d.%d' % sys.version_info[:2],
-                                   'site-packages')
+        # before bpo-45413, here we assert the posix_venv scheme does not regress
+        binpath = 'bin'
+        incpath = 'include'
+        libpath = os.path.join('lib',
+                               'python%d.%d' % sys.version_info[:2],
+                               'site-packages')
 
         # Resolve the paths in prefix
         binpath = os.path.join(sys.prefix, binpath)
         incpath = os.path.join(sys.prefix, incpath)
         libpath = os.path.join(sys.prefix, libpath)
 
-        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='venv'))
-        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='venv'))
+        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='posix_venv'))
+        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='posix_venv'))
 
         # The include directory on POSIX isn't exactly the same as before,
         # but it is "within"
-        sysconfig_includedir = sysconfig.get_path('include', scheme='venv')
-        if sys.platform == 'win32':
-            self.assertEqual(incpath, sysconfig.get_path('include', scheme='venv'))
-        else:
-            self.assertTrue(sysconfig_includedir.startswith(incpath + os.sep))
+        sysconfig_includedir = sysconfig.get_path('include', scheme='posix_venv')
+        self.assertTrue(sysconfig_includedir.startswith(incpath + os.sep))
 
+    def test_nt_venv_scheme(self):
+        # The following directories were hardcoded in the venv module
+        # before bpo-45413, here we assert the posix_venv scheme does not regress
+        binpath = 'Scripts'
+        incpath = 'Include'
+        libpath = os.path.join('Lib', 'site-packages')
+
+        # Resolve the paths in prefix
+        binpath = os.path.join(sys.prefix, binpath)
+        incpath = os.path.join(sys.prefix, incpath)
+        libpath = os.path.join(sys.prefix, libpath)
+
+        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='nt_venv'))
+        self.assertEqual(incpath, sysconfig.get_path('include', scheme='nt_venv'))
+        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='nt_venv'))
+
+    def test_get_venv_scheme(self):
+        if sys.platform == 'win32':
+            self.assertEqual(sysconfig.get_venv_scheme(), 'nt_venv')
+        else:
+            self.assertEqual(sysconfig.get_venv_scheme(), 'posix_venv')
 
     def test_get_config_vars(self):
         cvars = get_config_vars()
@@ -298,7 +311,7 @@ class TestSysConfig(unittest.TestCase):
         self.assertTrue(os.path.isfile(config_h), config_h)
 
     def test_get_scheme_names(self):
-        wanted = ['nt', 'posix_home', 'posix_prefix', 'venv']
+        wanted = ['nt', 'posix_home', 'posix_prefix', 'posix_venv', 'nt_venv']
         if HAS_USER_BASE:
             wanted.extend(['nt_user', 'osx_framework_user', 'posix_user'])
         self.assertEqual(get_scheme_names(), tuple(sorted(wanted)))

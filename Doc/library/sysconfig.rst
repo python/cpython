@@ -73,7 +73,7 @@ Every new component that is installed using :mod:`distutils` or a
 Distutils-based system will follow the same scheme to copy its file in the right
 places.
 
-Python currently supports seven schemes:
+Python currently supports eight schemes:
 
 - *posix_prefix*: scheme for POSIX platforms like Linux or macOS.  This is
   the default scheme used when Python or a component is installed.
@@ -83,12 +83,13 @@ Python currently supports seven schemes:
 - *posix_user*: scheme for POSIX platforms used when a component is installed
   through Distutils and the *user* option is used.  This scheme defines paths
   located under the user home directory.
+- *posix_venv*: scheme for :mod:`Python virtual environments <venv>` on POSIX
+  platforms; by default it is the same as *posix_prefix* .
 - *nt*: scheme for NT platforms like Windows.
 - *nt_user*: scheme for NT platforms, when the *user* option is used.
+- *nt_venv*: scheme for :mod:`Python virtual environments <venv>` on NT
+  platforms; by default it is the same as *nt* .
 - *osx_framework_user*: scheme for macOS, when the *user* option is used.
-- *venv*: scheme for :mod:`Python virtual environments <venv>`;
-  by default, this is a copy of *posix_prefix* on POSIX
-  or a copy of *nt* on NT platforms.
 
 Each scheme is itself composed of a series of paths and each path has a unique
 identifier.  Python currently uses eight paths:
@@ -124,7 +125,7 @@ identifier.  Python currently uses eight paths:
 
    .. versionchanged:: 3.11
       When Python runs form a virtual environment,
-      the *venv* scheme is returned.
+      the *posix_venv*/*nt_venv* scheme is returned.
 
 .. function:: get_preferred_scheme(key)
 
@@ -140,7 +141,17 @@ identifier.  Python currently uses eight paths:
 
    .. versionchanged:: 3.11
       When Python runs form a virtual environment and ``key="prefix"``,
-      the *venv* scheme is returned.
+      the *posix_venv*/*nt_venv* scheme is returned.
+
+.. function:: get_venv_scheme()
+
+   Return a preferred scheme name for an installation layout used inside
+   :mod:`Python virtual environments <venv>`.
+
+   The return value is either ``"posix_venv"``, or ``"nt_venv"``,
+   depending on the platform.
+
+   .. versionadded:: 3.11
 
 
 .. function:: _get_preferred_schemes()

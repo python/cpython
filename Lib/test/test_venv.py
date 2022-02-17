@@ -239,7 +239,8 @@ class BasicTest(BaseTest):
     @requireVenvCreate
     def test_sysconfig_preferred_and_default_scheme(self):
         """
-        Test that the sysconfig preferred(prefix) and default scheme is venv.
+        Test that the sysconfig preferred(prefix) and default scheme is
+        posix_venv/nt_venv.
         """
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
@@ -248,7 +249,10 @@ class BasicTest(BaseTest):
         for call in ('get_preferred_scheme("prefix")', 'get_default_scheme()'):
             cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
             out, err = check_output(cmd)
-            self.assertEqual(out.strip(), b'venv', err)
+            if sys.platform == 'win32':
+                self.assertEqual(out.strip(), b'nt_venv', err)
+            else:
+                self.assertEqual(out.strip(), b'posix_venv', err)
 
     if sys.platform == 'win32':
         ENV_SUBDIRS = (

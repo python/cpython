@@ -100,7 +100,8 @@ class EnvBuilder:
             'installed_base': env_dir,
             'installed_platbase': env_dir,
         }
-        return sysconfig.get_path(name, scheme='venv', vars=vars)
+        venv_scheme = sysconfig.get_venv_scheme()
+        return sysconfig.get_path(name, scheme=venv_scheme, vars=vars)
 
     def ensure_directories(self, env_dir):
         """
