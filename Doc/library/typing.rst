@@ -1467,10 +1467,19 @@ These are not used in annotations. They are building blocks for declaring types.
 
    To allow using this feature with older versions of Python that do not
    support :pep:`526`, ``TypedDict`` supports two additional equivalent
-   syntactic forms::
+   syntactic forms:
+
+   * Using a literal :class:`dict` as the second argument::
+
+      Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+   * Using keyword arguments::
 
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
-      Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+   .. deprecated-removed:: 3.11 3.13
+      The keyword-argument syntax is deprecated in 3.11 and will be removed
+      in 3.13. It may also be unsupported by static type checkers.
 
    Furthermore, there is another reason to use the functional syntax. If the keys
    of ``TypedDicts`` aren't valid identifiers, such as keywords, name with hyphens,
@@ -1492,6 +1501,9 @@ These are not used in annotations. They are building blocks for declaring types.
       class Point2D(TypedDict, total=False):
           x: int
           y: int
+
+      # Alternative syntax
+      Point2D = TypedDict('Point2D', {'x': int, 'y': int}, total=False)
 
    This means that a ``Point2D`` ``TypedDict`` can have any of the keys
    omitted. A type checker is only expected to support a literal ``False`` or

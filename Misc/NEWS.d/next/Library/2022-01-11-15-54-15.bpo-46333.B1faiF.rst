@@ -1,0 +1,4 @@
+The :meth:`__eq__` and :meth:`__hash__` methods of
+:class:`typing.ForwardRef` now honor the ``module`` parameter of
+:class:`typing.ForwardRef`. Forward references from different
+modules are now differentiated.

@@ -991,17 +991,17 @@ here is a pure Python equivalent:
             if obj is None:
                 return self
             if self.fget is None:
-                raise AttributeError(f'unreadable attribute {self._name}')
+                raise AttributeError(f"property '{self._name}' has no getter")
             return self.fget(obj)
 
         def __set__(self, obj, value):
             if self.fset is None:
-                raise AttributeError(f"can't set attribute {self._name}")
+                raise AttributeError(f"property '{self._name}' has no setter")
             self.fset(obj, value)
 
         def __delete__(self, obj):
             if self.fdel is None:
-                raise AttributeError(f"can't delete attribute {self._name}")
+                raise AttributeError(f"property '{self._name}' has no deleter")
             self.fdel(obj)
 
         def getter(self, fget):
@@ -1456,7 +1456,7 @@ attributes stored in ``__slots__``:
     >>> mark.dept = 'Space Pirate'
     Traceback (most recent call last):
         ...
-    AttributeError: can't set attribute
+    AttributeError: property 'dept' of 'Immutable' object has no setter
     >>> mark.location = 'Mars'
     Traceback (most recent call last):
         ...

@@ -667,6 +667,7 @@ compiler_set_qualname(struct compiler *c)
                 || parent->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION
                 || parent->u_scope_type == COMPILER_SCOPE_LAMBDA)
             {
+                _Py_DECLARE_STR(dot_locals, ".<locals>");
                 base = PyUnicode_Concat(parent->u_qualname,
                                         &_Py_STR(dot_locals));
                 if (base == NULL)
@@ -2022,6 +2023,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
 {
     PyCodeObject *co;
     int addNone = 1;
+    _Py_DECLARE_STR(anon_module, "<module>");
     if (!compiler_enter_scope(c, &_Py_STR(anon_module), COMPILER_SCOPE_MODULE,
                               mod, 1)) {
         return NULL;
@@ -2876,6 +2878,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         return 0;
     }
 
+    _Py_DECLARE_STR(anon_lambda, "<lambda>");
     if (!compiler_enter_scope(c, &_Py_STR(anon_lambda), COMPILER_SCOPE_LAMBDA,
                               (void *)e, e->lineno)) {
         return 0;
@@ -5034,17 +5037,16 @@ compiler_sync_comprehension_generator(struct compiler *c,
        and then write to the element */
 
     comprehension_ty gen;
-    basicblock *start, *anchor, *skip, *if_cleanup;
+    basicblock *start, *anchor, *if_cleanup;
     Py_ssize_t i, n;
 
     start = compiler_new_block(c);
-    skip = compiler_new_block(c);
     if_cleanup = compiler_new_block(c);
     anchor = compiler_new_block(c);
 
-    if (start == NULL || skip == NULL || if_cleanup == NULL ||
-        anchor == NULL)
+    if (start == NULL || if_cleanup == NULL || anchor == NULL) {
         return 0;
+    }
 
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
 
@@ -5131,8 +5133,6 @@ compiler_sync_comprehension_generator(struct compiler *c,
         default:
             return 0;
         }
-
-        compiler_use_next_block(c, skip);
     }
     compiler_use_next_block(c, if_cleanup);
     if (start) {
@@ -5350,6 +5350,7 @@ static int
 compiler_genexp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == GeneratorExp_kind);
+    _Py_DECLARE_STR(anon_genexpr, "<genexpr>");
     return compiler_comprehension(c, e, COMP_GENEXP, &_Py_STR(anon_genexpr),
                                   e->v.GeneratorExp.generators,
                                   e->v.GeneratorExp.elt, NULL);
@@ -5359,6 +5360,7 @@ static int
 compiler_listcomp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == ListComp_kind);
+    _Py_DECLARE_STR(anon_listcomp, "<listcomp>");
     return compiler_comprehension(c, e, COMP_LISTCOMP, &_Py_STR(anon_listcomp),
                                   e->v.ListComp.generators,
                                   e->v.ListComp.elt, NULL);
@@ -5368,6 +5370,7 @@ static int
 compiler_setcomp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == SetComp_kind);
+    _Py_DECLARE_STR(anon_setcomp, "<setcomp>");
     return compiler_comprehension(c, e, COMP_SETCOMP, &_Py_STR(anon_setcomp),
                                   e->v.SetComp.generators,
                                   e->v.SetComp.elt, NULL);
@@ -5378,6 +5381,7 @@ static int
 compiler_dictcomp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == DictComp_kind);
+    _Py_DECLARE_STR(anon_dictcomp, "<dictcomp>");
     return compiler_comprehension(c, e, COMP_DICTCOMP, &_Py_STR(anon_dictcomp),
                                   e->v.DictComp.generators,
                                   e->v.DictComp.key, e->v.DictComp.value);
@@ -7528,6 +7532,11 @@ normalize_jumps(struct assembler *a)
         if (last->i_opcode == JUMP_ABSOLUTE) {
             if (last->i_target->b_visited == 0) {
                 last->i_opcode = JUMP_FORWARD;
+            }
+        }
+        if (last->i_opcode == JUMP_FORWARD) {
+            if (last->i_target->b_visited == 1) {
+                last->i_opcode = JUMP_ABSOLUTE;
             }
         }
     }

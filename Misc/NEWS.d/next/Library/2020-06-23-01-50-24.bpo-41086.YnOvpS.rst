@@ -1,0 +1,1 @@
+Make the :class:`configparser.ConfigParser` constructor raise :exc:`TypeError` if the ``interpolation`` parameter is not of type :class:`configparser.Interpolation`

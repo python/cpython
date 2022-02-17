@@ -186,8 +186,8 @@ check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg)
     return rc;
 }
 
-#define GET_WARNINGS_ATTR(interp, attr, try_import) \
-    get_warnings_attr(interp, &_Py_ID(attr), try_import)
+#define GET_WARNINGS_ATTR(interp, ATTR, try_import) \
+    get_warnings_attr(interp, &_Py_ID(ATTR), try_import)
 
 /*
    Returns a new reference.

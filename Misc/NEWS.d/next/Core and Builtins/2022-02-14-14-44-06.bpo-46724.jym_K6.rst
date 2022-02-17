@@ -1,0 +1,2 @@
+Make sure that all backwards jumps use the ``JUMP_ABSOLUTE`` instruction, rather
+than ``JUMP_FORWARD`` with an argument of ``(2**32)+offset``.
