@@ -368,10 +368,10 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             raise ValueError(t)
 
         async def runner():
-            async with taskgroups.TaskGroup(name='g1') as g1:
+            async with taskgroups.TaskGroup() as g1:
                 g1.create_task(crash_after(0.1))
 
-                async with taskgroups.TaskGroup(name='g2') as g2:
+                async with taskgroups.TaskGroup() as g2:
                     g2.create_task(crash_after(0.2))
 
         r = asyncio.create_task(runner())
@@ -387,10 +387,10 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             raise ValueError(t)
 
         async def runner():
-            async with taskgroups.TaskGroup(name='g1') as g1:
+            async with taskgroups.TaskGroup() as g1:
                 g1.create_task(crash_after(10))
 
-                async with taskgroups.TaskGroup(name='g2') as g2:
+                async with taskgroups.TaskGroup() as g2:
                     g2.create_task(crash_after(0.1))
 
         r = asyncio.create_task(runner())
@@ -407,7 +407,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             1 / 0
 
         async def runner():
-            async with taskgroups.TaskGroup(name='g1') as g1:
+            async with taskgroups.TaskGroup() as g1:
                 g1.create_task(crash_soon())
                 try:
                     await asyncio.sleep(10)
@@ -430,7 +430,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             1 / 0
 
         async def nested_runner():
-            async with taskgroups.TaskGroup(name='g1') as g1:
+            async with taskgroups.TaskGroup() as g1:
                 g1.create_task(crash_soon())
                 try:
                     await asyncio.sleep(10)

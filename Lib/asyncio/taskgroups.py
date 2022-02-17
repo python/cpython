@@ -15,12 +15,7 @@ from . import tasks
 
 class TaskGroup:
 
-    def __init__(self, *, name=None):
-        if name is None:
-            self._name = f'tg-{_name_counter()}'
-        else:
-            self._name = str(name)
-
+    def __init__(self):
         self._entered = False
         self._exiting = False
         self._aborting = False
@@ -33,11 +28,8 @@ class TaskGroup:
         self._base_error = None
         self._on_completed_fut = None
 
-    def get_name(self):
-        return self._name
-
     def __repr__(self):
-        msg = f'<TaskGroup {self._name!r}'
+        msg = f'<TaskGroup'
         if self._tasks:
             msg += f' tasks:{len(self._tasks)}'
         if self._unfinished_tasks:
