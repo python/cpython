@@ -102,8 +102,8 @@ class TestProgram(object):
         self.runTests()
 
     def usageExit(self, msg=None):
-        warnings.warn("function \"usageExit\" is being deprecated and will be"
-                      " removed in 3.13", DeprecationWarning)
+        warnings.warn("TestProgram.usageExit() is deprecated and will be"
+                      " removed in Python 3.13", DeprecationWarning)
         if msg:
             print(msg)
         if self._discovery_parser is None:
