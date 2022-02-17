@@ -2756,16 +2756,8 @@ task_step_impl(TaskObj *task, PyObject *exc)
             exc_state->exc_value = ev;
 
             args = ((PyBaseExceptionObject*)ev)->args;
-            if (PyTuple_Size(args) > 0) {
-                PyObject *msg = PyTuple_GetItem(args, 0);
-                if (msg == NULL) {
-                    return NULL;
-                }
-                return future_cancel(fut, msg);
-            }
-            else {
-                return future_cancel(fut, NULL);
-            }
+            PyObject *msg = PyTuple_GET_SIZE(args) ? PyTuple_GET_ITEM(args, 0) : NULL;
+            return future_cancel(fut, msg);
         }
 
         /* Some other exception; pop it and call Task.set_exception() */
