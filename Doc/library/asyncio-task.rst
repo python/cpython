@@ -821,9 +821,6 @@ Task Object
    .. versionchanged:: 3.8
       Added the *name* parameter.
 
-   .. versionchanged:: 3.10
-      Removed the *loop* parameter.
-
    .. deprecated:: 3.10
       Deprecation warning is emitted if *loop* is not specified
       and there is no running event loop.
