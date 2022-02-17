@@ -124,8 +124,10 @@ class BaseTaskTests:
         t.cancel('my message')
         self.assertEqual(t._cancel_message, 'my message')
 
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(asyncio.CancelledError) as cm:
             self.loop.run_until_complete(t)
+
+        self.assertEqual('my message', cm.exception.args[0])
 
     def test_task_cancel_message_setter(self):
         async def coro():
@@ -135,8 +137,10 @@ class BaseTaskTests:
         t._cancel_message = 'my new message'
         self.assertEqual(t._cancel_message, 'my new message')
 
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(asyncio.CancelledError) as cm:
             self.loop.run_until_complete(t)
+
+        self.assertEqual('my new message', cm.exception.args[0])
 
     def test_task_del_collect(self):
         class Evil:
@@ -590,7 +594,7 @@ class BaseTaskTests:
                 with self.assertRaises(asyncio.CancelledError) as cm:
                     loop.run_until_complete(task)
                 exc = cm.exception
-                self.assertEqual(exc.args, ())
+                self.assertEqual(exc.args, expected_args)
 
                 actual = get_innermost_context(exc)
                 self.assertEqual(actual,
@@ -624,7 +628,7 @@ class BaseTaskTests:
                 with self.assertRaises(asyncio.CancelledError) as cm:
                     loop.run_until_complete(task)
                 exc = cm.exception
-                self.assertEqual(exc.args, ())
+                self.assertEqual(exc.args, expected_args)
 
                 actual = get_innermost_context(exc)
                 self.assertEqual(actual,
@@ -648,7 +652,7 @@ class BaseTaskTests:
         with self.assertRaises(asyncio.CancelledError) as cm:
             loop.run_until_complete(task)
         exc = cm.exception
-        self.assertEqual(exc.args, ())
+        self.assertEqual(exc.args, ('my message',))
 
         actual = get_innermost_context(exc)
         self.assertEqual(actual,
@@ -2296,7 +2300,7 @@ class BaseTaskTests:
                 try:
                     loop.run_until_complete(main())
                 except asyncio.CancelledError as exc:
-                    self.assertEqual(exc.args, ())
+                    self.assertEqual(exc.args, expected_args)
                     exc_type, exc_args, depth = get_innermost_context(exc)
                     self.assertEqual((exc_type, exc_args),
                         (asyncio.CancelledError, expected_args))

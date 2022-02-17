@@ -2740,6 +2740,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
         }
 
         if (PyErr_ExceptionMatches(asyncio_CancelledError)) {
+            PyObject *args;
             /* CancelledError */
             PyErr_Fetch(&et, &ev, &tb);
             assert(et);
@@ -2754,7 +2755,17 @@ task_step_impl(TaskObj *task, PyObject *exc)
             _PyErr_StackItem *exc_state = &fut->fut_cancelled_exc_state;
             exc_state->exc_value = ev;
 
-            return future_cancel(fut, NULL);
+            args = ((PyBaseExceptionObject*)ev)->args;
+            if (PyTuple_Size(args) > 0) {
+                PyObject *msg = PyTuple_GetItem(args, 0);
+                if (msg == NULL) {
+                    return NULL;
+                }
+                return future_cancel(fut, msg);
+            }
+            else {
+                return future_cancel(fut, NULL);
+            }
         }
 
         /* Some other exception; pop it and call Task.set_exception() */
