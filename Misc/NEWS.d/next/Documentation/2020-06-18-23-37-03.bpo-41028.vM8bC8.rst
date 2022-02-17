@@ -1,0 +1,2 @@
+Language and version switchers, previously maintained in every cpython
+branches, are now handled by docsbuild-script.
