@@ -1,0 +1,3 @@
+When profiling, the ``c_return`` and ``c_exception`` events now
+contain the returned value and the exception thruple, respectively,
+mirroring ``return`` and ``exception``.
