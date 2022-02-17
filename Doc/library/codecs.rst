@@ -697,7 +697,7 @@ compatible with the Python codec registry.
 
    .. method:: writelines(list)
 
-      Concatenates the string iterable and writes it to the stream. Infinite or
+      Writes the concatenated iterable of strings to the stream. Infinite or
       very large iterables are not supported. The standard bytes-to-bytes codecs
       do not support this method.
 
