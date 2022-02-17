@@ -10,6 +10,8 @@ import unittest
 from test.support import captured_stdout, requires_debug_ranges
 from test.support.bytecode_helper import BytecodeTestCase
 
+import opcode
+
 
 def get_tb():
     def _error():
@@ -222,10 +224,10 @@ dis_bug_45757 = """\
 
 # [255, 255, 255, 252] is -4 in a 4 byte signed integer
 bug46724 = bytes([
-    144, 255, # EXTENDED_ARG
-    144, 255,
-    144, 255,
-    110, 252, # JUMP_FORWARD
+    opcode.EXTENDED_ARG, 255,
+    opcode.EXTENDED_ARG, 255,
+    opcode.EXTENDED_ARG, 255,
+    opcode.opmap['JUMP_FORWARD'], 252,
 ])
 
 
