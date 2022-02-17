@@ -11,7 +11,7 @@
    Copyright (c) 2000-2005 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2001-2002 Greg Stein <gstein@users.sourceforge.net>
    Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
-   Copyright (c) 2016-2021 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2022 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2016      Cristian Rodríguez <crrodriguez@opensuse.org>
    Copyright (c) 2016      Thomas Beutlich <tc@tbeu.de>
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
@@ -1041,7 +1041,7 @@ XML_SetBillionLaughsAttackProtectionActivationThreshold(
 */
 #define XML_MAJOR_VERSION 2
 #define XML_MINOR_VERSION 4
-#define XML_MICRO_VERSION 1
+#define XML_MICRO_VERSION 4
 
 #ifdef __cplusplus
 }
