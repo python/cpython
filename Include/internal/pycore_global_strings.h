@@ -194,7 +194,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__weakref__)
         STRUCT_FOR_ID(__xor__)
         STRUCT_FOR_ID(_abc_impl)
-        STRUCT_FOR_ID(_array_reconstructor)
         STRUCT_FOR_ID(_blksize)
         STRUCT_FOR_ID(_dealloc_warn)
         STRUCT_FOR_ID(_finalizing)

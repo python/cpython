@@ -809,7 +809,6 @@ extern "C" {
                 INIT_ID(__weakref__), \
                 INIT_ID(__xor__), \
                 INIT_ID(_abc_impl), \
-                INIT_ID(_array_reconstructor), \
                 INIT_ID(_blksize), \
                 INIT_ID(_dealloc_warn), \
                 INIT_ID(_finalizing), \
