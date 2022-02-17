@@ -51,6 +51,7 @@ static uint8_t adaptive_opcodes[256] = {
     [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
     [BINARY_OP] = BINARY_OP_ADAPTIVE,
     [COMPARE_OP] = COMPARE_OP_ADAPTIVE,
+    [UNPACK_SEQUENCE] = UNPACK_SEQUENCE_ADAPTIVE,
 };
 
 /* The number of cache entries required for a "family" of instructions. */
@@ -64,6 +65,7 @@ static uint8_t cache_requirements[256] = {
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [BINARY_OP] = 1,  // _PyAdaptiveEntry
     [COMPARE_OP] = 1, /* _PyAdaptiveEntry */
+    [UNPACK_SEQUENCE] = 1,  // _PyAdaptiveEntry
 };
 
 Py_ssize_t _Py_QuickenedCount = 0;
@@ -155,6 +157,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, CALL, "call");
     err += add_stat_dict(stats, BINARY_OP, "binary_op");
     err += add_stat_dict(stats, COMPARE_OP, "compare_op");
+    err += add_stat_dict(stats, UNPACK_SEQUENCE, "unpack_sequence");
     if (err < 0) {
         Py_DECREF(stats);
         return NULL;
@@ -549,9 +552,28 @@ initial_counter_value(void) {
 #define SPEC_FAIL_SUBSCR_PY_OTHER 21
 #define SPEC_FAIL_SUBSCR_DICT_SUBCLASS_NO_OVERRIDE 22
 
-/* Binary add */
+/* Binary op */
 
-#define SPEC_FAIL_BINARY_OP_DIFFERENT_TYPES 12
+#define SPEC_FAIL_BINARY_OP_ADD_DIFFERENT_TYPES          8
+#define SPEC_FAIL_BINARY_OP_ADD_OTHER                    9
+#define SPEC_FAIL_BINARY_OP_AND_DIFFERENT_TYPES         10
+#define SPEC_FAIL_BINARY_OP_AND_INT                     11
+#define SPEC_FAIL_BINARY_OP_AND_OTHER                   12
+#define SPEC_FAIL_BINARY_OP_FLOOR_DIVIDE                13
+#define SPEC_FAIL_BINARY_OP_LSHIFT                      14
+#define SPEC_FAIL_BINARY_OP_MATRIX_MULTIPLY             15
+#define SPEC_FAIL_BINARY_OP_MULTIPLY_DIFFERENT_TYPES    16
+#define SPEC_FAIL_BINARY_OP_MULTIPLY_OTHER              17
+#define SPEC_FAIL_BINARY_OP_OR                          18
+#define SPEC_FAIL_BINARY_OP_POWER                       19
+#define SPEC_FAIL_BINARY_OP_REMAINDER                   20
+#define SPEC_FAIL_BINARY_OP_RSHIFT                      21
+#define SPEC_FAIL_BINARY_OP_SUBTRACT_DIFFERENT_TYPES    22
+#define SPEC_FAIL_BINARY_OP_SUBTRACT_OTHER              23
+#define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_DIFFERENT_TYPES 24
+#define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_FLOAT           25
+#define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_OTHER           26
+#define SPEC_FAIL_BINARY_OP_XOR                         27
 
 /* Calls */
 #define SPEC_FAIL_CALL_COMPLEX_PARAMETERS 9
@@ -607,27 +629,10 @@ initial_counter_value(void) {
 #define SPEC_FAIL_FOR_ITER_DICT_VALUES 22
 #define SPEC_FAIL_FOR_ITER_ENUMERATE 23
 
-/* UNPACK_SEQUENCE */
-#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_0 9
-#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_1 10
-#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_2 11
-#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_3 12
-#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_4 13
-#define SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_N 14
+// UNPACK_SEQUENCE
 
-#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_0 15
-#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_1 16
-#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_2 17
-#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_3 18
-#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_4 19
-#define SPEC_FAIL_UNPACK_SEQUENCE_LIST_N 20
-
-#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_0 21
-#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_1 22
-#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_2 23
-#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_3 24
-#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_4 25
-#define SPEC_FAIL_UNPACK_SEQUENCE_OTHER_N 26
+#define SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR 8
+#define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 9
 
 
 static int
@@ -1759,6 +1764,76 @@ _Py_Specialize_CallNoKw(
     return 0;
 }
 
+#ifdef Py_STATS
+static int
+binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
+{
+    switch (oparg) {
+        case NB_ADD:
+        case NB_INPLACE_ADD:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_ADD_DIFFERENT_TYPES;
+            }
+            return SPEC_FAIL_BINARY_OP_ADD_OTHER;
+        case NB_AND:
+        case NB_INPLACE_AND:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_AND_DIFFERENT_TYPES;
+            }
+            if (PyLong_CheckExact(lhs)) {
+                return SPEC_FAIL_BINARY_OP_AND_INT;
+            }
+            return SPEC_FAIL_BINARY_OP_AND_OTHER;
+        case NB_FLOOR_DIVIDE:
+        case NB_INPLACE_FLOOR_DIVIDE:
+            return SPEC_FAIL_BINARY_OP_FLOOR_DIVIDE;
+        case NB_LSHIFT:
+        case NB_INPLACE_LSHIFT:
+            return SPEC_FAIL_BINARY_OP_LSHIFT;
+        case NB_MATRIX_MULTIPLY:
+        case NB_INPLACE_MATRIX_MULTIPLY:
+            return SPEC_FAIL_BINARY_OP_MATRIX_MULTIPLY;
+        case NB_MULTIPLY:
+        case NB_INPLACE_MULTIPLY:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_MULTIPLY_DIFFERENT_TYPES;
+            }
+            return SPEC_FAIL_BINARY_OP_MULTIPLY_OTHER;
+        case NB_OR:
+        case NB_INPLACE_OR:
+            return SPEC_FAIL_BINARY_OP_OR;
+        case NB_POWER:
+        case NB_INPLACE_POWER:
+            return SPEC_FAIL_BINARY_OP_POWER;
+        case NB_REMAINDER:
+        case NB_INPLACE_REMAINDER:
+            return SPEC_FAIL_BINARY_OP_REMAINDER;
+        case NB_RSHIFT:
+        case NB_INPLACE_RSHIFT:
+            return SPEC_FAIL_BINARY_OP_RSHIFT;
+        case NB_SUBTRACT:
+        case NB_INPLACE_SUBTRACT:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_SUBTRACT_DIFFERENT_TYPES;
+            }
+            return SPEC_FAIL_BINARY_OP_SUBTRACT_OTHER;
+        case NB_TRUE_DIVIDE:
+        case NB_INPLACE_TRUE_DIVIDE:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_DIFFERENT_TYPES;
+            }
+            if (PyFloat_CheckExact(lhs)) {
+                return SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_FLOAT;
+            }
+            return SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_OTHER;
+        case NB_XOR:
+        case NB_INPLACE_XOR:
+            return SPEC_FAIL_BINARY_OP_XOR;
+    }
+    Py_UNREACHABLE();
+}
+#endif
+
 void
 _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                         SpecializedCacheEntry *cache)
@@ -1768,8 +1843,7 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         case NB_ADD:
         case NB_INPLACE_ADD:
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
-                SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_BINARY_OP_DIFFERENT_TYPES);
-                goto failure;
+                break;
             }
             if (PyUnicode_CheckExact(lhs)) {
                 if (_Py_OPCODE(instr[1]) == STORE_FAST && Py_REFCNT(lhs) == 2) {
@@ -1794,8 +1868,7 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         case NB_MULTIPLY:
         case NB_INPLACE_MULTIPLY:
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
-                SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_BINARY_OP_DIFFERENT_TYPES);
-                goto failure;
+                break;
             }
             if (PyLong_CheckExact(lhs)) {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_MULTIPLY_INT,
@@ -1811,8 +1884,7 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         case NB_SUBTRACT:
         case NB_INPLACE_SUBTRACT:
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
-                SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_BINARY_OP_DIFFERENT_TYPES);
-                goto failure;
+                break;
             }
             if (PyLong_CheckExact(lhs)) {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_INT,
@@ -1825,14 +1897,19 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 goto success;
             }
             break;
+#ifndef Py_STATS
         default:
             // These operators don't have any available specializations. Rather
             // than repeatedly attempting to specialize them, just convert them
-            // back to BINARY_OP (while still recording a failure, of course)!
+            // back to BINARY_OP (unless we're collecting stats, where it's more
+            // important to get accurate hit counts for the unadaptive version
+            // and each of the different failure types):
             *instr = _Py_MAKECODEUNIT(BINARY_OP, adaptive->original_oparg);
+            return;
+#endif
     }
-    SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_OTHER);
-failure:
+    SPECIALIZATION_FAIL(
+        BINARY_OP, binary_op_fail_kind(adaptive->original_oparg, lhs, rhs));
     STAT_INC(BINARY_OP, failure);
     cache_backoff(adaptive);
     return;
@@ -1950,6 +2027,56 @@ success:
 }
 
 #ifdef Py_STATS
+static int
+unpack_sequence_fail_kind(PyObject *seq)
+{
+    if (PySequence_Check(seq)) {
+        return SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE;
+    }
+    if (PyIter_Check(seq)) {
+        return SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR;
+    }
+    return SPEC_FAIL_OTHER;
+}
+#endif
+
+void
+_Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
+                              SpecializedCacheEntry *cache)
+{
+    _PyAdaptiveEntry *adaptive = &cache->adaptive;
+    if (PyTuple_CheckExact(seq)) {
+        if (PyTuple_GET_SIZE(seq) != adaptive->original_oparg) {
+            SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
+            goto failure;
+        }
+        if (PyTuple_GET_SIZE(seq) == 2) {
+            *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_TWO_TUPLE,
+                                      _Py_OPARG(*instr));
+            goto success;
+        }
+        *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_TUPLE, _Py_OPARG(*instr));
+        goto success;
+    }
+    if (PyList_CheckExact(seq)) {
+        if (PyList_GET_SIZE(seq) != adaptive->original_oparg) {
+            SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
+            goto failure;
+        }
+        *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_LIST, _Py_OPARG(*instr));
+        goto success;
+    }
+    SPECIALIZATION_FAIL(UNPACK_SEQUENCE, unpack_sequence_fail_kind(seq));
+failure:
+    STAT_INC(UNPACK_SEQUENCE, failure);
+    cache_backoff(adaptive);
+    return;
+success:
+    STAT_INC(UNPACK_SEQUENCE, success);
+    adaptive->counter = initial_counter_value();
+}
+
+#ifdef Py_STATS
 
 int
  _PySpecialization_ClassifyIterator(PyObject *iter)
@@ -1999,22 +2126,6 @@ int
         return SPEC_FAIL_FOR_ITER_ITERTOOLS;
     }
     return SPEC_FAIL_OTHER;
-}
-
-int
-_PySpecialization_ClassifySequence(PyObject *seq, int n)
-{
-    assert(n >= 0);
-    if (n > 4) {
-        n = 5;
-    }
-    if (PyTuple_CheckExact(seq)) {
-        return SPEC_FAIL_UNPACK_SEQUENCE_TUPLE_0 + n;
-    }
-    if (PyList_CheckExact(seq)) {
-        return SPEC_FAIL_UNPACK_SEQUENCE_LIST_0 + n;
-    }
-    return SPEC_FAIL_UNPACK_SEQUENCE_OTHER_0 + n;
 }
 
 int

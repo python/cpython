@@ -38,49 +38,49 @@ class _C:
         cls.x = x == 1
 
 dis_c_instance_method = """\
-%3d           0 RESUME                   0
+%3d        RESUME                   0
 
-%3d           2 LOAD_FAST                1 (x)
-              4 LOAD_CONST               1 (1)
-              6 COMPARE_OP               2 (==)
-              8 LOAD_FAST                0 (self)
-             10 STORE_ATTR               0 (x)
-             12 LOAD_CONST               0 (None)
-             14 RETURN_VALUE
+%3d        LOAD_FAST                1 (x)
+           LOAD_CONST               1 (1)
+           COMPARE_OP               2 (==)
+           LOAD_FAST                0 (self)
+           STORE_ATTR               0 (x)
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
 """ % (_C.__init__.__code__.co_firstlineno, _C.__init__.__code__.co_firstlineno + 1,)
 
 dis_c_instance_method_bytes = """\
-          0 RESUME                   0
-          2 LOAD_FAST                1
-          4 LOAD_CONST               1
-          6 COMPARE_OP               2 (==)
-          8 LOAD_FAST                0
-         10 STORE_ATTR               0
-         12 LOAD_CONST               0
-         14 RETURN_VALUE
+       RESUME                   0
+       LOAD_FAST                1
+       LOAD_CONST               1
+       COMPARE_OP               2 (==)
+       LOAD_FAST                0
+       STORE_ATTR               0
+       LOAD_CONST               0
+       RETURN_VALUE
 """
 
 dis_c_class_method = """\
-%3d           0 RESUME                   0
+%3d        RESUME                   0
 
-%3d           2 LOAD_FAST                1 (x)
-              4 LOAD_CONST               1 (1)
-              6 COMPARE_OP               2 (==)
-              8 LOAD_FAST                0 (cls)
-             10 STORE_ATTR               0 (x)
-             12 LOAD_CONST               0 (None)
-             14 RETURN_VALUE
+%3d        LOAD_FAST                1 (x)
+           LOAD_CONST               1 (1)
+           COMPARE_OP               2 (==)
+           LOAD_FAST                0 (cls)
+           STORE_ATTR               0 (x)
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
 """ % (_C.cm.__code__.co_firstlineno, _C.cm.__code__.co_firstlineno + 2,)
 
 dis_c_static_method = """\
-%3d           0 RESUME                   0
+%3d        RESUME                   0
 
-%3d           2 LOAD_FAST                0 (x)
-              4 LOAD_CONST               1 (1)
-              6 COMPARE_OP               2 (==)
-              8 STORE_FAST               0 (x)
-             10 LOAD_CONST               0 (None)
-             12 RETURN_VALUE
+%3d        LOAD_FAST                0 (x)
+           LOAD_CONST               1 (1)
+           COMPARE_OP               2 (==)
+           STORE_FAST               0 (x)
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
 """ % (_C.sm.__code__.co_firstlineno, _C.sm.__code__.co_firstlineno + 2,)
 
 # Class disassembling info has an extra newline at end.
@@ -100,30 +100,30 @@ def _f(a):
     return 1
 
 dis_f = """\
-%3d           0 RESUME                   0
+%3d        RESUME                   0
 
-%3d           2 LOAD_GLOBAL              0 (print)
-              4 LOAD_FAST                0 (a)
-              6 PRECALL_FUNCTION         1
-              8 CALL                     0
-             10 POP_TOP
+%3d        LOAD_GLOBAL              0 (print)
+           LOAD_FAST                0 (a)
+           PRECALL_FUNCTION         1
+           CALL                     0
+           POP_TOP
 
-%3d          12 LOAD_CONST               1 (1)
-             14 RETURN_VALUE
+%3d        LOAD_CONST               1 (1)
+           RETURN_VALUE
 """ % (_f.__code__.co_firstlineno,
        _f.__code__.co_firstlineno + 1,
        _f.__code__.co_firstlineno + 2)
 
 
 dis_f_co_code = """\
-          0 RESUME                   0
-          2 LOAD_GLOBAL              0
-          4 LOAD_FAST                0
-          6 PRECALL_FUNCTION         1
-          8 CALL                     0
-         10 POP_TOP
-         12 LOAD_CONST               1
-         14 RETURN_VALUE
+       RESUME                   0
+       LOAD_GLOBAL              0
+       LOAD_FAST                0
+       PRECALL_FUNCTION         1
+       CALL                     0
+       POP_TOP
+       LOAD_CONST               1
+       RETURN_VALUE
 """
 
 
@@ -133,23 +133,23 @@ def bug708901():
         pass
 
 dis_bug708901 = """\
-%3d           0 RESUME                   0
+%3d        RESUME                   0
 
-%3d           2 LOAD_GLOBAL              0 (range)
-              4 LOAD_CONST               1 (1)
+%3d        LOAD_GLOBAL              0 (range)
+           LOAD_CONST               1 (1)
 
-%3d           6 LOAD_CONST               2 (10)
+%3d        LOAD_CONST               2 (10)
 
-%3d           8 PRECALL_FUNCTION         2
-             10 CALL                     0
-             12 GET_ITER
-        >>   14 FOR_ITER                 2 (to 20)
-             16 STORE_FAST               0 (res)
+%3d        PRECALL_FUNCTION         2
+           CALL                     0
+           GET_ITER
+        >> FOR_ITER                 2 (to 20)
+           STORE_FAST               0 (res)
 
-%3d          18 JUMP_ABSOLUTE            7 (to 14)
+%3d        JUMP_ABSOLUTE            7 (to 14)
 
-%3d     >>   20 LOAD_CONST               0 (None)
-             22 RETURN_VALUE
+%3d     >> LOAD_CONST               0 (None)
+           RETURN_VALUE
 """ % (bug708901.__code__.co_firstlineno,
        bug708901.__code__.co_firstlineno + 1,
        bug708901.__code__.co_firstlineno + 2,
@@ -164,22 +164,22 @@ def bug1333982(x=[]):
     pass
 
 dis_bug1333982 = """\
-%3d           0 RESUME                   0
+%3d        RESUME                   0
 
-%3d           2 LOAD_ASSERTION_ERROR
-              4 LOAD_CONST               2 (<code object <listcomp> at 0x..., file "%s", line %d>)
-              6 MAKE_FUNCTION            0
-              8 LOAD_FAST                0 (x)
-             10 GET_ITER
-             12 PRECALL_FUNCTION         1
-             14 CALL                     0
+%3d        LOAD_ASSERTION_ERROR
+           LOAD_CONST               2 (<code object <listcomp> at 0x..., file "%s", line %d>)
+           MAKE_FUNCTION            0
+           LOAD_FAST                0 (x)
+           GET_ITER
+           PRECALL_FUNCTION         1
+           CALL                     0
 
-%3d          16 LOAD_CONST               3 (1)
+%3d        LOAD_CONST               3 (1)
 
-%3d          18 BINARY_OP                0 (+)
-             20 PRECALL_FUNCTION         1
-             22 CALL                     0
-             24 RAISE_VARARGS            1
+%3d        BINARY_OP                0 (+)
+           PRECALL_FUNCTION         1
+           CALL                     0
+           RAISE_VARARGS            1
 """ % (bug1333982.__code__.co_firstlineno,
        bug1333982.__code__.co_firstlineno + 1,
        __file__,
@@ -197,9 +197,9 @@ bug42562.__code__ = bug42562.__code__.replace(co_linetable=b'\x04\x80')
 
 
 dis_bug42562 = """\
-          0 RESUME                   0
-          2 LOAD_CONST               0 (None)
-          4 RETURN_VALUE
+       RESUME                   0
+       LOAD_CONST               0 (None)
+       RETURN_VALUE
 """
 
 # Extended arg followed by NOP
@@ -212,66 +212,66 @@ code_bug_45757 = bytes([
     ])
 
 dis_bug_45757 = """\
-          0 EXTENDED_ARG             1
-          2 NOP
-          4 EXTENDED_ARG             1
-          6 LOAD_CONST             297
-          8 RETURN_VALUE
+       EXTENDED_ARG             1
+       NOP
+       EXTENDED_ARG             1
+       LOAD_CONST             297
+       RETURN_VALUE
 """
 
 _BIG_LINENO_FORMAT = """\
-  1           0 RESUME                   0
+  1        RESUME                   0
 
-%3d           2 LOAD_GLOBAL              0 (spam)
-              4 POP_TOP
-              6 LOAD_CONST               0 (None)
-              8 RETURN_VALUE
+%3d        LOAD_GLOBAL              0 (spam)
+           POP_TOP
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
 """
 
 _BIG_LINENO_FORMAT2 = """\
-   1           0 RESUME                   0
+   1        RESUME                   0
 
-%4d           2 LOAD_GLOBAL              0 (spam)
-               4 POP_TOP
-               6 LOAD_CONST               0 (None)
-               8 RETURN_VALUE
+%4d        LOAD_GLOBAL              0 (spam)
+            POP_TOP
+            LOAD_CONST               0 (None)
+            RETURN_VALUE
 """
 
 dis_module_expected_results = """\
 Disassembly of f:
-  4           0 RESUME                   0
-              2 LOAD_CONST               0 (None)
-              4 RETURN_VALUE
+  4        RESUME                   0
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
 
 Disassembly of g:
-  5           0 RESUME                   0
-              2 LOAD_CONST               0 (None)
-              4 RETURN_VALUE
+  5        RESUME                   0
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
 
 """
 
 expr_str = "x + 1"
 
 dis_expr_str = """\
-              0 RESUME                   0
+           RESUME                   0
 
-  1           2 LOAD_NAME                0 (x)
-              4 LOAD_CONST               0 (1)
-              6 BINARY_OP                0 (+)
-              8 RETURN_VALUE
+  1        LOAD_NAME                0 (x)
+           LOAD_CONST               0 (1)
+           BINARY_OP                0 (+)
+           RETURN_VALUE
 """
 
 simple_stmt_str = "x = x + 1"
 
 dis_simple_stmt_str = """\
-              0 RESUME                   0
+           RESUME                   0
 
-  1           2 LOAD_NAME                0 (x)
-              4 LOAD_CONST               0 (1)
-              6 BINARY_OP                0 (+)
-              8 STORE_NAME               0 (x)
-             10 LOAD_CONST               1 (None)
-             12 RETURN_VALUE
+  1        LOAD_NAME                0 (x)
+           LOAD_CONST               0 (1)
+           BINARY_OP                0 (+)
+           STORE_NAME               0 (x)
+           LOAD_CONST               1 (None)
+           RETURN_VALUE
 """
 
 annot_stmt_str = """\
@@ -283,35 +283,35 @@ lst[fun(0)]: int = 1
 # leading newline is for a reason (tests lineno)
 
 dis_annot_stmt_str = """\
-              0 RESUME                   0
+           RESUME                   0
 
-  2           2 SETUP_ANNOTATIONS
-              4 LOAD_CONST               0 (1)
-              6 STORE_NAME               0 (x)
-              8 LOAD_NAME                1 (int)
-             10 LOAD_NAME                2 (__annotations__)
-             12 LOAD_CONST               1 ('x')
-             14 STORE_SUBSCR
+  2        SETUP_ANNOTATIONS
+           LOAD_CONST               0 (1)
+           STORE_NAME               0 (x)
+           LOAD_NAME                1 (int)
+           LOAD_NAME                2 (__annotations__)
+           LOAD_CONST               1 ('x')
+           STORE_SUBSCR
 
-  3          16 LOAD_NAME                3 (fun)
-             18 LOAD_CONST               0 (1)
-             20 PRECALL_FUNCTION         1
-             22 CALL                     0
-             24 LOAD_NAME                2 (__annotations__)
-             26 LOAD_CONST               2 ('y')
-             28 STORE_SUBSCR
+  3        LOAD_NAME                3 (fun)
+           LOAD_CONST               0 (1)
+           PRECALL_FUNCTION         1
+           CALL                     0
+           LOAD_NAME                2 (__annotations__)
+           LOAD_CONST               2 ('y')
+           STORE_SUBSCR
 
-  4          30 LOAD_CONST               0 (1)
-             32 LOAD_NAME                4 (lst)
-             34 LOAD_NAME                3 (fun)
-             36 LOAD_CONST               3 (0)
-             38 PRECALL_FUNCTION         1
-             40 CALL                     0
-             42 STORE_SUBSCR
-             44 LOAD_NAME                1 (int)
-             46 POP_TOP
-             48 LOAD_CONST               4 (None)
-             50 RETURN_VALUE
+  4        LOAD_CONST               0 (1)
+           LOAD_NAME                4 (lst)
+           LOAD_NAME                3 (fun)
+           LOAD_CONST               3 (0)
+           PRECALL_FUNCTION         1
+           CALL                     0
+           STORE_SUBSCR
+           LOAD_NAME                1 (int)
+           POP_TOP
+           LOAD_CONST               4 (None)
+           RETURN_VALUE
 """
 
 compound_stmt_str = """\
@@ -321,63 +321,59 @@ while 1:
 # Trailing newline has been deliberately omitted
 
 dis_compound_stmt_str = """\
-              0 RESUME                   0
+           RESUME                   0
 
-  1           2 LOAD_CONST               0 (0)
-              4 STORE_NAME               0 (x)
+  1        LOAD_CONST               0 (0)
+           STORE_NAME               0 (x)
 
-  2           6 NOP
+  2        NOP
 
-  3     >>    8 LOAD_NAME                0 (x)
-             10 LOAD_CONST               1 (1)
-             12 BINARY_OP               13 (+=)
-             14 STORE_NAME               0 (x)
+  3     >> LOAD_NAME                0 (x)
+           LOAD_CONST               1 (1)
+           BINARY_OP               13 (+=)
+           STORE_NAME               0 (x)
 
-  2          16 JUMP_ABSOLUTE            4 (to 8)
+  2        JUMP_ABSOLUTE            4 (to 8)
 """
 
 dis_traceback = """\
-%3d           0 RESUME                   0
+%3d        RESUME                   0
 
-%3d           2 NOP
+%3d        NOP
 
-%3d           4 LOAD_CONST               1 (1)
-              6 LOAD_CONST               2 (0)
-    -->       8 BINARY_OP               11 (/)
-             10 POP_TOP
+%3d        LOAD_CONST               1 (1)
+           LOAD_CONST               2 (0)
+    -->    BINARY_OP               11 (/)
+           POP_TOP
 
-%3d          12 LOAD_FAST                1 (tb)
-             14 RETURN_VALUE
-        >>   16 PUSH_EXC_INFO
+%3d        LOAD_FAST                1 (tb)
+           RETURN_VALUE
+        >> PUSH_EXC_INFO
 
-%3d          18 LOAD_GLOBAL              0 (Exception)
-             20 JUMP_IF_NOT_EXC_MATCH    25 (to 50)
-             22 STORE_FAST               0 (e)
+%3d        LOAD_GLOBAL              0 (Exception)
+           JUMP_IF_NOT_EXC_MATCH    25 (to 50)
+           STORE_FAST               0 (e)
 
-%3d          24 LOAD_FAST                0 (e)
-             26 LOAD_ATTR                1 (__traceback__)
-             28 STORE_FAST               1 (tb)
-             30 POP_EXCEPT
-             32 LOAD_CONST               0 (None)
-             34 STORE_FAST               0 (e)
-             36 DELETE_FAST              0 (e)
+%3d        LOAD_FAST                0 (e)
+           LOAD_ATTR                1 (__traceback__)
+           STORE_FAST               1 (tb)
+           POP_EXCEPT
+           LOAD_CONST               0 (None)
+           STORE_FAST               0 (e)
+           DELETE_FAST              0 (e)
 
-%3d          38 LOAD_FAST                1 (tb)
-             40 RETURN_VALUE
-        >>   42 LOAD_CONST               0 (None)
-             44 STORE_FAST               0 (e)
-             46 DELETE_FAST              0 (e)
-             48 RERAISE                  1
+%3d        LOAD_FAST                1 (tb)
+           RETURN_VALUE
+        >> LOAD_CONST               0 (None)
+           STORE_FAST               0 (e)
+           DELETE_FAST              0 (e)
+           RERAISE                  1
 
-%3d     >>   50 RERAISE                  0
-        >>   52 COPY                     3
-             54 POP_EXCEPT
-             56 RERAISE                  1
+%3d     >> RERAISE                  0
+        >> COPY                     3
+           POP_EXCEPT
+           RERAISE                  1
 ExceptionTable:
-  4 to 10 -> 16 [0]
-  16 to 22 -> 52 [1] lasti
-  24 to 28 -> 42 [1] lasti
-  42 to 50 -> 52 [1] lasti
 """ % (TRACEBACK_CODE.co_firstlineno,
        TRACEBACK_CODE.co_firstlineno + 1,
        TRACEBACK_CODE.co_firstlineno + 2,
@@ -391,23 +387,23 @@ def _fstring(a, b, c, d):
     return f'{a} {b:4} {c!r} {d!r:4}'
 
 dis_fstring = """\
-%3d           0 RESUME                   0
+%3d        RESUME                   0
 
-%3d           2 LOAD_FAST                0 (a)
-              4 FORMAT_VALUE             0
-              6 LOAD_CONST               1 (' ')
-              8 LOAD_FAST                1 (b)
-             10 LOAD_CONST               2 ('4')
-             12 FORMAT_VALUE             4 (with format)
-             14 LOAD_CONST               1 (' ')
-             16 LOAD_FAST                2 (c)
-             18 FORMAT_VALUE             2 (repr)
-             20 LOAD_CONST               1 (' ')
-             22 LOAD_FAST                3 (d)
-             24 LOAD_CONST               2 ('4')
-             26 FORMAT_VALUE             6 (repr, with format)
-             28 BUILD_STRING             7
-             30 RETURN_VALUE
+%3d        LOAD_FAST                0 (a)
+           FORMAT_VALUE             0
+           LOAD_CONST               1 (' ')
+           LOAD_FAST                1 (b)
+           LOAD_CONST               2 ('4')
+           FORMAT_VALUE             4 (with format)
+           LOAD_CONST               1 (' ')
+           LOAD_FAST                2 (c)
+           FORMAT_VALUE             2 (repr)
+           LOAD_CONST               1 (' ')
+           LOAD_FAST                3 (d)
+           LOAD_CONST               2 ('4')
+           FORMAT_VALUE             6 (repr, with format)
+           BUILD_STRING             7
+           RETURN_VALUE
 """ % (_fstring.__code__.co_firstlineno, _fstring.__code__.co_firstlineno + 1)
 
 def _tryfinally(a, b):
@@ -423,29 +419,27 @@ def _tryfinallyconst(b):
         b()
 
 dis_tryfinally = """\
-%3d           0 RESUME                   0
+%3d        RESUME                   0
 
-%3d           2 NOP
+%3d        NOP
 
-%3d           4 LOAD_FAST                0 (a)
+%3d        LOAD_FAST                0 (a)
 
-%3d           6 LOAD_FAST                1 (b)
-              8 PRECALL_FUNCTION         0
-             10 CALL                     0
-             12 POP_TOP
-             14 RETURN_VALUE
-        >>   16 PUSH_EXC_INFO
-             18 LOAD_FAST                1 (b)
-             20 PRECALL_FUNCTION         0
-             22 CALL                     0
-             24 POP_TOP
-             26 RERAISE                  0
-        >>   28 COPY                     3
-             30 POP_EXCEPT
-             32 RERAISE                  1
+%3d        LOAD_FAST                1 (b)
+           PRECALL_FUNCTION         0
+           CALL                     0
+           POP_TOP
+           RETURN_VALUE
+        >> PUSH_EXC_INFO
+           LOAD_FAST                1 (b)
+           PRECALL_FUNCTION         0
+           CALL                     0
+           POP_TOP
+           RERAISE                  0
+        >> COPY                     3
+           POP_EXCEPT
+           RERAISE                  1
 ExceptionTable:
-  4 to 4 -> 16 [0]
-  16 to 26 -> 28 [1] lasti
 """ % (_tryfinally.__code__.co_firstlineno,
        _tryfinally.__code__.co_firstlineno + 1,
        _tryfinally.__code__.co_firstlineno + 2,
@@ -453,29 +447,28 @@ ExceptionTable:
        )
 
 dis_tryfinallyconst = """\
-%3d           0 RESUME                   0
+%3d        RESUME                   0
 
-%3d           2 NOP
+%3d        NOP
 
-%3d           4 NOP
+%3d        NOP
 
-%3d           6 LOAD_FAST                0 (b)
-              8 PRECALL_FUNCTION         0
-             10 CALL                     0
-             12 POP_TOP
-             14 LOAD_CONST               1 (1)
-             16 RETURN_VALUE
-             18 PUSH_EXC_INFO
-             20 LOAD_FAST                0 (b)
-             22 PRECALL_FUNCTION         0
-             24 CALL                     0
-             26 POP_TOP
-             28 RERAISE                  0
-        >>   30 COPY                     3
-             32 POP_EXCEPT
-             34 RERAISE                  1
+%3d        LOAD_FAST                0 (b)
+           PRECALL_FUNCTION         0
+           CALL                     0
+           POP_TOP
+           LOAD_CONST               1 (1)
+           RETURN_VALUE
+           PUSH_EXC_INFO
+           LOAD_FAST                0 (b)
+           PRECALL_FUNCTION         0
+           CALL                     0
+           POP_TOP
+           RERAISE                  0
+        >> COPY                     3
+           POP_EXCEPT
+           RERAISE                  1
 ExceptionTable:
-  18 to 28 -> 30 [1] lasti
 """ % (_tryfinallyconst.__code__.co_firstlineno,
        _tryfinallyconst.__code__.co_firstlineno + 1,
        _tryfinallyconst.__code__.co_firstlineno + 2,
@@ -499,18 +492,18 @@ def _h(y):
     return foo
 
 dis_nested_0 = """\
-              0 MAKE_CELL                0 (y)
+           MAKE_CELL                0 (y)
 
-%3d           2 RESUME                   0
+%3d        RESUME                   0
 
-%3d           4 LOAD_CLOSURE             0 (y)
-              6 BUILD_TUPLE              1
-              8 LOAD_CONST               1 (<code object foo at 0x..., file "%s", line %d>)
-             10 MAKE_FUNCTION            8 (closure)
-             12 STORE_FAST               1 (foo)
+%3d        LOAD_CLOSURE             0 (y)
+           BUILD_TUPLE              1
+           LOAD_CONST               1 (<code object foo at 0x..., file "%s", line %d>)
+           MAKE_FUNCTION            8 (closure)
+           STORE_FAST               1 (foo)
 
-%3d          14 LOAD_FAST                1 (foo)
-             16 RETURN_VALUE
+%3d        LOAD_FAST                1 (foo)
+           RETURN_VALUE
 """ % (_h.__code__.co_firstlineno,
        _h.__code__.co_firstlineno + 1,
        __file__,
@@ -520,20 +513,20 @@ dis_nested_0 = """\
 
 dis_nested_1 = """%s
 Disassembly of <code object foo at 0x..., file "%s", line %d>:
-              0 COPY_FREE_VARS           1
-              2 MAKE_CELL                0 (x)
+           COPY_FREE_VARS           1
+           MAKE_CELL                0 (x)
 
-%3d           4 RESUME                   0
+%3d        RESUME                   0
 
-%3d           6 LOAD_CLOSURE             0 (x)
-              8 BUILD_TUPLE              1
-             10 LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
-             12 MAKE_FUNCTION            8 (closure)
-             14 LOAD_DEREF               1 (y)
-             16 GET_ITER
-             18 PRECALL_FUNCTION         1
-             20 CALL                     0
-             22 RETURN_VALUE
+%3d        LOAD_CLOSURE             0 (x)
+           BUILD_TUPLE              1
+           LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
+           MAKE_FUNCTION            8 (closure)
+           LOAD_DEREF               1 (y)
+           GET_ITER
+           PRECALL_FUNCTION         1
+           CALL                     0
+           RETURN_VALUE
 """ % (dis_nested_0,
        __file__,
        _h.__code__.co_firstlineno + 1,
@@ -545,27 +538,90 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
 
 dis_nested_2 = """%s
 Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
-              0 COPY_FREE_VARS           1
+           COPY_FREE_VARS           1
 
-%3d           2 RESUME                   0
-              4 BUILD_LIST               0
-              6 LOAD_FAST                0 (.0)
-        >>    8 FOR_ITER                 6 (to 22)
-             10 STORE_FAST               1 (z)
-             12 LOAD_DEREF               2 (x)
-             14 LOAD_FAST                1 (z)
-             16 BINARY_OP                0 (+)
-             18 LIST_APPEND              2
-             20 JUMP_ABSOLUTE            4 (to 8)
-        >>   22 RETURN_VALUE
+%3d        RESUME                   0
+           BUILD_LIST               0
+           LOAD_FAST                0 (.0)
+        >> FOR_ITER                 6 (to 22)
+           STORE_FAST               1 (z)
+           LOAD_DEREF               2 (x)
+           LOAD_FAST                1 (z)
+           BINARY_OP                0 (+)
+           LIST_APPEND              2
+           JUMP_ABSOLUTE            4 (to 8)
+        >> RETURN_VALUE
 """ % (dis_nested_1,
        __file__,
        _h.__code__.co_firstlineno + 3,
        _h.__code__.co_firstlineno + 3,
 )
 
+class DisTestBase(unittest.TestCase):
+    "Common utilities for DisTests and TestDisTraceback"
 
-class DisTests(unittest.TestCase):
+    def strip_addresses(self, text):
+        return re.sub(r'\b0x[0-9A-Fa-f]+\b', '0x...', text)
+
+    def find_offset_column(self, lines):
+        for line in lines:
+            if line and not line.startswith("Disassembly"):
+                break
+        else:
+            return 0, 0
+        offset = 5
+        while (line[offset] == " "):
+            offset += 1
+        if (line[offset] == ">"):
+            offset += 2
+        while (line[offset] == " "):
+            offset += 1
+        end = offset
+        while line[end] in "0123456789":
+            end += 1
+        return end-5, end
+
+    def assert_offsets_increasing(self, text, delta):
+        expected_offset = 0
+        lines = text.splitlines()
+        start, end = self.find_offset_column(lines)
+        for line in lines:
+            if not line:
+                continue
+            if line.startswith("Disassembly"):
+                expected_offset = 0
+                continue
+            if line.startswith("Exception"):
+                break
+            offset = int(line[start:end])
+            self.assertEqual(offset, expected_offset, line)
+            expected_offset += delta
+
+    def strip_offsets(self, text):
+        lines = text.splitlines(True)
+        start, end = self.find_offset_column(lines)
+        res = []
+        lines = iter(lines)
+        for line in lines:
+            if line.startswith("Exception"):
+                res.append(line)
+                break
+            if not line or line.startswith("Disassembly"):
+                res.append(line)
+            else:
+                res.append(line[:start] + line[end:])
+        return "".join(res)
+
+    def do_disassembly_compare(self, got, expected, with_offsets=False):
+        if not with_offsets:
+            self.assert_offsets_increasing(got, 2)
+            got = self.strip_offsets(got)
+        if got != expected:
+            got = self.strip_addresses(got)
+        self.assertEqual(got, expected)
+
+
+class DisTests(DisTestBase):
 
     maxDiff = None
 
@@ -582,15 +638,10 @@ class DisTests(unittest.TestCase):
     def get_disassemble_as_string(self, func, lasti=-1):
         return self.get_disassembly(func, lasti, False)
 
-    def strip_addresses(self, text):
-        return re.sub(r'\b0x[0-9A-Fa-f]+\b', '0x...', text)
-
-    def do_disassembly_test(self, func, expected):
+    def do_disassembly_test(self, func, expected, with_offsets=False):
         self.maxDiff = None
         got = self.get_disassembly(func, depth=0)
-        if got != expected:
-            got = self.strip_addresses(got)
-        self.assertEqual(got, expected)
+        self.do_disassembly_compare(got, expected, with_offsets)
 
     def test_opmap(self):
         self.assertEqual(dis.opmap["NOP"], 9)
@@ -690,9 +741,9 @@ class DisTests(unittest.TestCase):
             return ''.join(s)
 
         for i in range(1, 5):
-            self.do_disassembly_test(func(i), expected(i, 4))
-        self.do_disassembly_test(func(1248), expected(1248, 4))
-        self.do_disassembly_test(func(1250), expected(1250, 5))
+            self.do_disassembly_test(func(i), expected(i, 4), True)
+        self.do_disassembly_test(func(1248), expected(1248, 4), True)
+        self.do_disassembly_test(func(1250), expected(1250, 5), True)
 
     def test_disassemble_str(self):
         self.do_disassembly_test(expr_str, dis_expr_str)
@@ -764,7 +815,7 @@ class DisTests(unittest.TestCase):
             sys.last_traceback = tb
 
         tb_dis = self.get_disassemble_as_string(tb.tb_frame.f_code, tb.tb_lasti)
-        self.do_disassembly_test(None, tb_dis)
+        self.do_disassembly_test(None, tb_dis, True)
 
     def test_dis_object(self):
         self.assertRaises(TypeError, dis.dis, object())
@@ -773,6 +824,7 @@ class DisTests(unittest.TestCase):
         def check(expected, **kwargs):
             dis = self.get_disassembly(_h, **kwargs)
             dis = self.strip_addresses(dis)
+            dis = self.strip_offsets(dis)
             self.assertEqual(dis, expected)
 
         check(dis_nested_0, depth=0)
@@ -1369,7 +1421,7 @@ class InstructionTests(InstructionTestCase):
 
 # get_instructions has its own tests above, so can rely on it to validate
 # the object oriented API
-class BytecodeTests(InstructionTestCase):
+class BytecodeTests(InstructionTestCase, DisTestBase):
 
     def test_instantiation(self):
         # Test with function, method, code string and code object
@@ -1410,7 +1462,7 @@ class BytecodeTests(InstructionTestCase):
 
     def test_disassembled(self):
         actual = dis.Bytecode(_f).dis()
-        self.assertEqual(actual, dis_f)
+        self.do_disassembly_compare(actual, dis_f)
 
     def test_from_traceback(self):
         tb = get_tb()
@@ -1423,7 +1475,7 @@ class BytecodeTests(InstructionTestCase):
         self.maxDiff = None
         tb = get_tb()
         b = dis.Bytecode.from_traceback(tb)
-        self.assertEqual(b.dis(), dis_traceback)
+        self.assertEqual(self.strip_offsets(b.dis()), dis_traceback)
 
     @requires_debug_ranges()
     def test_bytecode_co_positions(self):
@@ -1492,7 +1544,7 @@ class TestFinderMethods(unittest.TestCase):
         self.assertEqual(sorted(labels), sorted(jumps))
 
 
-class TestDisTraceback(unittest.TestCase):
+class TestDisTraceback(DisTestBase):
     def setUp(self) -> None:
         try:  # We need to clean up existing tracebacks
             del sys.last_traceback
@@ -1516,13 +1568,13 @@ class TestDisTraceback(unittest.TestCase):
         tb = get_tb()
         sys.last_traceback = tb
 
-        self.assertEqual(self.get_disassembly(None), dis_traceback)
+        self.do_disassembly_compare(self.get_disassembly(None), dis_traceback)
 
     def test_distb_explicit_arg(self):
         self.maxDiff = None
         tb = get_tb()
 
-        self.assertEqual(self.get_disassembly(tb), dis_traceback)
+        self.do_disassembly_compare(self.get_disassembly(tb), dis_traceback)
 
 
 class TestDisTracebackWithFile(TestDisTraceback):

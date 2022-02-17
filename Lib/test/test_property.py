@@ -322,27 +322,27 @@ class _PropertyUnreachableAttribute:
         cls.obj = cls.cls()
 
     def test_get_property(self):
-        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("unreadable attribute")):
+        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("has no getter")):
             self.obj.foo
 
     def test_set_property(self):
-        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("can't set attribute")):
+        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("has no setter")):
             self.obj.foo = None
 
     def test_del_property(self):
-        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("can't delete attribute")):
+        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("has no deleter")):
             del self.obj.foo
 
 
 class PropertyUnreachableAttributeWithName(_PropertyUnreachableAttribute, unittest.TestCase):
-    msg_format = "^{} 'foo'$"
+    msg_format = r"^property 'foo' of 'PropertyUnreachableAttributeWithName\.cls' object {}$"
 
     class cls:
         foo = property()
 
 
 class PropertyUnreachableAttributeNoName(_PropertyUnreachableAttribute, unittest.TestCase):
-    msg_format = "^{}$"
+    msg_format = "^property of 'PropertyUnreachableAttributeNoName\.cls' object {}$"
 
     class cls:
         pass
