@@ -2899,10 +2899,8 @@ err_occurred:
 extern int _PyIO_buffered_at_fork_reinit(PyObject *);
 
 static int
-stream_at_fork_reinit(_Py_Identifier *stream_id)
+stream_at_fork_reinit(PyObject *stream)
 {
-    PyObject *stream = _PySys_GetObjectId(stream_id);
-
     if (stream == NULL || Py_IsNone(stream)) {
         return 0;
     }
@@ -2910,7 +2908,7 @@ stream_at_fork_reinit(_Py_Identifier *stream_id)
     /* The buffer attribute is not part of the TextIOBase API
      * and may not exist in some implementations. If not present,
      * we have no locks to reinitialize. */
-    PyObject *buffer = _PyObject_GetAttrId(stream, &PyId_buffer);
+    PyObject *buffer = PyObject_GetAttr(stream, &_Py_ID(buffer));
     if (buffer == NULL) {
         PyErr_Clear();
         return 0;
@@ -2927,9 +2925,15 @@ stream_at_fork_reinit(_Py_Identifier *stream_id)
 PyStatus
 _PySys_ReInitStdio(void)
 {
-    int reinit_stdin  = stream_at_fork_reinit(&PyId_stdin);
-    int reinit_stdout = stream_at_fork_reinit(&PyId_stdout);
-    int reinit_stderr = stream_at_fork_reinit(&PyId_stderr);
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    PyObject *sys_stdin  = _PySys_GetAttr(tstate, &_Py_ID(stdin));
+    PyObject *sys_stdout = _PySys_GetAttr(tstate, &_Py_ID(stdout));
+    PyObject *sys_stderr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+
+    int reinit_stdin  = stream_at_fork_reinit(sys_stdin);
+    int reinit_stdout = stream_at_fork_reinit(sys_stdout);
+    int reinit_stderr = stream_at_fork_reinit(sys_stderr);
 
     if (reinit_stdin < 0 || reinit_stdout < 0 || reinit_stderr < 0) {
         return _PyStatus_ERR("Failed to reinitialize standard streams");
