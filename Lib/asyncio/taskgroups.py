@@ -3,10 +3,6 @@
 
 __all__ = ["TaskGroup"]
 
-import itertools
-import textwrap
-import traceback
-import types
 import weakref
 
 from . import events
@@ -223,6 +219,3 @@ class TaskGroup:
             #                                 # after TaskGroup is finished.
             self._parent_cancel_requested = True
             self._parent_task.cancel()
-
-
-_name_counter = itertools.count(1).__next__
