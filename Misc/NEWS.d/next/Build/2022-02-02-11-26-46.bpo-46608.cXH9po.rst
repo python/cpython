@@ -1,0 +1,2 @@
+Exclude marshalled-frozen data if deep-freezing to save 300 KB disk space.  This includes adding
+a new ``is_package`` field to :c:struct:`_frozen`.  Patch by Kumar Aditya.

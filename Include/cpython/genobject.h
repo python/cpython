@@ -13,7 +13,6 @@ extern "C" {
    and coroutine objects. */
 #define _PyGenObject_HEAD(prefix)                                           \
     PyObject_HEAD                                                           \
-    /* Note: gi_frame can be NULL if the generator is "finished" */         \
     /* The code object backing the generator */                             \
     PyCodeObject *prefix##_code;                                            \
     /* List of weak reference. */                                           \

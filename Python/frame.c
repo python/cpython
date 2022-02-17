@@ -1,8 +1,10 @@
 
 #include "Python.h"
 #include "frameobject.h"
+#include "pycore_code.h"           // stats
 #include "pycore_frame.h"
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "opcode.h"
 
 int
 _PyFrame_Traverse(InterpreterFrame *frame, visitproc visit, void *arg)
@@ -51,15 +53,6 @@ _PyFrame_Copy(InterpreterFrame *src, InterpreterFrame *dest)
     memcpy(dest, src, size);
 }
 
-static inline void
-clear_specials(InterpreterFrame *frame)
-{
-    frame->generator = NULL;
-    Py_XDECREF(frame->frame_obj);
-    Py_XDECREF(frame->f_locals);
-    Py_DECREF(frame->f_func);
-    Py_DECREF(frame->f_code);
-}
 
 static void
 take_ownership(PyFrameObject *f, InterpreterFrame *frame)
@@ -91,11 +84,11 @@ take_ownership(PyFrameObject *f, InterpreterFrame *frame)
 }
 
 void
-_PyFrame_Clear(InterpreterFrame * frame)
+_PyFrame_Clear(InterpreterFrame *frame)
 {
     /* It is the responsibility of the owning generator/coroutine
-     * to have cleared the generator pointer */
-    assert(frame->generator == NULL);
+     * to have cleared the enclosing generator, if any. */
+    assert(!frame->is_generator);
     if (frame->frame_obj) {
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;
@@ -110,5 +103,24 @@ _PyFrame_Clear(InterpreterFrame * frame)
     for (int i = 0; i < frame->stacktop; i++) {
         Py_XDECREF(frame->localsplus[i]);
     }
-    clear_specials(frame);
+    Py_XDECREF(frame->frame_obj);
+    Py_XDECREF(frame->f_locals);
+    Py_DECREF(frame->f_func);
+    Py_DECREF(frame->f_code);
+}
+
+/* Consumes reference to func */
+InterpreterFrame *
+_PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func)
+{
+    PyCodeObject *code = (PyCodeObject *)func->func_code;
+    size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
+    CALL_STAT_INC(frames_pushed);
+    InterpreterFrame *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
+    if (new_frame == NULL) {
+        Py_DECREF(func);
+        return NULL;
+    }
+    _PyFrame_InitializeSpecials(new_frame, func, NULL, code->co_nlocalsplus);
+    return new_frame;
 }

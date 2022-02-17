@@ -758,6 +758,15 @@ class ElementTreeTest(unittest.TestCase):
                 ('end-ns', ''),
             ])
 
+    def test_initialize_parser_without_target(self):
+        # Explicit None
+        parser = ET.XMLParser(target=None)
+        self.assertIsInstance(parser.target, ET.TreeBuilder)
+
+        # Implicit None
+        parser2 = ET.XMLParser()
+        self.assertIsInstance(parser2.target, ET.TreeBuilder)
+
     def test_children(self):
         # Test Element children iteration
 

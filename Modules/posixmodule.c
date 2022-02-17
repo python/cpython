@@ -22,12 +22,13 @@
 #  include "pycore_bitutils.h"    // _Py_popcount32()
 #endif
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_fileutils.h"     // _Py_closerange()
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
+#include "pycore_fileutils.h"     // _Py_closerange()
 #include "pycore_import.h"        // _PyImport_ReInitLock()
 #include "pycore_sysmodule.h"     // _PySys_ReInitStdio()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyObject_LookupSpecial()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include "structmember.h"         // PyMemberDef
@@ -323,8 +324,6 @@ corresponding Unix manual entries for more information on calls.");
 #    define fsync _commit
 #  endif  /* _MSC_VER */
 #endif  /* ! __WATCOMC__ || __QNX__ */
-
-_Py_IDENTIFIER(__fspath__);
 
 /*[clinic input]
 # one of the few times we lie about this name!
@@ -887,7 +886,7 @@ fail:
 #define _PyLong_FromDev PyLong_FromLongLong
 
 
-#if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
+#if (defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)) || defined(HAVE_DEVICE_MACROS)
 static int
 _Py_Dev_Converter(PyObject *obj, void *p)
 {
@@ -896,7 +895,7 @@ _Py_Dev_Converter(PyObject *obj, void *p)
         return 0;
     return 1;
 }
-#endif /* HAVE_MKNOD && HAVE_MAKEDEV */
+#endif /* (HAVE_MKNOD && HAVE_MAKEDEV) || HAVE_DEVICE_MACROS */
 
 
 #ifdef AT_FDCWD
@@ -1165,7 +1164,7 @@ path_converter(PyObject *o, void *p)
         /* Inline PyOS_FSPath() for better error messages. */
         PyObject *func, *res;
 
-        func = _PyObject_LookupSpecial(o, &PyId___fspath__);
+        func = _PyObject_LookupSpecial(o, &_Py_ID(__fspath__));
         if (NULL == func) {
             goto error_format;
         }
@@ -3298,7 +3297,14 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
     }
     else
 #endif /* HAVE_FHCMODAT */
+    {
+#ifdef HAVE_CHMOD
         result = chmod(path->narrow, mode);
+#else
+        result = -1;
+        errno = ENOSYS;
+#endif
+    }
     Py_END_ALLOW_THREADS
 
     if (result) {
@@ -4239,6 +4245,48 @@ os_listdir_impl(PyObject *module, path_t *path)
 }
 
 #ifdef MS_WINDOWS
+int
+_PyOS_getfullpathname(const wchar_t *path, wchar_t **abspath_p)
+{
+    wchar_t woutbuf[MAX_PATH], *woutbufp = woutbuf;
+    DWORD result;
+
+    result = GetFullPathNameW(path,
+                              Py_ARRAY_LENGTH(woutbuf), woutbuf,
+                              NULL);
+    if (!result) {
+        return -1;
+    }
+
+    if (result >= Py_ARRAY_LENGTH(woutbuf)) {
+        if ((size_t)result <= (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+            woutbufp = PyMem_RawMalloc((size_t)result * sizeof(wchar_t));
+        }
+        else {
+            woutbufp = NULL;
+        }
+        if (!woutbufp) {
+            *abspath_p = NULL;
+            return 0;
+        }
+
+        result = GetFullPathNameW(path, result, woutbufp, NULL);
+        if (!result) {
+            PyMem_RawFree(woutbufp);
+            return -1;
+        }
+    }
+
+    if (woutbufp != woutbuf) {
+        *abspath_p = woutbufp;
+        return 0;
+    }
+
+    *abspath_p = _PyMem_RawWcsdup(woutbufp);
+    return 0;
+}
+
+
 /* A helper function for abspath on win32 */
 /*[clinic input]
 os._getfullpathname
@@ -4254,8 +4302,7 @@ os__getfullpathname_impl(PyObject *module, path_t *path)
 {
     wchar_t *abspath;
 
-    /* _Py_abspath() is implemented with GetFullPathNameW() on Windows */
-    if (_Py_abspath(path->wide, &abspath) < 0) {
+    if (_PyOS_getfullpathname(path->wide, &abspath) < 0) {
         return win32_error_object("GetFullPathNameW", path->object);
     }
     if (abspath == NULL) {
@@ -4891,6 +4938,7 @@ os_system_impl(PyObject *module, PyObject *command)
 #endif /* HAVE_SYSTEM */
 
 
+#ifdef HAVE_UMASK
 /*[clinic input]
 os.umask
 
@@ -4909,6 +4957,7 @@ os_umask_impl(PyObject *module, int mask)
         return posix_error();
     return PyLong_FromLong((long)i);
 }
+#endif
 
 #ifdef MS_WINDOWS
 
@@ -14393,7 +14442,7 @@ PyOS_FSPath(PyObject *path)
         return path;
     }
 
-    func = _PyObject_LookupSpecial(path, &PyId___fspath__);
+    func = _PyObject_LookupSpecial(path, &_Py_ID(__fspath__));
     if (NULL == func) {
         return PyErr_Format(PyExc_TypeError,
                             "expected str, bytes or os.PathLike object, "
@@ -15176,11 +15225,15 @@ all_ins(PyObject *m)
 #ifdef SF_NODISKIO
     if (PyModule_AddIntMacro(m, SF_NODISKIO)) return -1;
 #endif
+    /* is obsolete since the 11.x release */
 #ifdef SF_MNOWAIT
     if (PyModule_AddIntMacro(m, SF_MNOWAIT)) return -1;
 #endif
 #ifdef SF_SYNC
     if (PyModule_AddIntMacro(m, SF_SYNC)) return -1;
+#endif
+#ifdef SF_NOCACHE
+    if (PyModule_AddIntMacro(m, SF_NOCACHE)) return -1;
 #endif
 
     /* constants for posix_fadvise */

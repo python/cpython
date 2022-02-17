@@ -50,6 +50,7 @@
 #include "longobject.h"
 #include "cpython/longintrepr.h"
 #include "boolobject.h"
+#include "buffer.h"
 #include "floatobject.h"
 #include "complexobject.h"
 #include "rangeobject.h"

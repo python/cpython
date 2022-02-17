@@ -85,20 +85,12 @@ Used in:  Py_SAFE_DOWNCAST
 #define PY_INT32_T int32_t
 #define PY_INT64_T int64_t
 
-/* If PYLONG_BITS_IN_DIGIT is not defined then we'll use 30-bit digits if all
-   the necessary integer types are available, and we're on a 64-bit platform
-   (as determined by SIZEOF_VOID_P); otherwise we use 15-bit digits.
-
-   From pyodide: WASM has 32 bit pointers but has native 64 bit arithmetic
-   so it is more efficient to use 30 bit digits.
+/* PYLONG_BITS_IN_DIGIT describes the number of bits per "digit" (limb) in the
+ * PyLongObject implementation (longintrepr.h). It's currently either 30 or 15,
+ * defaulting to 30. The 15-bit digit option may be removed in the future.
  */
-
 #ifndef PYLONG_BITS_IN_DIGIT
-#if SIZEOF_VOID_P >= 8 || defined(__wasm__)
-#  define PYLONG_BITS_IN_DIGIT 30
-#else
-#  define PYLONG_BITS_IN_DIGIT 15
-#endif
+#define PYLONG_BITS_IN_DIGIT 30
 #endif
 
 /* uintptr_t is the C9X name for an unsigned integral type such that a

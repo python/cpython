@@ -1,6 +1,7 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
+#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
@@ -90,6 +91,7 @@ typedef struct {
     PyObject *task_context;
     int task_must_cancel;
     int task_log_destroy_pending;
+    int task_cancel_requested;
 } TaskObj;
 
 typedef struct {
@@ -1480,13 +1482,6 @@ finally:
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
-static PyObject *
-future_cls_getitem(PyObject *cls, PyObject *type)
-{
-    Py_INCREF(cls);
-    return cls;
-}
-
 static PyAsyncMethods FutureType_as_async = {
     (unaryfunc)future_new_iter,         /* am_await */
     0,                                  /* am_aiter */
@@ -1507,7 +1502,7 @@ static PyMethodDef FutureType_methods[] = {
     _ASYNCIO_FUTURE_GET_LOOP_METHODDEF
     _ASYNCIO_FUTURE__MAKE_CANCELLED_ERROR_METHODDEF
     _ASYNCIO_FUTURE__REPR_INFO_METHODDEF
-    {"__class_getitem__", future_cls_getitem, METH_O|METH_CLASS, NULL},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -2045,6 +2040,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     Py_CLEAR(self->task_fut_waiter);
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
+    self->task_cancel_requested = 0;
     Py_INCREF(coro);
     Py_XSETREF(self->task_coro, coro);
 
@@ -2211,6 +2207,11 @@ _asyncio_Task_cancel_impl(TaskObj *self, PyObject *msg)
         Py_RETURN_FALSE;
     }
 
+    if (self->task_cancel_requested) {
+        Py_RETURN_FALSE;
+    }
+    self->task_cancel_requested = 1;
+
     if (self->task_fut_waiter) {
         PyObject *res;
         int is_true;
@@ -2236,6 +2237,56 @@ _asyncio_Task_cancel_impl(TaskObj *self, PyObject *msg)
     Py_XINCREF(msg);
     Py_XSETREF(self->task_cancel_msg, msg);
     Py_RETURN_TRUE;
+}
+
+/*[clinic input]
+_asyncio.Task.cancelling
+
+Return True if the task is in the process of being cancelled.
+
+This is set once .cancel() is called
+and remains set until .uncancel() is called.
+
+As long as this flag is set, further .cancel() calls will be ignored,
+until .uncancel() is called to reset it.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task_cancelling_impl(TaskObj *self)
+/*[clinic end generated code: output=803b3af96f917d7e input=c50e50f9c3ca4676]*/
+/*[clinic end generated code]*/
+{
+    if (self->task_cancel_requested) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
+}
+
+/*[clinic input]
+_asyncio.Task.uncancel
+
+Reset the flag returned by cancelling().
+
+This should be used by tasks that catch CancelledError
+and wish to continue indefinitely until they are cancelled again.
+
+Returns the previous value of the flag.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task_uncancel_impl(TaskObj *self)
+/*[clinic end generated code: output=58184d236a817d3c input=5db95e28fcb6f7cd]*/
+/*[clinic end generated code]*/
+{
+    if (self->task_cancel_requested) {
+        self->task_cancel_requested = 0;
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
 }
 
 /*[clinic input]
@@ -2449,13 +2500,6 @@ done:
     FutureObj_finalize((FutureObj*)task);
 }
 
-static PyObject *
-task_cls_getitem(PyObject *cls, PyObject *type)
-{
-    Py_INCREF(cls);
-    return cls;
-}
-
 static void TaskObj_dealloc(PyObject *);  /* Needs Task_CheckExact */
 
 static PyMethodDef TaskType_methods[] = {
@@ -2468,6 +2512,8 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_SET_RESULT_METHODDEF
     _ASYNCIO_TASK_SET_EXCEPTION_METHODDEF
     _ASYNCIO_TASK_CANCEL_METHODDEF
+    _ASYNCIO_TASK_CANCELLING_METHODDEF
+    _ASYNCIO_TASK_UNCANCEL_METHODDEF
     _ASYNCIO_TASK_GET_STACK_METHODDEF
     _ASYNCIO_TASK_PRINT_STACK_METHODDEF
     _ASYNCIO_TASK__MAKE_CANCELLED_ERROR_METHODDEF
@@ -2475,7 +2521,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_GET_NAME_METHODDEF
     _ASYNCIO_TASK_SET_NAME_METHODDEF
     _ASYNCIO_TASK_GET_CORO_METHODDEF
-    {"__class_getitem__", task_cls_getitem, METH_O|METH_CLASS, NULL},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -3318,16 +3364,13 @@ static int
 module_init(void)
 {
     PyObject *module = NULL;
+    if (module_initialized) {
+        return 0;
+    }
 
     asyncio_mod = PyImport_ImportModule("asyncio");
     if (asyncio_mod == NULL) {
         goto fail;
-    }
-    if (module_initialized != 0) {
-        return 0;
-    }
-    else {
-        module_initialized = 1;
     }
 
     current_tasks = PyDict_New();
@@ -3389,6 +3432,7 @@ module_init(void)
         goto fail;
     }
 
+    module_initialized = 1;
     Py_DECREF(module);
     return 0;
 
