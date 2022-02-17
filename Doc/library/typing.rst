@@ -1472,6 +1472,19 @@ These are not used in annotations. They are building blocks for declaring types.
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
       Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
 
+   Furthermore, there is another reason to use the functional syntax. If the keys
+   of ``TypedDicts`` aren't valid identifiers, such as keywords, name with hyphens,
+   etc., we must use the functional syntax.
+   Example::
+
+      # raise SyntaxError
+      class Point2D(TypedDict):
+          in: int  # 'in'(a keyword)
+          x-y: int  # name with hyphens
+
+      # OK, functional syntax
+      Point2D = TypedDict('Point2D', {'in': int, 'x-y': int})
+
    By default, all keys must be present in a ``TypedDict``. It is possible to
    override this by specifying totality.
    Usage::
@@ -1484,39 +1497,6 @@ These are not used in annotations. They are building blocks for declaring types.
    omitted. A type checker is only expected to support a literal ``False`` or
    ``True`` as the value of the ``total`` argument. ``True`` is the default,
    and makes all items defined in the class body required.
-
-   The type info for introspection can be accessed via ``Point2D.__annotations__``,
-   ``Point2D.__total__``, ``Point2D.__required_keys__``, and
-   ``Point2D.__optional_keys__``.
-
-   ``Point2D.__annotations__`` gives a dict maps the field names to the field types::
-
-      >>> Point2D.__annotations__
-      {'x': int, 'y': int}
-
-   ``Point2D.__total__`` gives the value of the ``total`` argument, ``Point2D.__required_keys__``
-   and ``Point2D.__optional_keys__`` return ``frozenset`` objects containing
-   required and optional keys respectively::
-
-      >>> class Point2D(TypedDict): ...
-      ...
-      >>> Point2D.__total__
-      True
-      >>> Point2D.__required_keys__
-      frozenset({'x', 'y'})
-      >>> Point2D.__optional_keys__
-      frozenset()
-
-   If the ``total`` argument is set to ``False`` then all keys in the class body are optional::
-
-      >>> class Point2D(TypedDict, total=False): ...
-      ...
-      >>> Point2D.__total__
-      False
-      >>> Point2D.__required_keys__
-      frozenset()
-      >>> Point2D.__optional_keys__
-      frozenset({'x', 'y'})
 
    It is possible for a ``TypedDict`` type to inherit from one or more TypedDict types
    using the class-based syntax.
@@ -1532,6 +1512,52 @@ These are not used in annotations. They are building blocks for declaring types.
          x: int
          y: int
          z: int
+
+   The type info for introspection can be accessed via ``Point2D.__annotations__``,
+   ``Point2D.__total__``, ``Point2D.__required_keys__``, and
+   ``Point2D.__optional_keys__``.
+
+   .. attribute:: __annotations__
+
+      ``Point2D.__annotations__`` gives a dict maps the field names to the field types::
+
+      >>> Point2D.__annotations__
+      {'x': int, 'y': int}
+
+   .. attribute:: __total__
+
+      ``Point2D.__total__`` gives the value of the ``total`` argument::
+
+      >>> class Point2D(TypedDict): ...
+      ...
+      >>> Point2D.__total__
+      True
+      >>> class Point2D(TypedDict, total=False): ...
+      ...
+      >>> Point2D.__total__
+      False
+
+   .. attribute:: __required_keys__
+   .. attribute:: __optional_keys__
+
+      ``Point2D.__required_keys__`` and ``Point2D.__optional_keys__`` return
+      ``frozenset`` objects containing required and optional keys, respectively.
+      Currently the only way to set required and optional keys is mixed inheritance,
+      declaring a ``TypedDict`` with one value for the ``total`` argument and
+      then inheriting it from another ``TypedDict`` with a different value for ``total``.
+      Usage::
+
+      >>> class Point2D(TypedDict, total=False):
+      ...     x: int
+      ...     y: int
+      ...
+      >>> class Point3D(Point2D):
+      ...     z: int
+      ...
+      >>> Point3D.__required_keys__
+      frozenset({'z'})
+      >>> Point3D.__optional_keys__
+      frozenset({'x', 'y'})
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
