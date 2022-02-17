@@ -697,8 +697,7 @@ compatible with the Python codec registry.
 
    .. method:: writelines(list)
 
-      Writes the concatenated list of strings to the stream by reusing
-      the :meth:`write` method, and does not support infinite or very large generators. The standard bytes-to-bytes codecs
+      Concatenates the string iterable and writes it to the stream. Infinite or very large iterables are not supported. The standard bytes-to-bytes codecs
       do not support this method.
 
 
