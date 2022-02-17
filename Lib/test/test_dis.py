@@ -1,14 +1,15 @@
 # Minimal tests for dis module
 
-from test.support import captured_stdout, requires_debug_ranges
-from test.support.bytecode_helper import BytecodeTestCase
-import unittest
-import sys
+import contextlib
 import dis
 import io
 import re
+import sys
 import types
-import contextlib
+import unittest
+from test.support import captured_stdout, requires_debug_ranges
+from test.support.bytecode_helper import BytecodeTestCase
+
 
 def get_tb():
     def _error():
@@ -229,10 +230,10 @@ bug46724 = bytes([
 
 
 dis_bug46724 = """\
-    >>    0 EXTENDED_ARG           255
-          2 EXTENDED_ARG         65535
-          4 EXTENDED_ARG         16777215
-          6 JUMP_FORWARD            -4 (to 0)
+    >> EXTENDED_ARG           255
+       EXTENDED_ARG         65535
+       EXTENDED_ARG         16777215
+       JUMP_FORWARD            -4 (to 0)
 """
 
 _BIG_LINENO_FORMAT = """\
