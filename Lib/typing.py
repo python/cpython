@@ -767,10 +767,11 @@ class ForwardRef(_Final, _root=True):
         if self.__forward_evaluated__ and other.__forward_evaluated__:
             return (self.__forward_arg__ == other.__forward_arg__ and
                     self.__forward_value__ == other.__forward_value__)
-        return self.__forward_arg__ == other.__forward_arg__
+        return (self.__forward_arg__ == other.__forward_arg__ and
+                self.__forward_module__ == other.__forward_module__)
 
     def __hash__(self):
-        return hash(self.__forward_arg__)
+        return hash((self.__forward_arg__, self.__forward_module__))
 
     def __or__(self, other):
         return Union[self, other]
