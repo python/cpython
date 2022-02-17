@@ -692,3 +692,10 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
         self.assertGreaterEqual(nhydras, 10)
+
+    async def test_taskgroup_task_name(self):
+        async def coro():
+            await asyncio.sleep(0)
+        async with taskgroups.TaskGroup() as g:
+            t = g.create_task(coro(), name="yolo")
+            self.assertEqual(t.get_name(), "yolo")
