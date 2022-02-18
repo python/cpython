@@ -1,6 +1,7 @@
 import contextlib
 import enum
 
+from dataclasses import dataclass
 from types import TracebackType
 from typing import final, Any, Iterator, Optional, Type
 
@@ -27,18 +28,13 @@ class _State(enum.Enum):
 
 
 @final
+@dataclass(slots=True)
 class CancelScope:
-    __slots__ = ("_deadline", "_loop", "_state", "_task", "_timeout_handler")
-
-    def __init__(
-        self, deadline: Optional[float], loop: events.AbstractEventLoop
-    ) -> None:
-        self._loop = loop
-        self._state = _State.CREATED
-
-        self._timeout_handler: Optional[events.TimerHandle] = None
-        self._task: Optional[tasks.Task[Any]] = None
-        self._deadline = deadline
+    _deadline: float | None
+    _loop: events.AbstractEventLoop
+    _state: _State = _State.CREATED
+    _task: tasks.Task[Any] | None = None
+    _timeout_handler: events.TimerHandle | None = None
 
     @property
     def deadline(self) -> Optional[float]:
