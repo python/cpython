@@ -385,7 +385,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a5 3477 (Replace DUP_TOP/DUP_TOP_TWO with COPY and
 #                         ROT_TWO/ROT_THREE/ROT_FOUR/ROT_N with SWAP)
 #     Python 3.11a5 3478 (New CALL opcodes)
-#     Python 3.11a5 3479 (New CALL opcodes, second iteration)
+#     Python 3.11a5 3479 (Add PUSH_NULL opcode)
 
 #     Python 3.12 will start with magic number 3500
 
