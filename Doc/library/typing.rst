@@ -1533,19 +1533,22 @@ These are not used in annotations. They are building blocks for declaring types.
 
       ``Point2D.__annotations__`` gives a dict maps the field names to the field types::
 
+      >>> from typing import TypedDict
+      >>> class Point2D(TypedDict):
+      ...     x: int
+      ...     y: int
+      ...
       >>> Point2D.__annotations__
-      {'x': int, 'y': int}
+      {'x': <class 'int'>, 'y': <class 'int'>}
 
    .. attribute:: __total__
 
       ``Point2D.__total__`` gives the value of the ``total`` argument::
 
-      >>> class Point2D(TypedDict): ...
-      ...
+      >>> class Point2D(TypedDict): pass
       >>> Point2D.__total__
       True
-      >>> class Point2D(TypedDict, total=False): ...
-      ...
+      >>> class Point2D(TypedDict, total=False): pass
       >>> Point2D.__total__
       False
 
