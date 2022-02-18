@@ -1,0 +1,1 @@
+Consider ``embed``, ``source``, ``track``, ``wbr`` as empty tags.
