@@ -56,8 +56,8 @@ class CancelScope:
         return self._state == _State.CANCELLED
 
     def cancelling(self) -> bool:
-        # Timeout reached but __exit__ was not executed yet
-        return self._state == _State.CANCELLING
+        # Timeout reached, cancellation scheduled
+        return self._state in (_State.CANCELLING, _State.CANCELLED)
 
     def __repr__(self) -> str:
         info = [str(self._state)]
@@ -107,7 +107,7 @@ class CancelScope:
             self._timeout_handler = None
         else:
             self._timeout_handler = self._loop.call_at(
-                self._loop.time() + self._deadline,
+                self._deadline,
                 self._on_timeout,
             )
 
