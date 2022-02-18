@@ -1,14 +1,17 @@
 # Minimal tests for dis module
 
-from test.support import captured_stdout, requires_debug_ranges
-from test.support.bytecode_helper import BytecodeTestCase
-import unittest
-import sys
+import contextlib
 import dis
 import io
 import re
+import sys
 import types
-import contextlib
+import unittest
+from test.support import captured_stdout, requires_debug_ranges
+from test.support.bytecode_helper import BytecodeTestCase
+
+import opcode
+
 
 def get_tb():
     def _error():
@@ -217,6 +220,22 @@ dis_bug_45757 = """\
        EXTENDED_ARG             1
        LOAD_CONST             297
        RETURN_VALUE
+"""
+
+# [255, 255, 255, 252] is -4 in a 4 byte signed integer
+bug46724 = bytes([
+    opcode.EXTENDED_ARG, 255,
+    opcode.EXTENDED_ARG, 255,
+    opcode.EXTENDED_ARG, 255,
+    opcode.opmap['JUMP_FORWARD'], 252,
+])
+
+
+dis_bug46724 = """\
+    >> EXTENDED_ARG           255
+       EXTENDED_ARG         65535
+       EXTENDED_ARG         16777215
+       JUMP_FORWARD            -4 (to 0)
 """
 
 _BIG_LINENO_FORMAT = """\
@@ -687,6 +706,10 @@ class DisTests(DisTestBase):
     def test_bug_45757(self):
         # Extended arg followed by NOP
         self.do_disassembly_test(code_bug_45757, dis_bug_45757)
+
+    def test_bug_46724(self):
+        # Test that negative operargs are handled properly
+        self.do_disassembly_test(bug46724, dis_bug46724)
 
     def test_big_linenos(self):
         def func(count):
