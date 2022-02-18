@@ -372,7 +372,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 g1.create_task(crash_after(0.1))
 
                 async with taskgroups.TaskGroup() as g2:
-                    g2.create_task(crash_after(0.2))
+                    g2.create_task(crash_after(10))
 
         r = asyncio.create_task(runner())
         with self.assertRaises(ExceptionGroup) as cm:
