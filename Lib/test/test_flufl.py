@@ -17,7 +17,7 @@ class FLUFLTests(unittest.TestCase):
         self.assertIn('2 != 3', cm.exception.text)
         self.assertEqual(cm.exception.filename, '<FLUFL test>')
 
-        self.assertTrue(cm.exception.lineno, 2)
+        self.assertEqual(cm.exception.lineno, 2)
         # The old parser reports the end of the token and the new
         # parser reports the start of the token
         self.assertEqual(cm.exception.offset, 3)
