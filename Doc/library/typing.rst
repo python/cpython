@@ -1533,24 +1533,24 @@ These are not used in annotations. They are building blocks for declaring types.
 
       ``Point2D.__annotations__`` gives a dict maps the field names to the field types::
 
-      >>> from typing import TypedDict
-      >>> class Point2D(TypedDict):
-      ...     x: int
-      ...     y: int
-      ...
-      >>> Point2D.__annotations__
-      {'x': <class 'int'>, 'y': <class 'int'>}
+         >>> from typing import TypedDict
+         >>> class Point2D(TypedDict):
+         ...     x: int
+         ...     y: int
+         ...
+         >>> Point2D.__annotations__
+         {'x': <class 'int'>, 'y': <class 'int'>}
 
    .. attribute:: __total__
 
       ``Point2D.__total__`` gives the value of the ``total`` argument::
 
-      >>> class Point2D(TypedDict): pass
-      >>> Point2D.__total__
-      True
-      >>> class Point2D(TypedDict, total=False): pass
-      >>> Point2D.__total__
-      False
+         >>> class Point2D(TypedDict): pass
+         >>> Point2D.__total__
+         True
+         >>> class Point2D(TypedDict, total=False): pass
+         >>> Point2D.__total__
+         False
 
    .. attribute:: __required_keys__
    .. attribute:: __optional_keys__
@@ -1562,17 +1562,17 @@ These are not used in annotations. They are building blocks for declaring types.
       then inheriting it from another ``TypedDict`` with a different value for ``total``.
       Usage::
 
-      >>> class Point2D(TypedDict, total=False):
-      ...     x: int
-      ...     y: int
-      ...
-      >>> class Point3D(Point2D):
-      ...     z: int
-      ...
-      >>> Point3D.__required_keys__
-      frozenset({'z'})
-      >>> Point3D.__optional_keys__
-      frozenset({'x', 'y'})
+         >>> class Point2D(TypedDict, total=False):
+         ...     x: int
+         ...     y: int
+         ...
+         >>> class Point3D(Point2D):
+         ...     z: int
+         ...
+         >>> Point3D.__required_keys__
+         frozenset({'z'})
+         >>> Point3D.__optional_keys__
+         frozenset({'x', 'y'})
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
