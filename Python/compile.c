@@ -1012,17 +1012,15 @@ stack_effect(int opcode, int oparg, int jump)
             return -oparg;
 
         /* Functions and calls */
-        case PRECALL_METHOD:
-            return -oparg-1;
-        case PRECALL_FUNCTION:
+        case PRECALL:
             return -oparg;
         case KW_NAMES:
             return 0;
         case CALL:
-            return 0;
+            return -1;
 
         case CALL_FUNCTION_EX:
-            return -1 - ((oparg & 0x01) != 0);
+            return -2 - ((oparg & 0x01) != 0);
         case MAKE_FUNCTION:
             return 0 - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0) -
                 ((oparg & 0x04) != 0) - ((oparg & 0x08) != 0);
@@ -1084,6 +1082,7 @@ stack_effect(int opcode, int oparg, int jump)
         case MATCH_KEYS:
             return 1;
         case COPY:
+        case PUSH_NULL:
             return 1;
         case BINARY_OP:
             return -1;
@@ -1800,7 +1799,7 @@ compiler_call_exit_with_nones(struct compiler *c) {
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP_I(c, PRECALL_FUNCTION, 3);
+    ADDOP_I(c, PRECALL, 2);
     ADDOP_I(c, CALL, 0);
     return 1;
 }
@@ -2178,7 +2177,7 @@ compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
     int old_end_col_offset = c->u->u_end_col_offset;
     for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         SET_LOC(c, (expr_ty)asdl_seq_GET(decos, i));
-        ADDOP_I(c, PRECALL_FUNCTION, 1);
+        ADDOP_I(c, PRECALL, 0);
         ADDOP_I(c, CALL, 0);
     }
     c->u->u_lineno = old_lineno;
@@ -2630,6 +2629,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         return 0;
 
     /* 2. load the 'build_class' function */
+    ADDOP(c, PUSH_NULL);
     ADDOP(c, LOAD_BUILD_CLASS);
 
     /* 3. load a function (or closure) made from the code object */
@@ -2645,7 +2645,6 @@ compiler_class(struct compiler *c, stmt_ty s)
     /* 5. generate the rest of the code for the call */
     if (!compiler_call_helper(c, 2, s->v.ClassDef.bases, s->v.ClassDef.keywords))
         return 0;
-
     /* 6. apply decorators */
     if (!compiler_apply_decorators(c, decos))
         return 0;
@@ -3858,7 +3857,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
     ADDOP(c, LOAD_ASSERTION_ERROR);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
-        ADDOP_I(c, PRECALL_FUNCTION, 1);
+        ADDOP_I(c, PRECALL, 0);
         ADDOP_I(c, CALL, 0);
     }
     ADDOP_I(c, RAISE_VARARGS, 1);
@@ -4680,14 +4679,14 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 
     if (kwdsl) {
         VISIT_SEQ(c, keyword, kwds);
-        ADDOP_I(c, PRECALL_METHOD, argsl + kwdsl);
+        ADDOP_I(c, PRECALL, argsl + kwdsl);
         if (!compiler_call_simple_kw_helper(c, kwds, kwdsl)) {
             return 0;
         };
         ADDOP_I(c, CALL, kwdsl);
     }
     else {
-        ADDOP_I(c, PRECALL_METHOD, argsl);
+        ADDOP_I(c, PRECALL, argsl);
         ADDOP_I(c, CALL, 0);
     }
     c->u->u_lineno = old_lineno;
@@ -4731,6 +4730,9 @@ compiler_call(struct compiler *c, expr_ty e)
     if (!check_caller(c, e->v.Call.func)) {
         return 0;
     }
+    SET_LOC(c, e->v.Call.func);
+    ADDOP(c, PUSH_NULL);
+    SET_LOC(c, e);
     VISIT(c, expr, e->v.Call.func);
     return compiler_call_helper(c, 0,
                                 e->v.Call.args,
@@ -4755,7 +4757,7 @@ compiler_joined_str(struct compiler *c, expr_ty e)
             VISIT(c, expr, asdl_seq_GET(e->v.JoinedStr.values, i));
             ADDOP_I(c, LIST_APPEND, 1);
         }
-        ADDOP_I(c, PRECALL_METHOD, 1);
+        ADDOP_I(c, PRECALL, 1);
         ADDOP_I(c, CALL, 0);
     }
     else {
@@ -4925,7 +4927,7 @@ compiler_call_helper(struct compiler *c,
     }
     if (nkwelts) {
         VISIT_SEQ(c, keyword, keywords);
-        ADDOP_I(c, PRECALL_FUNCTION, n + nelts + nkwelts);
+        ADDOP_I(c, PRECALL, n + nelts + nkwelts);
         if (!compiler_call_simple_kw_helper(c, keywords, nkwelts)) {
             return 0;
         };
@@ -4933,7 +4935,7 @@ compiler_call_helper(struct compiler *c,
         return 1;
     }
     else {
-        ADDOP_I(c, PRECALL_FUNCTION, n + nelts);
+        ADDOP_I(c, PRECALL, n + nelts);
         ADDOP_I(c, CALL, 0);
         return 1;
     }
@@ -5328,7 +5330,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         ADDOP(c, GET_ITER);
     }
 
-    ADDOP_I(c, PRECALL_FUNCTION, 1);
+    ADDOP_I(c, PRECALL, 0);
     ADDOP_I(c, CALL, 0);
 
     if (is_async_generator && type != COMP_GENEXP) {
