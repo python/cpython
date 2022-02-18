@@ -1,0 +1,1 @@
+Fix libexpat symbols collisions with user dynamically loaded or statically linked libexpat in embedded Python.
