@@ -26,7 +26,7 @@ class TaskGroup:
         self._on_completed_fut = None
 
     def __repr__(self):
-        info = []
+        info = ['']
         if self._tasks:
             info.append(f'tasks={len(self._tasks)}')
         if self._unfinished_tasks:
@@ -38,7 +38,7 @@ class TaskGroup:
         elif self._entered:
             info.append('entered')
 
-        info_str = ' ' + ' '.join(info)
+        info_str = ' '.join(info)
         return f'<TaskGroup{info_str}>'
 
     async def __aenter__(self):
