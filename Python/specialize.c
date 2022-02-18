@@ -178,8 +178,7 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
     /* Mark some opcodes as specializable for stats,
      * even though we don't specialize them yet. */
     fprintf(out, "opcode[%d].specializable : 1\n", FOR_ITER);
-    fprintf(out, "opcode[%d].specializable : 1\n", PRECALL_FUNCTION);
-    fprintf(out, "opcode[%d].specializable : 1\n", PRECALL_METHOD);
+    fprintf(out, "opcode[%d].specializable : 1\n", PRECALL);
     fprintf(out, "opcode[%d].specializable : 1\n", UNPACK_SEQUENCE);
     for (int i = 0; i < 256; i++) {
         if (adaptive_opcodes[i]) {
@@ -1528,7 +1527,7 @@ specialize_method_descriptor(
     }
     assert(_list_append != NULL);
     if (nargs == 2 && descr == _list_append) {
-        assert(_Py_OPCODE(instr[-1]) == PRECALL_METHOD);
+        assert(_Py_OPCODE(instr[-1]) == PRECALL);
         cache[-1].obj.obj = (PyObject *)_list_append;
         *instr = _Py_MAKECODEUNIT(CALL_NO_KW_LIST_APPEND, _Py_OPARG(*instr));
         return 0;
