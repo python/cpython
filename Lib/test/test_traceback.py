@@ -1519,7 +1519,7 @@ class BaseExceptionReportingTests:
                     f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 9}, in exc\n'
                     f'  |     raise EG("eg", [VE(1), exc, VE(4)])\n'
                     f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
-                    f'  | ExceptionGroup: eg (group of 4 exceptions)\n'
+                    f'  | ExceptionGroup: eg (group of 3 exceptions)\n'
                     f'  +-+---------------- 1 ----------------\n'
                     f'    | ValueError: 1\n'
                     f'    +---------------- 2 ----------------\n'
@@ -1605,43 +1605,43 @@ class BaseExceptionReportingTests:
                 f'eg{i}',
                 [ValueError(i), exc, ValueError(-i)])
 
-        expected = ('  | ExceptionGroup: eg999 (group of 2001 exceptions)\n'
+        expected = ('  | ExceptionGroup: eg999 (group of 3 exceptions)\n'
                     '  +-+---------------- 1 ----------------\n'
                     '    | ValueError: 999\n'
                     '    +---------------- 2 ----------------\n'
-                    '    | ExceptionGroup: eg998 (group of 1999 exceptions)\n'
+                    '    | ExceptionGroup: eg998 (group of 3 exceptions)\n'
                     '    +-+---------------- 1 ----------------\n'
                     '      | ValueError: 998\n'
                     '      +---------------- 2 ----------------\n'
-                    '      | ExceptionGroup: eg997 (group of 1997 exceptions)\n'
+                    '      | ExceptionGroup: eg997 (group of 3 exceptions)\n'
                     '      +-+---------------- 1 ----------------\n'
                     '        | ValueError: 997\n'
                     '        +---------------- 2 ----------------\n'
-                    '        | ExceptionGroup: eg996 (group of 1995 exceptions)\n'
+                    '        | ExceptionGroup: eg996 (group of 3 exceptions)\n'
                     '        +-+---------------- 1 ----------------\n'
                     '          | ValueError: 996\n'
                     '          +---------------- 2 ----------------\n'
-                    '          | ExceptionGroup: eg995 (group of 1993 exceptions)\n'
+                    '          | ExceptionGroup: eg995 (group of 3 exceptions)\n'
                     '          +-+---------------- 1 ----------------\n'
                     '            | ValueError: 995\n'
                     '            +---------------- 2 ----------------\n'
-                    '            | ExceptionGroup: eg994 (group of 1991 exceptions)\n'
+                    '            | ExceptionGroup: eg994 (group of 3 exceptions)\n'
                     '            +-+---------------- 1 ----------------\n'
                     '              | ValueError: 994\n'
                     '              +---------------- 2 ----------------\n'
-                    '              | ExceptionGroup: eg993 (group of 1989 exceptions)\n'
+                    '              | ExceptionGroup: eg993 (group of 3 exceptions)\n'
                     '              +-+---------------- 1 ----------------\n'
                     '                | ValueError: 993\n'
                     '                +---------------- 2 ----------------\n'
-                    '                | ExceptionGroup: eg992 (group of 1987 exceptions)\n'
+                    '                | ExceptionGroup: eg992 (group of 3 exceptions)\n'
                     '                +-+---------------- 1 ----------------\n'
                     '                  | ValueError: 992\n'
                     '                  +---------------- 2 ----------------\n'
-                    '                  | ExceptionGroup: eg991 (group of 1985 exceptions)\n'
+                    '                  | ExceptionGroup: eg991 (group of 3 exceptions)\n'
                     '                  +-+---------------- 1 ----------------\n'
                     '                    | ValueError: 991\n'
                     '                    +---------------- 2 ----------------\n'
-                    '                    | ExceptionGroup: eg990 (group of 1983 exceptions)\n'
+                    '                    | ExceptionGroup: eg990 (group of 3 exceptions)\n'
                     '                    +-+---------------- 1 ----------------\n'
                     '                      | ValueError: 990\n'
                     '                      +---------------- 2 ----------------\n'
@@ -2460,7 +2460,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
     def test_exception_group_format_exception_only(self):
         teg = traceback.TracebackException(*self.eg_info)
         formatted = ''.join(teg.format_exception_only()).split('\n')
-        expected = "ExceptionGroup: eg2 (group of 3 exceptions)\n".split('\n')
+        expected = "ExceptionGroup: eg2 (group of 2 exceptions)\n".split('\n')
 
         self.assertEqual(formatted, expected)
 
@@ -2476,7 +2476,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
                     f'  |   File "{__file__}", line {lno_g+23}, in _get_exception_group',
                     f'  |     raise ExceptionGroup("eg2", [exc3, exc4])',
                     f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
-                    f'  | ExceptionGroup: eg2 (group of 3 exceptions)',
+                    f'  | ExceptionGroup: eg2 (group of 2 exceptions)',
                     f'  +-+---------------- 1 ----------------',
                     f'    | Exception Group Traceback (most recent call last):',
                     f'    |   File "{__file__}", line {lno_g+16}, in _get_exception_group',
@@ -2531,7 +2531,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
         formatted = ''.join(teg.format()).split('\n')
 
         expected = [
-                    f'  | ExceptionGroup: eg (group of 13 exceptions)',
+                    f'  | ExceptionGroup: eg (group of 2 exceptions)',
                     f'  +-+---------------- 1 ----------------',
                     f'    | ExceptionGroup: eg1 (group of 3 exceptions)',
                     f'    +-+---------------- 1 ----------------',
@@ -2563,11 +2563,11 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
         formatted = ''.join(teg.format()).split('\n')
 
         expected = [
-                    f'  | ExceptionGroup: exc (group of 7 exceptions)',
+                    f'  | ExceptionGroup: exc (group of 3 exceptions)',
                     f'  +-+---------------- 1 ----------------',
                     f'    | ValueError: -2',
                     f'    +---------------- 2 ----------------',
-                    f'    | ExceptionGroup: exc (group of 5 exceptions)',
+                    f'    | ExceptionGroup: exc (group of 3 exceptions)',
                     f'    +-+---------------- 1 ----------------',
                     f'      | ValueError: -1',
                     f'      +---------------- 2 ----------------',

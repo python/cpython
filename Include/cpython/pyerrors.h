@@ -18,7 +18,6 @@ typedef struct {
     PyException_HEAD
     PyObject *msg;
     PyObject *excs;
-    Py_ssize_t leaf_count;
 } PyBaseExceptionGroupObject;
 
 typedef struct {

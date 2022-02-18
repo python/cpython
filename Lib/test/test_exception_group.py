@@ -114,7 +114,7 @@ class StrAndReprTests(unittest.TestCase):
         eg = BaseExceptionGroup(
             'nested', [eg, ValueError(1), eg, TypeError(2)])
 
-        self.assertEqual(str(eg), "nested (group of 6 exceptions)")
+        self.assertEqual(str(eg), "nested (group of 4 exceptions)")
         self.assertEqual(repr(eg),
             "ExceptionGroup('nested', "
                 "[ExceptionGroup('flat', "
@@ -136,7 +136,7 @@ class StrAndReprTests(unittest.TestCase):
         eg = BaseExceptionGroup(
             'nested', [eg, ValueError(1), eg])
 
-        self.assertEqual(str(eg), "nested (group of 5 exceptions)")
+        self.assertEqual(str(eg), "nested (group of 3 exceptions)")
         self.assertEqual(repr(eg),
             "BaseExceptionGroup('nested', "
                 "[BaseExceptionGroup('flat', "
@@ -158,7 +158,7 @@ class StrAndReprTests(unittest.TestCase):
         eg = MyEG(
             'nested', [eg, ValueError(1), eg, TypeError(2)])
 
-        self.assertEqual(str(eg), "nested (group of 6 exceptions)")
+        self.assertEqual(str(eg), "nested (group of 4 exceptions)")
         self.assertEqual(repr(eg), (
                  "MyEG('nested', "
                      "[MyEG('flat', [ValueError(1), TypeError(2)]), "
