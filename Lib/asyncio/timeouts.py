@@ -64,7 +64,7 @@ class CancelScope:
         if self._state == _State.ENTERED and self._deadline is not None:
             info.append("deadline={self._deadline}")
         cls_name = self.__class__.__name__
-        return f"<{cls_name} at {id(self):#x}, {', '.join(info)}>"
+        return f"<{cls_name} at {id(self):#x}, {' '.join(info)}>"
 
     def __enter__(self) -> "CancelScope":
         self._state = _State.ENTERED
