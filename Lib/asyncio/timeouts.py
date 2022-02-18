@@ -20,6 +20,7 @@ __all__ = (
 class _State(enum.Enum):
     CREATED = "created"
     ENTERED = "active"
+    CANCELLING = "cancelling"
     CANCELLED = "cancelled"
     EXITED = "exited"
 
@@ -36,7 +37,6 @@ class CancelScope:
 
         self._timeout_handler: Optional[events.TimerHandle] = None
         self._deadline = deadline
-        self._reschedule()
 
     @property
     def deadline(self) -> Optional[float]:
@@ -50,6 +50,10 @@ class CancelScope:
     def cancelled(self) -> bool:
         """Is timeout expired during execution?"""
         return self._state == _State.CANCELLED
+
+    def cancelling(self) -> bool:
+        # Timeout reached but __exit__ was not executed yet
+        return self._state == _State.CANCELLING
 
     def __repr__(self) -> str:
         info = [str(self._state)]
@@ -70,7 +74,10 @@ class CancelScope:
         exc_tb: Optional[TracebackType],
     ) -> Optional[bool]:
         # state is EXITED if not timed out previously
-        if self._state != _State.CANCELLED:
+        assert self._state in (_State.ENTERED, _State.CANCELLING)
+        if self._state == _State.CANCELLING:
+            self._state = _State.CANCELLED
+        elif self._state == _State.ENTERED:
             self._state = _State.EXITED
 
         if self._timeout_handler is not None:
@@ -82,6 +89,10 @@ class CancelScope:
     def _reschedule(self) -> None:
         assert self._state == _State.ENTERED
 
+        task = tasks.current_task()
+        if task is None:
+            raise RuntimeError("CancelScope should be used inside a task")
+
         if self._timeout_handler is not None:
             self._timeout_handler.cancel()
 
@@ -91,13 +102,13 @@ class CancelScope:
             self._timeout_handler = self._loop.call_at(
                 self._loop.time() + self._deadline,
                 self._on_timeout,
-                tasks.current_task(),
+                task,
             )
 
     def _on_timeout(self, task: tasks.Task[Any]) -> None:
         assert self._state == _State.ENTERED
         task.cancel()
-        self._state = _State.CANCELLED
+        self._state = _State.CANCELLING
         # drop the reference early
         self._timeout_handler = None
 
