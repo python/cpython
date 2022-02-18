@@ -256,11 +256,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         except exceptions.CancelledError as exc:
             # Save the original exception so we can chain it later.
             self._cancelled_exc = exc
-            args = exc.args
-            if args:
-                super().cancel(args[0])  # I.e., Future.cancel(self, msg).
-            else:
-                super().cancel()  # I.e., Future.cancel(self).
+            super().cancel()  # I.e., Future.cancel(self).
         except (KeyboardInterrupt, SystemExit) as exc:
             super().set_exception(exc)
             raise
