@@ -28,11 +28,11 @@ class TaskGroup:
     def __repr__(self):
         info = []
         if self._tasks:
-            info.append(f'tasks:{len(self._tasks)}')
+            info.append(f'tasks={len(self._tasks)}')
         if self._unfinished_tasks:
-            info.append(f'unfinished:{self._unfinished_tasks}')
+            info.append(f'unfinished={self._unfinished_tasks}')
         if self._errors:
-            info.append(f'errors:{len(self._errors)}')
+            info.append(f'errors={len(self._errors)}')
         if self._aborting:
             info.append('cancelling')
         elif self._entered:
