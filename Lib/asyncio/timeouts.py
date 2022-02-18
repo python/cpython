@@ -47,8 +47,7 @@ class CancelScope:
         self._deadline = value
         self._reschedule()
 
-    @property
-    def expired(self) -> bool:
+    def cancelled(self) -> bool:
         """Is timeout expired during execution?"""
         return self._state == _State.CANCELLED
 
