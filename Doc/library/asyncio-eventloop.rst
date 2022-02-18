@@ -343,7 +343,7 @@ Creating Futures and Tasks
    the name of the task using :meth:`Task.set_name`.
 
    .. versionchanged:: 3.8
-      Added the ``name`` parameter.
+      Added the *name* parameter.
 
 .. method:: loop.set_task_factory(factory)
 
@@ -456,7 +456,20 @@ Opening network connections
      to wait for the TLS handshake to complete before aborting the connection.
      ``60.0`` seconds if ``None`` (default).
 
-   .. versionadded:: 3.8
+   .. versionchanged:: 3.5
+
+      Added support for SSL/TLS in :class:`ProactorEventLoop`.
+
+   .. versionchanged:: 3.6
+
+      The socket option :py:data:`~socket.TCP_NODELAY` is set by default
+      for all TCP connections.
+
+   .. versionchanged:: 3.7
+
+      Added the *ssl_handshake_timeout* parameter.
+
+   .. versionchanged:: 3.8
 
       Added the *happy_eyeballs_delay* and *interleave* parameters.
 
@@ -470,19 +483,6 @@ Opening network connections
       delay and provides an algorithm.
 
       For more information: https://tools.ietf.org/html/rfc6555
-
-   .. versionadded:: 3.7
-
-      The *ssl_handshake_timeout* parameter.
-
-   .. versionchanged:: 3.6
-
-      The socket option :py:data:`~socket.TCP_NODELAY` is set by default
-      for all TCP connections.
-
-   .. versionchanged:: 3.5
-
-      Added support for SSL/TLS in :class:`ProactorEventLoop`.
 
    .. seealso::
 
@@ -588,12 +588,8 @@ Opening network connections
 
    .. availability:: Unix.
 
-   .. versionadded:: 3.7
-
-      The *ssl_handshake_timeout* parameter.
-
    .. versionchanged:: 3.7
-
+      Added the *ssl_handshake_timeout* parameter.
       The *path* parameter can now be a :term:`path-like object`.
 
 
@@ -672,15 +668,6 @@ Creating network servers
      :meth:`Server.serve_forever` to make the server to start accepting
      connections.
 
-   .. versionadded:: 3.7
-
-      Added *ssl_handshake_timeout* and *start_serving* parameters.
-
-   .. versionchanged:: 3.6
-
-      The socket option :py:data:`~socket.TCP_NODELAY` is set by default
-      for all TCP connections.
-
    .. versionchanged:: 3.5
 
       Added support for SSL/TLS in :class:`ProactorEventLoop`.
@@ -688,6 +675,12 @@ Creating network servers
    .. versionchanged:: 3.5.1
 
       The *host* parameter can be a sequence of strings.
+
+   .. versionchanged:: 3.6
+
+      Added *ssl_handshake_timeout* and *start_serving* parameters.
+      The socket option :py:data:`~socket.TCP_NODELAY` is set by default
+      for all TCP connections.
 
    .. seealso::
 
@@ -713,12 +706,9 @@ Creating network servers
 
    .. availability:: Unix.
 
-   .. versionadded:: 3.7
-
-      The *ssl_handshake_timeout* and *start_serving* parameters.
-
    .. versionchanged:: 3.7
 
+      Added the *ssl_handshake_timeout* and *start_serving* parameters.
       The *path* parameter can now be a :class:`~pathlib.Path` object.
 
 .. coroutinemethod:: loop.connect_accepted_socket(protocol_factory, \
@@ -746,11 +736,11 @@ Creating network servers
 
    Returns a ``(transport, protocol)`` pair.
 
-   .. versionadded:: 3.7
-
-      The *ssl_handshake_timeout* parameter.
-
    .. versionadded:: 3.5.3
+
+   .. versionchanged:: 3.7
+
+      Added the *ssl_handshake_timeout* parameter.
 
 
 Transferring files
