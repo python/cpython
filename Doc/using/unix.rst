@@ -162,6 +162,7 @@ Custom OpenSSL
          $ pushd openssl-VERSION
          $ ./config \
               --prefix=/usr/local/custom-openssl \
+              --libdir=lib \
               --openssldir=/etc/ssl
          $ make -j1 depend
          $ make -j8

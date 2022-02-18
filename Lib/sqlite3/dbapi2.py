@@ -28,8 +28,6 @@ from _sqlite3 import *
 
 paramstyle = "qmark"
 
-threadsafety = 1
-
 apilevel = "2.0"
 
 Date = datetime.date

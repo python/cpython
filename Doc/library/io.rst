@@ -131,7 +131,7 @@ explicitly when opening text files. If you want to use UTF-8, pass
 ``encoding="utf-8"``. To use the current locale encoding,
 ``encoding="locale"`` is supported in Python 3.10.
 
-When you need to run existing code on Windows that attempts to opens
+When you need to run existing code on Windows that attempts to open
 UTF-8 files using the default locale encoding, you can enable the UTF-8
 mode. See :ref:`UTF-8 mode on Windows <win-utf8-mode>`.
 
@@ -390,6 +390,9 @@ I/O Base Classes
       Read and return a list of lines from the stream.  *hint* can be specified
       to control the number of lines read: no more lines will be read if the
       total size (in bytes/characters) of all lines so far exceeds *hint*.
+
+      *hint* values of ``0`` or less, as well as ``None``, are treated as no
+      hint.
 
       Note that it's already possible to iterate on file objects using ``for
       line in file: ...`` without calling ``file.readlines()``.

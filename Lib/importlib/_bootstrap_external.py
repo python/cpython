@@ -355,16 +355,54 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a1 3450 Use exception table for unwinding ("zero cost" exception handling)
 #     Python 3.11a1 3451 (Add CALL_METHOD_KW)
 #     Python 3.11a1 3452 (drop nlocals from marshaled code objects)
+#     Python 3.11a1 3453 (add co_fastlocalnames and co_fastlocalkinds)
+#     Python 3.11a1 3454 (compute cell offsets relative to locals bpo-43693)
+#     Python 3.11a1 3455 (add MAKE_CELL bpo-43693)
+#     Python 3.11a1 3456 (interleave cell args bpo-43693)
+#     Python 3.11a1 3457 (Change localsplus to a bytes object bpo-43693)
+#     Python 3.11a1 3458 (imported objects now don't use LOAD_METHOD/CALL_METHOD)
+#     Python 3.11a1 3459 (PEP 657: add end line numbers and column offsets for instructions)
+#     Python 3.11a1 3460 (Add co_qualname field to PyCodeObject bpo-44530)
+#     Python 3.11a1 3461 (JUMP_ABSOLUTE must jump backwards)
+#     Python 3.11a2 3462 (bpo-44511: remove COPY_DICT_WITHOUT_KEYS, change
+#                         MATCH_CLASS and MATCH_KEYS, and add COPY)
+#     Python 3.11a3 3463 (bpo-45711: JUMP_IF_NOT_EXC_MATCH no longer pops the
+#                         active exception)
+#     Python 3.11a3 3464 (bpo-45636: Merge numeric BINARY_*/INPLACE_* into
+#                         BINARY_OP)
+#     Python 3.11a3 3465 (Add COPY_FREE_VARS opcode)
+#     Python 3.11a4 3466 (bpo-45292: PEP-654 except*)
+#     Python 3.11a4 3467 (Change CALL_xxx opcodes)
+#     Python 3.11a4 3468 (Add SEND opcode)
+#     Python 3.11a4 3469 (bpo-45711: remove type, traceback from exc_info)
+#     Python 3.11a4 3470 (bpo-46221: PREP_RERAISE_STAR no longer pushes lasti)
+#     Python 3.11a4 3471 (bpo-46202: remove pop POP_EXCEPT_AND_RERAISE)
+#     Python 3.11a4 3472 (bpo-46009: replace GEN_START with POP_TOP)
+#     Python 3.11a4 3473 (Add POP_JUMP_IF_NOT_NONE/POP_JUMP_IF_NONE opcodes)
+#     Python 3.11a4 3474 (Add RESUME opcode)
+#     Python 3.11a5 3475 (Add RETURN_GENERATOR opcode)
+#     Python 3.11a5 3476 (Add ASYNC_GEN_WRAP opcode)
+#     Python 3.11a5 3477 (Replace DUP_TOP/DUP_TOP_TWO with COPY and
+#                         ROT_TWO/ROT_THREE/ROT_FOUR/ROT_N with SWAP)
+#     Python 3.11a5 3478 (New CALL opcodes)
+
+#     Python 3.12 will start with magic number 3500
+
+
+#     Python 3.12 will start with magic number 3500
+
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
 # due to the addition of new opcodes).
 #
+# Starting with Python 3.11, Python 3.n starts with magic number 2900+50n.
+#
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3452).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3478).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -1175,7 +1213,7 @@ class ExtensionFileLoader(FileLoader, _LoaderBasics):
         return hash(self.name) ^ hash(self.path)
 
     def create_module(self, spec):
-        """Create an unitialized extension module"""
+        """Create an uninitialized extension module"""
         module = _bootstrap._call_with_frames_removed(
             _imp.create_dynamic, spec)
         _bootstrap._verbose_message('extension module {!r} loaded from {!r}',
@@ -1215,10 +1253,15 @@ class _NamespacePath:
     using path_finder.  For top-level modules, the parent module's path
     is sys.path."""
 
+    # When invalidate_caches() is called, this epoch is incremented
+    # https://bugs.python.org/issue45703
+    _epoch = 0
+
     def __init__(self, name, path, path_finder):
         self._name = name
         self._path = path
         self._last_parent_path = tuple(self._get_parent_path())
+        self._last_epoch = self._epoch
         self._path_finder = path_finder
 
     def _find_parent_path_names(self):
@@ -1238,7 +1281,7 @@ class _NamespacePath:
     def _recalculate(self):
         # If the parent's path has changed, recalculate _path
         parent_path = tuple(self._get_parent_path()) # Make a copy
-        if parent_path != self._last_parent_path:
+        if parent_path != self._last_parent_path or self._epoch != self._last_epoch:
             spec = self._path_finder(self._name, parent_path)
             # Note that no changes are made if a loader is returned, but we
             #  do remember the new parent path
@@ -1246,6 +1289,7 @@ class _NamespacePath:
                 if spec.submodule_search_locations:
                     self._path = spec.submodule_search_locations
             self._last_parent_path = parent_path     # Save the copy
+            self._last_epoch = self._epoch
         return self._path
 
     def __iter__(self):
@@ -1270,8 +1314,10 @@ class _NamespacePath:
         self._path.append(item)
 
 
-# We use this exclusively in module_from_spec() for backward-compatibility.
-class _NamespaceLoader:
+# This class is actually exposed publicly in a namespace package's __loader__
+# attribute, so it should be available through a non-private name.
+# https://bugs.python.org/issue35673
+class NamespaceLoader:
     def __init__(self, name, path, path_finder):
         self._path = _NamespacePath(name, path, path_finder)
 
@@ -1282,7 +1328,7 @@ class _NamespaceLoader:
         The method is deprecated.  The import machinery does the job itself.
 
         """
-        _warnings.warn("_NamespaceLoader.module_repr() is deprecated and "
+        _warnings.warn("NamespaceLoader.module_repr() is deprecated and "
                        "slated for removal in Python 3.12", DeprecationWarning)
         return '<module {!r} (namespace)>'.format(module.__name__)
 
@@ -1318,6 +1364,10 @@ class _NamespaceLoader:
         return NamespaceReader(self._path)
 
 
+# We use this exclusively in module_from_spec() for backward-compatibility.
+_NamespaceLoader = NamespaceLoader
+
+
 # Finders #####################################################################
 
 class PathFinder:
@@ -1333,6 +1383,9 @@ class PathFinder:
                 del sys.path_importer_cache[name]
             elif hasattr(finder, 'invalidate_caches'):
                 finder.invalidate_caches()
+        # Also invalidate the caches of _NamespacePaths
+        # https://bugs.python.org/issue45703
+        _NamespacePath._epoch += 1
 
     @staticmethod
     def _path_hooks(path):

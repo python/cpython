@@ -23,12 +23,6 @@
 #  define T_POINTER T_ULONGLONG
 #endif
 
-/* Compatibility with Python 3.3 */
-#if PY_VERSION_HEX < 0x03040000
-#    define PyMem_RawMalloc PyMem_Malloc
-#    define PyMem_RawFree PyMem_Free
-#endif
-
 #define F_HANDLE F_POINTER
 #define F_ULONG_PTR F_POINTER
 #define F_DWORD "k"
@@ -1876,7 +1870,7 @@ static PyType_Slot overlapped_type_slots[] = {
 static PyType_Spec overlapped_type_spec = {
     .name = "_overlapped.Overlapped",
     .basicsize = sizeof(OverlappedObject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = overlapped_type_slots
 };
 

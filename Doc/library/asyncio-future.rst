@@ -54,6 +54,9 @@ Future Functions
       See also the :func:`create_task` function which is the
       preferred way for creating new Tasks.
 
+      Save a reference to the result of this function, to avoid
+      a task disappearing mid execution.
+
    .. versionchanged:: 3.5.1
       The function accepts any :term:`awaitable` object.
 
@@ -191,7 +194,7 @@ Future Object
       schedule the callbacks, and return ``True``.
 
       .. versionchanged:: 3.9
-         Added the ``msg`` parameter.
+         Added the *msg* parameter.
 
    .. method:: exception()
 

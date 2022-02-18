@@ -3,12 +3,14 @@ apt-get update
 
 apt-get -yq install \
     build-essential \
+    pkg-config \
     ccache \
     gdb \
     lcov \
     libbz2-dev \
     libffi-dev \
     libgdbm-dev \
+    libgdbm-compat-dev \
     liblzma-dev \
     libncurses5-dev \
     libreadline6-dev \

@@ -304,7 +304,7 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
 
 
 def test_suite():
-    return unittest.makeSuite(UtilTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(UtilTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

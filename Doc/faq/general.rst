@@ -113,7 +113,7 @@ to many different classes of problems.
 
 The language comes with a large standard library that covers areas such as
 string processing (regular expressions, Unicode, calculating differences between
-files), Internet protocols (HTTP, FTP, SMTP, XML-RPC, POP, IMAP, CGI
+files), internet protocols (HTTP, FTP, SMTP, XML-RPC, POP, IMAP, CGI
 programming), software engineering (unit testing, logging, profiling, parsing
 Python code), and operating system interfaces (system calls, filesystems, TCP/IP
 sockets).  Look at the table of contents for :ref:`library-index` to get an idea
