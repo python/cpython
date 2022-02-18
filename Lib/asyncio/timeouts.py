@@ -27,7 +27,7 @@ class _State(enum.Enum):
 
 @final
 class CancelScope:
-    __slots__ = ("_deadline", "_loop", "_state", "_timeout_handler")
+    __slots__ = ("_deadline", "_loop", "_state", "_task", "_timeout_handler")
 
     def __init__(
         self, deadline: Optional[float], loop: events.AbstractEventLoop
@@ -36,6 +36,7 @@ class CancelScope:
         self._state = _State.CREATED
 
         self._timeout_handler: Optional[events.TimerHandle] = None
+        self._task: Optional[tasks.Task[Any]] = None
         self._deadline = deadline
 
     @property
@@ -46,6 +47,9 @@ class CancelScope:
     def deadline(self, value: Optional[float]) -> None:
         self._deadline = value
         self._reschedule()
+
+    def cancel(self, msg: Any = None) -> bool:
+        return self._task.cancel(msg)
 
     def cancelled(self) -> bool:
         """Is timeout expired during execution?"""
@@ -64,6 +68,9 @@ class CancelScope:
 
     def __enter__(self) -> "CancelScope":
         self._state = _State.ENTERED
+        self._task = tasks.current_task()
+        if self._task is None:
+            raise RuntimeError("CancelScope should be used inside a task")
         self._reschedule()
         return self
 
@@ -87,11 +94,11 @@ class CancelScope:
         return None
 
     def _reschedule(self) -> None:
-        assert self._state == _State.ENTERED
-
-        task = tasks.current_task()
-        if task is None:
-            raise RuntimeError("CancelScope should be used inside a task")
+        assert self._state != _State.CREATED
+        if self._state != _State.ENTERED:
+            raise RuntimeError(
+                f"Cannot change state of {self._state} CancelScope",
+            )
 
         if self._timeout_handler is not None:
             self._timeout_handler.cancel()
@@ -102,12 +109,11 @@ class CancelScope:
             self._timeout_handler = self._loop.call_at(
                 self._loop.time() + self._deadline,
                 self._on_timeout,
-                task,
             )
 
-    def _on_timeout(self, task: tasks.Task[Any]) -> None:
+    def _on_timeout(self) -> None:
         assert self._state == _State.ENTERED
-        task.cancel()
+        self._task.cancel()
         self._state = _State.CANCELLING
         # drop the reference early
         self._timeout_handler = None
