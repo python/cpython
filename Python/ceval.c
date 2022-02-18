@@ -4513,7 +4513,6 @@ handle_eval_breaker:
             /* Move ownership of reference from stack to call_shape
              * and make sure that NULL is cleared from stack */
             PyObject *function = PEEK(nargs + 1);
-            assert(call_shape.kwnames == NULL);
 #ifdef Py_STATS
             extern int _PySpecialization_ClassifyCallable(PyObject *);
             SpecializationStats *stats =
@@ -4537,6 +4536,7 @@ handle_eval_breaker:
         }
 
         TARGET(KW_NAMES) {
+            assert(call_shape.kwnames == NULL);
             assert(oparg < PyTuple_GET_SIZE(consts));
             call_shape.kwnames = GETITEM(consts, oparg);
             DISPATCH();
