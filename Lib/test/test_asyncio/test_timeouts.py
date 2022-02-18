@@ -17,8 +17,31 @@ class BaseTimeoutTests:
         return self.__class__.Task(coro, loop=loop, name=name)
 
     async def test_cancel_scope_basic(self):
-        with self.assertRaises(asyncio.CancelledError):
-            with asyncio.cancel_scope(0.1) as scope:
+        with asyncio.cancel_scope(0.1) as scope:
+            await asyncio.sleep(10)
+        self.assertTrue(scope.cancelling())
+        self.assertTrue(scope.cancelled())
+
+    async def test_cancel_scope_at_basic(self):
+        loop = asyncio.get_running_loop()
+
+        with asyncio.cancel_scope_at(loop.time() + 0.1) as scope:
+            await asyncio.sleep(10)
+        self.assertTrue(scope.cancelling())
+        self.assertTrue(scope.cancelled())
+
+    async def test_timeout_basic(self):
+        with self.assertRaises(TimeoutError):
+            with asyncio.timeout(0.1) as scope:
+                await asyncio.sleep(10)
+        self.assertTrue(scope.cancelling())
+        self.assertTrue(scope.cancelled())
+
+    async def test_timeout_at_basic(self):
+        loop = asyncio.get_running_loop()
+
+        with self.assertRaises(TimeoutError):
+            with asyncio.timeout_at(loop.time() + 0.1) as scope:
                 await asyncio.sleep(10)
         self.assertTrue(scope.cancelling())
         self.assertTrue(scope.cancelled())

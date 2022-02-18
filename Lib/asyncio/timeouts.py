@@ -5,6 +5,7 @@ from types import TracebackType
 from typing import final, Any, Iterator, Optional, Type
 
 from . import events
+from . import exceptions
 from . import tasks
 
 
@@ -82,14 +83,18 @@ class CancelScope:
     ) -> Optional[bool]:
         # state is EXITED if not timed out previously
         assert self._state in (_State.ENTERED, _State.CANCELLING)
-        if self._state == _State.CANCELLING:
-            self._state = _State.CANCELLED
-        elif self._state == _State.ENTERED:
-            self._state = _State.EXITED
 
         if self._timeout_handler is not None:
             self._timeout_handler.cancel()
             self._timeout_handler = None
+
+        if exc_type is exceptions.CancelledError:
+            if self._state == _State.CANCELLING:
+                self._state = _State.CANCELLED
+            if exc_val.args and exc_val.args[0] == id(self):
+                return True
+        elif self._state == _State.ENTERED:
+            self._state = _State.EXITED
 
         return None
 
@@ -113,7 +118,7 @@ class CancelScope:
 
     def _on_timeout(self) -> None:
         assert self._state == _State.ENTERED
-        self._task.cancel()
+        self._task.cancel(id(self))
         self._state = _State.CANCELLING
         # drop the reference early
         self._timeout_handler = None
@@ -129,6 +134,7 @@ def cancel_scope(delay: Optional[float]) -> Iterator[CancelScope]:
         yield scope
 
 
+@contextlib.contextmanager
 def cancel_scope_at(deadline: Optional[float]) -> Iterator[CancelScope]:
     loop = events.get_running_loop()
     with CancelScope(deadline, loop) as scope:
@@ -150,10 +156,11 @@ def timeout(delay: Optional[float]) -> Iterator[CancelScope]:
     """
     with cancel_scope(delay) as scope:
         yield scope
-    if scope.expired:
+    if scope.cancelled:
         raise TimeoutError()
 
 
+@contextlib.contextmanager
 def timeout_at(deadline: Optional[float]) -> Iterator[CancelScope]:
     """Schedule the timeout at absolute time.
 
@@ -171,5 +178,5 @@ def timeout_at(deadline: Optional[float]) -> Iterator[CancelScope]:
     """
     with cancel_scope_at(deadline) as scope:
         yield scope
-    if scope.expired:
+    if scope.cancelled:
         raise TimeoutError()
