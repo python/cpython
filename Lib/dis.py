@@ -515,6 +515,12 @@ def _disassemble_str(source, **kwargs):
 
 disco = disassemble                     # XXX For backwards compatibility
 
+
+# Rely on C `int` being 32 bits for oparg
+_INT_BITS = 32
+# Value for c int when it overflows
+_INT_OVERFLOW = 2 ** (_INT_BITS - 1)
+
 def _unpack_opargs(code):
     extended_arg = 0
     for i in range(0, len(code), 2):
@@ -522,6 +528,11 @@ def _unpack_opargs(code):
         if op >= HAVE_ARGUMENT:
             arg = code[i+1] | extended_arg
             extended_arg = (arg << 8) if op == EXTENDED_ARG else 0
+            # The oparg is stored as a signed integer
+            # If the value exceeds its upper limit, it will overflow and wrap
+            # to a negative integer
+            if extended_arg >= _INT_OVERFLOW:
+                extended_arg -= 2 * _INT_OVERFLOW
         else:
             arg = None
             extended_arg = 0
