@@ -27,11 +27,6 @@ typedef struct {
 } _PyAttrCache;
 
 typedef struct {
-    uint32_t module_keys_version;
-    uint32_t builtin_keys_version;
-} _PyLoadGlobalCache;
-
-typedef struct {
     /* Borrowed ref in LOAD_METHOD */
     PyObject *obj;
 } _PyObjectCache;
@@ -57,12 +52,25 @@ typedef union {
     _PyEntryZero zero;
     _PyAdaptiveEntry adaptive;
     _PyAttrCache attr;
-    _PyLoadGlobalCache load_global;
     _PyObjectCache obj;
     _PyCallCache call;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
+
+/* Inline caches */
+
+typedef struct {
+    _Py_CODEUNIT counter;
+    _Py_CODEUNIT index;
+    _Py_CODEUNIT module_keys_version;
+    _Py_CODEUNIT _m1;
+    _Py_CODEUNIT builtin_keys_version;
+    _Py_CODEUNIT _b1;
+} _PyLoadGlobalCache;
+
+#define LOAD_GLOBAL_INLINE_CACHE_SIZE (sizeof(_PyLoadGlobalCache)/sizeof(_Py_CODEUNIT))
+
 
 /* Maximum size of code to quicken, in code units. */
 #define MAX_SIZE_TO_QUICKEN 5000
@@ -267,7 +275,7 @@ cache_backoff(_PyAdaptiveEntry *entry) {
 
 int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
-int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name);
 int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
@@ -345,6 +353,20 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define CALL_STAT_INC(name) ((void)0)
 #define OBJECT_STAT_INC(name) ((void)0)
 #endif
+
+/* TO DO -- Move these somewhere sensible and use native endianness */
+static inline void
+write32(uint16_t *p, uint32_t val)
+{
+    p[0] = (uint16_t)val;
+    p[1] = val >> 16;
+}
+
+static inline uint32_t
+read32(uint16_t *p)
+{
+    return p[0] | (p[1] << 16);
+}
 
 
 #ifdef __cplusplus

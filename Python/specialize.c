@@ -43,7 +43,6 @@
   Values of zero are ignored. */
 static uint8_t adaptive_opcodes[256] = {
     [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
-    [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
     [LOAD_METHOD] = LOAD_METHOD_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
     [STORE_SUBSCR] = STORE_SUBSCR_ADAPTIVE,
@@ -54,10 +53,13 @@ static uint8_t adaptive_opcodes[256] = {
     [UNPACK_SEQUENCE] = UNPACK_SEQUENCE_ADAPTIVE,
 };
 
+static uint8_t inline_opcodes[256] = {
+    [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
+};
+
 /* The number of cache entries required for a "family" of instructions. */
 static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
-    [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
     [BINARY_SUBSCR] = 2, /* _PyAdaptiveEntry, _PyObjectCache */
     [STORE_SUBSCR] = 0,
@@ -408,6 +410,12 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
                 new_oparg = 0;
             }
             instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, new_oparg);
+        }
+        else if (inline_opcodes[opcode] && previous_opcode != EXTENDED_ARG) {
+            instructions[i] = _Py_MAKECODEUNIT(inline_opcodes[opcode], oparg);
+            instructions[i+1] = 0; /* counter */
+            i++;
+            previous_opcode = opcode;
         }
         else {
             /* Super instructions don't use the cache,
@@ -1156,11 +1164,10 @@ fail:
 int
 _Py_Specialize_LoadGlobal(
     PyObject *globals, PyObject *builtins,
-    _Py_CODEUNIT *instr, PyObject *name,
-    SpecializedCacheEntry *cache)
+    _Py_CODEUNIT *instr, PyObject *name)
 {
-    _PyAdaptiveEntry *cache0 = &cache->adaptive;
-    _PyLoadGlobalCache *cache1 = &cache[-1].load_global;
+    /* Use inline cache */
+    _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)(instr+1);
     assert(PyUnicode_CheckExact(name));
     if (!PyDict_CheckExact(globals)) {
         goto fail;
@@ -1179,8 +1186,8 @@ _Py_Specialize_LoadGlobal(
         if (keys_version == 0) {
             goto fail;
         }
-        cache1->module_keys_version = keys_version;
-        cache0->index = (uint16_t)index;
+        cache->index = (uint16_t)index;
+        write32(&cache->module_keys_version, keys_version);
         *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_MODULE, _Py_OPARG(*instr));
         goto success;
     }
@@ -1206,20 +1213,20 @@ _Py_Specialize_LoadGlobal(
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
         goto fail;
     }
-    cache1->module_keys_version = globals_version;
-    cache1->builtin_keys_version = builtins_version;
-    cache0->index = (uint16_t)index;
+    cache->index = (uint16_t)index;
+    write32(&cache->module_keys_version, globals_version);
+    write32(&cache->builtin_keys_version, builtins_version);
     *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_BUILTIN, _Py_OPARG(*instr));
     goto success;
 fail:
     STAT_INC(LOAD_GLOBAL, failure);
     assert(!PyErr_Occurred());
-    cache_backoff(cache0);
+    cache->counter = ADAPTIVE_CACHE_BACKOFF;
     return 0;
 success:
     STAT_INC(LOAD_GLOBAL, success);
     assert(!PyErr_Occurred());
-    cache0->counter = initial_counter_value();
+    cache->counter = initial_counter_value();
     return 0;
 }
 

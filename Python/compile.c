@@ -854,6 +854,7 @@ stack_effect(int opcode, int oparg, int jump)
         case NOP:
         case EXTENDED_ARG:
         case RESUME:
+        case CACHE_ENTRY:
             return 0;
 
         /* Stack manipulation */
@@ -4112,6 +4113,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     /* XXX Leave assert here, but handle __doc__ and the like better */
     assert(scope || PyUnicode_READ_CHAR(name, 0) == '_');
 
+    int cache_size = 0;
     switch (optype) {
     case OP_DEREF:
         switch (ctx) {
@@ -4132,7 +4134,10 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         return 1;
     case OP_GLOBAL:
         switch (ctx) {
-        case Load: op = LOAD_GLOBAL; break;
+        case Load:
+            op = LOAD_GLOBAL;
+            cache_size = LOAD_GLOBAL_INLINE_CACHE_SIZE;
+            break;
         case Store: op = STORE_GLOBAL; break;
         case Del: op = DELETE_GLOBAL; break;
         }
@@ -4151,7 +4156,11 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     Py_DECREF(mangled);
     if (arg < 0)
         return 0;
-    return compiler_addop_i(c, op, arg);
+    RETURN_IF_FALSE(compiler_addop_i(c, op, arg));
+    for (int i = 0; i < cache_size; i++) {
+        compiler_addop_i_noline(c, CACHE_ENTRY, i);
+    }
+    return 1;
 }
 
 static int

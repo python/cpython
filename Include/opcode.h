@@ -113,6 +113,7 @@ extern "C" {
 #define PRECALL_METHOD                  168
 #define CALL                            171
 #define KW_NAMES                        172
+#define CACHE_ENTRY                     240
 #define BINARY_OP_ADAPTIVE                2
 #define BINARY_OP_ADD_INT                 3
 #define BINARY_OP_ADD_FLOAT               4

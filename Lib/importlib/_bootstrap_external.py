@@ -386,6 +386,8 @@ _code_type = type(_write_atomic.__code__)
 #                         ROT_TWO/ROT_THREE/ROT_FOUR/ROT_N with SWAP)
 #     Python 3.11a5 3478 (New CALL opcodes)
 
+#     Python 3.11a5 3485 Inline caches.
+
 #     Python 3.12 will start with magic number 3500
 
 
@@ -402,7 +404,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3478).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3485).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
