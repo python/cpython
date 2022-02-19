@@ -13,6 +13,11 @@
 
 This module defines a number of utilities for use by CGI scripts
 written in Python.
+
+The global variable maxlen can be set to an integer indicating the maximum size
+of a POST request. POST requests larger than this size will result in a
+ValueError being raised during parsing. The default value of this variable is 0,
+meaning the request size is unlimited.
 """
 
 # History

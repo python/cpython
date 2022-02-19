@@ -15,6 +15,10 @@ try:
     import _testcapi
 except ImportError:
     _testcapi = None
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 try:
     import ctypes
@@ -1900,7 +1904,10 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                 name += "_codec"
             elif encoding == "latin_1":
                 name = "latin_1"
-            self.assertEqual(encoding.replace("_", "-"), name.replace("_", "-"))
+            # Skip the mbcs alias on Windows
+            if name != "mbcs":
+                self.assertEqual(encoding.replace("_", "-"),
+                                 name.replace("_", "-"))
 
             (b, size) = codecs.getencoder(encoding)(s)
             self.assertEqual(size, len(s), "encoding=%r" % encoding)
@@ -3184,11 +3191,13 @@ class CodePageTest(unittest.TestCase):
         self.assertEqual(decoded, ('abc', 3))
 
     def test_mbcs_alias(self):
-        # Check that looking up our 'default' codepage will return
-        # mbcs when we don't have a more specific one available
-        with mock.patch('_winapi.GetACP', return_value=123):
-            codec = codecs.lookup('cp123')
-            self.assertEqual(codec.name, 'mbcs')
+        # On Windows, the encoding name must be the ANSI code page
+        encoding = locale.getpreferredencoding(False)
+        self.assertTrue(encoding.startswith('cp'), encoding)
+
+        # The encodings module create a "mbcs" alias to the ANSI code page
+        codec = codecs.lookup(encoding)
+        self.assertEqual(codec.name, "mbcs")
 
     @support.bigmemtest(size=2**31, memuse=7, dry_run=False)
     def test_large_input(self, size):
@@ -3345,7 +3354,7 @@ class StreamRecoderTest(unittest.TestCase):
         self.assertEqual(sr.readline(), b'789\n')
 
 
-@unittest.skipIf(_testcapi is None, 'need _testcapi module')
+@unittest.skipIf(_testinternalcapi is None, 'need _testinternalcapi module')
 class LocaleCodecTest(unittest.TestCase):
     """
     Test indirectly _Py_DecodeUTF8Ex() and _Py_EncodeUTF8Ex().
@@ -3359,7 +3368,7 @@ class LocaleCodecTest(unittest.TestCase):
     SURROGATES = "\uDC80\uDCFF"
 
     def encode(self, text, errors="strict"):
-        return _testcapi.EncodeLocaleEx(text, 0, errors)
+        return _testinternalcapi.EncodeLocaleEx(text, 0, errors)
 
     def check_encode_strings(self, errors):
         for text in self.STRINGS:
@@ -3399,7 +3408,7 @@ class LocaleCodecTest(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'unsupported error handler')
 
     def decode(self, encoded, errors="strict"):
-        return _testcapi.DecodeLocaleEx(encoded, 0, errors)
+        return _testinternalcapi.DecodeLocaleEx(encoded, 0, errors)
 
     def check_decode_strings(self, errors):
         is_utf8 = (self.ENCODING == "utf-8")

@@ -1,0 +1,2 @@
+Prevent default asyncio event loop policy modification warning after
+``test_asyncio`` execution.

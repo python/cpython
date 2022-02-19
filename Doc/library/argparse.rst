@@ -148,7 +148,8 @@ ArgumentParser objects
    as keyword arguments. Each parameter has its own more detailed description
    below, but in short they are:
 
-   * prog_ - The name of the program (default: ``sys.argv[0]``)
+   * prog_ - The name of the program (default:
+     ``os.path.basename(sys.argv[0])``)
 
    * usage_ - The string describing the program usage (default: generated from
      arguments added to parser)

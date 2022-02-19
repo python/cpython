@@ -11,10 +11,10 @@ import re
 import sys
 import textwrap
 import traceback
-import types
 import unittest
 import weakref
 from unittest import mock
+from types import GenericAlias
 
 import asyncio
 from asyncio import coroutines
@@ -107,6 +107,12 @@ class BaseTaskTests:
         self.loop = self.new_test_loop()
         self.loop.set_task_factory(self.new_task)
         self.loop.create_future = lambda: self.new_future(self.loop)
+
+
+    def test_generic_alias(self):
+        task = self.__class__.Task[str]
+        self.assertEqual(task.__args__, (str,))
+        self.assertIsInstance(task, GenericAlias)
 
     def test_task_cancel_message_getter(self):
         async def coro():
@@ -278,7 +284,7 @@ class BaseTaskTests:
         self.set_event_loop(loop)
         fut = asyncio.ensure_future(Aw(coro()), loop=loop)
         loop.run_until_complete(fut)
-        assert fut.result() == 'ok'
+        self.assertEqual(fut.result(), 'ok')
 
     def test_ensure_future_neither(self):
         with self.assertRaises(TypeError):
@@ -489,6 +495,51 @@ class BaseTaskTests:
             loop.close()
         # This also distinguishes from the initial has_cycle=None.
         self.assertEqual(has_cycle, False)
+
+
+    def test_cancelling(self):
+        loop = asyncio.new_event_loop()
+
+        async def task():
+            await asyncio.sleep(10)
+
+        try:
+            t = self.new_task(loop, task())
+            self.assertFalse(t.cancelling())
+            self.assertNotIn(" cancelling ", repr(t))
+            self.assertTrue(t.cancel())
+            self.assertTrue(t.cancelling())
+            self.assertIn(" cancelling ", repr(t))
+            self.assertFalse(t.cancel())
+
+            with self.assertRaises(asyncio.CancelledError):
+                loop.run_until_complete(t)
+        finally:
+            loop.close()
+
+    def test_uncancel(self):
+        loop = asyncio.new_event_loop()
+
+        async def task():
+            try:
+                await asyncio.sleep(10)
+            except asyncio.CancelledError:
+                asyncio.current_task().uncancel()
+                await asyncio.sleep(10)
+
+        try:
+            t = self.new_task(loop, task())
+            loop.run_until_complete(asyncio.sleep(0.01))
+            self.assertTrue(t.cancel())  # Cancel first sleep
+            self.assertIn(" cancelling ", repr(t))
+            loop.run_until_complete(asyncio.sleep(0.01))
+            self.assertNotIn(" cancelling ", repr(t))  # after .uncancel()
+            self.assertTrue(t.cancel())  # Cancel second sleep
+
+            with self.assertRaises(asyncio.CancelledError):
+                loop.run_until_complete(t)
+        finally:
+            loop.close()
 
     def test_cancel(self):
 
@@ -1016,7 +1067,7 @@ class BaseTaskTests:
 
         async def main():
             result = await asyncio.wait_for(inner(), timeout=.01)
-            assert result == 1
+            self.assertEqual(result, 1)
 
         asyncio.run(main())
 
