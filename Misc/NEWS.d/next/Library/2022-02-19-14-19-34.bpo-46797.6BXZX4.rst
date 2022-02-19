@@ -1,0 +1,2 @@
+Deprecation warnings are now emitted for deprecated features in the
+:mod:`ast` module which were deprecated in documentation only.

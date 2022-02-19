@@ -284,9 +284,7 @@ def get_docstring(node, clean=True):
     if not(node.body and isinstance(node.body[0], Expr)):
         return None
     node = node.body[0].value
-    if isinstance(node, Str):
-        text = node.s
-    elif isinstance(node, Constant) and isinstance(node.value, str):
+    if isinstance(node, Constant) and isinstance(node.value, str):
         text = node.value
     else:
         return None
@@ -505,15 +503,34 @@ if not hasattr(Constant, 'n'):
     # The following code is for backward compatibility.
     # It will be removed in future.
 
-    def _getter(self):
+    def _n_getter(self):
         """Deprecated. Use value instead."""
+        import warnings
+        warnings.warn("Attribute n is deprecated; use value instead",
+                      DeprecationWarning, stacklevel=2)
         return self.value
 
-    def _setter(self, value):
+    def _n_setter(self, value):
+        import warnings
+        warnings.warn("Attribute n is deprecated; use value instead",
+                      DeprecationWarning, stacklevel=2)
         self.value = value
 
-    Constant.n = property(_getter, _setter)
-    Constant.s = property(_getter, _setter)
+    def _s_getter(self):
+        """Deprecated. Use value instead."""
+        import warnings
+        warnings.warn("Attribute s is deprecated; use value instead",
+                      DeprecationWarning, stacklevel=2)
+        return self.value
+
+    def _s_setter(self, value):
+        import warnings
+        warnings.warn("Attribute s is deprecated; use value instead",
+                      DeprecationWarning, stacklevel=2)
+        self.value = value
+
+    Constant.n = property(_n_getter, _n_setter)
+    Constant.s = property(_s_getter, _s_setter)
 
 class _ABC(type):
 
@@ -544,6 +561,9 @@ def _new(cls, *args, **kwargs):
         if pos < len(args):
             raise TypeError(f"{cls.__name__} got multiple values for argument {key!r}")
     if cls in _const_types:
+        import warnings
+        warnings.warn(f"ast.{cls.__qualname__} is deprecated; use ast.Constant instead",
+                    DeprecationWarning, stacklevel=2)
         return Constant(*args, **kwargs)
     return Constant.__new__(cls, *args, **kwargs)
 
@@ -566,9 +586,14 @@ class Ellipsis(Constant, metaclass=_ABC):
     _fields = ()
 
     def __new__(cls, *args, **kwargs):
-        if cls is Ellipsis:
+        if cls is _ast_Ellipsis:
+            import warnings
+            warnings.warn("ast.Ellipsis is deprecated; use ast.Constant instead",
+                        DeprecationWarning, stacklevel=2)
             return Constant(..., *args, **kwargs)
         return Constant.__new__(cls, *args, **kwargs)
+
+_ast_Ellipsis = Ellipsis
 
 _const_types = {
     Num: (int, float, complex),
@@ -603,6 +628,9 @@ class Index(slice):
 class ExtSlice(slice):
     """Deprecated AST node class. Use ast.Tuple instead."""
     def __new__(cls, dims=(), **kwargs):
+        import warnings
+        warnings.warn("ast.ExtSlice is deprecated; use ast.Tuple instead",
+                      DeprecationWarning, stacklevel=2)
         return Tuple(list(dims), Load(), **kwargs)
 
 # If the ast module is loaded more than once, only add deprecated methods once
@@ -612,9 +640,14 @@ if not hasattr(Tuple, 'dims'):
 
     def _dims_getter(self):
         """Deprecated. Use elts instead."""
+        import warnings
+        warnings.warn("Attribute dims is deprecated; use elts instead",
+                      DeprecationWarning, stacklevel=2)
         return self.elts
 
     def _dims_setter(self, value):
+        warnings.warn("Attribute dims is deprecated, use elts instead",
+                      DeprecationWarning, stacklevel=2)
         self.elts = value
 
     Tuple.dims = property(_dims_getter, _dims_setter)
@@ -1697,6 +1730,25 @@ class _Unparser(NodeVisitor):
 def unparse(ast_obj):
     unparser = _Unparser()
     return unparser.visit(ast_obj)
+
+
+_deprecated_globals = {
+    name: (globals().pop(name), '; use ast.Constant instead')
+    for name in ('Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis')
+}
+_deprecated_globals['slice'] = globals().pop('slice'), ''
+_deprecated_globals['Index'] = globals().pop('Index'), ''
+_deprecated_globals['ExtSlice'] = globals().pop('ExtSlice'), '; use ast.Tuple instead'
+
+def __getattr__(name):
+    if name in _deprecated_globals:
+        value, details = _deprecated_globals[name]
+        globals()[name] = value
+        import warnings
+        warnings.warn(f"ast.{name} is deprecated{details}",
+                      DeprecationWarning, stacklevel=2)
+        return value
+    raise AttributeError(f"module 'ast' has no attribute '{name}'")
 
 
 def main():
