@@ -276,7 +276,7 @@ For example::
        according to when an element is first encountered in the left operand
        and then by the order encountered in the right operand.
 
-    Counter objects support three methods beyond those available for all
+    Counter objects support additional methods beyond those available for all
     dictionaries:
 
     .. method:: elements()
