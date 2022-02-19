@@ -3549,6 +3549,15 @@ class GetTypeHintTests(BaseTestCase):
             {"x": typing.Annotated[int | float, "const"]}
         )
 
+    def test_get_type_hints_annotated_in_union(self):  # bpo-46603
+        def with_union(x: int | list[Annotated[str, 'meta']]): ...
+
+        self.assertEqual(get_type_hints(with_union), {'x': int | list[str]})
+        self.assertEqual(
+            get_type_hints(with_union, include_extras=True),
+            {'x': int | list[Annotated[str, 'meta']]},
+        )
+
     def test_get_type_hints_annotated_refs(self):
 
         Const = Annotated[T, "Const"]
