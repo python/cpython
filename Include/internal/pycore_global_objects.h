@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_global_strings.h"  // struct _Py_global_strings
 
+
 // These would be in pycore_long.h if it weren't for an include cycle.
 #define _PY_NSMALLPOSINTS           257
 #define _PY_NSMALLNEGINTS           5
