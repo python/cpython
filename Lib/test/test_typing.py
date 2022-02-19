@@ -4585,12 +4585,6 @@ class TypedDictTests(BaseTestCase):
 
         with self.assertRaises(TypeError):
             TypedDict(_typename='Emp', name=str, id=int)
-        
-        # We raise a DeprecationWarning for the keyword syntax
-        # before the TypeError.
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(TypeError):
-                TypedDict('Emp', _fields={'name': str, 'id': int})
 
     def test_typeddict_errors(self):
         Emp = TypedDict('Emp', {'name': str, 'id': int})
