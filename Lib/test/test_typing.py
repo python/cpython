@@ -4586,7 +4586,9 @@ class TypedDictTests(BaseTestCase):
         with self.assertRaises(TypeError):
             TypedDict(_typename='Emp', name=str, id=int)
         with self.assertRaises(TypeError):
-            TypedDict('Emp', _fields={'name': str, 'id': int})
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                TypedDict('Emp', _fields={'name': str, 'id': int})
 
     def test_typeddict_errors(self):
         Emp = TypedDict('Emp', {'name': str, 'id': int})
@@ -4599,7 +4601,9 @@ class TypedDictTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(dict, Emp)
         with self.assertRaises(TypeError):
-            TypedDict('Hi', x=1)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                TypedDict('Hi', x=1)
         with self.assertRaises(TypeError):
             TypedDict('Hi', [('x', int), ('y', 1)])
         with self.assertRaises(TypeError):
