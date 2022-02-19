@@ -2744,6 +2744,18 @@ class CastTests(BaseTestCase):
         cast('hello', 42)
 
 
+# We need this to make sure that `@no_type_check` respects `__module__` attr:
+from test import ann_module8
+
+@no_type_check
+class NoTypeCheck_Outer:
+    Inner = ann_module8.NoTypeCheck_Outer.Inner
+
+@no_type_check
+class NoTypeCheck_WithFunction:
+    NoTypeCheck_function = ann_module8.NoTypeCheck_function
+
+
 class ForwardRefTests(BaseTestCase):
 
     def test_basics(self):
@@ -3058,8 +3070,97 @@ class ForwardRefTests(BaseTestCase):
         @no_type_check
         class D(C):
             c = C
+
         # verify that @no_type_check never affects bases
         self.assertEqual(get_type_hints(C.meth), {'x': int})
+
+        # and never child classes:
+        class Child(D):
+            def foo(self, x: int): ...
+
+        self.assertEqual(get_type_hints(Child.foo), {'x': int})
+
+    def test_no_type_check_nested_types(self):
+        # See https://bugs.python.org/issue46571
+        class Other:
+            o: int
+        class B:  # Has the same `__name__`` as `A.B` and different `__qualname__`
+            o: int
+        @no_type_check
+        class A:
+            a: int
+            class B:
+                b: int
+                class C:
+                    c: int
+            class D:
+                d: int
+
+            Other = Other
+
+        for klass in [A, A.B, A.B.C, A.D]:
+            with self.subTest(klass=klass):
+                self.assertTrue(klass.__no_type_check__)
+                self.assertEqual(get_type_hints(klass), {})
+
+        for not_modified in [Other, B]:
+            with self.subTest(not_modified=not_modified):
+                with self.assertRaises(AttributeError):
+                    not_modified.__no_type_check__
+                self.assertNotEqual(get_type_hints(not_modified), {})
+
+    def test_no_type_check_class_and_static_methods(self):
+        @no_type_check
+        class Some:
+            @staticmethod
+            def st(x: int) -> int: ...
+            @classmethod
+            def cl(cls, y: int) -> int: ...
+
+        self.assertTrue(Some.st.__no_type_check__)
+        self.assertEqual(get_type_hints(Some.st), {})
+        self.assertTrue(Some.cl.__no_type_check__)
+        self.assertEqual(get_type_hints(Some.cl), {})
+
+    def test_no_type_check_other_module(self):
+        self.assertTrue(NoTypeCheck_Outer.__no_type_check__)
+        with self.assertRaises(AttributeError):
+            ann_module8.NoTypeCheck_Outer.__no_type_check__
+        with self.assertRaises(AttributeError):
+            ann_module8.NoTypeCheck_Outer.Inner.__no_type_check__
+
+        self.assertTrue(NoTypeCheck_WithFunction.__no_type_check__)
+        with self.assertRaises(AttributeError):
+            ann_module8.NoTypeCheck_function.__no_type_check__
+
+    def test_no_type_check_foreign_functions(self):
+        # We should not modify this function:
+        def some(*args: int) -> int:
+            ...
+
+        @no_type_check
+        class A:
+            some_alias = some
+            some_class = classmethod(some)
+            some_static = staticmethod(some)
+
+        with self.assertRaises(AttributeError):
+            some.__no_type_check__
+        self.assertEqual(get_type_hints(some), {'args': int, 'return': int})
+
+    def test_no_type_check_lambda(self):
+        @no_type_check
+        class A:
+            # Corner case: `lambda` is both an assignment and a function:
+            bar: Callable[[int], int] = lambda arg: arg
+
+        self.assertTrue(A.bar.__no_type_check__)
+        self.assertEqual(get_type_hints(A.bar), {})
+
+    def test_no_type_check_TypeError(self):
+        # This simply should not fail with
+        # `TypeError: can't set attributes of built-in/extension type 'dict'`
+        no_type_check(dict)
 
     def test_no_type_check_forward_ref_as_string(self):
         class C:
