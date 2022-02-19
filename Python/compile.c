@@ -724,12 +724,8 @@ compiler_new_block(struct compiler *c)
 static basicblock *
 compiler_next_block(struct compiler *c)
 {
-    basicblock *block = compiler_new_block(c);
-    if (block == NULL)
-        return NULL;
-    c->u->u_curblock->b_next = block;
-    c->u->u_curblock = block;
-    return block;
+    assert(c->u->u_curblock);
+    return c->u->u_curblock;
 }
 
 static basicblock *
@@ -1105,6 +1101,29 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
     return stack_effect(opcode, oparg, -1);
 }
 
+static int is_end_of_basic_block(struct instr *instr)
+{
+    int opcode = instr->i_opcode;
+
+    return is_jump(instr) ||
+        opcode == RETURN_VALUE ||
+        opcode == RAISE_VARARGS ||
+        opcode == RERAISE;
+}
+
+static int
+compiler_new_block_if_needed(struct compiler *c, struct instr *instr)
+{
+    if (is_end_of_basic_block(instr)) {
+        basicblock *b = compiler_new_block(c);
+        if (b == NULL) {
+            return -1;
+        }
+        compiler_use_next_block(c, b);
+    }
+    return 0;
+}
+
 /* Add an opcode with no argument.
    Returns 0 on failure, 1 on success.
 */
@@ -1130,6 +1149,9 @@ compiler_addop_line(struct compiler *c, int opcode, int line,
     i->i_end_lineno = end_line;
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
+    if (compiler_new_block_if_needed(c, i) < 0) {
+        return 0;
+    }
     return 1;
 }
 
@@ -1364,6 +1386,9 @@ compiler_addop_i_line(struct compiler *c, int opcode, Py_ssize_t oparg,
     i->i_end_lineno = end_lineno;
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
+    if (compiler_new_block_if_needed(c, i) < 0) {
+        return 0;
+    }
     return 1;
 }
 
@@ -1381,7 +1406,7 @@ compiler_addop_i_noline(struct compiler *c, int opcode, Py_ssize_t oparg)
     return compiler_addop_i_line(c, opcode, oparg, -1, 0, 0, 0);
 }
 
-static int add_jump_to_block(basicblock *b, int opcode,
+static int add_jump_to_block(struct compiler *c, basicblock *b, int opcode,
                              int lineno, int end_lineno,
                              int col_offset, int end_col_offset,
                              basicblock *target)
@@ -1401,13 +1426,16 @@ static int add_jump_to_block(basicblock *b, int opcode,
     i->i_end_lineno = end_lineno;
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
+    if (compiler_new_block_if_needed(c, i) < 0) {
+        return 0;
+    }
     return 1;
 }
 
 static int
 compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 {
-    return add_jump_to_block(c->u->u_curblock, opcode, c->u->u_lineno,
+    return add_jump_to_block(c, c->u->u_curblock, opcode, c->u->u_lineno,
                              c->u->u_end_lineno, c->u->u_col_offset,
                              c->u->u_end_col_offset, b);
 }
@@ -1415,7 +1443,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 static int
 compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 {
-    return add_jump_to_block(c->u->u_curblock, opcode, -1, 0, 0, 0, b);
+    return add_jump_to_block(c, c->u->u_curblock, opcode, -1, 0, 0, 0, b);
 }
 
 /* NEXT_BLOCK() creates an implicit jump from the current block
