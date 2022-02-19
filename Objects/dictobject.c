@@ -320,19 +320,19 @@ dictkeys_decref(PyDictKeysObject *dk)
 static inline Py_ssize_t
 dictkeys_get_index(const PyDictKeysObject *keys, Py_ssize_t i)
 {
-    Py_ssize_t s = DK_SIZE(keys);
+    int log2size = DK_LOG_SIZE(keys);
     Py_ssize_t ix;
 
-    if (s <= 0xff) {
+    if (log2size < 8) {
         const int8_t *indices = (const int8_t*)(keys->dk_indices);
         ix = indices[i];
     }
-    else if (s <= 0xffff) {
+    else if (log2size < 16) {
         const int16_t *indices = (const int16_t*)(keys->dk_indices);
         ix = indices[i];
     }
 #if SIZEOF_VOID_P > 4
-    else if (s > 0xffffffff) {
+    else if (log2size >= 32) {
         const int64_t *indices = (const int64_t*)(keys->dk_indices);
         ix = indices[i];
     }
@@ -349,23 +349,23 @@ dictkeys_get_index(const PyDictKeysObject *keys, Py_ssize_t i)
 static inline void
 dictkeys_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
 {
-    Py_ssize_t s = DK_SIZE(keys);
+    int log2size = DK_LOG_SIZE(keys);
 
     assert(ix >= DKIX_DUMMY);
     assert(keys->dk_version == 0);
 
-    if (s <= 0xff) {
+    if (log2size < 8) {
         int8_t *indices = (int8_t*)(keys->dk_indices);
         assert(ix <= 0x7f);
         indices[i] = (char)ix;
     }
-    else if (s <= 0xffff) {
+    else if (log2size < 16) {
         int16_t *indices = (int16_t*)(keys->dk_indices);
         assert(ix <= 0x7fff);
         indices[i] = (int16_t)ix;
     }
 #if SIZEOF_VOID_P > 4
-    else if (s > 0xffffffff) {
+    else if (log2size >= 32) {
         int64_t *indices = (int64_t*)(keys->dk_indices);
         indices[i] = ix;
     }
@@ -631,7 +631,7 @@ free_keys_object(PyDictKeysObject *keys)
     // free_keys_object() must not be called after _PyDict_Fini()
     assert(state->keys_numfree != -1);
 #endif
-    if (DK_SIZE(keys) == PyDict_MINSIZE && state->keys_numfree < PyDict_MAXFREELIST) {
+    if (DK_LOG_SIZE(keys) == PyDict_LOG_MINSIZE && state->keys_numfree < PyDict_MAXFREELIST) {
         state->keys_free_list[state->keys_numfree++] = keys;
         return;
     }
@@ -1196,7 +1196,7 @@ Internal routine used by dictresize() to build a hashtable of entries.
 static void
 build_indices(PyDictKeysObject *keys, PyDictKeyEntry *ep, Py_ssize_t n)
 {
-    size_t mask = (size_t)DK_SIZE(keys) - 1;
+    size_t mask = DK_MASK(keys);
     for (Py_ssize_t ix = 0; ix != n; ix++, ep++) {
         Py_hash_t hash = ep->me_hash;
         size_t i = hash & mask;
@@ -1296,7 +1296,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize)
         // dictresize() must not be called after _PyDict_Fini()
         assert(state->keys_numfree != -1);
 #endif
-        if (DK_SIZE(oldkeys) == PyDict_MINSIZE &&
+        if (DK_LOG_SIZE(oldkeys) == PyDict_LOG_MINSIZE &&
             state->keys_numfree < PyDict_MAXFREELIST)
         {
             state->keys_free_list[state->keys_numfree++] = oldkeys;
@@ -1482,6 +1482,17 @@ PyDict_GetItemWithError(PyObject *op, PyObject *key)
     ix = _Py_dict_lookup(mp, key, hash, &value);
     assert(ix >= 0 || value == NULL);
     return value;
+}
+
+PyObject *
+_PyDict_GetItemWithError(PyObject *dp, PyObject *kv)
+{
+    assert(PyUnicode_CheckExact(kv));
+    Py_hash_t hash = kv->ob_type->tp_hash(kv);
+    if (hash == -1) {
+        return NULL;
+    }
+    return _PyDict_GetItem_KnownHash(dp, kv, hash);
 }
 
 PyObject *
@@ -2166,8 +2177,8 @@ dict_subscript(PyDictObject *mp, PyObject *key)
         if (!PyDict_CheckExact(mp)) {
             /* Look up __missing__ method if we're a subclass. */
             PyObject *missing, *res;
-            _Py_IDENTIFIER(__missing__);
-            missing = _PyObject_LookupSpecial((PyObject *)mp, &PyId___missing__);
+            missing = _PyObject_LookupSpecial(
+                    (PyObject *)mp, &_Py_ID(__missing__));
             if (missing != NULL) {
                 res = PyObject_CallOneArg(missing, key);
                 Py_DECREF(missing);
@@ -2369,9 +2380,8 @@ dict_update_arg(PyObject *self, PyObject *arg)
     if (PyDict_CheckExact(arg)) {
         return PyDict_Merge(self, arg, 1);
     }
-    _Py_IDENTIFIER(keys);
     PyObject *func;
-    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+    if (_PyObject_LookupAttr(arg, &_Py_ID(keys), &func) < 0) {
         return -1;
     }
     if (func != NULL) {
@@ -2545,7 +2555,7 @@ dict_merge(PyObject *a, PyObject *b, int override)
             // If other is clean, combined, and just allocated, just clone it.
             if (other->ma_values == NULL &&
                     other->ma_used == okeys->dk_nentries &&
-                    (DK_SIZE(okeys) == PyDict_MINSIZE ||
+                    (DK_LOG_SIZE(okeys) == PyDict_LOG_MINSIZE ||
                      USABLE_FRACTION(DK_SIZE(okeys)/2) < other->ma_used)) {
                 PyDictKeysObject *keys = clone_combined_dict_keys(other);
                 if (keys == NULL) {
@@ -4128,7 +4138,6 @@ dict___reversed___impl(PyDictObject *self)
 static PyObject *
 dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     /* copy the iterator state */
     dictiterobject tmp = *di;
     Py_XINCREF(tmp.di_dict);
@@ -4138,7 +4147,7 @@ dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(iter)), list);
 }
 
 PyTypeObject PyDictRevIterItem_Type = {
@@ -4408,9 +4417,8 @@ dictviews_sub(PyObject *self, PyObject *other)
         return NULL;
     }
 
-    _Py_IDENTIFIER(difference_update);
-    PyObject *tmp = _PyObject_CallMethodIdOneArg(
-            result, &PyId_difference_update, other);
+    PyObject *tmp = PyObject_CallMethodOneArg(
+            result, &_Py_ID(difference_update), other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -4446,8 +4454,8 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
     /* if other is a set and self is smaller than other,
        reuse set intersection logic */
     if (PySet_CheckExact(other) && len_self <= PyObject_Size(other)) {
-        _Py_IDENTIFIER(intersection);
-        return _PyObject_CallMethodIdObjArgs(other, &PyId_intersection, self, NULL);
+        return PyObject_CallMethodObjArgs(
+                other, &_Py_ID(intersection), self, NULL);
     }
 
     /* if other is another dict view, and it is bigger than self,
@@ -4587,9 +4595,8 @@ dictitems_xor(PyObject *self, PyObject *other)
     }
     key = val1 = val2 = NULL;
 
-    _Py_IDENTIFIER(items);
-    PyObject *remaining_pairs = _PyObject_CallMethodIdNoArgs(temp_dict,
-                                                             &PyId_items);
+    PyObject *remaining_pairs = PyObject_CallMethodNoArgs(
+            temp_dict, &_Py_ID(items));
     if (remaining_pairs == NULL) {
         goto error;
     }
@@ -4621,9 +4628,8 @@ dictviews_xor(PyObject* self, PyObject *other)
         return NULL;
     }
 
-    _Py_IDENTIFIER(symmetric_difference_update);
-    PyObject *tmp = _PyObject_CallMethodIdOneArg(
-            result, &PyId_symmetric_difference_update, other);
+    PyObject *tmp = PyObject_CallMethodOneArg(
+            result, &_Py_ID(symmetric_difference_update), other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;

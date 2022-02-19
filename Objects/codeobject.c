@@ -1020,7 +1020,7 @@ positionsiter_next(positionsiterator* pi)
 
 static PyTypeObject PositionsIterator = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "poisitions_iterator",              /* tp_name */
+    "positions_iterator",               /* tp_name */
     sizeof(positionsiterator),          /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
@@ -1923,4 +1923,16 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
         PyObject_ClearWeakRefs((PyObject *)co);
         co->co_weakreflist = NULL;
     }
+}
+
+void
+_PyStaticCode_InternStrings(PyCodeObject *co) 
+{
+    int res = intern_strings(co->co_names);
+    assert(res == 0);
+    res = intern_string_constants(co->co_consts, NULL);
+    assert(res == 0);
+    res = intern_strings(co->co_localsplusnames);
+    assert(res == 0);
+    (void)res;
 }

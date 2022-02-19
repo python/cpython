@@ -5,7 +5,7 @@ At large scale, the structure of the module is following:
 * Imports and exports, all public names should be explicitly added to __all__.
 * Internal helper functions: these should never be used in code outside this module.
 * _SpecialForm and its instances (special forms):
-  Any, NoReturn, ClassVar, Union, Optional, Concatenate
+  Any, NoReturn, Never, ClassVar, Union, Optional, Concatenate
 * Classes whose instances can be type arguments in addition to types:
   ForwardRef, TypeVar and ParamSpec
 * The core of internal generics API: _GenericAlias and _VariadicGenericAlias, the latter is
@@ -117,12 +117,14 @@ __all__ = [
 
     # One-off things.
     'AnyStr',
+    'assert_never',
     'cast',
     'final',
     'get_args',
     'get_origin',
     'get_type_hints',
     'is_typeddict',
+    'Never',
     'NewType',
     'no_type_check',
     'no_type_check_decorator',
@@ -175,7 +177,7 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
-    if arg in (Any, NoReturn, Self, ClassVar, Final, TypeAlias):
+    if arg in (Any, NoReturn, Never, Self, ClassVar, Final, TypeAlias):
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
@@ -441,8 +443,39 @@ def NoReturn(self, parameters):
       def stop() -> NoReturn:
           raise Exception('no way')
 
-    This type is invalid in other positions, e.g., ``List[NoReturn]``
-    will fail in static type checkers.
+    NoReturn can also be used as a bottom type, a type that
+    has no values. Starting in Python 3.11, the Never type should
+    be used for this concept instead. Type checkers should treat the two
+    equivalently.
+
+    """
+    raise TypeError(f"{self} is not subscriptable")
+
+# This is semantically identical to NoReturn, but it is implemented
+# separately so that type checkers can distinguish between the two
+# if they want.
+@_SpecialForm
+def Never(self, parameters):
+    """The bottom type, a type that has no members.
+
+    This can be used to define a function that should never be
+    called, or a function that never returns::
+
+        from typing import Never
+
+        def never_call_me(arg: Never) -> None:
+            pass
+
+        def int_or_str(arg: int | str) -> None:
+            never_call_me(arg)  # type checker error
+            match arg:
+                case int():
+                    print("It's an int")
+                case str():
+                    print("It's a str")
+                case _:
+                    never_call_me(arg)  # ok, arg is of type Never
+
     """
     raise TypeError(f"{self} is not subscriptable")
 
@@ -734,10 +767,11 @@ class ForwardRef(_Final, _root=True):
         if self.__forward_evaluated__ and other.__forward_evaluated__:
             return (self.__forward_arg__ == other.__forward_arg__ and
                     self.__forward_value__ == other.__forward_value__)
-        return self.__forward_arg__ == other.__forward_arg__
+        return (self.__forward_arg__ == other.__forward_arg__ and
+                self.__forward_module__ == other.__forward_module__)
 
     def __hash__(self):
-        return hash(self.__forward_arg__)
+        return hash((self.__forward_arg__, self.__forward_module__))
 
     def __or__(self, other):
         return Union[self, other]
@@ -746,7 +780,11 @@ class ForwardRef(_Final, _root=True):
         return Union[other, self]
 
     def __repr__(self):
-        return f'ForwardRef({self.__forward_arg__!r})'
+        if self.__forward_module__ is None:
+            module_repr = ''
+        else:
+            module_repr = f', module={self.__forward_module__!r}'
+        return f'ForwardRef({self.__forward_arg__!r}{module_repr})'
 
 class _TypeVarLike:
     """Mixin for TypeVar-like types (TypeVar and ParamSpec)."""
@@ -2060,6 +2098,29 @@ def is_typeddict(tp):
     return isinstance(tp, _TypedDictMeta)
 
 
+def assert_never(arg: Never, /) -> Never:
+    """Statically assert that a line of code is unreachable.
+
+    Example::
+
+        def int_or_str(arg: int | str) -> None:
+            match arg:
+                case int():
+                    print("It's an int")
+                case str():
+                    print("It's a str")
+                case _:
+                    assert_never(arg)
+
+    If a type checker finds that a call to assert_never() is
+    reachable, it will emit an error.
+
+    At runtime, this throws an exception when called.
+
+    """
+    raise AssertionError("Expected code to be unreachable")
+
+
 def no_type_check(arg):
     """Decorator to indicate that annotations are not type hints.
 
@@ -2070,13 +2131,23 @@ def no_type_check(arg):
     This mutates the function(s) or class(es) in place.
     """
     if isinstance(arg, type):
-        arg_attrs = arg.__dict__.copy()
-        for attr, val in arg.__dict__.items():
-            if val in arg.__bases__ + (arg,):
-                arg_attrs.pop(attr)
-        for obj in arg_attrs.values():
+        for key in dir(arg):
+            obj = getattr(arg, key)
+            if (
+                not hasattr(obj, '__qualname__')
+                or obj.__qualname__ != f'{arg.__qualname__}.{obj.__name__}'
+                or getattr(obj, '__module__', None) != arg.__module__
+            ):
+                # We only modify objects that are defined in this type directly.
+                # If classes / methods are nested in multiple layers,
+                # we will modify them when processing their direct holders.
+                continue
+            # Instance, class, and static methods:
             if isinstance(obj, types.FunctionType):
                 obj.__no_type_check__ = True
+            if isinstance(obj, types.MethodType):
+                obj.__func__.__no_type_check__ = True
+            # Nested types:
             if isinstance(obj, type):
                 no_type_check(obj)
     try:
@@ -2509,9 +2580,8 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
 
     The type info can be accessed via the Point2D.__annotations__ dict, and
     the Point2D.__required_keys__ and Point2D.__optional_keys__ frozensets.
-    TypedDict supports two additional equivalent forms::
+    TypedDict supports an additional equivalent form::
 
-        Point2D = TypedDict('Point2D', x=int, y=int, label=str)
         Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
 
     By default, all keys must be present in a TypedDict. It is possible
@@ -2527,14 +2597,22 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
     the total argument. True is the default, and makes all items defined in the
     class body be required.
 
-    The class syntax is only supported in Python 3.6+, while two other
-    syntax forms work for Python 2.7 and 3.2+
+    The class syntax is only supported in Python 3.6+, while the other
+    syntax form works for Python 2.7 and 3.2+
     """
     if fields is None:
         fields = kwargs
     elif kwargs:
         raise TypeError("TypedDict takes either a dict or keyword arguments,"
                         " but not both")
+    if kwargs:
+        warnings.warn(
+            "The kwargs-based syntax for TypedDict definitions is deprecated "
+            "in Python 3.11, will be removed in Python 3.13, and may not be "
+            "understood by third-party type checkers.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     ns = {'__annotations__': dict(fields)}
     module = _caller()

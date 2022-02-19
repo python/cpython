@@ -1815,6 +1815,192 @@ class TestWeirdBugs(unittest.TestCase):
         s = {0}
         s.update(other)
 
+
+class TestOperationsMutating:
+    """Regression test for bpo-46615"""
+
+    constructor1 = None
+    constructor2 = None
+
+    def make_sets_of_bad_objects(self):
+        class Bad:
+            def __eq__(self, other):
+                if not enabled:
+                    return False
+                if randrange(20) == 0:
+                    set1.clear()
+                if randrange(20) == 0:
+                    set2.clear()
+                return bool(randrange(2))
+            def __hash__(self):
+                return randrange(2)
+        # Don't behave poorly during construction.
+        enabled = False
+        set1 = self.constructor1(Bad() for _ in range(randrange(50)))
+        set2 = self.constructor2(Bad() for _ in range(randrange(50)))
+        # Now start behaving poorly
+        enabled = True
+        return set1, set2
+
+    def check_set_op_does_not_crash(self, function):
+        for _ in range(100):
+            set1, set2 = self.make_sets_of_bad_objects()
+            try:
+                function(set1, set2)
+            except RuntimeError as e:
+                # Just make sure we don't crash here.
+                self.assertIn("changed size during iteration", str(e))
+
+
+class TestBinaryOpsMutating(TestOperationsMutating):
+
+    def test_eq_with_mutation(self):
+        self.check_set_op_does_not_crash(lambda a, b: a == b)
+
+    def test_ne_with_mutation(self):
+        self.check_set_op_does_not_crash(lambda a, b: a != b)
+
+    def test_lt_with_mutation(self):
+        self.check_set_op_does_not_crash(lambda a, b: a < b)
+
+    def test_le_with_mutation(self):
+        self.check_set_op_does_not_crash(lambda a, b: a <= b)
+
+    def test_gt_with_mutation(self):
+        self.check_set_op_does_not_crash(lambda a, b: a > b)
+
+    def test_ge_with_mutation(self):
+        self.check_set_op_does_not_crash(lambda a, b: a >= b)
+
+    def test_and_with_mutation(self):
+        self.check_set_op_does_not_crash(lambda a, b: a & b)
+
+    def test_or_with_mutation(self):
+        self.check_set_op_does_not_crash(lambda a, b: a | b)
+
+    def test_sub_with_mutation(self):
+        self.check_set_op_does_not_crash(lambda a, b: a - b)
+
+    def test_xor_with_mutation(self):
+        self.check_set_op_does_not_crash(lambda a, b: a ^ b)
+
+    def test_iadd_with_mutation(self):
+        def f(a, b):
+            a &= b
+        self.check_set_op_does_not_crash(f)
+
+    def test_ior_with_mutation(self):
+        def f(a, b):
+            a |= b
+        self.check_set_op_does_not_crash(f)
+
+    def test_isub_with_mutation(self):
+        def f(a, b):
+            a -= b
+        self.check_set_op_does_not_crash(f)
+
+    def test_ixor_with_mutation(self):
+        def f(a, b):
+            a ^= b
+        self.check_set_op_does_not_crash(f)
+
+    def test_iteration_with_mutation(self):
+        def f1(a, b):
+            for x in a:
+                pass
+            for y in b:
+                pass
+        def f2(a, b):
+            for y in b:
+                pass
+            for x in a:
+                pass
+        def f3(a, b):
+            for x, y in zip(a, b):
+                pass
+        self.check_set_op_does_not_crash(f1)
+        self.check_set_op_does_not_crash(f2)
+        self.check_set_op_does_not_crash(f3)
+
+
+class TestBinaryOpsMutating_Set_Set(TestBinaryOpsMutating, unittest.TestCase):
+    constructor1 = set
+    constructor2 = set
+
+class TestBinaryOpsMutating_Subclass_Subclass(TestBinaryOpsMutating, unittest.TestCase):
+    constructor1 = SetSubclass
+    constructor2 = SetSubclass
+
+class TestBinaryOpsMutating_Set_Subclass(TestBinaryOpsMutating, unittest.TestCase):
+    constructor1 = set
+    constructor2 = SetSubclass
+
+class TestBinaryOpsMutating_Subclass_Set(TestBinaryOpsMutating, unittest.TestCase):
+    constructor1 = SetSubclass
+    constructor2 = set
+
+
+class TestMethodsMutating(TestOperationsMutating):
+
+    def test_issubset_with_mutation(self):
+        self.check_set_op_does_not_crash(set.issubset)
+
+    def test_issuperset_with_mutation(self):
+        self.check_set_op_does_not_crash(set.issuperset)
+
+    def test_intersection_with_mutation(self):
+        self.check_set_op_does_not_crash(set.intersection)
+
+    def test_union_with_mutation(self):
+        self.check_set_op_does_not_crash(set.union)
+
+    def test_difference_with_mutation(self):
+        self.check_set_op_does_not_crash(set.difference)
+
+    def test_symmetric_difference_with_mutation(self):
+        self.check_set_op_does_not_crash(set.symmetric_difference)
+
+    def test_isdisjoint_with_mutation(self):
+        self.check_set_op_does_not_crash(set.isdisjoint)
+
+    def test_difference_update_with_mutation(self):
+        self.check_set_op_does_not_crash(set.difference_update)
+
+    def test_intersection_update_with_mutation(self):
+        self.check_set_op_does_not_crash(set.intersection_update)
+
+    def test_symmetric_difference_update_with_mutation(self):
+        self.check_set_op_does_not_crash(set.symmetric_difference_update)
+
+    def test_update_with_mutation(self):
+        self.check_set_op_does_not_crash(set.update)
+
+
+class TestMethodsMutating_Set_Set(TestMethodsMutating, unittest.TestCase):
+    constructor1 = set
+    constructor2 = set
+
+class TestMethodsMutating_Subclass_Subclass(TestMethodsMutating, unittest.TestCase):
+    constructor1 = SetSubclass
+    constructor2 = SetSubclass
+
+class TestMethodsMutating_Set_Subclass(TestMethodsMutating, unittest.TestCase):
+    constructor1 = set
+    constructor2 = SetSubclass
+
+class TestMethodsMutating_Subclass_Set(TestMethodsMutating, unittest.TestCase):
+    constructor1 = SetSubclass
+    constructor2 = set
+
+class TestMethodsMutating_Set_Dict(TestMethodsMutating, unittest.TestCase):
+    constructor1 = set
+    constructor2 = dict.fromkeys
+
+class TestMethodsMutating_Set_List(TestMethodsMutating, unittest.TestCase):
+    constructor1 = set
+    constructor2 = list
+
+
 # Application tests (based on David Eppstein's graph recipes ====================================
 
 def powerset(U):

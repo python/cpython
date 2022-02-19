@@ -1,0 +1,1 @@
+Fix :mod:`dis` behavior on negative jump offsets.

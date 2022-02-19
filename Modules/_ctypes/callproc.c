@@ -54,6 +54,8 @@
 
  */
 
+#define NEEDS_PY_IDENTIFIER
+
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 
@@ -1160,11 +1162,7 @@ PyObject *_ctypes_callproc(PPROC pProc,
         return NULL;
     }
 
-    args = (struct argument *)alloca(sizeof(struct argument) * argcount);
-    if (!args) {
-        PyErr_NoMemory();
-        return NULL;
-    }
+    args = alloca(sizeof(struct argument) * argcount);
     memset(args, 0, sizeof(struct argument) * argcount);
     argtype_count = argtypes ? PyTuple_GET_SIZE(argtypes) : 0;
 #ifdef MS_WIN32

@@ -574,6 +574,34 @@ These can be used as types in annotations and do not support ``[]``.
    * Every type is compatible with :data:`Any`.
    * :data:`Any` is compatible with every type.
 
+.. data:: Never
+
+   The `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
+   a type that has no members.
+
+   This can be used to define a function that should never be
+   called, or a function that never returns::
+
+     from typing import Never
+
+     def never_call_me(arg: Never) -> None:
+         pass
+
+     def int_or_str(arg: int | str) -> None:
+         never_call_me(arg)  # type checker error
+         match arg:
+             case int():
+                 print("It's an int")
+             case str():
+                 print("It's a str")
+             case _:
+                 never_call_me(arg)  # ok, arg is of type Never
+
+   .. versionadded:: 3.11
+
+      On older Python versions, :data:`NoReturn` may be used to express the
+      same concept. ``Never`` was added to make the intended meaning more explicit.
+
 .. data:: NoReturn
 
    Special type indicating that a function never returns.
@@ -583,6 +611,12 @@ These can be used as types in annotations and do not support ``[]``.
 
       def stop() -> NoReturn:
           raise RuntimeError('no way')
+
+   ``NoReturn`` can also be used as a
+   `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_, a type that
+   has no values. Starting in Python 3.11, the :data:`Never` type should
+   be used for this concept instead. Type checkers should treat the two
+   equivalently.
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
@@ -1436,10 +1470,19 @@ These are not used in annotations. They are building blocks for declaring types.
    ``Point2D.__optional_keys__``.
    To allow using this feature with older versions of Python that do not
    support :pep:`526`, ``TypedDict`` supports two additional equivalent
-   syntactic forms::
+   syntactic forms:
+
+   * Using a literal :class:`dict` as the second argument::
+
+      Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+   * Using keyword arguments::
 
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
-      Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+   .. deprecated-removed:: 3.11 3.13
+      The keyword-argument syntax is deprecated in 3.11 and will be removed
+      in 3.13. It may also be unsupported by static type checkers.
 
    By default, all keys must be present in a ``TypedDict``. It is possible to
    override this by specifying totality.
@@ -1448,6 +1491,9 @@ These are not used in annotations. They are building blocks for declaring types.
       class Point2D(TypedDict, total=False):
           x: int
           y: int
+
+      # Alternative syntax
+      Point2D = TypedDict('Point2D', {'x': int, 'y': int}, total=False)
 
    This means that a ``Point2D`` ``TypedDict`` can have any of the keys
    omitted. A type checker is only expected to support a literal ``False`` or
@@ -1979,6 +2025,28 @@ Functions and decorators
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
 
+.. function:: assert_never(arg, /)
+
+   Assert to the type checker that a line of code is unreachable.
+
+   Example::
+
+       def int_or_str(arg: int | str) -> None:
+           match arg:
+               case int():
+                   print("It's an int")
+               case str():
+                   print("It's a str")
+               case _ as unreachable:
+                   assert_never(unreachable)
+
+   If a type checker finds that a call to ``assert_never()`` is
+   reachable, it will emit an error.
+
+   At runtime, this throws an exception when called.
+
+   .. versionadded:: 3.11
+
 .. function:: reveal_type(obj)
 
    Reveal the inferred static type of an expression.
@@ -2077,8 +2145,8 @@ Functions and decorators
    Decorator to indicate that annotations are not type hints.
 
    This works as class or function :term:`decorator`.  With a class, it
-   applies recursively to all methods defined in that class (but not
-   to methods defined in its superclasses or subclasses).
+   applies recursively to all methods and classes defined in that class
+   (but not to methods defined in its superclasses or subclasses).
 
    This mutates the function(s) in place.
 
