@@ -585,6 +585,14 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                       return_type=None)
 
 
+def _post_init_fn(globals):
+    return _create_fn('__post_init__',
+                      ('self',),
+                      ['pass'],
+                      globals=globals,
+                      return_type=None)
+
+
 def _repr_fn(fields, globals):
     fn = _create_fn('__repr__',
                     ('self',),
@@ -1019,10 +1027,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     (std_init_fields,
      kw_only_init_fields) = _fields_in_init_order(all_init_fields)
 
+    # Does this class have a post-init function?
+    has_post_init = hasattr(cls, _POST_INIT_NAME)
     if init:
-        # Does this class have a post-init function?
-        has_post_init = hasattr(cls, _POST_INIT_NAME)
-
         _set_new_attribute(cls, '__init__',
                            _init_fn(all_init_fields,
                                     std_init_fields,
@@ -1037,6 +1044,10 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                                     globals,
                                     slots,
                           ))
+
+    if not has_post_init:
+        # If we don't have a `__post_init__` redefined, add an empty one.
+        _set_new_attribute(cls, _POST_INIT_NAME, _post_init_fn(globals))
 
     # Get the fields as a list, and include only real fields.  This is
     # used in all of the following methods.

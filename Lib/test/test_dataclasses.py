@@ -935,6 +935,9 @@ class TestCase(unittest.TestCase):
                 raise CustomError()
         # Creating the class won't raise
         C()
+        # But, direct invokation will:
+        with self.assertRaises(CustomError):
+            C().__post_init__()
 
         @dataclass
         class C:
@@ -953,6 +956,17 @@ class TestCase(unittest.TestCase):
                 self.x *= 2
         with self.assertRaises(FrozenInstanceError):
             C()
+
+        # Make sure that we add an empty `__post_init__` by default (bpo-46757)
+        @dataclass
+        class EmtpyPostInit:
+            ...
+        EmtpyPostInit().__post_init__()
+
+        @dataclass(init=False)
+        class EmtpyPostInitWithoutInit:
+            ...
+        EmtpyPostInitWithoutInit().__post_init__()
 
     def test_post_init_super(self):
         # Make sure super() post-init isn't called by default.
@@ -984,6 +998,22 @@ class TestCase(unittest.TestCase):
 
         with self.assertRaises(CustomError):
             C()
+
+        # Make sure that calls to `super().__post_init__` works for all cases.
+        @dataclass
+        class Foo:  # Does not have explicit `__post_init__`
+            ...
+
+        @dataclass
+        class SubclassOfFoo(Foo):
+            x: int
+
+            def __post_init__(self):
+                super().__post_init__()
+                self.x += 1
+
+        sob = SubclassOfFoo(1)
+        self.assertEqual(sob.x, 2)
 
     def test_post_init_staticmethod(self):
         flag = False
