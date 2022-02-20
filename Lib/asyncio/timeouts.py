@@ -82,7 +82,6 @@ class Timeout:
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Optional[bool]:
-        # state is EXITED if not timed out previously
         assert self._state in (_State.ENTERED, _State.CANCELLING)
 
         if self._timeout_handler is not None:
