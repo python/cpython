@@ -122,7 +122,7 @@ class CancelScope:
 
 
 @contextlib.contextmanager
-def cancel_scope(delay: Optional[float]) -> Iterator[CancelScope]:
+def cancel_after(delay: Optional[float]) -> Iterator[CancelScope]:
     loop = events.get_running_loop()
     with CancelScope(
         loop.time() + delay if delay is not None else None,
@@ -132,7 +132,7 @@ def cancel_scope(delay: Optional[float]) -> Iterator[CancelScope]:
 
 
 @contextlib.contextmanager
-def cancel_scope_at(deadline: Optional[float]) -> Iterator[CancelScope]:
+def cancel_at(deadline: Optional[float]) -> Iterator[CancelScope]:
     loop = events.get_running_loop()
     with CancelScope(deadline, loop) as scope:
         yield scope
