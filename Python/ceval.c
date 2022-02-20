@@ -1584,7 +1584,7 @@ pop_frame(PyThreadState *tstate, InterpreterFrame *frame)
     return prev_frame;
 }
 
-/* It is only between a PRECALL_METHOD/FUNCTION instruction and the following CALL,
+/* It is only between the PRECALL instruction and the following CALL,
  * that these values have any meaning.
  */
 typedef struct {
@@ -1869,6 +1869,12 @@ handle_eval_breaker:
         TARGET(POP_TOP) {
             PyObject *value = POP();
             Py_DECREF(value);
+            DISPATCH();
+        }
+
+        TARGET(PUSH_NULL) {
+            /* Use BASIC_PUSH as NULL is not a valid object pointer */
+            BASIC_PUSH(NULL);
             DISPATCH();
         }
 
@@ -4476,25 +4482,7 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
-        TARGET(PRECALL_FUNCTION) {
-            /* Move ownership of reference from stack to call_shape */
-            call_shape.callable = PEEK(oparg + 1);
-            call_shape.postcall_shrink = 1;
-
-            call_shape.total_args = oparg;
-            assert(call_shape.kwnames == NULL);
-#ifdef Py_STATS
-            extern int _PySpecialization_ClassifyCallable(PyObject *);
-            SpecializationStats *stats =
-                &_py_stats.opcode_stats[PRECALL_FUNCTION].specialization;
-            stats->failure++;
-            int kind = _PySpecialization_ClassifyCallable(call_shape.callable);
-            stats->failure_kinds[kind]++;
-#endif
-            DISPATCH();
-        }
-
-        TARGET(PRECALL_METHOD) {
+        TARGET(PRECALL) {
             /* Designed to work in tamdem with LOAD_METHOD. */
             /* `meth` is NULL when LOAD_METHOD thinks that it's not
                 a method call.
@@ -4533,7 +4521,7 @@ handle_eval_breaker:
 #ifdef Py_STATS
             extern int _PySpecialization_ClassifyCallable(PyObject *);
             SpecializationStats *stats =
-                &_py_stats.opcode_stats[PRECALL_METHOD].specialization;
+                &_py_stats.opcode_stats[PRECALL].specialization;
             stats->failure++;
             int kind = _PySpecialization_ClassifyCallable(call_shape.callable);
             stats->failure_kinds[kind]++;
@@ -5118,6 +5106,8 @@ handle_eval_breaker:
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
 
+            STACK_SHRINK(1);
+            assert(TOP() == NULL);
             SET_TOP(result);
             if (result == NULL) {
                 goto error;

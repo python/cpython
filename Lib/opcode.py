@@ -55,6 +55,7 @@ def jabs_op(name, op):
 # Blank lines correspond to available opcodes
 
 def_op('POP_TOP', 1)
+def_op('PUSH_NULL', 2)
 
 def_op('NOP', 9)
 def_op('UNARY_POSITIVE', 10)
@@ -187,9 +188,7 @@ def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
-
-def_op('PRECALL_FUNCTION', 167)
-def_op('PRECALL_METHOD', 168)
+def_op('PRECALL', 166)
 
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
