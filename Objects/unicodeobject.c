@@ -15616,7 +15616,7 @@ PyUnicode_InternInPlace(PyObject **p)
     /* The two references in interned dict (key and value) are not counted by
        refcnt. unicode_dealloc() and _PyUnicode_ClearInterned() take care of
        this. */
-    Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
+    _Py_SetImmortal(s);
     _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
 #else
     // PyDict expects that interned strings have their hash
