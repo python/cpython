@@ -1952,6 +1952,54 @@ gc_get_freeze_count_impl(PyObject *module)
     return gc_list_size(&gcstate->permanent_generation.head);
 }
 
+static int
+immortalize_object(PyObject *obj, PyObject *Py_UNUSED(ignored))
+{
+    _Py_SetImmortal(obj);
+    /* Special case for PyCodeObjects since they don't have a tp_traverse */
+    if (PyCode_Check(obj)) {
+        PyCodeObject *code = (PyCodeObject *)obj;
+        _Py_SetImmortal(code->co_code);
+        _Py_SetImmortal(code->co_consts);
+        _Py_SetImmortal(code->co_names);
+        _Py_SetImmortal(code->co_varnames);
+        _Py_SetImmortal(code->co_freevars);
+        _Py_SetImmortal(code->co_cellvars);
+        _Py_SetImmortal(code->co_filename);
+        _Py_SetImmortal(code->co_name);
+        _Py_SetImmortal(code->co_linetable);
+    }
+    return 0;
+}
+
+PyObject *
+_PyGC_ImmortalizeHeap(void) {
+    PyGC_Head *gc, *list;
+    PyThreadState *tstate = _PyThreadState_GET();
+    GCState *gcstate = &tstate->interp->gc;
+
+    /* Remove any dead objects to avoid immortalizing them */
+    PyGC_Collect();
+
+    /* Move all instances into the permanent generation */
+    gc_freeze_impl(NULL);
+
+    /* Immortalize all instances in the permanent generation */
+    list = &gcstate->permanent_generation.head;
+    for (gc = GC_NEXT(list); gc != list; gc = GC_NEXT(gc)) {
+        _Py_SetImmortal(FROM_GC(gc));
+        /* This can traverse to non-GC-tracked objects, and some of those
+         * non-GC-tracked objects (e.g. dicts) can later become GC-tracked, and
+         * not be in the permanent generation. So it is possible for immortal
+         * objects to enter GC collection. Currently what happens in that case
+         * is that their immortal bit makes it look like they have a very large
+         * refcount, so they are not collected. */
+        Py_TYPE(FROM_GC(gc))->tp_traverse(
+              FROM_GC(gc), (visitproc)immortalize_object, NULL);
+    }
+    Py_RETURN_NONE;
+}
+
 
 PyDoc_STRVAR(gc__doc__,
 "This module provides access to the garbage collector for reference cycles.\n"
