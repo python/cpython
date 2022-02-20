@@ -16,20 +16,20 @@ As of Python 3.6, this is compact and ordered. Basic idea is described here:
 
 layout:
 
-+----------------------+
-| dk_refcnt            |
-| dk_log2_size         |
-| dk_log2_index_bytess |
-| dk_kind              |
-| dk_usable            |
-| dk_nentries          |
-+----------------------+
-| dk_indices[]         |
-|                      |
-+----------------------+
-| dk_entries[]         |
-|                      |
-+----------------------+
++---------------------+
+| dk_refcnt           |
+| dk_log2_size        |
+| dk_log2_index_bytes |
+| dk_kind             |
+| dk_usable           |
+| dk_nentries         |
++---------------------+
+| dk_indices[]        |
+|                     |
++---------------------+
+| dk_entries[]        |
+|                     |
++---------------------+
 
 dk_indices is actual hashtable.  It holds index in entries, or DKIX_EMPTY(-1)
 or DKIX_DUMMY(-2).
