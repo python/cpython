@@ -16,35 +16,38 @@ class BaseTimeoutTests:
     def new_task(self, loop, coro, name='TestTask'):
         return self.__class__.Task(coro, loop=loop, name=name)
 
-    async def test_cancel_scope_basic(self):
-        async with asyncio.cancel_after(0.1) as scope:
-            await asyncio.sleep(10)
-        self.assertTrue(scope.cancelling())
-        self.assertTrue(scope.cancelled())
-
-    async def test_cancel_scope_at_basic(self):
-        loop = asyncio.get_running_loop()
-
-        async with asyncio.cancel_at(loop.time() + 0.1) as scope:
-            await asyncio.sleep(10)
-        self.assertTrue(scope.cancelling())
-        self.assertTrue(scope.cancelled())
-
     async def test_timeout_basic(self):
         with self.assertRaises(TimeoutError):
-            async with asyncio.timeout(0.1) as scope:
+            async with asyncio.timeout(0.1) as cm:
                 await asyncio.sleep(10)
-        self.assertTrue(scope.cancelling())
-        self.assertTrue(scope.cancelled())
+        self.assertTrue(cm.expired())
 
     async def test_timeout_at_basic(self):
         loop = asyncio.get_running_loop()
 
         with self.assertRaises(TimeoutError):
-            async with asyncio.timeout_at(loop.time() + 0.1) as scope:
+            async with asyncio.timeout_at(loop.time() + 0.1) as cm:
                 await asyncio.sleep(10)
-        self.assertTrue(scope.cancelling())
-        self.assertTrue(scope.cancelled())
+        self.assertTrue(cm.expired())
+
+    async def test_nested_timeouts(self):
+        cancel = False
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(0.1) as cm1:
+                try:
+                    async with asyncio.timeout(0.1) as cm2:
+                        await asyncio.sleep(10)
+                except asyncio.CancelledError:
+                    cancel = True
+                    raise
+                except TimeoutError:
+                    self.fail(
+                        "The only topmost timed out context manager "
+                        "raises TimeoutError"
+                    )
+        self.assertTrue(cancel)
+        self.assertTrue(cm1.expired())
+        self.assertTrue(cm2.expired())
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),

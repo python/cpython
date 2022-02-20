@@ -1,20 +1,16 @@
-import contextlib
 import enum
 
 from types import TracebackType
-from typing import final, Any, Iterator, Optional, Type
+from typing import final, Any, Dict, Optional, Type
 
 from . import events
-from . import exceptions
 from . import tasks
 
 
 __all__ = (
-    "cancel_scope",
-    "cancel_scope_at",
+    "Timeout",
     "timeout",
     "timeout_at",
-    "CancelScope"
 )
 
 
@@ -27,13 +23,9 @@ class _State(enum.Enum):
 
 
 @final
-class CancelScope:
-    __slots__ = ("_deadline", "_loop", "_state", "_task", "_timeout_handler")
+class Timeout:
 
-    def __init__(
-        self, deadline: Optional[float], loop: events.AbstractEventLoop
-    ) -> None:
-        self._loop = loop
+    def __init__(self, deadline: Optional[float]) -> None:
         self._state = _State.CREATED
 
         self._timeout_handler: Optional[events.TimerHandle] = None
@@ -44,32 +36,44 @@ class CancelScope:
     def deadline(self) -> Optional[float]:
         return self._deadline
 
-    @deadline.setter
-    def deadline(self, value: Optional[float]) -> None:
-        self._deadline = value
-        self._reschedule()
+    def reschedule(self, deadline: Optional[float]) -> None:
+        assert self._state != _State.CREATED
+        if self._state != _State.ENTERED:
+            raise RuntimeError(
+                f"Cannot change state of {self._state} CancelScope",
+            )
 
-    def cancelled(self) -> bool:
+        self._deadline = deadline
+
+        if self._timeout_handler is not None:
+            self._timeout_handler.cancel()
+
+        if deadline is None:
+            self._timeout_handler = None
+        else:
+            loop = events.get_running_loop()
+            self._timeout_handler = loop.call_at(
+                deadline,
+                self._on_timeout,
+            )
+
+    def expired(self) -> bool:
         """Is timeout expired during execution?"""
-        return self._state == _State.CANCELLED
-
-    def cancelling(self) -> bool:
-        # Timeout reached, cancellation scheduled
         return self._state in (_State.CANCELLING, _State.CANCELLED)
 
     def __repr__(self) -> str:
         info = [str(self._state)]
-        if self._state == _State.ENTERED and self._deadline is not None:
+        if self._state is _State.ENTERED and self._deadline is not None:
             info.append(f"deadline={self._deadline}")
         cls_name = self.__class__.__name__
         return f"<{cls_name} at {id(self):#x}, {' '.join(info)}>"
 
-    async def __aenter__(self) -> "CancelScope":
+    async def __aenter__(self) -> "Timeout":
         self._state = _State.ENTERED
         self._task = tasks.current_task()
         if self._task is None:
-            raise RuntimeError("CancelScope should be used inside a task")
-        self._reschedule()
+            raise RuntimeError("Timeout should be used inside a task")
+        self.reschedule(self._deadline)
         return self
 
     async def __aexit__(
@@ -85,61 +89,41 @@ class CancelScope:
             self._timeout_handler.cancel()
             self._timeout_handler = None
 
-        if exc_type is exceptions.CancelledError:
-            if self._state == _State.CANCELLING:
-                self._state = _State.CANCELLED
-            if exc_val.args and exc_val.args[0] == id(self):
-                return True
-        elif self._state == _State.ENTERED:
+        if self._state is _State.CANCELLING:
+            self._state = _State.CANCELLED
+        elif self._state is _State.ENTERED:
             self._state = _State.EXITED
+
+        counter = _COUNTERS[self._task]
+        if counter == 1:
+            raise TimeoutError
+        else:
+            _COUNTERS[self._task] = counter - 1
 
         return None
 
-    def _reschedule(self) -> None:
-        assert self._state != _State.CREATED
-        if self._state != _State.ENTERED:
-            raise RuntimeError(
-                f"Cannot change state of {self._state} CancelScope",
-            )
-
-        if self._timeout_handler is not None:
-            self._timeout_handler.cancel()
-
-        if self._deadline is None:
-            self._timeout_handler = None
-        else:
-            self._timeout_handler = self._loop.call_at(
-                self._deadline,
-                self._on_timeout,
-            )
-
     def _on_timeout(self) -> None:
-        assert self._state == _State.ENTERED
-        self._task.cancel(id(self))
+        assert self._state is _State.ENTERED
+        self._task.cancel()
         self._state = _State.CANCELLING
         # drop the reference early
         self._timeout_handler = None
+        counter = _COUNTERS.get(self._task)
+        if counter is None:
+            _COUNTERS[self._task] = 1
+            self._task.add_done_callback(_drop_task)
+        else:
+            _COUNTERS[self._task] = counter + 1
 
 
-@contextlib.contextmanager
-def cancel_after(delay: Optional[float]) -> Iterator[CancelScope]:
-    loop = events.get_running_loop()
-    with CancelScope(
-        loop.time() + delay if delay is not None else None,
-        loop,
-    ) as scope:
-        yield scope
+_COUNTERS: Dict[tasks.Task, int] = {}
 
 
-@contextlib.contextmanager
-def cancel_at(deadline: Optional[float]) -> Iterator[CancelScope]:
-    loop = events.get_running_loop()
-    with CancelScope(deadline, loop) as scope:
-        yield scope
+def _drop_task(task: tasks.Task) -> None:
+    del _COUNTERS[task]
 
 
-@contextlib.contextmanager
-def timeout(delay: Optional[float]) -> Iterator[CancelScope]:
+def timeout(delay: Optional[float]) -> Timeout:
     """timeout context manager.
 
     Useful in cases when you want to apply timeout logic around block
@@ -151,14 +135,11 @@ def timeout(delay: Optional[float]) -> Iterator[CancelScope]:
 
     delay - value in seconds or None to disable timeout logic
     """
-    with cancel_scope(delay) as scope:
-        yield scope
-    if scope.cancelled:
-        raise TimeoutError()
+    loop = events.get_running_loop()
+    return Timeout(loop.time() + delay if delay is not None else None)
 
 
-@contextlib.contextmanager
-def timeout_at(deadline: Optional[float]) -> Iterator[CancelScope]:
+def timeout_at(deadline: Optional[float]) -> Timeout:
     """Schedule the timeout at absolute time.
 
     deadline argument points on the time in the same clock system
@@ -173,7 +154,4 @@ def timeout_at(deadline: Optional[float]) -> Iterator[CancelScope]:
 
 
     """
-    with cancel_scope_at(deadline) as scope:
-        yield scope
-    if scope.cancelled:
-        raise TimeoutError()
+    return Timeout(deadline)
