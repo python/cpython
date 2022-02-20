@@ -64,7 +64,7 @@ class CancelScope:
         cls_name = self.__class__.__name__
         return f"<{cls_name} at {id(self):#x}, {' '.join(info)}>"
 
-    def __enter__(self) -> "CancelScope":
+    async def __aenter__(self) -> "CancelScope":
         self._state = _State.ENTERED
         self._task = tasks.current_task()
         if self._task is None:
@@ -72,7 +72,7 @@ class CancelScope:
         self._reschedule()
         return self
 
-    def __exit__(
+    async def __aexit__(
         self,
         exc_type: Optional[Type[BaseException]],
         exc_val: Optional[BaseException],
