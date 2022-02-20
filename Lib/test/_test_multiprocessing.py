@@ -4102,9 +4102,9 @@ class _TestSharedMemory(BaseTestCase):
             sl[7] = 2
 
         # Assign value without format change (str -> str)
-        current_format = sl._get_packing_format(0)
+        current_format = sl._get_offset_and_packing_format(0)[1]
         sl[0] = 'howdy'
-        self.assertEqual(current_format, sl._get_packing_format(0))
+        self.assertEqual(current_format, sl._get_offset_and_packing_format(0)[1])
 
         # Verify attributes are readable.
         self.assertEqual(sl.format, '8s8sdqxxxxxx?xxxxxxxx?q')
