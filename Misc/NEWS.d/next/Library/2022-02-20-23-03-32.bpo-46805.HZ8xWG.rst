@@ -1,0 +1,4 @@
+Added raw datagram socket functions for asyncio:
+:meth:`~asyncio.AbstractEventLoop.sock_sendto`,
+:meth:`~asyncio.AbstractEventLoop.sock_recvfrom` and
+:meth:`~asyncio.AbstractEventLoop.sock_recvfrom_into`.
