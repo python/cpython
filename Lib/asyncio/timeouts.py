@@ -1,6 +1,5 @@
 import enum
 
-from dataclasses import dataclass
 from types import TracebackType
 from typing import final, Any, Dict, Optional, Type
 
