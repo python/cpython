@@ -696,12 +696,12 @@ a pure Python equivalent:
     >>> b.g == b['g'] == ('getattr_hook', b, 'g')
     True
 
-Note, there is no `__getattr__` hook in the :meth:`__getattribute__` code.
-That is why calling :meth:`__getattribute__` directly or with
-``super().__getattribute__`` will bypass `__getattr__` entirely.
+Note, there is no :meth:`__getattr__` hook in the :meth:`__getattribute__`
+code.  That is why calling :meth:`__getattribute__` directly or with
+``super().__getattribute__`` will bypass :meth:`__getattr__` entirely.
 
 Instead, it is the dot operator and the :func:`getattr` function that are
-responsible for invoking `__getattr__` whenever :meth:`__getattribute__`
+responsible for invoking :meth:`__getattr__` whenever :meth:`__getattribute__`
 raises an :exc:`AttributeError`.  Their logic is encapsulated in a helper
 function:
 
