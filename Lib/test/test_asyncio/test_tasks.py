@@ -3407,6 +3407,11 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
             coros.append(coro())
         return coros
 
+    def _gather(self, *args, **kwargs):
+        async def coro():
+            return asyncio.gather(*args, **kwargs)
+        return self.one_loop.run_until_complete(coro())
+
     def test_constructor_loop_selection(self):
         async def coro():
             return 'abc'
