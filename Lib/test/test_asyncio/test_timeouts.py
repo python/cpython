@@ -18,7 +18,7 @@ class BaseTimeoutTests:
 
     async def test_timeout_basic(self):
         with self.assertRaises(TimeoutError):
-            async with asyncio.timeout(0.1) as cm:
+            async with asyncio.timeout(0.01) as cm:
                 await asyncio.sleep(10)
         self.assertTrue(cm.expired())
 
@@ -26,16 +26,16 @@ class BaseTimeoutTests:
         loop = asyncio.get_running_loop()
 
         with self.assertRaises(TimeoutError):
-            async with asyncio.timeout_at(loop.time() + 0.1) as cm:
+            async with asyncio.timeout_at(loop.time() + 0.01) as cm:
                 await asyncio.sleep(10)
         self.assertTrue(cm.expired())
 
     async def test_nested_timeouts(self):
         cancel = False
         with self.assertRaises(TimeoutError):
-            async with asyncio.timeout(0.1) as cm1:
+            async with asyncio.timeout(0.01) as cm1:
                 try:
-                    async with asyncio.timeout(0.1) as cm2:
+                    async with asyncio.timeout(0.01) as cm2:
                         await asyncio.sleep(10)
                 except asyncio.CancelledError:
                     cancel = True
@@ -48,6 +48,48 @@ class BaseTimeoutTests:
         self.assertTrue(cancel)
         self.assertTrue(cm1.expired())
         self.assertTrue(cm2.expired())
+
+    async def test_waiter_cancelled(self):
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(0.01):
+                with self.assertRaises(asyncio.CancelledError):
+                    await asyncio.sleep(10)
+
+    async def test_timeout_not_called(self):
+        loop = asyncio.get_running_loop()
+        t0 = loop.time()
+        async with asyncio.timeout(10) as cm:
+            await asyncio.sleep(0.01)
+        t1 = loop.time()
+
+        self.assertFalse(cm.expired())
+        # finised fast. Very busy CI box requires high enough limit,
+        # that's why 0.01 cannot be used
+        self.assertLess(t1-t0, 2)
+
+    async def test_timeout_disabled(self):
+        loop = asyncio.get_running_loop()
+        t0 = loop.time()
+        async with asyncio.timeout(None) as cm:
+            await asyncio.sleep(0.01)
+        t1 = loop.time()
+
+        self.assertFalse(cm.expired())
+        # finised fast. Very busy CI box requires high enough limit,
+        # that's why 0.01 cannot be used
+        self.assertLess(t1-t0, 2)
+
+    async def test_timeout_at_disabled(self):
+        loop = asyncio.get_running_loop()
+        t0 = loop.time()
+        async with asyncio.timeout(None) as cm:
+            await asyncio.sleep(0.01)
+        t1 = loop.time()
+
+        self.assertFalse(cm.expired())
+        # finised fast. Very busy CI box requires high enough limit,
+        # that's why 0.01 cannot be used
+        self.assertLess(t1-t0, 2)
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),

@@ -91,14 +91,13 @@ class Timeout:
 
         if self._state is _State.CANCELLING:
             self._state = _State.CANCELLED
+            counter = _COUNTERS[self._task]
+            if counter == 1:
+                raise TimeoutError
+            else:
+                _COUNTERS[self._task] = counter - 1
         elif self._state is _State.ENTERED:
             self._state = _State.EXITED
-
-        counter = _COUNTERS[self._task]
-        if counter == 1:
-            raise TimeoutError
-        else:
-            _COUNTERS[self._task] = counter - 1
 
         return None
 
