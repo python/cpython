@@ -232,6 +232,9 @@ struct compiler_unit {
     int u_col_offset;      /* the offset of the current stmt */
     int u_end_lineno;      /* the end line of the current stmt */
     int u_end_col_offset;  /* the end offset of the current stmt */
+
+    /* true if we need to create an implicit basicblock before the next instr */
+    int u_need_new_implicit_block;
 };
 
 /* This struct captures the global state of a compilation.
@@ -727,6 +730,7 @@ compiler_use_next_block(struct compiler *c, basicblock *block)
     assert(block != NULL);
     c->u->u_curblock->b_next = block;
     c->u->u_curblock = block;
+    c->u->u_need_new_implicit_block = 0;
     return block;
 }
 
@@ -1105,9 +1109,9 @@ static int is_end_of_basic_block(struct instr *instr)
 }
 
 static int
-compiler_new_block_if_needed(struct compiler *c, struct instr *instr)
+compiler_use_new_implicit_block_if_needed(struct compiler *c)
 {
-    if (is_end_of_basic_block(instr)) {
+    if (c->u->u_need_new_implicit_block) {
         basicblock *b = compiler_new_block(c);
         if (b == NULL) {
             return -1;
@@ -1115,6 +1119,14 @@ compiler_new_block_if_needed(struct compiler *c, struct instr *instr)
         compiler_use_next_block(c, b);
     }
     return 0;
+}
+
+static void
+compiler_check_if_end_of_block(struct compiler *c, struct instr *instr)
+{
+    if (is_end_of_basic_block(instr)) {
+        c->u->u_need_new_implicit_block = 1;
+    }
 }
 
 /* Add an opcode with no argument.
@@ -1125,26 +1137,29 @@ static int
 compiler_addop_line(struct compiler *c, int opcode, int line,
                     int end_line, int col_offset, int end_col_offset)
 {
-    basicblock *b;
-    struct instr *i;
-    int off;
     assert(!HAS_ARG(opcode) || IS_ARTIFICIAL(opcode));
-    off = compiler_next_instr(c->u->u_curblock);
-    if (off < 0)
+
+    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
+        return -1;
+    }
+
+    basicblock *b = c->u->u_curblock;
+    int off = compiler_next_instr(b);
+    if (off < 0) {
         return 0;
-    b = c->u->u_curblock;
-    i = &b->b_instr[off];
+    }
+    struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = 0;
-    if (opcode == RETURN_VALUE)
+    if (opcode == RETURN_VALUE) {
         b->b_return = 1;
+    }
     i->i_lineno = line;
     i->i_end_lineno = end_line;
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
-    if (compiler_new_block_if_needed(c, i) < 0) {
-        return 0;
-    }
+
+    compiler_check_if_end_of_block(c, i);
     return 1;
 }
 
@@ -1356,9 +1371,6 @@ compiler_addop_i_line(struct compiler *c, int opcode, Py_ssize_t oparg,
                       int lineno, int end_lineno,
                       int col_offset, int end_col_offset)
 {
-    struct instr *i;
-    int off;
-
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
 
@@ -1366,22 +1378,28 @@ compiler_addop_i_line(struct compiler *c, int opcode, Py_ssize_t oparg,
 
        The argument of a concrete bytecode instruction is limited to 8-bit.
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
+
     assert(HAS_ARG(opcode));
     assert(0 <= oparg && oparg <= 2147483647);
 
-    off = compiler_next_instr(c->u->u_curblock);
-    if (off < 0)
+    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
+        return -1;
+    }
+
+    basicblock *b = c->u->u_curblock;
+    int off = compiler_next_instr(b);
+    if (off < 0) {
         return 0;
-    i = &c->u->u_curblock->b_instr[off];
+    }
+    struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
     i->i_lineno = lineno;
     i->i_end_lineno = end_lineno;
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
-    if (compiler_new_block_if_needed(c, i) < 0) {
-        return 0;
-    }
+
+    compiler_check_if_end_of_block(c, i);
     return 1;
 }
 
@@ -1399,15 +1417,19 @@ compiler_addop_i_noline(struct compiler *c, int opcode, Py_ssize_t oparg)
     return compiler_addop_i_line(c, opcode, oparg, -1, 0, 0, 0);
 }
 
-static int add_jump_to_block(struct compiler *c, basicblock *b, int opcode,
+static int add_jump_to_block(struct compiler *c, int opcode,
                              int lineno, int end_lineno,
                              int col_offset, int end_col_offset,
                              basicblock *target)
 {
     assert(HAS_ARG(opcode));
-    assert(b != NULL);
     assert(target != NULL);
 
+    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
+        return -1;
+    }
+
+    basicblock *b = c->u->u_curblock;
     int off = compiler_next_instr(b);
     struct instr *i = &b->b_instr[off];
     if (off < 0) {
@@ -1419,16 +1441,15 @@ static int add_jump_to_block(struct compiler *c, basicblock *b, int opcode,
     i->i_end_lineno = end_lineno;
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
-    if (compiler_new_block_if_needed(c, i) < 0) {
-        return 0;
-    }
+
+    compiler_check_if_end_of_block(c, i);
     return 1;
 }
 
 static int
 compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 {
-    return add_jump_to_block(c, c->u->u_curblock, opcode, c->u->u_lineno,
+    return add_jump_to_block(c, opcode, c->u->u_lineno,
                              c->u->u_end_lineno, c->u->u_col_offset,
                              c->u->u_end_col_offset, b);
 }
@@ -1436,7 +1457,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 static int
 compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 {
-    return add_jump_to_block(c, c->u->u_curblock, opcode, -1, 0, 0, 0, b);
+    return add_jump_to_block(c, opcode, -1, 0, 0, 0, b);
 }
 
 #define ADDOP(C, OP) { \
