@@ -49,9 +49,6 @@ class CancelScope:
         self._deadline = value
         self._reschedule()
 
-    def cancel(self, msg: Any = None) -> bool:
-        return self._task.cancel(msg)
-
     def cancelled(self) -> bool:
         """Is timeout expired during execution?"""
         return self._state == _State.CANCELLED
