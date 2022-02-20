@@ -90,11 +90,11 @@ class Timeout:
 
         if self._state is _State.CANCELLING:
             self._state = _State.CANCELLED
-            counter = _COUNTERS[self._task]
-            if counter == 1:
-                raise TimeoutError
-            else:
-                _COUNTERS[self._task] = counter - 1
+
+            if self._task.uncancel() == 0:
+                # Since there are no outstanding cancel requests, we're
+                # handling this.
+                return True
         elif self._state is _State.ENTERED:
             self._state = _State.EXITED
 
