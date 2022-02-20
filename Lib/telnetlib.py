@@ -431,18 +431,20 @@ class Telnet:
         buf = [b'', b'']
         try:
             while self.rawq:
-                c = self.rawq_getchar()
                 if not self.iacseq:
-                    if c == theNULL:
-                        continue
-                    if c == b"\021":
-                        continue
-                    if c != IAC:
-                        buf[self.sb] = buf[self.sb] + c
-                        continue
+                    slice = self._rawq_getslice()
+                    if slice:
+                        buf[self.sb] = buf[self.sb] + slice
                     else:
-                        self.iacseq += c
+                        c = self.rawq_getchar()
+                        if c == theNULL:
+                            continue
+                        elif c == b"\021":
+                            continue
+                        else:
+                            self.iacseq += c
                 elif len(self.iacseq) == 1:
+                    c = self.rawq_getchar()
                     # 'IAC: IAC CMD [OPTION only for WILL/WONT/DO/DONT]'
                     if c in (DO, DONT, WILL, WONT):
                         self.iacseq += c
@@ -469,6 +471,7 @@ class Telnet:
                             # unless we did a WILL/DO before.
                             self.msg('IAC %d not recognized' % ord(c))
                 elif len(self.iacseq) == 2:
+                    c = self.rawq_getchar()
                     cmd = self.iacseq[1:2]
                     self.iacseq = b''
                     opt = c
@@ -491,6 +494,28 @@ class Telnet:
             self.sb = 0
         self.cookedq = self.cookedq + buf[0]
         self.sbdataq = self.sbdataq + buf[1]
+
+    def _next_nonIAC_slice(self):
+        """Return next non-IAC characters from raw queue.
+        Assumes the caller checked the raw queue is not empty.
+        """
+        next_i = self.irawq
+        max_i = len(self.rawq)
+        while next_i < max_i:
+            c = self.rawq[next_i]
+            if c == theNULL[0] or c == 0x11 or c == IAC[0]:
+                break
+            next_i += 1
+
+        if next_i == self.irawq:
+            return None
+        else:
+            slice = self.rawq[self.irawq:next_i]
+            self.irawq = next_i
+            if next_i == max_i:
+                self.rawq = b''
+                self.irawq = 0
+            return slice
 
     def rawq_getchar(self):
         """Get next char from raw queue.
@@ -522,7 +547,7 @@ class Telnet:
             self.irawq = 0
         # The buffer size should be fairly small so as to avoid quadratic
         # behavior in process_rawq() above
-        buf = self.sock.recv(50)
+        buf = self.sock.recv(4096)
         self.msg("recv %r", buf)
         self.eof = (not buf)
         self.rawq = self.rawq + buf
