@@ -840,7 +840,7 @@ BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
     assert(PyTuple_CheckExact(self->excs));
     Py_ssize_t num_excs = PyTuple_Size(self->excs);
     return PyUnicode_FromFormat(
-        "%S (group of %zd exception%s)",
+        "%S (%zd sub-exception%s)",
         self->msg, num_excs, num_excs > 1 ? "s" : "");
 }
 

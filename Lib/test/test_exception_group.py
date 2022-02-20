@@ -107,14 +107,14 @@ class StrAndReprTests(unittest.TestCase):
         eg = BaseExceptionGroup(
             'flat', [ValueError(1), TypeError(2)])
 
-        self.assertEqual(str(eg), "flat (group of 2 exceptions)")
+        self.assertEqual(str(eg), "flat (2 sub-exceptions)")
         self.assertEqual(repr(eg),
             "ExceptionGroup('flat', [ValueError(1), TypeError(2)])")
 
         eg = BaseExceptionGroup(
             'nested', [eg, ValueError(1), eg, TypeError(2)])
 
-        self.assertEqual(str(eg), "nested (group of 4 exceptions)")
+        self.assertEqual(str(eg), "nested (4 sub-exceptions)")
         self.assertEqual(repr(eg),
             "ExceptionGroup('nested', "
                 "[ExceptionGroup('flat', "
@@ -127,7 +127,7 @@ class StrAndReprTests(unittest.TestCase):
         eg = BaseExceptionGroup(
             'flat', [ValueError(1), KeyboardInterrupt(2)])
 
-        self.assertEqual(str(eg), "flat (group of 2 exceptions)")
+        self.assertEqual(str(eg), "flat (2 sub-exceptions)")
         self.assertEqual(repr(eg),
             "BaseExceptionGroup("
                 "'flat', "
@@ -136,7 +136,7 @@ class StrAndReprTests(unittest.TestCase):
         eg = BaseExceptionGroup(
             'nested', [eg, ValueError(1), eg])
 
-        self.assertEqual(str(eg), "nested (group of 3 exceptions)")
+        self.assertEqual(str(eg), "nested (3 sub-exceptions)")
         self.assertEqual(repr(eg),
             "BaseExceptionGroup('nested', "
                 "[BaseExceptionGroup('flat', "
@@ -152,13 +152,13 @@ class StrAndReprTests(unittest.TestCase):
         eg = MyEG(
             'flat', [ValueError(1), TypeError(2)])
 
-        self.assertEqual(str(eg), "flat (group of 2 exceptions)")
+        self.assertEqual(str(eg), "flat (2 sub-exceptions)")
         self.assertEqual(repr(eg), "MyEG('flat', [ValueError(1), TypeError(2)])")
 
         eg = MyEG(
             'nested', [eg, ValueError(1), eg, TypeError(2)])
 
-        self.assertEqual(str(eg), "nested (group of 4 exceptions)")
+        self.assertEqual(str(eg), "nested (4 sub-exceptions)")
         self.assertEqual(repr(eg), (
                  "MyEG('nested', "
                      "[MyEG('flat', [ValueError(1), TypeError(2)]), "
