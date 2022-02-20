@@ -1062,10 +1062,10 @@ do_WSARecvFrom(OverlappedObject *self, HANDLE handle,
     int ret;
     DWORD err;
 
-    wsabuf.buf = PyBytes_AS_STRING(buf);
+    wsabuf.buf = PyBytes_AS_STRING(bufobj);
     wsabuf.len = buflen;
 
-    self->type = TYPE_READFROM;
+    self->type = TYPE_READ_FROM;
     self->handle = handle;
     self->read_from.allocated_buffer = bufobj;
     memset(&self->read_from.address, 0, sizeof(self->read_from.address));
