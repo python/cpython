@@ -915,6 +915,9 @@ stack_effect(int opcode, int oparg, int jump)
         case FOR_ITER:
             /* -1 at end of iterator, 1 if continue iterating. */
             return jump > 0 ? -1 : 1;
+        case FOR_END:
+            /* -1 at end of iterator, 1 if continue iterating. */
+            return jump == 0 ? -1 : 1;
         case SEND:
             return jump > 0 ? -1 : 0;
         case STORE_ATTR:
@@ -2970,11 +2973,9 @@ compiler_for(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, body);
     VISIT(c, expr, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
-    /* Mark jump as artificial */
-    UNSET_LOC(c);
-    ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
+    SET_LOC(c, s->v.For.iter);
+    ADDOP_JUMP(c, FOR_END, body);
     compiler_use_next_block(c, cleanup);
-
     compiler_pop_fblock(c, FOR_LOOP, start);
 
     VISIT_SEQ(c, stmt, s->v.For.orelse);

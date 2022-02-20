@@ -1378,7 +1378,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
 /* The stack can grow at most MAXINT deep, as co_nlocals and
    co_stacksize are ints. */
 #define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
-#define EMPTY()           (STACK_LEVEL() == 0)
 #define TOP()             (stack_pointer[-1])
 #define SECOND()          (stack_pointer[-2])
 #define THIRD()           (stack_pointer[-3])
@@ -1389,6 +1388,22 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define BASIC_STACKADJ(n) (stack_pointer += n)
 #define BASIC_PUSH(v)     (*stack_pointer++ = (v))
 #define BASIC_POP()       (*--stack_pointer)
+
+#ifdef Py_DEBUG
+#define ASSERT_EMPTY() do {                              \
+    if (STACK_LEVEL()) {                                 \
+        fprintf(stderr, "----\n");                       \
+        while (STACK_LEVEL()) {                          \
+            _PyObject_Dump(BASIC_POP());                 \
+            fprintf(stderr, "----\n");                   \
+        }                                                \
+        Py_FatalError("Unexpected items on the stack."); \
+    }                                                    \
+} while (0)
+#else
+#define ASSERT_EMPTY() ((void)0)
+#endif
+
 
 #ifdef LLTRACE
 #define PUSH(v)         { (void)(BASIC_PUSH(v), \
@@ -1434,6 +1449,19 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define GET_CACHE() \
     _GetSpecializedCacheEntryForInstruction(first_instr, INSTR_OFFSET(), oparg)
 
+#define MAYBE_QUICKEN() \
+    do { \
+        int err = _Py_IncrementCountAndMaybeQuicken(frame->f_code); \
+        if (err) { \
+            if (err < 0) { \
+                goto error; \
+            } \
+            /* Update first_instr and next_instr to point to newly quickened code */ \
+            int nexti = INSTR_OFFSET(); \
+            first_instr = frame->f_code->co_firstinstr; \
+            next_instr = first_instr + nexti; \
+        } \
+    } while (0)
 
 #define DEOPT_IF(cond, instname) if (cond) { goto instname ## _miss; }
 
@@ -1734,16 +1762,7 @@ handle_eval_breaker:
         }
 
         TARGET(RESUME) {
-            int err = _Py_IncrementCountAndMaybeQuicken(frame->f_code);
-            if (err) {
-                if (err < 0) {
-                    goto error;
-                }
-                /* Update first_instr and next_instr to point to newly quickened code */
-                int nexti = INSTR_OFFSET();
-                first_instr = frame->f_code->co_firstinstr;
-                next_instr = first_instr + nexti;
-            }
+            MAYBE_QUICKEN();
             JUMP_TO_INSTRUCTION(RESUME_QUICK);
         }
 
@@ -2374,7 +2393,7 @@ handle_eval_breaker:
 
         TARGET(RETURN_VALUE) {
             PyObject *retval = POP();
-            assert(EMPTY());
+            ASSERT_EMPTY();
             frame->f_state = FRAME_RETURNED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
@@ -4046,16 +4065,7 @@ handle_eval_breaker:
 
         TARGET(JUMP_ABSOLUTE) {
             PREDICTED(JUMP_ABSOLUTE);
-            int err = _Py_IncrementCountAndMaybeQuicken(frame->f_code);
-            if (err) {
-                if (err < 0) {
-                    goto error;
-                }
-                /* Update first_instr and next_instr to point to newly quickened code */
-                int nexti = INSTR_OFFSET();
-                first_instr = frame->f_code->co_firstinstr;
-                next_instr = first_instr + nexti;
-            }
+            MAYBE_QUICKEN();
             JUMP_TO_INSTRUCTION(JUMP_ABSOLUTE_QUICK);
         }
 
@@ -4222,6 +4232,39 @@ handle_eval_breaker:
             STACK_SHRINK(1);
             Py_DECREF(iter);
             JUMPBY(oparg);
+            DISPATCH();
+        }
+
+        TARGET(FOR_END) {
+            /* before: [iter]; after: [iter, iter()] *or* [] */
+            MAYBE_QUICKEN();
+            JUMP_TO_INSTRUCTION(FOR_END_QUICK);
+        }
+
+        TARGET(FOR_END_QUICK) {
+            PREDICTED(FOR_END_QUICK);
+            PyObject *iter = TOP();
+            PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            if (next != NULL) {
+                PUSH(next);
+                JUMPBY(oparg);
+                CHECK_EVAL_BREAKER();
+                PREDICT(STORE_FAST);
+                PREDICT(UNPACK_SEQUENCE);
+                DISPATCH();
+            }
+            if (_PyErr_Occurred(tstate)) {
+                if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                    goto error;
+                }
+                else if (tstate->c_tracefunc != NULL) {
+                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
+                }
+                _PyErr_Clear(tstate);
+            }
+            /* iterator ended normally */
+            STACK_SHRINK(1);
+            Py_DECREF(iter);
             DISPATCH();
         }
 
@@ -5152,7 +5195,7 @@ handle_eval_breaker:
             if (gen == NULL) {
                 goto error;
             }
-            assert(EMPTY());
+            ASSERT_EMPTY();
             _PyFrame_SetStackPointer(frame, stack_pointer);
             InterpreterFrame *gen_frame = (InterpreterFrame *)gen->gi_iframe;
             _PyFrame_Copy(frame, gen_frame);

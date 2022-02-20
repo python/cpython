@@ -194,6 +194,8 @@ def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
 
+jrel_op('FOR_END', 173)
+
 del def_op, name_op, jrel_op, jabs_op
 
 _nb_ops = [
@@ -264,6 +266,7 @@ _specialized_instructions = [
     "CALL_NO_KW_TYPE_1",
     "CALL_NO_KW_METHOD_DESCRIPTOR_FAST",
     "JUMP_ABSOLUTE_QUICK",
+    "FOR_END_QUICK",
     "LOAD_ATTR_ADAPTIVE",
     "LOAD_ATTR_INSTANCE_VALUE",
     "LOAD_ATTR_WITH_HINT",
