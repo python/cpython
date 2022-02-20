@@ -358,7 +358,7 @@ builtin_any(PyObject *module, PyObject *iterable)
 {
     PyObject *it, *item;
     PyObject *(*iternext)(PyObject *);
-    int cmp;
+    int cmp = 0;
 
     it = PyObject_GetIter(iterable);
     if (it == NULL)
