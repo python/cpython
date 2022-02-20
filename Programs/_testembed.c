@@ -1182,7 +1182,7 @@ static int test_open_code_hook(void)
     return result;
 }
 
-static int _audit_hook_clear_count = 0; 
+static int _audit_hook_clear_count = 0;
 
 static int _audit_hook(const char *event, PyObject *args, void *userdata)
 {
