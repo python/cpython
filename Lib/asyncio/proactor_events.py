@@ -699,8 +699,17 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     async def sock_recv_into(self, sock, buf):
         return await self._proactor.recv_into(sock, buf)
 
+    async def sock_recvfrom(self, sock, bufsize):
+        return await self._proactor.recvfrom(sock, bufsize)
+
+    async def sock_recvfrom_into(self, sock, buf, nbytes=0):
+        return await self._proactor.recvfrom_into(sock, buf, nbytes)
+
     async def sock_sendall(self, sock, data):
         return await self._proactor.send(sock, data)
+
+    async def sock_sendto(self, sock, data, address):
+        return await self._proactor.send(sock, data, 0, address)
 
     async def sock_connect(self, sock, address):
         return await self._proactor.connect(sock, address)

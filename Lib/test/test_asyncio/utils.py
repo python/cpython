@@ -281,6 +281,31 @@ def run_test_server(*, host='127.0.0.1', port=0, use_ssl=False):
                                 server_ssl_cls=SSLWSGIServer)
 
 
+def echo_datagrams(sock):
+    while True:
+        data, addr = sock.recvfrom(4096)
+        if data == b'STOP':
+            sock.close()
+            break
+        else:
+            sock.sendto(data, addr)
+
+
+@contextlib.contextmanager
+def run_udp_echo_server(*, host='127.0.0.1', port=0):
+    addr_info = socket.getaddrinfo(host, port, type=socket.SOCK_DGRAM)
+    family, type, proto, _, sockaddr = addr_info[0]
+    sock = socket.socket(family, type, proto)
+    sock.bind((host, port))
+    thread = threading.Thread(target=lambda: echo_datagrams(sock))
+    thread.start()
+    try:
+        yield sock.getsockname()
+    finally:
+        sock.sendto(b'STOP', sock.getsockname())
+        thread.join()
+
+
 def make_test_protocol(base):
     dct = {}
     for name in dir(base):

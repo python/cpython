@@ -1053,6 +1053,46 @@ do_WSARecv(OverlappedObject *self, HANDLE handle,
     }
 }
 
+static PyObject *
+do_WSARecvFrom(OverlappedObject *self, HANDLE handle,
+               PyObject *bufobj, DWORD buflen, DWORD flags)
+{
+    DWORD nread;
+    WSABUF wsabuf;
+    int ret;
+    DWORD err;
+
+    wsabuf.buf = PyBytes_AS_STRING(buf);
+    wsabuf.len = buflen;
+
+    self->type = TYPE_READFROM;
+    self->handle = handle;
+    self->read_from.allocated_buffer = bufobj;
+    memset(&self->read_from.address, 0, sizeof(self->read_from.address));
+    self->read_from.address_length = sizeof(self->read_from.address);
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = WSARecvFrom((SOCKET)handle, &wsabuf, 1, &nread, &flags,
+                      (SOCKADDR*)&self->read_from.address,
+                      &self->read_from.address_length,
+                      &self->overlapped, NULL);
+    Py_END_ALLOW_THREADS
+
+    self->error = err = (ret < 0 ? WSAGetLastError() : ERROR_SUCCESS);
+    switch(err) {
+    case ERROR_BROKEN_PIPE:
+        mark_as_completed(&self->overlapped);
+        return SetFromWindowsErr(err);
+    case ERROR_SUCCESS:
+    case ERROR_MORE_DATA:
+    case ERROR_IO_PENDING:
+        Py_RETURN_NONE;
+    default:
+        self->type = TYPE_NOT_STARTED;
+        return SetFromWindowsErr(err);
+    }
+}
+
 /*[clinic input]
 _overlapped.Overlapped.WSARecv
 
@@ -1766,11 +1806,7 @@ _overlapped_Overlapped_WSARecvFrom_impl(OverlappedObject *self,
                                         DWORD flags)
 /*[clinic end generated code: output=13832a2025b86860 input=1b2663fa130e0286]*/
 {
-    DWORD nread;
     PyObject *buf;
-    WSABUF wsabuf;
-    int ret;
-    DWORD err;
 
     if (self->type != TYPE_NONE) {
         PyErr_SetString(PyExc_ValueError, "operation already attempted");
@@ -1785,37 +1821,55 @@ _overlapped_Overlapped_WSARecvFrom_impl(OverlappedObject *self,
         return NULL;
     }
 
-    wsabuf.len = size;
-    wsabuf.buf = PyBytes_AS_STRING(buf);
-
-    self->type = TYPE_READ_FROM;
-    self->handle = handle;
-    self->read_from.allocated_buffer = buf;
-    memset(&self->read_from.address, 0, sizeof(self->read_from.address));
-    self->read_from.address_length = sizeof(self->read_from.address);
-
-    Py_BEGIN_ALLOW_THREADS
-    ret = WSARecvFrom((SOCKET)handle, &wsabuf, 1, &nread, &flags,
-                      (SOCKADDR*)&self->read_from.address,
-                      &self->read_from.address_length,
-                      &self->overlapped, NULL);
-    Py_END_ALLOW_THREADS
-
-    self->error = err = (ret < 0 ? WSAGetLastError() : ERROR_SUCCESS);
-
-    switch(err) {
-    case ERROR_BROKEN_PIPE:
-        mark_as_completed(&self->overlapped);
-        return SetFromWindowsErr(err);
-    case ERROR_SUCCESS:
-    case ERROR_MORE_DATA:
-    case ERROR_IO_PENDING:
-        Py_RETURN_NONE;
-    default:
-        self->type = TYPE_NOT_STARTED;
-        return SetFromWindowsErr(err);
-    }
+    return do_WSARecvFrom(self, handle, buf, size, flags);
 }
+
+
+/*[clinic input]
+_overlapped.Overlapped.WSARecvFromInto
+
+    handle: HANDLE
+    buf as bufobj: object
+    size: DWORD
+    flags: DWORD = 0
+    /
+
+Start overlapped receive.
+[clinic start generated code]*/
+
+static PyObject *
+_overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
+                                            HANDLE handle, PyObject *bufobj,
+                                            DWORD size, DWORD flags)
+/*[clinic end generated code: output=45fc5d883a11c4e5 input=8eacd80d50157434]*/
+{
+    if (self->type != TYPE_NONE) {
+        PyErr_SetString(PyExc_ValueError, "operation already attempted");
+        return NULL;
+    }
+
+    Py_buffer buffer;
+    if (!PyArg_Parse(bufobj, "y*", &buffer))
+        return NULL;
+
+#if SIZEOF_SIZE_T > SIZEOF_LONG
+    if (buffer.len > (Py_ssize_t)ULONG_MAX) {
+        PyBuffer_Release(&buffer);
+        PyErr_SetString(PyExc_ValueError, "buffer too large");
+        return NULL;
+    }
+#endif
+    if (buffer.len < size) {
+        PyBuffer_Release(&buffer);
+        PyErr_SetString(PyExc_ValueError,
+                        "nbytes is greater than the length of the buffer");
+        return NULL;
+    }
+
+    PyBuffer_Release(&buffer);
+    return do_WSARecvFrom(self, handle, bufobj, size, flags);
+}
+
 
 #include "clinic/overlapped.c.h"
 
@@ -1826,6 +1880,8 @@ static PyMethodDef Overlapped_methods[] = {
     _OVERLAPPED_OVERLAPPED_READFILEINTO_METHODDEF
     _OVERLAPPED_OVERLAPPED_WSARECV_METHODDEF
     _OVERLAPPED_OVERLAPPED_WSARECVINTO_METHODDEF
+    _OVERLAPPED_OVERLAPPED_WSARECVFROM_METHODDEF
+    _OVERLAPPED_OVERLAPPED_WSARECVFROMINTO_METHODDEF
     _OVERLAPPED_OVERLAPPED_WRITEFILE_METHODDEF
     _OVERLAPPED_OVERLAPPED_WSASEND_METHODDEF
     _OVERLAPPED_OVERLAPPED_ACCEPTEX_METHODDEF
