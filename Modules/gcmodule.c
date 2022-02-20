@@ -281,8 +281,12 @@ gc_list_move(PyGC_Head *node, PyGC_Head *list)
     /* Unlink from current list. */
     PyGC_Head *from_prev = GC_PREV(node);
     PyGC_Head *from_next = GC_NEXT(node);
-    _PyGCHead_SET_NEXT(from_prev, from_next);
-    _PyGCHead_SET_PREV(from_next, from_prev);
+    if (from_next) {
+      _PyGCHead_SET_NEXT(from_prev, from_next);
+    }
+    if (from_prev) {
+      _PyGCHead_SET_PREV(from_next, from_prev);
+    }
 
     /* Relink at end of new list. */
     // list must not have flags.  So we can skip macros.
@@ -1950,6 +1954,48 @@ gc_get_freeze_count_impl(PyObject *module)
 {
     GCState *gcstate = get_gc_state();
     return gc_list_size(&gcstate->permanent_generation.head);
+}
+
+
+static int
+immortalize_object(PyObject *obj, PyGC_Head *permanent_gen)
+{
+    if (_Py_IsImmortal(obj)) {
+      return 0;
+    }
+
+    // printf("Iterating: %s \n", PyUnicode_AsUTF8(PyObject_Repr(PyLong_FromVoidPtr(obj))));
+    _Py_SetImmortal(obj);
+    /* Special case for PyCodeObjects since they don't have a tp_traverse */
+    if (PyCode_Check(obj)) {
+        PyCodeObject *code = (PyCodeObject *)obj;
+        _Py_SetImmortal(code->co_code);
+        _Py_SetImmortal(code->co_consts);
+        _Py_SetImmortal(code->co_names);
+        _Py_SetImmortal(code->co_varnames);
+        _Py_SetImmortal(code->co_freevars);
+        _Py_SetImmortal(code->co_cellvars);
+        _Py_SetImmortal(code->co_filename);
+        _Py_SetImmortal(code->co_name);
+        _Py_SetImmortal(code->co_linetable);
+    }
+
+    PyTypeObject* tp = Py_TYPE(obj);
+    if (tp->tp_traverse) {
+        gc_list_move(AS_GC(obj), permanent_gen);
+        tp->tp_traverse(obj, (visitproc)immortalize_object, permanent_gen);
+    }
+    return 0;
+}
+
+PyObject *
+_PyGC_TransitiveImmortalize(PyObject *obj) {
+    Py_TYPE(obj)->tp_traverse(
+        obj,
+        (visitproc)immortalize_object,
+        &_PyThreadState_GET()->interp->gc.permanent_generation.head
+    );
+    Py_RETURN_NONE;
 }
 
 

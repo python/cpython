@@ -1829,6 +1829,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         if (mod == NULL) {
             goto error;
         }
+        _PyGC_TransitiveImmortalize(mod);
     }
 
     has_from = 0;
