@@ -432,7 +432,7 @@ class Telnet:
         try:
             while self.rawq:
                 if not self.iacseq:
-                    slice = self._rawq_getslice()
+                    slice = self._next_nonIAC_slice()
                     if slice:
                         buf[self.sb] = buf[self.sb] + slice
                     else:
