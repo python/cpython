@@ -9,6 +9,7 @@ from . import events
 from . import exceptions
 from . import tasks
 
+
 class TaskGroup:
 
     def __init__(self):
@@ -25,19 +26,20 @@ class TaskGroup:
         self._on_completed_fut = None
 
     def __repr__(self):
-        msg = f'<TaskGroup'
+        info = ['']
         if self._tasks:
-            msg += f' tasks:{len(self._tasks)}'
+            info.append(f'tasks={len(self._tasks)}')
         if self._unfinished_tasks:
-            msg += f' unfinished:{self._unfinished_tasks}'
+            info.append(f'unfinished={self._unfinished_tasks}')
         if self._errors:
-            msg += f' errors:{len(self._errors)}'
+            info.append(f'errors={len(self._errors)}')
         if self._aborting:
-            msg += ' cancelling'
+            info.append('cancelling')
         elif self._entered:
-            msg += ' entered'
-        msg += '>'
-        return msg
+            info.append('entered')
+
+        info_str = ' '.join(info)
+        return f'<TaskGroup{info_str}>'
 
     async def __aenter__(self):
         if self._entered:
