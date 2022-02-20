@@ -722,13 +722,6 @@ compiler_new_block(struct compiler *c)
 }
 
 static basicblock *
-compiler_next_block(struct compiler *c)
-{
-    assert(c->u->u_curblock);
-    return c->u->u_curblock;
-}
-
-static basicblock *
 compiler_use_next_block(struct compiler *c, basicblock *block)
 {
     assert(block != NULL);
@@ -1444,17 +1437,6 @@ static int
 compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 {
     return add_jump_to_block(c, c->u->u_curblock, opcode, -1, 0, 0, 0, b);
-}
-
-/* NEXT_BLOCK() creates an implicit jump from the current block
-   to the new block.
-
-   The returns inside this macro make it impossible to decref objects
-   created in the local function. Local objects should use the arena.
-*/
-#define NEXT_BLOCK(C) { \
-    if (compiler_next_block((C)) == NULL) \
-        return 0; \
 }
 
 #define ADDOP(C, OP) { \
@@ -2834,12 +2816,10 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
                 ADDOP_I(c, COPY, 2);
                 ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, i));
                 ADDOP_JUMP(c, POP_JUMP_IF_FALSE, cleanup);
-                NEXT_BLOCK(c);
             }
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
             ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, n));
             ADDOP_JUMP(c, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
-            NEXT_BLOCK(c);
             basicblock *end = compiler_new_block(c);
             if (end == NULL)
                 return 0;
@@ -2863,7 +2843,6 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
     /* general implementation */
     VISIT(c, expr, e);
     ADDOP_JUMP(c, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
-    NEXT_BLOCK(c);
     return 1;
 }
 
@@ -3139,7 +3118,6 @@ compiler_return(struct compiler *c, stmt_ty s)
         ADDOP_LOAD_CONST(c, s->v.Return.value->v.Constant.value);
     }
     ADDOP(c, RETURN_VALUE);
-    NEXT_BLOCK(c);
 
     return 1;
 }
@@ -3160,7 +3138,6 @@ compiler_break(struct compiler *c)
         return 0;
     }
     ADDOP_JUMP(c, JUMP_ABSOLUTE, loop->fb_exit);
-    NEXT_BLOCK(c);
     return 1;
 }
 
@@ -3177,7 +3154,6 @@ compiler_continue(struct compiler *c)
         return compiler_error(c, "'continue' not properly in loop");
     }
     ADDOP_JUMP(c, JUMP_ABSOLUTE, loop->fb_block);
-    NEXT_BLOCK(c)
     return 1;
 }
 
@@ -3359,7 +3335,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, TRY_EXCEPT, body);
     ADDOP_NOLINE(c, POP_BLOCK);
     if (s->v.Try.orelse && asdl_seq_LEN(s->v.Try.orelse)) {
-        NEXT_BLOCK(c);
         VISIT_SEQ(c, stmt, s->v.Try.orelse);
     }
     ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
@@ -3385,7 +3360,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         if (handler->v.ExceptHandler.type) {
             VISIT(c, expr, handler->v.ExceptHandler.type);
             ADDOP_JUMP(c, JUMP_IF_NOT_EXC_MATCH, except);
-            NEXT_BLOCK(c);
         }
         if (handler->v.ExceptHandler.name) {
             basicblock *cleanup_end, *cleanup_body;
@@ -3591,7 +3565,6 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         if (handler->v.ExceptHandler.type) {
             VISIT(c, expr, handler->v.ExceptHandler.type);
             ADDOP_JUMP(c, JUMP_IF_NOT_EG_MATCH, except);
-            NEXT_BLOCK(c);
         }
 
         basicblock *cleanup_end = compiler_new_block(c);
@@ -3676,7 +3649,6 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     ADDOP(c, PREP_RERAISE_STAR);
     ADDOP_I(c, COPY, 1);
     ADDOP_JUMP(c, POP_JUMP_IF_NOT_NONE, reraise);
-    NEXT_BLOCK(c);
 
     /* Nothing to reraise */
     ADDOP(c, POP_TOP);
@@ -3968,7 +3940,6 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
             }
         }
         ADDOP_I(c, RAISE_VARARGS, (int)n);
-        NEXT_BLOCK(c);
         break;
     case Try_kind:
         return compiler_try(c, s);
@@ -4514,7 +4485,6 @@ compiler_compare(struct compiler *c, expr_ty e)
             ADDOP_I(c, COPY, 2);
             ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, i));
             ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, cleanup);
-            NEXT_BLOCK(c);
         }
         VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
         ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, n));
@@ -5115,7 +5085,6 @@ compiler_sync_comprehension_generator(struct compiler *c,
         depth++;
         compiler_use_next_block(c, start);
         ADDOP_JUMP(c, FOR_ITER, anchor);
-        NEXT_BLOCK(c);
     }
     VISIT(c, expr, gen->target);
 
@@ -5125,7 +5094,6 @@ compiler_sync_comprehension_generator(struct compiler *c,
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
         if (!compiler_jump_if(c, e, if_cleanup, 0))
             return 0;
-        NEXT_BLOCK(c);
     }
 
     if (++gen_index < asdl_seq_LEN(generators))
@@ -5220,7 +5188,6 @@ compiler_async_comprehension_generator(struct compiler *c,
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
         if (!compiler_jump_if(c, e, if_cleanup, 0))
             return 0;
-        NEXT_BLOCK(c);
     }
 
     depth++;
@@ -5432,7 +5399,6 @@ compiler_with_except_finish(struct compiler *c, basicblock * cleanup) {
     if (exit == NULL)
         return 0;
     ADDOP_JUMP(c, POP_JUMP_IF_TRUE, exit);
-    NEXT_BLOCK(c);
     ADDOP_I(c, RERAISE, 2);
     compiler_use_next_block(c, cleanup);
     POP_EXCEPT_AND_RERAISE(c);
@@ -6171,7 +6137,6 @@ jump_to_fail_pop(struct compiler *c, pattern_context *pc, int op)
     Py_ssize_t pops = pc->on_top + PyList_GET_SIZE(pc->stores);
     RETURN_IF_FALSE(ensure_fail_pop(c, pc, pops));
     ADDOP_JUMP(c, op, pc->fail_pop[pops]);
-    NEXT_BLOCK(c);
     return 1;
 }
 
@@ -6181,7 +6146,6 @@ emit_and_reset_fail_pop(struct compiler *c, pattern_context *pc)
 {
     if (!pc->fail_pop_size) {
         assert(pc->fail_pop == NULL);
-        NEXT_BLOCK(c);
         return 1;
     }
     while (--pc->fail_pop_size) {
@@ -6684,7 +6648,6 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
         }
         assert(control);
         if (!compiler_addop_j(c, JUMP_FORWARD, end) ||
-            !compiler_next_block(c) ||
             !emit_and_reset_fail_pop(c, pc))
         {
             goto error;
@@ -8159,10 +8122,7 @@ assemble(struct compiler *c, int addNone)
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
 
-    /* Make sure every block that falls off the end returns None.
-       XXX NEXT_BLOCK() isn't quite right, because if the last
-       block ends with a jump or return b_next shouldn't set.
-     */
+    /* Make sure every block that falls off the end returns None. */
     if (!c->u->u_curblock->b_return) {
         UNSET_LOC(c);
         if (addNone)
