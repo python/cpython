@@ -106,19 +106,6 @@ class Timeout:
         self._state = _State.CANCELLING
         # drop the reference early
         self._timeout_handler = None
-        counter = _COUNTERS.get(self._task)
-        if counter is None:
-            _COUNTERS[self._task] = 1
-            self._task.add_done_callback(_drop_task)
-        else:
-            _COUNTERS[self._task] = counter + 1
-
-
-_COUNTERS: Dict[tasks.Task, int] = {}
-
-
-def _drop_task(task: tasks.Task) -> None:
-    del _COUNTERS[task]
 
 
 def timeout(delay: Optional[float]) -> Timeout:
