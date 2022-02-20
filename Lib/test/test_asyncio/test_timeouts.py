@@ -26,9 +26,11 @@ class BaseTimeoutTests:
         loop = asyncio.get_running_loop()
 
         with self.assertRaises(TimeoutError):
-            async with asyncio.timeout_at(loop.time() + 0.01) as cm:
+            deadline = loop.time() + 0.01
+            async with asyncio.timeout_at(deadline) as cm:
                 await asyncio.sleep(10)
         self.assertTrue(cm.expired())
+        self.assertEqual(deadline, cm.deadline)
 
     async def test_nested_timeouts(self):
         cancel = False
@@ -75,6 +77,7 @@ class BaseTimeoutTests:
         t1 = loop.time()
 
         self.assertFalse(cm.expired())
+        self.assertIsNone(cm.deadline)
         # finised fast. Very busy CI box requires high enough limit,
         # that's why 0.01 cannot be used
         self.assertLess(t1-t0, 2)
@@ -87,9 +90,52 @@ class BaseTimeoutTests:
         t1 = loop.time()
 
         self.assertFalse(cm.expired())
+        self.assertIsNone(cm.deadline)
         # finised fast. Very busy CI box requires high enough limit,
         # that's why 0.01 cannot be used
         self.assertLess(t1-t0, 2)
+
+    async def test_timeout_zero(self):
+        loop = asyncio.get_running_loop()
+        t0 = loop.time()
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(0) as cm:
+                await asyncio.sleep(10)
+        t1 = loop.time()
+        self.assertTrue(cm.expired())
+        # finised fast. Very busy CI box requires high enough limit,
+        # that's why 0.01 cannot be used
+        self.assertLess(t1-t0, 2)
+
+    async def test_foreign_exception_passed(self):
+        with self.assertRaises(KeyError):
+            async with asyncio.timeout(0.01) as cm:
+                raise KeyError
+        self.assertFalse(cm.expired())
+
+    async def test_foreign_cancel_doesnt_timeout_if_not_expired(self):
+        with self.assertRaises(asyncio.CancelledError):
+            async with asyncio.timeout(10) as cm:
+                raise asyncio.CancelledError
+        self.assertFalse(cm.expired())
+
+    async def test_outer_task_is_not_cancelled(self):
+
+        has_timeout = False
+
+        async def outer() -> None:
+            nonlocal has_timeout
+            try:
+                async with asyncio.timeout(0.001):
+                    await asyncio.sleep(1)
+            except asyncio.TimeoutError:
+                has_timeout = True
+
+        task = asyncio.create_task(outer())
+        await task
+        assert has_timeout
+        assert not task.cancelled()
+        assert task.done()
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
