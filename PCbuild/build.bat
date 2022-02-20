@@ -91,6 +91,7 @@ if "%~1"=="-E" (set IncludeExternals=false) & shift & goto CheckOpts
 if "%~1"=="--no-ctypes" (set IncludeCTypes=false) & shift & goto CheckOpts
 if "%~1"=="--no-ssl" (set IncludeSSL=false) & shift & goto CheckOpts
 if "%~1"=="--no-tkinter" (set IncludeTkinter=false) & shift & goto CheckOpts
+if "%~1"=="--inlinestat" (set InlineStat=true) & shift & goto CheckOpts
 
 if "%IncludeExternals%"=="" set IncludeExternals=true
 if "%IncludeCTypes%"=="" set IncludeCTypes=true
