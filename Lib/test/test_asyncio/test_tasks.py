@@ -2307,8 +2307,10 @@ class BaseTaskTests:
                         (asyncio.CancelledError, expected_args, 0),
                     )
                 else:
-                    self.fail('gather did not propagate the cancellation '
-                              'request')
+                    self.fail(
+                        'gather() does not propagate CancelledError '
+                        'raised by inner task to the gather() caller.'
+                    )
 
     def test_exception_traceback(self):
         # See http://bugs.python.org/issue28843
