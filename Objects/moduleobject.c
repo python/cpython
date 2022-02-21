@@ -572,7 +572,7 @@ PyModule_GetState(PyObject* m)
 }
 
 void
-_PyModule_ClearPhaseOne(PyObject *d)
+module_dict_clear_phase_one(PyObject *d)
 {
     /* Phase one only clears names starting with a single underscore
      * while also excluding modules from being deleted
@@ -584,13 +584,13 @@ _PyModule_ClearPhaseOne(PyObject *d)
     int verbose = _Py_GetConfig()->verbose;
     while (PyDict_Next(d, &pos, &key, &value)) {
         if (value == Py_None || PyModule_Check(value) || !PyUnicode_Check(key)) {
-          continue;
+            continue;
         }
         if (PyUnicode_READ_CHAR(key, 0) != '_') {
-          continue;
+            continue;
         }
         if (PyUnicode_READ_CHAR(key, 1) == '_') {
-          continue;
+            continue;
         }
         if (verbose > 1) {
             const char *s = PyUnicode_AsUTF8(key);
@@ -599,7 +599,6 @@ _PyModule_ClearPhaseOne(PyObject *d)
             else
                 PyErr_Clear();
         }
-        // printf("#   Phase 1 - Clearing: %s\n", PyUnicode_AsUTF8(PyObject_Repr(key)));
         if (PyDict_SetItem(d, key, Py_None) != 0) {
             PyErr_WriteUnraisable(NULL);
         }
@@ -607,7 +606,7 @@ _PyModule_ClearPhaseOne(PyObject *d)
 }
 
 void
-_PyModule_ClearPhaseTwo(PyObject *d)
+module_dict_clear_phase_two(PyObject *d)
 {
     /* Phase two, clears all names except for __builtins__ and modules */
     Py_ssize_t pos;
@@ -619,12 +618,12 @@ _PyModule_ClearPhaseTwo(PyObject *d)
     int verbose = _Py_GetConfig()->verbose;
     while (PyDict_Next(d, &pos, &key, &value)) {
         if (value == Py_None || PyModule_Check(value) || !PyUnicode_Check(key)) {
-          continue;
+            continue;
         }
         if (PyUnicode_READ_CHAR(key, 0) == '_' ||
             _PyUnicode_EqualToASCIIString(key, "__builtins__"))
         {
-          continue;
+            continue;
         }
         if (verbose > 1) {
             const char *s = PyUnicode_AsUTF8(key);
@@ -633,7 +632,6 @@ _PyModule_ClearPhaseTwo(PyObject *d)
             else
                 PyErr_Clear();
         }
-        // printf("#   Phase 2 - Clearing: %s\n", PyUnicode_AsUTF8(PyObject_Repr(key)));
         if (PyDict_SetItem(d, key, Py_None) != 0) {
             PyErr_WriteUnraisable(NULL);
         }
@@ -641,7 +639,7 @@ _PyModule_ClearPhaseTwo(PyObject *d)
 }
 
 void
-_PyModule_ClearPhaseThree(PyObject *d)
+module_dict_clear_phase_three(PyObject *d)
 {
     /* Phase three, clears all modules except __builtins__*/
     Py_ssize_t pos;
@@ -653,10 +651,10 @@ _PyModule_ClearPhaseThree(PyObject *d)
     int verbose = _Py_GetConfig()->verbose;
     while (PyDict_Next(d, &pos, &key, &value)) {
         if (value == Py_None || !PyModule_Check(value) || !PyUnicode_Check(key)) {
-          continue;
+            continue;
         }
         if (_PyUnicode_EqualToASCIIString(key, "__builtins__")) {
-          continue;
+            continue;
         }
         if (verbose > 1) {
             const char *s = PyUnicode_AsUTF8(key);
@@ -665,7 +663,6 @@ _PyModule_ClearPhaseThree(PyObject *d)
             else
                 PyErr_Clear();
         }
-        // printf("#   Phase 3 - Clearing: %s\n", PyUnicode_AsUTF8(PyObject_Repr(key)));
         if (PyDict_SetItem(d, key, Py_None) != 0) {
             PyErr_WriteUnraisable(NULL);
         }
@@ -673,21 +670,28 @@ _PyModule_ClearPhaseThree(PyObject *d)
 }
 
 void
-_PyModule_Clear(PyObject *m, int phase)
+_PyModule_Clear(PyObject *m)
+{
+    PyObject *d = ((PyModuleObject *)m)->md_dict;
+    if (d != NULL)
+        _PyModule_ClearDict(d);
+}
+
+void
+_PyModule_PhasedClear(PyObject *m, int phase)
 {
     PyObject *d = ((PyModuleObject *)m)->md_dict;
     if (d == NULL) {
       return;
     }
-    // printf("# Module: %s\n", PyUnicode_AsUTF8(PyObject_Repr(((PyModuleObject *)m)->md_name)));
     if (phase == 1) {
-       _PyModule_ClearPhaseOne(d);
+       module_dict_clear_phase_one(d);
     }
     if (phase == 2) {
-       _PyModule_ClearPhaseTwo(d);
+       module_dict_clear_phase_two(d);
     }
     if (phase == 3) {
-       _PyModule_ClearPhaseThree(d);
+       module_dict_clear_phase_three(d);
     }
 }
 

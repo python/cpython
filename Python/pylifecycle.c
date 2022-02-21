@@ -1501,7 +1501,7 @@ finalize_modules_clear_weaklist(PyThreadState *tstate,
             if (verbose && PyUnicode_Check(name)) {
                 PySys_FormatStderr("# cleanup[3] wiping %U\n", name);
             }
-            _PyModule_Clear(mod, phase);
+            _PyModule_PhasedClear(mod, phase);
             if (max_module_phase) {
               Py_DECREF(mod);
             }
