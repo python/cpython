@@ -17,6 +17,7 @@ __all__ = (
 class _State(enum.Enum):
     CREATED = "created"
     ENTERED = "active"
+    EXPIRING = "expiring"
     EXPIRED = "expired"
     EXITED = "exited"
 
@@ -58,7 +59,7 @@ class Timeout:
 
     def expired(self) -> bool:
         """Is timeout expired during execution?"""
-        return self._state is _State.EXPIRED
+        return self._state in (_State.EXPIRING, _State.EXPIRED)
 
     def __repr__(self) -> str:
         info = [str(self._state)]
@@ -81,13 +82,15 @@ class Timeout:
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Optional[bool]:
-        assert self._state in (_State.ENTERED, _State.EXPIRED)
+        assert self._state in (_State.ENTERED, _State.EXPIRING)
 
         if self._timeout_handler is not None:
             self._timeout_handler.cancel()
             self._timeout_handler = None
 
-        if self._state is _State.EXPIRED:
+        if self._state is _State.EXPIRING:
+            self._state = _State.EXPIRED
+
             if self._task.uncancel() == 0:
                 # Since there are no outstanding cancel requests, we're
                 # handling this.
@@ -100,7 +103,7 @@ class Timeout:
     def _on_timeout(self) -> None:
         assert self._state is _State.ENTERED
         self._task.cancel()
-        self._state = _State.EXPIRED
+        self._state = _State.EXPIRING
         # drop the reference early
         self._timeout_handler = None
 
