@@ -1964,7 +1964,6 @@ immortalize_object(PyObject *obj, PyGC_Head *permanent_gen)
       return 0;
     }
 
-    // printf("Iterating: %s \n", PyUnicode_AsUTF8(PyObject_Repr(PyLong_FromVoidPtr(obj))));
     _Py_SetImmortal(obj);
     /* Special case for PyCodeObjects since they don't have a tp_traverse */
     if (PyCode_Check(obj)) {
@@ -1990,6 +1989,7 @@ immortalize_object(PyObject *obj, PyGC_Head *permanent_gen)
 
 PyObject *
 _PyGC_TransitiveImmortalize(PyObject *obj) {
+    _Py_SetImmortal(obj);
     Py_TYPE(obj)->tp_traverse(
         obj,
         (visitproc)immortalize_object,
