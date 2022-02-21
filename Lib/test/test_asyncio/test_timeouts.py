@@ -1,6 +1,7 @@
 """Tests for asyncio/timeouts.py"""
 
 import unittest
+import time
 
 import asyncio
 from asyncio import tasks
@@ -15,6 +16,17 @@ class BaseTimeoutTests:
 
     def new_task(self, loop, coro, name='TestTask'):
         return self.__class__.Task(coro, loop=loop, name=name)
+
+    def _setupAsyncioLoop(self):
+        assert self._asyncioTestLoop is None, 'asyncio test loop already initialized'
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.set_debug(True)
+        self._asyncioTestLoop = loop
+        loop.set_task_factory(self.new_task)
+        fut = loop.create_future()
+        self._asyncioCallsTask = loop.create_task(self._asyncioLoopRunner(fut))
+        loop.run_until_complete(fut)
 
     async def test_timeout_basic(self):
         with self.assertRaises(TimeoutError):
@@ -136,6 +148,50 @@ class BaseTimeoutTests:
         assert has_timeout
         assert not task.cancelled()
         assert task.done()
+
+    async def test_nested_timeouts(self):
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(0.1) as outer:
+                try:
+                    async with asyncio.timeout(0.2) as inner:
+                        await asyncio.sleep(10)
+                except asyncio.TimeoutError:
+                    # Pretend we start a super long operation here.
+                    self.assertTrue(False)
+
+    async def test_nested_timeouts_concurrent(self):
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(0.002):
+                try:
+                    async with asyncio.timeout(0.003):
+                        # Pretend we crunch some numbers.
+                        time.sleep(0.005)
+                        await asyncio.sleep(1)
+                except asyncio.TimeoutError:
+                    pass
+
+    async def test_nested_timeouts_loop_busy(self):
+        """
+        After the inner timeout is an expensive operation which should
+        be stopped by the outer timeout.
+
+        Note: this fails for now.
+        """
+        start = time.perf_counter()
+        try:
+            async with asyncio.timeout(0.002) as outer:
+                try:
+                    async with asyncio.timeout(0.001) as inner:
+                        # Pretend the loop is busy for a while.
+                        time.sleep(0.010)
+                        await asyncio.sleep(0.001)
+                except asyncio.TimeoutError:
+                    # This sleep should be interrupted.
+                    await asyncio.sleep(0.050)
+        except asyncio.TimeoutError:
+            pass
+        took = time.perf_counter() - start
+        self.assertTrue(took <= 0.015)
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
