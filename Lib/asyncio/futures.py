@@ -132,7 +132,7 @@ class Future:
         This should only be called once when handling a cancellation since
         it erases the saved context exception value.
         """
-        if isinstance(self._cancelled_exc, exceptions.CancelledError):
+        if self._cancelled_exc is not None:
             exc = self._cancelled_exc
             self._cancelled_exc = None
             return exc

@@ -616,18 +616,10 @@ create_cancelled_error(FutureObj *fut)
 {
     PyObject *exc;
     if (fut->fut_cancelled_exc != NULL) {
+        /* transfer ownership */
         exc = fut->fut_cancelled_exc;
-        /* Check if exc is a CancelledError */
-        int res = PyObject_IsInstance(exc, asyncio_CancelledError);
-        if (res == -1) {
-            /* An error occurred, abort */
-            return NULL;
-        }
-        if (res == 1) {
-            /* exc is CancelledError; return it with transferring the ownership*/
-            fut->fut_cancelled_exc = NULL;
-            return exc;
-        }
+        fut->fut_cancelled_exc = NULL;
+        return exc;
     }
     PyObject *msg = fut->fut_cancel_msg;
     if (msg == NULL || msg == Py_None) {

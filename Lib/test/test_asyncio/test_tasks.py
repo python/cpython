@@ -637,13 +637,15 @@ class BaseTaskTests:
     def test_cancellation_exception_context(self):
         loop = asyncio.new_event_loop()
         self.set_event_loop(loop)
+        fut = loop.create_future()
 
         async def sleep():
+            fut.set_result(None)
             await asyncio.sleep(10)
 
         async def coro():
             inner_task = self.new_task(loop, sleep())
-            await asyncio.sleep(0)
+            await fut
             loop.call_soon(inner_task.cancel, 'msg')
             try:
                 await inner_task
