@@ -1,0 +1,1 @@
+Implement :func:`dict.resize`. Allow developers to resize dict on demand.
