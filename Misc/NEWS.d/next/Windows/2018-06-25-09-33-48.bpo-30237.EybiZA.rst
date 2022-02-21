@@ -1,2 +1,0 @@
-Output error when ReadConsole is canceled by CancelSynchronousIo instead of
-crashing.

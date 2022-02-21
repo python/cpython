@@ -56,7 +56,7 @@ ConfigParser -- responsible for parsing a list of
 
         When `interpolation` is given, it should be an Interpolation subclass
         instance. It will be used as the handler for option value
-        pre-processing when using getters. RawConfigParser object s don't do
+        pre-processing when using getters. RawConfigParser objects don't do
         any sort of interpolation, whereas ConfigParser uses an instance of
         BasicInterpolation. The library also provides a ``zc.buildbot``
         inspired ExtendedInterpolation implementation.
@@ -80,7 +80,7 @@ ConfigParser -- responsible for parsing a list of
         Return list of configuration options for the named section.
 
     read(filenames, encoding=None)
-        Read and parse the list of named configuration files, given by
+        Read and parse the iterable of named configuration files, given by
         name.  A single filename is also allowed.  Non-existing files
         are ignored.  Return list of successfully read files.
 
@@ -316,7 +316,7 @@ class ParsingError(Error):
     def filename(self):
         """Deprecated, use `source'."""
         warnings.warn(
-            "The 'filename' attribute will be removed in future versions.  "
+            "The 'filename' attribute will be removed in Python 3.12. "
             "Use 'source' instead.",
             DeprecationWarning, stacklevel=2
         )
@@ -326,7 +326,7 @@ class ParsingError(Error):
     def filename(self, value):
         """Deprecated, user `source'."""
         warnings.warn(
-            "The 'filename' attribute will be removed in future versions.  "
+            "The 'filename' attribute will be removed in Python 3.12. "
             "Use 'source' instead.",
             DeprecationWarning, stacklevel=2
         )
@@ -563,7 +563,7 @@ class RawConfigParser(MutableMapping):
     # Regular expressions for parsing section headers and options
     _SECT_TMPL = r"""
         \[                                 # [
-        (?P<header>[^]]+)                  # very permissive!
+        (?P<header>.+)                     # very permissive!
         \]                                 # ]
         """
     _OPT_TMPL = r"""
@@ -633,6 +633,11 @@ class RawConfigParser(MutableMapping):
             self._interpolation = self._DEFAULT_INTERPOLATION
         if self._interpolation is None:
             self._interpolation = Interpolation()
+        if not isinstance(self._interpolation, Interpolation):
+            raise TypeError(
+                f"interpolation= must be None or an instance of Interpolation;"
+                f" got an object of type {type(self._interpolation)}"
+            )
         if converters is not _UNSET:
             self._converters.update(converters)
         if defaults:
@@ -677,19 +682,20 @@ class RawConfigParser(MutableMapping):
         return list(opts.keys())
 
     def read(self, filenames, encoding=None):
-        """Read and parse a filename or a list of filenames.
+        """Read and parse a filename or an iterable of filenames.
 
         Files that cannot be opened are silently ignored; this is
-        designed so that you can specify a list of potential
+        designed so that you can specify an iterable of potential
         configuration file locations (e.g. current directory, user's
         home directory, systemwide directory), and all existing
-        configuration files in the list will be read.  A single
+        configuration files in the iterable will be read.  A single
         filename may also be given.
 
         Return list of successfully read files.
         """
         if isinstance(filenames, (str, bytes, os.PathLike)):
             filenames = [filenames]
+        encoding = io.text_encoding(encoding)
         read_ok = []
         for filename in filenames:
             try:
@@ -756,7 +762,7 @@ class RawConfigParser(MutableMapping):
     def readfp(self, fp, filename=None):
         """Deprecated, use read_file instead."""
         warnings.warn(
-            "This method will be removed in future versions.  "
+            "This method will be removed in Python 3.12. "
             "Use 'parser.read_file()' instead.",
             DeprecationWarning, stacklevel=2
         )
@@ -907,6 +913,9 @@ class RawConfigParser(MutableMapping):
 
         If `space_around_delimiters' is True (the default), delimiters
         between keys and values are surrounded by spaces.
+
+        Please note that comments in the original configuration file are not
+        preserved when writing the configuration back.
         """
         if space_around_delimiters:
             d = " {} ".format(self._delimiters[0])
@@ -1005,7 +1014,7 @@ class RawConfigParser(MutableMapping):
         Configuration files may include comments, prefixed by specific
         characters (`#' and `;' by default). Comments may appear on their own
         in an otherwise empty line or may be entered in lines holding values or
-        section names.
+        section names. Please note that comments get stripped off when reading configuration files.
         """
         elements_added = set()
         cursect = None                        # None, or a dictionary
@@ -1228,7 +1237,7 @@ class SafeConfigParser(ConfigParser):
         super().__init__(*args, **kwargs)
         warnings.warn(
             "The SafeConfigParser class has been renamed to ConfigParser "
-            "in Python 3.2. This alias will be removed in future versions."
+            "in Python 3.2. This alias will be removed in Python 3.12."
             " Use ConfigParser directly instead.",
             DeprecationWarning, stacklevel=2
         )

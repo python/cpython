@@ -183,8 +183,8 @@ def main(import_, options):
                 benchmarks = [b]
                 break
         else:
-            print('Unknown benchmark: {!r}'.format(options.benchmark,
-                  file=sys.stderr))
+            print('Unknown benchmark: {!r}'.format(options.benchmark),
+                  file=sys.stderr)
             sys.exit(1)
     seconds = 1
     seconds_plural = 's' if seconds > 1 else ''

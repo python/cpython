@@ -1,8 +1,8 @@
 import sys
 import unittest
-from test import support
+from test.support import import_helper
 
-pwd = support.import_module('pwd')
+pwd = import_helper.import_module('pwd')
 
 @unittest.skipUnless(hasattr(pwd, 'getpwall'), 'Does not have getpwall()')
 class PwdTest(unittest.TestCase):
@@ -21,7 +21,7 @@ class PwdTest(unittest.TestCase):
             self.assertEqual(e[3], e.pw_gid)
             self.assertIsInstance(e.pw_gid, int)
             self.assertEqual(e[4], e.pw_gecos)
-            self.assertIsInstance(e.pw_gecos, str)
+            self.assertIn(type(e.pw_gecos), (str, type(None)))
             self.assertEqual(e[5], e.pw_dir)
             self.assertIsInstance(e.pw_dir, str)
             self.assertEqual(e[6], e.pw_shell)
@@ -69,7 +69,7 @@ class PwdTest(unittest.TestCase):
 
         allnames = list(bynames.keys())
         namei = 0
-        fakename = allnames[namei]
+        fakename = allnames[namei] if allnames else "invaliduser"
         while fakename in bynames:
             chars = list(fakename)
             for i in range(len(chars)):

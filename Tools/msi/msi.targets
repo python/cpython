@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-    <Target Name="ProcessInstallFiles" AfterTargets="PrepareForBuild" Condition="@(InstallFiles) != ''">
+    <Target Name="ProcessInstallFiles"
+            AfterTargets="PrepareForBuild"
+            DependsOnTargets="FindPythonForBuild"
+            Condition="@(InstallFiles) != ''">
         <PropertyGroup>
             <_FileListTarget>$(IntermediateOutputPath)$(MSBuildProjectName).g.csv</_FileListTarget>
             <_InstallFilesTarget>$(IntermediateOutputPath)$(MSBuildProjectName).g.wxs</_InstallFilesTarget>
@@ -17,7 +20,7 @@
         </ItemGroup>
 
         <WriteLinesToFile File="$(_FileListTarget)" Lines="@(InstallFiles->'&quot;%(_Source)&quot;,&quot;%(_Target)&quot;,&quot;%(Group)&quot;,&quot;%(DiskId)&quot;,&quot;%(Condition)&quot;')" Overwrite="true" />
-        <Exec Command='"$(PythonExe)" csv_to_wxs.py "$(_FileListTarget)" "$(_InstallFilesTarget)"'
+        <Exec Command='$(PythonForBuild) csv_to_wxs.py "$(_FileListTarget)" "$(_InstallFilesTarget)"'
               WorkingDirectory="$(MSBuildThisFileDirectory)" />
 
         <ItemGroup>
@@ -47,7 +50,7 @@ EncodingType=
 
         <WriteLinesToFile File="$(_CatFileSourceTarget)" Lines="$(_CatFile)" Overwrite="true" />
         <Exec Command='$(_MakeCatCommand) "$(_CatFileSourceTarget)"' WorkingDirectory="$(MSBuildThisFileDirectory)" />
-        <Exec Command='$(_SignCommand) "$(_CatFileTarget)"' WorkingDirectory="$(MSBuildThisFileDirectory)"
+        <Exec Command='$(_SignCommand) "$(_CatFileTarget)" || $(_SignCommand) "$(_CatFileTarget)" || $(_SignCommand) "$(_CatFileTarget)"' WorkingDirectory="$(MSBuildThisFileDirectory)"
               Condition="Exists($(_CatFileTarget)) and '$(_SignCommand)' != ''" />
 
         <ItemGroup>
@@ -76,18 +79,18 @@ EncodingType=
 
     <Target Name="SignCabs">
         <Error Text="Unable to locate signtool.exe. Set /p:SignToolPath and rebuild" Condition="'$(_SignCommand)' == ''" />
-        <Exec Command="$(_SignCommand) @(SignCabs->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
+        <Exec Command="$(_SignCommand) @(SignCabs->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignCabs->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignCabs->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
     </Target>
     <Target Name="SignMsi">
         <Error Text="Unable to locate signtool.exe. Set /p:SignToolPath and rebuild" Condition="'$(_SignCommand)' == ''" />
-        <Exec Command="$(_SignCommand) @(SignMsi->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
+        <Exec Command="$(_SignCommand) @(SignMsi->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignMsi->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignMsi->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
     </Target>
     <Target Name="SignBundleEngine">
         <Error Text="Unable to locate signtool.exe. Set /p:SignToolPath and rebuild" Condition="'$(_SignCommand)' == ''" />
-        <Exec Command="$(_SignCommand) @(SignBundleEngine->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
+        <Exec Command="$(_SignCommand) @(SignBundleEngine->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignBundleEngine->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignBundleEngine->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
     </Target>
     <Target Name="SignBundle">
         <Error Text="Unable to locate signtool.exe. Set /p:SignToolPath and rebuild" Condition="'$(_SignCommand)' == ''" />
-        <Exec Command="$(_SignCommand) @(SignBundle->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
+        <Exec Command="$(_SignCommand) @(SignBundle->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignBundle->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignBundle->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
     </Target>
 </Project>

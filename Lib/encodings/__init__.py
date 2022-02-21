@@ -12,7 +12,7 @@
     * getregentry() -> codecs.CodecInfo object
     The getregentry() API must return a CodecInfo object with encoder, decoder,
     incrementalencoder, incrementaldecoder, streamwriter and streamreader
-    atttributes which adhere to the Python Codec Interface Standard.
+    attributes which adhere to the Python Codec Interface Standard.
 
     In addition, a module may optionally also define the following
     APIs which are then used by the package's codec search function:
@@ -61,7 +61,8 @@ def normalize_encoding(encoding):
         if c.isalnum() or c == '.':
             if punct and chars:
                 chars.append('_')
-            chars.append(c)
+            if c.isascii():
+                chars.append(c)
             punct = False
         else:
             punct = True
@@ -151,9 +152,6 @@ def search_function(encoding):
     # Return the registry entry
     return entry
 
-# Register the search_function in the Python codec registry
-codecs.register(search_function)
-
 if sys.platform == 'win32':
     def _alias_mbcs(encoding):
         try:
@@ -166,4 +164,8 @@ if sys.platform == 'win32':
             # Imports may fail while we are shutting down
             pass
 
+    # It must be registered before search_function()
     codecs.register(_alias_mbcs)
+
+# Register the search_function in the Python codec registry
+codecs.register(search_function)

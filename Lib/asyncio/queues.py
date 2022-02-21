@@ -2,9 +2,10 @@ __all__ = ('Queue', 'PriorityQueue', 'LifoQueue', 'QueueFull', 'QueueEmpty')
 
 import collections
 import heapq
+from types import GenericAlias
 
-from . import events
 from . import locks
+from . import mixins
 
 
 class QueueEmpty(Exception):
@@ -17,7 +18,7 @@ class QueueFull(Exception):
     pass
 
 
-class Queue:
+class Queue(mixins._LoopBoundMixin):
     """A queue, useful for coordinating producer and consumer coroutines.
 
     If maxsize is less than or equal to zero, the queue size is infinite. If it
@@ -29,11 +30,8 @@ class Queue:
     interrupted between calling qsize() and doing an operation on the Queue.
     """
 
-    def __init__(self, maxsize=0, *, loop=None):
-        if loop is None:
-            self._loop = events.get_event_loop()
-        else:
-            self._loop = loop
+    def __init__(self, maxsize=0, *, loop=mixins._marker):
+        super().__init__(loop=loop)
         self._maxsize = maxsize
 
         # Futures.
@@ -41,7 +39,7 @@ class Queue:
         # Futures.
         self._putters = collections.deque()
         self._unfinished_tasks = 0
-        self._finished = locks.Event(loop=self._loop)
+        self._finished = locks.Event()
         self._finished.set()
         self._init(maxsize)
 
@@ -71,6 +69,8 @@ class Queue:
 
     def __str__(self):
         return f'<{type(self).__name__} {self._format()}>'
+
+    __class_getitem__ = classmethod(GenericAlias)
 
     def _format(self):
         result = f'maxsize={self._maxsize!r}'
@@ -115,7 +115,7 @@ class Queue:
         slot is available before adding item.
         """
         while self.full():
-            putter = self._loop.create_future()
+            putter = self._get_loop().create_future()
             self._putters.append(putter)
             try:
                 await putter
@@ -153,7 +153,7 @@ class Queue:
         If queue is empty, wait until an item is available.
         """
         while self.empty():
-            getter = self._loop.create_future()
+            getter = self._get_loop().create_future()
             self._getters.append(getter)
             try:
                 await getter

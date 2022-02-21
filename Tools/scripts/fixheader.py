@@ -15,8 +15,8 @@ def process(filename):
     except IOError as msg:
         sys.stderr.write('%s: can\'t open: %s\n' % (filename, str(msg)))
         return
-    data = f.read()
-    f.close()
+    with f:
+        data = f.read()
     if data[:2] != '/*':
         sys.stderr.write('%s does not begin with C comment\n' % filename)
         return
@@ -25,25 +25,25 @@ def process(filename):
     except IOError as msg:
         sys.stderr.write('%s: can\'t write: %s\n' % (filename, str(msg)))
         return
-    sys.stderr.write('Processing %s ...\n' % filename)
-    magic = 'Py_'
-    for c in filename:
-        if ord(c)<=0x80 and c.isalnum():
-            magic = magic + c.upper()
-        else: magic = magic + '_'
-    sys.stdout = f
-    print('#ifndef', magic)
-    print('#define', magic)
-    print('#ifdef __cplusplus')
-    print('extern "C" {')
-    print('#endif')
-    print()
-    f.write(data)
-    print()
-    print('#ifdef __cplusplus')
-    print('}')
-    print('#endif')
-    print('#endif /*', '!'+magic, '*/')
+    with f:
+        sys.stderr.write('Processing %s ...\n' % filename)
+        magic = 'Py_'
+        for c in filename:
+            if ord(c)<=0x80 and c.isalnum():
+                magic = magic + c.upper()
+            else: magic = magic + '_'
+        print('#ifndef', magic, file=f)
+        print('#define', magic, file=f)
+        print('#ifdef __cplusplus', file=f)
+        print('extern "C" {', file=f)
+        print('#endif', file=f)
+        print(file=f)
+        f.write(data)
+        print(file=f)
+        print('#ifdef __cplusplus', file=f)
+        print('}', file=f)
+        print('#endif', file=f)
+        print('#endif /*', '!'+magic, '*/', file=f)
 
 if __name__ == '__main__':
     main()
