@@ -23,6 +23,9 @@ ABCs; these can, of course, be further derived. In addition, the
 a class or instance provides a particular interface, for example, if it is
 hashable or if it is a mapping.
 
+In addition to allowing virtual subclasses, abstract base classes cannot be
+instantiated unless they have no abstract methods or all of their abstract methods have been overridden. This allows code to be shared in a base class
+even when it doesn't make sense to use that base class on its own.
 
 This module provides the metaclass :class:`ABCMeta` for defining ABCs and
 a helper class :class:`ABC` to alternatively define ABCs through inheritance:
@@ -31,12 +34,14 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
 
    A helper class that has :class:`ABCMeta` as its metaclass.  With this class,
    an abstract base class can be created by simply deriving from :class:`ABC`
-   avoiding sometimes confusing metaclass usage, for example::
+   and declaring an abstract method::
 
      from abc import ABC
 
      class MyABC(ABC):
-         pass
+         @abstractmethod
+         def my_abstract_method(self):
+             ...
 
    Note that the type of :class:`ABC` is still :class:`ABCMeta`, therefore
    inheriting from :class:`ABC` requires the usual precautions regarding
@@ -47,7 +52,16 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
      from abc import ABCMeta
 
      class MyABC(metaclass=ABCMeta):
-         pass
+         @abstractmethod
+         def my_abstract_method(self):
+             ...
+
+   As any class that derives from an ABC also inherits its metaclass, Python
+   differentiates abstract and concrete classes by whether they implement any
+   abstract methods. A class with no abstract methods that derives from
+   :class:`ABC` will be considered concrete and can be instantiated. A class
+   with no abstract methods can still take advantage of this module's virtual
+   subclassing features.
 
    .. versionadded:: 3.4
 
@@ -64,6 +78,10 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
    won't show up in their MRO (Method Resolution Order) nor will method
    implementations defined by the registering ABC be callable (not even via
    :func:`super`). [#]_
+
+   Note that a class with the :class:`ABCMeta` metaclass will be considered
+   abstract only if has at least one abstract method that has not been
+   overridden.
 
    Classes created with a metaclass of :class:`ABCMeta` have the following method:
 
@@ -168,10 +186,11 @@ The :mod:`abc` module also provides the following decorator:
 
    Using this decorator requires that the class's metaclass is :class:`ABCMeta`
    or is derived from it.  A class that has a metaclass derived from
-   :class:`ABCMeta` cannot be instantiated unless all of its abstract methods
-   and properties are overridden.  The abstract methods can be called using any
-   of the normal 'super' call mechanisms.  :func:`abstractmethod` may be used
-   to declare abstract methods for properties and descriptors.
+   :class:`ABCMeta` cannot be instantiated unless it has no abstract methods
+   and all of its parent's abstract methods and properties have been
+   overridden.  The abstract methods can be called using any of the
+   normal 'super' call mechanisms.  :func:`abstractmethod` may be used to
+   declare abstract methods for properties and descriptors.
 
    Dynamically adding abstract methods to a class, or attempting to modify the
    abstraction status of a method or class once it is created, are only
@@ -227,14 +246,36 @@ The :mod:`abc` module also provides the following decorator:
               return any(getattr(f, '__isabstractmethod__', False) for
                          f in (self._fget, self._fset, self._fdel))
 
-   .. note::
+   Abstract methods may have an implementation. This implementation can be
+   called via the :func:`super` mechanism from the class that
+   overrides it::
 
-      Unlike Java abstract methods, these abstract
-      methods may have an implementation. This implementation can be
-      called via the :func:`super` mechanism from the class that
-      overrides it.  This could be useful as an end-point for a
-      super-call in a framework that uses cooperative
-      multiple-inheritance.
+      class NonZeroList(ABC):
+          def __init__(self):
+              self._data = []
+
+          @abstractmethod
+          def append_checked(self, item):
+              if item == 0:
+                  raise ValueError("Must be nonzero")
+              self._data.append(item)
+
+      class PositiveList(MyABC)
+          def append_checked(self, item):
+              if item < 0:
+                  raise ValueError("Must be positive")
+              super().append_checked(item)
+
+
+   You can signal that an abstract method's implementation
+   should not be used by raising :class:`NotImplementedError`::
+
+      class MyABC(ABC):
+          @abstractmethod
+          def my_abstract_method(self):
+              raise NotImplementedError
+
+
 
 The :mod:`abc` module also supports the following legacy decorators:
 

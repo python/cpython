@@ -444,7 +444,8 @@ attributes:
 
 .. function:: isabstract(object)
 
-   Return ``True`` if the object is an abstract base class.
+   Return ``True`` if the object is an abstract base class. Note that a
+   class must have at least one abstract method to be considered abstract.
 
 
 .. function:: ismethoddescriptor(object)
