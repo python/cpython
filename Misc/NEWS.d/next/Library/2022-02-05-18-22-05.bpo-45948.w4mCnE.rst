@@ -1,0 +1,5 @@
+Fixed a discrepancy in the C implementation of the
+:mod:`xml.etree.ElementTree` module. Now, instantiating an
+:class:`xml.etree.ElementTree.XMLParser` with a ``target=None``
+keyword provides a default :class:`xml.etree.ElementTree.TreeBuilder`
+target as the Python implementation does.

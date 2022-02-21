@@ -15,8 +15,7 @@ import threading
 import sys
 import tempfile
 import _multiprocessing
-
-from time import time as _time
+import time
 
 from . import context
 from . import process
@@ -77,16 +76,16 @@ class SemLock(object):
             # We only get here if we are on Unix with forking
             # disabled.  When the object is garbage collected or the
             # process shuts down we unlink the semaphore name
-            from .semaphore_tracker import register
-            register(self._semlock.name)
+            from .resource_tracker import register
+            register(self._semlock.name, "semaphore")
             util.Finalize(self, SemLock._cleanup, (self._semlock.name,),
                           exitpriority=0)
 
     @staticmethod
     def _cleanup(name):
-        from .semaphore_tracker import unregister
+        from .resource_tracker import unregister
         sem_unlink(name)
-        unregister(name)
+        unregister(name, "semaphore")
 
     def _make_methods(self):
         self.acquire = self._semlock.acquire
@@ -271,7 +270,7 @@ class Condition(object):
     def notify(self, n=1):
         assert self._lock._semlock._is_mine(), 'lock is not owned'
         assert not self._wait_semaphore.acquire(
-            False), ('notify: Should not have been able to acquire'
+            False), ('notify: Should not have been able to acquire '
                      + '_wait_semaphore')
 
         # to take account of timeouts since last notify*() we subtract
@@ -302,13 +301,13 @@ class Condition(object):
         if result:
             return result
         if timeout is not None:
-            endtime = _time() + timeout
+            endtime = time.monotonic() + timeout
         else:
             endtime = None
             waittime = None
         while not result:
             if endtime is not None:
-                waittime = endtime - _time()
+                waittime = endtime - time.monotonic()
                 if waittime <= 0:
                     break
             self.wait(waittime)
@@ -354,6 +353,9 @@ class Event(object):
                 return True
             return False
 
+    def __repr__(self) -> str:
+        set_status = 'set' if self.is_set() else 'unset'
+        return f"<{type(self).__qualname__} at {id(self):#x} {set_status}>"
 #
 # Barrier
 #

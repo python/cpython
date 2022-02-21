@@ -4,6 +4,8 @@
 Extending Distutils
 *******************
 
+.. include:: ./_setuptools_disclaimer.rst
+
 Distutils can be extended in various ways.  Most extensions take the form of new
 commands or replacements for existing commands.  New commands may be written to
 support new types of platform-specific packaging, for example, while

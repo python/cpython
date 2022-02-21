@@ -8,7 +8,7 @@
 
 --------------
 
-This module provides APIs to manage, store, and access non-local
+This module provides APIs to manage, store, and access context-local
 state.  The :class:`~contextvars.ContextVar` class is used to declare
 and work with *Context Variables*.  The :func:`~contextvars.copy_context`
 function and the :class:`~contextvars.Context` class should be used to
@@ -26,7 +26,7 @@ See also :pep:`567` for additional details.
 Context Variables
 -----------------
 
-.. class:: ContextVar(name, [\*, default])
+.. class:: ContextVar(name, [*, default])
 
    This class is used to declare a new Context Variable, e.g.::
 
@@ -47,6 +47,8 @@ Context Variables
    .. attribute:: ContextVar.name
 
       The name of the variable.  This is a read-only property.
+
+      .. versionadded:: 3.7.1
 
    .. method:: get([default])
 
@@ -92,7 +94,7 @@ Context Variables
           # var.get() would raise a LookupError.
 
 
-.. class:: contextvars.Token
+.. class:: Token
 
    *Token* objects are returned by the :meth:`ContextVar.set` method.
    They can be passed to the :meth:`ContextVar.reset` method to revert
@@ -144,7 +146,7 @@ Manual Context Management
 
    Context implements the :class:`collections.abc.Mapping` interface.
 
-   .. method:: run(callable, \*args, \*\*kwargs)
+   .. method:: run(callable, *args, **kwargs)
 
       Execute ``callable(*args, **kwargs)`` code in the context object
       the *run* method is called on.  Return the result of the execution
@@ -253,7 +255,7 @@ client::
         addr = writer.transport.get_extra_info('socket').getpeername()
         client_addr_var.set(addr)
 
-        # In any code that we call is is now possible to get
+        # In any code that we call is now possible to get
         # client's address by calling 'client_addr_var.get()'.
 
         while True:

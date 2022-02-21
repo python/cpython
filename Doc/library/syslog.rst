@@ -31,6 +31,8 @@ The module defines the following functions:
    If :func:`openlog` has not been called prior to the call to :func:`syslog`,
    ``openlog()`` will be called with no arguments.
 
+   .. audit-event:: syslog.syslog priority,message syslog.syslog
+
 
 .. function:: openlog([ident[, logoption[, facility]]])
 
@@ -45,10 +47,12 @@ The module defines the following functions:
    keyword argument (default is :const:`LOG_USER`) sets the default facility for
    messages which do not have a facility explicitly encoded.
 
+   .. audit-event:: syslog.openlog ident,logoption,facility syslog.openlog
+
    .. versionchanged:: 3.2
       In previous versions, keyword arguments were not allowed, and *ident* was
       required.  The default for *ident* was dependent on the system libraries,
-      and often was ``python`` instead of the name of the python program file.
+      and often was ``python`` instead of the name of the Python program file.
 
 
 .. function:: closelog()
@@ -60,6 +64,8 @@ The module defines the following functions:
    :func:`openlog` hasn't already been called), and *ident* and other
    :func:`openlog` parameters are reset to defaults.
 
+   .. audit-event:: syslog.closelog "" syslog.closelog
+
 
 .. function:: setlogmask(maskpri)
 
@@ -69,6 +75,8 @@ The module defines the following functions:
    calculates the mask for the individual priority *pri*.  The function
    ``LOG_UPTO(pri)`` calculates the mask for all priorities up to and including
    *pri*.
+
+   .. audit-event:: syslog.setlogmask maskpri syslog.setlogmask
 
 The module defines the following constants:
 

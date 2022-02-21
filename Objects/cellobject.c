@@ -1,8 +1,7 @@
 /* Cell object implementation */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
 
 PyObject *
 PyCell_New(PyObject *obj)
@@ -17,6 +16,37 @@ PyCell_New(PyObject *obj)
 
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
+}
+
+PyDoc_STRVAR(cell_new_doc,
+"cell([contents])\n"
+"--\n"
+"\n"
+"Create a new cell object.\n"
+"\n"
+"  contents\n"
+"    the contents of the cell. If not specified, the cell will be empty,\n"
+"    and \n further attempts to access its cell_contents attribute will\n"
+"    raise a ValueError.");
+
+
+static PyObject *
+cell_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *obj = NULL;
+
+    if (!_PyArg_NoKeywords("cell", kwargs)) {
+        goto exit;
+    }
+    /* min = 0: we allow the cell to be empty */
+    if (!PyArg_UnpackTuple(args, "cell", 0, 1, &obj)) {
+        goto exit;
+    }
+    return_value = PyCell_New(obj);
+
+exit:
+    return return_value;
 }
 
 PyObject *
@@ -80,7 +110,7 @@ cell_repr(PyCellObject *op)
         return PyUnicode_FromFormat("<cell at %p: empty>", op);
 
     return PyUnicode_FromFormat("<cell at %p: %.80s object at %p>",
-                               op, op->ob_ref->ob_type->tp_name,
+                               op, Py_TYPE(op->ob_ref)->tp_name,
                                op->ob_ref);
 }
 
@@ -111,7 +141,7 @@ cell_get_contents(PyCellObject *op, void *closure)
 }
 
 static int
-cell_set_contents(PyCellObject *op, PyObject *obj)
+cell_set_contents(PyCellObject *op, PyObject *obj, void *Py_UNUSED(ignored))
 {
     Py_XINCREF(obj);
     Py_XSETREF(op->ob_ref, obj);
@@ -130,10 +160,10 @@ PyTypeObject PyCell_Type = {
     sizeof(PyCellObject),
     0,
     (destructor)cell_dealloc,                   /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)cell_repr,                        /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -145,7 +175,7 @@ PyTypeObject PyCell_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    0,                                          /* tp_doc */
+    cell_new_doc,                               /* tp_doc */
     (traverseproc)cell_traverse,                /* tp_traverse */
     (inquiry)cell_clear,                        /* tp_clear */
     cell_richcompare,                           /* tp_richcompare */
@@ -155,4 +185,13 @@ PyTypeObject PyCell_Type = {
     0,                                          /* tp_methods */
     0,                                          /* tp_members */
     cell_getsetlist,                            /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    (newfunc)cell_new,                          /* tp_new */
+    0,                                          /* tp_free */
 };

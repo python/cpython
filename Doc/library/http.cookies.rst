@@ -55,8 +55,9 @@ in Cookie name (as :attr:`~Morsel.key`).
 .. class:: SimpleCookie([input])
 
    This class derives from :class:`BaseCookie` and overrides :meth:`value_decode`
-   and :meth:`value_encode` to be the identity and :func:`str` respectively.
-
+   and :meth:`value_encode`. SimpleCookie supports strings as cookie values.
+   When setting the value, SimpleCookie calls the builtin :func:`str()` to convert
+   the value to a string. Values received from HTTP are kept as strings.
 
 .. seealso::
 
@@ -76,15 +77,16 @@ Cookie Objects
 
 .. method:: BaseCookie.value_decode(val)
 
-   Return a decoded value from a string representation. Return value can be any
-   type. This method does nothing in :class:`BaseCookie` --- it exists so it can be
-   overridden.
+   Return a tuple ``(real_value, coded_value)`` from a string representation.
+   ``real_value`` can be any type. This method does no decoding in
+   :class:`BaseCookie` --- it exists so it can be overridden.
 
 
 .. method:: BaseCookie.value_encode(val)
 
-   Return an encoded value. *val* can be any type, but return value must be a
-   string. This method does nothing in :class:`BaseCookie` --- it exists so it can
+   Return a tuple ``(real_value, coded_value)``. *val* can be any type, but
+   ``coded_value`` will always be converted to a string.
+   This method does no encoding in :class:`BaseCookie` --- it exists so it can
    be overridden.
 
    In general, it should be the case that :meth:`value_encode` and
@@ -137,10 +139,15 @@ Morsel Objects
    * ``secure``
    * ``version``
    * ``httponly``
+   * ``samesite``
 
    The attribute :attr:`httponly` specifies that the cookie is only transferred
    in HTTP requests, and is not accessible through JavaScript. This is intended
    to mitigate some forms of cross-site scripting.
+
+   The attribute :attr:`samesite` specifies that the browser is not allowed to
+   send the cookie along with cross-site requests. This helps to mitigate CSRF
+   attacks. Valid values for this attribute are "Strict" and "Lax".
 
    The keys are case-insensitive and their default value is ``''``.
 
@@ -152,6 +159,9 @@ Morsel Objects
       Attributes :attr:`~Morsel.key`, :attr:`~Morsel.value` and
       :attr:`~Morsel.coded_value` are read-only.  Use :meth:`~Morsel.set` for
       setting them.
+
+   .. versionchanged:: 3.8
+      Added support for the :attr:`samesite` attribute.
 
 
 .. attribute:: Morsel.value

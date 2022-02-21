@@ -186,8 +186,7 @@ INTERNAL_ERROR        = -32603
 
 class Error(Exception):
     """Base class for client errors."""
-    def __str__(self):
-        return repr(self)
+    __str__ = object.__str__
 
 ##
 # Indicates an HTTP-level protocol error.  This is raised by the HTTP
@@ -265,16 +264,22 @@ boolean = Boolean = bool
 
 # Issue #13305: different format codes across platforms
 _day0 = datetime(1, 1, 1)
-if _day0.strftime('%Y') == '0001':      # Mac OS X
+def _try(fmt):
+    try:
+        return _day0.strftime(fmt) == '0001'
+    except ValueError:
+        return False
+if _try('%Y'):      # Mac OS X
     def _iso8601_format(value):
         return value.strftime("%Y%m%dT%H:%M:%S")
-elif _day0.strftime('%4Y') == '0001':   # Linux
+elif _try('%4Y'):   # Linux
     def _iso8601_format(value):
         return value.strftime("%4Y%m%dT%H:%M:%S")
 else:
     def _iso8601_format(value):
         return value.strftime("%Y%m%dT%H:%M:%S").zfill(17)
 del _day0
+del _try
 
 
 def _strftime(value):
@@ -314,31 +319,38 @@ class DateTime:
             s = self.timetuple()
             o = other.timetuple()
         else:
-            otype = (hasattr(other, "__class__")
-                     and other.__class__.__name__
-                     or type(other))
-            raise TypeError("Can't compare %s and %s" %
-                            (self.__class__.__name__, otype))
+            s = self
+            o = NotImplemented
         return s, o
 
     def __lt__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s < o
 
     def __le__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s <= o
 
     def __gt__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s > o
 
     def __ge__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s >= o
 
     def __eq__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s == o
 
     def timetuple(self):
@@ -436,7 +448,7 @@ class ExpatParser:
         target.xml(encoding, None)
 
     def feed(self, data):
-        self._parser.Parse(data, 0)
+        self._parser.Parse(data, False)
 
     def close(self):
         try:
@@ -869,8 +881,6 @@ class MultiCall:
     def __repr__(self):
         return "<%s at %#x>" % (self.__class__.__name__, id(self))
 
-    __str__ = __repr__
-
     def __getattr__(self, name):
         return _MultiCallMethod(self.__call_list, name)
 
@@ -1131,10 +1141,12 @@ class Transport:
     # that they can decode such a request
     encode_threshold = None #None = don't encode
 
-    def __init__(self, use_datetime=False, use_builtin_types=False):
+    def __init__(self, use_datetime=False, use_builtin_types=False,
+                 *, headers=()):
         self._use_datetime = use_datetime
         self._use_builtin_types = use_builtin_types
         self._connection = (None, None)
+        self._headers = list(headers)
         self._extra_headers = []
 
     ##
@@ -1214,7 +1226,7 @@ class Transport:
         if isinstance(host, tuple):
             host, x509 = host
 
-        auth, host = urllib.parse.splituser(host)
+        auth, host = urllib.parse._splituser(host)
 
         if auth:
             auth = urllib.parse.unquote_to_bytes(auth)
@@ -1265,7 +1277,7 @@ class Transport:
 
     def send_request(self, host, handler, request_body, debug):
         connection = self.make_connection(host)
-        headers = self._extra_headers[:]
+        headers = self._headers + self._extra_headers
         if debug:
             connection.set_debuglevel(1)
         if self.accept_gzip_encoding and gzip:
@@ -1347,9 +1359,11 @@ class Transport:
 class SafeTransport(Transport):
     """Handles an HTTPS transaction to an XML-RPC server."""
 
-    def __init__(self, use_datetime=False, use_builtin_types=False, *,
-                 context=None):
-        super().__init__(use_datetime=use_datetime, use_builtin_types=use_builtin_types)
+    def __init__(self, use_datetime=False, use_builtin_types=False,
+                 *, headers=(), context=None):
+        super().__init__(use_datetime=use_datetime,
+                         use_builtin_types=use_builtin_types,
+                         headers=headers)
         self.context = context
 
     # FIXME: mostly untested
@@ -1409,19 +1423,20 @@ class ServerProxy:
 
     def __init__(self, uri, transport=None, encoding=None, verbose=False,
                  allow_none=False, use_datetime=False, use_builtin_types=False,
-                 *, context=None):
+                 *, headers=(), context=None):
         # establish a "logical" server connection
 
         # get the url
-        type, uri = urllib.parse.splittype(uri)
-        if type not in ("http", "https"):
+        p = urllib.parse.urlsplit(uri)
+        if p.scheme not in ("http", "https"):
             raise OSError("unsupported XML-RPC protocol")
-        self.__host, self.__handler = urllib.parse.splithost(uri)
+        self.__host = p.netloc
+        self.__handler = urllib.parse.urlunsplit(["", "", *p[2:]])
         if not self.__handler:
             self.__handler = "/RPC2"
 
         if transport is None:
-            if type == "https":
+            if p.scheme == "https":
                 handler = SafeTransport
                 extra_kwargs = {"context": context}
             else:
@@ -1429,6 +1444,7 @@ class ServerProxy:
                 extra_kwargs = {}
             transport = handler(use_datetime=use_datetime,
                                 use_builtin_types=use_builtin_types,
+                                headers=headers,
                                 **extra_kwargs)
         self.__transport = transport
 
@@ -1462,8 +1478,6 @@ class ServerProxy:
             "<%s for %s%s>" %
             (self.__class__.__name__, self.__host, self.__handler)
             )
-
-    __str__ = __repr__
 
     def __getattr__(self, name):
         # magic method dispatcher

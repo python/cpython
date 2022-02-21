@@ -31,6 +31,8 @@ class TestDecode(CTest):
 
 class TestEncode(CTest):
     def test_make_encoder(self):
+        # bpo-6986: The interpreter shouldn't crash in case c_make_encoder()
+        # receives invalid arguments.
         self.assertRaises(TypeError, self.json.encoder.c_make_encoder,
             (True, False),
             b"\xCD\x7D\x3D\x4E\x12\x4C\xF9\x79\xD7\x52\xBA\x82\xF2\x27\x4A\x7D\xA0\xCA\x75",
@@ -56,6 +58,15 @@ class TestEncode(CTest):
                                                False, False, False)
         with self.assertRaises(ZeroDivisionError):
             enc('spam', 4)
+
+    def test_bad_markers_argument_to_encoder(self):
+        # https://bugs.python.org/issue45269
+        with self.assertRaisesRegex(
+            TypeError,
+            r'make_encoder\(\) argument 1 must be dict or None, not int',
+        ):
+            self.json.encoder.c_make_encoder(1, None, None, None, ': ', ', ',
+                                             False, False, False)
 
     def test_bad_bool_args(self):
         def test(name):
