@@ -4088,7 +4088,6 @@ class _TestSharedMemory(BaseTestCase):
             ['howdy', b'HoWdY', -273.154, 100, None, True, 42]
         )
         self.addCleanup(sl.shm.unlink)
-
         # Verify __repr__
         self.assertIn(sl.shm.name, str(sl))
         self.assertIn(str(list(sl)), str(sl))
@@ -4102,9 +4101,9 @@ class _TestSharedMemory(BaseTestCase):
             sl[7] = 2
 
         # Assign value without format change (str -> str)
-        current_format = sl._get_offset_and_packing_format(0)[1]
+        current_format = sl._get_packing_format(0)
         sl[0] = 'howdy'
-        self.assertEqual(current_format, sl._get_offset_and_packing_format(0)[1])
+        self.assertEqual(current_format, sl._get_packing_format(0))
 
         # Verify attributes are readable.
         self.assertEqual(sl.format, '8s8sdqxxxxxx?xxxxxxxx?q')
