@@ -1800,7 +1800,7 @@ compiler_call_exit_with_nones(struct compiler *c) {
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_I(c, PRECALL, 2);
-    ADDOP_I(c, CALL, 0);
+    ADDOP_I(c, CALL, 2);
     return 1;
 }
 
@@ -4679,16 +4679,12 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 
     if (kwdsl) {
         VISIT_SEQ(c, keyword, kwds);
-        ADDOP_I(c, PRECALL, argsl + kwdsl);
         if (!compiler_call_simple_kw_helper(c, kwds, kwdsl)) {
             return 0;
         };
-        ADDOP_I(c, CALL, kwdsl);
     }
-    else {
-        ADDOP_I(c, PRECALL, argsl);
-        ADDOP_I(c, CALL, 0);
-    }
+    ADDOP_I(c, PRECALL, argsl + kwdsl);
+    ADDOP_I(c, CALL, argsl + kwdsl);
     c->u->u_lineno = old_lineno;
     return 1;
 }
@@ -4758,7 +4754,7 @@ compiler_joined_str(struct compiler *c, expr_ty e)
             ADDOP_I(c, LIST_APPEND, 1);
         }
         ADDOP_I(c, PRECALL, 1);
-        ADDOP_I(c, CALL, 0);
+        ADDOP_I(c, CALL, 1);
     }
     else {
         VISIT_SEQ(c, expr, e->v.JoinedStr.values);
@@ -4927,18 +4923,13 @@ compiler_call_helper(struct compiler *c,
     }
     if (nkwelts) {
         VISIT_SEQ(c, keyword, keywords);
-        ADDOP_I(c, PRECALL, n + nelts + nkwelts);
         if (!compiler_call_simple_kw_helper(c, keywords, nkwelts)) {
             return 0;
         };
-        ADDOP_I(c, CALL, nkwelts);
-        return 1;
     }
-    else {
-        ADDOP_I(c, PRECALL, n + nelts);
-        ADDOP_I(c, CALL, 0);
-        return 1;
-    }
+    ADDOP_I(c, PRECALL, n + nelts + nkwelts);
+    ADDOP_I(c, CALL, n + nelts + nkwelts);
+    return 1;
 
 ex_call:
 
