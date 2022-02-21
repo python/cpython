@@ -1597,7 +1597,7 @@ is_method(PyObject **stack_pointer, int args) {
 }
 
 #define KWNAMES_LEN() \
-    (call_shape.kwnames == NULL ? 0 :  PyTuple_GET_SIZE(call_shape.kwnames))
+    (call_shape.kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(call_shape.kwnames)))
 
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int throwflag)
