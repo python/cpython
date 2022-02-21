@@ -2288,8 +2288,8 @@ class _BasePathTest(object):
         self.assertTrue(R.is_mount())
         if os_helper.can_symlink():
             self.assertFalse((P / 'linkA').is_mount())
-        self.assertIs(self.cls('/\udfff').is_mount(), False)
-        self.assertIs(self.cls('/\x00').is_mount(), False)
+        self.assertIs((R / '\udfff').is_mount(), False)
+        self.assertIs((R / '\x00').is_mount(), False)
 
     def test_is_symlink(self):
         P = self.cls(BASE)
