@@ -94,6 +94,7 @@ static PyObject * special_lookup(PyThreadState *, PyObject *, _Py_Identifier *);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static void format_kwargs_error(PyThreadState *, PyObject *func, PyObject *kwargs);
 static void format_awaitable_error(PyThreadState *, PyTypeObject *, int, int);
+static void unknown_opcode_error(PyThreadState *, PyFrameObject *, int);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -4418,11 +4419,7 @@ main_loop:
         _unknown_opcode:
 #endif
         default:
-            fprintf(stderr,
-                "XXX lineno: %d, opcode: %d\n",
-                PyFrame_GetLineNumber(f),
-                opcode);
-            _PyErr_SetString(tstate, PyExc_SystemError, "unknown opcode");
+            unknown_opcode_error(tstate, f, opcode);
             goto error;
 
         } /* switch */
@@ -6308,6 +6305,16 @@ format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int prevprevop
                           type->tp_name);
         }
     }
+}
+
+_Py_NO_INLINE static void
+unknown_opcode_error(PyThreadState *tstate, PyFrameObject *f, int opcode)
+{
+    fprintf(stderr,
+        "XXX lineno: %d, opcode: %d\n",
+        PyFrame_GetLineNumber(f),
+        opcode);
+    _PyErr_SetString(tstate, PyExc_SystemError, "unknown opcode");
 }
 
 static PyObject *
