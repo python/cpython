@@ -288,6 +288,8 @@ class _ExecutorManagerThread(threading.Thread):
         self.thread_wakeup = executor._executor_manager_thread_wakeup
         self.shutdown_lock = executor._shutdown_lock
 
+        # Make mp.util.debug available even during runtime shutdown
+        self._debugp = mp.util.debug
         # A weakref.ref to the ProcessPoolExecutor that owns this thread. Used
         # to determine if the ProcessPoolExecutor has been garbage collected
         # and that the manager can exit.
@@ -297,9 +299,8 @@ class _ExecutorManagerThread(threading.Thread):
         def weakref_cb(_,
                        thread_wakeup=self.thread_wakeup,
                        shutdown_lock=self.shutdown_lock):
-            # TODO(eelizondo): mp doesn't exist anymore here
-            # mp.util.debug('Executor collected: triggering callback for'
-            #               ' QueueManager wakeup')
+            self._debugp('Executor collected: triggering callback for'
+                          ' QueueManager wakeup')
             # ./python Lib/test/test_concurrent_futures.py ProcessPoolForkProcessPoolShutdownTest.test_interpreter_shutdown
             with shutdown_lock:
                 thread_wakeup.wakeup()

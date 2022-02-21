@@ -1583,7 +1583,6 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertNotIn("Error", err)
             self.assertIn("ResourceWarning: Implicitly cleaning up", err)
 
-    @unittest.skipIf(True, 'TODO(eelizondo): Modules unavailable for __del__')
     def test_exit_on_shutdown(self):
         # Issue #22427
         with self.do_create() as dir:

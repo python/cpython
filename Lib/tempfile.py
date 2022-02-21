@@ -804,6 +804,9 @@ class TemporaryDirectory:
             warn_message="Implicitly cleaning up {!r}".format(self),
             ignore_errors=self._ignore_cleanup_errors)
 
+        # Make _os.path.exists available even during runtime shutdown
+        self._exists = _os.path.exists
+
     @classmethod
     def _rmtree(cls, name, ignore_errors=False):
         def onerror(func, path, exc_info):
@@ -850,7 +853,7 @@ class TemporaryDirectory:
         self.cleanup()
 
     def cleanup(self):
-        if self._finalizer.detach() or _os.path.exists(self.name):
+        if self._finalizer.detach() or self._exists(self.name):
             self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
 
     __class_getitem__ = classmethod(_types.GenericAlias)
