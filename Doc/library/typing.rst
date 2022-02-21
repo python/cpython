@@ -1486,9 +1486,9 @@ These are not used in annotations. They are building blocks for declaring types.
    etc., we must use the functional syntax.
    Example::
 
-      # raise SyntaxError
+      # raises SyntaxError
       class Point2D(TypedDict):
-          in: int  # 'in'(a keyword)
+          in: int  # 'in' is a keyword
           x-y: int  # name with hyphens
 
       # OK, functional syntax
@@ -1531,7 +1531,7 @@ These are not used in annotations. They are building blocks for declaring types.
 
    .. attribute:: __annotations__
 
-      ``Point2D.__annotations__`` gives a dict maps the field names to the field types::
+      ``Point2D.__annotations__`` gives a dict which maps the field names to the field types::
 
          >>> from typing import TypedDict
          >>> class Point2D(TypedDict):
@@ -1543,7 +1543,10 @@ These are not used in annotations. They are building blocks for declaring types.
 
    .. attribute:: __total__
 
-      ``Point2D.__total__`` gives the value of the ``total`` argument::
+      ``Point2D.__total__`` gives the value of the ``total`` argument. Furthermore,
+      inherited items won't be affected by the totality flag which defined in superclass,
+      and instead use totality of the TypedDict type where they were defined.
+      Example::
 
          >>> class Point2D(TypedDict): pass
          >>> Point2D.__total__
@@ -1551,13 +1554,16 @@ These are not used in annotations. They are building blocks for declaring types.
          >>> class Point2D(TypedDict, total=False): pass
          >>> Point2D.__total__
          False
+         >>> class Point3D(Point2D): pass
+         >>> Point3D.__total__
+         True
 
    .. attribute:: __required_keys__
    .. attribute:: __optional_keys__
 
       ``Point2D.__required_keys__`` and ``Point2D.__optional_keys__`` return
-      ``frozenset`` objects containing required and optional keys, respectively.
-      Currently the only way to set required and optional keys is mixed inheritance,
+      ``frozenset`` objects containing required and potentially-missing keys, respectively.
+      Currently the only way to set required and potentially-missing keys is mixed inheritance,
       declaring a ``TypedDict`` with one value for the ``total`` argument and
       then inheriting it from another ``TypedDict`` with a different value for ``total``.
       Usage::
@@ -1569,10 +1575,10 @@ These are not used in annotations. They are building blocks for declaring types.
          >>> class Point3D(Point2D):
          ...     z: int
          ...
-         >>> Point3D.__required_keys__
-         frozenset({'z'})
-         >>> Point3D.__optional_keys__
-         frozenset({'x', 'y'})
+         >>> Point3D.__required_keys__ == frozenset({'z'})
+         True
+         >>> Point3D.__optional_keys__ == frozenset({'x', 'y'})
+         True
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
