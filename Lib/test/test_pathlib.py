@@ -2275,10 +2275,12 @@ class _BasePathTest(object):
         self.assertIs((P / 'fileA\udfff').is_file(), False)
         self.assertIs((P / 'fileA\x00').is_file(), False)
 
-    @only_posix
     def test_is_mount(self):
         P = self.cls(BASE)
-        R = self.cls('/')  # TODO: Work out Windows.
+        if os.name == 'nt':
+            R = self.cls('c:\\')
+        else:
+            R = self.cls('/')
         self.assertFalse((P / 'fileA').is_mount())
         self.assertFalse((P / 'dirA').is_mount())
         self.assertFalse((P / 'non-existing').is_mount())
