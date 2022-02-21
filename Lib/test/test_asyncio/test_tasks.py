@@ -124,8 +124,10 @@ class BaseTaskTests:
         t.cancel('my message')
         self.assertEqual(t._cancel_message, 'my message')
 
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(asyncio.CancelledError) as cm:
             self.loop.run_until_complete(t)
+
+        self.assertEqual('my message', cm.exception.args[0])
 
     def test_task_cancel_message_setter(self):
         async def coro():
@@ -135,8 +137,10 @@ class BaseTaskTests:
         t._cancel_message = 'my new message'
         self.assertEqual(t._cancel_message, 'my new message')
 
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(asyncio.CancelledError) as cm:
             self.loop.run_until_complete(t)
+
+        self.assertEqual('my new message', cm.exception.args[0])
 
     def test_task_del_collect(self):
         class Evil:
@@ -590,11 +594,11 @@ class BaseTaskTests:
                 with self.assertRaises(asyncio.CancelledError) as cm:
                     loop.run_until_complete(task)
                 exc = cm.exception
-                self.assertEqual(exc.args, ())
+                self.assertEqual(exc.args, expected_args)
 
                 actual = get_innermost_context(exc)
                 self.assertEqual(actual,
-                    (asyncio.CancelledError, expected_args, 2))
+                    (asyncio.CancelledError, expected_args, 0))
 
     def test_cancel_with_message_then_future_exception(self):
         # Test Future.exception() after calling cancel() with a message.
@@ -624,11 +628,39 @@ class BaseTaskTests:
                 with self.assertRaises(asyncio.CancelledError) as cm:
                     loop.run_until_complete(task)
                 exc = cm.exception
-                self.assertEqual(exc.args, ())
+                self.assertEqual(exc.args, expected_args)
 
                 actual = get_innermost_context(exc)
                 self.assertEqual(actual,
-                    (asyncio.CancelledError, expected_args, 2))
+                    (asyncio.CancelledError, expected_args, 0))
+
+    def test_cancellation_exception_context(self):
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+        fut = loop.create_future()
+
+        async def sleep():
+            fut.set_result(None)
+            await asyncio.sleep(10)
+
+        async def coro():
+            inner_task = self.new_task(loop, sleep())
+            await fut
+            loop.call_soon(inner_task.cancel, 'msg')
+            try:
+                await inner_task
+            except asyncio.CancelledError as ex:
+                raise ValueError("cancelled") from ex
+
+        task = self.new_task(loop, coro())
+        with self.assertRaises(ValueError) as cm:
+            loop.run_until_complete(task)
+        exc = cm.exception
+        self.assertEqual(exc.args, ('cancelled',))
+
+        actual = get_innermost_context(exc)
+        self.assertEqual(actual,
+            (asyncio.CancelledError, ('msg',), 1))
 
     def test_cancel_with_message_before_starting_task(self):
         loop = asyncio.new_event_loop()
@@ -648,11 +680,11 @@ class BaseTaskTests:
         with self.assertRaises(asyncio.CancelledError) as cm:
             loop.run_until_complete(task)
         exc = cm.exception
-        self.assertEqual(exc.args, ())
+        self.assertEqual(exc.args, ('my message',))
 
         actual = get_innermost_context(exc)
         self.assertEqual(actual,
-            (asyncio.CancelledError, ('my message',), 2))
+            (asyncio.CancelledError, ('my message',), 0))
 
     def test_cancel_yield(self):
         async def task():
@@ -2296,15 +2328,17 @@ class BaseTaskTests:
                 try:
                     loop.run_until_complete(main())
                 except asyncio.CancelledError as exc:
-                    self.assertEqual(exc.args, ())
-                    exc_type, exc_args, depth = get_innermost_context(exc)
-                    self.assertEqual((exc_type, exc_args),
-                        (asyncio.CancelledError, expected_args))
-                    # The exact traceback seems to vary in CI.
-                    self.assertIn(depth, (2, 3))
+                    self.assertEqual(exc.args, expected_args)
+                    actual = get_innermost_context(exc)
+                    self.assertEqual(
+                        actual,
+                        (asyncio.CancelledError, expected_args, 0),
+                    )
                 else:
-                    self.fail('gather did not propagate the cancellation '
-                              'request')
+                    self.fail(
+                        'gather() does not propagate CancelledError '
+                        'raised by inner task to the gather() caller.'
+                    )
 
     def test_exception_traceback(self):
         # See http://bugs.python.org/issue28843

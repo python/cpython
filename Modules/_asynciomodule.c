@@ -77,7 +77,7 @@ typedef enum {
     int prefix##_blocking;                                                  \
     PyObject *dict;                                                         \
     PyObject *prefix##_weakreflist;                                         \
-    _PyErr_StackItem prefix##_cancelled_exc_state;
+    PyObject *prefix##_cancelled_exc;
 
 typedef struct {
     FutureObj_HEAD(fut)
@@ -496,7 +496,7 @@ future_init(FutureObj *fut, PyObject *loop)
     Py_CLEAR(fut->fut_exception);
     Py_CLEAR(fut->fut_source_tb);
     Py_CLEAR(fut->fut_cancel_msg);
-    _PyErr_ClearExcState(&fut->fut_cancelled_exc_state);
+    Py_CLEAR(fut->fut_cancelled_exc);
 
     fut->fut_state = STATE_PENDING;
     fut->fut_log_tb = 0;
@@ -612,25 +612,32 @@ future_set_exception(FutureObj *fut, PyObject *exc)
 }
 
 static PyObject *
-create_cancelled_error(PyObject *msg)
+create_cancelled_error(FutureObj *fut)
 {
     PyObject *exc;
+    if (fut->fut_cancelled_exc != NULL) {
+        /* transfer ownership */
+        exc = fut->fut_cancelled_exc;
+        fut->fut_cancelled_exc = NULL;
+        return exc;
+    }
+    PyObject *msg = fut->fut_cancel_msg;
     if (msg == NULL || msg == Py_None) {
         exc = PyObject_CallNoArgs(asyncio_CancelledError);
     } else {
         exc = PyObject_CallOneArg(asyncio_CancelledError, msg);
     }
+    PyException_SetContext(exc, fut->fut_cancelled_exc);
+    Py_CLEAR(fut->fut_cancelled_exc);
     return exc;
 }
 
 static void
 future_set_cancelled_error(FutureObj *fut)
 {
-    PyObject *exc = create_cancelled_error(fut->fut_cancel_msg);
+    PyObject *exc = create_cancelled_error(fut);
     PyErr_SetObject(asyncio_CancelledError, exc);
     Py_DECREF(exc);
-
-    _PyErr_ChainStackItem(&fut->fut_cancelled_exc_state);
 }
 
 static int
@@ -793,7 +800,7 @@ FutureObj_clear(FutureObj *fut)
     Py_CLEAR(fut->fut_exception);
     Py_CLEAR(fut->fut_source_tb);
     Py_CLEAR(fut->fut_cancel_msg);
-    _PyErr_ClearExcState(&fut->fut_cancelled_exc_state);
+    Py_CLEAR(fut->fut_cancelled_exc);
     Py_CLEAR(fut->dict);
     return 0;
 }
@@ -809,11 +816,8 @@ FutureObj_traverse(FutureObj *fut, visitproc visit, void *arg)
     Py_VISIT(fut->fut_exception);
     Py_VISIT(fut->fut_source_tb);
     Py_VISIT(fut->fut_cancel_msg);
+    Py_VISIT(fut->fut_cancelled_exc);
     Py_VISIT(fut->dict);
-
-    _PyErr_StackItem *exc_state = &fut->fut_cancelled_exc_state;
-    Py_VISIT(exc_state->exc_value);
-
     return 0;
 }
 
@@ -1369,15 +1373,7 @@ static PyObject *
 _asyncio_Future__make_cancelled_error_impl(FutureObj *self)
 /*[clinic end generated code: output=a5df276f6c1213de input=ac6effe4ba795ecc]*/
 {
-    PyObject *exc = create_cancelled_error(self->fut_cancel_msg);
-    _PyErr_StackItem *exc_state = &self->fut_cancelled_exc_state;
-
-    if (exc_state->exc_value) {
-        PyException_SetContext(exc, Py_NewRef(exc_state->exc_value));
-        _PyErr_ClearExcState(exc_state);
-    }
-
-    return exc;
+    return create_cancelled_error(self);
 }
 
 /*[clinic input]
@@ -2677,7 +2673,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
 
         if (!exc) {
             /* exc was not a CancelledError */
-            exc = create_cancelled_error(task->task_cancel_msg);
+            exc = create_cancelled_error((FutureObj*)task);
 
             if (!exc) {
                 goto fail;
@@ -2751,8 +2747,8 @@ task_step_impl(TaskObj *task, PyObject *exc)
             Py_XDECREF(et);
 
             FutureObj *fut = (FutureObj*)task;
-            _PyErr_StackItem *exc_state = &fut->fut_cancelled_exc_state;
-            exc_state->exc_value = ev;
+            /* transfer ownership */
+            fut->fut_cancelled_exc = ev;
 
             return future_cancel(fut, NULL);
         }
