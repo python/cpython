@@ -497,4 +497,4 @@ class ShareableList:
         else:
             raise ValueError(f"{value!r} not in this container")
 
-    # __class_getitem__ = classmethod(types.GenericAlias)
+    __class_getitem__ = classmethod(types.GenericAlias)
