@@ -116,9 +116,9 @@ to start a process.  These *start methods* are
 
   *forkserver*
     When the program starts and selects the *forkserver* start method,
-    a server process is started.  From then on, whenever a new process
+    a server process is spawned.  From then on, whenever a new process
     is needed, the parent process connects to the server and requests
-    that it fork a new process.  The fork server process is single
+    that it forks a new process.  The fork server process is single
     threaded so it is safe for it to use :func:`os.fork`.  No
     unnecessary resources are inherited.
 
@@ -1459,7 +1459,7 @@ inherited by child processes.
    Otherwise, *size_or_initializer* is a sequence which is used to initialize
    the array and whose length determines the length of the array.
 
-   If *lock* is ``True`` (the default) then a new lock object is created to
+   If *lock* is ``True`` (the default) then a new recursive lock object is created to
    synchronize access to the value.  If *lock* is a :class:`Lock` or
    :class:`RLock` object then that will be used to synchronize access to the
    value.  If *lock* is ``False`` then access to the returned object will not be
