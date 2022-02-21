@@ -1246,6 +1246,25 @@ class Path(PurePath):
             # Non-encodable path
             return False
 
+    def is_mount(self):
+        """
+        Check if this path is a POSIX mount point
+        """
+        # Need to exist and be a dir
+        if not self.exists() or not self.is_dir():
+            return False
+
+        try:
+            parent_dev = self.parent.stat().st_dev
+        except OSError:
+            return False
+
+        dev = self.stat().st_dev
+        if dev != parent_dev:
+            return True
+        ino = self.stat().st_ino
+        parent_ino = self.parent.stat().st_ino
+        return ino == parent_ino
 
     def is_symlink(self):
         """
@@ -1361,26 +1380,6 @@ class PosixPath(Path, PurePosixPath):
         import grp
         return grp.getgrgid(self.stat().st_gid).gr_name
 
-    def is_mount(self):
-        """
-        Check if this path is a POSIX mount point
-        """
-        # Need to exist and be a dir
-        if not self.exists() or not self.is_dir():
-            return False
-
-        try:
-            parent_dev = self.parent.stat().st_dev
-        except OSError:
-            return False
-
-        dev = self.stat().st_dev
-        if dev != parent_dev:
-            return True
-        ino = self.stat().st_ino
-        parent_ino = self.parent.stat().st_ino
-        return ino == parent_ino
-
 
 class WindowsPath(Path, PureWindowsPath):
     """Path subclass for Windows systems.
@@ -1408,10 +1407,4 @@ class WindowsPath(Path, PureWindowsPath):
         raise NotImplementedError("Path.group() is unsupported on this system")
 
     def is_mount(self):
-        """
-        Check if this path is a POSIX mount point
-        """
-        warnings.warn("pathlib.WindowsPath.is_mount() is deprecated and "
-                      "scheduled for removal in Python 3.13.",
-                      DeprecationWarning, stacklevel=2)
         raise NotImplementedError("Path.is_mount() is unsupported on this system")

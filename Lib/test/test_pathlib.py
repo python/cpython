@@ -1373,12 +1373,6 @@ class WindowsPathAsPureTest(PureWindowsPathTest):
             with self.assertRaises(NotImplementedError):
                 P('c:/').group()
 
-    def test_is_mount(self):
-        P = self.cls
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(NotImplementedError):
-                P('c:/').is_mount()
-
 
 class _BasePathTest(object):
     """Tests for the FS-accessing functionalities of the Path classes."""

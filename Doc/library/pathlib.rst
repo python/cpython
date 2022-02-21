@@ -849,9 +849,7 @@ call fails (for example because the path doesn't exist).
    function checks whether *path*'s parent, :file:`path/..`, is on a different
    device than *path*, or whether :file:`path/..` and *path* point to the same
    i-node on the same device --- this should detect mount points for all Unix
-   and POSIX variants.
-
-   .. availability:: Unix.
+   and POSIX variants.  Not implemented on Windows.
 
    .. versionadded:: 3.7
 

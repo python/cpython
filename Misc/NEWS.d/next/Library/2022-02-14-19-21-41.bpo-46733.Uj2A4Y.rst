@@ -1,3 +1,2 @@
-Deprecate :meth:`pathlib.WindowsPath.owner()`,
-:meth:`~pathlib.WindowsPath.group()` and
-:meth:`~pathlib.WindowsPath.is_mount()`.
+Deprecate :meth:`pathlib.WindowsPath.owner()` and
+:meth:`~pathlib.WindowsPath.group()`.
