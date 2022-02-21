@@ -854,12 +854,8 @@ class PureWindowsPath(PurePath):
 
 
 class _AbstractPath(PurePath, ABC):
-    """PurePath subclass with abstract methods for making system calls.
-
-    In a future version of Python, the this class's interface may be exposed
-    as a public API, losing its underscore prefix. However, in its current
-    state it should be considered a private implementation detail with no
-    stability guarantees. Please direct feedback to bpo-24132.
+    """Private PurePath subclass with abstract methods for opening files and
+    listing directories.
     """
     __slots__ = ()
 
