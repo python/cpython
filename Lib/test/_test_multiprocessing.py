@@ -4088,6 +4088,7 @@ class _TestSharedMemory(BaseTestCase):
             ['howdy', b'HoWdY', -273.154, 100, None, True, 42]
         )
         self.addCleanup(sl.shm.unlink)
+
         # Verify __repr__
         self.assertIn(sl.shm.name, str(sl))
         self.assertIn(str(list(sl)), str(sl))
