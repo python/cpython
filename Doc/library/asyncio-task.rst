@@ -843,6 +843,9 @@ Task Object
       .. versionchanged:: 3.9
          Added the *msg* parameter.
 
+      .. versionchanged:: 3.11
+         The ``msg`` parameter is propagated from cancelled task to its awaiter.
+
       .. _asyncio_example_task_cancel:
 
       The following example illustrates how coroutines can intercept
