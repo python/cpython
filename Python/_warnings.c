@@ -1141,8 +1141,7 @@ warnings_filters_mutated(PyObject *self, PyObject *args)
     if (st == NULL) {
         return NULL;
     }
-    st->filters_version++;
-    Py_RETURN_NONE;
+    return PyLong_FromLong(st->filters_version++);
 }
 
 static PyObject *
