@@ -972,21 +972,20 @@ class SysModuleTest(unittest.TestCase):
         rc, stdout, stderr = assert_python_ok('-c', code)
         self.assertEqual(stdout.rstrip(), b'True')
 
-    @unittest.skipIf(True, 'TODO(eelizondo): __del__ order changed')
     def test_issue20602(self):
         # sys.flags and sys.float_info were wiped during shutdown.
         code = """if 1:
             import sys
             class A:
                 def __del__(self, sys=sys):
-                    print(sys.flags)
-                    print(sys.float_info)
+                    print(sys.flags, file=sys.stderr)
+                    print(sys.float_info, file=sys.stderr)
             a = A()
             """
         rc, out, err = assert_python_ok('-c', code)
-        out = out.splitlines()
-        self.assertIn(b'sys.flags', out[0])
-        self.assertIn(b'sys.float_info', out[1])
+        err = err.splitlines()
+        self.assertIn(b'sys.flags', err[0])
+        self.assertIn(b'sys.float_info', err[1])
 
     def test_sys_ignores_cleaning_up_user_data(self):
         code = """if 1:

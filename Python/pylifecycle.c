@@ -1568,6 +1568,9 @@ finalize_modules(PyThreadState *tstate)
         Py_DECREF(weaklist);
     }
 
+    // Collect the leftover garbage of the immortal modules
+    _PyGC_CollectNoFail(tstate);
+
     // Clear sys and builtins modules dict
     finalize_clear_sys_builtins_dict(interp, verbose);
 

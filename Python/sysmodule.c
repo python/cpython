@@ -2074,8 +2074,8 @@ error:
 }
 
 
-static PyObject *
-list_stdlib_module_names(void)
+PyObject *
+_PySys_StdlibModuleNameList(void)
 {
     Py_ssize_t len = Py_ARRAY_LENGTH(_Py_stdlib_module_names);
     PyObject *names = PyTuple_New(len);
@@ -2810,7 +2810,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("hash_info", get_hash_info(tstate));
     SET_SYS("maxunicode", PyLong_FromLong(0x10FFFF));
     SET_SYS("builtin_module_names", list_builtin_module_names());
-    SET_SYS("stdlib_module_names", list_stdlib_module_names());
+    SET_SYS("stdlib_module_names", _PySys_StdlibModuleNameList());
 #if PY_BIG_ENDIAN
     SET_SYS_FROM_STRING("byteorder", "big");
 #else

@@ -7,6 +7,8 @@ PyAPI_FUNC(PyObject *) _PySys_GetAttr(PyThreadState *tstate,
 PyAPI_FUNC(PyObject *) _PySys_GetObjectId(_Py_Identifier *key);
 PyAPI_FUNC(int) _PySys_SetObjectId(_Py_Identifier *key, PyObject *);
 
+PyAPI_FUNC(PyObject *) _PySys_StdlibModuleNameList(void);
+
 PyAPI_FUNC(size_t) _PySys_GetSizeOf(PyObject *);
 
 typedef int(*Py_AuditHookFunction)(const char *, PyObject *, void *);

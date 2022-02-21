@@ -2182,7 +2182,6 @@ class TestSorted(unittest.TestCase):
 
 class ShutdownTest(unittest.TestCase):
 
-    @unittest.skipIf(True, 'TODO(eelizondo): __del__ order changed')
     def test_cleanup(self):
         # Issue #19255: builtins are still available at shutdown
         code = """if 1:
@@ -2190,11 +2189,11 @@ class ShutdownTest(unittest.TestCase):
             import sys
 
             class C:
-                def __del__(self):
-                    print("before")
+                def __del__(self, sys=sys):
+                    print("before", file=sys.stderr)
                     # Check that builtins still exist
                     len(())
-                    print("after")
+                    print("after", file=sys.stderr)
 
             c = C()
             # Make this module survive until builtins and sys are cleaned
@@ -2212,7 +2211,7 @@ class ShutdownTest(unittest.TestCase):
         # implemented in Python
         rc, out, err = assert_python_ok("-c", code,
                                         PYTHONIOENCODING="ascii")
-        self.assertEqual(["before", "after"], out.decode().splitlines())
+        self.assertEqual(["before", "after"], err.decode().splitlines())
 
 
 @cpython_only

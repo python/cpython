@@ -1334,10 +1334,14 @@ if HAS_SHMEM:
                 from . import resource_tracker
                 resource_tracker.ensure_running()
             BaseManager.__init__(self, *args, **kwargs)
-            util.debug(f"{self.__class__.__name__} created by pid {getpid()}")
+
+            # Make util.debug available even during runtime shutdown
+            self._debugp = util.debug
+
+            self._debugp(f"{self.__class__.__name__} created by pid {getpid()}")
 
         def __del__(self):
-            util.debug(f"{self.__class__.__name__}.__del__ by pid {getpid()}")
+            self._debugp(f"{self.__class__.__name__}.__del__ by pid {getpid()}")
 
         def get_server(self):
             'Better than monkeypatching for now; merge into Server ultimately'

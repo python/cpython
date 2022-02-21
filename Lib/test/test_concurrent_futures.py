@@ -301,7 +301,6 @@ class ExecutorShutdownTest:
                           self.executor.submit,
                           pow, 2, 5)
 
-    @unittest.skipIf(True, 'TODO(eelizondo): __del__ order changed')
     def test_interpreter_shutdown(self):
         # Test the atexit hook for shutdown of worker threads and processes
         rc, out, err = assert_python_ok('-c', """if 1:

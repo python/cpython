@@ -645,7 +645,7 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b"")
         self.assertEqual(data, "Thread-1 (func)\nTrue\nTrue\n")
 
-    @unittest.skipIf(True, 'TODO(eelizondo): __del__ order changed')
+    @unittest.skipIf(True, 'TODO(eelizondo): Modules unavailable for __del__')
     def test_main_thread_during_shutdown(self):
         # bpo-31516: current_thread() should still point to the main thread
         # at shutdown
@@ -875,23 +875,23 @@ class ThreadTests(BaseTestCase):
                 # Daemon threads must never add it to _shutdown_locks.
                 self.assertNotIn(tstate_lock, threading._shutdown_locks)
 
-    @unittest.skipIf(True, 'TODO(eelizondo): __del__ order changed')
     def test_locals_at_exit(self):
         # bpo-19466: thread locals must not be deleted before destructors
         # are called
         rc, out, err = assert_python_ok("-c", """if 1:
+            import sys
             import threading
 
             class Atexit:
-                def __del__(self):
-                    print("thread_dict.atexit = %r" % thread_dict.atexit)
+                def __del__(self, sys=sys):
+                    print("thread_dict.atexit = %r" % thread_dict.atexit, file=sys.stderr)
 
             thread_dict = threading.local()
             thread_dict.atexit = "value"
 
-            atexit = Atexit()
+            _atexit = Atexit()
         """)
-        self.assertEqual(out.rstrip(), b"thread_dict.atexit = 'value'")
+        self.assertEqual(err.rstrip(), b"thread_dict.atexit = 'value'")
 
     def test_boolean_target(self):
         # bpo-41149: A thread that had a boolean value of False would not
