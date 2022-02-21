@@ -254,7 +254,7 @@ class ShareableList:
 
     # The shared memory area is organized as follows:
     # - 8 bytes: number of items (N) as a 64-bit integer
-    # - (3 * N + 1) * 8 bytes: offsets from the start of the data
+    # - (2 * N + 1) * 8 bytes: offsets from the start of the data
     #                          area, the `struct` format string and the index
     #                          into _back_transforms_mapping for each elements
     # - K bytes: the data area storing item values (with encoding and size
@@ -377,7 +377,7 @@ class ShareableList:
             fmt_as_str = "xxxxxx" + fmt_as_str
         transform_function = self._back_transforms_mapping[transform_code]
         return offset, fmt_as_str, transform_function
-    
+
     def _get_packing_format(self, position):
         return self._get_metainfo(position)[1]
 
