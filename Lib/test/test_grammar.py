@@ -251,6 +251,15 @@ class TokenTests(unittest.TestCase):
         check("1e3in x")
         check("1jin x")
 
+        check("0xfnot in x")
+        check("0o7not in x")
+        check("0b1not in x")
+        check("9not in x")
+        check("0not in x")
+        check("1.not in x")
+        check("1e3not in x")
+        check("1jnot in x")
+
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', SyntaxWarning)
             check("0xfis x")
