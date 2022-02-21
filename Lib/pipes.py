@@ -109,7 +109,7 @@ class Template:
 
     def append(self, cmd, kind):
         """t.append(cmd, kind) adds a new step at the end."""
-        if type(cmd) is not type(''):
+        if not isinstance(cmd, str):
             raise TypeError('Template.append: cmd must be a string')
         if kind not in stepkinds:
             raise ValueError('Template.append: bad kind %r' % (kind,))
@@ -125,7 +125,7 @@ class Template:
 
     def prepend(self, cmd, kind):
         """t.prepend(cmd, kind) adds a new step at the front."""
-        if type(cmd) is not type(''):
+        if not isinstance(cmd, str):
             raise TypeError('Template.prepend: cmd must be a string')
         if kind not in stepkinds:
             raise ValueError('Template.prepend: bad kind %r' % (kind,))

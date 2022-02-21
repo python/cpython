@@ -4,8 +4,10 @@ Nick Mathewson
 """
 
 import unittest
-from test import support
+from test.support import os_helper
 
+import os
+import stat
 import sys
 import uu
 import io
@@ -134,6 +136,15 @@ class UUTest(unittest.TestCase):
                 decoded = codecs.decode(encodedtext, "uu_codec")
                 self.assertEqual(decoded, plaintext)
 
+    def test_newlines_escaped(self):
+        # Test newlines are escaped with uu.encode
+        inp = io.BytesIO(plaintext)
+        out = io.BytesIO()
+        filename = "test.txt\n\roverflow.txt"
+        safefilename = b"test.txt\\n\\roverflow.txt"
+        uu.encode(inp, out, filename)
+        self.assertIn(safefilename, out.getvalue())
+
 class UUStdIOTest(unittest.TestCase):
 
     def setUp(self):
@@ -163,10 +174,11 @@ class UUStdIOTest(unittest.TestCase):
 class UUFileTest(unittest.TestCase):
 
     def setUp(self):
-        self.tmpin  = support.TESTFN + "i"
-        self.tmpout = support.TESTFN + "o"
-        self.addCleanup(support.unlink, self.tmpin)
-        self.addCleanup(support.unlink, self.tmpout)
+        # uu.encode() supports only ASCII file names
+        self.tmpin  = os_helper.TESTFN_ASCII + "i"
+        self.tmpout = os_helper.TESTFN_ASCII + "o"
+        self.addCleanup(os_helper.unlink, self.tmpin)
+        self.addCleanup(os_helper.unlink, self.tmpout)
 
     def test_encode(self):
         with open(self.tmpin, 'wb') as fin:
@@ -217,6 +229,23 @@ class UUFileTest(unittest.TestCase):
 
         with open(self.tmpin, 'rb') as f:
             self.assertRaises(uu.Error, uu.decode, f)
+
+    def test_decode_mode(self):
+        # Verify that decode() will set the given mode for the out_file
+        expected_mode = 0o444
+        with open(self.tmpin, 'wb') as f:
+            f.write(encodedtextwrapped(expected_mode, self.tmpout))
+
+        # make file writable again, so it can be removed (Windows only)
+        self.addCleanup(os.chmod, self.tmpout, expected_mode | stat.S_IWRITE)
+
+        with open(self.tmpin, 'rb') as f:
+            uu.decode(f)
+
+        self.assertEqual(
+            stat.S_IMODE(os.stat(self.tmpout).st_mode),
+            expected_mode
+        )
 
 
 if __name__=="__main__":

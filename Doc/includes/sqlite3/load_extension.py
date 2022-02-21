@@ -24,3 +24,5 @@ con.executescript("""
     """)
 for row in con.execute("select rowid, name, ingredients from recipe where name match 'pie'"):
     print(row)
+
+con.close()
