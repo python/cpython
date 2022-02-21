@@ -19,7 +19,9 @@
 
 .. note::
 
-   Calling a platform-specific method on a mismatched platform will return its default value. For example, calling :func:`win32_ver` on Linux will return ``('', '', '', '')``.
+   Calling a platform-specific method on a mismatched platform will return its 
+   default value. For example, calling :func:`win32_ver` on Linux will return
+   ``('', '', '', '')``.
 
 
 Cross Platform
