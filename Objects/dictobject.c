@@ -3001,6 +3001,23 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
     return val;
 }
 
+/*[clinic input]
+dict.resize
+
+    size: Py_ssize_t
+    /
+
+Resize the dict and return the self.
+[clinic start generated code]*/
+
+static PyObject *
+dict_resize_impl(PyDictObject *self, Py_ssize_t size)
+/*[clinic end generated code: output=3202407fa0857c33 input=ba90a50f016b102e]*/
+{
+    int res = dictresize(self, calculate_log2_keysize(size));
+    return res == 0 ? (Py_INCREF(self), (PyObject *)self) : Py_None;
+}
+
 PyObject *
 PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
 {
@@ -3368,6 +3385,7 @@ static PyMethodDef mapp_methods[] = {
      copy__doc__},
     DICT___REVERSED___METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    DICT_RESIZE_METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 

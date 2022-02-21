@@ -79,6 +79,42 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(dict_resize__doc__,
+"resize($self, size, /)\n"
+"--\n"
+"\n"
+"Resize the dict and return the self.");
+
+#define DICT_RESIZE_METHODDEF    \
+    {"resize", (PyCFunction)dict_resize, METH_O, dict_resize__doc__},
+
+static PyObject *
+dict_resize_impl(PyDictObject *self, Py_ssize_t size);
+
+static PyObject *
+dict_resize(PyDictObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t size;
+
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        size = ival;
+    }
+    return_value = dict_resize_impl(self, size);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(dict_setdefault__doc__,
 "setdefault($self, key, default=None, /)\n"
 "--\n"
@@ -191,4 +227,4 @@ dict___reversed__(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict___reversed___impl(self);
 }
-/*[clinic end generated code: output=7b77c16e43d6735a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=46aa68e9db20868d input=a9049054013a1b77]*/

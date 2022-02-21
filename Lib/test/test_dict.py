@@ -856,6 +856,12 @@ class DictTest(unittest.TestCase):
         resizing = True
         d[9] = 6
 
+    def test_resize3(self):
+        d = {}
+        orig_size = sys.getsizeof(d)
+        d.resize(9)
+        self.assertGreater(sys.getsizeof(d), orig_size)
+
     def test_empty_presized_dict_in_freelist(self):
         # Bug #3537: if an empty but presized dict with a size larger
         # than 7 was in the freelist, it triggered an assertion failure
