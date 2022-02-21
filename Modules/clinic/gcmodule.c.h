@@ -89,14 +89,24 @@ gc_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"generation", NULL};
-    static _PyArg_Parser _parser = {"|i:collect", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "collect", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int generation = NUM_GENERATIONS - 1;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &generation)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    generation = _PyLong_AsInt(args[0]);
+    if (generation == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
     _return_value = gc_collect_impl(module, generation);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -136,11 +146,6 @@ gc_set_debug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flags;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     flags = _PyLong_AsInt(arg);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
@@ -238,13 +243,22 @@ gc_get_objects(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"generation", NULL};
-    static _PyArg_Parser _parser = {"|O&:get_objects", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "get_objects", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     Py_ssize_t generation = -1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        _Py_convert_optional_to_ssize_t, &generation)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[0], &generation)) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = gc_get_objects_impl(module, generation);
 
 exit:
@@ -279,6 +293,15 @@ PyDoc_STRVAR(gc_is_tracked__doc__,
 
 #define GC_IS_TRACKED_METHODDEF    \
     {"is_tracked", (PyCFunction)gc_is_tracked, METH_O, gc_is_tracked__doc__},
+
+PyDoc_STRVAR(gc_is_finalized__doc__,
+"is_finalized($module, obj, /)\n"
+"--\n"
+"\n"
+"Returns true if the object has been already finalized by the GC.");
+
+#define GC_IS_FINALIZED_METHODDEF    \
+    {"is_finalized", (PyCFunction)gc_is_finalized, METH_O, gc_is_finalized__doc__},
 
 PyDoc_STRVAR(gc_freeze__doc__,
 "freeze($module, /)\n"
@@ -349,4 +372,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d692bf475f0bb096 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=61e15f3a549f3ab5 input=a9049054013a1b77]*/

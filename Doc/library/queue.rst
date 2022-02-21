@@ -150,6 +150,11 @@ provide the public methods described below.
    Otherwise (*block* is false), return an item if one is immediately available,
    else raise the :exc:`Empty` exception (*timeout* is ignored in that case).
 
+   Prior to 3.0 on POSIX systems, and for all versions on Windows, if
+   *block* is true and *timeout* is ``None``, this operation goes into
+   an uninterruptible wait on an underlying lock. This means that no exceptions
+   can occur, and in particular a SIGINT will not trigger a :exc:`KeyboardInterrupt`.
+
 
 .. method:: Queue.get_nowait()
 
@@ -185,32 +190,28 @@ fully processed by daemon consumer threads.
 
 Example of how to wait for enqueued tasks to be completed::
 
+    import threading, queue
+
+    q = queue.Queue()
+
     def worker():
         while True:
             item = q.get()
-            if item is None:
-                break
-            do_work(item)
+            print(f'Working on {item}')
+            print(f'Finished {item}')
             q.task_done()
 
-    q = queue.Queue()
-    threads = []
-    for i in range(num_worker_threads):
-        t = threading.Thread(target=worker)
-        t.start()
-        threads.append(t)
+    # turn-on the worker thread
+    threading.Thread(target=worker, daemon=True).start()
 
-    for item in source():
+    # send thirty task requests to the worker
+    for item in range(30):
         q.put(item)
+    print('All task requests sent\n', end='')
 
     # block until all tasks are done
     q.join()
-
-    # stop workers
-    for i in range(num_worker_threads):
-        q.put(None)
-    for t in threads:
-        t.join()
+    print('All work completed')
 
 
 SimpleQueue Objects

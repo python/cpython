@@ -14,15 +14,20 @@
  * (c) 2002 Gregory P. Ward.  All Rights Reserved.
  * (c) 2002 Python Software Foundation.  All Rights Reserved.
  *
- * XXX need a license statement
- *
  * $Id$
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+#define NEEDS_PY_IDENTIFIER
+
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "structmember.h"
+#include "pycore_fileutils.h"     // _Py_write()
+#include "structmember.h"         // PyMemberDef
 
+#include <stdlib.h>               // getenv()
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #else
@@ -156,7 +161,7 @@ oss_dealloc(oss_audio_t *self)
     /* if already closed, don't reclose it */
     if (self->fd != -1)
         close(self->fd);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 
@@ -201,7 +206,7 @@ oss_mixer_dealloc(oss_mixer_t *self)
     /* if already closed, don't reclose it */
     if (self->fd != -1)
         close(self->fd);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 
@@ -242,7 +247,7 @@ static int _is_fd_valid(int fd)
      arg = dsp.xxx(arg)
 */
 static PyObject *
-_do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
+_do_ioctl_1(int fd, PyObject *args, char *fname, unsigned long cmd)
 {
     char argfmt[33] = "i:";
     int arg;
@@ -267,7 +272,7 @@ _do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
    way.
 */
 static PyObject *
-_do_ioctl_1_internal(int fd, PyObject *args, char *fname, int cmd)
+_do_ioctl_1_internal(int fd, PyObject *args, char *fname, unsigned long cmd)
 {
     char argfmt[32] = ":";
     int arg = 0;
@@ -287,7 +292,7 @@ _do_ioctl_1_internal(int fd, PyObject *args, char *fname, int cmd)
 /* _do_ioctl_0() is a private helper for the no-argument ioctls:
    SNDCTL_DSP_{SYNC,RESET,POST}. */
 static PyObject *
-_do_ioctl_0(int fd, PyObject *args, char *fname, int cmd)
+_do_ioctl_0(int fd, PyObject *args, char *fname, unsigned long cmd)
 {
     char argfmt[32] = ":";
     int rv;
@@ -539,7 +544,7 @@ oss_exit(PyObject *self, PyObject *unused)
 {
     _Py_IDENTIFIER(close);
 
-    PyObject *ret = _PyObject_CallMethodId(self, &PyId_close, NULL);
+    PyObject *ret = _PyObject_CallMethodIdNoArgs(self, &PyId_close);
     if (!ret)
         return NULL;
     Py_DECREF(ret);
@@ -965,10 +970,10 @@ static PyTypeObject OSSAudioType = {
     0,                          /*tp_itemsize*/
     /* methods */
     (destructor)oss_dealloc,    /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_reserved*/
+    0,                          /*tp_as_async*/
     0,                          /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -999,10 +1004,10 @@ static PyTypeObject OSSMixerType = {
     0,                              /*tp_itemsize*/
     /* methods */
     (destructor)oss_mixer_dealloc,  /*tp_dealloc*/
-    0,                              /*tp_print*/
+    0,                              /*tp_vectorcall_offset*/
     0,                              /*tp_getattr*/
     0,                              /*tp_setattr*/
-    0,                              /*tp_reserved*/
+    0,                              /*tp_as_async*/
     0,                              /*tp_repr*/
     0,                              /*tp_as_number*/
     0,                              /*tp_as_sequence*/

@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 Old Buffer Protocol
 -------------------
@@ -42,7 +42,7 @@ an object, and :c:func:`PyBuffer_Release` when the buffer view can be released.
    Otherwise returns ``0``.  This function always succeeds.
 
    Note that this function tries to get and release a buffer, and exceptions
-   which occur while calling correspoding functions will get suppressed.
+   which occur while calling corresponding functions will get suppressed.
    To get error reporting use :c:func:`PyObject_GetBuffer()` instead.
 
 

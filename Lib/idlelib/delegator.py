@@ -14,7 +14,7 @@ class Delegator:
 
     def resetcache(self):
         "Removes added attributes while leaving original attributes."
-        # Function is really about resetting delagator dict
+        # Function is really about resetting delegator dict
         # to original state.  Cache is just a means
         for key in self.__cache:
             try:

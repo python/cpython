@@ -44,7 +44,7 @@ The special characters are:
     "|"      A|B, creates an RE that will match either A or B.
     (...)    Matches the RE inside the parentheses.
              The contents can be retrieved or matched later in the string.
-    (?aiLmsux) Set the A, I, L, M, S, U, or X flag for the RE (see below).
+    (?aiLmsux) The letters set the corresponding flags defined below.
     (?:...)  Non-grouping version of regular parentheses.
     (?P<name>...) The substring matched by the group is accessible by name.
     (?P=name)     Matches the text matched earlier by the group named name.
@@ -97,7 +97,9 @@ This module exports the following functions:
     purge     Clear the regular expression cache.
     escape    Backslash all non-alphanumerics in a string.
 
-Some of the functions in this module takes flags as optional parameters:
+Each function other than purge and escape can take an optional 'flags' argument
+consisting of one or more of the following module constants, joined by "|".
+A, L, and U are mutually exclusive.
     A  ASCII       For string patterns, make \w, \W, \b, \B, \d, \D
                    match the corresponding ASCII character categories
                    (rather than the whole Unicode categories, which is the
@@ -135,31 +137,27 @@ __all__ = [
     "findall", "finditer", "compile", "purge", "template", "escape",
     "error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
     "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
-    "UNICODE",
+    "UNICODE", "NOFLAG", "RegexFlag",
 ]
 
 __version__ = "2.2.1"
 
-class RegexFlag(enum.IntFlag):
-    ASCII = sre_compile.SRE_FLAG_ASCII # assume ascii "locale"
-    IGNORECASE = sre_compile.SRE_FLAG_IGNORECASE # ignore case
-    LOCALE = sre_compile.SRE_FLAG_LOCALE # assume current 8-bit locale
-    UNICODE = sre_compile.SRE_FLAG_UNICODE # assume unicode "locale"
-    MULTILINE = sre_compile.SRE_FLAG_MULTILINE # make anchors look for newline
-    DOTALL = sre_compile.SRE_FLAG_DOTALL # make dot match newline
-    VERBOSE = sre_compile.SRE_FLAG_VERBOSE # ignore whitespace and comments
-    A = ASCII
-    I = IGNORECASE
-    L = LOCALE
-    U = UNICODE
-    M = MULTILINE
-    S = DOTALL
-    X = VERBOSE
+@enum.global_enum
+@enum._simple_enum(enum.IntFlag, boundary=enum.KEEP)
+class RegexFlag:
+    NOFLAG = 0
+    ASCII = A = sre_compile.SRE_FLAG_ASCII # assume ascii "locale"
+    IGNORECASE = I = sre_compile.SRE_FLAG_IGNORECASE # ignore case
+    LOCALE = L = sre_compile.SRE_FLAG_LOCALE # assume current 8-bit locale
+    UNICODE = U = sre_compile.SRE_FLAG_UNICODE # assume unicode "locale"
+    MULTILINE = M = sre_compile.SRE_FLAG_MULTILINE # make anchors look for newline
+    DOTALL = S = sre_compile.SRE_FLAG_DOTALL # make dot match newline
+    VERBOSE = X = sre_compile.SRE_FLAG_VERBOSE # ignore whitespace and comments
     # sre extensions (experimental, don't rely on these)
-    TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
-    T = TEMPLATE
+    TEMPLATE = T = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
     DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
-globals().update(RegexFlag.__members__)
+    __str__ = object.__str__
+    _numeric_repr_ = hex
 
 # sre exception
 error = sre_compile.error

@@ -2,6 +2,38 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(pairwise_new__doc__,
+"pairwise(iterable, /)\n"
+"--\n"
+"\n"
+"Return an iterator of overlapping pairs taken from the input iterator.\n"
+"\n"
+"    s -> (s0,s1), (s1,s2), (s2, s3), ...");
+
+static PyObject *
+pairwise_new_impl(PyTypeObject *type, PyObject *iterable);
+
+static PyObject *
+pairwise_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *iterable;
+
+    if ((type == &pairwise_type ||
+         type->tp_init == pairwise_type.tp_init) &&
+        !_PyArg_NoKeywords("pairwise", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("pairwise", PyTuple_GET_SIZE(args), 1, 1)) {
+        goto exit;
+    }
+    iterable = PyTuple_GET_ITEM(args, 0);
+    return_value = pairwise_new_impl(type, iterable);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_groupby__doc__,
 "groupby(iterable, key=None)\n"
 "--\n"
@@ -23,14 +55,24 @@ itertools_groupby(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "key", NULL};
-    static _PyArg_Parser _parser = {"O|O:groupby", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "groupby", 0};
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *it;
     PyObject *keyfunc = Py_None;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &it, &keyfunc)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    it = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    keyfunc = fastargs[1];
+skip_optional_pos:
     return_value = itertools_groupby_impl(type, it, keyfunc);
 
 exit:
@@ -48,7 +90,8 @@ itertools__grouper(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *parent;
     PyObject *tgtkey;
 
-    if ((type == &_grouper_type) &&
+    if ((type == &_grouper_type ||
+         type->tp_init == _grouper_type.tp_init) &&
         !_PyArg_NoKeywords("_grouper", kwargs)) {
         goto exit;
     }
@@ -56,7 +99,7 @@ itertools__grouper(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), &groupby_type)) {
-        _PyArg_BadArgument("_grouper", 1, (&groupby_type)->tp_name, PyTuple_GET_ITEM(args, 0));
+        _PyArg_BadArgument("_grouper", "argument 1", (&groupby_type)->tp_name, PyTuple_GET_ITEM(args, 0));
         goto exit;
     }
     parent = PyTuple_GET_ITEM(args, 0);
@@ -85,7 +128,8 @@ itertools_teedataobject(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *values;
     PyObject *next;
 
-    if ((type == &teedataobject_type) &&
+    if ((type == &teedataobject_type ||
+         type->tp_init == teedataobject_type.tp_init) &&
         !_PyArg_NoKeywords("teedataobject", kwargs)) {
         goto exit;
     }
@@ -94,7 +138,7 @@ itertools_teedataobject(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     it = PyTuple_GET_ITEM(args, 0);
     if (!PyList_Check(PyTuple_GET_ITEM(args, 1))) {
-        _PyArg_BadArgument("teedataobject", 2, "list", PyTuple_GET_ITEM(args, 1));
+        _PyArg_BadArgument("teedataobject", "argument 2", "list", PyTuple_GET_ITEM(args, 1));
         goto exit;
     }
     values = PyTuple_GET_ITEM(args, 1);
@@ -120,7 +164,8 @@ itertools__tee(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     PyObject *iterable;
 
-    if ((type == &tee_type) &&
+    if ((type == &tee_type ||
+         type->tp_init == tee_type.tp_init) &&
         !_PyArg_NoKeywords("_tee", kwargs)) {
         goto exit;
     }
@@ -160,14 +205,9 @@ itertools_tee(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -199,7 +239,8 @@ itertools_cycle(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     PyObject *iterable;
 
-    if ((type == &cycle_type) &&
+    if ((type == &cycle_type ||
+         type->tp_init == cycle_type.tp_init) &&
         !_PyArg_NoKeywords("cycle", kwargs)) {
         goto exit;
     }
@@ -231,7 +272,8 @@ itertools_dropwhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *func;
     PyObject *seq;
 
-    if ((type == &dropwhile_type) &&
+    if ((type == &dropwhile_type ||
+         type->tp_init == dropwhile_type.tp_init) &&
         !_PyArg_NoKeywords("dropwhile", kwargs)) {
         goto exit;
     }
@@ -262,7 +304,8 @@ itertools_takewhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *func;
     PyObject *seq;
 
-    if ((type == &takewhile_type) &&
+    if ((type == &takewhile_type ||
+         type->tp_init == takewhile_type.tp_init) &&
         !_PyArg_NoKeywords("takewhile", kwargs)) {
         goto exit;
     }
@@ -293,7 +336,8 @@ itertools_starmap(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *func;
     PyObject *seq;
 
-    if ((type == &starmap_type) &&
+    if ((type == &starmap_type ||
+         type->tp_init == starmap_type.tp_init) &&
         !_PyArg_NoKeywords("starmap", kwargs)) {
         goto exit;
     }
@@ -334,13 +378,29 @@ itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "r", NULL};
-    static _PyArg_Parser _parser = {"On:combinations", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "combinations", 0};
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *iterable;
     Py_ssize_t r;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &iterable, &r)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
+    }
+    iterable = fastargs[0];
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(fastargs[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        r = ival;
     }
     return_value = itertools_combinations_impl(type, iterable, r);
 
@@ -354,7 +414,7 @@ PyDoc_STRVAR(itertools_combinations_with_replacement__doc__,
 "\n"
 "Return successive r-length combinations of elements in the iterable allowing individual elements to have successive repeats.\n"
 "\n"
-"combinations_with_replacement(\'ABC\', 2) --> AA AB AC BB BC CC\"");
+"combinations_with_replacement(\'ABC\', 2) --> (\'A\',\'A\'), (\'A\',\'B\'), (\'A\',\'C\'), (\'B\',\'B\'), (\'B\',\'C\'), (\'C\',\'C\')");
 
 static PyObject *
 itertools_combinations_with_replacement_impl(PyTypeObject *type,
@@ -366,13 +426,29 @@ itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "r", NULL};
-    static _PyArg_Parser _parser = {"On:combinations_with_replacement", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "combinations_with_replacement", 0};
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *iterable;
     Py_ssize_t r;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &iterable, &r)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
+    }
+    iterable = fastargs[0];
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(fastargs[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        r = ival;
     }
     return_value = itertools_combinations_with_replacement_impl(type, iterable, r);
 
@@ -397,14 +473,24 @@ itertools_permutations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "r", NULL};
-    static _PyArg_Parser _parser = {"O|O:permutations", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "permutations", 0};
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *iterable;
     PyObject *robj = Py_None;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &iterable, &robj)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    iterable = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    robj = fastargs[1];
+skip_optional_pos:
     return_value = itertools_permutations_impl(type, iterable, robj);
 
 exit:
@@ -426,15 +512,35 @@ itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "func", "initial", NULL};
-    static _PyArg_Parser _parser = {"O|O$O:accumulate", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "accumulate", 0};
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *iterable;
     PyObject *binop = Py_None;
     PyObject *initial = Py_None;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &iterable, &binop, &initial)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    iterable = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[1]) {
+        binop = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    initial = fastargs[2];
+skip_optional_kwonly:
     return_value = itertools_accumulate_impl(type, iterable, binop, initial);
 
 exit:
@@ -458,14 +564,19 @@ itertools_compress(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "selectors", NULL};
-    static _PyArg_Parser _parser = {"OO:compress", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "compress", 0};
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *seq1;
     PyObject *seq2;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &seq1, &seq2)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    seq1 = fastargs[0];
+    seq2 = fastargs[1];
     return_value = itertools_compress_impl(type, seq1, seq2);
 
 exit:
@@ -490,7 +601,8 @@ itertools_filterfalse(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *func;
     PyObject *seq;
 
-    if ((type == &filterfalse_type) &&
+    if ((type == &filterfalse_type ||
+         type->tp_init == filterfalse_type.tp_init) &&
         !_PyArg_NoKeywords("filterfalse", kwargs)) {
         goto exit;
     }
@@ -527,17 +639,32 @@ itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"start", "step", NULL};
-    static _PyArg_Parser _parser = {"|OO:count", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "count", 0};
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     PyObject *long_cnt = NULL;
     PyObject *long_step = NULL;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &long_cnt, &long_step)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[0]) {
+        long_cnt = fastargs[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    long_step = fastargs[1];
+skip_optional_pos:
     return_value = itertools_count_impl(type, long_cnt, long_step);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3d0ca69707b60715 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5cb14d4a3fe8aeec input=a9049054013a1b77]*/

@@ -4,61 +4,121 @@
 extern "C" {
 #endif
 
-#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
-#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_atomic.h"
-#include "pythread.h"
+/* Forward declarations */
+struct pyruntimestate;
+struct _ceval_runtime_state;
 
-struct _is;  // See PyInterpreterState in cpython/pystate.h.
+#ifndef Py_DEFAULT_RECURSION_LIMIT
+#  define Py_DEFAULT_RECURSION_LIMIT 1000
+#endif
 
-PyAPI_FUNC(int) _Py_AddPendingCall(struct _is*, unsigned long, int (*)(void *), void *);
-PyAPI_FUNC(int) _Py_MakePendingCalls(struct _is*);
+#include "pycore_interp.h"        // PyInterpreterState.eval_frame
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 
-struct _pending_calls {
-    PyThread_type_lock lock;
-    /* Request for running pending calls. */
-    _Py_atomic_int calls_to_do;
-    /* Request for looking at the `async_exc` field of the current
-       thread state.
-       Guarded by the GIL. */
-    int async_exc;
-#define NPENDINGCALLS 32
-    struct {
-        unsigned long thread_id;
-        int (*func)(void *);
-        void *arg;
-    } calls[NPENDINGCALLS];
-    int first;
-    int last;
-};
 
-struct _ceval_interpreter_state {
-    /* This single variable consolidates all requests to break out of
-       the fast path in the eval loop. */
-    _Py_atomic_int eval_breaker;
-    struct _pending_calls pending;
-};
+extern void _Py_FinishPendingCalls(PyThreadState *tstate);
+extern void _PyEval_InitRuntimeState(struct _ceval_runtime_state *);
+extern void _PyEval_InitState(struct _ceval_state *, PyThread_type_lock);
+extern void _PyEval_FiniState(struct _ceval_state *ceval);
+PyAPI_FUNC(void) _PyEval_SignalReceived(PyInterpreterState *interp);
+PyAPI_FUNC(int) _PyEval_AddPendingCall(
+    PyInterpreterState *interp,
+    int (*func)(void *),
+    void *arg);
+PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyInterpreterState *interp);
+#ifdef HAVE_FORK
+extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
+#endif
+PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(
+    PyThreadState *tstate,
+    int new_depth);
 
-#include "pycore_gil.h"
+void _PyEval_Fini(void);
 
-struct _ceval_runtime_state {
-    int recursion_limit;
-    /* Records whether tracing is on for any thread.  Counts the number
-       of threads for which tstate->c_tracefunc is non-NULL, so if the
-       value is 0, we know we don't have to check this thread's
-       c_tracefunc.  This speeds up the if statement in
-       PyEval_EvalFrameEx() after fast_next_opcode. */
-    int tracing_possible;
-    /* Request for dropping the GIL */
-    _Py_atomic_int gil_drop_request;
-    /* Request for checking signals. */
-    _Py_atomic_int signals_pending;
-    struct _gil_runtime_state gil;
-};
 
-PyAPI_FUNC(void) _PyEval_Initialize(struct _ceval_runtime_state *);
+extern PyObject* _PyEval_GetBuiltins(PyThreadState *tstate);
+extern PyObject *_PyEval_BuiltinsFromGlobals(
+    PyThreadState *tstate,
+    PyObject *globals);
+
+
+static inline PyObject*
+_PyEval_EvalFrame(PyThreadState *tstate, struct _interpreter_frame *frame, int throwflag)
+{
+    if (tstate->interp->eval_frame == NULL) {
+        return _PyEval_EvalFrameDefault(tstate, frame, throwflag);
+    }
+    return tstate->interp->eval_frame(tstate, frame, throwflag);
+}
+
+extern PyObject *
+_PyEval_Vector(PyThreadState *tstate,
+            PyFunctionObject *func, PyObject *locals,
+            PyObject* const* args, size_t argcount,
+            PyObject *kwnames);
+
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+extern int _PyEval_ThreadsInitialized(PyInterpreterState *interp);
+#else
+extern int _PyEval_ThreadsInitialized(struct pyruntimestate *runtime);
+#endif
+extern PyStatus _PyEval_InitGIL(PyThreadState *tstate);
+extern void _PyEval_FiniGIL(PyInterpreterState *interp);
+
+extern void _PyEval_ReleaseLock(PyThreadState *tstate);
+
+extern void _PyEval_DeactivateOpCache(void);
+
+
+/* --- _Py_EnterRecursiveCall() ----------------------------------------- */
+
+#ifdef USE_STACKCHECK
+/* With USE_STACKCHECK macro defined, trigger stack checks in
+   _Py_CheckRecursiveCall() on every 64th call to Py_EnterRecursiveCall. */
+static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
+    return (tstate->recursion_remaining-- <= 0
+            || (tstate->recursion_remaining & 63) == 0);
+}
+#else
+static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
+    return tstate->recursion_remaining-- <= 0;
+}
+#endif
+
+PyAPI_FUNC(int) _Py_CheckRecursiveCall(
+    PyThreadState *tstate,
+    const char *where);
+
+static inline int _Py_EnterRecursiveCall(PyThreadState *tstate,
+                                         const char *where) {
+    return (_Py_MakeRecCheck(tstate) && _Py_CheckRecursiveCall(tstate, where));
+}
+
+static inline int _Py_EnterRecursiveCall_inline(const char *where) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _Py_EnterRecursiveCall(tstate, where);
+}
+
+#define Py_EnterRecursiveCall(where) _Py_EnterRecursiveCall_inline(where)
+
+static inline void _Py_LeaveRecursiveCall(PyThreadState *tstate)  {
+    tstate->recursion_remaining++;
+}
+
+static inline void _Py_LeaveRecursiveCall_inline(void)  {
+    PyThreadState *tstate = _PyThreadState_GET();
+    _Py_LeaveRecursiveCall(tstate);
+}
+
+#define Py_LeaveRecursiveCall() _Py_LeaveRecursiveCall_inline()
+
+struct _interpreter_frame *_PyEval_GetFrame(void);
+
+PyObject *_Py_MakeCoro(PyFunctionObject *func);
 
 #ifdef __cplusplus
 }

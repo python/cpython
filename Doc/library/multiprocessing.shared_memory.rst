@@ -176,6 +176,7 @@ same ``numpy.ndarray`` from two distinct Python shells:
 
 
 .. class:: SharedMemoryManager([address[, authkey]])
+   :module: multiprocessing.managers
 
    A subclass of :class:`~multiprocessing.managers.BaseManager` which can be
    used for the management of shared memory blocks across processes.
@@ -218,8 +219,8 @@ The following example demonstrates the basic mechanisms of a
 .. doctest::
    :options: +SKIP
 
-   >>> from multiprocessing import shared_memory
-   >>> smm = shared_memory.SharedMemoryManager()
+   >>> from multiprocessing.managers import SharedMemoryManager
+   >>> smm = SharedMemoryManager()
    >>> smm.start()  # Start the process that manages the shared memory blocks
    >>> sl = smm.ShareableList(range(4))
    >>> sl
@@ -238,7 +239,7 @@ needed:
 .. doctest::
    :options: +SKIP
 
-   >>> with shared_memory.SharedMemoryManager() as smm:
+   >>> with SharedMemoryManager() as smm:
    ...     sl = smm.ShareableList(range(2000))
    ...     # Divide the work among two processes, storing partial results in sl
    ...     p1 = Process(target=do_work, args=(sl, 0, 1000))
@@ -341,3 +342,30 @@ behind it:
    >>> c.shm.close()
    >>> c.shm.unlink()
 
+The following examples demonstrates that ``ShareableList``
+(and underlying ``SharedMemory``) objects
+can be pickled and unpickled if needed.
+Note, that it will still be the same shared object.
+This happens, because the deserialized object has
+the same unique name and is just attached to an existing
+object with the same name (if the object is still alive):
+
+   >>> import pickle
+   >>> from multiprocessing import shared_memory
+   >>> sl = shared_memory.ShareableList(range(10))
+   >>> list(sl)
+   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+   >>> deserialized_sl = pickle.loads(pickle.dumps(sl))
+   >>> list(deserialized_sl)
+   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+   >>> sl[0] = -1
+   >>> deserialized_sl[1] = -2
+   >>> list(sl)
+   [-1, -2, 2, 3, 4, 5, 6, 7, 8, 9]
+   >>> list(deserialized_sl)
+   [-1, -2, 2, 3, 4, 5, 6, 7, 8, 9]
+
+   >>> sl.shm.close()
+   >>> sl.shm.unlink()

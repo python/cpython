@@ -2,7 +2,7 @@
 
 Coverage is effectively 100%.  Tkinter dialog is mocked, Mac-only line
 may be skipped, and dummy function in bind test should not be called.
-Not tested: exit with 'self.advanced or self.keys_ok(keys)) ...' False.
+Not tested: exit with 'self.advanced or self.keys_ok(keys) ...' False.
 """
 
 from idlelib import config_key

@@ -52,6 +52,15 @@ The module defines the following items:
    :ref:`zipfile-objects` for constructor details.
 
 
+.. class:: Path
+   :noindex:
+
+   A pathlib-compatible wrapper for zip files. See section
+   :ref:`path-objects` for details.
+
+   .. versionadded:: 3.8
+
+
 .. class:: PyZipFile
    :noindex:
 
@@ -68,7 +77,6 @@ The module defines the following items:
    *date_time* should be a tuple containing six fields which describe the time
    of the last modification to the file; the fields are described in section
    :ref:`zipinfo-objects`.
-
 
 .. function:: is_zipfile(filename)
 
@@ -397,6 +405,11 @@ ZipFile Objects
       If ``arcname`` (or ``filename``, if ``arcname`` is  not given) contains a null
       byte, the name of the file in the archive will be truncated at the null byte.
 
+   .. note::
+
+      A leading slash in the filename may lead to the archive being impossible to
+      open in some zip programs on Windows systems.
+
    .. versionchanged:: 3.6
       Calling :meth:`write` on a ZipFile created with mode ``'r'`` or
       a closed ZipFile will raise a :exc:`ValueError`.  Previously,
@@ -455,6 +468,112 @@ The following data attributes are also available:
    it should be no longer than 65535 bytes.  Comments longer than this will be
    truncated.
 
+
+.. _path-objects:
+
+Path Objects
+------------
+
+.. class:: Path(root, at='')
+
+   Construct a Path object from a ``root`` zipfile (which may be a
+   :class:`ZipFile` instance or ``file`` suitable for passing to
+   the :class:`ZipFile` constructor).
+
+   ``at`` specifies the location of this Path within the zipfile,
+   e.g. 'dir/file.txt', 'dir/', or ''. Defaults to the empty string,
+   indicating the root.
+
+Path objects expose the following features of :mod:`pathlib.Path`
+objects:
+
+Path objects are traversable using the ``/`` operator or ``joinpath``.
+
+.. attribute:: Path.name
+
+   The final path component.
+
+.. method:: Path.open(mode='r', *, pwd, **)
+
+   Invoke :meth:`ZipFile.open` on the current path.
+   Allows opening for read or write, text or binary
+   through supported modes: 'r', 'w', 'rb', 'wb'.
+   Positional and keyword arguments are passed through to
+   :class:`io.TextIOWrapper` when opened as text and
+   ignored otherwise.
+   ``pwd`` is the ``pwd`` parameter to
+   :meth:`ZipFile.open`.
+
+   .. versionchanged:: 3.9
+      Added support for text and binary modes for open. Default
+      mode is now text.
+
+.. method:: Path.iterdir()
+
+   Enumerate the children of the current directory.
+
+.. method:: Path.is_dir()
+
+   Return ``True`` if the current context references a directory.
+
+.. method:: Path.is_file()
+
+   Return ``True`` if the current context references a file.
+
+.. method:: Path.exists()
+
+   Return ``True`` if the current context references a file or
+   directory in the zip file.
+
+.. data:: Path.suffix
+
+   The file extension of the final component.
+
+   .. versionadded:: 3.11
+      Added :data:`Path.suffix` property.
+
+.. data:: Path.stem
+
+   The final path component, without its suffix.
+
+   .. versionadded:: 3.11
+      Added :data:`Path.stem` property.
+
+.. data:: Path.suffixes
+
+   A list of the path’s file extensions.
+
+   .. versionadded:: 3.11
+      Added :data:`Path.suffixes` property.
+
+.. method:: Path.read_text(*, **)
+
+   Read the current file as unicode text. Positional and
+   keyword arguments are passed through to
+   :class:`io.TextIOWrapper` (except ``buffer``, which is
+   implied by the context).
+
+.. method:: Path.read_bytes()
+
+   Read the current file as bytes.
+
+.. method:: Path.joinpath(*other)
+
+   Return a new Path object with each of the *other* arguments
+   joined. The following are equivalent::
+
+   >>> Path(...).joinpath('child').joinpath('grandchild')
+   >>> Path(...).joinpath('child', 'grandchild')
+   >>> Path(...) / 'child' / 'grandchild'
+
+   .. versionchanged:: 3.10
+      Prior to 3.10, ``joinpath`` was undocumented and accepted
+      exactly one parameter.
+
+The `zipp <https://pypi.org/project/zipp>`_ project provides backports
+of the latest path object functionality to older Pythons. Use
+``zipp.Path`` in place of ``zipfile.Path`` for early access to
+changes.
 
 .. _pyzipfile-objects:
 
@@ -749,5 +868,47 @@ Command-line options
 
    Test whether the zipfile is valid or not.
 
+Decompression pitfalls
+----------------------
 
+The extraction in zipfile module might fail due to some pitfalls listed below.
+
+From file itself
+~~~~~~~~~~~~~~~~
+
+Decompression may fail due to incorrect password / CRC checksum / ZIP format or
+unsupported compression method / decryption.
+
+File System limitations
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Exceeding limitations on different file systems can cause decompression failed.
+Such as allowable characters in the directory entries, length of the file name,
+length of the pathname, size of a single file, and number of files, etc.
+
+.. _zipfile-resources-limitations:
+
+Resources limitations
+~~~~~~~~~~~~~~~~~~~~~
+
+The lack of memory or disk volume would lead to decompression
+failed. For example, decompression bombs (aka `ZIP bomb`_)
+apply to zipfile library that can cause disk volume exhaustion.
+
+Interruption
+~~~~~~~~~~~~
+
+Interruption during the decompression, such as pressing control-C or killing the
+decompression process may result in incomplete decompression of the archive.
+
+Default behaviors of extraction
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Not knowing the default extraction behaviors
+can cause unexpected decompression results.
+For example, when extracting the same archive twice,
+it overwrites files without asking.
+
+
+.. _ZIP bomb: https://en.wikipedia.org/wiki/Zip_bomb
 .. _PKZIP Application Note: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT

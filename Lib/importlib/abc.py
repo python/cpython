@@ -1,5 +1,4 @@
 """Abstract base classes related to import."""
-from . import _bootstrap
 from . import _bootstrap_external
 from . import machinery
 try:
@@ -10,10 +9,24 @@ except ImportError as exc:
     _frozen_importlib = None
 try:
     import _frozen_importlib_external
-except ImportError as exc:
+except ImportError:
     _frozen_importlib_external = _bootstrap_external
+from ._abc import Loader
 import abc
 import warnings
+
+# for compatibility with Python 3.10
+from .resources.abc import ResourceReader, Traversable, TraversableResources
+
+
+__all__ = [
+    'Loader', 'Finder', 'MetaPathFinder', 'PathEntryFinder',
+    'ResourceLoader', 'InspectLoader', 'ExecutionLoader',
+    'FileLoader', 'SourceLoader',
+
+    # for compatibility with Python 3.10
+    'ResourceReader', 'Traversable', 'TraversableResources',
+]
 
 
 def _register(abstract_cls, *classes):
@@ -39,15 +52,27 @@ class Finder(metaclass=abc.ABCMeta):
     Deprecated since Python 3.3
     """
 
+    def __init__(self):
+        warnings.warn("the Finder ABC is deprecated and "
+                       "slated for removal in Python 3.12; use MetaPathFinder "
+                       "or PathEntryFinder instead",
+                       DeprecationWarning)
+
     @abc.abstractmethod
     def find_module(self, fullname, path=None):
         """An abstract method that should find a module.
         The fullname is a str and the optional path is a str or None.
         Returns a Loader object or None.
         """
+        warnings.warn("importlib.abc.Finder along with its find_module() "
+                      "method are deprecated and "
+                       "slated for removal in Python 3.12; use "
+                       "MetaPathFinder.find_spec() or "
+                       "PathEntryFinder.find_spec() instead",
+                       DeprecationWarning)
 
 
-class MetaPathFinder(Finder):
+class MetaPathFinder(metaclass=abc.ABCMeta):
 
     """Abstract base class for import finders on sys.meta_path."""
 
@@ -66,8 +91,8 @@ class MetaPathFinder(Finder):
 
         """
         warnings.warn("MetaPathFinder.find_module() is deprecated since Python "
-                      "3.4 in favor of MetaPathFinder.find_spec() "
-                      "(available since 3.4)",
+                      "3.4 in favor of MetaPathFinder.find_spec() and is "
+                      "slated for removal in Python 3.12",
                       DeprecationWarning,
                       stacklevel=2)
         if not hasattr(self, 'find_spec'):
@@ -84,7 +109,7 @@ _register(MetaPathFinder, machinery.BuiltinImporter, machinery.FrozenImporter,
           machinery.PathFinder, machinery.WindowsRegistryFinder)
 
 
-class PathEntryFinder(Finder):
+class PathEntryFinder(metaclass=abc.ABCMeta):
 
     """Abstract base class for path entry finders used by PathFinder."""
 
@@ -131,53 +156,6 @@ class PathEntryFinder(Finder):
         """
 
 _register(PathEntryFinder, machinery.FileFinder)
-
-
-class Loader(metaclass=abc.ABCMeta):
-
-    """Abstract base class for import loaders."""
-
-    def create_module(self, spec):
-        """Return a module to initialize and into which to load.
-
-        This method should raise ImportError if anything prevents it
-        from creating a new module.  It may return None to indicate
-        that the spec should create the new module.
-        """
-        # By default, defer to default semantics for the new module.
-        return None
-
-    # We don't define exec_module() here since that would break
-    # hasattr checks we do to support backward compatibility.
-
-    def load_module(self, fullname):
-        """Return the loaded module.
-
-        The module must be added to sys.modules and have import-related
-        attributes set properly.  The fullname is a str.
-
-        ImportError is raised on failure.
-
-        This method is deprecated in favor of loader.exec_module(). If
-        exec_module() exists then it is used to provide a backwards-compatible
-        functionality for this method.
-
-        """
-        if not hasattr(self, 'exec_module'):
-            raise ImportError
-        return _bootstrap._load_module_shim(self, fullname)
-
-    def module_repr(self, module):
-        """Return a module's repr.
-
-        Used by the module type when the method does not raise
-        NotImplementedError.
-
-        This method is deprecated.
-
-        """
-        # The exception will cause ModuleType.__repr__ to ignore this method.
-        raise NotImplementedError
 
 
 class ResourceLoader(Loader):
@@ -246,7 +224,7 @@ class InspectLoader(Loader):
     exec_module = _bootstrap_external._LoaderBasics.exec_module
     load_module = _bootstrap_external._LoaderBasics.load_module
 
-_register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter)
+_register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter, machinery.NamespaceLoader)
 
 
 class ExecutionLoader(InspectLoader):
@@ -340,49 +318,3 @@ class SourceLoader(_bootstrap_external.SourceLoader, ResourceLoader, ExecutionLo
         """
 
 _register(SourceLoader, machinery.SourceFileLoader)
-
-
-class ResourceReader(metaclass=abc.ABCMeta):
-
-    """Abstract base class to provide resource-reading support.
-
-    Loaders that support resource reading are expected to implement
-    the ``get_resource_reader(fullname)`` method and have it either return None
-    or an object compatible with this ABC.
-    """
-
-    @abc.abstractmethod
-    def open_resource(self, resource):
-        """Return an opened, file-like object for binary reading.
-
-        The 'resource' argument is expected to represent only a file name
-        and thus not contain any subdirectory components.
-
-        If the resource cannot be found, FileNotFoundError is raised.
-        """
-        raise FileNotFoundError
-
-    @abc.abstractmethod
-    def resource_path(self, resource):
-        """Return the file system path to the specified resource.
-
-        The 'resource' argument is expected to represent only a file name
-        and thus not contain any subdirectory components.
-
-        If the resource does not exist on the file system, raise
-        FileNotFoundError.
-        """
-        raise FileNotFoundError
-
-    @abc.abstractmethod
-    def is_resource(self, name):
-        """Return True if the named 'name' is consider a resource."""
-        raise FileNotFoundError
-
-    @abc.abstractmethod
-    def contents(self):
-        """Return an iterable of strings over the contents of the package."""
-        return []
-
-
-_register(ResourceReader, machinery.SourceFileLoader)

@@ -1,14 +1,29 @@
 #ifndef Py_INTERNAL_HAMT_H
 #define Py_INTERNAL_HAMT_H
 
-#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
-#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
 #define _Py_HAMT_MAX_TREE_DEPTH 7
 
 
-#define PyHamt_Check(o) (Py_TYPE(o) == &_PyHamt_Type)
+extern PyTypeObject _PyHamt_Type;
+extern PyTypeObject _PyHamt_ArrayNode_Type;
+extern PyTypeObject _PyHamt_BitmapNode_Type;
+extern PyTypeObject _PyHamt_CollisionNode_Type;
+extern PyTypeObject _PyHamtKeys_Type;
+extern PyTypeObject _PyHamtValues_Type;
+extern PyTypeObject _PyHamtItems_Type;
+
+/* runtime lifecycle */
+
+void _PyHamt_Fini(PyInterpreterState *);
+
+
+/* other API */
+
+#define PyHamt_Check(o) Py_IS_TYPE(o, &_PyHamt_Type)
 
 
 /* Abstract tree node. */
@@ -61,15 +76,6 @@ typedef struct {
 } PyHamtIterator;
 
 
-PyAPI_DATA(PyTypeObject) _PyHamt_Type;
-PyAPI_DATA(PyTypeObject) _PyHamt_ArrayNode_Type;
-PyAPI_DATA(PyTypeObject) _PyHamt_BitmapNode_Type;
-PyAPI_DATA(PyTypeObject) _PyHamt_CollisionNode_Type;
-PyAPI_DATA(PyTypeObject) _PyHamtKeys_Type;
-PyAPI_DATA(PyTypeObject) _PyHamtValues_Type;
-PyAPI_DATA(PyTypeObject) _PyHamtItems_Type;
-
-
 /* Create a new HAMT immutable mapping. */
 PyHamtObject * _PyHamt_New(void);
 
@@ -109,8 +115,5 @@ PyObject * _PyHamt_NewIterValues(PyHamtObject *o);
 
 /* Return a Items iterator over "o". */
 PyObject * _PyHamt_NewIterItems(PyHamtObject *o);
-
-int _PyHamt_Init(void);
-void _PyHamt_Fini(void);
 
 #endif /* !Py_INTERNAL_HAMT_H */

@@ -11,6 +11,13 @@ with a prompt are output from the interpreter. Note that a secondary prompt on a
 line by itself in an example means you must type a blank line; this is used to
 end a multi-line command.
 
+.. only:: html
+
+   You can toggle the display of prompts and output by clicking on ``>>>``
+   in the upper-right corner of an example box.  If you hide the prompts
+   and output for an example, then you can easily copy and paste the input
+   lines into your interpreter.
+
 .. index:: single: # (hash); comment
 
 Many of the examples in this manual, even those entered at the interactive
@@ -73,7 +80,7 @@ operator; to calculate the remainder you can use ``%``::
    5
    >>> 17 % 3  # the % operator returns the remainder of the division
    2
-   >>> 5 * 3 + 2  # result * divisor + remainder
+   >>> 5 * 3 + 2  # floored quotient * divisor + remainder
    17
 
 With Python, it is possible to use the ``**`` operator to calculate powers [#]_::
@@ -269,14 +276,6 @@ to obtain individual characters, *slicing* allows you to obtain substring::
    >>> word[2:5]  # characters from position 2 (included) to 5 (excluded)
    'tho'
 
-Note how the start is always included, and the end always excluded.  This
-makes sure that ``s[:i] + s[i:]`` is always equal to ``s``::
-
-   >>> word[:2] + word[2:]
-   'Python'
-   >>> word[:4] + word[4:]
-   'Python'
-
 Slice indices have useful defaults; an omitted first index defaults to zero, an
 omitted second index defaults to the size of the string being sliced. ::
 
@@ -286,6 +285,14 @@ omitted second index defaults to the size of the string being sliced. ::
    'on'
    >>> word[-2:]  # characters from the second-last (included) to the end
    'on'
+
+Note how the start is always included, and the end always excluded.  This
+makes sure that ``s[:i] + s[i:]`` is always equal to ``s``::
+
+   >>> word[:2] + word[2:]
+   'Python'
+   >>> word[:4] + word[4:]
+   'Python'
 
 One way to remember how slices work is to think of the indices as pointing
 *between* characters, with the left edge of the first character numbered 0.
@@ -383,7 +390,7 @@ items of different types, but usually the items all have the same type. ::
    >>> squares
    [1, 4, 9, 16, 25]
 
-Like strings (and all other built-in :term:`sequence` type), lists can be
+Like strings (and all other built-in :term:`sequence` types), lists can be
 indexed and sliced::
 
    >>> squares[0]  # indexing returns the item
@@ -394,7 +401,8 @@ indexed and sliced::
    [9, 16, 25]
 
 All slice operations return a new list containing the requested elements.  This
-means that the following slice returns a new (shallow) copy of the list::
+means that the following slice returns a
+:ref:`shallow copy <shallow_vs_deep_copy>` of the list::
 
    >>> squares[:]
    [1, 4, 9, 16, 25]

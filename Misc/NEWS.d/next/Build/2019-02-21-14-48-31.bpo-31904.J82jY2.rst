@@ -1,1 +1,0 @@
-Enable build system to cross-build for VxWorks RTOS.

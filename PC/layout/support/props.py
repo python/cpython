@@ -6,13 +6,7 @@ import os
 
 from .constants import *
 
-__all__ = ["PYTHON_PROPS_NAME"]
-
-
-def public(f):
-    __all__.append(f.__name__)
-    return f
-
+__all__ = ["get_props_layout"]
 
 PYTHON_PROPS_NAME = "python.props"
 
@@ -24,15 +18,9 @@ PROPS_DATA = {
 }
 
 if not PROPS_DATA["PYTHON_VERSION"]:
-    if VER_NAME:
-        PROPS_DATA["PYTHON_VERSION"] = "{}.{}-{}{}".format(
-            VER_DOT, VER_MICRO, VER_NAME, VER_SERIAL
-        )
-    else:
-        PROPS_DATA["PYTHON_VERSION"] = "{}.{}".format(VER_DOT, VER_MICRO)
-
-if not PROPS_DATA["PYTHON_PLATFORM"]:
-    PROPS_DATA["PYTHON_PLATFORM"] = "x64" if IS_X64 else "Win32"
+    PROPS_DATA["PYTHON_VERSION"] = "{}.{}{}{}".format(
+        VER_DOT, VER_MICRO, "-" if VER_SUFFIX else "", VER_SUFFIX
+    )
 
 PROPS_DATA["PYTHON_TARGET"] = "_GetPythonRuntimeFilesDependsOn{}{}_{}".format(
     VER_MAJOR, VER_MINOR, PROPS_DATA["PYTHON_PLATFORM"]
@@ -41,8 +29,7 @@ PROPS_DATA["PYTHON_TARGET"] = "_GetPythonRuntimeFilesDependsOn{}{}_{}".format(
 PROPS_TEMPLATE = r"""<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="$(Platform) == '{PYTHON_PLATFORM}'">
-    <PythonHome Condition="$(Configuration) == 'Debug'">$([msbuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), "python_d.exe")</PythonHome>
-    <PythonHome Condition="$(PythonHome) == ''">$([msbuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), "python.exe")</PythonHome>
+    <PythonHome Condition="$(PythonHome) == ''">$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)\..\..\tools"))</PythonHome>
     <PythonInclude>$(PythonHome)\include</PythonInclude>
     <PythonLibs>$(PythonHome)\libs</PythonLibs>
     <PythonTag>{PYTHON_TAG}</PythonTag>
@@ -97,14 +84,16 @@ PROPS_TEMPLATE = r"""<?xml version="1.0" encoding="utf-8"?>
 """
 
 
-@public
 def get_props_layout(ns):
     if ns.include_all or ns.include_props:
-        yield "python.props", ns.temp / "python.props"
-
-
-@public
-def get_props(ns):
-    # TODO: Filter contents of props file according to included/excluded items
-    props = PROPS_TEMPLATE.format_map(PROPS_DATA)
-    return props.encode("utf-8")
+        # TODO: Filter contents of props file according to included/excluded items
+        d = dict(PROPS_DATA)
+        if not d.get("PYTHON_PLATFORM"):
+            d["PYTHON_PLATFORM"] = {
+                "win32": "Win32",
+                "amd64": "X64",
+                "arm32": "ARM",
+                "arm64": "ARM64",
+            }[ns.arch]
+        props = PROPS_TEMPLATE.format_map(d)
+        yield "python.props", ("python.props", props.encode("utf-8"))
