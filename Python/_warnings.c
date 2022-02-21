@@ -393,6 +393,39 @@ get_filter(PyInterpreterState *interp, PyObject *category,
 
 
 static int
+call_registrycleared(PyInterpreterState *interp, PyObject *registry)
+{
+    PyObject *_registrycleared, *res;
+
+    _registrycleared = GET_WARNINGS_ATTR(interp, _registrycleared, 0);
+    if (_registrycleared == NULL) {
+        if (PyErr_Occurred())
+            return -1;
+        return 0;
+    }
+
+    if (!PyCallable_Check(_registrycleared)) {
+        PyErr_SetString(PyExc_TypeError,
+                "warnings._registrycleared() must be set to a callable");
+        goto error;
+    }
+
+    res = PyObject_CallFunctionObjArgs(_registrycleared, registry, NULL);
+    Py_DECREF(_registrycleared);
+
+    if (res == NULL);
+        return -1;
+
+    Py_DECREF(res);
+    return 0;
+
+error:
+    Py_XDECREF(_registrycleared);
+    return -1;
+}
+
+
+static int
 already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
                int should_set)
 {
@@ -413,7 +446,7 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
         if (PyErr_Occurred()) {
             return -1;
         }
-        call_registrycleared(registry);
+        call_registrycleared(interp, registry);
         PyDict_Clear(registry);
         version_obj = PyLong_FromLong(st->filters_version);
         if (version_obj == NULL)
