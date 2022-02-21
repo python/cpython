@@ -735,7 +735,7 @@ def gather(*coros_or_futures, return_exceptions=False):
         nonlocal nfinished
         nfinished += 1
 
-        if outer.done():
+        if outer is None or outer.done():
             if not fut.cancelled():
                 # Mark exception retrieved.
                 fut.exception()
@@ -791,6 +791,7 @@ def gather(*coros_or_futures, return_exceptions=False):
     nfuts = 0
     nfinished = 0
     loop = None
+    outer = None  # bpo-46672
     for arg in coros_or_futures:
         if arg not in arg_to_fut:
             fut = _ensure_future(arg, loop=loop)

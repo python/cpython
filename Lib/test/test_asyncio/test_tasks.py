@@ -3235,6 +3235,20 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         test_utils.run_briefly(self.one_loop)
         self.assertIsInstance(f.exception(), RuntimeError)
 
+    def test_issue46672(self):
+        with mock.patch(
+            'asyncio.base_events.BaseEventLoop.call_exception_handler',
+        ):
+            async def coro(s):
+                return s
+            c = coro('abc')
+
+            with self.assertRaises(TypeError):
+                self._gather(c, {})
+            self._run_loop(self.one_loop)
+            # NameError should not happen:
+            self.one_loop.call_exception_handler.assert_not_called()
+
 
 class RunCoroutineThreadsafeTests(test_utils.TestCase):
     """Test case for asyncio.run_coroutine_threadsafe."""

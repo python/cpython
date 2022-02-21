@@ -127,6 +127,14 @@ class AnyTests(BaseTestCase):
 class BottomTypeTestsMixin:
     bottom_type: ClassVar[Any]
 
+    def test_equality(self):
+        self.assertEqual(self.bottom_type, self.bottom_type)
+        self.assertIs(self.bottom_type, self.bottom_type)
+        self.assertNotEqual(self.bottom_type, None)
+
+    def test_get_origin(self):
+        self.assertIs(get_origin(self.bottom_type), None)
+
     def test_instance_type_error(self):
         with self.assertRaises(TypeError):
             isinstance(42, self.bottom_type)
@@ -162,12 +170,34 @@ class NoReturnTests(BottomTypeTestsMixin, BaseTestCase):
     def test_repr(self):
         self.assertEqual(repr(NoReturn), 'typing.NoReturn')
 
+    def test_get_type_hints(self):
+        def some(arg: NoReturn) -> NoReturn: ...
+        def some_str(arg: 'NoReturn') -> 'typing.NoReturn': ...
+
+        expected = {'arg': NoReturn, 'return': NoReturn}
+        for target in [some, some_str]:
+            with self.subTest(target=target):
+                self.assertEqual(gth(target), expected)
+
+    def test_not_equality(self):
+        self.assertNotEqual(NoReturn, Never)
+        self.assertNotEqual(Never, NoReturn)
+
 
 class NeverTests(BottomTypeTestsMixin, BaseTestCase):
     bottom_type = Never
 
     def test_repr(self):
         self.assertEqual(repr(Never), 'typing.Never')
+
+    def test_get_type_hints(self):
+        def some(arg: Never) -> Never: ...
+        def some_str(arg: 'Never') -> 'typing.Never': ...
+
+        expected = {'arg': Never, 'return': Never}
+        for target in [some, some_str]:
+            with self.subTest(target=target):
+                self.assertEqual(gth(target), expected)
 
 
 class AssertNeverTests(BaseTestCase):
@@ -177,11 +207,23 @@ class AssertNeverTests(BaseTestCase):
 
 
 class SelfTests(BaseTestCase):
+    def test_equality(self):
+        self.assertEqual(Self, Self)
+        self.assertIs(Self, Self)
+        self.assertNotEqual(Self, None)
+
     def test_basics(self):
         class Foo:
             def bar(self) -> Self: ...
+        class FooStr:
+            def bar(self) -> 'Self': ...
+        class FooStrTyping:
+            def bar(self) -> 'typing.Self': ...
 
-        self.assertEqual(gth(Foo.bar), {'return': Self})
+        for target in [Foo, FooStr, FooStrTyping]:
+            with self.subTest(target=target):
+                self.assertEqual(gth(target.bar), {'return': Self})
+        self.assertIs(get_origin(Self), None)
 
     def test_repr(self):
         self.assertEqual(repr(Self), 'typing.Self')
@@ -193,6 +235,9 @@ class SelfTests(BaseTestCase):
     def test_cannot_subclass(self):
         with self.assertRaises(TypeError):
             class C(type(Self)):
+                pass
+        with self.assertRaises(TypeError):
+            class C(Self):
                 pass
 
     def test_cannot_init(self):
@@ -2744,6 +2789,18 @@ class CastTests(BaseTestCase):
         cast('hello', 42)
 
 
+# We need this to make sure that `@no_type_check` respects `__module__` attr:
+from test import ann_module8
+
+@no_type_check
+class NoTypeCheck_Outer:
+    Inner = ann_module8.NoTypeCheck_Outer.Inner
+
+@no_type_check
+class NoTypeCheck_WithFunction:
+    NoTypeCheck_function = ann_module8.NoTypeCheck_function
+
+
 class ForwardRefTests(BaseTestCase):
 
     def test_basics(self):
@@ -3058,8 +3115,97 @@ class ForwardRefTests(BaseTestCase):
         @no_type_check
         class D(C):
             c = C
+
         # verify that @no_type_check never affects bases
         self.assertEqual(get_type_hints(C.meth), {'x': int})
+
+        # and never child classes:
+        class Child(D):
+            def foo(self, x: int): ...
+
+        self.assertEqual(get_type_hints(Child.foo), {'x': int})
+
+    def test_no_type_check_nested_types(self):
+        # See https://bugs.python.org/issue46571
+        class Other:
+            o: int
+        class B:  # Has the same `__name__`` as `A.B` and different `__qualname__`
+            o: int
+        @no_type_check
+        class A:
+            a: int
+            class B:
+                b: int
+                class C:
+                    c: int
+            class D:
+                d: int
+
+            Other = Other
+
+        for klass in [A, A.B, A.B.C, A.D]:
+            with self.subTest(klass=klass):
+                self.assertTrue(klass.__no_type_check__)
+                self.assertEqual(get_type_hints(klass), {})
+
+        for not_modified in [Other, B]:
+            with self.subTest(not_modified=not_modified):
+                with self.assertRaises(AttributeError):
+                    not_modified.__no_type_check__
+                self.assertNotEqual(get_type_hints(not_modified), {})
+
+    def test_no_type_check_class_and_static_methods(self):
+        @no_type_check
+        class Some:
+            @staticmethod
+            def st(x: int) -> int: ...
+            @classmethod
+            def cl(cls, y: int) -> int: ...
+
+        self.assertTrue(Some.st.__no_type_check__)
+        self.assertEqual(get_type_hints(Some.st), {})
+        self.assertTrue(Some.cl.__no_type_check__)
+        self.assertEqual(get_type_hints(Some.cl), {})
+
+    def test_no_type_check_other_module(self):
+        self.assertTrue(NoTypeCheck_Outer.__no_type_check__)
+        with self.assertRaises(AttributeError):
+            ann_module8.NoTypeCheck_Outer.__no_type_check__
+        with self.assertRaises(AttributeError):
+            ann_module8.NoTypeCheck_Outer.Inner.__no_type_check__
+
+        self.assertTrue(NoTypeCheck_WithFunction.__no_type_check__)
+        with self.assertRaises(AttributeError):
+            ann_module8.NoTypeCheck_function.__no_type_check__
+
+    def test_no_type_check_foreign_functions(self):
+        # We should not modify this function:
+        def some(*args: int) -> int:
+            ...
+
+        @no_type_check
+        class A:
+            some_alias = some
+            some_class = classmethod(some)
+            some_static = staticmethod(some)
+
+        with self.assertRaises(AttributeError):
+            some.__no_type_check__
+        self.assertEqual(get_type_hints(some), {'args': int, 'return': int})
+
+    def test_no_type_check_lambda(self):
+        @no_type_check
+        class A:
+            # Corner case: `lambda` is both an assignment and a function:
+            bar: Callable[[int], int] = lambda arg: arg
+
+        self.assertTrue(A.bar.__no_type_check__)
+        self.assertEqual(get_type_hints(A.bar), {})
+
+    def test_no_type_check_TypeError(self):
+        # This simply should not fail with
+        # `TypeError: can't set attributes of built-in/extension type 'dict'`
+        no_type_check(dict)
 
     def test_no_type_check_forward_ref_as_string(self):
         class C:
@@ -3446,6 +3592,15 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(
             get_type_hints(barfoo4, globals(), locals(), include_extras=True),
             {"x": typing.Annotated[int | float, "const"]}
+        )
+
+    def test_get_type_hints_annotated_in_union(self):  # bpo-46603
+        def with_union(x: int | list[Annotated[str, 'meta']]): ...
+
+        self.assertEqual(get_type_hints(with_union), {'x': int | list[str]})
+        self.assertEqual(
+            get_type_hints(with_union, include_extras=True),
+            {'x': int | list[Annotated[str, 'meta']]},
         )
 
     def test_get_type_hints_annotated_refs(self):
@@ -4430,8 +4585,6 @@ class TypedDictTests(BaseTestCase):
 
         with self.assertRaises(TypeError):
             TypedDict(_typename='Emp', name=str, id=int)
-        with self.assertRaises(TypeError):
-            TypedDict('Emp', _fields={'name': str, 'id': int})
 
     def test_typeddict_errors(self):
         Emp = TypedDict('Emp', {'name': str, 'id': int})
@@ -4443,8 +4596,11 @@ class TypedDictTests(BaseTestCase):
             isinstance(jim, Emp)
         with self.assertRaises(TypeError):
             issubclass(dict, Emp)
-        with self.assertRaises(TypeError):
-            TypedDict('Hi', x=1)
+        # We raise a DeprecationWarning for the keyword syntax
+        # before the TypeError.
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(TypeError):
+                TypedDict('Hi', x=1)
         with self.assertRaises(TypeError):
             TypedDict('Hi', [('x', int), ('y', 1)])
         with self.assertRaises(TypeError):
@@ -5315,11 +5471,13 @@ class SpecialAttrsTests(BaseTestCase):
             typing.Literal: 'Literal',
             typing.NewType: 'NewType',
             typing.NoReturn: 'NoReturn',
+            typing.Never: 'Never',
             typing.Optional: 'Optional',
             typing.TypeAlias: 'TypeAlias',
             typing.TypeGuard: 'TypeGuard',
             typing.TypeVar: 'TypeVar',
             typing.Union: 'Union',
+            typing.Self: 'Self',
             # Subscribed special forms
             typing.Annotated[Any, "Annotation"]: 'Annotated',
             typing.ClassVar[Any]: 'ClassVar',
