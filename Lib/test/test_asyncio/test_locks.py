@@ -934,16 +934,6 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         res = await asyncio.gather(*tasks)
         return res, tasks
 
-    async def test_barrier_doesnt_accept_loop_parameter(self):
-        loop = asyncio.get_running_loop()
-
-        with self.assertRaisesRegex(
-                TypeError,
-                rf'As of 3.10, the \*loop\* parameter was removed from '
-                rf'Barrier\(\) since it is no longer necessary'
-            ):
-            asyncio.Barrier(1, loop=loop)
-
     async def test_barrier(self):
         barrier = asyncio.Barrier(self.N)
         self.assertTrue(barrier.filling)
@@ -1405,7 +1395,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(barrier.n_waiting, 0)
         self.assertTrue(barrier.broken)
 
-    async def test_abort_barrier_broken(self):
+    async def test_abort_barrier_then_still_broken(self):
         barrier = asyncio.Barrier(self.N)
         results1 = []
         results2 = []
@@ -1430,7 +1420,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(barrier.n_waiting, 0)
 
-    async def test_abort_barrier_and_resetting(self):
+    async def test_abort_barrier_then_resetting(self):
         barrier1 = asyncio.Barrier(self.N)
         barrier2 = asyncio.Barrier(self.N)
         results1 = []
