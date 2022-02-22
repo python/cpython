@@ -5578,8 +5578,8 @@ LOAD_ATTR_INSTANCE_VALUE_miss:
 
 LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE_miss:
         {
-            // Special-cased because the standard opcode does not push
-            // "owner" to the stack, but we need to push it if we DEOPT.
+            // This is special-cased because we have a specialization of
+            // LOAD_FAST that borrows cache from the following instruction.
             STAT_INC(LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE, miss);
             STAT_INC(LOAD_ATTR, miss);
             SpecializedCacheEntry *caches = _GetSpecializedCacheEntryForInstruction(
