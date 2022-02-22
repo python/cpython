@@ -1395,7 +1395,7 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(result, [1, 2, 3])
 
         result = []
-        a = b = c = [1,2,3]
+        a = b = c = [1, 2, 3]
         for x in *a, *b, *c:
             result.append(x)
         self.assertEqual(result, 3 * a)
