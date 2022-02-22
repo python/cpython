@@ -216,10 +216,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         self._cancel_message = msg
         return True
 
-    def cancelling(self) -> int:
+    def cancelling(self):
         return self._num_cancels_requested
 
-    def uncancel(self) -> int:
+    def uncancel(self):
         if self._num_cancels_requested > 0:
             self._num_cancels_requested -= 1
         return self._num_cancels_requested

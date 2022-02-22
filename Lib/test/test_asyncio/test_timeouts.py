@@ -42,7 +42,7 @@ class BaseTimeoutTests:
             async with asyncio.timeout_at(deadline) as cm:
                 await asyncio.sleep(10)
         self.assertTrue(cm.expired())
-        self.assertEqual(deadline, cm.deadline)
+        self.assertEqual(deadline, cm.when())
 
     async def test_nested_timeouts(self):
         cancel = False
@@ -89,7 +89,7 @@ class BaseTimeoutTests:
         t1 = loop.time()
 
         self.assertFalse(cm.expired())
-        self.assertIsNone(cm.deadline)
+        self.assertIsNone(cm.when())
         # finised fast. Very busy CI box requires high enough limit,
         # that's why 0.01 cannot be used
         self.assertLess(t1-t0, 2)
@@ -102,7 +102,7 @@ class BaseTimeoutTests:
         t1 = loop.time()
 
         self.assertFalse(cm.expired())
-        self.assertIsNone(cm.deadline)
+        self.assertIsNone(cm.when())
         # finised fast. Very busy CI box requires high enough limit,
         # that's why 0.01 cannot be used
         self.assertLess(t1-t0, 2)
