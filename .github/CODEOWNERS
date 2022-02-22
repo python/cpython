@@ -147,6 +147,8 @@ Lib/ast.py                    @isidentical
 **/*cgi*                      @ethanfurman
 **/*tarfile*                  @ethanfurman
 
+**/*tomllib*                  @hukkin @encukou
+
 # macOS
 /Mac/                         @python/macos-team
 **/*osx_support*              @python/macos-team
