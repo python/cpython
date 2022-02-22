@@ -199,6 +199,8 @@ the built-in function :func:`range` returns an iterator of integers suitable to
 emulate the effect of Pascal's ``for i := a to b do``; e.g., ``list(range(3))``
 returns the list ``[0, 1, 2]``.
 
+.. versionchanged:: 3.11
+   Starred elements are now allowed in the expression list.
 
 .. _try:
 .. _except:
