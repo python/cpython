@@ -91,7 +91,7 @@ typedef struct {
     PyObject *task_context;
     int task_must_cancel;
     int task_log_destroy_pending;
-    int task_cancel_requested;
+    int task_num_cancels_requested;
 } TaskObj;
 
 typedef struct {
@@ -2036,7 +2036,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     Py_CLEAR(self->task_fut_waiter);
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
-    self->task_cancel_requested = 0;
+    self->task_num_cancels_requested = 0;
     Py_INCREF(coro);
     Py_XSETREF(self->task_coro, coro);
 
@@ -2203,10 +2203,10 @@ _asyncio_Task_cancel_impl(TaskObj *self, PyObject *msg)
         Py_RETURN_FALSE;
     }
 
-    if (self->task_cancel_requested) {
+    self->task_num_cancels_requested += 1;
+    if (self->task_num_cancels_requested > 1) {
         Py_RETURN_FALSE;
     }
-    self->task_cancel_requested = 1;
 
     if (self->task_fut_waiter) {
         PyObject *res;
@@ -2252,12 +2252,7 @@ _asyncio_Task_cancelling_impl(TaskObj *self)
 /*[clinic end generated code: output=803b3af96f917d7e input=c50e50f9c3ca4676]*/
 /*[clinic end generated code]*/
 {
-    if (self->task_cancel_requested) {
-        Py_RETURN_TRUE;
-    }
-    else {
-        Py_RETURN_FALSE;
-    }
+    return PyLong_FromLong(self->task_num_cancels_requested);
 }
 
 /*[clinic input]
@@ -2276,13 +2271,10 @@ _asyncio_Task_uncancel_impl(TaskObj *self)
 /*[clinic end generated code: output=58184d236a817d3c input=5db95e28fcb6f7cd]*/
 /*[clinic end generated code]*/
 {
-    if (self->task_cancel_requested) {
-        self->task_cancel_requested = 0;
-        Py_RETURN_TRUE;
+    if (self->task_num_cancels_requested > 0) {
+        self->task_num_cancels_requested -= 1;
     }
-    else {
-        Py_RETURN_FALSE;
-    }
+    return PyLong_FromLong(self->task_num_cancels_requested);
 }
 
 /*[clinic input]
