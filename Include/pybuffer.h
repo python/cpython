@@ -17,6 +17,10 @@ extern "C" {
  *
  */
 
+// Forward declaration to be able to include pybuffer.h before object.h:
+// pybuffer.h uses PyObject and object.h uses Py_buffer.
+typedef struct _object PyObject;
+
 typedef struct {
     void *buf;
     PyObject *obj;        /* owned reference */
