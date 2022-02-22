@@ -2440,7 +2440,8 @@ Async Object Structures
 
       PyObject *am_aiter(PyObject *self);
 
-   Must return an :term:`awaitable` object.  See :meth:`__anext__` for details.
+   Must return an :term:`asynchronous iterator` object.
+   See :meth:`__anext__` for details.
 
    This slot may be set to ``NULL`` if an object does not implement
    asynchronous iteration protocol.
