@@ -4691,6 +4691,7 @@ handle_eval_breaker:
             DEOPT_IF(func->func_version != cache1->func_version, CALL);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(code->co_argcount != argcount, CALL);
+            STAT_INC(CALL, hit);
             InterpreterFrame *new_frame = _PyFrame_Push(tstate, func);
             if (new_frame == NULL) {
                 goto error;
@@ -4725,6 +4726,7 @@ handle_eval_breaker:
             DEOPT_IF(argcount > code->co_argcount, CALL);
             int minargs = cache1->min_args;
             DEOPT_IF(argcount < minargs, CALL);
+            STAT_INC(CALL, hit);
             InterpreterFrame *new_frame = _PyFrame_Push(tstate, func);
             if (new_frame == NULL) {
                 goto error;
