@@ -1514,15 +1514,33 @@ These are not used in annotations. They are building blocks for declaring types.
    Usage::
 
       class Point3D(Point2D):
-         z: int
+          z: int
 
    ``Point3D`` has three items: ``x``, ``y`` and ``z``. It is equivalent to this
    definition::
 
       class Point3D(TypedDict):
-         x: int
-         y: int
-         z: int
+          x: int
+          y: int
+          z: int
+
+   It is worth noting that a ``TypedDict`` cannot inherit from a non-TypedDict class,
+   notably including :class:`Generic`. For example::
+
+      class X(TypedDict):
+          x: int
+
+      class Y(TypedDict):
+          y: int
+
+      class Z(object): pass  # A non-TypedDict class
+
+      class XY(X, Y): pass  # OK
+
+      class XZ(X, Z): pass  # raises TypeError
+
+      T = TypeVar('T')
+      class XT(X, Generic[T]): pass  # raises TypeError
 
    The type info for introspection can be accessed via ``Point2D.__annotations__``,
    ``Point2D.__total__``, ``Point2D.__required_keys__``, and
@@ -1542,9 +1560,7 @@ These are not used in annotations. They are building blocks for declaring types.
 
    .. attribute:: __total__
 
-      ``Point2D.__total__`` gives the value of the ``total`` argument. Furthermore,
-      inherited items won't be affected by the totality flag which defined in superclass,
-      and instead use totality of the TypedDict type where they were defined.
+      ``Point2D.__total__`` gives the value of the ``total`` argument.
       Example::
 
          >>> class Point2D(TypedDict): pass
@@ -1562,9 +1578,10 @@ These are not used in annotations. They are building blocks for declaring types.
 
       ``Point2D.__required_keys__`` and ``Point2D.__optional_keys__`` return
       ``frozenset`` objects containing required and non-required keys, respectively.
-      Currently the only way to declare both required and non-required keys in the same ``TypedDict`` is mixed inheritance,
-      declaring a ``TypedDict`` with one value for the ``total`` argument and
-      then inheriting it from another ``TypedDict`` with a different value for ``total``.
+      Currently the only way to declare both required and non-required keys in the
+      same ``TypedDict`` is mixed inheritance, declaring a ``TypedDict`` with one value
+      for the ``total`` argument and then inheriting it from another ``TypedDict`` with
+      a different value for ``total``.
       Usage::
 
          >>> class Point2D(TypedDict, total=False):
