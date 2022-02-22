@@ -1517,7 +1517,7 @@ These are not used in annotations. They are building blocks for declaring types.
       class Point3D(Point2D):
          z: int
 
-   Now the ``Point3D`` has three items: ``x``, ``y`` and ``z``. It is equivalent to this
+   ``Point3D`` has three items: ``x``, ``y`` and ``z``. It is equivalent to this
    definition::
 
       class Point3D(TypedDict):
