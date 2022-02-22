@@ -1749,9 +1749,7 @@ _multibytecodec_MultibyteStreamWriter_write_impl(MultibyteStreamWriterObject *se
     if (mbstreamwriter_iwrite(self, strobj, state->str_write)) {
         return NULL;
     }
-    else {
-        Py_RETURN_NONE;
-    }
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
