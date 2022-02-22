@@ -920,9 +920,7 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
 
 class BarrierTests(unittest.IsolatedAsyncioTestCase):
-    """
-    Tests for Barrier objects.
-    """
+
     async def asyncSetUp(self):
         await super().asyncSetUp()
         self.N = 5
@@ -967,6 +965,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(RGX_REPR.match(repr(barrier)))
         self.assertTrue(f"wait:{incr}/{self.N}" in repr(barrier))
         self.assertTrue(f"block:0/{self.N}" in repr(barrier))
+
         barrier._set_filling()
         self.assertTrue(RGX_REPR.match(repr(barrier)))
         self.assertTrue(repr(barrier).endswith('state:0]>'))
@@ -1317,7 +1316,6 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(all(results2))
 
         self.assertEqual(barrier.n_waiting, 0)
-
 
     async def test_reset_barrier_while_draining_then_blocking(self):
         barrier = asyncio.Barrier(self.N)
