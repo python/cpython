@@ -38,7 +38,7 @@ def print_specialization_stats(name, family_stats, defines):
         for key in sorted(family_stats):
             if key.startswith("specialization.failure_kinds"):
                 continue
-            if key.startswith("specialization."):
+            if key in ("specialization.hit", "specialization.miss"):
                 label = key[len("specialization."):]
             elif key == "execution_count":
                 label = "unquickened"
