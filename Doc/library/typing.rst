@@ -1510,7 +1510,7 @@ These are not used in annotations. They are building blocks for declaring types.
    ``True`` as the value of the ``total`` argument. ``True`` is the default,
    and makes all items defined in the class body required.
 
-   It is possible for a ``TypedDict`` type to inherit from one or more TypedDict types
+   It is possible for a ``TypedDict`` type to inherit from one or more other ``TypedDict`` types
    using the class-based syntax.
    Usage::
 
