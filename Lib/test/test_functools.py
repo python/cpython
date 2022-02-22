@@ -19,9 +19,9 @@ import gc
 from weakref import proxy
 import contextlib
 
+from test.support import async_helper
 from test.support import import_helper
 from test.support import threading_helper
-from test.support.script_helper import assert_python_ok
 
 import functools
 
@@ -1724,6 +1724,20 @@ class TestLRU:
                    for i, v in enumerate([1, 2, 2, 3, 2])]
         with threading_helper.start_threads(threads):
             pass
+
+    @async_helper.async_test
+    async def test_lru_cache_async(self):
+        times = 0
+
+        @self.module.lru_cache()
+        async def f(x):
+            nonlocal times
+            times += 1
+            return times, x
+
+        self.assertEqual(await f(1), (1, 1))
+        self.assertEqual(await f(1), (1, 1))  # f not called again
+        self.assertEqual(await f(0), (2, 0))
 
     def test_need_for_rlock(self):
         # This will deadlock on an LRU cache that uses a regular lock

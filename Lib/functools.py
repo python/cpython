@@ -476,6 +476,29 @@ def _make_key(args, kwds, typed,
         return key[0]
     return _HashedSeq(key)
 
+class _CachedAwaitable:
+    """Wrapper to cache when a cache decorator is applied on a coroutine function.
+
+    A coroutine shouldn't simply be cached since it can only be awaited once.
+    This wrapper is cached instead, which awaits the underlying coroutine at
+    most once and caches the result for subsequent calls.
+    """
+
+    def __init__(self, coro):
+        self.coro = coro
+        self.lock = RLock()
+        self.cache = _NOT_FOUND
+
+    def __await__(self):
+        if self.cache is not _NOT_FOUND:
+            return self.cache
+        with self.lock:
+            # check if another thread got the result while we awaited lock
+            if self.cache is not _NOT_FOUND:
+                return self.cache
+            self.cache = yield from self.coro.__await__()
+        return self.cache
+
 def lru_cache(maxsize=128, typed=False):
     """Least-recently-used cache decorator.
 
@@ -516,7 +539,15 @@ def lru_cache(maxsize=128, typed=False):
             'Expected first argument to be an integer, a callable, or None')
 
     def decorating_function(user_function):
-        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
+        import inspect
+
+        if inspect.iscoroutinefunction(user_function):
+            def wrapped_user_function(*args, **kwargs):
+                return _CachedAwaitable(user_function(*args, **kwargs))
+        else:
+            wrapped_user_function = user_function
+
+        wrapper = _lru_cache_wrapper(wrapped_user_function, maxsize, typed, _CacheInfo)
         wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
         return update_wrapper(wrapper, user_function)
 

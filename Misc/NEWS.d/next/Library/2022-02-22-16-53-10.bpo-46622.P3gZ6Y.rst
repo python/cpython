@@ -1,0 +1,3 @@
+The :func:`functools.lru_cache` and :func:`functools.cache` decorators can
+now decorate an async function. This caches a wrapper to the coroutine
+returned by the function, and awaits it when the wrapper is first awaited.

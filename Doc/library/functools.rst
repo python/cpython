@@ -51,6 +51,9 @@ The :mod:`functools` module defines the following functions:
 
    .. versionadded:: 3.9
 
+   .. versionchanged:: 3.11
+      Added support for caching an async function.
+
 
 .. decorator:: cached_property(func)
 
@@ -250,6 +253,9 @@ The :mod:`functools` module defines the following functions:
 
    .. versionadded:: 3.9
       Added the function :func:`cache_parameters`
+
+   .. versionchanged:: 3.11
+      Added support for caching an async function.
 
 .. decorator:: total_ordering
 
