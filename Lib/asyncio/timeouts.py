@@ -32,8 +32,7 @@ class Timeout:
         self._task: Optional[tasks.Task[Any]] = None
         self._deadline = deadline
 
-    @property
-    def deadline(self) -> Optional[float]:
+    def when(self) -> Optional[float]:
         return self._deadline
 
     def reschedule(self, deadline: Optional[float]) -> None:
