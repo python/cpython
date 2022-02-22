@@ -1,1 +1,1 @@
-Don't deopt :opcode:`COMPARE_OP` when collecting stats.
+Don't un-adapt :opcode:`COMPARE_OP` when collecting specialization stats.
