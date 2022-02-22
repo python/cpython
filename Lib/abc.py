@@ -83,22 +83,13 @@ class abstractproperty(property):
 
 
 try:
-    from _abc import (
-        get_cache_token,
-        _abc_init,
-        _abc_register,
-        _abc_instancecheck,
-        _abc_subclasscheck,
-        _get_dump,
-        _reset_registry,
-        _reset_caches,
-    )
+    from _abc import (get_cache_token, _abc_init, _abc_register,
+                      _abc_instancecheck, _abc_subclasscheck, _get_dump,
+                      _reset_registry, _reset_caches)
 except ImportError:
     from _py_abc import ABCMeta, get_cache_token
-
-    ABCMeta.__module__ = "abc"
+    ABCMeta.__module__ = 'abc'
 else:
-
     class ABCMeta(type):
         """Metaclass for defining Abstract Base Classes (ABCs).
 
@@ -112,11 +103,10 @@ else:
         implementations defined by the registering ABC be callable (not
         even via super()).
 
-        Note that a class with the :class:`ABCMeta` metaclass will be
-        considered abstract only if has at least one abstract method
-        that has not been overridden.
+        Note that a class with the ABCMeta metaclass will be considered
+        abstract only if has at least one abstract method that has not
+        been overridden.
         """
-
         def __new__(mcls, name, bases, namespace, **kwargs):
             cls = super().__new__(mcls, name, bases, namespace, **kwargs)
             _abc_init(cls)
@@ -141,19 +131,13 @@ else:
             """Debug helper to print the ABC registry."""
             print(f"Class: {cls.__module__}.{cls.__qualname__}", file=file)
             print(f"Inv. counter: {get_cache_token()}", file=file)
-            (
-                _abc_registry,
-                _abc_cache,
-                _abc_negative_cache,
-                _abc_negative_cache_version,
-            ) = _get_dump(cls)
+            (_abc_registry, _abc_cache, _abc_negative_cache,
+             _abc_negative_cache_version) = _get_dump(cls)
             print(f"_abc_registry: {_abc_registry!r}", file=file)
             print(f"_abc_cache: {_abc_cache!r}", file=file)
             print(f"_abc_negative_cache: {_abc_negative_cache!r}", file=file)
-            print(
-                f"_abc_negative_cache_version: {_abc_negative_cache_version!r}",
-                file=file,
-            )
+            print(f"_abc_negative_cache_version: {_abc_negative_cache_version!r}",
+                  file=file)
 
         def _abc_registry_clear(cls):
             """Clear the registry (for debugging or testing)."""
@@ -180,7 +164,7 @@ def update_abstractmethods(cls):
 
     If cls is not an instance of ABCMeta, does nothing.
     """
-    if not hasattr(cls, "__abstractmethods__"):
+    if not hasattr(cls, '__abstractmethods__'):
         # We check for __abstractmethods__ here because cls might by a C
         # implementation or a python implementation (especially during
         # testing), and we want to handle both cases.
@@ -190,7 +174,7 @@ def update_abstractmethods(cls):
     # Check the existing abstract methods of the parents, keep only the ones
     # that are not implemented.
     for scls in cls.__bases__:
-        for name in getattr(scls, "__abstractmethods__", ()):
+        for name in getattr(scls, '__abstractmethods__', ()):
             value = getattr(cls, name, None)
             if getattr(value, "__isabstractmethod__", False):
                 abstracts.add(name)
@@ -206,5 +190,4 @@ class ABC(metaclass=ABCMeta):
     """Helper class that provides a standard way to create an ABC using
     inheritance.
     """
-
     __slots__ = ()
