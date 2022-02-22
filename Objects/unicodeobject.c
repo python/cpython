@@ -1941,26 +1941,6 @@ unicode_dealloc(PyObject *unicode)
     case SSTATE_NOT_INTERNED:
         break;
 
-    case SSTATE_INTERNED_MORTAL:
-    {
-#ifdef INTERNED_STRINGS
-        /* Revive the dead object temporarily. PyDict_DelItem() removes two
-           references (key and value) which were ignored by
-           PyUnicode_InternInPlace(). Use refcnt=3 rather than refcnt=2
-           to prevent calling unicode_dealloc() again. Adjust refcnt after
-           PyDict_DelItem(). */
-        assert(Py_REFCNT(unicode) == 0);
-        Py_SET_REFCNT(unicode, 3);
-        if (PyDict_DelItem(interned, unicode) != 0) {
-            _PyErr_WriteUnraisableMsg("deletion of interned string failed",
-                                      NULL);
-        }
-        assert(Py_REFCNT(unicode) == 1);
-        Py_SET_REFCNT(unicode, 0);
-#endif
-        break;
-    }
-
     case SSTATE_INTERNED_IMMORTAL:
         _PyObject_ASSERT_FAILED_MSG(unicode, "Immortal interned string died");
         break;
@@ -15608,16 +15588,12 @@ PyUnicode_InternInPlace(PyObject **p)
     }
 
     if (t != s) {
-        Py_INCREF(t);
         Py_SETREF(*p, t);
         return;
     }
 
-    /* The two references in interned dict (key and value) are not counted by
-       refcnt. unicode_dealloc() and _PyUnicode_ClearInterned() take care of
-       this. */
-    Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
-    _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
+    _Py_SetImmortal(s);
+    _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
 #else
     // PyDict expects that interned strings have their hash
     // (PyASCIIObject.hash) already computed.
@@ -15638,10 +15614,6 @@ PyUnicode_InternImmortal(PyObject **p)
     }
 
     PyUnicode_InternInPlace(p);
-    if (PyUnicode_CHECK_INTERNED(*p) != SSTATE_INTERNED_IMMORTAL) {
-        _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
-        Py_INCREF(*p);
-    }
 }
 
 PyObject *
@@ -15668,49 +15640,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     }
     assert(PyDict_CheckExact(interned));
 
-    /* Interned unicode strings are not forcibly deallocated; rather, we give
-       them their stolen references back, and then clear and DECREF the
-       interned dict. */
-
-#ifdef INTERNED_STATS
-    fprintf(stderr, "releasing %zd interned strings\n",
-            PyDict_GET_SIZE(interned));
-
-    Py_ssize_t immortal_size = 0, mortal_size = 0;
-#endif
-    Py_ssize_t pos = 0;
-    PyObject *s, *ignored_value;
-    while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
-        assert(PyUnicode_IS_READY(s));
-
-        switch (PyUnicode_CHECK_INTERNED(s)) {
-        case SSTATE_INTERNED_IMMORTAL:
-            Py_SET_REFCNT(s, Py_REFCNT(s) + 1);
-#ifdef INTERNED_STATS
-            immortal_size += PyUnicode_GET_LENGTH(s);
-#endif
-            break;
-        case SSTATE_INTERNED_MORTAL:
-            // Restore the two references (key and value) ignored
-            // by PyUnicode_InternInPlace().
-            Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
-#ifdef INTERNED_STATS
-            mortal_size += PyUnicode_GET_LENGTH(s);
-#endif
-            break;
-        case SSTATE_NOT_INTERNED:
-            /* fall through */
-        default:
-            Py_UNREACHABLE();
-        }
-        _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
-    }
-#ifdef INTERNED_STATS
-    fprintf(stderr,
-            "total size of all interned strings: %zd/%zd mortal/immortal\n",
-            mortal_size, immortal_size);
-#endif
-
+    /* Interned unicode strings are not forcibly deallocated */
     PyDict_Clear(interned);
     Py_CLEAR(interned);
 }

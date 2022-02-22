@@ -1238,17 +1238,16 @@ class FinalizationTest(unittest.TestCase):
         # during Python finalization
         code = """
 import warnings
-warn = warnings.warn
 
 class A:
     def __del__(self):
-        warn("test")
+        warnings.warn("test")
 
 a=A()
         """
         rc, out, err = assert_python_ok("-c", code)
         self.assertEqual(err.decode().rstrip(),
-                         '<string>:7: UserWarning: test')
+                         '<string>:6: UserWarning: test')
 
     def test_late_resource_warning(self):
         # Issue #21925: Emitting a ResourceWarning late during the Python

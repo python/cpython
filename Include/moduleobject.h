@@ -29,6 +29,7 @@ Py_DEPRECATED(3.2) PyAPI_FUNC(const char *) PyModule_GetFilename(PyObject *);
 PyAPI_FUNC(PyObject *) PyModule_GetFilenameObject(PyObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyModule_Clear(PyObject *);
+PyAPI_FUNC(void) _PyModule_PhasedClear(PyObject *, int phase);
 PyAPI_FUNC(void) _PyModule_ClearDict(PyObject *);
 PyAPI_FUNC(int) _PyModuleSpec_IsInitializing(PyObject *);
 #endif
@@ -48,11 +49,13 @@ typedef struct PyModuleDef_Base {
   PyObject* m_copy;
 } PyModuleDef_Base;
 
-#define PyModuleDef_HEAD_INIT { \
-    PyObject_HEAD_INIT(NULL)    \
-    NULL, /* m_init */          \
-    0,    /* m_index */         \
-    NULL, /* m_copy */          \
+// TODO(eduardo-elizondo): This is only used to simplify the review of GH-19474
+// Rather than changing this API, we'll introduce PyModuleDef_HEAD_IMMORTAL_INIT
+#define PyModuleDef_HEAD_INIT {       \
+    PyObject_HEAD_IMMORTAL_INIT(NULL) \
+    NULL, /* m_init */                \
+    0,    /* m_index */               \
+    NULL, /* m_copy */                \
   }
 
 struct PyModuleDef_Slot;

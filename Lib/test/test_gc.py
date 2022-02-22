@@ -714,22 +714,24 @@ class GCTests(unittest.TestCase):
         # Create a reference cycle through the __main__ module and check
         # it gets collected at interpreter shutdown.
         code = """if 1:
+            import sys
             class C:
-                def __del__(self):
-                    print('__del__ called')
+                def __del__(self, sys=sys):
+                    print('__del__ called', file=sys.stderr)
             l = [C()]
             l.append(l)
             """
         rc, out, err = assert_python_ok('-c', code)
-        self.assertEqual(out.strip(), b'__del__ called')
+        self.assertEqual(err.strip(), b'__del__ called')
 
     def test_gc_ordinary_module_at_shutdown(self):
         # Same as above, but with a non-__main__ module.
         with temp_dir() as script_dir:
             module = """if 1:
+                import sys
                 class C:
-                    def __del__(self):
-                        print('__del__ called')
+                    def __del__(self, sys=sys):
+                        print('__del__ called', file=sys.stderr)
                 l = [C()]
                 l.append(l)
                 """
@@ -740,13 +742,14 @@ class GCTests(unittest.TestCase):
                 """ % (script_dir,)
             make_script(script_dir, 'gctest', module)
             rc, out, err = assert_python_ok('-c', code)
-            self.assertEqual(out.strip(), b'__del__ called')
+            self.assertEqual(err.strip(), b'')
 
     def test_global_del_SystemExit(self):
         code = """if 1:
+            import sys
             class ClassWithDel:
-                def __del__(self):
-                    print('__del__ called')
+                def __del__(self, sys=sys):
+                    print('__del__ called', file=sys.stderr)
             a = ClassWithDel()
             a.link = a
             raise SystemExit(0)"""
@@ -754,7 +757,7 @@ class GCTests(unittest.TestCase):
         with open(TESTFN, 'w', encoding="utf-8") as script:
             script.write(code)
         rc, out, err = assert_python_ok(TESTFN)
-        self.assertEqual(out.strip(), b'__del__ called')
+        self.assertEqual(err.strip(), b'__del__ called')
 
     def test_get_stats(self):
         stats = gc.get_stats()

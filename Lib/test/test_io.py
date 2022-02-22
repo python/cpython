@@ -3518,6 +3518,7 @@ class TextIOWrapperTest(unittest.TestCase):
         code = """if 1:
             import codecs
             import {iomod} as io
+            import sys
 
             # Avoid looking up codecs at shutdown
             codecs.lookup('utf-8')
@@ -3525,27 +3526,21 @@ class TextIOWrapperTest(unittest.TestCase):
             class C:
                 def __init__(self):
                     self.buf = io.BytesIO()
-                def __del__(self):
+                def __del__(self, sys=sys):
                     io.TextIOWrapper(self.buf, **{kwargs})
-                    print("ok")
+                    print("ok", file=sys.stderr)
             c = C()
             """.format(iomod=iomod, kwargs=kwargs)
         return assert_python_ok("-c", code)
 
     def test_create_at_shutdown_without_encoding(self):
         rc, out, err = self._check_create_at_shutdown()
-        if err:
-            # Can error out with a RuntimeError if the module state
-            # isn't found.
-            self.assertIn(self.shutdown_error, err.decode())
-        else:
-            self.assertEqual("ok", out.decode().strip())
+        self.assertEqual("ok", err.decode().strip())
 
     def test_create_at_shutdown_with_encoding(self):
         rc, out, err = self._check_create_at_shutdown(encoding='utf-8',
                                                       errors='strict')
-        self.assertFalse(err)
-        self.assertEqual("ok", out.decode().strip())
+        self.assertEqual("ok", err.decode().strip())
 
     def test_read_byteslike(self):
         r = MemviewBytesIO(b'Just some random string\n')

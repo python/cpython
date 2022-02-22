@@ -915,7 +915,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_leak(self):
                     GLOBAL_LIST.append(object())
         """)
-        self.check_leak(code, 'references')
+        self.check_leak(code, 'memory blocks')
 
     @unittest.skipUnless(Py_DEBUG, 'need a debug build')
     def test_huntrleaks_fd_leak(self):

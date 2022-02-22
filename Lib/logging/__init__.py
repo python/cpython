@@ -1448,6 +1448,8 @@ class Logger(Filterer):
         self.handlers = []
         self.disabled = False
         self._cache = {}
+        # Make normcase available even during runtime shutdown
+        self._normcase = os.path.normcase
 
     def setLevel(self, level):
         """
@@ -1569,7 +1571,7 @@ class Logger(Filterer):
         rv = "(unknown file)", 0, "(unknown function)", None
         while hasattr(f, "f_code"):
             co = f.f_code
-            filename = os.path.normcase(co.co_filename)
+            filename = self._normcase(co.co_filename)
             if filename == _srcfile:
                 f = f.f_back
                 continue

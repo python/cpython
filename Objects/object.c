@@ -1705,7 +1705,8 @@ PyTypeObject _PyNone_Type = {
 
 PyObject _Py_NoneStruct = {
   _PyObject_EXTRA_INIT
-  1, &_PyNone_Type
+  _Py_IMMORTAL_REFCNT,
+  &_PyNone_Type
 };
 
 /* NotImplemented is an object that can be used to signal that an
@@ -1994,7 +1995,9 @@ _Py_NewReference(PyObject *op)
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
-    Py_SET_REFCNT(op, 1);
+    /* Do not use Py_SET_REFCNT to skip the Immortal Instance check. This
+     * API guarantees that an instance will always be set to a refcnt of 1 */
+    op->ob_refcnt = 1;
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op, 1);
 #endif

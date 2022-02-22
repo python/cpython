@@ -385,7 +385,8 @@ class SysModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, sys.getrefcount)
         c = sys.getrefcount(None)
         n = None
-        self.assertEqual(sys.getrefcount(None), c+1)
+        # Singleton refcnts don't change
+        self.assertEqual(sys.getrefcount(None), c)
         del n
         self.assertEqual(sys.getrefcount(None), c)
         if hasattr(sys, "gettotalrefcount"):
@@ -977,14 +978,14 @@ class SysModuleTest(unittest.TestCase):
             import sys
             class A:
                 def __del__(self, sys=sys):
-                    print(sys.flags)
-                    print(sys.float_info)
+                    print(sys.flags, file=sys.stderr)
+                    print(sys.float_info, file=sys.stderr)
             a = A()
             """
         rc, out, err = assert_python_ok('-c', code)
-        out = out.splitlines()
-        self.assertIn(b'sys.flags', out[0])
-        self.assertIn(b'sys.float_info', out[1])
+        err = err.splitlines()
+        self.assertIn(b'sys.flags', err[0])
+        self.assertIn(b'sys.float_info', err[1])
 
     def test_sys_ignores_cleaning_up_user_data(self):
         code = """if 1:

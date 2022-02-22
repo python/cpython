@@ -649,28 +649,29 @@ class ThreadTests(BaseTestCase):
         # bpo-31516: current_thread() should still point to the main thread
         # at shutdown
         code = """if 1:
-            import gc, threading
+            import gc, sys, threading
 
             main_thread = threading.current_thread()
             assert main_thread is threading.main_thread()  # sanity check
 
             class RefCycle:
-                def __init__(self):
+                def __init__(self, main_thread):
                     self.cycle = self
+                    self.main_thread = main_thread
 
-                def __del__(self):
+                def __del__(self, sys=sys):
                     print("GC:",
-                          threading.current_thread() is main_thread,
-                          threading.main_thread() is main_thread,
-                          threading.enumerate() == [main_thread])
+                          threading.current_thread() is self.main_thread,
+                          threading.main_thread() is self.main_thread,
+                          threading.enumerate() == [self.main_thread],
+                          file=sys.stderr)
 
-            RefCycle()
+            RefCycle(main_thread)
             gc.collect()  # sanity check
-            x = RefCycle()
+            x = RefCycle(main_thread)
         """
         _, out, err = assert_python_ok("-c", code)
-        data = out.decode()
-        self.assertEqual(err, b"")
+        data = err.decode()
         self.assertEqual(data.splitlines(),
                          ["GC: True True True"] * 2)
 
@@ -878,18 +879,19 @@ class ThreadTests(BaseTestCase):
         # bpo-19466: thread locals must not be deleted before destructors
         # are called
         rc, out, err = assert_python_ok("-c", """if 1:
+            import sys
             import threading
 
             class Atexit:
-                def __del__(self):
-                    print("thread_dict.atexit = %r" % thread_dict.atexit)
+                def __del__(self, sys=sys):
+                    print("thread_dict.atexit = %r" % thread_dict.atexit, file=sys.stderr)
 
             thread_dict = threading.local()
             thread_dict.atexit = "value"
 
-            atexit = Atexit()
+            _atexit = Atexit()
         """)
-        self.assertEqual(out.rstrip(), b"thread_dict.atexit = 'value'")
+        self.assertEqual(err.rstrip(), b"thread_dict.atexit = 'value'")
 
     def test_boolean_target(self):
         # bpo-41149: A thread that had a boolean value of False would not

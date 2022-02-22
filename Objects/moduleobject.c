@@ -572,11 +572,127 @@ PyModule_GetState(PyObject* m)
 }
 
 void
+module_dict_clear_phase_one(PyObject *d)
+{
+    /* Phase one only clears names starting with a single underscore
+     * while also excluding modules from being deleted
+     */
+    Py_ssize_t pos;
+    PyObject *key, *value;
+
+    pos = 0;
+    int verbose = _Py_GetConfig()->verbose;
+    while (PyDict_Next(d, &pos, &key, &value)) {
+        if (value == Py_None || PyModule_Check(value) || !PyUnicode_Check(key)) {
+            continue;
+        }
+        if (PyUnicode_READ_CHAR(key, 0) != '_') {
+            continue;
+        }
+        if (PyUnicode_READ_CHAR(key, 1) == '_') {
+            continue;
+        }
+        if (verbose > 1) {
+            const char *s = PyUnicode_AsUTF8(key);
+            if (s != NULL)
+                PySys_WriteStderr("#   clear[1] %s\n", s);
+            else
+                PyErr_Clear();
+        }
+        if (PyDict_SetItem(d, key, Py_None) != 0) {
+            PyErr_WriteUnraisable(NULL);
+        }
+    }
+}
+
+void
+module_dict_clear_phase_two(PyObject *d)
+{
+    /* Phase two, clears all names except for __builtins__ and modules */
+    Py_ssize_t pos;
+    PyObject *key, *value;
+
+
+    /* First, clear only names starting with a single underscore */
+    pos = 0;
+    int verbose = _Py_GetConfig()->verbose;
+    while (PyDict_Next(d, &pos, &key, &value)) {
+        if (value == Py_None || PyModule_Check(value) || !PyUnicode_Check(key)) {
+            continue;
+        }
+        if (PyUnicode_READ_CHAR(key, 0) == '_' ||
+            _PyUnicode_EqualToASCIIString(key, "__builtins__"))
+        {
+            continue;
+        }
+        if (verbose > 1) {
+            const char *s = PyUnicode_AsUTF8(key);
+            if (s != NULL)
+                PySys_WriteStderr("#   clear[1] %s\n", s);
+            else
+                PyErr_Clear();
+        }
+        if (PyDict_SetItem(d, key, Py_None) != 0) {
+            PyErr_WriteUnraisable(NULL);
+        }
+    }
+}
+
+void
+module_dict_clear_phase_three(PyObject *d)
+{
+    /* Phase three, clears all modules except __builtins__*/
+    Py_ssize_t pos;
+    PyObject *key, *value;
+
+
+    /* First, clear only names starting with a single underscore */
+    pos = 0;
+    int verbose = _Py_GetConfig()->verbose;
+    while (PyDict_Next(d, &pos, &key, &value)) {
+        if (value == Py_None || !PyModule_Check(value) || !PyUnicode_Check(key)) {
+            continue;
+        }
+        if (_PyUnicode_EqualToASCIIString(key, "__builtins__")) {
+            continue;
+        }
+        if (verbose > 1) {
+            const char *s = PyUnicode_AsUTF8(key);
+            if (s != NULL)
+                PySys_WriteStderr("#   clear[1] %s\n", s);
+            else
+                PyErr_Clear();
+        }
+        if (PyDict_SetItem(d, key, Py_None) != 0) {
+            PyErr_WriteUnraisable(NULL);
+        }
+    }
+}
+
+void
 _PyModule_Clear(PyObject *m)
 {
     PyObject *d = ((PyModuleObject *)m)->md_dict;
     if (d != NULL)
         _PyModule_ClearDict(d);
+}
+
+void
+_PyModule_PhasedClear(PyObject *m, int phase)
+{
+    PyObject *d = ((PyModuleObject *)m)->md_dict;
+    if (d == NULL) {
+      return;
+    }
+    if (phase == 1) {
+       module_dict_clear_phase_one(d);
+    }
+    if (phase == 2) {
+       module_dict_clear_phase_two(d);
+    }
+    if (phase == 3) {
+       module_dict_clear_phase_three(d);
+    }
 }
 
 void
@@ -640,6 +756,7 @@ _PyModule_ClearDict(PyObject *d)
        builtins, in particularly 'None'. */
 
 }
+
 
 /*[clinic input]
 class module "PyModuleObject *" "&PyModule_Type"

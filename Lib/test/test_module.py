@@ -269,15 +269,20 @@ a = A(destroyed)"""
     def test_module_finalization_at_shutdown(self):
         # Module globals and builtins should still be available during shutdown
         rc, out, err = assert_python_ok("-c", "from test import final_a")
-        self.assertFalse(err)
-        lines = out.splitlines()
+        lines = err.splitlines()
         self.assertEqual(set(lines), {
-            b"x = a",
-            b"x = b",
-            b"final_a.x = a",
-            b"final_b.x = b",
-            b"len = len",
-            b"shutil.rmtree = rmtree"})
+            b'x = a',
+            b'final_b.x = b',
+            b'x = b',
+            b'final_a.x = a',
+            b'shutil.rmtree = rmtree',
+            b'len = len',
+            b'x = None',
+            b'final_b.x = b',
+            b'x = None',
+            b'final_a.x = None',
+            b'shutil.rmtree = rmtree',
+            b'len = len'})
 
     def test_descriptor_errors_propagate(self):
         class Descr:
