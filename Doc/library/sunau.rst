@@ -59,7 +59,7 @@ The :mod:`sunau` module defines the following functions:
    A *mode* of ``'r'`` returns an :class:`AU_read` object, while a *mode* of ``'w'``
    or ``'wb'`` returns an :class:`AU_write` object.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.11
       Added support for :term:`path-like objects <path-like object>`.
 
 .. function:: openfp(file, mode)

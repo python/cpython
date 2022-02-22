@@ -51,7 +51,7 @@ Module :mod:`aifc` defines the following function:
    .. versionchanged:: 3.4
       Support for the :keyword:`with` statement was added.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.11
       Added support for :term:`path-like objects <path-like object>`.
 
 Objects returned by :func:`.open` when a file is opened for reading have the
