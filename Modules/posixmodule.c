@@ -7623,21 +7623,15 @@ static PyObject *
 os_getgroups_impl(PyObject *module)
 /*[clinic end generated code: output=42b0c17758561b56 input=d3f109412e6a155c]*/
 {
-    PyObject *result = NULL;
-    gid_t grouplist[MAX_GROUPS];
-
     /* On MacOSX getgroups(2) can return more than MAX_GROUPS results
      * This is a helper variable to store the intermediate result when
      * that happens.
      *
-     * To keep the code readable the OSX behaviour is unconditional,
-     * according to the POSIX spec this should be safe on all unix-y
-     * systems.
+     * See bpo-7900.
      */
-    gid_t* alt_grouplist = grouplist;
+    gid_t *grouplist = NULL;
     int n;
 
-#ifdef __APPLE__
     /* Issue #17557: As of OS X 10.8, getgroups(2) no longer raises EINVAL if
      * there are more groups than can fit in grouplist.  Therefore, on OS X
      * always first call getgroups with length 0 to get the actual number
@@ -7646,56 +7640,25 @@ os_getgroups_impl(PyObject *module)
     n = getgroups(0, NULL);
     if (n < 0) {
         return posix_error();
-    } else if (n <= MAX_GROUPS) {
-        /* groups will fit in existing array */
-        alt_grouplist = grouplist;
     } else {
-        alt_grouplist = PyMem_New(gid_t, n);
-        if (alt_grouplist == NULL) {
+        n++; // Avoid malloc(0)
+        grouplist = PyMem_New(gid_t, n+1);
+        if (grouplist == NULL) {
             return PyErr_NoMemory();
         }
     }
 
-    n = getgroups(n, alt_grouplist);
+    n = getgroups(n, grouplist);
     if (n == -1) {
-        if (alt_grouplist != grouplist) {
-            PyMem_Free(alt_grouplist);
-        }
+        PyMem_Free(grouplist);
         return posix_error();
     }
-#else
-    n = getgroups(MAX_GROUPS, grouplist);
-    if (n < 0) {
-        if (errno == EINVAL) {
-            n = getgroups(0, NULL);
-            if (n == -1) {
-                return posix_error();
-            }
-            if (n == 0) {
-                /* Avoid malloc(0) */
-                alt_grouplist = grouplist;
-            } else {
-                alt_grouplist = PyMem_New(gid_t, n);
-                if (alt_grouplist == NULL) {
-                    return PyErr_NoMemory();
-                }
-                n = getgroups(n, alt_grouplist);
-                if (n == -1) {
-                    PyMem_Free(alt_grouplist);
-                    return posix_error();
-                }
-            }
-        } else {
-            return posix_error();
-        }
-    }
-#endif
 
-    result = PyList_New(n);
+    PyObject *result = PyList_New(n);
     if (result != NULL) {
         int i;
         for (i = 0; i < n; ++i) {
-            PyObject *o = _PyLong_FromGid(alt_grouplist[i]);
+            PyObject *o = _PyLong_FromGid(grouplist[i]);
             if (o == NULL) {
                 Py_DECREF(result);
                 result = NULL;
@@ -7705,9 +7668,7 @@ os_getgroups_impl(PyObject *module)
         }
     }
 
-    if (alt_grouplist != grouplist) {
-        PyMem_Free(alt_grouplist);
-    }
+    PyMem_Free(grouplist);
 
     return result;
 }
@@ -8212,14 +8173,11 @@ static PyObject *
 os_setgroups(PyObject *module, PyObject *groups)
 /*[clinic end generated code: output=3fcb32aad58c5ecd input=fa742ca3daf85a7e]*/
 {
-    Py_ssize_t i, len;
-    gid_t grouplist[MAX_GROUPS];
-
     if (!PySequence_Check(groups)) {
         PyErr_SetString(PyExc_TypeError, "setgroups argument must be a sequence");
         return NULL;
     }
-    len = PySequence_Size(groups);
+    Py_ssize_t len = PySequence_Size(groups);
     if (len < 0) {
         return NULL;
     }
@@ -8227,27 +8185,36 @@ os_setgroups(PyObject *module, PyObject *groups)
         PyErr_SetString(PyExc_ValueError, "too many groups");
         return NULL;
     }
-    for(i = 0; i < len; i++) {
+
+    gid_t *grouplist = PyMem_New(gid_t, len+1); // Avoid malloc(0)
+    for (Py_ssize_t i = 0; i < len; i++) {
         PyObject *elem;
         elem = PySequence_GetItem(groups, i);
-        if (!elem)
+        if (!elem) {
+            PyMem_Free(grouplist);
             return NULL;
+        }
         if (!PyLong_Check(elem)) {
             PyErr_SetString(PyExc_TypeError,
                             "groups must be integers");
             Py_DECREF(elem);
+            PyMem_Free(grouplist);
             return NULL;
         } else {
             if (!_Py_Gid_Converter(elem, &grouplist[i])) {
                 Py_DECREF(elem);
+                PyMem_Free(grouplist);
                 return NULL;
             }
         }
         Py_DECREF(elem);
     }
 
-    if (setgroups(len, grouplist) < 0)
+    if (setgroups(len, grouplist) < 0) {
+        PyMem_Free(grouplist);
         return posix_error();
+    }
+    PyMem_Free(grouplist);
     Py_RETURN_NONE;
 }
 #endif /* HAVE_SETGROUPS */
