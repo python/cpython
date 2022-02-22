@@ -160,6 +160,9 @@ traceback. (Contributed by Irit Katriel in :issue:`45607`.)
 Other Language Changes
 ======================
 
+* Starred expressions can be used in :ref:`for statements<for>`. (See
+  :issue:`46725` for more details.)
+
 * Asynchronous comprehensions are now allowed inside comprehensions in
   asynchronous functions. Outer comprehensions implicitly become
   asynchronous. (Contributed by Serhiy Storchaka in :issue:`33346`.)
