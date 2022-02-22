@@ -423,13 +423,12 @@ class Barrier(mixins._LoopBoundMixin):
     have all made their call.
     """
 
-    def __init__(self, parties, action=None, *, loop=mixins._marker):
+    def __init__(self, parties, action=None):
         """Create a barrier, initialised to 'parties' tasks.
         'action' is a coroutine which, when supplied, will be called by
         the last task calling the wait() method,
         just prior to releasing them all.
         """
-        super().__init__(loop=loop)
         if parties < 1:
             raise ValueError('parties must be > 0')
 
