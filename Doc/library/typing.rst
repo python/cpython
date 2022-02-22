@@ -1481,9 +1481,8 @@ These are not used in annotations. They are building blocks for declaring types.
       The keyword-argument syntax is deprecated in 3.11 and will be removed
       in 3.13. It may also be unsupported by static type checkers.
 
-   Furthermore, there is another reason to use the functional syntax. If the keys
-   of ``TypedDicts`` aren't valid identifiers, such as keywords, name with hyphens,
-   etc., we must use the functional syntax.
+   The functional syntax should also be used when any of the keys are not valid
+   :ref:`identifiers`, for example because they are keywords or contain hyphens.
    Example::
 
       # raises SyntaxError
