@@ -5477,7 +5477,7 @@ LOAD_ATTR_INSTANCE_VALUE_miss:
                         next_instr[-3] =  _Py_MAKECODEUNIT(LOAD_FAST__LOAD_FAST, _Py_OPARG(next_instr[-3]));
                     }
                 }
-                STAT_INC(opname, deopt);
+                STAT_INC(LOAD_ATTR, deopt);
                 cache_backoff(cache);
             }
             oparg = cache->original_oparg;
