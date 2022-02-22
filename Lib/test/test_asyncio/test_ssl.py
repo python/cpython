@@ -1019,7 +1019,7 @@ class TestSSL(test_utils.TestCase):
     def test_create_server_ssl_over_ssl(self):
         CNT = 0           # number of clients that were successful
         TOTAL_CNT = 25    # total number of clients that test will create
-        TIMEOUT = 10.0    # timeout for this test
+        TIMEOUT = 30.0    # timeout for this test
 
         A_DATA = b'A' * 1024 * 1024
         B_DATA = b'B' * 1024 * 1024

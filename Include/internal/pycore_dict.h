@@ -68,6 +68,9 @@ struct _dictkeysobject {
     /* Size of the hash table (dk_indices). It must be a power of 2. */
     uint8_t dk_log2_size;
 
+    /* Size of the hash table (dk_indices) by bytes. */
+    uint8_t dk_log2_index_bytes;
+
     /* Kind of keys */
     uint8_t dk_kind;
 
@@ -129,7 +132,7 @@ struct _dictvalues {
             2 : sizeof(int32_t))
 #endif
 #define DK_ENTRIES(dk) \
-    ((PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[DK_SIZE(dk) * DK_IXSIZE(dk)]))
+    ((PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
 
 extern uint64_t _pydict_global_version;
 
