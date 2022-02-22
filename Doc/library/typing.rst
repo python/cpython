@@ -1563,7 +1563,7 @@ These are not used in annotations. They are building blocks for declaring types.
 
       ``Point2D.__required_keys__`` and ``Point2D.__optional_keys__`` return
       ``frozenset`` objects containing required and non-required keys, respectively.
-      Currently the only way to set required and potentially-missing keys is mixed inheritance,
+      Currently the only way to declare both required and non-required keys in the same ``TypedDict`` is mixed inheritance,
       declaring a ``TypedDict`` with one value for the ``total`` argument and
       then inheriting it from another ``TypedDict`` with a different value for ``total``.
       Usage::
