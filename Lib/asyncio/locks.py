@@ -612,7 +612,7 @@ class Barrier(mixins._LoopBoundMixin):
 
     @property
     def draining(self):
-        """Return True if the barrier is in a broken state."""
+        """Return True if the barrier is draining."""
         return self._state == 1
 
     @property
@@ -622,7 +622,7 @@ class Barrier(mixins._LoopBoundMixin):
 
     @property
     def resetting(self):
-        """Return True if the barrier is filling."""
+        """Return True if the barrier is resetting."""
         return self._state == -1
 
 
