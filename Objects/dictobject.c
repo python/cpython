@@ -16,19 +16,20 @@ As of Python 3.6, this is compact and ordered. Basic idea is described here:
 
 layout:
 
-+---------------+
-| dk_refcnt     |
-| dk_log2_size  |
-| dk_kind       |
-| dk_usable     |
-| dk_nentries   |
-+---------------+
-| dk_indices    |
-|               |
-+---------------+
-| dk_entries    |
-|               |
-+---------------+
++---------------------+
+| dk_refcnt           |
+| dk_log2_size        |
+| dk_log2_index_bytes |
+| dk_kind             |
+| dk_usable           |
+| dk_nentries         |
++---------------------+
+| dk_indices[]        |
+|                     |
++---------------------+
+| dk_entries[]        |
+|                     |
++---------------------+
 
 dk_indices is actual hashtable.  It holds index in entries, or DKIX_EMPTY(-1)
 or DKIX_DUMMY(-2).
@@ -444,6 +445,7 @@ estimate_log2_keysize(Py_ssize_t n)
 static PyDictKeysObject empty_keys_struct = {
         1, /* dk_refcnt */
         0, /* dk_log2_size */
+        0, /* dk_log2_index_bytes */
         DICT_KEYS_SPLIT, /* dk_kind */
         1, /* dk_version */
         0, /* dk_usable (immutable) */
@@ -562,24 +564,25 @@ static PyDictKeysObject*
 new_keys_object(uint8_t log2_size)
 {
     PyDictKeysObject *dk;
-    Py_ssize_t es, usable;
+    Py_ssize_t usable;
+    int log2_bytes;
 
     assert(log2_size >= PyDict_LOG_MINSIZE);
 
     usable = USABLE_FRACTION(1<<log2_size);
-    if (log2_size <= 7) {
-        es = 1;
+    if (log2_size < 8) {
+        log2_bytes = log2_size;
     }
-    else if (log2_size <= 15) {
-        es = 2;
+    else if (log2_size < 16) {
+        log2_bytes = log2_size + 1;
     }
 #if SIZEOF_VOID_P > 4
-    else if (log2_size <= 31) {
-        es = 4;
+    else if (log2_size >= 32) {
+        log2_bytes = log2_size + 3;
     }
 #endif
     else {
-        es = sizeof(Py_ssize_t);
+        log2_bytes = log2_size + 2;
     }
 
 #if PyDict_MAXFREELIST > 0
@@ -595,7 +598,7 @@ new_keys_object(uint8_t log2_size)
 #endif
     {
         dk = PyObject_Malloc(sizeof(PyDictKeysObject)
-                             + (es<<log2_size)
+                             + ((size_t)1 << log2_bytes)
                              + sizeof(PyDictKeyEntry) * usable);
         if (dk == NULL) {
             PyErr_NoMemory();
@@ -607,11 +610,12 @@ new_keys_object(uint8_t log2_size)
 #endif
     dk->dk_refcnt = 1;
     dk->dk_log2_size = log2_size;
+    dk->dk_log2_index_bytes = log2_bytes;
     dk->dk_kind = DICT_KEYS_UNICODE;
     dk->dk_nentries = 0;
     dk->dk_usable = usable;
     dk->dk_version = 0;
-    memset(&dk->dk_indices[0], 0xff, es<<log2_size);
+    memset(&dk->dk_indices[0], 0xff, ((size_t)1 << log2_bytes));
     memset(DK_ENTRIES(dk), 0, sizeof(PyDictKeyEntry) * usable);
     return dk;
 }
