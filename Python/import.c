@@ -1829,7 +1829,10 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         if (mod == NULL) {
             goto error;
         }
-        _PyGC_TransitiveImmortalize(mod);
+        // Immortalize top level modules
+        if (tstate->recursion_limit - tstate->recursion_remaining == 1) {
+            _PyGC_TransitiveImmortalize(mod);
+        }
     }
 
     has_from = 0;
