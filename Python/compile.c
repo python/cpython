@@ -148,16 +148,16 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
     int caches = _PyOpcode_InlineCacheEntries[opcode];
     switch (ilen - caches) {
         case 4:
-            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 24) & 0xff);
+            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 24) & 0xFF);
             /* fall through */
         case 3:
-            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 16) & 0xff);
+            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 16) & 0xFF);
             /* fall through */
         case 2:
-            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 8) & 0xff);
+            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 8) & 0xFF);
             /* fall through */
         case 1:
-            *codestr++ = _Py_MAKECODEUNIT(opcode, oparg & 0xff);
+            *codestr++ = _Py_MAKECODEUNIT(opcode, oparg & 0xFF);
             break;
         default:
             Py_UNREACHABLE();
