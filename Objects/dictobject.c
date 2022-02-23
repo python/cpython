@@ -473,7 +473,7 @@ struct {
 #define Py_EMPTY_KEYS &empty_keys_struct
 
 /* Uncomment to check the dict content in _PyDict_CheckConsistency() */
-#define DEBUG_PYDICT
+// #define DEBUG_PYDICT
 
 #ifdef DEBUG_PYDICT
 #  define ASSERT_CONSISTENT(op) assert(_PyDict_CheckConsistency((PyObject *)(op), 1))
@@ -1042,14 +1042,18 @@ When the key isn't found a DKIX_EMPTY is returned.
 Py_ssize_t
 _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr)
 {
-    PyDictKeysObject *dk = mp->ma_keys;
-    DictKeysKind kind = dk->dk_kind;
+    PyDictKeysObject *dk;
+    DictKeysKind kind;
     Py_ssize_t ix;
 
+start:
+    dk = mp->ma_keys;
+    kind = dk->dk_kind;
+
     if (kind == DICT_KEYS_GENERAL) {
-        for (;;) {
-            ix = dictkeys_generic_lookup(mp, dk, key, hash);
-            if (ix != DKIX_KEY_CHANGED) break;
+        ix = dictkeys_generic_lookup(mp, dk, key, hash);
+        if (ix == DKIX_KEY_CHANGED) {
+            goto start;
         }
         if (ix >= 0) {
             *value_addr = DK_ENTRIES(dk)[ix].me_value;
@@ -1064,9 +1068,9 @@ _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **valu
         ix = dictkeys_stringlookup_unicode(dk, key, hash);
     }
     else {
-        for (;;) {
-            ix = dictkeys_stringlookup_generic(mp, dk, key, hash);
-            if (ix != DKIX_KEY_CHANGED) break;
+        ix = dictkeys_stringlookup_generic(mp, dk, key, hash);
+        if (ix == DKIX_KEY_CHANGED) {
+            goto start;
         }
     }
 
@@ -3159,23 +3163,36 @@ dict_equal(PyDictObject *a, PyDictObject *b)
         return 0;
     /* Same # of entries -- check all of 'em.  Exit early on any diff. */
     for (i = 0; i < a->ma_keys->dk_nentries; i++) {
-        PyDictKeyEntry *ep = &DK_ENTRIES(a->ma_keys)[i];
-        PyObject *aval;
-        if (a->ma_values)
-            aval = a->ma_values->values[i];
-        else
+        PyObject *key, *aval;
+        Py_hash_t hash;
+        if (a->ma_keys->dk_kind == DICT_KEYS_GENERAL) {
+            PyDictKeyEntry *ep = &DK_ENTRIES(a->ma_keys)[i];
+            key = ep->me_key;
             aval = ep->me_value;
+            hash = ep->me_hash;
+        }
+        else {
+            PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(a->ma_keys)[i];
+            key = ep->me_key;
+            if (key == NULL) {
+                continue;
+            }
+            hash = unicode_get_hash(key);
+            if (a->ma_values)
+                aval = a->ma_values->values[i];
+            else
+                aval = ep->me_value;
+        }
         if (aval != NULL) {
             int cmp;
             PyObject *bval;
-            PyObject *key = ep->me_key;
             /* temporarily bump aval's refcount to ensure it stays
                alive until we're done with it */
             Py_INCREF(aval);
             /* ditto for key */
             Py_INCREF(key);
             /* reuse the known hash value */
-            _Py_dict_lookup(b, key, ep->me_hash, &bval);
+            _Py_dict_lookup(b, key, hash, &bval);
             if (bval == NULL) {
                 Py_DECREF(key);
                 Py_DECREF(aval);
@@ -3444,7 +3461,6 @@ dict_popitem_impl(PyDictObject *self)
 /*[clinic end generated code: output=e65fcb04420d230d input=1c38a49f21f64941]*/
 {
     Py_ssize_t i, j;
-    PyDictKeyEntry *ep0, *ep;
     PyObject *res;
 
     /* Allocate the result tuple before checking the size.  Believe it
@@ -3474,23 +3490,45 @@ dict_popitem_impl(PyDictObject *self)
     self->ma_keys->dk_version = 0;
 
     /* Pop last item */
-    ep0 = DK_ENTRIES(self->ma_keys);
-    i = self->ma_keys->dk_nentries - 1;
-    while (i >= 0 && ep0[i].me_value == NULL) {
-        i--;
-    }
-    assert(i >= 0);
+    PyObject *key, *value;
+    Py_hash_t hash;
+    if (self->ma_keys->dk_kind == DICT_KEYS_GENERAL) {
+        PyDictKeyEntry *ep0 = DK_ENTRIES(self->ma_keys);
+        i = self->ma_keys->dk_nentries - 1;
+        while (i >= 0 && ep0[i].me_value == NULL) {
+            i--;
+        }
+        assert(i >= 0);
 
-    ep = &ep0[i];
-    j = lookdict_index(self->ma_keys, ep->me_hash, i);
+        key = ep0[i].me_key;
+        hash = ep0[i].me_hash;
+        value = ep0[i].me_value;
+        ep0[i].me_key = NULL;
+        ep0[i].me_hash = -1;
+        ep0[i].me_value = NULL;
+    }
+    else {
+        PyDictUnicodeEntry *ep0 = DK_UNICODE_ENTRIES(self->ma_keys);
+        i = self->ma_keys->dk_nentries - 1;
+        while (i >= 0 && ep0[i].me_value == NULL) {
+            i--;
+        }
+        assert(i >= 0);
+
+        key = ep0[i].me_key;
+        hash = unicode_get_hash(key);
+        value = ep0[i].me_value;
+        ep0[i].me_key = NULL;
+        ep0[i].me_value = NULL;
+    }
+
+    j = lookdict_index(self->ma_keys, hash, i);
     assert(j >= 0);
     assert(dictkeys_get_index(self->ma_keys, j) == i);
     dictkeys_set_index(self->ma_keys, j, DKIX_DUMMY);
 
-    PyTuple_SET_ITEM(res, 0, ep->me_key);
-    PyTuple_SET_ITEM(res, 1, ep->me_value);
-    ep->me_key = NULL;
-    ep->me_value = NULL;
+    PyTuple_SET_ITEM(res, 0, key);
+    PyTuple_SET_ITEM(res, 1, value);
     /* We can't dk_usable++ since there is DKIX_DUMMY in indices */
     self->ma_keys->dk_nentries = i;
     self->ma_used--;
@@ -4036,7 +4074,7 @@ dictiter_iternextkey(dictiterobject *di)
         if (i >= d->ma_used)
             goto fail;
         int index = get_index_from_order(d, i);
-        key = DK_ENTRIES(k)[index].me_key;
+        key = DK_UNICODE_ENTRIES(k)[index].me_key;
         assert(d->ma_values->values[index] != NULL);
     }
     else {
@@ -4367,20 +4405,33 @@ dictreviter_iternext(dictiterobject *di)
     }
     if (d->ma_values) {
         int index = get_index_from_order(d, i);
-        key = DK_ENTRIES(k)[index].me_key;
+        key = DK_UNICODE_ENTRIES(k)[index].me_key;
         value = d->ma_values->values[index];
         assert (value != NULL);
     }
     else {
-        PyDictKeyEntry *entry_ptr = &DK_ENTRIES(k)[i];
-        while (entry_ptr->me_value == NULL) {
-            if (--i < 0) {
-                goto fail;
+        if (k->dk_kind == DICT_KEYS_GENERAL) {
+            PyDictKeyEntry *entry_ptr = &DK_ENTRIES(k)[i];
+            while (entry_ptr->me_value == NULL) {
+                if (--i < 0) {
+                    goto fail;
+                }
+                entry_ptr--;
             }
-            entry_ptr--;
+            key = entry_ptr->me_key;
+            value = entry_ptr->me_value;
         }
-        key = entry_ptr->me_key;
-        value = entry_ptr->me_value;
+        else {
+            PyDictUnicodeEntry *entry_ptr = &DK_UNICODE_ENTRIES(k)[i];
+            while (entry_ptr->me_value == NULL) {
+                if (--i < 0) {
+                    goto fail;
+                }
+                entry_ptr--;
+            }
+            key = entry_ptr->me_key;
+            value = entry_ptr->me_value;
+        }
     }
     di->di_pos = i-1;
     di->len--;
