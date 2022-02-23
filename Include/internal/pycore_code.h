@@ -23,7 +23,7 @@ typedef struct {
 
 typedef struct {
     uint32_t tp_version;
-    uint32_t dk_version_or_hint;
+    uint32_t dk_version;
 } _PyAttrCache;
 
 typedef struct {
