@@ -853,6 +853,8 @@ Porting to Python 3.11
     use ``PyObject_GetAttrString((PyObject*)frame, "f_locals")``.
   * ``f_lasti``: removed,
     use ``PyObject_GetAttrString((PyObject*)frame, "f_lasti")``.
+    Code using ``f_lasti`` with ``PyCode_Addr2Line()`` should use
+    :c:func:`PyFrame_GetLineNumber` instead.
 
   The following fields were removed entirely, as they were details
   of the old implementation:
