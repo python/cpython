@@ -19,6 +19,8 @@ instrsize(unsigned int oparg)
         4;
 }
 
+extern const uint8_t _Py_InlineCacheSize[256];
+
 /* Spits out op/oparg pair using ilen bytes. codestr should be pointed at the
    desired location of the first EXTENDED_ARG */
 static void

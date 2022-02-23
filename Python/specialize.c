@@ -53,8 +53,12 @@ static uint8_t adaptive_opcodes[256] = {
     [UNPACK_SEQUENCE] = UNPACK_SEQUENCE_ADAPTIVE,
 };
 
-static uint8_t inline_opcodes[256] = {
+static const uint8_t inline_opcodes[256] = {
     [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
+};
+
+const uint8_t _Py_InlineCacheSize[256] = {
+    [LOAD_GLOBAL] = LOAD_GLOBAL_INLINE_CACHE_SIZE,
 };
 
 /* The number of cache entries required for a "family" of instructions. */
@@ -1213,9 +1217,13 @@ _Py_Specialize_LoadGlobal(
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
         goto fail;
     }
+    if (builtins_version > UINT16_MAX) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
+        goto fail;
+    }
     cache->index = (uint16_t)index;
     write32(&cache->module_keys_version, globals_version);
-    write32(&cache->builtin_keys_version, builtins_version);
+    cache->builtin_keys_version = (uint16_t)builtins_version;
     *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_BUILTIN, _Py_OPARG(*instr));
     goto success;
 fail:

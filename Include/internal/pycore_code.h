@@ -66,7 +66,6 @@ typedef struct {
     _Py_CODEUNIT module_keys_version;
     _Py_CODEUNIT _m1;
     _Py_CODEUNIT builtin_keys_version;
-    _Py_CODEUNIT _b1;
 } _PyLoadGlobalCache;
 
 #define LOAD_GLOBAL_INLINE_CACHE_SIZE (sizeof(_PyLoadGlobalCache)/sizeof(_Py_CODEUNIT))

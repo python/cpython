@@ -3034,7 +3034,7 @@ handle_eval_breaker:
             PyDictObject *bdict = (PyDictObject *)BUILTINS();
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             uint32_t mod_version = read32(&cache->module_keys_version);
-            uint32_t bltn_version = read32(&cache->builtin_keys_version);
+            uint16_t bltn_version = cache->builtin_keys_version;
             DEOPT_IF(mdict->ma_keys->dk_version != mod_version, LOAD_GLOBAL);
             DEOPT_IF(bdict->ma_keys->dk_version != bltn_version, LOAD_GLOBAL);
             PyDictKeyEntry *ep = DK_ENTRIES(bdict->ma_keys) + cache->index;

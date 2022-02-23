@@ -4113,7 +4113,6 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     /* XXX Leave assert here, but handle __doc__ and the like better */
     assert(scope || PyUnicode_READ_CHAR(name, 0) == '_');
 
-    int cache_size = 0;
     switch (optype) {
     case OP_DEREF:
         switch (ctx) {
@@ -4134,10 +4133,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         return 1;
     case OP_GLOBAL:
         switch (ctx) {
-        case Load:
-            op = LOAD_GLOBAL;
-            cache_size = LOAD_GLOBAL_INLINE_CACHE_SIZE;
-            break;
+        case Load: op = LOAD_GLOBAL; break;
         case Store: op = STORE_GLOBAL; break;
         case Del: op = DELETE_GLOBAL; break;
         }
@@ -4157,9 +4153,6 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     if (arg < 0)
         return 0;
     RETURN_IF_FALSE(compiler_addop_i(c, op, arg));
-    for (int i = 0; i < cache_size; i++) {
-        compiler_addop_i_noline(c, CACHE_ENTRY, i);
-    }
     return 1;
 }
 
@@ -7105,8 +7098,10 @@ blocksize(basicblock *b)
     int i;
     int size = 0;
 
-    for (i = 0; i < b->b_iused; i++)
+    for (i = 0; i < b->b_iused; i++) {
         size += instrsize(b->b_instr[i].i_oparg);
+        size += _Py_InlineCacheSize[b->b_instr[i].i_opcode];
+    }
     return size;
 }
 
@@ -7371,6 +7366,7 @@ assemble_exception_table(struct assembler *a)
                 handler = instr->i_except;
             }
             ioffset += instrsize(instr->i_oparg);
+            ioffset += _Py_InlineCacheSize[instr->i_opcode];
         }
     }
     if (handler != NULL) {
@@ -7499,30 +7495,35 @@ assemble_cnotab(struct assembler* a, struct instr* i, int instr_size)
 static int
 assemble_emit(struct assembler *a, struct instr *i)
 {
-    int size, arg = 0;
+    int isize, tsize, arg = 0;
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
     _Py_CODEUNIT *code;
 
     arg = i->i_oparg;
-    size = instrsize(arg);
+    isize = instrsize(arg);
+    tsize = isize + _Py_InlineCacheSize[i->i_opcode];
     if (i->i_lineno && !assemble_lnotab(a, i)) {
         return 0;
     }
     if (!assemble_enotab(a, i)) {
         return 0;
     }
-    if (!assemble_cnotab(a, i, size)) {
+    if (!assemble_cnotab(a, i, tsize)) {
         return 0;
     }
-    if (a->a_offset + size >= len / (int)sizeof(_Py_CODEUNIT)) {
+    if (a->a_offset + tsize >= len / (int)sizeof(_Py_CODEUNIT)) {
         if (len > PY_SSIZE_T_MAX / 2)
             return 0;
         if (_PyBytes_Resize(&a->a_bytecode, len * 2) < 0)
             return 0;
     }
     code = (_Py_CODEUNIT *)PyBytes_AS_STRING(a->a_bytecode) + a->a_offset;
-    a->a_offset += size;
-    write_op_arg(code, i->i_opcode, arg, size);
+    a->a_offset += tsize;
+    write_op_arg(code, i->i_opcode, arg, isize);
+    code += isize;
+    for (int j = 0; j < _Py_InlineCacheSize[i->i_opcode]; j++) {
+        *code++ = PACKOPARG(CACHE_ENTRY, j);
+    }
     return 1;
 }
 
@@ -7587,6 +7588,7 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
                         extended_arg_recompile = 1;
                     }
                 }
+                bsize += _Py_InlineCacheSize[instr->i_opcode];
             }
         }
 
