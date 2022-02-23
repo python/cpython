@@ -176,9 +176,9 @@ or on combining URL components into a URL string.
       now raise :exc:`ValueError`.
 
    .. versionchanged:: 3.11
-      Values for `url` and `scheme` other than strings or bytes raise
-      :exc:`TypeError` if true or emit `DeprecationWarning` if false (to be
-      changed to `TypeError` in future versions of Python).
+      Values for ``url`` and ``scheme`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
 
 
 .. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace', max_num_fields=None, separator='&')
@@ -270,9 +270,9 @@ or on combining URL components into a URL string.
       separator key, with ``&`` as the default separator.
 
    .. versionchanged:: 3.11
-      Values for `qs` and `separator` other than strings or bytes raise
-      :exc:`TypeError` if true or emit `DeprecationWarning` if false (to be
-      changed to `TypeError` in future versions of Python).
+      Values for ``qs`` and ``separator`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
 
 
 .. function:: urlunparse(parts)
@@ -284,9 +284,9 @@ or on combining URL components into a URL string.
    states that these are equivalent).
 
    .. versionchanged:: 3.11
-      Items in `parts` other than strings or bytes raise
-      :exc:`TypeError` if true or emit `DeprecationWarning` if false (to be
-      changed to `TypeError` in future versions of Python).
+      Items in ``parts`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
 
 
 .. function:: urlsplit(urlstring, scheme='', allow_fragments=True)
@@ -353,9 +353,9 @@ or on combining URL components into a URL string.
       ASCII newline and tab characters are stripped from the URL.
 
    .. versionchanged:: 3.11
-      Values for the url argument and `scheme` other than strings or bytes raise
-      :exc:`TypeError` if true or emit `DeprecationWarning` if false (to be
-      changed to `TypeError` in future versions of Python).
+      Values for the url argument and ``scheme`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
 
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
@@ -369,9 +369,9 @@ or on combining URL components into a URL string.
    with an empty query; the RFC states that these are equivalent).
 
    .. versionchanged:: 3.11
-      Items in `parts` other than strings or bytes raise
-      :exc:`TypeError` if true or emit `DeprecationWarning` if false (to be
-      changed to `TypeError` in future versions of Python).
+      Items in ``parts`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
 
 
 .. function:: urljoin(base, url, allow_fragments=True)
@@ -408,9 +408,9 @@ or on combining URL components into a URL string.
       Behavior updated to match the semantics defined in :rfc:`3986`.
 
    .. versionchanged:: 3.11
-      Values for `base` and `url` other than strings or bytes raise
-      :exc:`TypeError` if true or emit `DeprecationWarning` if false (to be
-      changed to `TypeError` in future versions of Python).
+      Values for ``base`` and ``url`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
 
 
 .. function:: urldefrag(url)
@@ -439,8 +439,8 @@ or on combining URL components into a URL string.
 
    .. versionchanged:: 3.11
       Values other than strings or bytes raise
-      :exc:`TypeError` if true or emit `DeprecationWarning` if false (to be
-      changed to `TypeError` in future versions of Python).
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
 
 .. function:: unwrap(url)
 
