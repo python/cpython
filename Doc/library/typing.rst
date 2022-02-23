@@ -1524,7 +1524,7 @@ These are not used in annotations. They are building blocks for declaring types.
           y: int
           z: int
 
-   It is worth noting that a ``TypedDict`` cannot inherit from a non-TypedDict class,
+   A ``TypedDict`` cannot inherit from a non-TypedDict class,
    notably including :class:`Generic`. For example::
 
       class X(TypedDict):
@@ -1577,7 +1577,7 @@ These are not used in annotations. They are building blocks for declaring types.
    .. attribute:: __optional_keys__
 
       ``Point2D.__required_keys__`` and ``Point2D.__optional_keys__`` return
-      ``frozenset`` objects containing required and non-required keys, respectively.
+      :class:`frozenset` objects containing required and non-required keys, respectively.
       Currently the only way to declare both required and non-required keys in the
       same ``TypedDict`` is mixed inheritance, declaring a ``TypedDict`` with one value
       for the ``total`` argument and then inheriting it from another ``TypedDict`` with
