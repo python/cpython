@@ -1019,3 +1019,7 @@ Removed
   public C API by mistake, it must only be used by Python internally.
   Use the ``PyTypeObject.tp_members`` member instead.
   (Contributed by Victor Stinner in :issue:`40170`.)
+
+* Remove the ``HAVE_PY_SET_53BIT_PRECISION`` macro (moved to the internal C
+  API).
+  (Contributed by Victor Stinner in :issue:`45412`.)
