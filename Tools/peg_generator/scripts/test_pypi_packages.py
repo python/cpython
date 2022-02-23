@@ -19,7 +19,8 @@ from scripts import test_parse_directory
 HERE = pathlib.Path(__file__).resolve().parent
 
 argparser = argparse.ArgumentParser(
-    prog="test_pypi_packages", description="Helper program to test parsing PyPI packages",
+    prog="test_pypi_packages",
+    description="Helper program to test parsing PyPI packages",
 )
 argparser.add_argument(
     "-t", "--tree", action="count", help="Compare parse tree to official AST", default=0

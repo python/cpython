@@ -42,7 +42,7 @@ Cross Platform
 
    .. note::
 
-      On Mac OS X (and perhaps other platforms), executable files may be
+      On macOS (and perhaps other platforms), executable files may be
       universal files containing multiple architectures.
 
       To get at the "64-bitness" of the current interpreter, it is more
@@ -225,13 +225,13 @@ Windows Platform
    .. versionadded:: 3.8
 
 
-Mac OS Platform
----------------
+macOS Platform
+--------------
 
 
 .. function:: mac_ver(release='', versioninfo=('','',''), machine='')
 
-   Get Mac OS version information and return it as tuple ``(release, versioninfo,
+   Get macOS version information and return it as tuple ``(release, versioninfo,
    machine)`` with *versioninfo* being a tuple ``(version, dev_stage,
    non_release_version)``.
 

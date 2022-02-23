@@ -38,6 +38,7 @@ set BUILD_ARM32=
 set BUILD_ARM64=
 set BUILD_PDB=
 set BUILD_NOOPT=
+set COPY_LICENSE=
 set INSTALL_CYGWIN=
 
 :CheckOpts
@@ -49,6 +50,7 @@ if /I "%1"=="-arm32" (set BUILD_ARM32=1) & shift & goto :CheckOpts
 if /I "%1"=="-arm64" (set BUILD_ARM64=1) & shift & goto :CheckOpts
 if /I "%1"=="-pdb" (set BUILD_PDB=-g) & shift & goto :CheckOpts
 if /I "%1"=="-noopt" (set BUILD_NOOPT=CFLAGS='-Od -warn all') & shift & goto :CheckOpts
+if /I "%1"=="-license" (set COPY_LICENSE=1) & shift & goto :CheckOpts
 if /I "%1"=="-?" goto :Usage
 if /I "%1"=="--install-cygwin" (set INSTALL_CYGWIN=1) & shift & goto :CheckOpts
 goto :Usage
@@ -60,6 +62,7 @@ if NOT DEFINED BUILD_X64 if NOT DEFINED BUILD_X86 if NOT DEFINED BUILD_ARM32 if 
     set BUILD_X86=1
     set BUILD_ARM32=1
     set BUILD_ARM64=1
+    set COPY_LICENSE=1
 )
 
 if "%INSTALL_CYGWIN%"=="1" call :InstallCygwin
@@ -98,9 +101,14 @@ if not exist Makefile.in (
 )
 
 if "%BUILD_X64%"=="1" call :BuildOne x64 x86_64-w64-cygwin x86_64-w64-cygwin
+if errorlevel 1 exit /B %ERRORLEVEL%
 if "%BUILD_X86%"=="1" call :BuildOne x86 i686-pc-cygwin i686-pc-cygwin
+if errorlevel 1 exit /B %ERRORLEVEL%
 if "%BUILD_ARM32%"=="1" call :BuildOne x86_arm i686-pc-cygwin arm-w32-cygwin
+if errorlevel 1 exit /B %ERRORLEVEL%
 if "%BUILD_ARM64%"=="1" call :BuildOne x86_arm64 i686-pc-cygwin aarch64-w64-cygwin
+if errorlevel 1 exit /B %ERRORLEVEL%
+if "%COPY_LICENSE%"=="1" copy /y "%LIBFFI_SOURCE%\LICENSE" "%LIBFFI_OUT%\LICENSE"
 
 popd
 endlocal
@@ -179,11 +187,11 @@ if "%LIBFFI_TEST%" EQU "1" (
 
 echo copying files to %_LIBFFI_OUT%
 if not exist %_LIBFFI_OUT%\include (md %_LIBFFI_OUT%\include)
-copy %ARTIFACTS%\.libs\libffi-7.dll %_LIBFFI_OUT%
-copy %ARTIFACTS%\.libs\libffi-7.lib %_LIBFFI_OUT%
-copy %ARTIFACTS%\.libs\libffi-7.pdb %_LIBFFI_OUT%
-copy %ARTIFACTS%\fficonfig.h %_LIBFFI_OUT%\include
-copy %ARTIFACTS%\include\*.h %_LIBFFI_OUT%\include
+copy %ARTIFACTS%\.libs\libffi-*.dll %_LIBFFI_OUT% || exit /B 1
+copy %ARTIFACTS%\.libs\libffi-*.lib %_LIBFFI_OUT% || exit /B 1
+copy %ARTIFACTS%\.libs\libffi-*.pdb %_LIBFFI_OUT%
+copy %ARTIFACTS%\fficonfig.h %_LIBFFI_OUT%\include || exit /B 1
+copy %ARTIFACTS%\include\*.h %_LIBFFI_OUT%\include || exit /B 1
 
 endlocal
 exit /b

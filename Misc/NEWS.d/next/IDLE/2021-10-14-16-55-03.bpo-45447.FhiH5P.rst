@@ -1,0 +1,2 @@
+Apply IDLE syntax highlighting to `.pyi` files. Patch by Alex Waygood
+and Terry Jan Reedy.

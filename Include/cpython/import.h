@@ -32,6 +32,8 @@ struct _frozen {
     const char *name;                 /* ASCII encoded string */
     const unsigned char *code;
     int size;
+    bool is_package;
+    PyObject *(*get_code)(void);
 };
 
 /* Embedding apps may change this pointer to point to their favorite

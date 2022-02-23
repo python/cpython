@@ -422,7 +422,7 @@ static PyType_Spec bz2_compressor_type_spec = {
     // bz2_compressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = bz2_compressor_type_slots,
 };
 
@@ -766,7 +766,7 @@ static PyType_Spec bz2_decompressor_type_spec = {
     // bz2_decompressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = bz2_decompressor_type_slots,
 };
 

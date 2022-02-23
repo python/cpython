@@ -59,3 +59,11 @@ bound into a function.
 
     For efficiently iterating over the line numbers in a code object, use `the API described in PEP 626
     <https://www.python.org/dev/peps/pep-0626/#out-of-process-debuggers-and-profilers>`_.
+
+.. c:function:: int PyCode_Addr2Location(PyObject *co, int byte_offset, int *start_line, int *start_column, int *end_line, int *end_column)
+
+   Sets the passed ``int`` pointers to the source code line and column numbers
+   for the instruction at ``byte_offset``. Sets the value to ``0`` when
+   information is not available for any particular element.
+
+   Returns ``1`` if the function succeeds and 0 otherwise.

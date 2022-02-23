@@ -1,3 +1,4 @@
+import contextlib
 import collections.abc
 import io
 import os
@@ -324,7 +325,7 @@ class _BasePurePathTest(object):
         self.assertFalse(P('b/py').match('b.py'))
         self.assertFalse(P('/a.py').match('b.py'))
         self.assertFalse(P('b.py/c').match('b.py'))
-        # Wilcard relative pattern.
+        # Wildcard relative pattern.
         self.assertTrue(P('b.py').match('*.py'))
         self.assertTrue(P('a/b.py').match('*.py'))
         self.assertTrue(P('/a/b.py').match('*.py'))
@@ -1282,19 +1283,35 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertIs(False, P('').is_reserved())
         self.assertIs(False, P('/').is_reserved())
         self.assertIs(False, P('/foo/bar').is_reserved())
-        self.assertIs(True, P('con').is_reserved())
-        self.assertIs(True, P('NUL').is_reserved())
-        self.assertIs(True, P('NUL.txt').is_reserved())
-        self.assertIs(True, P('com1').is_reserved())
-        self.assertIs(True, P('com9.bar').is_reserved())
-        self.assertIs(False, P('bar.com9').is_reserved())
-        self.assertIs(True, P('lpt1').is_reserved())
-        self.assertIs(True, P('lpt9.bar').is_reserved())
-        self.assertIs(False, P('bar.lpt9').is_reserved())
-        # Only the last component matters.
-        self.assertIs(False, P('c:/NUL/con/baz').is_reserved())
         # UNC paths are never reserved.
         self.assertIs(False, P('//my/share/nul/con/aux').is_reserved())
+        # Case-insensitive DOS-device names are reserved.
+        self.assertIs(True, P('nul').is_reserved())
+        self.assertIs(True, P('aux').is_reserved())
+        self.assertIs(True, P('prn').is_reserved())
+        self.assertIs(True, P('con').is_reserved())
+        self.assertIs(True, P('conin$').is_reserved())
+        self.assertIs(True, P('conout$').is_reserved())
+        # COM/LPT + 1-9 or + superscript 1-3 are reserved.
+        self.assertIs(True, P('COM1').is_reserved())
+        self.assertIs(True, P('LPT9').is_reserved())
+        self.assertIs(True, P('com\xb9').is_reserved())
+        self.assertIs(True, P('com\xb2').is_reserved())
+        self.assertIs(True, P('lpt\xb3').is_reserved())
+        # DOS-device name mataching ignores characters after a dot or
+        # a colon and also ignores trailing spaces.
+        self.assertIs(True, P('NUL.txt').is_reserved())
+        self.assertIs(True, P('PRN  ').is_reserved())
+        self.assertIs(True, P('AUX  .txt').is_reserved())
+        self.assertIs(True, P('COM1:bar').is_reserved())
+        self.assertIs(True, P('LPT9   :bar').is_reserved())
+        # DOS-device names are only matched at the beginning
+        # of a path component.
+        self.assertIs(False, P('bar.com9').is_reserved())
+        self.assertIs(False, P('bar.lpt9').is_reserved())
+        # Only the last path component matters.
+        self.assertIs(True, P('c:/baz/con/NUL').is_reserved())
+        self.assertIs(False, P('c:/NUL/con/baz').is_reserved())
 
 class PurePathTest(_BasePurePathTest, unittest.TestCase):
     cls = pathlib.PurePath
@@ -1439,6 +1456,28 @@ class _BasePathTest(object):
     def test_cwd(self):
         p = self.cls.cwd()
         self._test_cwd(p)
+
+    def test_absolute_common(self):
+        P = self.cls
+
+        with mock.patch("os.getcwd") as getcwd:
+            getcwd.return_value = BASE
+
+            # Simple relative paths.
+            self.assertEqual(str(P().absolute()), BASE)
+            self.assertEqual(str(P('.').absolute()), BASE)
+            self.assertEqual(str(P('a').absolute()), os.path.join(BASE, 'a'))
+            self.assertEqual(str(P('a', 'b', 'c').absolute()), os.path.join(BASE, 'a', 'b', 'c'))
+
+            # Symlinks should not be resolved.
+            self.assertEqual(str(P('linkB', 'fileB').absolute()), os.path.join(BASE, 'linkB', 'fileB'))
+            self.assertEqual(str(P('brokenLink').absolute()), os.path.join(BASE, 'brokenLink'))
+            self.assertEqual(str(P('brokenLinkLoop').absolute()), os.path.join(BASE, 'brokenLinkLoop'))
+
+            # '..' entries should be preserved and not normalised.
+            self.assertEqual(str(P('..').absolute()), os.path.join(BASE, '..'))
+            self.assertEqual(str(P('a', '..').absolute()), os.path.join(BASE, 'a', '..'))
+            self.assertEqual(str(P('..', 'b').absolute()), os.path.join(BASE, '..', 'b'))
 
     def _test_home(self, p):
         q = self.cls(os.path.expanduser('~'))
@@ -1700,21 +1739,18 @@ class _BasePathTest(object):
         # Patching is needed to avoid relying on the filesystem
         # to return the order of the files as the error will not
         # happen if the symlink is the last item.
+        real_scandir = os.scandir
+        def my_scandir(path):
+            with real_scandir(path) as scandir_it:
+                entries = list(scandir_it)
+            entries.sort(key=lambda entry: entry.name)
+            return contextlib.nullcontext(entries)
 
-        with mock.patch("os.scandir") as scandir:
-            scandir.return_value = sorted(os.scandir(base))
+        with mock.patch("os.scandir", my_scandir):
             self.assertEqual(len(set(base.glob("*"))), 3)
-
-        subdir.mkdir()
-
-        with mock.patch("os.scandir") as scandir:
-            scandir.return_value = sorted(os.scandir(base))
+            subdir.mkdir()
             self.assertEqual(len(set(base.glob("*"))), 4)
-
-        subdir.chmod(000)
-
-        with mock.patch("os.scandir") as scandir:
-            scandir.return_value = sorted(os.scandir(base))
+            subdir.chmod(000)
             self.assertEqual(len(set(base.glob("*"))), 4)
 
     def _check_resolve(self, p, expected, strict=True):
@@ -1814,8 +1850,10 @@ class _BasePathTest(object):
         it = p.iterdir()
         it2 = p.iterdir()
         next(it2)
-        with p:
-            pass
+        # bpo-46556: path context managers are deprecated in Python 3.11.
+        with self.assertWarns(DeprecationWarning):
+            with p:
+                pass
         # Using a path as a context manager is a no-op, thus the following
         # operations should still succeed after the context manage exits.
         next(it)
@@ -1823,8 +1861,9 @@ class _BasePathTest(object):
         p.exists()
         p.resolve()
         p.absolute()
-        with p:
-            pass
+        with self.assertWarns(DeprecationWarning):
+            with p:
+                pass
 
     def test_chmod(self):
         p = self.cls(BASE) / 'fileA'
@@ -2161,6 +2200,7 @@ class _BasePathTest(object):
             p = self.cls(BASE, 'dirCPC%d' % pattern_num)
             self.assertFalse(p.exists())
 
+            real_mkdir = os.mkdir
             def my_mkdir(path, mode=0o777):
                 path = str(path)
                 # Emulate another process that would create the directory
@@ -2169,15 +2209,15 @@ class _BasePathTest(object):
                 # function is called at most 5 times (dirCPC/dir1/dir2,
                 # dirCPC/dir1, dirCPC, dirCPC/dir1, dirCPC/dir1/dir2).
                 if pattern.pop():
-                    os.mkdir(path, mode)  # From another process.
+                    real_mkdir(path, mode)  # From another process.
                     concurrently_created.add(path)
-                os.mkdir(path, mode)  # Our real call.
+                real_mkdir(path, mode)  # Our real call.
 
             pattern = [bool(pattern_num & (1 << n)) for n in range(5)]
             concurrently_created = set()
             p12 = p / 'dir1' / 'dir2'
             try:
-                with mock.patch("pathlib._normal_accessor.mkdir", my_mkdir):
+                with mock.patch("os.mkdir", my_mkdir):
                     p12.mkdir(parents=True, exist_ok=False)
             except FileExistsError:
                 self.assertIn(str(p12), concurrently_created)
@@ -2417,9 +2457,6 @@ class _BasePathTest(object):
 class PathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.Path
 
-    def test_class_getitem(self):
-        self.assertIs(self.cls[str], self.cls)
-
     def test_concrete_class(self):
         p = self.cls('a')
         self.assertIs(type(p),
@@ -2440,6 +2477,17 @@ class PathTest(_BasePathTest, unittest.TestCase):
 @only_posix
 class PosixPathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.PosixPath
+
+    def test_absolute(self):
+        P = self.cls
+        self.assertEqual(str(P('/').absolute()), '/')
+        self.assertEqual(str(P('/a').absolute()), '/a')
+        self.assertEqual(str(P('/a/b').absolute()), '/a/b')
+
+        # '//'-prefixed absolute path (supported by POSIX).
+        self.assertEqual(str(P('//').absolute()), '//')
+        self.assertEqual(str(P('//a').absolute()), '//a')
+        self.assertEqual(str(P('//a/b').absolute()), '//a/b')
 
     def _check_symlink_loop(self, *args, strict=True):
         path = self.cls(*args)
@@ -2542,13 +2590,21 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             othername = username
             otherhome = userhome
 
+        fakename = 'fakeuser'
+        # This user can theoretically exist on a test runner. Create unique name:
+        try:
+            while pwd.getpwnam(fakename):
+                fakename += '1'
+        except KeyError:
+            pass  # Non-existent name found
+
         p1 = P('~/Documents')
-        p2 = P('~' + username + '/Documents')
-        p3 = P('~' + othername + '/Documents')
-        p4 = P('../~' + username + '/Documents')
-        p5 = P('/~' + username + '/Documents')
+        p2 = P(f'~{username}/Documents')
+        p3 = P(f'~{othername}/Documents')
+        p4 = P(f'../~{username}/Documents')
+        p5 = P(f'/~{username}/Documents')
         p6 = P('')
-        p7 = P('~fakeuser/Documents')
+        p7 = P(f'~{fakename}/Documents')
 
         with os_helper.EnvironmentVarGuard() as env:
             env.pop('HOME', None)
@@ -2597,6 +2653,31 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
 @only_nt
 class WindowsPathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.WindowsPath
+
+    def test_absolute(self):
+        P = self.cls
+
+        # Simple absolute paths.
+        self.assertEqual(str(P('c:\\').absolute()), 'c:\\')
+        self.assertEqual(str(P('c:\\a').absolute()), 'c:\\a')
+        self.assertEqual(str(P('c:\\a\\b').absolute()), 'c:\\a\\b')
+
+        # UNC absolute paths.
+        share = '\\\\server\\share\\'
+        self.assertEqual(str(P(share).absolute()), share)
+        self.assertEqual(str(P(share + 'a').absolute()), share + 'a')
+        self.assertEqual(str(P(share + 'a\\b').absolute()), share + 'a\\b')
+
+        # UNC relative paths.
+        with mock.patch("os.getcwd") as getcwd:
+            getcwd.return_value = share
+
+            self.assertEqual(str(P().absolute()), share)
+            self.assertEqual(str(P('.').absolute()), share)
+            self.assertEqual(str(P('a').absolute()), os.path.join(share, 'a'))
+            self.assertEqual(str(P('a', 'b', 'c').absolute()),
+                             os.path.join(share, 'a', 'b', 'c'))
+
 
     def test_glob(self):
         P = self.cls

@@ -1,7 +1,6 @@
 import argparse
 import os
 import sys
-from test import support
 from test.support import os_helper
 
 
@@ -140,6 +139,38 @@ ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
 #   default (see bpo-30822).
 RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
 
+
+class Namespace(argparse.Namespace):
+    def __init__(self, **kwargs) -> None:
+        self.testdir = None
+        self.verbose = 0
+        self.quiet = False
+        self.exclude = False
+        self.single = False
+        self.randomize = False
+        self.fromfile = None
+        self.fail_env_changed = False
+        self.use_resources = None
+        self.trace = False
+        self.coverdir = 'coverage'
+        self.runleaks = False
+        self.huntrleaks = False
+        self.verbose2 = False
+        self.verbose3 = False
+        self.print_slow = False
+        self.random_seed = None
+        self.use_mp = None
+        self.forever = False
+        self.header = False
+        self.failfast = False
+        self.match_tests = None
+        self.ignore_tests = None
+        self.pgo = False
+        self.pgo_extended = False
+
+        super().__init__(**kwargs)
+
+
 class _ArgParser(argparse.ArgumentParser):
 
     def error(self, message):
@@ -234,9 +265,6 @@ def _create_parser():
                             '(instead of the Python stdlib test suite)')
 
     group = parser.add_argument_group('Special runs')
-    group.add_argument('-l', '--findleaks', action='store_const', const=2,
-                       default=1,
-                       help='deprecated alias to --fail-env-changed')
     group.add_argument('-L', '--runleaks', action='store_true',
                        help='run the leaks(1) command just before exit.' +
                             more_details)
@@ -320,13 +348,7 @@ def resources_list(string):
 
 def _parse_args(args, **kwargs):
     # Defaults
-    ns = argparse.Namespace(testdir=None, verbose=0, quiet=False,
-         exclude=False, single=False, randomize=False, fromfile=None,
-         findleaks=1, use_resources=None, trace=False, coverdir='coverage',
-         runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
-         random_seed=None, use_mp=None, verbose3=False, forever=False,
-         header=False, failfast=False, match_tests=None, ignore_tests=None,
-         pgo=False)
+    ns = Namespace()
     for k, v in kwargs.items():
         if not hasattr(ns, k):
             raise TypeError('%r is an invalid keyword argument '
@@ -344,9 +366,6 @@ def _parse_args(args, **kwargs):
             parser.error("unrecognized arguments: %s" % arg)
             sys.exit(1)
 
-    if ns.findleaks > 1:
-        # --findleaks implies --fail-env-changed
-        ns.fail_env_changed = True
     if ns.single and ns.fromfile:
         parser.error("-s and -f don't go together!")
     if ns.use_mp is not None and ns.trace:

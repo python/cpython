@@ -77,6 +77,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.loop._proactor.recv_into.assert_called_with(self.sock, called_buf)
         self.protocol.data_received.assert_called_with(bytearray(buf))
 
+    @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_loop_reading_no_data(self):
         res = self.loop.create_future()
         res.set_result(0)
@@ -838,6 +839,7 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
     def test_make_datagram_transport(self):
         tr = self.datagram_transport()
         self.assertIsInstance(tr, _ProactorDatagramTransport)
+        self.assertIsInstance(tr, asyncio.DatagramTransport)
         close_transport(tr)
 
     def test_datagram_loop_writing(self):
@@ -869,6 +871,7 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.protocol.datagram_received.assert_called_with(b'data', ('127.0.0.1', 12068))
         close_transport(tr)
 
+    @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_datagram_loop_reading_no_data(self):
         res = self.loop.create_future()
         res.set_result((b'', ('127.0.0.1', 12068)))

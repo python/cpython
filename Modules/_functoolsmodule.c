@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_GC_TRACK
@@ -50,7 +51,7 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs);
 static inline _functools_state *
 get_functools_state_by_type(PyTypeObject *type)
 {
-    PyObject *module = _PyType_GetModuleByDef(type, &_functools_module);
+    PyObject *module = PyType_GetModuleByDef(type, &_functools_module);
     if (module == NULL) {
         return NULL;
     }
@@ -186,7 +187,7 @@ partial_dealloc(partialobject *pto)
 /* Merging keyword arguments using the vectorcall convention is messy, so
  * if we would need to do that, we stop using vectorcall and fall back
  * to using partial_call() instead. */
-_Py_NO_INLINE static PyObject *
+Py_NO_INLINE static PyObject *
 partial_vectorcall_fallback(PyThreadState *tstate, partialobject *pto,
                             PyObject *const *args, size_t nargsf,
                             PyObject *kwnames)
@@ -268,7 +269,7 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
 static void
 partial_setvectorcall(partialobject *pto)
 {
-    if (PyVectorcall_Function(pto->fn) == NULL) {
+    if (_PyVectorcall_Function(pto->fn) == NULL) {
         /* Don't use vectorcall if the underlying function doesn't support it */
         pto->vectorcall = NULL;
     }
@@ -465,7 +466,7 @@ partial_setstate(partialobject *pto, PyObject *state)
 static PyMethodDef partial_methods[] = {
     {"__reduce__", (PyCFunction)partial_reduce, METH_NOARGS},
     {"__setstate__", (PyCFunction)partial_setstate, METH_O},
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
@@ -491,7 +492,8 @@ static PyType_Spec partial_type_spec = {
     .name = "functools.partial",
     .basicsize = sizeof(partialobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-             Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_VECTORCALL,
+             Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_VECTORCALL |
+             Py_TPFLAGS_IMMUTABLETYPE,
     .slots = partial_type_slots
 };
 
@@ -559,7 +561,7 @@ static PyType_Spec keyobject_type_spec = {
     .name = "functools.KeyWrapper",
     .basicsize = sizeof(keyobject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
-              Py_TPFLAGS_HAVE_GC),
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = keyobject_type_slots
 };
 
@@ -781,7 +783,8 @@ static PyType_Slot lru_list_elem_type_slots[] = {
 static PyType_Spec lru_list_elem_type_spec = {
     .name = "functools._lru_list_elem",
     .basicsize = sizeof(lru_list_elem),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+             Py_TPFLAGS_IMMUTABLETYPE,
     .slots = lru_list_elem_type_slots
 };
 
@@ -1417,7 +1420,7 @@ static PyType_Spec lru_cache_type_spec = {
     .name = "functools._lru_cache_wrapper",
     .basicsize = sizeof(lru_cache_object),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-             Py_TPFLAGS_METHOD_DESCRIPTOR,
+             Py_TPFLAGS_METHOD_DESCRIPTOR | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = lru_cache_type_slots
 };
 
@@ -1438,7 +1441,7 @@ static int
 _functools_exec(PyObject *module)
 {
     _functools_state *state = get_functools_state(module);
-    state->kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+    state->kwd_mark = _PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
     if (state->kwd_mark == NULL) {
         return -1;
     }
