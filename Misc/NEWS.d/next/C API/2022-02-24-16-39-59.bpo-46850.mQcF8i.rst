@@ -1,0 +1,17 @@
+Remove the following ``_PyEval`` private functions (moved to the internal C
+API headers):
+
+* ``_PyEval_CallTracing()``
+* ``_PyEval_EvalFrameDefault()``
+* ``_PyEval_GetAsyncGenFinalizer()``
+* ``_PyEval_GetAsyncGenFirstiter()``
+* ``_PyEval_GetCoroutineOriginTrackingDepth()``
+* ``_PyEval_GetSwitchInterval()``
+* ``_PyEval_RequestCodeExtraIndex()``
+* ``_PyEval_SetAsyncGenFinalizer()``
+* ``_PyEval_SetAsyncGenFirstiter()``
+* ``_PyEval_SetProfile()``
+* ``_PyEval_SetSwitchInterval()``
+* ``_PyEval_SetTrace()``
+
+Patch by Victor Stinner.

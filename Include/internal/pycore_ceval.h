@@ -20,6 +20,23 @@ struct _ceval_runtime_state;
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
 
+PyAPI_FUNC(PyObject *) _PyEval_CallTracing(PyObject *func, PyObject *args);
+PyAPI_DATA(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+PyAPI_FUNC(int) _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+PyAPI_FUNC(int) _PyEval_GetCoroutineOriginTrackingDepth(void);
+PyAPI_FUNC(int) _PyEval_SetAsyncGenFirstiter(PyObject *);
+PyAPI_FUNC(PyObject *) _PyEval_GetAsyncGenFirstiter(void);
+PyAPI_FUNC(int) _PyEval_SetAsyncGenFinalizer(PyObject *);
+PyAPI_FUNC(PyObject *) _PyEval_GetAsyncGenFinalizer(void);
+
+PyAPI_FUNC(PyObject *) _PyEval_EvalFrameDefault(PyThreadState *tstate, struct _interpreter_frame *f, int exc);
+
+PyAPI_FUNC(void) _PyEval_SetSwitchInterval(unsigned long microseconds);
+PyAPI_FUNC(unsigned long) _PyEval_GetSwitchInterval(void);
+
+PyAPI_FUNC(Py_ssize_t) _PyEval_RequestCodeExtraIndex(freefunc);
+
+
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
 extern void _PyEval_InitRuntimeState(struct _ceval_runtime_state *);
 extern void _PyEval_InitState(struct _ceval_state *, PyThread_type_lock);
