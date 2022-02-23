@@ -98,7 +98,7 @@ tuple_alloc(Py_ssize_t size)
 static inline PyObject *
 tuple_get_empty(void)
 {
-    return (PyObject *)&_Py_SINGLETON(tuple_empty);
+    return _Py_NewRef((PyObject *)&_Py_SINGLETON(tuple_empty));
 }
 
 
@@ -223,7 +223,7 @@ static void
 tupledealloc(PyTupleObject *op)
 {
     /* The empty tuple is statically allocated. */
-    if ((PyObject *)op == tuple_get_empty()) {
+    if (op == &_Py_SINGLETON(tuple_empty)) {
         return;
     }
     Py_ssize_t len = Py_SIZE(op);
