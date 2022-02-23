@@ -65,7 +65,6 @@ static uint8_t cache_requirements[256] = {
     [CALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [PRECALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
-    [BINARY_OP] = 1,  // _PyAdaptiveEntry
     [COMPARE_OP] = 1, /* _PyAdaptiveEntry */
     [UNPACK_SEQUENCE] = 1,  // _PyAdaptiveEntry
 };
@@ -386,7 +385,9 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
         int opcode = _Py_OPCODE(instructions[i]);
         int oparg = _Py_OPARG(instructions[i]);
         uint8_t adaptive_opcode = adaptive_opcodes[opcode];
-        if (adaptive_opcode && previous_opcode != EXTENDED_ARG) {
+        if (adaptive_opcode && previous_opcode != EXTENDED_ARG && 
+            !_PyOpcode_InlineCacheEntries[opcode])
+        {
             int new_oparg = oparg_from_instruction_and_update_offset(
                 i, opcode, oparg, &cache_offset
             );
@@ -1874,11 +1875,10 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 #endif
 
 void
-_Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                        SpecializedCacheEntry *cache)
+_Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr)
 {
-    _PyAdaptiveEntry *adaptive = &cache->adaptive;
-    switch (adaptive->original_oparg) {
+    uint16_t *counter = inline_cache_uint16(instr, 0);
+    switch (_Py_OPARG(*instr)) {
         case NB_ADD:
         case NB_INPLACE_ADD:
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
@@ -1943,18 +1943,18 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
             // back to BINARY_OP (unless we're collecting stats, where it's more
             // important to get accurate hit counts for the unadaptive version
             // and each of the different failure types):
-            *instr = _Py_MAKECODEUNIT(BINARY_OP, adaptive->original_oparg);
+            *instr = _Py_MAKECODEUNIT(BINARY_OP, _Py_OPARG(*instr));
             return;
 #endif
     }
     SPECIALIZATION_FAIL(
-        BINARY_OP, binary_op_fail_kind(adaptive->original_oparg, lhs, rhs));
+        BINARY_OP, binary_op_fail_kind(_Py_OPARG(*instr), lhs, rhs));
     STAT_INC(BINARY_OP, failure);
-    cache_backoff(adaptive);
+    *counter = ADAPTIVE_CACHE_BACKOFF;
     return;
 success:
     STAT_INC(BINARY_OP, success);
-    adaptive->counter = initial_counter_value();
+    *counter = initial_counter_value();
 }
 
 

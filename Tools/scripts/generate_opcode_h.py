@@ -53,6 +53,7 @@ def main(opcode_py, outfile='Include/opcode.h'):
         code = fp.read()
     exec(code, opcode)
     opmap = opcode['opmap']
+    opname = opcode['opname']
     hasconst = opcode['hasconst']
     hasjrel = opcode['hasjrel']
     hasjabs = opcode['hasjabs']
@@ -62,7 +63,7 @@ def main(opcode_py, outfile='Include/opcode.h'):
         used[op] = True
     with open(outfile, 'w') as fobj:
         fobj.write(header)
-        for name in opcode['opname']:
+        for name in opname:
             if name in opmap:
                 fobj.write(DEFINE.format(name, opmap[name]))
             if name == 'POP_EXCEPT': # Special entry for HAVE_ARGUMENT
@@ -88,6 +89,12 @@ def main(opcode_py, outfile='Include/opcode.h'):
         fobj.write("\n")
         for i, (op, _) in enumerate(opcode["_nb_ops"]):
             fobj.write(DEFINE.format(op, i))
+
+        fobj.write("\nstatic const uint8_t _PyOpcode_InlineCacheEntries[256] = {\n")
+        for i, entries in enumerate(opcode["_inline_cache_entries"]):
+            if entries:
+                fobj.write(f"    [{opname[i]}] = {entries},\n")
+        fobj.write("};\n")
 
         fobj.write(footer)
 

@@ -132,6 +132,12 @@ _GetSpecializedCacheEntryForInstruction(const _Py_CODEUNIT *first_instr, int nex
     );
 }
 
+static inline uint16_t *
+inline_cache_uint16(_Py_CODEUNIT *next_instr, int offset)
+{
+    return (uint16_t *)(next_instr + offset);
+}
+
 #define QUICKENING_WARMUP_DELAY 8
 
 /* We want to compare to zero for efficiency, so we offset values accordingly */
@@ -275,8 +281,7 @@ int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     PyObject *kwnames, SpecializedCacheEntry *cache);
 int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     PyObject *kwnames, SpecializedCacheEntry *cache, PyObject *builtins);
-void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                             SpecializedCacheEntry *cache);
+void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr);
 void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                    SpecializedCacheEntry *cache);
