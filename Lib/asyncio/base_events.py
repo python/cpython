@@ -1341,9 +1341,17 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def _ensure_resolved(self, address, *,
                                family=0, type=socket.SOCK_STREAM,
                                proto=0, flags=0, loop):
-        host, port = address[:2]
-        return await loop.getaddrinfo(host, port, family=family, type=type,
-                                      proto=proto, flags=flags)
+        host, port, *rest = address
+        if not rest:
+            return await loop.getaddrinfo(
+                host, port, family=family, type=type, proto=proto, flags=flags,
+            )
+        return [
+            (*first, (host, port, *rest)) for *first, (host, port, *_) in
+            await loop.getaddrinfo(
+                host, port, family=family, type=type, proto=proto, flags=flags,
+            )
+        ]
 
     async def _create_server_getaddrinfo(self, host, port, family, flags):
         infos = await self._ensure_resolved((host, port), family=family,
