@@ -625,14 +625,14 @@ def _find_module_shim(self, fullname):
     return loader
 
 
-def _classify_pyc(data, name, exc_details):
+def _classify_pyc(data, path, exc_details):
     """Perform basic validity checking of a pyc header and return the flags field,
     which determines how the pyc should be further validated against the source.
 
     *data* is the contents of the pyc file. (Only the first 16 bytes are
     required, though.)
 
-    *name* is the name of the module being imported. It is used for logging.
+    *path* is the full path of the pyc file. It is used for exception messages.
 
     *exc_details* is a dictionary passed to ImportError if it raised for
     improved debugging.
@@ -643,17 +643,17 @@ def _classify_pyc(data, name, exc_details):
     """
     magic = data[:4]
     if magic != MAGIC_NUMBER:
-        message = f'bad magic number in {name!r}: {magic!r}'
+        message = f'bad magic number in {path!r}: {magic!r}'
         _bootstrap._verbose_message('{}', message)
         raise ImportError(message, **exc_details)
     if len(data) < 16:
-        message = f'reached EOF while reading pyc header of {name!r}'
+        message = f'reached EOF while reading pyc header of {path!r}'
         _bootstrap._verbose_message('{}', message)
         raise EOFError(message)
     flags = _unpack_uint32(data[4:8])
     # Only the first two flags are defined.
     if flags & ~0b11:
-        message = f'invalid flags {flags!r} in {name!r}'
+        message = f'invalid flags {flags!r} in {path!r}'
         raise ImportError(message, **exc_details)
     return flags
 
@@ -1024,7 +1024,7 @@ class SourceLoader(_LoaderBasics):
                         'path': bytecode_path,
                     }
                     try:
-                        flags = _classify_pyc(data, fullname, exc_details)
+                        flags = _classify_pyc(data, bytecode_path, exc_details)
                         bytes_data = memoryview(data)[16:]
                         hash_based = flags & 0b1 != 0
                         if hash_based:
@@ -1183,7 +1183,7 @@ class SourcelessFileLoader(FileLoader, _LoaderBasics):
             'name': fullname,
             'path': path,
         }
-        _classify_pyc(data, fullname, exc_details)
+        _classify_pyc(data, path, exc_details)
         return _compile_bytecode(
             memoryview(data)[16:],
             name=fullname,

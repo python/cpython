@@ -1,0 +1,2 @@
+When an ``ImportError`` is raised for a broken ``.pyc`` file, the path to
+the problematic ``.pyc`` file is included in the exception message.
