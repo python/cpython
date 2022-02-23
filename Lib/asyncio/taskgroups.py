@@ -3,24 +3,16 @@
 
 __all__ = ["TaskGroup"]
 
-import itertools
-import textwrap
-import traceback
-import types
 import weakref
 
 from . import events
 from . import exceptions
 from . import tasks
 
+
 class TaskGroup:
 
-    def __init__(self, *, name=None):
-        if name is None:
-            self._name = f'tg-{_name_counter()}'
-        else:
-            self._name = str(name)
-
+    def __init__(self):
         self._entered = False
         self._exiting = False
         self._aborting = False
@@ -33,23 +25,21 @@ class TaskGroup:
         self._base_error = None
         self._on_completed_fut = None
 
-    def get_name(self):
-        return self._name
-
     def __repr__(self):
-        msg = f'<TaskGroup {self._name!r}'
+        info = ['']
         if self._tasks:
-            msg += f' tasks:{len(self._tasks)}'
+            info.append(f'tasks={len(self._tasks)}')
         if self._unfinished_tasks:
-            msg += f' unfinished:{self._unfinished_tasks}'
+            info.append(f'unfinished={self._unfinished_tasks}')
         if self._errors:
-            msg += f' errors:{len(self._errors)}'
+            info.append(f'errors={len(self._errors)}')
         if self._aborting:
-            msg += ' cancelling'
+            info.append('cancelling')
         elif self._entered:
-            msg += ' entered'
-        msg += '>'
-        return msg
+            info.append('entered')
+
+        info_str = ' '.join(info)
+        return f'<TaskGroup{info_str}>'
 
     async def __aenter__(self):
         if self._entered:
@@ -152,12 +142,13 @@ class TaskGroup:
             me = BaseExceptionGroup('unhandled errors in a TaskGroup', errors)
             raise me from None
 
-    def create_task(self, coro):
+    def create_task(self, coro, *, name=None):
         if not self._entered:
             raise RuntimeError(f"TaskGroup {self!r} has not been entered")
         if self._exiting and self._unfinished_tasks == 0:
             raise RuntimeError(f"TaskGroup {self!r} is finished")
         task = self._loop.create_task(coro)
+        tasks._set_task_name(task, name)
         task.add_done_callback(self._on_task_done)
         self._unfinished_tasks += 1
         self._tasks.add(task)
@@ -230,6 +221,3 @@ class TaskGroup:
             #                                 # after TaskGroup is finished.
             self._parent_cancel_requested = True
             self._parent_task.cancel()
-
-
-_name_counter = itertools.count(1).__next__

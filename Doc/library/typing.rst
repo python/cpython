@@ -2145,8 +2145,8 @@ Functions and decorators
    Decorator to indicate that annotations are not type hints.
 
    This works as class or function :term:`decorator`.  With a class, it
-   applies recursively to all methods defined in that class (but not
-   to methods defined in its superclasses or subclasses).
+   applies recursively to all methods and classes defined in that class
+   (but not to methods defined in its superclasses or subclasses).
 
    This mutates the function(s) in place.
 

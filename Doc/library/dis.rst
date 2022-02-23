@@ -36,11 +36,12 @@ the following command can be used to display the disassembly of
    >>> dis.dis(myfunc)
      1           0 RESUME                   0
 
-     2           2 LOAD_GLOBAL              0 (len)
-                 4 LOAD_FAST                0 (alist)
-                 6 PRECALL_FUNCTION         1
-                 8 CALL                     0
-                10 RETURN_VALUE
+     2           2 PUSH_NULL
+                 4 LOAD_GLOBAL              0 (len)
+                 6 LOAD_FAST                0 (alist)
+                 8 PRECALL                  1
+                10 CALL                     1
+                12 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -106,9 +107,10 @@ Example::
     ...     print(instr.opname)
     ...
     RESUME
+    PUSH_NULL
     LOAD_GLOBAL
     LOAD_FAST
-    PRECALL_FUNCTION
+    PRECALL
     CALL
     RETURN_VALUE
 
@@ -1063,17 +1065,27 @@ iterations of the loop.
      with ``__cause__`` set to ``TOS``)
 
 
-.. opcode:: CALL (named)
+.. opcode:: CALL (argc)
 
-   Calls a callable object with the number of positional arguments specified by
-   the preceding :opcode:`PRECALL_FUNCTION` or :opcode:`PRECALL_METHOD` and
-   the named arguments specified by the preceding :opcode:`KW_NAMES`, if any.
-   *named* indicates the number of named arguments.
-   On the stack are (in ascending order):
+   Calls a callable object with the number of arguments specified by ``argc``,
+   including the named arguments specified by the preceding
+   :opcode:`KW_NAMES`, if any.
+   On the stack are (in ascending order), either:
 
+   * NULL
    * The callable
    * The positional arguments
    * The named arguments
+
+   or:
+
+   * The callable
+   * ``self``
+   * The remaining positional arguments
+   * The named arguments
+
+   ``argc`` is the total of the positional and named arguments, excluding
+   ``self`` when a ``NULL`` is not present.
 
    ``CALL`` pops all arguments and the callable object off the stack,
    calls the callable object with those arguments, and pushes the return value
@@ -1102,33 +1114,34 @@ iterations of the loop.
    Loads a method named ``co_names[namei]`` from the TOS object. TOS is popped.
    This bytecode distinguishes two cases: if TOS has a method with the correct
    name, the bytecode pushes the unbound method and TOS. TOS will be used as
-   the first argument (``self``) by :opcode:`PRECALL_METHOD` when calling the
+   the first argument (``self``) by :opcode:`CALL` when calling the
    unbound method. Otherwise, ``NULL`` and the object return by the attribute
    lookup are pushed.
 
    .. versionadded:: 3.7
 
 
-.. opcode:: PRECALL_METHOD (argc)
+.. opcode:: PRECALL (argc)
 
-   Prefixes :opcode:`CALL` (possibly with an intervening ``KW_NAMES``).
-   This opcode is designed to be used with :opcode:`LOAD_METHOD`.
-   Sets internal variables, so that :opcode:`CALL`
-   clean up after :opcode:`LOAD_METHOD` correctly.
+   Prefixes :opcode:`CALL`. Logically this is a no op.
+   It exists to enable effective specialization of calls.
+   ``argc`` is the number of arguments as described in :opcode:`CALL`.
 
    .. versionadded:: 3.11
 
 
-.. opcode:: PRECALL_FUNCTION (args)
+.. opcode:: PUSH_NULL
 
-   Prefixes :opcode:`CALL` (possibly with an intervening ``KW_NAMES``).
-   Sets internal variables, so that :opcode:`CALL` can execute correctly.
+    Pushes a ``NULL`` to the stack.
+    Used in the call sequence to match the ``NULL`` pushed by
+    :opcode:`LOAD_METHOD` for non-method calls.
 
    .. versionadded:: 3.11
 
 
 .. opcode:: KW_NAMES (i)
 
+   Prefixes :opcode:`PRECALL`.
    Stores a reference to ``co_consts[consti]`` into an internal variable
    for use by :opcode:`CALL`. ``co_consts[consti]`` must be a tuple of strings.
 
