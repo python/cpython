@@ -1872,10 +1872,91 @@ scan_keywords(const char * const *keywords, int *ptotal, int *pposonly)
 }
 
 static int
+parse_format(const char *format, int total, int npos,
+             const char **pfname, const char **pcustommsg,
+             int *pmin, int *pmax)
+{
+    /* grab the function name or custom error msg first (mutually exclusive) */
+    const char *custommsg;
+    const char *fname = strchr(format, ':');
+    if (fname) {
+        fname++;
+        custommsg = NULL;
+    }
+    else {
+        custommsg = strchr(format,';');
+        if (custommsg) {
+            custommsg++;
+        }
+    }
+
+    int min = INT_MAX;
+    int max = INT_MAX;
+    for (int i = 0; i < total; i++) {
+        if (*format == '|') {
+            if (min != INT_MAX) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Invalid format string (| specified twice)");
+                return -1;
+            }
+            if (max != INT_MAX) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Invalid format string ($ before |)");
+                return -1;
+            }
+            min = i;
+            format++;
+        }
+        if (*format == '$') {
+            if (max != INT_MAX) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Invalid format string ($ specified twice)");
+                return -1;
+            }
+            if (i < npos) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Empty parameter name after $");
+                return -1;
+            }
+            max = i;
+            format++;
+        }
+        if (IS_END_OF_FORMAT(*format)) {
+            PyErr_Format(PyExc_SystemError,
+                        "More keyword list entries (%d) than "
+                        "format specifiers (%d)", total, i);
+            return -1;
+        }
+
+        const char *msg = skipitem(&format, NULL, 0);
+        if (msg) {
+            PyErr_Format(PyExc_SystemError, "%s: '%s'", msg,
+                        format);
+            return -1;
+        }
+    }
+    min = Py_MIN(min, total);
+    max = Py_MIN(max, total);
+
+    if (!IS_END_OF_FORMAT(*format) && (*format != '|') && (*format != '$')) {
+        PyErr_Format(PyExc_SystemError,
+            "more argument specifiers than keyword list entries "
+            "(remaining format:'%s')", format);
+        return -1;
+    }
+
+    *pfname = fname;
+    *pcustommsg = custommsg;
+    *pmin = min;
+    *pmax = max;
+    return 0;
+}
+
+static int
 parser_init(struct _PyArg_Parser *parser)
 {
     const char * const *keywords;
-    const char *format, *msg;
+    const char *fname, *custommsg;
     int i, len, pos, min, max, nkw;
     PyObject *kwtuple;
 
@@ -1888,74 +1969,9 @@ parser_init(struct _PyArg_Parser *parser)
     if (scan_keywords(keywords, &len, &pos) < 0) {
         return 0;
     }
-
-    format = parser->format;
-    if (format) {
-        /* grab the function name or custom error msg first (mutually exclusive) */
-        parser->fname = strchr(parser->format, ':');
-        if (parser->fname) {
-            parser->fname++;
-            parser->custom_msg = NULL;
-        }
-        else {
-            parser->custom_msg = strchr(parser->format,';');
-            if (parser->custom_msg)
-                parser->custom_msg++;
-        }
-
-        min = max = INT_MAX;
-        for (i = 0; i < len; i++) {
-            if (*format == '|') {
-                if (min != INT_MAX) {
-                    PyErr_SetString(PyExc_SystemError,
-                                    "Invalid format string (| specified twice)");
-                    return 0;
-                }
-                if (max != INT_MAX) {
-                    PyErr_SetString(PyExc_SystemError,
-                                    "Invalid format string ($ before |)");
-                    return 0;
-                }
-                min = i;
-                format++;
-            }
-            if (*format == '$') {
-                if (max != INT_MAX) {
-                    PyErr_SetString(PyExc_SystemError,
-                                    "Invalid format string ($ specified twice)");
-                    return 0;
-                }
-                if (i < pos) {
-                    PyErr_SetString(PyExc_SystemError,
-                                    "Empty parameter name after $");
-                    return 0;
-                }
-                max = i;
-                format++;
-            }
-            if (IS_END_OF_FORMAT(*format)) {
-                PyErr_Format(PyExc_SystemError,
-                            "More keyword list entries (%d) than "
-                            "format specifiers (%d)", len, i);
-                return 0;
-            }
-
-            msg = skipitem(&format, NULL, 0);
-            if (msg) {
-                PyErr_Format(PyExc_SystemError, "%s: '%s'", msg,
-                            format);
-                return 0;
-            }
-        }
-        parser->min = Py_MIN(min, len);
-        parser->max = Py_MIN(max, len);
-
-        if (!IS_END_OF_FORMAT(*format) && (*format != '|') && (*format != '$')) {
-            PyErr_Format(PyExc_SystemError,
-                "more argument specifiers than keyword list entries "
-                "(remaining format:'%s')", format);
-            return 0;
-        }
+    if (parser->format && parse_format(parser->format, len, pos,
+                                       &fname, &custommsg, &min, &max) < 0) {
+        return 0;
     }
 
     nkw = len - pos;
@@ -1975,6 +1991,10 @@ parser_init(struct _PyArg_Parser *parser)
     }
 
     parser->pos = pos;
+    parser->fname = fname;
+    parser->custom_msg = custommsg;
+    parser->min = min;
+    parser->max = max;
     parser->kwtuple = kwtuple;
 
     assert(parser->next == NULL);
