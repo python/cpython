@@ -4443,8 +4443,7 @@ handle_eval_breaker:
             int dictoffset = *(int16_t *)&cache0->index;
             PyDictObject **dictptr = (PyDictObject**)(((char *)self)+dictoffset);
             assert(
-                ((PyObject **)dictptr == _PyObject_ManagedDictPointer(self) && dictoffset < 0)
-                ||
+                dictoffset == MANAGED_DICT_OFFSET ||
                 (dictoffset == self_cls->tp_dictoffset && dictoffset > 0)
             );
             PyDictObject *dict = *dictptr;
