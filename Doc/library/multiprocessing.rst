@@ -1413,74 +1413,8 @@ object -- see :ref:`multiprocessing-managers`.
 Shared :mod:`ctypes` Objects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-It is possible to create shared objects using shared memory which can be
+It is possible to create shared :mod:`ctypes` objects from shared memory which can be
 inherited by child processes.
-
-.. function:: Value(typecode_or_type, *args, lock=True)
-
-   Return a :mod:`ctypes` object allocated from shared memory.  By default the
-   return value is actually a synchronized wrapper for the object.  The object
-   itself can be accessed via the *value* attribute of a :class:`Value`.
-
-   *typecode_or_type* determines the type of the returned object: it is either a
-   ctypes type or a one character typecode of the kind used by the :mod:`array`
-   module.  *\*args* is passed on to the constructor for the type.
-
-   If *lock* is ``True`` (the default) then a new recursive lock
-   object is created to synchronize access to the value.  If *lock* is
-   a :class:`Lock` or :class:`RLock` object then that will be used to
-   synchronize access to the value.  If *lock* is ``False`` then
-   access to the returned object will not be automatically protected
-   by a lock, so it will not necessarily be "process-safe".
-
-   Operations like ``+=`` which involve a read and write are not
-   atomic.  So if, for instance, you want to atomically increment a
-   shared value it is insufficient to just do ::
-
-       counter.value += 1
-
-   Assuming the associated lock is recursive (which it is by default)
-   you can instead do ::
-
-       with counter.get_lock():
-           counter.value += 1
-
-   Note that *lock* is a keyword-only argument.
-
-.. function:: Array(typecode_or_type, size_or_initializer, *, lock=True)
-
-   Return a ctypes array allocated from shared memory.  By default the return
-   value is actually a synchronized wrapper for the array.
-
-   *typecode_or_type* determines the type of the elements of the returned array:
-   it is either a ctypes type or a one character typecode of the kind used by
-   the :mod:`array` module.  If *size_or_initializer* is an integer, then it
-   determines the length of the array, and the array will be initially zeroed.
-   Otherwise, *size_or_initializer* is a sequence which is used to initialize
-   the array and whose length determines the length of the array.
-
-   If *lock* is ``True`` (the default) then a new recursive lock object is created to
-   synchronize access to the value.  If *lock* is a :class:`Lock` or
-   :class:`RLock` object then that will be used to synchronize access to the
-   value.  If *lock* is ``False`` then access to the returned object will not be
-   automatically protected by a lock, so it will not necessarily be
-   "process-safe".
-
-   Note that *lock* is a keyword only argument.
-
-   Note that an array of :data:`ctypes.c_char` has *value* and *raw*
-   attributes which allow one to use it to store and retrieve strings.
-
-
-The :mod:`multiprocessing.sharedctypes` module
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-.. module:: multiprocessing.sharedctypes
-   :synopsis: Allocate ctypes objects from shared memory.
-
-The :mod:`multiprocessing.sharedctypes` module provides functions for allocating
-:mod:`ctypes` objects from shared memory which can be inherited by child
-processes.
 
 .. note::
 
@@ -1527,7 +1461,7 @@ processes.
    process-safe synchronization wrapper may be returned instead of a raw ctypes
    array.
 
-   If *lock* is ``True`` (the default) then a new lock object is created to
+   If *lock* is ``True`` (the default) then a new recursive lock object is created to
    synchronize access to the value.  If *lock* is a
    :class:`~multiprocessing.Lock` or :class:`~multiprocessing.RLock` object
    then that will be used to synchronize access to the
@@ -1543,7 +1477,7 @@ processes.
    process-safe synchronization wrapper may be returned instead of a raw ctypes
    object.
 
-   If *lock* is ``True`` (the default) then a new lock object is created to
+   If *lock* is ``True`` (the default) then a new recursive lock object is created to
    synchronize access to the value.  If *lock* is a :class:`~multiprocessing.Lock` or
    :class:`~multiprocessing.RLock` object then that will be used to synchronize access to the
    value.  If *lock* is ``False`` then access to the returned object will not be
@@ -1551,6 +1485,21 @@ processes.
    "process-safe".
 
    Note that *lock* is a keyword-only argument.
+
+   Operations like ``+=`` which involve a read and write are not
+   atomic.  So if, for instance, you want to atomically increment a
+   shared value it is insufficient to just do ::
+
+       counter.value += 1
+
+   Assuming the associated lock is recursive (which it is by default)
+   you can instead do ::
+
+       with counter.get_lock():
+           counter.value += 1
+
+.. module:: multiprocessing.sharedctypes
+   :synopsis: Allocate ctypes objects from shared memory.
 
 .. function:: copy(obj)
 
@@ -1591,8 +1540,7 @@ MyStruct(4, 6)       RawValue(MyStruct, 4, 6)
 Below is an example where a number of ctypes objects are modified by a child
 process::
 
-   from multiprocessing import Process, Lock
-   from multiprocessing.sharedctypes import Value, Array
+   from multiprocessing import Process, Lock, Value, Array
    from ctypes import Structure, c_double
 
    class Point(Structure):
@@ -2122,9 +2070,6 @@ any proxies referring to it.
 Process Pools
 ~~~~~~~~~~~~~
 
-.. module:: multiprocessing.pool
-   :synopsis: Create pools of processes.
-
 One can create a pool of processes which will carry out tasks submitted to it
 with the :class:`Pool` class.
 
@@ -2295,6 +2240,8 @@ with the :class:`Pool` class.
       :ref:`typecontextmanager`.  :meth:`~contextmanager.__enter__` returns the
       pool object, and :meth:`~contextmanager.__exit__` calls :meth:`terminate`.
 
+.. module:: multiprocessing.pool
+   :synopsis: Create pools of processes.
 
 .. class:: AsyncResult
 
