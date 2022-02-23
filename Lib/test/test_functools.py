@@ -3,7 +3,6 @@ import builtins
 import collections
 import collections.abc
 import copy
-import inspect
 from itertools import permutations
 import pickle
 from random import choice
@@ -709,17 +708,6 @@ class TestUpdateWrapper(unittest.TestCase):
         self.assertEqual(wrapper.__name__, 'max')
         self.assertTrue(wrapper.__doc__.startswith('max('))
         self.assertEqual(wrapper.__annotations__, {})
-    
-    def test_partial_update(self):
-        def wrapper(a, b, c, d):
-            pass
-        sig_original = inspect.signature(wrapper)
-        curried_a = functools.partial(wrapper, 1)
-        sig_curried_a_1 = inspect.signature(curried_a)
-        functools.update_wrapper(curried_a, wrapper)
-        sig_curried_a_2 = inspect.signature(curried_a)
-        self.assertEqual(sig_curried_a_2, sig_curried_a_1)
-        self.assertNotEqual(sig_curried_a_2, sig_original)
 
 
 class TestWraps(TestUpdateWrapper):
