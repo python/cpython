@@ -1115,7 +1115,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         }
     }
     else {
-        int dictoffset = owner_cls->tp_dictoffset;
+        Py_ssize_t dictoffset = owner_cls->tp_dictoffset;
         if (dictoffset < 0 || dictoffset > INT16_MAX) {
             SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
             goto fail;
@@ -1155,7 +1155,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             *instr = _Py_MAKECODEUNIT(LOAD_METHOD_WITH_VALUES, _Py_OPARG(*instr));
             break;
         case MANAGED_DICT:
-            cache0->index = (uint16_t)MANAGED_DICT_OFFSET;
+            *(int16_t *)&cache0->index = (int16_t)MANAGED_DICT_OFFSET;
             *instr = _Py_MAKECODEUNIT(LOAD_METHOD_WITH_DICT, _Py_OPARG(*instr));
             break;
         case OFFSET_DICT:
