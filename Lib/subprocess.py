@@ -313,12 +313,14 @@ def _args_from_interpreter_flags():
             args.append('-E')
         if sys.flags.no_user_site:
             args.append('-s')
+        if sys.flags.safe_path:
+            args.append('-P')
 
     # -W options
     warnopts = sys.warnoptions[:]
-    bytes_warning = sys.flags.bytes_warning
     xoptions = getattr(sys, '_xoptions', {})
-    dev_mode = ('dev' in xoptions)
+    bytes_warning = sys.flags.bytes_warning
+    dev_mode = sys.flags.dev_mode
 
     if bytes_warning > 1:
         warnopts.remove("error::BytesWarning")
