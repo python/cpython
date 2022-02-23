@@ -43,6 +43,11 @@ typedef struct {
     PyObject *me_value; /* This field is only meaningful for combined tables */
 } PyDictKeyEntry;
 
+typedef struct {
+    PyObject *me_key;   /* The key must be Unicode and have hash. */
+    PyObject *me_value; /* This field is only meaningful for combined tables */
+} PyDictUnicodeEntry;
+
 /* _Py_dict_lookup() returns index of entry which can be used like DK_ENTRIES(dk)[index].
  * -1 when no entry found, -3 when compare raises error.
  */
@@ -54,6 +59,7 @@ int _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
 #define DKIX_EMPTY (-1)
 #define DKIX_DUMMY (-2)  /* Used internally */
 #define DKIX_ERROR (-3)
+#define DKIX_KEY_CHANGED (-4) /* Used internally */
 
 typedef enum {
     DICT_KEYS_GENERAL = 0,
@@ -98,7 +104,7 @@ struct _dictkeysobject {
        Dynamically sized, SIZEOF_VOID_P is minimum. */
     char dk_indices[];  /* char is required to avoid strict aliasing. */
 
-    /* "PyDictKeyEntry dk_entries[dk_usable];" array follows:
+    /* "PyDictKeyEntry or PyDictUnicodeEntry dk_entries[USABLE_FRACTION(DK_SIZE(dk))];" array follows:
        see the DK_ENTRIES() macro */
 };
 
@@ -132,7 +138,9 @@ struct _dictvalues {
             2 : sizeof(int32_t))
 #endif
 #define DK_ENTRIES(dk) \
-    ((PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
+    (assert(dk->dk_kind == DICT_KEYS_GENERAL), (PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
+#define DK_UNICODE_ENTRIES(dk) \
+    (assert(dk->dk_kind != DICT_KEYS_GENERAL), (PyDictUnicodeEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
 
 extern uint64_t _pydict_global_version;
 
