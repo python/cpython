@@ -57,14 +57,14 @@ static uint8_t adaptive_opcodes[256] = {
 
 /* The number of cache entries required for a "family" of instructions. */
 static uint8_t cache_requirements[256] = {
-    [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
+    [LOAD_ATTR] = 1,  // _PyAdaptiveEntry
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
     [BINARY_SUBSCR] = 2, /* _PyAdaptiveEntry, _PyObjectCache */
     [STORE_SUBSCR] = 0,
     [CALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [PRECALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
-    [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
+    [STORE_ATTR] = 1,  // _PyAdaptiveEntry
     [BINARY_OP] = 1,  // _PyAdaptiveEntry
     [COMPARE_OP] = 1, /* _PyAdaptiveEntry */
     [UNPACK_SEQUENCE] = 1,  // _PyAdaptiveEntry
@@ -638,7 +638,7 @@ initial_counter_value(void) {
 static int
 specialize_module_load_attr(
     PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
-    _PyAdaptiveEntry *cache0, _PyAttrCache *cache1, int opcode,
+    _PyAdaptiveEntry *cache0, int opcode,
     int opcode_module)
 {
     PyModuleObject *m = (PyModuleObject *)owner;
@@ -671,7 +671,7 @@ specialize_module_load_attr(
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
     }
-    cache1->dk_version_or_hint = keys_version;
+    cache0->version = keys_version;
     cache0->index = (uint16_t)index;
     *instr = _Py_MAKECODEUNIT(opcode_module, _Py_OPARG(*instr));
     return 0;
@@ -760,7 +760,7 @@ static int
 specialize_dict_access(
     PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
     DescriptorClassification kind, PyObject *name,
-    _PyAdaptiveEntry *cache0, _PyAttrCache *cache1,
+    _PyAdaptiveEntry *cache0,
     int base_op, int values_op, int hint_op)
 {
     assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT ||
@@ -782,7 +782,7 @@ specialize_dict_access(
             SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
             return 0;
         }
-        cache1->tp_version = type->tp_version_tag;
+        cache0->version = type->tp_version_tag;
         cache0->index = (uint16_t)index;
         *instr = _Py_MAKECODEUNIT(values_op, _Py_OPARG(*instr));
     }
@@ -795,12 +795,12 @@ specialize_dict_access(
         PyObject *value = NULL;
         Py_ssize_t hint =
             _PyDict_GetItemHint(dict, name, -1, &value);
-        if (hint != (uint32_t)hint) {
+        if (hint != (uint16_t)hint) {
             SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
             return 0;
         }
-        cache1->dk_version_or_hint = (uint32_t)hint;
-        cache1->tp_version = type->tp_version_tag;
+        cache0->index = (uint16_t)hint;
+        cache0->version = type->tp_version_tag;
         *instr = _Py_MAKECODEUNIT(hint_op, _Py_OPARG(*instr));
     }
     return 1;
@@ -810,9 +810,8 @@ int
 _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
 {
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
-    _PyAttrCache *cache1 = &cache[-1].attr;
     if (PyModule_CheckExact(owner)) {
-        int err = specialize_module_load_attr(owner, instr, name, cache0, cache1,
+        int err = specialize_module_load_attr(owner, instr, name, cache0,
             LOAD_ATTR, LOAD_ATTR_MODULE);
         if (err) {
             goto fail;
@@ -853,7 +852,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
             assert(dmem->type == T_OBJECT_EX);
             assert(offset > 0);
             cache0->index = (uint16_t)offset;
-            cache1->tp_version = type->tp_version_tag;
+            cache0->version = type->tp_version_tag;
             *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SLOT, _Py_OPARG(*instr));
             goto success;
         }
@@ -862,7 +861,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
             Py_ssize_t offset = offsetof(PyObject, ob_type);
             assert(offset == (uint16_t)offset);
             cache0->index = (uint16_t)offset;
-            cache1->tp_version = type->tp_version_tag;
+            cache0->version = type->tp_version_tag;
             *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SLOT, _Py_OPARG(*instr));
             goto success;
         }
@@ -883,7 +882,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
             break;
     }
     int err = specialize_dict_access(
-        owner, instr, type, kind, name, cache0, cache1,
+        owner, instr, type, kind, name, cache0,
         LOAD_ATTR, LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT
     );
     if (err < 0) {
@@ -908,7 +907,6 @@ int
 _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
 {
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
-    _PyAttrCache *cache1 = &cache[-1].attr;
     PyTypeObject *type = Py_TYPE(owner);
     if (PyModule_CheckExact(owner)) {
         SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDDEN);
@@ -942,7 +940,7 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, S
             assert(dmem->type == T_OBJECT_EX);
             assert(offset > 0);
             cache0->index = (uint16_t)offset;
-            cache1->tp_version = type->tp_version_tag;
+            cache0->version = type->tp_version_tag;
             *instr = _Py_MAKECODEUNIT(STORE_ATTR_SLOT, _Py_OPARG(*instr));
             goto success;
         }
@@ -965,7 +963,7 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, S
     }
 
     int err = specialize_dict_access(
-        owner, instr, type, kind, name, cache0, cache1,
+        owner, instr, type, kind, name, cache0,
         STORE_ATTR, STORE_ATTR_INSTANCE_VALUE, STORE_ATTR_WITH_HINT
     );
     if (err < 0) {
@@ -1066,7 +1064,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
 
     PyTypeObject *owner_cls = Py_TYPE(owner);
     if (PyModule_CheckExact(owner)) {
-        int err = specialize_module_load_attr(owner, instr, name, cache0, cache1,
+        int err = specialize_module_load_attr(owner, instr, name, cache0,
             LOAD_METHOD, LOAD_METHOD_MODULE);
         if (err) {
             goto fail;
@@ -1111,7 +1109,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }
-        cache1->dk_version_or_hint = keys_version;
+        cache1->dk_version = keys_version;
         *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CACHED, _Py_OPARG(*instr));
     }
     else {
