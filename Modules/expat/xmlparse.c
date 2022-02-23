@@ -1,4 +1,4 @@
-/* 2e2c8ce5f11a473d65ec313ab20ceee6afefb355f5405afc06e7204e2e41c8c0 (2.4.4+)
+/* a30d2613dcfdef81475a9d1a349134d2d42722172fdaa7d5bb12ed2aa74b9596 (2.4.6+)
                             __  __            _
                          ___\ \/ /_ __   __ _| |_
                         / _ \\  /| '_ \ / _` | __|
@@ -11,7 +11,7 @@
    Copyright (c) 2000-2006 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2001-2002 Greg Stein <gstein@users.sourceforge.net>
    Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
-   Copyright (c) 2005-2009 Steven Solie <ssolie@users.sourceforge.net>
+   Copyright (c) 2005-2009 Steven Solie <steven@solie.ca>
    Copyright (c) 2016      Eric Rahm <erahm@mozilla.com>
    Copyright (c) 2016-2022 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2016      Gaurav <g.gupta@samsung.com>
@@ -718,8 +718,7 @@ XML_ParserCreate(const XML_Char *encodingName) {
 
 XML_Parser XMLCALL
 XML_ParserCreateNS(const XML_Char *encodingName, XML_Char nsSep) {
-  XML_Char tmp[2];
-  *tmp = nsSep;
+  XML_Char tmp[2] = {nsSep, 0};
   return XML_ParserCreate_MM(encodingName, NULL, tmp);
 }
 
@@ -1344,8 +1343,7 @@ XML_ExternalEntityParserCreate(XML_Parser oldParser, const XML_Char *context,
      would be otherwise.
   */
   if (parser->m_ns) {
-    XML_Char tmp[2];
-    *tmp = parser->m_namespaceSeparator;
+    XML_Char tmp[2] = {parser->m_namespaceSeparator, 0};
     parser = parserCreate(encodingName, &parser->m_mem, tmp, newDtd);
   } else {
     parser = parserCreate(encodingName, &parser->m_mem, NULL, newDtd);
@@ -2563,6 +2561,7 @@ storeRawNames(XML_Parser parser) {
   while (tag) {
     int bufSize;
     int nameLen = sizeof(XML_Char) * (tag->name.strLen + 1);
+    size_t rawNameLen;
     char *rawNameBuf = tag->buf + nameLen;
     /* Stop if already stored.  Since m_tagStack is a stack, we can stop
        at the first entry that has already been copied; everything
@@ -2574,7 +2573,11 @@ storeRawNames(XML_Parser parser) {
     /* For re-use purposes we need to ensure that the
        size of tag->buf is a multiple of sizeof(XML_Char).
     */
-    bufSize = nameLen + ROUND_UP(tag->rawNameLength, sizeof(XML_Char));
+    rawNameLen = ROUND_UP(tag->rawNameLength, sizeof(XML_Char));
+    /* Detect and prevent integer overflow. */
+    if (rawNameLen > (size_t)INT_MAX - nameLen)
+      return XML_FALSE;
+    bufSize = nameLen + (int)rawNameLen;
     if (bufSize > tag->bufEnd - tag->buf) {
       char *temp = (char *)REALLOC(parser, tag->buf, bufSize);
       if (temp == NULL)
@@ -3756,6 +3759,17 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
     if (! mustBeXML && isXMLNS
         && (len > xmlnsLen || uri[len] != xmlnsNamespace[len]))
       isXMLNS = XML_FALSE;
+
+    // NOTE: While Expat does not validate namespace URIs against RFC 3986,
+    //       we have to at least make sure that the XML processor on top of
+    //       Expat (that is splitting tag names by namespace separator into
+    //       2- or 3-tuples (uri-local or uri-local-prefix)) cannot be confused
+    //       by an attacker putting additional namespace separator characters
+    //       into namespace declarations.  That would be ambiguous and not to
+    //       be expected.
+    if (parser->m_ns && (uri[len] == parser->m_namespaceSeparator)) {
+      return XML_ERROR_SYNTAX;
+    }
   }
   isXML = isXML && len == xmlLen;
   isXMLNS = isXMLNS && len == xmlnsLen;
@@ -7317,44 +7331,15 @@ nextScaffoldPart(XML_Parser parser) {
   return next;
 }
 
-static void
-build_node(XML_Parser parser, int src_node, XML_Content *dest,
-           XML_Content **contpos, XML_Char **strpos) {
-  DTD *const dtd = parser->m_dtd; /* save one level of indirection */
-  dest->type = dtd->scaffold[src_node].type;
-  dest->quant = dtd->scaffold[src_node].quant;
-  if (dest->type == XML_CTYPE_NAME) {
-    const XML_Char *src;
-    dest->name = *strpos;
-    src = dtd->scaffold[src_node].name;
-    for (;;) {
-      *(*strpos)++ = *src;
-      if (! *src)
-        break;
-      src++;
-    }
-    dest->numchildren = 0;
-    dest->children = NULL;
-  } else {
-    unsigned int i;
-    int cn;
-    dest->numchildren = dtd->scaffold[src_node].childcnt;
-    dest->children = *contpos;
-    *contpos += dest->numchildren;
-    for (i = 0, cn = dtd->scaffold[src_node].firstchild; i < dest->numchildren;
-         i++, cn = dtd->scaffold[cn].nextsib) {
-      build_node(parser, cn, &(dest->children[i]), contpos, strpos);
-    }
-    dest->name = NULL;
-  }
-}
-
 static XML_Content *
 build_model(XML_Parser parser) {
+  /* Function build_model transforms the existing parser->m_dtd->scaffold
+   * array of CONTENT_SCAFFOLD tree nodes into a new array of
+   * XML_Content tree nodes followed by a gapless list of zero-terminated
+   * strings. */
   DTD *const dtd = parser->m_dtd; /* save one level of indirection */
   XML_Content *ret;
-  XML_Content *cpos;
-  XML_Char *str;
+  XML_Char *str; /* the current string writing location */
 
   /* Detect and prevent integer overflow.
    * The preprocessor guard addresses the "always false" warning
@@ -7380,10 +7365,96 @@ build_model(XML_Parser parser) {
   if (! ret)
     return NULL;
 
-  str = (XML_Char *)(&ret[dtd->scaffCount]);
-  cpos = &ret[1];
+  /* What follows is an iterative implementation (of what was previously done
+   * recursively in a dedicated function called "build_node".  The old recursive
+   * build_node could be forced into stack exhaustion from input as small as a
+   * few megabyte, and so that was a security issue.  Hence, a function call
+   * stack is avoided now by resolving recursion.)
+   *
+   * The iterative approach works as follows:
+   *
+   * - We have two writing pointers, both walking up the result array; one does
+   *   the work, the other creates "jobs" for its colleague to do, and leads
+   *   the way:
+   *
+   *   - The faster one, pointer jobDest, always leads and writes "what job
+   *     to do" by the other, once they reach that place in the
+   *     array: leader "jobDest" stores the source node array index (relative
+   *     to array dtd->scaffold) in field "numchildren".
+   *
+   *   - The slower one, pointer dest, looks at the value stored in the
+   *     "numchildren" field (which actually holds a source node array index
+   *     at that time) and puts the real data from dtd->scaffold in.
+   *
+   * - Before the loop starts, jobDest writes source array index 0
+   *   (where the root node is located) so that dest will have something to do
+   *   when it starts operation.
+   *
+   * - Whenever nodes with children are encountered, jobDest appends
+   *   them as new jobs, in order.  As a result, tree node siblings are
+   *   adjacent in the resulting array, for example:
+   *
+   *     [0] root, has two children
+   *       [1] first child of 0, has three children
+   *         [3] first child of 1, does not have children
+   *         [4] second child of 1, does not have children
+   *         [5] third child of 1, does not have children
+   *       [2] second child of 0, does not have children
+   *
+   *   Or (the same data) presented in flat array view:
+   *
+   *     [0] root, has two children
+   *
+   *     [1] first child of 0, has three children
+   *     [2] second child of 0, does not have children
+   *
+   *     [3] first child of 1, does not have children
+   *     [4] second child of 1, does not have children
+   *     [5] third child of 1, does not have children
+   *
+   * - The algorithm repeats until all target array indices have been processed.
+   */
+  XML_Content *dest = ret; /* tree node writing location, moves upwards */
+  XML_Content *const destLimit = &ret[dtd->scaffCount];
+  XML_Content *jobDest = ret; /* next free writing location in target array */
+  str = (XML_Char *)&ret[dtd->scaffCount];
 
-  build_node(parser, 0, ret, &cpos, &str);
+  /* Add the starting job, the root node (index 0) of the source tree  */
+  (jobDest++)->numchildren = 0;
+
+  for (; dest < destLimit; dest++) {
+    /* Retrieve source tree array index from job storage */
+    const int src_node = (int)dest->numchildren;
+
+    /* Convert item */
+    dest->type = dtd->scaffold[src_node].type;
+    dest->quant = dtd->scaffold[src_node].quant;
+    if (dest->type == XML_CTYPE_NAME) {
+      const XML_Char *src;
+      dest->name = str;
+      src = dtd->scaffold[src_node].name;
+      for (;;) {
+        *str++ = *src;
+        if (! *src)
+          break;
+        src++;
+      }
+      dest->numchildren = 0;
+      dest->children = NULL;
+    } else {
+      unsigned int i;
+      int cn;
+      dest->name = NULL;
+      dest->numchildren = dtd->scaffold[src_node].childcnt;
+      dest->children = jobDest;
+
+      /* Append scaffold indices of children to array */
+      for (i = 0, cn = dtd->scaffold[src_node].firstchild;
+           i < dest->numchildren; i++, cn = dtd->scaffold[cn].nextsib)
+        (jobDest++)->numchildren = (unsigned int)cn;
+    }
+  }
+
   return ret;
 }
 
@@ -7412,7 +7483,7 @@ getElementType(XML_Parser parser, const ENCODING *enc, const char *ptr,
 
 static XML_Char *
 copyString(const XML_Char *s, const XML_Memory_Handling_Suite *memsuite) {
-  int charsRequired = 0;
+  size_t charsRequired = 0;
   XML_Char *result;
 
   /* First determine how long the string is */
