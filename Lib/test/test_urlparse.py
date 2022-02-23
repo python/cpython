@@ -847,47 +847,11 @@ class UrlParseTestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "Cannot mix str"):
             urllib.parse.urljoin(b"http://python.org", "http://python.org")
 
-    def test_forbidden_types(self):
-        with self.assertRaisesRegex(
-                TypeError,
-                "Expected a string or bytes object: got <class 'list'>"):
-            urllib.parse.urljoin('http://www.python.org', [])
-        with self.assertRaisesRegex(
-                TypeError,
-                "Expected a string or bytes object: got <class 'list'>"):
-            urllib.parse.urljoin([], b'docs')
-        with self.assertRaisesRegex(
-                TypeError,
-                "Expected a string or bytes object: got <class 'NoneType'>"):
-            urllib.parse.urlparse(b'www.python.org', None)
-        with self.assertRaisesRegex(
-                TypeError,
-                "Expected a string or bytes object: got <class 'dict'>"):
-            urllib.parse.urlparse({}, '')
-        with self.assertRaisesRegex(
-                TypeError,
-                "Expected a string or bytes object: got <class 'int'>"):
-            urllib.parse.urlsplit(0, 'http')
-        with self.assertRaisesRegex(
-                TypeError,
-                "Expected a string or bytes object: got <class 'NoneType'>"):
-            urllib.parse.urlsplit('http://www.python.org', None)
-        with self.assertRaisesRegex(
-                TypeError,
-                "Expected a string or bytes object: got <class 'tuple'>"):
-            urllib.parse.urldefrag(())
-        with self.assertRaisesRegex(
-                TypeError,
-                "Expected a string or bytes object: got <class 'NoneType'>"):
-            urllib.parse.urlunparse([None, './Python','x-newscheme://foo.com/stuff','x://y','x:/y','x:/','/',])
-        with self.assertRaisesRegex(
-                TypeError,
-                "Expected a string or bytes object: got <class 'int'>"):
-            urllib.parse.urlunsplit(['http', 0, '', '', ''])
-        with self.assertRaisesRegex(
-                TypeError,
-                "Expected a string or bytes object: got <class 'NoneType'>"):
-            urllib.parse.parse_qsl(None, encoding='latin-1')
+    def test_non_string_true_values_rejected(self):
+        # True values raise informative TypeErrors
+        msg = "Expected a string or bytes object: got <class "
+        with self.assertRaisesRegex(TypeError, msg):
+            urllib.parse.urlsplit(1, b'http')
 
     def _check_result_type(self, str_type):
         num_args = len(str_type._fields)
@@ -1377,6 +1341,32 @@ class DeprecationTest(unittest.TestCase):
             urllib.parse.to_bytes('')
         self.assertEqual(str(cm.warning),
                          'urllib.parse.to_bytes() is deprecated as of 3.8')
+
+    def test_false_value_deprecation(self):
+        pattern = (
+            "Providing false values other than strings or bytes to urllib.parse "
+            "is deprecated: got <class "
+        )
+        with self.assertWarnsRegex(DeprecationWarning, pattern):
+            urllib.parse.urljoin('http://www.python.org', [])
+        with self.assertWarnsRegex(DeprecationWarning, pattern):
+            urllib.parse.urljoin([], b'docs')
+        with self.assertWarnsRegex(DeprecationWarning, pattern):
+            urllib.parse.urlparse(b'www.python.org', None)
+        with self.assertWarnsRegex(DeprecationWarning, pattern):
+            urllib.parse.urlparse({}, '')
+        with self.assertWarnsRegex(DeprecationWarning, pattern):
+            urllib.parse.urlsplit(0, b'http')
+        with self.assertWarnsRegex(DeprecationWarning, pattern):
+            urllib.parse.urlsplit(b'http://www.python.org', None)
+        with self.assertWarnsRegex(DeprecationWarning, pattern):
+            urllib.parse.urldefrag(())
+        with self.assertWarnsRegex(DeprecationWarning, pattern):
+            urllib.parse.urlunparse([None, b'www.python.org', None, None, None, None])
+        with self.assertWarnsRegex(DeprecationWarning, pattern):
+            urllib.parse.urlunsplit(['http', 0, '', '', ''])
+        with self.assertWarnsRegex(DeprecationWarning, pattern):
+            urllib.parse.parse_qsl(None, encoding='latin-1')
 
 
 if __name__ == "__main__":

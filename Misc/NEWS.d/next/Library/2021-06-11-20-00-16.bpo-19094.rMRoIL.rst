@@ -1,5 +1,3 @@
-Raised ``TypeError`` when providing anything but a string or bytes
-object to :func:`urllib.parse.urljoin`, :func:`urllib.parse.urlparse`,
-:func:`urllib.parse.urlsplit`, :func:`urllib.parse.urldefrag`, or
-:func:`urllib.parse.parse_qsl`, or when providing the same in an iterable
-passed to :func:`urllib.parse.urlunparse` or :func:`urllib.parse.urlunsplit`.
+Providing anything but a string or bytes object to :mod:`urllib.parse`
+functions expecting strings or bytes now raises :exc:`DeprecationWarning`
+if the value tests false, or :exc:`TypeError` if it tests true.

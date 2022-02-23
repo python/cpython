@@ -114,8 +114,14 @@ def _coerce_args(*args):
     #   - noop for str inputs
     #   - encoding function otherwise
     for arg in args:
-        if not isinstance(arg, (str, bytes, bytearray)):
-            raise TypeError(f'Expected a string or bytes object: got {type(arg)}')
+        if not (isinstance(arg, str) or hasattr(arg, 'decode')):
+            if arg:
+                raise TypeError(f"Expected a string or bytes object: got {type(arg)}")
+            else:
+                warnings.warn(
+                    f"Providing false values other than strings or bytes "
+                    f"to urllib.parse is deprecated: got {type(arg)}",
+                    DeprecationWarning, 3)
     str_input = isinstance(args[0], str)
     for arg in args[1:]:
         # We special-case the empty string to support the
