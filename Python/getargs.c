@@ -1851,32 +1851,43 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
 static struct _PyArg_Parser *static_arg_parsers = NULL;
 
 static int
-parser_init(struct _PyArg_Parser *parser)
+scan_keywords(const char * const *keywords, int *ptotal, int *pposonly)
 {
-    const char * const *keywords;
-    const char *format, *msg;
-    int i, len, min, max, nkw;
-    PyObject *kwtuple;
-
-    assert(parser->keywords != NULL);
-    if (parser->kwtuple != NULL) {
-        return 1;
-    }
-
-    keywords = parser->keywords;
     /* scan keywords and count the number of positional-only parameters */
+    int i;
     for (i = 0; keywords[i] && !*keywords[i]; i++) {
     }
-    parser->pos = i;
+    *pposonly = i;
+
     /* scan keywords and get greatest possible nbr of args */
     for (; keywords[i]; i++) {
         if (!*keywords[i]) {
             PyErr_SetString(PyExc_SystemError,
                             "Empty keyword parameter name");
-            return 0;
+            return -1;
         }
     }
-    len = i;
+    *ptotal = i;
+    return 0;
+}
+
+static int
+parser_init(struct _PyArg_Parser *parser)
+{
+    const char * const *keywords;
+    const char *format, *msg;
+    int i, len, pos, min, max, nkw;
+    PyObject *kwtuple;
+
+    keywords = parser->keywords;
+    assert(keywords != NULL);
+    if (parser->kwtuple != NULL) {
+        return 1;
+    }
+
+    if (scan_keywords(keywords, &len, &pos) < 0) {
+        return 0;
+    }
 
     format = parser->format;
     if (format) {
@@ -1914,7 +1925,7 @@ parser_init(struct _PyArg_Parser *parser)
                                     "Invalid format string ($ specified twice)");
                     return 0;
                 }
-                if (i < parser->pos) {
+                if (i < pos) {
                     PyErr_SetString(PyExc_SystemError,
                                     "Empty parameter name after $");
                     return 0;
@@ -1947,12 +1958,12 @@ parser_init(struct _PyArg_Parser *parser)
         }
     }
 
-    nkw = len - parser->pos;
+    nkw = len - pos;
     kwtuple = PyTuple_New(nkw);
     if (kwtuple == NULL) {
         return 0;
     }
-    keywords = parser->keywords + parser->pos;
+    keywords = parser->keywords + pos;
     for (i = 0; i < nkw; i++) {
         PyObject *str = PyUnicode_FromString(keywords[i]);
         if (str == NULL) {
@@ -1962,6 +1973,8 @@ parser_init(struct _PyArg_Parser *parser)
         PyUnicode_InternInPlace(&str);
         PyTuple_SET_ITEM(kwtuple, i, str);
     }
+
+    parser->pos = pos;
     parser->kwtuple = kwtuple;
 
     assert(parser->next == NULL);
