@@ -1016,7 +1016,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual((c.x, c.y), (3, 4))
         self.assertTrue(C.flag)
 
-    def test_post_init_no_auto_added(self):
+    def test_post_init_not_auto_added(self):
         # See bpo-46757, which had proposed always adding __post_init__.  As
         # Raymond Hettinger pointed out, that would be a breaking change.  So,
         # add a test to make sure that the current behavior doesn't change.
