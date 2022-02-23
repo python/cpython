@@ -447,6 +447,53 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_asyncio_Task_cancelling__doc__,
+"cancelling($self, /)\n"
+"--\n"
+"\n"
+"Return True if the task is in the process of being cancelled.\n"
+"\n"
+"This is set once .cancel() is called\n"
+"and remains set until .uncancel() is called.\n"
+"\n"
+"As long as this flag is set, further .cancel() calls will be ignored,\n"
+"until .uncancel() is called to reset it.");
+
+#define _ASYNCIO_TASK_CANCELLING_METHODDEF    \
+    {"cancelling", (PyCFunction)_asyncio_Task_cancelling, METH_NOARGS, _asyncio_Task_cancelling__doc__},
+
+static PyObject *
+_asyncio_Task_cancelling_impl(TaskObj *self);
+
+static PyObject *
+_asyncio_Task_cancelling(TaskObj *self, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_Task_cancelling_impl(self);
+}
+
+PyDoc_STRVAR(_asyncio_Task_uncancel__doc__,
+"uncancel($self, /)\n"
+"--\n"
+"\n"
+"Reset the flag returned by cancelling().\n"
+"\n"
+"This should be used by tasks that catch CancelledError\n"
+"and wish to continue indefinitely until they are cancelled again.\n"
+"\n"
+"Returns the previous value of the flag.");
+
+#define _ASYNCIO_TASK_UNCANCEL_METHODDEF    \
+    {"uncancel", (PyCFunction)_asyncio_Task_uncancel, METH_NOARGS, _asyncio_Task_uncancel__doc__},
+
+static PyObject *
+_asyncio_Task_uncancel_impl(TaskObj *self);
+
+static PyObject *
+_asyncio_Task_uncancel(TaskObj *self, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_Task_uncancel_impl(self);
+}
+
 PyDoc_STRVAR(_asyncio_Task_get_stack__doc__,
 "get_stack($self, /, *, limit=None)\n"
 "--\n"
@@ -871,4 +918,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0d127162ac92e0c0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c02708a9d6a774cc input=a9049054013a1b77]*/

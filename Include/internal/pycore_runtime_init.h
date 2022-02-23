@@ -651,16 +651,25 @@ extern "C" {
                 INIT_STR(anon_module, "<module>"), \
                 INIT_STR(anon_setcomp, "<setcomp>"), \
                 INIT_STR(anon_string, "<string>"), \
+                INIT_STR(anon_unknown, "<unknown>"), \
+                INIT_STR(close_br, "}"), \
                 INIT_STR(comma_sep, ", "), \
+                INIT_STR(dbl_close_br, "}}"), \
+                INIT_STR(dbl_open_br, "{{"), \
                 INIT_STR(dbl_percent, "%%"), \
                 INIT_STR(dot, "."), \
                 INIT_STR(dot_locals, ".<locals>"), \
                 INIT_STR(empty, ""), \
+                INIT_STR(list_err, "list index out of range"), \
+                INIT_STR(newline, "\n"), \
+                INIT_STR(open_br, "{"), \
                 INIT_STR(percent, "%"), \
             }, \
             .identifiers = { \
+                INIT_ID(False), \
                 INIT_ID(Py_Repr), \
                 INIT_ID(TextIOWrapper), \
+                INIT_ID(True), \
                 INIT_ID(WarningMessage), \
                 INIT_ID(_), \
                 INIT_ID(__IOBase_closed), \
@@ -809,7 +818,9 @@ extern "C" {
                 INIT_ID(__weakref__), \
                 INIT_ID(__xor__), \
                 INIT_ID(_abc_impl), \
+                INIT_ID(_annotation), \
                 INIT_ID(_blksize), \
+                INIT_ID(_bootstrap), \
                 INIT_ID(_dealloc_warn), \
                 INIT_ID(_finalizing), \
                 INIT_ID(_find_and_load), \
@@ -831,23 +842,31 @@ extern "C" {
                 INIT_ID(big), \
                 INIT_ID(buffer), \
                 INIT_ID(builtins), \
+                INIT_ID(c_call), \
+                INIT_ID(c_exception), \
+                INIT_ID(c_return), \
+                INIT_ID(call), \
                 INIT_ID(clear), \
                 INIT_ID(close), \
+                INIT_ID(closed), \
                 INIT_ID(code), \
                 INIT_ID(copy), \
                 INIT_ID(copyreg), \
                 INIT_ID(decode), \
                 INIT_ID(default), \
                 INIT_ID(defaultaction), \
+                INIT_ID(dictcomp), \
                 INIT_ID(difference_update), \
                 INIT_ID(dispatch_table), \
                 INIT_ID(displayhook), \
                 INIT_ID(enable), \
+                INIT_ID(encode), \
                 INIT_ID(encoding), \
                 INIT_ID(end_lineno), \
                 INIT_ID(end_offset), \
                 INIT_ID(errors), \
                 INIT_ID(excepthook), \
+                INIT_ID(exception), \
                 INIT_ID(extend), \
                 INIT_ID(filename), \
                 INIT_ID(fileno), \
@@ -855,22 +874,30 @@ extern "C" {
                 INIT_ID(filters), \
                 INIT_ID(find_class), \
                 INIT_ID(flush), \
+                INIT_ID(genexpr), \
                 INIT_ID(get), \
                 INIT_ID(get_source), \
                 INIT_ID(getattr), \
+                INIT_ID(getstate), \
                 INIT_ID(ignore), \
                 INIT_ID(importlib), \
+                INIT_ID(inf), \
                 INIT_ID(intersection), \
                 INIT_ID(isatty), \
                 INIT_ID(items), \
                 INIT_ID(iter), \
+                INIT_ID(join), \
                 INIT_ID(keys), \
+                INIT_ID(lambda), \
                 INIT_ID(last_traceback), \
                 INIT_ID(last_type), \
                 INIT_ID(last_value), \
                 INIT_ID(latin1), \
+                INIT_ID(line), \
                 INIT_ID(lineno), \
+                INIT_ID(listcomp), \
                 INIT_ID(little), \
+                INIT_ID(locale), \
                 INIT_ID(match), \
                 INIT_ID(metaclass), \
                 INIT_ID(mode), \
@@ -881,9 +908,11 @@ extern "C" {
                 INIT_ID(n_sequence_fields), \
                 INIT_ID(n_unnamed_fields), \
                 INIT_ID(name), \
+                INIT_ID(newlines), \
                 INIT_ID(obj), \
                 INIT_ID(offset), \
                 INIT_ID(onceregistry), \
+                INIT_ID(opcode), \
                 INIT_ID(open), \
                 INIT_ID(parent), \
                 INIT_ID(partial), \
@@ -911,6 +940,7 @@ extern "C" {
                 INIT_ID(seek), \
                 INIT_ID(seekable), \
                 INIT_ID(send), \
+                INIT_ID(setcomp), \
                 INIT_ID(setstate), \
                 INIT_ID(sort), \
                 INIT_ID(stderr), \
@@ -922,6 +952,8 @@ extern "C" {
                 INIT_ID(text), \
                 INIT_ID(threading), \
                 INIT_ID(throw), \
+                INIT_ID(top), \
+                INIT_ID(truncate), \
                 INIT_ID(unraisablehook), \
                 INIT_ID(values), \
                 INIT_ID(version), \

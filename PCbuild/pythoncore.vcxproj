@@ -263,6 +263,7 @@
     <ClInclude Include="..\Include\osmodule.h" />
     <ClInclude Include="..\Include\patchlevel.h" />
     <ClInclude Include="..\Include\py_curses.h" />
+    <ClInclude Include="..\Include\pybuffer.h" />
     <ClInclude Include="..\Include\pycapsule.h" />
     <ClInclude Include="..\Include\pyerrors.h" />
     <ClInclude Include="..\Include\pyexpat.h" />

@@ -147,6 +147,9 @@
     <ClInclude Include="..\Include\py_curses.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\pybuffer.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\pycapsule.h">
       <Filter>Include</Filter>
     </ClInclude>
