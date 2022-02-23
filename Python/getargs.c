@@ -1983,9 +1983,16 @@ parser_init(struct _PyArg_Parser *parser)
 
     keywords = parser->keywords;
     assert(keywords != NULL);
-    if (parser->kwtuple != NULL) {
+
+    if (parser->initialized) {
         return 1;
     }
+    assert(parser->pos == 0 &&
+           (parser->format == NULL || parser->fname == NULL) &&
+           parser->custom_msg == NULL &&
+           parser->min == 0 &&
+           parser->max == 0 &&
+           parser->kwtuple == NULL);
 
     if (scan_keywords(keywords, &len, &pos) < 0) {
         return 0;
@@ -2005,6 +2012,7 @@ parser_init(struct _PyArg_Parser *parser)
     parser->min = min;
     parser->max = max;
     parser->kwtuple = kwtuple;
+    parser->initialized = 1;
 
     assert(parser->next == NULL);
     parser->next = static_arg_parsers;
