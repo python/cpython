@@ -160,6 +160,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, BINARY_OP, "binary_op");
     err += add_stat_dict(stats, COMPARE_OP, "compare_op");
     err += add_stat_dict(stats, UNPACK_SEQUENCE, "unpack_sequence");
+    err += add_stat_dict(stats, PRECALL, "precall");
     if (err < 0) {
         Py_DECREF(stats);
         return NULL;
@@ -180,8 +181,6 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
     /* Mark some opcodes as specializable for stats,
      * even though we don't specialize them yet. */
     fprintf(out, "opcode[%d].specializable : 1\n", FOR_ITER);
-    fprintf(out, "opcode[%d].specializable : 1\n", PRECALL);
-    fprintf(out, "opcode[%d].specializable : 1\n", UNPACK_SEQUENCE);
     for (int i = 0; i < 256; i++) {
         if (adaptive_opcodes[i]) {
             fprintf(out, "opcode[%d].specializable : 1\n", i);
