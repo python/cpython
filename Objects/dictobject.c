@@ -2595,10 +2595,9 @@ dict_items(PyDictObject *mp)
 {
     PyObject *v;
     Py_ssize_t i, j, n;
-    Py_ssize_t offset;
-    PyObject *item, *key;
-    PyDictKeyEntry *ep;
-    PyObject **value_ptr;
+    PyObject *item;
+    PyObject **key_ptr, **value_ptr;
+    Py_ssize_t key_offset, value_offset;
 
     /* Preallocate the list of tuples, to avoid allocations during
      * the loop over the items, which could trigger GC, which
@@ -2625,20 +2624,28 @@ dict_items(PyDictObject *mp)
         goto again;
     }
     /* Nothing we do below makes any function calls. */
-    ep = DK_ENTRIES(mp->ma_keys);
-    if (mp->ma_values) {
-        value_ptr = mp->ma_values->values;
-        offset = sizeof(PyObject *);
+    if (mp->ma_keys->dk_kind == DICT_KEYS_GENERAL) {
+        PyDictKeyEntry *ep = DK_ENTRIES(mp->ma_keys);
+        key_ptr = &ep->me_key;
+        value_ptr = &ep->me_value;
+        key_offset = value_offset = sizeof(PyDictKeyEntry);
     }
     else {
-        value_ptr = &ep[0].me_value;
-        offset = sizeof(PyDictKeyEntry);
+        PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(mp->ma_keys);
+        key_ptr = &ep->me_key;
+        value_ptr = &ep->me_value;
+        key_offset = value_offset = sizeof(PyDictUnicodeEntry);
+        if (mp->ma_values) {
+            value_ptr = mp->ma_values->values;
+            value_offset = sizeof(PyObject *);
+        }
     }
     for (i = 0, j = 0; j < n; i++) {
         PyObject *value = *value_ptr;
-        value_ptr = (PyObject **)(((char *)value_ptr) + offset);
+        PyObject *key = *key_ptr;
+        key_ptr = (PyObject **)(((char *)key_ptr) + key_offset);
+        value_ptr = (PyObject **)(((char *)value_ptr) + value_offset);
         if (value != NULL) {
-            key = ep[i].me_key;
             item = PyList_GET_ITEM(v, j);
             Py_INCREF(key);
             PyTuple_SET_ITEM(item, 0, key);
