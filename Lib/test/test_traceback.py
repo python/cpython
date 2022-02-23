@@ -1326,16 +1326,18 @@ class BaseExceptionReportingTests:
         e = ValueError(42)
         vanilla = self.get_report(e)
 
-        e.add_note('My Note', replace=True)
+        e.add_note('My Note')
         self.assertEqual(self.get_report(e), vanilla + 'My Note\n')
 
-        e.add_note('', replace=True)
+        del e.__notes__
+        e.add_note('')
         self.assertEqual(self.get_report(e), vanilla + '\n')
 
-        e.add_note('Your Note', replace=True)
+        del e.__notes__
+        e.add_note('Your Note')
         self.assertEqual(self.get_report(e), vanilla + 'Your Note\n')
 
-        e.add_note(None, replace=True)
+        del e.__notes__
         self.assertEqual(self.get_report(e), vanilla)
 
     def test_exception_with_note_with_multiple_notes(self):
@@ -1350,8 +1352,10 @@ class BaseExceptionReportingTests:
             self.get_report(e),
             vanilla + 'Note 1\n' + 'Note 2\n' + 'Note 3\n')
 
-        e.add_note('Note 4', replace=True)
-        e.add_note('Note 5', replace=True)
+        del e.__notes__
+        e.add_note('Note 4')
+        del e.__notes__
+        e.add_note('Note 5')
         e.add_note('Note 6')
 
         self.assertEqual(

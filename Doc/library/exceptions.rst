@@ -126,20 +126,18 @@ The following exceptions are used mostly as base classes for other exceptions.
              tb = sys.exc_info()[2]
              raise OtherException(...).with_traceback(tb)
 
-   .. method:: add_note(note, / replace=False)
+   .. method:: add_note(note)
 
-      If ``note`` is a string, it is added to the exception's notes which appear
-      in the standard traceback after the exception string. If ``replace`` is
-      true, all previously existing notes are removed before the new one is added.
-      To clear all notes, use ``add_note(None, replace=True)``. A :exc:`TypeError`
-      is raise if ``note`` is neither a string nor ``None``.
+      Add the string ``note`` to the exception's notes which appear in the standard
+      traceback after the exception string. A :exc:`TypeError` is raise if ``note``
+      is not a string.
 
       .. versionadded:: 3.11
 
    .. attribute:: __notes__
 
-      A read-only field that contains a tuple of the notes of this exception.
-      See :meth:`add_note`.
+      A tuple of the notes of this exception, which were added with :meth:`add_note`.
+      Its contents can be cleared with ``del e.__notes__``.
 
       .. versionadded:: 3.11
 

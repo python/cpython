@@ -198,30 +198,20 @@ BaseException_add_note(PyObject *self_, PyObject *args, PyObject *kwds)
 {
     PyBaseExceptionObject *self = _PyBaseExceptionObject_cast(self_);
     PyObject *note = NULL;
-    int replace = 0;
-    static char *kwlist[] = {"note", "replace", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|$p:add_note",
-                                     kwlist, &note, &replace)) {
+
+    if (!PyArg_ParseTuple(args, "U:add_note", &note)) {
         return NULL;
     }
 
-    if (replace) {
-        Py_CLEAR(self->notes);
-    }
     if (self->notes == NULL) {
         self->notes = PyList_New(0);
         if (self->notes == NULL) {
             return NULL;
         }
     }
-    if (! Py_IsNone(note)) {
-        if (!PyUnicode_CheckExact(note)) {
-            PyErr_SetString(PyExc_TypeError, "a note must be a string or None");
-            return NULL;
-        }
-        if (PyList_Append(self->notes, note) < 0) {
-            return NULL;
-        }
+    assert(PyUnicode_CheckExact(note)); 
+    if (PyList_Append(self->notes, note) < 0) {
+        return NULL;
     }
     Py_RETURN_NONE;
 }
@@ -235,7 +225,7 @@ static PyMethodDef BaseException_methods[] = {
    {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
    {"with_traceback", (PyCFunction)BaseException_with_traceback, METH_O,
     with_traceback_doc},
-   {"add_note", (PyCFunction)BaseException_add_note, METH_VARARGS | METH_KEYWORDS,
+   {"add_note", (PyCFunction)BaseException_add_note, METH_VARARGS,
     add_note_doc},
    {NULL, NULL, 0, NULL},
 };
@@ -272,6 +262,22 @@ BaseException_get_notes(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
         return PyTuple_New(0);
     }
     return PySequence_Tuple(self->notes);
+}
+
+static int
+BaseException_set_notes(PyBaseExceptionObject *self, PyObject *note,
+                       void *Py_UNUSED(ignored))
+{
+    if (note == NULL) {
+        Py_CLEAR(self->notes);
+    }
+    else {
+        PyErr_SetString(
+            PyExc_AttributeError,
+            "Cannot assign a value to __notes__. Use add_note().");
+        return -1;
+    }
+    return 0;
 }
 
 static PyObject *
@@ -364,7 +370,7 @@ BaseException_set_cause(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
 static PyGetSetDef BaseException_getset[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
-    {"__notes__", (getter)BaseException_get_notes, NULL},
+    {"__notes__", (getter)BaseException_get_notes, (setter)BaseException_set_notes},
     {"__traceback__", (getter)BaseException_get_tb, (setter)BaseException_set_tb},
     {"__context__", BaseException_get_context,
      BaseException_set_context, PyDoc_STR("exception context")},

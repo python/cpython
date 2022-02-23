@@ -556,21 +556,11 @@ class ExceptionTests(unittest.TestCase):
                     e.__notes__ = ("NewNote",)
                 self.assertEqual(e.__notes__, ("My Note", "Your Note"))
 
-                with self.assertRaises(AttributeError):
-                    del e.__notes__
-                self.assertEqual(e.__notes__, ("My Note", "Your Note"))
-
-                e.add_note("Our Note", replace=True)
-                self.assertEqual(e.__notes__, ("Our Note",))
-
-                e.add_note("Our Final Note", replace=False)
-                self.assertEqual(e.__notes__, ("Our Note", "Our Final Note"))
-
-                e.add_note(None, replace=False)
-                self.assertEqual(e.__notes__, ("Our Note", "Our Final Note"))
-
-                e.add_note(None, replace=True)
+                del e.__notes__
                 self.assertEqual(e.__notes__, ())
+
+                e.add_note("Our Note")
+                self.assertEqual(e.__notes__, ("Our Note",))
 
 
     def testWithTraceback(self):

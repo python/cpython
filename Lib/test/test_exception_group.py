@@ -567,7 +567,7 @@ class NestedExceptionGroupSplitTest(ExceptionGroupSplitTestBase):
         try:
             nested_group()
         except ExceptionGroup as e:
-            e.add_note(f"the note: {id(e)}", replace=True)
+            e.add_note(f"the note: {id(e)}")
             eg = e
 
         eg_template = [
