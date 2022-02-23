@@ -11,7 +11,7 @@
    Copyright (c) 2002      Greg Stein <gstein@users.sourceforge.net>
    Copyright (c) 2002-2006 Karl Waclawek <karl@waclawek.net>
    Copyright (c) 2002-2003 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
-   Copyright (c) 2005-2009 Steven Solie <ssolie@users.sourceforge.net>
+   Copyright (c) 2005-2009 Steven Solie <steven@solie.ca>
    Copyright (c) 2016-2021 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
    Copyright (c) 2019      David Loffredo <loffredo@steptools.com>
