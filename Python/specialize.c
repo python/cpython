@@ -1110,7 +1110,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }
-        cache1->dk_version_or_hint = keys_version;
+        cache1->dk_version = keys_version;
         *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CACHED, _Py_OPARG(*instr));
     }
     else {
