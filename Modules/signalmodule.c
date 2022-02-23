@@ -60,6 +60,8 @@ module signal
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b0301a3bde5fe9d3]*/
 
+#ifdef HAVE_SETSIG_T
+
 /*[python input]
 
 class sigset_t_converter(CConverter):
@@ -68,6 +70,7 @@ class sigset_t_converter(CConverter):
 
 [python start generated code]*/
 /*[python end generated code: output=da39a3ee5e6b4b0d input=b5689d14466b6823]*/
+#endif
 
 /*
    NOTES ON THE INTERACTION BETWEEN SIGNALS AND THREADS
@@ -148,6 +151,7 @@ typedef struct {
 #ifdef PYHAVE_ITIMER_ERROR
     PyObject *itimer_error;
 #endif
+    PyTypeObject *siginfo_type;
 } _signal_module_state;
 
 
@@ -289,7 +293,7 @@ trip_signal(int sig_num)
     _Py_atomic_store(&is_tripped, 1);
 
     /* Signals are always handled by the main interpreter */
-    PyInterpreterState *interp = _PyRuntime.interpreters.main;
+    PyInterpreterState *interp = _PyInterpreterState_Main();
 
     /* Notify ceval.c */
     _PyEval_SignalReceived(interp);
@@ -762,7 +766,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
     is_socket = 0;
     if (sockfd != INVALID_FD) {
         /* Import the _socket module to call WSAStartup() */
-        mod = PyImport_ImportModuleNoBlock("_socket");
+        mod = PyImport_ImportModule("_socket");
         if (mod == NULL)
             return NULL;
         Py_DECREF(mod);
@@ -932,6 +936,7 @@ signal_getitimer_impl(PyObject *module, int which)
 #endif // HAVE_GETITIMER
 
 
+#ifdef HAVE_SIGSET_T
 #if defined(PYPTHREAD_SIGMASK) || defined(HAVE_SIGPENDING)
 static PyObject*
 sigset_to_set(sigset_t mask)
@@ -1063,9 +1068,9 @@ signal_sigwait_impl(PyObject *module, sigset_t sigset)
 }
 
 #endif   /* #ifdef HAVE_SIGWAIT */
+#endif   /* #ifdef HAVE_SIGSET_T */
 
-
-#if defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS)
+#if (defined(HAVE_SIGFILLSET) && defined(HAVE_SIGSET_T)) || defined(MS_WINDOWS)
 
 /*[clinic input]
 signal.valid_signals
@@ -1103,7 +1108,8 @@ signal_valid_signals_impl(PyObject *module)
 #endif
 }
 
-#endif   /* #if defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS) */
+#endif   /* #if (defined(HAVE_SIGFILLSET) && defined(HAVE_SIGSET_T)) || defined(MS_WINDOWS) */
+
 
 
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
@@ -1131,12 +1137,11 @@ static PyStructSequence_Desc struct_siginfo_desc = {
     7          /* n_in_sequence */
 };
 
-static PyTypeObject SiginfoType;
 
 static PyObject *
-fill_siginfo(siginfo_t *si)
+fill_siginfo(_signal_module_state *state, siginfo_t *si)
 {
-    PyObject *result = PyStructSequence_New(&SiginfoType);
+    PyObject *result = PyStructSequence_New(state->siginfo_type);
     if (!result)
         return NULL;
 
@@ -1168,6 +1173,7 @@ fill_siginfo(siginfo_t *si)
 }
 #endif
 
+#ifdef HAVE_SIGSET_T
 #ifdef HAVE_SIGWAITINFO
 
 /*[clinic input]
@@ -1198,7 +1204,8 @@ signal_sigwaitinfo_impl(PyObject *module, sigset_t sigset)
     if (err == -1)
         return (!async_err) ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
 
-    return fill_siginfo(&si);
+    _signal_module_state *state = get_signal_state(module);
+    return fill_siginfo(state, &si);
 }
 
 #endif   /* #ifdef HAVE_SIGWAITINFO */
@@ -1266,10 +1273,12 @@ signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
         }
     } while (1);
 
-    return fill_siginfo(&si);
+    _signal_module_state *state = get_signal_state(module);
+    return fill_siginfo(state, &si);
 }
 
 #endif   /* #ifdef HAVE_SIGTIMEDWAIT */
+#endif   /* #ifdef HAVE_SIGSET_T */
 
 
 #if defined(HAVE_PTHREAD_KILL)
@@ -1547,6 +1556,9 @@ signal_add_constants(PyObject *module)
 #ifdef SIGINFO
     ADD_INT_MACRO(SIGINFO);
 #endif
+#ifdef SIGSTKFLT
+    ADD_INT_MACRO(SIGSTKFLT);
+#endif
 
     // ITIMER_xxx constants
 #ifdef ITIMER_REAL
@@ -1649,8 +1661,15 @@ signal_module_exec(PyObject *m)
         return -1;
     }
 #endif
+
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
-    if (PyModule_AddType(m, &SiginfoType) < 0) {
+    modstate->siginfo_type = PyStructSequence_NewType(&struct_siginfo_desc);
+    if (modstate->siginfo_type == NULL) {
+        return -1;
+    }
+#endif
+#if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
+    if (PyModule_AddType(m, modstate->siginfo_type) < 0) {
         return -1;
     }
 #endif
@@ -1671,16 +1690,18 @@ signal_module_exec(PyObject *m)
 static int
 _signal_module_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    _signal_module_state *modstate = get_signal_state(module);
-    Py_VISIT(modstate->itimer_error);
+    _signal_module_state *state = get_signal_state(module);
+    Py_VISIT(state->itimer_error);
+    Py_VISIT(state->siginfo_type);
     return 0;
 }
 
 static int
 _signal_module_clear(PyObject *module)
 {
-    _signal_module_state *modstate = get_signal_state(module);
-    Py_CLEAR(modstate->itimer_error);
+    _signal_module_state *state = get_signal_state(module);
+    Py_CLEAR(state->itimer_error);
+    Py_CLEAR(state->siginfo_type);
     return 0;
 }
 
@@ -1952,14 +1973,6 @@ _PySignal_Init(int install_signal_handlers)
     if (state->sigint_event == NULL) {
         PyErr_SetFromWindowsErr(0);
         return -1;
-    }
-#endif
-
-#if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
-    if (SiginfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&SiginfoType, &struct_siginfo_desc) < 0) {
-            return -1;
-        }
     }
 #endif
 

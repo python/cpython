@@ -10,10 +10,8 @@ import _pickle
 import pkgutil
 import re
 import stat
-import string
 import tempfile
 import test.support
-import time
 import types
 import typing
 import unittest
@@ -23,6 +21,7 @@ import xml.etree.ElementTree
 import textwrap
 from io import StringIO
 from collections import namedtuple
+from urllib.request import urlopen, urlcleanup
 from test.support import import_helper
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
@@ -379,8 +378,6 @@ class PydocBaseTest(unittest.TestCase):
 class PydocDocTest(unittest.TestCase):
     maxDiff = None
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
     @requires_docstrings
@@ -396,9 +393,6 @@ class PydocDocTest(unittest.TestCase):
         self.assertIn(mod_file, result)
         self.assertIn(doc_loc, result)
 
-
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
     @requires_docstrings
@@ -457,8 +451,7 @@ class PydocDocTest(unittest.TestCase):
         self.assertEqual(expected, result,
             "documentation for missing module found")
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     'Docstrings are omitted with -OO and above')
+    @requires_docstrings
     def test_not_ascii(self):
         result = run_pydoc('test.test_pydoc.nonascii', PYTHONIOENCODING='ascii')
         encoded = nonascii.__doc__.encode('ascii', 'backslashreplace')
@@ -612,15 +605,12 @@ class PydocDocTest(unittest.TestCase):
         # Testing that the subclasses section does not appear
         self.assertNotIn('Built-in subclasses', text)
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     'Docstrings are omitted with -O2 and above')
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
     @requires_docstrings
     def test_help_output_redirect(self):
         # issue 940286, if output is set in Helper, then all output from
         # Helper.help should be redirected
-        old_pattern = expected_text_pattern
         getpager_old = pydoc.getpager
         getpager_new = lambda: (lambda x: x)
         self.maxDiff = None
@@ -682,8 +672,7 @@ class PydocDocTest(unittest.TestCase):
             synopsis = pydoc.synopsis(TESTFN, {})
             self.assertEqual(synopsis, 'line 1: h\xe9')
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     'Docstrings are omitted with -OO and above')
+    @requires_docstrings
     def test_synopsis_sourceless(self):
         os = import_helper.import_fresh_module('os')
         expected = os.__doc__.splitlines()[0]
@@ -745,6 +734,7 @@ class PydocDocTest(unittest.TestCase):
         methods = pydoc.allmethods(TestClass)
         self.assertDictEqual(methods, expected)
 
+    @requires_docstrings
     def test_method_aliases(self):
         class A:
             def tkraise(self, aboveThis=None):
@@ -801,10 +791,10 @@ class B(A)
 ''' % __name__)
 
         doc = pydoc.render_doc(B, renderer=pydoc.HTMLDoc())
-        expected_text = """
+        expected_text = f"""
 Python Library Documentation
 
-class B in module test.test_pydoc
+class B in module {__name__}
 class B(A)
     Method resolution order:
         B
@@ -1210,12 +1200,12 @@ cm(x) method of builtins.type instance
         class X:
             attr = Descr()
 
-        self.assertEqual(self._get_summary_lines(X.attr), """\
-<test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>""")
+        self.assertEqual(self._get_summary_lines(X.attr), f"""\
+<{__name__}.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>""")
 
         X.attr.__doc__ = 'Custom descriptor'
-        self.assertEqual(self._get_summary_lines(X.attr), """\
-<test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>
+        self.assertEqual(self._get_summary_lines(X.attr), f"""\
+<{__name__}.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>
     Custom descriptor
 """)
 
@@ -1274,6 +1264,7 @@ foo
             'async <a name="-an_async_generator"><strong>an_async_generator',
             html)
 
+    @requires_docstrings
     def test_html_for_https_links(self):
         def a_fn_with_https_link():
             """a link https://localhost/"""
@@ -1285,29 +1276,43 @@ foo
             html
         )
 
+
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
 
     def test_server(self):
-
-        # Minimal test that starts the server, then stops it.
+        # Minimal test that starts the server, checks that it works, then stops
+        # it and checks its cleanup.
         def my_url_handler(url, content_type):
             text = 'the URL sent was: (%s, %s)' % (url, content_type)
             return text
 
-        serverthread = pydoc._start_server(my_url_handler, hostname='0.0.0.0', port=0)
-        self.assertIn('0.0.0.0', serverthread.docserver.address)
-
-        starttime = time.monotonic()
-        timeout = test.support.SHORT_TIMEOUT
-
-        while serverthread.serving:
-            time.sleep(.01)
-            if serverthread.serving and time.monotonic() - starttime > timeout:
-                serverthread.stop()
-                break
-
+        serverthread = pydoc._start_server(
+            my_url_handler,
+            hostname='localhost',
+            port=0,
+            )
         self.assertEqual(serverthread.error, None)
+        self.assertTrue(serverthread.serving)
+        self.addCleanup(
+            lambda: serverthread.stop() if serverthread.serving else None
+            )
+        self.assertIn('localhost', serverthread.url)
+
+        self.addCleanup(urlcleanup)
+        self.assertEqual(
+            b'the URL sent was: (/test, text/html)',
+            urlopen(urllib.parse.urljoin(serverthread.url, '/test')).read(),
+            )
+        self.assertEqual(
+            b'the URL sent was: (/test.css, text/css)',
+            urlopen(urllib.parse.urljoin(serverthread.url, '/test.css')).read(),
+            )
+
+        serverthread.stop()
+        self.assertFalse(serverthread.serving)
+        self.assertIsNone(serverthread.docserver)
+        self.assertIsNone(serverthread.url)
 
 
 class PydocUrlHandlerTest(PydocBaseTest):
@@ -1346,11 +1351,11 @@ class TestHelper(unittest.TestCase):
         self.assertEqual(sorted(pydoc.Helper.keywords),
                          sorted(keyword.kwlist))
 
+
 class PydocWithMetaClasses(unittest.TestCase):
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
+    @requires_docstrings
     def test_DynamicClassAttribute(self):
         class Meta(type):
             def __getattr__(self, name):
@@ -1371,10 +1376,9 @@ class PydocWithMetaClasses(unittest.TestCase):
         result = output.getvalue().strip()
         self.assertEqual(expected_text, result)
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
+    @requires_docstrings
     def test_virtualClassAttributeWithOneMeta(self):
         class Meta(type):
             def __dir__(cls):
@@ -1392,10 +1396,9 @@ class PydocWithMetaClasses(unittest.TestCase):
         result = output.getvalue().strip()
         self.assertEqual(expected_text, result)
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
+    @requires_docstrings
     def test_virtualClassAttributeWithTwoMeta(self):
         class Meta1(type):
             def __dir__(cls):
@@ -1424,7 +1427,6 @@ class PydocWithMetaClasses(unittest.TestCase):
             pass
         class Class2(Class1, metaclass=Meta3):
             pass
-        fail1 = fail2 = False
         output = StringIO()
         helper = pydoc.Helper(output=output)
         helper(Class1)
@@ -1438,10 +1440,9 @@ class PydocWithMetaClasses(unittest.TestCase):
         result2 = output.getvalue().strip()
         self.assertEqual(expected_text2, result2)
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
+    @requires_docstrings
     def test_buggy_dir(self):
         class M(type):
             def __dir__(cls):
@@ -1501,7 +1502,6 @@ class TestInternalUtilities(unittest.TestCase):
         self.assertEqual(self._get_revised_path(leading_argv0dir), expected_path)
         trailing_argv0dir = clean_path + [self.argv0dir]
         self.assertEqual(self._get_revised_path(trailing_argv0dir), expected_path)
-
 
     def test_sys_path_adjustment_protects_pydoc_dir(self):
         def _get_revised_path(given_path):

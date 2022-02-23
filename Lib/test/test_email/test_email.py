@@ -2743,6 +2743,20 @@ message 2
         self.assertEqual(str(cm.exception),
                          'There may be at most 1 To headers in a message')
 
+
+# Test the NonMultipart class
+class TestNonMultipart(TestEmailBase):
+    def test_nonmultipart_is_not_multipart(self):
+        msg = MIMENonMultipart('text', 'plain')
+        self.assertFalse(msg.is_multipart())
+
+    def test_attach_raises_exception(self):
+        msg = Message()
+        msg['Subject'] = 'subpart 1'
+        r = MIMENonMultipart('text', 'plain')
+        self.assertRaises(errors.MultipartConversionError, r.attach, msg)
+
+
 # A general test of parser->model->generator idempotency.  IOW, read a message
 # in, parse it into a message object tree, then without touching the tree,
 # regenerate the plain text.  The original text and the transformed text

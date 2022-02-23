@@ -279,6 +279,10 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 #define SSTATE_INTERNED_MORTAL 1
 #define SSTATE_INTERNED_IMMORTAL 2
 
+/* Use only if you know it's a string */
+#define PyUnicode_CHECK_INTERNED(op) \
+    (((PyASCIIObject *)(op))->state.interned)
+
 /* Return true if the string contains only ASCII characters, or 0 if not. The
    string may be compact (PyUnicode_IS_COMPACT_ASCII) or not, but must be
    ready. */
@@ -430,12 +434,12 @@ enum PyUnicode_Kind {
         (0x10ffffU)))))
 
 Py_DEPRECATED(3.3)
-static inline Py_ssize_t _PyUnicode_get_wstr_length(PyObject *op) {
+static inline Py_ssize_t PyUnicode_WSTR_LENGTH(PyObject *op) {
     return PyUnicode_IS_COMPACT_ASCII(op) ?
             ((PyASCIIObject*)op)->length :
             ((PyCompactUnicodeObject*)op)->wstr_length;
 }
-#define PyUnicode_WSTR_LENGTH(op) _PyUnicode_get_wstr_length((PyObject*)op)
+#define PyUnicode_WSTR_LENGTH(op) PyUnicode_WSTR_LENGTH(_PyObject_CAST(op))
 
 /* === Public API ========================================================= */
 
@@ -1015,6 +1019,9 @@ PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
 /* Fast equality check when the inputs are known to be exact unicode types
    and where the hash values are equal (i.e. a very probable match) */
 PyAPI_FUNC(int) _PyUnicode_EQ(PyObject *, PyObject *);
+
+/* Equality check. Returns -1 on failure. */
+PyAPI_FUNC(int) _PyUnicode_Equal(PyObject *, PyObject *);
 
 PyAPI_FUNC(int) _PyUnicode_WideCharString_Converter(PyObject *, void *);
 PyAPI_FUNC(int) _PyUnicode_WideCharString_Opt_Converter(PyObject *, void *);

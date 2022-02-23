@@ -7,6 +7,7 @@ import io
 
 from opcode import *
 from opcode import __all__ as _opcodes_all
+from opcode import _nb_ops
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",
@@ -27,6 +28,7 @@ MAKE_FUNCTION = opmap['MAKE_FUNCTION']
 MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 
 LOAD_CONST = opmap['LOAD_CONST']
+BINARY_OP = opmap['BINARY_OP']
 
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and
@@ -411,10 +413,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         is_jump_target = offset in labels
         argval = None
         argrepr = ''
-        try:
-            positions = next(co_positions)
-        except StopIteration:
-            positions = None
+        positions = Positions(*next(co_positions, ()))
         if arg is not None:
             #  Set argval to the dereferenced value of the argument when
             #  available, and argrepr to the string representation of argval.
@@ -446,6 +445,8 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             elif op == MAKE_FUNCTION:
                 argrepr = ', '.join(s for i, s in enumerate(MAKE_FUNCTION_FLAGS)
                                     if arg & (1<<i))
+            elif op == BINARY_OP:
+                _, argrepr = _nb_ops[arg]
         yield Instruction(opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)
@@ -514,6 +515,12 @@ def _disassemble_str(source, **kwargs):
 
 disco = disassemble                     # XXX For backwards compatibility
 
+
+# Rely on C `int` being 32 bits for oparg
+_INT_BITS = 32
+# Value for c int when it overflows
+_INT_OVERFLOW = 2 ** (_INT_BITS - 1)
+
 def _unpack_opargs(code):
     extended_arg = 0
     for i in range(0, len(code), 2):
@@ -521,8 +528,14 @@ def _unpack_opargs(code):
         if op >= HAVE_ARGUMENT:
             arg = code[i+1] | extended_arg
             extended_arg = (arg << 8) if op == EXTENDED_ARG else 0
+            # The oparg is stored as a signed integer
+            # If the value exceeds its upper limit, it will overflow and wrap
+            # to a negative integer
+            if extended_arg >= _INT_OVERFLOW:
+                extended_arg -= 2 * _INT_OVERFLOW
         else:
             arg = None
+            extended_arg = 0
         yield (i, op, arg)
 
 def findlabels(code):

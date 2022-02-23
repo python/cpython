@@ -381,7 +381,7 @@ _PyCode_New(struct _PyCodeConstructor *con)
 
     // Discard the endlinetable and columntable if we are opted out of debug
     // ranges.
-    if (_Py_GetConfig()->no_debug_ranges) {
+    if (!_Py_GetConfig()->code_debug_ranges) {
         con->endlinetable = Py_None;
         con->columntable = Py_None;
     }
@@ -553,16 +553,11 @@ PyCode_New(int argcount, int kwonlyargcount,
 PyCodeObject *
 PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 {
-    PyObject *emptystring = NULL;
     PyObject *nulltuple = NULL;
     PyObject *filename_ob = NULL;
     PyObject *funcname_ob = NULL;
     PyCodeObject *result = NULL;
 
-    emptystring = PyBytes_FromString("");
-    if (emptystring == NULL) {
-        goto failed;
-    }
     nulltuple = PyTuple_New(0);
     if (nulltuple == NULL) {
         goto failed;
@@ -576,6 +571,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
         goto failed;
     }
 
+#define emptystring (PyObject *)&_Py_SINGLETON(bytes_empty)
     struct _PyCodeConstructor con = {
         .filename = filename_ob,
         .name = funcname_ob,
@@ -594,7 +590,6 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     result = _PyCode_New(&con);
 
 failed:
-    Py_XDECREF(emptystring);
     Py_XDECREF(nulltuple);
     Py_XDECREF(funcname_ob);
     Py_XDECREF(filename_ob);
@@ -1020,7 +1015,7 @@ positionsiter_next(positionsiterator* pi)
 
 static PyTypeObject PositionsIterator = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "poisitions_iterator",              /* tp_name */
+    "positions_iterator",               /* tp_name */
     sizeof(positionsiterator),          /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
@@ -1254,8 +1249,8 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
     PyObject *ourfreevars = NULL;
     PyObject *ourcellvars = NULL;
 
-    if (PySys_Audit("code.__new__", "OOOOiiiiii",
-                    code, filename, name, qualname, argcount, posonlyargcount,
+    if (PySys_Audit("code.__new__", "OOOiiiiii",
+                    code, filename, name, argcount, posonlyargcount,
                     kwonlyargcount, nlocals, stacksize, flags) < 0) {
         goto cleanup;
     }
@@ -1638,8 +1633,8 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
 
 #undef CHECK_INT_ARG
 
-    if (PySys_Audit("code.__new__", "OOOOiiiiii",
-                    co_code, co_filename, co_name, co_qualname, co_argcount,
+    if (PySys_Audit("code.__new__", "OOOiiiiii",
+                    co_code, co_filename, co_name, co_argcount,
                     co_posonlyargcount, co_kwonlyargcount, co_nlocals,
                     co_stacksize, co_flags) < 0) {
         return NULL;
@@ -1905,4 +1900,34 @@ _PyCode_ConstantKey(PyObject *op)
         Py_DECREF(obj_id);
     }
     return key;
+}
+
+void 
+_PyStaticCode_Dealloc(PyCodeObject *co)
+{
+    if (co->co_quickened) {
+        PyMem_Free(co->co_quickened);
+        co->co_quickened = NULL;
+         _Py_QuickenedCount--;
+    }
+    co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
+    PyMem_Free(co->co_extra);
+    co->co_extra = NULL;
+    co->co_firstinstr = (_Py_CODEUNIT *)PyBytes_AS_STRING(co->co_code);
+    if (co->co_weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject *)co);
+        co->co_weakreflist = NULL;
+    }
+}
+
+void
+_PyStaticCode_InternStrings(PyCodeObject *co) 
+{
+    int res = intern_strings(co->co_names);
+    assert(res == 0);
+    res = intern_string_constants(co->co_consts, NULL);
+    assert(res == 0);
+    res = intern_strings(co->co_localsplusnames);
+    assert(res == 0);
+    (void)res;
 }

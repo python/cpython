@@ -1,0 +1,9 @@
+Fix wasm32-emscripten test failures and platform issues.
+- Disable syscalls that are not supported or don't work, e.g.
+  wait, getrusage, prlimit, mkfifo, mknod, setres[gu]id, setgroups.
+- Use fd_count to cound open fds.
+- Add more checks for subprocess and fork.
+- Add workarounds for missing _multiprocessing and failing socket.accept().
+- Enable bzip2.
+- Disable large file support.
+- Disable signal.alarm.

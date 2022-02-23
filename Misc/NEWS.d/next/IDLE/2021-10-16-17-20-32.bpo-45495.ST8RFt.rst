@@ -1,1 +1,0 @@
-Add context keywords 'case' and 'match' to completions list.

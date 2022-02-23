@@ -12,7 +12,7 @@ import unittest
 from subprocess import PIPE, Popen
 from test.support import import_helper
 from test.support import os_helper
-from test.support import _4G, bigmemtest
+from test.support import _4G, bigmemtest, requires_subprocess
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 gzip = import_helper.import_module('gzip')
@@ -562,6 +562,14 @@ class TestGzip(BaseTest):
             datac = gzip.compress(data)
             self.assertEqual(gzip.decompress(datac), data)
 
+    def test_decompress_truncated_trailer(self):
+        compressed_data = gzip.compress(data1)
+        self.assertRaises(EOFError, gzip.decompress, compressed_data[:-4])
+
+    def test_decompress_missing_trailer(self):
+        compressed_data = gzip.compress(data1)
+        self.assertRaises(EOFError, gzip.decompress, compressed_data[:-8])
+
     def test_read_truncated(self):
         data = data1*50
         # Drop the CRC (4 bytes) and file size (4 bytes).
@@ -752,6 +760,7 @@ def create_and_remove_directory(directory):
 class TestCommandLine(unittest.TestCase):
     data = b'This is a simple test with gzip'
 
+    @requires_subprocess()
     def test_decompress_stdin_stdout(self):
         with io.BytesIO() as bytes_io:
             with gzip.GzipFile(fileobj=bytes_io, mode='wb') as gzip_file:
@@ -787,6 +796,7 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(rc, 1)
         self.assertEqual(out, b'')
 
+    @requires_subprocess()
     @create_and_remove_directory(TEMPDIR)
     def test_compress_stdin_outfile(self):
         args = sys.executable, '-m', 'gzip'

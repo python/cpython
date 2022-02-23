@@ -9,6 +9,39 @@
 
 static uint32_t next_func_version = 1;
 
+PyFunctionObject *
+_PyFunction_FromConstructor(PyFrameConstructor *constr)
+{
+
+    PyFunctionObject *op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
+    if (op == NULL) {
+        return NULL;
+    }
+    Py_INCREF(constr->fc_globals);
+    op->func_globals = constr->fc_globals;
+    Py_INCREF(constr->fc_builtins);
+    op->func_builtins = constr->fc_builtins;
+    Py_INCREF(constr->fc_name);
+    op->func_name = constr->fc_name;
+    Py_INCREF(constr->fc_qualname);
+    op->func_qualname = constr->fc_qualname;
+    Py_INCREF(constr->fc_code);
+    op->func_code = constr->fc_code;
+    op->func_defaults = NULL;
+    op->func_kwdefaults = NULL;
+    op->func_closure = NULL;
+    Py_INCREF(Py_None);
+    op->func_doc = Py_None;
+    op->func_dict = NULL;
+    op->func_weakreflist = NULL;
+    op->func_module = NULL;
+    op->func_annotations = NULL;
+    op->vectorcall = _PyFunction_Vectorcall;
+    op->func_version = 0;
+    _PyObject_GC_TRACK(op);
+    return op;
+}
+
 PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 {
@@ -46,8 +79,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     Py_INCREF(doc);
 
     // __module__: Use globals['__name__'] if it exists, or NULL.
-    _Py_IDENTIFIER(__name__);
-    PyObject *module = _PyDict_GetItemIdWithError(globals, &PyId___name__);
+    PyObject *module = PyDict_GetItemWithError(globals, &_Py_ID(__name__));
     PyObject *builtins = NULL;
     if (module == NULL && _PyErr_Occurred(tstate)) {
         goto error;
@@ -241,6 +273,37 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
     return 0;
 }
 
+static PyObject *
+func_get_annotation_dict(PyFunctionObject *op)
+{
+    if (op->func_annotations == NULL) {
+        return NULL;
+    }
+    if (PyTuple_CheckExact(op->func_annotations)) {
+        PyObject *ann_tuple = op->func_annotations;
+        PyObject *ann_dict = PyDict_New();
+        if (ann_dict == NULL) {
+            return NULL;
+        }
+
+        assert(PyTuple_GET_SIZE(ann_tuple) % 2 == 0);
+
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(ann_tuple); i += 2) {
+            int err = PyDict_SetItem(ann_dict,
+                                     PyTuple_GET_ITEM(ann_tuple, i),
+                                     PyTuple_GET_ITEM(ann_tuple, i + 1));
+
+            if (err < 0) {
+                return NULL;
+            }
+        }
+        Py_SETREF(op->func_annotations, ann_dict);
+    }
+    Py_INCREF(op->func_annotations);
+    assert(PyDict_Check(op->func_annotations));
+    return op->func_annotations;
+}
+
 PyObject *
 PyFunction_GetAnnotations(PyObject *op)
 {
@@ -248,7 +311,7 @@ PyFunction_GetAnnotations(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_annotations;
+    return func_get_annotation_dict((PyFunctionObject *)op);
 }
 
 int
@@ -468,27 +531,7 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
         if (op->func_annotations == NULL)
             return NULL;
     }
-    if (PyTuple_CheckExact(op->func_annotations)) {
-        PyObject *ann_tuple = op->func_annotations;
-        PyObject *ann_dict = PyDict_New();
-        if (ann_dict == NULL) {
-            return NULL;
-        }
-
-        assert(PyTuple_GET_SIZE(ann_tuple) % 2 == 0);
-
-        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(ann_tuple); i += 2) {
-            int err = PyDict_SetItem(ann_dict,
-                                     PyTuple_GET_ITEM(ann_tuple, i),
-                                     PyTuple_GET_ITEM(ann_tuple, i + 1));
-
-            if (err < 0)
-                return NULL;
-        }
-        Py_SETREF(op->func_annotations, ann_dict);
-    }
-    Py_INCREF(op->func_annotations);
-    return op->func_annotations;
+    return func_get_annotation_dict(op);
 }
 
 static int
@@ -764,12 +807,7 @@ functools_wraps(PyObject *wrapper, PyObject *wrapped)
 {
 #define COPY_ATTR(ATTR) \
     do { \
-        _Py_IDENTIFIER(ATTR); \
-        PyObject *attr = _PyUnicode_FromId(&PyId_ ## ATTR); \
-        if (attr == NULL) { \
-            return -1; \
-        } \
-        if (functools_copy_attr(wrapper, wrapped, attr) < 0) { \
+        if (functools_copy_attr(wrapper, wrapped, &_Py_ID(ATTR)) < 0) { \
             return -1; \
         } \
     } while (0) \

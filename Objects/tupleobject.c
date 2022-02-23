@@ -7,6 +7,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
+#include "pycore_tuple.h"         // struct _Py_tuple_state()
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
@@ -588,10 +589,8 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
 static PyObject *
 tuplerepeat(PyTupleObject *a, Py_ssize_t n)
 {
-    Py_ssize_t i, j;
     Py_ssize_t size;
     PyTupleObject *np;
-    PyObject **p, **items;
     if (Py_SIZE(a) == 0 || n == 1) {
         if (PyTuple_CheckExact(a)) {
             /* Since tuples are immutable, we can return a shared
@@ -609,13 +608,32 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
     np = tuple_alloc(size);
     if (np == NULL)
         return NULL;
-    p = np->ob_item;
-    items = a->ob_item;
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < Py_SIZE(a); j++) {
-            *p = items[j];
-            Py_INCREF(*p);
-            p++;
+    PyObject **dest = np->ob_item;
+    PyObject **dest_end = dest + size;
+    if (Py_SIZE(a) == 1) {
+        PyObject *elem = a->ob_item[0];
+        Py_SET_REFCNT(elem, Py_REFCNT(elem) + n);
+#ifdef Py_REF_DEBUG
+        _Py_RefTotal += n;
+#endif
+        while (dest < dest_end) {
+            *dest++ = elem;
+        }
+    }
+    else {
+        PyObject **src = a->ob_item;
+        PyObject **src_end = src + Py_SIZE(a);
+        while (src < src_end) {
+            Py_SET_REFCNT(*src, Py_REFCNT(*src) + n);
+#ifdef Py_REF_DEBUG
+            _Py_RefTotal += n;
+#endif
+            *dest++ = *src++;
+        }
+        // Now src chases after dest in the same buffer
+        src = np->ob_item;
+        while (dest < dest_end) {
+            *dest++ = *src++;
         }
     }
     _PyObject_GC_TRACK(np);
@@ -799,7 +817,7 @@ tuple_vectorcall(PyObject *type, PyObject * const*args,
     }
 
     if (nargs) {
-        return tuple_new_impl((PyTypeObject *)type, args[0]);
+        return tuple_new_impl(_PyType_CAST(type), args[0]);
     }
     else {
         return tuple_get_empty();
@@ -1066,7 +1084,7 @@ _PyTuple_ClearFreeList(PyInterpreterState *interp)
 
 
 PyStatus
-_PyTuple_Init(PyInterpreterState *interp)
+_PyTuple_InitGlobalObjects(PyInterpreterState *interp)
 {
     struct _Py_tuple_state *state = &interp->tuple;
     if (tuple_create_empty_tuple_singleton(state) < 0) {
@@ -1075,6 +1093,24 @@ _PyTuple_Init(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
+
+PyStatus
+_PyTuple_InitTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
+    if (PyType_Ready(&PyTuple_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize tuple type");
+    }
+
+    if (PyType_Ready(&PyTupleIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize tuple iterator type");
+    }
+
+    return _PyStatus_OK();
+}
 
 void
 _PyTuple_Fini(PyInterpreterState *interp)
@@ -1157,12 +1193,11 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 tupleiter_reduce(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     if (it->it_seq)
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
                              it->it_seq, it->it_index);
     else
-        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
 }
 
 static PyObject *

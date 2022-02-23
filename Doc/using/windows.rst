@@ -129,8 +129,8 @@ suppressing the UI in order to change some of the defaults.
 To completely hide the installer UI and install Python silently, pass the
 ``/quiet`` option. To skip past the user interaction but still display
 progress and errors, pass the ``/passive`` option. The ``/uninstall``
-option may be passed to immediately begin removing Python - no prompt will be
-displayed.
+option may be passed to immediately begin removing Python - no confirmation
+prompt will be displayed.
 
 All other options are passed as ``name=value``, where the value is usually
 ``0`` to disable a feature, ``1`` to enable a feature, or a path. The full list
@@ -165,9 +165,13 @@ of available options is shown below.
 | CompileAll                | Compile all ``.py`` files to         | 0                        |
 |                           | ``.pyc``.                            |                          |
 +---------------------------+--------------------------------------+--------------------------+
-| PrependPath               | Add install and Scripts directories  | 0                        |
-|                           | to :envvar:`PATH` and ``.PY`` to     |                          |
-|                           | :envvar:`PATHEXT`                    |                          |
+| PrependPath               | Prepend install and Scripts          | 0                        |
+|                           | directories  to :envvar:`PATH` and   |                          |
+|                           | add ``.PY`` to :envvar:`PATHEXT`     |                          |
++---------------------------+--------------------------------------+--------------------------+
+| AppendPath                | Append install and Scripts           | 0                        |
+|                           | directories  to :envvar:`PATH` and   |                          |
+|                           | add ``.PY`` to :envvar:`PATHEXT`     |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Shortcuts                 | Create shortcuts for the interpreter,| 1                        |
 |                           | documentation and IDLE if installed. |                          |

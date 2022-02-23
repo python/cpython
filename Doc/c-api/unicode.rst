@@ -268,57 +268,57 @@ are available through these macros which are mapped to C functions depending on
 the Python configuration.
 
 
-.. c:function:: int Py_UNICODE_ISSPACE(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISSPACE(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a whitespace character.
 
 
-.. c:function:: int Py_UNICODE_ISLOWER(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISLOWER(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a lowercase character.
 
 
-.. c:function:: int Py_UNICODE_ISUPPER(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISUPPER(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is an uppercase character.
 
 
-.. c:function:: int Py_UNICODE_ISTITLE(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISTITLE(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a titlecase character.
 
 
-.. c:function:: int Py_UNICODE_ISLINEBREAK(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISLINEBREAK(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a linebreak character.
 
 
-.. c:function:: int Py_UNICODE_ISDECIMAL(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISDECIMAL(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a decimal character.
 
 
-.. c:function:: int Py_UNICODE_ISDIGIT(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISDIGIT(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a digit character.
 
 
-.. c:function:: int Py_UNICODE_ISNUMERIC(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISNUMERIC(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a numeric character.
 
 
-.. c:function:: int Py_UNICODE_ISALPHA(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISALPHA(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is an alphabetic character.
 
 
-.. c:function:: int Py_UNICODE_ISALNUM(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISALNUM(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is an alphanumeric character.
 
 
-.. c:function:: int Py_UNICODE_ISPRINTABLE(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISPRINTABLE(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a printable character.
    Nonprintable characters are those characters defined in the Unicode character
@@ -332,7 +332,7 @@ the Python configuration.
 These APIs can be used for fast direct character conversions:
 
 
-.. c:function:: Py_UNICODE Py_UNICODE_TOLOWER(Py_UNICODE ch)
+.. c:function:: Py_UCS4 Py_UNICODE_TOLOWER(Py_UCS4 ch)
 
    Return the character *ch* converted to lower case.
 
@@ -340,7 +340,7 @@ These APIs can be used for fast direct character conversions:
       This function uses simple case mappings.
 
 
-.. c:function:: Py_UNICODE Py_UNICODE_TOUPPER(Py_UNICODE ch)
+.. c:function:: Py_UCS4 Py_UNICODE_TOUPPER(Py_UCS4 ch)
 
    Return the character *ch* converted to upper case.
 
@@ -348,7 +348,7 @@ These APIs can be used for fast direct character conversions:
       This function uses simple case mappings.
 
 
-.. c:function:: Py_UNICODE Py_UNICODE_TOTITLE(Py_UNICODE ch)
+.. c:function:: Py_UCS4 Py_UNICODE_TOTITLE(Py_UCS4 ch)
 
    Return the character *ch* converted to title case.
 
@@ -356,19 +356,19 @@ These APIs can be used for fast direct character conversions:
       This function uses simple case mappings.
 
 
-.. c:function:: int Py_UNICODE_TODECIMAL(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_TODECIMAL(Py_UCS4 ch)
 
    Return the character *ch* converted to a decimal positive integer.  Return
    ``-1`` if this is not possible.  This macro does not raise exceptions.
 
 
-.. c:function:: int Py_UNICODE_TODIGIT(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_TODIGIT(Py_UCS4 ch)
 
    Return the character *ch* converted to a single digit integer. Return ``-1`` if
    this is not possible.  This macro does not raise exceptions.
 
 
-.. c:function:: double Py_UNICODE_TONUMERIC(Py_UNICODE ch)
+.. c:function:: double Py_UNICODE_TONUMERIC(Py_UCS4 ch)
 
    Return the character *ch* converted to a double. Return ``-1.0`` if this is not
    possible.  This macro does not raise exceptions.
@@ -1003,7 +1003,7 @@ Error handling is set by errors which may also be set to ``NULL`` meaning to use
 the default handling defined for the codec.  Default error handling for all
 built-in codecs is "strict" (:exc:`ValueError` is raised).
 
-The codecs all use a similar interface.  Only deviation from the following
+The codecs all use a similar interface.  Only deviations from the following
 generic ones are documented for simplicity.
 
 
@@ -1171,7 +1171,7 @@ These are the UTF-16 codec APIs:
    ``1``, any byte order mark is copied to the output (where it will result in
    either a ``\ufeff`` or a ``\ufffe`` character).
 
-   After completion, *\*byteorder* is set to the current byte order at the end
+   After completion, ``*byteorder`` is set to the current byte order at the end
    of input data.
 
    If *byteorder* is ``NULL``, the codec starts in native order mode.
@@ -1302,7 +1302,7 @@ Character Map Codecs
 
 This codec is special in that it can be used to implement many different codecs
 (and this is in fact what was done to obtain most of the standard codecs
-included in the :mod:`encodings` package). The codec uses mapping to encode and
+included in the :mod:`encodings` package). The codec uses mappings to encode and
 decode characters.  The mapping objects provided must support the
 :meth:`__getitem__` mapping interface; dictionaries and sequences work well.
 
@@ -1426,7 +1426,7 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 .. c:function:: PyObject* PyUnicode_Splitlines(PyObject *s, int keepend)
 
    Split a Unicode string at line breaks, returning a list of Unicode strings.
-   CRLF is considered to be one line break.  If *keepend* is ``0``, the Line break
+   CRLF is considered to be one line break.  If *keepend* is ``0``, the line break
    characters are not included in the resulting strings.
 
 
