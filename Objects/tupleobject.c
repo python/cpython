@@ -222,12 +222,13 @@ PyTuple_Pack(Py_ssize_t n, ...)
 static void
 tupledealloc(PyTupleObject *op)
 {
+    /* The empty tuple is statically allocated. */
     if ((PyObject *)op == tuple_get_empty()) {
         return;
     }
     Py_ssize_t len = Py_SIZE(op);
-    /* The empty tuple is statically allocated. */
-    assert(len > 0);
+    /* tuple subclasses have their own empty instances. */
+    assert(len > 0 || !PyTuple_CheckExact(op));
     PyObject_GC_UnTrack(op);
     Py_TRASHCAN_BEGIN(op, tupledealloc)
 
@@ -788,6 +789,7 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
     if (tmp == NULL)
         return NULL;
     assert(PyTuple_Check(tmp));
+    /* This may allocate an empty tuple that is not the global one. */
     newobj = type->tp_alloc(type, n = PyTuple_GET_SIZE(tmp));
     if (newobj == NULL) {
         Py_DECREF(tmp);
