@@ -2404,6 +2404,11 @@ def _signature_from_callable(obj, *,
         else:
             return sig
 
+    # See issue 44337, handle functools.partial before follow_wrapper_chains
+    if isinstance(obj, functools.partial):
+        wrapped_sig = _get_signature_of(obj.func)
+        return _signature_get_partial(wrapped_sig, obj)
+
     # Was this function wrapped by a decorator?
     if follow_wrapper_chains:
         obj = unwrap(obj, stop=(lambda f: hasattr(f, "__signature__")))
@@ -2463,10 +2468,6 @@ def _signature_from_callable(obj, *,
     if _signature_is_builtin(obj):
         return _signature_from_builtin(sigcls, obj,
                                        skip_bound_arg=skip_bound_arg)
-
-    if isinstance(obj, functools.partial):
-        wrapped_sig = _get_signature_of(obj.func)
-        return _signature_get_partial(wrapped_sig, obj)
 
     sig = None
     if isinstance(obj, type):
