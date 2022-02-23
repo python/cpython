@@ -2013,9 +2013,15 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
     int op = adaptive->original_oparg;
     int next_opcode = _Py_OPCODE(instr[1]);
     if (next_opcode != POP_JUMP_IF_FALSE && next_opcode != POP_JUMP_IF_TRUE) {
-        // Can't ever combine, so don't don't bother being adaptive.
-        SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_NOT_FOLLOWED_BY_COND_JUMP);
+        // Can't ever combine, so don't don't bother being adaptive (unless
+        // we're collecting stats, where it's more important to get accurate hit
+        // counts for the unadaptive version and each of the different failure
+        // types):
+#ifndef Py_STATS
         *instr = _Py_MAKECODEUNIT(COMPARE_OP, adaptive->original_oparg);
+        return;
+#endif
+        SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_NOT_FOLLOWED_BY_COND_JUMP);
         goto failure;
     }
     assert(op <= Py_GE);
