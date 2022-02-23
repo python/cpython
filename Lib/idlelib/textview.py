@@ -87,7 +87,7 @@ class ViewFrame(Frame):
         self.parent = parent
         self.bind('<Return>', self.ok)
         self.bind('<Escape>', self.ok)
-        self.textframe = ScrollableTextFrame(self, relief=SUNKEN, height=700)
+        self.textframe = ScrollableTextFrame(self, relief=SUNKEN, height=900)
 
         text = self.text = self.textframe.text
         text.insert('1.0', contents)
@@ -165,7 +165,7 @@ class ViewWindow(Toplevel):
         # Place dialog below parent if running htest.
         x = parent.winfo_rootx() + 10
         y = parent.winfo_rooty() + (10 if not _htest else 100)
-        self.geometry(f'=750x500+{x}+{y}')
+        self.geometry(f'=800x600+{x}+{y}')
 
         self.title(title)
         self.viewframe = ViewFrame(self, contents, wrap=wrap)
