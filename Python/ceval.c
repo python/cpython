@@ -4429,7 +4429,7 @@ handle_eval_breaker:
 
         TARGET(LOAD_METHOD_WITH_DICT) {
             /* LOAD_METHOD, with a dict
-             Can be either a managed dict, or a tp_dictoffset  offset.*/
+             Can be either a managed dict, or a tp_dictoffset offset.*/
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
