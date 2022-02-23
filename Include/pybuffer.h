@@ -6,6 +6,10 @@
 extern "C" {
 #endif
 
+// Forward declaration to be able to include pybuffer.h before object.h:
+// pybuffer.h uses PyObject and object.h uses Py_buffer.
+typedef struct _object PyObject;
+
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030b0000
 
 /* === New Buffer API ============================================
@@ -16,10 +20,6 @@ extern "C" {
  * break the ABI.
  *
  */
-
-// Forward declaration to be able to include pybuffer.h before object.h:
-// pybuffer.h uses PyObject and object.h uses Py_buffer.
-typedef struct _object PyObject;
 
 typedef struct {
     void *buf;
