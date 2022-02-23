@@ -1286,7 +1286,7 @@ class ImportTracebackTests(unittest.TestCase):
 
     def test_broken_pyc(self):
         pyc = self.create_module("garbage", "...", ext=".pyc")
-        expected_msg = "bad magic number in '{}': b'...'".format(os.path.abspath(pyc))
+        expected_msg = "bad magic number in {!r}: b'...'".format(os.path.abspath(pyc))
         with self.assertRaises(ImportError) as cm:
             import garbage
         self.assertEqual(expected_msg, cm.exception.msg)
