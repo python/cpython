@@ -23,10 +23,10 @@ requires_Decompress_copy = unittest.skipUnless(
 # ways to compress data with zlib can produce different compressed data.
 # Simplified test_pair() code:
 #
-#   def func1(datasrc):
-#       return zlib.compress(datasrc)
+#   def func1(data):
+#       return zlib.compress(data)
 #
-#   def func2(datasrc)
+#   def func2(data)
 #       co = zlib.compressobj()
 #       x1 = co.compress(data)
 #       x2 = co.flush()
@@ -41,10 +41,10 @@ requires_Decompress_copy = unittest.skipUnless(
 # Only the compressed data is different, the decompression returns the original
 # data:
 #
-#   zlib.decompress(func1()) == zlib.decompress(func2()) == datasrc
+#   zlib.decompress(func1(data)) == zlib.decompress(func2(data)) == data
 #
-# Make the assumption that s390x always has an accelerator to simplify the
-# skip condition. Don't skip on Windows which doesn't have os.uname().
+# Make the assumption that s390x always has an accelerator to simplify the skip
+# condition. Windows doesn't have os.uname() but it doesn't support s390x.
 skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
                                 'skipped on s390x')
 
