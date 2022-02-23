@@ -232,11 +232,9 @@ PyAPI_FUNC(int) PyModule_ExecDef(PyObject *module, PyModuleDef *def);
  #define PyModule_FromDefAndSpec2 PyModule_FromDefAndSpec2TraceRefs
 #endif
 
-PyAPI_FUNC(PyObject *) PyModule_Create2(struct PyModuleDef*,
-                                     int apiver);
+PyAPI_FUNC(PyObject *) PyModule_Create2(PyModuleDef*, int apiver);
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyModule_CreateInitialized(struct PyModuleDef*,
-                                                   int apiver);
+PyAPI_FUNC(PyObject *) _PyModule_CreateInitialized(PyModuleDef*, int apiver);
 #endif
 
 #ifdef Py_LIMITED_API
