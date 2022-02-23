@@ -1971,7 +1971,7 @@ Customizing class creation
 --------------------------
 
 Whenever a class inherits from another class, :meth:`~object.__init_subclass__` is
-called on that class. This way, it is possible to write classes which
+called on the parent class. This way, it is possible to write classes which
 change the behavior of subclasses. This is closely related to class
 decorators, but where class decorators only affect the specific class they're
 applied to, ``__init_subclass__`` solely applies to future subclasses of the
