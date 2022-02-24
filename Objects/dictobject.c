@@ -1500,7 +1500,7 @@ _PyDict_GetItemWithError(PyObject *dp, PyObject *kv)
 }
 
 PyObject *
-_PyDict_GetItemIdWithError(PyObject *dp, struct _Py_Identifier *key)
+_PyDict_GetItemIdWithError(PyObject *dp, _Py_Identifier *key)
 {
     PyObject *kv;
     kv = _PyUnicode_FromId(key); /* borrowed */
@@ -3411,7 +3411,7 @@ _PyDict_Contains_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
 }
 
 int
-_PyDict_ContainsId(PyObject *op, struct _Py_Identifier *key)
+_PyDict_ContainsId(PyObject *op, _Py_Identifier *key)
 {
     PyObject *kv = _PyUnicode_FromId(key); /* borrowed */
     if (kv == NULL) {
@@ -3589,7 +3589,7 @@ PyDict_GetItemString(PyObject *v, const char *key)
 }
 
 int
-_PyDict_SetItemId(PyObject *v, struct _Py_Identifier *key, PyObject *item)
+_PyDict_SetItemId(PyObject *v, _Py_Identifier *key, PyObject *item)
 {
     PyObject *kv;
     kv = _PyUnicode_FromId(key); /* borrowed */

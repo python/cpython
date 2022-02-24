@@ -884,8 +884,7 @@ PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
 
 
 PyObject *
-_PyObject_CallMethodIdObjArgs(PyObject *obj,
-                              struct _Py_Identifier *name, ...)
+_PyObject_CallMethodIdObjArgs(PyObject *obj, _Py_Identifier *name, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if (obj == NULL || name == NULL) {
