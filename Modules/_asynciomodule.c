@@ -2197,7 +2197,7 @@ This also increases the task's count of cancellation requests.
 
 static PyObject *
 _asyncio_Task_cancel_impl(TaskObj *self, PyObject *msg)
-/*[clinic end generated code: output=c66b60d41c74f9f1 input=f4ff8e8ffc5f1c00]*/
+/*[clinic end generated code: output=c66b60d41c74f9f1 input=7bb51bf25974c783]*/
 {
     self->task_log_tb = 0;
 
@@ -2248,7 +2248,7 @@ and may be decremented using .uncancel().
 
 static PyObject *
 _asyncio_Task_cancelling_impl(TaskObj *self)
-/*[clinic end generated code: output=803b3af96f917d7e input=c50e50f9c3ca4676]*/
+/*[clinic end generated code: output=803b3af96f917d7e input=b625224d310cbb17]*/
 /*[clinic end generated code]*/
 {
     return PyLong_FromLong(self->task_num_cancels_requested);
@@ -2267,7 +2267,7 @@ Returns the remaining number of cancellation requests.
 
 static PyObject *
 _asyncio_Task_uncancel_impl(TaskObj *self)
-/*[clinic end generated code: output=58184d236a817d3c input=5db95e28fcb6f7cd]*/
+/*[clinic end generated code: output=58184d236a817d3c input=68f81a4b90b46be2]*/
 /*[clinic end generated code]*/
 {
     if (self->task_num_cancels_requested > 0) {
