@@ -1062,6 +1062,13 @@ specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr, PyObject *nam
     }
 }
 
+typedef enum {
+    MANAGED_VALUES = 1,
+    MANAGED_DICT = 2,
+    OFFSET_DICT = 3,
+    NO_DICT = 4
+} ObjectDictKind;
+
 // Please collect stats carefully before and after modifying. A subtle change
 // can cause a significant drop in cache hits. A possible test is
 // python.exe -m test_typing test_re test_dis test_zlib.
@@ -1071,8 +1078,8 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
     _PyAttrCache *cache1 = &cache[-1].attr;
     _PyObjectCache *cache2 = &cache[-2].obj;
-
     PyTypeObject *owner_cls = Py_TYPE(owner);
+
     if (PyModule_CheckExact(owner)) {
         int err = specialize_module_load_attr(owner, instr, name, cache0,
             LOAD_METHOD, LOAD_METHOD_MODULE);
@@ -1102,13 +1109,39 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
         goto fail;
     }
+    ObjectDictKind dictkind;
+    PyDictKeysObject *keys;
     if (owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyObject **owner_dictptr = _PyObject_ManagedDictPointer(owner);
-        if (*owner_dictptr) {
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_LOAD_METHOD_HAS_MANAGED_DICT);
+        PyObject *dict = *_PyObject_ManagedDictPointer(owner);
+        keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
+        if (dict == NULL) {
+            dictkind = MANAGED_VALUES;
+        }
+        else {
+            dictkind = MANAGED_DICT;
+        }
+    }
+    else {
+        Py_ssize_t dictoffset = owner_cls->tp_dictoffset;
+        if (dictoffset < 0 || dictoffset > INT16_MAX) {
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
             goto fail;
         }
-        PyDictKeysObject *keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
+        if (dictoffset == 0) {
+            dictkind = NO_DICT;
+            keys = NULL;
+        }
+        else {
+            PyObject *dict = *(PyObject **) ((char *)owner + dictoffset);
+            if (dict == NULL) {
+                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NO_DICT);
+                goto fail;
+            }
+            keys = ((PyDictObject *)dict)->ma_keys;
+            dictkind = OFFSET_DICT;
+        }
+    }
+    if (dictkind != NO_DICT) {
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
         if (index != DKIX_EMPTY) {
             SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_LOAD_METHOD_IS_ATTR);
@@ -1120,16 +1153,23 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             goto fail;
         }
         cache1->dk_version = keys_version;
-        *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CACHED, _Py_OPARG(*instr));
     }
-    else {
-        if (owner_cls->tp_dictoffset == 0) {
+    switch(dictkind) {
+        case NO_DICT:
             *instr = _Py_MAKECODEUNIT(LOAD_METHOD_NO_DICT, _Py_OPARG(*instr));
-        }
-        else {
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_LOAD_METHOD_HAS_DICT);
-            goto fail;
-        }
+            break;
+        case MANAGED_VALUES:
+            *instr = _Py_MAKECODEUNIT(LOAD_METHOD_WITH_VALUES, _Py_OPARG(*instr));
+            break;
+        case MANAGED_DICT:
+            *(int16_t *)&cache0->index = (int16_t)MANAGED_DICT_OFFSET;
+            *instr = _Py_MAKECODEUNIT(LOAD_METHOD_WITH_DICT, _Py_OPARG(*instr));
+            break;
+        case OFFSET_DICT:
+            assert(owner_cls->tp_dictoffset > 0 && owner_cls->tp_dictoffset <= INT16_MAX);
+            cache0->index = (uint16_t)owner_cls->tp_dictoffset;
+            *instr = _Py_MAKECODEUNIT(LOAD_METHOD_WITH_DICT, _Py_OPARG(*instr));
+            break;
     }
     /* `descr` is borrowed. This is safe for methods (even inherited ones from
     *  super classes!) as long as tp_version_tag is validated for two main reasons:
