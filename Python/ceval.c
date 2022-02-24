@@ -3457,7 +3457,7 @@ handle_eval_breaker:
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             assert(cache0->version != 0);
             PyTypeObject *tp = Py_TYPE(owner);
-            // Note: these DEOPT_IFs jump back to LOAD_FAST.
+            // These DEOPT_IF miss branches do PUSH(Py_NewRef(owner)).
             DEOPT_IF(tp->tp_version_tag != cache0->version,
                      LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE);
             assert(tp->tp_dictoffset < 0);
