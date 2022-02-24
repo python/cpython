@@ -1940,7 +1940,7 @@ handle_eval_breaker:
             if (prod == NULL) {
                 goto error;
             }
-            next_instr += _PyOpcode_InlineCacheEntries[BINARY_OP];
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -1961,7 +1961,7 @@ handle_eval_breaker:
             if (prod == NULL) {
                 goto error;
             }
-            next_instr += _PyOpcode_InlineCacheEntries[BINARY_OP];
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -1980,7 +1980,7 @@ handle_eval_breaker:
             if (sub == NULL) {
                 goto error;
             }
-            next_instr += _PyOpcode_InlineCacheEntries[BINARY_OP];
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -2000,7 +2000,7 @@ handle_eval_breaker:
             if (sub == NULL) {
                 goto error;
             }
-            next_instr += _PyOpcode_InlineCacheEntries[BINARY_OP];
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -2019,7 +2019,7 @@ handle_eval_breaker:
             if (TOP() == NULL) {
                 goto error;
             }
-            next_instr += _PyOpcode_InlineCacheEntries[BINARY_OP];
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -2049,7 +2049,7 @@ handle_eval_breaker:
             if (TOP() == NULL) {
                 goto error;
             }
-            next_instr += _PyOpcode_InlineCacheEntries[BINARY_OP];
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -2070,7 +2070,7 @@ handle_eval_breaker:
             if (sum == NULL) {
                 goto error;
             }
-            next_instr += _PyOpcode_InlineCacheEntries[BINARY_OP];
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -2089,7 +2089,7 @@ handle_eval_breaker:
             if (sum == NULL) {
                 goto error;
             }
-            next_instr += _PyOpcode_InlineCacheEntries[BINARY_OP];
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -5380,23 +5380,23 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
-            next_instr += _PyOpcode_InlineCacheEntries[BINARY_OP];
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             DISPATCH();
         }
 
         TARGET(BINARY_OP_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
-            uint16_t *counter = inline_cache_uint16(next_instr, 0);
-            if (*counter == 0) {
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
+            if (cache->counter == 0) {
                 PyObject *lhs = SECOND();
                 PyObject *rhs = TOP();
                 next_instr--;
-                _Py_Specialize_BinaryOp(lhs, rhs, next_instr);
+                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg);
                 DISPATCH();
             }
             else {
                 STAT_INC(BINARY_OP, deferred);
-                *counter -= 1;
+                cache->counter--;
                 JUMP_TO_INSTRUCTION(BINARY_OP);
             }
         }
@@ -5512,7 +5512,8 @@ opname ## _miss: \
     { \
         STAT_INC(opcode, miss); \
         STAT_INC(opname, miss); \
-        uint16_t *counter = inline_cache_uint16(next_instr, 0); \
+        /* The counter is always the first cache entry: */ \
+        _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr; \
         *counter -= 1; \
         if (*counter == 0) { \
             next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, _Py_OPARG(next_instr[-1])); \

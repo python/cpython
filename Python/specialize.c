@@ -1878,10 +1878,13 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 #endif
 
 void
-_Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr)
+_Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
+                        int oparg)
 {
-    uint16_t *counter = inline_cache_uint16(instr, 1);
-    switch (_Py_OPARG(*instr)) {
+    Py_BUILD_ASSERT(_PyOpcode_InlineCacheEntries[BINARY_OP] == 
+                    INLINE_CACHE_ENTRIES_BINARY_OP);
+    _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
+    switch (oparg) {
         case NB_ADD:
         case NB_INPLACE_ADD:
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
@@ -1890,20 +1893,18 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr)
             if (PyUnicode_CheckExact(lhs)) {
                 if (_Py_OPCODE(instr[1]) == STORE_FAST && Py_REFCNT(lhs) == 2) {
                     *instr = _Py_MAKECODEUNIT(BINARY_OP_INPLACE_ADD_UNICODE,
-                                              _Py_OPARG(*instr));
+                                              oparg);
                     goto success;
                 }
-                *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_UNICODE,
-                                          _Py_OPARG(*instr));
+                *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_UNICODE, oparg);
                 goto success;
             }
             if (PyLong_CheckExact(lhs)) {
-                *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_INT, _Py_OPARG(*instr));
+                *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_INT, oparg);
                 goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
-                *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_FLOAT,
-                                          _Py_OPARG(*instr));
+                *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_FLOAT, oparg);
                 goto success;
             }
             break;
@@ -1913,13 +1914,11 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr)
                 break;
             }
             if (PyLong_CheckExact(lhs)) {
-                *instr = _Py_MAKECODEUNIT(BINARY_OP_MULTIPLY_INT,
-                                          _Py_OPARG(*instr));
+                *instr = _Py_MAKECODEUNIT(BINARY_OP_MULTIPLY_INT, oparg);
                 goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
-                *instr = _Py_MAKECODEUNIT(BINARY_OP_MULTIPLY_FLOAT,
-                                          _Py_OPARG(*instr));
+                *instr = _Py_MAKECODEUNIT(BINARY_OP_MULTIPLY_FLOAT, oparg);
                 goto success;
             }
             break;
@@ -1929,13 +1928,11 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr)
                 break;
             }
             if (PyLong_CheckExact(lhs)) {
-                *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_INT,
-                                          _Py_OPARG(*instr));
+                *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_INT, oparg);
                 goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
-                *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_FLOAT,
-                                          _Py_OPARG(*instr));
+                *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_FLOAT, oparg);
                 goto success;
             }
             break;
@@ -1946,18 +1943,17 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr)
             // back to BINARY_OP (unless we're collecting stats, where it's more
             // important to get accurate hit counts for the unadaptive version
             // and each of the different failure types):
-            *instr = _Py_MAKECODEUNIT(BINARY_OP, _Py_OPARG(*instr));
+            *instr = _Py_MAKECODEUNIT(BINARY_OP, oparg);
             return;
 #endif
     }
-    SPECIALIZATION_FAIL(
-        BINARY_OP, binary_op_fail_kind(_Py_OPARG(*instr), lhs, rhs));
+    SPECIALIZATION_FAIL(BINARY_OP, binary_op_fail_kind(oparg, lhs, rhs));
     STAT_INC(BINARY_OP, failure);
-    *counter = ADAPTIVE_CACHE_BACKOFF;
+    cache->counter = ADAPTIVE_CACHE_BACKOFF;
     return;
 success:
     STAT_INC(BINARY_OP, success);
-    *counter = initial_counter_value();
+    cache->counter = initial_counter_value();
 }
 
 

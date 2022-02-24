@@ -64,6 +64,13 @@ typedef union {
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
 
+typedef struct {
+    _Py_CODEUNIT counter;
+} _PyBinaryOpCache;
+
+#define INLINE_CACHE_ENTRIES_BINARY_OP \
+    (sizeof(_PyBinaryOpCache) / sizeof(_Py_CODEUNIT))
+
 /* Maximum size of code to quicken, in code units. */
 #define MAX_SIZE_TO_QUICKEN 5000
 
@@ -130,12 +137,6 @@ _GetSpecializedCacheEntryForInstruction(const _Py_CODEUNIT *first_instr, int nex
         first_instr,
         offset_from_oparg_and_nexti(oparg, nexti)
     );
-}
-
-static inline uint16_t *
-inline_cache_uint16(_Py_CODEUNIT *next_instr, int offset)
-{
-    return (uint16_t *)(next_instr + offset);
 }
 
 #define QUICKENING_WARMUP_DELAY 8
@@ -281,7 +282,8 @@ int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     PyObject *kwnames, SpecializedCacheEntry *cache);
 int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     PyObject *kwnames, SpecializedCacheEntry *cache, PyObject *builtins);
-void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr);
+void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
+                             int oparg);
 void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                    SpecializedCacheEntry *cache);
