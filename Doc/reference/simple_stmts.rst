@@ -961,7 +961,8 @@ Names listed in a :keyword:`global` statement must not be used in the same code
 block textually preceding that :keyword:`!global` statement.
 
 Names listed in a :keyword:`global` statement must not be defined as formal
-parameters, or as targets in :keyword:`with` statements or :keyword:`except` clauses, or in a :keyword:`for` target list, :keyword:`class`
+parameters, or as targets in :keyword:`with` statements or :keyword:`except`
+clauses, or in a :keyword:`for` target list, :keyword:`class`
 definition, function definition, :keyword:`import` statement, or variable
 annotation.
 
@@ -1000,10 +1001,12 @@ The :keyword:`!nonlocal` statement
                 : ["=" (`target_list` "=")+ starred_expression]
                 : | "nonlocal" identifier augop expression_list
 
+When the definition of a function is nested within the definitions of other
+functions, its nonlocal scopes are the local scopes of the enclosing function.
 The :keyword:`nonlocal` statement causes the listed identifiers to refer to
-previously bound variables in the nearest enclosing scope excluding globals.
-This is important because the default behavior for binding is to search the
-local namespace first.  The statement allows encapsulated code to rebind
+previously bound variables in the nearest nonlocal enclosing scope, excluding
+globals. This is important because the default behavior for binding is to search
+the local namespace first.  The statement allows encapsulated code to rebind
 variables outside of the local scope besides the global (module) scope.
 
 .. XXX not implemented
