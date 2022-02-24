@@ -302,6 +302,63 @@ mmap_read_method(mmap_object *self,
     return result;
 }
 
+Py_ssize_t
+mmap_find_string_generic(mmap_object *self,
+                         const char *haystack,
+                         Py_ssize_t haystack_len,
+                         const char *needle,
+                         Py_ssize_t needle_len,
+                         int reverse)
+{
+    int sign = reverse ? -1 : 1;
+    const char *p = NULL;
+    const char *start_p = haystack;
+    const char *end_p = start_p + haystack_len;
+
+    for (p = (reverse ? end_p - needle_len : start_p);
+         (p >= start_p) && (p + needle_len <= end_p); p += sign) {
+        Py_ssize_t i;
+        for (i = 0; i < needle_len && needle[i] == p[i]; ++i)
+            /* nothing */;
+        if (i == needle_len) {
+            return p - self->data;
+        }
+    }
+    return -1;
+}
+
+Py_ssize_t
+mmap_find(mmap_object *self,
+          const char *haystack,
+          Py_ssize_t haystack_len,
+          const char *needle,
+          Py_ssize_t needle_len)
+#ifdef HAVE_MEMMEM
+{
+    const char *start_p = haystack;
+    const char *end_p = start_p + haystack_len;
+    const char *res = memmem(haystack, haystack_len, needle, needle_len);
+    if (res && res + needle_len <= end_p) {
+        return res - self->data;
+    }
+    return -1;
+}
+#else
+{
+    return mmap_find_string_generic(self, haystack, haystack_len, needle, needle_len, 0);
+}
+#endif /* HAVE_MEMMEM */
+
+Py_ssize_t
+mmap_rfind(mmap_object *self,
+          const char *haystack,
+          Py_ssize_t haystack_len,
+          const char *needle,
+          Py_ssize_t needle_len)
+{
+    return mmap_find_string_generic(self, haystack, haystack_len, needle, needle_len, 1);
+}
+
 static PyObject *
 mmap_gfind(mmap_object *self,
            PyObject *args,
@@ -315,42 +372,40 @@ mmap_gfind(mmap_object *self,
     if (!PyArg_ParseTuple(args, reverse ? "y*|nn:rfind" : "y*|nn:find",
                           &view, &start, &end)) {
         return NULL;
+    } 
+
+    const char *start_p;
+    const char *needle = view.buf;
+    Py_ssize_t len = view.len;
+
+    if (start < 0)
+        start += self->size;
+    if (start < 0)
+        start = 0;
+    else if (start > self->size)
+        start = self->size;
+
+    if (end < 0)
+        end += self->size;
+    if (end < 0)
+        end = 0;
+    else if (end > self->size)
+        end = self->size;
+
+    start_p = self->data + start;
+
+    Py_ssize_t res;
+    if (reverse) {
+        res = mmap_rfind(self, start_p, end-start, needle, len);
     } else {
-        const char *p, *start_p, *end_p;
-        int sign = reverse ? -1 : 1;
-        const char *needle = view.buf;
-        Py_ssize_t len = view.len;
-
-        if (start < 0)
-            start += self->size;
-        if (start < 0)
-            start = 0;
-        else if (start > self->size)
-            start = self->size;
-
-        if (end < 0)
-            end += self->size;
-        if (end < 0)
-            end = 0;
-        else if (end > self->size)
-            end = self->size;
-
-        start_p = self->data + start;
-        end_p = self->data + end;
-
-        for (p = (reverse ? end_p - len : start_p);
-             (p >= start_p) && (p + len <= end_p); p += sign) {
-            Py_ssize_t i;
-            for (i = 0; i < len && needle[i] == p[i]; ++i)
-                /* nothing */;
-            if (i == len) {
-                PyBuffer_Release(&view);
-                return PyLong_FromSsize_t(p - self->data);
-            }
-        }
-        PyBuffer_Release(&view);
-        return PyLong_FromLong(-1);
+        res = mmap_find(self, start_p, end-start, needle, len);
     }
+
+    PyBuffer_Release(&view);
+    if (res > -1) {
+        return PyLong_FromSsize_t(res);
+    }
+    return PyLong_FromLong(-1);
 }
 
 static PyObject *
