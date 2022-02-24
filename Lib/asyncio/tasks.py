@@ -105,7 +105,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         else:
             self._name = str(name)
 
-        self._cancel_requested = False
+        self._num_cancels_requested = 0
         self._must_cancel = False
         self._fut_waiter = None
         self._coro = coro
@@ -198,13 +198,15 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         task will be marked as cancelled when the wrapped coroutine
         terminates with a CancelledError exception (even if cancel()
         was not called).
+
+        This also increases the task's count of cancellation requests.
         """
         self._log_traceback = False
         if self.done():
             return False
-        if self._cancel_requested:
+        self._num_cancels_requested += 1
+        if self._num_cancels_requested > 1:
             return False
-        self._cancel_requested = True
         if self._fut_waiter is not None:
             if self._fut_waiter.cancel(msg=msg):
                 # Leave self._fut_waiter; it may be a Task that
@@ -217,14 +219,24 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         return True
 
     def cancelling(self):
-        return self._cancel_requested
+        """Return the count of the task's cancellation requests.
+
+        This count is incremented when .cancel() is called
+        and may be decremented using .uncancel().
+        """
+        return self._num_cancels_requested
 
     def uncancel(self):
-        if self._cancel_requested:
-            self._cancel_requested = False
-            return True
-        else:
-            return False
+        """Decrement the task's count of cancellation requests.
+
+        This should be used by tasks that catch CancelledError
+        and wish to continue indefinitely until they are cancelled again.
+
+        Returns the remaining number of cancellation requests.
+        """
+        if self._num_cancels_requested > 0:
+            self._num_cancels_requested -= 1
+        return self._num_cancels_requested
 
     def __step(self, exc=None):
         if self.done():
