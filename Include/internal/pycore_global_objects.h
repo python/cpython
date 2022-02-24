@@ -42,7 +42,7 @@ struct _Py_global_objects {
 
         struct _Py_global_strings strings;
 
-        PyGC_Head _tuple_empty_gc_not_used;
+        _PyGC_Head_UNUSED _tuple_empty_gc_not_used;
         PyTupleObject tuple_empty;
     } singletons;
 };
