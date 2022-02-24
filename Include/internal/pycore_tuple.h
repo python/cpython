@@ -38,10 +38,16 @@ extern void _PyTuple_Fini(PyInterpreterState *);
 
 struct _Py_tuple_state {
 #if PyTuple_MAXSAVESIZE > 0
-    /* Each entry up to PyTuple_MAXSAVESIZE is a free list.
-       The empty tuple is handled separately, hence declaring one fewer. */
-    PyTupleObject *free_list[PyTuple_MAXSAVESIZE - 1];
-    int numfree[PyTuple_MAXSAVESIZE - 1];
+    /* There is one freelist for each size from 1 to PyTuple_MAXSAVESIZE.
+       The empty tuple is handled separately.
+
+       Each tuple stored in the array is the head of the linked list
+       (and the next available tuple) for that size.  The actual tuple
+       object is used as the linked list node, with its first item
+       (ob_item[0]) pointing to the next node (i.e. the previous head).
+       Each linked list is initially NULL. */
+    PyTupleObject *free_list[PyTuple_MAXSAVESIZE];
+    int numfree[PyTuple_MAXSAVESIZE];
 #endif
 };
 
