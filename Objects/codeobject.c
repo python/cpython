@@ -1537,6 +1537,16 @@ code_getfreevars(PyCodeObject *code, void *closure)
     return _PyCode_GetFreevars(code);
 }
 
+static PyObject *
+code_getquickened(PyCodeObject *code, void *closure)
+{
+    if (code->co_quickened == NULL) {
+        Py_RETURN_NONE;
+    }
+    return PyBytes_FromStringAndSize((char *)code->co_firstinstr,
+                                     PyBytes_Size(code->co_code));
+}
+
 static PyGetSetDef code_getsetlist[] = {
     {"co_lnotab",    (getter)code_getlnotab, NULL, NULL},
     // The following old names are kept for backward compatibility.
@@ -1544,6 +1554,7 @@ static PyGetSetDef code_getsetlist[] = {
     {"co_varnames",  (getter)code_getvarnames, NULL, NULL},
     {"co_cellvars",  (getter)code_getcellvars, NULL, NULL},
     {"co_freevars",  (getter)code_getfreevars, NULL, NULL},
+    {"_co_quickened",  (getter)code_getquickened, NULL, NULL},
     {0}
 };
 
@@ -1902,7 +1913,7 @@ _PyCode_ConstantKey(PyObject *op)
     return key;
 }
 
-void 
+void
 _PyStaticCode_Dealloc(PyCodeObject *co)
 {
     if (co->co_quickened) {
@@ -1921,7 +1932,7 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
 }
 
 void
-_PyStaticCode_InternStrings(PyCodeObject *co) 
+_PyStaticCode_InternStrings(PyCodeObject *co)
 {
     int res = intern_strings(co->co_names);
     assert(res == 0);
