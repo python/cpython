@@ -889,6 +889,16 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         return -1;
     }
     if (err) {
+        if (_Py_OPCODE(instr[0]) == LOAD_ATTR_INSTANCE_VALUE) {
+            // Note: instr[-1] exists because there's something on the stack,
+            // and instr[-2] exists because there's at least a RESUME as well.
+            if (_Py_OPCODE(instr[-1]) == LOAD_FAST) {
+                instr[-1] = _Py_MAKECODEUNIT(LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE, _Py_OPARG(instr[-1]));
+                if (_Py_OPCODE(instr[-2]) == LOAD_FAST__LOAD_FAST) {
+                    instr[-2] = _Py_MAKECODEUNIT(LOAD_FAST, _Py_OPARG(instr[-2]));
+                }
+            }
+        }
         goto success;
     }
 fail:

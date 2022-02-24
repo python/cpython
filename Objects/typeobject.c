@@ -3716,7 +3716,7 @@ PyType_GetModuleState(PyTypeObject *type)
  * given PyModuleDef.
  */
 PyObject *
-PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
+PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
 {
     assert(PyType_Check(type));
 
@@ -3869,7 +3869,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 }
 
 PyObject *
-_PyType_LookupId(PyTypeObject *type, struct _Py_Identifier *name)
+_PyType_LookupId(PyTypeObject *type, _Py_Identifier *name)
 {
     PyObject *oname;
     oname = _PyUnicode_FromId(name);   /* borrowed */

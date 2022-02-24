@@ -110,6 +110,7 @@ class Printer:
         self.hits, self.misses = 0, 0
         self.patchups: list[str] = []
         self.deallocs: list[str] = []
+        self.interns: list[str] = []
         self.write('#include "Python.h"')
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
@@ -279,7 +280,7 @@ class Printer:
             self.write(f".co_cellvars = {co_cellvars},")
             self.write(f".co_freevars = {co_freevars},")
         self.deallocs.append(f"_PyStaticCode_Dealloc(&{name});")
-        self.patchups.append(f"_PyStaticCode_InternStrings(&{name});")
+        self.interns.append(f"_PyStaticCode_InternStrings(&{name});")
         return f"& {name}.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
@@ -445,6 +446,9 @@ def generate(args: list[str], output: TextIO) -> None:
             printer.generate_file(modname, code)
     with printer.block(f"void\n_Py_Deepfreeze_Fini(void)"):
             for p in printer.deallocs:
+                printer.write(p)
+    with printer.block(f"void\n_Py_Deepfreeze_Init(void)"):
+            for p in printer.interns:
                 printer.write(p)
     if verbose:
         print(f"Cache hits: {printer.hits}, misses: {printer.misses}")
