@@ -4424,7 +4424,7 @@ handle_eval_breaker:
             }
         }
 
-        TARGET(LOAD_METHOD_CACHED) {
+        TARGET(LOAD_METHOD_WITH_VALUES) {
             /* LOAD_METHOD, with cached method object */
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
@@ -4432,12 +4432,44 @@ handle_eval_breaker:
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAttrCache *cache1 = &caches[-1].attr;
             _PyObjectCache *cache2 = &caches[-2].obj;
-
+            assert(cache1->tp_version != 0);
             DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
             assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictObject *dict = *(PyDictObject**)_PyObject_ManagedDictPointer(self);
             DEOPT_IF(dict != NULL, LOAD_METHOD);
             DEOPT_IF(((PyHeapTypeObject *)self_cls)->ht_cached_keys->dk_version != cache1->dk_version, LOAD_METHOD);
+            STAT_INC(LOAD_METHOD, hit);
+            PyObject *res = cache2->obj;
+            assert(res != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            Py_INCREF(res);
+            SET_TOP(res);
+            PUSH(self);
+            NOTRACE_DISPATCH();
+        }
+
+        TARGET(LOAD_METHOD_WITH_DICT) {
+            /* LOAD_METHOD, with a dict
+             Can be either a managed dict, or a tp_dictoffset offset.*/
+            assert(cframe.use_tracing == 0);
+            PyObject *self = TOP();
+            PyTypeObject *self_cls = Py_TYPE(self);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyAttrCache *cache1 = &caches[-1].attr;
+            _PyObjectCache *cache2 = &caches[-2].obj;
+
+            DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
+            /* Treat index as a signed 16 bit value */
+            int dictoffset = *(int16_t *)&cache0->index;
+            PyDictObject **dictptr = (PyDictObject**)(((char *)self)+dictoffset);
+            assert(
+                dictoffset == MANAGED_DICT_OFFSET ||
+                (dictoffset == self_cls->tp_dictoffset && dictoffset > 0)
+            );
+            PyDictObject *dict = *dictptr;
+            DEOPT_IF(dict == NULL, LOAD_METHOD);
+            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version, LOAD_METHOD);
             STAT_INC(LOAD_METHOD, hit);
             PyObject *res = cache2->obj;
             assert(res != NULL);
