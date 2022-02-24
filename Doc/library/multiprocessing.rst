@@ -2020,9 +2020,9 @@ demonstrates a level of control over the synchronization.
       a new shared object -- see documentation for the *method_to_typeid*
       argument of :meth:`BaseManager.register`.
 
-      If an exception is raised by the call, then is re-raised by
+      If an exception is raised by the call then it is re-raised by
       :meth:`_callmethod`.  If some other exception is raised in the manager's
-      process then this is converted into a :exc:`RemoteError` exception and is
+      process then it is converted into a :exc:`RemoteError` exception and is
       raised by :meth:`_callmethod`.
 
       Note in particular that an exception will be raised if *methodname* has
