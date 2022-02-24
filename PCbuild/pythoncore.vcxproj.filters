@@ -192,6 +192,9 @@
     <ClInclude Include="..\Include\pythread.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\pytypedefs.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\rangeobject.h">
       <Filter>Include</Filter>
     </ClInclude>

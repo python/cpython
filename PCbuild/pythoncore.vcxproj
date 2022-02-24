@@ -279,6 +279,7 @@
     <ClInclude Include="..\Include\pystrtod.h" />
     <ClInclude Include="..\Include\pythonrun.h" />
     <ClInclude Include="..\Include\pythread.h" />
+    <ClInclude Include="..\Include\pytypedefs.h" />
     <ClInclude Include="..\Include\rangeobject.h" />
     <ClInclude Include="..\Include\setobject.h" />
     <ClInclude Include="..\Include\sliceobject.h" />
