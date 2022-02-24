@@ -22,6 +22,10 @@
 #include <unistd.h>
 #endif
 
+/* Empty initializer for deepfrozen modules */
+void _Py_Deepfreeze_Init(void)
+{
+}
 /* Empty finalizer for deepfrozen modules */
 void
 _Py_Deepfreeze_Fini(void)
