@@ -23,15 +23,11 @@ PyAPI_DATA(PyTypeObject) PyMethodDescr_Type;
 PyAPI_DATA(PyTypeObject) PyWrapperDescr_Type;
 PyAPI_DATA(PyTypeObject) PyDictProxy_Type;
 PyAPI_DATA(PyTypeObject) PyProperty_Type;
-// Forward declaration for following prototype
-struct PyMemberDef;
 
 PyAPI_FUNC(PyObject *) PyDescr_NewMethod(PyTypeObject *, PyMethodDef *);
 PyAPI_FUNC(PyObject *) PyDescr_NewClassMethod(PyTypeObject *, PyMethodDef *);
-PyAPI_FUNC(PyObject *) PyDescr_NewMember(PyTypeObject *,
-                                               struct PyMemberDef *);
-PyAPI_FUNC(PyObject *) PyDescr_NewGetSet(PyTypeObject *,
-                                               struct PyGetSetDef *);
+PyAPI_FUNC(PyObject *) PyDescr_NewMember(PyTypeObject *, PyMemberDef *);
+PyAPI_FUNC(PyObject *) PyDescr_NewGetSet(PyTypeObject *, PyGetSetDef *);
 
 PyAPI_FUNC(PyObject *) PyDictProxy_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyWrapper_New(PyObject *, PyObject *);
