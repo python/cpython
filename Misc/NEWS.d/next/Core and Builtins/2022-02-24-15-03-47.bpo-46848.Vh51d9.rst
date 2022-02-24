@@ -1,0 +1,2 @@
+``mmap.find()`` was optimized by using libc's ``memmem(3)`` function (which is optimized) instead of using a trivial ``for`` loop.
+For trivial use cases, such as counting new lines in a large file, the performance boost can be up to 100%.
