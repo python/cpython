@@ -32,7 +32,7 @@ PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
                                        Py_hash_t hash);
 PyAPI_FUNC(PyObject *) _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
 PyAPI_FUNC(PyObject *) _PyDict_GetItemIdWithError(PyObject *dp,
-                                                  struct _Py_Identifier *key);
+                                                  _Py_Identifier *key);
 PyAPI_FUNC(PyObject *) _PyDict_GetItemStringWithError(PyObject *, const char *);
 PyAPI_FUNC(PyObject *) PyDict_SetDefault(
     PyObject *mp, PyObject *key, PyObject *defaultobj);
@@ -49,7 +49,7 @@ PyAPI_FUNC(int) _PyDict_Next(
 /* Get the number of items of a dictionary. */
 #define PyDict_GET_SIZE(mp)  (assert(PyDict_Check(mp)),((PyDictObject *)mp)->ma_used)
 PyAPI_FUNC(int) _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
-PyAPI_FUNC(int) _PyDict_ContainsId(PyObject *, struct _Py_Identifier *);
+PyAPI_FUNC(int) _PyDict_ContainsId(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
 PyAPI_FUNC(void) _PyDict_MaybeUntrack(PyObject *mp);
 PyAPI_FUNC(int) _PyDict_HasOnlyStringKeys(PyObject *mp);
@@ -66,9 +66,9 @@ PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
    argument is raised.
 */
 PyAPI_FUNC(int) _PyDict_MergeEx(PyObject *mp, PyObject *other, int override);
-PyAPI_FUNC(int) _PyDict_SetItemId(PyObject *dp, struct _Py_Identifier *key, PyObject *item);
+PyAPI_FUNC(int) _PyDict_SetItemId(PyObject *dp, _Py_Identifier *key, PyObject *item);
 
-PyAPI_FUNC(int) _PyDict_DelItemId(PyObject *mp, struct _Py_Identifier *key);
+PyAPI_FUNC(int) _PyDict_DelItemId(PyObject *mp, _Py_Identifier *key);
 PyAPI_FUNC(void) _PyDict_DebugMallocStats(FILE *out);
 
 int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr, PyObject *name, PyObject *value);

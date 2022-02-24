@@ -65,8 +65,8 @@ struct PyMemberDef {
 #define PY_AUDIT_READ       READ_RESTRICTED
 
 /* Current API, use this */
-PyAPI_FUNC(PyObject *) PyMember_GetOne(const char *, struct PyMemberDef *);
-PyAPI_FUNC(int) PyMember_SetOne(char *, struct PyMemberDef *, PyObject *);
+PyAPI_FUNC(PyObject *) PyMember_GetOne(const char *, PyMemberDef *);
+PyAPI_FUNC(int) PyMember_SetOne(char *, PyMemberDef *, PyObject *);
 
 
 #ifdef __cplusplus

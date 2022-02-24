@@ -201,11 +201,11 @@ struct _typeobject {
     iternextfunc tp_iternext;
 
     /* Attribute descriptor and subclassing stuff */
-    struct PyMethodDef *tp_methods;
-    struct PyMemberDef *tp_members;
-    struct PyGetSetDef *tp_getset;
+    PyMethodDef *tp_methods;
+    PyMemberDef *tp_members;
+    PyGetSetDef *tp_getset;
     // Strong reference on a heap type, borrowed reference on a static type
-    struct _typeobject *tp_base;
+    PyTypeObject *tp_base;
     PyObject *tp_dict;
     descrgetfunc tp_descr_get;
     descrsetfunc tp_descr_set;
@@ -262,7 +262,7 @@ PyAPI_FUNC(PyObject *) _PyObject_LookupSpecialId(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
-PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, struct PyModuleDef *);
+PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
@@ -270,8 +270,8 @@ PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
 PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 
 PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
-PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, struct _Py_Identifier *);
-PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, struct _Py_Identifier *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
+PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, _Py_Identifier *, PyObject *);
 /* Replacements of PyObject_GetAttr() and _PyObject_GetAttrId() which
    don't raise AttributeError.
 
@@ -282,7 +282,7 @@ PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, struct _Py_Identifier *, PyObjec
    is raised.
 */
 PyAPI_FUNC(int) _PyObject_LookupAttr(PyObject *, PyObject *, PyObject **);
-PyAPI_FUNC(int) _PyObject_LookupAttrId(PyObject *, struct _Py_Identifier *, PyObject **);
+PyAPI_FUNC(int) _PyObject_LookupAttrId(PyObject *, _Py_Identifier *, PyObject **);
 
 PyAPI_FUNC(int) _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
 
@@ -461,8 +461,8 @@ passed as second argument to Py_TRASHCAN_BEGIN().
 */
 
 /* Python 3.9 private API, invoked by the macros below. */
-PyAPI_FUNC(int) _PyTrash_begin(struct _ts *tstate, PyObject *op);
-PyAPI_FUNC(void) _PyTrash_end(struct _ts *tstate);
+PyAPI_FUNC(int) _PyTrash_begin(PyThreadState *tstate, PyObject *op);
+PyAPI_FUNC(void) _PyTrash_end(PyThreadState *tstate);
 /* Python 3.10 private API, invoked by the Py_TRASHCAN_BEGIN(). */
 PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
 

@@ -40,10 +40,10 @@ PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);
 /* State unique per thread */
 
 /* New in 3.3 */
-PyAPI_FUNC(int) PyState_AddModule(PyObject*, struct PyModuleDef*);
-PyAPI_FUNC(int) PyState_RemoveModule(struct PyModuleDef*);
+PyAPI_FUNC(int) PyState_AddModule(PyObject*, PyModuleDef*);
+PyAPI_FUNC(int) PyState_RemoveModule(PyModuleDef*);
 #endif
-PyAPI_FUNC(PyObject*) PyState_FindModule(struct PyModuleDef*);
+PyAPI_FUNC(PyObject*) PyState_FindModule(PyModuleDef*);
 
 PyAPI_FUNC(PyThreadState *) PyThreadState_New(PyInterpreterState *);
 PyAPI_FUNC(void) PyThreadState_Clear(PyThreadState *);

@@ -63,8 +63,8 @@ whose size is determined when the object is allocated.
 #ifdef Py_TRACE_REFS
 /* Define pointers to support a doubly-linked list of all live heap objects. */
 #define _PyObject_HEAD_EXTRA            \
-    struct _object *_ob_next;           \
-    struct _object *_ob_prev;
+    PyObject *_ob_next;           \
+    PyObject *_ob_prev;
 
 #define _PyObject_EXTRA_INIT 0, 0,
 
@@ -237,8 +237,8 @@ PyAPI_FUNC(void*) PyType_GetSlot(PyTypeObject*, int);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
 PyAPI_FUNC(PyObject*) PyType_FromModuleAndSpec(PyObject *, PyType_Spec *, PyObject *);
-PyAPI_FUNC(PyObject *) PyType_GetModule(struct _typeobject *);
-PyAPI_FUNC(void *) PyType_GetModuleState(struct _typeobject *);
+PyAPI_FUNC(PyObject *) PyType_GetModule(PyTypeObject *);
+PyAPI_FUNC(void *) PyType_GetModuleState(PyTypeObject *);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
 PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
