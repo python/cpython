@@ -1928,8 +1928,8 @@ void
 _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                         int oparg)
 {
-    Py_BUILD_ASSERT(_PyOpcode_InlineCacheEntries[BINARY_OP] == 
-                    INLINE_CACHE_ENTRIES_BINARY_OP);
+    assert(_PyOpcode_InlineCacheEntries[BINARY_OP] == 
+           INLINE_CACHE_ENTRIES_BINARY_OP);
     _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
     switch (oparg) {
         case NB_ADD:
