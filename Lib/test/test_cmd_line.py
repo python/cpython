@@ -3,6 +3,7 @@
 # See test_cmd_line_script.py for testing of script execution
 
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -125,6 +126,9 @@ class CmdLineTest(unittest.TestCase):
             # because of bugs in C extensions. This test is only about checking
             # the showrefcount feature.
             self.assertRegex(err, br'^\[-?\d+ refs, \d+ blocks\]')
+            refs, blocks = map(int, re.findall(r'-?\d+', str(err)))
+            self.assertLessEqual(refs, 0)
+            self.assertEqual(blocks, 0)
         else:
             self.assertEqual(err, b'')
 
