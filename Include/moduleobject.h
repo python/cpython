@@ -72,7 +72,7 @@ typedef struct PyModuleDef_Slot{
 
 #endif /* New in 3.5 */
 
-typedef struct PyModuleDef{
+struct PyModuleDef {
   PyModuleDef_Base m_base;
   const char* m_name;
   const char* m_doc;
@@ -82,7 +82,7 @@ typedef struct PyModuleDef{
   traverseproc m_traverse;
   inquiry m_clear;
   freefunc m_free;
-} PyModuleDef;
+};
 
 
 // Internal C API
