@@ -222,16 +222,19 @@ PyTuple_Pack(Py_ssize_t n, ...)
 static void
 tupledealloc(PyTupleObject *op)
 {
-    /* The empty tuple is statically allocated. */
-    if (op == &_Py_SINGLETON(tuple_empty)) {
-        return;
+    if (Py_SIZE(op) == 0) {
+        /* The empty tuple is statically allocated. */
+        if (op == &_Py_SINGLETON(tuple_empty)) {
+            return;
+        }
+        /* tuple subclasses have their own empty instances. */
+        assert(!PyTuple_CheckExact(op));
     }
-    Py_ssize_t len = Py_SIZE(op);
-    /* tuple subclasses have their own empty instances. */
-    assert(len > 0 || !PyTuple_CheckExact(op));
+
     PyObject_GC_UnTrack(op);
     Py_TRASHCAN_BEGIN(op, tupledealloc)
 
+    Py_ssize_t len = Py_SIZE(op);
     Py_ssize_t i = len;
     while (--i >= 0) {
         Py_XDECREF(op->ob_item[i]);
