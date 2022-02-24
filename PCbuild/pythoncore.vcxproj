@@ -263,6 +263,7 @@
     <ClInclude Include="..\Include\osmodule.h" />
     <ClInclude Include="..\Include\patchlevel.h" />
     <ClInclude Include="..\Include\py_curses.h" />
+    <ClInclude Include="..\Include\pybuffer.h" />
     <ClInclude Include="..\Include\pycapsule.h" />
     <ClInclude Include="..\Include\pyerrors.h" />
     <ClInclude Include="..\Include\pyexpat.h" />
@@ -278,6 +279,7 @@
     <ClInclude Include="..\Include\pystrtod.h" />
     <ClInclude Include="..\Include\pythonrun.h" />
     <ClInclude Include="..\Include\pythread.h" />
+    <ClInclude Include="..\Include\pytypedefs.h" />
     <ClInclude Include="..\Include\rangeobject.h" />
     <ClInclude Include="..\Include\setobject.h" />
     <ClInclude Include="..\Include\sliceobject.h" />

@@ -25,6 +25,7 @@ Data members:
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_structseq.h"     // _PyStructSequence_InitType()
@@ -706,7 +707,6 @@ sys_displayhook(PyObject *module, PyObject *o)
 {
     PyObject *outf;
     PyObject *builtins;
-    static PyObject *newline = NULL;
     PyThreadState *tstate = _PyThreadState_GET();
 
     builtins = PyImport_GetModule(&_Py_ID(builtins));
@@ -747,12 +747,8 @@ sys_displayhook(PyObject *module, PyObject *o)
             return NULL;
         }
     }
-    if (newline == NULL) {
-        newline = PyUnicode_FromString("\n");
-        if (newline == NULL)
-            return NULL;
-    }
-    if (PyFile_WriteObject(newline, outf, Py_PRINT_RAW) != 0)
+    _Py_DECLARE_STR(newline, "\n");
+    if (PyFile_WriteObject(&_Py_STR(newline), outf, Py_PRINT_RAW) != 0)
         return NULL;
     if (PyObject_SetAttr(builtins, &_Py_ID(_), o) != 0)
         return NULL;
@@ -946,30 +942,18 @@ sys_intern_impl(PyObject *module, PyObject *s)
 
 /*
  * Cached interned string objects used for calling the profile and
- * trace functions.  Initialized by trace_init().
+ * trace functions.
  */
-static PyObject *whatstrings[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-
-static int
-trace_init(void)
-{
-    static const char * const whatnames[8] = {
-        "call", "exception", "line", "return",
-        "c_call", "c_exception", "c_return",
-        "opcode"
-    };
-    PyObject *name;
-    int i;
-    for (i = 0; i < 8; ++i) {
-        if (whatstrings[i] == NULL) {
-            name = PyUnicode_InternFromString(whatnames[i]);
-            if (name == NULL)
-                return -1;
-            whatstrings[i] = name;
-        }
-    }
-    return 0;
-}
+static PyObject *whatstrings[8] = {
+   &_Py_ID(call),
+   &_Py_ID(exception),
+   &_Py_ID(line),
+   &_Py_ID(return),
+   &_Py_ID(c_call),
+   &_Py_ID(c_exception),
+   &_Py_ID(c_return),
+   &_Py_ID(opcode),
+};
 
 
 static PyObject *
@@ -1050,10 +1034,6 @@ trace_trampoline(PyObject *self, PyFrameObject *frame,
 static PyObject *
 sys_settrace(PyObject *self, PyObject *args)
 {
-    if (trace_init() == -1) {
-        return NULL;
-    }
-
     PyThreadState *tstate = _PyThreadState_GET();
     if (args == Py_None) {
         if (_PyEval_SetTrace(tstate, NULL, NULL) < 0) {
@@ -1099,10 +1079,6 @@ sys_gettrace_impl(PyObject *module)
 static PyObject *
 sys_setprofile(PyObject *self, PyObject *args)
 {
-    if (trace_init() == -1) {
-        return NULL;
-    }
-
     PyThreadState *tstate = _PyThreadState_GET();
     if (args == Py_None) {
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
@@ -2862,7 +2838,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 #endif
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
     SET_SYS_FROM_STRING("float_repr_style", "short");
 #else
     SET_SYS_FROM_STRING("float_repr_style", "legacy");
