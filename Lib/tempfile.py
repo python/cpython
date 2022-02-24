@@ -788,9 +788,12 @@ class SpooledTemporaryFile(_io.IOBase):
         return self._file.tell()
 
     def truncate(self, size=None):
-        if size is not None and size > self._max_size:
-            self.rollover()
-        return self._file.truncate(size)
+        if size is None:
+            return self._file.truncate()
+        else:
+            if size > self._max_size:
+                self.rollover()
+            return self._file.truncate(size)
 
     def writable(self):
         return self._file.writable()
