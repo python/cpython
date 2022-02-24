@@ -160,6 +160,9 @@ traceback. (Contributed by Irit Katriel in :issue:`45607`.)
 Other Language Changes
 ======================
 
+* Starred expressions can be used in :ref:`for statements<for>`. (See
+  :issue:`46725` for more details.)
+
 * Asynchronous comprehensions are now allowed inside comprehensions in
   asynchronous functions. Outer comprehensions implicitly become
   asynchronous. (Contributed by Serhiy Storchaka in :issue:`33346`.)
@@ -482,6 +485,12 @@ Deprecated
   * the :meth:`configparser.ParsingError.readfp` method
 
   (Contributed by Hugo van Kemenade in :issue:`45173`.)
+
+* The :func:`locale.getdefaultlocale` function is deprecated and will be
+  removed in Python 3.13. Use :func:`locale.setlocale`,
+  :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
+  :func:`locale.getlocale` functions instead.
+  (Contributed by Victor Stinner in :issue:`46659`.)
 
 
 Removed
@@ -844,6 +853,8 @@ Porting to Python 3.11
     use ``PyObject_GetAttrString((PyObject*)frame, "f_locals")``.
   * ``f_lasti``: removed,
     use ``PyObject_GetAttrString((PyObject*)frame, "f_lasti")``.
+    Code using ``f_lasti`` with ``PyCode_Addr2Line()`` should use
+    :c:func:`PyFrame_GetLineNumber` instead.
 
   The following fields were removed entirely, as they were details
   of the old implementation:
@@ -1010,3 +1021,7 @@ Removed
   public C API by mistake, it must only be used by Python internally.
   Use the ``PyTypeObject.tp_members`` member instead.
   (Contributed by Victor Stinner in :issue:`40170`.)
+
+* Remove the ``HAVE_PY_SET_53BIT_PRECISION`` macro (moved to the internal C
+  API).
+  (Contributed by Victor Stinner in :issue:`45412`.)

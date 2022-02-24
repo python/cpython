@@ -1,0 +1,1 @@
+Support UDP sockets in  :meth:`asyncio.loop.sock_connect` for selector-based event loops.  Patch by Thomas Grainger.

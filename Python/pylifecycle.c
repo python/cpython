@@ -24,7 +24,6 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
-#include "pycore_symtable.h"      // _PySymtable_Fini()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 #include "pycore_tuple.h"         // _PyTuple_InitTypes()
@@ -1690,9 +1689,6 @@ finalize_interp_clear(PyThreadState *tstate)
     int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
 
     _PyExc_ClearExceptionGroupType(tstate->interp);
-    if (is_main_interp) {
-        _PySymtable_Fini();
-    }
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
