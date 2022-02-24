@@ -1,0 +1,1 @@
+Fix memory leak in interned strings of deep-frozen modules.
