@@ -2528,8 +2528,6 @@ static int
 dict_merge(PyObject *a, PyObject *b, int override)
 {
     PyDictObject *mp, *other;
-    Py_ssize_t i, n;
-    PyDictKeyEntry *entry, *ep0;
 
     assert(0 <= override && override <= 2);
 
@@ -2596,54 +2594,46 @@ dict_merge(PyObject *a, PyObject *b, int override)
                return -1;
             }
         }
-        ep0 = DK_ENTRIES(other->ma_keys);
-        for (i = 0, n = other->ma_keys->dk_nentries; i < n; i++) {
-            PyObject *key, *value;
-            Py_hash_t hash;
-            entry = &ep0[i];
-            key = entry->me_key;
-            hash = entry->me_hash;
-            if (other->ma_values)
-                value = other->ma_values->values[i];
-            else
-                value = entry->me_value;
 
-            if (value != NULL) {
-                int err = 0;
+        Py_ssize_t pos = 0;
+        PyObject *key, *value;
+        Py_hash_t hash;
+        Py_ssize_t orig_nentries = other->ma_keys->dk_nentries;
+        while (_PyDict_Next(b, &pos, &key, &value, &hash)) {
+            int err = 0;
+            Py_INCREF(key);
+            Py_INCREF(value);
+            if (override == 1) {
                 Py_INCREF(key);
                 Py_INCREF(value);
-                if (override == 1) {
+                err = insertdict(mp, key, hash, value);
+            }
+            else {
+                err = _PyDict_Contains_KnownHash(a, key, hash);
+                if (err == 0) {
                     Py_INCREF(key);
                     Py_INCREF(value);
                     err = insertdict(mp, key, hash, value);
                 }
-                else {
-                    err = _PyDict_Contains_KnownHash(a, key, hash);
-                    if (err == 0) {
-                        Py_INCREF(key);
-                        Py_INCREF(value);
-                        err = insertdict(mp, key, hash, value);
+                else if (err > 0) {
+                    if (override != 0) {
+                        _PyErr_SetKeyError(key);
+                        Py_DECREF(value);
+                        Py_DECREF(key);
+                        return -1;
                     }
-                    else if (err > 0) {
-                        if (override != 0) {
-                            _PyErr_SetKeyError(key);
-                            Py_DECREF(value);
-                            Py_DECREF(key);
-                            return -1;
-                        }
-                        err = 0;
-                    }
+                    err = 0;
                 }
-                Py_DECREF(value);
-                Py_DECREF(key);
-                if (err != 0)
-                    return -1;
+            }
+            Py_DECREF(value);
+            Py_DECREF(key);
+            if (err != 0)
+                return -1;
 
-                if (n != other->ma_keys->dk_nentries) {
-                    PyErr_SetString(PyExc_RuntimeError,
-                                    "dict mutated during update");
-                    return -1;
-                }
+            if (orig_nentries != other->ma_keys->dk_nentries) {
+                PyErr_SetString(PyExc_RuntimeError,
+                        "dict mutated during update");
+                return -1;
             }
         }
     }
