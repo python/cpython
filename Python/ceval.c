@@ -1769,7 +1769,6 @@ handle_eval_breaker:
         }
 
         TARGET(LOAD_FAST) {
-            PREDICTED(LOAD_FAST);
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
                 goto unbound_local_error;
@@ -5578,25 +5577,24 @@ LOAD_ATTR_INSTANCE_VALUE_miss:
 
 LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE_miss:
         {
-            // This is special-cased because we have a specialization of
-            // LOAD_FAST that borrows cache from the following instruction.
-            STAT_INC(LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE, miss);
-            STAT_INC(LOAD_ATTR, miss);
-            SpecializedCacheEntry *caches = _GetSpecializedCacheEntryForInstruction(
-                first_instr, INSTR_OFFSET() + 1, _Py_OPARG(*next_instr));
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            cache0->counter--;
-            if (cache0->counter == 0) {
-                assert(_Py_OPCODE(next_instr[0]) == LOAD_ATTR_INSTANCE_VALUE);
-                next_instr[0] = _Py_MAKECODEUNIT(LOAD_ATTR_ADAPTIVE, _Py_OPARG(next_instr[0]));
-                assert(_Py_OPCODE(next_instr[-1]) == LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE);
-                next_instr[-1] = _Py_MAKECODEUNIT(LOAD_FAST, _Py_OPARG(next_instr[-1]));
-                if (_Py_OPCODE(next_instr[-2]) == LOAD_FAST) {
-                    next_instr[-2] =  _Py_MAKECODEUNIT(LOAD_FAST__LOAD_FAST, _Py_OPARG(next_instr[-2]));
-                }
-                STAT_INC(LOAD_ATTR, deopt);
+            // This is special-cased because we have a superinstruction
+            // that includes a specialized instruction.
+            // If the specialized portion misses, carry out
+            // the first instruction, then perform a miss
+            // for the second instruction as usual.
+
+            // Do LOAD_FAST
+            {
+                PyObject *value = GETLOCAL(oparg);
+                assert(value != NULL); // Already checked if unbound
+                Py_INCREF(value);
+                PUSH(value);
+                NEXTOPARG();
+                next_instr++;
             }
-            JUMP_TO_INSTRUCTION(LOAD_FAST);
+
+            // Now we are in the correct state for LOAD_ATTR
+            goto LOAD_ATTR_INSTANCE_VALUE_miss;
         }
 
 binary_subscr_dict_error:
