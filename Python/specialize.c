@@ -385,31 +385,34 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
         int opcode = _Py_OPCODE(instructions[i]);
         int oparg = _Py_OPARG(instructions[i]);
         uint8_t adaptive_opcode = adaptive_opcodes[opcode];
-        if (adaptive_opcode && previous_opcode != EXTENDED_ARG && 
-            !_PyOpcode_InlineCacheEntries[opcode])
-        {
-            int new_oparg = oparg_from_instruction_and_update_offset(
-                i, opcode, oparg, &cache_offset
-            );
-            if (new_oparg < 0) {
-                /* Not possible to allocate a cache for this instruction */
-                previous_opcode = opcode;
-                continue;
+        if (adaptive_opcode) {
+            if (_PyOpcode_InlineCacheEntries[opcode]) {
+                instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, oparg);
             }
-            previous_opcode = adaptive_opcode;
-            int entries_needed = cache_requirements[opcode];
-            if (entries_needed) {
-                /* Initialize the adpative cache entry */
-                int cache0_offset = cache_offset-entries_needed;
-                SpecializedCacheEntry *cache =
-                    _GetSpecializedCacheEntry(instructions, cache0_offset);
-                cache->adaptive.original_oparg = oparg;
-                cache->adaptive.counter = 0;
-            } else {
-                // oparg is the adaptive cache counter
-                new_oparg = 0;
+            else if (previous_opcode != EXTENDED_ARG) {
+                int new_oparg = oparg_from_instruction_and_update_offset(
+                    i, opcode, oparg, &cache_offset
+                );
+                if (new_oparg < 0) {
+                    /* Not possible to allocate a cache for this instruction */
+                    previous_opcode = opcode;
+                    continue;
+                }
+                previous_opcode = adaptive_opcode;
+                int entries_needed = cache_requirements[opcode];
+                if (entries_needed) {
+                    /* Initialize the adpative cache entry */
+                    int cache0_offset = cache_offset-entries_needed;
+                    SpecializedCacheEntry *cache =
+                        _GetSpecializedCacheEntry(instructions, cache0_offset);
+                    cache->adaptive.original_oparg = oparg;
+                    cache->adaptive.counter = 0;
+                } else {
+                    // oparg is the adaptive cache counter
+                    new_oparg = 0;
+                }
+                instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, new_oparg);
             }
-            instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, new_oparg);
         }
         else {
             /* Super instructions don't use the cache,
@@ -1877,7 +1880,7 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 void
 _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr)
 {
-    uint16_t *counter = inline_cache_uint16(instr, 0);
+    uint16_t *counter = inline_cache_uint16(instr, 1);
     switch (_Py_OPARG(*instr)) {
         case NB_ADD:
         case NB_INPLACE_ADD:
