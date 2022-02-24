@@ -13,11 +13,11 @@ import re
 import time
 import types
 from typing import Dict, FrozenSet, TextIO, Tuple
-
+from generate_global_objects import get_identifiers_and_strings
 import umarshal
 
 verbose = False
-
+identifiers = get_identifiers_and_strings()[0]
 
 def isprintable(b: bytes) -> bool:
     return all(0x20 <= c < 0x7f for c in b)
@@ -166,6 +166,8 @@ class Printer:
         return f"& {name}.ob_base.ob_base"
 
     def generate_unicode(self, name: str, s: str) -> str:
+        if s in identifiers:
+            return f"&_Py_ID({s})"
         kind, ascii = analyze_character_width(s)
         if kind == PyUnicode_1BYTE_KIND:
             datatype = "uint8_t"
