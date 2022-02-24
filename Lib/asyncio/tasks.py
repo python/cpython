@@ -198,6 +198,8 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         task will be marked as cancelled when the wrapped coroutine
         terminates with a CancelledError exception (even if cancel()
         was not called).
+
+        This also increases the task's count of cancellation requests.
         """
         self._log_traceback = False
         if self.done():
@@ -217,9 +219,21 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         return True
 
     def cancelling(self):
+        """Return the count of the task's cancellation requests.
+
+        This count is incremented when .cancel() is called
+        and may be decremented using .uncancel().
+        """
         return self._num_cancels_requested
 
     def uncancel(self):
+        """Decrement the task's count of cancellation requests.
+
+        This should be used by tasks that catch CancelledError
+        and wish to continue indefinitely until they are cancelled again.
+
+        Returns the remaining number of cancellation requests.
+        """
         if self._num_cancels_requested > 0:
             self._num_cancels_requested -= 1
         return self._num_cancels_requested

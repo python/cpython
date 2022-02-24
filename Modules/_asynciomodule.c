@@ -2191,6 +2191,8 @@ not return True (unless the task was already cancelled).  A
 task will be marked as cancelled when the wrapped coroutine
 terminates with a CancelledError exception (even if cancel()
 was not called).
+
+This also increases the task's count of cancellation requests.
 [clinic start generated code]*/
 
 static PyObject *
@@ -2238,13 +2240,10 @@ _asyncio_Task_cancel_impl(TaskObj *self, PyObject *msg)
 /*[clinic input]
 _asyncio.Task.cancelling
 
-Return True if the task is in the process of being cancelled.
+Return the count of the task's cancellation requests.
 
-This is set once .cancel() is called
-and remains set until .uncancel() is called.
-
-As long as this flag is set, further .cancel() calls will be ignored,
-until .uncancel() is called to reset it.
+This count is incremented when .cancel() is called
+and may be decremented using .uncancel().
 [clinic start generated code]*/
 
 static PyObject *
@@ -2258,12 +2257,12 @@ _asyncio_Task_cancelling_impl(TaskObj *self)
 /*[clinic input]
 _asyncio.Task.uncancel
 
-Reset the flag returned by cancelling().
+Decrement the task's count of cancellation requests.
 
 This should be used by tasks that catch CancelledError
 and wish to continue indefinitely until they are cancelled again.
 
-Returns the previous value of the flag.
+Returns the remaining number of cancellation requests.
 [clinic start generated code]*/
 
 static PyObject *
