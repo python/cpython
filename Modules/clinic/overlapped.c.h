@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#ifdef Py_BUILD_CORE
+#include "pycore_gc.h"            // PyGC_Head
+#include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_overlapped_CreateIoCompletionPort__doc__,
 "CreateIoCompletionPort($module, handle, port, key, concurrency, /)\n"
 "--\n"

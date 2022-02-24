@@ -1756,7 +1756,7 @@ class BlockPrinter:
         self.language = language
         self.f = f or io.StringIO()
 
-    def print_block(self, block):
+    def print_block(self, block, *, core_includes=False):
         input = block.input
         output = block.output
         dsl_name = block.dsl_name
@@ -1782,6 +1782,14 @@ class BlockPrinter:
 
         write(self.language.stop_line.format(dsl_name=dsl_name))
         write("\n")
+
+        if core_includes:
+            write("\n")
+            write('#ifdef Py_BUILD_CORE\n')
+            write('#include "pycore_gc.h"            // PyGC_Head\n')
+            write('#include "pycore_runtime.h"       // _Py_ID()\n')
+            write('#endif\n')
+            write("\n")
 
         input = ''.join(block.input)
         output = ''.join(block.output)
@@ -2117,7 +2125,7 @@ impl_definition block
 
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
-                    printer_2.print_block(block)
+                    printer_2.print_block(block, core_includes=True)
                     write_file(destination.filename, printer_2.f.getvalue())
                     continue
         text = printer.f.getvalue()

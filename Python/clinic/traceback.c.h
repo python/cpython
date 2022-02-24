@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#ifdef Py_BUILD_CORE
+#include "pycore_gc.h"            // PyGC_Head
+#include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(tb_new__doc__,
 "TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)\n"
 "--\n"

@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#ifdef Py_BUILD_CORE
+#include "pycore_gc.h"            // PyGC_Head
+#include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_statistics__normal_dist_inv_cdf__doc__,
 "_normal_dist_inv_cdf($module, p, mu, sigma, /)\n"
 "--\n"

@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#ifdef Py_BUILD_CORE
+#include "pycore_gc.h"            // PyGC_Head
+#include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(builtin___import____doc__,
 "__import__($module, /, name, globals=None, locals=None, fromlist=(),\n"
 "           level=0)\n"

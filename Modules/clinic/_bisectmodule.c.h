@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#ifdef Py_BUILD_CORE
+#include "pycore_gc.h"            // PyGC_Head
+#include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_bisect_bisect_right__doc__,
 "bisect_right($module, /, a, x, lo=0, hi=None, *, key=None)\n"
 "--\n"

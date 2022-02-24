@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#ifdef Py_BUILD_CORE
+#include "pycore_gc.h"            // PyGC_Head
+#include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 static int
 sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
                   PyObject *fdobj);

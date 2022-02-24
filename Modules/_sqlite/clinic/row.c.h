@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#ifdef Py_BUILD_CORE
+#include "pycore_gc.h"            // PyGC_Head
+#include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 static PyObject *
 pysqlite_row_new_impl(PyTypeObject *type, pysqlite_Cursor *cursor,
                       PyObject *data);

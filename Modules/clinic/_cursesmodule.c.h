@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#ifdef Py_BUILD_CORE
+#include "pycore_gc.h"            // PyGC_Head
+#include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_curses_window_addch__doc__,
 "addch([y, x,] ch, [attr=_curses.A_NORMAL])\n"
 "Paint the character.\n"

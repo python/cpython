@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#ifdef Py_BUILD_CORE
+#include "pycore_gc.h"            // PyGC_Head
+#include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_io_open__doc__,
 "open($module, /, file, mode=\'r\', buffering=-1, encoding=None,\n"
 "     errors=None, newline=None, closefd=True, opener=None)\n"

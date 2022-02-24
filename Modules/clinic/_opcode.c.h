@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#ifdef Py_BUILD_CORE
+#include "pycore_gc.h"            // PyGC_Head
+#include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_opcode_stack_effect__doc__,
 "stack_effect($module, opcode, oparg=None, /, *, jump=None)\n"
 "--\n"
