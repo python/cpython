@@ -312,7 +312,7 @@ def __getattr__(name):
         global OpenWrapper
         OpenWrapper = open
         return OpenWrapper
-    raise AttributeError(name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 # In normal operation, both `UnsupportedOperation`s should be bound to the
