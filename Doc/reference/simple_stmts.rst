@@ -1004,10 +1004,10 @@ The :keyword:`!nonlocal` statement
 When the definition of a function is nested within the definitions of other
 functions, its nonlocal scopes are the local scopes of the enclosing function.
 The :keyword:`nonlocal` statement causes the listed identifiers to refer to
-previously bound variables in the nearest nonlocal enclosing scope, excluding
-globals. This is important because the default behavior for binding is to search
-the local namespace first.  The statement allows encapsulated code to rebind
-variables outside of the local scope besides the global (module) scope.
+previously bound variables in the nearest nonlocal enclosing scope, which
+excludes globals. This is important because the default behavior for binding is
+to search the local namespace first.  The statement allows encapsulated code to
+rebind variables outside of the local scope besides the global (module) scope.
 
 .. XXX not implemented
    The :keyword:`nonlocal` statement may prepend an assignment or augmented
