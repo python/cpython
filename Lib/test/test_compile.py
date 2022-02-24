@@ -838,7 +838,7 @@ if 1:
                 instructions = [opcode.opname for opcode in opcodes]
                 self.assertNotIn('LOAD_METHOD', instructions)
                 self.assertIn('LOAD_ATTR', instructions)
-                self.assertIn('PRECALL_FUNCTION', instructions)
+                self.assertIn('PRECALL', instructions)
 
     def test_lineno_procedure_call(self):
         def call():
@@ -1007,6 +1007,16 @@ if 1:
                 self.assertNotEqual(instr.arg, 0)
             elif instr.opname in HANDLED_JUMPS:
                 self.assertNotEqual(instr.arg, (line + 1)*INSTR_SIZE)
+
+    def test_no_wraparound_jump(self):
+        # See https://bugs.python.org/issue46724
+
+        def while_not_chained(a, b, c):
+            while not (a < b < c):
+                pass
+
+        for instr in dis.Bytecode(while_not_chained):
+            self.assertNotEqual(instr.opname, "EXTENDED_ARG")
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):

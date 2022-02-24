@@ -1,0 +1,2 @@
+:class:`~http.server.SimpleHTTPRequestHandler` now uses HTML5 grammar. Patch
+by Dong-hee Na.

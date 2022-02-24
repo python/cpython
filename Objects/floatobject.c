@@ -10,7 +10,7 @@
 #include "pycore_interp.h"        // _PyInterpreterState.float_state
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
-#include "pycore_pymath.h"        // _Py_ADJUST_ERANGE1()
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniType()
 
@@ -945,7 +945,7 @@ float___ceil___impl(PyObject *self)
    ndigits <= 323).  Returns a Python float, or sets a Python error and
    returns NULL on failure (OverflowError and memory errors are possible). */
 
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
 /* version of double_round that uses the correctly-rounded string<->double
    conversions from Python/dtoa.c */
 
@@ -1002,7 +1002,7 @@ double_round(double x, int ndigits) {
     return result;
 }
 
-#else /* PY_NO_SHORT_FLOAT_REPR */
+#else  // _PY_SHORT_FLOAT_REPR == 0
 
 /* fallback version, to be used when correctly rounded binary<->decimal
    conversions aren't available */
@@ -1052,7 +1052,7 @@ double_round(double x, int ndigits) {
     return PyFloat_FromDouble(z);
 }
 
-#endif /* PY_NO_SHORT_FLOAT_REPR */
+#endif  // _PY_SHORT_FLOAT_REPR == 0
 
 /* round a Python float v to the closest multiple of 10**-ndigits */
 
@@ -2492,7 +2492,7 @@ _PyFloat_Unpack2(const unsigned char *p, int le)
     f |= *p;
 
     if (e == 0x1f) {
-#ifdef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 0
         if (f == 0) {
             /* Infinity */
             return sign ? -Py_HUGE_VAL : Py_HUGE_VAL;
@@ -2507,9 +2507,9 @@ _PyFloat_Unpack2(const unsigned char *p, int le)
                 "can't unpack IEEE 754 NaN "
                 "on platform that does not support NaNs");
             return -1;
-#endif  /* #ifdef Py_NAN */
+#endif  // !defined(Py_NAN)
         }
-#else
+#else  // _PY_SHORT_FLOAT_REPR == 1
         if (f == 0) {
             /* Infinity */
             return _Py_dg_infinity(sign);
@@ -2518,7 +2518,7 @@ _PyFloat_Unpack2(const unsigned char *p, int le)
             /* NaN */
             return _Py_dg_stdnan(sign);
         }
-#endif  /* #ifdef PY_NO_SHORT_FLOAT_REPR */
+#endif  // _PY_SHORT_FLOAT_REPR == 1
     }
 
     x = (double)f / 1024.0;

@@ -1,0 +1,2 @@
+:func:`shutil.rmtree` can now work with VirtualBox shared  folders when
+running from the guest operating-system.
