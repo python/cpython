@@ -295,6 +295,7 @@ _specialized_instructions = [
     "LOAD_FAST__LOAD_CONST",
     "LOAD_CONST__LOAD_FAST",
     "STORE_FAST__STORE_FAST",
+    "LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE",
 ]
 _specialization_stats = [
     "success",
