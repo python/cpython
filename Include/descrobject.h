@@ -8,13 +8,13 @@ extern "C" {
 typedef PyObject *(*getter)(PyObject *, void *);
 typedef int (*setter)(PyObject *, PyObject *, void *);
 
-typedef struct PyGetSetDef {
+struct PyGetSetDef {
     const char *name;
     getter get;
     setter set;
     const char *doc;
     void *closure;
-} PyGetSetDef;
+};
 
 PyAPI_DATA(PyTypeObject) PyClassMethodDescr_Type;
 PyAPI_DATA(PyTypeObject) PyGetSetDescr_Type;

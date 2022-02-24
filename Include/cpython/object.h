@@ -262,10 +262,8 @@ PyAPI_FUNC(PyObject *) _PyObject_LookupSpecialId(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
-struct PyModuleDef;
 PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, struct PyModuleDef *);
 
-struct _Py_Identifier;
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
 PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
@@ -461,9 +459,6 @@ of the actual class being deallocated. Otherwise we might end up with a
 partially-deallocated object. To check this, the tp_dealloc function must be
 passed as second argument to Py_TRASHCAN_BEGIN().
 */
-
-/* Forward declarations for PyThreadState */
-struct _ts;
 
 /* Python 3.9 private API, invoked by the macros below. */
 PyAPI_FUNC(int) _PyTrash_begin(struct _ts *tstate, PyObject *op);
