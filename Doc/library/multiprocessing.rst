@@ -2245,8 +2245,8 @@ with the :class:`Pool` class.
 
 .. class:: AsyncResult
 
-   The class of the result returned by :meth:`Pool.apply_async` and
-   :meth:`Pool.map_async`.
+   The class of the result returned by :meth:`Pool.apply_async`,
+   :meth:`Pool.map_async`, and :meth:`Pool.starmap_async`.
 
    .. method:: get([timeout])
 
