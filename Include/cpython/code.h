@@ -5,7 +5,7 @@
 /* Each instruction in a code object is a fixed-width value,
  * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
  * opcode allows for larger values but the current limit is 3 uses
- * of EXTENDED_ARG (see Python/wordcode_helpers.h), for a maximum
+ * of EXTENDED_ARG (see Python/compile.c), for a maximum
  * 32-bit value.  This aligns with the note in Python/compile.c
  * (compiler_addop_i_line) indicating that the max oparg value is
  * 2**32 - 1, rather than INT_MAX.

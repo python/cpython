@@ -35,20 +35,23 @@ hasnargs = [] # unused
 opmap = {}
 opname = ['<%r>' % (op,) for op in range(256)]
 
-def def_op(name, op):
+_inline_cache_entries = [0] * 256
+
+def def_op(name, op, entries=0):
     opname[op] = name
     opmap[name] = op
+    _inline_cache_entries[op] = entries
 
-def name_op(name, op):
-    def_op(name, op)
+def name_op(name, op, entries=0):
+    def_op(name, op, entries)
     hasname.append(op)
 
-def jrel_op(name, op):
-    def_op(name, op)
+def jrel_op(name, op, entries=0):
+    def_op(name, op, entries)
     hasjrel.append(op)
 
-def jabs_op(name, op):
-    def_op(name, op)
+def jabs_op(name, op, entries=0):
+    def_op(name, op, entries)
     hasjabs.append(op)
 
 # Instruction opcodes for compiled code
@@ -56,6 +59,7 @@ def jabs_op(name, op):
 
 def_op('POP_TOP', 1)
 def_op('PUSH_NULL', 2)
+def_op('CACHE', 3)
 
 def_op('NOP', 9)
 def_op('UNARY_POSITIVE', 10)
@@ -137,7 +141,7 @@ def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
-def_op('BINARY_OP', 122)
+def_op('BINARY_OP', 122, 1)
 jrel_op('SEND', 123) # Number of bytes to skip
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)

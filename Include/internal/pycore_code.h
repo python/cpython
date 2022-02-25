@@ -64,6 +64,13 @@ typedef union {
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
 
+typedef struct {
+    _Py_CODEUNIT counter;
+} _PyBinaryOpCache;
+
+#define INLINE_CACHE_ENTRIES_BINARY_OP \
+    (sizeof(_PyBinaryOpCache) / sizeof(_Py_CODEUNIT))
+
 /* Maximum size of code to quicken, in code units. */
 #define MAX_SIZE_TO_QUICKEN 5000
 
@@ -276,7 +283,7 @@ int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
 int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     PyObject *kwnames, SpecializedCacheEntry *cache, PyObject *builtins);
 void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                             SpecializedCacheEntry *cache);
+                             int oparg);
 void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                    SpecializedCacheEntry *cache);
