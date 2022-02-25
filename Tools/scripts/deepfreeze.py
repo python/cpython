@@ -13,8 +13,9 @@ import re
 import time
 import types
 from typing import Dict, FrozenSet, TextIO, Tuple
-from generate_global_objects import get_identifiers_and_strings
+
 import umarshal
+from generate_global_objects import get_identifiers_and_strings
 
 verbose = False
 identifiers = get_identifiers_and_strings()[0]
