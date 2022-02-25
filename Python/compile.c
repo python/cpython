@@ -268,6 +268,9 @@ struct compiler_unit {
     int u_col_offset;      /* the offset of the current stmt */
     int u_end_lineno;      /* the end line of the current stmt */
     int u_end_col_offset;  /* the end offset of the current stmt */
+
+    /* true if we need to create an implicit basicblock before the next instr */
+    int u_need_new_implicit_block;
 };
 
 /* This struct captures the global state of a compilation.
@@ -758,22 +761,12 @@ compiler_new_block(struct compiler *c)
 }
 
 static basicblock *
-compiler_next_block(struct compiler *c)
-{
-    basicblock *block = compiler_new_block(c);
-    if (block == NULL)
-        return NULL;
-    c->u->u_curblock->b_next = block;
-    c->u->u_curblock = block;
-    return block;
-}
-
-static basicblock *
 compiler_use_next_block(struct compiler *c, basicblock *block)
 {
     assert(block != NULL);
     c->u->u_curblock->b_next = block;
     c->u->u_curblock = block;
+    c->u->u_need_new_implicit_block = 0;
     return block;
 }
 
@@ -1141,6 +1134,37 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
     return stack_effect(opcode, oparg, -1);
 }
 
+static int is_end_of_basic_block(struct instr *instr)
+{
+    int opcode = instr->i_opcode;
+
+    return is_jump(instr) ||
+        opcode == RETURN_VALUE ||
+        opcode == RAISE_VARARGS ||
+        opcode == RERAISE;
+}
+
+static int
+compiler_use_new_implicit_block_if_needed(struct compiler *c)
+{
+    if (c->u->u_need_new_implicit_block) {
+        basicblock *b = compiler_new_block(c);
+        if (b == NULL) {
+            return -1;
+        }
+        compiler_use_next_block(c, b);
+    }
+    return 0;
+}
+
+static void
+compiler_check_if_end_of_block(struct compiler *c, struct instr *instr)
+{
+    if (is_end_of_basic_block(instr)) {
+        c->u->u_need_new_implicit_block = 1;
+    }
+}
+
 /* Add an opcode with no argument.
    Returns 0 on failure, 1 on success.
 */
@@ -1149,23 +1173,29 @@ static int
 compiler_addop_line(struct compiler *c, int opcode, int line,
                     int end_line, int col_offset, int end_col_offset)
 {
-    basicblock *b;
-    struct instr *i;
-    int off;
     assert(!HAS_ARG(opcode) || IS_ARTIFICIAL(opcode));
-    off = compiler_next_instr(c->u->u_curblock);
-    if (off < 0)
+
+    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
+        return -1;
+    }
+
+    basicblock *b = c->u->u_curblock;
+    int off = compiler_next_instr(b);
+    if (off < 0) {
         return 0;
-    b = c->u->u_curblock;
-    i = &b->b_instr[off];
+    }
+    struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = 0;
-    if (opcode == RETURN_VALUE)
+    if (opcode == RETURN_VALUE) {
         b->b_return = 1;
+    }
     i->i_lineno = line;
     i->i_end_lineno = end_line;
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
+
+    compiler_check_if_end_of_block(c, i);
     return 1;
 }
 
@@ -1377,9 +1407,6 @@ compiler_addop_i_line(struct compiler *c, int opcode, Py_ssize_t oparg,
                       int lineno, int end_lineno,
                       int col_offset, int end_col_offset)
 {
-    struct instr *i;
-    int off;
-
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
 
@@ -1387,19 +1414,28 @@ compiler_addop_i_line(struct compiler *c, int opcode, Py_ssize_t oparg,
 
        The argument of a concrete bytecode instruction is limited to 8-bit.
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
+
     assert(HAS_ARG(opcode));
     assert(0 <= oparg && oparg <= 2147483647);
 
-    off = compiler_next_instr(c->u->u_curblock);
-    if (off < 0)
+    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
+        return -1;
+    }
+
+    basicblock *b = c->u->u_curblock;
+    int off = compiler_next_instr(b);
+    if (off < 0) {
         return 0;
-    i = &c->u->u_curblock->b_instr[off];
+    }
+    struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
     i->i_lineno = lineno;
     i->i_end_lineno = end_lineno;
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
+
+    compiler_check_if_end_of_block(c, i);
     return 1;
 }
 
@@ -1417,15 +1453,19 @@ compiler_addop_i_noline(struct compiler *c, int opcode, Py_ssize_t oparg)
     return compiler_addop_i_line(c, opcode, oparg, -1, 0, 0, 0);
 }
 
-static int add_jump_to_block(basicblock *b, int opcode,
+static int add_jump_to_block(struct compiler *c, int opcode,
                              int lineno, int end_lineno,
                              int col_offset, int end_col_offset,
                              basicblock *target)
 {
     assert(HAS_ARG(opcode));
-    assert(b != NULL);
     assert(target != NULL);
 
+    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
+        return -1;
+    }
+
+    basicblock *b = c->u->u_curblock;
     int off = compiler_next_instr(b);
     struct instr *i = &b->b_instr[off];
     if (off < 0) {
@@ -1437,13 +1477,15 @@ static int add_jump_to_block(basicblock *b, int opcode,
     i->i_end_lineno = end_lineno;
     i->i_col_offset = col_offset;
     i->i_end_col_offset = end_col_offset;
+
+    compiler_check_if_end_of_block(c, i);
     return 1;
 }
 
 static int
 compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 {
-    return add_jump_to_block(c->u->u_curblock, opcode, c->u->u_lineno,
+    return add_jump_to_block(c, opcode, c->u->u_lineno,
                              c->u->u_end_lineno, c->u->u_col_offset,
                              c->u->u_end_col_offset, b);
 }
@@ -1451,18 +1493,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 static int
 compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 {
-    return add_jump_to_block(c->u->u_curblock, opcode, -1, 0, 0, 0, b);
-}
-
-/* NEXT_BLOCK() creates an implicit jump from the current block
-   to the new block.
-
-   The returns inside this macro make it impossible to decref objects
-   created in the local function. Local objects should use the arena.
-*/
-#define NEXT_BLOCK(C) { \
-    if (compiler_next_block((C)) == NULL) \
-        return 0; \
+    return add_jump_to_block(c, opcode, -1, 0, 0, 0, b);
 }
 
 #define ADDOP(C, OP) { \
@@ -2823,12 +2854,10 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
                 ADDOP_I(c, COPY, 2);
                 ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, i));
                 ADDOP_JUMP(c, POP_JUMP_IF_FALSE, cleanup);
-                NEXT_BLOCK(c);
             }
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
             ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, n));
             ADDOP_JUMP(c, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
-            NEXT_BLOCK(c);
             basicblock *end = compiler_new_block(c);
             if (end == NULL)
                 return 0;
@@ -2852,7 +2881,6 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
     /* general implementation */
     VISIT(c, expr, e);
     ADDOP_JUMP(c, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
-    NEXT_BLOCK(c);
     return 1;
 }
 
@@ -3128,7 +3156,6 @@ compiler_return(struct compiler *c, stmt_ty s)
         ADDOP_LOAD_CONST(c, s->v.Return.value->v.Constant.value);
     }
     ADDOP(c, RETURN_VALUE);
-    NEXT_BLOCK(c);
 
     return 1;
 }
@@ -3149,7 +3176,6 @@ compiler_break(struct compiler *c)
         return 0;
     }
     ADDOP_JUMP(c, JUMP_ABSOLUTE, loop->fb_exit);
-    NEXT_BLOCK(c);
     return 1;
 }
 
@@ -3166,7 +3192,6 @@ compiler_continue(struct compiler *c)
         return compiler_error(c, "'continue' not properly in loop");
     }
     ADDOP_JUMP(c, JUMP_ABSOLUTE, loop->fb_block);
-    NEXT_BLOCK(c)
     return 1;
 }
 
@@ -3348,7 +3373,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, TRY_EXCEPT, body);
     ADDOP_NOLINE(c, POP_BLOCK);
     if (s->v.Try.orelse && asdl_seq_LEN(s->v.Try.orelse)) {
-        NEXT_BLOCK(c);
         VISIT_SEQ(c, stmt, s->v.Try.orelse);
     }
     ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
@@ -3374,7 +3398,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         if (handler->v.ExceptHandler.type) {
             VISIT(c, expr, handler->v.ExceptHandler.type);
             ADDOP_JUMP(c, JUMP_IF_NOT_EXC_MATCH, except);
-            NEXT_BLOCK(c);
         }
         if (handler->v.ExceptHandler.name) {
             basicblock *cleanup_end, *cleanup_body;
@@ -3580,7 +3603,6 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         if (handler->v.ExceptHandler.type) {
             VISIT(c, expr, handler->v.ExceptHandler.type);
             ADDOP_JUMP(c, JUMP_IF_NOT_EG_MATCH, except);
-            NEXT_BLOCK(c);
         }
 
         basicblock *cleanup_end = compiler_new_block(c);
@@ -3665,7 +3687,6 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     ADDOP(c, PREP_RERAISE_STAR);
     ADDOP_I(c, COPY, 1);
     ADDOP_JUMP(c, POP_JUMP_IF_NOT_NONE, reraise);
-    NEXT_BLOCK(c);
 
     /* Nothing to reraise */
     ADDOP(c, POP_TOP);
@@ -3957,7 +3978,6 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
             }
         }
         ADDOP_I(c, RAISE_VARARGS, (int)n);
-        NEXT_BLOCK(c);
         break;
     case Try_kind:
         return compiler_try(c, s);
@@ -4503,7 +4523,6 @@ compiler_compare(struct compiler *c, expr_ty e)
             ADDOP_I(c, COPY, 2);
             ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, i));
             ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, cleanup);
-            NEXT_BLOCK(c);
         }
         VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
         ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, n));
@@ -5093,7 +5112,6 @@ compiler_sync_comprehension_generator(struct compiler *c,
         depth++;
         compiler_use_next_block(c, start);
         ADDOP_JUMP(c, FOR_ITER, anchor);
-        NEXT_BLOCK(c);
     }
     VISIT(c, expr, gen->target);
 
@@ -5103,7 +5121,6 @@ compiler_sync_comprehension_generator(struct compiler *c,
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
         if (!compiler_jump_if(c, e, if_cleanup, 0))
             return 0;
-        NEXT_BLOCK(c);
     }
 
     if (++gen_index < asdl_seq_LEN(generators))
@@ -5198,7 +5215,6 @@ compiler_async_comprehension_generator(struct compiler *c,
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
         if (!compiler_jump_if(c, e, if_cleanup, 0))
             return 0;
-        NEXT_BLOCK(c);
     }
 
     depth++;
@@ -5410,7 +5426,6 @@ compiler_with_except_finish(struct compiler *c, basicblock * cleanup) {
     if (exit == NULL)
         return 0;
     ADDOP_JUMP(c, POP_JUMP_IF_TRUE, exit);
-    NEXT_BLOCK(c);
     ADDOP_I(c, RERAISE, 2);
     compiler_use_next_block(c, cleanup);
     POP_EXCEPT_AND_RERAISE(c);
@@ -6149,7 +6164,6 @@ jump_to_fail_pop(struct compiler *c, pattern_context *pc, int op)
     Py_ssize_t pops = pc->on_top + PyList_GET_SIZE(pc->stores);
     RETURN_IF_FALSE(ensure_fail_pop(c, pc, pops));
     ADDOP_JUMP(c, op, pc->fail_pop[pops]);
-    NEXT_BLOCK(c);
     return 1;
 }
 
@@ -6159,7 +6173,6 @@ emit_and_reset_fail_pop(struct compiler *c, pattern_context *pc)
 {
     if (!pc->fail_pop_size) {
         assert(pc->fail_pop == NULL);
-        NEXT_BLOCK(c);
         return 1;
     }
     while (--pc->fail_pop_size) {
@@ -6662,7 +6675,6 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
         }
         assert(control);
         if (!compiler_addop_j(c, JUMP_FORWARD, end) ||
-            !compiler_next_block(c) ||
             !emit_and_reset_fail_pop(c, pc))
         {
             goto error;
@@ -8136,10 +8148,7 @@ assemble(struct compiler *c, int addNone)
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
 
-    /* Make sure every block that falls off the end returns None.
-       XXX NEXT_BLOCK() isn't quite right, because if the last
-       block ends with a jump or return b_next shouldn't set.
-     */
+    /* Make sure every block that falls off the end returns None. */
     if (!c->u->u_curblock->b_return) {
         UNSET_LOC(c);
         if (addNone)
