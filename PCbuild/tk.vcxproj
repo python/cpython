@@ -64,10 +64,8 @@
     <NMakeBuildCommandLine>setlocal
 set VCINSTALLDIR=$(VCInstallDir)
 cd /D "$(tkDir)win"
-rem Ensure that nmakehlp doesn't need to be compiled
-copy x86_64-w64-mingw32-nmakehlp.exe nmakehlp.exe
-nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) CC=cl $(TkDirs) $(DebugFlags) $(WarningsFlags) TCLSH_NATIVE="$(tclWin32Exe)" all
-nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) CC=cl $(TkDirs) $(DebugFlags) $(WarningsFlags) TCLSH_NATIVE="$(tclWin32Exe)" install-binaries install-libraries
+nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs) $(DebugFlags) $(WarningsFlags) TCLSH_NATIVE="$(tclWin32Exe)" all
+nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs) $(DebugFlags) $(WarningsFlags) TCLSH_NATIVE="$(tclWin32Exe)" install-binaries install-libraries
 copy /Y ..\license.terms "$(OutDir)\tklicense.terms"
 </NMakeBuildCommandLine>
   </PropertyGroup>
