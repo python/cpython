@@ -8,15 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-// Extra declarations
-#if !defined(_MSC_VER) && !defined(__STDC__)
-extern double fmod (double, double);
-extern double frexp (double, int *);
-extern double ldexp (double, int);
-extern double modf (double, double *);
-extern double pow(double, double);
-#endif  // !defined(_MSC_VER) && !defined(__STDC__)
-
 
 /* _Py_ADJUST_ERANGE1(x)
  * _Py_ADJUST_ERANGE2(x, y)
