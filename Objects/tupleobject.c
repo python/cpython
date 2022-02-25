@@ -920,14 +920,22 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         PyErr_BadInternalCall();
         return -1;
     }
-    oldsize = Py_SIZE(v);
-    if (oldsize == newsize)
-        return 0;
 
+    oldsize = Py_SIZE(v);
+    if (oldsize == newsize) {
+        return 0;
+    }
+    if (newsize == 0) {
+        Py_DECREF(v);
+        *pv = tuple_get_empty();
+        return 0;
+    }
     if (oldsize == 0) {
-        /* Empty tuples are often shared, so we should never
-           resize them in-place even if we do own the only
-           (current) reference */
+#ifdef Py_DEBUG
+        assert(v == &_Py_SINGLETON(tuple_empty));
+#endif
+        /* The empty tuple is statically allocated so we never
+           resize it in-place. */
         Py_DECREF(v);
         *pv = PyTuple_New(newsize);
         return *pv == NULL ? -1 : 0;
@@ -946,10 +954,6 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     /* DECREF items deleted by shrinkage */
     for (i = newsize; i < oldsize; i++) {
         Py_CLEAR(v->ob_item[i]);
-    }
-    if (newsize == 0) {
-        *pv = tuple_get_empty();
-        return 0;
     }
     sv = PyObject_GC_Resize(PyTupleObject, v, newsize);
     if (sv == NULL) {
