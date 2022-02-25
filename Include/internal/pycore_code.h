@@ -362,15 +362,6 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OBJECT_STAT_INC(name) ((void)0)
 #endif
 
-
-unsigned int unaligned_load_big(unsigned short *p) {
-    return (p[0] << 16) | p[1];
-}
-
-unsigned int unaligned_load_little(unsigned short *p) {
-    return (p[1] << 16) | p[0];
-}
-
 // Cache values are only valid in memory, so use native endianness.
 #ifdef WORDS_BIGENDIAN
 

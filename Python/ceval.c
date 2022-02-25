@@ -1731,11 +1731,6 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(CACHE_ENTRY) {
-            _PyErr_SetString(tstate, PyExc_SystemError, "Attempting to execute a cache entry");
-            goto error;
-        }
-
         TARGET(RESUME) {
             int err = _Py_IncrementCountAndMaybeQuicken(frame->f_code);
             if (err) {

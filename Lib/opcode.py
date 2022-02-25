@@ -198,7 +198,6 @@ def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
 
-def_op('CACHE_ENTRY', 240)
 
 del def_op, name_op, jrel_op, jabs_op
 
