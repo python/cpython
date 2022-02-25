@@ -32,7 +32,7 @@ struct _frozen {
     const char *name;                 /* ASCII encoded string */
     const unsigned char *code;
     int size;
-    bool is_package;
+    int is_package;
     PyObject *(*get_code)(void);
 };
 
