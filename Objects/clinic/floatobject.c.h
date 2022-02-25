@@ -290,8 +290,8 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(float___set_format____doc__,
-"__set_format__($type, typestr, fmt, /)\n"
+PyDoc_STRVAR(float___setformat____doc__,
+"__setformat__($type, typestr, fmt, /)\n"
 "--\n"
 "\n"
 "You probably don\'t want to use this function.\n"
@@ -308,25 +308,25 @@ PyDoc_STRVAR(float___set_format____doc__,
 "Override the automatic determination of C-level floating point type.\n"
 "This affects how floats are converted to and from binary strings.");
 
-#define FLOAT___SET_FORMAT___METHODDEF    \
-    {"__set_format__", (PyCFunction)(void(*)(void))float___set_format__, METH_FASTCALL|METH_CLASS, float___set_format____doc__},
+#define FLOAT___SETFORMAT___METHODDEF    \
+    {"__setformat__", (PyCFunction)(void(*)(void))float___setformat__, METH_FASTCALL|METH_CLASS, float___setformat____doc__},
 
 static PyObject *
-float___set_format___impl(PyTypeObject *type, const char *typestr,
-                          const char *fmt);
+float___setformat___impl(PyTypeObject *type, const char *typestr,
+                         const char *fmt);
 
 static PyObject *
-float___set_format__(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
+float___setformat__(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *typestr;
     const char *fmt;
 
-    if (!_PyArg_CheckPositional("__set_format__", nargs, 2, 2)) {
+    if (!_PyArg_CheckPositional("__setformat__", nargs, 2, 2)) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("__set_format__", "argument 1", "str", args[0]);
+        _PyArg_BadArgument("__setformat__", "argument 1", "str", args[0]);
         goto exit;
     }
     Py_ssize_t typestr_length;
@@ -339,7 +339,7 @@ float___set_format__(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("__set_format__", "argument 2", "str", args[1]);
+        _PyArg_BadArgument("__setformat__", "argument 2", "str", args[1]);
         goto exit;
     }
     Py_ssize_t fmt_length;
@@ -351,7 +351,7 @@ float___set_format__(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    return_value = float___set_format___impl(type, typestr, fmt);
+    return_value = float___setformat___impl(type, typestr, fmt);
 
 exit:
     return return_value;
@@ -388,4 +388,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=122a73f4c9d25806 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3fb0c0624cc87dff input=a9049054013a1b77]*/

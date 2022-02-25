@@ -1,0 +1,1 @@
+Implement a specialized combined opcode ``LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE``.  Patch by Dennis Sweeney.

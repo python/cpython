@@ -2,8 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#include <stdbool.h>
-
 
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
@@ -79,12 +77,11 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
-// The PyThreadState typedef is in Include/pystate.h.
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
-    struct _ts *prev;
-    struct _ts *next;
+    PyThreadState *prev;
+    PyThreadState *next;
     PyInterpreterState *interp;
 
     /* Has been initialized to a safe state.
@@ -94,7 +91,7 @@ struct _ts {
     int _initialized;
 
     /* Was this thread state statically allocated? */
-    bool _static;
+    int _static;
 
     int recursion_remaining;
     int recursion_limit;
@@ -308,12 +305,12 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 
 /* cross-interpreter data */
 
-struct _xid;
-
 // _PyCrossInterpreterData is similar to Py_buffer as an effectively
 // opaque struct that holds data outside the object machinery.  This
 // is necessary to pass safely between interpreters in the same process.
-typedef struct _xid {
+typedef struct _xid _PyCrossInterpreterData;
+
+struct _xid {
     // data is the cross-interpreter-safe derivation of a Python object
     // (see _PyObject_GetCrossInterpreterData).  It will be NULL if the
     // new_object func (below) encodes the data.
@@ -339,7 +336,7 @@ typedef struct _xid {
     // interpreter given the data.  The resulting object (a new
     // reference) will be equivalent to the original object.  This field
     // is required.
-    PyObject *(*new_object)(struct _xid *);
+    PyObject *(*new_object)(_PyCrossInterpreterData *);
     // free is called when the data is released.  If it is NULL then
     // nothing will be done to free the data.  For some types this is
     // okay (e.g. bytes) and for those types this field should be set
@@ -350,7 +347,7 @@ typedef struct _xid {
     // to PyMem_RawFree (the default if not explicitly set to NULL).
     // The call will happen with the original interpreter activated.
     void (*free)(void *);
-} _PyCrossInterpreterData;
+};
 
 PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyCrossInterpreterData *);
 PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *);
@@ -360,7 +357,7 @@ PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
 
 /* cross-interpreter data registry */
 
-typedef int (*crossinterpdatafunc)(PyObject *, struct _xid *);
+typedef int (*crossinterpdatafunc)(PyObject *, _PyCrossInterpreterData *);
 
 PyAPI_FUNC(int) _PyCrossInterpreterData_RegisterClass(PyTypeObject *, crossinterpdatafunc);
 PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);

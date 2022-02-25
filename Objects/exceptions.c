@@ -836,7 +836,12 @@ BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
 {
     assert(self->msg);
     assert(PyUnicode_Check(self->msg));
-    return Py_NewRef(self->msg);
+
+    assert(PyTuple_CheckExact(self->excs));
+    Py_ssize_t num_excs = PyTuple_Size(self->excs);
+    return PyUnicode_FromFormat(
+        "%S (%zd sub-exception%s)",
+        self->msg, num_excs, num_excs > 1 ? "s" : "");
 }
 
 static PyObject *

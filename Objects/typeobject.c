@@ -3716,7 +3716,7 @@ PyType_GetModuleState(PyTypeObject *type)
  * given PyModuleDef.
  */
 PyObject *
-PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
+PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
 {
     assert(PyType_Check(type));
 
@@ -3869,7 +3869,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 }
 
 PyObject *
-_PyType_LookupId(PyTypeObject *type, struct _Py_Identifier *name)
+_PyType_LookupId(PyTypeObject *type, _Py_Identifier *name)
 {
     PyObject *oname;
     oname = _PyUnicode_FromId(name);   /* borrowed */
@@ -8065,7 +8065,7 @@ static slotdef slotdefs[] = {
     UNSLOT("__abs__", nb_absolute, slot_nb_absolute, wrap_unaryfunc,
            "abs(self)"),
     UNSLOT("__bool__", nb_bool, slot_nb_bool, wrap_inquirypred,
-           "self != 0"),
+           "True if self else False"),
     UNSLOT("__invert__", nb_invert, slot_nb_invert, wrap_unaryfunc, "~self"),
     BINSLOT("__lshift__", nb_lshift, slot_nb_lshift, "<<"),
     RBINSLOT("__rlshift__", nb_lshift, slot_nb_lshift, "<<"),
