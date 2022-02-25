@@ -1657,10 +1657,16 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
             self.fail(f"unexpected output: {out!a}")
         refs = int(match.group(1))
         blocks = int(match.group(2))
-        # bpo-46417: Tolerate negative reference count which can occur because
-        # of bugs in C extensions. It is only wrong if it's greater than 0.
-        self.assertLessEqual(refs, 0, out)
-        self.assertEqual(blocks, 0, out)
+        if not MS_WINDOWS:
+            # bpo-46417: Tolerate negative reference count which can occur because
+            # of bugs in C extensions. It is only wrong if it's greater than 0.
+            self.assertLessEqual(refs, 0, out)
+            self.assertEqual(blocks, 0, out)
+        else:
+            # bpo-46857: on Windows, Python still leaks 1 reference and 1
+            # memory block at exit.
+            self.assertLessEqual(refs, 1, out)
+            self.assertIn(blocks, (0, 1), out)
 
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
