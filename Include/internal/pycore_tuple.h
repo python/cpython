@@ -13,41 +13,54 @@ extern "C" {
 
 /* runtime lifecycle */
 
+extern PyStatus _PyTuple_InitGlobalObjects(PyInterpreterState *);
 extern PyStatus _PyTuple_InitTypes(PyInterpreterState *);
 extern void _PyTuple_Fini(PyInterpreterState *);
 
 
 /* other API */
 
-#ifndef WITH_FREELISTS
-// without freelists
-// for tuples only store empty tuple singleton
-#  define PyTuple_MAXSAVESIZE 0
-#  define PyTuple_MAXFREELIST 0
-#endif
+// PyTuple_MAXSAVESIZE - largest tuple to save on free list
+// PyTuple_MAXFREELIST - maximum number of tuples of each size to save
 
-/* Speed optimization to avoid frequent malloc/free of small tuples */
-#ifndef PyTuple_MAXSAVESIZE
-   // Largest tuple to save on free list
-#  define PyTuple_MAXSAVESIZE 20
-#endif
-#ifndef PyTuple_MAXFREELIST
-   // Maximum number of tuples of each size to save
-#  define PyTuple_MAXFREELIST 2000
+#if PyTuple_MAXSAVESIZE <= 0
+   // A build indicated that no tuple freelists should be used.
+#  define PyTuple_NFREELISTS 0
+#  undef PyTuple_MAXSAVESIZE
+
+#elif !defined(WITH_FREELISTS)
+   // Only store the empty tuple singleton.
+#  define PyTuple_NFREELISTS 1
+#  ifndef PyTuple_MAXSAVESIZE
+#    define PyTuple_MAXSAVESIZE 0
+#  endif
+#  ifndef PyTuple_MAXFREELIST
+#    define PyTuple_MAXFREELIST 1
+#  endif
+
+#else
+#  ifndef PyTuple_MAXSAVESIZE
+#    define PyTuple_MAXSAVESIZE 20
+#  endif
+#  define PyTuple_NFREELISTS (PyTuple_MAXSAVESIZE + 1)
+#  ifndef PyTuple_MAXFREELIST
+#    define PyTuple_MAXFREELIST 2000
+#  endif
 #endif
 
 struct _Py_tuple_state {
-#if PyTuple_MAXSAVESIZE > 0
+#if PyTuple_NFREELISTS > 0
     /* There is one freelist for each size from 1 to PyTuple_MAXSAVESIZE.
-       The empty tuple is handled separately.
+       Entry 0 is the empty tuple () of which at most one instance
+       will be allocated.
 
        Each tuple stored in the array is the head of the linked list
        (and the next available tuple) for that size.  The actual tuple
        object is used as the linked list node, with its first item
        (ob_item[0]) pointing to the next node (i.e. the previous head).
        Each linked list is initially NULL. */
-    PyTupleObject *free_list[PyTuple_MAXSAVESIZE];
-    int numfree[PyTuple_MAXSAVESIZE];
+    PyTupleObject *free_list[PyTuple_NFREELISTS];
+    int numfree[PyTuple_NFREELISTS];
 #endif
 };
 

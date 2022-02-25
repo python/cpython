@@ -33,7 +33,6 @@ static inline int maybe_freelist_push(PyTupleObject *);
 static PyTupleObject *
 tuple_alloc(Py_ssize_t size)
 {
-    assert(size != 0);  // The empty tuple is statically allocated.
     if (size < 0) {
         PyErr_BadInternalCall();
         return NULL;
@@ -53,13 +52,23 @@ tuple_alloc(Py_ssize_t size)
     return op;
 }
 
+static inline PyTupleObject *maybe_freelist_get_empty_singleton(void);
+
 static inline PyObject *
 tuple_get_empty(void)
 {
-    Py_INCREF(&_Py_SINGLETON(tuple_empty));
-    return (PyObject *)&_Py_SINGLETON(tuple_empty);
+    PyTupleObject *op = maybe_freelist_get_empty_singleton();
+    if (op != NULL) {
+        Py_INCREF(op);
+    }
+    else {
+        op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, 0);
+        _PyObject_GC_TRACK(op);
+    }
+    return (PyObject *)op;
 }
 
+// Note that tuple subclasses have their own empty instances.
 
 PyObject *
 PyTuple_New(Py_ssize_t size)
@@ -181,19 +190,6 @@ PyTuple_Pack(Py_ssize_t n, ...)
 static void
 tupledealloc(PyTupleObject *op)
 {
-    if (Py_SIZE(op) == 0) {
-        /* The empty tuple is statically allocated. */
-        if (op == &_Py_SINGLETON(tuple_empty)) {
-#ifdef Py_DEBUG
-            _Py_FatalRefcountError("deallocating the empty tuple singleton");
-#else
-            return;
-#endif
-        }
-        /* tuple subclasses have their own empty instances. */
-        assert(!PyTuple_CheckExact(op));
-    }
-
     PyObject_GC_UnTrack(op);
     Py_TRASHCAN_BEGIN(op, tupledealloc)
 
@@ -201,6 +197,7 @@ tupledealloc(PyTupleObject *op)
     while (--i >= 0) {
         Py_XDECREF(op->ob_item[i]);
     }
+    // This will abort on the empty singleton (if there is one).
     if (!maybe_freelist_push(op)) {
         Py_TYPE(op)->tp_free((PyObject *)op);
     }
@@ -931,9 +928,6 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         return 0;
     }
     if (oldsize == 0) {
-#ifdef Py_DEBUG
-        assert(v == &_Py_SINGLETON(tuple_empty));
-#endif
         /* The empty tuple is statically allocated so we never
            resize it in-place. */
         Py_DECREF(v);
@@ -990,20 +984,29 @@ _PyTuple_InitTypes(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
-static void maybe_freelist_clear(PyInterpreterState *);
-static void maybe_freelist_fini(PyInterpreterState *);
+static int maybe_freelist_init_empty_tuple(PyInterpreterState *);
+
+PyStatus
+_PyTuple_InitGlobalObjects(PyInterpreterState *interp)
+{
+    if (maybe_freelist_init_empty_tuple(interp) < 0) {
+        return _PyStatus_NO_MEMORY();
+    }
+    return _PyStatus_OK();
+}
+
+static void maybe_freelist_clear(PyInterpreterState *, int);
 
 void
 _PyTuple_Fini(PyInterpreterState *interp)
 {
-    maybe_freelist_clear(interp);
-    maybe_freelist_fini(interp);
+    maybe_freelist_clear(interp, 1);
 }
 
 void
 _PyTuple_ClearFreeList(PyInterpreterState *interp)
 {
-    maybe_freelist_clear(interp);
+    maybe_freelist_clear(interp, 0);
 }
 
 /*********************** Tuple Iterator **************************/
@@ -1160,17 +1163,56 @@ tuple_iter(PyObject *seq)
 #define STATE (interp->tuple)
 #define FREELIST_FINALIZED (STATE.numfree[0] < 0)
 
+static int
+maybe_freelist_init_empty_tuple(PyInterpreterState *interp)
+{
+#if PyTuple_NFREELISTS > 0
+    assert(STATE.free_list[0] == NULL);
+
+    PyTupleObject *op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, 0);
+    if (op == NULL) {
+        return -1;
+    }
+    // The empty tuple singleton is not tracked by the GC.
+    // It does not contain any Python object.
+
+    STATE.free_list[0] = op;
+    assert(STATE.numfree[0] == 0);
+    STATE.numfree[0] = 1;
+#endif
+    return 0;
+}
+
+static inline PyTupleObject *
+maybe_freelist_get_empty_singleton(void)
+{
+#if PyTuple_NFREELISTS > 0
+    PyTupleObject *op = STATE.free_list[0];
+    // maybe_freelist_get_empty_singleton() must not be called
+    // before maybe_freelist_init_empty_tuple()
+    // or after maybe_freelist_clear(fini=1).
+    assert(op != NULL);
+#ifdef Py_DEBUG
+    assert(STATE.numfree[0] == 1);
+#endif
+    return (PyObject *) op;
+#else
+    return NULL;
+#endif
+}
+
 static inline PyTupleObject *
 maybe_freelist_pop(Py_ssize_t size)
 {
-#if PyTuple_MAXSAVESIZE > 0
+#if PyTuple_NFREELISTS > 0
     PyInterpreterState *interp = _PyInterpreterState_GET();
 #ifdef Py_DEBUG
     /* maybe_freelist_pop() must not be called after maybe_freelist_fini(). */
     assert(!FREELIST_FINALIZED);
 #endif
-    Py_ssize_t index = size - 1;
-    if (index < PyTuple_MAXSAVESIZE) {
+    assert(size > 0);
+    if (size < PyTuple_MAXSAVESIZE) {
+        Py_ssize_t index = size;
         PyTupleObject *op = STATE.free_list[index];
         if (op != NULL) {
             /* op is the head of a linked list, with the first item
@@ -1196,14 +1238,24 @@ maybe_freelist_pop(Py_ssize_t size)
 static inline int
 maybe_freelist_push(PyTupleObject *op)
 {
-#if PyTuple_MAXSAVESIZE > 0
+#if PyTuple_NFREELISTS > 0
     PyInterpreterState *interp = _PyInterpreterState_GET();
 #ifdef Py_DEBUG
     /* maybe_freelist_push() must not be called after maybe_freelist_fini(). */
     assert(!FREELIST_FINALIZED);
 #endif
-    Py_ssize_t index = Py_SIZE(op) - 1;
-    if (index < PyTuple_MAXSAVESIZE
+    if (Py_SIZE(op) == 0) {
+#ifdef Py_DEBUG
+        // The empty tuple singleton must only be deallocated by
+        // maybe_freelist_fini(): not before, not after.
+        if (op == STATE.free_list[0] && STATE.numfree[0] < 0) {
+            _Py_FatalRefcountError("deallocating the empty tuple singleton");
+        }
+#endif
+        return 1;
+    }
+    Py_ssize_t index = Py_SIZE(op);
+    if (index < PyTuple_NFREELISTS
         && STATE.numfree[index] < PyTuple_MAXFREELIST
         && Py_IS_TYPE(op, &PyTuple_Type))
     {
@@ -1219,13 +1271,26 @@ maybe_freelist_push(PyTupleObject *op)
 }
 
 static void
-maybe_freelist_clear(PyInterpreterState *interp)
+maybe_freelist_clear(PyInterpreterState *interp, int fini)
 {
-#if PyTuple_MAXSAVESIZE > 0
-    for (Py_ssize_t i = 0; i < PyTuple_MAXSAVESIZE; i++) {
+#if PyTuple_NFREELISTS > 0
+    // The empty tuple singleton is only cleared during finalization.
+    if (fini) {
+        assert(!_PyObject_GC_IS_TRACKED(STATE.free_list[0]));
+        // XXX Is this right?
+        assert(STATE.free_list[0].ob_item[0] == NULL);
+#ifdef Py_DEBUG
+        STATE.numfree[0] = 0;
+#endif
+        Py_CLEAR(STATE.free_list[0]);
+#ifdef Py_DEBUG
+        STATE.numfree[0] = -1;
+#endif
+    }
+    for (Py_ssize_t i = 1; i < PyTuple_NFREELISTS; i++) {
         PyTupleObject *p = STATE.free_list[i];
         STATE.free_list[i] = NULL;
-        STATE.numfree[i] = 0;
+        STATE.numfree[i] = fini ? -1 : 0;
         while (p) {
             PyTupleObject *q = p;
             p = (PyTupleObject *)(p->ob_item[0]);
@@ -1235,24 +1300,14 @@ maybe_freelist_clear(PyInterpreterState *interp)
 #endif
 }
 
-static void
-maybe_freelist_fini(PyInterpreterState *interp)
-{
-#if PyTuple_MAXSAVESIZE > 0
-    for (Py_ssize_t i = 0; i < PyTuple_MAXSAVESIZE; i++) {
-        STATE.numfree[i] = -1;
-    }
-#endif
-}
-
 /* Print summary info about the state of the optimized allocator */
 void
 _PyTuple_DebugMallocStats(FILE *out)
 {
-#if PyTuple_MAXSAVESIZE > 0
+#if PyTuple_NFREELISTS > 0
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    for (int i = 0; i < PyTuple_MAXSAVESIZE; i++) {
-        int len = i + 1;
+    for (int i = 0; i < PyTuple_NFREELISTS; i++) {
+        int len = i;
         char buf[128];
         PyOS_snprintf(buf, sizeof(buf),
                       "free %d-sized PyTupleObject", len);
