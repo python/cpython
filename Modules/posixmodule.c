@@ -8186,7 +8186,7 @@ os_setgroups(PyObject *module, PyObject *groups)
         return NULL;
     }
 
-    gid_t *grouplist = PyMem_New(gid_t, len+1); // Avoid malloc(0)
+    gid_t *grouplist = PyMem_New(gid_t, len);
     for (Py_ssize_t i = 0; i < len; i++) {
         PyObject *elem;
         elem = PySequence_GetItem(groups, i);
