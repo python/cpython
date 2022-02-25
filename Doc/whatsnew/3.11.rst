@@ -404,6 +404,11 @@ Optimizations
   larger *k*).
   (Contributed by Serhiy Storchaka in :issue:`37295`.)
 
+* Dict don't store hash value when all inserted keys are Unicode objects.
+  This reduces dict size. For example, ``sys.getsizeof(dict.fromkeys("abcdefg"))``
+  becomes 272 bytes from 352 bytes on 64bit platform.
+  (Contributed by Inada Naoki in :issue:`46845`.)
+
 
 CPython bytecode changes
 ========================
