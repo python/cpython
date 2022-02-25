@@ -687,7 +687,7 @@ free_keys_object(PyDictKeysObject *keys)
     assert(state->keys_numfree != -1);
 #endif
     if (DK_LOG_SIZE(keys) == PyDict_LOG_MINSIZE && state->keys_numfree < PyDict_MAXFREELIST
-            && DK_IS_UNICODE(keys->dk_kind)) {
+            && DK_IS_UNICODE(keys)) {
         state->keys_free_list[state->keys_numfree++] = keys;
         return;
     }
