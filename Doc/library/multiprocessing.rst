@@ -2073,7 +2073,7 @@ Process Pools
 One can create a pool of processes which will carry out tasks submitted to it
 with the :class:`Pool` class.
 
-.. class:: Pool([processes[, initializer[, initargs[, maxtasksperchild [, context]]]]])
+.. class:: Pool([processes[, initializer[, initargs[, maxtasksperchild]]]])
 
    A process pool object which controls a pool of worker processes to which jobs
    can be submitted.  It supports asynchronous results with timeouts and
@@ -2090,12 +2090,6 @@ with the :class:`Pool` class.
    unused resources to be freed. The default *maxtasksperchild* is ``None``, which
    means worker processes will live as long as the pool.
 
-   *context* can be used to specify the context used for starting
-   the worker processes.  Usually a pool is created using the
-   function :func:`multiprocessing.Pool` or the :meth:`Pool` method
-   of a context object.  In both cases *context* is set
-   appropriately.
-
    Note that the methods of the pool object should only be called by
    the process which created the pool.
 
@@ -2111,9 +2105,6 @@ with the :class:`Pool` class.
 
    .. versionadded:: 3.2
       *maxtasksperchild*
-
-   .. versionadded:: 3.4
-      *context*
 
    .. note::
 
@@ -2648,7 +2639,7 @@ worker threads rather than worker processes.
    If *initializer* is not ``None`` then each worker process will call
    ``initializer(*initargs)`` when it starts.
 
-   Unlike :class:`Pool`, *maxtasksperchild* and *context* cannot be provided.
+   Unlike :class:`Pool`, *maxtasksperchild* cannot be provided.
 
     .. note::
 
