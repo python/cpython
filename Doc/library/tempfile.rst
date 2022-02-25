@@ -62,8 +62,8 @@ The module defines the following user-callable items:
    The :py:data:`os.O_TMPFILE` flag is used if it is available and works
    (Linux-specific, requires Linux kernel 3.11 or later).
 
-   On platforms that are neither Posix nor Cygwin, TemporaryFile behaves exactly
-   like NamedTemporaryFile.
+   On platforms that are neither Posix nor Cygwin, TemporaryFile is an alias
+   for NamedTemporaryFile.
 
    .. audit-event:: tempfile.mkstemp fullpath tempfile.TemporaryFile
 
