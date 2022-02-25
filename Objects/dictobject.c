@@ -40,8 +40,8 @@ Size of indices is dk_size.  Type of each index in indices is vary on dk_size:
 * int32 for 2**16 <= dk_size <= 2**31
 * int64 for 2**32 <= dk_size
 
-dk_entries is array of PyDictKeyEntry.  Its size is USABLE_FRACTION(dk_size).
-DK_ENTRIES(dk) can be used to get pointer to entries.
+dk_entries is array of PyDictKeyEntry when dk_kind == DICT_KEYS_GENERAL or
+PyDictUnicodeEntry otherwise. Its length is USABLE_FRACTION(dk_size).
 
 NOTE: Since negative value is used for DKIX_EMPTY and DKIX_DUMMY, type of
 dk_indices entry is signed integer and int16 is used for table which
