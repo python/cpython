@@ -2304,7 +2304,7 @@ Listeners and Clients
 .. module:: multiprocessing.connection
    :synopsis: API for dealing with sockets.
 
-Usually message passing between processes is done using queues or by using
+Usually message passing between processes is done using queues or
 :class:`~Connection` objects returned by
 :func:`~multiprocessing.Pipe`.
 
