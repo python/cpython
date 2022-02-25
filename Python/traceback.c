@@ -1167,7 +1167,7 @@ done:
    This function is signal safe. */
 
 static void
-dump_frame(int fd, InterpreterFrame *frame)
+dump_frame(int fd, _PyInterpreterFrame *frame)
 {
     PyCodeObject *code = frame->f_code;
     PUTS(fd, "  File ");
@@ -1205,7 +1205,7 @@ dump_frame(int fd, InterpreterFrame *frame)
 static void
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
-    InterpreterFrame *frame;
+    _PyInterpreterFrame *frame;
     unsigned int depth;
 
     if (write_header) {
