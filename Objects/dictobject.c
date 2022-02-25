@@ -2502,9 +2502,7 @@ static PyObject *
 dict_keys(PyDictObject *mp)
 {
     PyObject *v;
-    Py_ssize_t i, j;
-    Py_ssize_t n, key_offset, value_offset;
-    PyObject **key_ptr, **value_ptr;
+    Py_ssize_t n;
 
   again:
     n = mp->ma_used;
@@ -2568,7 +2566,7 @@ static PyObject *
 dict_items(PyDictObject *mp)
 {
     PyObject *v;
-    Py_ssize_t i, j, n;
+    Py_ssize_t i, n;
     PyObject *item;
 
     /* Preallocate the list of tuples, to avoid allocations during
