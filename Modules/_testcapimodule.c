@@ -40,6 +40,9 @@
 #  error "_testcapi must test the public Python C API, not CPython internal C API"
 #endif
 
+#ifdef bool
+#  error "The public headers should not include <stdbool.h>, see bpo-46748"
+#endif
 
 // Forward declarations
 static struct PyModuleDef _testcapimodule;

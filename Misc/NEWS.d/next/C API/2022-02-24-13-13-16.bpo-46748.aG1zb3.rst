@@ -1,0 +1,2 @@
+Python's public headers no longer import ``<stdbool.h>``, leaving code that
+embedd/extends Python free to define ``bool``, ``true`` and ``false``.
