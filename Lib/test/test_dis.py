@@ -1140,7 +1140,7 @@ def _prepare_test_cases():
           ',\n  '.join(map(_stringify_instruction, _instructions)), ',\n]', sep='')
     dis.dis(outer)
 
-_prepare_test_cases()
+#_prepare_test_cases()
 
 Instruction = dis.Instruction
 expected_opinfo_outer = [
