@@ -13,11 +13,6 @@ PyAPI_DATA(PyTypeObject) PyFrame_Type;
 PyAPI_FUNC(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
                                         PyObject *, PyObject *);
 
-/* only internal use */
-PyFrameObject*
-_PyFrame_New_NoTrack(PyCodeObject *code);
-
-
 /* The rest of the interface is specific for frame objects */
 
 /* Conversions between "fast locals" and locals in dictionary */

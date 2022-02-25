@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_code.h"
 #include "pycore_dict.h"
+#include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
 #include "pycore_global_strings.h"  // _Py_ID()
 #include "pycore_long.h"
 #include "pycore_moduleobject.h"
@@ -1928,7 +1929,7 @@ void
 _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                         int oparg)
 {
-    assert(_PyOpcode_InlineCacheEntries[BINARY_OP] == 
+    assert(_PyOpcode_InlineCacheEntries[BINARY_OP] ==
            INLINE_CACHE_ENTRIES_BINARY_OP);
     _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
     switch (oparg) {
