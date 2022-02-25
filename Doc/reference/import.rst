@@ -619,10 +619,11 @@ the module.
    compiled file would exist (see :pep:`3147`).
 
    It is also appropriate to set ``__cached__`` when ``__file__`` is not
-   set.  However, that scenario is quite atypical.  Ultimately, the
-   loader is what makes use of ``__file__`` and/or ``__cached__``.  So
-   if a loader can load from a cached module but otherwise does not load
-   from a file, that atypical scenario may be appropriate.
+   set.  However, that scenario is quite atypical.  Ultimately, ``__file__`` and
+   ``__cached__`` are set by the import system from the module spec provided by
+   the finder - the spec instructs the loader.  If a loader can load from a cached
+   module but otherwise does not load from a file, that atypical scenario may be
+   appropriate.
 
 .. _package-path-rules:
 
