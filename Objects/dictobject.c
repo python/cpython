@@ -2111,7 +2111,7 @@ _PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
             if (i >= n)
                 return 0;
             key = entry_ptr->me_key;
-            hash = ((PyASCIIObject*)key)->hash;
+            hash = unicode_get_hash(entry_ptr->me_key);
             value = entry_ptr->me_value;
         }
         else {
@@ -2518,36 +2518,15 @@ dict_keys(PyDictObject *mp)
         Py_DECREF(v);
         goto again;
     }
-    if (DK_IS_UNICODE(mp->ma_keys)) {
-        PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(mp->ma_keys);
-        key_ptr = &ep->me_key;
-        key_offset = sizeof(PyDictUnicodeEntry);
 
-        if (mp->ma_values) {
-            value_ptr = mp->ma_values->values;
-            value_offset = sizeof(PyObject *);
-        }
-        else {
-            value_ptr = &ep->me_value;
-            value_offset = key_offset;
-        }
-    }
-    else {
-        PyDictKeyEntry *ep = DK_ENTRIES(mp->ma_keys);
-        key_ptr = &ep->me_key;
-        value_ptr = &ep->me_value;
-        key_offset = value_offset = sizeof(PyDictKeyEntry);
-    }
-
-    for (i = 0, j = 0; j < n; i++) {
-        if (*value_ptr != NULL) {
-            PyObject *key = *key_ptr;
-            Py_INCREF(key);
-            PyList_SET_ITEM(v, j, key);
-            j++;
-        }
-        key_ptr = (PyObject **)(((char *)key_ptr) + key_offset);
-        value_ptr = (PyObject **)(((char *)value_ptr) + value_offset);
+    /* Nothing we do below makes any function calls. */
+    Py_ssize_t j = 0, pos = 0;
+    PyObject *key;
+    while (_PyDict_Next((PyObject*)mp, &pos, &key, NULL, NULL)) {
+        assert(j < n);
+        Py_INCREF(key);
+        PyList_SET_ITEM(v, j, key);
+        j++;
     }
     assert(j == n);
     return v;
@@ -2557,9 +2536,7 @@ static PyObject *
 dict_values(PyDictObject *mp)
 {
     PyObject *v;
-    Py_ssize_t i, j;
-    Py_ssize_t n, offset;
-    PyObject **value_ptr;
+    Py_ssize_t n;
 
   again:
     n = mp->ma_used;
@@ -2573,31 +2550,15 @@ dict_values(PyDictObject *mp)
         Py_DECREF(v);
         goto again;
     }
-    if (DK_IS_UNICODE(mp->ma_keys)) {
-        if (mp->ma_values) {
-            value_ptr = mp->ma_values->values;
-            offset = sizeof(PyObject *);
-        }
-        else {
-            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(mp->ma_keys);
-            value_ptr = &ep->me_value;
-            offset = sizeof(PyDictUnicodeEntry);
-        }
-    }
-    else {
-        PyDictKeyEntry *ep = DK_ENTRIES(mp->ma_keys);
-        value_ptr = &ep->me_value;
-        offset = sizeof(PyDictKeyEntry);
-    }
 
-    for (i = 0, j = 0; j < n; i++) {
-        PyObject *value = *value_ptr;
-        value_ptr = (PyObject **)(((char *)value_ptr) + offset);
-        if (value != NULL) {
-            Py_INCREF(value);
-            PyList_SET_ITEM(v, j, value);
-            j++;
-        }
+    /* Nothing we do below makes any function calls. */
+    Py_ssize_t j = 0, pos = 0;
+    PyObject *value;
+    while (_PyDict_Next((PyObject*)mp, &pos, NULL, &value, NULL)) {
+        assert(j < n);
+        Py_INCREF(value);
+        PyList_SET_ITEM(v, j, value);
+        j++;
     }
     assert(j == n);
     return v;
@@ -2609,8 +2570,6 @@ dict_items(PyDictObject *mp)
     PyObject *v;
     Py_ssize_t i, j, n;
     PyObject *item;
-    PyObject **key_ptr, **value_ptr;
-    Py_ssize_t key_offset, value_offset;
 
     /* Preallocate the list of tuples, to avoid allocations during
      * the loop over the items, which could trigger GC, which
@@ -2636,37 +2595,18 @@ dict_items(PyDictObject *mp)
         Py_DECREF(v);
         goto again;
     }
-    /* Nothing we do below makes any function calls. */
-    if (DK_IS_UNICODE(mp->ma_keys)) {
-        PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(mp->ma_keys);
-        key_ptr = &ep->me_key;
-        value_ptr = &ep->me_value;
-        key_offset = value_offset = sizeof(PyDictUnicodeEntry);
-        if (mp->ma_values) {
-            value_ptr = mp->ma_values->values;
-            value_offset = sizeof(PyObject *);
-        }
-    }
-    else {
-        PyDictKeyEntry *ep = DK_ENTRIES(mp->ma_keys);
-        key_ptr = &ep->me_key;
-        value_ptr = &ep->me_value;
-        key_offset = value_offset = sizeof(PyDictKeyEntry);
-    }
 
-    for (i = 0, j = 0; j < n; i++) {
-        PyObject *value = *value_ptr;
-        PyObject *key = *key_ptr;
-        key_ptr = (PyObject **)(((char *)key_ptr) + key_offset);
-        value_ptr = (PyObject **)(((char *)value_ptr) + value_offset);
-        if (value != NULL) {
-            item = PyList_GET_ITEM(v, j);
-            Py_INCREF(key);
-            PyTuple_SET_ITEM(item, 0, key);
-            Py_INCREF(value);
-            PyTuple_SET_ITEM(item, 1, value);
-            j++;
-        }
+    /* Nothing we do below makes any function calls. */
+    Py_ssize_t j = 0, pos = 0;
+    PyObject *key, *value;
+    while (_PyDict_Next((PyObject*)mp, &pos, &key, &value, NULL)) {
+        assert(j < n);
+        PyObject *item = PyList_GET_ITEM(v, j);
+        Py_INCREF(key);
+        PyTuple_SET_ITEM(item, 0, key);
+        Py_INCREF(value);
+        PyTuple_SET_ITEM(item, 1, value);
+        j++;
     }
     assert(j == n);
     return v;
