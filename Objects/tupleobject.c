@@ -56,7 +56,8 @@ tuple_alloc(Py_ssize_t size)
 static inline PyObject *
 tuple_get_empty(void)
 {
-    return _Py_NewRef((PyObject *)&_Py_SINGLETON(tuple_empty));
+    Py_INCREF(&_Py_SINGLETON(tuple_empty));
+    return (PyObject *)&_Py_SINGLETON(tuple_empty);
 }
 
 
