@@ -1939,6 +1939,7 @@ handle_eval_breaker:
             if (prod == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -1959,6 +1960,7 @@ handle_eval_breaker:
             if (prod == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -1977,6 +1979,7 @@ handle_eval_breaker:
             if (sub == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -1996,6 +1999,7 @@ handle_eval_breaker:
             if (sub == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -2014,6 +2018,7 @@ handle_eval_breaker:
             if (TOP() == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -2043,6 +2048,7 @@ handle_eval_breaker:
             if (TOP() == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -2063,6 +2069,7 @@ handle_eval_breaker:
             if (sum == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -2081,6 +2088,7 @@ handle_eval_breaker:
             if (sum == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             NOTRACE_DISPATCH();
         }
 
@@ -5425,23 +5433,23 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             DISPATCH();
         }
 
         TARGET(BINARY_OP_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
-            SpecializedCacheEntry *cache = GET_CACHE();
-            if (cache->adaptive.counter == 0) {
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
+            if (cache->counter == 0) {
                 PyObject *lhs = SECOND();
                 PyObject *rhs = TOP();
                 next_instr--;
-                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, cache);
+                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg);
                 DISPATCH();
             }
             else {
                 STAT_INC(BINARY_OP, deferred);
-                cache->adaptive.counter--;
-                oparg = cache->adaptive.original_oparg;
+                cache->counter--;
                 JUMP_TO_INSTRUCTION(BINARY_OP);
             }
         }
@@ -5460,6 +5468,10 @@ handle_eval_breaker:
             oparg |= oldoparg << 8;
             PRE_DISPATCH_GOTO();
             DISPATCH_GOTO();
+        }
+
+        TARGET(CACHE) {
+            Py_UNREACHABLE();
         }
 
 #if USE_COMPUTED_GOTOS
@@ -5548,6 +5560,22 @@ opname ## _miss: \
         JUMP_TO_INSTRUCTION(opname); \
     }
 
+#define MISS_WITH_INLINE_CACHE(opname) \
+opname ## _miss: \
+    { \
+        STAT_INC(opcode, miss); \
+        STAT_INC(opname, miss); \
+        /* The counter is always the first cache entry: */ \
+        _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr; \
+        *counter -= 1; \
+        if (*counter == 0) { \
+            next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, _Py_OPARG(next_instr[-1])); \
+            STAT_INC(opname, deopt); \
+            *counter = ADAPTIVE_CACHE_BACKOFF; \
+        } \
+        JUMP_TO_INSTRUCTION(opname); \
+    }
+
 #define MISS_WITH_OPARG_COUNTER(opname) \
 opname ## _miss: \
     { \
@@ -5569,7 +5597,7 @@ MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_CACHE(PRECALL)
 MISS_WITH_CACHE(CALL)
-MISS_WITH_CACHE(BINARY_OP)
+MISS_WITH_INLINE_CACHE(BINARY_OP)
 MISS_WITH_CACHE(COMPARE_OP)
 MISS_WITH_CACHE(BINARY_SUBSCR)
 MISS_WITH_CACHE(UNPACK_SEQUENCE)
