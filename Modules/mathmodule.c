@@ -283,7 +283,7 @@ m_inf(void)
 /* Constant nan value, generated in the same way as float('nan'). */
 /* We don't currently assume that Py_NAN is defined everywhere. */
 
-#if _PY_SHORT_FLOAT_REPR == 1 || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
 
 static double
 m_nan(void)
@@ -3838,7 +3838,7 @@ math_exec(PyObject *module)
     if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(m_inf())) < 0) {
         return -1;
     }
-#if _PY_SHORT_FLOAT_REPR == 1 || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
     if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(m_nan())) < 0) {
         return -1;
     }
