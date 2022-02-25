@@ -260,10 +260,11 @@ _specialized_instructions = [
     "LOAD_GLOBAL_MODULE",
     "LOAD_GLOBAL_BUILTIN",
     "LOAD_METHOD_ADAPTIVE",
-    "LOAD_METHOD_CACHED",
     "LOAD_METHOD_CLASS",
     "LOAD_METHOD_MODULE",
     "LOAD_METHOD_NO_DICT",
+    "LOAD_METHOD_WITH_DICT",
+    "LOAD_METHOD_WITH_VALUES",
     "PRECALL_ADAPTIVE",
     "PRECALL_BUILTIN_CLASS",
     "PRECALL_NO_KW_BUILTIN_O",
@@ -295,6 +296,7 @@ _specialized_instructions = [
     "LOAD_FAST__LOAD_CONST",
     "LOAD_CONST__LOAD_FAST",
     "STORE_FAST__STORE_FAST",
+    "LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE",
 ]
 _specialization_stats = [
     "success",

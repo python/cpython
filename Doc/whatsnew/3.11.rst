@@ -618,6 +618,9 @@ Changes in the Python API
 Build Changes
 =============
 
+* Building Python now requires a C11 compiler without optional C11 features.
+  (Contributed by Victor Stinner in :issue:`46656`.)
+
 * CPython can now be built with the ThinLTO option via ``--with-lto=thin``.
   (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
 
@@ -630,10 +633,12 @@ Build Changes
   (Contributed by Victor Stinner in :issue:`45440`.)
 
 * Building Python now requires a C99 ``<math.h>`` header file providing
-  a ``NAN`` constant, or the ``__builtin_nan()`` built-in function. If a
-  platform does not support Not-a-Number (NaN), the ``Py_NO_NAN`` macro can be
-  defined in the ``pyconfig.h`` file.
+  a ``NAN`` constant, or the ``__builtin_nan()`` built-in function.
   (Contributed by Victor Stinner in :issue:`46640`.)
+
+* Building Python now requires support for floating point Not-a-Number (NaN):
+  remove the ``Py_NO_NAN`` macro.
+  (Contributed by Victor Stinner in :issue:`46656`.)
 
 * Freelists for object structs can now be disabled. A new :program:`configure`
   option :option:`!--without-freelists` can be used to disable all freelists
@@ -853,6 +858,8 @@ Porting to Python 3.11
     use ``PyObject_GetAttrString((PyObject*)frame, "f_locals")``.
   * ``f_lasti``: removed,
     use ``PyObject_GetAttrString((PyObject*)frame, "f_lasti")``.
+    Code using ``f_lasti`` with ``PyCode_Addr2Line()`` should use
+    :c:func:`PyFrame_GetLineNumber` instead.
 
   The following fields were removed entirely, as they were details
   of the old implementation:
@@ -1019,3 +1026,7 @@ Removed
   public C API by mistake, it must only be used by Python internally.
   Use the ``PyTypeObject.tp_members`` member instead.
   (Contributed by Victor Stinner in :issue:`40170`.)
+
+* Remove the ``HAVE_PY_SET_53BIT_PRECISION`` macro (moved to the internal C
+  API).
+  (Contributed by Victor Stinner in :issue:`45412`.)
