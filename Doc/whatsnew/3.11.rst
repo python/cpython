@@ -633,10 +633,12 @@ Build Changes
   (Contributed by Victor Stinner in :issue:`45440`.)
 
 * Building Python now requires a C99 ``<math.h>`` header file providing
-  a ``NAN`` constant, or the ``__builtin_nan()`` built-in function. If a
-  platform does not support Not-a-Number (NaN), the ``Py_NO_NAN`` macro can be
-  defined in the ``pyconfig.h`` file.
+  a ``NAN`` constant, or the ``__builtin_nan()`` built-in function.
   (Contributed by Victor Stinner in :issue:`46640`.)
+
+* Building Python now requires support for floating point Not-a-Number (NaN):
+  remove the ``Py_NO_NAN`` macro.
+  (Contributed by Victor Stinner in :issue:`46656`.)
 
 * Freelists for object structs can now be disabled. A new :program:`configure`
   option :option:`!--without-freelists` can be used to disable all freelists
