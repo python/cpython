@@ -19,6 +19,8 @@ struct _frame {
     PyObject *_f_frame_data[1];
 };
 
+extern PyFrameObject* _PyFrame_New_NoTrack(PyCodeObject *code);
+
 /* runtime lifecycle */
 
 extern void _PyFrame_Fini(PyInterpreterState *interp);
