@@ -33,7 +33,6 @@
 
 #define NEED_OPCODE_JUMP_TABLES
 #include "opcode.h"               // EXTENDED_ARG
-#include "wordcode_helpers.h"     // instrsize()
 
 
 #define DEFAULT_BLOCK_SIZE 16
@@ -129,6 +128,43 @@ static inline int
 is_jump(struct instr *i)
 {
     return i->i_opcode >= SETUP_WITH || is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
+}
+
+static int
+instr_size(struct instr *instruction)
+{
+    int opcode = instruction->i_opcode;
+    int oparg = instruction->i_oparg;
+    int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
+    int caches = _PyOpcode_InlineCacheEntries[opcode];
+    return extended_args + 1 + caches;
+}
+
+static void
+write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
+{
+    int opcode = instruction->i_opcode;
+    int oparg = instruction->i_oparg;
+    int caches = _PyOpcode_InlineCacheEntries[opcode];
+    switch (ilen - caches) {
+        case 4:
+            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 24) & 0xFF);
+            /* fall through */
+        case 3:
+            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 16) & 0xFF);
+            /* fall through */
+        case 2:
+            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 8) & 0xFF);
+            /* fall through */
+        case 1:
+            *codestr++ = _Py_MAKECODEUNIT(opcode, oparg & 0xFF);
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
+    while (caches--) {
+        *codestr++ = _Py_MAKECODEUNIT(CACHE, 0);
+    }
 }
 
 typedef struct basicblock_ {
@@ -854,6 +890,7 @@ stack_effect(int opcode, int oparg, int jump)
         case NOP:
         case EXTENDED_ARG:
         case RESUME:
+        case CACHE:
             return 0;
 
         /* Stack manipulation */
@@ -7065,8 +7102,9 @@ blocksize(basicblock *b)
     int i;
     int size = 0;
 
-    for (i = 0; i < b->b_iused; i++)
-        size += instrsize(b->b_instr[i].i_oparg);
+    for (i = 0; i < b->b_iused; i++) {
+        size += instr_size(&b->b_instr[i]);
+    }
     return size;
 }
 
@@ -7330,7 +7368,7 @@ assemble_exception_table(struct assembler *a)
                 start = ioffset;
                 handler = instr->i_except;
             }
-            ioffset += instrsize(instr->i_oparg);
+            ioffset += instr_size(instr);
         }
     }
     if (handler != NULL) {
@@ -7459,12 +7497,10 @@ assemble_cnotab(struct assembler* a, struct instr* i, int instr_size)
 static int
 assemble_emit(struct assembler *a, struct instr *i)
 {
-    int size, arg = 0;
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
     _Py_CODEUNIT *code;
 
-    arg = i->i_oparg;
-    size = instrsize(arg);
+    int size = instr_size(i);
     if (i->i_lineno && !assemble_lnotab(a, i)) {
         return 0;
     }
@@ -7482,7 +7518,7 @@ assemble_emit(struct assembler *a, struct instr *i)
     }
     code = (_Py_CODEUNIT *)PyBytes_AS_STRING(a->a_bytecode) + a->a_offset;
     a->a_offset += size;
-    write_op_arg(code, i->i_opcode, arg, size);
+    write_instr(code, i, size);
     return 1;
 }
 
@@ -7532,7 +7568,7 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
             bsize = b->b_offset;
             for (i = 0; i < b->b_iused; i++) {
                 struct instr *instr = &b->b_instr[i];
-                int isize = instrsize(instr->i_oparg);
+                int isize = instr_size(instr);
                 /* Relative jumps are computed relative to
                    the instruction pointer after fetching
                    the jump instruction.
@@ -7543,7 +7579,7 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
                     if (is_relative_jump(instr)) {
                         instr->i_oparg -= bsize;
                     }
-                    if (instrsize(instr->i_oparg) != isize) {
+                    if (instr_size(instr) != isize) {
                         extended_arg_recompile = 1;
                     }
                 }
@@ -7555,7 +7591,7 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
         with a better solution.
 
         The issue is that in the first loop blocksize() is called
-        which calls instrsize() which requires i_oparg be set
+        which calls instr_size() which requires i_oparg be set
         appropriately. There is a bootstrap problem because
         i_oparg is calculated in the second loop above.
 

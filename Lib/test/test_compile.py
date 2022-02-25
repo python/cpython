@@ -1062,7 +1062,9 @@ class TestSourcePositions(unittest.TestCase):
     def assertOpcodeSourcePositionIs(self, code, opcode,
             line, end_line, column, end_column, occurrence=1):
 
-        for instr, position in zip(dis.Bytecode(code), code.co_positions()):
+        for instr, position in zip(
+            dis.Bytecode(code, show_caches=True), code.co_positions(), strict=True
+        ):
             if instr.opname == opcode:
                 occurrence -= 1
                 if not occurrence:
