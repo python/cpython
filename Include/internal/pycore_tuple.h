@@ -29,20 +29,13 @@ extern void _PyTuple_Fini(PyInterpreterState *);
 #  undef PyTuple_MAXSAVESIZE
 
 #elif !defined(WITH_FREELISTS)
-   // Only store the empty tuple singleton.
-#  define PyTuple_NFREELISTS 1
-#  ifndef PyTuple_MAXSAVESIZE
-#    define PyTuple_MAXSAVESIZE 0
-#  endif
-#  ifndef PyTuple_MAXFREELIST
-#    define PyTuple_MAXFREELIST 1
-#  endif
+#  define PyTuple_NFREELISTS 0
 
 #else
 #  ifndef PyTuple_MAXSAVESIZE
 #    define PyTuple_MAXSAVESIZE 20
 #  endif
-#  define PyTuple_NFREELISTS (PyTuple_MAXSAVESIZE + 1)
+#  define PyTuple_NFREELISTS PyTuple_MAXSAVESIZE
 #  ifndef PyTuple_MAXFREELIST
 #    define PyTuple_MAXFREELIST 2000
 #  endif
@@ -51,8 +44,7 @@ extern void _PyTuple_Fini(PyInterpreterState *);
 struct _Py_tuple_state {
 #if PyTuple_NFREELISTS > 0
     /* There is one freelist for each size from 1 to PyTuple_MAXSAVESIZE.
-       Entry 0 is the empty tuple () of which at most one instance
-       will be allocated.
+       The empty tuple is handled separately.
 
        Each tuple stored in the array is the head of the linked list
        (and the next available tuple) for that size.  The actual tuple
