@@ -174,13 +174,6 @@ PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 PyAPI_FUNC(int) PyCode_Addr2Location(PyCodeObject *, int, int *, int *, int *, int *);
 
-/* Return the ending source code line number from a bytecode index. */
-PyAPI_FUNC(int) _PyCode_Addr2EndLine(PyCodeObject *, int);
-/* Return the starting source code column offset from a bytecode index. */
-PyAPI_FUNC(int) _PyCode_Addr2Offset(PyCodeObject *, int);
-/* Return the ending source code column offset from a bytecode index. */
-PyAPI_FUNC(int) _PyCode_Addr2EndOffset(PyCodeObject *, int);
-
 /* for internal use only */
 struct _opaque {
     int computed_line;
@@ -217,15 +210,3 @@ PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
                                  void **extra);
 PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
                                  void *extra);
-
-/** API for initializing the line number tables. */
-int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
-int _PyCode_InitEndAddressRange(PyCodeObject* co, PyCodeAddressRange* bounds);
-
-/** Out of process API for initializing the line number table. */
-void PyLineTable_InitAddressRange(const char *linetable, Py_ssize_t length, int firstlineno, PyCodeAddressRange *range);
-
-/** API for traversing the line number table. */
-int PyLineTable_NextAddressRange(PyCodeAddressRange *range);
-int PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
-
