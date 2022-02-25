@@ -184,7 +184,11 @@ tupledealloc(PyTupleObject *op)
     if (Py_SIZE(op) == 0) {
         /* The empty tuple is statically allocated. */
         if (op == &_Py_SINGLETON(tuple_empty)) {
+#ifdef Py_DEBUG
+            _Py_FatalRefcountError("deallocating the empty tuple singleton");
+#else
             return;
+#endif
         }
         /* tuple subclasses have their own empty instances. */
         assert(!PyTuple_CheckExact(op));
