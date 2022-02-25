@@ -2636,7 +2636,7 @@ worker threads rather than worker processes.
    *processes* is the number of worker threads to use.  If *processes* is
    ``None`` then the number returned by :func:`os.cpu_count` is used.
 
-   If *initializer* is not ``None`` then each worker process will call
+   If *initializer* is not ``None`` then each worker thread will call
    ``initializer(*initargs)`` when it starts.
 
    Unlike :class:`Pool`, *maxtasksperchild* cannot be provided.
