@@ -2486,15 +2486,7 @@ _PyFloat_Unpack2(const unsigned char *p, int le)
         }
         else {
             /* NaN */
-#ifdef Py_NAN
             return sign ? -Py_NAN : Py_NAN;
-#else
-            PyErr_SetString(
-                PyExc_ValueError,
-                "can't unpack IEEE 754 NaN "
-                "on platform that does not support NaNs");
-            return -1;
-#endif  // !defined(Py_NAN)
         }
 #else  // _PY_SHORT_FLOAT_REPR == 1
         if (f == 0) {
