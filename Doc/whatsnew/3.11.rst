@@ -837,40 +837,40 @@ Porting to Python 3.11
   which are not available in the limited C API.
   (Contributed by Victor Stinner in :issue:`46007`.)
 
-* Changes of the private :c:type:`PyFrameObject` structure members.
+* The :c:type:`PyFrameObject` structure member has been moved to the internal C
+  API headers.
 
-  While the documentation notes that the fields of ``PyFrameObject`` are
-  subject to change at any time, they have been stable for a long time
-  and were used in several popular extensions.
+  While the documentation notes that the :c:type:`PyFrameObject` fields are
+  subject to change at any time, they have been stable for a long time and were
+  used in several popular extensions.
+
   In Python 3.11, the frame struct was reorganized to allow performance
-  optimizations. Rather than reading the fields directly, extensions should
-  use functions:
+  optimizations. Some fields were removed entirely, as they were details of the
+  old implementation.
 
-  * ``f_code``: removed, use :c:func:`PyFrame_GetCode` instead.
-    Warning: the function returns a :term:`strong reference`, need to call
-    :c:func:`Py_DECREF`.
-  * ``f_back``: changed (see below), use :c:func:`PyFrame_GetBack`.
-  * ``f_builtins``: removed,
-    use ``PyObject_GetAttrString((PyObject*)frame, "f_builtins")``.
-  * ``f_globals``: removed,
-    use ``PyObject_GetAttrString((PyObject*)frame, "f_globals")``.
-  * ``f_locals``: removed,
-    use ``PyObject_GetAttrString((PyObject*)frame, "f_locals")``.
-  * ``f_lasti``: removed,
-    use ``PyObject_GetAttrString((PyObject*)frame, "f_lasti")``.
-    Code using ``f_lasti`` with ``PyCode_Addr2Line()`` should use
+  :c:type:`PyFrameObject` fields:
+
+  * ``f_back``: use :c:func:`PyFrame_GetBack`.
+  * ``f_blockstack``: removed.
+  * ``f_builtins``: use ``PyObject_GetAttrString((PyObject*)frame, "f_builtins")``.
+  * ``f_code``: use :c:func:`PyFrame_GetCode`.
+  * ``f_gen``: removed.
+  * ``f_globals``: use ``PyObject_GetAttrString((PyObject*)frame, "f_globals")``.
+  * ``f_iblock``: removed.
+  * ``f_lasti``: use ``PyObject_GetAttrString((PyObject*)frame, "f_lasti")``.
+    Code using ``f_lasti`` with ``PyCode_Addr2Line()`` must use
     :c:func:`PyFrame_GetLineNumber` instead.
-
-  The following fields were removed entirely, as they were details
-  of the old implementation:
-
-  * ``f_valuesstack``
-  * ``f_stackdepth``
-  * ``f_gen``
-  * ``f_iblock``
-  * ``f_state``
-  * ``f_blockstack``
-  * ``f_localsplus``
+  * ``f_lineno``: use :c:func:`PyFrame_GetLineNumber`
+  * ``f_locals``: use ``PyObject_GetAttrString((PyObject*)frame, "f_locals")``.
+  * ``f_stackdepth``: removed.
+  * ``f_state``: no public API (renamed to ``f_frame.f_state``).
+  * ``f_trace``: no public API.
+  * ``f_trace_lines``: use ``PyObject_GetAttrString((PyObject*)frame, "f_trace_lines")``
+    (it also be modified).
+  * ``f_trace_opcodes``: use ``PyObject_GetAttrString((PyObject*)frame, "f_trace_opcodes")``
+    (it also be modified).
+  * ``f_localsplus``: no public API (renamed to ``f_frame.localsplus``).
+  * ``f_valuestack``: removed.
 
   The Python frame object is now created lazily. A side effect is that the
   ``f_back`` member must not be accessed directly, since its value is now also
@@ -897,9 +897,9 @@ Porting to Python 3.11
       }
       #endif
 
-  Or use `the pythoncapi_compat project
-  <https://github.com/pythoncapi/pythoncapi_compat>`__ to get these APIs
-  on older Python versions.
+  Or use the `pythoncapi_compat project
+  <https://github.com/pythoncapi/pythoncapi_compat>`__ to get these two
+  functions on older Python versions.
 
 * Changes of the :c:type:`PyThreadState` structure members:
 

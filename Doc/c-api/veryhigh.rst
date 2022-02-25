@@ -288,8 +288,16 @@ the same library that the Python runtime is using.
 
 .. c:type:: PyFrameObject
 
-   The C structure of the objects used to describe frame objects. The
-   fields of this type are subject to change at any time.
+   The C structure of the objects used to describe frame objects.
+
+   The structure is only part of the internal C API: fields should not be
+   access directly. Use getter functions like :c:func:`PyFrame_GetCode` and
+   :c:func:`PyFrame_GetBack`.
+
+   Debuggers and profilers can use the limited C API to access this structure.
+
+   .. versionchanged:: 3.11
+      The structure moved to the internal C API headers.
 
 
 .. c:function:: PyObject* PyEval_EvalFrame(PyFrameObject *f)
