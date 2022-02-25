@@ -2538,7 +2538,7 @@ compiler_class(struct compiler *c, stmt_ty s)
          <name> = __build_class__(<func>, <name>, *<bases>, **<keywords>)
        where:
          <func> is a zero arg function/closure created from the class body.
-            It mutates its locals namespace to build the class.
+            It mutates its locals to build the class namespace.
          <name> is the class name
          <bases> is the positional arguments and *varargs argument
          <keywords> is the keyword arguments and **kwds argument
