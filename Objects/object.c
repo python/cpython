@@ -1825,6 +1825,11 @@ _PyTypes_InitState(PyInterpreterState *interp)
 }
 
 
+
+#ifdef MS_WINDOWS
+extern PyTypeObject PyHKEY_Type;
+#endif
+
 static PyTypeObject* static_types[] = {
     // The two most important base types: must be initialized first and
     // deallocated last.
@@ -1869,6 +1874,9 @@ static PyTypeObject* static_types[] = {
     &PyFunction_Type,
     &PyGen_Type,
     &PyGetSetDescr_Type,
+#ifdef MS_WINDOWS
+    &PyHKEY_Type,
+#endif
     &PyInstanceMethod_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
