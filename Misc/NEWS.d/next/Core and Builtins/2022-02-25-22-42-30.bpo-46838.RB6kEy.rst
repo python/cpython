@@ -1,2 +1,2 @@
-Improve yntax errors for incorrect function definitions. Patch by Pablo
+Improve syntax errors for incorrect function definitions. Patch by Pablo
 Galindo
