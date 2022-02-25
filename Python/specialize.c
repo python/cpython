@@ -1208,6 +1208,8 @@ _Py_Specialize_LoadGlobal(
     PyObject *globals, PyObject *builtins,
     _Py_CODEUNIT *instr, PyObject *name)
 {
+    assert(_PyOpcode_InlineCacheEntries[LOAD_GLOBAL] ==
+           INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
     /* Use inline cache */
     _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)(instr+1);
     assert(PyUnicode_CheckExact(name));

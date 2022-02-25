@@ -362,7 +362,33 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OBJECT_STAT_INC(name) ((void)0)
 #endif
 
-/* TO DO -- Move these somewhere sensible and use native endianness */
+
+unsigned int unaligned_load_big(unsigned short *p) {
+    return (p[0] << 16) | p[1];
+}
+
+unsigned int unaligned_load_little(unsigned short *p) {
+    return (p[1] << 16) | p[0];
+}
+
+// Cache values are only valid in memory, so use native endianness.
+#ifdef WORDS_BIGENDIAN
+
+static inline void
+write32(uint16_t *p, uint32_t val)
+{
+    p[0] = val >> 16;
+    p[1] = (uint16_t)val;
+}
+
+static inline uint32_t
+read32(uint16_t *p)
+{
+    return (p[0] << 16) | p[1];
+}
+
+#else
+
 static inline void
 write32(uint16_t *p, uint32_t val)
 {
@@ -376,6 +402,7 @@ read32(uint16_t *p)
     return p[0] | (p[1] << 16);
 }
 
+#endif
 
 #ifdef __cplusplus
 }
