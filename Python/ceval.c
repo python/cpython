@@ -78,7 +78,7 @@ static int call_trace_protected(Py_tracefunc, PyObject *,
                                 PyThreadState *, InterpreterFrame *,
                                 int, PyObject *);
 static void call_exc_trace(Py_tracefunc, PyObject *,
-                           PyThreadState *, InterpreterFrame *);
+                           PyThreadState *, InterpreterFrame *, int);
 static int maybe_call_line_trace(Py_tracefunc, PyObject *,
                                  PyThreadState *, InterpreterFrame *, int);
 static void maybe_dtrace_line(InterpreterFrame *, PyTraceInfo *, int);
@@ -2554,7 +2554,8 @@ handle_eval_breaker:
                 if (retval == NULL) {
                     if (tstate->c_tracefunc != NULL
                             && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
-                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
+                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate,
+                                       frame, PyTrace_EXCEPTION);
                     if (_PyGen_FetchStopIterationValue(&retval) == 0) {
                         gen_status = PYGEN_RETURN;
                     }
@@ -4242,7 +4243,8 @@ handle_eval_breaker:
                     goto error;
                 }
                 else if (tstate->c_tracefunc != NULL) {
-                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
+                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate,
+                                   frame, PyTrace_EXCEPTION);
                 }
                 _PyErr_Clear(tstate);
             }
@@ -5690,7 +5692,7 @@ error:
             /* Make sure state is set to FRAME_UNWINDING for tracing */
             frame->f_state = FRAME_UNWINDING;
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
-                           tstate, frame);
+                           tstate, frame, PyTrace_EXCEPTION);
         }
 
 exception_unwind:
@@ -6726,7 +6728,8 @@ prtrace(PyThreadState *tstate, PyObject *v, const char *str)
 static void
 call_exc_trace(Py_tracefunc func, PyObject *self,
                PyThreadState *tstate,
-               InterpreterFrame *f)
+               InterpreterFrame *f,
+               int what)
 {
     PyObject *type, *value, *traceback, *orig_traceback, *arg;
     int err;
@@ -6742,7 +6745,10 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
         _PyErr_Restore(tstate, type, value, orig_traceback);
         return;
     }
-    err = call_trace(func, self, tstate, f, PyTrace_EXCEPTION, arg);
+    if (what == PyTrace_C_EXCEPTION)
+        err = call_trace_protected(func, self, tstate, f, what, arg);
+    else
+        err = call_trace(func, self, tstate, f, what, arg);
     Py_DECREF(arg);
     if (err == 0) {
         _PyErr_Restore(tstate, type, value, orig_traceback);
@@ -7158,16 +7164,15 @@ if (use_tracing && tstate->c_profilefunc) { \
         x = call; \
         if (tstate->c_profilefunc != NULL) { \
             if (x == NULL) { \
-                call_trace_protected(tstate->c_profilefunc, \
+                call_exc_trace(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
                     tstate, tstate->cframe->current_frame, \
-                    PyTrace_C_EXCEPTION, func); \
-                /* XXX should pass (type, value, tb) */ \
+                    PyTrace_C_EXCEPTION); \
             } else { \
                 if (call_trace(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
                     tstate, tstate->cframe->current_frame, \
-                    PyTrace_C_RETURN, func)) { \
+                    PyTrace_C_RETURN, x)) { \
                     Py_DECREF(x); \
                     x = NULL; \
                 } \
