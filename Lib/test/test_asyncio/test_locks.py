@@ -985,6 +985,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         async with barrier._cond:
             self.assertTrue(RGX_REPR.match(repr(barrier)))
             self.assertTrue('locked' in repr(barrier))
+        self.assertTrue('unlocked' in repr(barrier))
 
     async def test_barrier_parties(self):
         self.assertRaises(ValueError, lambda: asyncio.Barrier(0))
@@ -1092,13 +1093,13 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(barrier.n_waiting, 0)
         self.assertFalse(barrier.broken)
 
-    async def test_draining_check(self):
+    async def test_draining_state(self):
         barrier = asyncio.Barrier(self.N)
         results = []
 
         async def coro():
             async with barrier:
-            # barrier state change to filling for the last task release
+                # barrier state change to filling for the last task release
                 results.append(barrier.draining)
 
         await self.gather_tasks(self.N, coro)
@@ -1115,7 +1116,6 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         barrier = asyncio.Barrier(self.N)        
         barrier_nowaiting = asyncio.Barrier(self.N - rewait)        
         results = []
-        states = []
         rewait_n = rewait
         
         async def coro():
@@ -1124,7 +1124,6 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
             # first time waiting
             p = await barrier.wait()
 
-            states.append(barrier._state)
             # after wainting once for all tasks
             if rewait_n > 0:
                 rewait_n -= 1
@@ -1134,7 +1133,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
                 # task here does not wait so it is blocking (drainig state)
                 results.append(barrier.n_blocking)
 
-                # wait for end of draining
+                # wait for end of draining `barrier`
                 await barrier_nowaiting.wait()
 
                 # wait for joining other waiting tasks 
@@ -1194,9 +1193,6 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
             results.append(True)
 
         await self.gather_tasks(self.N, coro)
-        # for _ in range(self.N):
-        #     asyncio.create_task(coro())
-        # await asyncio.sleep(0)
 
         self.assertEqual(len(results1), 1)
         self.assertTrue(results1[0])
@@ -1225,9 +1221,6 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
                 results2.append(True)
 
         await self.gather_tasks(self.N, coro)
-        # tasks  = self.make_tasks(self.N, coro)
-        # await asyncio.sleep(0)
-        # await asyncio.gather(*tasks) 
 
         self.assertEqual(len(results1), 1)
         self.assertFalse(results1[0])
@@ -1246,7 +1239,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(barrier.n_waiting, 0)
         self.assertFalse(barrier.broken)
 
-    async def test_reset_barrier_while_waiting(self):
+    async def test_reset_barrier_while_tasks_waiting(self):
         barrier = asyncio.Barrier(self.N)
         results = []
 
@@ -1259,9 +1252,11 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         async def coro_reset():
             await barrier.reset()
 
+        # N-1 tasks waiting on barrier with N parties
         tasks  = self.make_tasks(self.N-1, coro)
         await asyncio.sleep(0)
 
+        # reset the barrier
         asyncio.create_task(coro_reset())
         await asyncio.gather(*tasks)
 
@@ -1271,7 +1266,68 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(barrier.resetting)
         self.assertFalse(barrier.broken)
 
-    async def test_reset_barrier_while_waiting_then_waiting_again(self):
+    async def test_reset_barrier_when_tasks_half_draining(self):
+        barrier = asyncio.Barrier(self.N)
+        results1 = []
+        rest_of_tasks = self.N//2 
+        
+        async def coro():
+            try:
+                await barrier.wait()
+            except asyncio.BrokenBarrierError:
+                # catch here waiting tasks
+                results1.append(True)
+            else:
+                # here drained task ouside the barrier 
+                if rest_of_tasks == barrier._count:
+                    # 'd' tasks outside the barrier
+                    await barrier.reset() 
+ 
+        await self.gather_tasks(self.N, coro)
+
+        self.assertEqual(results1, [True]*rest_of_tasks)
+        self.assertEqual(barrier.n_waiting, 0)
+        self.assertFalse(barrier.resetting)
+        self.assertFalse(barrier.broken)
+
+    async def test_reset_barrier_when_tasks_half_draining_half_blocking(self):
+        barrier = asyncio.Barrier(self.N)
+        results1 = []
+        results2 = []
+        blocking_tasks = self.N//2
+        
+        async def coro():
+            try:
+                await barrier.wait()
+            except asyncio.BrokenBarrierError:
+                # here catch still waiting tasks 
+                results1.append(True)
+
+                # so now waiting again to reach nb_parties
+                await barrier.wait()
+            else:
+                if blocking_tasks == barrier.n_blocking:
+                    # reset now: raise asyncio.BrokenBarrierError for waiting tasks
+                    await barrier.reset() 
+
+                    # so now waiting again to reach nb_parties
+                    await barrier.wait() 
+                else:
+                    try:
+                        await barrier.wait()
+                    except asyncio.BrokenBarrierError:
+                        # here no catch - blocked tasks go to wait
+                        results2.append(True)
+
+        await self.gather_tasks(self.N, coro)
+
+        self.assertEqual(results1, [True]*blocking_tasks)
+        self.assertEqual(results2, [])
+        self.assertEqual(barrier.n_waiting, 0)
+        self.assertFalse(barrier.resetting)
+        self.assertFalse(barrier.broken)
+
+    async def test_reset_barrier_while_tasks_waiting_and_waiting_again(self):
         barrier = asyncio.Barrier(self.N)
         results1 = []
         results2 = []
@@ -1291,11 +1347,12 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
 
         tasks = self.make_tasks(self.N-1, coro1)
 
+        # reset barrier, N-1 waiting tasks raise an BrokenBarrierError
         asyncio.create_task(barrier.reset())
         await asyncio.sleep(0)
 
+        # complete waiting tasks in the `finally`
         asyncio.create_task(coro2())
-        await asyncio.sleep(0)
 
         await asyncio.gather(*tasks)
 
@@ -1307,49 +1364,8 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(barrier.n_waiting, 0)
 
-    async def test_reset_barrier_while_draining_then_blocking(self):
-        barrier = asyncio.Barrier(self.N)
-        results1 = []
-        results2 = []
-        results3 = []
-        count = 0
 
-        async def coro():
-            nonlocal count
-
-            try:
-                i = await barrier.wait()
-            except: 
-                results2.append(True)
-
-            count += 1
-            if count == self.N-1: # there is one task still waiting
-                await barrier.reset()
-                await barrier.wait()
-            else:
-                try:
-                    await barrier.wait()
-                    results1.append(True)
-                except Exception as e:
-                    results2.append(True)
-
-            # Now, pass the barrier again
-            await barrier.wait()
-            results3.append(True)
-
-        await self.gather_tasks(self.N, coro)
-
-        self.assertFalse(barrier.broken)
-        self.assertEqual(len(results1), self.N-1)
-        self.assertTrue(all(results1))
-        self.assertEqual(len(results2), 1)
-        self.assertTrue(results2[0])
-        self.assertEqual(len(results3), self.N)
-        self.assertTrue(all(results3))
-
-        self.assertEqual(barrier.n_waiting, 0)
-
-    async def test_reset_barrier_while_draining(self):
+    async def test_reset_barrier_while_tasks_draining(self):
         barrier = asyncio.Barrier(self.N)
         results1 = []
         results2 = []
@@ -1361,18 +1377,26 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
 
             i = await barrier.wait()
             count += 1
-            if count == self.N: # last task exited from barrier
+            if count == self.N: 
+                # last task exited from barrier
                 await barrier.reset()
+
+                # wit here to reach the `parties`` 
                 await barrier.wait()
-            else:
+            else: 
                 try:
+                    # second waiting
                     await barrier.wait()
+
+                    # N-1 tasks here
                     results1.append(True)
                 except Exception as e:
+                    # never goes here 
                     results2.append(True)
 
             # Now, pass the barrier again
-            await barrier.wait()
+            # last wait, must be completed
+            k = await barrier.wait()
             results3.append(True)
 
         await self.gather_tasks(self.N, coro)
@@ -1395,7 +1419,39 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(barrier.n_waiting, 0)
         self.assertTrue(barrier.broken)
 
-    async def test_abort_barrier_then_still_broken(self):
+    async def test_abort_barrier_when_tasks_half_draining_half_blocking(self):
+        barrier = asyncio.Barrier(self.N)
+        results1 = []
+        results2 = []
+        blocking_tasks = self.N//2
+        
+        async def coro():
+            try:
+                await barrier.wait()
+            except asyncio.BrokenBarrierError:
+                # here catch tasks waiting to drain 
+                results1.append(True)
+            else:
+                if blocking_tasks == barrier.n_blocking:
+                    # abort now: raise asyncio.BrokenBarrierError for all tasks
+                    await barrier.abort() 
+                else:
+                    try:
+                        await barrier.wait()
+                    except asyncio.BrokenBarrierError:
+                        # here catch blocked tasks (already drained)
+                        results2.append(True)
+
+        await self.gather_tasks(self.N, coro)
+
+        self.assertTrue(barrier.broken)
+        self.assertEqual(results1, [True]*blocking_tasks)
+        self.assertEqual(results2, [True]*(self.N-blocking_tasks-1))
+        self.assertEqual(barrier.n_waiting, 0)
+        self.assertFalse(barrier.resetting)
+
+    async def test_abort_barrier_when_exception(self):
+        # test from threading.Barrier: see `lock_tests.test_reset`
         barrier = asyncio.Barrier(self.N)
         results1 = []
         results2 = []
@@ -1417,10 +1473,11 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(barrier.broken)
         self.assertEqual(len(results1), 0)
         self.assertEqual(len(results2), self.N-1)
-
+        self.assertTrue(all(results2))
         self.assertEqual(barrier.n_waiting, 0)
 
-    async def test_abort_barrier_then_resetting(self):
+    async def test_abort_barrier_when_exception_then_resetting(self):
+        # test from threading.Barrier: see `lock_tests.test_abort_and_reset``
         barrier1 = asyncio.Barrier(self.N)
         barrier2 = asyncio.Barrier(self.N)
         results1 = []
@@ -1454,7 +1511,9 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(barrier1.broken)
         self.assertEqual(len(results1), 0)
         self.assertEqual(len(results2), self.N-1)
+        self.assertTrue(all(results2))
         self.assertEqual(len(results3), self.N)
+        self.assertTrue(all(results3))
 
         self.assertEqual(barrier1.n_waiting, 0)
 
