@@ -166,6 +166,13 @@ jobs:
       platform: x64
       msbuildArguments: /t:CopyTclTkLib /p:OutDir="$(Build.ArtifactStagingDirectory)\tcl_amd64"
 
+  - task: MSBuild@1
+    displayName: 'Copy Tcl/Tk lib for publish'
+    inputs:
+      solution: PCbuild\tcltk.props
+      platform: ARM64
+      msbuildArguments: /t:CopyTclTkLib /p:OutDir="$(Build.ArtifactStagingDirectory)\tcl_arm64"
+
   - task: PublishPipelineArtifact@0
     displayName: 'Publish artifact: tcltk_lib_win32'
     inputs:
@@ -177,3 +184,9 @@ jobs:
     inputs:
       targetPath: '$(Build.ArtifactStagingDirectory)\tcl_amd64'
       artifactName: tcltk_lib_amd64
+
+  - task: PublishPipelineArtifact@0
+    displayName: 'Publish artifact: tcltk_lib_arm64'
+    inputs:
+      targetPath: '$(Build.ArtifactStagingDirectory)\tcl_arm64'
+      artifactName: tcltk_lib_arm64
