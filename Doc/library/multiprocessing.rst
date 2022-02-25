@@ -2119,10 +2119,10 @@ with the :class:`Pool` class.
 
       Worker processes within a :class:`Pool` typically live for the complete
       duration of the Pool's work queue. A frequent pattern found in other
-      systems (such as Apache, mod_wsgi, etc) to free resources held by
+      systems (such as Apache, mod_wsgi, etc.) to free resources held by
       workers is to allow a worker within a pool to complete only a set
-      amount of work before being exiting, being cleaned up and a new
-      process spawned to replace the old one. The *maxtasksperchild*
+      amount of work before being exited, cleaned up, and replaced by a new
+      spawned process. The *maxtasksperchild*
       argument to the :class:`Pool` exposes this ability to the end user.
 
    .. method:: apply(func[, args[, kwds]])
