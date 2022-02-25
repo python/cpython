@@ -7641,8 +7641,7 @@ os_getgroups_impl(PyObject *module)
     if (n < 0) {
         return posix_error();
     } else {
-        n++; // Avoid malloc(0)
-        grouplist = PyMem_New(gid_t, n+1);
+        grouplist = PyMem_New(gid_t, n);
         if (grouplist == NULL) {
             return PyErr_NoMemory();
         }
