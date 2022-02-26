@@ -9,11 +9,6 @@ extern "C" {
 #endif
 
 
-/* runtime lifecycle */
-
-extern PyStatus _PyStructSequence_InitState(PyInterpreterState *);
-
-
 /* other API */
 
 PyAPI_FUNC(PyTypeObject *) _PyStructSequence_NewType(

@@ -12,7 +12,7 @@ from test.support import requires_zlib
 from typing import Dict, Union
 
 try:
-    from importlib import resources
+    from importlib import resources  # type: ignore
 
     getattr(resources, 'files')
     getattr(resources, 'as_file')
@@ -230,21 +230,6 @@ class EggInfoFile(OnSysPath, SiteDir):
     def setUp(self):
         super().setUp()
         build_files(EggInfoFile.files, prefix=self.site_dir)
-
-
-class LocalPackage:
-    files: FilesDef = {
-        "setup.py": """
-            import setuptools
-            setuptools.setup(name="local-pkg", version="2.0.1")
-            """,
-    }
-
-    def setUp(self):
-        self.fixtures = contextlib.ExitStack()
-        self.addCleanup(self.fixtures.close)
-        self.fixtures.enter_context(tempdir_as_cwd())
-        build_files(self.files)
 
 
 def build_files(file_defs, prefix=pathlib.Path()):

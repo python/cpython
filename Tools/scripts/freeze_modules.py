@@ -9,7 +9,7 @@ import os
 import ntpath
 import posixpath
 import sys
-
+import argparse
 from update_file import updating_file_with_tmpfile
 
 
@@ -463,14 +463,15 @@ def replace_block(lines, start_marker, end_marker, replacements, file):
     return lines[:start_pos + 1] + replacements + lines[end_pos:]
 
 
-def regen_frozen(modules):
+def regen_frozen(modules, frozen_modules: bool):
     headerlines = []
     parentdir = os.path.dirname(FROZEN_FILE)
-    for src in _iter_sources(modules):
-        # Adding a comment to separate sections here doesn't add much,
-        # so we don't.
-        header = relpath_for_posix_display(src.frozenfile, parentdir)
-        headerlines.append(f'#include "{header}"')
+    if frozen_modules:
+        for src in _iter_sources(modules):
+            # Adding a comment to separate sections here doesn't add much,
+            # so we don't.
+            header = relpath_for_posix_display(src.frozenfile, parentdir)
+            headerlines.append(f'#include "{header}"')
 
     externlines = []
     bootstraplines = []
@@ -500,9 +501,13 @@ def regen_frozen(modules):
         externlines.append("extern PyObject *%s(void);" % get_code_name)
 
         symbol = mod.symbol
-        pkg = '-' if mod.ispkg else ''
-        line = ('{"%s", %s, %s(int)sizeof(%s), GET_CODE(%s)},'
-                ) % (mod.name, symbol, pkg, symbol, code_name)
+        pkg = 'true' if mod.ispkg else 'false'
+        if not frozen_modules:
+            line = ('{"%s", NULL, 0, %s, GET_CODE(%s)},'
+                ) % (mod.name, pkg, code_name)
+        else:
+            line = ('{"%s", %s, (int)sizeof(%s), %s, GET_CODE(%s)},'
+                ) % (mod.name, symbol, symbol, pkg, code_name)
         lines.append(line)
 
         if mod.isalias:
@@ -710,18 +715,21 @@ def regen_pcbuild(modules):
 #######################################
 # the script
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--frozen-modules", action="store_true",
+        help="Use both frozen and deepfrozen modules. (default: uses only deepfrozen modules)")
+
 def main():
+    args = parser.parse_args()
+    frozen_modules: bool = args.frozen_modules
     # Expand the raw specs, preserving order.
     modules = list(parse_frozen_specs())
 
     # Regen build-related files.
     regen_makefile(modules)
     regen_pcbuild(modules)
-    regen_frozen(modules)
+    regen_frozen(modules, frozen_modules)
 
 
 if __name__ == '__main__':
-    argv = sys.argv[1:]
-    if argv:
-        sys.exit(f'ERROR: got unexpected args {argv}')
-    main()
+    main()    
