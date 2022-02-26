@@ -2183,17 +2183,15 @@ long_from_binary_base(const char **str, int base, PyLongObject **res)
     char prev = 0;
     Py_ssize_t digits = 0;
     int bits_per_char;
-    Py_ssize_t n;
     PyLongObject *z;
     twodigits accum;
     int bits_in_accum;
     digit *pdigit;
 
     assert(base >= 2 && base <= 32 && (base & (base - 1)) == 0);
-    n = base;
-    for (bits_per_char = -1; n; ++bits_per_char) {
-        n >>= 1;
-    }
+
+    bits_per_char = _Py_bit_length((unsigned long)base);
+
     /* count digits and set p to end-of-string */
     while (_PyLong_DigitValue[Py_CHARMASK(*p)] < base || *p == '_') {
         if (*p == '_') {
