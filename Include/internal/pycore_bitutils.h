@@ -143,29 +143,17 @@ _Py_popcount32(uint32_t x)
 // Return the index of the most significant 1 bit in 'x'. This is the smallest
 // integer k such that x < 2**k. Equivalent to floor(log2(x)) + 1 for x != 0.
 static inline int
-_Py_bit_length(unsigned long x)
+_Py_bit_length32(uint32_t x)
 {
 #if (defined(__clang__) || defined(__GNUC__))
-    if (x != 0) {
-        // __builtin_clzl() is available since GCC 3.4.
-        // Undefined behavior for x == 0.
-        return (int)sizeof(unsigned long) * 8 - __builtin_clzl(x);
-    }
-    else {
-        return 0;
-    }
+    // __builtin_clzl() is undefined for x = 0.
+    Py_BUILT_ASSERT(sizeof(long) <= sizeof(uint32_t));
+    return x == 0 ? 0 : 32 - __builtin_clzl(x);
 #elif defined(_MSC_VER)
-    // _BitScanReverse() is documented to search 32 bits.
-    Py_BUILD_ASSERT(sizeof(unsigned long) <= 4);
     unsigned long msb;
-    if (_BitScanReverse(&msb, x)) {
-        return (int)msb + 1;
-    }
-    else {
-        return 0;
-    }
+    return _BitScanReverse(&msb, x) ? msb + 1 : 0;
 #else
-    const int BIT_LENGTH_TABLE[32] = {
+    static const int BIT_LENGTH_TABLE[32] = {
         0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
         5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
     };
@@ -179,6 +167,43 @@ _Py_bit_length(unsigned long x)
 #endif
 }
 
+
+// Return the index of the most significant 1 bit in 'x'. This is the smallest
+// integer k such that x < 2**k. Equivalent to floor(log2(x)) + 1 for x != 0.
+// (Same as _Py_bit_length(), but works for 64-bit integers.)
+static inline int
+_Py_bit_length64(uint64_t x)
+{
+#if (defined(__clang__) || defined(__GNUC__))
+    /* __builtin_clzll() is undefined for x = 0 */
+    return x == 0 ? 0 : 64 - __builtin_clzll(x);
+#elif defined(_MSC_VER) && defined(_WIN64)
+    // FIXME(lpereira): Is _WIN64 sufficient to test for Aarch64 and x86-64?
+    // _BitScanReverse64() is only defined for 64-bit Windows, either on x86,
+    // or on ARM:
+    //    https://docs.microsoft.com/en-us/cpp/intrinsics/bitscanreverse-bitscanreverse64
+    unsigned long msb;
+    return _BitScanReverse64(&msb, x) ? msb + 1 : 0;
+#else
+    int upper_bits = _Py_bit_length32((uint32_t)(x >> 32));
+    int lower_bits = _Py_bit_length32((uint32_t)x);
+    return upper_bits + lower_bits;
+#endif
+}
+
+static inline int _Py_bit_length(unsigned long x)
+{
+    _Py_BUILD_ASSERT(sizeof(x) == sizeof(uint32_t) || sizeof(x) == sizeof(uint64_t));
+
+    if (sizeof(x) == sizeof(uint32_t)) {
+        return _Py_bit_length32(x);
+    }
+    if (sizeof(x) == sizeof(uint64_t)) {
+        return _Py_bit_length64(x);
+    }
+
+    _Py_UNREACHABLE();
+}
 
 #ifdef __cplusplus
 }
