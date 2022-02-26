@@ -10,8 +10,6 @@ module instead.
 
 #define MODULE_VERSION "1.0"
 
-#define NEEDS_PY_IDENTIFIER
-
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 #include <stdbool.h>
@@ -27,6 +25,7 @@ typedef struct {
     PyTypeObject *reader_type;
     PyTypeObject *writer_type;
     long field_limit;   /* max parsed field size */
+    PyObject *str_write;
 } _csvstate;
 
 static struct PyModuleDef _csvmodule;
@@ -48,6 +47,7 @@ _csv_clear(PyObject *module)
     Py_CLEAR(module_state->dialect_type);
     Py_CLEAR(module_state->reader_type);
     Py_CLEAR(module_state->writer_type);
+    Py_CLEAR(module_state->str_write);
     return 0;
 }
 
@@ -60,6 +60,7 @@ _csv_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(module_state->dialect_type);
     Py_VISIT(module_state->reader_type);
     Py_VISIT(module_state->writer_type);
+    Py_VISIT(module_state->str_write);
     return 0;
 }
 
@@ -1430,7 +1431,6 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
     PyObject * output_file, * dialect = NULL;
     _csvstate *module_state = get_csv_state(module);
     WriterObj * self = PyObject_GC_New(WriterObj, module_state->writer_type);
-    _Py_IDENTIFIER(write);
 
     if (!self)
         return NULL;
@@ -1449,7 +1449,9 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         Py_DECREF(self);
         return NULL;
     }
-    if (_PyObject_LookupAttrId(output_file, &PyId_write, &self->write) < 0) {
+    if (_PyObject_LookupAttr(output_file,
+                             module_state->str_write,
+                             &self->write) < 0) {
         Py_DECREF(self);
         return NULL;
     }
@@ -1751,6 +1753,10 @@ csv_exec(PyObject *module) {
         return -1;
     }
 
+    module_state->str_write = PyUnicode_InternFromString("write");
+    if (module_state->str_write == NULL) {
+        return -1;
+    }
     return 0;
 }
 

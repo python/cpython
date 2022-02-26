@@ -1,0 +1,2 @@
+Correct the docstring for the :meth:`__bool__` method. Patch by Jelle
+Zijlstra.

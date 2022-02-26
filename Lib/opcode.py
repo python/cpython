@@ -35,26 +35,31 @@ hasnargs = [] # unused
 opmap = {}
 opname = ['<%r>' % (op,) for op in range(256)]
 
-def def_op(name, op):
+_inline_cache_entries = [0] * 256
+
+def def_op(name, op, entries=0):
     opname[op] = name
     opmap[name] = op
+    _inline_cache_entries[op] = entries
 
-def name_op(name, op):
-    def_op(name, op)
+def name_op(name, op, entries=0):
+    def_op(name, op, entries)
     hasname.append(op)
 
-def jrel_op(name, op):
-    def_op(name, op)
+def jrel_op(name, op, entries=0):
+    def_op(name, op, entries)
     hasjrel.append(op)
 
-def jabs_op(name, op):
-    def_op(name, op)
+def jabs_op(name, op, entries=0):
+    def_op(name, op, entries)
     hasjabs.append(op)
 
 # Instruction opcodes for compiled code
 # Blank lines correspond to available opcodes
 
 def_op('POP_TOP', 1)
+def_op('PUSH_NULL', 2)
+def_op('CACHE', 3)
 
 def_op('NOP', 9)
 def_op('UNARY_POSITIVE', 10)
@@ -136,7 +141,7 @@ def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
-def_op('BINARY_OP', 122)
+def_op('BINARY_OP', 122, 1)
 jrel_op('SEND', 123) # Number of bytes to skip
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)
@@ -187,9 +192,7 @@ def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
-
-def_op('PRECALL_FUNCTION', 167)
-def_op('PRECALL_METHOD', 168)
+def_op('PRECALL', 166)
 
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
@@ -249,21 +252,8 @@ _specialized_instructions = [
     "STORE_SUBSCR_LIST_INT",
     "STORE_SUBSCR_DICT",
     "CALL_ADAPTIVE",
-    "CALL_BUILTIN_CLASS",
-    "CALL_NO_KW_BUILTIN_O",
-    "CALL_NO_KW_BUILTIN_FAST",
-    "CALL_BUILTIN_FAST_WITH_KEYWORDS",
-    "CALL_NO_KW_LEN",
-    "CALL_NO_KW_ISINSTANCE",
     "CALL_PY_EXACT_ARGS",
     "CALL_PY_WITH_DEFAULTS",
-    "CALL_NO_KW_LIST_APPEND",
-    "CALL_NO_KW_METHOD_DESCRIPTOR_O",
-    "CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS",
-    "CALL_NO_KW_STR_1",
-    "CALL_NO_KW_TUPLE_1",
-    "CALL_NO_KW_TYPE_1",
-    "CALL_NO_KW_METHOD_DESCRIPTOR_FAST",
     "JUMP_ABSOLUTE_QUICK",
     "LOAD_ATTR_ADAPTIVE",
     "LOAD_ATTR_INSTANCE_VALUE",
@@ -274,21 +264,43 @@ _specialized_instructions = [
     "LOAD_GLOBAL_MODULE",
     "LOAD_GLOBAL_BUILTIN",
     "LOAD_METHOD_ADAPTIVE",
-    "LOAD_METHOD_CACHED",
     "LOAD_METHOD_CLASS",
     "LOAD_METHOD_MODULE",
     "LOAD_METHOD_NO_DICT",
+    "LOAD_METHOD_WITH_DICT",
+    "LOAD_METHOD_WITH_VALUES",
+    "PRECALL_ADAPTIVE",
+    "PRECALL_BUILTIN_CLASS",
+    "PRECALL_NO_KW_BUILTIN_O",
+    "PRECALL_NO_KW_BUILTIN_FAST",
+    "PRECALL_BUILTIN_FAST_WITH_KEYWORDS",
+    "PRECALL_NO_KW_LEN",
+    "PRECALL_NO_KW_ISINSTANCE",
+    "PRECALL_NO_KW_LIST_APPEND",
+    "PRECALL_NO_KW_METHOD_DESCRIPTOR_O",
+    "PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS",
+    "PRECALL_NO_KW_STR_1",
+    "PRECALL_NO_KW_TUPLE_1",
+    "PRECALL_NO_KW_TYPE_1",
+    "PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST",
+    "PRECALL_BOUND_METHOD",
+    "PRECALL_PYFUNC",
     "RESUME_QUICK",
     "STORE_ATTR_ADAPTIVE",
     "STORE_ATTR_INSTANCE_VALUE",
     "STORE_ATTR_SLOT",
     "STORE_ATTR_WITH_HINT",
+    "UNPACK_SEQUENCE_ADAPTIVE",
+    "UNPACK_SEQUENCE_LIST",
+    "UNPACK_SEQUENCE_TUPLE",
+    "UNPACK_SEQUENCE_TWO_TUPLE",
     # Super instructions
     "LOAD_FAST__LOAD_FAST",
     "STORE_FAST__LOAD_FAST",
     "LOAD_FAST__LOAD_CONST",
     "LOAD_CONST__LOAD_FAST",
     "STORE_FAST__STORE_FAST",
+    "LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE",
 ]
 _specialization_stats = [
     "success",

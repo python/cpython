@@ -19,7 +19,7 @@ static PyMemberDef module_members[] = {
 PyTypeObject PyModuleDef_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "moduledef",                                /* tp_name */
-    sizeof(struct PyModuleDef),                 /* tp_basicsize */
+    sizeof(PyModuleDef),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
 };
 
@@ -32,13 +32,13 @@ _PyModule_IsExtension(PyObject *obj)
     }
     PyModuleObject *module = (PyModuleObject*)obj;
 
-    struct PyModuleDef *def = module->md_def;
+    PyModuleDef *def = module->md_def;
     return (def != NULL && def->m_methods != NULL);
 }
 
 
 PyObject*
-PyModuleDef_Init(struct PyModuleDef* def)
+PyModuleDef_Init(PyModuleDef* def)
 {
     assert(PyModuleDef_Type.tp_flags & Py_TPFLAGS_READY);
     if (def->m_base.m_index == 0) {
@@ -182,7 +182,7 @@ _add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
 }
 
 PyObject *
-PyModule_Create2(struct PyModuleDef* module, int module_api_version)
+PyModule_Create2(PyModuleDef* module, int module_api_version)
 {
     if (!_PyImport_IsInitialized(_PyInterpreterState_GET())) {
         PyErr_SetString(PyExc_SystemError,
@@ -193,7 +193,7 @@ PyModule_Create2(struct PyModuleDef* module, int module_api_version)
 }
 
 PyObject *
-_PyModule_CreateInitialized(struct PyModuleDef* module, int module_api_version)
+_PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
 {
     const char* name;
     PyModuleObject *m;
@@ -256,7 +256,7 @@ _PyModule_CreateInitialized(struct PyModuleDef* module, int module_api_version)
 }
 
 PyObject *
-PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api_version)
+PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_version)
 {
     PyModuleDef_Slot* cur_slot;
     PyObject *(*create)(PyObject *, PyModuleDef*) = NULL;
