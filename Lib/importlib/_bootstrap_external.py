@@ -371,16 +371,38 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a3 3464 (bpo-45636: Merge numeric BINARY_*/INPLACE_* into
 #                         BINARY_OP)
 #     Python 3.11a3 3465 (Add COPY_FREE_VARS opcode)
+#     Python 3.11a4 3466 (bpo-45292: PEP-654 except*)
+#     Python 3.11a4 3467 (Change CALL_xxx opcodes)
+#     Python 3.11a4 3468 (Add SEND opcode)
+#     Python 3.11a4 3469 (bpo-45711: remove type, traceback from exc_info)
+#     Python 3.11a4 3470 (bpo-46221: PREP_RERAISE_STAR no longer pushes lasti)
+#     Python 3.11a4 3471 (bpo-46202: remove pop POP_EXCEPT_AND_RERAISE)
+#     Python 3.11a4 3472 (bpo-46009: replace GEN_START with POP_TOP)
+#     Python 3.11a4 3473 (Add POP_JUMP_IF_NOT_NONE/POP_JUMP_IF_NONE opcodes)
+#     Python 3.11a4 3474 (Add RESUME opcode)
+#     Python 3.11a5 3475 (Add RETURN_GENERATOR opcode)
+#     Python 3.11a5 3476 (Add ASYNC_GEN_WRAP opcode)
+#     Python 3.11a5 3477 (Replace DUP_TOP/DUP_TOP_TWO with COPY and
+#                         ROT_TWO/ROT_THREE/ROT_FOUR/ROT_N with SWAP)
+#     Python 3.11a5 3478 (New CALL opcodes)
+#     Python 3.11a5 3479 (Add PUSH_NULL opcode)
+#     Python 3.11a5 3480 (New CALL opcodes, second iteration)
+#     Python 3.11a5 3481 (Use inline CACHE instructions)
+
+#     Python 3.12 will start with magic number 3500
+
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
 # due to the addition of new opcodes).
 #
+# Starting with Python 3.11, Python 3.n starts with magic number 2900+50n.
+#
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3465).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3481).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'

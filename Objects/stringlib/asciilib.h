@@ -20,6 +20,7 @@
 #define STRINGLIB_NEW(STR,LEN)   _PyUnicode_FromASCII((const char*)(STR),(LEN))
 #define STRINGLIB_CHECK          PyUnicode_Check
 #define STRINGLIB_CHECK_EXACT    PyUnicode_CheckExact
+#define STRINGLIB_MUTABLE 0
 
 #define STRINGLIB_TOSTR          PyObject_Str
 #define STRINGLIB_TOASCII        PyObject_ASCII

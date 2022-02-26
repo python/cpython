@@ -3,7 +3,6 @@ import contextlib
 import filecmp
 import importlib.util
 import io
-import itertools
 import os
 import pathlib
 import py_compile
@@ -16,22 +15,21 @@ import time
 import unittest
 
 from unittest import mock, skipUnless
-from concurrent.futures import ProcessPoolExecutor
 try:
     # compileall relies on ProcessPoolExecutor if ProcessPoolExecutor exists
     # and it can function.
+    from concurrent.futures import ProcessPoolExecutor
     from concurrent.futures.process import _check_system_limits
     _check_system_limits()
     _have_multiprocessing = True
-except NotImplementedError:
+except (NotImplementedError, ModuleNotFoundError):
     _have_multiprocessing = False
 
 from test import support
 from test.support import os_helper
 from test.support import script_helper
-
-from .test_py_compile import without_source_date_epoch
-from .test_py_compile import SourceDateEpochTestMeta
+from test.test_py_compile import without_source_date_epoch
+from test.test_py_compile import SourceDateEpochTestMeta
 
 
 def get_pyc(script, opt):

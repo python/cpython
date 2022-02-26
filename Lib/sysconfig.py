@@ -192,6 +192,7 @@ if _PYTHON_BUILD:
         scheme['headers'] = scheme['include']
         scheme['include'] = '{srcdir}/Include'
         scheme['platinclude'] = '{projectbase}/.'
+    del scheme
 
 
 def _subst_vars(s, local_vars):
@@ -616,6 +617,7 @@ def get_config_vars(*args):
 
         if os.name == 'nt':
             _init_non_posix(_CONFIG_VARS)
+            _CONFIG_VARS['VPATH'] = sys._vpath
         if os.name == 'posix':
             _init_posix(_CONFIG_VARS)
         # For backward compatibility, see issue19555

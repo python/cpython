@@ -62,6 +62,10 @@ typedef void (*PyOS_sighandler_t)(int);
 PyAPI_FUNC(PyOS_sighandler_t) PyOS_getsig(int);
 PyAPI_FUNC(PyOS_sighandler_t) PyOS_setsig(int, PyOS_sighandler_t);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
+PyAPI_DATA(const unsigned long) Py_Version;
+#endif
+
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_PYLIFECYCLE_H
 #  include "cpython/pylifecycle.h"

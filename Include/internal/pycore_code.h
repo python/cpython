@@ -23,7 +23,7 @@ typedef struct {
 
 typedef struct {
     uint32_t tp_version;
-    uint32_t dk_version_or_hint;
+    uint32_t dk_version;
 } _PyAttrCache;
 
 typedef struct {
@@ -38,7 +38,7 @@ typedef struct {
 
 typedef struct {
     uint32_t func_version;
-    uint16_t defaults_start;
+    uint16_t min_args;
     uint16_t defaults_len;
 } _PyCallCache;
 
@@ -63,6 +63,13 @@ typedef union {
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
+
+typedef struct {
+    _Py_CODEUNIT counter;
+} _PyBinaryOpCache;
+
+#define INLINE_CACHE_ENTRIES_BINARY_OP \
+    (sizeof(_PyBinaryOpCache) / sizeof(_Py_CODEUNIT))
 
 /* Maximum size of code to quicken, in code units. */
 #define MAX_SIZE_TO_QUICKEN 5000
@@ -252,9 +259,35 @@ PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
 /* Private API */
 
 /* Getters for internal PyCodeObject data. */
-PyAPI_FUNC(PyObject *) _PyCode_GetVarnames(PyCodeObject *);
-PyAPI_FUNC(PyObject *) _PyCode_GetCellvars(PyCodeObject *);
-PyAPI_FUNC(PyObject *) _PyCode_GetFreevars(PyCodeObject *);
+extern PyObject* _PyCode_GetVarnames(PyCodeObject *);
+extern PyObject* _PyCode_GetCellvars(PyCodeObject *);
+extern PyObject* _PyCode_GetFreevars(PyCodeObject *);
+
+/* Return the ending source code line number from a bytecode index. */
+extern int _PyCode_Addr2EndLine(PyCodeObject *, int);
+
+/* Return the ending source code line number from a bytecode index. */
+extern int _PyCode_Addr2EndLine(PyCodeObject *, int);
+/* Return the starting source code column offset from a bytecode index. */
+extern int _PyCode_Addr2Offset(PyCodeObject *, int);
+/* Return the ending source code column offset from a bytecode index. */
+extern int _PyCode_Addr2EndOffset(PyCodeObject *, int);
+
+/** API for initializing the line number tables. */
+extern int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
+extern int _PyCode_InitEndAddressRange(PyCodeObject* co, PyCodeAddressRange* bounds);
+
+/** Out of process API for initializing the line number table. */
+extern void _PyLineTable_InitAddressRange(
+    const char *linetable,
+    Py_ssize_t length,
+    int firstlineno,
+    PyCodeAddressRange *range);
+
+/** API for traversing the line number table. */
+extern int _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
+extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
+
 
 #define ADAPTIVE_CACHE_BACKOFF 64
 
@@ -265,56 +298,87 @@ cache_backoff(_PyAdaptiveEntry *entry) {
 
 /* Specialization functions */
 
-int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
-int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
-int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
-int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
-int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
-int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
-int _Py_Specialize_CallFunction(PyObject *callable, _Py_CODEUNIT *instr, int nargs, SpecializedCacheEntry *cache, PyObject *builtins);
-void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                             SpecializedCacheEntry *cache);
-void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
+extern int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+extern int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+extern int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+extern int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+extern int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
+extern int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
+extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
+    PyObject *kwnames, SpecializedCacheEntry *cache);
+extern int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
+    PyObject *kwnames, SpecializedCacheEntry *cache, PyObject *builtins);
+extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
+                             int oparg);
+extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
+extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
+                                   SpecializedCacheEntry *cache);
 
-#define PRINT_SPECIALIZATION_STATS 0
-#define PRINT_SPECIALIZATION_STATS_DETAILED 0
-#define PRINT_SPECIALIZATION_STATS_TO_FILE 0
+/* Deallocator function for static codeobjects used in deepfreeze.py */
+extern void _PyStaticCode_Dealloc(PyCodeObject *co);
+/* Function to intern strings of codeobjects */
+extern int _PyStaticCode_InternStrings(PyCodeObject *co);
 
-#ifdef Py_DEBUG
-#define COLLECT_SPECIALIZATION_STATS 1
-#define COLLECT_SPECIALIZATION_STATS_DETAILED 1
-#else
-#define COLLECT_SPECIALIZATION_STATS PRINT_SPECIALIZATION_STATS
-#define COLLECT_SPECIALIZATION_STATS_DETAILED PRINT_SPECIALIZATION_STATS_DETAILED
-#endif
+#ifdef Py_STATS
 
-#define SPECIALIZATION_FAILURE_KINDS 20
+#define SPECIALIZATION_FAILURE_KINDS 30
 
-#if COLLECT_SPECIALIZATION_STATS
-
-typedef struct _stats {
-    uint64_t specialization_success;
-    uint64_t specialization_failure;
+typedef struct _specialization_stats {
+    uint64_t success;
+    uint64_t failure;
     uint64_t hit;
     uint64_t deferred;
     uint64_t miss;
     uint64_t deopt;
-    uint64_t unquickened;
-#if COLLECT_SPECIALIZATION_STATS_DETAILED
-    uint64_t specialization_failure_kinds[SPECIALIZATION_FAILURE_KINDS];
-#endif
+    uint64_t failure_kinds[SPECIALIZATION_FAILURE_KINDS];
 } SpecializationStats;
 
-extern SpecializationStats _specialization_stats[256];
-#define STAT_INC(opname, name) _specialization_stats[opname].name++
-#define STAT_DEC(opname, name) _specialization_stats[opname].name--
-void _Py_PrintSpecializationStats(void);
+typedef struct _opcode_stats {
+    SpecializationStats specialization;
+    uint64_t execution_count;
+    uint64_t pair_count[256];
+} OpcodeStats;
 
-PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
+typedef struct _call_stats {
+    uint64_t inlined_py_calls;
+    uint64_t pyeval_calls;
+    uint64_t frames_pushed;
+    uint64_t frame_objects_created;
+} CallStats;
+
+typedef struct _object_stats {
+    uint64_t allocations;
+    uint64_t frees;
+    uint64_t new_values;
+    uint64_t dict_materialized_on_request;
+    uint64_t dict_materialized_new_key;
+    uint64_t dict_materialized_too_big;
+} ObjectStats;
+
+typedef struct _stats {
+    OpcodeStats opcode_stats[256];
+    CallStats call_stats;
+    ObjectStats object_stats;
+} PyStats;
+
+extern PyStats _py_stats;
+
+#define STAT_INC(opname, name) _py_stats.opcode_stats[opname].specialization.name++
+#define STAT_DEC(opname, name) _py_stats.opcode_stats[opname].specialization.name--
+#define OPCODE_EXE_INC(opname) _py_stats.opcode_stats[opname].execution_count++
+#define CALL_STAT_INC(name) _py_stats.call_stats.name++
+#define OBJECT_STAT_INC(name) _py_stats.object_stats.name++
+
+extern void _Py_PrintSpecializationStats(int to_file);
+
+extern PyObject* _Py_GetSpecializationStats(void);
 
 #else
 #define STAT_INC(opname, name) ((void)0)
 #define STAT_DEC(opname, name) ((void)0)
+#define OPCODE_EXE_INC(opname) ((void)0)
+#define CALL_STAT_INC(name) ((void)0)
+#define OBJECT_STAT_INC(name) ((void)0)
 #endif
 
 

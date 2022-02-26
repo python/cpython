@@ -85,20 +85,12 @@ Used in:  Py_SAFE_DOWNCAST
 #define PY_INT32_T int32_t
 #define PY_INT64_T int64_t
 
-/* If PYLONG_BITS_IN_DIGIT is not defined then we'll use 30-bit digits if all
-   the necessary integer types are available, and we're on a 64-bit platform
-   (as determined by SIZEOF_VOID_P); otherwise we use 15-bit digits.
-
-   From pyodide: WASM has 32 bit pointers but has native 64 bit arithmetic
-   so it is more efficient to use 30 bit digits.
+/* PYLONG_BITS_IN_DIGIT describes the number of bits per "digit" (limb) in the
+ * PyLongObject implementation (longintrepr.h). It's currently either 30 or 15,
+ * defaulting to 30. The 15-bit digit option may be removed in the future.
  */
-
 #ifndef PYLONG_BITS_IN_DIGIT
-#if SIZEOF_VOID_P >= 8 || defined(__wasm__)
-#  define PYLONG_BITS_IN_DIGIT 30
-#else
-#  define PYLONG_BITS_IN_DIGIT 15
-#endif
+#define PYLONG_BITS_IN_DIGIT 30
 #endif
 
 /* uintptr_t is the C9X name for an unsigned integral type such that a
@@ -318,61 +310,6 @@ extern "C" {
     (assert((WIDE)(NARROW)(VALUE) == (VALUE)), (NARROW)(VALUE))
 #else
 #define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
-#endif
-
-/*  The functions _Py_dg_strtod and _Py_dg_dtoa in Python/dtoa.c (which are
- *  required to support the short float repr introduced in Python 3.1) require
- *  that the floating-point unit that's being used for arithmetic operations
- *  on C doubles is set to use 53-bit precision.  It also requires that the
- *  FPU rounding mode is round-half-to-even, but that's less often an issue.
- *
- *  If your FPU isn't already set to 53-bit precision/round-half-to-even, and
- *  you want to make use of _Py_dg_strtod and _Py_dg_dtoa, then you should
- *
- *     #define HAVE_PY_SET_53BIT_PRECISION 1
- *
- * The macros are designed to be used within a single C function: see
- * Python/pystrtod.c for an example of their use.
- */
-
-// HAVE_PY_SET_53BIT_PRECISION macro must be kept in sync with pycore_pymath.h
-#ifdef HAVE_GCC_ASM_FOR_X87
-   // Get and set x87 control word for gcc/x86
-#  define HAVE_PY_SET_53BIT_PRECISION 1
-#endif
-#if defined(_MSC_VER) && !defined(_WIN64) && !defined(_M_ARM)
-   // Get and set x87 control word for VisualStudio/x86.
-   // x87 not supported in 64-bit or ARM.
-#  define HAVE_PY_SET_53BIT_PRECISION 1
-#endif
-#ifdef HAVE_GCC_ASM_FOR_MC68881
-#  define HAVE_PY_SET_53BIT_PRECISION 1
-#endif
-
-
-/* If we can't guarantee 53-bit precision, don't use the code
-   in Python/dtoa.c, but fall back to standard code.  This
-   means that repr of a float will be long (17 sig digits).
-
-   Realistically, there are two things that could go wrong:
-
-   (1) doubles aren't IEEE 754 doubles, or
-   (2) we're on x86 with the rounding precision set to 64-bits
-       (extended precision), and we don't know how to change
-       the rounding precision.
- */
-
-#if !defined(DOUBLE_IS_LITTLE_ENDIAN_IEEE754) && \
-    !defined(DOUBLE_IS_BIG_ENDIAN_IEEE754) && \
-    !defined(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754)
-#  define PY_NO_SHORT_FLOAT_REPR
-#endif
-
-/* double rounding is symptomatic of use of extended precision on x86.  If
-   we're seeing double rounding, and we don't have any mechanism available for
-   changing the FPU rounding precision, then don't use Python/dtoa.c. */
-#if defined(X87_DOUBLE_ROUNDING) && !defined(HAVE_PY_SET_53BIT_PRECISION)
-#  define PY_NO_SHORT_FLOAT_REPR
 #endif
 
 

@@ -1,0 +1,2 @@
+Building Python now requires a C11 compiler without optional C11 features.
+Patch by Victor Stinner.

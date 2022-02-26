@@ -90,8 +90,10 @@ jobs:
           if test -n "$changes"; then
             echo "Generated files not up to date."
             echo "Perhaps you forgot to run make regen-all or build.bat --regen. ;)"
-            echo "configure files must be regenerated with a specific, unpatched version of autoconf."
+            echo "configure files must be regenerated with a specific version of autoconf."
             echo "$changes"
+            echo ""
+            git diff --staged || true
             exit 1
           fi
       - name: Check exported libpython symbols
@@ -110,6 +112,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build CPython
       run: .\PCbuild\build.bat -e -p Win32
+      timeout-minutes: 30
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
@@ -128,6 +131,7 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
       run: .\PCbuild\build.bat -e -p x64
+      timeout-minutes: 30
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
@@ -161,7 +165,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1l
+      OPENSSL_VER: 1.1.1m
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v2
@@ -176,7 +180,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v2.1.6
+      uses: actions/cache@v2.1.7
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -220,7 +224,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.1.1l, 3.0.0]
+        openssl_ver: [1.1.1m, 3.0.1]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
@@ -239,7 +243,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v2.1.6
+      uses: actions/cache@v2.1.7
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -267,7 +271,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1l
+      OPENSSL_VER: 1.1.1m
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
@@ -283,7 +287,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v2.1.6
+      uses: actions/cache@v2.1.7
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -302,4 +306,12 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Tests
-      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu -x test_ctypes test_crypt test_decimal test_faulthandler test_interpreters test___all__ test_idle test_tix test_tk test_ttk_guionly test_ttk_textonly test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn"
+      # Skip test_tools test_peg_generator test_concurrent_futures because
+      # there are too slow: between 5 and 20 minutes on this CI.
+      #
+      # Skip multiprocessing and concurrent.futures tests which are affected by
+      # bpo-45200 bug: libasan dead lock in pthread_create().
+      #
+      # test___all__ is skipped because importing some modules directly can trigger
+      # known problems with ASAN (like tk or crypt).
+      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu -x test___all__ test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn test_tools test_peg_generator test_concurrent_futures"
