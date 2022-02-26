@@ -340,7 +340,8 @@ class FunctionTests(unittest.TestCase):
                                "select spam(?)", (1 << 65,))
 
     def test_non_contiguous_blob(self):
-        self.assertRaisesRegex(ValueError, "could not convert BLOB to buffer",
+        self.assertRaisesRegex(BufferError,
+                               "underlying buffer is not C-contiguous",
                                self.con.execute, "select spam(?)",
                                (memoryview(b"blob")[::2],))
 
