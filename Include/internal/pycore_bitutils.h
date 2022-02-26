@@ -247,6 +247,27 @@ static inline bool _Py_sub_overflow64(int64_t a, int64_t b, int64_t *result)
 #endif
 }
 
+static inline bool _Py_mul_overflow32(int32_t a, int32_t b, int32_t *result)
+{
+#if (defined(__clang__) || defined(__GNUC__))
+    return __builtin_mul_overflow(a, b, result);
+#else
+    uint64_t result64 = (uint64_t)((uint64_t)a * (uint64_t)b);
+    *result = (int32_t)result64;
+    return result64 <= INT32_MAX;
+#endif
+}
+
+static inline bool _Py_mul_overflow64(int64_t a, int64_t b, int64_t *result)
+{
+#if (defined(__clang__) || defined(__GNUC__))
+    return __builtin_mul_overflow(a, b, result);
+#else
+    *result = (uint64_t)a + (uint64_t)b;
+    return (a >= INT32_MAX || b >= INT32_MAX) && a > 0 && INT64_MAX / a < b;
+#endif
+}
+
 #ifdef __cplusplus
 }
 #endif
