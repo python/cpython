@@ -46,7 +46,7 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
 # The empty string classifies URLs with no scheme specified,
 # being the default value returned by “urlsplit” and “urlparse”.
 
-"""SchemeClass is an enum with members. RELATIVE, NETLOC, and PARAMS. These
+"""SchemeClass is an enum with the members RELATIVE, NETLOC, and PARAMS. These
 describe methods for URL resolution, usually by scheme. These resolution classes
 determine, namely, whether a scheme supports, respectively, relative addressing,
 preserving the netloc (domain name), and preserving the parameters."""
