@@ -1882,7 +1882,7 @@ currently in a read transaction or is involved in a backup operation.
 static PyObject *
 deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
                  const char *name)
-/*[clinic end generated code: output=e394c798b98bad89 input=648327de6cdc107e]*/
+/*[clinic end generated code: output=e394c798b98bad89 input=7cf51653d0c40e22]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;

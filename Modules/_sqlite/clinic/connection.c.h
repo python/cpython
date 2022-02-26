@@ -767,7 +767,7 @@ PyDoc_STRVAR(deserialize__doc__,
 "Load a serialized database. Non-standard.\n"
 "\n"
 "  data\n"
-"    The serialized database content\n"
+"    The serialized database content.\n"
 "  name\n"
 "    Which database to reopen with the deserialization.\n"
 "\n"
@@ -994,4 +994,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=aefa6b5036964d5a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fc68ba7a5d8a9173 input=a9049054013a1b77]*/
