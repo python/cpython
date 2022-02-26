@@ -4095,7 +4095,6 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(D[Unpack[Ts]]), (Unpack[Ts],))
         self.assertEqual(get_args(D[T, Unpack[Ts]]), (T, Unpack[Ts],))
         self.assertEqual(get_args(D[Unpack[Ts], T]), (Unpack[Ts], T))
-        self.assertEqual(get_args(D[Unpack[Ts], int, ...]), (Unpack[Ts], int, ...))
 
         self.assertEqual(get_args(tuple[Unpack[Ts]]), (Unpack[Ts],))
         self.assertEqual(get_args(Tuple[Unpack[Ts]]), (Unpack[Ts],))
