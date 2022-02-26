@@ -25,7 +25,8 @@ Resource Locators. It supports the following URL schemes: ``file``, ``ftp``,
 ``gopher``, ``hdl``, ``http``, ``https``, ``imap``, ``mailto``, ``mms``,
 ``news``, ``nntp``, ``prospero``, ``rsync``, ``rtsp``, ``rtspu``, ``sftp``,
 ``shttp``, ``sip``, ``sips``, ``snews``, ``svn``, ``svn+ssh``, ``telnet``,
-``wais``, ``ws``, ``wss``.
+``wais``, ``ws``, ``wss``. The behavior of other schemes may be controlled with
+a collection of ``UrlClass`` enums passed to dependent functions.
 
 The :mod:`urllib.parse` module defines functions that fall into two broad
 categories: URL parsing and URL quoting. These are covered in detail in
@@ -37,24 +38,33 @@ URL Parsing
 The URL parsing functions focus on splitting a URL string into its components,
 or on combining URL components into a URL string.
 
-.. function:: urlparse(urlstring, scheme='', allow_fragments=True)
+.. function:: urlparse(urlstring, scheme='', allow_fragments=True, classes=set())
 
-   Parse a URL into six components, returning a 6-item :term:`named tuple`.  This
-   corresponds to the general structure of a URL:
-   ``scheme://netloc/path;parameters?query#fragment``.
-   Each tuple item is a string, possibly empty. The components are not broken up
-   into smaller parts (for example, the network location is a single string), and %
+   Parse a URL into six components with respect to given scheme classes,
+   returning a 6-item :term:`named tuple`. This corresponds to the general
+   structure of a URL: ``scheme://netloc/path;parameters?query#fragment``. Each
+   tuple item is a string, possibly empty. The components are not broken up into
+   smaller parts (for example, the network location is a single string), and %
    escapes are not expanded. The delimiters as shown above are not part of the
-   result, except for a leading slash in the *path* component, which is retained if
-   present.  For example:
+   result, except for a leading slash in the *path* component, which is retained
+   if present.
+
+   The scheme of the URL determines whether or not parameters are parsed as
+   distinct from the path. To override the scheme and parse parameters anyway,
+   pass a set containing ``SchemeClass.PARAMS``.
+
+   For example:
 
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
 
-      >>> from urllib.parse import urlparse
+      >>> from urllib.parse import urlparse, SchemeClass
       >>> urlparse("scheme://netloc/path;parameters?query#fragment")
       ParseResult(scheme='scheme', netloc='netloc', path='/path;parameters', params='',
                   query='query', fragment='fragment')
+      >>> urlparse("scheme://netloc/path;parameters?query#fragment", classes=[SchemeClass.PARAMS])
+      ParseResult(scheme='scheme', netloc='netloc', path='/path',
+                  params=';parameters', query='query', fragment='fragment')
       >>> o = urlparse("http://docs.python.org:80/3/library/urllib.parse.html?"
       ...              "highlight=params#url-parsing")
       >>> o
@@ -348,19 +358,21 @@ or on combining URL components into a URL string.
    with an empty query; the RFC states that these are equivalent).
 
 
-.. function:: urljoin(base, url, allow_fragments=True)
+.. function:: urljoin(base, url, allow_fragments=True, classes=set())
 
    Construct a full ("absolute") URL by combining a "base URL" (*base*) with
-   another URL (*url*).  Informally, this uses components of the base URL, in
-   particular the addressing scheme, the network location and (part of) the
-   path, to provide missing components in the relative URL.  For example:
+   another URL (*url*), and with behavior given by a set of ``SchemeClass``
+   enums. Informally, this uses components of the base URL, in particular the
+   addressing scheme, the network location and (part of) the path, to provide
+   missing components in the relative URL. For example:
 
       >>> from urllib.parse import urljoin
       >>> urljoin('http://www.cwi.nl/%7Eguido/Python.html', 'FAQ.html')
       'http://www.cwi.nl/%7Eguido/FAQ.html'
 
    The *allow_fragments* argument has the same meaning and default as for
-   :func:`urlparse`.
+   :func:`urlparse`. As in :func:`urlparse`, a ``SchemeClass`` set may be given
+   to override behavior inferred by the scheme.
 
    .. note::
 
@@ -543,6 +555,53 @@ operating on :class:`bytes` or :class:`bytearray` objects:
 
    .. versionadded:: 3.2
 
+Special URL Behaviors and Scheme Classes
+----------------------------------------
+
+:mod:`urllib.parse` recognizes three special properties of URLs, namely relative
+addressing (used in, for instance, the ``ftp``, ``http``, or ``gopher``
+protocols), netloc-sensitive resolution (used in the ``ftp``, ``http``, or
+``git`` protocols), and URLs that may contain parameters (for instance, ``ftp``
+or ``telnet``).
+
+Relative addressing allows resolution of relative URLs, and netloc-sensitive
+addressing allows resolution with respect to the netloc (domain name) of a URL.
+As HTTP URLs have both behaviors by default, this is demonstrated in the
+following example:
+
+   >>> from urllib.parse import urljoin
+   >>> urljoin('http://example.org/post/x', '../y')
+   'http://example.org/post/y'
+
+Additionally, if it is not indicated that a URL is sensitive to parameters
+(those specified after a semicolon in the path), then they'll be treated as part
+of the path rather than as a distinct component.
+
+Without specifying optional parameters or modifying global variables, Python
+will guess what parameters to apply based on the scheme. Schemes associated with
+each are specified by three lists in :mod:`urllib.parse`:
+
+* ``urllib.uses_relative``
+* ``urllib.uses_netloc``
+* ``urllib.uses_params``
+
+In addition, any function that takes a ``classes`` parameter (for instance,
+:func:`urlparse` and :func:`urljoin`) may override the behavior of the uses
+lists, for instance, parsing a custom or widely unused scheme with the same
+behavior as that of HTTP:
+
+   >>> from urllib.parse import urljoin, SchemeClass
+   >>> urljoin(
+           'my-protocol://example.org/post/x', '../y',
+           classes=[SchemeClass.NETLOC, SchemeClass.RELATIVE])
+   'http://example.org/post/y'
+
+For reference, the following three scheme classes are present (exactly
+corresponding to the uses lists):
+
+* ``urllib.SchemeClass.RELATIVE``
+* ``urllib.SchemeClass.NETLOC``
+* ``urllib.SchemeClass.PARAMS``
 
 URL Quoting
 -----------
