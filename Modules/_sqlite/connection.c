@@ -1923,7 +1923,6 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
         (void)_pysqlite_seterror(self->state, self->db);
         return NULL;
     }
-
     Py_RETURN_TRUE;
 }
 #endif  // PY_SQLITE_HAVE_SERIALIZE
