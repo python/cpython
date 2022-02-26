@@ -404,7 +404,7 @@ class TypeVarTupleTests(BaseTestCase):
         Ts = TypeVarTuple('Ts')
         class A(Generic[Unpack[Ts]]): pass
 
-        self.assertTrue(repr(A[()]).endswith('A[]'))
+        self.assertTrue(repr(A[()]).endswith('A[()]'))
         self.assertTrue(repr(A[float]).endswith('A[float]'))
         self.assertTrue(repr(A[float, str]).endswith('A[float, str]'))
         self.assertTrue(repr(
@@ -433,7 +433,7 @@ class TypeVarTupleTests(BaseTestCase):
         class A(Generic[Unpack[Ts]]): pass
 
         B = A[Unpack[Ts]]
-        self.assertTrue(repr(B[()]).endswith('A[]'))
+        self.assertTrue(repr(B[()]).endswith('A[()]'))
         self.assertTrue(repr(B[float]).endswith('A[float]'))
         self.assertTrue(repr(B[float, str]).endswith('A[float, str]'))
 

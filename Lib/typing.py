@@ -1513,7 +1513,11 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             name = 'typing.' + self._name
         else:
             name = _type_repr(self.__origin__)
-        args = ", ".join([_type_repr(a) for a in self.__args__])
+        if self.__args__:
+            args = ", ".join([_type_repr(a) for a in self.__args__])
+        else:
+            # To ensure the repr is eval-able.
+            args = "()"
         return f'{name}[{args}]'
 
     def __reduce__(self):
