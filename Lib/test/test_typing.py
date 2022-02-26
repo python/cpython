@@ -433,38 +433,43 @@ class TypeVarTupleTests(BaseTestCase):
         class A(Generic[Unpack[Ts]]): pass
 
         B = A[Unpack[Ts]]
+        self.assertTrue(repr(B).endswith('A[*Ts]'))
         self.assertTrue(repr(B[()]).endswith('A[()]'))
         self.assertTrue(repr(B[float]).endswith('A[float]'))
         self.assertTrue(repr(B[float, str]).endswith('A[float, str]'))
 
         C = A[Unpack[Ts], int]
+        self.assertTrue(repr(C).endswith('A[*Ts, int]'))
         self.assertTrue(repr(C[()]).endswith('A[int]'))
         self.assertTrue(repr(C[float]).endswith('A[float, int]'))
         self.assertTrue(repr(C[float, str]).endswith('A[float, str, int]'))
 
         D = A[int, Unpack[Ts]]
+        self.assertTrue(repr(D).endswith('A[int, *Ts]'))
         self.assertTrue(repr(D[()]).endswith('A[int]'))
         self.assertTrue(repr(D[float]).endswith('A[int, float]'))
         self.assertTrue(repr(D[float, str]).endswith('A[int, float, str]'))
 
-        D = A[int, Unpack[Ts], str]
-        self.assertTrue(repr(D[()]).endswith('A[int, str]'))
-        self.assertTrue(repr(D[float]).endswith('A[int, float, str]'))
-        self.assertTrue(repr(D[float, bool]).endswith('A[int, float, bool, str]'))
+        E = A[int, Unpack[Ts], str]
+        self.assertTrue(repr(E).endswith('A[int, *Ts, str]'))
+        self.assertTrue(repr(E[()]).endswith('A[int, str]'))
+        self.assertTrue(repr(E[float]).endswith('A[int, float, str]'))
+        self.assertTrue(repr(E[float, bool]).endswith('A[int, float, bool, str]'))
 
-        H = A[Unpack[Ts], Unpack[tuple[str, ...]]]
+        F = A[Unpack[Ts], Unpack[tuple[str, ...]]]
+        self.assertTrue(repr(F).endswith('A[*Ts, *tuple[str, ...]]'))
         self.assertTrue(repr(
-            H[()]
+            F[()]
         ).endswith(
             'A[*tuple[str, ...]]')
         )
         self.assertTrue(repr(
-            H[float]
+            F[float]
         ).endswith(
             'A[float, *tuple[str, ...]]'
         ))
         self.assertTrue(repr(
-            H[float, int]
+            F[float, int]
         ).endswith(
             'A[float, int, *tuple[str, ...]]'
         ))
