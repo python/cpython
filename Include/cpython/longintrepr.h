@@ -61,19 +61,52 @@ typedef long stwodigits; /* signed variant of twodigits */
 #define PyLong_BASE     ((digit)1 << PyLong_SHIFT)
 #define PyLong_MASK     ((digit)(PyLong_BASE - 1))
 
-/* Long integer representation.
-   The absolute value of a number is equal to
-        SUM(for i=0 through abs(ob_size)-1) ob_digit[i] * 2**(SHIFT*i)
-   Negative numbers are represented with ob_size < 0;
-   zero is represented by ob_size == 0.
-   In a normalized number, ob_digit[abs(ob_size)-1] (the most significant
-   digit) is never zero.  Also, in all cases, for all valid i,
-        0 <= ob_digit[i] <= MASK.
-   The allocation function takes care of allocating extra memory
-   so that ob_digit[0] ... ob_digit[abs(ob_size)-1] are actually available.
+/* Long Integer Representation
+   ---------------------------
+
+   There are two representations of long objects: the inlined
+   representation, where the sign and value is stored within the ob_size
+   field, and the bignum implementation, where the ob_size stores both the sign
+   and number of digits in the ob_digits field.
+
+   To distinguish between either representation, one looks at the least significant
+   bit of the ob_size field; if it's set, the value is inlined in that field; if it's
+   unset, then it should be treated as the number of digits in ob_digit.
+
+   For inlined longs, their value can be obtained with this expression:
+
+        ob_size >> 1
+
+   For inlined longs:
+       * These integers have a capacity of 62bits on 64-bit architectures:
+         one bit for the "is inlined" flag, and one sign bit.  This is 30 bits on
+         32-bit architectures (for the same reasons).
+       * Inlined longs are always normalized, as they use the machine
+         representation for integers.
+       * Allocation functions won't allocate the space for the ob_digit buffer,
+         because these are never used with this representation.
+       * As a consequence of the previous point, the width of a digit for
+         long longs can be either 15 or 30, and this doesn't affect the
+         representation of inlined longs.
+
+   For bignum longs, their absolute value can be obtained with this expression:
+
+        SUM(for i=0 through abs(ob_size >> 1)-1) ob_digit[i] * 2**(SHIFT*i)
+
+   In this representation:
+       * These numbers can also be normalized.  In a normalized number,
+         ob_digit[abs(ob_size)-1] (the most significant digit) is never zero.
+       * Also, in all cases, for all valid i, 0 <= ob_digit[i] <= MASK.
+       * The allocation function takes care of allocating extra memory
+         so that ob_digit[0] ... ob_digit[abs(ob_size)-1] are actually available.
+
+   In either case:
+       * Negative numbers are represented by (ob_size >> 1) < 0
+       * Zero is represented by (ob_size >> 1) == 0
 
    CAUTION:  Generic code manipulating subtypes of PyVarObject has to
-   aware that ints abuse  ob_size's sign bit.
+   aware that ints abuse  ob_size's sign bit and its least significant
+   bit.
 */
 
 struct _longobject {

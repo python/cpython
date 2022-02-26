@@ -235,7 +235,7 @@ def generate_runtime_init(identifiers, strings):
                 # Global int objects.
                 with printer.block('.small_ints =', ','):
                     for i in range(-nsmallnegints, nsmallposints):
-                        printer.write(f'_PyLong_DIGIT_INIT({i}),')
+                        printer.write(f'_PyLong_INLINED_INIT({i}),')
                 printer.write('')
                 # Global bytes objects.
                 printer.write('.bytes_empty = _PyBytes_SIMPLE_INIT(0, 0),')
