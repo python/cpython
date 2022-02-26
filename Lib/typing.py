@@ -800,7 +800,7 @@ def _is_unpacked_typevartuple(x):
 
 
 def _is_typevar_like(x):
-    return _is_unpacked_typevartuple(x) or isinstance(x, (TypeVar, ParamSpec))
+    return isinstance(x, (TypeVar, ParamSpec)) or _is_unpacked_typevartuple(x)
 
 
 class _BoundVarianceMixin:
