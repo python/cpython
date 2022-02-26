@@ -317,7 +317,7 @@ extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
 /* Deallocator function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Dealloc(PyCodeObject *co);
 /* Function to intern strings of codeobjects */
-extern void _PyStaticCode_InternStrings(PyCodeObject *co);
+extern int _PyStaticCode_InternStrings(PyCodeObject *co);
 
 #ifdef Py_STATS
 
