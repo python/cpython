@@ -486,6 +486,7 @@ class TypeVarTupleTests(BaseTestCase):
             class C(Unpack[Ts]): pass
 
     def test_variadic_class_args_are_correct(self):
+        T = TypeVar('T')
         Ts = TypeVarTuple('Ts')
         class A(Generic[Unpack[Ts]]): pass
         B = A[()]
@@ -494,6 +495,82 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertEqual(C.__args__, (int,))
         D = A[int, str]
         self.assertEqual(D.__args__, (int, str))
+        E = A[T]
+        self.assertEqual(E.__args__, (T,))
+        F = A[Unpack[Ts]]
+        self.assertEqual(F.__args__, (Unpack[Ts],))
+        G = A[T, Unpack[Ts]]
+        self.assertEqual(G.__args__, (T, Unpack[Ts]))
+        H = A[Unpack[Ts], T]
+        self.assertEqual(H.__args__, (Unpack[Ts], T))
+
+    def test_variadic_class_origin_is_correct(self):
+        Ts = TypeVarTuple('Ts')
+        class D(Generic[Unpack[Ts]]): pass
+        self.assertIs(D[int].__origin__, D)
+        self.assertIs(D[T].__origin__, D)
+        self.assertIs(D[Unpack[Ts]].__origin__, D)
+
+    def test_tuple_args_are_correct(self):
+        Ts = TypeVarTuple('Ts')
+
+        self.assertEqual(tuple[Unpack[Ts]].__args__, (Unpack[Ts],))
+        self.assertEqual(Tuple[Unpack[Ts]].__args__, (Unpack[Ts],))
+
+        self.assertEqual(tuple[Unpack[Ts], int].__args__, (Unpack[Ts], int))
+        self.assertEqual(Tuple[Unpack[Ts], int].__args__, (Unpack[Ts], int))
+
+        self.assertEqual(tuple[int, Unpack[Ts]].__args__, (int, Unpack[Ts]))
+        self.assertEqual(Tuple[int, Unpack[Ts]].__args__, (int, Unpack[Ts]))
+
+        self.assertEqual(tuple[int, Unpack[Ts], str].__args__,
+                         (int, Unpack[Ts], str))
+        self.assertEqual(Tuple[int, Unpack[Ts], str].__args__,
+                         (int, Unpack[Ts], str))
+
+        self.assertEqual(tuple[Unpack[Ts], int].__args__, (Unpack[Ts], int))
+        self.assertEqual(Tuple[Unpack[Ts]].__args__, (Unpack[Ts],))
+
+    def test_callable_args_are_correct(self):
+        Ts = TypeVarTuple('Ts')
+        Ts1 = TypeVarTuple('Ts1')
+        Ts2 = TypeVarTuple('Ts2')
+
+        # TypeVarTuple in the arguments
+
+        a = Callable[[Unpack[Ts]], None]
+        self.assertEqual(a.__args__, (Unpack[Ts], type(None)))
+
+        b = Callable[[int, Unpack[Ts]], None]
+        self.assertEqual(b.__args__, (int, Unpack[Ts], type(None)))
+
+        c = Callable[[Unpack[Ts], int], None]
+        self.assertEqual(c.__args__, (Unpack[Ts], int, type(None)))
+
+        d = Callable[[str, Unpack[Ts], int], None]
+        self.assertEqual(d.__args__, (str, Unpack[Ts], int, type(None)))
+
+        # TypeVarTuple as the return
+
+        e = Callable[[None], Unpack[Ts]]
+        self.assertEqual(e.__args__, (type(None), Unpack[Ts]))
+
+        f = Callable[[None], tuple[int, Unpack[Ts]]]
+        self.assertEqual(f.__args__, (type(None), tuple[int, Unpack[Ts]]))
+
+        g = Callable[[None], tuple[Unpack[Ts], int]]
+        self.assertEqual(g.__args__, (type(None), tuple[Unpack[Ts], int]))
+
+        h = Callable[[None], tuple[str, Unpack[Ts], int]]
+        self.assertEqual(h.__args__, (type(None), tuple[str, Unpack[Ts], int]))
+
+        # TypeVarTuple in both
+
+        i = Callable[[Unpack[Ts]], Unpack[Ts]]
+        self.assertEqual(i.__args__, (Unpack[Ts], Unpack[Ts]))
+
+        j = Callable[[Unpack[Ts1]], Unpack[Ts2]]
+        self.assertEqual(j.__args__, (Unpack[Ts1], Unpack[Ts2]))
 
     def test_variadic_class_with_duplicate_typevartuples_fails(self):
         Ts1 = TypeVarTuple('Ts1')
@@ -794,47 +871,6 @@ class TypeVarTupleTests(BaseTestCase):
                     _determine_typevar_substitution(typevars, args),
                     result_or_exception
                 )
-
-    def test_callable_args_is_correct(self):
-        Ts = TypeVarTuple('Ts')
-        Ts1 = TypeVarTuple('Ts1')
-        Ts2 = TypeVarTuple('Ts2')
-
-        # TypeVarTuple in the arguments
-
-        a = Callable[[Unpack[Ts]], None]
-        self.assertEqual(a.__args__, (Unpack[Ts], type(None)))
-
-        b = Callable[[int, Unpack[Ts]], None]
-        self.assertEqual(b.__args__, (int, Unpack[Ts], type(None)))
-
-        c = Callable[[Unpack[Ts], int], None]
-        self.assertEqual(c.__args__, (Unpack[Ts], int, type(None)))
-
-        d = Callable[[str, Unpack[Ts], int], None]
-        self.assertEqual(d.__args__, (str, Unpack[Ts], int, type(None)))
-
-        # TypeVarTuple as the return
-
-        e = Callable[[None], Unpack[Ts]]
-        self.assertEqual(e.__args__, (type(None), Unpack[Ts]))
-
-        f = Callable[[None], tuple[int, Unpack[Ts]]]
-        self.assertEqual(f.__args__, (type(None), tuple[int, Unpack[Ts]]))
-
-        g = Callable[[None], tuple[Unpack[Ts], int]]
-        self.assertEqual(g.__args__, (type(None), tuple[Unpack[Ts], int]))
-
-        h = Callable[[None], tuple[str, Unpack[Ts], int]]
-        self.assertEqual(h.__args__, (type(None), tuple[str, Unpack[Ts], int]))
-
-        # TypeVarTuple in both
-
-        i = Callable[[Unpack[Ts]], Unpack[Ts]]
-        self.assertEqual(i.__args__, (Unpack[Ts], Unpack[Ts]))
-
-        j = Callable[[Unpack[Ts1]], Unpack[Ts2]]
-        self.assertEqual(j.__args__, (Unpack[Ts1], Unpack[Ts2]))
 
 
 class UnionTests(BaseTestCase):
@@ -4043,13 +4079,6 @@ class GetUtilitiesTestCase(TestCase):
         self.assertIs(get_origin(P.args), P)
         self.assertIs(get_origin(P.kwargs), P)
 
-    def test_get_origin_typevartuple(self):
-        Ts = TypeVarTuple('Ts')
-        class D(Generic[Unpack[Ts]]): pass
-        self.assertIs(get_origin(D[int]), D)
-        self.assertIs(get_origin(D[T]), D)
-        self.assertIs(get_origin(D[Unpack[Ts]]), D)
-
     def test_get_args(self):
         T = TypeVar('T')
         class C(Generic[T]): pass
@@ -4086,34 +4115,6 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(Callable[Concatenate[int, P], int]),
                          (Concatenate[int, P], int))
         self.assertEqual(get_args(list | str), (list, str))
-
-    def test_get_args_typevartuple(self):
-        Ts = TypeVarTuple('Ts')
-        class D(Generic[Unpack[Ts]]): pass
-        self.assertEqual(get_args(D[int]), (int,))
-        self.assertEqual(get_args(D[T]), (T,))
-        self.assertEqual(get_args(D[Unpack[Ts]]), (Unpack[Ts],))
-        self.assertEqual(get_args(D[T, Unpack[Ts]]), (T, Unpack[Ts],))
-        self.assertEqual(get_args(D[Unpack[Ts], T]), (Unpack[Ts], T))
-
-        self.assertEqual(get_args(tuple[Unpack[Ts]]), (Unpack[Ts],))
-        self.assertEqual(get_args(Tuple[Unpack[Ts]]), (Unpack[Ts],))
-
-        self.assertEqual(get_args(tuple[Unpack[Ts], int]), (Unpack[Ts], int))
-        self.assertEqual(get_args(Tuple[Unpack[Ts], int]), (Unpack[Ts], int))
-
-        self.assertEqual(get_args(tuple[int, Unpack[Ts]]), (int, Unpack[Ts]))
-        self.assertEqual(get_args(Tuple[int, Unpack[Ts]]), (int, Unpack[Ts]))
-
-        self.assertEqual(get_args(tuple[int, Unpack[Ts], str]),
-                         (int, Unpack[Ts], str))
-        self.assertEqual(get_args(Tuple[int, Unpack[Ts], str]),
-                         (int, Unpack[Ts], str))
-
-        self.assertEqual(get_args(tuple[Unpack[Ts], int, ...]),
-                         (Unpack[Ts], int, ...))
-        self.assertEqual(get_args(Tuple[Unpack[Ts]]),
-                         (Unpack[Ts],))
 
 
 class CollectionsAbcTests(BaseTestCase):
