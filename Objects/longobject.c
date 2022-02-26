@@ -2110,7 +2110,7 @@ _PyLong_FormatBytesWriter(_PyBytesWriter *writer, char *str,
  * Note that when converting a base B string, a char c is a legitimate
  * base B digit iff _PyLong_DigitValue[Py_CHARPyLong_MASK(c)] < B.
  */
-unsigned char _PyLong_DigitValue[256] = {
+const unsigned char _PyLong_DigitValue[256] = {
     37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
     37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
     37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
