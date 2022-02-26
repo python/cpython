@@ -2802,6 +2802,14 @@ class GenericTests(BaseTestCase):
         self.assertEqual(deepcopy(ci).attr, 1)
         self.assertEqual(ci.__orig_class__, C[int])
 
+    def test_copy_with(self):
+        # bpo-46581
+        from typing import Callable, ParamSpec
+        P = ParamSpec('P')
+        original = Callable[P, int]
+        copied = original.copy_with((P, int))
+        self.assertEqual(original.__parameters__, copied.__parameters__)
+
     def test_weakref_all(self):
         T = TypeVar('T')
         things = [Any, Union[T, int], Callable[..., T], Tuple[Any, Any],
