@@ -1863,7 +1863,7 @@ serialize_impl(pysqlite_Connection *self, const char *name)
 _sqlite3.Connection.deserialize as deserialize
 
     data: Py_buffer(accept={buffer, str})
-        The serialized database content
+        The serialized database content.
     /
     *
     name: str = "main"
@@ -1895,7 +1895,7 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
      *
      * Make sure we don't overflow sqlite3_deserialize(); it accepts a signed
      * 64-bit int as its data size argument, but sqlite3_malloc64 accepts an
-     * unsigned 64-bit int as its size argument
+     * unsigned 64-bit int as its size argument.
      *
      * We can safely use sqlite3_malloc64 here, since it was introduced before
      * the serialize APIs.
