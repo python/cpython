@@ -10762,8 +10762,8 @@ if test "x$have_uuid" = xmissing; then :
 
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBUUID" >&5
-$as_echo_n "checking for LIBUUID... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid >= 2.20" >&5
+$as_echo_n "checking for uuid >= 2.20... " >&6; }
 
 if test -n "$LIBUUID_CFLAGS"; then
     pkg_cv_LIBUUID_CFLAGS="$LIBUUID_CFLAGS"
@@ -10803,7 +10803,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -10951,7 +10951,7 @@ done
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
       for ac_header in uuid/uuid.h
@@ -11758,8 +11758,8 @@ fi
 
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBNSL" >&5
-$as_echo_n "checking for LIBNSL... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libnsl" >&5
+$as_echo_n "checking for libnsl... " >&6; }
 
 if test -n "$LIBNSL_CFLAGS"; then
     pkg_cv_LIBNSL_CFLAGS="$LIBNSL_CFLAGS"
@@ -11799,7 +11799,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -11900,7 +11900,7 @@ esac
   LIBNSL_LIBS=${LIBNSL_LIBS-$libnsl}
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
   LIBNSL_CFLAGS=${LIBNSL_CFLAGS-""}
@@ -12027,8 +12027,8 @@ fi
 
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBSQLITE3" >&5
-$as_echo_n "checking for LIBSQLITE3... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3 >= 3.7.15" >&5
+$as_echo_n "checking for sqlite3 >= 3.7.15... " >&6; }
 
 if test -n "$LIBSQLITE3_CFLAGS"; then
     pkg_cv_LIBSQLITE3_CFLAGS="$LIBSQLITE3_CFLAGS"
@@ -12068,7 +12068,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -12090,7 +12090,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
     LIBSQLITE3_CFLAGS=${LIBSQLITE3_CFLAGS-""}
@@ -14739,8 +14739,8 @@ fi
 
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZLIB" >&5
-$as_echo_n "checking for ZLIB... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for zlib >= 1.2.0" >&5
+$as_echo_n "checking for zlib >= 1.2.0... " >&6; }
 
 if test -n "$ZLIB_CFLAGS"; then
     pkg_cv_ZLIB_CFLAGS="$ZLIB_CFLAGS"
@@ -14780,7 +14780,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -14916,7 +14916,7 @@ done
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
   for ac_header in zlib.h
@@ -15058,8 +15058,8 @@ fi
 
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZIP2" >&5
-$as_echo_n "checking for BZIP2... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for bzip2" >&5
+$as_echo_n "checking for bzip2... " >&6; }
 
 if test -n "$BZIP2_CFLAGS"; then
     pkg_cv_BZIP2_CFLAGS="$BZIP2_CFLAGS"
@@ -15099,7 +15099,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -15192,7 +15192,7 @@ done
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
   for ac_header in bzlib.h
@@ -15280,8 +15280,8 @@ fi
 
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBLZMA" >&5
-$as_echo_n "checking for LIBLZMA... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for liblzma" >&5
+$as_echo_n "checking for liblzma... " >&6; }
 
 if test -n "$LIBLZMA_CFLAGS"; then
     pkg_cv_LIBLZMA_CFLAGS="$LIBLZMA_CFLAGS"
@@ -15321,7 +15321,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -15414,7 +15414,7 @@ done
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
   for ac_header in lzma.h
@@ -15950,8 +15950,8 @@ done
 
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBCRYPT" >&5
-$as_echo_n "checking for LIBCRYPT... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libxcrypt >= 3.1.1" >&5
+$as_echo_n "checking for libxcrypt >= 3.1.1... " >&6; }
 
 if test -n "$LIBCRYPT_CFLAGS"; then
     pkg_cv_LIBCRYPT_CFLAGS="$LIBCRYPT_CFLAGS"
@@ -15991,7 +15991,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -16088,7 +16088,7 @@ LIBS=$save_LIBS
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
   save_CFLAGS=$CFLAGS
@@ -20887,8 +20887,8 @@ fi
     if ! $found; then
         OPENSSL_INCLUDES=
         for ssldir in $ssldirs; do
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for openssl/ssl.h in $ssldir" >&5
-$as_echo_n "checking for openssl/ssl.h in $ssldir... " >&6; }
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for include/openssl/ssl.h in $ssldir" >&5
+$as_echo_n "checking for include/openssl/ssl.h in $ssldir... " >&6; }
             if test -f "$ssldir/include/openssl/ssl.h"; then
                 OPENSSL_INCLUDES="-I$ssldir/include"
                 OPENSSL_LDFLAGS="-L$ssldir/lib"
