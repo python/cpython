@@ -31,7 +31,7 @@ Reflection
    See also :c:func:`PyThreadState_GetFrame`.
 
 
-.. c:function:: int PyFrame_GetBack(PyFrameObject *frame)
+.. c:function:: PyFrameObject* PyFrame_GetBack(PyFrameObject *frame)
 
    Get the *frame* next outer frame.
 
@@ -42,7 +42,7 @@ Reflection
    .. versionadded:: 3.9
 
 
-.. c:function:: int PyFrame_GetCode(PyFrameObject *frame)
+.. c:function:: PyCodeObject* PyFrame_GetCode(PyFrameObject *frame)
 
    Get the *frame* code.
 

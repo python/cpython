@@ -34,6 +34,10 @@ parameters:
   displayName: "Signature description"
   type: string
   default: 'Built: $(Build.BuildNumber)'
+- name: DoARM64
+  displayName: "Publish ARM64 build"
+  type: boolean
+  default: true
 - name: DoPGO
   displayName: "Run PGO"
   type: boolean
@@ -64,25 +68,26 @@ parameters:
   default: '0'
 
 variables:
-    __RealSigningCertificate: 'Python Software Foundation'
-    ${{ if ne(parameters.GitRemote, '(Other)') }}:
-      GitRemote: ${{ parameters.GitRemote }}
-    ${{ else }}:
-      GitRemote: ${{ parameters.GitRemote_Other }}
-    SourceTag: ${{ parameters.SourceTag }}
-    DoPGO: ${{ parameters.DoPGO }}
-    ${{ if ne(parameters.SigningCertificate, 'Unsigned') }}:
-      SigningCertificate: ${{ parameters.SigningCertificate }}
-    SigningDescription: ${{ parameters.SigningDescription }}
-    DoLayout: ${{ parameters.DoLayout }}
-    DoMSIX: ${{ parameters.DoMSIX }}
-    DoNuget: ${{ parameters.DoNuget }}
-    DoEmbed: ${{ parameters.DoEmbed }}
-    DoMSI: ${{ parameters.DoMSI }}
-    DoPublish: ${{ parameters.DoPublish }}
+  __RealSigningCertificate: 'Python Software Foundation'
+  ${{ if ne(parameters.GitRemote, '(Other)') }}:
+    GitRemote: ${{ parameters.GitRemote }}
+  ${{ else }}:
+    GitRemote: ${{ parameters.GitRemote_Other }}
+  SourceTag: ${{ parameters.SourceTag }}
+  DoPGO: ${{ parameters.DoPGO }}
+  ${{ if ne(parameters.SigningCertificate, 'Unsigned') }}:
+    SigningCertificate: ${{ parameters.SigningCertificate }}
+  SigningDescription: ${{ parameters.SigningDescription }}
+  DoLayout: ${{ parameters.DoLayout }}
+  DoMSIX: ${{ parameters.DoMSIX }}
+  DoNuget: ${{ parameters.DoNuget }}
+  DoEmbed: ${{ parameters.DoEmbed }}
+  DoMSI: ${{ parameters.DoMSI }}
+  DoPublish: ${{ parameters.DoPublish }}
+  PublishARM64: ${{ parameters.DoARM64 }}
 # QUEUE TIME VARIABLES
-#    PyDotOrgUsername: ''
-#    PyDotOrgServer: ''
+#  PyDotOrgUsername: ''
+#  PyDotOrgServer: ''
 
 trigger: none
 pr: none

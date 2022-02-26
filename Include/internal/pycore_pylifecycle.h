@@ -59,13 +59,13 @@ extern PyStatus _PySys_ReadPreinitWarnOptions(PyWideStringList *options);
 extern PyStatus _PySys_ReadPreinitXOptions(PyConfig *config);
 extern int _PySys_UpdateConfig(PyThreadState *tstate);
 extern void _PySys_Fini(PyInterpreterState *interp);
-extern PyStatus _PyBuiltins_AddExceptions(PyObject * bltinmod);
+extern int _PyBuiltins_AddExceptions(PyObject * bltinmod);
 extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
 extern PyStatus _PyImportZip_Init(PyThreadState *tstate);
 extern PyStatus _PyGC_Init(PyInterpreterState *interp);
 extern PyStatus _PyAtExit_Init(PyInterpreterState *interp);
-
+extern int _Py_Deepfreeze_Init(void);
 
 /* Various internal finalizers */
 
@@ -83,6 +83,8 @@ extern void _PyWarnings_Fini(PyInterpreterState *interp);
 extern void _PyAST_Fini(PyInterpreterState *interp);
 extern void _PyAtExit_Fini(PyInterpreterState *interp);
 extern void _PyThread_FiniType(PyInterpreterState *interp);
+extern void _Py_Deepfreeze_Fini(void);
+extern void _PyArg_Fini(void);
 
 extern PyStatus _PyGILState_Init(_PyRuntimeState *runtime);
 extern PyStatus _PyGILState_SetTstate(PyThreadState *tstate);
