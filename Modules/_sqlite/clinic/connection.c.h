@@ -5,9 +5,9 @@ preserve
 static int
 pysqlite_connection_init_impl(pysqlite_Connection *self,
                               const char *database, double timeout,
-                              int detect_types, PyObject *isolation_level,
+                              int detect_types, const char *isolation_level,
                               int check_same_thread, PyObject *factory,
-                              int cached_statements, int uri);
+                              int cache_size, int uri);
 
 static int
 pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -22,10 +22,10 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     const char *database = NULL;
     double timeout = 5.0;
     int detect_types = 0;
-    PyObject *isolation_level = NULL;
+    const char *isolation_level = "";
     int check_same_thread = 1;
     PyObject *factory = (PyObject*)clinic_state()->ConnectionType;
-    int cached_statements = 128;
+    int cache_size = 128;
     int uri = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 8, 0, argsbuf);
@@ -63,7 +63,9 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[3]) {
-        isolation_level = fastargs[3];
+        if (!isolation_level_converter(fastargs[3], &isolation_level)) {
+            goto exit;
+        }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -84,8 +86,8 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[6]) {
-        cached_statements = _PyLong_AsInt(fastargs[6]);
-        if (cached_statements == -1 && PyErr_Occurred()) {
+        cache_size = _PyLong_AsInt(fastargs[6]);
+        if (cache_size == -1 && PyErr_Occurred()) {
             goto exit;
         }
         if (!--noptargs) {
@@ -97,7 +99,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional_pos:
-    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri);
+    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database, timeout, detect_types, isolation_level, check_same_thread, factory, cache_size, uri);
 
 exit:
     /* Cleanup for database */
@@ -834,4 +836,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=d71bf16bef67878f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c2faf6563397091b input=a9049054013a1b77]*/

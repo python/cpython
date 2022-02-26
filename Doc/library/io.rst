@@ -131,7 +131,7 @@ explicitly when opening text files. If you want to use UTF-8, pass
 ``encoding="utf-8"``. To use the current locale encoding,
 ``encoding="locale"`` is supported in Python 3.10.
 
-When you need to run existing code on Windows that attempts to opens
+When you need to run existing code on Windows that attempts to open
 UTF-8 files using the default locale encoding, you can enable the UTF-8
 mode. See :ref:`UTF-8 mode on Windows <win-utf8-mode>`.
 

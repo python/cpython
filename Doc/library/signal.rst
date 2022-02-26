@@ -197,6 +197,16 @@ The variables defined in the :mod:`signal` module are:
 
    Segmentation fault: invalid memory reference.
 
+.. data:: SIGSTKFLT
+
+    Stack fault on coprocessor. The Linux kernel does not raise this signal: it
+    can only be raised in user space.
+
+   .. availability:: Linux, on architectures where the signal is available. See
+      the man page :manpage:`signal(7)` for further information.
+
+   .. versionadded:: 3.11
+
 .. data:: SIGTERM
 
    Termination signal.

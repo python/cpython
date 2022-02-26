@@ -1,4 +1,4 @@
-# Copyright 2001-2016 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2021 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Additional handlers for the logging package for Python. The core package is
 based on PEP 282 and comments thereto in comp.lang.python.
 
-Copyright (C) 2001-2016 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging.handlers' and log away!
 """
@@ -366,9 +366,22 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         fileNames = os.listdir(dirName)
         result = []
         # See bpo-44753: Don't use the extension when computing the prefix.
-        prefix = os.path.splitext(baseName)[0] + "."
+        n, e = os.path.splitext(baseName)
+        prefix = n + '.'
         plen = len(prefix)
         for fileName in fileNames:
+            if self.namer is None:
+                # Our files will always start with baseName
+                if not fileName.startswith(baseName):
+                    continue
+            else:
+                # Our files could be just about anything after custom naming, but
+                # likely candidates are of the form
+                # foo.log.DATETIME_SUFFIX or foo.DATETIME_SUFFIX.log
+                if (not fileName.startswith(baseName) and fileName.endswith(e) and
+                    len(fileName) > (plen + 1) and not fileName[plen+1].isdigit()):
+                    continue
+
             if fileName[:plen] == prefix:
                 suffix = fileName[plen:]
                 # See bpo-45628: The date/time suffix could be anywhere in the

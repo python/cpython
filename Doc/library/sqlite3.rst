@@ -21,16 +21,17 @@ The sqlite3 module was written by Gerhard Häring.  It provides a SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
 requires SQLite 3.7.15 or newer.
 
-To use the module, you must first create a :class:`Connection` object that
+To use the module, start by creating a :class:`Connection` object that
 represents the database.  Here the data will be stored in the
 :file:`example.db` file::
 
    import sqlite3
    con = sqlite3.connect('example.db')
 
-You can also supply the special name ``:memory:`` to create a database in RAM.
+The special path name ``:memory:`` can be provided to create a temporary
+database in RAM.
 
-Once you have a :class:`Connection`, you can create a :class:`Cursor`  object
+Once a :class:`Connection` has been established, create a :class:`Cursor` object
 and call its :meth:`~Cursor.execute` method to perform SQL commands::
 
    cur = con.cursor()
@@ -49,16 +50,17 @@ and call its :meth:`~Cursor.execute` method to perform SQL commands::
    # Just be sure any changes have been committed or they will be lost.
    con.close()
 
-The data you've saved is persistent and is available in subsequent sessions::
+The saved data is persistent: it can be reloaded in a subsequent session even
+after restarting the Python interpreter::
 
    import sqlite3
    con = sqlite3.connect('example.db')
    cur = con.cursor()
 
-To retrieve data after executing a SELECT statement, you can either treat the
-cursor as an :term:`iterator`, call the cursor's :meth:`~Cursor.fetchone` method to
-retrieve a single matching row, or call :meth:`~Cursor.fetchall` to get a list of the
-matching rows.
+To retrieve data after executing a SELECT statement, either treat the cursor as
+an :term:`iterator`, call the cursor's :meth:`~Cursor.fetchone` method to
+retrieve a single matching row, or call :meth:`~Cursor.fetchall` to get a list
+of the matching rows.
 
 This example uses the iterator form::
 
@@ -73,27 +75,27 @@ This example uses the iterator form::
 
 .. _sqlite3-placeholders:
 
-Usually your SQL operations will need to use values from Python variables.  You
-shouldn't assemble your query using Python's string operations because doing so
-is insecure; it makes your program vulnerable to an SQL injection attack
-(see the `xkcd webcomic <https://xkcd.com/327/>`_ for a humorous example of
-what can go wrong)::
+SQL operations usually need to use values from Python variables. However,
+beware of using Python's string operations to assemble queries, as they
+are vulnerable to SQL injection attacks (see the `xkcd webcomic
+<https://xkcd.com/327/>`_ for a humorous example of what can go wrong)::
 
    # Never do this -- insecure!
    symbol = 'RHAT'
    cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
 
-Instead, use the DB-API's parameter substitution. Put a placeholder wherever
-you want to use a value, and then provide a tuple of values as the second
-argument to the cursor's :meth:`~Cursor.execute` method. An SQL statement may
+Instead, use the DB-API's parameter substitution. To insert a variable into a
+query string, use a placeholder in the string, and substitute the actual values
+into the query by providing them as a :class:`tuple` of values to the second
+argument of the cursor's :meth:`~Cursor.execute` method. An SQL statement may
 use one of two kinds of placeholders: question marks (qmark style) or named
 placeholders (named style). For the qmark style, ``parameters`` must be a
 :term:`sequence <sequence>`. For the named style, it can be either a
 :term:`sequence <sequence>` or :class:`dict` instance. The length of the
 :term:`sequence <sequence>` must match the number of placeholders, or a
 :exc:`ProgrammingError` is raised. If a :class:`dict` is given, it must contain
-keys for all named parameters. Any extra items are ignored. Here's an example
-of both styles:
+keys for all named parameters. Any extra items are ignored. Here's an example of
+both styles:
 
 .. literalinclude:: ../includes/sqlite3/execute_1.py
 
@@ -271,14 +273,28 @@ Module functions and constants
    for the connection, you can set the *cached_statements* parameter. The currently
    implemented default is to cache 128 statements.
 
-   If *uri* is true, *database* is interpreted as a URI. This allows you
-   to specify options. For example, to open a database in read-only mode
-   you can use::
+   If *uri* is :const:`True`, *database* is interpreted as a
+   :abbr:`URI (Uniform Resource Identifier)` with a file path and an optional
+   query string.  The scheme part *must* be ``"file:"``.  The path can be a
+   relative or absolute file path.  The query string allows us to pass
+   parameters to SQLite. Some useful URI tricks include::
 
-       db = sqlite3.connect('file:path/to/database?mode=ro', uri=True)
+       # Open a database in read-only mode.
+       con = sqlite3.connect("file:template.db?mode=ro", uri=True)
 
-   More information about this feature, including a list of recognized options, can
-   be found in the `SQLite URI documentation <https://www.sqlite.org/uri.html>`_.
+       # Don't implicitly create a new database file if it does not already exist.
+       # Will raise sqlite3.OperationalError if unable to open a database file.
+       con = sqlite3.connect("file:nosuchdb.db?mode=rw", uri=True)
+
+       # Create a shared named in-memory database.
+       con1 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
+       con2 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
+       con1.executescript("create table t(t); insert into t values(28);")
+       rows = con2.execute("select * from t").fetchall()
+
+   More information about this feature, including a list of recognized
+   parameters, can be found in the
+   `SQLite URI documentation <https://www.sqlite.org/uri.html>`_.
 
    .. audit-event:: sqlite3.connect database sqlite3.connect
    .. audit-event:: sqlite3.connect/handle connection_handle sqlite3.connect
@@ -327,9 +343,27 @@ Module functions and constants
 
    By default you will not get any tracebacks in user-defined functions,
    aggregates, converters, authorizer callbacks etc. If you want to debug them,
-   you can call this function with *flag* set to ``True``. Afterwards, you will
-   get tracebacks from callbacks on ``sys.stderr``. Use :const:`False` to
-   disable the feature again.
+   you can call this function with *flag* set to :const:`True`. Afterwards, you
+   will get tracebacks from callbacks on :data:`sys.stderr`. Use :const:`False`
+   to disable the feature again.
+
+   Register an :func:`unraisable hook handler <sys.unraisablehook>` for an
+   improved debug experience::
+
+      >>> import sqlite3
+      >>> sqlite3.enable_callback_tracebacks(True)
+      >>> cx = sqlite3.connect(":memory:")
+      >>> cx.set_trace_callback(lambda stmt: 5/0)
+      >>> cx.execute("select 1")
+      Exception ignored in: <function <lambda> at 0x10b4e3ee0>
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <lambda>
+      ZeroDivisionError: division by zero
+      >>> import sys
+      >>> sys.unraisablehook = lambda unraisable: print(unraisable)
+      >>> cx.execute("select 1")
+      UnraisableHookArgs(exc_type=<class 'ZeroDivisionError'>, exc_value=ZeroDivisionError('division by zero'), exc_traceback=<traceback object at 0x10b559900>, err_msg=None, object=<function <lambda> at 0x10b4e3ee0>)
+      <sqlite3.Cursor object at 0x10b1fe840>
 
 
 .. _sqlite3-connection-objects:
@@ -825,14 +859,15 @@ Cursor Objects
 
    .. attribute:: lastrowid
 
-      This read-only attribute provides the rowid of the last modified row. It is
-      only set if you issued an ``INSERT`` or a ``REPLACE`` statement using the
-      :meth:`execute` method.  For operations other than ``INSERT`` or
-      ``REPLACE`` or when :meth:`executemany` is called, :attr:`lastrowid` is
-      set to :const:`None`.
+      This read-only attribute provides the row id of the last inserted row. It
+      is only updated after successful ``INSERT`` or ``REPLACE`` statements
+      using the :meth:`execute` method.  For other statements, after
+      :meth:`executemany` or :meth:`executescript`, or if the insertion failed,
+      the value of ``lastrowid`` is left unchanged.  The initial value of
+      ``lastrowid`` is :const:`None`.
 
-      If the ``INSERT`` or ``REPLACE`` statement failed to insert the previous
-      successful rowid is returned.
+      .. note::
+         Inserts into ``WITHOUT ROWID`` tables are not recorded.
 
       .. versionchanged:: 3.6
          Added support for the ``REPLACE`` statement.

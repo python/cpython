@@ -1,4 +1,4 @@
-from . import util as test_util
+from test.test_importlib import util as test_util
 
 init = test_util.import_importlib('importlib')
 

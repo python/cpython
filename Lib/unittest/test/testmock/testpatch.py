@@ -1875,9 +1875,10 @@ class PatchTest(unittest.TestCase):
             self.assertEqual(foo(), 1)
         self.assertEqual(foo(), 0)
 
+        orig_doc = foo.__doc__
         with patch.object(foo, '__doc__', "FUN"):
             self.assertEqual(foo.__doc__, "FUN")
-        self.assertEqual(foo.__doc__, "TEST")
+        self.assertEqual(foo.__doc__, orig_doc)
 
         with patch.object(foo, '__module__', "testpatch2"):
             self.assertEqual(foo.__module__, "testpatch2")
@@ -1932,8 +1933,13 @@ class PatchTest(unittest.TestCase):
 
 
     def test_invalid_target(self):
-        with self.assertRaises(TypeError):
-            patch('')
+        class Foo:
+            pass
+
+        for target in ['', 12, Foo()]:
+            with self.subTest(target=target):
+                with self.assertRaises(TypeError):
+                    patch(target)
 
 
     def test_cant_set_kwargs_when_passing_a_mock(self):

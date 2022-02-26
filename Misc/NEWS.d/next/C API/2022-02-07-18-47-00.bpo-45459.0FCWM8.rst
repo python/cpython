@@ -1,0 +1,3 @@
+Rename ``Include/buffer.h`` header file to ``Include/pybuffer.h`` to avoid
+conflits with projects having an existing ``buffer.h`` header file. Patch by
+Victor Stinner.
