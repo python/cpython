@@ -196,6 +196,8 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("returnlonglong", 0, func_returnlonglong)
         self.con.create_function("returnnan", 0, lambda: float("nan"))
         self.con.create_function("returntoolargeint", 0, lambda: 1 << 65)
+        self.con.create_function("return_noncont_blob", 0,
+                                 lambda: memoryview(b"blob")[::2])
         self.con.create_function("raiseexception", 0, func_raiseexception)
         self.con.create_function("memoryerror", 0, func_memoryerror)
         self.con.create_function("overflowerror", 0, func_overflowerror)
@@ -344,6 +346,12 @@ class FunctionTests(unittest.TestCase):
                                "underlying buffer is not C-contiguous",
                                self.con.execute, "select spam(?)",
                                (memoryview(b"blob")[::2],))
+
+    @with_tracebacks(BufferError, regex="buffer.*contiguous")
+    def test_return_non_contiguous_blob(self):
+        with self.assertRaises(sqlite.OperationalError):
+            cur = self.con.execute("select return_noncont_blob()")
+            cur.fetchone()
 
     def test_param_surrogates(self):
         self.assertRaisesRegex(UnicodeEncodeError, "surrogates not allowed",
