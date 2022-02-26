@@ -8,7 +8,7 @@ from . import coroutines
 def _task_repr_info(task):
     info = base_futures._future_repr_info(task)
 
-    if task._must_cancel:
+    if task.cancelling() and not task.done():
         # replace status
         info[0] = 'cancelling'
 

@@ -1,0 +1,3 @@
+Building Python now requires a C99 ``<math.h>`` header file providing a ``NAN``
+constant, or the ``__builtin_nan()`` built-in function.
+Patch by Victor Stinner.

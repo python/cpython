@@ -306,4 +306,12 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Tests
-      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu -x test_ctypes test_crypt test_decimal test_faulthandler test_interpreters test___all__ test_idle test_tix test_tk test_ttk_guionly test_ttk_textonly test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn"
+      # Skip test_tools test_peg_generator test_concurrent_futures because
+      # there are too slow: between 5 and 20 minutes on this CI.
+      #
+      # Skip multiprocessing and concurrent.futures tests which are affected by
+      # bpo-45200 bug: libasan dead lock in pthread_create().
+      #
+      # test___all__ is skipped because importing some modules directly can trigger
+      # known problems with ASAN (like tk or crypt).
+      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu -x test___all__ test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn test_tools test_peg_generator test_concurrent_futures"

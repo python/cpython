@@ -26,6 +26,10 @@ try:
     import _posixsubprocess
 except ImportError:
     _posixsubprocess = None
+try:
+    import _testmultiphase
+except ImportError:
+    _testmultiphase = None
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
@@ -62,6 +66,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(testfunction.attribute, "test")
         self.assertRaises(AttributeError, setattr, inst.testfunction, "attribute", "test")
 
+    @support.requires_subprocess()
     def test_no_FatalError_infinite_loop(self):
         with support.SuppressCrashReport():
             p = subprocess.Popen([sys.executable, "-c",
@@ -606,6 +611,7 @@ class CAPITest(unittest.TestCase):
             self.assertNotIn(name, modules)
         self.assertEqual(len(modules), total)
 
+    @support.requires_subprocess()
     def test_fatal_error(self):
         # By default, stdlib extension modules are ignored,
         # but not test modules.
@@ -798,6 +804,7 @@ class SubinterpreterTest(unittest.TestCase):
 
         self.assertFalse(hasattr(binascii.Error, "foobar"))
 
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_module_state_shared_in_global(self):
         """
         bpo-44050: Extension module state should be shared between interpreters
@@ -874,6 +881,7 @@ class Test_testinternalcapi(unittest.TestCase):
                     if name.startswith('test_'))
 
 
+@support.requires_subprocess()
 class PyMemDebugTests(unittest.TestCase):
     PYTHONMALLOC = 'debug'
     # '0x04c06e0' or '04C06E0'
@@ -991,6 +999,7 @@ class PyMemDefaultTests(PyMemDebugTests):
     PYTHONMALLOC = ''
 
 
+@unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
 class Test_ModuleStateAccess(unittest.TestCase):
     """Test access to module start (PEP 573)"""
 
@@ -1060,6 +1069,22 @@ class Test_ModuleStateAccess(unittest.TestCase):
 
                 with self.assertRaises(TypeError):
                     increment_count(1, 2, 3)
+
+    def test_get_module_bad_def(self):
+        # PyType_GetModuleByDef fails gracefully if it doesn't
+        # find what it's looking for.
+        # see bpo-46433
+        instance = self.module.StateAccessType()
+        with self.assertRaises(TypeError):
+            instance.getmodulebydef_bad_def()
+
+    def test_get_module_static_in_mro(self):
+        # Here, the class PyType_GetModuleByDef is looking for
+        # appears in the MRO after a static type (Exception).
+        # see bpo-46433
+        class Subclass(BaseException, self.module.StateAccessType):
+            pass
+        self.assertIs(Subclass().get_defining_module(), self.module)
 
 
 if __name__ == "__main__":

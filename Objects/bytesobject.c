@@ -23,8 +23,6 @@ class bytes "PyBytesObject *" "&PyBytes_Type"
 
 #include "clinic/bytesobject.c.h"
 
-_Py_IDENTIFIER(__bytes__);
-
 /* PyBytesObject_SIZE gives the basic size of a bytes object; any memory allocation
    for a bytes object of length n should request PyBytesObject_SIZE + n bytes.
 
@@ -530,7 +528,7 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
         return v;
     }
     /* does it support __bytes__? */
-    func = _PyObject_LookupSpecial(v, &PyId___bytes__);
+    func = _PyObject_LookupSpecial(v, &_Py_ID(__bytes__));
     if (func != NULL) {
         result = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
@@ -1235,6 +1233,7 @@ PyBytes_AsStringAndSize(PyObject *obj,
 #define STRINGLIB_GET_EMPTY() bytes_get_empty()
 
 #include "stringlib/stringdefs.h"
+#define STRINGLIB_MUTABLE 0
 
 #include "stringlib/fastsearch.h"
 #include "stringlib/count.h"
@@ -2581,7 +2580,7 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
     /* We'd like to call PyObject_Bytes here, but we need to check for an
        integer argument before deferring to PyBytes_FromObject, something
        PyObject_Bytes doesn't do. */
-    else if ((func = _PyObject_LookupSpecial(x, &PyId___bytes__)) != NULL) {
+    else if ((func = _PyObject_LookupSpecial(x, &_Py_ID(__bytes__))) != NULL) {
         bytes = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (bytes == NULL)
@@ -2904,7 +2903,7 @@ PyTypeObject PyBytes_Type = {
     bytes_methods,                              /* tp_methods */
     0,                                          /* tp_members */
     0,                                          /* tp_getset */
-    &PyBaseObject_Type,                         /* tp_base */
+    0,                                          /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
@@ -3121,12 +3120,11 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 striter_reduce(striterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
                              it->it_seq, it->it_index);
     } else {
-        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
     }
 }
 

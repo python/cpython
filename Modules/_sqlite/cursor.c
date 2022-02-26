@@ -129,13 +129,12 @@ _pysqlite_get_converter(pysqlite_state *state, const char *keystr,
     PyObject *key;
     PyObject *upcase_key;
     PyObject *retval;
-    _Py_IDENTIFIER(upper);
 
     key = PyUnicode_FromStringAndSize(keystr, keylen);
     if (!key) {
         return NULL;
     }
-    upcase_key = _PyObject_CallMethodIdNoArgs(key, &PyId_upper);
+    upcase_key = PyObject_CallMethodNoArgs(key, state->str_upper);
     Py_DECREF(key);
     if (!upcase_key) {
         return NULL;
@@ -455,7 +454,7 @@ get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
     return PyObject_Vectorcall(cache, args + 1, nargsf, NULL);
 }
 
-static PyObject *
+PyObject *
 _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation, PyObject* second_argument)
 {
     PyObject* parameters_list = NULL;
@@ -465,7 +464,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     int rc;
     int numcols;
     PyObject* column_name;
-    sqlite_int64 lastrowid;
 
     if (!check_cursor(self)) {
         goto error;
@@ -630,16 +628,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             self->rowcount= -1L;
         }
 
-        if (!multiple) {
-            Py_BEGIN_ALLOW_THREADS
-            lastrowid = sqlite3_last_insert_rowid(self->connection->db);
-            Py_END_ALLOW_THREADS
-            Py_SETREF(self->lastrowid, PyLong_FromLongLong(lastrowid));
-            if (self->lastrowid == NULL) {
-                goto error;
-            }
-        }
-
         if (rc == SQLITE_DONE && !multiple) {
             pysqlite_statement_reset(self->statement);
             Py_CLEAR(self->statement);
@@ -649,6 +637,17 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             pysqlite_statement_reset(self->statement);
         }
         Py_XDECREF(parameters);
+    }
+
+    if (!multiple) {
+        sqlite_int64 lastrowid;
+
+        Py_BEGIN_ALLOW_THREADS
+        lastrowid = sqlite3_last_insert_rowid(self->connection->db);
+        Py_END_ALLOW_THREADS
+
+        Py_SETREF(self->lastrowid, PyLong_FromLongLong(lastrowid));
+        // Fall through on error.
     }
 
 error:
