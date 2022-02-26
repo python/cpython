@@ -205,6 +205,28 @@ static inline int _Py_bit_length(unsigned long x)
     _Py_UNREACHABLE();
 }
 
+static inline bool _Py_add_overflow32(int32_t a, int32_t b, int32_t *result)
+{
+#if (defined(__clang__) || defined(__GNUC__))
+    return __builtin_add_overflow(a, b, result);
+#else
+    *result = (int64_t)((uint32_t)a + (uint32_t)b);
+    /* When adding, signed overflow only happens if the result has different sign when
+     * both inputs have the same sign. */
+    return ((*result ^ a) & ~(a ^ b)) >> 31;
+#endif
+}
+
+static inline bool _Py_add_overflow64(int64_t a, int64_t b, int64_t *result)
+{
+#if (defined(__clang__) || defined(__GNUC__))
+    return __builtin_add_overflow(a, b, result);
+#else
+    *result = (int64_t)((uint64_t)a + (uint64_t)b);
+    return ((*result ^ a) & ~(a ^ b)) >> 63;
+#endif
+}
+
 #ifdef __cplusplus
 }
 #endif
