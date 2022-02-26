@@ -139,6 +139,31 @@ _Py_popcount32(uint32_t x)
 #endif
 }
 
+static inline int
+_Py_popcount64(uint64_t x)
+{
+#if (defined(__clang__) || defined(__GNUC__))
+    if (sizeof(long long) == sizeof(uint64_t)) {
+        return __builtin_popcountll(x);
+    }
+    if (sizeof(long) == sizeof(uint64_t)) {
+        return __builtin_popcountl(x);
+    }
+#endif
+    return _Py_popcount32(x >> 32) + _Py_popcount32((uint32_t)x);
+}
+
+static inline int
+_Py_popcount(long x)
+{
+    if (sizeof(long) == sizeof(uint32_t)) {
+        return _Py_popcount32(x);
+    }
+    if (sizeof(long) == sizeof(uint64_t)) {
+        return _Py_popcount64(x);
+    }
+    _Py_UNREACHABLE();
+}
 
 // Return the index of the most significant 1 bit in 'x'. This is the smallest
 // integer k such that x < 2**k. Equivalent to floor(log2(x)) + 1 for x != 0.
