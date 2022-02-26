@@ -243,7 +243,7 @@ def _check_generic(cls, parameters, elen):
     alen = len(parameters)
     if alen != elen:
         raise TypeError(f"Too {'many' if alen > elen else 'few'} arguments for {cls};"
-                        f" actual {alen}, expected {elen} " + str(parameters))
+                        f" actual {alen}, expected {elen}")
 
 
 def _prepare_paramspec_params(cls, params):
