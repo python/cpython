@@ -1125,11 +1125,7 @@ def _is_unpacked_tuple(x):
     # aren't legal.
     unpacked_type = x.__args__[0]
 
-    if (hasattr(unpacked_type, '__origin__')
-            and unpacked_type.__origin__ is tuple):
-        return True
-    else:
-        return False
+    return getattr(unpacked_type, '__origin__', None) is tuple
 
 
 def _is_unpacked_arbitrary_length_tuple(x):
@@ -1242,8 +1238,7 @@ def _determine_typevar_substitution(typevars, args):
     if not typevars:
         return {}
 
-    num_typevartuples = len([x for x in typevars
-                             if isinstance(x, TypeVarTuple)])
+    num_typevartuples = sum(1 for x in typevars if isinstance(x, TypeVarTuple))
     if num_typevartuples > 1:
         raise TypeError("At most 1 TypeVarTuple may be used in a type "
                         f"parameter list, but saw {num_typevartuples}")
@@ -1475,7 +1470,6 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
                     new_arg = old_arg[subargs]
             else:
                 new_arg = old_arg
-
 
             if self.__origin__ == collections.abc.Callable and isinstance(new_arg, tuple):
                 # Consider the following `Callable`.
