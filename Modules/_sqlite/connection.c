@@ -1904,17 +1904,18 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
         PyErr_SetString(PyExc_OverflowError, "'data' is too large");
         return NULL;
     }
+
     sqlite3_int64 size = (sqlite3_int64)data->len;
     unsigned char *buf = sqlite3_malloc64(size);
     if (buf == NULL) {
         return PyErr_NoMemory();
     }
-    (void)memcpy(buf, data->buf, data->len);
 
     const unsigned int flags = SQLITE_DESERIALIZE_FREEONCLOSE |
                                SQLITE_DESERIALIZE_RESIZEABLE;
     int rc;
     Py_BEGIN_ALLOW_THREADS
+    (void)memcpy(buf, data->buf, data->len);
     rc = sqlite3_deserialize(self->db, name, buf, size, size, flags);
     Py_END_ALLOW_THREADS
 
