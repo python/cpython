@@ -33,16 +33,16 @@ Lib/test/test_importlib/namespacedata01/*  noeol
 Lib/test/xmltestdata/*                     noeol
 
 # CRLF files
-[attr]crlf text eol=crlf
+[attr]dos text eol=crlf
 
-*.bat               crlf
-*.proj              crlf
-*.props             crlf
-*.ps1               crlf
-*.sln               crlf
-*.vcxproj*          crlf
-PC/readme.txt       crlf
-PCbuild/readme.txt  crlf
+*.bat               dos
+*.proj              dos
+*.props             dos
+*.ps1               dos
+*.sln               dos
+*.vcxproj*          dos
+PC/readme.txt       dos
+PCbuild/readme.txt  dos
 
 # Language aware diff headers
 # https://tekin.co.uk/2020/10/better-git-diff-output-for-ruby-python-elixir-and-more
