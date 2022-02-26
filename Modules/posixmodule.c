@@ -7623,29 +7623,19 @@ static PyObject *
 os_getgroups_impl(PyObject *module)
 /*[clinic end generated code: output=42b0c17758561b56 input=d3f109412e6a155c]*/
 {
-    /* On MacOSX getgroups(2) can return more than MAX_GROUPS results
-     * This is a helper variable to store the intermediate result when
-     * that happens.
-     *
-     * See bpo-7900.
-     */
-    gid_t *grouplist = NULL;
-    int n;
-
-    /* Issue #17557: As of OS X 10.8, getgroups(2) no longer raises EINVAL if
-     * there are more groups than can fit in grouplist.  Therefore, on OS X
-     * always first call getgroups with length 0 to get the actual number
-     * of groups.
-     */
-    n = getgroups(0, NULL);
+    // Call getgroups with length 0 to get the actual number of groups
+    int n = getgroups(0, NULL);
     if (n < 0) {
         return posix_error();
-    } else {
-        n++; // Avoid malloc(0)
-        grouplist = PyMem_New(gid_t, n+1);
-        if (grouplist == NULL) {
-            return PyErr_NoMemory();
-        }
+    }
+
+    if (n == 0) {
+        return PyList_New(0);
+    }
+
+    gid_t *grouplist = PyMem_New(gid_t, n);
+    if (grouplist == NULL) {
+        return PyErr_NoMemory();
     }
 
     n = getgroups(n, grouplist);
@@ -7655,22 +7645,25 @@ os_getgroups_impl(PyObject *module)
     }
 
     PyObject *result = PyList_New(n);
-    if (result != NULL) {
-        int i;
-        for (i = 0; i < n; ++i) {
-            PyObject *o = _PyLong_FromGid(grouplist[i]);
-            if (o == NULL) {
-                Py_DECREF(result);
-                result = NULL;
-                break;
-            }
-            PyList_SET_ITEM(result, i, o);
-        }
+    if (result == NULL) {
+        goto error;
     }
 
+    for (int i = 0; i < n; ++i) {
+        PyObject *group = _PyLong_FromGid(grouplist[i]);
+        if (group == NULL) {
+            goto error;
+        }
+        PyList_SET_ITEM(result, i, group);
+    }
     PyMem_Free(grouplist);
 
     return result;
+
+error:
+    PyMem_Free(grouplist);
+    Py_XDECREF(result);
+    return NULL;
 }
 #endif /* HAVE_GETGROUPS */
 
