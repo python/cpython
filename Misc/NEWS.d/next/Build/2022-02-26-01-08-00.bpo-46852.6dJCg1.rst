@@ -1,0 +1,2 @@
+Building Python now requires IEEE 754 (floating point) support. Patch by
+Victor Stinner.

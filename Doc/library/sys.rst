@@ -607,6 +607,9 @@ always available.
 
    .. versionadded:: 3.1
 
+   .. versionchanged:: 3.11
+      The value is now always ``'short'``.
+
 
 .. function:: getallocatedblocks()
 

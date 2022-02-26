@@ -10,7 +10,7 @@
 #include "pycore_interp.h"        // _PyInterpreterState.float_state
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
-#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
+#include "pycore_pymath.h"        // _Py_SET_53BIT_PRECISION_START
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniType()
 
@@ -932,10 +932,8 @@ float___ceil___impl(PyObject *self)
    ndigits <= 323).  Returns a Python float, or sets a Python error and
    returns NULL on failure (OverflowError and memory errors are possible). */
 
-#if _PY_SHORT_FLOAT_REPR == 1
-/* version of double_round that uses the correctly-rounded string<->double
-   conversions from Python/dtoa.c */
-
+// Rounding that uses the correctly-rounded string<->double conversions
+// from Python/dtoa.c
 static PyObject *
 double_round(double x, int ndigits) {
 
@@ -988,58 +986,6 @@ double_round(double x, int ndigits) {
     _Py_dg_freedtoa(buf);
     return result;
 }
-
-#else  // _PY_SHORT_FLOAT_REPR == 0
-
-/* fallback version, to be used when correctly rounded binary<->decimal
-   conversions aren't available */
-
-static PyObject *
-double_round(double x, int ndigits) {
-    double pow1, pow2, y, z;
-    if (ndigits >= 0) {
-        if (ndigits > 22) {
-            /* pow1 and pow2 are each safe from overflow, but
-               pow1*pow2 ~= pow(10.0, ndigits) might overflow */
-            pow1 = pow(10.0, (double)(ndigits-22));
-            pow2 = 1e22;
-        }
-        else {
-            pow1 = pow(10.0, (double)ndigits);
-            pow2 = 1.0;
-        }
-        y = (x*pow1)*pow2;
-        /* if y overflows, then rounded value is exactly x */
-        if (!Py_IS_FINITE(y))
-            return PyFloat_FromDouble(x);
-    }
-    else {
-        pow1 = pow(10.0, (double)-ndigits);
-        pow2 = 1.0; /* unused; silences a gcc compiler warning */
-        y = x / pow1;
-    }
-
-    z = round(y);
-    if (fabs(y-z) == 0.5)
-        /* halfway between two integers; use round-half-even */
-        z = 2.0*round(y/2.0);
-
-    if (ndigits >= 0)
-        z = (z / pow2) / pow1;
-    else
-        z *= pow1;
-
-    /* if computation resulted in overflow, raise OverflowError */
-    if (!Py_IS_FINITE(z)) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "overflow occurred during round");
-        return NULL;
-    }
-
-    return PyFloat_FromDouble(z);
-}
-
-#endif  // _PY_SHORT_FLOAT_REPR == 0
 
 /* round a Python float v to the closest multiple of 10**-ndigits */
 
@@ -2407,16 +2353,6 @@ _PyFloat_Unpack2(const unsigned char *p, int le)
     f |= *p;
 
     if (e == 0x1f) {
-#if _PY_SHORT_FLOAT_REPR == 0
-        if (f == 0) {
-            /* Infinity */
-            return sign ? -Py_HUGE_VAL : Py_HUGE_VAL;
-        }
-        else {
-            /* NaN */
-            return sign ? -Py_NAN : Py_NAN;
-        }
-#else  // _PY_SHORT_FLOAT_REPR == 1
         if (f == 0) {
             /* Infinity */
             return _Py_dg_infinity(sign);
@@ -2425,7 +2361,6 @@ _PyFloat_Unpack2(const unsigned char *p, int le)
             /* NaN */
             return _Py_dg_stdnan(sign);
         }
-#endif  // _PY_SHORT_FLOAT_REPR == 1
     }
 
     x = (double)f / 1024.0;

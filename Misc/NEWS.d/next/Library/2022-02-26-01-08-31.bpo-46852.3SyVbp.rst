@@ -1,0 +1,2 @@
+:data:`sys.float_repr_style` is now always ``'short'``. Patch by Victor
+Stinner.

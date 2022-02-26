@@ -188,7 +188,7 @@ extern void _Py_set_387controlword(unsigned short);
 #endif
 
 
-//--- _PY_SHORT_FLOAT_REPR macro -------------------------------------------
+//--- Make sure that IEEE 754 is supported ---------------------------------
 
 // If we can't guarantee 53-bit precision, don't use the code
 // in Python/dtoa.c, but fall back to standard code.  This
@@ -203,18 +203,14 @@ extern void _Py_set_387controlword(unsigned short);
 #if !defined(DOUBLE_IS_LITTLE_ENDIAN_IEEE754) && \
     !defined(DOUBLE_IS_BIG_ENDIAN_IEEE754) && \
     !defined(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754)
-#  define _PY_SHORT_FLOAT_REPR 0
+#  error "Building Python requires IEEE 754 support"
 #endif
 
 // Double rounding is symptomatic of use of extended precision on x86.
 // If we're seeing double rounding, and we don't have any mechanism available
 // for changing the FPU rounding precision, then don't use Python/dtoa.c.
 #if defined(X87_DOUBLE_ROUNDING) && !defined(HAVE_PY_SET_53BIT_PRECISION)
-#  define _PY_SHORT_FLOAT_REPR 0
-#endif
-
-#ifndef _PY_SHORT_FLOAT_REPR
-#  define _PY_SHORT_FLOAT_REPR 1
+#  error "Building Python requires IEEE 754 support"
 #endif
 
 
