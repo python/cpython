@@ -442,7 +442,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         The maximum amount of data to be received at once is specified by
         nbytes.
         """
-        _check_ssl_socket(sock)
+        base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
@@ -480,7 +480,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         The received data is written into *buf* (a writable buffer).
         The return value is a tuple of (number of bytes written, address).
         """
-        _check_ssl_socket(sock)
+        base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
@@ -575,7 +575,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         raised, and there is no way to determine how much data, if any, was
         successfully processed by the receiving end of the connection.
         """
-        _check_ssl_socket(sock)
+        base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
