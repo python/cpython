@@ -750,7 +750,7 @@ Connection Objects
 
    .. method:: serialize(*, name="main")
 
-      This method serializes a database into a :class:`bytes` sequence.  For an
+      This method serializes a database into a :class:`bytes` object.  For an
       ordinary on-disk database file, the serialization is just a copy of the
       disk file.  For an in-memory database or a "temp" database, the
       serialization is the same sequence of bytes which would be written to
