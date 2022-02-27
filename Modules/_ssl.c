@@ -22,6 +22,7 @@
 #define OPENSSL_NO_DEPRECATED 1
 
 #define PY_SSIZE_T_CLEAN
+#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 
@@ -40,8 +41,6 @@
 #define PySSL_BEGIN_ALLOW_THREADS { \
             PyThreadState *_save = NULL;  \
             PySSL_BEGIN_ALLOW_THREADS_S(_save);
-#define PySSL_BLOCK_THREADS     PySSL_END_ALLOW_THREADS_S(_save);
-#define PySSL_UNBLOCK_THREADS   PySSL_BEGIN_ALLOW_THREADS_S(_save);
 #define PySSL_END_ALLOW_THREADS PySSL_END_ALLOW_THREADS_S(_save); }
 
 
@@ -1054,17 +1053,29 @@ _create_tuple_for_attribute(_sslmodulestate *state,
                             ASN1_OBJECT *name, ASN1_STRING *value)
 {
     Py_ssize_t buflen;
-    unsigned char *valuebuf = NULL;
-    PyObject *attr;
+    PyObject *pyattr;
+    PyObject *pyname = _asn1obj2py(state, name, 0);
 
-    buflen = ASN1_STRING_to_UTF8(&valuebuf, value);
-    if (buflen < 0) {
+    if (pyname == NULL) {
         _setSSLError(state, NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
-    attr = Py_BuildValue("Ns#", _asn1obj2py(state, name, 0), valuebuf, buflen);
-    OPENSSL_free(valuebuf);
-    return attr;
+
+    if (ASN1_STRING_type(value) == V_ASN1_BIT_STRING) {
+        buflen = ASN1_STRING_length(value);
+        pyattr = Py_BuildValue("Ny#", pyname, ASN1_STRING_get0_data(value), buflen);
+    } else {
+        unsigned char *valuebuf = NULL;
+        buflen = ASN1_STRING_to_UTF8(&valuebuf, value);
+        if (buflen < 0) {
+            _setSSLError(state, NULL, 0, __FILE__, __LINE__);
+            Py_DECREF(pyname);
+            return NULL;
+        }
+        pyattr = Py_BuildValue("Ns#", pyname, valuebuf, buflen);
+        OPENSSL_free(valuebuf);
+    }
+    return pyattr;
 }
 
 static PyObject *
@@ -2989,8 +3000,8 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     int result;
 
    /* slower approach, walk MRO and get borrowed reference to module.
-    * _PyType_GetModuleByDef is required for SSLContext subclasses */
-    PyObject *module = _PyType_GetModuleByDef(type, &_sslmodule_def);
+    * PyType_GetModuleByDef is required for SSLContext subclasses */
+    PyObject *module = PyType_GetModuleByDef(type, &_sslmodule_def);
     if (module == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "Cannot find internal module state");

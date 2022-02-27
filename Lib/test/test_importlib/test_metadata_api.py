@@ -5,7 +5,7 @@ import warnings
 import importlib
 import contextlib
 
-from test.test_importlib import fixtures
+from . import fixtures
 from importlib.metadata import (
     Distribution,
     PackageNotFoundError,
@@ -172,6 +172,11 @@ class APITests(
             entry_points().get('entries', 'default') == entry_points()['entries']
             entry_points().get('missing', ()) == ()
 
+    def test_entry_points_allows_no_attributes(self):
+        ep = entry_points().select(group='entries', name='main')
+        with self.assertRaises(AttributeError):
+            ep.foo = 4
+
     def test_metadata_for_this_package(self):
         md = metadata('egginfo-pkg')
         assert md['author'] == 'Steven Ma'
@@ -313,7 +318,3 @@ class InvalidateCache(unittest.TestCase):
     def test_invalidate_cache(self):
         # No externally observable behavior, but ensures test coverage...
         importlib.invalidate_caches()
-
-
-if __name__ == '__main__':
-    unittest.main()

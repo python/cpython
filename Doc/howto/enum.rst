@@ -23,7 +23,7 @@ selection of values.  For example, the days of the week::
     ...     SATURDAY = 6
     ...     SUNDAY = 7
 
- Or perhaps the RGB primary colors::
+Or perhaps the RGB primary colors::
 
     >>> from enum import Enum
     >>> class Color(Enum):
@@ -1398,4 +1398,3 @@ Subclassing EnumType
 While most enum needs can be met by customizing :class:`Enum` subclasses,
 either with class decorators or custom functions, :class:`EnumType` can be
 subclassed to provide a different Enum experience.
-

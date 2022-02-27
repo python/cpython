@@ -837,9 +837,8 @@ if 1:
                 opcodes = list(dis.get_instructions(func))
                 instructions = [opcode.opname for opcode in opcodes]
                 self.assertNotIn('LOAD_METHOD', instructions)
-                self.assertNotIn('CALL_METHOD', instructions)
                 self.assertIn('LOAD_ATTR', instructions)
-                self.assertIn('CALL_NO_KW', instructions)
+                self.assertIn('PRECALL', instructions)
 
     def test_lineno_procedure_call(self):
         def call():
@@ -1009,6 +1008,16 @@ if 1:
             elif instr.opname in HANDLED_JUMPS:
                 self.assertNotEqual(instr.arg, (line + 1)*INSTR_SIZE)
 
+    def test_no_wraparound_jump(self):
+        # See https://bugs.python.org/issue46724
+
+        def while_not_chained(a, b, c):
+            while not (a < b < c):
+                pass
+
+        for instr in dis.Bytecode(while_not_chained):
+            self.assertNotEqual(instr.opname, "EXTENDED_ARG")
+
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
     # Ensure that compiled code snippets have correct line and column numbers
@@ -1053,7 +1062,9 @@ class TestSourcePositions(unittest.TestCase):
     def assertOpcodeSourcePositionIs(self, code, opcode,
             line, end_line, column, end_column, occurrence=1):
 
-        for instr, position in zip(dis.Bytecode(code), code.co_positions()):
+        for instr, position in zip(
+            dis.Bytecode(code, show_caches=True), code.co_positions(), strict=True
+        ):
             if instr.opname == opcode:
                 occurrence -= 1
                 if not occurrence:
@@ -1096,7 +1107,7 @@ f(
 )
 """
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_NO_KW',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
             line=1, end_line=3, column=0, end_column=1)
 
     def test_very_long_line_end_offset(self):
@@ -1106,7 +1117,7 @@ f(
         snippet = f"g('{long_string}')"
 
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_NO_KW',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
             line=1, end_line=1, column=None, end_column=None)
 
     def test_complex_single_line_expression(self):

@@ -17,6 +17,7 @@ from .queues import *
 from .streams import *
 from .subprocess import *
 from .tasks import *
+from .taskgroups import *
 from .threads import *
 from .transports import *
 

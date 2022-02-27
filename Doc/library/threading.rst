@@ -314,7 +314,7 @@ since it is impossible to detect the termination of alien threads.
    or "Thread-*N* (target)" where "target" is ``target.__name__`` if the
    *target* argument is specified.
 
-   *args* is the argument tuple for the target invocation.  Defaults to ``()``.
+   *args* is a list or tuple of arguments for the target invocation.  Defaults to ``()``.
 
    *kwargs* is a dictionary of keyword arguments for the target invocation.
    Defaults to ``{}``.
@@ -352,6 +352,19 @@ since it is impossible to detect the termination of alien threads.
       method invokes the callable object passed to the object's constructor as
       the *target* argument, if any, with positional and keyword arguments taken
       from the *args* and *kwargs* arguments, respectively.
+
+      Using list or tuple as the *args* argument which passed to the :class:`Thread`
+      could achieve the same effect.
+
+      Example::
+
+         >>> from threading import Thread
+         >>> t = Thread(target=print, args=[1])
+         >>> t.run()
+         1
+         >>> t = Thread(target=print, args=(1,))
+         >>> t.run()
+         1
 
    .. method:: join(timeout=None)
 

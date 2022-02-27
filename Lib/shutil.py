@@ -648,6 +648,7 @@ def _rmtree_safe_fd(topfd, path, onerror):
         if is_dir:
             try:
                 dirfd = os.open(entry.name, os.O_RDONLY, dir_fd=topfd)
+                dirfd_closed = False
             except OSError:
                 onerror(os.open, fullname, sys.exc_info())
             else:
@@ -655,6 +656,8 @@ def _rmtree_safe_fd(topfd, path, onerror):
                     if os.path.samestat(orig_st, os.fstat(dirfd)):
                         _rmtree_safe_fd(dirfd, fullname, onerror)
                         try:
+                            os.close(dirfd)
+                            dirfd_closed = True
                             os.rmdir(entry.name, dir_fd=topfd)
                         except OSError:
                             onerror(os.rmdir, fullname, sys.exc_info())
@@ -668,7 +671,8 @@ def _rmtree_safe_fd(topfd, path, onerror):
                         except OSError:
                             onerror(os.path.islink, fullname, sys.exc_info())
                 finally:
-                    os.close(dirfd)
+                    if not dirfd_closed:
+                        os.close(dirfd)
         else:
             try:
                 os.unlink(entry.name, dir_fd=topfd)
@@ -711,6 +715,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
             return
         try:
             fd = os.open(path, os.O_RDONLY)
+            fd_closed = False
         except Exception:
             onerror(os.open, path, sys.exc_info())
             return
@@ -718,6 +723,8 @@ def rmtree(path, ignore_errors=False, onerror=None):
             if os.path.samestat(orig_st, os.fstat(fd)):
                 _rmtree_safe_fd(fd, path, onerror)
                 try:
+                    os.close(fd)
+                    fd_closed = True
                     os.rmdir(path)
                 except OSError:
                     onerror(os.rmdir, path, sys.exc_info())
@@ -728,7 +735,8 @@ def rmtree(path, ignore_errors=False, onerror=None):
                 except OSError:
                     onerror(os.path.islink, path, sys.exc_info())
         finally:
-            os.close(fd)
+            if not fd_closed:
+                os.close(fd)
     else:
         try:
             if _rmtree_islink(path):

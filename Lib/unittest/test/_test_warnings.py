@@ -18,6 +18,17 @@ def warnfun():
     warnings.warn('rw', RuntimeWarning)
 
 class TestWarnings(unittest.TestCase):
+    # unittest warnings will be printed at most once per type (max one message
+    # for the fail* methods, and one for the assert* methods)
+    def test_assert(self):
+        self.assertEquals(2+2, 4)
+        self.assertEquals(2*2, 4)
+        self.assertEquals(2**2, 4)
+
+    def test_fail(self):
+        self.failUnless(1)
+        self.failUnless(True)
+
     def test_other_unittest(self):
         self.assertAlmostEqual(2+2, 4)
         self.assertNotAlmostEqual(4+4, 2)
