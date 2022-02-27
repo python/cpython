@@ -84,17 +84,15 @@ typedef struct _typeobject PyTypeObject;
 /*
 Immortalization:
 
-This marks the reference count bit that will be used to define immortality.
-The GC bit-shifts refcounts left by two, and after that shift it still needs
-to be larger than zero, so it's placed after the first three high bits.
-
-For backwards compatibility the actual reference count of an immortal instance
-is set to higher than just the immortal bit. This will ensure that the immortal
-bit will remain active, even with extensions compiled without the updated checks
-in Py_INCREF and Py_DECREF. This can be safely changed to a smaller value if
-additional bits are needed in the reference count field.
+This marks the reference count bit that will be used to define immortality which
+is set right after the sign bit. For backwards compatibility the actual
+reference count of an immortal instance is set to higher than the immortal bit.
+This will ensure that the immortal bit will remain active, even with extensions
+compiled without the updated checks in Py_INCREF and Py_DECREF.
+This extra value can be safely changed to a smaller value if additional bits are
+needed in the reference count field.
 */
-#define _Py_IMMORTAL_BIT_OFFSET (8 * sizeof(Py_ssize_t) - 4)
+#define _Py_IMMORTAL_BIT_OFFSET (8 * sizeof(Py_ssize_t) - 2)
 #define _Py_IMMORTAL_BIT (1LL << _Py_IMMORTAL_BIT_OFFSET)
 #define _Py_IMMORTAL_REFCNT (_Py_IMMORTAL_BIT + (_Py_IMMORTAL_BIT / 2))
 
@@ -105,8 +103,6 @@ additional bits are needed in the reference count field.
 #define PyObject_HEAD_IMMORTAL_INIT(type)        \
     { _PyObject_EXTRA_INIT _Py_IMMORTAL_REFCNT, type },
 
-// TODO(eduardo-elizondo): This is only used to simplify the review of GH-19474
-// Rather than changing this API, we'll introduce PyVarObject_HEAD_IMMORTAL_INIT
 #define PyVarObject_HEAD_INIT(type, size)       \
     { PyObject_HEAD_IMMORTAL_INIT(type) size },
 
