@@ -1894,8 +1894,7 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
      * - Tell SQLite that it is permitted to grow the resulting database
      *
      * Make sure we don't overflow sqlite3_deserialize(); it accepts a signed
-     * 64-bit int as its data size argument, but sqlite3_malloc64 accepts an
-     * unsigned 64-bit int as its size argument.
+     * 64-bit int as its data size argument.
      *
      * We can safely use sqlite3_malloc64 here, since it was introduced before
      * the serialize APIs.
