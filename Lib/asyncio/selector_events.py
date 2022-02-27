@@ -483,6 +483,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
+        if not nbytes:
+            nbytes = len(buf)
+          
         try:
             return sock.recvfrom_into(buf, nbytes)
         except (BlockingIOError, InterruptedError):
