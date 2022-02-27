@@ -1,0 +1,2 @@
+Reduce the memory usage of specialized :opcode:`LOAD_ATTR` and
+:opcode:`STORE_ATTR` instructions.
