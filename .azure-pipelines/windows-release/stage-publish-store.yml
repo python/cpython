@@ -7,7 +7,7 @@ jobs:
   condition: and(succeeded(), eq(variables['DoMSIX'], 'true'))
 
   pool:
-    vmImage: windows-2022
+    vmImage: windows-2019
 
   workspace:
     clean: all
