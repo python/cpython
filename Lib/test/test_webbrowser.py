@@ -8,6 +8,8 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test webserver requires subprocess")
 
 URL = 'http://www.example.com'
 CMD_NAME = 'test'
