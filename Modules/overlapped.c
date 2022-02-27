@@ -674,9 +674,9 @@ Overlapped_clear(OverlappedObject *self)
             break;
         }
         case TYPE_READ_FROM_INTO: {
-            if (self->read_from.result) {
+            if (self->read_from_into.result) {
                 // We've received a message, free the result tuple.
-                Py_CLEAR(self->read_from.result);
+                Py_CLEAR(self->read_from_into.result);
             }
             if (self->read_from_into.user_buffer.obj) {
                 PyBuffer_Release(&self->read_from_into.user_buffer);
@@ -884,6 +884,11 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
             else if (self->type == TYPE_READ_FROM &&
                      (self->read_from.result != NULL ||
                       self->read_from.allocated_buffer != NULL))
+            {
+                break;
+            }
+            else if (self->type == TYPE_READ_FROM_INTO &&
+                     self->read_from_into.result != NULL)
             {
                 break;
             }
@@ -1663,6 +1668,13 @@ Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
     case TYPE_READ_FROM:
         Py_VISIT(self->read_from.result);
         Py_VISIT(self->read_from.allocated_buffer);
+        break;
+    case TYPE_READ_FROM_INTO:
+        Py_VISIT(self->read_from_into.result);
+        if (self->read_from_into.user_buffer.obj) {
+            Py_VISIT(&self->read_from_into.user_buffer.obj);
+        }
+        break;
     }
     return 0;
 }
