@@ -1900,7 +1900,7 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
      * We can safely use sqlite3_malloc64 here, since it was introduced before
      * the serialize APIs.
      */
-    if (data->len > ((1 << 63) - 1)) {
+    if (data->len > 9223372036854775807) {  // (1 << 63) - 1
         PyErr_SetString(PyExc_OverflowError, "'data' is too large");
         return NULL;
     }
