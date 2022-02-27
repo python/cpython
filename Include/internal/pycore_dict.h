@@ -148,6 +148,10 @@ extern uint64_t _pydict_global_version;
 #define DICT_NEXT_VERSION() (++_pydict_global_version)
 
 PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
+PyObject *_PyDict_FromItems(
+        PyObject *const *keys, Py_ssize_t keys_offset,
+        PyObject *const *values, Py_ssize_t values_offset,
+        Py_ssize_t length);
 
 static inline void
 _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)

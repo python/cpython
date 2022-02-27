@@ -123,6 +123,8 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "stringlib/eq.h"         // unicode_eq()
 
+#include <stdbool.h>
+
 /*[clinic input]
 class dict "PyDictObject *" "&PyDict_Type"
 [clinic start generated code]*/
@@ -600,7 +602,7 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
 
 
 static PyDictKeysObject*
-new_keys_object(uint8_t log2_size, int unicode)
+new_keys_object(uint8_t log2_size, bool unicode)
 {
     PyDictKeysObject *dk;
     Py_ssize_t usable;
@@ -1561,8 +1563,8 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize, int unicode)
     return 0;
 }
 
-PyObject *
-_PyDict_NewPresized(Py_ssize_t minused)
+static PyObject *
+dict_new_presized(Py_ssize_t minused, bool unicode)
 {
     const uint8_t log2_max_presize = 17;
     const Py_ssize_t max_presize = ((Py_ssize_t)1) << log2_max_presize;
@@ -1583,11 +1585,54 @@ _PyDict_NewPresized(Py_ssize_t minused)
         log2_newsize = estimate_log2_keysize(minused);
     }
 
-    // TODO: Document that this function returns dict optimized for string keys.
-    new_keys = new_keys_object(log2_newsize, 1);
+    new_keys = new_keys_object(log2_newsize, unicode);
     if (new_keys == NULL)
         return NULL;
     return new_dict(new_keys, NULL, 0, 0);
+}
+
+PyObject *
+_PyDict_NewPresized(Py_ssize_t minused)
+{
+    return dict_new_presized(minused, false);
+}
+
+PyObject *
+_PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
+                  PyObject *const *values, Py_ssize_t values_offset,
+                  Py_ssize_t length)
+{
+    bool unicode = true;
+    PyObject *const *ks = keys;
+
+    for (Py_ssize_t i = 0; i < length; i++) {
+        if (!PyUnicode_CheckExact(*ks)) {
+            unicode = false;
+            break;
+        }
+        ks += keys_offset;
+    }
+
+    PyObject *dict = dict_new_presized(length, unicode);
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    ks = keys;
+    PyObject *const *vs = values;
+
+    for (Py_ssize_t i = 0; i < length; i++) {
+        PyObject *key = *ks;
+        PyObject *value = *vs;
+        if (PyDict_SetItem(dict, key, value) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        ks += keys_offset;
+        vs += values_offset;
+    }
+
+    return dict;
 }
 
 /* Note that, for historical reasons, PyDict_GetItem() suppresses all errors
