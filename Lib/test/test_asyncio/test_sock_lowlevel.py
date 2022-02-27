@@ -410,12 +410,12 @@ class BaseSockTestsMixin:
             self.assertEqual(buf, data)
             self.assertEqual(from_addr, server_address)
 
-            buf = bytearray(4096)
+            buf = bytearray(8192)
             await self.loop.sock_sendto(sock, data, server_address)
             num_bytes, from_addr = await self.loop.sock_recvfrom_into(
-                sock, buf, 2048)
-            self.assertEqual(num_bytes, 2048)
-            self.assertEqual(buf[:2048], data[:2048])
+                sock, buf, 4096)
+            self.assertEqual(num_bytes, 4096)
+            self.assertEqual(buf[:4096], data[:4096])
             self.assertEqual(from_addr, server_address)
 
     def test_recvfrom_into(self):
@@ -430,7 +430,7 @@ class BaseSockTestsMixin:
         data = b'\x01' * 4096
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.setblocking(False)
-            mock_sock = Mock(socket.socket)
+            mock_sock = Mock(sock)
             mock_sock.gettimeout = sock.gettimeout
             mock_sock.sendto.configure_mock(side_effect=BlockingIOError)
             mock_sock.fileno = sock.fileno
@@ -445,6 +445,10 @@ class BaseSockTestsMixin:
             self.assertEqual(from_addr, server_address)
 
     def test_sendto_blocking(self):
+        if sys.platform == 'win32':
+            if isinstance(self.loop, asyncio.ProactorEventLoop):
+                raise unittest.SkipTest('Not relevant to ProactorEventLoop')
+
         with test_utils.run_udp_echo_server() as server_address:
             self.loop.run_until_complete(
                 self._basetest_datagram_sendto_blocking(server_address))
