@@ -149,6 +149,8 @@ Type Objects
    ``Py_TYPE(self)`` may be a *subclass* of the intended class, and subclasses
    are not necessarily defined in the same module as their superclass.
    See :c:type:`PyCMethod` to get the class that defines the method.
+   See :c:func:`PyType_GetModuleByDef` for cases when ``PyCMethod`` cannot
+   be used.
 
    .. versionadded:: 3.9
 
@@ -165,6 +167,21 @@ Type Objects
    returns ``NULL`` without setting an exception.
 
    .. versionadded:: 3.9
+
+.. c:function:: PyObject* PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
+
+   Find the first superclass whose module was created from
+   the given :c:type:`PyModuleDef` *def*, and return that module.
+
+   If no module is found, raises a :py:class:`TypeError` and returns ``NULL``.
+
+   This function is intended to be used together with
+   :c:func:`PyModule_GetState()` to get module state from slot methods (such as
+   :c:member:`~PyTypeObject.tp_init` or :c:member:`~PyNumberMethods.nb_add`)
+   and other places where a method's defining class cannot be passed using the
+   :c:type:`PyCMethod` calling convention.
+
+   .. versionadded:: 3.11
 
 
 Creating Heap-Allocated Types

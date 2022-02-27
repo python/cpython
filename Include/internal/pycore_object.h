@@ -8,9 +8,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include <stdbool.h>
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_runtime.h"       // _PyRuntime
 
 
 #define _PyObject_IMMORTAL_INIT(type) \
@@ -225,6 +227,8 @@ static inline PyObject **_PyObject_ManagedDictPointer(PyObject *obj)
     return ((PyObject **)obj)-3;
 }
 
+#define MANAGED_DICT_OFFSET (((int)sizeof(PyObject *))*-3)
+
 extern PyObject ** _PyObject_DictPointer(PyObject *);
 extern int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg);
 extern void _PyObject_ClearInstanceAttributes(PyObject *self);
@@ -235,6 +239,8 @@ extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 // Access macro to the members which are floating "behind" the object
 #define _PyHeapType_GET_MEMBERS(etype) \
     ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
+
+PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
 
 #ifdef __cplusplus
 }
