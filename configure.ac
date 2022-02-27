@@ -3484,7 +3484,7 @@ dnl hence CPPFLAGS instead of CFLAGS.
     AC_CHECK_LIB([sqlite3], [sqlite3_serialize], [
       AC_DEFINE(
         [PY_SQLITE_HAVE_SERIALIZE], [1],
-        ["Define if SQLite was compiled with the serialize API"])
+        [Define if SQLite was compiled with the serialize API])
     ])
   ])
 )

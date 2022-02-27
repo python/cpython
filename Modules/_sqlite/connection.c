@@ -1830,12 +1830,12 @@ Serialize a database into a byte string. Non-standard.
 For an ordinary on-disk database file, the serialization is just a copy of the
 disk file. For an in-memory database or a "temp" database, the serialization is
 the same sequence of bytes which would be written to disk if that database
-where backed up to disk.
+were backed up to disk.
 [clinic start generated code]*/
 
 static PyObject *
 serialize_impl(pysqlite_Connection *self, const char *name)
-/*[clinic end generated code: output=97342b0e55239dd3 input=4b6efe5a4d524470]*/
+/*[clinic end generated code: output=97342b0e55239dd3 input=bb5513432e17fef8]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1900,7 +1900,7 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
      * We can safely use sqlite3_malloc64 here, since it was introduced before
      * the serialize APIs.
      */
-    if (data->len > 9223372036854775807) {
+    if (data->len > ((1 << 63) - 1)) {
         PyErr_SetString(PyExc_OverflowError, "'data' is too large");
         return NULL;
     }

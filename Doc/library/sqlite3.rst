@@ -754,7 +754,7 @@ Connection Objects
       ordinary on-disk database file, the serialization is just a copy of the
       disk file.  For an in-memory database or a "temp" database, the
       serialization is the same sequence of bytes which would be written to
-      disk if that database where backed up to disk.
+      disk if that database were backed up to disk.
 
       *name* is the database to be serialized, and defaults to the main
       database.

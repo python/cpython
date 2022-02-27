@@ -1494,7 +1494,7 @@
 /* Define to 1 to build the sqlite module with loadable extensions support. */
 #undef PY_SQLITE_ENABLE_LOAD_EXTENSION
 
-/* "Define if SQLite was compiled with the serialize API" */
+/* Define if SQLite was compiled with the serialize API */
 #undef PY_SQLITE_HAVE_SERIALIZE
 
 /* Default cipher suites list for ssl module. 1: Python's preferred selection,

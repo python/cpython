@@ -711,7 +711,7 @@ PyDoc_STRVAR(serialize__doc__,
 "For an ordinary on-disk database file, the serialization is just a copy of the\n"
 "disk file. For an in-memory database or a \"temp\" database, the serialization is\n"
 "the same sequence of bytes which would be written to disk if that database\n"
-"where backed up to disk.");
+"were backed up to disk.");
 
 #define SERIALIZE_METHODDEF    \
     {"serialize", (PyCFunction)(void(*)(void))serialize, METH_FASTCALL|METH_KEYWORDS, serialize__doc__},
@@ -994,4 +994,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=fc68ba7a5d8a9173 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=879ab806f1216663 input=a9049054013a1b77]*/
