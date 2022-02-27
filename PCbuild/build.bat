@@ -95,9 +95,10 @@ if "%~1"=="--no-tkinter" (set IncludeTkinter=false) & shift & goto CheckOpts
 if "%IncludeExternals%"=="" set IncludeExternals=true
 if "%IncludeCTypes%"=="" set IncludeCTypes=true
 if "%IncludeSSL%"=="" set IncludeSSL=true
-if "%IncludeTkinter%"=="" set IncludeTkinter=true
+set IncludeTkinter=true
 
 if "%IncludeExternals%"=="true" call "%dir%get_externals.bat"
+call "%dir%prepare_tcltk.bat"
 
 if "%do_pgo%" EQU "true" if "%platf%" EQU "x64" (
     if "%PROCESSOR_ARCHITEW6432%" NEQ "AMD64" if "%PROCESSOR_ARCHITECTURE%" NEQ "AMD64" (
