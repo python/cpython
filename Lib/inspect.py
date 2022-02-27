@@ -1174,9 +1174,13 @@ class BlockFinder:
         self.started = False
         self.passline = False
         self.indecorator = False
-        self.decoratorhasargs = False
         self.last = 1
         self.body_col0 = None
+        self._decoratorhasargs_count = 0
+
+    @property
+    def decoratorhasargs(self):
+        return bool(self._decoratorhasargs_count)
 
     def tokeneater(self, type, token, srowcol, erowcol, line):
         if not self.started and not self.indecorator:
@@ -1191,11 +1195,12 @@ class BlockFinder:
             self.passline = True    # skip to the end of the line
         elif token == "(":
             if self.indecorator:
-                self.decoratorhasargs = True
+                self._decoratorhasargs_count += 1
         elif token == ")":
             if self.indecorator:
-                self.indecorator = False
-                self.decoratorhasargs = False
+                self._decoratorhasargs_count -= 1
+                if not self.decoratorhasargs:
+                    self.indecorator = False
         elif type == tokenize.NEWLINE:
             self.passline = False   # stop skipping when a NEWLINE is seen
             self.last = srowcol[0]

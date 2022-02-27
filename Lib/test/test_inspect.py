@@ -31,6 +31,7 @@ from test.support.os_helper import TESTFN
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2
+from test import inspect_fodder3 as mod3
 from test import support
 from test import inspect_stock_annotations
 from test import inspect_stringized_annotations
@@ -672,6 +673,12 @@ class TestDecorators(GetSourceBase):
 
     def test_decorator_with_lambda(self):
         self.assertSourceEqual(mod2.func114, 113, 115)
+
+class TestDecoratorsMulti(GetSourceBase):
+    fodderModule = mod3
+
+    def test_decorator_with_multiple_lambdas_with_calls(self):
+        self.assertSourceEqual(mod3.func8, 7, 9)
 
 class TestOneliners(GetSourceBase):
     fodderModule = mod2
