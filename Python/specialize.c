@@ -59,7 +59,6 @@ static uint8_t adaptive_opcodes[256] = {
 /* The number of cache entries required for a "family" of instructions. */
 static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 1,  // _PyAdaptiveEntry
-    [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
     [BINARY_SUBSCR] = 2, /* _PyAdaptiveEntry, _PyObjectCache */
     [STORE_SUBSCR] = 0,
@@ -67,7 +66,6 @@ static uint8_t cache_requirements[256] = {
     [PRECALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [STORE_ATTR] = 1,  // _PyAdaptiveEntry
     [COMPARE_OP] = 1, /* _PyAdaptiveEntry */
-    [UNPACK_SEQUENCE] = 1,  // _PyAdaptiveEntry
 };
 
 Py_ssize_t _Py_QuickenedCount = 0;
@@ -1209,11 +1207,12 @@ fail:
 int
 _Py_Specialize_LoadGlobal(
     PyObject *globals, PyObject *builtins,
-    _Py_CODEUNIT *instr, PyObject *name,
-    SpecializedCacheEntry *cache)
+    _Py_CODEUNIT *instr, PyObject *name)
 {
-    _PyAdaptiveEntry *cache0 = &cache->adaptive;
-    _PyLoadGlobalCache *cache1 = &cache[-1].load_global;
+    assert(_PyOpcode_InlineCacheEntries[LOAD_GLOBAL] ==
+           INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
+    /* Use inline cache */
+    _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)(instr + 1);
     assert(PyUnicode_CheckExact(name));
     if (!PyDict_CheckExact(globals)) {
         goto fail;
@@ -1232,8 +1231,8 @@ _Py_Specialize_LoadGlobal(
         if (keys_version == 0) {
             goto fail;
         }
-        cache1->module_keys_version = keys_version;
-        cache0->index = (uint16_t)index;
+        cache->index = (uint16_t)index;
+        write32(&cache->module_keys_version, keys_version);
         *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_MODULE, _Py_OPARG(*instr));
         goto success;
     }
@@ -1259,20 +1258,24 @@ _Py_Specialize_LoadGlobal(
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
         goto fail;
     }
-    cache1->module_keys_version = globals_version;
-    cache1->builtin_keys_version = builtins_version;
-    cache0->index = (uint16_t)index;
+    if (builtins_version > UINT16_MAX) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
+        goto fail;
+    }
+    cache->index = (uint16_t)index;
+    write32(&cache->module_keys_version, globals_version);
+    cache->builtin_keys_version = (uint16_t)builtins_version;
     *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_BUILTIN, _Py_OPARG(*instr));
     goto success;
 fail:
     STAT_INC(LOAD_GLOBAL, failure);
     assert(!PyErr_Occurred());
-    cache_backoff(cache0);
+    cache->counter = ADAPTIVE_CACHE_BACKOFF;
     return 0;
 success:
     STAT_INC(LOAD_GLOBAL, success);
     assert(!PyErr_Occurred());
-    cache0->counter = initial_counter_value();
+    cache->counter = initial_counter_value();
     return 0;
 }
 
@@ -2133,39 +2136,39 @@ unpack_sequence_fail_kind(PyObject *seq)
 #endif
 
 void
-_Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
-                              SpecializedCacheEntry *cache)
+_Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr, int oparg)
 {
-    _PyAdaptiveEntry *adaptive = &cache->adaptive;
+    assert(_PyOpcode_InlineCacheEntries[UNPACK_SEQUENCE] ==
+           INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
+    _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)(instr + 1);
     if (PyTuple_CheckExact(seq)) {
-        if (PyTuple_GET_SIZE(seq) != adaptive->original_oparg) {
+        if (PyTuple_GET_SIZE(seq) != oparg) {
             SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
             goto failure;
         }
         if (PyTuple_GET_SIZE(seq) == 2) {
-            *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_TWO_TUPLE,
-                                      _Py_OPARG(*instr));
+            *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_TWO_TUPLE, oparg);
             goto success;
         }
-        *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_TUPLE, _Py_OPARG(*instr));
+        *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_TUPLE, oparg);
         goto success;
     }
     if (PyList_CheckExact(seq)) {
-        if (PyList_GET_SIZE(seq) != adaptive->original_oparg) {
+        if (PyList_GET_SIZE(seq) != oparg) {
             SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
             goto failure;
         }
-        *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_LIST, _Py_OPARG(*instr));
+        *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_LIST, oparg);
         goto success;
     }
     SPECIALIZATION_FAIL(UNPACK_SEQUENCE, unpack_sequence_fail_kind(seq));
 failure:
     STAT_INC(UNPACK_SEQUENCE, failure);
-    cache_backoff(adaptive);
+    cache->counter = ADAPTIVE_CACHE_BACKOFF;
     return;
 success:
     STAT_INC(UNPACK_SEQUENCE, success);
-    adaptive->counter = initial_counter_value();
+    cache->counter = initial_counter_value();
 }
 
 #ifdef Py_STATS
