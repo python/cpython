@@ -102,6 +102,71 @@ class InstanceCreation(unittest.TestCase):
             MyBEG)
 
 
+class StrAndReprTests(unittest.TestCase):
+    def test_ExceptionGroup(self):
+        eg = BaseExceptionGroup(
+            'flat', [ValueError(1), TypeError(2)])
+
+        self.assertEqual(str(eg), "flat (2 sub-exceptions)")
+        self.assertEqual(repr(eg),
+            "ExceptionGroup('flat', [ValueError(1), TypeError(2)])")
+
+        eg = BaseExceptionGroup(
+            'nested', [eg, ValueError(1), eg, TypeError(2)])
+
+        self.assertEqual(str(eg), "nested (4 sub-exceptions)")
+        self.assertEqual(repr(eg),
+            "ExceptionGroup('nested', "
+                "[ExceptionGroup('flat', "
+                    "[ValueError(1), TypeError(2)]), "
+                 "ValueError(1), "
+                 "ExceptionGroup('flat', "
+                    "[ValueError(1), TypeError(2)]), TypeError(2)])")
+
+    def test_BaseExceptionGroup(self):
+        eg = BaseExceptionGroup(
+            'flat', [ValueError(1), KeyboardInterrupt(2)])
+
+        self.assertEqual(str(eg), "flat (2 sub-exceptions)")
+        self.assertEqual(repr(eg),
+            "BaseExceptionGroup("
+                "'flat', "
+                "[ValueError(1), KeyboardInterrupt(2)])")
+
+        eg = BaseExceptionGroup(
+            'nested', [eg, ValueError(1), eg])
+
+        self.assertEqual(str(eg), "nested (3 sub-exceptions)")
+        self.assertEqual(repr(eg),
+            "BaseExceptionGroup('nested', "
+                "[BaseExceptionGroup('flat', "
+                    "[ValueError(1), KeyboardInterrupt(2)]), "
+                "ValueError(1), "
+                "BaseExceptionGroup('flat', "
+                    "[ValueError(1), KeyboardInterrupt(2)])])")
+
+    def test_custom_exception(self):
+        class MyEG(ExceptionGroup):
+            pass
+
+        eg = MyEG(
+            'flat', [ValueError(1), TypeError(2)])
+
+        self.assertEqual(str(eg), "flat (2 sub-exceptions)")
+        self.assertEqual(repr(eg), "MyEG('flat', [ValueError(1), TypeError(2)])")
+
+        eg = MyEG(
+            'nested', [eg, ValueError(1), eg, TypeError(2)])
+
+        self.assertEqual(str(eg), "nested (4 sub-exceptions)")
+        self.assertEqual(repr(eg), (
+                 "MyEG('nested', "
+                     "[MyEG('flat', [ValueError(1), TypeError(2)]), "
+                      "ValueError(1), "
+                      "MyEG('flat', [ValueError(1), TypeError(2)]), "
+                      "TypeError(2)])"))
+
+
 def create_simple_eg():
     excs = []
     try:

@@ -1,0 +1,1 @@
+Fix an issue with :meth:`~tarfile.is_tarfile` method when using *fileobj* argument: position in the *fileobj* was advanced forward which made it unreadable with :meth:`tarfile.TarFile.open`.

@@ -831,6 +831,13 @@ should have the desired effect. If an organisation produces a number of
 libraries, then the logger name specified can be 'orgname.foo' rather than
 just 'foo'.
 
+.. note:: It is strongly advised that you *do not log to the root logger*
+   in your library. Instead, use a logger with a unique and easily
+   identifiable name, such as the ``__name__`` for your library's top-level package
+   or module. Logging to the root logger will make it difficult or impossible for
+   the application developer to configure the logging verbosity or handlers of
+   your library as they wish.
+
 .. note:: It is strongly advised that you *do not add any handlers other
    than* :class:`~logging.NullHandler` *to your library's loggers*. This is
    because the configuration of handlers is the prerogative of the application

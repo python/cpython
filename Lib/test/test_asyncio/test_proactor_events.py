@@ -839,6 +839,7 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
     def test_make_datagram_transport(self):
         tr = self.datagram_transport()
         self.assertIsInstance(tr, _ProactorDatagramTransport)
+        self.assertIsInstance(tr, asyncio.DatagramTransport)
         close_transport(tr)
 
     def test_datagram_loop_writing(self):

@@ -278,6 +278,8 @@ class DeprecatedList(list):
     1
     """
 
+    __slots__ = ()
+
     _warn = functools.partial(
         warnings.warn,
         "EntryPoints list interface is deprecated. Cast to list if needed.",
