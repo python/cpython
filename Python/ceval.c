@@ -5546,21 +5546,6 @@ handle_eval_breaker:
 
 /* Specialization misses */
 
-#define MISS_INLINE_CACHE(opname) \
-opname ## _miss: \
-    { \
-        STAT_INC(opcode, miss); \
-        STAT_INC(opname, miss); \
-        uint16_t *counter = next_instr; \
-        *counter = *counter-1; \
-        if (*counter == 0) { \
-            next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, _Py_OPARG(next_instr[-1])); \
-            STAT_INC(opname, deopt); \
-            *counter = ADAPTIVE_CACHE_BACKOFF; \
-        } \
-        JUMP_TO_INSTRUCTION(opname); \
-    }
-
 #define MISS_WITH_CACHE(opname) \
 opname ## _miss: \
     { \
@@ -5610,7 +5595,7 @@ opname ## _miss: \
 
 MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(STORE_ATTR)
-MISS_INLINE_CACHE(LOAD_GLOBAL)
+MISS_WITH_INLINE_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_CACHE(PRECALL)
 MISS_WITH_CACHE(CALL)

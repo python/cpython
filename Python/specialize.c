@@ -43,8 +43,8 @@
 /* Map from opcode to adaptive opcode.
   Values of zero are ignored. */
 static uint8_t adaptive_opcodes[256] = {
-    [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
     [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
+    [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
     [LOAD_METHOD] = LOAD_METHOD_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
     [STORE_SUBSCR] = STORE_SUBSCR_ADAPTIVE,
