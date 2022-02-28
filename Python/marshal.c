@@ -13,6 +13,7 @@
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_floatobject.h"   // _PyFloat_Pack8()
 #include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_tuple.h"         // _PyTuple_NewNoTrack
 #include "code.h"
 #include "marshal.h"              // Py_MARSHAL_VERSION
 
@@ -1203,7 +1204,7 @@ r_object(RFILE *p)
             break;
         }
     _read_tuple:
-        v = PyTuple_New(n);
+        v = _PyTuple_NewNoTrack(n);
         R_REF(v);
         if (v == NULL)
             break;
@@ -1221,6 +1222,7 @@ r_object(RFILE *p)
             PyTuple_SET_ITEM(v, i, v2);
         }
         retval = v;
+        // TODO: if gc-type is contained, convert v to regular tuple.
         break;
 
     case TYPE_LIST:

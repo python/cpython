@@ -18,7 +18,9 @@ PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 /* Cast argument to PyTupleObject* type. */
 #define _PyTuple_CAST(op) (assert(PyTuple_Check(op)), (PyTupleObject *)(op))
 
-#define PyTuple_GET_SIZE(op)    Py_SIZE(_PyTuple_CAST(op))
+#define _PyTuple_NOGC_FLAG (PY_SSIZE_T_MIN)
+#define _PyTuple_HAS_NO_GC(op)  (Py_SIZE(_PyTuple_CAST(op)) & _PyTuple_NOGC_FLAG)
+#define PyTuple_GET_SIZE(op)    (Py_SIZE(_PyTuple_CAST(op)) & ~_PyTuple_NOGC_FLAG)
 
 #define PyTuple_GET_ITEM(op, i) (_PyTuple_CAST(op)->ob_item[i])
 
