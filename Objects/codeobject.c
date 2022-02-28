@@ -1925,6 +1925,10 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
         co->co_quickened = NULL;
          _Py_QuickenedCount--;
     }
+    if (co->_co_obj_cache) {
+        PyMem_Free(co->_co_obj_cache);
+        co->_co_obj_cache = NULL;
+    }
     co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     PyMem_Free(co->co_extra);
     co->co_extra = NULL;

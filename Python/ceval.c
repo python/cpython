@@ -2198,10 +2198,10 @@ handle_eval_breaker:
             PyObject *container = SECOND();
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
             PyObject *cached = frame->f_code->_co_obj_cache[cache->object];
-            assert(PyFunction_Check(cached));
-            PyFunctionObject *getitem = (PyFunctionObject *)cached;
             uint32_t type_version = read32(&cache->type_version);
             DEOPT_IF(Py_TYPE(container)->tp_version_tag != type_version, BINARY_SUBSCR);
+            assert(PyFunction_Check(cached));
+            PyFunctionObject *getitem = (PyFunctionObject *)cached;
             DEOPT_IF(getitem->func_version != cache->func_version, BINARY_SUBSCR);
             PyCodeObject *code = (PyCodeObject *)getitem->func_code;
             size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
@@ -2221,10 +2221,10 @@ handle_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            frame->f_lasti += INLINE_CACHE_ENTRIES_BINARY_SUBSCR;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             CALL_STAT_INC(inlined_py_calls);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             goto start_frame;
         }
 
@@ -5606,7 +5606,7 @@ MISS_WITH_CACHE(PRECALL)
 MISS_WITH_CACHE(CALL)
 MISS_WITH_INLINE_CACHE(BINARY_OP)
 MISS_WITH_CACHE(COMPARE_OP)
-MISS_WITH_CACHE(BINARY_SUBSCR)
+MISS_WITH_INLINE_CACHE(BINARY_SUBSCR)
 MISS_WITH_INLINE_CACHE(UNPACK_SEQUENCE)
 MISS_WITH_OPARG_COUNTER(STORE_SUBSCR)
 
