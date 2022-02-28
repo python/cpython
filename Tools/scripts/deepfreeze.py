@@ -15,9 +15,10 @@ import types
 from typing import Dict, FrozenSet, TextIO, Tuple
 
 import umarshal
+from generate_global_objects import get_identifiers_and_strings
 
 verbose = False
-
+identifiers = get_identifiers_and_strings()[0]
 
 def isprintable(b: bytes) -> bool:
     return all(0x20 <= c < 0x7f for c in b)
@@ -167,6 +168,8 @@ class Printer:
         return f"& {name}.ob_base.ob_base"
 
     def generate_unicode(self, name: str, s: str) -> str:
+        if s in identifiers:
+            return f"&_Py_ID({s})"
         kind, ascii = analyze_character_width(s)
         if kind == PyUnicode_1BYTE_KIND:
             datatype = "uint8_t"
@@ -280,7 +283,7 @@ class Printer:
             self.write(f".co_cellvars = {co_cellvars},")
             self.write(f".co_freevars = {co_freevars},")
         self.deallocs.append(f"_PyStaticCode_Dealloc(&{name});")
-        self.interns.append(f"_PyStaticCode_InternStrings(&{name});")
+        self.interns.append(f"_PyStaticCode_InternStrings(&{name})")
         return f"& {name}.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
@@ -447,9 +450,11 @@ def generate(args: list[str], output: TextIO) -> None:
     with printer.block(f"void\n_Py_Deepfreeze_Fini(void)"):
             for p in printer.deallocs:
                 printer.write(p)
-    with printer.block(f"void\n_Py_Deepfreeze_Init(void)"):
+    with printer.block(f"int\n_Py_Deepfreeze_Init(void)"):
             for p in printer.interns:
-                printer.write(p)
+                with printer.block(f"if ({p} < 0)"):
+                    printer.write("return -1;")
+            printer.write("return 0;")
     if verbose:
         print(f"Cache hits: {printer.hits}, misses: {printer.misses}")
 

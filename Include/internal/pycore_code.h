@@ -77,6 +77,13 @@ typedef struct {
 } _PyBinaryOpCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_OP CACHE_ENTRIES(_PyBinaryOpCache)
+typedef struct {
+    _Py_CODEUNIT counter;
+} _PyUnpackSequenceCache;
+
+
+#define INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE \
+    (sizeof(_PyUnpackSequenceCache) / sizeof(_Py_CODEUNIT))
 
 /* Maximum size of code to quicken, in code units. */
 #define MAX_SIZE_TO_QUICKEN 5000
@@ -319,12 +326,12 @@ extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *
                              int oparg);
 extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
-                                   SpecializedCacheEntry *cache);
+                                          int oparg);
 
 /* Deallocator function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Dealloc(PyCodeObject *co);
 /* Function to intern strings of codeobjects */
-extern void _PyStaticCode_InternStrings(PyCodeObject *co);
+extern int _PyStaticCode_InternStrings(PyCodeObject *co);
 
 #ifdef Py_STATS
 

@@ -193,14 +193,6 @@ class _AsyncGeneratorContextManager(
 ):
     """Helper for @asynccontextmanager decorator."""
 
-    def __call__(self, func):
-        @wraps(func)
-        async def inner(*args, **kwds):
-            async with self.__class__(self.func, self.args, self.kwds):
-                return await func(*args, **kwds)
-
-        return inner
-
     async def __aenter__(self):
         # do not keep args and kwds alive unnecessarily
         # they are only needed for recreation, which is not possible anymore

@@ -54,7 +54,7 @@ class PythonValuesTestCase(unittest.TestCase):
             _fields_ = [("name", c_char_p),
                         ("code", POINTER(c_ubyte)),
                         ("size", c_int),
-                        ("is_package", c_bool),
+                        ("is_package", c_int),
                         ("get_code", POINTER(c_ubyte)),  # Function ptr
                         ]
         FrozenTable = POINTER(struct_frozen)
