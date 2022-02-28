@@ -1616,15 +1616,15 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     int oparg;         /* Current opcode argument, if any */
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
 
-    CFrame cframe;
+    _PyCFrame cframe;
     CallShape call_shape;
     call_shape.kwnames = NULL; // Borrowed reference. Reset by CALL instructions.
 
-    /* WARNING: Because the CFrame lives on the C stack,
+    /* WARNING: Because the _PyCFrame lives on the C stack,
      * but can be accessed from a heap allocated object (tstate)
      * strict stack discipline must be maintained.
      */
-    CFrame *prev_cframe = tstate->cframe;
+    _PyCFrame *prev_cframe = tstate->cframe;
     cframe.use_tracing = prev_cframe->use_tracing;
     cframe.previous = prev_cframe;
     tstate->cframe = &cframe;
