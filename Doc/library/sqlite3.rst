@@ -778,7 +778,7 @@ Connection Objects
       .. note::
 
          This method is only available if the underlying SQLite library has the
-         serialize API.
+         deserialize API.
 
       .. versionadded:: 3.11
 
