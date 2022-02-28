@@ -539,22 +539,29 @@ Precomputed tables
 :mod:`msilib` provides a few subpackages that contain only schema and table
 definitions. Currently, these definitions are based on MSI version 2.0.
 
+.. module:: msilib.schema
 
-.. data:: schema
+msilib.schema
+^^^^^^^^^^^^^
 
-   This is the standard MSI schema for MSI 2.0, with the *tables* variable
-   providing a list of table definitions, and *_Validation_records* providing the
-   data for MSI validation.
+This is the standard MSI schema for MSI 2.0, with the *tables* variable
+providing a list of table definitions, and *_Validation_records* providing the
+data for MSI validation.
+
+.. module:: msilib.sequence
+
+msilib.sequence
+^^^^^^^^^^^^^^^
+
+This module contains table contents for the standard sequence tables:
+*AdminExecuteSequence*, *AdminUISequence*, *AdvtExecuteSequence*,
+*InstallExecuteSequence*, and *InstallUISequence*.
 
 
-.. data:: sequence
+.. module:: msilib.text
 
-   This module contains table contents for the standard sequence tables:
-   *AdminExecuteSequence*, *AdminUISequence*, *AdvtExecuteSequence*,
-   *InstallExecuteSequence*, and *InstallUISequence*.
+msilib.text
+^^^^^^^^^^^
 
-
-.. data:: text
-
-   This module contains definitions for the UIText and ActionText tables, for the
-   standard installer actions.
+This module contains definitions for the UIText and ActionText tables, for the
+standard installer actions.
