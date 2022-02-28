@@ -53,6 +53,8 @@ struct _Py_tuple_state {
        Each linked list is initially NULL. */
     PyTupleObject *free_list[PyTuple_NFREELISTS];
     int numfree[PyTuple_NFREELISTS];
+#else
+    char _unused;  // Empty structs are not allowed.
 #endif
 };
 
