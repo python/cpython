@@ -23,7 +23,7 @@ extern void _PyTuple_Fini(PyInterpreterState *);
 // PyTuple_MAXSAVESIZE - largest tuple to save on free list
 // PyTuple_MAXFREELIST - maximum number of tuples of each size to save
 
-#if PyTuple_MAXSAVESIZE <= 0
+#if defined(PyTuple_MAXSAVESIZE) && PyTuple_MAXSAVESIZE <= 0
    // A build indicated that tuple freelists should not be used.
 #  define PyTuple_NFREELISTS 0
 #  undef PyTuple_MAXSAVESIZE
