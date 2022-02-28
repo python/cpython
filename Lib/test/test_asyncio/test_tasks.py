@@ -3284,13 +3284,12 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
             self.one_loop.call_exception_handler.assert_not_called()
 
 
-class RunCoroutineThreadsafeTests(test_utils.TestCase):
+class RunCoroutineThreadsafeTests(unittest.IsolatedAsyncioTestCase):
     """Test case for asyncio.run_coroutine_threadsafe."""
 
-    def setUp(self):
+    async def asyncSetUp(self) -> None:
         super().setUp()
-        self.loop = asyncio.new_event_loop()
-        self.set_event_loop(self.loop) # Will cleanup properly
+        self.loop = asyncio.get_running_loop()
 
     async def add(self, a, b, fail=False, cancel=False):
         """Wait 0.05 second and return a + b."""
