@@ -388,6 +388,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a5 3479 (Add PUSH_NULL opcode)
 #     Python 3.11a5 3480 (New CALL opcodes, second iteration)
 #     Python 3.11a5 3481 (Use inline CACHE instructions)
+#     Python 3.11a5 3482 (Use inline caching for UNPACK_SEQUENCE)
 
 #     Python 3.12 will start with magic number 3500
 
@@ -402,7 +403,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3481).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3482).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
