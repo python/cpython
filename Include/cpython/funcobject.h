@@ -82,8 +82,6 @@ PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
     size_t nargsf,
     PyObject *kwnames);
 
-uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
-
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
 #define PyFunction_GET_CODE(func) \

@@ -256,13 +256,10 @@ def generate_runtime_init(identifiers, strings):
         printer.write(after)
 
 
-#######################################
-# the script
-
-def main() -> None:
+def get_identifiers_and_strings() -> tuple[set[str], dict[str, str]]:
     identifiers = set(IDENTIFIERS)
     strings = dict(STRING_LITERALS)
-    for name, string, filename, lno, _ in iter_global_strings():
+    for name, string, *_ in iter_global_strings():
         if string is None:
             if name not in IGNORED:
                 identifiers.add(name)
@@ -271,6 +268,13 @@ def main() -> None:
                 strings[name] = string
             elif string != strings[name]:
                 raise ValueError(f'string mismatch for {name!r} ({string!r} != {strings[name]!r}')
+    return identifiers, strings
+
+#######################################
+# the script
+
+def main() -> None:
+    identifiers, strings = get_identifiers_and_strings()
 
     generate_global_strings(identifiers, strings)
     generate_runtime_init(identifiers, strings)
