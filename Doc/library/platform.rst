@@ -63,7 +63,7 @@ Cross Platform
    string is returned if the value cannot be determined.
 
 
-.. function:: platform(aliased=0, terse=0)
+.. function:: platform(aliased=False, terse=False)
 
    Returns a single string identifying the underlying platform with as much useful
    information as possible.
@@ -71,12 +71,12 @@ Cross Platform
    The output is intended to be *human readable* rather than machine parseable. It
    may look different on different platforms and this is intended.
 
-   If *aliased* is true, the function will use aliases for various platforms that
+   If *aliased* is ``True``, the function will use aliases for various platforms that
    report system names which differ from their common names, for example SunOS will
    be reported as Solaris.  The :func:`system_alias` function is used to implement
    this.
 
-   Setting *terse* to true causes the function to return only the absolute minimum
+   Setting *terse* to ``True`` causes the function to return only the absolute minimum
    information needed to identify the platform.
 
    .. versionchanged:: 3.8
