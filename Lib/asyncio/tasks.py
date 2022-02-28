@@ -205,8 +205,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         if self.done():
             return False
         self._num_cancels_requested += 1
-        if self._num_cancels_requested > 1:
-            return False
+        # These two lines are controversial.  See discussion starting at
+        # https://github.com/python/cpython/pull/31394#issuecomment-1053545331
+        # Also remember that this is duplicated in _asynciomodule.c.
+        # if self._num_cancels_requested > 1:
+        #     return False
         if self._fut_waiter is not None:
             if self._fut_waiter.cancel(msg=msg):
                 # Leave self._fut_waiter; it may be a Task that
