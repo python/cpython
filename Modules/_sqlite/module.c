@@ -595,7 +595,6 @@ module_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->str___conform__);
     Py_VISIT(state->str_executescript);
     Py_VISIT(state->str_finalize);
-    Py_VISIT(state->str_step);
     Py_VISIT(state->str_upper);
 
     return 0;
