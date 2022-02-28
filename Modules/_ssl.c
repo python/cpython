@@ -6208,10 +6208,7 @@ sslmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->err_names_to_codes);
     Py_VISIT(state->lib_codes_to_names);
     Py_VISIT(state->Sock_Type);
-    Py_VISIT(state->str_library);
-    Py_VISIT(state->str_reason);
-    Py_VISIT(state->str_verify_code);
-    Py_VISIT(state->str_verify_message);
+
     return 0;
 }
 
