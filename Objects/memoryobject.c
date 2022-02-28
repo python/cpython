@@ -2916,7 +2916,6 @@ result:
     unpacker_free(unpack_v);
     unpacker_free(unpack_w);
 
-    Py_XINCREF(res);
     return res;
 }
 

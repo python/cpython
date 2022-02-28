@@ -527,8 +527,6 @@ range_hash(rangeobject *r)
     if (cmp_result == -1)
         goto end;
     if (cmp_result == 1) {
-        Py_INCREF(Py_None);
-        Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 1, Py_None);
         PyTuple_SET_ITEM(t, 2, Py_None);
     }
@@ -539,7 +537,6 @@ range_hash(rangeobject *r)
         if (cmp_result == -1)
             goto end;
         if (cmp_result == 1) {
-            Py_INCREF(Py_None);
             PyTuple_SET_ITEM(t, 2, Py_None);
         }
         else {

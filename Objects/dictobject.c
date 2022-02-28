@@ -2933,7 +2933,6 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
     }
     else
         res = Py_NotImplemented;
-    Py_INCREF(res);
     return res;
 }
 
@@ -4339,7 +4338,6 @@ dictview_richcompare(PyObject *self, PyObject *other, int op)
     if (ok < 0)
         return NULL;
     result = ok ? Py_True : Py_False;
-    Py_INCREF(result);
     return result;
 }
 

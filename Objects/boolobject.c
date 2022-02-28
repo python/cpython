@@ -22,7 +22,6 @@ PyObject *PyBool_FromLong(long ok)
         result = Py_True;
     else
         result = Py_False;
-    Py_INCREF(result);
     return result;
 }
 

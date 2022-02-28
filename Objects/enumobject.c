@@ -359,7 +359,6 @@ reversed_new_impl(PyTypeObject *type, PyObject *seq)
 
     reversed_meth = _PyObject_LookupSpecial(seq, &_Py_ID(__reversed__));
     if (reversed_meth == Py_None) {
-        Py_DECREF(reversed_meth);
         PyErr_Format(PyExc_TypeError,
                      "'%.200s' object is not reversible",
                      Py_TYPE(seq)->tp_name);

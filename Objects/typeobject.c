@@ -237,7 +237,7 @@ _PyType_InitCache(PyInterpreterState *interp)
         entry->version = 0;
         // Set to None so _PyType_Lookup() can use Py_SETREF(),
         // rather than using slower Py_XSETREF().
-        entry->name = Py_NewRef(Py_None);
+        entry->name = Py_None;
         entry->value = NULL;
     }
 }
@@ -4633,7 +4633,6 @@ object_richcompare(PyObject *self, PyObject *other, int op)
            objects are compared, both get a chance at the
            comparison.  See issue #1393. */
         res = (self == other) ? Py_True : Py_NotImplemented;
-        Py_INCREF(res);
         break;
 
     case Py_NE:
@@ -4641,7 +4640,6 @@ object_richcompare(PyObject *self, PyObject *other, int op)
            unless the latter returns NotImplemented. */
         if (Py_TYPE(self)->tp_richcompare == NULL) {
             res = Py_NotImplemented;
-            Py_INCREF(res);
             break;
         }
         res = (*Py_TYPE(self)->tp_richcompare)(self, other, Py_EQ);
@@ -4655,14 +4653,12 @@ object_richcompare(PyObject *self, PyObject *other, int op)
                     res = Py_False;
                 else
                     res = Py_True;
-                Py_INCREF(res);
             }
         }
         break;
 
     default:
         res = Py_NotImplemented;
-        Py_INCREF(res);
         break;
     }
 
@@ -4979,7 +4975,6 @@ _PyObject_GetState(PyObject *obj, int required)
         }
         if (_PyObject_IsInstanceDictEmpty(obj)) {
             state = Py_None;
-            Py_INCREF(state);
         }
         else {
             state = PyObject_GenericGetDict(obj, NULL);
@@ -5202,7 +5197,6 @@ _PyObject_GetItemsIter(PyObject *obj, PyObject **listitems,
 
     if (!PyList_Check(obj)) {
         *listitems = Py_None;
-        Py_INCREF(*listitems);
     }
     else {
         *listitems = PyObject_GetIter(obj);
@@ -5212,7 +5206,6 @@ _PyObject_GetItemsIter(PyObject *obj, PyObject **listitems,
 
     if (!PyDict_Check(obj)) {
         *dictitems = Py_None;
-        Py_INCREF(*dictitems);
     }
     else {
         PyObject *items = PyObject_CallMethodNoArgs(obj, &_Py_ID(items));
@@ -7212,7 +7205,6 @@ FUNCNAME(PyObject *self, PyObject *other) \
                 r = vectorcall_maybe(tstate, &_Py_ID(RDUNDER), stack, 2); \
                 if (r != Py_NotImplemented) \
                     return r; \
-                Py_DECREF(r); \
                 do_other = 0; \
             } \
         } \
@@ -7315,7 +7307,6 @@ slot_sq_contains(PyObject *self, PyObject *value)
 
     func = lookup_maybe_method(self, &_Py_ID(__contains__), &unbound);
     if (func == Py_None) {
-        Py_DECREF(func);
         PyErr_Format(PyExc_TypeError,
                      "'%.200s' object is not a container",
                      Py_TYPE(self)->tp_name);
@@ -7517,7 +7508,6 @@ slot_tp_hash(PyObject *self)
     func = lookup_maybe_method(self, &_Py_ID(__hash__), &unbound);
 
     if (func == Py_None) {
-        Py_DECREF(func);
         func = NULL;
     }
 
@@ -7712,7 +7702,6 @@ slot_tp_iter(PyObject *self)
 
     func = lookup_maybe_method(self, &_Py_ID(__iter__), &unbound);
     if (func == Py_None) {
-        Py_DECREF(func);
         PyErr_Format(PyExc_TypeError,
                      "'%.200s' object is not iterable",
                      Py_TYPE(self)->tp_name);

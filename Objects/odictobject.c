@@ -1507,7 +1507,6 @@ odict_richcompare(PyObject *v, PyObject *w, int op)
             return NULL;
 
         res = (eq == (op == Py_EQ)) ? Py_True : Py_False;
-        Py_INCREF(res);
         return res;
     } else {
         Py_RETURN_NOTIMPLEMENTED;
