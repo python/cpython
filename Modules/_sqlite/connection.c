@@ -1825,7 +1825,7 @@ _sqlite3.Connection.serialize as serialize
     name: str = "main"
         Which database to serialize.
 
-Serialize a database into a byte string. Non-standard.
+Serialize a database into a byte string.
 
 For an ordinary on-disk database file, the serialization is just a copy of the
 disk file. For an in-memory database or a "temp" database, the serialization is
@@ -1835,7 +1835,7 @@ were backed up to disk.
 
 static PyObject *
 serialize_impl(pysqlite_Connection *self, const char *name)
-/*[clinic end generated code: output=97342b0e55239dd3 input=bb5513432e17fef8]*/
+/*[clinic end generated code: output=97342b0e55239dd3 input=d2eb5194a65abe2b]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1869,7 +1869,7 @@ _sqlite3.Connection.deserialize as deserialize
     name: str = "main"
         Which database to reopen with the deserialization.
 
-Load a serialized database. Non-standard.
+Load a serialized database.
 
 The deserialize interface causes the database connection to disconnect from the
 target database, and then reopen it as an in-memory database based on the given
@@ -1882,7 +1882,7 @@ currently in a read transaction or is involved in a backup operation.
 static PyObject *
 deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
                  const char *name)
-/*[clinic end generated code: output=e394c798b98bad89 input=7cf51653d0c40e22]*/
+/*[clinic end generated code: output=e394c798b98bad89 input=1be4ca1faacf28f2]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1922,7 +1922,7 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
         (void)_pysqlite_seterror(self->state, self->db);
         return NULL;
     }
-    Py_RETURN_TRUE;
+    Py_RETURN_NONE;
 }
 #endif  // PY_SQLITE_HAVE_SERIALIZE
 

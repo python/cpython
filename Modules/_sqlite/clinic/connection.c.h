@@ -703,7 +703,7 @@ PyDoc_STRVAR(serialize__doc__,
 "serialize($self, /, *, name=\'main\')\n"
 "--\n"
 "\n"
-"Serialize a database into a byte string. Non-standard.\n"
+"Serialize a database into a byte string.\n"
 "\n"
 "  name\n"
 "    Which database to serialize.\n"
@@ -764,7 +764,7 @@ PyDoc_STRVAR(deserialize__doc__,
 "deserialize($self, data, /, *, name=\'main\')\n"
 "--\n"
 "\n"
-"Load a serialized database. Non-standard.\n"
+"Load a serialized database.\n"
 "\n"
 "  data\n"
 "    The serialized database content.\n"
@@ -994,4 +994,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=879ab806f1216663 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=961f983241c1b845 input=a9049054013a1b77]*/

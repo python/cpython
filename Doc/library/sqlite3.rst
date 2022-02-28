@@ -771,9 +771,12 @@ Connection Objects
 
       This method causes the database connection to disconnect from database
       *name*, and reopen *name* as an in-memory database based on the
-      serialization contained in *data*.  Deserialization will fail with
-      ``SQLITE_BUSY`` if the database is currently in a read transaction or is
-      involved in a backup operation.
+      serialization contained in *data*.  Deserialization will raise
+      :exc:`OperationalError` if the database connection is currently involved
+      in a read transaction or a backup operation.  :exc:`DataError` will be
+      raised if ``len(data)`` is larger than ``2**63 - 1``, and
+      :exc:`DatabaseError` will be raised if *data* does not contain a valid
+      SQLite database.
 
       .. note::
 
