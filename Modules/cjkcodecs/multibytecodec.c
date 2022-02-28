@@ -1992,7 +1992,6 @@ _multibytecodec_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->decoder_type);
     Py_VISIT(state->reader_type);
     Py_VISIT(state->writer_type);
-    Py_VISIT(state->str_write);
     return 0;
 }
 
