@@ -58,6 +58,7 @@ struct PyCodeObject {
     _Py_CODEUNIT *co_firstinstr; /* Pointer to first instruction, used for quickening.
                                     Unlike the other "hot" fields, this one is
                                     actually derived from co_code. */
+    PyObject **_co_obj_cache;    /* Array of borrowed references to objects, for specialized code. */
     PyObject *co_exceptiontable; /* Byte string encoding exception handling table */
     int co_flags;               /* CO_..., see below */
     int co_warmup;              /* Warmup counter for quickening */
@@ -90,6 +91,7 @@ struct PyCodeObject {
     int co_nplaincellvars;      /* number of non-arg cell variables */
     int co_ncellvars;           /* total number of cell variables */
     int co_nfreevars;           /* number of free variables */
+    int _co_obj_cache_len;      /* number of entries in _co_obj_cache */
     // lazily-computed values
     PyObject *co_varnames;      /* tuple of strings (local variable names) */
     PyObject *co_cellvars;      /* tuple of strings (cell variable names) */

@@ -61,12 +61,16 @@ static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 1,  // _PyAdaptiveEntry
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
-    [BINARY_SUBSCR] = 2, /* _PyAdaptiveEntry, _PyObjectCache */
     [STORE_SUBSCR] = 0,
     [CALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [PRECALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [STORE_ATTR] = 1,  // _PyAdaptiveEntry
     [COMPARE_OP] = 1, /* _PyAdaptiveEntry */
+};
+
+/* The number of object cache entries required for a "family" of instructions. */
+static const uint8_t object_cache_requirements[256] = {
+    [BINARY_SUBSCR] = 5,
 };
 
 Py_ssize_t _Py_QuickenedCount = 0;
@@ -287,6 +291,14 @@ _Py_PrintSpecializationStats(int to_file)
 #define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
 #endif
 
+static void
+_PyQuickenedSetObject(const _Py_CODEUNIT *first_instr, uint16_t index, PyObject *obj)
+{
+    SpecializedCacheOrInstruction *last_cache_plus_one = (SpecializedCacheOrInstruction *)first_instr;
+    assert(&last_cache_plus_one->code[0] == first_instr);
+    last_cache_plus_one[-1-index].entry.obj.obj = obj;
+}
+
 static SpecializedCacheOrInstruction *
 allocate(int cache_count, int instruction_count)
 {
@@ -353,7 +365,10 @@ entries_needed(const _Py_CODEUNIT *code, int len)
     int previous_opcode = -1;
     for (int i = 0; i < len; i++) {
         uint8_t opcode = _Py_OPCODE(code[i]);
-        if (previous_opcode != EXTENDED_ARG) {
+        if (object_cache_requirements[opcode]) {
+            cache_offset += object_cache_requirements[opcode];
+        }
+        else if (previous_opcode != EXTENDED_ARG) {
             oparg_from_instruction_and_update_offset(i, opcode, 0, &cache_offset);
         }
         previous_opcode = opcode;
@@ -387,6 +402,11 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
         if (adaptive_opcode) {
             if (_PyOpcode_InlineCacheEntries[opcode]) {
                 instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, oparg);
+                if (object_cache_requirements[opcode]) {
+                    assert(_PyOpcode_InlineCacheEntries[opcode] >= 2);
+                    instructions[i+2] = cache_offset;
+                    cache_offset += object_cache_requirements[opcode];
+                }
             }
             else if (previous_opcode != EXTENDED_ARG) {
                 int new_oparg = oparg_from_instruction_and_update_offset(
@@ -1332,9 +1352,11 @@ function_kind(PyCodeObject *code) {
 
 int
 _Py_Specialize_BinarySubscr(
-     PyObject *container, PyObject *sub, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+     PyObject *container, PyObject *sub, _Py_CODEUNIT *instr, PyCodeObject *code)
 {
-    _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    assert(_PyOpcode_InlineCacheEntries[BINARY_SUBSCR] ==
+           INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+    _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)(instr + 1);
     PyTypeObject *container_type = Py_TYPE(container);
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
@@ -1362,25 +1384,25 @@ _Py_Specialize_BinarySubscr(
     PyObject *descriptor = _PyType_Lookup(cls, &_Py_ID(__getitem__));
     if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
         PyFunctionObject *func = (PyFunctionObject *)descriptor;
-        PyCodeObject *code = (PyCodeObject *)func->func_code;
-        int kind = function_kind(code);
+        PyCodeObject *fcode = (PyCodeObject *)func->func_code;
+        int kind = function_kind(fcode);
         if (kind != SIMPLE_FUNCTION) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, kind);
             goto fail;
         }
-        if (code->co_argcount != 2) {
+        if (fcode->co_argcount != 2) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
             goto fail;
         }
         assert(cls->tp_version_tag != 0);
-        cache0->version = cls->tp_version_tag;
+        cache->type_version = cls->tp_version_tag;
         int version = _PyFunction_GetVersionForCurrentState(func);
         if (version == 0 || version != (uint16_t)version) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }
-        cache0->index = version;
-        cache[-1].obj.obj = descriptor;
+        cache->func_version = version;
+        _PyQuickenedSetObject(code->co_firstinstr, cache->object, descriptor);
         *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_GETITEM, _Py_OPARG(*instr));
         goto success;
     }
@@ -1389,12 +1411,12 @@ _Py_Specialize_BinarySubscr(
 fail:
     STAT_INC(BINARY_SUBSCR, failure);
     assert(!PyErr_Occurred());
-    cache_backoff(cache0);
+    cache->counter = ADAPTIVE_CACHE_BACKOFF;
     return 0;
 success:
     STAT_INC(BINARY_SUBSCR, success);
     assert(!PyErr_Occurred());
-    cache0->counter = initial_counter_value();
+    cache->counter = initial_counter_value();
     return 0;
 }
 
