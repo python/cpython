@@ -16,19 +16,20 @@ As of Python 3.6, this is compact and ordered. Basic idea is described here:
 
 layout:
 
-+---------------+
-| dk_refcnt     |
-| dk_log2_size  |
-| dk_kind       |
-| dk_usable     |
-| dk_nentries   |
-+---------------+
-| dk_indices    |
-|               |
-+---------------+
-| dk_entries    |
-|               |
-+---------------+
++---------------------+
+| dk_refcnt           |
+| dk_log2_size        |
+| dk_log2_index_bytes |
+| dk_kind             |
+| dk_usable           |
+| dk_nentries         |
++---------------------+
+| dk_indices[]        |
+|                     |
++---------------------+
+| dk_entries[]        |
+|                     |
++---------------------+
 
 dk_indices is actual hashtable.  It holds index in entries, or DKIX_EMPTY(-1)
 or DKIX_DUMMY(-2).
@@ -320,19 +321,19 @@ dictkeys_decref(PyDictKeysObject *dk)
 static inline Py_ssize_t
 dictkeys_get_index(const PyDictKeysObject *keys, Py_ssize_t i)
 {
-    Py_ssize_t s = DK_SIZE(keys);
+    int log2size = DK_LOG_SIZE(keys);
     Py_ssize_t ix;
 
-    if (s <= 0xff) {
+    if (log2size < 8) {
         const int8_t *indices = (const int8_t*)(keys->dk_indices);
         ix = indices[i];
     }
-    else if (s <= 0xffff) {
+    else if (log2size < 16) {
         const int16_t *indices = (const int16_t*)(keys->dk_indices);
         ix = indices[i];
     }
 #if SIZEOF_VOID_P > 4
-    else if (s > 0xffffffff) {
+    else if (log2size >= 32) {
         const int64_t *indices = (const int64_t*)(keys->dk_indices);
         ix = indices[i];
     }
@@ -349,23 +350,23 @@ dictkeys_get_index(const PyDictKeysObject *keys, Py_ssize_t i)
 static inline void
 dictkeys_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
 {
-    Py_ssize_t s = DK_SIZE(keys);
+    int log2size = DK_LOG_SIZE(keys);
 
     assert(ix >= DKIX_DUMMY);
     assert(keys->dk_version == 0);
 
-    if (s <= 0xff) {
+    if (log2size < 8) {
         int8_t *indices = (int8_t*)(keys->dk_indices);
         assert(ix <= 0x7f);
         indices[i] = (char)ix;
     }
-    else if (s <= 0xffff) {
+    else if (log2size < 16) {
         int16_t *indices = (int16_t*)(keys->dk_indices);
         assert(ix <= 0x7fff);
         indices[i] = (int16_t)ix;
     }
 #if SIZEOF_VOID_P > 4
-    else if (s > 0xffffffff) {
+    else if (log2size >= 32) {
         int64_t *indices = (int64_t*)(keys->dk_indices);
         indices[i] = ix;
     }
@@ -444,6 +445,7 @@ estimate_log2_keysize(Py_ssize_t n)
 static PyDictKeysObject empty_keys_struct = {
         1, /* dk_refcnt */
         0, /* dk_log2_size */
+        0, /* dk_log2_index_bytes */
         DICT_KEYS_SPLIT, /* dk_kind */
         1, /* dk_version */
         0, /* dk_usable (immutable) */
@@ -562,24 +564,25 @@ static PyDictKeysObject*
 new_keys_object(uint8_t log2_size)
 {
     PyDictKeysObject *dk;
-    Py_ssize_t es, usable;
+    Py_ssize_t usable;
+    int log2_bytes;
 
     assert(log2_size >= PyDict_LOG_MINSIZE);
 
     usable = USABLE_FRACTION(1<<log2_size);
-    if (log2_size <= 7) {
-        es = 1;
+    if (log2_size < 8) {
+        log2_bytes = log2_size;
     }
-    else if (log2_size <= 15) {
-        es = 2;
+    else if (log2_size < 16) {
+        log2_bytes = log2_size + 1;
     }
 #if SIZEOF_VOID_P > 4
-    else if (log2_size <= 31) {
-        es = 4;
+    else if (log2_size >= 32) {
+        log2_bytes = log2_size + 3;
     }
 #endif
     else {
-        es = sizeof(Py_ssize_t);
+        log2_bytes = log2_size + 2;
     }
 
 #if PyDict_MAXFREELIST > 0
@@ -595,7 +598,7 @@ new_keys_object(uint8_t log2_size)
 #endif
     {
         dk = PyObject_Malloc(sizeof(PyDictKeysObject)
-                             + (es<<log2_size)
+                             + ((size_t)1 << log2_bytes)
                              + sizeof(PyDictKeyEntry) * usable);
         if (dk == NULL) {
             PyErr_NoMemory();
@@ -607,11 +610,12 @@ new_keys_object(uint8_t log2_size)
 #endif
     dk->dk_refcnt = 1;
     dk->dk_log2_size = log2_size;
+    dk->dk_log2_index_bytes = log2_bytes;
     dk->dk_kind = DICT_KEYS_UNICODE;
     dk->dk_nentries = 0;
     dk->dk_usable = usable;
     dk->dk_version = 0;
-    memset(&dk->dk_indices[0], 0xff, es<<log2_size);
+    memset(&dk->dk_indices[0], 0xff, ((size_t)1 << log2_bytes));
     memset(DK_ENTRIES(dk), 0, sizeof(PyDictKeyEntry) * usable);
     return dk;
 }
@@ -631,7 +635,7 @@ free_keys_object(PyDictKeysObject *keys)
     // free_keys_object() must not be called after _PyDict_Fini()
     assert(state->keys_numfree != -1);
 #endif
-    if (DK_SIZE(keys) == PyDict_MINSIZE && state->keys_numfree < PyDict_MAXFREELIST) {
+    if (DK_LOG_SIZE(keys) == PyDict_LOG_MINSIZE && state->keys_numfree < PyDict_MAXFREELIST) {
         state->keys_free_list[state->keys_numfree++] = keys;
         return;
     }
@@ -1196,7 +1200,7 @@ Internal routine used by dictresize() to build a hashtable of entries.
 static void
 build_indices(PyDictKeysObject *keys, PyDictKeyEntry *ep, Py_ssize_t n)
 {
-    size_t mask = (size_t)DK_SIZE(keys) - 1;
+    size_t mask = DK_MASK(keys);
     for (Py_ssize_t ix = 0; ix != n; ix++, ep++) {
         Py_hash_t hash = ep->me_hash;
         size_t i = hash & mask;
@@ -1296,7 +1300,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize)
         // dictresize() must not be called after _PyDict_Fini()
         assert(state->keys_numfree != -1);
 #endif
-        if (DK_SIZE(oldkeys) == PyDict_MINSIZE &&
+        if (DK_LOG_SIZE(oldkeys) == PyDict_LOG_MINSIZE &&
             state->keys_numfree < PyDict_MAXFREELIST)
         {
             state->keys_free_list[state->keys_numfree++] = oldkeys;
@@ -1496,7 +1500,7 @@ _PyDict_GetItemWithError(PyObject *dp, PyObject *kv)
 }
 
 PyObject *
-_PyDict_GetItemIdWithError(PyObject *dp, struct _Py_Identifier *key)
+_PyDict_GetItemIdWithError(PyObject *dp, _Py_Identifier *key)
 {
     PyObject *kv;
     kv = _PyUnicode_FromId(key); /* borrowed */
@@ -2555,7 +2559,7 @@ dict_merge(PyObject *a, PyObject *b, int override)
             // If other is clean, combined, and just allocated, just clone it.
             if (other->ma_values == NULL &&
                     other->ma_used == okeys->dk_nentries &&
-                    (DK_SIZE(okeys) == PyDict_MINSIZE ||
+                    (DK_LOG_SIZE(okeys) == PyDict_LOG_MINSIZE ||
                      USABLE_FRACTION(DK_SIZE(okeys)/2) < other->ma_used)) {
                 PyDictKeysObject *keys = clone_combined_dict_keys(other);
                 if (keys == NULL) {
@@ -3407,7 +3411,7 @@ _PyDict_Contains_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
 }
 
 int
-_PyDict_ContainsId(PyObject *op, struct _Py_Identifier *key)
+_PyDict_ContainsId(PyObject *op, _Py_Identifier *key)
 {
     PyObject *kv = _PyUnicode_FromId(key); /* borrowed */
     if (kv == NULL) {
@@ -3585,7 +3589,7 @@ PyDict_GetItemString(PyObject *v, const char *key)
 }
 
 int
-_PyDict_SetItemId(PyObject *v, struct _Py_Identifier *key, PyObject *item)
+_PyDict_SetItemId(PyObject *v, _Py_Identifier *key, PyObject *item)
 {
     PyObject *kv;
     kv = _PyUnicode_FromId(key); /* borrowed */

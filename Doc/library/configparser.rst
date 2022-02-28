@@ -267,6 +267,9 @@ out.  Values can also span multiple lines, as long as they are indented deeper
 than the first line of the value.  Depending on the parser's mode, blank lines
 may be treated as parts of multiline values or ignored.
 
+By default,  a valid section name can be any string that does not contain '\\n' or ']'.
+To change this, see :attr:`ConfigParser.SECTCRE`.
+
 Configuration files may include comments, prefixed by specific
 characters (``#`` and ``;`` by default [1]_).  Comments may appear on
 their own on an otherwise empty line, possibly indented. [1]_

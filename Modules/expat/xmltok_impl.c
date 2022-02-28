@@ -10,7 +10,7 @@
    Copyright (c) 2000      Clark Cooper <coopercc@users.sourceforge.net>
    Copyright (c) 2002      Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
-   Copyright (c) 2016-2021 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2022 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
    Copyright (c) 2018      Benjamin Peterson <benjamin@python.org>
    Copyright (c) 2018      Anton Maklakov <antmak.pub@gmail.com>
@@ -69,7 +69,7 @@
   case BT_LEAD##n:                                                             \
     if (end - ptr < n)                                                         \
       return XML_TOK_PARTIAL_CHAR;                                             \
-    if (! IS_NAME_CHAR(enc, ptr, n)) {                                         \
+    if (IS_INVALID_CHAR(enc, ptr, n) || ! IS_NAME_CHAR(enc, ptr, n)) {         \
       *nextTokPtr = ptr;                                                       \
       return XML_TOK_INVALID;                                                  \
     }                                                                          \
@@ -98,7 +98,7 @@
   case BT_LEAD##n:                                                             \
     if (end - ptr < n)                                                         \
       return XML_TOK_PARTIAL_CHAR;                                             \
-    if (! IS_NMSTRT_CHAR(enc, ptr, n)) {                                       \
+    if (IS_INVALID_CHAR(enc, ptr, n) || ! IS_NMSTRT_CHAR(enc, ptr, n)) {       \
       *nextTokPtr = ptr;                                                       \
       return XML_TOK_INVALID;                                                  \
     }                                                                          \
@@ -1142,6 +1142,10 @@ PREFIX(prologTok)(const ENCODING *enc, const char *ptr, const char *end,
   case BT_LEAD##n:                                                             \
     if (end - ptr < n)                                                         \
       return XML_TOK_PARTIAL_CHAR;                                             \
+    if (IS_INVALID_CHAR(enc, ptr, n)) {                                        \
+      *nextTokPtr = ptr;                                                       \
+      return XML_TOK_INVALID;                                                  \
+    }                                                                          \
     if (IS_NMSTRT_CHAR(enc, ptr, n)) {                                         \
       ptr += n;                                                                \
       tok = XML_TOK_NAME;                                                      \
@@ -1270,7 +1274,7 @@ PREFIX(attributeValueTok)(const ENCODING *enc, const char *ptr, const char *end,
     switch (BYTE_TYPE(enc, ptr)) {
 #  define LEAD_CASE(n)                                                         \
   case BT_LEAD##n:                                                             \
-    ptr += n;                                                                  \
+    ptr += n; /* NOTE: The encoding has already been validated. */             \
     break;
       LEAD_CASE(2)
       LEAD_CASE(3)
@@ -1339,7 +1343,7 @@ PREFIX(entityValueTok)(const ENCODING *enc, const char *ptr, const char *end,
     switch (BYTE_TYPE(enc, ptr)) {
 #  define LEAD_CASE(n)                                                         \
   case BT_LEAD##n:                                                             \
-    ptr += n;                                                                  \
+    ptr += n; /* NOTE: The encoding has already been validated. */             \
     break;
       LEAD_CASE(2)
       LEAD_CASE(3)
@@ -1518,7 +1522,7 @@ PREFIX(getAtts)(const ENCODING *enc, const char *ptr, int attsMax,
       state = inName;                                                          \
     }
 #  define LEAD_CASE(n)                                                         \
-  case BT_LEAD##n:                                                             \
+  case BT_LEAD##n: /* NOTE: The encoding has already been validated. */        \
     START_NAME ptr += (n - MINBPC(enc));                                       \
     break;
       LEAD_CASE(2)
@@ -1730,7 +1734,7 @@ PREFIX(nameLength)(const ENCODING *enc, const char *ptr) {
     switch (BYTE_TYPE(enc, ptr)) {
 #  define LEAD_CASE(n)                                                         \
   case BT_LEAD##n:                                                             \
-    ptr += n;                                                                  \
+    ptr += n; /* NOTE: The encoding has already been validated. */             \
     break;
       LEAD_CASE(2)
       LEAD_CASE(3)
@@ -1775,7 +1779,7 @@ PREFIX(updatePosition)(const ENCODING *enc, const char *ptr, const char *end,
     switch (BYTE_TYPE(enc, ptr)) {
 #  define LEAD_CASE(n)                                                         \
   case BT_LEAD##n:                                                             \
-    ptr += n;                                                                  \
+    ptr += n; /* NOTE: The encoding has already been validated. */             \
     pos->columnNumber++;                                                       \
     break;
       LEAD_CASE(2)

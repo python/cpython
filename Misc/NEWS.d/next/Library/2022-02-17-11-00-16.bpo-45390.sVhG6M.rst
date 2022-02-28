@@ -1,0 +1,2 @@
+Propagate :exc:`asyncio.CancelledError` message from inner task to outer
+awaiter.

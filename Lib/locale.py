@@ -555,6 +555,12 @@ def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
 
     """
 
+    import warnings
+    warnings.warn(
+        "Use setlocale(), getpreferredencoding(False) and getlocale() instead",
+        DeprecationWarning, stacklevel=2
+    )
+
     try:
         # check if it's supported by the _locale module
         import _locale

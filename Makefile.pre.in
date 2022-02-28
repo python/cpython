@@ -1176,8 +1176,8 @@ regen-importlib: regen-frozen
 # Global objects
 
 .PHONY: regen-global-objects
-regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py $(FREEZE_MODULE_DEPS)
-	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/generate_global_objects.py
+regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
 
 ############################################################################
 # ABI
@@ -1439,7 +1439,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/abstract.h \
 		$(srcdir)/Include/bltinmodule.h \
 		$(srcdir)/Include/boolobject.h \
-		$(srcdir)/Include/buffer.h \
 		$(srcdir)/Include/bytearrayobject.h \
 		$(srcdir)/Include/bytesobject.h \
 		$(srcdir)/Include/ceval.h \
@@ -1472,6 +1471,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
+		$(srcdir)/Include/pybuffer.h \
 		$(srcdir)/Include/pycapsule.h \
 		$(srcdir)/Include/pydtrace.h \
 		$(srcdir)/Include/pyerrors.h \
@@ -1488,6 +1488,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pythonrun.h \
 		$(srcdir)/Include/pythread.h \
+		$(srcdir)/Include/pytypedefs.h \
 		$(srcdir)/Include/rangeobject.h \
 		$(srcdir)/Include/setobject.h \
 		$(srcdir)/Include/sliceobject.h \
@@ -2435,9 +2436,6 @@ patchcheck: @DEF_MAKE_RULE@
 
 check-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --all $(srcdir)/Misc/stable_abi.txt
-
-check-global-objects: all
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/generate_global_objects.py --check
 
 .PHONY: update-config
 update-config:
