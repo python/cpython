@@ -77,18 +77,13 @@ typedef struct {
 } _PyBinaryOpCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_OP CACHE_ENTRIES(_PyBinaryOpCache)
+
 typedef struct {
     _Py_CODEUNIT counter;
 } _PyUnpackSequenceCache;
 
-
-
-
-
-
-
-
-
+#define INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE \
+    CACHE_ENTRIES(_PyUnpackSequenceCache)
 
 typedef struct {
     _Py_CODEUNIT counter;
@@ -98,12 +93,7 @@ typedef struct {
     _Py_CODEUNIT func_version;
 } _PyBinarySubscrCache;
 
-
-#define INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE \
-    (sizeof(_PyUnpackSequenceCache) / sizeof(_Py_CODEUNIT))
-
-#define INLINE_CACHE_ENTRIES_BINARY_SUBSCR \
-    (sizeof(_PyBinarySubscrCache) / sizeof(_Py_CODEUNIT))
+#define INLINE_CACHE_ENTRIES_BINARY_SUBSCR CACHE_ENTRIES(_PyBinarySubscrCache)
 
 /* Maximum size of code to quicken, in code units. */
 #define MAX_SIZE_TO_QUICKEN 5000
