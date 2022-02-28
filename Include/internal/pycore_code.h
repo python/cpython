@@ -82,7 +82,6 @@ typedef struct {
     _Py_CODEUNIT counter;
 } _PyUnpackSequenceCache;
 
-
 #define INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE \
     CACHE_ENTRIES(_PyUnpackSequenceCache)
 
@@ -90,7 +89,6 @@ typedef struct {
     _Py_CODEUNIT counter;
     _Py_CODEUNIT mask;
 } _PyCompareOpCache;
-
 
 #define INLINE_CACHE_ENTRIES_COMPARE_OP CACHE_ENTRIES(_PyCompareOpCache)
 
