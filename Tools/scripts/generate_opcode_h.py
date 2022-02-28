@@ -76,7 +76,7 @@ def main(opcode_py, outfile='Include/opcode.h'):
             used[next_op] = True
         fobj.write(DEFINE.format('DO_TRACING', 255))
         fobj.write("\nextern const uint8_t _PyOpcode_InlineCacheEntries[256];\n")
-        fobj.write("#ifdef NEED_OPCODE_TABLES\n")
+        fobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
         write_int_array_from_ops("_PyOpcode_RelativeJump", opcode['hasjrel'], fobj)
         write_int_array_from_ops("_PyOpcode_Jump", opcode['hasjrel'] + opcode['hasjabs'], fobj)
 

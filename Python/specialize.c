@@ -1213,7 +1213,7 @@ _Py_Specialize_LoadGlobal(
     assert(_PyOpcode_InlineCacheEntries[LOAD_GLOBAL] ==
            INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
     /* Use inline cache */
-    _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)(instr+1);
+    _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)(instr + 1);
     assert(PyUnicode_CheckExact(name));
     if (!PyDict_CheckExact(globals)) {
         goto fail;

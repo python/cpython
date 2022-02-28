@@ -187,6 +187,7 @@ extern "C" {
 #define DO_TRACING                      255
 
 extern const uint8_t _PyOpcode_InlineCacheEntries[256];
+
 #ifdef NEED_OPCODE_TABLES
 static const uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
