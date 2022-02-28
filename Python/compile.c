@@ -8227,6 +8227,9 @@ assemble(struct compiler *c, int addNone)
     if (_PyBytes_Resize(&a.a_except_table, a.a_except_table_off) < 0) {
         goto error;
     }
+    if (!merge_const_one(c, &a.a_except_table)) {
+        goto error;
+    }
     if (!assemble_start_line_range(&a)) {
         return 0;
     }
@@ -8246,6 +8249,9 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
     if (_PyBytes_Resize(&a.a_cnotab, a.a_cnotab_off) < 0) {
+        goto error;
+    }
+    if (!merge_const_one(c, &a.a_cnotab)) {
         goto error;
     }
     if (_PyBytes_Resize(&a.a_bytecode, a.a_offset * sizeof(_Py_CODEUNIT)) < 0) {
