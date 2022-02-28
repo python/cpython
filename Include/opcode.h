@@ -185,8 +185,11 @@ extern "C" {
 #define STORE_FAST__STORE_FAST          175
 #define LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE 176
 #define DO_TRACING                      255
-#ifdef NEED_OPCODE_JUMP_TABLES
-static uint32_t _PyOpcode_RelativeJump[8] = {
+
+extern const uint8_t _PyOpcode_InlineCacheEntries[256];
+
+#ifdef NEED_OPCODE_TABLES
+static const uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     0U,
     536870912U,
@@ -196,7 +199,7 @@ static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     0U,
 };
-static uint32_t _PyOpcode_Jump[8] = {
+static const uint32_t _PyOpcode_Jump[8] = {
     0U,
     0U,
     536870912U,
@@ -205,6 +208,12 @@ static uint32_t _PyOpcode_Jump[8] = {
     0U,
     0U,
     0U,
+};
+
+const uint8_t _PyOpcode_InlineCacheEntries[256] = {
+    [UNPACK_SEQUENCE] = 1,
+    [LOAD_GLOBAL] = 5,
+    [BINARY_OP] = 1,
 };
 #endif /* OPCODE_TABLES */
 
@@ -239,11 +248,6 @@ static uint32_t _PyOpcode_Jump[8] = {
 #define NB_INPLACE_SUBTRACT              23
 #define NB_INPLACE_TRUE_DIVIDE           24
 #define NB_INPLACE_XOR                   25
-
-static const uint8_t _PyOpcode_InlineCacheEntries[256] = {
-    [UNPACK_SEQUENCE] = 1,
-    [BINARY_OP] = 1,
-};
 
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
 
