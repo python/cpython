@@ -1841,12 +1841,19 @@ serialize_impl(pysqlite_Connection *self, const char *name)
         return NULL;
     }
 
+    /* If SQLite has a contiguous memory representation of the database, we can
+     * avoid memory allocations, so we try with the no-copy flag first.
+     */
     sqlite3_int64 size;
-    const unsigned int flags = 0;
+    unsigned int flags = SQLITE_SERIALIZE_NOCOPY;
     const char *data;
 
     Py_BEGIN_ALLOW_THREADS
     data = (const char *)sqlite3_serialize(self->db, name, &size, flags);
+    if (data == NULL) {
+        flags &= ~SQLITE_SERIALIZE_NOCOPY;
+        data = (const char *)sqlite3_serialize(self->db, name, &size, flags);
+    }
     Py_END_ALLOW_THREADS
 
     if (data == NULL) {
@@ -1855,7 +1862,9 @@ serialize_impl(pysqlite_Connection *self, const char *name)
         return NULL;
     }
     PyObject *res = PyBytes_FromStringAndSize(data, size);
-    sqlite3_free((void *)data);
+    if (!(flags & SQLITE_SERIALIZE_NOCOPY)) {
+        sqlite3_free((void *)data);
+    }
     return res;
 }
 
