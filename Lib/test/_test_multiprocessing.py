@@ -247,6 +247,30 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(current.ident, os.getpid())
         self.assertEqual(current.exitcode, None)
 
+    def test_args_argument(self):
+        # bpo-45735: Using list or tuple as *args* in constructor could
+        # achieve the same effect.
+        args_cases = (1, "str", [1], (1,))
+        args_types = (list, tuple)
+
+        test_cases = itertools.product(args_cases, args_types)
+
+        for args, args_type in test_cases:
+            with self.subTest(args=args, args_type=args_type):
+                q = self.Queue(1)
+                # pass a tuple or list as args
+                p = self.Process(target=self._test_args, args=args_type((q, args)))
+                p.daemon = True
+                p.start()
+                child_args = q.get()
+                self.assertEqual(child_args, args)
+                p.join()
+                close_queue(q)
+
+    @classmethod
+    def _test_args(cls, q, arg):
+        q.put(arg)
+
     def test_daemon_argument(self):
         if self.TYPE == "threads":
             self.skipTest('test not appropriate for {}'.format(self.TYPE))

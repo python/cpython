@@ -142,6 +142,7 @@
     <ClInclude Include="..\Include\cpython\code.h" />
     <ClInclude Include="..\Include\cpython\compile.h" />
     <ClInclude Include="..\Include\cpython\context.h" />
+    <ClInclude Include="..\Include\cpython\descrobject.h" />
     <ClInclude Include="..\Include\cpython\dictobject.h" />
     <ClInclude Include="..\Include\cpython\fileobject.h" />
     <ClInclude Include="..\Include\cpython\fileutils.h" />
@@ -233,6 +234,7 @@
     <ClInclude Include="..\Include\internal\pycore_pymem.h" />
     <ClInclude Include="..\Include\internal\pycore_pystate.h" />
     <ClInclude Include="..\Include\internal\pycore_runtime.h" />
+    <ClInclude Include="..\Include\internal\pycore_runtime_init.h" />
     <ClInclude Include="..\Include\internal\pycore_sliceobject.h" />
     <ClInclude Include="..\Include\internal\pycore_strhex.h" />
     <ClInclude Include="..\Include\internal\pycore_structseq.h" />
@@ -261,6 +263,7 @@
     <ClInclude Include="..\Include\osmodule.h" />
     <ClInclude Include="..\Include\patchlevel.h" />
     <ClInclude Include="..\Include\py_curses.h" />
+    <ClInclude Include="..\Include\pybuffer.h" />
     <ClInclude Include="..\Include\pycapsule.h" />
     <ClInclude Include="..\Include\pyerrors.h" />
     <ClInclude Include="..\Include\pyexpat.h" />
@@ -276,6 +279,7 @@
     <ClInclude Include="..\Include\pystrtod.h" />
     <ClInclude Include="..\Include\pythonrun.h" />
     <ClInclude Include="..\Include\pythread.h" />
+    <ClInclude Include="..\Include\pytypedefs.h" />
     <ClInclude Include="..\Include\rangeobject.h" />
     <ClInclude Include="..\Include\setobject.h" />
     <ClInclude Include="..\Include\sliceobject.h" />
@@ -323,7 +327,6 @@
     <ClInclude Include="..\Python\importdl.h" />
     <ClInclude Include="..\Python\stdlib_module_names.h" />
     <ClInclude Include="..\Python\thread_nt.h" />
-    <ClInclude Include="..\Python\wordcode_helpers.h" />
   </ItemGroup>
   <ItemGroup Condition="$(IncludeExternals)">
     <ClInclude Include="$(zlibDir)\crc32.h" />
@@ -527,29 +530,7 @@
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN deepfreeze -->
-    <ClCompile Include="..\Python\deepfreeze\df.importlib._bootstrap.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.importlib._bootstrap_external.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.zipimport.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.abc.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.codecs.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.io.c" />
-    <ClCompile Include="..\Python\deepfreeze\df._collections_abc.c" />
-    <ClCompile Include="..\Python\deepfreeze\df._sitebuiltins.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.genericpath.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.ntpath.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.posixpath.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.os.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.site.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.stat.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.importlib.util.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.importlib.machinery.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.runpy.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.__hello__.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.__phello__.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.__phello__.ham.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.__phello__.ham.eggs.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.__phello__.spam.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.frozen_only.c" />
+    <ClCompile Include="..\Python\deepfreeze\deepfreeze.c" />
     <!-- END deepfreeze -->
     </ItemGroup>
   <ItemGroup Condition="$(IncludeExternals)">

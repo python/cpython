@@ -1,0 +1,1 @@
+Use inline cache for :opcode:`LOAD_GLOBAL`.

@@ -98,7 +98,7 @@ jobs:
   condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
 
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
 
   strategy:
     matrix:

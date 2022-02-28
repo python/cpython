@@ -22,9 +22,15 @@ Copyright (C) 1994 Steen Lumholt.
 */
 
 #define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 #include <ctype.h>
+#ifdef MS_WINDOWS
+#  include "pycore_fileutils.h"   // _Py_stat()
+#endif
 
 #ifdef MS_WINDOWS
 #include <windows.h>
@@ -311,10 +317,6 @@ typedef struct {
 } TkappObject;
 
 #define Tkapp_Interp(v) (((TkappObject *) (v))->interp)
-
-#define DEBUG_REFCNT(v) (printf("DEBUG: id=%p, refcnt=%i\n", \
-(void *) v, Py_REFCNT(v)))
-
 
 
 /**** Error Handling ****/

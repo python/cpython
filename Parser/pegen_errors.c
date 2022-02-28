@@ -250,8 +250,19 @@ get_error_line_from_tokenizer_buffers(Parser *p, Py_ssize_t lineno)
     char *cur_line = p->tok->fp_interactive ? p->tok->interactive_src_start : p->tok->str;
     assert(cur_line != NULL);
 
-    for (int i = 0; i < lineno - 1; i++) {
-        cur_line = strchr(cur_line, '\n') + 1;
+    Py_ssize_t relative_lineno = p->starting_lineno ? lineno - p->starting_lineno + 1 : lineno;
+    const char* buf_end = p->tok->fp_interactive ? p->tok->interactive_src_end : p->tok->inp;
+
+    for (int i = 0; i < relative_lineno - 1; i++) {
+        char *new_line = strchr(cur_line, '\n') + 1;
+        // The assert is here for debug builds but the conditional that
+        // follows is there so in release builds we do not crash at the cost
+        // to report a potentially wrong line.
+        assert(new_line != NULL && new_line <= buf_end);
+        if (new_line == NULL || new_line > buf_end) {
+            break;
+        }
+        cur_line = new_line;
     }
 
     char *next_newline;

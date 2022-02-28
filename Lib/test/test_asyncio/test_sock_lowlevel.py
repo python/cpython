@@ -1,5 +1,4 @@
 import socket
-import time
 import asyncio
 import sys
 import unittest
@@ -9,6 +8,10 @@ from itertools import cycle, islice
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support import socket_helper
+
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
 
 
 class MyProto(asyncio.Protocol):
@@ -512,3 +515,7 @@ else:
 
         def create_event_loop(self):
             return asyncio.SelectorEventLoop(selectors.SelectSelector())
+
+
+if __name__ == '__main__':
+    unittest.main()
