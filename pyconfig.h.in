@@ -733,6 +733,9 @@
 /* Define if you have the 'memfd_create' function. */
 #undef HAVE_MEMFD_CREATE
 
+/* Define if you have the 'memmem' function. */
+#undef HAVE_MEMMEM
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
