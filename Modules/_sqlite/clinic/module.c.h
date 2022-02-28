@@ -118,7 +118,7 @@ PyDoc_STRVAR(pysqlite_complete_statement__doc__,
 "complete_statement($module, /, statement)\n"
 "--\n"
 "\n"
-"Checks if a string contains a complete SQL statement. Non-standard.");
+"Checks if a string contains a complete SQL statement.");
 
 #define PYSQLITE_COMPLETE_STATEMENT_METHODDEF    \
     {"complete_statement", (PyCFunction)(void(*)(void))pysqlite_complete_statement, METH_FASTCALL|METH_KEYWORDS, pysqlite_complete_statement__doc__},
@@ -164,7 +164,10 @@ PyDoc_STRVAR(pysqlite_enable_shared_cache__doc__,
 "\n"
 "Enable or disable shared cache mode for the calling thread.\n"
 "\n"
-"Experimental/Non-standard.");
+"This method is deprecated and will be removed in Python 3.12.\n"
+"Shared cache is strongly discouraged by the SQLite 3 documentation.\n"
+"If shared cache must be used, open the database in URI mode using\n"
+"the cache=shared query parameter.");
 
 #define PYSQLITE_ENABLE_SHARED_CACHE_METHODDEF    \
     {"enable_shared_cache", (PyCFunction)(void(*)(void))pysqlite_enable_shared_cache, METH_FASTCALL|METH_KEYWORDS, pysqlite_enable_shared_cache__doc__},
@@ -199,7 +202,7 @@ PyDoc_STRVAR(pysqlite_register_adapter__doc__,
 "register_adapter($module, type, caster, /)\n"
 "--\n"
 "\n"
-"Registers an adapter with pysqlite\'s adapter registry. Non-standard.");
+"Registers an adapter with sqlite3\'s adapter registry.");
 
 #define PYSQLITE_REGISTER_ADAPTER_METHODDEF    \
     {"register_adapter", (PyCFunction)(void(*)(void))pysqlite_register_adapter, METH_FASTCALL, pysqlite_register_adapter__doc__},
@@ -230,7 +233,7 @@ PyDoc_STRVAR(pysqlite_register_converter__doc__,
 "register_converter($module, name, converter, /)\n"
 "--\n"
 "\n"
-"Registers a converter with pysqlite. Non-standard.");
+"Registers a converter with sqlite3.");
 
 #define PYSQLITE_REGISTER_CONVERTER_METHODDEF    \
     {"register_converter", (PyCFunction)(void(*)(void))pysqlite_register_converter, METH_FASTCALL, pysqlite_register_converter__doc__},
@@ -296,7 +299,7 @@ PyDoc_STRVAR(pysqlite_adapt__doc__,
 "adapt($module, obj, proto=PrepareProtocolType, alt=<unrepresentable>, /)\n"
 "--\n"
 "\n"
-"Adapt given object to given protocol. Non-standard.");
+"Adapt given object to given protocol.");
 
 #define PYSQLITE_ADAPT_METHODDEF    \
     {"adapt", (PyCFunction)(void(*)(void))pysqlite_adapt, METH_FASTCALL, pysqlite_adapt__doc__},
@@ -331,4 +334,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ef03fdbf018d3391 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2cf05d1b089c7be4 input=a9049054013a1b77]*/
