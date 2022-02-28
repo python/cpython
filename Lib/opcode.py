@@ -135,7 +135,7 @@ jabs_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
 jabs_op('JUMP_ABSOLUTE', 113)        # ""
 jabs_op('POP_JUMP_IF_FALSE', 114)    # ""
 jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
-name_op('LOAD_GLOBAL', 116)     # Index in name list
+name_op('LOAD_GLOBAL', 116, 5)     # Index in name list
 def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
@@ -197,6 +197,7 @@ def_op('PRECALL', 166)
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
+
 
 del def_op, name_op, jrel_op, jabs_op
 

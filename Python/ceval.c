@@ -2993,25 +2993,26 @@ handle_eval_breaker:
                     }
                 }
             }
+            /* Skip over inline cache */
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             PUSH(v);
             DISPATCH();
         }
 
         TARGET(LOAD_GLOBAL_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
-            SpecializedCacheEntry *cache = GET_CACHE();
-            if (cache->adaptive.counter == 0) {
-                PyObject *name = GETITEM(names, cache->adaptive.original_oparg);
+            uint16_t counter = *next_instr;
+            if (counter == 0) {
+                PyObject *name = GETITEM(names, oparg);
                 next_instr--;
-                if (_Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name, cache) < 0) {
+                if (_Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name) < 0) {
                     goto error;
                 }
                 DISPATCH();
             }
             else {
                 STAT_INC(LOAD_GLOBAL, deferred);
-                cache->adaptive.counter--;
-                oparg = cache->adaptive.original_oparg;
+                *next_instr = counter-1;
                 JUMP_TO_INSTRUCTION(LOAD_GLOBAL);
             }
         }
@@ -3020,13 +3021,13 @@ handle_eval_breaker:
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             PyDictObject *dict = (PyDictObject *)GLOBALS();
-            SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            _PyLoadGlobalCache *cache1 = &caches[-1].load_global;
-            DEOPT_IF(dict->ma_keys->dk_version != cache1->module_keys_version, LOAD_GLOBAL);
-            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index;
+            _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
+            uint32_t version = read32(&cache->module_keys_version);
+            DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
+            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache->index;
             PyObject *res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
             Py_INCREF(res);
             PUSH(res);
@@ -3039,14 +3040,15 @@ handle_eval_breaker:
             DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
             PyDictObject *mdict = (PyDictObject *)GLOBALS();
             PyDictObject *bdict = (PyDictObject *)BUILTINS();
-            SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            _PyLoadGlobalCache *cache1 = &caches[-1].load_global;
-            DEOPT_IF(mdict->ma_keys->dk_version != cache1->module_keys_version, LOAD_GLOBAL);
-            DEOPT_IF(bdict->ma_keys->dk_version != cache1->builtin_keys_version, LOAD_GLOBAL);
-            PyDictKeyEntry *ep = DK_ENTRIES(bdict->ma_keys) + cache0->index;
+            _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
+            uint32_t mod_version = read32(&cache->module_keys_version);
+            uint16_t bltn_version = cache->builtin_keys_version;
+            DEOPT_IF(mdict->ma_keys->dk_version != mod_version, LOAD_GLOBAL);
+            DEOPT_IF(bdict->ma_keys->dk_version != bltn_version, LOAD_GLOBAL);
+            PyDictKeyEntry *ep = DK_ENTRIES(bdict->ma_keys) + cache->index;
             PyObject *res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
             Py_INCREF(res);
             PUSH(res);
@@ -5594,7 +5596,7 @@ opname ## _miss: \
 
 MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(STORE_ATTR)
-MISS_WITH_CACHE(LOAD_GLOBAL)
+MISS_WITH_INLINE_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_CACHE(PRECALL)
 MISS_WITH_CACHE(CALL)
