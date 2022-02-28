@@ -287,6 +287,8 @@ class Printer:
         return f"& {name}.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
+        if len(t) == 0:
+            return f"(PyObject *)& _Py_SINGLETON(tuple_empty)"
         items = [self.generate(f"{name}_{i}", it) for i, it in enumerate(t)]
         self.write("static")
         with self.indent():
