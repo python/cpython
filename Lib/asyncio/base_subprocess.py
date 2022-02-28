@@ -222,6 +222,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             if not waiter.cancelled():
                 waiter.set_result(returncode)
         self._exit_waiters = None
+        self.close()
 
     async def _wait(self):
         """Wait until the process exit and return the process return code.
@@ -233,6 +234,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         waiter = self._loop.create_future()
         self._exit_waiters.append(waiter)
         return await waiter
+
 
     def _try_finish(self):
         assert not self._finished

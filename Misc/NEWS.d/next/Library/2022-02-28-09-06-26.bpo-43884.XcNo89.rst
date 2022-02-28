@@ -1,0 +1,1 @@
+Fix :mod:`asyncio` subprocess to close it's transport when the process exits.
