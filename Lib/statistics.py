@@ -185,10 +185,11 @@ def _sum(data):
     """
     count = 0
     types = set()
+    types_add = types.add
     partials = {}
     partials_get = partials.get
     for typ, values in groupby(data, type):
-        types.add(typ)
+        types_add(typ)
         for n, d in map(_exact_ratio, values):
             count += 1
             partials[d] = partials_get(d, 0) + n
@@ -217,10 +218,11 @@ def _ss(data, c=None):
         return (T, total, count)
     count = 0
     types = set()
+    types_add = types.add
     sx_partials = defaultdict(int)
     sxx_partials = defaultdict(int)
     for typ, values in groupby(data, type):
-        types.add(typ)
+        types_add(typ)
         for n, d in map(_exact_ratio, values):
             count += 1
             sx_partials[d] += n
