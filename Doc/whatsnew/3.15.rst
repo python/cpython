@@ -368,6 +368,13 @@ shelve
   (Contributed by Andrea Oliveri in :gh:`134004`.)
 
 
+socket
+------
+
+* Add constants for the ISO-TP CAN protocol.
+  (Contributed by Patrick Menschel and Stefan Tatschner in :gh:`86819`.)
+
+
 sqlite3
 -------
 
