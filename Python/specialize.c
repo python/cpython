@@ -59,7 +59,6 @@ static uint8_t adaptive_opcodes[256] = {
 /* The number of cache entries required for a "family" of instructions. */
 static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 1,  // _PyAdaptiveEntry
-    [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
     [STORE_SUBSCR] = 0,
     [CALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
@@ -70,7 +69,7 @@ static uint8_t cache_requirements[256] = {
 
 /* The number of object cache entries required for a "family" of instructions. */
 static const uint8_t object_cache_requirements[256] = {
-    [BINARY_SUBSCR] = 5,
+    [BINARY_SUBSCR] = 1,
 };
 
 Py_ssize_t _Py_QuickenedCount = 0;
@@ -291,14 +290,6 @@ _Py_PrintSpecializationStats(int to_file)
 #define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
 #endif
 
-static void
-_PyQuickenedSetObject(const _Py_CODEUNIT *first_instr, uint16_t index, PyObject *obj)
-{
-    SpecializedCacheOrInstruction *last_cache_plus_one = (SpecializedCacheOrInstruction *)first_instr;
-    assert(&last_cache_plus_one->code[0] == first_instr);
-    last_cache_plus_one[-1-index].entry.obj.obj = obj;
-}
-
 static SpecializedCacheOrInstruction *
 allocate(int cache_count, int instruction_count)
 {
@@ -365,15 +356,23 @@ entries_needed(const _Py_CODEUNIT *code, int len)
     int previous_opcode = -1;
     for (int i = 0; i < len; i++) {
         uint8_t opcode = _Py_OPCODE(code[i]);
-        if (object_cache_requirements[opcode]) {
-            cache_offset += object_cache_requirements[opcode];
-        }
-        else if (previous_opcode != EXTENDED_ARG) {
+        if (previous_opcode != EXTENDED_ARG) {
             oparg_from_instruction_and_update_offset(i, opcode, 0, &cache_offset);
         }
         previous_opcode = opcode;
     }
     return cache_offset + 1;   // One extra for the count entry
+}
+
+static int
+object_slots_needed(const _Py_CODEUNIT *code, int len)
+{
+    int count = 0;
+    for (int i = 0; i < len; i++) {
+        uint8_t opcode = _Py_OPCODE(code[i]);
+        count += object_cache_requirements[opcode];
+    }
+    return count;
 }
 
 static inline _Py_CODEUNIT *
@@ -393,6 +392,7 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
 {
     _Py_CODEUNIT *instructions = first_instruction(quickened);
     int cache_offset = 0;
+    int object_offset = 0;
     int previous_opcode = -1;
     int previous_oparg = 0;
     for(int i = 0; i < len; i++) {
@@ -404,9 +404,11 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
                 instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, oparg);
                 if (object_cache_requirements[opcode]) {
                     assert(_PyOpcode_InlineCacheEntries[opcode] >= 2);
-                    instructions[i+2] = cache_offset;
-                    cache_offset += object_cache_requirements[opcode];
+                    instructions[i+2] = object_offset;
+                    object_offset += object_cache_requirements[opcode];
                 }
+                previous_opcode = -1;
+                i += _PyOpcode_InlineCacheEntries[opcode];
             }
             else if (previous_opcode != EXTENDED_ARG) {
                 int new_oparg = oparg_from_instruction_and_update_offset(
@@ -485,9 +487,16 @@ _Py_Quicken(PyCodeObject *code) {
         code->co_warmup = QUICKENING_WARMUP_COLDEST;
         return 0;
     }
+    int obj_count = object_slots_needed(code->co_firstinstr, instr_count);
+    code->_co_obj_cache = PyMem_Malloc(obj_count*sizeof(PyObject *));
+    code->_co_obj_cache_len = obj_count;
+    if (code->_co_obj_cache == NULL) {
+        return -1;
+    }
     int entry_count = entries_needed(code->co_firstinstr, instr_count);
     SpecializedCacheOrInstruction *quickened = allocate(entry_count, instr_count);
     if (quickened == NULL) {
+        PyMem_Free(code->_co_obj_cache);
         return -1;
     }
     _Py_CODEUNIT *new_instructions = first_instruction(quickened);
@@ -1228,11 +1237,12 @@ fail:
 int
 _Py_Specialize_LoadGlobal(
     PyObject *globals, PyObject *builtins,
-    _Py_CODEUNIT *instr, PyObject *name,
-    SpecializedCacheEntry *cache)
+    _Py_CODEUNIT *instr, PyObject *name)
 {
-    _PyAdaptiveEntry *cache0 = &cache->adaptive;
-    _PyLoadGlobalCache *cache1 = &cache[-1].load_global;
+    assert(_PyOpcode_InlineCacheEntries[LOAD_GLOBAL] ==
+           INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
+    /* Use inline cache */
+    _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)(instr + 1);
     assert(PyUnicode_CheckExact(name));
     if (!PyDict_CheckExact(globals)) {
         goto fail;
@@ -1251,8 +1261,8 @@ _Py_Specialize_LoadGlobal(
         if (keys_version == 0) {
             goto fail;
         }
-        cache1->module_keys_version = keys_version;
-        cache0->index = (uint16_t)index;
+        cache->index = (uint16_t)index;
+        write32(&cache->module_keys_version, keys_version);
         *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_MODULE, _Py_OPARG(*instr));
         goto success;
     }
@@ -1278,20 +1288,24 @@ _Py_Specialize_LoadGlobal(
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
         goto fail;
     }
-    cache1->module_keys_version = globals_version;
-    cache1->builtin_keys_version = builtins_version;
-    cache0->index = (uint16_t)index;
+    if (builtins_version > UINT16_MAX) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
+        goto fail;
+    }
+    cache->index = (uint16_t)index;
+    write32(&cache->module_keys_version, globals_version);
+    cache->builtin_keys_version = (uint16_t)builtins_version;
     *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_BUILTIN, _Py_OPARG(*instr));
     goto success;
 fail:
     STAT_INC(LOAD_GLOBAL, failure);
     assert(!PyErr_Occurred());
-    cache_backoff(cache0);
+    cache->counter = ADAPTIVE_CACHE_BACKOFF;
     return 0;
 success:
     STAT_INC(LOAD_GLOBAL, success);
     assert(!PyErr_Occurred());
-    cache0->counter = initial_counter_value();
+    cache->counter = initial_counter_value();
     return 0;
 }
 
@@ -1402,7 +1416,9 @@ _Py_Specialize_BinarySubscr(
             goto fail;
         }
         cache->func_version = version;
-        _PyQuickenedSetObject(code->co_firstinstr, cache->object, descriptor);
+        assert(code->_co_obj_cache != NULL);
+        assert(cache->object >= 0 && cache->object < code->_co_obj_cache_len);
+        code->_co_obj_cache[cache->object] =  descriptor;
         *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_GETITEM, _Py_OPARG(*instr));
         goto success;
     }
