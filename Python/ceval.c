@@ -910,7 +910,6 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             Py_DECREF(value);
             Py_DECREF(values);
             // Return None:
-            Py_INCREF(Py_None);
             values = Py_None;
             goto done;
         }
@@ -1903,7 +1902,6 @@ handle_eval_breaker:
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
             if (err == 0) {
-                Py_INCREF(Py_True);
                 SET_TOP(Py_True);
                 DISPATCH();
             }
@@ -3770,7 +3768,6 @@ handle_eval_breaker:
             PyObject *left = TOP();
             int res = Py_Is(left, right) ^ oparg;
             PyObject *b = res ? Py_True : Py_False;
-            Py_INCREF(b);
             SET_TOP(b);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -3789,7 +3786,6 @@ handle_eval_breaker:
                 goto error;
             }
             PyObject *b = (res^oparg) ? Py_True : Py_False;
-            Py_INCREF(b);
             PUSH(b);
             PREDICT(POP_JUMP_IF_FALSE);
             PREDICT(POP_JUMP_IF_TRUE);
@@ -3819,7 +3815,6 @@ handle_eval_breaker:
             }
 
             if (Py_IsNone(match)) {
-                Py_DECREF(match);
                 Py_XDECREF(rest);
                 /* no match - jump to target */
                 JUMPTO(oparg);
@@ -3922,11 +3917,9 @@ handle_eval_breaker:
             PyObject *cond = POP();
             int err;
             if (Py_IsTrue(cond)) {
-                Py_DECREF(cond);
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
-                Py_DECREF(cond);
                 JUMPTO(oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -3949,11 +3942,9 @@ handle_eval_breaker:
             PyObject *cond = POP();
             int err;
             if (Py_IsFalse(cond)) {
-                Py_DECREF(cond);
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {
-                Py_DECREF(cond);
                 JUMPTO(oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -3979,14 +3970,12 @@ handle_eval_breaker:
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
             }
-            Py_DECREF(value);
             DISPATCH();
         }
 
         TARGET(POP_JUMP_IF_NONE) {
             PyObject *value = POP();
             if (Py_IsNone(value)) {
-                Py_DECREF(value);
                 JUMPTO(oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -4000,7 +3989,6 @@ handle_eval_breaker:
             int err;
             if (Py_IsTrue(cond)) {
                 STACK_SHRINK(1);
-                Py_DECREF(cond);
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
@@ -4024,7 +4012,6 @@ handle_eval_breaker:
             int err;
             if (Py_IsFalse(cond)) {
                 STACK_SHRINK(1);
-                Py_DECREF(cond);
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {
@@ -4113,7 +4100,6 @@ handle_eval_breaker:
             }
             else {
                 // Failure!
-                Py_INCREF(Py_None);
                 SET_TOP(Py_None);
             }
             Py_DECREF(subject);
@@ -4124,7 +4110,6 @@ handle_eval_breaker:
             PyObject *subject = TOP();
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
             PyObject *res = match ? Py_True : Py_False;
-            Py_INCREF(res);
             PUSH(res);
             PREDICT(POP_JUMP_IF_FALSE);
             DISPATCH();
@@ -4134,7 +4119,6 @@ handle_eval_breaker:
             PyObject *subject = TOP();
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
             PyObject *res = match ? Py_True : Py_False;
-            Py_INCREF(res);
             PUSH(res);
             PREDICT(POP_JUMP_IF_FALSE);
             DISPATCH();
@@ -4334,7 +4318,6 @@ handle_eval_breaker:
                 SET_TOP(exc_info->exc_value);
             }
             else {
-                Py_INCREF(Py_None);
                 SET_TOP(Py_None);
             }
 
@@ -4975,7 +4958,6 @@ handle_eval_breaker:
             Py_DECREF(arg);
             Py_DECREF(list);
             STACK_SHRINK(call_shape.postcall_shrink+1);
-            Py_INCREF(Py_None);
             SET_TOP(Py_None);
             Py_DECREF(call_shape.callable);
             NOTRACE_DISPATCH();
@@ -6302,7 +6284,6 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
             fixed_cause = cause;
         }
         else if (Py_IsNone(cause)) {
-            Py_DECREF(cause);
             fixed_cause = NULL;
         }
         else {
@@ -6514,7 +6495,6 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
     _PyErr_Fetch(tstate, &type, &value, &orig_traceback);
     if (value == NULL) {
         value = Py_None;
-        Py_INCREF(value);
     }
     _PyErr_NormalizeException(tstate, &type, &value, &orig_traceback);
     traceback = (orig_traceback != NULL) ? orig_traceback : Py_None;
