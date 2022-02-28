@@ -67,7 +67,6 @@ static uint8_t cache_requirements[256] = {
     [PRECALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [STORE_ATTR] = 1,  // _PyAdaptiveEntry
     [COMPARE_OP] = 1, /* _PyAdaptiveEntry */
-    [UNPACK_SEQUENCE] = 1,  // _PyAdaptiveEntry
 };
 
 Py_ssize_t _Py_QuickenedCount = 0;
@@ -2133,39 +2132,39 @@ unpack_sequence_fail_kind(PyObject *seq)
 #endif
 
 void
-_Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
-                              SpecializedCacheEntry *cache)
+_Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr, int oparg)
 {
-    _PyAdaptiveEntry *adaptive = &cache->adaptive;
+    assert(_PyOpcode_InlineCacheEntries[UNPACK_SEQUENCE] ==
+           INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
+    _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)(instr + 1);
     if (PyTuple_CheckExact(seq)) {
-        if (PyTuple_GET_SIZE(seq) != adaptive->original_oparg) {
+        if (PyTuple_GET_SIZE(seq) != oparg) {
             SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
             goto failure;
         }
         if (PyTuple_GET_SIZE(seq) == 2) {
-            *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_TWO_TUPLE,
-                                      _Py_OPARG(*instr));
+            *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_TWO_TUPLE, oparg);
             goto success;
         }
-        *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_TUPLE, _Py_OPARG(*instr));
+        *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_TUPLE, oparg);
         goto success;
     }
     if (PyList_CheckExact(seq)) {
-        if (PyList_GET_SIZE(seq) != adaptive->original_oparg) {
+        if (PyList_GET_SIZE(seq) != oparg) {
             SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
             goto failure;
         }
-        *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_LIST, _Py_OPARG(*instr));
+        *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_LIST, oparg);
         goto success;
     }
     SPECIALIZATION_FAIL(UNPACK_SEQUENCE, unpack_sequence_fail_kind(seq));
 failure:
     STAT_INC(UNPACK_SEQUENCE, failure);
-    cache_backoff(adaptive);
+    cache->counter = ADAPTIVE_CACHE_BACKOFF;
     return;
 success:
     STAT_INC(UNPACK_SEQUENCE, success);
-    adaptive->counter = initial_counter_value();
+    cache->counter = initial_counter_value();
 }
 
 #ifdef Py_STATS
