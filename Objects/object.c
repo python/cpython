@@ -1996,7 +1996,7 @@ _Py_NewReference(PyObject *op)
     _Py_RefTotal++;
 #endif
     /* Do not use Py_SET_REFCNT to skip the Immortal Instance check. This
-     * API guarantees that an instance will always be set to a refcnt of 1 */
+     * API guarantees that an instance will always be set to a refcnt of 1. */
     op->ob_refcnt = 1;
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op, 1);
