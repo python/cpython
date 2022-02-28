@@ -241,6 +241,7 @@ static uint32_t _PyOpcode_Jump[8] = {
 #define NB_INPLACE_XOR                   25
 
 static const uint8_t _PyOpcode_InlineCacheEntries[256] = {
+    [UNPACK_SEQUENCE] = 1,
     [BINARY_OP] = 1,
 };
 
