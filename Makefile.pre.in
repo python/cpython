@@ -1176,7 +1176,7 @@ regen-importlib: regen-frozen
 # Global objects
 
 .PHONY: regen-global-objects
-regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
+regen-global-objects: regen-deepfreeze $(srcdir)/Tools/scripts/generate_global_objects.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
 
 ############################################################################
