@@ -13,6 +13,17 @@ extern "C" {
 
 extern PyStatus _PyBytes_InitTypes(PyInterpreterState *);
 
+/* Substring Search */
+
+Py_ssize_t
+_PyBytes_Find(const char *haystack, Py_ssize_t len_haystack,
+              const char *needle, Py_ssize_t len_needle,
+              Py_ssize_t offset);
+
+Py_ssize_t
+_PyBytes_ReverseFind(const char *haystack, Py_ssize_t len_haystack,
+                     const char *needle, Py_ssize_t len_needle,
+                     Py_ssize_t offset);
 
 #ifdef __cplusplus
 }
