@@ -2102,25 +2102,24 @@ handle_eval_breaker:
             SET_TOP(res);
             if (res == NULL)
                 goto error;
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_ADAPTIVE) {
-            SpecializedCacheEntry *cache = GET_CACHE();
-            if (cache->adaptive.counter == 0) {
+            _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
+            if (cache->counter == 0) {
                 PyObject *sub = TOP();
                 PyObject *container = SECOND();
                 next_instr--;
-                if (_Py_Specialize_BinarySubscr(container, sub, next_instr, cache) < 0) {
+                if (_Py_Specialize_BinarySubscr(container, sub, next_instr) < 0) {
                     goto error;
                 }
                 DISPATCH();
             }
             else {
                 STAT_INC(BINARY_SUBSCR, deferred);
-                cache->adaptive.counter--;
-                assert(cache->adaptive.original_oparg == 0);
-                /* No need to set oparg here; it isn't used by BINARY_SUBSCR */
+                cache->counter--;
                 JUMP_TO_INSTRUCTION(BINARY_SUBSCR);
             }
         }
@@ -2146,6 +2145,7 @@ handle_eval_breaker:
             Py_DECREF(sub);
             SET_TOP(res);
             Py_DECREF(list);
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             NOTRACE_DISPATCH();
         }
 
@@ -2170,6 +2170,7 @@ handle_eval_breaker:
             Py_DECREF(sub);
             SET_TOP(res);
             Py_DECREF(tuple);
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             NOTRACE_DISPATCH();
         }
 
@@ -2188,18 +2189,22 @@ handle_eval_breaker:
             Py_DECREF(sub);
             SET_TOP(res);
             Py_DECREF(dict);
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_GETITEM) {
             PyObject *sub = TOP();
             PyObject *container = SECOND();
-            SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            _PyObjectCache *cache1 = &caches[-1].obj;
-            PyFunctionObject *getitem = (PyFunctionObject *)cache1->obj;
-            DEOPT_IF(Py_TYPE(container)->tp_version_tag != cache0->version, BINARY_SUBSCR);
-            DEOPT_IF(getitem->func_version != cache0->index, BINARY_SUBSCR);
+            _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
+            uint32_t type_version = read32(&cache->type_version);
+            PyTypeObject *tp = Py_TYPE(container);
+            DEOPT_IF(tp->tp_version_tag != type_version, BINARY_SUBSCR);
+            assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
+            PyObject *cached = ((PyHeapTypeObject *)tp)->_spec_cache.getitem;
+            assert(PyFunction_Check(cached));
+            PyFunctionObject *getitem = (PyFunctionObject *)cached;
+            DEOPT_IF(getitem->func_version != cache->func_version, BINARY_SUBSCR);
             PyCodeObject *code = (PyCodeObject *)getitem->func_code;
             size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
             assert(code->co_argcount == 2);
@@ -2218,6 +2223,7 @@ handle_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            frame->f_lasti += INLINE_CACHE_ENTRIES_BINARY_SUBSCR;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             CALL_STAT_INC(inlined_py_calls);
@@ -5605,7 +5611,7 @@ MISS_WITH_CACHE(PRECALL)
 MISS_WITH_CACHE(CALL)
 MISS_WITH_INLINE_CACHE(BINARY_OP)
 MISS_WITH_INLINE_CACHE(COMPARE_OP)
-MISS_WITH_CACHE(BINARY_SUBSCR)
+MISS_WITH_INLINE_CACHE(BINARY_SUBSCR)
 MISS_WITH_INLINE_CACHE(UNPACK_SEQUENCE)
 MISS_WITH_OPARG_COUNTER(STORE_SUBSCR)
 

@@ -60,7 +60,6 @@ static uint8_t adaptive_opcodes[256] = {
 static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 1,  // _PyAdaptiveEntry
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
-    [BINARY_SUBSCR] = 2, /* _PyAdaptiveEntry, _PyObjectCache */
     [STORE_SUBSCR] = 0,
     [CALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [PRECALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
@@ -385,6 +384,8 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
         if (adaptive_opcode) {
             if (_PyOpcode_InlineCacheEntries[opcode]) {
                 instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, oparg);
+                previous_opcode = -1;
+                i += _PyOpcode_InlineCacheEntries[opcode];
             }
             else if (previous_opcode != EXTENDED_ARG) {
                 int new_oparg = oparg_from_instruction_and_update_offset(
@@ -553,6 +554,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_SUBSCR_PY_SIMPLE 20
 #define SPEC_FAIL_SUBSCR_PY_OTHER 21
 #define SPEC_FAIL_SUBSCR_DICT_SUBCLASS_NO_OVERRIDE 22
+#define SPEC_FAIL_SUBSCR_NOT_HEAP_TYPE 23
 
 /* Binary op */
 
@@ -1335,9 +1337,11 @@ function_kind(PyCodeObject *code) {
 
 int
 _Py_Specialize_BinarySubscr(
-     PyObject *container, PyObject *sub, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+     PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
 {
-    _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    assert(_PyOpcode_InlineCacheEntries[BINARY_SUBSCR] ==
+           INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+    _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)(instr + 1);
     PyTypeObject *container_type = Py_TYPE(container);
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
@@ -1364,26 +1368,30 @@ _Py_Specialize_BinarySubscr(
     PyTypeObject *cls = Py_TYPE(container);
     PyObject *descriptor = _PyType_Lookup(cls, &_Py_ID(__getitem__));
     if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
+        if (!(container_type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_SUBSCR_NOT_HEAP_TYPE);
+            goto fail;
+        }
         PyFunctionObject *func = (PyFunctionObject *)descriptor;
-        PyCodeObject *code = (PyCodeObject *)func->func_code;
-        int kind = function_kind(code);
+        PyCodeObject *fcode = (PyCodeObject *)func->func_code;
+        int kind = function_kind(fcode);
         if (kind != SIMPLE_FUNCTION) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, kind);
             goto fail;
         }
-        if (code->co_argcount != 2) {
+        if (fcode->co_argcount != 2) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
             goto fail;
         }
         assert(cls->tp_version_tag != 0);
-        cache0->version = cls->tp_version_tag;
+        write32(&cache->type_version, cls->tp_version_tag);
         int version = _PyFunction_GetVersionForCurrentState(func);
         if (version == 0 || version != (uint16_t)version) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }
-        cache0->index = version;
-        cache[-1].obj.obj = descriptor;
+        cache->func_version = version;
+        ((PyHeapTypeObject *)container_type)->_spec_cache.getitem = descriptor;
         *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_GETITEM, _Py_OPARG(*instr));
         goto success;
     }
@@ -1392,12 +1400,12 @@ _Py_Specialize_BinarySubscr(
 fail:
     STAT_INC(BINARY_SUBSCR, failure);
     assert(!PyErr_Occurred());
-    cache_backoff(cache0);
+    cache->counter = ADAPTIVE_CACHE_BACKOFF;
     return 0;
 success:
     STAT_INC(BINARY_SUBSCR, success);
     assert(!PyErr_Occurred());
-    cache0->counter = initial_counter_value();
+    cache->counter = initial_counter_value();
     return 0;
 }
 
