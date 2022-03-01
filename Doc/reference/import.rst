@@ -84,9 +84,9 @@ considered a package.
 
 All modules have a name.  Subpackage names are separated from their parent
 package name by a dot, akin to Python's standard attribute access syntax.  Thus
-you might have a module called :mod:`sys` and a package called :mod:`email`,
-which in turn has a subpackage called :mod:`email.mime` and a module within
-that subpackage called :mod:`email.mime.text`.
+you might have a package called :mod:`email`, which in turn has a subpackage
+called :mod:`email.mime` and a module within that subpackage called
+:mod:`email.mime.text`.
 
 
 Regular packages
