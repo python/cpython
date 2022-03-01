@@ -590,13 +590,6 @@ module_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->lru_cache);
     Py_VISIT(state->psyco_adapters);
 
-    // Interned strings
-    Py_VISIT(state->str___adapt__);
-    Py_VISIT(state->str___conform__);
-    Py_VISIT(state->str_executescript);
-    Py_VISIT(state->str_finalize);
-    Py_VISIT(state->str_upper);
-
     return 0;
 }
 
