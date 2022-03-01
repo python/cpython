@@ -65,7 +65,6 @@ static uint8_t cache_requirements[256] = {
     [CALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [PRECALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [STORE_ATTR] = 1,  // _PyAdaptiveEntry
-    [COMPARE_OP] = 1, /* _PyAdaptiveEntry */
 };
 
 Py_ssize_t _Py_QuickenedCount = 0;
@@ -2057,26 +2056,27 @@ static int compare_masks[] = {
 };
 
 void
-_Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
-                         _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+_Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
+                         int oparg)
 {
-    _PyAdaptiveEntry *adaptive = &cache->adaptive;
-    int op = adaptive->original_oparg;
-    int next_opcode = _Py_OPCODE(instr[1]);
+    assert(_PyOpcode_InlineCacheEntries[COMPARE_OP] ==
+           INLINE_CACHE_ENTRIES_COMPARE_OP);
+    _PyCompareOpCache *cache = (_PyCompareOpCache *)(instr + 1);
+    int next_opcode = _Py_OPCODE(instr[INLINE_CACHE_ENTRIES_COMPARE_OP + 1]);
     if (next_opcode != POP_JUMP_IF_FALSE && next_opcode != POP_JUMP_IF_TRUE) {
         // Can't ever combine, so don't don't bother being adaptive (unless
         // we're collecting stats, where it's more important to get accurate hit
         // counts for the unadaptive version and each of the different failure
         // types):
 #ifndef Py_STATS
-        *instr = _Py_MAKECODEUNIT(COMPARE_OP, adaptive->original_oparg);
+        *instr = _Py_MAKECODEUNIT(COMPARE_OP, oparg);
         return;
 #endif
         SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_NOT_FOLLOWED_BY_COND_JUMP);
         goto failure;
     }
-    assert(op <= Py_GE);
-    int when_to_jump_mask = compare_masks[op];
+    assert(oparg <= Py_GE);
+    int when_to_jump_mask = compare_masks[oparg];
     if (next_opcode == POP_JUMP_IF_FALSE) {
         when_to_jump_mask = (1 | 2 | 4) & ~when_to_jump_mask;
     }
@@ -2085,14 +2085,14 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
         goto failure;
     }
     if (PyFloat_CheckExact(lhs)) {
-        *instr = _Py_MAKECODEUNIT(COMPARE_OP_FLOAT_JUMP, _Py_OPARG(*instr));
-        adaptive->index = when_to_jump_mask;
+        *instr = _Py_MAKECODEUNIT(COMPARE_OP_FLOAT_JUMP, oparg);
+        cache->mask = when_to_jump_mask;
         goto success;
     }
     if (PyLong_CheckExact(lhs)) {
         if (Py_ABS(Py_SIZE(lhs)) <= 1 && Py_ABS(Py_SIZE(rhs)) <= 1) {
-            *instr = _Py_MAKECODEUNIT(COMPARE_OP_INT_JUMP, _Py_OPARG(*instr));
-            adaptive->index = when_to_jump_mask;
+            *instr = _Py_MAKECODEUNIT(COMPARE_OP_INT_JUMP, oparg);
+            cache->mask = when_to_jump_mask;
             goto success;
         }
         else {
@@ -2101,24 +2101,24 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
         }
     }
     if (PyUnicode_CheckExact(lhs)) {
-        if (op != Py_EQ && op != Py_NE) {
+        if (oparg != Py_EQ && oparg != Py_NE) {
             SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_STRING);
             goto failure;
         }
         else {
-            *instr = _Py_MAKECODEUNIT(COMPARE_OP_STR_JUMP, _Py_OPARG(*instr));
-            adaptive->index = (when_to_jump_mask & 2) == 0;
+            *instr = _Py_MAKECODEUNIT(COMPARE_OP_STR_JUMP, oparg);
+            cache->mask = (when_to_jump_mask & 2) == 0;
             goto success;
         }
     }
     SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
 failure:
     STAT_INC(COMPARE_OP, failure);
-    cache_backoff(adaptive);
+    cache->counter = ADAPTIVE_CACHE_BACKOFF;
     return;
 success:
     STAT_INC(COMPARE_OP, success);
-    adaptive->counter = initial_counter_value();
+    cache->counter = initial_counter_value();
 }
 
 #ifdef Py_STATS
