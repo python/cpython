@@ -1166,6 +1166,13 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
     status->st_ino = (((uint64_t)info.nFileIndexHigh) << 32) + info.nFileIndexLow;
     return 0;
 #else
+
+#  if __has_feature(memory_sanitizer)
+    // bpo-46887: Work around clang MSAN bug:
+    // https://github.com/llvm/llvm-project/issues/54131
+    memset(status, 0, sizeof(*status));
+#  endif
+
     return fstat(fd, status);
 #endif
 }
@@ -1225,6 +1232,11 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
         errno = EINVAL;
         return -1;
     }
+#  if __has_feature(memory_sanitizer)
+    // bpo-46887: Work around clang MSAN bug:
+    // https://github.com/llvm/llvm-project/issues/54131
+    memset(buf, 0, sizeof(*buf));
+#  endif
     err = stat(fname, buf);
     PyMem_RawFree(fname);
 #endif
@@ -2093,7 +2105,7 @@ join_relfile(wchar_t *buffer, size_t bufsize,
              const wchar_t *dirname, const wchar_t *relfile)
 {
 #ifdef MS_WINDOWS
-    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile, 
+    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile,
         PATHCCH_ALLOW_LONG_PATHS))) {
         return -1;
     }

@@ -2484,6 +2484,12 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
     STRUCT_STAT st;
     int result;
 
+#  if __has_feature(memory_sanitizer)
+    // bpo-46887: Work around clang MSAN bug:
+    // https://github.com/llvm/llvm-project/issues/54131
+    memset(&st, 0, sizeof(st));
+#  endif
+
 #ifdef HAVE_FSTATAT
     int fstatat_unavailable = 0;
 #endif
