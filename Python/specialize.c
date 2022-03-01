@@ -67,11 +67,6 @@ static uint8_t cache_requirements[256] = {
     [COMPARE_OP] = 1, /* _PyAdaptiveEntry */
 };
 
-/* The number of object cache entries required for a "family" of instructions. */
-static const uint8_t object_cache_requirements[256] = {
-    [BINARY_SUBSCR] = 1,
-};
-
 Py_ssize_t _Py_QuickenedCount = 0;
 #ifdef Py_STATS
 PyStats _py_stats = { 0 };
@@ -381,7 +376,6 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
 {
     _Py_CODEUNIT *instructions = first_instruction(quickened);
     int cache_offset = 0;
-    int object_offset = 0;
     int previous_opcode = -1;
     int previous_oparg = 0;
     for(int i = 0; i < len; i++) {
@@ -391,11 +385,6 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
         if (adaptive_opcode) {
             if (_PyOpcode_InlineCacheEntries[opcode]) {
                 instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, oparg);
-                if (object_cache_requirements[opcode]) {
-                    assert(_PyOpcode_InlineCacheEntries[opcode] >= 2);
-                    instructions[i+2] = object_offset;
-                    object_offset += object_cache_requirements[opcode];
-                }
                 previous_opcode = -1;
                 i += _PyOpcode_InlineCacheEntries[opcode];
             }
