@@ -161,7 +161,7 @@ PyTuple_New(Py_ssize_t size)
 }
 
 PyObject *
-_PyTuple_NewNoTrack(Py_ssize_t size)
+_PyTuple_NewNoGC(Py_ssize_t size)
 {
     PyTupleObject *op;
 #if PyTuple_MAXSAVESIZE > 0
