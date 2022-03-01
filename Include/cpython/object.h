@@ -231,7 +231,7 @@ struct _typeobject {
 
 /* This struct is used by the specializer
  * It should should be treated as an opaque blob
- * by code than the specializer and interpreter. */
+ * by code other than the specializer and interpreter. */
 struct _specialization_cache {
     PyObject *getitem;
 };
