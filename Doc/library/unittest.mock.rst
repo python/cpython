@@ -2165,7 +2165,7 @@ Magic methods that are supported but not setup by default in ``MagicMock`` are:
 * ``__reversed__`` and ``__missing__``
 * ``__reduce__``, ``__reduce_ex__``, ``__getinitargs__``, ``__getnewargs__``,
   ``__getstate__`` and ``__setstate__``
-* ``__getformat__`` and ``__setformat__``
+* ``__getformat__``
 
 
 

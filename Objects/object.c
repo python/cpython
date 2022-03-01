@@ -61,12 +61,7 @@ Py_ssize_t _Py_RefTotal;
 Py_ssize_t
 _Py_GetRefTotal(void)
 {
-    PyObject *o;
-    Py_ssize_t total = _Py_RefTotal;
-    o = _PySet_Dummy;
-    if (o != NULL)
-        total -= Py_REFCNT(o);
-    return total;
+    return _Py_RefTotal;
 }
 
 void
@@ -1825,6 +1820,11 @@ _PyTypes_InitState(PyInterpreterState *interp)
 }
 
 
+
+#ifdef MS_WINDOWS
+extern PyTypeObject PyHKEY_Type;
+#endif
+
 static PyTypeObject* static_types[] = {
     // The two most important base types: must be initialized first and
     // deallocated last.
@@ -1869,6 +1869,9 @@ static PyTypeObject* static_types[] = {
     &PyFunction_Type,
     &PyGen_Type,
     &PyGetSetDescr_Type,
+#ifdef MS_WINDOWS
+    &PyHKEY_Type,
+#endif
     &PyInstanceMethod_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,

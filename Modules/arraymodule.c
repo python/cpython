@@ -3034,11 +3034,6 @@ array_traverse(PyObject *module, visitproc visit, void *arg)
     array_state *state = get_array_state(module);
     Py_VISIT(state->ArrayType);
     Py_VISIT(state->ArrayIterType);
-    Py_VISIT(state->str_read);
-    Py_VISIT(state->str_write);
-    Py_VISIT(state->str__array_reconstructor);
-    Py_VISIT(state->str___dict__);
-    Py_VISIT(state->str_iter);
     return 0;
 }
 

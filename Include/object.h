@@ -1,6 +1,5 @@
 #ifndef Py_OBJECT_H
 #define Py_OBJECT_H
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -61,15 +60,11 @@ whose size is determined when the object is allocated.
 #  error Py_LIMITED_API is incompatible with Py_TRACE_REFS
 #endif
 
-/* PyTypeObject structure is defined in cpython/object.h.
-   In Py_LIMITED_API, PyTypeObject is an opaque structure. */
-typedef struct _typeobject PyTypeObject;
-
 #ifdef Py_TRACE_REFS
 /* Define pointers to support a doubly-linked list of all live heap objects. */
 #define _PyObject_HEAD_EXTRA            \
-    struct _object *_ob_next;           \
-    struct _object *_ob_prev;
+    PyObject *_ob_next;           \
+    PyObject *_ob_prev;
 
 #define _PyObject_EXTRA_INIT 0, 0,
 
@@ -102,11 +97,11 @@ typedef struct _typeobject PyTypeObject;
  * by hand.  Similarly every pointer to a variable-size Python object can,
  * in addition, be cast to PyVarObject*.
  */
-typedef struct _object {
+struct _object {
     _PyObject_HEAD_EXTRA
     Py_ssize_t ob_refcnt;
     PyTypeObject *ob_type;
-} PyObject;
+};
 
 /* Cast argument to PyObject* type. */
 #define _PyObject_CAST(op) ((PyObject*)(op))
@@ -242,8 +237,8 @@ PyAPI_FUNC(void*) PyType_GetSlot(PyTypeObject*, int);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
 PyAPI_FUNC(PyObject*) PyType_FromModuleAndSpec(PyObject *, PyType_Spec *, PyObject *);
-PyAPI_FUNC(PyObject *) PyType_GetModule(struct _typeobject *);
-PyAPI_FUNC(void *) PyType_GetModuleState(struct _typeobject *);
+PyAPI_FUNC(PyObject *) PyType_GetModule(PyTypeObject *);
+PyAPI_FUNC(void *) PyType_GetModuleState(PyTypeObject *);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
 PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
@@ -765,4 +760,4 @@ static inline int PyType_CheckExact(PyObject *op) {
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_OBJECT_H */
+#endif   // !Py_OBJECT_H

@@ -77,12 +77,7 @@
     <Variable Name="Include_test" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_doc" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_tools" Value="1" bal:Overridable="yes" />
-    <?if $(var.Platform)~="ARM64" ?>
-    <Variable Name="Include_tcltk" Value="0" />
-    <Variable Name="Include_tcltkState" Value="disable" />
-    <?else ?>
     <Variable Name="Include_tcltk" Value="1" bal:Overridable="yes" />
-    <?endif ?>
     <Variable Name="Include_pip" Value="1" bal:Overridable="yes" />
     <?if $(var.Platform)~="ARM64" ?>
     <Variable Name="Include_launcher" Value="0" bal:Overridable="yes" />
@@ -122,8 +117,8 @@
       <PackageGroupRef Id="test" />
       <PackageGroupRef Id="doc" />
       <PackageGroupRef Id="tools" />
-      <?if $(var.Platform)!="ARM64" ?>
       <PackageGroupRef Id="tcltk" />
+      <?if $(var.Platform)!="ARM64" ?>
       <PackageGroupRef Id="launcher" />
       <?endif ?>
       <PackageGroupRef Id="pip" />
