@@ -61,7 +61,7 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v3
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
