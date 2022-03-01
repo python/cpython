@@ -86,11 +86,9 @@ PyObject *
 _PyTuple_NewNoGC(Py_ssize_t size)
 {
     PyTupleObject *op;
-#if PyTuple_MAXSAVESIZE > 0
     if (size == 0) {
         return tuple_get_empty();
     }
-#endif
 
     /* Check for overflow */
     if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
