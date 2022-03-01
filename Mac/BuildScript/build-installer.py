@@ -369,6 +369,7 @@ def library_recipes():
                             '-DSQLITE_ENABLE_RTREE '
                             '-DSQLITE_OMIT_AUTOINIT '
                             '-DSQLITE_TCL=0 '
+                            '-DSQLITE_ENABLE_MATH_FUNCTIONS'
                             ),
               configure_pre=[
                   '--enable-threadsafe',
