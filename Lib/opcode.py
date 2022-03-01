@@ -68,7 +68,7 @@ def_op('UNARY_NOT', 12)
 
 def_op('UNARY_INVERT', 15)
 
-def_op('BINARY_SUBSCR', 25)
+def_op('BINARY_SUBSCR', 25, 4)
 
 def_op('GET_LEN', 30)
 def_op('MATCH_MAPPING', 31)
