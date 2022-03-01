@@ -389,7 +389,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a5 3480 (New CALL opcodes, second iteration)
 #     Python 3.11a5 3481 (Use inline cache for BINARY_OP)
 #     Python 3.11a5 3482 (Use inline caching for UNPACK_SEQUENCE and LOAD_GLOBAL)
-#     Python 3.11a5 3483 (Use inline caching for COMPARE_OP)
+#     Python 3.11a5 3483 (Use inline caching for COMPARE_OP and BINARY_SUBSCR)
 
 #     Python 3.12 will start with magic number 3500
 

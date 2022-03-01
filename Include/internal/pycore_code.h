@@ -92,6 +92,15 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_COMPARE_OP CACHE_ENTRIES(_PyCompareOpCache)
 
+typedef struct {
+    _Py_CODEUNIT counter;
+    _Py_CODEUNIT type_version;
+    _Py_CODEUNIT _t1;
+    _Py_CODEUNIT func_version;
+} _PyBinarySubscrCache;
+
+#define INLINE_CACHE_ENTRIES_BINARY_SUBSCR CACHE_ENTRIES(_PyBinarySubscrCache)
+
 /* Maximum size of code to quicken, in code units. */
 #define MAX_SIZE_TO_QUICKEN 5000
 
@@ -323,7 +332,7 @@ extern int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObjec
 extern int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 extern int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name);
 extern int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
-extern int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
+extern int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
 extern int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
 extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     PyObject *kwnames, SpecializedCacheEntry *cache);
