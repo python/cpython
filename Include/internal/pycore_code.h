@@ -77,13 +77,20 @@ typedef struct {
 } _PyBinaryOpCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_OP CACHE_ENTRIES(_PyBinaryOpCache)
+
 typedef struct {
     _Py_CODEUNIT counter;
 } _PyUnpackSequenceCache;
 
-
 #define INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE \
-    (sizeof(_PyUnpackSequenceCache) / sizeof(_Py_CODEUNIT))
+    CACHE_ENTRIES(_PyUnpackSequenceCache)
+
+typedef struct {
+    _Py_CODEUNIT counter;
+    _Py_CODEUNIT mask;
+} _PyCompareOpCache;
+
+#define INLINE_CACHE_ENTRIES_COMPARE_OP CACHE_ENTRIES(_PyCompareOpCache)
 
 /* Maximum size of code to quicken, in code units. */
 #define MAX_SIZE_TO_QUICKEN 5000
@@ -323,8 +330,9 @@ extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int narg
 extern int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     PyObject *kwnames, SpecializedCacheEntry *cache, PyObject *builtins);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                             int oparg);
-extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
+                                    int oparg);
+extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
+                                     _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
 

@@ -212,6 +212,7 @@ static const uint32_t _PyOpcode_Jump[8] = {
 
 const uint8_t _PyOpcode_InlineCacheEntries[256] = {
     [UNPACK_SEQUENCE] = 1,
+    [COMPARE_OP] = 2,
     [LOAD_GLOBAL] = 5,
     [BINARY_OP] = 1,
 };
