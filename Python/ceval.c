@@ -3037,7 +3037,6 @@ handle_eval_breaker:
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             uint32_t version = read32(&cache->module_keys_version);
             DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
-            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache->index;
             PyObject *res = dictkeys_get_value_by_index(dict->ma_keys, cache->index);
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
