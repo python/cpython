@@ -208,16 +208,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
 static void
 tupledealloc(PyTupleObject *op)
 {
-    if (_PyTuple_HAS_NO_GC(op)) {
-        Py_ssize_t i = PyTuple_GET_SIZE(op);
-        while (--i >= 0) {
-            Py_XDECREF(op->ob_item[i]);
-        }
-        Py_TYPE(op)->tp_free((PyObject *)op);
-        return;
-    }
-
-    if (Py_SIZE(op) == 0) {
+    if (PyTuple_GET_SIZE(op) == 0) {
         /* The empty tuple is statically allocated. */
         if (op == &_Py_SINGLETON(tuple_empty)) {
 #ifdef Py_DEBUG
@@ -230,6 +221,15 @@ tupledealloc(PyTupleObject *op)
         /* tuple subclasses have their own empty instances. */
         assert(!PyTuple_CheckExact(op));
 #endif
+    }
+
+    if (_PyTuple_HAS_NO_GC(op)) {
+        Py_ssize_t i = PyTuple_GET_SIZE(op);
+        while (--i >= 0) {
+            Py_XDECREF(op->ob_item[i]);
+        }
+        Py_TYPE(op)->tp_free((PyObject *)op);
+        return;
     }
 
     PyObject_GC_UnTrack(op);
