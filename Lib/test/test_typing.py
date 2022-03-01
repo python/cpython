@@ -1074,6 +1074,26 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaises(TypeError):
             CG[int](42)
 
+    def test_protocol_defining_init(self):
+        class P(Protocol):
+            x: int
+            def __init__(self, x: int) -> None:
+                self.x = x
+
+        # the protocol itself cannot be instantiated
+        with self.assertRaises(TypeError):
+            P()
+
+        # but a concrete subclass can
+        class C(P): pass
+
+        c = C(1)
+        self.assertIsInstance(c, C)
+
+        # and this concrete subclass can inherit the __init__
+        # implementation from Protocol
+        self.assertEqual(c.x, 1)
+
     def test_cannot_instantiate_abstract(self):
         @runtime_checkable
         class P(Protocol):
