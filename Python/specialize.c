@@ -1349,7 +1349,7 @@ function_kind(PyCodeObject *code) {
 
 int
 _Py_Specialize_BinarySubscr(
-     PyObject *container, PyObject *sub, _Py_CODEUNIT *instr, PyCodeObject *code)
+     PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
 {
     assert(_PyOpcode_InlineCacheEntries[BINARY_SUBSCR] ==
            INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
