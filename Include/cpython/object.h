@@ -230,8 +230,8 @@ struct _typeobject {
 };
 
 /* This struct is used by the specializer
- * It should should be treated as opaque blob
- * by any other code */
+ * It should should be treated as an opaque blob
+ * by code than the specializer and interpreter. */
 struct _specialization_cache {
     PyObject *getitem;
 };
@@ -254,7 +254,7 @@ typedef struct _heaptypeobject {
     struct _dictkeysobject *ht_cached_keys;
     PyObject *ht_module;
     char *_ht_tpname;  // Storage for "tp_name"; see PyType_FromModuleAndSpec
-    struct _specialization_cache _spec_cache; // Internal -- DO NOT USE.
+    struct _specialization_cache _spec_cache; // For use by the specializer.
     /* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;
 
