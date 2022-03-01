@@ -1457,7 +1457,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
         LOAD_##attr_or_method); \
     assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE); \
     assert(cache0->index < dict->ma_keys->dk_nentries); \
-    PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index; \
+    PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + cache0->index; \
     res = ep->me_value; \
     DEOPT_IF(res == NULL, LOAD_##attr_or_method); \
     STAT_INC(LOAD_##attr_or_method, hit); \
@@ -1593,6 +1593,19 @@ typedef struct {
 static inline bool
 is_method(PyObject **stack_pointer, int args) {
     return PEEK(args+2) != NULL;
+}
+
+static PyObject*
+dictkeys_get_value_by_index(PyDictKeysObject *dk, int index)
+{
+    if (DK_IS_UNICODE(dk)) {
+        PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dk) + index;
+        return ep->me_value;
+    }
+    else {
+        PyDictKeyEntry *ep = DK_ENTRIES(dk) + index;
+        return ep->me_value;
+    }
 }
 
 #define KWNAMES_LEN() \
@@ -3030,8 +3043,7 @@ handle_eval_breaker:
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             uint32_t version = read32(&cache->module_keys_version);
             DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
-            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache->index;
-            PyObject *res = ep->me_value;
+            PyObject *res = dictkeys_get_value_by_index(dict->ma_keys, cache->index);
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
@@ -3051,8 +3063,7 @@ handle_eval_breaker:
             uint16_t bltn_version = cache->builtin_keys_version;
             DEOPT_IF(mdict->ma_keys->dk_version != mod_version, LOAD_GLOBAL);
             DEOPT_IF(bdict->ma_keys->dk_version != bltn_version, LOAD_GLOBAL);
-            PyDictKeyEntry *ep = DK_ENTRIES(bdict->ma_keys) + cache->index;
-            PyObject *res = ep->me_value;
+            PyObject *res = dictkeys_get_value_by_index(bdict->ma_keys, cache->index);
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
@@ -3272,20 +3283,12 @@ handle_eval_breaker:
         }
 
         TARGET(BUILD_MAP) {
-            Py_ssize_t i;
-            PyObject *map = _PyDict_NewPresized((Py_ssize_t)oparg);
+            PyObject *map = _PyDict_FromItems(
+                    &PEEK(2*oparg), 2,
+                    &PEEK(2*oparg - 1), 2,
+                    oparg);
             if (map == NULL)
                 goto error;
-            for (i = oparg; i > 0; i--) {
-                int err;
-                PyObject *key = PEEK(2*i);
-                PyObject *value = PEEK(2*i - 1);
-                err = PyDict_SetItem(map, key, value);
-                if (err != 0) {
-                    Py_DECREF(map);
-                    goto error;
-                }
-            }
 
             while (oparg--) {
                 Py_DECREF(POP());
@@ -3351,7 +3354,6 @@ handle_eval_breaker:
         }
 
         TARGET(BUILD_CONST_KEY_MAP) {
-            Py_ssize_t i;
             PyObject *map;
             PyObject *keys = TOP();
             if (!PyTuple_CheckExact(keys) ||
@@ -3360,19 +3362,11 @@ handle_eval_breaker:
                                  "bad BUILD_CONST_KEY_MAP keys argument");
                 goto error;
             }
-            map = _PyDict_NewPresized((Py_ssize_t)oparg);
+            map = _PyDict_FromItems(
+                    &PyTuple_GET_ITEM(keys, 0), 1,
+                    &PEEK(oparg + 1), 1, oparg);
             if (map == NULL) {
                 goto error;
-            }
-            for (i = oparg; i > 0; i--) {
-                int err;
-                PyObject *key = PyTuple_GET_ITEM(keys, oparg - i);
-                PyObject *value = PEEK(i + 1);
-                err = PyDict_SetItem(map, key, value);
-                if (err != 0) {
-                    Py_DECREF(map);
-                    goto error;
-                }
             }
 
             Py_DECREF(POP());
@@ -3538,9 +3532,16 @@ handle_eval_breaker:
             PyObject *name = GETITEM(names, cache0->original_oparg);
             uint16_t hint = cache0->index;
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, LOAD_ATTR);
-            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
-            DEOPT_IF(ep->me_key != name, LOAD_ATTR);
-            res = ep->me_value;
+            if (DK_IS_UNICODE(dict->ma_keys)) {
+                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
+                DEOPT_IF(ep->me_key != name, LOAD_ATTR);
+                res = ep->me_value;
+            }
+            else {
+                PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
+                DEOPT_IF(ep->me_key != name, LOAD_ATTR);
+                res = ep->me_value;
+            }
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
@@ -3630,15 +3631,27 @@ handle_eval_breaker:
             PyObject *name = GETITEM(names, cache0->original_oparg);
             uint16_t hint = cache0->index;
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, STORE_ATTR);
-            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
-            DEOPT_IF(ep->me_key != name, STORE_ATTR);
-            PyObject *old_value = ep->me_value;
-            DEOPT_IF(old_value == NULL, STORE_ATTR);
-            STAT_INC(STORE_ATTR, hit);
-            STACK_SHRINK(1);
-            PyObject *value = POP();
-            ep->me_value = value;
+            PyObject *value, *old_value;
+            if (DK_IS_UNICODE(dict->ma_keys)) {
+                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
+                DEOPT_IF(ep->me_key != name, STORE_ATTR);
+                old_value = ep->me_value;
+                DEOPT_IF(old_value == NULL, STORE_ATTR);
+                STACK_SHRINK(1);
+                value = POP();
+                ep->me_value = value;
+            }
+            else {
+                PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
+                DEOPT_IF(ep->me_key != name, STORE_ATTR);
+                old_value = ep->me_value;
+                DEOPT_IF(old_value == NULL, STORE_ATTR);
+                STACK_SHRINK(1);
+                value = POP();
+                ep->me_value = value;
+            }
             Py_DECREF(old_value);
+            STAT_INC(STORE_ATTR, hit);
             /* Ensure dict is GC tracked if it needs to be */
             if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(value)) {
                 _PyObject_GC_TRACK(dict);
