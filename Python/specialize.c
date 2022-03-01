@@ -489,7 +489,6 @@ _Py_Quicken(PyCodeObject *code) {
     }
     int obj_count = object_slots_needed(code->co_firstinstr, instr_count);
     code->_co_obj_cache = PyMem_Malloc(obj_count*sizeof(PyObject *));
-    code->_co_obj_cache_len = obj_count;
     if (code->_co_obj_cache == NULL) {
         return -1;
     }
@@ -1417,8 +1416,7 @@ _Py_Specialize_BinarySubscr(
         }
         cache->func_version = version;
         assert(code->_co_obj_cache != NULL);
-        assert(cache->object >= 0 && cache->object < code->_co_obj_cache_len);
-        code->_co_obj_cache[cache->object] =  descriptor;
+        code->_co_obj_cache[cache->object] = descriptor;
         *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_GETITEM, _Py_OPARG(*instr));
         goto success;
     }
