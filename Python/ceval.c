@@ -1616,15 +1616,15 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     int oparg;         /* Current opcode argument, if any */
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
 
-    CFrame cframe;
+    _PyCFrame cframe;
     CallShape call_shape;
     call_shape.kwnames = NULL; // Borrowed reference. Reset by CALL instructions.
 
-    /* WARNING: Because the CFrame lives on the C stack,
+    /* WARNING: Because the _PyCFrame lives on the C stack,
      * but can be accessed from a heap allocated object (tstate)
      * strict stack discipline must be maintained.
      */
-    CFrame *prev_cframe = tstate->cframe;
+    _PyCFrame *prev_cframe = tstate->cframe;
     cframe.use_tracing = prev_cframe->use_tracing;
     cframe.previous = prev_cframe;
     tstate->cframe = &cframe;
@@ -3677,8 +3677,10 @@ handle_eval_breaker:
             SET_TOP(res);
             Py_DECREF(left);
             Py_DECREF(right);
-            if (res == NULL)
+            if (res == NULL) {
                 goto error;
+            }
+            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
             PREDICT(POP_JUMP_IF_FALSE);
             PREDICT(POP_JUMP_IF_TRUE);
             DISPATCH();
@@ -3686,18 +3688,17 @@ handle_eval_breaker:
 
         TARGET(COMPARE_OP_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
-            SpecializedCacheEntry *cache = GET_CACHE();
-            if (cache->adaptive.counter == 0) {
+            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
+            if (cache->counter == 0) {
                 PyObject *right = TOP();
                 PyObject *left = SECOND();
                 next_instr--;
-                _Py_Specialize_CompareOp(left, right, next_instr, cache);
+                _Py_Specialize_CompareOp(left, right, next_instr, oparg);
                 DISPATCH();
             }
             else {
                 STAT_INC(COMPARE_OP, deferred);
-                cache->adaptive.counter--;
-                oparg = cache->adaptive.original_oparg;
+                cache->counter--;
                 JUMP_TO_INSTRUCTION(COMPARE_OP);
             }
         }
@@ -3705,8 +3706,8 @@ handle_eval_breaker:
         TARGET(COMPARE_OP_FLOAT_JUMP) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
-            SpecializedCacheEntry *caches = GET_CACHE();
-            int when_to_jump_mask = caches[0].adaptive.index;
+            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
+            int when_to_jump_mask = cache->mask;
             PyObject *right = TOP();
             PyObject *left = SECOND();
             DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
@@ -3717,6 +3718,7 @@ handle_eval_breaker:
             DEOPT_IF(isnan(dleft), COMPARE_OP);
             DEOPT_IF(isnan(dright), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
+            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
             NEXTOPARG();
             STACK_SHRINK(2);
             Py_DECREF(left);
@@ -3737,8 +3739,8 @@ handle_eval_breaker:
         TARGET(COMPARE_OP_INT_JUMP) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
-            SpecializedCacheEntry *caches = GET_CACHE();
-            int when_to_jump_mask = caches[0].adaptive.index;
+            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
+            int when_to_jump_mask = cache->mask;
             PyObject *right = TOP();
             PyObject *left = SECOND();
             DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
@@ -3750,6 +3752,7 @@ handle_eval_breaker:
             Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
             Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
             int sign = (ileft > iright) - (ileft < iright);
+            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
             NEXTOPARG();
             STACK_SHRINK(2);
             Py_DECREF(left);
@@ -3770,8 +3773,8 @@ handle_eval_breaker:
         TARGET(COMPARE_OP_STR_JUMP) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
-            SpecializedCacheEntry *caches = GET_CACHE();
-            int invert = caches[0].adaptive.index;
+            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
+            int invert = cache->mask;
             PyObject *right = TOP();
             PyObject *left = SECOND();
             DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
@@ -3781,8 +3784,8 @@ handle_eval_breaker:
             if (res < 0) {
                 goto error;
             }
-            assert(caches[0].adaptive.original_oparg == Py_EQ ||
-                   caches[0].adaptive.original_oparg == Py_NE);
+            assert(oparg == Py_EQ || oparg == Py_NE);
+            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
             NEXTOPARG();
             assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
             STACK_SHRINK(2);
@@ -5607,7 +5610,7 @@ MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_CACHE(PRECALL)
 MISS_WITH_CACHE(CALL)
 MISS_WITH_INLINE_CACHE(BINARY_OP)
-MISS_WITH_CACHE(COMPARE_OP)
+MISS_WITH_INLINE_CACHE(COMPARE_OP)
 MISS_WITH_INLINE_CACHE(BINARY_SUBSCR)
 MISS_WITH_INLINE_CACHE(UNPACK_SEQUENCE)
 MISS_WITH_OPARG_COUNTER(STORE_SUBSCR)

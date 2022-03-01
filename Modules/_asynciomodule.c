@@ -2206,9 +2206,13 @@ _asyncio_Task_cancel_impl(TaskObj *self, PyObject *msg)
     }
 
     self->task_num_cancels_requested += 1;
-    if (self->task_num_cancels_requested > 1) {
-        Py_RETURN_FALSE;
-    }
+
+    // These three lines are controversial.  See discussion starting at
+    // https://github.com/python/cpython/pull/31394#issuecomment-1053545331
+    // and corresponding code in tasks.py.
+    // if (self->task_num_cancels_requested > 1) {
+    //     Py_RETURN_FALSE;
+    // }
 
     if (self->task_fut_waiter) {
         PyObject *res;

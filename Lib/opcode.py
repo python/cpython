@@ -125,7 +125,7 @@ def_op('BUILD_LIST', 103)       # Number of list items
 def_op('BUILD_SET', 104)        # Number of set items
 def_op('BUILD_MAP', 105)        # Number of dict entries
 name_op('LOAD_ATTR', 106)       # Index in name list
-def_op('COMPARE_OP', 107)       # Comparison operator
+def_op('COMPARE_OP', 107, 2)       # Comparison operator
 hascompare.append(107)
 name_op('IMPORT_NAME', 108)     # Index in name list
 name_op('IMPORT_FROM', 109)     # Index in name list

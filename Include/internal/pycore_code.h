@@ -87,6 +87,13 @@ typedef struct {
 
 typedef struct {
     _Py_CODEUNIT counter;
+    _Py_CODEUNIT mask;
+} _PyCompareOpCache;
+
+#define INLINE_CACHE_ENTRIES_COMPARE_OP CACHE_ENTRIES(_PyCompareOpCache)
+
+typedef struct {
+    _Py_CODEUNIT counter;
     _Py_CODEUNIT type_version;
     _Py_CODEUNIT _t1;
     _Py_CODEUNIT func_version;
@@ -332,8 +339,9 @@ extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int narg
 extern int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     PyObject *kwnames, SpecializedCacheEntry *cache, PyObject *builtins);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                             int oparg);
-extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
+                                    int oparg);
+extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
+                                     _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
 
