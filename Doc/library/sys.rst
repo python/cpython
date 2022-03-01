@@ -449,10 +449,12 @@ always available.
 
 .. function:: exit([arg])
 
-   Exit from Python.  This is implemented by raising the :exc:`SystemExit`
+   Exit from Python.  If called in the main thread, this raises the :exc:`SystemExit`
    exception, so cleanup actions specified by finally clauses of :keyword:`try`
    statements are honored, and it is possible to intercept the exit attempt at
-   an outer level.
+   an outer level. When called from a thread other than the main thread, this
+   causes the thread to exit silently, nothing is printed and is equivalent to calling
+   :func:`thread.exit`.
 
    The optional argument *arg* can be an integer giving the exit status
    (defaulting to zero), or another type of object.  If it is an integer, zero
