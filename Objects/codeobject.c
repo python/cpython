@@ -348,7 +348,6 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     /* not set */
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
-    co->_co_obj_cache = NULL;
 
     co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     co->co_quickened = NULL;
@@ -1370,9 +1369,6 @@ code_dealloc(PyCodeObject *co)
         PyMem_Free(co->co_quickened);
         _Py_QuickenedCount--;
     }
-    if (co->_co_obj_cache) {
-        PyMem_Free(co->_co_obj_cache);
-    }
     PyObject_Free(co);
 }
 
@@ -1924,10 +1920,6 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
         PyMem_Free(co->co_quickened);
         co->co_quickened = NULL;
          _Py_QuickenedCount--;
-    }
-    if (co->_co_obj_cache) {
-        PyMem_Free(co->_co_obj_cache);
-        co->_co_obj_cache = NULL;
     }
     co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     PyMem_Free(co->co_extra);

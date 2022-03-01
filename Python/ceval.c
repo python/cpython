@@ -2197,9 +2197,11 @@ handle_eval_breaker:
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
-            PyObject *cached = frame->f_code->_co_obj_cache[cache->object];
             uint32_t type_version = read32(&cache->type_version);
-            DEOPT_IF(Py_TYPE(container)->tp_version_tag != type_version, BINARY_SUBSCR);
+            PyTypeObject *tp = Py_TYPE(container);
+            DEOPT_IF(tp->tp_version_tag != type_version, BINARY_SUBSCR);
+            assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
+            PyObject *cached = ((PyHeapTypeObject *)tp)->_spec_cache.getitem;
             assert(PyFunction_Check(cached));
             PyFunctionObject *getitem = (PyFunctionObject *)cached;
             DEOPT_IF(getitem->func_version != cache->func_version, BINARY_SUBSCR);

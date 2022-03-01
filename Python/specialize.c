@@ -364,17 +364,6 @@ entries_needed(const _Py_CODEUNIT *code, int len)
     return cache_offset + 1;   // One extra for the count entry
 }
 
-static int
-object_slots_needed(const _Py_CODEUNIT *code, int len)
-{
-    int count = 0;
-    for (int i = 0; i < len; i++) {
-        uint8_t opcode = _Py_OPCODE(code[i]);
-        count += object_cache_requirements[opcode];
-    }
-    return count;
-}
-
 static inline _Py_CODEUNIT *
 first_instruction(SpecializedCacheOrInstruction *quickened)
 {
@@ -487,15 +476,9 @@ _Py_Quicken(PyCodeObject *code) {
         code->co_warmup = QUICKENING_WARMUP_COLDEST;
         return 0;
     }
-    int obj_count = object_slots_needed(code->co_firstinstr, instr_count);
-    code->_co_obj_cache = PyMem_Malloc(obj_count*sizeof(PyObject *));
-    if (code->_co_obj_cache == NULL) {
-        return -1;
-    }
     int entry_count = entries_needed(code->co_firstinstr, instr_count);
     SpecializedCacheOrInstruction *quickened = allocate(entry_count, instr_count);
     if (quickened == NULL) {
-        PyMem_Free(code->_co_obj_cache);
         return -1;
     }
     _Py_CODEUNIT *new_instructions = first_instruction(quickened);
@@ -583,6 +566,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_SUBSCR_PY_SIMPLE 20
 #define SPEC_FAIL_SUBSCR_PY_OTHER 21
 #define SPEC_FAIL_SUBSCR_DICT_SUBCLASS_NO_OVERRIDE 22
+#define SPEC_FAIL_SUBSCR_NOT_HEAP_TYPE 23
 
 /* Binary op */
 
@@ -1396,6 +1380,10 @@ _Py_Specialize_BinarySubscr(
     PyTypeObject *cls = Py_TYPE(container);
     PyObject *descriptor = _PyType_Lookup(cls, &_Py_ID(__getitem__));
     if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
+        if (!(container_type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_SUBSCR_NOT_HEAP_TYPE);
+            goto fail;
+        }
         PyFunctionObject *func = (PyFunctionObject *)descriptor;
         PyCodeObject *fcode = (PyCodeObject *)func->func_code;
         int kind = function_kind(fcode);
@@ -1415,8 +1403,7 @@ _Py_Specialize_BinarySubscr(
             goto fail;
         }
         cache->func_version = version;
-        assert(code->_co_obj_cache != NULL);
-        code->_co_obj_cache[cache->object] = descriptor;
+        ((PyHeapTypeObject *)container_type)->_spec_cache.getitem = descriptor;
         *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_GETITEM, _Py_OPARG(*instr));
         goto success;
     }

@@ -87,7 +87,6 @@ typedef struct {
 
 typedef struct {
     _Py_CODEUNIT counter;
-    _Py_CODEUNIT object;
     _Py_CODEUNIT type_version;
     _Py_CODEUNIT _t1;
     _Py_CODEUNIT func_version;
