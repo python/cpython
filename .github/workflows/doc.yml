@@ -27,7 +27,7 @@ jobs:
     name: 'Docs'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Register Sphinx problem matcher
       run: echo "::add-matcher::.github/problem-matchers/sphinx.json"
     - name: 'Install Dependencies'
