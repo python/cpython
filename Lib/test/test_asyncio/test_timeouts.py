@@ -200,6 +200,8 @@ class BaseTimeoutTests:
         cm = await fut
 
         self.assertEqual(cm.when(), deadline1)
+        breakpoint()
+        repr(cm)
         cm.reschedule(deadline2)
         self.assertEqual(cm.when(), deadline2)
         cm.reschedule(None)

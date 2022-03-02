@@ -14,12 +14,12 @@ __all__ = (
 )
 
 
-class _State(str, enum.Enum):
+class _State(enum.Enum):
     CREATED = "created"
     ENTERED = "active"
     EXPIRING = "expiring"
     EXPIRED = "expired"
-    EXITED = "exited"
+    EXITED = "finished"
 
 
 @final
@@ -61,11 +61,11 @@ class Timeout:
         return self._state in (_State.EXPIRING, _State.EXPIRED)
 
     def __repr__(self) -> str:
-        info = [str(self._state)]
-        if self._state is _State.ENTERED and self._deadline is not None:
-            info.append(f"deadline={self._deadline}")
-        cls_name = self.__class__.__name__
-        return f"<{cls_name} at {id(self):#x}, {' '.join(info)}>"
+        info = ['']
+        if self._state is _State.ENTERED:
+            info.append(f"deadline={self._deadline:.3f}")
+        info_str = ' '.join(info)
+        return f"<Timeout [{self._state.value}]{info_str}>"
 
     async def __aenter__(self) -> "Timeout":
         self._state = _State.ENTERED
