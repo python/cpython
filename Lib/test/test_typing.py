@@ -1089,7 +1089,7 @@ class ProtocolTests(BaseTestCase):
         P.__init__(c, 1)
         self.assertEqual(c.x, 1)
 
-    def test_concrete_class_inherting_init_from_protocol(self):
+    def test_concrete_class_inheriting_init_from_protocol(self):
         class P(Protocol):
             x: int
             def __init__(self, x: int) -> None:
