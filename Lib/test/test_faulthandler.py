@@ -5,9 +5,9 @@ import os
 import signal
 import subprocess
 import sys
-import sysconfig
 from test import support
 from test.support import script_helper, is_android
+from test.support import skip_if_sanitizer
 import tempfile
 import unittest
 from textwrap import dedent
@@ -19,16 +19,6 @@ except ImportError:
 
 TIMEOUT = 0.5
 MS_WINDOWS = (os.name == 'nt')
-_cflags = sysconfig.get_config_var('CFLAGS') or ''
-_config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
-UB_SANITIZER = (
-    '-fsanitize=undefined' in _cflags or
-    '--with-undefined-behavior-sanitizer' in _config_args
-)
-MEMORY_SANITIZER = (
-    '-fsanitize=memory' in _cflags or
-    '--with-memory-sanitizer' in _config_args
-)
 
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
@@ -271,8 +261,8 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Segmentation fault')
 
-    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
-                     "sanitizer builds change crashing process output.")
+    @skip_if_sanitizer(memory=True, ub=True, reason="sanitizer "
+                       "builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_file(self):
         with temporary_filename() as filename:
@@ -288,8 +278,8 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
-    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
-                     "sanitizer builds change crashing process output.")
+    @skip_if_sanitizer(memory=True, ub=True, reason="sanitizer "
+                       "builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
