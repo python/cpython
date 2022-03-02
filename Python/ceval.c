@@ -1459,7 +1459,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
     PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache->index; \
     res = ep->me_value; \
     DEOPT_IF(res == NULL, LOAD_##attr_or_method); \
-    /* XXX: Uncomment this next line to make test_asyncio very angry! */ \
+    /* XXX: Remove this next line to make test_asyncio very angry! */ \
     DEOPT_IF(LOAD_##attr_or_method == LOAD_ATTR, LOAD_##attr_or_method); \
     STAT_INC(LOAD_##attr_or_method, hit); \
     Py_INCREF(res);
@@ -4465,7 +4465,9 @@ handle_eval_breaker:
             assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictObject *dict = *(PyDictObject**)_PyObject_ManagedDictPointer(self);
             DEOPT_IF(dict != NULL, LOAD_METHOD);
-            DEOPT_IF(((PyHeapTypeObject *)self_cls)->ht_cached_keys->dk_version != read_u32(cache->keys_version), LOAD_METHOD);
+            PyHeapTypeObject *self_heap_type = (PyHeapTypeObject *)self_cls;
+            DEOPT_IF(self_heap_type->ht_cached_keys->dk_version !=
+                     read_u32(cache->keys_version), LOAD_METHOD);
             STAT_INC(LOAD_METHOD, hit);
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
