@@ -1844,9 +1844,7 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
     Py_hash_t hash;
     PyObject *value;
 
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1)
-    {
+    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return NULL;
@@ -1873,9 +1871,7 @@ _PyDict_SetItem_Take2(PyDictObject *mp, PyObject *key, PyObject *value)
     assert(value);
     assert(PyDict_Check(mp));
     Py_hash_t hash;
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1)
-    {
+    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1) {
             Py_DECREF(key);
@@ -1998,8 +1994,7 @@ PyDict_DelItem(PyObject *op, PyObject *key)
 {
     Py_hash_t hash;
     assert(key);
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1) {
+    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return -1;
@@ -2257,8 +2252,7 @@ _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *deflt)
         _PyErr_SetKeyError(key);
         return NULL;
     }
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1) {
+    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return NULL;
@@ -2498,8 +2492,7 @@ dict_subscript(PyDictObject *mp, PyObject *key)
     Py_hash_t hash;
     PyObject *value;
 
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1) {
+    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return NULL;
@@ -3257,8 +3250,7 @@ dict___contains__(PyDictObject *self, PyObject *key)
     Py_ssize_t ix;
     PyObject *value;
 
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1) {
+    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return NULL;
@@ -3289,8 +3281,7 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
     Py_hash_t hash;
     Py_ssize_t ix;
 
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1) {
+    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return NULL;
@@ -3317,8 +3308,7 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         return NULL;
     }
 
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1) {
+    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return NULL;
@@ -3707,8 +3697,7 @@ PyDict_Contains(PyObject *op, PyObject *key)
     PyDictObject *mp = (PyDictObject *)op;
     PyObject *value;
 
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1) {
+    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return -1;
