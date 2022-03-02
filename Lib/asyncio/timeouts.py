@@ -14,7 +14,7 @@ __all__ = (
 )
 
 
-class _State(enum.Enum):
+class _State(str, enum.Enum):
     CREATED = "created"
     ENTERED = "active"
     EXPIRING = "expiring"
