@@ -6296,7 +6296,7 @@ if test ! -d CaseSensitiveTestDir; then
 mkdir CaseSensitiveTestDir
 fi
 
-if test -d casesensitivetestdir
+if test -d casesensitivetestdir && test -z "$EXEEXT"
 then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
