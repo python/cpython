@@ -532,7 +532,7 @@ Functions and classes provided:
 
       Enters a new context manager and adds its :meth:`__exit__` method to
       the callback stack. The return value is the result of the context
-      manager's own :meth:`__enter__` method. 
+      manager's own :meth:`__enter__` method.
 
       These context managers may suppress exceptions just as they normally
       would if used directly as part of a :keyword:`with` statement.
@@ -547,7 +547,7 @@ Functions and classes provided:
 
       As ``__enter__`` is *not* invoked, this method can be used to cover
       part of an :meth:`__enter__` implementation with a context manager's own
-      :meth:`__exit__` method. 
+      :meth:`__exit__` method.
 
       If passed an object that is not a context manager, this method assumes
       it is a callback with the same signature as a context manager's
