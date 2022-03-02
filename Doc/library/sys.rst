@@ -450,8 +450,6 @@ always available.
 .. function:: exit([arg])
 
    Raise a :exc:`SystemExit` exception, signaling an intention to exit the interpreter.
-   Cleanup actions specified by finally clauses of :keyword:`try` statements are honored, 
-   and it is possible to intercept the exit attempt at an outer level. 
 
    The optional argument *arg* can be an integer giving the exit status
    (defaulting to zero), or another type of object.  If it is an integer, zero
@@ -470,6 +468,9 @@ always available.
    the process when called from the main thread, and the exception is not
    intercepted.
 
+   Cleanup actions specified by finally clauses of :keyword:`try` statements are honored, 
+   and it is possible to intercept the exit attempt at an outer level. 
+   
    .. versionchanged:: 3.6
       If an error occurs in the cleanup after the Python interpreter
       has caught :exc:`SystemExit` (such as an error flushing buffered data
