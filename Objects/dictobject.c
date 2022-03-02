@@ -454,23 +454,13 @@ static PyDictKeysObject empty_keys_struct = {
         1, /* dk_refcnt */
         0, /* dk_log2_size */
         0, /* dk_log2_index_bytes */
-        DICT_KEYS_SPLIT, /* dk_kind */
+        DICT_KEYS_UNICODE, /* dk_kind */
         1, /* dk_version */
         0, /* dk_usable (immutable) */
         0, /* dk_nentries */
         {DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY,
          DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY}, /* dk_indices */
 };
-
-
-struct {
-    uint8_t prefix[sizeof(PyObject *)];
-    PyDictValues values;
-} empty_values_struct = {
-    { [sizeof(PyObject *)-1] = sizeof(PyObject *) },
-    {{NULL}}
-};
-#define empty_values (&empty_values_struct.values)
 
 #define Py_EMPTY_KEYS &empty_keys_struct
 
@@ -495,7 +485,6 @@ get_index_from_order(PyDictObject *mp, Py_ssize_t i)
 static void
 dump_entries(PyDictKeysObject *dk)
 {
-    int kind = dk->dk_kind;
     for (Py_ssize_t i = 0; i < dk->dk_nentries; i++) {
         if (DK_IS_UNICODE(dk)) {
             PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(dk)[i];
@@ -531,7 +520,7 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
     if (!splitted) {
         /* combined table */
         CHECK(keys->dk_kind != DICT_KEYS_SPLIT);
-        CHECK(keys->dk_refcnt == 1);
+        CHECK(keys->dk_refcnt == 1 || keys == Py_EMPTY_KEYS);
     }
     else {
         CHECK(keys->dk_kind == DICT_KEYS_SPLIT);
@@ -688,7 +677,8 @@ free_keys_object(PyDictKeysObject *keys)
     // free_keys_object() must not be called after _PyDict_Fini()
     assert(state->keys_numfree != -1);
 #endif
-    if (DK_LOG_SIZE(keys) == PyDict_LOG_MINSIZE && state->keys_numfree < PyDict_MAXFREELIST
+    if (DK_LOG_SIZE(keys) == PyDict_LOG_MINSIZE
+            && state->keys_numfree < PyDict_MAXFREELIST
             && DK_IS_UNICODE(keys)) {
         state->keys_free_list[state->keys_numfree++] = keys;
         return;
@@ -845,7 +835,7 @@ PyObject *
 PyDict_New(void)
 {
     dictkeys_incref(Py_EMPTY_KEYS);
-    return new_dict(Py_EMPTY_KEYS, empty_values, 0, 0);
+    return new_dict(Py_EMPTY_KEYS, NULL, 0, 0);
 }
 
 /* Search index of hash table from offset of entry table */
@@ -1478,9 +1468,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize, int unicode)
         }
         dictkeys_decref(oldkeys);
         mp->ma_values = NULL;
-        if (oldvalues != empty_values) {
-            free_values(oldvalues);
-        }
+        free_values(oldvalues);
     }
     else {  // oldkeys is combined.
         if (oldkeys->dk_kind == DICT_KEYS_GENERAL) {
@@ -1506,7 +1494,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize, int unicode)
             if (unicode) { // combined unicode -> combined unicode
                 PyDictUnicodeEntry *newentries = DK_UNICODE_ENTRIES(mp->ma_keys);
                 if (oldkeys->dk_nentries == numentries && mp->ma_keys->dk_kind == DICT_KEYS_UNICODE) {
-                        memcpy(newentries, oldentries, numentries * sizeof(PyDictUnicodeEntry));
+                    memcpy(newentries, oldentries, numentries * sizeof(PyDictUnicodeEntry));
                 }
                 else {
                     PyDictUnicodeEntry *ep = oldentries;
@@ -1533,27 +1521,31 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize, int unicode)
             }
         }
 
-        assert(oldkeys->dk_kind != DICT_KEYS_SPLIT);
-        assert(oldkeys->dk_refcnt == 1);
+        // We can not use free_keys_object here because key's reference
+        // are moved already.
+        if (oldkeys != Py_EMPTY_KEYS) {
+            assert(oldkeys->dk_kind != DICT_KEYS_SPLIT);
+            assert(oldkeys->dk_refcnt == 1);
 #ifdef Py_REF_DEBUG
-        _Py_RefTotal--;
+            _Py_RefTotal--;
 #endif
 #if PyDict_MAXFREELIST > 0
-        struct _Py_dict_state *state = get_dict_state();
+            struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
-        // dictresize() must not be called after _PyDict_Fini()
-        assert(state->keys_numfree != -1);
+            // dictresize() must not be called after _PyDict_Fini()
+            assert(state->keys_numfree != -1);
 #endif
-        if (DK_LOG_SIZE(oldkeys) == PyDict_LOG_MINSIZE &&
-            DK_IS_UNICODE(oldkeys) &&
-            state->keys_numfree < PyDict_MAXFREELIST)
-        {
-            state->keys_free_list[state->keys_numfree++] = oldkeys;
-        }
-        else
+            if (DK_LOG_SIZE(oldkeys) == PyDict_LOG_MINSIZE &&
+                    DK_IS_UNICODE(oldkeys) &&
+                    state->keys_numfree < PyDict_MAXFREELIST)
+            {
+                state->keys_free_list[state->keys_numfree++] = oldkeys;
+            }
+            else
 #endif
-        {
-            PyObject_Free(oldkeys);
+            {
+                PyObject_Free(oldkeys);
+            }
         }
     }
 
@@ -2086,12 +2078,13 @@ PyDict_Clear(PyObject *op)
     mp = ((PyDictObject *)op);
     oldkeys = mp->ma_keys;
     oldvalues = mp->ma_values;
-    if (oldvalues == empty_values)
+    if (oldkeys == Py_EMPTY_KEYS) {
         return;
+    }
     /* Empty the dict... */
     dictkeys_incref(Py_EMPTY_KEYS);
     mp->ma_keys = Py_EMPTY_KEYS;
-    mp->ma_values = empty_values;
+    mp->ma_values = NULL;
     mp->ma_used = 0;
     mp->ma_version_tag = DICT_NEXT_VERSION();
     /* ...then clear the keys and values */
@@ -2366,16 +2359,14 @@ dict_dealloc(PyDictObject *mp)
     PyObject_GC_UnTrack(mp);
     Py_TRASHCAN_BEGIN(mp, dict_dealloc)
     if (values != NULL) {
-        if (values != empty_values) {
-            for (i = 0, n = mp->ma_keys->dk_nentries; i < n; i++) {
-                Py_XDECREF(values->values[i]);
-            }
-            free_values(values);
+        for (i = 0, n = mp->ma_keys->dk_nentries; i < n; i++) {
+            Py_XDECREF(values->values[i]);
         }
+        free_values(values);
         dictkeys_decref(keys);
     }
     else if (keys != NULL) {
-        assert(keys->dk_refcnt == 1);
+        assert(keys->dk_refcnt == 1 || keys == Py_EMPTY_KEYS);
         dictkeys_decref(keys);
     }
 #if PyDict_MAXFREELIST > 0
@@ -2855,9 +2846,7 @@ dict_merge(PyObject *a, PyObject *b, int override)
                 dictkeys_decref(mp->ma_keys);
                 mp->ma_keys = keys;
                 if (mp->ma_values != NULL) {
-                    if (mp->ma_values != empty_values) {
-                        free_values(mp->ma_values);
-                    }
+                    free_values(mp->ma_values);
                     mp->ma_values = NULL;
                 }
 
@@ -3769,7 +3758,7 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     d->ma_version_tag = DICT_NEXT_VERSION();
     dictkeys_incref(Py_EMPTY_KEYS);
     d->ma_keys = Py_EMPTY_KEYS;
-    d->ma_values = empty_values;
+    d->ma_values = NULL;
     ASSERT_CONSISTENT(d);
 
     if (type != &PyDict_Type) {
