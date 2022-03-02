@@ -449,8 +449,8 @@ always available.
 
 .. function:: exit([arg])
 
-   This is implemented by raising the :exc:`SystemExit` exception, so cleanup 
-   actions specified by finally clauses of :keyword:`try` statements are honored, 
+   Raise a :exc:`SystemExit` exception, signaling an intention to exit the interpreter.
+   Cleanup actions specified by finally clauses of :keyword:`try` statements are honored, 
    and it is possible to intercept the exit attempt at an outer level. 
 
    The optional argument *arg* can be an integer giving the exit status
