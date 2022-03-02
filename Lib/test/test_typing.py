@@ -1074,7 +1074,7 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaises(TypeError):
             CG[int](42)
 
-    def test_protocol_defining_init_does_not_get_overriden(self):
+    def test_protocol_defining_init_does_not_get_overridden(self):
         # check that P.__init__ doesn't get clobbered
         # see https://bugs.python.org/issue44807
 
