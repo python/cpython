@@ -918,8 +918,8 @@ success:
 int
 _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
 {
-    assert(_PyOpcode_InlineCacheEntries[LOAD_ATTR] ==
-           INLINE_CACHE_ENTRIES_LOAD_ATTR);
+    assert(_PyOpcode_InlineCacheEntries[STORE_ATTR] ==
+           INLINE_CACHE_ENTRIES_STORE_ATTR);
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     PyTypeObject *type = Py_TYPE(owner);
     if (PyModule_CheckExact(owner)) {
