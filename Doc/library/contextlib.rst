@@ -529,7 +529,7 @@ Functions and classes provided:
 
       Enters a new context manager and adds its :meth:`__exit__` method to
       the callback stack. The return value is the result of the context
-      manager's own :meth:`__enter__` method. The :meth:`__enter__` method 
+      manager's own :meth:`__enter__` method. The :meth:`__enter__` method
       returns the :class:`ExitStack` instance, and performs no additional operations.
 
       These context managers may suppress exceptions just as they normally
