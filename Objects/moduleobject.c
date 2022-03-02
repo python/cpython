@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
+#include "pycore_object.h"        // _PyType_AllocNoTrack
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "structmember.h"         // PyMemberDef
@@ -80,7 +81,7 @@ static PyModuleObject *
 new_module_notrack(PyTypeObject *mt)
 {
     PyModuleObject *m;
-    m = PyObject_GC_New(PyModuleObject, mt);
+    m = (PyModuleObject *)_PyType_AllocNoTrack(mt, 0);
     if (m == NULL)
         return NULL;
     m->md_def = NULL;
