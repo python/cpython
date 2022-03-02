@@ -17,6 +17,7 @@ class MissingFile:
 DATA_DIR = Path(__file__).parent / "data"
 
 VALID_FILES = tuple((DATA_DIR / "valid").glob("**/*.toml"))
+assert VALID_FILES, "Valid TOML test files not found"
 
 _expected_files = []
 for p in VALID_FILES:
@@ -29,6 +30,7 @@ for p in VALID_FILES:
 VALID_FILES_EXPECTED = tuple(_expected_files)
 
 INVALID_FILES = tuple((DATA_DIR / "invalid").glob("**/*.toml"))
+assert INVALID_FILES, "Invalid TOML test files not found"
 
 
 class TestData(unittest.TestCase):
