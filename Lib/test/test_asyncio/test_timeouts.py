@@ -80,6 +80,7 @@ class BaseTimeoutTests:
         # finised fast. Very busy CI box requires high enough limit,
         # that's why 0.01 cannot be used
         self.assertLess(t1-t0, 2)
+        self.assertGreater(cm.when(), t1)
 
     async def test_timeout_disabled(self):
         loop = asyncio.get_running_loop()
@@ -118,6 +119,7 @@ class BaseTimeoutTests:
         # finised fast. Very busy CI box requires high enough limit,
         # that's why 0.01 cannot be used
         self.assertLess(t1-t0, 2)
+        self.assertTrue(t0 <= cm.when() <= t1)
 
     async def test_foreign_exception_passed(self):
         with self.assertRaises(KeyError):
@@ -182,6 +184,32 @@ class BaseTimeoutTests:
             pass
         took = time.perf_counter() - start
         self.assertTrue(took <= 1)
+
+    async def test_reschedule(self):
+        loop = asyncio.get_running_loop()
+        fut = loop.create_future()
+        deadline1 = loop.time() + 10
+        deadline2 = deadline1 + 20
+
+        async def f():
+            async with asyncio.timeout_at(deadline1) as cm:
+                fut.set_result(cm)
+                await asyncio.sleep(50)
+
+        task = asyncio.create_task(f())
+        cm = await fut
+
+        self.assertEqual(cm.when(), deadline1)
+        cm.reschedule(deadline2)
+        self.assertEqual(cm.when(), deadline2)
+        cm.reschedule(None)
+        self.assertIsNone(cm.when())
+
+        task.cancel()
+
+        with self.assertRaises(asyncio.CancelledError):
+            await task
+        self.assertFalse(cm.expired())
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
