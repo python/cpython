@@ -1112,7 +1112,7 @@ if test ! -d CaseSensitiveTestDir; then
 mkdir CaseSensitiveTestDir
 fi
 
-if test -d casesensitivetestdir
+if test -d casesensitivetestdir && test -z "$EXEEXT"
 then
     AC_MSG_RESULT(yes)
     BUILDEXEEXT=.exe
