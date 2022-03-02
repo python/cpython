@@ -32,9 +32,9 @@ In the function ``greeting``, the argument ``name`` is expected to be of type
 :class:`str` and the return type :class:`str`. Subtypes are accepted as
 arguments.
 
-New features have been added to the typing module in each version of Python.
+New features are frequently added to the ``typing`` module.
 The `typing_extensions <https://pypi.org/project/typing-extensions/>`_ package
-provides backports of new ``typing`` features to older versions of Python.
+provides backports of these new features to older versions of Python.
 
 .. _relevant-peps:
 
