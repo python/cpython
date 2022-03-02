@@ -315,12 +315,8 @@ mmap_gfind(mmap_object *self,
     if (!PyArg_ParseTuple(args, reverse ? "y*|nn:rfind" : "y*|nn:find",
                           &view, &start, &end)) {
         return NULL;
-    } else {
-        const char *p, *start_p, *end_p;
-        int sign = reverse ? -1 : 1;
-        const char *needle = view.buf;
-        Py_ssize_t len = view.len;
-
+    }
+    else {
         if (start < 0)
             start += self->size;
         if (start < 0)
@@ -335,21 +331,19 @@ mmap_gfind(mmap_object *self,
         else if (end > self->size)
             end = self->size;
 
-        start_p = self->data + start;
-        end_p = self->data + end;
-
-        for (p = (reverse ? end_p - len : start_p);
-             (p >= start_p) && (p + len <= end_p); p += sign) {
-            Py_ssize_t i;
-            for (i = 0; i < len && needle[i] == p[i]; ++i)
-                /* nothing */;
-            if (i == len) {
-                PyBuffer_Release(&view);
-                return PyLong_FromSsize_t(p - self->data);
-            }
+        Py_ssize_t res;
+        if (reverse) {
+            res = _PyBytes_ReverseFind(
+                self->data + start, end - start,
+                view.buf, view.len, start);
+        }
+        else {
+            res = _PyBytes_Find(
+                self->data + start, end - start,
+                view.buf, view.len, start);
         }
         PyBuffer_Release(&view);
-        return PyLong_FromLong(-1);
+        return PyLong_FromSsize_t(res);
     }
 }
 
