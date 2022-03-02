@@ -50,8 +50,12 @@ class TestData(unittest.TestCase):
         for valid, expected in zip(VALID_FILES, VALID_FILES_EXPECTED):
             with self.subTest(msg=valid.stem):
                 if isinstance(expected, MissingFile):
-                    # Would be nice to xfail here, but unittest doesn't seem
-                    # to allow that in a nice way.
+                    # For a poor man's xfail, assert that this is one of the
+                    # test cases where expected data is known to be missing.
+                    assert valid.stem in {
+                        "qa-array-inline-nested-1000",
+                        "qa-table-inline-nested-1000",
+                    }
                     continue
                 toml_str = valid.read_bytes().decode()
                 actual = tomllib.loads(toml_str)
