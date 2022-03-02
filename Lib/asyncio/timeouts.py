@@ -25,34 +25,34 @@ class _State(enum.Enum):
 @final
 class Timeout:
 
-    def __init__(self, deadline: Optional[float]) -> None:
+    def __init__(self, when: Optional[float]) -> None:
         self._state = _State.CREATED
 
         self._timeout_handler: Optional[events.TimerHandle] = None
         self._task: Optional[tasks.Task[Any]] = None
-        self._deadline = deadline
+        self._when = when
 
     def when(self) -> Optional[float]:
-        return self._deadline
+        return self._when
 
-    def reschedule(self, deadline: Optional[float]) -> None:
-        assert self._state != _State.CREATED
-        if self._state != _State.ENTERED:
+    def reschedule(self, when: Optional[float]) -> None:
+        assert self._state is not _State.CREATED
+        if self._state is not _State.ENTERED:
             raise RuntimeError(
-                f"Cannot change state of {self._state} CancelScope",
+                f"Cannot change state of {self._state.value} Timeout",
             )
 
-        self._deadline = deadline
+        self._when = when
 
         if self._timeout_handler is not None:
             self._timeout_handler.cancel()
 
-        if deadline is None:
+        if when is None:
             self._timeout_handler = None
         else:
             loop = events.get_running_loop()
             self._timeout_handler = loop.call_at(
-                deadline,
+                when,
                 self._on_timeout,
             )
 
@@ -63,7 +63,7 @@ class Timeout:
     def __repr__(self) -> str:
         info = ['']
         if self._state is _State.ENTERED:
-            info.append(f"deadline={self._deadline:.3f}")
+            info.append(f"when={self._when:.3f}")
         info_str = ' '.join(info)
         return f"<Timeout [{self._state.value}]{info_str}>"
 
@@ -72,7 +72,7 @@ class Timeout:
         self._task = tasks.current_task()
         if self._task is None:
             raise RuntimeError("Timeout should be used inside a task")
-        self.reschedule(self._deadline)
+        self.reschedule(self._when)
         return self
 
     async def __aexit__(
@@ -123,10 +123,10 @@ def timeout(delay: Optional[float]) -> Timeout:
     return Timeout(loop.time() + delay if delay is not None else None)
 
 
-def timeout_at(deadline: Optional[float]) -> Timeout:
+def timeout_at(when: Optional[float]) -> Timeout:
     """Schedule the timeout at absolute time.
 
-    deadline argument points on the time in the same clock system
+    when argument points on the time in the same clock system
     as loop.time().
 
     Please note: it is not POSIX time but a time with
@@ -138,4 +138,4 @@ def timeout_at(deadline: Optional[float]) -> Timeout:
 
 
     """
-    return Timeout(deadline)
+    return Timeout(when)

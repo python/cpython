@@ -213,7 +213,7 @@ class BaseTimeoutTests:
 
     async def test_repr_active(self):
         async with asyncio.timeout(10) as cm:
-            self.assertRegex(repr(cm), r"<Timeout \[active\] deadline=\d+\.\d*>")
+            self.assertRegex(repr(cm), r"<Timeout \[active\] when=\d+\.\d*>")
 
     async def test_repr_expired(self):
         with self.assertRaises(TimeoutError):
