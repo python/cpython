@@ -1,0 +1,1 @@
+:class:`typing.Protocol` no longer silently replaces __init__ methods defined on subclasses
