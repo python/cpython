@@ -221,6 +221,12 @@ class BaseTimeoutTests:
                 await asyncio.sleep(10)
         self.assertEqual(repr(cm), "<Timeout [expired]>")
 
+    async def test_repr_finished(self):
+        async with asyncio.timeout(10) as cm:
+            await asyncio.sleep(0)
+
+        self.assertEqual(repr(cm), "<Timeout [finished]>")
+
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
                      'requires the C _asyncio module')
