@@ -1879,26 +1879,6 @@ def cast(typ, val):
     return val
 
 
-def _get_defaults(func):
-    """Internal helper to extract the default arguments, by name."""
-    try:
-        code = func.__code__
-    except AttributeError:
-        # Some built-in functions don't have __code__, __defaults__, etc.
-        return {}
-    pos_count = code.co_argcount
-    arg_names = code.co_varnames
-    arg_names = arg_names[:pos_count]
-    defaults = func.__defaults__ or ()
-    kwdefaults = func.__kwdefaults__
-    res = dict(kwdefaults) if kwdefaults else {}
-    pos_offset = pos_count - len(defaults)
-    for name, value in zip(arg_names[pos_offset:], defaults):
-        assert name not in res
-        res[name] = value
-    return res
-
-
 _allowed_types = (types.FunctionType, types.BuiltinFunctionType,
                   types.MethodType, types.ModuleType,
                   WrapperDescriptorType, MethodWrapperType, MethodDescriptorType)
@@ -1908,8 +1888,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     """Return type hints for an object.
 
     This is often the same as obj.__annotations__, but it handles
-    forward references encoded as string literals, adds Optional[t] if a
-    default value equal to None is set and recursively replaces all
+    forward references encoded as string literals and recursively replaces all
     'Annotated[T, ...]' with 'T' (unless 'include_extras=True').
 
     The argument may be a module, class, method, or function. The annotations
@@ -1989,7 +1968,6 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         else:
             raise TypeError('{!r} is not a module, class, method, '
                             'or function.'.format(obj))
-    defaults = _get_defaults(obj)
     hints = dict(hints)
     for name, value in hints.items():
         if value is None:
@@ -2002,10 +1980,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 is_argument=not isinstance(obj, types.ModuleType),
                 is_class=False,
             )
-        value = _eval_type(value, globalns, localns)
-        if name in defaults and defaults[name] is None:
-            value = Optional[value]
-        hints[name] = value
+        hints[name] = _eval_type(value, globalns, localns)
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
 

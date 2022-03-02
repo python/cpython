@@ -2828,16 +2828,15 @@ class ForwardRefTests(BaseTestCase):
         t = Node[int]
         both_hints = get_type_hints(t.add_both, globals(), locals())
         self.assertEqual(both_hints['left'], Optional[Node[T]])
-        self.assertEqual(both_hints['right'], Optional[Node[T]])
-        self.assertEqual(both_hints['left'], both_hints['right'])
-        self.assertEqual(both_hints['stuff'], Optional[int])
+        self.assertEqual(both_hints['right'], Node[T])
+        self.assertEqual(both_hints['stuff'], int)
         self.assertNotIn('blah', both_hints)
 
         left_hints = get_type_hints(t.add_left, globals(), locals())
         self.assertEqual(left_hints['node'], Optional[Node[T]])
 
         right_hints = get_type_hints(t.add_right, globals(), locals())
-        self.assertEqual(right_hints['node'], Optional[Node[T]])
+        self.assertEqual(right_hints['node'], Node[T])
 
     def test_forwardref_instance_type_error(self):
         fr = typing.ForwardRef('int')
@@ -3628,6 +3627,18 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(
             get_type_hints(MySet.__ior__, globals(), locals()),
             {'other': MySet[T], 'return': MySet[T]}
+        )
+
+    def test_get_type_hints_annotated_with_none_default(self):
+        # See: https://bugs.python.org/issue46195
+        def annotated_with_none_default(x: Annotated[int, 'data'] = None): ...
+        self.assertEqual(
+            get_type_hints(annotated_with_none_default),
+            {'x': int},
+        )
+        self.assertEqual(
+            get_type_hints(annotated_with_none_default, include_extras=True),
+            {'x': Annotated[int, 'data']},
         )
 
     def test_get_type_hints_classes_str_annotations(self):
