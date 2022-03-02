@@ -504,12 +504,12 @@ Functions and classes provided:
 
    The :meth:`__enter__` method returns the :class:`ExitStack` instance, and 
    performs no additional operations.
-   
+
    Each instance maintains a stack of registered callbacks that are called in
    reverse order when the instance is closed (either explicitly or implicitly
    at the end of a :keyword:`with` statement). Note that callbacks are *not*
    invoked implicitly when the context stack instance is garbage collected.
-   
+
    This stack model is used so that context managers that acquire their
    resources in their ``__init__`` method (such as file objects) can be
    handled correctly.
