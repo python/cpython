@@ -259,7 +259,7 @@ def generate_runtime_init(identifiers, strings):
         printer.write(after)
 
 
-def get_identifiers_and_strings() -> tuple[set[str], dict[str, str]]:
+def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
     identifiers = set(IDENTIFIERS)
     strings = dict(STRING_LITERALS)
     for name, string, *_ in iter_global_strings():
