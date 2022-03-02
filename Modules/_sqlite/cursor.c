@@ -882,7 +882,7 @@ static PyMethodDef cursor_methods[] = {
     {"executemany", (PyCFunction)pysqlite_cursor_executemany, METH_VARARGS,
         PyDoc_STR("Repeatedly executes a SQL statement.")},
     {"executescript", (PyCFunction)pysqlite_cursor_executescript, METH_VARARGS,
-        PyDoc_STR("Executes a multiple SQL statements at once. Non-standard.")},
+        PyDoc_STR("Executes a multiple SQL statements at once.")},
     {"fetchone", (PyCFunction)pysqlite_cursor_fetchone, METH_NOARGS,
         PyDoc_STR("Fetches one row from the resultset.")},
     {"fetchmany", (PyCFunction)(void(*)(void))pysqlite_cursor_fetchmany, METH_VARARGS|METH_KEYWORDS,
