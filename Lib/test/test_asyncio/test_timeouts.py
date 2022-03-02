@@ -200,8 +200,6 @@ class BaseTimeoutTests:
         cm = await fut
 
         self.assertEqual(cm.when(), deadline1)
-        breakpoint()
-        repr(cm)
         cm.reschedule(deadline2)
         self.assertEqual(cm.when(), deadline2)
         cm.reschedule(None)
@@ -212,6 +210,16 @@ class BaseTimeoutTests:
         with self.assertRaises(asyncio.CancelledError):
             await task
         self.assertFalse(cm.expired())
+
+    async def test_repr_active(self):
+        async with asyncio.timeout(10) as cm:
+            self.assertRegex(repr(cm), r"<Timeout \[active\] deadline=\d+\.\d*>")
+
+    async def test_repr_expired(self):
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(0.01) as cm:
+                await asyncio.sleep(10)
+        self.assertEqual(repr(cm), "<Timeout [expired]>")
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
