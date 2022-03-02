@@ -28,7 +28,6 @@ import pickle
 import random
 import signal
 import sys
-import sysconfig
 import textwrap
 import threading
 import time
@@ -40,7 +39,7 @@ from itertools import cycle, count
 from test import support
 from test.support.script_helper import (
     assert_python_ok, assert_python_failure, run_python_until_end)
-from test.support import FakePath
+from test.support import FakePath, skip_if_sanitizer
 
 import codecs
 import io  # C implementation of io
@@ -61,17 +60,6 @@ else:
         return obj
     class EmptyStruct(ctypes.Structure):
         pass
-
-_cflags = sysconfig.get_config_var('CFLAGS') or ''
-_config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
-MEMORY_SANITIZER = (
-    '-fsanitize=memory' in _cflags or
-    '--with-memory-sanitizer' in _config_args
-)
-
-ADDRESS_SANITIZER = (
-    '-fsanitize=address' in _cflags
-)
 
 # Does io.IOBase finalizer log the exception if the close() method fails?
 # The exception is ignored silently by default in release build.
@@ -1543,8 +1531,8 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
 class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     tp = io.BufferedReader
 
-    @unittest.skipIf(MEMORY_SANITIZER or ADDRESS_SANITIZER, "sanitizer defaults to crashing "
-                     "instead of returning NULL for malloc failure.")
+    @skip_if_sanitizer(memory=True, address=True, reason= "sanitizer defaults to crashing "
+                       "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedReaderTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -1892,8 +1880,8 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
     tp = io.BufferedWriter
 
-    @unittest.skipIf(MEMORY_SANITIZER or ADDRESS_SANITIZER, "sanitizer defaults to crashing "
-                     "instead of returning NULL for malloc failure.")
+    @skip_if_sanitizer(memory=True, address=True, reason= "sanitizer defaults to crashing "
+                       "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedWriterTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -2391,8 +2379,8 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
 class CBufferedRandomTest(BufferedRandomTest, SizeofTest):
     tp = io.BufferedRandom
 
-    @unittest.skipIf(MEMORY_SANITIZER or ADDRESS_SANITIZER, "sanitizer defaults to crashing "
-                     "instead of returning NULL for malloc failure.")
+    @skip_if_sanitizer(memory=True, address=True, reason= "sanitizer defaults to crashing "
+                       "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedRandomTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
