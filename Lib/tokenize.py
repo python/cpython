@@ -143,6 +143,7 @@ for _prefix in _all_string_prefixes():
     endpats[_prefix + '"'] = Double
     endpats[_prefix + "'''"] = Single3
     endpats[_prefix + '"""'] = Double3
+del _prefix
 
 # A set of all of the single and triple quoted string prefixes,
 #  including the opening quotes.
@@ -153,6 +154,7 @@ for t in _all_string_prefixes():
         single_quoted.add(u)
     for u in (t + '"""', t + "'''"):
         triple_quoted.add(u)
+del t, u
 
 tabsize = 8
 

@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_bytes_methods.h" // _Py_bytes_startswith()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_format.h"        // F_LJUST
@@ -22,8 +23,6 @@ class bytes "PyBytesObject *" "&PyBytes_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=7a238f965d64892b]*/
 
 #include "clinic/bytesobject.c.h"
-
-_Py_IDENTIFIER(__bytes__);
 
 /* PyBytesObject_SIZE gives the basic size of a bytes object; any memory allocation
    for a bytes object of length n should request PyBytesObject_SIZE + n bytes.
@@ -530,7 +529,7 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
         return v;
     }
     /* does it support __bytes__? */
-    func = _PyObject_LookupSpecial(v, &PyId___bytes__);
+    func = _PyObject_LookupSpecial(v, &_Py_ID(__bytes__));
     if (func != NULL) {
         result = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
@@ -1235,6 +1234,7 @@ PyBytes_AsStringAndSize(PyObject *obj,
 #define STRINGLIB_GET_EMPTY() bytes_get_empty()
 
 #include "stringlib/stringdefs.h"
+#define STRINGLIB_MUTABLE 0
 
 #include "stringlib/fastsearch.h"
 #include "stringlib/count.h"
@@ -1247,6 +1247,24 @@ PyBytes_AsStringAndSize(PyObject *obj,
 #include "stringlib/transmogrify.h"
 
 #undef STRINGLIB_GET_EMPTY
+
+Py_ssize_t
+_PyBytes_Find(const char *haystack, Py_ssize_t len_haystack,
+              const char *needle, Py_ssize_t len_needle,
+              Py_ssize_t offset)
+{
+    return stringlib_find(haystack, len_haystack,
+                          needle, len_needle, offset);
+}
+
+Py_ssize_t
+_PyBytes_ReverseFind(const char *haystack, Py_ssize_t len_haystack,
+                     const char *needle, Py_ssize_t len_needle,
+                     Py_ssize_t offset)
+{
+    return stringlib_rfind(haystack, len_haystack,
+                           needle, len_needle, offset);
+}
 
 PyObject *
 PyBytes_Repr(PyObject *obj, int smartquotes)
@@ -2581,7 +2599,7 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
     /* We'd like to call PyObject_Bytes here, but we need to check for an
        integer argument before deferring to PyBytes_FromObject, something
        PyObject_Bytes doesn't do. */
-    else if ((func = _PyObject_LookupSpecial(x, &PyId___bytes__)) != NULL) {
+    else if ((func = _PyObject_LookupSpecial(x, &_Py_ID(__bytes__))) != NULL) {
         bytes = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (bytes == NULL)
@@ -3121,12 +3139,11 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 striter_reduce(striterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
                              it->it_seq, it->it_index);
     } else {
-        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
     }
 }
 

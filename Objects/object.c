@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_context.h"       // _PyContextTokenMissing_Type
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
@@ -29,11 +30,6 @@ extern "C" {
 
 /* Defined in tracemalloc.c */
 extern void _PyMem_DumpTraceback(int fd, const void *ptr);
-
-_Py_IDENTIFIER(Py_Repr);
-_Py_IDENTIFIER(__bytes__);
-_Py_IDENTIFIER(__dir__);
-_Py_IDENTIFIER(__isabstractmethod__);
 
 
 int
@@ -65,12 +61,7 @@ Py_ssize_t _Py_RefTotal;
 Py_ssize_t
 _Py_GetRefTotal(void)
 {
-    PyObject *o;
-    Py_ssize_t total = _Py_RefTotal;
-    o = _PySet_Dummy;
-    if (o != NULL)
-        total -= Py_REFCNT(o);
-    return total;
+    return _Py_RefTotal;
 }
 
 void
@@ -561,7 +552,7 @@ PyObject_Bytes(PyObject *v)
         return v;
     }
 
-    func = _PyObject_LookupSpecial(v, &PyId___bytes__);
+    func = _PyObject_LookupSpecial(v, &_Py_ID(__bytes__));
     if (func != NULL) {
         result = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
@@ -599,12 +590,9 @@ def _PyObject_FunctionStr(x):
 PyObject *
 _PyObject_FunctionStr(PyObject *x)
 {
-    _Py_IDENTIFIER(__module__);
-    _Py_IDENTIFIER(__qualname__);
-    _Py_IDENTIFIER(builtins);
     assert(!PyErr_Occurred());
     PyObject *qualname;
-    int ret = _PyObject_LookupAttrId(x, &PyId___qualname__, &qualname);
+    int ret = _PyObject_LookupAttr(x, &_Py_ID(__qualname__), &qualname);
     if (qualname == NULL) {
         if (ret < 0) {
             return NULL;
@@ -613,13 +601,9 @@ _PyObject_FunctionStr(PyObject *x)
     }
     PyObject *module;
     PyObject *result = NULL;
-    ret = _PyObject_LookupAttrId(x, &PyId___module__, &module);
+    ret = _PyObject_LookupAttr(x, &_Py_ID(__module__), &module);
     if (module != NULL && module != Py_None) {
-        PyObject *builtinsname = _PyUnicode_FromId(&PyId_builtins);
-        if (builtinsname == NULL) {
-            goto done;
-        }
-        ret = PyObject_RichCompareBool(module, builtinsname, Py_NE);
+        ret = PyObject_RichCompareBool(module, &_Py_ID(builtins), Py_NE);
         if (ret < 0) {
             // error
             goto done;
@@ -857,7 +841,7 @@ _PyObject_IsAbstract(PyObject *obj)
     if (obj == NULL)
         return 0;
 
-    res = _PyObject_LookupAttrId(obj, &PyId___isabstractmethod__, &isabstract);
+    res = _PyObject_LookupAttr(obj, &_Py_ID(__isabstractmethod__), &isabstract);
     if (res > 0) {
         res = PyObject_IsTrue(isabstract);
         Py_DECREF(isabstract);
@@ -891,8 +875,6 @@ static inline int
 set_attribute_error_context(PyObject* v, PyObject* name)
 {
     assert(PyErr_Occurred());
-    _Py_IDENTIFIER(name);
-    _Py_IDENTIFIER(obj);
     // Intercept AttributeError exceptions and augment them to offer
     // suggestions later.
     if (PyErr_ExceptionMatches(PyExc_AttributeError)){
@@ -900,8 +882,8 @@ set_attribute_error_context(PyObject* v, PyObject* name)
         PyErr_Fetch(&type, &value, &traceback);
         PyErr_NormalizeException(&type, &value, &traceback);
         if (PyErr_GivenExceptionMatches(value, PyExc_AttributeError) &&
-            (_PyObject_SetAttrId(value, &PyId_name, name) ||
-             _PyObject_SetAttrId(value, &PyId_obj, v))) {
+            (PyObject_SetAttr(value, &_Py_ID(name), name) ||
+             PyObject_SetAttr(value, &_Py_ID(obj), v))) {
             return 1;
         }
         PyErr_Restore(type, value, traceback);
@@ -1568,7 +1550,7 @@ static PyObject *
 _dir_object(PyObject *obj)
 {
     PyObject *result, *sorted;
-    PyObject *dirfunc = _PyObject_LookupSpecial(obj, &PyId___dir__);
+    PyObject *dirfunc = _PyObject_LookupSpecial(obj, &_Py_ID(__dir__));
 
     assert(obj != NULL);
     if (dirfunc == NULL) {
@@ -1838,8 +1820,18 @@ _PyTypes_InitState(PyInterpreterState *interp)
 }
 
 
+
+#ifdef MS_WINDOWS
+extern PyTypeObject PyHKEY_Type;
+#endif
+
 static PyTypeObject* static_types[] = {
-    // base types
+    // The two most important base types: must be initialized first and
+    // deallocated last.
+    &PyBaseObject_Type,
+    &PyType_Type,
+
+    // Static types with base=&PyBaseObject_Type
     &PyAsyncGen_Type,
     &PyByteArrayIter_Type,
     &PyByteArray_Type,
@@ -1853,6 +1845,9 @@ static PyTypeObject* static_types[] = {
     &PyClassMethod_Type,
     &PyCode_Type,
     &PyComplex_Type,
+    &PyContextToken_Type,
+    &PyContextVar_Type,
+    &PyContext_Type,
     &PyCoro_Type,
     &PyDictItems_Type,
     &PyDictIterItem_Type,
@@ -1867,18 +1862,23 @@ static PyTypeObject* static_types[] = {
     &PyDict_Type,
     &PyEllipsis_Type,
     &PyEnum_Type,
+    &PyFilter_Type,
     &PyFloat_Type,
     &PyFrame_Type,
     &PyFrozenSet_Type,
     &PyFunction_Type,
     &PyGen_Type,
     &PyGetSetDescr_Type,
+#ifdef MS_WINDOWS
+    &PyHKEY_Type,
+#endif
     &PyInstanceMethod_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
     &PyList_Type,
     &PyLongRangeIter_Type,
     &PyLong_Type,
+    &PyMap_Type,
     &PyMemberDescr_Type,
     &PyMemoryView_Type,
     &PyMethodDescr_Type,
@@ -1905,12 +1905,21 @@ static PyTypeObject* static_types[] = {
     &PyUnicodeIter_Type,
     &PyUnicode_Type,
     &PyWrapperDescr_Type,
+    &PyZip_Type,
     &Py_GenericAliasType,
     &_PyAnextAwaitable_Type,
     &_PyAsyncGenASend_Type,
     &_PyAsyncGenAThrow_Type,
     &_PyAsyncGenWrappedValue_Type,
+    &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
+    &_PyHamtItems_Type,
+    &_PyHamtKeys_Type,
+    &_PyHamtValues_Type,
+    &_PyHamt_ArrayNode_Type,
+    &_PyHamt_BitmapNode_Type,
+    &_PyHamt_CollisionNode_Type,
+    &_PyHamt_Type,
     &_PyInterpreterID_Type,
     &_PyManagedBuffer_Type,
     &_PyMethodWrapper_Type,
@@ -1940,29 +1949,20 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
         return _PyStatus_OK();
     }
 
-#define INIT_TYPE(TYPE) \
-    do { \
-        if (PyType_Ready(&(TYPE)) < 0) { \
-            return _PyStatus_ERR("Can't initialize " #TYPE " type"); \
-        } \
-    } while (0)
-
-    // Base types
-    INIT_TYPE(PyBaseObject_Type);
-    INIT_TYPE(PyType_Type);
-    assert(PyBaseObject_Type.tp_base == NULL);
-    assert(PyType_Type.tp_base == &PyBaseObject_Type);
-
     // All other static types (unless initialized elsewhere)
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
         if (PyType_Ready(type) < 0) {
             return _PyStatus_ERR("Can't initialize types");
         }
+        if (type == &PyType_Type) {
+            // Sanitify checks of the two most important types
+            assert(PyBaseObject_Type.tp_base == NULL);
+            assert(PyType_Type.tp_base == &PyBaseObject_Type);
+        }
     }
 
     return _PyStatus_OK();
-#undef INIT_TYPE
 }
 
 
@@ -1983,10 +1983,6 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
     // their base classes.
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types)-1; i>=0; i--) {
         PyTypeObject *type = static_types[i];
-        // Cannot delete a type if it still has subclasses
-        if (type->tp_subclasses != NULL) {
-            continue;
-        }
         _PyStaticType_Dealloc(type);
     }
 }
@@ -2141,7 +2137,7 @@ Py_ReprEnter(PyObject *obj)
        early on startup. */
     if (dict == NULL)
         return 0;
-    list = _PyDict_GetItemIdWithError(dict, &PyId_Py_Repr);
+    list = PyDict_GetItemWithError(dict, &_Py_ID(Py_Repr));
     if (list == NULL) {
         if (PyErr_Occurred()) {
             return -1;
@@ -2149,7 +2145,7 @@ Py_ReprEnter(PyObject *obj)
         list = PyList_New(0);
         if (list == NULL)
             return -1;
-        if (_PyDict_SetItemId(dict, &PyId_Py_Repr, list) < 0)
+        if (PyDict_SetItem(dict, &_Py_ID(Py_Repr), list) < 0)
             return -1;
         Py_DECREF(list);
     }
@@ -2177,7 +2173,7 @@ Py_ReprLeave(PyObject *obj)
     if (dict == NULL)
         goto finally;
 
-    list = _PyDict_GetItemIdWithError(dict, &PyId_Py_Repr);
+    list = PyDict_GetItemWithError(dict, &_Py_ID(Py_Repr));
     if (list == NULL || !PyList_Check(list))
         goto finally;
 

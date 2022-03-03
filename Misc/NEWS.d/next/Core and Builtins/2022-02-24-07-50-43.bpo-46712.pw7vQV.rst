@@ -1,0 +1,1 @@
+Share global string identifiers in deep-frozen modules.

@@ -1173,6 +1173,13 @@ Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
 regen-importlib: regen-frozen
 
 ############################################################################
+# Global objects
+
+.PHONY: regen-global-objects
+regen-global-objects: regen-deepfreeze $(srcdir)/Tools/scripts/generate_global_objects.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
+
+############################################################################
 # ABI
 
 regen-limited-abi: all
@@ -1183,9 +1190,10 @@ regen-limited-abi: all
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-frozen clinic \
-	regen-pegen-metaparser regen-pegen regen-test-frozenmain
+	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
+	regen-global-objects
 	@echo
-	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
+	@echo "Note: make regen-stdlib-module-names and make autoconf should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -1463,6 +1471,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
+		$(srcdir)/Include/pybuffer.h \
 		$(srcdir)/Include/pycapsule.h \
 		$(srcdir)/Include/pydtrace.h \
 		$(srcdir)/Include/pyerrors.h \
@@ -1479,6 +1488,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pythonrun.h \
 		$(srcdir)/Include/pythread.h \
+		$(srcdir)/Include/pytypedefs.h \
 		$(srcdir)/Include/rangeobject.h \
 		$(srcdir)/Include/setobject.h \
 		$(srcdir)/Include/sliceobject.h \
@@ -1505,6 +1515,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/code.h \
 		$(srcdir)/Include/cpython/compile.h \
 		$(srcdir)/Include/cpython/context.h \
+		$(srcdir)/Include/cpython/descrobject.h \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \
 		$(srcdir)/Include/cpython/fileutils.h \
