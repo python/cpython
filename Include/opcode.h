@@ -183,7 +183,6 @@ extern "C" {
 #define LOAD_FAST__LOAD_CONST           173
 #define LOAD_CONST__LOAD_FAST           174
 #define STORE_FAST__STORE_FAST          175
-#define LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE 176
 #define DO_TRACING                      255
 
 extern const uint8_t _PyOpcode_InlineCacheEntries[256];

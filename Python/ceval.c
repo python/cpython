@@ -3458,33 +3458,6 @@ handle_eval_breaker:
             }
         }
 
-        TARGET(LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE) {
-            assert(cframe.use_tracing == 0);
-            PyObject *owner = GETLOCAL(oparg); // borrowed
-            if (owner == NULL) {
-                goto unbound_local_error;
-            }
-            // GET_CACHE(), but for the following opcode
-            assert(_Py_OPCODE(*next_instr) == LOAD_ATTR_INSTANCE_VALUE);
-            _PyAttrCache *cache = (_PyAttrCache *)(next_instr + 1);
-            uint32_t type_version = read_u32(cache->version);
-            assert(type_version != 0);
-            PyTypeObject *tp = Py_TYPE(owner);
-            // These DEOPT_IF miss branches do PUSH(Py_NewRef(owner)).
-            DEOPT_IF(tp->tp_version_tag != type_version,
-                     LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE);
-            assert(tp->tp_dictoffset < 0);
-            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictValues *values = *_PyObject_ValuesPointer(owner);
-            DEOPT_IF(values == NULL, LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE);
-            PyObject *res = values->values[cache->index];
-            DEOPT_IF(res == NULL, LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE);
-            STAT_INC(LOAD_ATTR, hit);
-            PUSH(Py_NewRef(res));
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR + 1);
-            NOTRACE_DISPATCH();
-        }
-
         TARGET(LOAD_ATTR_INSTANCE_VALUE) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
@@ -3493,14 +3466,13 @@ handle_eval_breaker:
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             uint32_t type_version = read_u32(cache->version);
             assert(type_version != 0);
-            DEOPT_IF(tp->tp_version_tag != type_version,
-                     LOAD_ATTR_INSTANCE_VALUE);
+            DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
             assert(tp->tp_dictoffset < 0);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictValues *values = *_PyObject_ValuesPointer(owner);
-            DEOPT_IF(values == NULL, LOAD_ATTR_INSTANCE_VALUE);
+            DEOPT_IF(values == NULL, LOAD_ATTR);
             res = values->values[cache->index];
-            DEOPT_IF(res == NULL, LOAD_ATTR_INSTANCE_VALUE);
+            DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
             SET_TOP(res);
@@ -5639,51 +5611,6 @@ MISS_WITH_INLINE_CACHE(COMPARE_OP)
 MISS_WITH_INLINE_CACHE(BINARY_SUBSCR)
 MISS_WITH_INLINE_CACHE(UNPACK_SEQUENCE)
 MISS_WITH_OPARG_COUNTER(STORE_SUBSCR)
-
-LOAD_ATTR_INSTANCE_VALUE_miss:
-        {
-            // Special-cased so that if LOAD_ATTR_INSTANCE_VALUE
-            // gets replaced, then any preceeding
-            // LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE gets replaced as well
-            STAT_INC(LOAD_ATTR_INSTANCE_VALUE, miss);
-            STAT_INC(LOAD_ATTR, miss);
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            cache->counter--;
-            if (cache->counter == 0) {
-                next_instr[-1] = _Py_MAKECODEUNIT(LOAD_ATTR_ADAPTIVE, oparg);
-                if (_Py_OPCODE(next_instr[-2]) == LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE) {
-                    next_instr[-2] = _Py_MAKECODEUNIT(LOAD_FAST, _Py_OPARG(next_instr[-2]));
-                    if (_Py_OPCODE(next_instr[-3]) == LOAD_FAST) {
-                        next_instr[-3] =  _Py_MAKECODEUNIT(LOAD_FAST__LOAD_FAST, _Py_OPARG(next_instr[-3]));
-                    }
-                }
-                STAT_INC(LOAD_ATTR, deopt);
-                cache->counter = ADAPTIVE_CACHE_BACKOFF;
-            }
-            JUMP_TO_INSTRUCTION(LOAD_ATTR);
-        }
-
-LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE_miss:
-        {
-            // This is special-cased because we have a superinstruction
-            // that includes a specialized instruction.
-            // If the specialized portion misses, carry out
-            // the first instruction, then perform a miss
-            // for the second instruction as usual.
-
-            // Do LOAD_FAST
-            {
-                PyObject *value = GETLOCAL(oparg);
-                assert(value != NULL); // Already checked if unbound
-                Py_INCREF(value);
-                PUSH(value);
-                NEXTOPARG();
-                next_instr++;
-            }
-
-            // Now we are in the correct state for LOAD_ATTR
-            goto LOAD_ATTR_INSTANCE_VALUE_miss;
-        }
 
 binary_subscr_dict_error:
         {
