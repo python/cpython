@@ -112,7 +112,7 @@ name_op('DELETE_NAME', 91)      # ""
 def_op('UNPACK_SEQUENCE', 92, 1)   # Number of tuple items
 jrel_op('FOR_ITER', 93)
 def_op('UNPACK_EX', 94)
-name_op('STORE_ATTR', 95)       # Index in name list
+name_op('STORE_ATTR', 95, 4)       # Index in name list
 name_op('DELETE_ATTR', 96)      # ""
 name_op('STORE_GLOBAL', 97)     # ""
 name_op('DELETE_GLOBAL', 98)    # ""
@@ -124,7 +124,7 @@ def_op('BUILD_TUPLE', 102)      # Number of tuple items
 def_op('BUILD_LIST', 103)       # Number of list items
 def_op('BUILD_SET', 104)        # Number of set items
 def_op('BUILD_MAP', 105)        # Number of dict entries
-name_op('LOAD_ATTR', 106)       # Index in name list
+name_op('LOAD_ATTR', 106, 4)       # Index in name list
 def_op('COMPARE_OP', 107, 2)       # Comparison operator
 hascompare.append(107)
 name_op('IMPORT_NAME', 108)     # Index in name list
@@ -186,7 +186,7 @@ def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
 
-name_op('LOAD_METHOD', 160)
+name_op('LOAD_METHOD', 160, 10)
 
 def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
@@ -301,7 +301,6 @@ _specialized_instructions = [
     "LOAD_FAST__LOAD_CONST",
     "LOAD_CONST__LOAD_FAST",
     "STORE_FAST__STORE_FAST",
-    "LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE",
 ]
 _specialization_stats = [
     "success",
