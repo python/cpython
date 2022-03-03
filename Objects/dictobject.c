@@ -1523,12 +1523,16 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize, int unicode)
 
         // We can not use free_keys_object here because key's reference
         // are moved already.
-        if (oldkeys != Py_EMPTY_KEYS) {
+#ifdef Py_REF_DEBUG
+        _Py_RefTotal--;
+#endif
+        if (oldkeys == Py_EMPTY_KEYS) {
+            oldkeys->dk_refcnt--;
+            assert(oldkeys->dk_refcnt > 0);
+        }
+        else {
             assert(oldkeys->dk_kind != DICT_KEYS_SPLIT);
             assert(oldkeys->dk_refcnt == 1);
-#ifdef Py_REF_DEBUG
-            _Py_RefTotal--;
-#endif
 #if PyDict_MAXFREELIST > 0
             struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
