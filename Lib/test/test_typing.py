@@ -5187,6 +5187,18 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(repr(P.args), "P.args")
         self.assertEqual(repr(P.kwargs), "P.kwargs")
 
+    def test_stringized(self):
+        P = ParamSpec('P')
+        class C(Generic[P]):
+            func: Callable["P", int]
+            def foo(self, *args: "P.args", **kwargs: "P.kwargs"):
+                pass
+
+        self.assertEqual(gth(C, globals(), locals()), {"func": Callable[P, int]})
+        self.assertEqual(
+            gth(C.foo, globals(), locals()), {"args": P.args, "kwargs": P.kwargs}
+        )
+
     def test_user_generics(self):
         T = TypeVar("T")
         P = ParamSpec("P")
