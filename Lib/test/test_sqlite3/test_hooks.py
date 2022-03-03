@@ -30,17 +30,6 @@ from test.test_sqlite3.test_dbapi import memory_database, cx_limit
 from test.test_sqlite3.test_userfunctions import with_tracebacks
 
 
-@contextlib.contextmanager
-def check_stmt_trace(self, cx, expected):
-    try:
-        traced = []
-        cx.set_trace_callback(traced.append)
-        yield
-    finally:
-        self.assertEqual(traced, expected)
-        cx.set_trace_callback(None)
-
-
 class CollationTests(unittest.TestCase):
     def test_create_collation_not_string(self):
         con = sqlite.connect(":memory:")
@@ -239,6 +228,16 @@ class ProgressTests(unittest.TestCase):
 
 
 class TraceCallbackTests(unittest.TestCase):
+    @contextlib.contextmanager
+    def check_stmt_trace(self, cx, expected):
+        try:
+            traced = []
+            cx.set_trace_callback(lambda stmt: traced.append(stmt))
+            yield
+        finally:
+            self.assertEqual(traced, expected)
+            cx.set_trace_callback(None)
+
     def test_trace_callback_used(self):
         """
         Test that the trace callback is invoked once it is set.
@@ -315,7 +314,7 @@ class TraceCallbackTests(unittest.TestCase):
             "insert into t values(2)",
             "COMMIT",
         ]
-        with memory_database() as cx, check_stmt_trace(self, cx, expected):
+        with memory_database() as cx, self.check_stmt_trace(cx, expected):
             with cx:
                 cx.execute("create table t(t)")
                 cx.executemany("insert into t values(?)", ((v,) for v in range(3)))
@@ -336,11 +335,11 @@ class TraceCallbackTests(unittest.TestCase):
             bad_param = "a" * (nextra + 1)
 
             unexpanded_query = template + "?"
-            with check_stmt_trace(self, cx, [unexpanded_query]):
+            with self.check_stmt_trace(cx, [unexpanded_query]):
                 cx.execute(unexpanded_query, (bad_param,))
 
             expanded_query = f"{template}'{ok_param}'"
-            with check_stmt_trace(self, cx, [expanded_query]):
+            with self.check_stmt_trace(cx, [expanded_query]):
                 cx.execute(unexpanded_query, (ok_param,))
 
     @with_tracebacks(ZeroDivisionError, regex="division by zero")
