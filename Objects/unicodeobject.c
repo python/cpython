@@ -206,7 +206,11 @@ extern "C" {
             *_to++ = (to_type) *_iter++;                \
     } while (0)
 
-#define LATIN1(ch) (ch < 128 ? (PyObject*)&_Py_SINGLETON(strings).ascii[ch] : (PyObject*)&_Py_SINGLETON(strings).latin1[ch - 128])
+#define LATIN1(ch)  \
+    (ch < 128 ? \
+     (PyObject*)&_Py_SINGLETON(strings).ascii[ch] \
+     : (PyObject*)&_Py_SINGLETON(strings).latin1[ch - 128])
+
 #ifdef MS_WINDOWS
    /* On Windows, overallocate by 50% is the best factor */
 #  define OVERALLOCATE_FACTOR 2
