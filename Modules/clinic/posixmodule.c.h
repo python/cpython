@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 PyDoc_STRVAR(os_stat__doc__,
 "stat($module, /, path, *, dir_fd=None, follow_symlinks=True)\n"
 "--\n"
@@ -43,41 +37,8 @@ static PyObject *
 os_stat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(dir_fd), &_Py_ID(follow_symlinks), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "dir_fd", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "stat",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "stat", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("stat", "path", 0, 1);
@@ -135,41 +96,8 @@ static PyObject *
 os_lstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(dir_fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "lstat",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "lstat", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("lstat", "path", 0, 0);
@@ -241,41 +169,8 @@ static PyObject *
 os_access(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 5
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(mode), &_Py_ID(dir_fd), &_Py_ID(effective_ids), &_Py_ID(follow_symlinks), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "mode", "dir_fd", "effective_ids", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "access",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "access", 0};
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("access", "path", 0, 0);
@@ -411,41 +306,8 @@ static PyObject *
 os_chdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "chdir",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "chdir", 0};
     PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("chdir", "path", 0, PATH_HAVE_FCHDIR);
 
@@ -486,41 +348,8 @@ static PyObject *
 os_fchdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "fchdir",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "fchdir", 0};
     PyObject *argsbuf[1];
     int fd;
 
@@ -576,41 +405,8 @@ static PyObject *
 os_chmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 4
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(mode), &_Py_ID(dir_fd), &_Py_ID(follow_symlinks), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "mode", "dir_fd", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "chmod",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "chmod", 0};
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("chmod", "path", 0, PATH_HAVE_FCHMOD);
@@ -674,41 +470,8 @@ static PyObject *
 os_fchmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(fd), &_Py_ID(mode), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"fd", "mode", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "fchmod",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "fchmod", 0};
     PyObject *argsbuf[2];
     int fd;
     int mode;
@@ -754,41 +517,8 @@ static PyObject *
 os_lchmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(mode), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "mode", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "lchmod",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "lchmod", 0};
     PyObject *argsbuf[2];
     path_t path = PATH_T_INITIALIZE("lchmod", "path", 0, 0);
     int mode;
@@ -840,41 +570,8 @@ static PyObject *
 os_chflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(flags), &_Py_ID(follow_symlinks), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "flags", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "chflags",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "chflags", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("chflags", "path", 0, 0);
@@ -933,41 +630,8 @@ static PyObject *
 os_lchflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(flags), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "flags", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "lchflags",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "lchflags", 0};
     PyObject *argsbuf[2];
     path_t path = PATH_T_INITIALIZE("lchflags", "path", 0, 0);
     unsigned long flags;
@@ -1013,41 +677,8 @@ static PyObject *
 os_chroot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "chroot",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "chroot", 0};
     PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("chroot", "path", 0, 0);
 
@@ -1087,41 +718,8 @@ static PyObject *
 os_fsync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "fsync",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "fsync", 0};
     PyObject *argsbuf[1];
     int fd;
 
@@ -1180,41 +778,8 @@ static PyObject *
 os_fdatasync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "fdatasync",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "fdatasync", 0};
     PyObject *argsbuf[1];
     int fd;
 
@@ -1276,41 +841,8 @@ static PyObject *
 os_chown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 5
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(uid), &_Py_ID(gid), &_Py_ID(dir_fd), &_Py_ID(follow_symlinks), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "uid", "gid", "dir_fd", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "chown",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "chown", 0};
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     path_t path = PATH_T_INITIALIZE("chown", "path", 0, PATH_HAVE_FCHOWN);
@@ -1379,41 +911,8 @@ static PyObject *
 os_fchown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(fd), &_Py_ID(uid), &_Py_ID(gid), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"fd", "uid", "gid", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "fchown",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "fchown", 0};
     PyObject *argsbuf[3];
     int fd;
     uid_t uid;
@@ -1462,41 +961,8 @@ static PyObject *
 os_lchown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(uid), &_Py_ID(gid), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "uid", "gid", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "lchown",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "lchown", 0};
     PyObject *argsbuf[3];
     path_t path = PATH_T_INITIALIZE("lchown", "path", 0, 0);
     uid_t uid;
@@ -1592,41 +1058,8 @@ static PyObject *
 os_link(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 5
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(src), &_Py_ID(dst), &_Py_ID(src_dir_fd), &_Py_ID(dst_dir_fd), &_Py_ID(follow_symlinks), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "link",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "link", 0};
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t src = PATH_T_INITIALIZE("link", "src", 0, 0);
@@ -1709,41 +1142,8 @@ static PyObject *
 os_listdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "listdir",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "listdir", 0};
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     path_t path = PATH_T_INITIALIZE("listdir", "path", 1, PATH_HAVE_FDOPENDIR);
@@ -1853,41 +1253,8 @@ static PyObject *
 os__getvolumepathname(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_getvolumepathname",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "_getvolumepathname", 0};
     PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("_getvolumepathname", "path", 0, 0);
 
@@ -1927,41 +1294,8 @@ static PyObject *
 os__path_splitroot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_path_splitroot",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "_path_splitroot", 0};
     PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("_path_splitroot", "path", 0, 0);
 
@@ -1999,41 +1333,8 @@ static PyObject *
 os__path_normpath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_path_normpath",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "_path_normpath", 0};
     PyObject *argsbuf[1];
     PyObject *path;
 
@@ -2071,41 +1372,8 @@ static PyObject *
 os_mkdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(mode), &_Py_ID(dir_fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "mode", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "mkdir",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "mkdir", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("mkdir", "path", 0, 0);
@@ -2198,41 +1466,8 @@ static PyObject *
 os_getpriority(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(which), &_Py_ID(who), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"which", "who", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "getpriority",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "getpriority", 0};
     PyObject *argsbuf[2];
     int which;
     int who;
@@ -2275,41 +1510,8 @@ static PyObject *
 os_setpriority(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(which), &_Py_ID(who), &_Py_ID(priority), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"which", "who", "priority", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "setpriority",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "setpriority", 0};
     PyObject *argsbuf[3];
     int which;
     int who;
@@ -2362,41 +1564,8 @@ static PyObject *
 os_rename(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 4
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(src), &_Py_ID(dst), &_Py_ID(src_dir_fd), &_Py_ID(dst_dir_fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "rename",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "rename", 0};
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t src = PATH_T_INITIALIZE("rename", "src", 0, 0);
@@ -2463,41 +1632,8 @@ static PyObject *
 os_replace(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 4
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(src), &_Py_ID(dst), &_Py_ID(src_dir_fd), &_Py_ID(dst_dir_fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "replace",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "replace", 0};
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t src = PATH_T_INITIALIZE("replace", "src", 0, 0);
@@ -2562,41 +1698,8 @@ static PyObject *
 os_rmdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(dir_fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "rmdir",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "rmdir", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("rmdir", "path", 0, 0);
@@ -2643,41 +1746,8 @@ static PyObject *
 os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(command), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"command", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "system",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "system", 0};
     PyObject *argsbuf[1];
     const Py_UNICODE *command;
     long _return_value;
@@ -2727,41 +1797,8 @@ static PyObject *
 os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(command), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"command", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "system",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "system", 0};
     PyObject *argsbuf[1];
     PyObject *command = NULL;
     long _return_value;
@@ -2841,41 +1878,8 @@ static PyObject *
 os_unlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(dir_fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "unlink",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "unlink", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("unlink", "path", 0, 0);
@@ -2925,41 +1929,8 @@ static PyObject *
 os_remove(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(dir_fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "remove",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "remove", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("remove", "path", 0, 0);
@@ -3053,41 +2024,8 @@ static PyObject *
 os_utime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 5
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(times), &_Py_ID(ns), &_Py_ID(dir_fd), &_Py_ID(follow_symlinks), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "times", "ns", "dir_fd", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "utime",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "utime", 0};
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("utime", "path", 0, PATH_UTIME_HAVE_FD);
@@ -3160,41 +2098,8 @@ static PyObject *
 os__exit(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(status), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_exit",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "_exit", 0};
     PyObject *argsbuf[1];
     int status;
 
@@ -3281,41 +2186,8 @@ static PyObject *
 os_execve(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(argv), &_Py_ID(env), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "argv", "env", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "execve",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "execve", 0};
     PyObject *argsbuf[3];
     path_t path = PATH_T_INITIALIZE("execve", "path", 0, PATH_HAVE_FEXECVE);
     PyObject *argv;
@@ -3386,41 +2258,8 @@ static PyObject *
 os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 10
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_STR(empty), &_Py_STR(empty), &_Py_ID(file_actions), &_Py_ID(setpgroup), &_Py_ID(resetids), &_Py_ID(setsid), &_Py_ID(setsigmask), &_Py_ID(setsigdef), &_Py_ID(scheduler), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsid", "setsigmask", "setsigdef", "scheduler", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "posix_spawn",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "posix_spawn", 0};
     PyObject *argsbuf[10];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     path_t path = PATH_T_INITIALIZE("posix_spawn", "path", 0, 0);
@@ -3546,41 +2385,8 @@ static PyObject *
 os_posix_spawnp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 10
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_STR(empty), &_Py_STR(empty), &_Py_ID(file_actions), &_Py_ID(setpgroup), &_Py_ID(resetids), &_Py_ID(setsid), &_Py_ID(setsigmask), &_Py_ID(setsigdef), &_Py_ID(scheduler), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsid", "setsigmask", "setsigdef", "scheduler", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "posix_spawnp",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "posix_spawnp", 0};
     PyObject *argsbuf[10];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     path_t path = PATH_T_INITIALIZE("posix_spawnp", "path", 0, 0);
@@ -3799,41 +2605,8 @@ static PyObject *
 os_register_at_fork(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(before), &_Py_ID(after_in_child), &_Py_ID(after_in_parent), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"before", "after_in_child", "after_in_parent", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "register_at_fork",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "register_at_fork", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *before = NULL;
@@ -3935,41 +2708,8 @@ static PyObject *
 os_sched_get_priority_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(policy), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"policy", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "sched_get_priority_max",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "sched_get_priority_max", 0};
     PyObject *argsbuf[1];
     int policy;
 
@@ -4007,41 +2747,8 @@ static PyObject *
 os_sched_get_priority_min(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(policy), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"policy", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "sched_get_priority_min",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "sched_get_priority_min", 0};
     PyObject *argsbuf[1];
     int policy;
 
@@ -4112,41 +2819,8 @@ static PyObject *
 os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(sched_priority), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"sched_priority", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "sched_param",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "sched_param", 0};
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -4814,41 +3488,8 @@ static PyObject *
 os_getpgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(pid), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"pid", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .format = "" _Py_PARSE_PID ":getpgid",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {"" _Py_PARSE_PID ":getpgid", _keywords, 0};
     pid_t pid;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
@@ -5308,41 +3949,8 @@ static PyObject *
 os_wait3(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(options), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"options", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "wait3",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "wait3", 0};
     PyObject *argsbuf[1];
     int options;
 
@@ -5383,41 +3991,8 @@ static PyObject *
 os_wait4(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(pid), &_Py_ID(options), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"pid", "options", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .format = "" _Py_PARSE_PID "i:wait4",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {"" _Py_PARSE_PID "i:wait4", _keywords, 0};
     pid_t pid;
     int options;
 
@@ -5600,41 +4175,8 @@ static PyObject *
 os_pidfd_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(pid), &_Py_ID(flags), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"pid", "flags", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .format = "" _Py_PARSE_PID "|O&:pidfd_open",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {"" _Py_PARSE_PID "|O&:pidfd_open", _keywords, 0};
     pid_t pid;
     unsigned int flags = 0;
 
@@ -5674,41 +4216,8 @@ static PyObject *
 os_readlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(dir_fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "readlink",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "readlink", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("readlink", "path", 0, 0);
@@ -5768,41 +4277,8 @@ static PyObject *
 os_symlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 4
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(src), &_Py_ID(dst), &_Py_ID(target_is_directory), &_Py_ID(dir_fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"src", "dst", "target_is_directory", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "symlink",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "symlink", 0};
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t src = PATH_T_INITIALIZE("symlink", "src", 0, 0);
@@ -6051,41 +4527,8 @@ static PyObject *
 os_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 4
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(flags), &_Py_ID(mode), &_Py_ID(dir_fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "flags", "mode", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "open",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "open", 0};
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("open", "path", 0, 0);
@@ -6154,41 +4597,8 @@ static PyObject *
 os_close(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "close",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "close", 0};
     PyObject *argsbuf[1];
     int fd;
 
@@ -6293,41 +4703,8 @@ static PyObject *
 os_dup2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(fd), &_Py_ID(fd2), &_Py_ID(inheritable), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"fd", "fd2", "inheritable", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "dup2",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "dup2", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     int fd;
@@ -6755,41 +5132,8 @@ static PyObject *
 os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 7
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(out_fd), &_Py_ID(in_fd), &_Py_ID(offset), &_Py_ID(count), &_Py_ID(headers), &_Py_ID(trailers), &_Py_ID(flags), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"out_fd", "in_fd", "offset", "count", "headers", "trailers", "flags", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "sendfile",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "sendfile", 0};
     PyObject *argsbuf[7];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
     int out_fd;
@@ -6867,41 +5211,8 @@ static PyObject *
 os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 7
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(out_fd), &_Py_ID(in_fd), &_Py_ID(offset), &_Py_ID(count), &_Py_ID(headers), &_Py_ID(trailers), &_Py_ID(flags), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"out_fd", "in_fd", "offset", "count", "headers", "trailers", "flags", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "sendfile",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "sendfile", 0};
     PyObject *argsbuf[7];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
     int out_fd;
@@ -6986,41 +5297,8 @@ static PyObject *
 os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 4
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(out_fd), &_Py_ID(in_fd), &_Py_ID(offset), &_Py_ID(count), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"out_fd", "in_fd", "offset", "count", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "sendfile",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "sendfile", 0};
     PyObject *argsbuf[4];
     int out_fd;
     int in_fd;
@@ -7124,41 +5402,8 @@ static PyObject *
 os_fstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "fstat",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "fstat", 0};
     PyObject *argsbuf[1];
     int fd;
 
@@ -7486,41 +5731,8 @@ static PyObject *
 os_copy_file_range(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 5
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(src), &_Py_ID(dst), &_Py_ID(count), &_Py_ID(offset_src), &_Py_ID(offset_dst), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"src", "dst", "count", "offset_src", "offset_dst", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "copy_file_range",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "copy_file_range", 0};
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     int src;
@@ -7610,41 +5822,8 @@ static PyObject *
 os_splice(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 6
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(src), &_Py_ID(dst), &_Py_ID(count), &_Py_ID(offset_src), &_Py_ID(offset_dst), &_Py_ID(flags), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"src", "dst", "count", "offset_src", "offset_dst", "flags", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "splice",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "splice", 0};
     PyObject *argsbuf[6];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     int src;
@@ -7728,41 +5907,8 @@ static PyObject *
 os_mkfifo(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(mode), &_Py_ID(dir_fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "mode", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "mkfifo",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "mkfifo", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("mkfifo", "path", 0, 0);
@@ -7838,41 +5984,8 @@ static PyObject *
 os_mknod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 4
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(mode), &_Py_ID(device), &_Py_ID(dir_fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "mode", "device", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "mknod",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "mknod", 0};
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("mknod", "path", 0, 0);
@@ -8103,41 +6216,8 @@ static PyObject *
 os_truncate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(length), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "length", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "truncate",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "truncate", 0};
     PyObject *argsbuf[2];
     path_t path = PATH_T_INITIALIZE("truncate", "path", 0, PATH_HAVE_FTRUNCATE);
     Py_off_t length;
@@ -8514,41 +6594,8 @@ static PyObject *
 os_WIFCONTINUED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(status), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "WIFCONTINUED",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "WIFCONTINUED", 0};
     PyObject *argsbuf[1];
     int status;
     int _return_value;
@@ -8591,41 +6638,8 @@ static PyObject *
 os_WIFSTOPPED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(status), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "WIFSTOPPED",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "WIFSTOPPED", 0};
     PyObject *argsbuf[1];
     int status;
     int _return_value;
@@ -8668,41 +6682,8 @@ static PyObject *
 os_WIFSIGNALED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(status), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "WIFSIGNALED",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "WIFSIGNALED", 0};
     PyObject *argsbuf[1];
     int status;
     int _return_value;
@@ -8745,41 +6726,8 @@ static PyObject *
 os_WIFEXITED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(status), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "WIFEXITED",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "WIFEXITED", 0};
     PyObject *argsbuf[1];
     int status;
     int _return_value;
@@ -8822,41 +6770,8 @@ static PyObject *
 os_WEXITSTATUS(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(status), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "WEXITSTATUS",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "WEXITSTATUS", 0};
     PyObject *argsbuf[1];
     int status;
     int _return_value;
@@ -8899,41 +6814,8 @@ static PyObject *
 os_WTERMSIG(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(status), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "WTERMSIG",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "WTERMSIG", 0};
     PyObject *argsbuf[1];
     int status;
     int _return_value;
@@ -8976,41 +6858,8 @@ static PyObject *
 os_WSTOPSIG(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(status), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "WSTOPSIG",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "WSTOPSIG", 0};
     PyObject *argsbuf[1];
     int status;
     int _return_value;
@@ -9091,41 +6940,8 @@ static PyObject *
 os_statvfs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "statvfs",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "statvfs", 0};
     PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("statvfs", "path", 0, PATH_HAVE_FSTATVFS);
 
@@ -9165,41 +6981,8 @@ static PyObject *
 os__getdiskusage(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_getdiskusage",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "_getdiskusage", 0};
     PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("_getdiskusage", "path", 0, 0);
 
@@ -9288,41 +7071,8 @@ static PyObject *
 os_pathconf(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(name), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "name", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "pathconf",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "pathconf", 0};
     PyObject *argsbuf[2];
     path_t path = PATH_T_INITIALIZE("pathconf", "path", 0, PATH_HAVE_FPATHCONF);
     int name;
@@ -9487,41 +7237,8 @@ static PyObject *
 os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 5
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(filepath), &_Py_ID(operation), &_Py_ID(arguments), &_Py_ID(cwd), &_Py_ID(show_cmd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"filepath", "operation", "arguments", "cwd", "show_cmd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "startfile",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "startfile", 0};
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t filepath = PATH_T_INITIALIZE("startfile", "filepath", 0, 0);
@@ -9641,41 +7358,8 @@ static PyObject *
 os_device_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "device_encoding",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "device_encoding", 0};
     PyObject *argsbuf[1];
     int fd;
 
@@ -9845,41 +7529,8 @@ static PyObject *
 os_getxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(attribute), &_Py_ID(follow_symlinks), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "attribute", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "getxattr",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "getxattr", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("getxattr", "path", 0, 1);
@@ -9942,41 +7593,8 @@ static PyObject *
 os_setxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 5
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(attribute), &_Py_ID(value), &_Py_ID(flags), &_Py_ID(follow_symlinks), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "attribute", "value", "flags", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "setxattr",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "setxattr", 0};
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     path_t path = PATH_T_INITIALIZE("setxattr", "path", 0, 1);
@@ -10064,41 +7682,8 @@ static PyObject *
 os_removexattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(attribute), &_Py_ID(follow_symlinks), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "attribute", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "removexattr",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "removexattr", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("removexattr", "path", 0, 1);
@@ -10160,41 +7745,8 @@ static PyObject *
 os_listxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(follow_symlinks), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "listxattr",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "listxattr", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     path_t path = PATH_T_INITIALIZE("listxattr", "path", 1, 1);
@@ -10288,41 +7840,8 @@ static PyObject *
 os_memfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(name), &_Py_ID(flags), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"name", "flags", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "memfd_create",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "memfd_create", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *name = NULL;
@@ -10372,41 +7891,8 @@ static PyObject *
 os_eventfd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(initval), &_Py_ID(flags), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"initval", "flags", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "eventfd",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "eventfd", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     unsigned int initval;
@@ -10453,41 +7939,8 @@ static PyObject *
 os_eventfd_read(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(fd), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "eventfd_read",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "eventfd_read", 0};
     PyObject *argsbuf[1];
     int fd;
 
@@ -10524,41 +7977,8 @@ static PyObject *
 os_eventfd_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(fd), &_Py_ID(value), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"fd", "value", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "eventfd_write",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "eventfd_write", 0};
     PyObject *argsbuf[2];
     int fd;
     unsigned long long value;
@@ -10924,41 +8344,8 @@ static PyObject *
 os_DirEntry_stat(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(follow_symlinks), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "stat",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "stat", 0};
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int follow_symlinks = 1;
@@ -10998,41 +8385,8 @@ static PyObject *
 os_DirEntry_is_dir(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(follow_symlinks), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "is_dir",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "is_dir", 0};
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int follow_symlinks = 1;
@@ -11077,41 +8431,8 @@ static PyObject *
 os_DirEntry_is_file(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(follow_symlinks), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "is_file",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "is_file", 0};
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int follow_symlinks = 1;
@@ -11197,41 +8518,8 @@ static PyObject *
 os_scandir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "scandir",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "scandir", 0};
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     path_t path = PATH_T_INITIALIZE("scandir", "path", 1, PATH_HAVE_FDOPENDIR);
@@ -11276,41 +8564,8 @@ static PyObject *
 os_fspath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "fspath",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "fspath", 0};
     PyObject *argsbuf[1];
     PyObject *path;
 
@@ -11343,41 +8598,8 @@ static PyObject *
 os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(size), &_Py_ID(flags), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"size", "flags", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "getrandom",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "getrandom", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_ssize_t size;
@@ -11440,41 +8662,8 @@ static PyObject *
 os__add_dll_directory(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_add_dll_directory",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "_add_dll_directory", 0};
     PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("_add_dll_directory", "path", 0, 0);
 
@@ -11518,41 +8707,8 @@ static PyObject *
 os__remove_dll_directory(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(cookie), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"cookie", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_remove_dll_directory",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "_remove_dll_directory", 0};
     PyObject *argsbuf[1];
     PyObject *cookie;
 
@@ -11599,41 +8755,8 @@ static PyObject *
 os_waitstatus_to_exitcode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(status), },
-    };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
-
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "waitstatus_to_exitcode",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
+    static _PyArg_Parser _parser = {NULL, _keywords, "waitstatus_to_exitcode", 0};
     PyObject *argsbuf[1];
     PyObject *status_obj;
 
@@ -12237,4 +9360,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=138487baeecdf698 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c22a8b6de4a0ccb7 input=a9049054013a1b77]*/
