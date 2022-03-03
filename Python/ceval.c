@@ -1595,19 +1595,6 @@ is_method(PyObject **stack_pointer, int args) {
     return PEEK(args+2) != NULL;
 }
 
-static PyObject*
-dictkeys_get_value_by_index(PyDictKeysObject *dk, int index)
-{
-    if (DK_IS_UNICODE(dk)) {
-        PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dk) + index;
-        return ep->me_value;
-    }
-    else {
-        PyDictKeyEntry *ep = DK_ENTRIES(dk) + index;
-        return ep->me_value;
-    }
-}
-
 #define KWNAMES_LEN() \
     (call_shape.kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(call_shape.kwnames)))
 
@@ -3043,7 +3030,9 @@ handle_eval_breaker:
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             uint32_t version = read32(&cache->module_keys_version);
             DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
-            PyObject *res = dictkeys_get_value_by_index(dict->ma_keys, cache->index);
+            assert(DK_IS_UNICODE(dict->ma_keys));
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
+            PyObject *res = entries[cache->index].me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
@@ -3063,7 +3052,9 @@ handle_eval_breaker:
             uint16_t bltn_version = cache->builtin_keys_version;
             DEOPT_IF(mdict->ma_keys->dk_version != mod_version, LOAD_GLOBAL);
             DEOPT_IF(bdict->ma_keys->dk_version != bltn_version, LOAD_GLOBAL);
-            PyObject *res = dictkeys_get_value_by_index(bdict->ma_keys, cache->index);
+            assert(DK_IS_UNICODE(bdict->ma_keys));
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
+            PyObject *res = entries[cache->index].me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
