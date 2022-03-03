@@ -237,7 +237,7 @@ exit:
 
 #if defined(HAVE_WINDOW_FUNCTIONS)
 
-PyDoc_STRVAR(pysqlite_connection_create_window_function__doc__,
+PyDoc_STRVAR(create_window_function__doc__,
 "create_window_function($self, name, num_params, aggregate_class, /, *,\n"
 "                       deterministic=False, directonly=False,\n"
 "                       innocuous=False)\n"
@@ -255,21 +255,17 @@ PyDoc_STRVAR(pysqlite_connection_create_window_function__doc__,
 "    A class with step(), finalize(), value(), and inverse() methods.\n"
 "    Set to None to clear the window function.");
 
-#define PYSQLITE_CONNECTION_CREATE_WINDOW_FUNCTION_METHODDEF    \
-    {"create_window_function", (PyCFunction)(void(*)(void))pysqlite_connection_create_window_function, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_create_window_function__doc__},
+#define CREATE_WINDOW_FUNCTION_METHODDEF    \
+    {"create_window_function", (PyCFunction)(void(*)(void))create_window_function, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, create_window_function__doc__},
 
 static PyObject *
-pysqlite_connection_create_window_function_impl(pysqlite_Connection *self,
-                                                PyTypeObject *cls,
-                                                const char *name,
-                                                int num_params,
-                                                PyObject *aggregate_class,
-                                                int deterministic,
-                                                int directonly,
-                                                int innocuous);
+create_window_function_impl(pysqlite_Connection *self, PyTypeObject *cls,
+                            const char *name, int num_params,
+                            PyObject *aggregate_class, int deterministic,
+                            int directonly, int innocuous);
 
 static PyObject *
-pysqlite_connection_create_window_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+create_window_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", "", "deterministic", "directonly", "innocuous", NULL};
@@ -285,7 +281,7 @@ pysqlite_connection_create_window_function(pysqlite_Connection *self, PyTypeObje
         &name, &num_params, &aggregate_class, &deterministic, &directonly, &innocuous)) {
         goto exit;
     }
-    return_value = pysqlite_connection_create_window_function_impl(self, cls, name, num_params, aggregate_class, deterministic, directonly, innocuous);
+    return_value = create_window_function_impl(self, cls, name, num_params, aggregate_class, deterministic, directonly, innocuous);
 
 exit:
     return return_value;
@@ -887,9 +883,9 @@ exit:
     return return_value;
 }
 
-#ifndef PYSQLITE_CONNECTION_CREATE_WINDOW_FUNCTION_METHODDEF
-    #define PYSQLITE_CONNECTION_CREATE_WINDOW_FUNCTION_METHODDEF
-#endif /* !defined(PYSQLITE_CONNECTION_CREATE_WINDOW_FUNCTION_METHODDEF) */
+#ifndef CREATE_WINDOW_FUNCTION_METHODDEF
+    #define CREATE_WINDOW_FUNCTION_METHODDEF
+#endif /* !defined(CREATE_WINDOW_FUNCTION_METHODDEF) */
 
 #ifndef PYSQLITE_CONNECTION_ENABLE_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_ENABLE_LOAD_EXTENSION_METHODDEF
@@ -898,4 +894,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=dcc8ff71a6779d53 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cee6f0d6fa9b61dd input=a9049054013a1b77]*/

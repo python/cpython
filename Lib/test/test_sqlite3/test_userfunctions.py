@@ -531,7 +531,7 @@ class WindowFunctionTests(unittest.TestCase):
 
     @with_tracebacks(WindowBogusException)
     def test_win_exception_in_method(self):
-        # Fixme: "finalize" does not raise correct exception yet
+        # Note: SQLite does not propagate errors from the "finalize" callback.
         for meth in ["__init__", "step", "value", "inverse"]:
             with self.subTest(meth=meth):
                 with unittest.mock.patch.object(WindowSumInt, meth,
@@ -544,7 +544,9 @@ class WindowFunctionTests(unittest.TestCase):
                         self.cur.execute(self.query % name)
                         ret = self.cur.fetchall()
 
+    @with_tracebacks(AttributeError)
     def test_win_missing_method(self):
+        # Note: SQLite does not propagate errors from the "finalize" callback.
         class MissingValue:
             def step(self, x): pass
             def inverse(self, x): pass
@@ -560,25 +562,19 @@ class WindowFunctionTests(unittest.TestCase):
             def inverse(self, x): pass
             def finalize(self): return 42
 
-        class MissingFinalize:
-            def step(self, x): pass
-            def value(self): return 42
-            def inverse(self, x): pass
-
-        # Fixme: finalize does not raise correct exception
         dataset = (
             ("step", MissingStep),
             ("value", MissingValue),
             ("inverse", MissingInverse),
-            #("finalize", MissingFinalize),
         )
         for meth, cls in dataset:
             with self.subTest(meth=meth, cls=cls):
-                self.con.create_window_function(meth, 1, cls)
-                self.addCleanup(self.con.create_window_function, meth, 1, None)
+                name = f"exc_{meth}"
+                self.con.create_window_function(name, 1, cls)
+                self.addCleanup(self.con.create_window_function, name, 1, None)
                 with self.assertRaisesRegex(sqlite.OperationalError,
                                             f"'{meth}' method not defined"):
-                    self.cur.execute(self.query % meth)
+                    self.cur.execute(self.query % name)
                     self.cur.fetchall()
 
     def test_win_clear_function(self):

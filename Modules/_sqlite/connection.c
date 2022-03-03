@@ -1053,16 +1053,15 @@ inverse_callback(sqlite3_context *context, int argc, sqlite3_value **params)
     PyObject *method = PyObject_GetAttr(*cls, ctx->state->str_inverse);
     if (method == NULL) {
         set_sqlite_error(context,
-                         "user-defined aggregate's 'inverse' method "
-                         "not defined");
+                "user-defined aggregate's 'inverse' method not defined");
         goto exit;
     }
 
     PyObject *args = _pysqlite_build_py_params(context, argc, params);
     if (args == NULL) {
         set_sqlite_error(context,
-                         "unable to build arguments for user-defined "
-                         "aggregate's 'inverse' method");
+                "unable to build arguments for user-defined aggregate's "
+                "'inverse' method");
         goto exit;
     }
 
@@ -1070,8 +1069,7 @@ inverse_callback(sqlite3_context *context, int argc, sqlite3_value **params)
     Py_DECREF(args);
     if (res == NULL) {
         set_sqlite_error(context,
-                         "user-defined aggregate's 'inverse' method "
-                         "raised error");
+                "user-defined aggregate's 'inverse' method raised error");
         goto exit;
     }
     Py_DECREF(res);
@@ -1114,8 +1112,8 @@ value_callback(sqlite3_context *context)
         Py_DECREF(res);
         if (rc < 0) {
             set_sqlite_error(context,
-                             "unable to set result from user-defined "
-                             "aggregate's 'value' method");
+                    "unable to set result from user-defined aggregate's "
+                    "'value' method");
         }
     }
 
@@ -1123,7 +1121,7 @@ value_callback(sqlite3_context *context)
 }
 
 /*[clinic input]
-_sqlite3.Connection.create_window_function as pysqlite_connection_create_window_function
+_sqlite3.Connection.create_window_function as create_window_function
 
     cls: defining_class
     name: str
@@ -1145,15 +1143,11 @@ Creates or redefines an aggregate window function. Non-standard.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_connection_create_window_function_impl(pysqlite_Connection *self,
-                                                PyTypeObject *cls,
-                                                const char *name,
-                                                int num_params,
-                                                PyObject *aggregate_class,
-                                                int deterministic,
-                                                int directonly,
-                                                int innocuous)
-/*[clinic end generated code: output=f36d5595c0c930d5 input=34a9b57a2c411aea]*/
+create_window_function_impl(pysqlite_Connection *self, PyTypeObject *cls,
+                            const char *name, int num_params,
+                            PyObject *aggregate_class, int deterministic,
+                            int directonly, int innocuous)
+/*[clinic end generated code: output=32287d1dac62b1d3 input=66afbc429306d593]*/
 {
     if (sqlite3_libversion_number() < 3025000) {
         PyErr_SetString(self->NotSupportedError,
@@ -2196,7 +2190,6 @@ static PyMethodDef connection_methods[] = {
     PYSQLITE_CONNECTION_CREATE_AGGREGATE_METHODDEF
     PYSQLITE_CONNECTION_CREATE_COLLATION_METHODDEF
     PYSQLITE_CONNECTION_CREATE_FUNCTION_METHODDEF
-    PYSQLITE_CONNECTION_CREATE_WINDOW_FUNCTION_METHODDEF
     PYSQLITE_CONNECTION_CURSOR_METHODDEF
     PYSQLITE_CONNECTION_ENABLE_LOAD_EXTENSION_METHODDEF
     PYSQLITE_CONNECTION_ENTER_METHODDEF
@@ -2213,6 +2206,7 @@ static PyMethodDef connection_methods[] = {
     PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF
     SETLIMIT_METHODDEF
     GETLIMIT_METHODDEF
+    CREATE_WINDOW_FUNCTION_METHODDEF
     {NULL, NULL}
 };
 
