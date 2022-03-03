@@ -5441,6 +5441,9 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
                 OBJECT_STAT_INC(dict_materialized_new_key);
             }
         }
+        else {
+            OBJECT_STAT_INC(dict_materialized_str_subclass);
+        }
 #endif
         PyObject *dict = make_dict_from_instance_attributes(keys, values);
         if (dict == NULL) {
