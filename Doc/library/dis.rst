@@ -494,7 +494,6 @@ the original TOS1.
       Previously, this instruction did not have an oparg.
 
 
-
 .. opcode:: GET_AITER
 
    Implements ``TOS = TOS.__aiter__()``.
