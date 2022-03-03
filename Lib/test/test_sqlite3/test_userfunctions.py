@@ -27,9 +27,9 @@ import io
 import re
 import sys
 import unittest
-import unittest.mock
 import sqlite3 as sqlite
 
+from unittest.mock import Mock, patch
 from test.support import bigmemtest, catch_unraisable_exception, gc_collect
 
 from test.test_sqlite3.test_dbapi import cx_limit
@@ -384,7 +384,7 @@ class FunctionTests(unittest.TestCase):
     # indices, which allows testing based on syntax, iso. the query optimizer.
     @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "Requires SQLite 3.8.3 or higher")
     def test_func_non_deterministic(self):
-        mock = unittest.mock.Mock(return_value=None)
+        mock = Mock(return_value=None)
         self.con.create_function("nondeterministic", 0, mock, deterministic=False)
         if sqlite.sqlite_version_info < (3, 15, 0):
             self.con.execute("select nondeterministic() = nondeterministic()")
@@ -395,7 +395,7 @@ class FunctionTests(unittest.TestCase):
 
     @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "Requires SQLite 3.8.3 or higher")
     def test_func_deterministic(self):
-        mock = unittest.mock.Mock(return_value=None)
+        mock = Mock(return_value=None)
         self.con.create_function("deterministic", 0, mock, deterministic=True)
         if sqlite.sqlite_version_info < (3, 15, 0):
             self.con.execute("select deterministic() = deterministic()")
@@ -483,7 +483,7 @@ class WindowSumInt:
     def finalize(self):
         return self.count
 
-class WindowBogusException(Exception):
+class BadWindow(Exception):
     pass
 
 
@@ -529,24 +529,31 @@ class WindowFunctionTests(unittest.TestCase):
                           self.con.create_window_function,
                           "shouldfail", -100, WindowSumInt)
 
-    @with_tracebacks(WindowBogusException)
+    @with_tracebacks(BadWindow)
     def test_win_exception_in_method(self):
-        # Note: SQLite does not propagate errors from the "finalize" callback.
         for meth in ["__init__", "step", "value", "inverse"]:
             with self.subTest(meth=meth):
-                with unittest.mock.patch.object(WindowSumInt, meth,
-                                                side_effect=WindowBogusException):
+                with patch.object(WindowSumInt, meth, side_effect=BadWindow):
                     name = f"exc_{meth}"
                     self.con.create_window_function(name, 1, WindowSumInt)
-                    err_str = f"'{meth}' method raised error"
-                    with self.assertRaisesRegex(sqlite.OperationalError,
-                                                err_str):
+                    msg = f"'{meth}' method raised error"
+                    with self.assertRaisesRegex(sqlite.OperationalError, msg):
                         self.cur.execute(self.query % name)
-                        ret = self.cur.fetchall()
+                        self.cur.fetchall()
+
+    @with_tracebacks(BadWindow)
+    def test_win_exception_in_finalize(self):
+        # Note: SQLite does not (as of version 3.38.0) propagate finalize
+        # callback errors to sqlite3_step(); this implies that OperationalError
+        # is _not_ raised.
+        with patch.object(WindowSumInt, "finalize", side_effect=BadWindow):
+            name = f"exception_in_finalize"
+            self.con.create_window_function(name, 1, WindowSumInt)
+            self.cur.execute(self.query % name)
+            self.cur.fetchall()
 
     @with_tracebacks(AttributeError)
     def test_win_missing_method(self):
-        # Note: SQLite does not propagate errors from the "finalize" callback.
         class MissingValue:
             def step(self, x): pass
             def inverse(self, x): pass
@@ -576,6 +583,23 @@ class WindowFunctionTests(unittest.TestCase):
                                             f"'{meth}' method not defined"):
                     self.cur.execute(self.query % name)
                     self.cur.fetchall()
+
+    @with_tracebacks(AttributeError)
+    def test_win_missing_finalize(self):
+        # Note: SQLite does not (as of version 3.38.0) propagate finalize
+        # callback errors to sqlite3_step(); this implies that OperationalError
+        # is _not_ raised.
+        name = "missing_finalize"
+
+        class MissingFinalize:
+            def step(self, x): pass
+            def value(self): return 42
+            def inverse(self, x): pass
+
+        self.con.create_window_function(name, 1, MissingFinalize)
+        self.addCleanup(self.con.create_window_function, name, 1, None)
+        self.cur.execute(self.query % name)
+        self.cur.fetchall()
 
     def test_win_clear_function(self):
         self.con.create_window_function("sumint", 1, None)

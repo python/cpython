@@ -823,6 +823,10 @@ final_callback(sqlite3_context *context)
                                "raised error";
         int attr_err = PyErr_ExceptionMatches(PyExc_AttributeError);
         _PyErr_ChainExceptions(exception, value, tb);
+
+        /* Note: contrary to the step, value, and inverse callbacks, SQLite
+         * does not, as of SQLite 3.38.0, propagate errors to sqlite3_step()
+         * from the finalize callback. */
         set_sqlite_error(context, attr_err ? attr_msg : err_msg);
     }
     else {
