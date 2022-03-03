@@ -1098,3 +1098,4 @@ bypass the initialization of the module search path.
 
    * :ref:`windows_finding_modules` for detailed Windows notes.
    * :ref:`using-on-unix` for Unix details.
+
