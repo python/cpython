@@ -1459,8 +1459,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
     PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + cache->index; \
     res = ep->me_value; \
     DEOPT_IF(res == NULL, LOAD_##attr_or_method); \
-    /* XXX: Remove this next line to make test_asyncio very angry! */ \
-    DEOPT_IF(LOAD_##attr_or_method == LOAD_ATTR, LOAD_##attr_or_method); \
     STAT_INC(LOAD_##attr_or_method, hit); \
     Py_INCREF(res);
 
