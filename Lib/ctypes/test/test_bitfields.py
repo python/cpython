@@ -1,5 +1,6 @@
 from ctypes import *
 from ctypes.test import need_symbol
+from test import support
 import unittest
 import os
 
@@ -39,6 +40,8 @@ class C_Test(unittest.TestCase):
                 setattr(b, name, i)
                 self.assertEqual(getattr(b, name), func(byref(b), name.encode('ascii')))
 
+    # bpo-46913: _ctypes/cfield.c h_get() has an undefined behavior
+    @support.skip_if_sanitizer(ub=True)
     def test_shorts(self):
         b = BITS()
         name = "M"
