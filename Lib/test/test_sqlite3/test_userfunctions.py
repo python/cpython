@@ -631,15 +631,15 @@ class WindowFunctionTests(unittest.TestCase):
             with self.subTest(kwargs=kwargs):
                 name = f"flags{i}"
 
-                if sqlite.sqlite_version_info < (3, 30, 0):
+                if kwargs["directonly"] and sqlite.sqlite_version_info < (3, 30, 0):
                     notsupported = "directonly"
-                elif sqlite.sqlite_version_info < (3, 31, 0):
+                elif kwargs["innocuous"] and sqlite.sqlite_version_info < (3, 31, 0):
                     notsupported = "innocuous"
                 else:
                     notsupported = None
 
                 if notsupported:
-                    with self.assertRaises(sqlite.NotSupportedError, notsupported):
+                    with self.assertRaisesRegex(sqlite.NotSupportedError, notsupported):
                         self.con.create_window_function(name, 1, WindowSumInt,
                                                         **kwargs)
                 else:

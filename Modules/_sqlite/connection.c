@@ -936,21 +936,6 @@ set_flag(int flag, int *dst, int is_set)
 }
 
 static int
-add_deterministic_flag_if_supported(pysqlite_Connection *self, int *flags,
-                                    int is_set)
-{
-#if SQLITE_VERSION_NUMBER < 3008003
-    NOT_SUPPORTED(self, "deterministic", "3.8.3");
-#else
-    if (sqlite3_libversion_number() < 3008003) {
-        NOT_SUPPORTED(self, "deterministic", "3.8.3");
-    }
-    set_flag(SQLITE_DETERMINISTIC, flags, is_set);
-#endif
-    return 0;
-}
-
-static int
 add_innocuous_flag_if_supported(pysqlite_Connection *self, int *flags,
                                 int is_set)
 {
@@ -1010,8 +995,19 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    if (add_deterministic_flag_if_supported(self, &flags, deterministic) < 0) {
+    if (deterministic) {
+#if SQLITE_VERSION_NUMBER < 3008003
+        PyErr_SetString(self->NotSupportedError,
+                        "deterministic=True requires SQLite 3.8.3 or higher");
         return NULL;
+#else
+        if (sqlite3_libversion_number() < 3008003) {
+            PyErr_SetString(self->NotSupportedError,
+                            "deterministic=True requires SQLite 3.8.3 or higher");
+            return NULL;
+        }
+        flags |= SQLITE_DETERMINISTIC;
+#endif
     }
     callback_context *ctx = create_callback_context(cls, func);
     if (ctx == NULL) {
@@ -1163,8 +1159,8 @@ create_window_function_impl(pysqlite_Connection *self, PyTypeObject *cls,
     }
 
     int flags = SQLITE_UTF8;
-    if (add_deterministic_flag_if_supported(self, &flags, deterministic) < 0) {
-        return NULL;
+    if (deterministic) {
+        flags |= SQLITE_DETERMINISTIC;
     }
     if (add_directonly_flag_if_supported(self, &flags, directonly) < 0) {
         return NULL;
