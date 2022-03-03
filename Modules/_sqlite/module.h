@@ -64,6 +64,7 @@ typedef struct {
     PyObject *str___conform__;
     PyObject *str_executescript;
     PyObject *str_finalize;
+    PyObject *str_step;
     PyObject *str_upper;
 } pysqlite_state;
 
