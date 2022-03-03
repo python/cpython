@@ -24,6 +24,7 @@
 import contextlib
 import functools
 import io
+import itertools
 import re
 import sys
 import unittest
@@ -621,6 +622,29 @@ class WindowFunctionTests(unittest.TestCase):
         self.con.create_window_function("err_val_ret", 1, ErrorValueReturn)
         self.assertRaisesRegex(sqlite.DataError, "string or blob too big",
                                self.cur.execute, self.query % "err_val_ret")
+
+    def test_win_flags(self):
+        flags = ("deterministic", "directonly", "innocuous")
+        dataset = itertools.product([False, True], repeat=3)
+        for i, d in enumerate(dataset):
+            kwargs = {k: v for k, v in zip(flags, d)}
+            with self.subTest(kwargs=kwargs):
+                name = f"flags{i}"
+
+                if sqlite.sqlite_version_info < (3, 30, 0):
+                    notsupported = "directonly"
+                elif sqlite.sqlite_version_info < (3, 31, 0):
+                    notsupported = "innocuous"
+                else:
+                    notsupported = None
+
+                if notsupported:
+                    with self.assertRaises(sqlite.NotSupportedError, notsupported):
+                        self.con.create_window_function(name, 1, WindowSumInt,
+                                                        **kwargs)
+                else:
+                    self.con.create_window_function(name, 1, WindowSumInt, **kwargs)
+                    self.addCleanup(self.con.create_window_function, name, 1, None)
 
 
 class AggregateTests(unittest.TestCase):

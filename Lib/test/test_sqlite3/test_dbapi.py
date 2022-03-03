@@ -1029,6 +1029,8 @@ class ThreadTests(unittest.TestCase):
             lambda: self.con.setlimit(sqlite.SQLITE_LIMIT_LENGTH, -1),
             lambda: self.con.getlimit(sqlite.SQLITE_LIMIT_LENGTH),
         ]
+        if sqlite.sqlite_version_info >= (3, 25, 0):
+            fns.append(lambda: self.con.create_window_function("foo", 0, None))
         for fn in fns:
             with self.subTest(fn=fn):
                 self._run_test(fn)
