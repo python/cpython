@@ -616,6 +616,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_COMPARE_OP_BASEOBJECT 21
 #define SPEC_FAIL_COMPARE_OP_FLOAT_LONG 22
 #define SPEC_FAIL_COMPARE_OP_LONG_FLOAT 23
+#define SPEC_FAIL_COMPARE_OP_EXTENDED_ARG 24
 
 /* FOR_ITER */
 #define SPEC_FAIL_FOR_ITER_GENERATOR 10
@@ -2088,6 +2089,10 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         *instr = _Py_MAKECODEUNIT(COMPARE_OP, oparg);
         return;
 #endif
+        if (next_opcode == EXTENDED_ARG) {
+            SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_EXTENDED_ARG);
+            goto failure;
+        }
         SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_NOT_FOLLOWED_BY_COND_JUMP);
         goto failure;
     }
