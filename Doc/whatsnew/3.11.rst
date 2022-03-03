@@ -381,7 +381,7 @@ venv
   to determine the paths inside the environment.
   When Python runs in a virtual environment, the same installation scheme
   is the default.
-  That means, downstream distributors can change the default sysconfig install
+  That means that downstream distributors can change the default sysconfig install
   scheme without changing behavior of virtual environments.
   Third party code that also creates new virtual environments should do the same.
   (Contributed by Miro Hrončok in :issue:`45413`.)

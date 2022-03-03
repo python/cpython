@@ -65,14 +65,14 @@ _INSTALL_SCHEMES = {
     # environments, like virtualenv. As distributors might now be customizing
     # the default install scheme, there is no guarantee that the information
     # returned by sysconfig.get_default_scheme/get_paths is correct for
-    # a virtual environment, the only guarantee we have is that it correct
+    # a virtual environment, the only guarantee we have is that it is correct
     # for the *current* environment. When bootstrapping a virtual environment,
     # we need to know its layout, so that we can place the files in the
     # correct locations.
     # The "*_venv" install scheme is a scheme to bootstrap virtual environments,
     # essentially identical to the default posix_prefix/nt schemes.
     # Downstream distributors who patch posix_prefix/nt scheme are encouraged to
-    # Leave the following schemes unchanged
+    # leave the following schemes unchanged
     'posix_venv': {
         'stdlib': '{installed_base}/{platlibdir}/python{py_version_short}',
         'platstdlib': '{platbase}/{platlibdir}/python{py_version_short}',
