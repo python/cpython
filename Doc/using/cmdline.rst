@@ -1012,30 +1012,36 @@ The :envvar:`PYTHONPATH` environment variable is often used to add directories
 to the search path. If this environment variable is found then the contents are
 added to the module search path.
 
+.. note::
+
+   :envvar:`PYTHONPATH` will affect all installed Python versions/environments.
+   Be wary of setting this in your shell profile or global environment variables.
+   The :mod:`site` module offers more nuanced techniques as mentioned below.
+
 The next items added are the directories containing standard Python modules as
-well as any shared libraries (DLL/dylib/so) that these modules depend on. The
-directory with the platform-independent Python modules is called ``prefix``.
-The directory with the shared libraries is called ``exec_prefix``.
+well as any :term:`extension module`\s that these modules depend on. Extension
+modules are .dll files on Windows, .dylib files on macOS and .so files on Linux.
+The directory with the platform-independent Python modules is called ``prefix``.
+The directory with the extension modules is called ``exec_prefix``.
 
 The :envvar:`PYTHONHOME` environment variable may be used to set the ``prefix``
 and ``exec_prefix`` locations. Otherwise these directories are found by using
 the Python executable as a starting point and then looking for various 'landmark'
 files and directories. Note that any symbolic links are followed so the real
-Python executable location is used as the search starting point. On MacOS, the
-:envvar:`PYTHONEXECUTABLE` environment variable may be used to set the Python
-executable location. The Python executable location is called ``home``.
+Python executable location is used as the search starting point. The Python
+executable location is called ``home``.
 
 Once ``home`` is determined, the ``prefix`` directory is found by first looking
 for :file:`python{majorversion}{minorversion}.zip` (``python311.zip``). On Windows
 the zip archive is searched for in ``home`` and on Unix the archive is expected
 to be in :file:`lib`. Note that the expected zip archive location is added to the
 module search path even if the archive does not exist. If no archive was found,
-Python on Windows will continue the search for ``prefix`` by looking for :file:`Lib\\os.py`
-or :file:`Lib\\os.pyc`. Python on Unix will look for :file:`lib/python{majorversion}.{minorversion}/os.py`
-(``lib/python3.11/os.py``) or :file:`lib/python{majorversion}.{minorversion}/os.pyc` (``lib/python3.11/os.pyc``).
-On Windows ``prefix`` and ``exec_prefix`` are the same, however on other platforms
-:file:`lib/python{majorversion}.{minorversion}/lib-dynload` (``lib/python3.11/lib-dynload``)
-is searched for and used as an anchor for ``exec_prefix``.
+Python on Windows will continue the search for ``prefix`` by looking for :file:`Lib\\os.py`.
+Python on Unix will look for :file:`lib/python{majorversion}.{minorversion}/os.py`
+(``lib/python3.11/os.py``). On Windows ``prefix`` and ``exec_prefix`` are the same,
+however on other platforms :file:`lib/python{majorversion}.{minorversion}/lib-dynload`
+(``lib/python3.11/lib-dynload``) is searched for and used as an anchor for
+``exec_prefix``.
 
 Once found, ``prefix`` and ``exec_prefix`` may be accessed at :data:`sys.prefix`
 and :data:`sys.exec_prefix`.
@@ -1067,10 +1073,10 @@ _pth files
 ~~~~~~~~~~
 
 To completely override :data:`sys.path`, create a ``._pth`` file with the same
-name as the DLL/dylib (``python311._pth``) or the executable (``python._pth``)
+name as the extension module (``python311._pth``) or the executable (``python._pth``)
 and specify one line for each path to add to :data:`sys.path`. The file based on
-the library name overrides the one based on the executable, which allows paths
-to be restricted for any program loading the runtime if desired.
+the extension module name overrides the one based on the executable, which allows
+paths to be restricted for any program loading the runtime if desired.
 
 When the file exists, all registry and environment variables are ignored,
 isolated mode is enabled, and :mod:`site` is not imported unless one line in the
