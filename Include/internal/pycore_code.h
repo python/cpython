@@ -524,7 +524,7 @@ read_obj(uint16_t *p)
     uintptr_t val;
 #if SIZEOF_UINTPTR_T == 8
     val = read_u64(p);
-#elif SIZE_OF_UINTPTR_T == 4
+#elif SIZEOF_UINTPTR_T == 4
     val = read_u32(p);
 #else
     #error "sizeof(uintptr_t) must be 4 or 8"
