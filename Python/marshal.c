@@ -11,7 +11,6 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_code.h"          // _PyCode_New()
-#include "pycore_floatobject.h"   // _PyFloat_Pack8()
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "code.h"
 #include "marshal.h"              // Py_MARSHAL_VERSION
@@ -271,8 +270,8 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
 static void
 w_float_bin(double v, WFILE *p)
 {
-    unsigned char buf[8];
-    if (_PyFloat_Pack8(v, buf, 1) < 0) {
+    char buf[8];
+    if (PyFloat_Pack8(v, buf, 1) < 0) {
         p->error = WFERR_UNMARSHALLABLE;
         return;
     }
@@ -883,10 +882,10 @@ r_PyLong(RFILE *p)
 static double
 r_float_bin(RFILE *p)
 {
-    const unsigned char *buf = (const unsigned char *) r_string(8, p);
+    const char *buf = r_string(8, p);
     if (buf == NULL)
         return -1;
-    return _PyFloat_Unpack8(buf, 1);
+    return PyFloat_Unpack8(buf, 1);
 }
 
 /* Issue #33720: Disable inlining for reducing the C stack consumption
