@@ -1,0 +1,3 @@
+For performance, use the optimized string-searching implementations
+from :meth:`~bytes.find` and :meth:`~bytes.rfind`
+for :meth:`~mmap.find` and :meth:`~mmap.rfind`.

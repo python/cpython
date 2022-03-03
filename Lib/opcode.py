@@ -35,20 +35,23 @@ hasnargs = [] # unused
 opmap = {}
 opname = ['<%r>' % (op,) for op in range(256)]
 
-def def_op(name, op):
+_inline_cache_entries = [0] * 256
+
+def def_op(name, op, entries=0):
     opname[op] = name
     opmap[name] = op
+    _inline_cache_entries[op] = entries
 
-def name_op(name, op):
-    def_op(name, op)
+def name_op(name, op, entries=0):
+    def_op(name, op, entries)
     hasname.append(op)
 
-def jrel_op(name, op):
-    def_op(name, op)
+def jrel_op(name, op, entries=0):
+    def_op(name, op, entries)
     hasjrel.append(op)
 
-def jabs_op(name, op):
-    def_op(name, op)
+def jabs_op(name, op, entries=0):
+    def_op(name, op, entries)
     hasjabs.append(op)
 
 # Instruction opcodes for compiled code
@@ -56,6 +59,7 @@ def jabs_op(name, op):
 
 def_op('POP_TOP', 1)
 def_op('PUSH_NULL', 2)
+def_op('CACHE', 3)
 
 def_op('NOP', 9)
 def_op('UNARY_POSITIVE', 10)
@@ -64,7 +68,7 @@ def_op('UNARY_NOT', 12)
 
 def_op('UNARY_INVERT', 15)
 
-def_op('BINARY_SUBSCR', 25)
+def_op('BINARY_SUBSCR', 25, 4)
 
 def_op('GET_LEN', 30)
 def_op('MATCH_MAPPING', 31)
@@ -105,7 +109,7 @@ HAVE_ARGUMENT = 90              # Opcodes from here have an argument:
 
 name_op('STORE_NAME', 90)       # Index in name list
 name_op('DELETE_NAME', 91)      # ""
-def_op('UNPACK_SEQUENCE', 92)   # Number of tuple items
+def_op('UNPACK_SEQUENCE', 92, 1)   # Number of tuple items
 jrel_op('FOR_ITER', 93)
 def_op('UNPACK_EX', 94)
 name_op('STORE_ATTR', 95)       # Index in name list
@@ -121,7 +125,7 @@ def_op('BUILD_LIST', 103)       # Number of list items
 def_op('BUILD_SET', 104)        # Number of set items
 def_op('BUILD_MAP', 105)        # Number of dict entries
 name_op('LOAD_ATTR', 106)       # Index in name list
-def_op('COMPARE_OP', 107)       # Comparison operator
+def_op('COMPARE_OP', 107, 2)       # Comparison operator
 hascompare.append(107)
 name_op('IMPORT_NAME', 108)     # Index in name list
 name_op('IMPORT_FROM', 109)     # Index in name list
@@ -131,13 +135,13 @@ jabs_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
 jabs_op('JUMP_ABSOLUTE', 113)        # ""
 jabs_op('POP_JUMP_IF_FALSE', 114)    # ""
 jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
-name_op('LOAD_GLOBAL', 116)     # Index in name list
+name_op('LOAD_GLOBAL', 116, 5)     # Index in name list
 def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
-def_op('BINARY_OP', 122)
+def_op('BINARY_OP', 122, 1)
 jrel_op('SEND', 123) # Number of bytes to skip
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)
@@ -193,6 +197,7 @@ def_op('PRECALL', 166)
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
+
 
 del def_op, name_op, jrel_op, jabs_op
 
@@ -260,10 +265,11 @@ _specialized_instructions = [
     "LOAD_GLOBAL_MODULE",
     "LOAD_GLOBAL_BUILTIN",
     "LOAD_METHOD_ADAPTIVE",
-    "LOAD_METHOD_CACHED",
     "LOAD_METHOD_CLASS",
     "LOAD_METHOD_MODULE",
     "LOAD_METHOD_NO_DICT",
+    "LOAD_METHOD_WITH_DICT",
+    "LOAD_METHOD_WITH_VALUES",
     "PRECALL_ADAPTIVE",
     "PRECALL_BUILTIN_CLASS",
     "PRECALL_NO_KW_BUILTIN_O",
@@ -295,6 +301,7 @@ _specialized_instructions = [
     "LOAD_FAST__LOAD_CONST",
     "LOAD_CONST__LOAD_FAST",
     "STORE_FAST__STORE_FAST",
+    "LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE",
 ]
 _specialization_stats = [
     "success",
