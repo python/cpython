@@ -34,7 +34,7 @@ from test.test_sqlite3.test_userfunctions import with_tracebacks
 def check_stmt_trace(self, cx, expected):
     try:
         traced = []
-        cx.set_trace_callback(lambda stmt: traced.append(stmt))
+        cx.set_trace_callback(traced.append)
         yield
     finally:
         self.assertEqual(traced, expected)
