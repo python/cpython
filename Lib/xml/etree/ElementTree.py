@@ -918,13 +918,9 @@ def _serialize_xml(write, elem, qnames, namespaces,
     if elem.tail:
         write(_escape_cdata(elem.tail))
 
-HTML_EMPTY = ("area", "base", "basefont", "br", "col", "frame", "hr",
-              "img", "input", "isindex", "link", "meta", "param")
-
-try:
-    HTML_EMPTY = set(HTML_EMPTY)
-except NameError:
-    pass
+HTML_EMPTY = {"area", "base", "basefont", "br", "col", "embed", "frame", "hr",
+              "img", "input", "isindex", "link", "meta", "param", "source",
+              "track", "wbr"}
 
 def _serialize_html(write, elem, qnames, namespaces, **kwargs):
     tag = elem.tag

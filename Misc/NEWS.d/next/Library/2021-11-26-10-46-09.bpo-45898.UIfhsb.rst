@@ -1,0 +1,2 @@
+:mod:`ctypes` no longer defines ``ffi_type_*`` symbols in ``cfield.c``. The
+symbols have been provided by libffi for over a decade.

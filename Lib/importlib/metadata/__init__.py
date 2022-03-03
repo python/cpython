@@ -156,8 +156,8 @@ class EntryPoint(DeprecatedTuple):
 
     pattern = re.compile(
         r'(?P<module>[\w.]+)\s*'
-        r'(:\s*(?P<attr>[\w.]+))?\s*'
-        r'(?P<extras>\[.*\])?\s*$'
+        r'(:\s*(?P<attr>[\w.]+)\s*)?'
+        r'((?P<extras>\[.*\])\s*)?$'
     )
     """
     A regular expression describing the syntax for an entry point,
@@ -277,6 +277,8 @@ class DeprecatedList(list):
     >>> len(recwarn)
     1
     """
+
+    __slots__ = ()
 
     _warn = functools.partial(
         warnings.warn,
@@ -570,18 +572,6 @@ class Distribution:
             getattr(finder, 'find_distributions', None) for finder in sys.meta_path
         )
         return filter(None, declared)
-
-    @classmethod
-    def _local(cls, root='.'):
-        from pep517 import build, meta
-
-        system = build.compat_system(root)
-        builder = functools.partial(
-            meta.build,
-            source_dir=root,
-            system=system,
-        )
-        return PathDistribution(zipfile.Path(meta.build_as_zip(builder)))
 
     @property
     def metadata(self) -> _meta.PackageMetadata:

@@ -68,6 +68,8 @@ annotations. These include:
      *Introducing* :data:`TypeAlias`
 * :pep:`647`: User-Defined Type Guards
      *Introducing* :data:`TypeGuard`
+* :pep:`673`: Self type
+    *Introducing* :data:`Self`
 
 .. _type-aliases:
 
@@ -572,6 +574,34 @@ These can be used as types in annotations and do not support ``[]``.
    * Every type is compatible with :data:`Any`.
    * :data:`Any` is compatible with every type.
 
+.. data:: Never
+
+   The `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
+   a type that has no members.
+
+   This can be used to define a function that should never be
+   called, or a function that never returns::
+
+     from typing import Never
+
+     def never_call_me(arg: Never) -> None:
+         pass
+
+     def int_or_str(arg: int | str) -> None:
+         never_call_me(arg)  # type checker error
+         match arg:
+             case int():
+                 print("It's an int")
+             case str():
+                 print("It's a str")
+             case _:
+                 never_call_me(arg)  # ok, arg is of type Never
+
+   .. versionadded:: 3.11
+
+      On older Python versions, :data:`NoReturn` may be used to express the
+      same concept. ``Never`` was added to make the intended meaning more explicit.
+
 .. data:: NoReturn
 
    Special type indicating that a function never returns.
@@ -582,8 +612,59 @@ These can be used as types in annotations and do not support ``[]``.
       def stop() -> NoReturn:
           raise RuntimeError('no way')
 
+   ``NoReturn`` can also be used as a
+   `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_, a type that
+   has no values. Starting in Python 3.11, the :data:`Never` type should
+   be used for this concept instead. Type checkers should treat the two
+   equivalently.
+
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
+
+.. data:: Self
+
+   Special type to represent the current enclosed class.
+   For example::
+
+      from typing import Self
+
+      class Foo:
+         def returns_self(self) -> Self:
+            ...
+            return self
+
+
+   This annotation is semantically equivalent to the following,
+   albeit in a more succinct fashion::
+
+      from typing import TypeVar
+
+      Self = TypeVar("Self", bound="Foo")
+
+      class Foo:
+         def returns_self(self: Self) -> Self:
+            ...
+            return self
+
+   In general if something currently follows the pattern of::
+
+      class Foo:
+         def return_self(self) -> "Foo":
+            ...
+            return self
+
+   You should use use :data:`Self` as calls to ``SubclassOfFoo.returns_self`` would have
+   ``Foo`` as the return type and not ``SubclassOfFoo``.
+
+   Other common use cases include:
+
+      - :class:`classmethod`\s that are used as alternative constructors and return instances
+        of the ``cls`` parameter.
+      - Annotating an :meth:`object.__enter__` method which returns self.
+
+   For more information, see :pep:`673`.
+
+   .. versionadded:: 3.11
 
 .. data:: TypeAlias
 
@@ -737,7 +818,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       from collections.abc import Callable
       from threading import Lock
-      from typing import Any, Concatenate, ParamSpec, TypeVar
+      from typing import Concatenate, ParamSpec, TypeVar
 
       P = ParamSpec('P')
       R = TypeVar('R')
@@ -1389,10 +1470,19 @@ These are not used in annotations. They are building blocks for declaring types.
    ``Point2D.__optional_keys__``.
    To allow using this feature with older versions of Python that do not
    support :pep:`526`, ``TypedDict`` supports two additional equivalent
-   syntactic forms::
+   syntactic forms:
+
+   * Using a literal :class:`dict` as the second argument::
+
+      Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+   * Using keyword arguments::
 
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
-      Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+   .. deprecated-removed:: 3.11 3.13
+      The keyword-argument syntax is deprecated in 3.11 and will be removed
+      in 3.13. It may also be unsupported by static type checkers.
 
    By default, all keys must be present in a ``TypedDict``. It is possible to
    override this by specifying totality.
@@ -1401,6 +1491,9 @@ These are not used in annotations. They are building blocks for declaring types.
       class Point2D(TypedDict, total=False):
           x: int
           y: int
+
+      # Alternative syntax
+      Point2D = TypedDict('Point2D', {'x': int, 'y': int}, total=False)
 
    This means that a ``Point2D`` ``TypedDict`` can have any of the keys
    omitted. A type checker is only expected to support a literal ``False`` or
@@ -1932,6 +2025,59 @@ Functions and decorators
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
 
+.. function:: assert_never(arg, /)
+
+   Assert to the type checker that a line of code is unreachable.
+
+   Example::
+
+       def int_or_str(arg: int | str) -> None:
+           match arg:
+               case int():
+                   print("It's an int")
+               case str():
+                   print("It's a str")
+               case _ as unreachable:
+                   assert_never(unreachable)
+
+   If a type checker finds that a call to ``assert_never()`` is
+   reachable, it will emit an error.
+
+   At runtime, this throws an exception when called.
+
+   .. versionadded:: 3.11
+
+.. function:: reveal_type(obj)
+
+   Reveal the inferred static type of an expression.
+
+   When a static type checker encounters a call to this function,
+   it emits a diagnostic with the type of the argument. For example::
+
+      x: int = 1
+      reveal_type(x)  # Revealed type is "builtins.int"
+
+   This can be useful when you want to debug how your type checker
+   handles a particular piece of code.
+
+   The function returns its argument unchanged, which allows using
+   it within an expression::
+
+      x = reveal_type(1)  # Revealed type is "builtins.int"
+
+   Most type checkers support ``reveal_type()`` anywhere, even if the
+   name is not imported from ``typing``. Importing the name from
+   ``typing`` allows your code to run without runtime errors and
+   communicates intent more clearly.
+
+   At runtime, this function prints the runtime type of its argument to stderr
+   and returns it unchanged::
+
+      x = reveal_type(1)  # prints "Runtime type is int"
+      print(x)  # prints "1"
+
+   .. versionadded:: 3.11
+
 .. decorator:: overload
 
    The ``@overload`` decorator allows describing functions and methods
@@ -1985,13 +2131,22 @@ Functions and decorators
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.11
+      The decorator will now set the ``__final__`` attribute to ``True``
+      on the decorated object. Thus, a check like
+      ``if getattr(obj, "__final__", False)`` can be used at runtime
+      to determine whether an object ``obj`` has been marked as final.
+      If the decorated object does not support setting attributes,
+      the decorator returns the object unchanged without raising an exception.
+
+
 .. decorator:: no_type_check
 
    Decorator to indicate that annotations are not type hints.
 
    This works as class or function :term:`decorator`.  With a class, it
-   applies recursively to all methods defined in that class (but not
-   to methods defined in its superclasses or subclasses).
+   applies recursively to all methods and classes defined in that class
+   (but not to methods defined in its superclasses or subclasses).
 
    This mutates the function(s) in place.
 
@@ -2030,9 +2185,7 @@ Introspection helpers
 
    This is often the same as ``obj.__annotations__``. In addition,
    forward references encoded as string literals are handled by evaluating
-   them in ``globals`` and ``locals`` namespaces. If necessary,
-   ``Optional[t]`` is added for function and method annotations if a default
-   value equal to ``None`` is set. For a class ``C``, return
+   them in ``globals`` and ``locals`` namespaces. For a class ``C``, return
    a dictionary constructed by merging all the ``__annotations__`` along
    ``C.__mro__`` in reverse order.
 
@@ -2058,6 +2211,11 @@ Introspection helpers
 
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
+
+   .. versionchanged:: 3.11
+      Previously, ``Optional[t]`` was added for function and method annotations
+      if a default value equal to ``None`` was set.
+      Now the annotation is returned unchanged.
 
 .. function:: get_args(tp)
 .. function:: get_origin(tp)
@@ -2133,7 +2291,7 @@ Constant
 
       If ``from __future__ import annotations`` is used in Python 3.7 or later,
       annotations are not evaluated at function definition time.
-      Instead, they are stored as strings in ``__annotations__``,
+      Instead, they are stored as strings in ``__annotations__``.
       This makes it unnecessary to use quotes around the annotation.
       (see :pep:`563`).
 

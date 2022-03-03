@@ -1,0 +1,6 @@
+Add ``PUSH_NULL`` instruction. This is used as a prefix when evaluating a
+callable, so that the stack has the same shape for methods and other calls.
+``PRECALL_FUNCTION`` and ``PRECALL_METHOD`` are merged into a single
+``PRECALL`` instruction.
+
+There is no change in semantics.

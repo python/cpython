@@ -1,0 +1,1 @@
+Make test suite support Expat >=2.4.5

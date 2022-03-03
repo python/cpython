@@ -2760,6 +2760,9 @@ left undefined.
    The built-in function :func:`int` falls back to :meth:`__trunc__` if neither
    :meth:`__int__` nor :meth:`__index__` is defined.
 
+   .. versionchanged:: 3.11
+      The delegation of :func:`int` to :meth:`__trunc__` is deprecated.
+
 
 .. _context-managers:
 

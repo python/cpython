@@ -617,11 +617,9 @@ class Counter(dict):
         ['A', 'A', 'B', 'B', 'C', 'C']
 
         # Knuth's example for prime factors of 1836:  2**2 * 3**3 * 17**1
+        >>> import math
         >>> prime_factors = Counter({2: 2, 3: 3, 17: 1})
-        >>> product = 1
-        >>> for factor in prime_factors.elements():     # loop over factors
-        ...     product *= factor                       # and multiply them
-        >>> product
+        >>> math.prod(prime_factors.elements())
         1836
 
         Note, if an element's count has been set to zero or is a negative
@@ -718,6 +716,51 @@ class Counter(dict):
         if elem in self:
             super().__delitem__(elem)
 
+    def __repr__(self):
+        if not self:
+            return f'{self.__class__.__name__}()'
+        try:
+            # dict() preserves the ordering returned by most_common()
+            d = dict(self.most_common())
+        except TypeError:
+            # handle case where values are not orderable
+            d = dict(self)
+        return f'{self.__class__.__name__}({d!r})'
+
+    # Multiset-style mathematical operations discussed in:
+    #       Knuth TAOCP Volume II section 4.6.3 exercise 19
+    #       and at http://en.wikipedia.org/wiki/Multiset
+    #
+    # Outputs guaranteed to only include positive counts.
+    #
+    # To strip negative and zero counts, add-in an empty counter:
+    #       c += Counter()
+    #
+    # Results are ordered according to when an element is first
+    # encountered in the left operand and then by the order
+    # encountered in the right operand.
+    #
+    # When the multiplicities are all zero or one, multiset operations
+    # are guaranteed to be equivalent to the corresponding operations
+    # for regular sets.
+    #     Given counter multisets such as:
+    #         cp = Counter(a=1, b=0, c=1)
+    #         cq = Counter(c=1, d=0, e=1)
+    #     The corresponding regular sets would be:
+    #         sp = {'a', 'c'}
+    #         sq = {'c', 'e'}
+    #     All of the following relations would hold:
+    #         set(cp + cq) == sp | sq
+    #         set(cp - cq) == sp - sq
+    #         set(cp | cq) == sp | sq
+    #         set(cp & cq) == sp & sq
+    #         (cp == cq) == (sp == sq)
+    #         (cp != cq) == (sp != sq)
+    #         (cp <= cq) == (sp <= sq)
+    #         (cp < cq) == (sp < sq)
+    #         (cp >= cq) == (sp >= sq)
+    #         (cp > cq) == (sp > sq)
+
     def __eq__(self, other):
         'True if all counts agree. Missing counts are treated as zero.'
         if not isinstance(other, Counter):
@@ -753,47 +796,6 @@ class Counter(dict):
         if not isinstance(other, Counter):
             return NotImplemented
         return self >= other and self != other
-
-    def __repr__(self):
-        if not self:
-            return f'{self.__class__.__name__}()'
-        try:
-            # dict() preserves the ordering returned by most_common()
-            d = dict(self.most_common())
-        except TypeError:
-            # handle case where values are not orderable
-            d = dict(self)
-        return f'{self.__class__.__name__}({d!r})'
-
-    # Multiset-style mathematical operations discussed in:
-    #       Knuth TAOCP Volume II section 4.6.3 exercise 19
-    #       and at http://en.wikipedia.org/wiki/Multiset
-    #
-    # Outputs guaranteed to only include positive counts.
-    #
-    # To strip negative and zero counts, add-in an empty counter:
-    #       c += Counter()
-    #
-    # When the multiplicities are all zero or one, multiset operations
-    # are guaranteed to be equivalent to the corresponding operations
-    # for regular sets.
-    #     Given counter multisets such as:
-    #         cp = Counter(a=1, b=0, c=1)
-    #         cq = Counter(c=1, d=0, e=1)
-    #     The corresponding regular sets would be:
-    #         sp = {'a', 'c'}
-    #         sq = {'c', 'e'}
-    #     All of the following relations would hold:
-    #         set(cp + cq) == sp | sq
-    #         set(cp - cq) == sp - sq
-    #         set(cp | cq) == sp | sq
-    #         set(cp & cq) == sp & sq
-    #         (cp == cq) == (sp == sq)
-    #         (cp != cq) == (sp != sq)
-    #         (cp <= cq) == (sp <= sq)
-    #         (cp < cq) == (sp < sq)
-    #         (cp >= cq) == (sp >= sq)
-    #         (cp > cq) == (sp > sq)
 
     def __add__(self, other):
         '''Add counts from two counters.

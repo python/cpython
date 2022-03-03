@@ -1490,8 +1490,10 @@ class UnicodeTest(string_tests.CommonTest,
         # issue18780
         import enum
         class Float(float, enum.Enum):
+            # a mixed-in type will use the name for %s etc.
             PI = 3.1415926
         class Int(enum.IntEnum):
+            # IntEnum uses the value and not the name for %s etc.
             IDES = 15
         class Str(enum.StrEnum):
             # StrEnum uses the value and not the name for %s etc.
@@ -1508,8 +1510,10 @@ class UnicodeTest(string_tests.CommonTest,
         # formatting jobs delegated from the string implementation:
         self.assertEqual('...%(foo)s...' % {'foo':Str.ABC},
                          '...abc...')
+        self.assertEqual('...%(foo)r...' % {'foo':Int.IDES},
+                         '...<Int.IDES: 15>...')
         self.assertEqual('...%(foo)s...' % {'foo':Int.IDES},
-                         '...IDES...')
+                         '...15...')
         self.assertEqual('...%(foo)i...' % {'foo':Int.IDES},
                          '...15...')
         self.assertEqual('...%(foo)d...' % {'foo':Int.IDES},
