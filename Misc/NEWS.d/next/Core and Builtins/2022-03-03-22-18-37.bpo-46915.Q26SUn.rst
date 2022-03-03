@@ -1,0 +1,2 @@
+Fix regression in ``moduleobject.h`` header file when building with
+versionless ``Py_LIMITED_API``.

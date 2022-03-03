@@ -79,7 +79,7 @@ struct PyModuleDef {
   const char* m_doc;
   Py_ssize_t m_size;
   PyMethodDef *m_methods;
-  PyModuleDef_Slot *m_slots;
+  struct PyModuleDef_Slot *m_slots;
   traverseproc m_traverse;
   inquiry m_clear;
   freefunc m_free;
