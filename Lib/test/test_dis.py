@@ -375,7 +375,7 @@ dis_traceback = """\
         >> PUSH_EXC_INFO
 
 %3d        LOAD_GLOBAL              0 (Exception)
-           JUMP_IF_NOT_EXC_MATCH    31 (to 62)
+           JUMP_IF_NOT_EXC_MATCH    35 (to 70)
            STORE_FAST               0 (e)
 
 %3d        LOAD_FAST                0 (e)
