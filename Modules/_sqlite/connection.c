@@ -926,13 +926,14 @@ do {                                                                    \
     }                                                                   \
 } while (0)
 
-#define SET_FLAG(fl)       \
-do {                       \
-    assert(flags != NULL); \
-    if (is_set) {          \
-        *flags |= fl;      \
-    }                      \
-} while (0)
+static inline void
+set_flag(int flag, int *dst, int is_set)
+{
+    assert(dst != NULL);
+    if (is_set) {
+        *dst |= flag;
+    }
+}
 
 static int
 add_deterministic_flag_if_supported(pysqlite_Connection *self, int *flags,
@@ -944,7 +945,7 @@ add_deterministic_flag_if_supported(pysqlite_Connection *self, int *flags,
     if (sqlite3_libversion_number() < 3008003) {
         NOT_SUPPORTED(self, "deterministic", "3.8.3");
     }
-    SET_FLAG(SQLITE_DETERMINISTIC);
+    set_flag(SQLITE_DETERMINISTIC, flags, is_set);
 #endif
     return 0;
 }
@@ -959,7 +960,7 @@ add_innocuous_flag_if_supported(pysqlite_Connection *self, int *flags,
     if (sqlite3_libversion_number() < 3031000) {
         NOT_SUPPORTED(self, "innocuous", "3.31.0");
     }
-    SET_FLAG(SQLITE_INNOCUOUS);
+    set_flag(SQLITE_INNOCUOUS, flags, is_set);
 #endif
     return 0;
 }
@@ -974,12 +975,11 @@ add_directonly_flag_if_supported(pysqlite_Connection *self, int *flags,
     if (sqlite3_libversion_number() < 3030000) {
         NOT_SUPPORTED(self, "directonly", "3.30.0");
     }
-    SET_FLAG(SQLITE_DIRECTONLY);
+    set_flag(SQLITE_DIRECTONLY, flags, is_set);
 #endif
     return 0;
 }
 
-#undef SET_FLAG
 #undef NOT_SUPPORTED
 
 /*[clinic input]
