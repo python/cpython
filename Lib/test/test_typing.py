@@ -3310,7 +3310,7 @@ class GetTypeHintTests(BaseTestCase):
         BA = Tuple[Annotated[T, (1, 0)], ...]
         def barfoo(x: BA): ...
         self.assertEqual(get_type_hints(barfoo, globals(), locals())['x'], Tuple[T, ...])
-        self.assertIs(
+        self.assertEqual(
             get_type_hints(barfoo, globals(), locals(), include_extras=True)['x'],
             BA
         )
@@ -3318,7 +3318,7 @@ class GetTypeHintTests(BaseTestCase):
         BA = tuple[Annotated[T, (1, 0)], ...]
         def barfoo(x: BA): ...
         self.assertEqual(get_type_hints(barfoo, globals(), locals())['x'], tuple[T, ...])
-        self.assertIs(
+        self.assertEqual(
             get_type_hints(barfoo, globals(), locals(), include_extras=True)['x'],
             BA
         )
