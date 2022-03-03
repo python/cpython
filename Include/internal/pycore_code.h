@@ -21,6 +21,7 @@ typedef struct {
 } _PyAdaptiveEntry;
 
 typedef struct {
+    /* Borrowed ref */
     PyObject *obj;
 } _PyObjectCache;
 
@@ -429,76 +430,107 @@ extern PyObject* _Py_GetSpecializationStats(void);
 #ifdef WORDS_BIGENDIAN
 
 static inline void
-write_u32(uint16_t p[2], uint32_t val)
+write_u32(uint16_t *p, uint32_t val)
 {
-    p[0] = val >> 16;
-    p[1] = (uint16_t)val;
-}
-
-static inline uint32_t
-read_u32(uint16_t p[2])
-{
-    return (p[0] << 16) | p[1];
+    p[0] = (uint16_t)(val >> 16);
+    p[1] = (uint16_t)(val >>  0);
 }
 
 static inline void
-write_obj(uint16_t p[4], PyObject *obj)
+write_u64(uint16_t *p, uint64_t val)
 {
-    uint64_t val = (uintptr_t)obj;
     p[0] = (uint16_t)(val >> 48);
     p[1] = (uint16_t)(val >> 32);
     p[2] = (uint16_t)(val >> 16);
     p[3] = (uint16_t)(val >>  0);
 }
 
-static inline PyObject *
-read_obj(uint16_t p[4])
+static inline uint32_t
+read_u32(uint16_t *p)
 {
-    uintptr_t val = 0;
+    uint32_t val = 0;
+    val |= (uint32_t)p[0] << 16;
+    val |= (uint32_t)p[1] <<  0;
+    return val;
+}
+
+static inline uint64_t
+read_u64(uint16_t *p)
+{
+    uint64_t val = 0;
     val |= (uint64_t)p[0] << 48;
     val |= (uint64_t)p[1] << 32;
     val |= (uint64_t)p[2] << 16;
     val |= (uint64_t)p[3] <<  0;
-    return (PyObject *)val;
+    return val;
 }
 
 #else
 
 static inline void
-write_u32(uint16_t p[2], uint32_t val)
+write_u32(uint16_t *p, uint32_t val)
 {
-    p[0] = (uint16_t)val;
-    p[1] = val >> 16;
-}
-
-static inline uint32_t
-read_u32(uint16_t p[2])
-{
-    return p[0] | (p[1] << 16);
+    p[0] = (uint16_t)(val >>  0);
+    p[1] = (uint16_t)(val >> 16);
 }
 
 static inline void
-write_obj(uint16_t p[4], PyObject *obj)
+write_u64(uint16_t *p, uint64_t val)
 {
-    uint64_t val = (uintptr_t)obj;
     p[0] = (uint16_t)(val >>  0);
     p[1] = (uint16_t)(val >> 16);
     p[2] = (uint16_t)(val >> 32);
     p[3] = (uint16_t)(val >> 48);
 }
 
-static inline PyObject *
-read_obj(uint16_t p[4])
+static inline uint32_t
+read_u32(uint16_t *p)
 {
-    uintptr_t val = 0;
+    uint32_t val = 0;
+    val |= (uint32_t)p[0] <<  0;
+    val |= (uint32_t)p[1] << 16;
+    return val;
+}
+
+static inline uint64_t
+read_u64(uint16_t *p)
+{
+    uint64_t val = 0;
     val |= (uint64_t)p[0] <<  0;
     val |= (uint64_t)p[1] << 16;
     val |= (uint64_t)p[2] << 32;
     val |= (uint64_t)p[3] << 48;
-    return (PyObject *)val;
+    return val;
 }
 
 #endif
+
+static inline void
+write_obj(uint16_t *p, PyObject *obj)
+{
+    uintptr_t val = (uintptr_t)obj;
+#if SIZEOF_UINTPTR_T == 8
+    write_u64(p, val);
+#elif SIZEOF_UINTPTR_T == 4
+    write_u32(p, val);
+#else
+    #error "sizeof(uintptr_t) must be 4 or 8"
+#endif
+}
+
+static inline PyObject *
+read_obj(uint16_t *p)
+{
+    uintptr_t val;
+#if SIZEOF_UINTPTR_T == 8
+    val = read_u64(p);
+#elif SIZE_OF_UINTPTR_T == 4
+    val = read_u32(p);
+#else
+    #error "sizeof(uintptr_t) must be 4 or 8"
+#endif
+    return (PyObject *)val;
+}
 
 #ifdef __cplusplus
 }
