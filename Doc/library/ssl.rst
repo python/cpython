@@ -1315,6 +1315,20 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: 3.2
 
+.. attribute:: SSLSocket.eager_recv
+
+   If set to ``True``, a call to :meth:`~socket.socket.recv()` or
+   :meth:`~socket.socket.recv_into()` on a
+   :ref:`non-blocking <ssl-nonblocking>` TLS socket
+   will drop the GIL once to read the entire buffer instead of reading at most
+   one TLS record (16 KB).
+
+   .. note::
+      Reading the entire buffer can include the TLS EOF segment, which will
+      close the TLS layer without raising :exc:`SSLEOFError`.
+
+   .. versionadded:: 3.12
+
 .. attribute:: SSLSocket.server_side
 
    A boolean which is ``True`` for server-side sockets and ``False`` for
