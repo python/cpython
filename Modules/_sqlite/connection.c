@@ -29,8 +29,6 @@
 #include "prepare_protocol.h"
 #include "util.h"
 
-#include <stdbool.h>
-
 #if SQLITE_VERSION_NUMBER >= 3014000
 #define HAVE_TRACE_V2
 #endif
@@ -1108,7 +1106,7 @@ value_callback(sqlite3_context *context)
                                "not defined";
         const char *err_msg  = "user-defined aggregate's 'value' method "
                                "raised error";
-        bool attr_err = PyErr_ExceptionMatches(PyExc_AttributeError);
+        int attr_err = PyErr_ExceptionMatches(PyExc_AttributeError);
         set_sqlite_error(context, attr_err ? attr_msg : err_msg);
     }
     else {
