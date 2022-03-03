@@ -1042,11 +1042,15 @@ inverse_callback(sqlite3_context *context, int argc, sqlite3_value **params)
 {
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
+    callback_context *ctx = (callback_context *)sqlite3_user_data(context);
+    assert(ctx != NULL);
+
     int size = sizeof(PyObject *);
     PyObject **cls = (PyObject **)sqlite3_aggregate_context(context, size);
     assert(cls != NULL);
     assert(*cls != NULL);
-    PyObject *method = PyObject_GetAttrString(*cls, "inverse");
+
+    PyObject *method = PyObject_GetAttr(*cls, ctx->state->str_inverse);
     if (method == NULL) {
         set_sqlite_error(context,
                          "user-defined aggregate's 'inverse' method "
@@ -1088,13 +1092,15 @@ value_callback(sqlite3_context *context)
 {
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
+    callback_context *ctx = (callback_context *)sqlite3_user_data(context);
+    assert(ctx != NULL);
+
     int size = sizeof(PyObject *);
     PyObject **cls = (PyObject **)sqlite3_aggregate_context(context, size);
     assert(cls != NULL);
     assert(*cls != NULL);
 
-    _Py_IDENTIFIER(value);
-    PyObject *res = _PyObject_CallMethodIdNoArgs(*cls, &PyId_value);
+    PyObject *res = PyObject_CallMethodNoArgs(*cls, ctx->state->str_value);
     if (res == NULL) {
         const char *attr_msg = "user-defined aggregate's 'value' method "
                                "not defined";
