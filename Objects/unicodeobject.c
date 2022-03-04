@@ -15499,6 +15499,10 @@ _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
 
 #ifdef Py_DEBUG
     assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
+
+    for (int i = 0; i < 256; i++) {
+        assert(_PyUnicode_CheckConsistency(LATIN1(i), 1));
+    }
 #endif
 
     return _PyStatus_OK();
