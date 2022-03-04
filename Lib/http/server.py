@@ -1259,17 +1259,17 @@ if __name__ == '__main__':
     parser.add_argument('--cgi', action='store_true',
                         help='run as CGI server')
     parser.add_argument('-b', '--bind', metavar='ADDRESS',
-                        help='specify the address to bind to '
+                        help='bind to this address '
                              '(default: all interfaces)')
     parser.add_argument('-d', '--directory', default=os.getcwd(),
-                        help='specify the directory to serve '
+                        help='serve this directory '
                              '(default: current directory)')
-    parser.add_argument('-p', '--protocol', default='HTTP/1.0',
-                        help='specify the HTTP version to conform to '
+    parser.add_argument('-p', '--protocol', metavar='VERSION',
+                        default='HTTP/1.0',
+                        help='conform to this HTTP version '
                              '(default: %(default)s)')
-    parser.add_argument('port', action='store', default=8000, type=int,
-                        nargs='?',
-                        help='specify the port to bind to '
+    parser.add_argument('port', default=8000, type=int, nargs='?',
+                        help='bind to this port '
                              '(default: %(default)s)')
     args = parser.parse_args()
     if args.cgi:
