@@ -398,6 +398,7 @@ typedef struct _object_stats {
     uint64_t dict_materialized_on_request;
     uint64_t dict_materialized_new_key;
     uint64_t dict_materialized_too_big;
+    uint64_t dict_materialized_str_subclass;
 } ObjectStats;
 
 typedef struct _stats {
