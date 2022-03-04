@@ -194,7 +194,7 @@ def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
 def_op('PRECALL', 166)
 
-def_op('CALL', 171)
+def_op('CALL', 171, 5)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
 

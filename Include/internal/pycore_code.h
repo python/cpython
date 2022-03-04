@@ -29,7 +29,7 @@ typedef struct {
     uint32_t func_version;
     uint16_t min_args;
     uint16_t defaults_len;
-} _PyCallCache;
+} _PyPrecallCache;
 
 
 /* Add specialized versions of entries to this union.
@@ -46,7 +46,7 @@ typedef union {
     _PyEntryZero zero;
     _PyAdaptiveEntry adaptive;
     _PyObjectCache obj;
-    _PyCallCache call;
+    _PyPrecallCache call;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
@@ -111,6 +111,16 @@ typedef struct {
 } _PyLoadMethodCache;
 
 #define INLINE_CACHE_ENTRIES_LOAD_METHOD CACHE_ENTRIES(_PyLoadMethodCache)
+
+// XXX: These members can definitely shrink:
+typedef struct {
+    _Py_CODEUNIT counter;
+    _Py_CODEUNIT func_version[2];
+    _Py_CODEUNIT min_args;
+    _Py_CODEUNIT defaults_len;
+} _PyCallCache;
+
+#define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
 
 /* Maximum size of code to quicken, in code units. */
 #define MAX_SIZE_TO_QUICKEN 5000
@@ -348,8 +358,8 @@ extern int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr,
                                      PyObject *name);
 extern int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
 extern int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
-extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
-    PyObject *kwnames, SpecializedCacheEntry *cache);
+extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
+                               int nargs, PyObject *kwnames);
 extern int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     PyObject *kwnames, SpecializedCacheEntry *cache, PyObject *builtins);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
