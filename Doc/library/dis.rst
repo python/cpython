@@ -475,14 +475,23 @@ the original TOS1.
 
 **Coroutine opcodes**
 
-.. opcode:: GET_AWAITABLE
+.. opcode:: GET_AWAITABLE (where)
 
    Implements ``TOS = get_awaitable(TOS)``, where ``get_awaitable(o)``
    returns ``o`` if ``o`` is a coroutine object or a generator object with
    the CO_ITERABLE_COROUTINE flag, or resolves
    ``o.__await__``.
 
+    If the ``where`` operand is nonzero, it indicates where the instruction
+    occurs:
+
+    * ``1`` After a call to ``__aenter__``
+    * ``2`` After a call to ``__aexit__``
+
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.11
+      Previously, this instruction did not have an oparg.
 
 
 .. opcode:: GET_AITER
