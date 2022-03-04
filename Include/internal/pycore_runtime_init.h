@@ -93,20 +93,22 @@ extern "C" {
         _PyBytes_SIMPLE_INIT(CH, 1) \
     }
 
+#define _PyASCIIObjectBase_INIT(LITERAL, ASCII) \
+    { \
+        .ob_base = _PyObject_IMMORTAL_INIT(&PyUnicode_Type), \
+        .length = sizeof(LITERAL) - 1, \
+        .hash = -1, \
+        .state = { \
+            .kind = 1, \
+            .compact = 1, \
+            .ascii = ASCII, \
+            .ready = 1, \
+        }, \
+    }
 #define _PyASCIIObject_INIT(LITERAL) \
     { \
-        ._ascii = { \
-            .ob_base = _PyObject_IMMORTAL_INIT(&PyUnicode_Type), \
-            .length = sizeof(LITERAL) - 1, \
-            .hash = -1, \
-            .state = { \
-                .kind = 1, \
-                .compact = 1, \
-                .ascii = 1, \
-                .ready = 1, \
-            }, \
-        }, \
-        ._data = LITERAL, \
+        ._ascii = _PyASCIIObjectBase_INIT(LITERAL, 1), \
+        ._data = LITERAL \
     }
 #define INIT_STR(NAME, LITERAL) \
     ._ ## NAME = _PyASCIIObject_INIT(LITERAL)
@@ -115,17 +117,7 @@ extern "C" {
 #define _PyCompactUnicodeObject_INIT(LITERAL) \
     { \
         ._latin1 = { \
-            ._base = { \
-                .ob_base = _PyObject_IMMORTAL_INIT(&PyUnicode_Type), \
-                .length = sizeof(LITERAL) - 1, \
-                .hash = -1, \
-                .state = { \
-                    .kind = 1, \
-                    .compact = 1, \
-                    .ascii = 0, \
-                    .ready = 1, \
-                }, \
-            }, \
+            ._base = _PyASCIIObjectBase_INIT(LITERAL, 0), \
         }, \
         ._data = LITERAL, \
     }
