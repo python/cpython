@@ -2028,8 +2028,9 @@ handle_eval_breaker:
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             DEOPT_IF(Py_REFCNT(left) != 2, BINARY_OP);
-            int next_oparg = _Py_OPARG(*next_instr);
-            assert(_Py_OPCODE(*next_instr) == STORE_FAST);
+            _Py_CODEUNIT true_next = next_instr[INLINE_CACHE_ENTRIES_BINARY_OP];
+            int next_oparg = _Py_OPARG(true_next);
+            assert(_Py_OPCODE(true_next) == STORE_FAST);
             /* In the common case, there are 2 references to the value
             * stored in 'variable' when the v = v + ... is performed: one
             * on the value stack (in 'v') and one still stored in the

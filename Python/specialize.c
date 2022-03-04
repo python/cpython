@@ -1951,7 +1951,8 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 break;
             }
             if (PyUnicode_CheckExact(lhs)) {
-                if (_Py_OPCODE(instr[1]) == STORE_FAST && Py_REFCNT(lhs) == 2) {
+                _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_BINARY_OP + 1];
+                if (_Py_OPCODE(next) == STORE_FAST && Py_REFCNT(lhs) == 2) {
                     *instr = _Py_MAKECODEUNIT(BINARY_OP_INPLACE_ADD_UNICODE,
                                               oparg);
                     goto success;
