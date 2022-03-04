@@ -9086,8 +9086,7 @@ super_vectorcall(PyObject *self, PyObject *const *args,
     size_t nargsf, PyObject *kwnames)
 {
     assert(PyType_Check(self));
-    if (kwnames != NULL) {
-        PyErr_SetString(PyExc_TypeError, "super() takes no keyword arguments");
+    if (!_PyArg_NoKwnames("super", kwnames)) {
         return NULL;
     }
 
