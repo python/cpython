@@ -815,17 +815,15 @@ final_callback(sqlite3_context *context)
         Py_DECREF(function_result);
     }
     if (!ok) {
-        const char *attr_msg = "user-defined aggregate's 'finalize' method "
-                               "not defined";
-        const char *err_msg  = "user-defined aggregate's 'finalize' method "
-                               "raised error";
         int attr_err = PyErr_ExceptionMatches(PyExc_AttributeError);
         _PyErr_ChainExceptions(exception, value, tb);
 
         /* Note: contrary to the step, value, and inverse callbacks, SQLite
          * does not, as of SQLite 3.38.0, propagate errors to sqlite3_step()
          * from the finalize callback. */
-        set_sqlite_error(context, attr_err ? attr_msg : err_msg);
+        set_sqlite_error(context, attr_err
+                ? "user-defined aggregate's 'finalize' method not defined"
+                : "user-defined aggregate's 'finalize' method raised error");
     }
     else {
         PyErr_Restore(exception, value, tb);
@@ -1048,12 +1046,10 @@ value_callback(sqlite3_context *context)
 
     PyObject *res = PyObject_CallMethodNoArgs(*cls, ctx->state->str_value);
     if (res == NULL) {
-        const char *attr_msg = "user-defined aggregate's 'value' method "
-                               "not defined";
-        const char *err_msg  = "user-defined aggregate's 'value' method "
-                               "raised error";
         int attr_err = PyErr_ExceptionMatches(PyExc_AttributeError);
-        set_sqlite_error(context, attr_err ? attr_msg : err_msg);
+        set_sqlite_error(context, attr_err
+                ? "user-defined aggregate's 'value' method not defined"
+                : "user-defined aggregate's 'value' method raised error");
     }
     else {
         int rc = _pysqlite_set_result(context, res);
