@@ -26,9 +26,6 @@
     <Variable Name="WinVer" Value="$(var.MajorVersionNumber).$(var.MinorVersionNumber)$(var.PyArchExt)$(var.PyTestExt)" />
     <Variable Name="WinVerNoDot" Value="$(var.MajorVersionNumber)$(var.MinorVersionNumber)$(var.PyArchExt)$(var.PyTestExt)" />
 
-    <!-- A more accurate value may be calculated by the bootstrapper -->
-    <Variable Name="ProgramFilesArmFolder" Value="[ProgramFilesFolder]" bal:Overridable="yes" />
-
     <Variable Name="InstallAllUsers" Value="0" bal:Overridable="yes" />
     <?if "$(var.PyTestExt)"="" ?>
     <Variable Name="InstallLauncherAllUsers" Value="1" bal:Overridable="yes" />
@@ -40,7 +37,7 @@
     <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFiles64Folder]Python[WinVerNoDot]" bal:Overridable="yes" />
     <Variable Name="TargetPlatform" Value="x64" />
     <?elseif $(var.Platform)~="ARM64" ?>
-    <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFilesArmFolder]Python[WinVerNoDot]" bal:Overridable="yes" />
+    <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFiles64Folder]Python[WinVerNoDot]" bal:Overridable="yes" />
     <Variable Name="TargetPlatform" Value="ARM64" />
     <?else ?>
     <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFilesFolder]Python[WinVerNoDot]" bal:Overridable="yes" />
