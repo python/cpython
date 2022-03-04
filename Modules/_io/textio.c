@@ -30,7 +30,7 @@ PyDoc_STRVAR(textiobase_doc,
     "\n"
     "This class provides a character and line based interface to stream\n"
     "I/O. There is no readinto method because Python's character strings\n"
-    "are immutable. The constructor accepts no arguments.\n"
+    "are immutable.\n"
     );
 
 static PyObject *
