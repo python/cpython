@@ -819,8 +819,9 @@ final_callback(sqlite3_context *context)
         _PyErr_ChainExceptions(exception, value, tb);
 
         /* Note: contrary to the step, value, and inverse callbacks, SQLite
-         * does not, as of SQLite 3.38.0, propagate errors to sqlite3_step()
-         * from the finalize callback. */
+         * does _not_, as of SQLite 3.38.0, propagate errors to sqlite3_step()
+         * from the finalize callback. This implies that execute*() will not
+         * raise OperationalError, as it normally would. */
         set_sqlite_error(context, attr_err
                 ? "user-defined aggregate's 'finalize' method not defined"
                 : "user-defined aggregate's 'finalize' method raised error");
