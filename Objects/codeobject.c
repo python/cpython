@@ -1571,10 +1571,7 @@ code_sizeof(PyCodeObject *co, PyObject *Py_UNUSED(args))
     }
 
     if (co->co_quickened != NULL) {
-        Py_ssize_t count = co->co_quickened[0].entry.zero.cache_count;
-        count += (PyBytes_GET_SIZE(co->co_code)+sizeof(SpecializedCacheEntry)-1)/
-            sizeof(SpecializedCacheEntry);
-        res += count * sizeof(SpecializedCacheEntry);
+        res += PyBytes_GET_SIZE(co->co_code);
     }
 
     return PyLong_FromSsize_t(res);
