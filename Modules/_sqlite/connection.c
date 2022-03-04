@@ -1076,8 +1076,7 @@ _sqlite3.Connection.create_window_function as create_window_function
         The name of the SQL aggregate window function to be created or
         redefined.
     num_params: int
-        The number of arguments that the SQL aggregate window function
-        takes.
+        The number of arguments the step and inverse methods takes.
     aggregate_class: object
         A class with step(), finalize(), value(), and inverse() methods.
         Set to None to clear the window function.
@@ -1090,7 +1089,7 @@ static PyObject *
 create_window_function_impl(pysqlite_Connection *self, PyTypeObject *cls,
                             const char *name, int num_params,
                             PyObject *aggregate_class)
-/*[clinic end generated code: output=5332cd9464522235 input=258eac1970a0947e]*/
+/*[clinic end generated code: output=5332cd9464522235 input=46d57a54225b5228]*/
 {
     if (sqlite3_libversion_number() < 3025000) {
         PyErr_SetString(self->NotSupportedError,

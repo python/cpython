@@ -247,8 +247,7 @@ PyDoc_STRVAR(create_window_function__doc__,
 "    The name of the SQL aggregate window function to be created or\n"
 "    redefined.\n"
 "  num_params\n"
-"    The number of arguments that the SQL aggregate window function\n"
-"    takes.\n"
+"    The number of arguments the step and inverse methods takes.\n"
 "  aggregate_class\n"
 "    A class with step(), finalize(), value(), and inverse() methods.\n"
 "    Set to None to clear the window function.");
@@ -888,4 +887,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=a8039b35c44796d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=17b01069e28ba5bd input=a9049054013a1b77]*/
