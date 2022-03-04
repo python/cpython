@@ -1222,6 +1222,7 @@ Consumes key and value references.
 static int
 insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
 {
+    PyObject *old_key;
     PyObject *old_value;
 
     if (DK_IS_UNICODE(mp->ma_keys) && !PyUnicode_CheckExact(key)) {
@@ -1277,6 +1278,15 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
         assert(mp->ma_keys->dk_usable >= 0);
         ASSERT_CONSISTENT(mp);
         return 0;
+    }
+
+    if (!DK_IS_UNICODE(mp->ma_keys)) {
+        PyDictKeyEntry *ep = &DK_ENTRIES(mp->ma_keys)[ix];
+        old_key = ep->me_key;
+        if (old_key != key) {
+            ep->me_key = key;
+            key = old_key;
+        }
     }
 
     if (old_value != value) {

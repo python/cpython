@@ -1797,6 +1797,19 @@ class MappingTestCase(TestBase):
         self.assertRaises(TypeError, d.__getitem__,  13)
         self.assertRaises(TypeError, d.__setitem__,  13, 13)
 
+    def test_weak_keyed_equal_replacement(self):
+        d = weakref.WeakKeyDictionary()
+        o1 = Object('1')
+        o2 = Object('1')
+        d[o1] = 1
+        d[o2] = 2
+        assert len(d) == 1
+        assert d[o2] == 2
+        assert tuple(d.keys())[0] is o2
+        del o1
+        assert len(d) == 1
+        assert tuple(d.keys())[0] is o2
+
     def test_weak_keyed_cascading_deletes(self):
         # SF bug 742860.  For some reason, before 2.3 __delitem__ iterated
         # over the keys via self.data.iterkeys().  If things vanished from

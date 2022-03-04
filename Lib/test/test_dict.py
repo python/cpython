@@ -618,6 +618,21 @@ class DictTest(unittest.TestCase):
         with self.assertRaises(Exc):
             d1 == d2
 
+    def test_eq_replace(self):
+        class AlwaysEqualCmp(object):
+            def __eq__(self, other):
+                return True
+
+            def __hash__(self):
+                return 1
+
+        o1 = AlwaysEqualCmp()
+        d3 = {}
+        d3[o1] = 1
+        o2 = AlwaysEqualCmp()
+        d3[o2] = 2
+        assert tuple(d3.keys())[0] is o2
+
     def test_keys_contained(self):
         self.helper_keys_contained(lambda x: x.keys())
         self.helper_keys_contained(lambda x: x.items())
