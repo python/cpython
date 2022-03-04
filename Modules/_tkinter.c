@@ -3440,11 +3440,5 @@ PyInit__tkinter(void)
         return NULL;
     }
 
-#if 0
-    /* This was not a good idea; through <Destroy> bindings,
-       Tcl_Finalize() may invoke Python code but at that point the
-       interpreter and thread state have already been destroyed! */
-    Py_AtExit(Tcl_Finalize);
-#endif
     return m;
 }

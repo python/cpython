@@ -34,20 +34,6 @@
  *   but INRIA implementation returns EAI_xxx defined for getaddrinfo().
  */
 
-#if 0
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <arpa/nameser.h>
-#include <netdb.h>
-#include <resolv.h>
-#include <string.h>
-#include <stddef.h>
-
-#include "addrinfo.h"
-#endif
-
 #define SUCCESS 0
 #define YES 1
 #define NO  0

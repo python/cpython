@@ -1825,25 +1825,6 @@ Py_FinalizeEx(void)
         status = -1;
     }
 
-    /* Collect final garbage.  This disposes of cycles created by
-     * class definitions, for example.
-     * XXX This is disabled because it caused too many problems.  If
-     * XXX a __del__ or weakref callback triggers here, Python code has
-     * XXX a hard time running, because even the sys module has been
-     * XXX cleared out (sys.stdout is gone, sys.excepthook is gone, etc).
-     * XXX One symptom is a sequence of information-free messages
-     * XXX coming from threads (if a __del__ or callback is invoked,
-     * XXX other threads can execute too, and any exception they encounter
-     * XXX triggers a comedy of errors as subsystem after subsystem
-     * XXX fails to find what it *expects* to find in sys to help report
-     * XXX the exception and consequent unexpected failures).  I've also
-     * XXX seen segfaults then, after adding print statements to the
-     * XXX Python code getting called.
-     */
-#if 0
-    _PyGC_CollectIfEnabled();
-#endif
-
     /* Disable tracemalloc after all Python objects have been destroyed,
        so it is possible to use tracemalloc in objects destructor. */
     _PyTraceMalloc_Fini();
@@ -2424,7 +2405,6 @@ init_sys_streams(PyThreadState *tstate)
     _PySys_SetAttr(&_Py_ID(stdout), std);
     Py_DECREF(std);
 
-#if 1 /* Disable this if you have trouble debugging bootstrap stuff */
     /* Set sys.stderr, replaces the preliminary stderr */
     fd = fileno(stderr);
     std = create_stdio(config, iomod, fd, 1, "<stderr>",
@@ -2455,7 +2435,6 @@ init_sys_streams(PyThreadState *tstate)
         goto error;
     }
     Py_DECREF(std);
-#endif
 
     goto done;
 

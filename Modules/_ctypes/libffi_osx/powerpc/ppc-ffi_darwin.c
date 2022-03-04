@@ -37,18 +37,8 @@
 #include <ppc-darwin.h>
 #include <architecture/ppc/mode_independent_asm.h>
 
-#if 0
-#if defined(POWERPC_DARWIN)
-#include <libkern/OSCacheControl.h>	// for sys_icache_invalidate()
-#endif
-
-#else
-
 #pragma weak sys_icache_invalidate
 extern void sys_icache_invalidate(void *start, size_t len);
-
-#endif
-
 
 extern void ffi_closure_ASM(void);
 

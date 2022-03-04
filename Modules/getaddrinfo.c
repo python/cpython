@@ -38,25 +38,6 @@
  * - PF_UNSPEC case would be handled in getipnodebyname() with the AI_ALL flag.
  */
 
-#if 0
-#include <sys/types.h>
-#include <sys/param.h>
-#include <sys/sysctl.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <arpa/nameser.h>
-#include <netdb.h>
-#include <resolv.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <ctype.h>
-#include <unistd.h>
-
-#include "addrinfo.h"
-#endif
-
 #if defined(__KAME__) && defined(ENABLE_IPV6)
 # define FAITH
 #endif
