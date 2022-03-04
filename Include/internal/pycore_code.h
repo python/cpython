@@ -13,24 +13,6 @@ typedef struct {
     int32_t _; /* Force 8 byte size */
 } _PyEntryZero;
 
-typedef struct {
-    uint8_t original_oparg;
-    uint8_t counter;
-    uint16_t index;
-    uint32_t version;
-} _PyAdaptiveEntry;
-
-typedef struct {
-    /* Borrowed ref */
-    PyObject *obj;
-} _PyObjectCache;
-
-typedef struct {
-    uint32_t func_version;
-    uint16_t min_args;
-    uint16_t defaults_len;
-} _PyPrecallCache;
-
 
 /* Add specialized versions of entries to this union.
  *
@@ -44,9 +26,6 @@ typedef struct {
  */
 typedef union {
     _PyEntryZero zero;
-    _PyAdaptiveEntry adaptive;
-    _PyObjectCache obj;
-    _PyPrecallCache call;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
@@ -121,6 +100,14 @@ typedef struct {
 } _PyCallCache;
 
 #define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
+
+// XXX: Combine with _PyCallCache?
+typedef struct {
+    _Py_CODEUNIT counter;
+    _Py_CODEUNIT callable[4];
+} _PyPrecallCache;
+
+#define INLINE_CACHE_ENTRIES_PRECALL CACHE_ENTRIES(_PyPrecallCache)
 
 /* Maximum size of code to quicken, in code units. */
 #define MAX_SIZE_TO_QUICKEN 5000
@@ -342,11 +329,6 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
 #define ADAPTIVE_CACHE_BACKOFF 64
 
-static inline void
-cache_backoff(_PyAdaptiveEntry *entry) {
-    entry->counter = ADAPTIVE_CACHE_BACKOFF;
-}
-
 /* Specialization functions */
 
 extern int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
@@ -360,8 +342,9 @@ extern int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_C
 extern int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
 extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
                                int nargs, PyObject *kwnames);
-extern int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
-    PyObject *kwnames, SpecializedCacheEntry *cache, PyObject *builtins);
+extern int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr,
+                                  int nargs, PyObject *kwnames,
+                                  PyObject *builtins, int oparg);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                                     int oparg);
 extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
