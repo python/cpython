@@ -24,7 +24,6 @@
 import contextlib
 import functools
 import io
-import itertools
 import re
 import sys
 import unittest
