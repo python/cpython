@@ -668,6 +668,8 @@ MODULE__CRYPT_FALSE
 MODULE__CRYPT_TRUE
 MODULE__BLAKE2_FALSE
 MODULE__BLAKE2_TRUE
+MODULE__BLAKE3_FALSE
+MODULE__BLAKE3_TRUE
 MODULE__SHA3_FALSE
 MODULE__SHA3_TRUE
 MODULE__SHA512_FALSE
@@ -1839,9 +1841,9 @@ Optional Packages:
                           leave OpenSSL's defaults untouched, STRING: use a
                           custom string, python and STRING also set TLS 1.2 as
                           minimum TLS version
-  --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
+  --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2,blake3
                           builtin hash modules, md5, sha1, sha256, sha512,
-                          sha3 (with shake), blake2
+                          sha3 (with shake), blake2, blake3
   --with-experimental-isolated-subinterpreters
                           better isolate subinterpreters, experimental build
                           mode (default is no)
@@ -20254,6 +20256,7 @@ done
 SRCDIRS="\
   Modules \
   Modules/_blake2 \
+  Modules/_blake3 \
   Modules/_ctypes \
   Modules/_decimal \
   Modules/_decimal/libmpdec \
@@ -21222,7 +21225,7 @@ fi
 
 
 # builtin hash modules
-default_hashlib_hashes="md5,sha1,sha256,sha512,sha3,blake2"
+default_hashlib_hashes="md5,sha1,sha256,sha512,sha3,blake2,blake3"
 
 $as_echo "#define PY_BUILTIN_HASHLIB_HASHES /**/" >>confdefs.h
 
@@ -21269,7 +21272,9 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
   sha3) :
     with_builtin_sha3=yes ;; #(
   blake2) :
-    with_builtin_blake2=yes
+    with_builtin_blake2=yes ;; #(
+  blake3) :
+    with_builtin_blake3=yes
      ;; #(
   *) :
      ;;
@@ -22911,6 +22916,43 @@ $as_echo "$py_cv_module__blake2" >&6; }
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _blake3" >&5
+$as_echo_n "checking for stdlib extension module _blake3... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_blake3*) :
+    py_cv_module__blake3=n/a ;; #(
+  *) :
+    if test "$with_builtin_blake3" = yes; then :
+  if true; then :
+  py_cv_module__blake3=yes
+else
+  py_cv_module__blake3=missing
+fi
+else
+  py_cv_module__blake3=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__BLAKE3=$py_cv_module__blake3$as_nl"
+  if test "x$py_cv_module__blake3" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module__blake3" = yes; then
+  MODULE__BLAKE3_TRUE=
+  MODULE__BLAKE3_FALSE='#'
+else
+  MODULE__BLAKE3_TRUE='#'
+  MODULE__BLAKE3_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__blake3" >&5
+$as_echo "$py_cv_module__blake3" >&6; }
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _crypt" >&5
 $as_echo_n "checking for stdlib extension module _crypt... " >&6; }
       case $py_stdlib_not_available in #(
@@ -23989,6 +24031,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__BLAKE2_TRUE}" && test -z "${MODULE__BLAKE2_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__BLAKE2\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__BLAKE3_TRUE}" && test -z "${MODULE__BLAKE3_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__BLAKE3\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CRYPT_TRUE}" && test -z "${MODULE__CRYPT_FALSE}"; then

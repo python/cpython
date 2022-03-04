@@ -1,6 +1,7 @@
 # Autodetecting setup.py script for building the Python extensions
 
 import argparse
+import atexit
 import importlib._bootstrap
 import importlib.machinery
 import importlib.util
@@ -121,6 +122,20 @@ Topic :: Software Development
 def run_command(cmd):
     status = os.system(cmd)
     return os.waitstatus_to_exitcode(status)
+
+# UNIX-specific.  But CPython's setup.py isn't used on Windows.
+def run_command_silently(*cmdline):
+    argv0 = cmdline[0]
+    pipe_read, pipe_write = os.pipe2(0)
+    result = os.fork()
+    if result:
+        # parent
+        pid, errno = os.waitpid(result, 0)
+        return errno
+    # child
+    for fileno in (sys.stdout.fileno(), sys.stderr.fileno()):
+        os.dup2(pipe_read, fileno)
+    os.execvp(argv0, cmdline)
 
 
 # Set common compiler and linker flags derived from the Makefile,
@@ -1874,6 +1889,213 @@ class PyBuildExt(build_ext):
                 '_blake2/blake2s_impl.c'
             ]
         ))
+
+        import subprocess
+        import shlex
+
+        blake3_deps = glob(
+            os.path.join(escape(self.srcdir), 'Modules/_blake3/impl/*')
+        )
+        blake3_deps.append('hashlib.h')
+        blake3_files = [
+            '_blake3/blake3module.c',
+            '_blake3/blake3_impl.c',
+            '_blake3/impl/blake3_portable.c',
+            '_blake3/impl/blake3_dispatch.c',
+            '_blake3/impl/blake3.c',
+        ]
+        blake3_extra_objects = []
+        blake3_define_macros = []
+
+        # BLAKE3 has several implementations of its checksum algorithm.
+        # There's the portable C version, which compiles and runs
+        # everywhere with no hassle.  It's reasonably performant, too.
+        # But what you really want are the implementations using local
+        # CPU SIMD extensions--these versions can be enormously faster.
+        #
+        # BLAKE3 currently supports five SIMD extension instruction sets.
+        # The first four are Intel extensions, available both in 32-bit
+        # and 64-bit modes.  From oldest to newest--which also ranks them
+        # from slowest to fastest--these are: "SSE2", "SSE4.1", "AVX2",
+        # and "AVX512".  Finally, newer ARM processors may support the
+        # "NEON" SIMD extension instruction set, also available in both
+        # 32-bit and 64-bit modes.
+        #
+        # blake3_dispatch.c has runtime code that determines which
+        # processor extensions are available and chooses the best one.
+        # We don't have to worry about that--that's all taken care of.
+        # The problem we face is compiling those SIMD extensions, here
+        # inside setup.py.  distutils (or whatever we're using under
+        # the hood these days) doesn't understand assembly-language
+        # files, or compiling specific C files with extra compiler flags.
+        # (If it does support these things, please! Submit a PR and show
+        # me how it's done!)
+        #
+        # So I've done what's hopefully the simplest thing that will work.
+        # This code extracts the compiler command-line we're using, then
+        # simply *tries* compiling the different SIMD implementations.  If
+        # one approach "works", it uses that.  In this case, a command-line
+        # is considered to have "worked" if it produced a .o file.  It's
+        # more brute-force than clever, but it should be portable and
+        # reliable.
+        #
+        # Here's what it tries, in order:
+        #
+        # * First it tries the assembly-language versions.  The BLAKE3
+        #   C README.rst says that these are preferable to the
+        #   C-with-intrinsics versions.  If that compiles, then we remove
+        #   the .o file, and add the *assembly language* file to the
+        #   "extra_objects" list.   distutils simply adds the contents
+        #   of that array to the link command-line.  The compiler sees
+        #   the .S file, and assembles it and links it in directly.
+        #   (This means we don't cache the .o files.  But it hardly
+        #   matters--assemblers are blindingly fast these days.)
+        #
+        #   There are three different assembly-language versions
+        #   for each of the supported Intel SIMD instruction sets:
+        #
+        #     * One for generic UNIX-like platforms.  This includes
+        #       Linux and OS X.
+        #     * One for the GNU toolchain on Windows, which should work
+        #       with either GCC or Clang.
+        #     * And one for MSVS on Windows.
+        #
+        # * If the assembly-language versions fail, then we try the
+        #   C-with-intrinsics version.  These use compiler extensions
+        #   that add intrinsic functions that map directly to assembly
+        #   language instructions, in this case SIMD instructions.
+        #
+        #     * Most of the time, these require special command-line
+        #       flags to compile, specifying the target "architecture".
+        #       If one of the command-lines with extra flags works,
+        #       we preserve the .o file the command-line generated, and
+        #       add it to the "extra_objects" list.
+        #
+        #     * If none of the command-lines with extra flags succeeded
+        #       in compiling the C-with-intrinsics version, we try
+        #       compiling it without any special command-line flags,
+        #       as apparently that's proper on some platforms.  If that
+        #       works, it simply adds the C file to the "files" list.
+        #
+        # * If none of the above files works, we give up.
+        #
+        # This code also adds BLAKE3_NO_* and BLAKE3_USE_* preprocessor
+        # macros as appropriate.
+        #
+        # My code doesn't try to be smart about only compiling extensions
+        # that run on the local platform, for several reasons:
+        #
+        # * I'm taking a "simplext thing that could possibly work" approach.
+        # * You can't simply say "what platform am I compiling on?", because
+        #   you may be cross-compiling.
+        # * The attempted compilations are so fast, it's probably not worth
+        #   bothering with.
+        # * It's harmless to try compiling something that has no chance of
+        #   working--it simply fails, and we move on.
+        #
+        # I'm slightly concerned about how I build build_path.
+        # I assume it always starts with "build" in the current
+        # directory.   If the user somehow relocates the build
+        # directory somewhere else, I won't notice.  The way
+        # it's written, if the "build" directory doesn't exist,
+        # it'll use ".".  Anyway, AFAICT, setup.py is pretty inflexible;
+        # see "./python setup.py -h".  It says it always builds in the
+        # "build/" directory.  So hopefully this is all fine!
+        #
+        # p.s. this code is only used for POSIX-ish platforms, like Linux,
+        # OS X, FreeBSD, etc.  Windows has a completely different build
+        # process, including for extension modules.
+
+        impl_dir_elements = ["Modules", "_blake3", "impl"]
+        impl_dir = os.path.sep.join(impl_dir_elements)
+        build_path_glob_elements = ["build", "temp*", *os.getcwd().strip(os.sep).split(os.sep), *impl_dir_elements ]
+        build_dir_elements = []
+        old_cwd = os.getcwd()
+        for element in build_path_glob_elements:
+            hits = glob(element)
+            if not hits:
+                break
+            hit = hits[0]
+            build_dir_elements.append(hit)
+            os.chdir(hit)
+        os.chdir(old_cwd)
+        build_dir = os.path.sep.join(build_dir_elements) or "."
+
+        cc = shlex.split(sysconfig.get_config_var('CC'))
+        cflags = shlex.split(sysconfig.get_config_var('CFLAGS'))
+
+        blake3_files_to_delete = []
+
+        for extension, *build_info in (
+            ('sse2',
+                ('blake3_sse2_x86-64_unix.S', ()),
+                ('blake3_sse2_x86-64_windows_gnu.S', ()), # gnu toolchain on windows
+                # ('blake3_sse2_x86-64_windows_msvc.asm', ()), # windows only
+                ('blake3_sse2.c', ('-msse2',)),
+                ('blake3_sse2.c', ()),
+                ),
+            ('sse41',
+                ('blake3_sse41_x86-64_unix.S', ()),
+                ('blake3_sse41_x86-64_windows_gnu.S', ()), # gnu toolchain on windows
+                # ('blake3_sse41_x86-64_windows_msvc.asm', ()), # windows only
+                ('blake3_sse41.c', ('-msse4.1',)),
+                ('blake3_sse41.c', ()),
+                ),
+            ('avx2',
+                ('blake3_avx2_x86-64_unix.S', ()),
+                ('blake3_avx2_x86-64_windows_gnu.S', ()), # gnu toolchain on windows
+                # ('blake3_avx2_x86-64_windows_msvc.asm', ()), # windows only
+                ('blake3_avx2.c', ('-mavx2',)),
+                # ('blake3_avx2.c', ('/arch:AVX2',)), # windows only
+                ('blake3_avx2.c', ()),
+                ),
+            ('avx512',
+                ('blake3_avx512_x86-64_unix.S', ()),
+                ('blake3_avx512_x86-64_windows_gnu.S', ()), # gnu toolchain on windows
+                # ('blake3_avx512_x86-64_windows_msvc.asm', ()), # windows only
+                ('blake3_avx512.c', ('-mavx512f', '-mavx512vl')),
+                # ('blake3_avx512.c', ('/arch:AVX512',)), # windows only
+                ('blake3_avx512.c', ()),
+                ),
+            ('neon',
+                ('blake3_neon.c', ('-mfpu=neon-vfpv4', '-mfloat-abi=hard')),
+                ('blake3_neon.c', ()),
+                ),
+            ):
+            upper = extension.upper()
+            for filename, flags in build_info:
+                path = os.path.join(impl_dir, filename)
+                dot_o = os.path.join(build_dir, filename.rpartition('.')[0] + ".o")
+                cmdline = [*cc, "-c", "-O3", *cflags, *flags, "-o", dot_o, path]
+                run_command_silently(*cmdline)
+                if os.path.exists(dot_o):
+                    if flags:
+                        blake3_extra_objects.append(dot_o)
+                        blake3_files_to_delete.append(os.path.abspath(dot_o))
+                    else:
+                        os.unlink(dot_o)
+                        if filename.endswith(".S"):
+                            blake3_extra_objects.append(path)
+                        else:
+                            blake3_files.append(path)
+                    blake3_define_macros.append((f"BLAKE3_USE_{upper}", 1))
+                    break
+            else:
+                blake3_define_macros.append((f"BLAKE3_NO_{upper}", None))
+                blake3_define_macros.append((f"BLAKE3_USE_{upper}", 0))
+        self.addext(Extension(
+            '_blake3',
+            blake3_files,
+            extra_objects=blake3_extra_objects,
+            define_macros=blake3_define_macros,
+            depends=blake3_deps,
+        ))
+
+        if blake3_files_to_delete:
+            def unlink_blake3_files():
+                for path in blake3_files_to_delete:
+                    os.unlink(path)
+            atexit.register(unlink_blake3_files)
 
     def detect_nis(self):
         self.addext(Extension('nis', ['nismodule.c']))

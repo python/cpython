@@ -12,7 +12,8 @@ Named constructor functions are also available, these are faster
 than using new(name):
 
 md5(), sha1(), sha224(), sha256(), sha384(), sha512(), blake2b(), blake2s(),
-sha3_224, sha3_256, sha3_384, sha3_512, shake_128, and shake_256.
+blake3(), sha3_224(), sha3_256(), sha3_384(), sha3_512(), shake_128(),
+and shake_256().
 
 More algorithms may be available on your platform but the above are guaranteed
 to exist.  See the algorithms_guaranteed and algorithms_available attributes
@@ -56,7 +57,7 @@ More condensed:
 # This tuple and __get_builtin_constructor() must be modified if a new
 # always available algorithm is added.
 __always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512',
-                      'blake2b', 'blake2s',
+                      'blake2b', 'blake2s', 'blake3',
                       'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
                       'shake_128', 'shake_256')
 
@@ -103,6 +104,9 @@ def __get_builtin_constructor(name):
             import _blake2
             cache['blake2b'] = _blake2.blake2b
             cache['blake2s'] = _blake2.blake2s
+        elif name in {'blake3'}:
+            import _blake3
+            cache['blake3'] = _blake3.blake3
         elif name in {'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512'}:
             import _sha3
             cache['sha3_224'] = _sha3.sha3_224

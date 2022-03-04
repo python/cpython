@@ -1,0 +1,4 @@
+Add BLAKE3 bindings to :mod:`hashlib`.  BLAKE3 is a fast new cryptographic
+hash algorithm created by the team behind BLAKE2. Python's BLAKE3 support
+uses local SIMD extensions where available, making it Python's fastest
+built-in hash algorithm on newer Intel and AMD CPUs for non-trivial inputs.

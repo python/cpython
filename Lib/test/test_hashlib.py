@@ -11,6 +11,7 @@ from binascii import unhexlify
 import hashlib
 import importlib
 import itertools
+import json
 import os
 import sys
 import sysconfig
@@ -28,7 +29,7 @@ from http.client import HTTPException
 COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
 
 # default builtin hash module
-default_builtin_hashes = {'md5', 'sha1', 'sha256', 'sha512', 'sha3', 'blake2'}
+default_builtin_hashes = {'md5', 'sha1', 'sha256', 'sha512', 'sha3', 'blake2', 'blake3'}
 # --with-builtin-hashlib-hashes override
 builtin_hashes = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
 if builtin_hashes is None:
@@ -63,6 +64,13 @@ except ImportError:
     _blake2 = None
 
 requires_blake2 = unittest.skipUnless(_blake2, 'requires _blake2')
+
+try:
+    import _blake3
+except ImportError:
+    _blake3 = None
+
+requires_blake3 = unittest.skipUnless(_blake3, 'requires _blake3')
 
 # bpo-46913: Don't test the _sha3 extension on a Python UBSAN build
 SKIP_SHA3 = support.check_sanitizer(ub=True)
@@ -100,7 +108,7 @@ class HashLibTestCase(unittest.TestCase):
     supported_hash_names = ( 'md5', 'MD5', 'sha1', 'SHA1',
                              'sha224', 'SHA224', 'sha256', 'SHA256',
                              'sha384', 'SHA384', 'sha512', 'SHA512',
-                             'blake2b', 'blake2s',
+                             'blake2b', 'blake2s', 'blake3',
                              'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
                              'shake_128', 'shake_256')
 
@@ -126,6 +134,10 @@ class HashLibTestCase(unittest.TestCase):
         _blake2 = self._conditional_import_module('_blake2')
         if _blake2:
             algorithms.update({'blake2b', 'blake2s'})
+
+        _blake3 = self._conditional_import_module('_blake3')
+        if _blake3:
+            algorithms.add('blake3')
 
         self.constructors_to_test = {}
         for algorithm in algorithms:
@@ -182,6 +194,8 @@ class HashLibTestCase(unittest.TestCase):
         if _blake2:
             add_builtin_constructor('blake2s')
             add_builtin_constructor('blake2b')
+        if _blake3:
+            add_builtin_constructor('blake3')
 
         if not SKIP_SHA3:
             _sha3 = self._conditional_import_module('_sha3')
@@ -390,6 +404,10 @@ class HashLibTestCase(unittest.TestCase):
         self.check_no_unicode('blake2b')
         self.check_no_unicode('blake2s')
 
+    @requires_blake3
+    def test_no_unicode_blake3(self):
+        self.check_no_unicode('blake3')
+
     @requires_sha3
     def test_no_unicode_sha3(self):
         self.check_no_unicode('sha3_224')
@@ -460,6 +478,10 @@ class HashLibTestCase(unittest.TestCase):
     def test_blocksize_name_blake2(self):
         self.check_blocksize_name('blake2b', 128, 64)
         self.check_blocksize_name('blake2s', 64, 32)
+
+    @requires_blake3
+    def test_blocksize_name_blake3(self):
+        self.check_blocksize_name('blake3', 64, 32)
 
     def test_case_md5_0(self):
         self.check(
@@ -786,6 +808,59 @@ class HashLibTestCase(unittest.TestCase):
         for msg, key, md in read_vectors('blake2s'):
             key = bytes.fromhex(key)
             self.check('blake2s', msg, md, key=key)
+
+    @requires_blake3
+    def test_blake3_vectors(self):
+        base_data = b''.join([bytes((i,)) for i in range(0, 251)])
+        data = base_data * 408
+
+        path = os.path.dirname(__file__) + "/blake3.test_vectors.json"
+        with open(path, "rb") as f:
+            test_vectors = json.load(f)
+
+        blake3_key = test_vectors['key'].encode('ascii')
+        blake3_derive_key_context = test_vectors['context_string'].encode('ascii')
+
+        def test(case):
+            nonlocal data
+            length = case['input_len']
+            truncated = data[:length]
+
+            styles = ['stock', 'initialized stock', 'key', 'derived_key']
+            for style in styles:
+                update = True
+                if style == 'stock':
+                    b = hashlib.blake3()
+                    expected = case['hash']
+                elif style == 'initialized stock':
+                    b = hashlib.blake3(truncated)
+                    expected = case['hash']
+                    update = False
+                elif style == 'key':
+                    b = hashlib.blake3(b'', key=blake3_key)
+                    expected = case['keyed_hash']
+                elif style == 'derived_key':
+                    b = hashlib.blake3(derive_key_context=blake3_derive_key_context)
+                    expected = case['derive_key']
+
+                if update:
+                    b.update(truncated)
+
+                copy = b.copy()
+
+                for hasher in [b, copy]:
+                    got = hasher.hexdigest(length=len(expected) // 2)
+                    self.assertEqual(expected, got, f"\n\ndidn't get the right long hash!\n{   style=}\n{  length=}\n\n{expected=}\n\n{     got=}\n")
+
+                    expected = expected[:b.output_length * 2]
+                    got = hasher.hexdigest()
+                    self.assertEqual(expected, got, f"\n\ndidn't get the right default-length hash!\n{   style=}\n{  length=}\n\n{expected=}\n\n{     got=}\n")
+
+                    got = hasher.digest().hex()
+                    self.assertEqual(expected, got, f"\n\ndidn't get the right default-length digest!\n{   style=}\n{  length=}\n\n{expected=}\n\n{     got=}\n")
+
+        for case in test_vectors['cases']:
+            test(case)
 
     @requires_sha3
     def test_case_sha3_224_0(self):
