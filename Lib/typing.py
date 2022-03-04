@@ -332,8 +332,8 @@ def _tp_cache(func=None, /, *, typed=False):
 def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
     """Evaluate all forward references in the given type t.
     For use of globalns and localns see the docstring for get_type_hints().
-    recursive_guard is used to prevent infinite recursion with a recursive
-    ForwardRef.
+    recursive_guard is used to prevent prevent infinite recursion
+    with recursive ForwardRef.
     """
     if isinstance(t, ForwardRef):
         return t._evaluate(globalns, localns, recursive_guard)
@@ -1097,7 +1097,7 @@ class _BaseGenericAlias(_Final, _root=True):
             return self._name or self.__origin__.__name__
 
         # We are careful for copy and pickle.
-        # Also for simplicity we don't relay any dunder names
+        # Also for simplicity we just don't relay all dunder names
         if '__origin__' in self.__dict__ and not _is_dunder(attr):
             return getattr(self.__origin__, attr)
         raise AttributeError(attr)
