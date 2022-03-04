@@ -183,7 +183,6 @@ extern "C" {
 #define LOAD_FAST__LOAD_CONST           173
 #define LOAD_CONST__LOAD_FAST           174
 #define STORE_FAST__STORE_FAST          175
-#define LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE 176
 #define DO_TRACING                      255
 
 extern const uint8_t _PyOpcode_InlineCacheEntries[256];
@@ -213,9 +212,12 @@ static const uint32_t _PyOpcode_Jump[8] = {
 const uint8_t _PyOpcode_InlineCacheEntries[256] = {
     [BINARY_SUBSCR] = 4,
     [UNPACK_SEQUENCE] = 1,
+    [STORE_ATTR] = 4,
+    [LOAD_ATTR] = 4,
     [COMPARE_OP] = 2,
     [LOAD_GLOBAL] = 5,
     [BINARY_OP] = 1,
+    [LOAD_METHOD] = 10,
 };
 #endif /* OPCODE_TABLES */
 

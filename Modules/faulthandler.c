@@ -32,6 +32,23 @@
 
 #define PUTS(fd, str) _Py_write_noraise(fd, str, strlen(str))
 
+
+// clang uses __attribute__((no_sanitize("undefined")))
+// GCC 4.9+ uses __attribute__((no_sanitize_undefined))
+#if defined(__has_feature)  // Clang
+#  if __has_feature(undefined_behavior_sanitizer)
+#    define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
+#  endif
+#endif
+#if defined(__GNUC__) \
+    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 9))
+#  define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
+#endif
+#ifndef _Py_NO_SANITIZE_UNDEFINED
+#  define _Py_NO_SANITIZE_UNDEFINED
+#endif
+
+
 #ifdef HAVE_SIGACTION
 typedef struct sigaction _Py_sighandler_t;
 #else
@@ -1013,7 +1030,7 @@ faulthandler_suppress_crash_report(void)
 #endif
 }
 
-static PyObject *
+static PyObject* _Py_NO_SANITIZE_UNDEFINED
 faulthandler_read_null(PyObject *self, PyObject *args)
 {
     volatile int *x;
@@ -1102,17 +1119,20 @@ faulthandler_fatal_error_c_thread(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *
+static PyObject* _Py_NO_SANITIZE_UNDEFINED
 faulthandler_sigfpe(PyObject *self, PyObject *args)
 {
+    faulthandler_suppress_crash_report();
+
     /* Do an integer division by zero: raise a SIGFPE on Intel CPU, but not on
        PowerPC. Use volatile to disable compile-time optimizations. */
     volatile int x = 1, y = 0, z;
-    faulthandler_suppress_crash_report();
     z = x / y;
+
     /* If the division by zero didn't raise a SIGFPE (e.g. on PowerPC),
        raise it manually. */
     raise(SIGFPE);
+
     /* This line is never reached, but we pretend to make something with z
        to silence a compiler warning. */
     return PyLong_FromLong(z);

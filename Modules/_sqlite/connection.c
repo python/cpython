@@ -734,11 +734,11 @@ step_callback(sqlite3_context *context, int argc, sqlite3_value **params)
     PyObject** aggregate_instance;
     PyObject* stepmethod = NULL;
 
-    aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, sizeof(PyObject*));
+    callback_context *ctx = (callback_context *)sqlite3_user_data(context);
+    assert(ctx != NULL);
 
+    aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, sizeof(PyObject*));
     if (*aggregate_instance == NULL) {
-        callback_context *ctx = (callback_context *)sqlite3_user_data(context);
-        assert(ctx != NULL);
         *aggregate_instance = PyObject_CallNoArgs(ctx->callable);
         if (!*aggregate_instance) {
             set_sqlite_error(context,
@@ -747,8 +747,10 @@ step_callback(sqlite3_context *context, int argc, sqlite3_value **params)
         }
     }
 
-    stepmethod = PyObject_GetAttrString(*aggregate_instance, "step");
+    stepmethod = PyObject_GetAttr(*aggregate_instance, ctx->state->str_step);
     if (!stepmethod) {
+        set_sqlite_error(context,
+                "user-defined aggregate's 'step' method not defined");
         goto error;
     }
 

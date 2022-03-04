@@ -175,7 +175,7 @@ static void *opcode_targets[256] = {
     &&TARGET_LOAD_FAST__LOAD_CONST,
     &&TARGET_LOAD_CONST__LOAD_FAST,
     &&TARGET_STORE_FAST__STORE_FAST,
-    &&TARGET_LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE,
+    &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
