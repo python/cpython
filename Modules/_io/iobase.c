@@ -34,8 +34,7 @@ typedef struct {
 } iobase;
 
 PyDoc_STRVAR(iobase_doc,
-    "The abstract base class for all I/O classes. The constructor accepts\n"
-    "no arguments.\n"
+    "The abstract base class for all I/O classes."
     "\n"
     "This class provides dummy implementations for many methods that\n"
     "derived classes can override selectively; the default implementations\n"
