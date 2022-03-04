@@ -475,20 +475,25 @@ Connection Objects
 
    .. method:: create_window_function(name, num_params, aggregate_class, /)
 
-      Creates a user-defined aggregate window function. Aggregate window
-      functions are supported by SQLite 3.25.0 and higher.
-      :exc:`NotSupportedError` will be raised if used with older
-      versions.
+      Creates user-defined aggregate window function *name*.
 
-      The aggregate class must implement ``step`` and ``inverse``
-      methods, which accept the number of parameters *num_params* (if
-      *num_params* is -1, the function may take any number of arguments),
-      and ``finalize`` and ``value`` methods which return the final and
-      the current result of the aggregate.
+      *aggregate_class* must implement the following methods:
 
-      The ``finalize`` and ``value`` methods can return any of the types
-      supported by SQLite: :class:`bytes`, :class:`str`, :class:`int`,
-      :class:`float` and :const:`None`.
+      * ``step``: adds a row to the current window
+      * ``value``: returns the current value of the aggregate
+      * ``inverse``: removes a row from the current window
+      * ``finalize``: returns the final value of the aggregate
+
+      ``step`` and ``value`` accept *num_params* number of parameters,
+      unless *num_params* is ``-1``, in which case they may take any number of
+      arguments.  ``finalize`` and ``value`` can return any of the types
+      supported by SQLite:
+      :class:`bytes`, :class:`str`, :class:`int`, :class:`float`, and
+      :const:`None`.  Call :meth:`create_window_function` with
+      *aggregate_class* set to :const:`None` to clear window function *name*.
+
+      Aggregate window functions are supported by SQLite 3.25.0 and higher.
+      :exc:`NotSupportedError` will be raised if used with older versions.
 
       .. versionadded:: 3.11
 

@@ -7,19 +7,19 @@ class WindowSumInt:
         self.count = 0
 
     def step(self, value):
-        """This callback adds a row to the current window."""
+        """Adds a row to the current window."""
         self.count += value
 
     def value(self):
-        """This callback returns the current value of the aggregate."""
+        """Returns the current value of the aggregate."""
         return self.count
 
     def inverse(self, value):
-        """This callback removes a row from the current window."""
+        """Removes a row from the current window."""
         self.count -= value
 
     def finalize(self):
-        """This callback returns the final value of the aggregate.
+        """Returns the final value of the aggregate.
 
         Any clean-up actions should be placed here.
         """
