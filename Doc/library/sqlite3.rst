@@ -473,9 +473,7 @@ Connection Objects
       .. literalinclude:: ../includes/sqlite3/mysumaggr.py
 
 
-   .. method:: create_window_function(name, num_params, aggregate_class, /, *,
-                                      deterministic=False, innocuous=False,
-                                      directonly=False)
+   .. method:: create_window_function(name, num_params, aggregate_class, /)
 
       Creates a user-defined aggregate window function. Aggregate window
       functions are supported by SQLite 3.25.0 and higher.
@@ -492,30 +490,12 @@ Connection Objects
       supported by SQLite: :class:`bytes`, :class:`str`, :class:`int`,
       :class:`float` and :const:`None`.
 
-      If *deterministic* is :const:`True`, the created function is marked as
-      `deterministic <https://sqlite.org/deterministic.html>`_, which
-      allows SQLite to perform additional optimizations.
-
-      If *innocuous* is :const:`True`, the created function is marked as
-      `innocuous <https://sqlite.org/deterministic.html>`_, which
-      indicates to SQLite that it is unlikely to cause problems, even if
-      misused.  This flag is supported by SQLite 3.31.0 or higher.
-      :exc:`NotSupportedError` will be raised if used with older
-      versions.
-
-      If *directonly* is :const:`True`, the created function is marked as
-      `directonly <https://sqlite.org/deterministic.html>`_, which
-      means that it may only be invoked from top-level SQL.  This flag
-      is an SQLite security feature that is recommended for all
-      user-defined SQL functions.  This flag is supported by SQLite
-      3.30.0 or higher.  :exc:`NotSupportedError` will be raised if used
-      with older versions.
-
       .. versionadded:: 3.11
 
       Example:
 
       .. literalinclude:: ../includes/sqlite3/sumintwindow.py
+
 
    .. method:: create_collation(name, callable)
 
