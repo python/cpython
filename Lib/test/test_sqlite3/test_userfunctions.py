@@ -525,7 +525,7 @@ class WindowFunctionTests(unittest.TestCase):
         self.assertEqual(self.cur.fetchall(), self.expected)
 
     def test_win_error_on_create(self):
-        self.assertRaises(sqlite.OperationalError,
+        self.assertRaises(sqlite.ProgrammingError,
                           self.con.create_window_function,
                           "shouldfail", -100, WindowSumInt)
 

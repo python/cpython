@@ -1124,8 +1124,9 @@ create_window_function_impl(pysqlite_Connection *self, PyTypeObject *cls,
     }
 
     if (rc != SQLITE_OK) {
-        PyErr_SetString(self->OperationalError,
-                        "Error creating window function");
+        // Errors are not set on the database connection, so we cannot
+        // use _pysqlite_seterror().
+        PyErr_SetString(self->ProgrammingError, sqlite3_errstr(rc));
         return NULL;
     }
     Py_RETURN_NONE;
