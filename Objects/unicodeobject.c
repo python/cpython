@@ -207,8 +207,8 @@ extern "C" {
     } while (0)
 
 #define LATIN1(ch)  \
-    (ch < 128 ? \
-     (PyObject*)&_Py_SINGLETON(strings).ascii[ch] \
+    (ch < 128 \
+     ? (PyObject*)&_Py_SINGLETON(strings).ascii[ch] \
      : (PyObject*)&_Py_SINGLETON(strings).latin1[ch - 128])
 
 #ifdef MS_WINDOWS
