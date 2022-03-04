@@ -1,0 +1,2 @@
+Fix incorrect handling of inline cache entries when specializing
+:opcode:`BINARY_OP`.
