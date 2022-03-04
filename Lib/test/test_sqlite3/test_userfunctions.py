@@ -512,12 +512,12 @@ class WindowFunctionTests(unittest.TestCase):
             ("d", 12),
             ("e", 9),
         ]
-        self.query = ("""
+        self.query = """
             select x, %s(y) over (
                 order by x rows between 1 preceding and 1 following
             ) as sum_y
             from test order by x
-        """)
+        """
         self.con.create_window_function("sumint", 1, WindowSumInt)
 
     def test_win_sum_int(self):
@@ -531,7 +531,7 @@ class WindowFunctionTests(unittest.TestCase):
 
     @with_tracebacks(BadWindow)
     def test_win_exception_in_method(self):
-        for meth in ["__init__", "step", "value", "inverse"]:
+        for meth in "__init__", "step", "value", "inverse":
             with self.subTest(meth=meth):
                 with patch.object(WindowSumInt, meth, side_effect=BadWindow):
                     name = f"exc_{meth}"
@@ -578,7 +578,6 @@ class WindowFunctionTests(unittest.TestCase):
             with self.subTest(meth=meth, cls=cls):
                 name = f"exc_{meth}"
                 self.con.create_window_function(name, 1, cls)
-                self.addCleanup(self.con.create_window_function, name, 1, None)
                 with self.assertRaisesRegex(sqlite.OperationalError,
                                             f"'{meth}' method not defined"):
                     self.cur.execute(self.query % name)
@@ -596,7 +595,6 @@ class WindowFunctionTests(unittest.TestCase):
 
         name = "missing_finalize"
         self.con.create_window_function(name, 1, MissingFinalize)
-        self.addCleanup(self.con.create_window_function, name, 1, None)
         self.cur.execute(self.query % name)
         self.cur.fetchall()
 
@@ -617,6 +615,7 @@ class WindowFunctionTests(unittest.TestCase):
             def __init__(self): pass
             def step(self, x): pass
             def value(self): return 1 << 65
+
         self.con.create_window_function("err_val_ret", 1, ErrorValueReturn)
         self.assertRaisesRegex(sqlite.DataError, "string or blob too big",
                                self.cur.execute, self.query % "err_val_ret")
