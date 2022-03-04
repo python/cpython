@@ -1054,7 +1054,14 @@ the :mod:`site` module documentation.
 .. note::
 
    The effect of :mod:`site` on the module search path may be seen by running
-   Python with ``-S`` which will start Python without importing site.
+   Python with ``-S`` which will start Python without importing site. ``-s`` will
+   skip adding the :data:`user site-packages directory <site.USER_SITE>` to :data:`sys.path`.
+
+   The effect of :envvar:`PYTHON*` environment variables may be seen by running
+   Python with ``-E`` which will start Python ignoring these environment variables.
+
+   Finally, ``-I`` will start Python in isolated mode, simlar to ``-E`` and ``-s``
+   but with further restrictions.
 
 Virtual environments
 ~~~~~~~~~~~~~~~~~~~~
@@ -1092,7 +1099,9 @@ Embedded Python
 ~~~~~~~~~~~~~~~
 
 If Python is embedded within another application :c:func:`Py_SetPath` can be used to
-bypass the initialization of the module search path.
+bypass the initialization of the module search path. Alternatively Python can be
+initialized with :c:func:`Py_InitializeFromConfig` and the :c:type:`PyConfig` structure,
+the path specific details are described at :ref:`init-path-config`.
 
 .. seealso::
 
