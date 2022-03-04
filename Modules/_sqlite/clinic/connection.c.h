@@ -238,9 +238,7 @@ exit:
 #if defined(HAVE_WINDOW_FUNCTIONS)
 
 PyDoc_STRVAR(create_window_function__doc__,
-"create_window_function($self, name, num_params, aggregate_class, /, *,\n"
-"                       deterministic=False, directonly=False,\n"
-"                       innocuous=False)\n"
+"create_window_function($self, name, num_params, aggregate_class, /)\n"
 "--\n"
 "\n"
 "Creates or redefines an aggregate window function. Non-standard.\n"
@@ -261,27 +259,23 @@ PyDoc_STRVAR(create_window_function__doc__,
 static PyObject *
 create_window_function_impl(pysqlite_Connection *self, PyTypeObject *cls,
                             const char *name, int num_params,
-                            PyObject *aggregate_class, int deterministic,
-                            int directonly, int innocuous);
+                            PyObject *aggregate_class);
 
 static PyObject *
 create_window_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", "", "", "deterministic", "directonly", "innocuous", NULL};
-    static _PyArg_Parser _parser = {"siO|$ppp:create_window_function", _keywords, 0};
+    static const char * const _keywords[] = {"", "", "", NULL};
+    static _PyArg_Parser _parser = {"siO:create_window_function", _keywords, 0};
     const char *name;
     int num_params;
     PyObject *aggregate_class;
-    int deterministic = 0;
-    int directonly = 0;
-    int innocuous = 0;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &name, &num_params, &aggregate_class, &deterministic, &directonly, &innocuous)) {
+        &name, &num_params, &aggregate_class)) {
         goto exit;
     }
-    return_value = create_window_function_impl(self, cls, name, num_params, aggregate_class, deterministic, directonly, innocuous);
+    return_value = create_window_function_impl(self, cls, name, num_params, aggregate_class);
 
 exit:
     return return_value;
@@ -894,4 +888,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=cee6f0d6fa9b61dd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a8039b35c44796d9 input=a9049054013a1b77]*/

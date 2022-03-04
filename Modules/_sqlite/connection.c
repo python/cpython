@@ -917,56 +917,6 @@ destructor_callback(void *ctx)
     }
 }
 
-#define NOT_SUPPORTED(con, name, ver)                                   \
-do {                                                                    \
-    if (is_set) {                                                       \
-        PyErr_SetString(con->NotSupportedError,                         \
-                        name "=True requires SQLite " ver "or higher"); \
-        return -1;                                                      \
-    }                                                                   \
-} while (0)
-
-static inline void
-set_flag(int flag, int *dst, int is_set)
-{
-    assert(dst != NULL);
-    if (is_set) {
-        *dst |= flag;
-    }
-}
-
-static int
-add_innocuous_flag_if_supported(pysqlite_Connection *self, int *flags,
-                                int is_set)
-{
-#if SQLITE_VERSION_NUMBER < 3031000
-    NOT_SUPPORTED(self, "innocuous", "3.31.0");
-#else
-    if (sqlite3_libversion_number() < 3031000) {
-        NOT_SUPPORTED(self, "innocuous", "3.31.0");
-    }
-    set_flag(SQLITE_INNOCUOUS, flags, is_set);
-#endif
-    return 0;
-}
-
-static int
-add_directonly_flag_if_supported(pysqlite_Connection *self, int *flags,
-                                 int is_set)
-{
-#if SQLITE_VERSION_NUMBER < 3030000
-    NOT_SUPPORTED(self, "directonly", "3.30.0");
-#else
-    if (sqlite3_libversion_number() < 3030000) {
-        NOT_SUPPORTED(self, "directonly", "3.30.0");
-    }
-    set_flag(SQLITE_DIRECTONLY, flags, is_set);
-#endif
-    return 0;
-}
-
-#undef NOT_SUPPORTED
-
 /*[clinic input]
 _sqlite3.Connection.create_function as pysqlite_connection_create_function
 
@@ -1132,10 +1082,6 @@ _sqlite3.Connection.create_window_function as create_window_function
         A class with step(), finalize(), value(), and inverse() methods.
         Set to None to clear the window function.
     /
-    *
-    deterministic: bool = False
-    directonly: bool = False
-    innocuous: bool = False
 
 Creates or redefines an aggregate window function. Non-standard.
 [clinic start generated code]*/
@@ -1143,9 +1089,8 @@ Creates or redefines an aggregate window function. Non-standard.
 static PyObject *
 create_window_function_impl(pysqlite_Connection *self, PyTypeObject *cls,
                             const char *name, int num_params,
-                            PyObject *aggregate_class, int deterministic,
-                            int directonly, int innocuous)
-/*[clinic end generated code: output=32287d1dac62b1d3 input=66afbc429306d593]*/
+                            PyObject *aggregate_class)
+/*[clinic end generated code: output=5332cd9464522235 input=258eac1970a0947e]*/
 {
     if (sqlite3_libversion_number() < 3025000) {
         PyErr_SetString(self->NotSupportedError,
@@ -1159,16 +1104,6 @@ create_window_function_impl(pysqlite_Connection *self, PyTypeObject *cls,
     }
 
     int flags = SQLITE_UTF8;
-    if (deterministic) {
-        flags |= SQLITE_DETERMINISTIC;
-    }
-    if (add_directonly_flag_if_supported(self, &flags, directonly) < 0) {
-        return NULL;
-    }
-    if (add_innocuous_flag_if_supported(self, &flags, innocuous) < 0) {
-        return NULL;
-    }
-
     int rc;
     if (Py_IsNone(aggregate_class)) {
         rc = sqlite3_create_window_function(self->db, name, num_params, flags,

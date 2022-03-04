@@ -590,13 +590,12 @@ class WindowFunctionTests(unittest.TestCase):
         # Note: SQLite does not (as of version 3.38.0) propagate finalize
         # callback errors to sqlite3_step(); this implies that OperationalError
         # is _not_ raised.
-        name = "missing_finalize"
-
         class MissingFinalize:
             def step(self, x): pass
             def value(self): return 42
             def inverse(self, x): pass
 
+        name = "missing_finalize"
         self.con.create_window_function(name, 1, MissingFinalize)
         self.addCleanup(self.con.create_window_function, name, 1, None)
         self.cur.execute(self.query % name)
@@ -622,32 +621,6 @@ class WindowFunctionTests(unittest.TestCase):
         self.con.create_window_function("err_val_ret", 1, ErrorValueReturn)
         self.assertRaisesRegex(sqlite.DataError, "string or blob too big",
                                self.cur.execute, self.query % "err_val_ret")
-
-    def test_win_flags_keyword_only(self):
-        with self.assertRaisesRegex(TypeError, "positional arguments"):
-            self.con.create_window_function("foo", 1, WindowSumInt, True)
-
-    def test_win_flags(self):
-        flags = ("deterministic", "directonly", "innocuous")
-        dataset = itertools.product([False, True], repeat=3)
-        for i, d in enumerate(dataset):
-            kwargs = {k: v for k, v in zip(flags, d)}
-            with self.subTest(kwargs=kwargs):
-                name = f"flags{i}"
-
-                if kwargs["directonly"] and sqlite.sqlite_version_info < (3, 30, 0):
-                    notsupported = "directonly"
-                elif kwargs["innocuous"] and sqlite.sqlite_version_info < (3, 31, 0):
-                    notsupported = "innocuous"
-                else:
-                    notsupported = None
-
-                if notsupported:
-                    with self.assertRaisesRegex(sqlite.NotSupportedError, notsupported):
-                        self.con.create_window_function(name, 1, WindowSumInt, **kwargs)
-                else:
-                    self.con.create_window_function(name, 1, WindowSumInt, **kwargs)
-                    self.addCleanup(self.con.create_window_function, name, 1, None)
 
 
 class AggregateTests(unittest.TestCase):
