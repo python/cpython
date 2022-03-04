@@ -1,0 +1,1 @@
+Fix ``NameError`` in :func:`asyncio.gather` when initial type check fails.

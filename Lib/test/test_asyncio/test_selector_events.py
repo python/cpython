@@ -151,6 +151,24 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop._csock.send.side_effect = RuntimeError()
         self.assertRaises(RuntimeError, self.loop._write_to_self)
 
+    @mock.patch('socket.getaddrinfo')
+    def test_sock_connect_resolve_using_socket_params(self, m_gai):
+        addr = ('need-resolution.com', 8080)
+        for sock_type in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
+            with self.subTest(sock_type):
+                sock = test_utils.mock_nonblocking_socket(type=sock_type)
+
+                m_gai.side_effect = \
+                    lambda *args: [(None, None, None, None, ('127.0.0.1', 0))]
+
+                con = self.loop.create_task(self.loop.sock_connect(sock, addr))
+                self.loop.run_until_complete(con)
+                m_gai.assert_called_with(
+                    addr[0], addr[1], sock.family, sock.type, sock.proto, 0)
+
+                self.loop.run_until_complete(con)
+                sock.connect.assert_called_with(('127.0.0.1', 0))
+
     def test_add_reader(self):
         self.loop._selector.get_key.side_effect = KeyError
         cb = lambda: True

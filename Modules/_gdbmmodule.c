@@ -4,7 +4,6 @@
 /* Doc strings: Mitch Chapman */
 
 #define PY_SSIZE_T_CLEAN
-#define NEEDS_PY_IDENTIFIER
 #include "Python.h"
 #include "gdbm.h"
 
@@ -545,8 +544,7 @@ gdbm__enter__(PyObject *self, PyObject *args)
 static PyObject *
 gdbm__exit__(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(close);
-    return _PyObject_CallMethodIdNoArgs(self, &PyId_close);
+    return _gdbm_gdbm_close_impl((gdbmobject *)self);
 }
 
 static PyMethodDef gdbm_methods[] = {

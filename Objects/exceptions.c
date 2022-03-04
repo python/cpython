@@ -15,10 +15,10 @@
 
 
 /* Compatibility aliases */
-PyObject *PyExc_EnvironmentError = NULL;
-PyObject *PyExc_IOError = NULL;
+PyObject *PyExc_EnvironmentError = NULL;  // borrowed ref
+PyObject *PyExc_IOError = NULL;  // borrowed ref
 #ifdef MS_WINDOWS
-PyObject *PyExc_WindowsError = NULL;
+PyObject *PyExc_WindowsError = NULL;  // borrowed ref
 #endif
 
 
@@ -836,7 +836,12 @@ BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
 {
     assert(self->msg);
     assert(PyUnicode_Check(self->msg));
-    return Py_NewRef(self->msg);
+
+    assert(PyTuple_CheckExact(self->excs));
+    Py_ssize_t num_excs = PyTuple_Size(self->excs);
+    return PyUnicode_FromFormat(
+        "%S (%zd sub-exception%s)",
+        self->msg, num_excs, num_excs > 1 ? "s" : "");
 }
 
 static PyObject *
@@ -3642,10 +3647,8 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
 
 #define INIT_ALIAS(NAME, TYPE) \
     do { \
-        Py_INCREF(PyExc_ ## TYPE); \
-        Py_XDECREF(PyExc_ ## NAME); \
         PyExc_ ## NAME = PyExc_ ## TYPE; \
-        if (PyDict_SetItemString(mod_dict, # NAME, PyExc_ ## NAME)) { \
+        if (PyDict_SetItemString(mod_dict, # NAME, PyExc_ ## TYPE)) { \
             return -1; \
         } \
     } while (0)
