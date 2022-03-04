@@ -623,6 +623,10 @@ class WindowFunctionTests(unittest.TestCase):
         self.assertRaisesRegex(sqlite.DataError, "string or blob too big",
                                self.cur.execute, self.query % "err_val_ret")
 
+    def test_win_flags_keyword_only(self):
+        with self.assertRaisesRegex(TypeError, "positional arguments"):
+            self.con.create_window_function("foo", 1, WindowSumInt, True)
+
     def test_win_flags(self):
         flags = ("deterministic", "directonly", "innocuous")
         dataset = itertools.product([False, True], repeat=3)
@@ -640,8 +644,7 @@ class WindowFunctionTests(unittest.TestCase):
 
                 if notsupported:
                     with self.assertRaisesRegex(sqlite.NotSupportedError, notsupported):
-                        self.con.create_window_function(name, 1, WindowSumInt,
-                                                        **kwargs)
+                        self.con.create_window_function(name, 1, WindowSumInt, **kwargs)
                 else:
                     self.con.create_window_function(name, 1, WindowSumInt, **kwargs)
                     self.addCleanup(self.con.create_window_function, name, 1, None)
