@@ -1,5 +1,0 @@
-When a namespace package is imported before another module from the same
-namespace is created/installed in a different :data:`sys.path` location
-while the program is running, calling the
-:func:`importlib.invalidate_caches` function will now also guarantee the new
-module is noticed.

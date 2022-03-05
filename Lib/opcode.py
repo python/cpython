@@ -35,31 +35,31 @@ hasnargs = [] # unused
 opmap = {}
 opname = ['<%r>' % (op,) for op in range(256)]
 
-def def_op(name, op):
+_inline_cache_entries = [0] * 256
+
+def def_op(name, op, entries=0):
     opname[op] = name
     opmap[name] = op
+    _inline_cache_entries[op] = entries
 
-def name_op(name, op):
-    def_op(name, op)
+def name_op(name, op, entries=0):
+    def_op(name, op, entries)
     hasname.append(op)
 
-def jrel_op(name, op):
-    def_op(name, op)
+def jrel_op(name, op, entries=0):
+    def_op(name, op, entries)
     hasjrel.append(op)
 
-def jabs_op(name, op):
-    def_op(name, op)
+def jabs_op(name, op, entries=0):
+    def_op(name, op, entries)
     hasjabs.append(op)
 
 # Instruction opcodes for compiled code
 # Blank lines correspond to available opcodes
 
 def_op('POP_TOP', 1)
-def_op('ROT_TWO', 2)
-def_op('ROT_THREE', 3)
-def_op('DUP_TOP', 4)
-def_op('DUP_TOP_TWO', 5)
-def_op('ROT_FOUR', 6)
+def_op('PUSH_NULL', 2)
+def_op('CACHE', 3)
 
 def_op('NOP', 9)
 def_op('UNARY_POSITIVE', 10)
@@ -68,7 +68,7 @@ def_op('UNARY_NOT', 12)
 
 def_op('UNARY_INVERT', 15)
 
-def_op('BINARY_SUBSCR', 25)
+def_op('BINARY_SUBSCR', 25, 4)
 
 def_op('GET_LEN', 30)
 def_op('MATCH_MAPPING', 31)
@@ -76,8 +76,6 @@ def_op('MATCH_SEQUENCE', 32)
 def_op('MATCH_KEYS', 33)
 
 def_op('PUSH_EXC_INFO', 35)
-
-def_op('POP_EXCEPT_AND_RERAISE', 37)
 
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
@@ -93,30 +91,31 @@ def_op('GET_ITER', 68)
 def_op('GET_YIELD_FROM_ITER', 69)
 def_op('PRINT_EXPR', 70)
 def_op('LOAD_BUILD_CLASS', 71)
-def_op('YIELD_FROM', 72)
-def_op('GET_AWAITABLE', 73)
+
 def_op('LOAD_ASSERTION_ERROR', 74)
+def_op('RETURN_GENERATOR', 75)
 
 def_op('LIST_TO_TUPLE', 82)
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
 def_op('YIELD_VALUE', 86)
-
+def_op('ASYNC_GEN_WRAP', 87)
+def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
 
 HAVE_ARGUMENT = 90              # Opcodes from here have an argument:
 
 name_op('STORE_NAME', 90)       # Index in name list
 name_op('DELETE_NAME', 91)      # ""
-def_op('UNPACK_SEQUENCE', 92)   # Number of tuple items
+def_op('UNPACK_SEQUENCE', 92, 1)   # Number of tuple items
 jrel_op('FOR_ITER', 93)
 def_op('UNPACK_EX', 94)
-name_op('STORE_ATTR', 95)       # Index in name list
+name_op('STORE_ATTR', 95, 4)       # Index in name list
 name_op('DELETE_ATTR', 96)      # ""
 name_op('STORE_GLOBAL', 97)     # ""
 name_op('DELETE_GLOBAL', 98)    # ""
-def_op('ROT_N', 99)
+def_op('SWAP', 99)
 def_op('LOAD_CONST', 100)       # Index in const list
 hasconst.append(100)
 name_op('LOAD_NAME', 101)       # Index in name list
@@ -124,8 +123,8 @@ def_op('BUILD_TUPLE', 102)      # Number of tuple items
 def_op('BUILD_LIST', 103)       # Number of list items
 def_op('BUILD_SET', 104)        # Number of set items
 def_op('BUILD_MAP', 105)        # Number of dict entries
-name_op('LOAD_ATTR', 106)       # Index in name list
-def_op('COMPARE_OP', 107)       # Comparison operator
+name_op('LOAD_ATTR', 106, 4)       # Index in name list
+def_op('COMPARE_OP', 107, 2)       # Comparison operator
 hascompare.append(107)
 name_op('IMPORT_NAME', 108)     # Index in name list
 name_op('IMPORT_FROM', 109)     # Index in name list
@@ -135,27 +134,28 @@ jabs_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
 jabs_op('JUMP_ABSOLUTE', 113)        # ""
 jabs_op('POP_JUMP_IF_FALSE', 114)    # ""
 jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
-name_op('LOAD_GLOBAL', 116)     # Index in name list
+name_op('LOAD_GLOBAL', 116, 5)     # Index in name list
 def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
-def_op('BINARY_OP', 122)
-
+def_op('BINARY_OP', 122, 1)
+jrel_op('SEND', 123) # Number of bytes to skip
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)
 def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
-
-def_op('GEN_START', 129)        # Kind of generator/coroutine
+jabs_op('JUMP_IF_NOT_EG_MATCH', 127)
+jabs_op('POP_JUMP_IF_NOT_NONE', 128)
+jabs_op('POP_JUMP_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
-def_op('CALL_FUNCTION', 131)    # #args
+def_op('GET_AWAITABLE', 131)
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
-
+jabs_op('JUMP_NO_INTERRUPT', 134) # Target byte offset from beginning of code
 def_op('MAKE_CELL', 135)
 hasfree.append(135)
 def_op('LOAD_CLOSURE', 136)
@@ -167,7 +167,6 @@ hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
 
-def_op('CALL_FUNCTION_KW', 141)  # #args + #kwargs
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
 def_op('EXTENDED_ARG', 144)
@@ -179,19 +178,25 @@ def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
 
+def_op('RESUME', 151)
 def_op('MATCH_CLASS', 152)
 
 def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
 
-name_op('LOAD_METHOD', 160)
-def_op('CALL_METHOD', 161)
+name_op('LOAD_METHOD', 160, 10)
+
 def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
-def_op('CALL_METHOD_KW', 166)
+def_op('PRECALL', 166)
+
+def_op('CALL', 171)
+def_op('KW_NAMES', 172)
+hasconst.append(172)
+
 
 del def_op, name_op, jrel_op, jabs_op
 
@@ -234,6 +239,10 @@ _specialized_instructions = [
     "BINARY_OP_MULTIPLY_FLOAT",
     "BINARY_OP_SUBTRACT_INT",
     "BINARY_OP_SUBTRACT_FLOAT",
+    "COMPARE_OP_ADAPTIVE",
+    "COMPARE_OP_FLOAT_JUMP",
+    "COMPARE_OP_INT_JUMP",
+    "COMPARE_OP_STR_JUMP",
     "BINARY_SUBSCR_ADAPTIVE",
     "BINARY_SUBSCR_GETITEM",
     "BINARY_SUBSCR_LIST_INT",
@@ -242,12 +251,9 @@ _specialized_instructions = [
     "STORE_SUBSCR_ADAPTIVE",
     "STORE_SUBSCR_LIST_INT",
     "STORE_SUBSCR_DICT",
-    "CALL_FUNCTION_ADAPTIVE",
-    "CALL_FUNCTION_BUILTIN_O",
-    "CALL_FUNCTION_BUILTIN_FAST",
-    "CALL_FUNCTION_LEN",
-    "CALL_FUNCTION_ISINSTANCE",
-    "CALL_FUNCTION_PY_SIMPLE",
+    "CALL_ADAPTIVE",
+    "CALL_PY_EXACT_ARGS",
+    "CALL_PY_WITH_DEFAULTS",
     "JUMP_ABSOLUTE_QUICK",
     "LOAD_ATTR_ADAPTIVE",
     "LOAD_ATTR_INSTANCE_VALUE",
@@ -258,14 +264,36 @@ _specialized_instructions = [
     "LOAD_GLOBAL_MODULE",
     "LOAD_GLOBAL_BUILTIN",
     "LOAD_METHOD_ADAPTIVE",
-    "LOAD_METHOD_CACHED",
     "LOAD_METHOD_CLASS",
     "LOAD_METHOD_MODULE",
     "LOAD_METHOD_NO_DICT",
+    "LOAD_METHOD_WITH_DICT",
+    "LOAD_METHOD_WITH_VALUES",
+    "PRECALL_ADAPTIVE",
+    "PRECALL_BUILTIN_CLASS",
+    "PRECALL_NO_KW_BUILTIN_O",
+    "PRECALL_NO_KW_BUILTIN_FAST",
+    "PRECALL_BUILTIN_FAST_WITH_KEYWORDS",
+    "PRECALL_NO_KW_LEN",
+    "PRECALL_NO_KW_ISINSTANCE",
+    "PRECALL_NO_KW_LIST_APPEND",
+    "PRECALL_NO_KW_METHOD_DESCRIPTOR_O",
+    "PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS",
+    "PRECALL_NO_KW_STR_1",
+    "PRECALL_NO_KW_TUPLE_1",
+    "PRECALL_NO_KW_TYPE_1",
+    "PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST",
+    "PRECALL_BOUND_METHOD",
+    "PRECALL_PYFUNC",
+    "RESUME_QUICK",
     "STORE_ATTR_ADAPTIVE",
     "STORE_ATTR_INSTANCE_VALUE",
     "STORE_ATTR_SLOT",
     "STORE_ATTR_WITH_HINT",
+    "UNPACK_SEQUENCE_ADAPTIVE",
+    "UNPACK_SEQUENCE_LIST",
+    "UNPACK_SEQUENCE_TUPLE",
+    "UNPACK_SEQUENCE_TWO_TUPLE",
     # Super instructions
     "LOAD_FAST__LOAD_FAST",
     "STORE_FAST__LOAD_FAST",
@@ -274,11 +302,10 @@ _specialized_instructions = [
     "STORE_FAST__STORE_FAST",
 ]
 _specialization_stats = [
-    "specialization_success",
-    "specialization_failure",
+    "success",
+    "failure",
     "hit",
     "deferred",
     "miss",
     "deopt",
-    "unquickened",
 ]

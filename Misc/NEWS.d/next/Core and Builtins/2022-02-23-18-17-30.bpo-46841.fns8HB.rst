@@ -1,0 +1,2 @@
+Store :opcode:`BINARY_OP` caches inline using a new :opcode:`CACHE`
+instruction.

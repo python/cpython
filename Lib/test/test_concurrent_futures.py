@@ -32,6 +32,12 @@ import multiprocessing.process
 import multiprocessing.util
 
 
+if support.check_sanitizer(address=True, memory=True):
+    # bpo-46633: Skip the test because it is too slow when Python is built
+    # with ASAN/MSAN: between 5 and 20 minutes on GitHub Actions.
+    raise unittest.SkipTest("test too slow on ASAN/MSAN build")
+
+
 def create_future(state=PENDING, exception=None, result=None):
     f = Future()
     f._state = state
@@ -578,6 +584,14 @@ create_executor_tests(ProcessPoolShutdownTest,
 
 
 class WaitTests:
+    def test_20369(self):
+        # See https://bugs.python.org/issue20369
+        future = self.executor.submit(time.sleep, 1.5)
+        done, not_done = futures.wait([future, future],
+                            return_when=futures.ALL_COMPLETED)
+        self.assertEqual({future}, done)
+        self.assertEqual(set(), not_done)
+
 
     def test_first_completed(self):
         future1 = self.executor.submit(mul, 21, 2)

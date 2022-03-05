@@ -17,6 +17,7 @@ import itertools
 import types
 import warnings
 import weakref
+from types import GenericAlias
 
 from . import base_tasks
 from . import coroutines
@@ -104,6 +105,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         else:
             self._name = str(name)
 
+        self._num_cancels_requested = 0
         self._must_cancel = False
         self._fut_waiter = None
         self._coro = coro
@@ -123,8 +125,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._loop.call_exception_handler(context)
         super().__del__()
 
-    def __class_getitem__(cls, type):
-        return cls
+    __class_getitem__ = classmethod(GenericAlias)
 
     def _repr_info(self):
         return base_tasks._task_repr_info(self)
@@ -197,10 +198,18 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         task will be marked as cancelled when the wrapped coroutine
         terminates with a CancelledError exception (even if cancel()
         was not called).
+
+        This also increases the task's count of cancellation requests.
         """
         self._log_traceback = False
         if self.done():
             return False
+        self._num_cancels_requested += 1
+        # These two lines are controversial.  See discussion starting at
+        # https://github.com/python/cpython/pull/31394#issuecomment-1053545331
+        # Also remember that this is duplicated in _asynciomodule.c.
+        # if self._num_cancels_requested > 1:
+        #     return False
         if self._fut_waiter is not None:
             if self._fut_waiter.cancel(msg=msg):
                 # Leave self._fut_waiter; it may be a Task that
@@ -211,6 +220,26 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         self._must_cancel = True
         self._cancel_message = msg
         return True
+
+    def cancelling(self):
+        """Return the count of the task's cancellation requests.
+
+        This count is incremented when .cancel() is called
+        and may be decremented using .uncancel().
+        """
+        return self._num_cancels_requested
+
+    def uncancel(self):
+        """Decrement the task's count of cancellation requests.
+
+        This should be used by tasks that catch CancelledError
+        and wish to continue indefinitely until they are cancelled again.
+
+        Returns the remaining number of cancellation requests.
+        """
+        if self._num_cancels_requested > 0:
+            self._num_cancels_requested -= 1
+        return self._num_cancels_requested
 
     def __step(self, exc=None):
         if self.done():
@@ -621,17 +650,23 @@ def _ensure_future(coro_or_future, *, loop=None):
             raise ValueError('The future belongs to a different loop than '
                             'the one specified as the loop argument')
         return coro_or_future
-
+    called_wrap_awaitable = False
     if not coroutines.iscoroutine(coro_or_future):
         if inspect.isawaitable(coro_or_future):
             coro_or_future = _wrap_awaitable(coro_or_future)
+            called_wrap_awaitable = True
         else:
             raise TypeError('An asyncio.Future, a coroutine or an awaitable '
                             'is required')
 
     if loop is None:
         loop = events._get_event_loop(stacklevel=4)
-    return loop.create_task(coro_or_future)
+    try:
+        return loop.create_task(coro_or_future)
+    except RuntimeError:
+        if not called_wrap_awaitable:
+            coro_or_future.close()
+        raise
 
 
 @types.coroutine
@@ -715,7 +750,7 @@ def gather(*coros_or_futures, return_exceptions=False):
         nonlocal nfinished
         nfinished += 1
 
-        if outer.done():
+        if outer is None or outer.done():
             if not fut.cancelled():
                 # Mark exception retrieved.
                 fut.exception()
@@ -771,6 +806,7 @@ def gather(*coros_or_futures, return_exceptions=False):
     nfuts = 0
     nfinished = 0
     loop = None
+    outer = None  # bpo-46672
     for arg in coros_or_futures:
         if arg not in arg_to_fut:
             fut = _ensure_future(arg, loop=loop)

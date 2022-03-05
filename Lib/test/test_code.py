@@ -357,7 +357,7 @@ class CodeTest(unittest.TestCase):
 
         artificial_instructions = []
         for instr, positions in zip(
-            dis.get_instructions(code),
+            dis.get_instructions(code, show_caches=True),
             code.co_positions(),
             strict=True
         ):
@@ -367,7 +367,7 @@ class CodeTest(unittest.TestCase):
             # get assigned the first_lineno but they don't have other positions.
             # There is no easy way of inferring them at that stage, so for now
             # we don't support it.
-            self.assertTrue(positions.count(None) in [0, 4])
+            self.assertIn(positions.count(None), [0, 3, 4])
 
             if not any(positions):
                 artificial_instructions.append(instr)
@@ -378,12 +378,15 @@ class CodeTest(unittest.TestCase):
                 for instruction in artificial_instructions
             ],
             [
+                ('RESUME', 0),
                 ("PUSH_EXC_INFO", None),
                 ("LOAD_CONST", None), # artificial 'None'
                 ("STORE_NAME", "e"),  # XX: we know the location for this
                 ("DELETE_NAME", "e"),
                 ("RERAISE", 1),
-                ("POP_EXCEPT_AND_RERAISE", None)
+                ("COPY", 3),
+                ("POP_EXCEPT", None),
+                ("RERAISE", 1)
             ]
         )
 
@@ -417,7 +420,9 @@ class CodeTest(unittest.TestCase):
         def func():
             x = 1
         new_code = func.__code__.replace(co_linetable=b'')
-        for line, end_line, column, end_column in new_code.co_positions():
+        positions = new_code.co_positions()
+        next(positions) # Skip RESUME at start
+        for line, end_line, column, end_column in positions:
             self.assertIsNone(line)
             self.assertEqual(end_line, new_code.co_firstlineno + 1)
 
@@ -426,7 +431,9 @@ class CodeTest(unittest.TestCase):
         def func():
             x = 1
         new_code = func.__code__.replace(co_endlinetable=b'')
-        for line, end_line, column, end_column in new_code.co_positions():
+        positions = new_code.co_positions()
+        next(positions) # Skip RESUME at start
+        for line, end_line, column, end_column in positions:
             self.assertEqual(line, new_code.co_firstlineno + 1)
             self.assertIsNone(end_line)
 
@@ -435,7 +442,9 @@ class CodeTest(unittest.TestCase):
         def func():
             x = 1
         new_code = func.__code__.replace(co_columntable=b'')
-        for line, end_line, column, end_column in new_code.co_positions():
+        positions = new_code.co_positions()
+        next(positions) # Skip RESUME at start
+        for line, end_line, column, end_column in positions:
             self.assertEqual(line, new_code.co_firstlineno + 1)
             self.assertEqual(end_line, new_code.co_firstlineno + 1)
             self.assertIsNone(column)

@@ -1,3 +1,0 @@
-``configure`` now checks for socket ``shutdown`` function. The check makes
-it possible to disable ``SYS_shutdown`` with ``ac_cv_func_shutdown=no`` in
-CONFIG_SITE.

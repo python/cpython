@@ -987,10 +987,10 @@ os.close(fd)
             wr.close()
             f = wr.wait_closed()
             self.loop.run_until_complete(f)
-            assert rd.at_eof()
+            self.assertTrue(rd.at_eof())
             f = rd.read()
             data = self.loop.run_until_complete(f)
-            assert data == b''
+            self.assertEqual(data, b'')
 
         self.assertEqual(messages, [])
 

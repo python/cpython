@@ -1,0 +1,3 @@
+The default all users install directory for ARM64 is now under the native
+``Program Files`` folder, rather than ``Program Files (Arm)`` which is
+intended for ARM (32-bit) files.

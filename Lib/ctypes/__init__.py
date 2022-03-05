@@ -92,15 +92,18 @@ def CFUNCTYPE(restype, *argtypes, **kw):
         flags |= _FUNCFLAG_USE_LASTERROR
     if kw:
         raise ValueError("unexpected keyword argument(s) %s" % kw.keys())
+
     try:
         return _c_functype_cache[(restype, argtypes, flags)]
     except KeyError:
-        class CFunctionType(_CFuncPtr):
-            _argtypes_ = argtypes
-            _restype_ = restype
-            _flags_ = flags
-        _c_functype_cache[(restype, argtypes, flags)] = CFunctionType
-        return CFunctionType
+        pass
+
+    class CFunctionType(_CFuncPtr):
+        _argtypes_ = argtypes
+        _restype_ = restype
+        _flags_ = flags
+    _c_functype_cache[(restype, argtypes, flags)] = CFunctionType
+    return CFunctionType
 
 if _os.name == "nt":
     from _ctypes import LoadLibrary as _dlopen
@@ -116,15 +119,18 @@ if _os.name == "nt":
             flags |= _FUNCFLAG_USE_LASTERROR
         if kw:
             raise ValueError("unexpected keyword argument(s) %s" % kw.keys())
+
         try:
             return _win_functype_cache[(restype, argtypes, flags)]
         except KeyError:
-            class WinFunctionType(_CFuncPtr):
-                _argtypes_ = argtypes
-                _restype_ = restype
-                _flags_ = flags
-            _win_functype_cache[(restype, argtypes, flags)] = WinFunctionType
-            return WinFunctionType
+            pass
+
+        class WinFunctionType(_CFuncPtr):
+            _argtypes_ = argtypes
+            _restype_ = restype
+            _flags_ = flags
+        _win_functype_cache[(restype, argtypes, flags)] = WinFunctionType
+        return WinFunctionType
     if WINFUNCTYPE.__doc__:
         WINFUNCTYPE.__doc__ = CFUNCTYPE.__doc__.replace("CFUNCTYPE", "WINFUNCTYPE")
 

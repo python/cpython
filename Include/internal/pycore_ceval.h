@@ -12,12 +12,17 @@ extern "C" {
 struct pyruntimestate;
 struct _ceval_runtime_state;
 
+#ifndef Py_DEFAULT_RECURSION_LIMIT
+#  define Py_DEFAULT_RECURSION_LIMIT 1000
+#endif
+
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
+
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
 extern void _PyEval_InitRuntimeState(struct _ceval_runtime_state *);
-extern int _PyEval_InitState(struct _ceval_state *ceval);
+extern void _PyEval_InitState(struct _ceval_state *, PyThread_type_lock);
 extern void _PyEval_FiniState(struct _ceval_state *ceval);
 PyAPI_FUNC(void) _PyEval_SignalReceived(PyInterpreterState *interp);
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
@@ -42,7 +47,7 @@ extern PyObject *_PyEval_BuiltinsFromGlobals(
 
 
 static inline PyObject*
-_PyEval_EvalFrame(PyThreadState *tstate, struct _interpreter_frame *frame, int throwflag)
+_PyEval_EvalFrame(PyThreadState *tstate, struct _PyInterpreterFrame *frame, int throwflag)
 {
     if (tstate->interp->eval_frame == NULL) {
         return _PyEval_EvalFrameDefault(tstate, frame, throwflag);
@@ -111,9 +116,9 @@ static inline void _Py_LeaveRecursiveCall_inline(void)  {
 
 #define Py_LeaveRecursiveCall() _Py_LeaveRecursiveCall_inline()
 
-struct _interpreter_frame *_PyEval_GetFrame(void);
+struct _PyInterpreterFrame *_PyEval_GetFrame(void);
 
-PyObject *_Py_MakeCoro(PyFunctionObject *func, struct _interpreter_frame *);
+PyObject *_Py_MakeCoro(PyFunctionObject *func);
 
 #ifdef __cplusplus
 }
