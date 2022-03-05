@@ -790,7 +790,7 @@ class ForwardRef(_Final, _root=True):
         return f'ForwardRef({self.__forward_arg__!r}{module_repr})'
 
 
-def _is_unpacked_typevartuple(x):
+def _is_unpacked_typevartuple(x: Any) -> bool:
     return (
             isinstance(x, _UnpackGenericAlias)
             # If x is Unpack[tuple[...]], __parameters__ will be empty.
@@ -799,7 +799,7 @@ def _is_unpacked_typevartuple(x):
     )
 
 
-def _is_typevar_like(x):
+def _is_typevar_like(x: Any) -> bool:
     return isinstance(x, (TypeVar, ParamSpec)) or _is_unpacked_typevartuple(x)
 
 
@@ -1115,7 +1115,7 @@ class _BaseGenericAlias(_Final, _root=True):
                 + [attr for attr in dir(self.__origin__) if not _is_dunder(attr)]))
 
 
-def _is_unpacked_tuple(x):
+def _is_unpacked_tuple(x: Any) -> bool:
     # Is `x` something like `*tuple[int]` or `*tuple[int, ...]`?
     if not isinstance(x, _UnpackGenericAlias):
         return False
@@ -1128,7 +1128,7 @@ def _is_unpacked_tuple(x):
     return getattr(unpacked_type, '__origin__', None) is tuple
 
 
-def _is_unpacked_arbitrary_length_tuple(x):
+def _is_unpacked_arbitrary_length_tuple(x: Any) -> bool:
     if not _is_unpacked_tuple(x):
         return False
     unpacked_tuple = x.__args__[0]
@@ -1153,12 +1153,25 @@ def _is_unpacked_arbitrary_length_tuple(x):
     return False
 
 
-def _determine_typevar_substitution(typevars, args):
+# Alias for readability in type signatures.
+_TypeVarOrTypeVarTuple = TypeVar | TypeVarTuple
+
+
+def _determine_typevar_substitution(
+        typevars: tuple[_TypeVarOrTypeVarTuple, ...],
+        args: tuple[type, ...]
+) -> dict[_TypeVarOrTypeVarTuple, type]:
     """Determines how to assign type arguments to type variables.
 
     Args:
         typevars: A tuple of TypeVars and (at most one) TypeVarTuple.
         args: A tuple of type arguments to substitute into type variables.
+
+    Returns:
+        A dictionary mapping type variables to corresponding type arguments.
+
+    Raises:
+        ValueError: A valid substitution cannot be found.
 
     Examples:
         T1 = TypeVar('T1')
