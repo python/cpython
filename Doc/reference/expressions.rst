@@ -815,41 +815,39 @@ Subscriptions
    object: dictionary
    pair: sequence; item
 
-The subscription of an object in Python can have one of two effects. If the
-object is a :term:`sequence` (such as a :class:`string <str>`,
-:class:`tuple` or :class:`list`) or a :term:`mapping` (such as a
-:class:`dictionary <dict>`), subscripting the object will select an object from
-the collection. Subscripting certain *classes or types*, meanwhile, will
-return a :ref:`generic alias <types-genericalias>` object representing a
-*parameterized generic class*. The latter form of subscription is primarily
-useful for :term:`type hinting <type hint>`.
+The subscription of an instance of a :ref:`container class <sequence-types>`
+will generally select an element from the container. The subscription of a
+:term:`generic class <generic type>` will generally return a
+:ref:`GenericAlias <types-genericalias>` object.
 
 .. productionlist:: python-grammar
    subscription: `primary` "[" `expression_list` "]"
 
-The primary must evaluate to an object that supports subscription, such as a
-:class:`list` or a :class:`dictionary <dict>`. User-defined objects can support
-subscription by defining one or both of :meth:`~object.__getitem__` and
-:meth:`~object.__class_getitem__`.
+When an object is subscripted, the interpreter will evaluate the primary and
+the expression list.
 
-.. seealso::
-   :ref:`classgetitem-versus-getitem`
-      Documentation explaining when a subscription will lead to
-      :meth:`~object.__class_getitem__` being called over
-      :meth:`~object.__getitem__`
+The primary must evaluate to an object that supports subscription. An object
+may support subscription through defining one or both of
+:meth:`~object.__getitem__` and :meth:`~object.__class_getitem__`. When the
+primary is subscripted, the evaluated result of the expression list will be
+passed to one of these methods. For more details on when ``__class_getitem__``
+is called instead of ``__getitem__``, see :ref:`classgetitem-versus-getitem`.
 
-Subscriptions calling *__getitem__*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+If the expression list contains at least one comma, it will evaluate to a
+:class:`tuple` containing the items of the expression list. Otherwise, the
+expression list will evaluate to the value of the list's sole member.
 
 For built-in objects, there are two types of objects that support subscription
 via :meth:`~object.__getitem__`:
 
-* If the primary is a :term:`mapping`, the expression list must evaluate to an
-  object whose value is one of the keys of the mapping, and the subscription
-  selects the value in the mapping that corresponds to that key.  (The
-  expression list is a :class:`tuple` except if it has exactly one item.)
-* If the primary is a :term:`sequence`, the expression list must evaluate to an
-  :class:`int` or a :class:`slice` (as discussed in the following section).
+1. Mappings. If the primary is a :term:`mapping`, the expression list must evaluate to an object
+   whose value is one of the keys of the mapping, and the subscription selects the
+   value in the mapping that corresponds to that key. An example of a mapping is
+   the :class:`dict` class.
+2. Sequences. If the primary is a :term:`sequence`, the expression list must evaluate to an
+   :class:`int` or a :class:`slice` (as discussed in the following section).
+   Examples of builtin sequences include the :class:`str`, :class:`list` and
+   :class:`tuple` classes.
 
 The formal syntax makes no special provision for negative indices in
 :term:`sequences <sequence>`. However, built-in sequences all provide a :meth:`~object.__getitem__`
@@ -866,15 +864,8 @@ this method will need to explicitly add that support.
    pair: string; item
 
 A :class:`string <str>` is a special kind of sequence whose items are
-*characters*. A character is not a separate data type but a string of exactly
-one character.
-
-Subscriptions calling *__class_getitem__*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-A large number of types in the standard library support subscription via
-:meth:`~object.__class_getitem__`. See :ref:`types-genericalias` for more
-information on the objects returned by such subscriptions.
+*characters*. A character is not a separate data type but a
+string of exactly one character.
 
 
 .. _slicings:
