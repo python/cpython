@@ -264,7 +264,7 @@ def generate_runtime_init(identifiers, strings):
                             printer.write(f'_PyASCIIObject_INIT("\\x{i:02x}"),')
                     with printer.block('.latin1 =', ','):
                         for i in range(128, 256):
-                            printer.write(f'_PyUnicode_LATIN1_BASE_INIT("\\x{i:02x}"),')
+                            printer.write(f'_PyUnicode_LATIN1_INIT("\\x{i:02x}"),')
                 printer.write('')
                 with printer.block('.tuple_empty =', ','):
                     printer.write('.ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0)')
