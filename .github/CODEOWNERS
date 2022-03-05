@@ -20,6 +20,16 @@ Objects/call.c                @markshannon
 Python/ceval.c                @markshannon
 Python/compile.c              @markshannon
 Python/ast_opt.c              @isidentical
+Lib/test/test_patma.py        @brandtbucher
+Lib/test/test_peepholer.py    @brandtbucher
+
+# Exceptions
+Lib/traceback.py              @iritkatriel
+Lib/test/test_except*.py      @iritkatriel
+Lib/test/test_traceback.py    @iritkatriel
+Objects/exceptions.c          @iritkatriel
+Python/traceback.c            @iritkatriel
+Python/pythonrun.c            @iritkatriel
 
 # Hashing
 **/*hashlib*                  @python/crypto-team @tiran
@@ -128,8 +138,10 @@ Lib/ast.py                    @isidentical
 
 **/*idlelib*                  @terryjreedy
 
-**/*typing*                   @gvanrossum @Fidget-Spinner
+**/*typing*                   @gvanrossum @Fidget-Spinner @JelleZijlstra
 
+**/*asyncore                  @giampaolo
+**/*asynchat                  @giampaolo
 **/*ftplib                    @giampaolo
 **/*shutil                    @giampaolo
 

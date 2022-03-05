@@ -51,7 +51,7 @@ def do_test(buf, method):
         return ComparableException(err)
 
 parse_strict_test_cases = [
-    ("", ValueError("bad query field: ''")),
+    ("", {}),
     ("&", ValueError("bad query field: ''")),
     ("&&", ValueError("bad query field: ''")),
     # Should the next few really be valid?

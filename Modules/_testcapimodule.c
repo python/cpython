@@ -12,6 +12,9 @@
    macro defined, but only the public C API must be tested here. */
 
 #undef Py_BUILD_CORE_MODULE
+#undef Py_BUILD_CORE_BUILTIN
+#define NEEDS_PY_IDENTIFIER
+
 /* Always enable assertions */
 #undef NDEBUG
 
@@ -37,6 +40,9 @@
 #  error "_testcapi must test the public Python C API, not CPython internal C API"
 #endif
 
+#ifdef bool
+#  error "The public headers should not include <stdbool.h>, see bpo-46748"
+#endif
 
 // Forward declarations
 static struct PyModuleDef _testcapimodule;
@@ -391,7 +397,7 @@ pycompilestring(PyObject* self, PyObject *obj) {
     if (the_string == NULL) {
         return NULL;
     }
-    return Py_CompileString(the_string, "blech", Py_file_input);
+    return Py_CompileString(the_string, "<string>", Py_file_input);
 }
 
 static PyObject*
@@ -3513,17 +3519,17 @@ static PyObject *
 exception_print(PyObject *self, PyObject *args)
 {
     PyObject *value;
-    PyObject *tb;
+    PyObject *tb = NULL;
 
     if (!PyArg_ParseTuple(args, "O:exception_print",
-                            &value))
-        return NULL;
-    if (!PyExceptionInstance_Check(value)) {
-        PyErr_Format(PyExc_TypeError, "an exception instance is required");
+                            &value)) {
         return NULL;
     }
 
-    tb = PyException_GetTraceback(value);
+    if (PyExceptionInstance_Check(value)) {
+        tb = PyException_GetTraceback(value);
+    }
+
     PyErr_Display((PyObject *) Py_TYPE(value), value, tb);
     Py_XDECREF(tb);
 
@@ -3863,7 +3869,7 @@ slot_tp_del(PyObject *self)
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
 
     /* Execute __del__ method, if any. */
-    del = _PyObject_LookupSpecial(self, &PyId___tp_del__);
+    del = _PyObject_LookupSpecialId(self, &PyId___tp_del__);
     if (del != NULL) {
         res = PyObject_CallNoArgs(del);
         if (res == NULL)
@@ -5417,98 +5423,6 @@ bad_get(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 }
 
 
-static PyObject *
-encode_locale_ex(PyObject *self, PyObject *args)
-{
-    PyObject *unicode;
-    int current_locale = 0;
-    wchar_t *wstr;
-    PyObject *res = NULL;
-    const char *errors = NULL;
-
-    if (!PyArg_ParseTuple(args, "U|is", &unicode, &current_locale, &errors)) {
-        return NULL;
-    }
-    wstr = PyUnicode_AsWideCharString(unicode, NULL);
-    if (wstr == NULL) {
-        return NULL;
-    }
-    _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
-
-    char *str = NULL;
-    size_t error_pos;
-    const char *reason = NULL;
-    int ret = _Py_EncodeLocaleEx(wstr,
-                                 &str, &error_pos, &reason,
-                                 current_locale, error_handler);
-    PyMem_Free(wstr);
-
-    switch(ret) {
-    case 0:
-        res = PyBytes_FromString(str);
-        PyMem_RawFree(str);
-        break;
-    case -1:
-        PyErr_NoMemory();
-        break;
-    case -2:
-        PyErr_Format(PyExc_RuntimeError, "encode error: pos=%zu, reason=%s",
-                     error_pos, reason);
-        break;
-    case -3:
-        PyErr_SetString(PyExc_ValueError, "unsupported error handler");
-        break;
-    default:
-        PyErr_SetString(PyExc_ValueError, "unknown error code");
-        break;
-    }
-    return res;
-}
-
-
-static PyObject *
-decode_locale_ex(PyObject *self, PyObject *args)
-{
-    char *str;
-    int current_locale = 0;
-    PyObject *res = NULL;
-    const char *errors = NULL;
-
-    if (!PyArg_ParseTuple(args, "y|is", &str, &current_locale, &errors)) {
-        return NULL;
-    }
-    _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
-
-    wchar_t *wstr = NULL;
-    size_t wlen = 0;
-    const char *reason = NULL;
-    int ret = _Py_DecodeLocaleEx(str,
-                                 &wstr, &wlen, &reason,
-                                 current_locale, error_handler);
-
-    switch(ret) {
-    case 0:
-        res = PyUnicode_FromWideChar(wstr, wlen);
-        PyMem_RawFree(wstr);
-        break;
-    case -1:
-        PyErr_NoMemory();
-        break;
-    case -2:
-        PyErr_Format(PyExc_RuntimeError, "decode error: pos=%zu, reason=%s",
-                     wlen, reason);
-        break;
-    case -3:
-        PyErr_SetString(PyExc_ValueError, "unsupported error handler");
-        break;
-    default:
-        PyErr_SetString(PyExc_ValueError, "unknown error code");
-        break;
-    }
-    return res;
-}
-
-
 #ifdef Py_REF_DEBUG
 static PyObject *
 negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
@@ -5861,6 +5775,7 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *negative_dictoffset(PyObject *, PyObject *);
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
 
@@ -5929,14 +5844,15 @@ static PyMethodDef TestMethods[] = {
 #if (defined(__linux__) || defined(__FreeBSD__)) && defined(__GNUC__)
     {"test_pep3118_obsolete_write_locks", (PyCFunction)test_pep3118_obsolete_write_locks, METH_NOARGS},
 #endif
-    {"getbuffer_with_null_view", getbuffer_with_null_view, METH_O},
-    {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat, METH_VARARGS},
-    {"test_buildvalue_N",       test_buildvalue_N,               METH_NOARGS},
+    {"getbuffer_with_null_view", getbuffer_with_null_view,       METH_O},
+    {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat,   METH_VARARGS},
+    {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
+    {"negative_dictoffset",      negative_dictoffset,            METH_NOARGS},
     {"test_buildvalue_issue38913", test_buildvalue_issue38913,   METH_NOARGS},
-    {"get_args",                get_args,                        METH_VARARGS},
+    {"get_args",                  get_args,                      METH_VARARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
-    {"test_get_type_qualname",   test_get_type_qualname,       METH_NOARGS},
+    {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
     {"test_type_from_ephemeral_spec", test_type_from_ephemeral_spec, METH_NOARGS},
     {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs,
       METH_VARARGS|METH_KEYWORDS},
@@ -6123,8 +6039,6 @@ static PyMethodDef TestMethods[] = {
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {"hamt", new_hamt, METH_NOARGS},
     {"bad_get", (PyCFunction)(void(*)(void))bad_get, METH_FASTCALL},
-    {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
-    {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif
@@ -6149,8 +6063,6 @@ static PyMethodDef TestMethods[] = {
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
-
-#define AddSym(d, n, f, v) {PyObject *o = f(v); PyDict_SetItemString(d, n, o); Py_DECREF(o);}
 
 typedef struct {
     char bool_member;
@@ -7523,6 +7435,7 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyLong_FromSsize_t(PY_SSIZE_T_MIN));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
+    PyModule_AddObject(m, "Py_Version", PyLong_FromUnsignedLong(Py_Version));
     Py_INCREF(&PyInstanceMethod_Type);
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
@@ -7629,6 +7542,11 @@ PyInit__testcapi(void)
     return m;
 }
 
+static PyObject *
+negative_dictoffset(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyType_FromSpec(&HeapCTypeWithNegativeDict_spec);
+}
 
 /* Test the C API exposed when PY_SSIZE_T_CLEAN is not defined */
 

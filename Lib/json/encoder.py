@@ -30,6 +30,7 @@ ESCAPE_DCT = {
 for i in range(0x20):
     ESCAPE_DCT.setdefault(chr(i), '\\u{0:04x}'.format(i))
     #ESCAPE_DCT.setdefault(chr(i), '\\u%04x' % (i,))
+del i
 
 INFINITY = float('inf')
 
@@ -116,7 +117,7 @@ class JSONEncoder(object):
 
         If check_circular is true, then lists, dicts, and custom encoded
         objects will be checked for circular references during encoding to
-        prevent an infinite recursion (which would cause an OverflowError).
+        prevent an infinite recursion (which would cause an RecursionError).
         Otherwise, no such check takes place.
 
         If allow_nan is true, then NaN, Infinity, and -Infinity will be

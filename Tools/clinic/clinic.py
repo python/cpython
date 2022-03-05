@@ -2820,8 +2820,6 @@ class bool_converter(CConverter):
 
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'i':
-            # XXX PyFloat_Check can be removed after the end of the
-            # deprecation in _PyLong_FromNbIndexOrNbInt.
             return """
                 {paramname} = _PyLong_AsInt({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
@@ -3667,8 +3665,7 @@ class self_converter(CConverter):
             self.show_in_signature = False
 
     # tp_new (METHOD_NEW) functions are of type newfunc:
-    #     typedef PyObject *(*newfunc)(struct _typeobject *, PyObject *, PyObject *);
-    # PyTypeObject is a typedef for struct _typeobject.
+    #     typedef PyObject *(*newfunc)(PyTypeObject *, PyObject *, PyObject *);
     #
     # tp_init (METHOD_INIT) functions are of type initproc:
     #     typedef int (*initproc)(PyObject *, PyObject *, PyObject *);

@@ -4,6 +4,7 @@ import importlib.abc
 import importlib.machinery
 import os
 import sys
+import tempfile
 import unittest
 import warnings
 
@@ -128,6 +129,40 @@ class SeparatedNamespacePackages(NamespacePackageTest):
         import foo.two
         self.assertEqual(foo.one.attr, 'portion1 foo one')
         self.assertEqual(foo.two.attr, 'portion2 foo two')
+
+
+class SeparatedNamespacePackagesCreatedWhileRunning(NamespacePackageTest):
+    paths = ['portion1']
+
+    def test_invalidate_caches(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # we manipulate sys.path before anything is imported to avoid
+            # accidental cache invalidation when changing it
+            sys.path.append(temp_dir)
+
+            import foo.one
+            self.assertEqual(foo.one.attr, 'portion1 foo one')
+
+            # the module does not exist, so it cannot be imported
+            with self.assertRaises(ImportError):
+                import foo.just_created
+
+            # util.create_modules() manipulates sys.path
+            # so we must create the modules manually instead
+            namespace_path = os.path.join(temp_dir, 'foo')
+            os.mkdir(namespace_path)
+            module_path = os.path.join(namespace_path, 'just_created.py')
+            with open(module_path, 'w', encoding='utf-8') as file:
+                file.write('attr = "just_created foo"')
+
+            # the module is not known, so it cannot be imported yet
+            with self.assertRaises(ImportError):
+                import foo.just_created
+
+            # but after explicit cache invalidation, it is importable
+            importlib.invalidate_caches()
+            import foo.just_created
+            self.assertEqual(foo.just_created.attr, 'just_created foo')
 
 
 class SeparatedOverlappingNamespacePackages(NamespacePackageTest):

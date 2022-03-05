@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(HAVE_GETRUSAGE)
+
 PyDoc_STRVAR(resource_getrusage__doc__,
 "getrusage($module, who, /)\n"
 "--\n"
@@ -28,6 +30,8 @@ resource_getrusage(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_GETRUSAGE) */
 
 PyDoc_STRVAR(resource_getrlimit__doc__,
 "getrlimit($module, resource, /)\n"
@@ -160,7 +164,11 @@ exit:
     return return_value;
 }
 
+#ifndef RESOURCE_GETRUSAGE_METHODDEF
+    #define RESOURCE_GETRUSAGE_METHODDEF
+#endif /* !defined(RESOURCE_GETRUSAGE_METHODDEF) */
+
 #ifndef RESOURCE_PRLIMIT_METHODDEF
     #define RESOURCE_PRLIMIT_METHODDEF
 #endif /* !defined(RESOURCE_PRLIMIT_METHODDEF) */
-/*[clinic end generated code: output=ad190fb33d647d1e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9ce1886c129eb2f3 input=a9049054013a1b77]*/

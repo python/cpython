@@ -6,7 +6,7 @@
 
 /* PyException_HEAD defines the initial segment of every exception class. */
 #define PyException_HEAD PyObject_HEAD PyObject *dict;\
-             PyObject *args; PyObject *traceback;\
+             PyObject *args; PyObject *note; PyObject *traceback;\
              PyObject *context; PyObject *cause;\
              char suppress_context;
 
@@ -148,6 +148,11 @@ PyAPI_FUNC(void) PyErr_RangedSyntaxLocationObject(
 PyAPI_FUNC(PyObject *) PyErr_ProgramTextObject(
     PyObject *filename,
     int lineno);
+
+PyAPI_FUNC(PyObject *) _PyErr_ProgramDecodedTextObject(
+    PyObject *filename,
+    int lineno,
+    const char* encoding);
 
 PyAPI_FUNC(PyObject *) _PyUnicodeTranslateError_Create(
     PyObject *object,

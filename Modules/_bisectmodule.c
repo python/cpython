@@ -4,6 +4,7 @@ Converted to C by Dmitry Vasiliev (dima at hlabs.spb.ru).
 */
 
 #define PY_SSIZE_T_CLEAN
+#define NEEDS_PY_IDENTIFIER
 #include "Python.h"
 
 /*[clinic input]

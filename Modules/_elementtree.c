@@ -12,6 +12,7 @@
  */
 
 #define PY_SSIZE_T_CLEAN
+#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
@@ -1393,22 +1394,19 @@ _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
                               PyObject *default_value)
 /*[clinic end generated code: output=523c614142595d75 input=ee153bbf8cdb246e]*/
 {
-    PyObject* value;
-
-    if (!self->extra || !self->extra->attrib)
-        value = default_value;
-    else {
-        value = PyDict_GetItemWithError(self->extra->attrib, key);
-        if (!value) {
-            if (PyErr_Occurred()) {
-                return NULL;
-            }
-            value = default_value;
+    if (self->extra && self->extra->attrib) {
+        PyObject *attrib = self->extra->attrib;
+        Py_INCREF(attrib);
+        PyObject *value = PyDict_GetItemWithError(attrib, key);
+        Py_XINCREF(value);
+        Py_DECREF(attrib);
+        if (value != NULL || PyErr_Occurred()) {
+            return value;
         }
     }
 
-    Py_INCREF(value);
-    return value;
+    Py_INCREF(default_value);
+    return default_value;
 }
 
 static PyObject *
@@ -3639,7 +3637,7 @@ ignore_attribute_error(PyObject *value)
 _elementtree.XMLParser.__init__
 
     *
-    target: object = NULL
+    target: object = None
     encoding: str(accept={str, NoneType}) = None
 
 [clinic start generated code]*/
@@ -3647,7 +3645,7 @@ _elementtree.XMLParser.__init__
 static int
 _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
                                      const char *encoding)
-/*[clinic end generated code: output=3ae45ec6cdf344e4 input=53e35a829ae043e8]*/
+/*[clinic end generated code: output=3ae45ec6cdf344e4 input=7e716dd6e4f3e439]*/
 {
     self->entity = PyDict_New();
     if (!self->entity)
@@ -3672,7 +3670,7 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
                            (unsigned long)_Py_HashSecret.expat.hashsalt);
     }
 
-    if (target) {
+    if (target != Py_None) {
         Py_INCREF(target);
     } else {
         target = treebuilder_new(&TreeBuilder_Type, NULL, NULL);

@@ -191,8 +191,9 @@ attributes:
 |           |                   | which this code object    |
 |           |                   | was defined               |
 +-----------+-------------------+---------------------------+
-|           | co_names          | tuple of names of local   |
-|           |                   | variables                 |
+|           | co_names          | tuple of names other      |
+|           |                   | than arguments and        |
+|           |                   | function locals           |
 +-----------+-------------------+---------------------------+
 |           | co_nlocals        | number of local variables |
 +-----------+-------------------+---------------------------+
@@ -273,6 +274,24 @@ attributes:
       :func:`getmembers` will only return class attributes defined in the
       metaclass when the argument is a class and those attributes have been
       listed in the metaclass' custom :meth:`__dir__`.
+
+
+.. function:: getmembers_static(object[, predicate])
+
+    Return all the members of an object in a list of ``(name, value)``
+    pairs sorted by name without triggering dynamic lookup via the descriptor
+    protocol, __getattr__ or __getattribute__. Optionally, only return members
+    that satisfy a given predicate.
+
+    .. note::
+
+        :func:`getmembers_static` may not be able to retrieve all members
+        that getmembers can fetch (like dynamically created attributes)
+        and may find members that getmembers can't (like descriptors
+        that raise AttributeError). It can also return descriptor objects
+        instead of instance members in some cases.
+
+    .. versionadded:: 3.11
 
 
 .. function:: getmodulename(path)
@@ -409,6 +428,14 @@ attributes:
 .. function:: isbuiltin(object)
 
    Return ``True`` if the object is a built-in function or a bound built-in method.
+
+
+.. function:: ismethodwrapper(object)
+
+   Return ``True`` if the type of object is a :class:`~types.MethodWrapperType`.
+
+   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object().__str__`,
+   :meth:`~object().__eq__` and :meth:`~object().__repr__`
 
 
 .. function:: isroutine(object)

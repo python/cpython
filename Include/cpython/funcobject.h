@@ -82,8 +82,6 @@ PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
     size_t nargsf,
     PyObject *kwnames);
 
-uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
-
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
 #define PyFunction_GET_CODE(func) \
@@ -100,9 +98,6 @@ uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
         (((PyFunctionObject *)func) -> func_closure)
 #define PyFunction_GET_ANNOTATIONS(func) \
         (((PyFunctionObject *)func) -> func_annotations)
-
-#define PyFunction_AS_FRAME_CONSTRUCTOR(func) \
-        ((PyFrameConstructor *)&((PyFunctionObject *)(func))->func_globals)
 
 /* The classmethod and staticmethod types lives here, too */
 PyAPI_DATA(PyTypeObject) PyClassMethod_Type;

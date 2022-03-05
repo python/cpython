@@ -22,5 +22,7 @@ The list of modules described in this chapter is:
    ssl.rst
    select.rst
    selectors.rst
+   asyncore.rst
+   asynchat.rst
    signal.rst
    mmap.rst

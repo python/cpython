@@ -1,7 +1,7 @@
 """Test case-sensitivity (PEP 235)."""
 import sys
 
-from .. import util
+from test.test_importlib import util
 
 importlib = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')

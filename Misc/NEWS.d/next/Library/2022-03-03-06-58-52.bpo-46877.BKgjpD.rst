@@ -1,0 +1,1 @@
+Export :func:`unittest.doModuleCleanups` in :mod:`unittest`. Patch by Kumar Aditya.
