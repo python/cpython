@@ -618,7 +618,7 @@ the module.
    to set this attribute; the path can simply point to where the
    compiled file would exist (see :pep:`3147`).
 
-   It is also appropriate to set ``__cached__`` when ``__file__`` is not
+   Note that ``__cached__`` may be set even when ``__file__`` is not
    set.  However, that scenario is quite atypical.  Ultimately, ``__file__`` and
    ``__cached__`` are set by the import system from the module spec provided by
    the finder - the spec instructs the loader.  If a loader can load from a cached
