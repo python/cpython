@@ -18,7 +18,7 @@
 #endif
 
 #include "Python.h"
-#include "pycore_strhex.h"        // _Py_strhex()
+#include "pycore_strhex.h"       // _Py_strhex()
 
 #include "../hashlib.h"
 #include "blake2ns.h"
@@ -36,6 +36,7 @@
 #else
 #include "impl/blake2s-ref.c"
 #endif
+
 
 extern PyType_Spec blake2s_type_spec;
 
