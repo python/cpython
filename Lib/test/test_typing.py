@@ -2367,6 +2367,11 @@ class GenericTests(BaseTestCase):
             class MyGeneric(Generic[T], Generic[S]): ...
         with self.assertRaises(TypeError):
             class MyGeneric(List[T], Generic[S]): ...
+        with self.assertRaises(TypeError):
+            Generic[()]
+        class C(Generic[T]): pass
+        with self.assertRaises(TypeError):
+            C[()]
 
     def test_init(self):
         T = TypeVar('T')

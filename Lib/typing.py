@@ -1805,28 +1805,31 @@ class Generic:
 
     @_tp_cache
     def __class_getitem__(cls, params):
+        """Parameterizes a generic class.
+
+        At least, parameterizing a generic class is the *main* thing this method
+        does. For example, for some generic class `Foo`, this is called when we
+        do `Foo[int]` - there, with `cls=Foo` and `params=int`.
+
+        However, note that this method is also called when defining generic
+        classes in the first place with `class Foo(Generic[T]): ...`.
+        """
         if not isinstance(params, tuple):
             params = (params,)
 
-        try:
-            num_class_params = len(cls.__parameters__)
-        except AttributeError:
-            only_class_parameter_is_typevartuple = False
-        else:
-            if (
-                    num_class_params == 1
-                    and isinstance(cls.__parameters__[0], TypeVarTuple)
-            ):
-                only_class_parameter_is_typevartuple = True
-            else:
-                only_class_parameter_is_typevartuple = False
-
-        if (
-                not params
-                and not (cls is Tuple or only_class_parameter_is_typevartuple)
-        ):
-            raise TypeError(
-                f"Parameter list to {cls.__qualname__}[...] cannot be empty")
+        if not params:
+            # We're only ok with `params` being empty if the class's only type
+            # parameter is a `TypeVarTuple` (which can contain zero types).
+            class_params = getattr(cls, "__parameters__", None)
+            only_class_parameter_is_typevartuple = (
+                    class_params is not None
+                    and len(class_params) == 1
+                    and isinstance(class_params[0], TypeVarTuple)
+            )
+            if not only_class_parameter_is_typevartuple:
+                raise TypeError(
+                    f"Parameter list to {cls.__qualname__}[...] cannot be empty"
+                )
 
         params = tuple(_type_convert(p) for p in params)
         if cls in (Generic, Protocol):
