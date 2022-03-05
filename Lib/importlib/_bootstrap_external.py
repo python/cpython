@@ -390,7 +390,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a5 3481 (Use inline cache for BINARY_OP)
 #     Python 3.11a5 3482 (Use inline caching for UNPACK_SEQUENCE and LOAD_GLOBAL)
 #     Python 3.11a5 3483 (Use inline caching for COMPARE_OP and BINARY_SUBSCR)
-#     Python 3.11a5 3484 (Use inline caching for LOAD_ATTR, LOAD_METHOD, and 
+#     Python 3.11a5 3484 (Use inline caching for LOAD_ATTR, LOAD_METHOD, and
 #                         STORE_ATTR)
 #     Python 3.11a5 3485 (Add an oparg to GET_AWAITABLE)
 
