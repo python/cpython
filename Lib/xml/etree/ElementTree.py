@@ -1244,7 +1244,13 @@ def iterparse(source, events=None, parser=None):
     # Use the internal, undocumented _parser argument for now; When the
     # parser argument of iterparse is removed, this can be killed.
     pullparser = XMLPullParser(events=events, _parser=parser)
+
     def iterator():
+        nonlocal source
+        close_source = False
+        if not hasattr(source, "read"):
+            source = open(source, "rb")
+            close_source = True
         try:
             while True:
                 yield from pullparser.read_events()
@@ -1265,11 +1271,6 @@ def iterparse(source, events=None, parser=None):
     it = IterParseIterator()
     it.root = None
     del iterator, IterParseIterator
-
-    close_source = False
-    if not hasattr(source, "read"):
-        source = open(source, "rb")
-        close_source = True
 
     return it
 
