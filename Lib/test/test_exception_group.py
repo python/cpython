@@ -11,7 +11,7 @@ class TestExceptionGroupTypeHierarchy(unittest.TestCase):
         self.assertTrue(issubclass(BaseExceptionGroup, BaseException))
 
     def test_exception_is_not_generic_type(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, 'Exception'):
             Exception[OSError]
 
     def test_exception_group_is_generic_type(self):
