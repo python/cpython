@@ -840,14 +840,14 @@ expression list will evaluate to the value of the list's sole member.
 For built-in objects, there are two types of objects that support subscription
 via :meth:`~object.__getitem__`:
 
-1. Mappings. If the primary is a :term:`mapping`, the expression list must evaluate to an object
-   whose value is one of the keys of the mapping, and the subscription selects the
-   value in the mapping that corresponds to that key. An example of a mapping is
-   the :class:`dict` class.
-2. Sequences. If the primary is a :term:`sequence`, the expression list must evaluate to an
-   :class:`int` or a :class:`slice` (as discussed in the following section).
-   Examples of builtin sequences include the :class:`str`, :class:`list` and
-   :class:`tuple` classes.
+1. Mappings. If the primary is a :term:`mapping`, the expression list must
+   evaluate to an object whose value is one of the keys of the mapping, and the
+   subscription selects the value in the mapping that corresponds to that key.
+   An example of a builtin mapping class is the :class:`dict` class.
+2. Sequences. If the primary is a :term:`sequence`, the expression list must
+   evaluate to an :class:`int` or a :class:`slice` (as discussed in the
+   following section). Examples of builtin sequence classes include the
+   :class:`str`, :class:`list` and :class:`tuple` classes.
 
 The formal syntax makes no special provision for negative indices in
 :term:`sequences <sequence>`. However, built-in sequences all provide a :meth:`~object.__getitem__`
