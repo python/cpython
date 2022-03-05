@@ -9,7 +9,8 @@ extern "C" {
  */
 
 
-/* Inline caches */
+// Inline caches. If you change the number of cache entries for an instruction,
+// you must *also* bump the magic number in Lib/importlib/_bootstap_external.py!
 
 #define CACHE_ENTRIES(cache) (sizeof(cache)/sizeof(_Py_CODEUNIT))
 
@@ -70,20 +71,16 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_LOAD_METHOD CACHE_ENTRIES(_PyLoadMethodCache)
 
-// XXX: These members can definitely shrink:
 typedef struct {
     _Py_CODEUNIT counter;
     _Py_CODEUNIT func_version[2];
     _Py_CODEUNIT min_args;
-    _Py_CODEUNIT defaults_len;
 } _PyCallCache;
 
 #define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
 
-// XXX: Combine with _PyCallCache?
 typedef struct {
     _Py_CODEUNIT counter;
-    _Py_CODEUNIT callable[4];
 } _PyPrecallCache;
 
 #define INLINE_CACHE_ENTRIES_PRECALL CACHE_ENTRIES(_PyPrecallCache)
@@ -115,6 +112,10 @@ _Py_IncrementCountAndMaybeQuicken(PyCodeObject *code)
 }
 
 extern Py_ssize_t _Py_QuickenedCount;
+
+extern PyObject *builtin_isinstance;
+extern PyObject *builtin_len;
+extern PyObject *builtin_list_append;
 
 /* "Locals plus" for a code object is the set of locals + cell vars +
  * free vars.  This relates to variable names as well as offsets into

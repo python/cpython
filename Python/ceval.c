@@ -1321,6 +1321,10 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define JUMPTO(x)       (next_instr = first_instr + (x))
 #define JUMPBY(x)       (next_instr += (x))
 
+// Skip from a PRECALL over a CALL to the next instruction:
+#define SKIP_CALL() \
+    JUMPBY(INLINE_CACHE_ENTRIES_PRECALL + 1 + INLINE_CACHE_ENTRIES_CALL)
+
 /* Get opcode and oparg from original instructions, not quickened form. */
 #define TRACING_NEXTOPARG() do { \
         _Py_CODEUNIT word = ((_Py_CODEUNIT *)PyBytes_AS_STRING(frame->f_code->co_code))[INSTR_OFFSET()]; \
@@ -4780,9 +4784,9 @@ handle_eval_breaker:
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
             }
-            int def_offset = cache->defaults_len - code->co_argcount;
             for (int i = argcount; i < code->co_argcount; i++) {
-                PyObject *def = PyTuple_GET_ITEM(func->func_defaults, i + def_offset);
+                PyObject *def = PyTuple_GET_ITEM(func->func_defaults,
+                                                 i - minargs);
                 Py_INCREF(def);
                 new_frame->localsplus[i] = def;
             }
@@ -4805,9 +4809,8 @@ handle_eval_breaker:
             PyObject *obj = TOP();
             PyObject *callable = SECOND();
             DEOPT_IF(callable != (PyObject *)&PyType_Type, PRECALL);
-            next_instr += INLINE_CACHE_ENTRIES_PRECALL +
-                          1 + INLINE_CACHE_ENTRIES_CALL; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyObject *res = Py_NewRef(Py_TYPE(obj));
             Py_DECREF(callable);
             Py_DECREF(obj);
@@ -4823,9 +4826,8 @@ handle_eval_breaker:
             DEOPT_IF(is_method(stack_pointer, 1), PRECALL);
             PyObject *callable = PEEK(2);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, PRECALL);
-            next_instr += INLINE_CACHE_ENTRIES_PRECALL +
-                          1 + INLINE_CACHE_ENTRIES_CALL; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyObject *arg = TOP();
             PyObject *res = PyObject_Str(arg);
             Py_DECREF(arg);
@@ -4845,9 +4847,8 @@ handle_eval_breaker:
             DEOPT_IF(is_method(stack_pointer, 1), PRECALL);
             PyObject *callable = PEEK(2);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, PRECALL);
-            next_instr += INLINE_CACHE_ENTRIES_PRECALL +
-                          1 + INLINE_CACHE_ENTRIES_CALL; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyObject *arg = TOP();
             PyObject *res = PySequence_Tuple(arg);
             Py_DECREF(arg);
@@ -4869,9 +4870,8 @@ handle_eval_breaker:
             DEOPT_IF(!PyType_Check(callable), PRECALL);
             PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_vectorcall == NULL, PRECALL);
-            next_instr += INLINE_CACHE_ENTRIES_PRECALL +
-                          1 + INLINE_CACHE_ENTRIES_CALL; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             STACK_SHRINK(total_args);
             PyObject *res = tp->tp_vectorcall((PyObject *)tp, stack_pointer,
                                               total_args-kwnames_len, call_shape.kwnames);
@@ -4900,9 +4900,8 @@ handle_eval_breaker:
             PyObject *callable = PEEK(total_args + 1);
             DEOPT_IF(!PyCFunction_CheckExact(callable), PRECALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_O, PRECALL);
-            next_instr += INLINE_CACHE_ENTRIES_PRECALL +
-                          1 + INLINE_CACHE_ENTRIES_CALL; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
@@ -4935,9 +4934,8 @@ handle_eval_breaker:
             DEOPT_IF(!PyCFunction_CheckExact(callable), PRECALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL,
                 PRECALL);
-            next_instr += INLINE_CACHE_ENTRIES_PRECALL +
-                          1 + INLINE_CACHE_ENTRIES_CALL; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             STACK_SHRINK(total_args);
             /* res = func(self, args, nargs) */
@@ -4975,9 +4973,8 @@ handle_eval_breaker:
             DEOPT_IF(!PyCFunction_CheckExact(callable), PRECALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) !=
                 (METH_FASTCALL | METH_KEYWORDS), PRECALL);
-            next_instr += INLINE_CACHE_ENTRIES_PRECALL +
-                          1 + INLINE_CACHE_ENTRIES_CALL; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             STACK_SHRINK(total_args);
             /* res = func(self, args, nargs, kwnames) */
             _PyCFunctionFastWithKeywords cfunc =
@@ -5010,15 +5007,13 @@ handle_eval_breaker:
             assert(cframe.use_tracing == 0);
             assert(call_shape.kwnames == NULL);
             /* len(o) */
-            _PyPrecallCache *cache = (_PyPrecallCache *)next_instr;
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
             DEOPT_IF(total_args != 1, PRECALL);
             PyObject *callable = PEEK(total_args + 1);
-            DEOPT_IF(callable != read_obj(cache->callable), PRECALL);
-            next_instr += INLINE_CACHE_ENTRIES_PRECALL +
-                          1 + INLINE_CACHE_ENTRIES_CALL; // Skip following call
+            DEOPT_IF(callable != builtin_len, PRECALL);
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyObject *arg = TOP();
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
@@ -5041,16 +5036,14 @@ handle_eval_breaker:
             assert(cframe.use_tracing == 0);
             assert(call_shape.kwnames == NULL);
             /* isinstance(o, o2) */
-            _PyPrecallCache *cache = (_PyPrecallCache *)next_instr;
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
             PyObject *callable = PEEK(total_args + 1);
             DEOPT_IF(total_args != 2, PRECALL);
 
-            DEOPT_IF(callable != read_obj(cache->callable), PRECALL);
-            next_instr += INLINE_CACHE_ENTRIES_PRECALL +
-                          1 + INLINE_CACHE_ENTRIES_CALL; // Skip following call
+            DEOPT_IF(callable != builtin_isinstance, PRECALL);
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyObject *cls = POP();
             PyObject *inst = TOP();
             int retval = PyObject_IsInstance(inst, cls);
@@ -5076,15 +5069,13 @@ handle_eval_breaker:
             assert(cframe.use_tracing == 0);
             assert(call_shape.kwnames == NULL);
             assert(oparg == 1);
-            _PyPrecallCache *cache = (_PyPrecallCache *)next_instr;
-            assert(read_obj(cache->callable) != NULL);
             PyObject *callable = PEEK(3);
-            DEOPT_IF(callable != read_obj(cache->callable), PRECALL);
+            assert(builtin_list_append);
+            DEOPT_IF(callable != builtin_list_append, PRECALL);
             PyObject *list = SECOND();
             DEOPT_IF(!PyList_Check(list), PRECALL);
             STAT_INC(PRECALL, hit);
-            next_instr += INLINE_CACHE_ENTRIES_PRECALL +
-                          1 + INLINE_CACHE_ENTRIES_CALL; // Skip following call
+            SKIP_CALL();
             PyObject *arg = TOP();
             int err = PyList_Append(list, arg);
             if (err) {
@@ -5108,9 +5099,8 @@ handle_eval_breaker:
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), PRECALL);
             PyMethodDef *meth = ((PyMethodDescrObject *)callable)->d_method;
             DEOPT_IF(meth->ml_flags != METH_O, PRECALL);
-            next_instr += INLINE_CACHE_ENTRIES_PRECALL +
-                          1 + INLINE_CACHE_ENTRIES_CALL; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyCFunction cfunc = meth->ml_meth;
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
@@ -5144,9 +5134,8 @@ handle_eval_breaker:
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), PRECALL);
             PyMethodDef *meth = ((PyMethodDescrObject *)callable)->d_method;
             DEOPT_IF(meth->ml_flags != METH_NOARGS, PRECALL);
-            next_instr += INLINE_CACHE_ENTRIES_PRECALL +
-                          1 + INLINE_CACHE_ENTRIES_CALL; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyCFunction cfunc = meth->ml_meth;
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
@@ -5177,9 +5166,8 @@ handle_eval_breaker:
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), PRECALL);
             PyMethodDef *meth = ((PyMethodDescrObject *)callable)->d_method;
             DEOPT_IF(meth->ml_flags != METH_FASTCALL, PRECALL);
-            next_instr += INLINE_CACHE_ENTRIES_PRECALL +
-                          1 + INLINE_CACHE_ENTRIES_CALL; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             _PyCFunctionFast cfunc = (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args-1;
             STACK_SHRINK(nargs);

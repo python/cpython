@@ -301,14 +301,17 @@ optimize(_Py_CODEUNIT *instructions, int len)
         uint8_t adaptive_opcode = adaptive_opcodes[opcode];
         if (adaptive_opcode) {
             instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, oparg);
-            i += _PyOpcode_InlineCacheEntries[opcode];
+            int caches = _PyOpcode_InlineCacheEntries[opcode];
+            // Make sure the adaptive counter is zero:
+            assert((caches ? instructions[i + 1] : oparg) == 0);
             previous_opcode = -1;
             previous_oparg = -1;
+            i += caches;
         }
         else {
             assert(!_PyOpcode_InlineCacheEntries[opcode]);
             switch (opcode) {
-                case JUMP_ABSOLUTE:
+                case JUMP_ABSOLUTE:                                                             
                     instructions[i] = _Py_MAKECODEUNIT(JUMP_ABSOLUTE_QUICK, oparg);
                     break;
                 case RESUME:
@@ -1472,25 +1475,24 @@ builtin_call_fail_kind(int ml_flags)
 }
 #endif
 
-static PyMethodDescrObject *_list_append = NULL;
+PyObject *builtin_isinstance = NULL;
+PyObject *builtin_len = NULL;
+PyObject *builtin_list_append = NULL;
 
 static int
 specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
                              int nargs, PyObject *kwnames, int oparg)
 {
     assert(_Py_OPCODE(*instr) == PRECALL_ADAPTIVE);
-    _PyPrecallCache *cache = (_PyPrecallCache *)(instr + 1);
     if (kwnames) {
         SPECIALIZATION_FAIL(PRECALL, SPEC_FAIL_CALL_KWNAMES);
         return -1;
     }
-    if (_list_append == NULL) {
-        _list_append = (PyMethodDescrObject *)_PyType_Lookup(&PyList_Type,
-                                                             &_Py_ID(append));
+    if (builtin_list_append == NULL) {
+        builtin_list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
     }
-    assert(_list_append != NULL);
-    if (nargs == 2 && descr == _list_append && oparg == 1) {
-        write_obj(cache->callable, (PyObject *)_list_append);
+    assert(builtin_list_append != NULL);
+    if (nargs == 2 && (PyObject *)descr == builtin_list_append && oparg == 1) {
         *instr = _Py_MAKECODEUNIT(PRECALL_NO_KW_LIST_APPEND, _Py_OPARG(*instr));
         return 0;
     }
@@ -1543,10 +1545,6 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
         return -1;
     }
     int argcount = code->co_argcount;
-    if (argcount > 0xffff) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_RANGE);
-        return -1;
-    }
     int defcount = func->func_defaults == NULL ? 0 : (int)PyTuple_GET_SIZE(func->func_defaults);
     assert(defcount <= argcount);
     int min_args = argcount-defcount;
@@ -1557,7 +1555,7 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     assert(nargs <= argcount && nargs >= min_args);
     assert(min_args >= 0 && defcount >= 0);
     assert(defcount == 0 || func->func_defaults != NULL);
-    if (min_args > 0xffff || defcount > 0xffff) {
+    if (min_args > 0xffff) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_RANGE);
         return -1;
     }
@@ -1568,7 +1566,6 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     }
     write_u32(cache->func_version, version);
     cache->min_args = min_args;
-    cache->defaults_len = defcount;
     if (argcount == nargs) {
         *instr = _Py_MAKECODEUNIT(CALL_PY_EXACT_ARGS, _Py_OPARG(*instr));
     }
@@ -1583,7 +1580,6 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                   PyObject *kwnames, PyObject *builtins)
 {
     assert(_Py_OPCODE(*instr) == PRECALL_ADAPTIVE);
-    _PyPrecallCache *cache = (_PyPrecallCache *)(instr + 1);
     if (PyCFunction_GET_FUNCTION(callable) == NULL) {
         return 1;
     }
@@ -1600,9 +1596,12 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                 return 1;
             }
             /* len(o) */
-            PyObject *builtin_len = PyDict_GetItemString(builtins, "len");
+            if (builtin_len == NULL) {
+                // Use builtins_copy to protect against mutated builtins:
+                builtin_len = PyDict_GetItemString(
+                    _PyInterpreterState_GET()->builtins_copy, "len");
+            }
             if (callable == builtin_len) {
-                write_obj(cache->callable, builtin_len);  // borrowed
                 *instr = _Py_MAKECODEUNIT(PRECALL_NO_KW_LEN,
                     _Py_OPARG(*instr));
                 return 0;
@@ -1618,10 +1617,12 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
             }
             if (nargs == 2) {
                 /* isinstance(o1, o2) */
-                PyObject *builtin_isinstance = PyDict_GetItemString(
-                    builtins, "isinstance");
+                if (builtin_isinstance == NULL) {
+                    // Use builtins_copy to protect against mutated builtins:
+                    builtin_isinstance = PyDict_GetItemString(
+                        _PyInterpreterState_GET()->builtins_copy, "isinstance");
+                }
                 if (callable == builtin_isinstance) {
-                    write_obj(cache->callable, builtin_isinstance);  // borrowed
                     *instr = _Py_MAKECODEUNIT(PRECALL_NO_KW_ISINSTANCE,
                         _Py_OPARG(*instr));
                     return 0;
@@ -1689,6 +1690,8 @@ int
 _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                        PyObject *kwnames, PyObject *builtins, int oparg)
 {
+    assert(_PyOpcode_InlineCacheEntries[PRECALL] ==
+           INLINE_CACHE_ENTRIES_PRECALL);
     _PyPrecallCache *cache = (_PyPrecallCache *)(instr + 1);
     int fail;
     if (PyCFunction_CheckExact(callable)) {
@@ -1734,6 +1737,7 @@ int
 _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                     PyObject *kwnames)
 {
+    assert(_PyOpcode_InlineCacheEntries[CALL] == INLINE_CACHE_ENTRIES_CALL);
     _PyCallCache *cache = (_PyCallCache *)(instr + 1);
     int fail;
     if (PyFunction_Check(callable)) {
