@@ -191,6 +191,10 @@ class _BasePurePathTest(object):
             self.assertTrue(r.endswith(')'), r)
             inner = r[len(clsname) + 1 : -1]
             self.assertEqual(eval(inner), p.as_posix())
+
+            if self.cls.__name__ == 'cls':
+                continue
+
             # The repr() roundtrips.
             q = eval(r, pathlib.__dict__)
             self.assertIs(q.__class__, p.__class__)
@@ -2733,6 +2737,10 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             env['HOME'] = 'C:\\Users\\eve'
             check()
 
+
+class PurePathSubclassTest(_BasePurePathTest, unittest.TestCase):
+    class cls(pathlib.PurePath):
+        pass
 
 
 class PathSubclassTest(_BasePathTest, unittest.TestCase):
