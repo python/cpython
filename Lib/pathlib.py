@@ -240,7 +240,7 @@ class PurePath(object):
         '_drv', '_root', '_parts',
         '_str', '_hash', '_pparts', '_cached_cparts',
     )
-    _pathmod = os.path
+    _flavour = os.path
 
     def __new__(cls, *args):
         """Construct a PurePath from one or several strings and or existing
@@ -259,15 +259,15 @@ class PurePath(object):
 
     @classmethod
     def _casefold(cls, s):
-        return cls._pathmod.normcase(s)
+        return cls._flavour.normcase(s)
 
     @classmethod
     def _casefold_parts(cls, parts):
-        return [cls._pathmod.normcase(p) for p in parts]
+        return [cls._flavour.normcase(p) for p in parts]
 
     @classmethod
     def _compile_pattern(cls, pattern):
-        flags = 0 if cls._pathmod is posixpath else re.IGNORECASE
+        flags = 0 if cls._flavour is posixpath else re.IGNORECASE
         return re.compile(fnmatch.translate(pattern), flags).fullmatch
 
     @classmethod
@@ -284,8 +284,8 @@ class PurePath(object):
     @classmethod
     def _splitroot(cls, part):
         # FIXME: This method should use os.path.splitdrive()
-        sep = cls._pathmod.sep
-        if cls._pathmod is posixpath:
+        sep = cls._flavour.sep
+        if cls._flavour is posixpath:
             if part and part[0] == sep:
                 stripped_part = part.lstrip(sep)
                 # According to POSIX path resolution:
@@ -341,8 +341,8 @@ class PurePath(object):
     @classmethod
     def _parse_parts(cls, parts):
         parsed = []
-        sep = cls._pathmod.sep
-        altsep = cls._pathmod.altsep
+        sep = cls._flavour.sep
+        altsep = cls._flavour.altsep
         drv = root = ''
         it = reversed(parts)
         for part in it:
@@ -419,9 +419,9 @@ class PurePath(object):
     @classmethod
     def _format_parsed_parts(cls, drv, root, parts):
         if drv or root:
-            return drv + root + cls._pathmod.sep.join(parts[1:])
+            return drv + root + cls._flavour.sep.join(parts[1:])
         else:
-            return cls._pathmod.sep.join(parts)
+            return cls._flavour.sep.join(parts)
 
     def _join_parsed_parts(self, drv2, root2, parts2):
         """
@@ -462,8 +462,8 @@ class PurePath(object):
     def as_posix(self):
         """Return the string representation of the path with forward (/)
         slashes."""
-        m = self._pathmod
-        return str(self).replace(m.sep, '/')
+        f = self._flavour
+        return str(self).replace(f.sep, '/')
 
     def __bytes__(self):
         """Return the bytes representation of the path.  This is only
@@ -479,7 +479,7 @@ class PurePath(object):
             raise ValueError("relative path can't be expressed as a file URI")
 
         # FIXME: move this implementation to os.path.fileuri()
-        if self._pathmod is posixpath:
+        if self._flavour is posixpath:
             # On POSIX we represent the path using the local filesystem encoding,
             # for portability to other applications.
             return 'file://' + urlquote_from_bytes(bytes(self))
@@ -507,7 +507,7 @@ class PurePath(object):
     def __eq__(self, other):
         if not isinstance(other, PurePath):
             return NotImplemented
-        return self._cparts == other._cparts and self._pathmod is other._pathmod
+        return self._cparts == other._cparts and self._flavour is other._flavour
 
     def __hash__(self):
         try:
@@ -517,22 +517,22 @@ class PurePath(object):
             return self._hash
 
     def __lt__(self, other):
-        if not isinstance(other, PurePath) or self._pathmod is not other._pathmod:
+        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._cparts < other._cparts
 
     def __le__(self, other):
-        if not isinstance(other, PurePath) or self._pathmod is not other._pathmod:
+        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._cparts <= other._cparts
 
     def __gt__(self, other):
-        if not isinstance(other, PurePath) or self._pathmod is not other._pathmod:
+        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._cparts > other._cparts
 
     def __ge__(self, other):
-        if not isinstance(other, PurePath) or self._pathmod is not other._pathmod:
+        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._cparts >= other._cparts
 
@@ -598,7 +598,7 @@ class PurePath(object):
         if not self.name:
             raise ValueError("%r has an empty name" % (self,))
         drv, root, parts = self._parse_parts((name,))
-        if (not name or name[-1] in [self._pathmod.sep, self._pathmod.altsep]
+        if (not name or name[-1] in [self._flavour.sep, self._flavour.altsep]
             or drv or root or len(parts) != 1):
             raise ValueError("Invalid name %r" % (name))
         return self._from_parsed_parts(self._drv, self._root,
@@ -613,8 +613,8 @@ class PurePath(object):
         has no suffix, add given suffix.  If the given suffix is an empty
         string, remove the suffix from the path.
         """
-        m = self._pathmod
-        if m.sep in suffix or m.altsep and m.altsep in suffix:
+        f = self._flavour
+        if f.sep in suffix or f.altsep and f.altsep in suffix:
             raise ValueError("Invalid suffix %r" % (suffix,))
         if suffix and not suffix.startswith('.') or suffix == '.':
             raise ValueError("Invalid suffix %r" % (suffix))
@@ -723,13 +723,13 @@ class PurePath(object):
         a drive)."""
         if not self._root:
             return False
-        return self._pathmod is posixpath or bool(self._drv)
+        return self._flavour is posixpath or bool(self._drv)
 
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
         by the system, if any."""
         # FIXME: move this implementation to os.path.isreserved()
-        if self._pathmod is posixpath or not self._parts:
+        if self._flavour is posixpath or not self._parts:
             return False
 
         # NOTE: the rules for reserved names seem somewhat complicated
@@ -778,7 +778,7 @@ class PurePosixPath(PurePath):
     On a POSIX system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
-    _pathmod = posixpath
+    _flavour = posixpath
     __slots__ = ()
 
 
@@ -788,7 +788,7 @@ class PureWindowsPath(PurePath):
     On a Windows system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
-    _pathmod = ntpath
+    _flavour = ntpath
     __slots__ = ()
 
 
@@ -809,7 +809,7 @@ class Path(PurePath):
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
-        elif cls._pathmod is not os.path:
+        elif cls._flavour is not os.path:
             raise NotImplementedError("cannot instantiate %r on your system"
                                       % (cls.__name__,))
         return cls._from_parts(args)
@@ -862,7 +862,7 @@ class Path(PurePath):
             other_st = other_path.stat()
         except AttributeError:
             other_st = self.__class__(other_path).stat()
-        return self._pathmod.samestat(st, other_st)
+        return self._flavour.samestat(st, other_st)
 
     def iterdir(self):
         """Iterate over the files in this directory.  Does not yield any
@@ -926,7 +926,7 @@ class Path(PurePath):
                 raise RuntimeError("Symlink loop from %r" % e.filename)
 
         try:
-            s = self._pathmod.realpath(self, strict=strict)
+            s = self._flavour.realpath(self, strict=strict)
         except OSError as e:
             check_eloop(e)
             raise
@@ -1215,7 +1215,7 @@ class Path(PurePath):
         """
         Check if this path is a POSIX mount point
         """
-        if self._pathmod is not posixpath:
+        if self._flavour is not posixpath:
             raise NotImplementedError("Path.is_mount() is unsupported on this system")
 
         # Need to exist and be a dir
@@ -1319,7 +1319,7 @@ class Path(PurePath):
         """
         if (not (self._drv or self._root) and
             self._parts and self._parts[0][:1] == '~'):
-            homedir = self._pathmod.expanduser(self._parts[0])
+            homedir = self._flavour.expanduser(self._parts[0])
             if homedir[:1] == "~":
                 raise RuntimeError("Could not determine home directory.")
             return self._from_parts([homedir] + self._parts[1:])

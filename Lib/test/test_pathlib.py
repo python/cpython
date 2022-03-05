@@ -46,8 +46,8 @@ class _BasePurePathTest(object):
     }
 
     def setUp(self):
-        self.sep = self.cls._pathmod.sep
-        self.altsep = self.cls._pathmod.altsep
+        self.sep = self.cls._flavour.sep
+        self.altsep = self.cls._flavour.altsep
 
     def _check_parse_parts(self, arg, expected):
         f = self.cls._parse_parts
