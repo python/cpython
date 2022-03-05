@@ -1157,10 +1157,112 @@ def _is_unpacked_arbitrary_length_tuple(x: Any) -> bool:
 _TypeVarOrTypeVarTuple = TypeVar | TypeVarTuple
 
 
+def _replace_degenerate_unpacked_tuples(
+        args: tuple[type, ...]
+) -> tuple[type, ...]:
+    """Replaces e.g. `*tuple[int]` with just `int` in `args`."""
+    new_args = []
+    for arg in args:
+        if (_is_unpacked_tuple(arg)
+                and not _is_unpacked_arbitrary_length_tuple(arg)):
+            arg_tuple = arg.__args__[0]  # The actual tuple[int]
+            new_args.extend(arg_tuple.__args__)
+        else:
+            new_args.append(arg)
+    return tuple(new_args)
+
+
+def _determine_typevar_substition_no_typevartuples(
+        typevars: tuple[TypeVar, ...],
+        args: tuple[type, ...]
+) -> dict[TypeVar, type]:
+    if any(_is_unpacked_arbitrary_length_tuple(arg) for arg in args):
+        raise TypeError(f"Cannot assign type arguments '{args}' to type "
+                        f"variables '{typevars}': cannot assign "
+                        "unpacked arbitrary-length tuple to a TypeVar")
+    if len(typevars) != len(args):
+        raise TypeError(f"Number of type variables ({len(typevars)}) "
+                        f"doesn't match number of type "
+                        f"arguments ({len(args)})")
+    return dict(zip(typevars, args))
+
+
+def _count_num_items_before_and_after(
+        items: tuple[Any, ...],
+        item_of_interest: Any,
+) -> tuple[int, int]:
+    item_of_interest_idxs = [i for i, x in enumerate(items)
+                             if x == item_of_interest]
+    if not item_of_interest_idxs:
+        raise ValueError("Item of interest not found")
+    if len(item_of_interest_idxs) > 1:
+        raise ValueError("Item of interest occurs more than once")
+    [item_of_interest_idx] = item_of_interest_idxs
+    num_start = item_of_interest_idx
+    # Assuming len(items) == 3:
+    # * If item_of_interest_idx == 0, there are 2 items after item_of_interest.
+    # * If item_of_interest_idx == 2, there are 0 items after item_of_interest.
+    num_end = len(items) - item_of_interest_idx - 1
+    return num_start, num_end
+
+
+def _determine_typevar_substitution_single_typevartuple(
+        typevars: tuple[_TypeVarOrTypeVarTuple, ...],
+        args: tuple[type, ...]
+) -> dict[_TypeVarOrTypeVarTuple, type | tuple[type, ...]]:
+    [typevartuple_idx] = [i for i, x in enumerate(typevars)
+                          if isinstance(x, TypeVarTuple)]
+    typevartuple = typevars[typevartuple_idx]
+    num_start_typevars, num_end_typevars = _count_num_items_before_and_after(
+        typevars, typevartuple
+    )
+
+    # Even if one of the args is an unpacked arbitrary-length tuple, we still
+    # need at least as many args as normal TypeVars.
+    # Couldn't we split the arbitrary-length tuples across multiple TypeVars?
+    # No, because an arbitrary-length tuple could have length zero!
+    if len(args) < num_start_typevars + num_end_typevars:
+        raise TypeError(
+            "Expected at least {} type parameters, but only got {}".format(
+                num_start_typevars + num_end_typevars, len(args)
+            )
+        )
+
+    if num_start_typevars == num_end_typevars == 0:
+        # It's just a single TypeVarTuple.
+        return {typevars[0]: args}
+    elif num_end_typevars == 0:
+        args_for_typevartuple = args[num_start_typevars:]
+        args_for_typevars = args[:num_start_typevars]
+        if any(_is_unpacked_arbitrary_length_tuple(arg)
+               for arg in args_for_typevars):
+            raise TypeError(f"Cannot assign type arguments '{args}' to type "
+                            f"variables '{typevars}': cannot assign "
+                            "arbitrary-length tuple to a TypeVar")
+        return {
+            **dict(zip(typevars[:num_start_typevars], args_for_typevars)),
+            typevartuple: args_for_typevartuple,
+        }
+    else:
+        args_for_left_typevars = args[:num_start_typevars]
+        args_for_typevartuple = args[num_start_typevars:-num_end_typevars]
+        args_for_right_typevars = args[-num_end_typevars:]
+        if any(_is_unpacked_arbitrary_length_tuple(arg)
+               for arg in args_for_left_typevars + args_for_right_typevars):
+            raise TypeError(f"Cannot assign type arguments '{args}' to type "
+                            f"variables '{typevars}': cannot assign "
+                            "arbitrary-length tuple to a TypeVar")
+        return {
+            **dict(zip(typevars[:num_start_typevars], args_for_left_typevars)),
+            typevartuple: args_for_typevartuple,
+            **dict(zip(typevars[-num_end_typevars:], args_for_right_typevars)),
+        }
+
+
 def _determine_typevar_substitution(
         typevars: tuple[_TypeVarOrTypeVarTuple, ...],
         args: tuple[type, ...]
-) -> dict[_TypeVarOrTypeVarTuple, type]:
+) -> dict[_TypeVarOrTypeVarTuple, type | tuple[type, ...]]:
     """Determines how to assign type arguments to type variables.
 
     Args:
@@ -1256,83 +1358,11 @@ def _determine_typevar_substitution(
         raise TypeError("At most 1 TypeVarTuple may be used in a type "
                         f"parameter list, but saw {num_typevartuples}")
 
-    # First, we should go through `args` to replace e.g. *tuple[int] with int.
-    new_args = []
-    for arg in args:
-        if (_is_unpacked_tuple(arg)
-                and not _is_unpacked_arbitrary_length_tuple(arg)):
-            arg_tuple = arg.__args__[0]  # The actual tuple[int]
-            new_args.extend(arg_tuple.__args__)
-        else:
-            new_args.append(arg)
-    args = tuple(new_args)
-
-    # Case 1: typevars does not contain any TypeVarTuples
+    args = _replace_degenerate_unpacked_tuples(args)
 
     if num_typevartuples == 0:
-        if any(_is_unpacked_arbitrary_length_tuple(arg) for arg in args):
-            raise TypeError(f"Cannot assign type arguments '{args}' to type "
-                            f"variables '{typevars}': cannot assign "
-                            "unpacked arbitrary-length tuple to a TypeVar")
-        if len(typevars) != len(args):
-            raise TypeError(f"Number of type variables ({len(typevars)}) "
-                            f"doesn't match number of type "
-                            f"arguments ({len(args)})")
-        return dict(zip(typevars, args))
-
-    # Case 2: typevars contains a single TypeVarTuple
-
-    [typevartuple_idx] = [i for i, x in enumerate(typevars)
-                          if isinstance(x, TypeVarTuple)]
-    typevartuple = typevars[typevartuple_idx]
-    num_start_typevars = typevartuple_idx
-    # Assuming len(typevars) == 3:
-    # * If typevartuple_idx == 0, there are 2 TypeVars at
-    #   the end of typevars.
-    # * If typevartuple_idx == 2 there are 0 TypeVars at
-    #   the end of typevars.
-    num_end_typevars = len(typevars) - typevartuple_idx - 1
-
-    # Even if one of the args is an unpacked arbitrary-length tuple, we still
-    # need at least as many args as normal TypeVars.
-    # Couldn't we split the arbitrary-length tuples across multiple TypeVars?
-    # No, because an arbitrary-length tuple could have length zero!
-    if len(args) < num_start_typevars + num_end_typevars:
-        raise TypeError(
-            "Expected at least {} type parameters, but only got {}".format(
-                num_start_typevars + num_end_typevars, len(args)
-            )
-        )
-
-    if num_start_typevars == num_end_typevars == 0:
-        # It's just a single TypeVarTuple.
-        return {typevars[0]: args}
-    elif num_end_typevars == 0:
-        args_for_typevartuple = args[num_start_typevars:]
-        args_for_typevars = args[:num_start_typevars]
-        if any(_is_unpacked_arbitrary_length_tuple(arg)
-               for arg in args_for_typevars):
-            raise TypeError(f"Cannot assign type arguments '{args}' to type "
-                            f"variables '{typevars}': cannot assign "
-                            "arbitrary-length tuple to a TypeVar")
-        return {
-            **dict(zip(typevars[:num_start_typevars], args_for_typevars)),
-            typevartuple: args_for_typevartuple,
-        }
-    else:
-        args_for_left_typevars = args[:num_start_typevars]
-        args_for_typevartuple = args[num_start_typevars:-num_end_typevars]
-        args_for_right_typevars = args[-num_end_typevars:]
-        if any(_is_unpacked_arbitrary_length_tuple(arg)
-               for arg in args_for_left_typevars + args_for_right_typevars):
-            raise TypeError(f"Cannot assign type arguments '{args}' to type "
-                            f"variables '{typevars}': cannot assign "
-                            "arbitrary-length tuple to a TypeVar")
-        return {
-            **dict(zip(typevars[:num_start_typevars], args_for_left_typevars)),
-            typevartuple: args_for_typevartuple,
-            **dict(zip(typevars[-num_end_typevars:], args_for_right_typevars)),
-        }
+        return _determine_typevar_substition_no_typevartuples(typevars, args)
+    return _determine_typevar_substitution_single_typevartuple(typevars, args)
 
 
 # Special typing constructs Union, Optional, Generic, Callable and Tuple
