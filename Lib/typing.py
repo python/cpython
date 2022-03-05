@@ -245,7 +245,6 @@ def _check_generic(cls, parameters, elen):
         raise TypeError(f"Too {'many' if alen > elen else 'few'} arguments for {cls};"
                         f" actual {alen}, expected {elen}")
 
-
 def _prepare_paramspec_params(cls, params):
     """Prepares the parameters for a Generic containing ParamSpec
     variables (internal helper).
