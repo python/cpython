@@ -64,7 +64,28 @@ class AnyTest(unittest.TestCase):
             self.assertEqual(expected, mock.mock_calls)
             self.assertEqual(mock.mock_calls, expected)
 
+    def test_any_no_spec(self):
+        # This is a regression test for bpo-37555
+        class Foo:
+            def __eq__(self, other): pass
 
+        mock = Mock()
+        mock(Foo(), 1)
+        mock.assert_has_calls([call(ANY, 1)])
+        mock.assert_called_with(ANY, 1)
+        mock.assert_any_call(ANY, 1)
+
+    def test_any_and_spec_set(self):
+        # This is a regression test for bpo-37555
+        class Foo:
+            def __eq__(self, other): pass
+
+        mock = Mock(spec=Foo)
+
+        mock(Foo(), 1)
+        mock.assert_has_calls([call(ANY, 1)])
+        mock.assert_called_with(ANY, 1)
+        mock.assert_any_call(ANY, 1)
 
 class CallTest(unittest.TestCase):
 
@@ -333,6 +354,26 @@ class CallTest(unittest.TestCase):
         self.assertEqual(_Call((), 'foo')[0], 'foo')
         self.assertEqual(_Call((('bar', 'barz'),),)[0], '')
         self.assertEqual(_Call((('bar', 'barz'), {'hello': 'world'}),)[0], '')
+
+    def test_dunder_call(self):
+        m = MagicMock()
+        m().foo()['bar']()
+        self.assertEqual(
+            m.mock_calls,
+            [call(), call().foo(), call().foo().__getitem__('bar'), call().foo().__getitem__()()]
+        )
+        m = MagicMock()
+        m().foo()['bar'] = 1
+        self.assertEqual(
+            m.mock_calls,
+            [call(), call().foo(), call().foo().__setitem__('bar', 1)]
+        )
+        m = MagicMock()
+        iter(m().foo())
+        self.assertEqual(
+            m.mock_calls,
+            [call(), call().foo(), call().foo().__iter__()]
+        )
 
 
 class SpecSignatureTest(unittest.TestCase):

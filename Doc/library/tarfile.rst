@@ -37,7 +37,7 @@ Some facts and figures:
    Added support for :mod:`lzma` compression.
 
 
-.. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, \*\*kwargs)
+.. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, **kwargs)
 
    Return a :class:`TarFile` object for the pathname *name*. For detailed
    information on :class:`TarFile` objects and the keyword arguments that are
@@ -63,19 +63,19 @@ Some facts and figures:
    +------------------+---------------------------------------------+
    | ``'x'`` or       | Create a tarfile exclusively without        |
    | ``'x:'``         | compression.                                |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'x:gz'``       | Create a tarfile with gzip compression.     |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'x:bz2'``      | Create a tarfile with bzip2 compression.    |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'x:xz'``       | Create a tarfile with lzma compression.     |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'a' or 'a:'``  | Open for appending with no compression. The |
@@ -101,6 +101,9 @@ Some facts and figures:
    For modes ``'w:gz'``, ``'r:gz'``, ``'w:bz2'``, ``'r:bz2'``, ``'x:gz'``,
    ``'x:bz2'``, :func:`tarfile.open` accepts the keyword argument
    *compresslevel* (default ``9``) to specify the compression level of the file.
+
+   For modes ``'w:xz'`` and ``'x:xz'``, :func:`tarfile.open` accepts the
+   keyword argument *preset* to specify the compression level of the file.
 
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
@@ -151,6 +154,7 @@ Some facts and figures:
 
 
 .. class:: TarFile
+   :noindex:
 
    Class for reading and writing tar archives. Do not use this class directly:
    use :func:`tarfile.open` instead. See :ref:`tarfile-objects`.
@@ -159,7 +163,10 @@ Some facts and figures:
 .. function:: is_tarfile(name)
 
    Return :const:`True` if *name* is a tar archive file, that the :mod:`tarfile`
-   module can read.
+   module can read. *name* may be a :class:`str`, file, or file-like object.
+
+   .. versionchanged:: 3.9
+      Support for file and file-like objects.
 
 
 The :mod:`tarfile` module defines the following exceptions:
@@ -290,9 +297,10 @@ be finalized; only the internally used file object will be closed. See the
 
       *fileobj* is not closed, when :class:`TarFile` is closed.
 
-   *format* controls the archive format. It must be one of the constants
+   *format* controls the archive format for writing. It must be one of the constants
    :const:`USTAR_FORMAT`, :const:`GNU_FORMAT` or :const:`PAX_FORMAT` that are
-   defined at module level.
+   defined at module level. When reading, format will be automatically detected, even
+   if different formats are present in a single archive.
 
    The *tarinfo* argument can be used to replace the default :class:`TarInfo` class
    with a different one.
@@ -440,10 +448,11 @@ be finalized; only the internally used file object will be closed. See the
 
 .. method:: TarFile.extractfile(member)
 
-   Extract a member from the archive as a file object. *member* may be a filename
-   or a :class:`TarInfo` object. If *member* is a regular file or a link, an
-   :class:`io.BufferedReader` object is returned. Otherwise, :const:`None` is
-   returned.
+   Extract a member from the archive as a file object. *member* may be
+   a filename or a :class:`TarInfo` object. If *member* is a regular file or
+   a link, an :class:`io.BufferedReader` object is returned. For all other
+   existing members, :const:`None` is returned. If *member* does not appear
+   in the archive, :exc:`KeyError` is raised.
 
    .. versionchanged:: 3.3
       Return an :class:`io.BufferedReader` object.
@@ -783,7 +792,7 @@ How to read a gzip compressed tar archive and display some member information::
    import tarfile
    tar = tarfile.open("sample.tar.gz", "r:gz")
    for tarinfo in tar:
-       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is", end="")
+       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
        if tarinfo.isreg():
            print("a regular file.")
        elif tarinfo.isdir():

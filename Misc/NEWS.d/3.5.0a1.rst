@@ -1255,7 +1255,7 @@ Support wrapped callables in doctest. Patch by Claudiu Popa.
 .. nonce: -sW7gk
 .. section: Library
 
-Make sure selectors.EpollSelecrtor.select() works when no FD is registered.
+Make sure selectors.EpollSelector.select() works when no FD is registered.
 
 ..
 
@@ -2234,7 +2234,7 @@ Cook.
 .. section: Library
 
 Lax cookie parsing in http.cookies could be a security issue when combined
-with non-standard cookie handling in some Web browsers.  Reported by Sergey
+with non-standard cookie handling in some web browsers.  Reported by Sergey
 Bobrov.
 
 ..
@@ -2648,7 +2648,7 @@ module.
 .. nonce: THJSYB
 .. section: Library
 
-Changed FeedParser feed() to avoid O(N**2) behavior when parsing long line.
+Changed FeedParser feed() to avoid O(N\ :sup:`2`) behavior when parsing long line.
 Original patch by Raymond Hettinger.
 
 ..
@@ -4992,7 +4992,7 @@ directory.
 .. nonce: vlM720
 .. section: Build
 
-For BerkelyDB and Sqlite, only add the found library and include directories
+For BerkeleyDB and Sqlite, only add the found library and include directories
 if they aren't already being searched. This avoids an explicit runtime
 library dependency.
 

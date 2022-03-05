@@ -29,7 +29,7 @@ _bz2_BZ2Compressor_compress(BZ2Compressor *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("compress", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("compress", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _bz2_BZ2Compressor_compress_impl(self, &data);
@@ -63,52 +63,6 @@ static PyObject *
 _bz2_BZ2Compressor_flush(BZ2Compressor *self, PyObject *Py_UNUSED(ignored))
 {
     return _bz2_BZ2Compressor_flush_impl(self);
-}
-
-PyDoc_STRVAR(_bz2_BZ2Compressor___init____doc__,
-"BZ2Compressor(compresslevel=9, /)\n"
-"--\n"
-"\n"
-"Create a compressor object for compressing data incrementally.\n"
-"\n"
-"  compresslevel\n"
-"    Compression level, as a number between 1 and 9.\n"
-"\n"
-"For one-shot compression, use the compress() function instead.");
-
-static int
-_bz2_BZ2Compressor___init___impl(BZ2Compressor *self, int compresslevel);
-
-static int
-_bz2_BZ2Compressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    int return_value = -1;
-    int compresslevel = 9;
-
-    if ((Py_TYPE(self) == &BZ2Compressor_Type) &&
-        !_PyArg_NoKeywords("BZ2Compressor", kwargs)) {
-        goto exit;
-    }
-    if (!_PyArg_CheckPositional("BZ2Compressor", PyTuple_GET_SIZE(args), 0, 1)) {
-        goto exit;
-    }
-    if (PyTuple_GET_SIZE(args) < 1) {
-        goto skip_optional;
-    }
-    if (PyFloat_Check(PyTuple_GET_ITEM(args, 0))) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    compresslevel = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
-    if (compresslevel == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-skip_optional:
-    return_value = _bz2_BZ2Compressor___init___impl((BZ2Compressor *)self, compresslevel);
-
-exit:
-    return return_value;
 }
 
 PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
@@ -156,20 +110,15 @@ _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("decompress", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("decompress", "argument 'data'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -190,34 +139,4 @@ exit:
 
     return return_value;
 }
-
-PyDoc_STRVAR(_bz2_BZ2Decompressor___init____doc__,
-"BZ2Decompressor()\n"
-"--\n"
-"\n"
-"Create a decompressor object for decompressing data incrementally.\n"
-"\n"
-"For one-shot decompression, use the decompress() function instead.");
-
-static int
-_bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self);
-
-static int
-_bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    int return_value = -1;
-
-    if ((Py_TYPE(self) == &BZ2Decompressor_Type) &&
-        !_PyArg_NoPositional("BZ2Decompressor", args)) {
-        goto exit;
-    }
-    if ((Py_TYPE(self) == &BZ2Decompressor_Type) &&
-        !_PyArg_NoKeywords("BZ2Decompressor", kwargs)) {
-        goto exit;
-    }
-    return_value = _bz2_BZ2Decompressor___init___impl((BZ2Decompressor *)self);
-
-exit:
-    return return_value;
-}
-/*[clinic end generated code: output=8e123f4eec497655 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ed10705d7a9fd598 input=a9049054013a1b77]*/

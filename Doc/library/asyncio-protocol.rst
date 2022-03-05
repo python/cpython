@@ -69,6 +69,10 @@ This documentation page contains the following sections:
 Transports
 ==========
 
+**Source code:** :source:`Lib/asyncio/transports.py`
+
+----------------------------------------------------
+
 Transports are classes provided by :mod:`asyncio` in order to abstract
 various kinds of communication channels.
 
@@ -431,6 +435,10 @@ Subprocess Transports
 Protocols
 =========
 
+**Source code:** :source:`Lib/asyncio/protocols.py`
+
+---------------------------------------------------
+
 asyncio provides a set of abstract base classes that should be used
 to implement network protocols.  Those classes are meant to be used
 together with :ref:`transports <asyncio-transport>`.
@@ -580,9 +588,6 @@ Buffered Streaming Protocols
 ----------------------------
 
 .. versionadded:: 3.7
-   **Important:** this has been added to asyncio in Python 3.7
-   *on a provisional basis*!  This is as an experimental API that
-   might be changed or removed completely in Python 3.8.
 
 Buffered Protocols can be used with any event loop method
 that supports `Streaming Protocols`_.
@@ -678,7 +683,7 @@ factories passed to the :meth:`loop.create_datagram_endpoint` method.
 Subprocess Protocols
 --------------------
 
-Datagram Protocol instances should be constructed by protocol
+Subprocess Protocol instances should be constructed by protocol
 factories passed to the :meth:`loop.subprocess_exec` and
 :meth:`loop.subprocess_shell` methods.
 
@@ -767,9 +772,8 @@ data, and waits until the connection is closed::
 
 
     class EchoClientProtocol(asyncio.Protocol):
-        def __init__(self, message, on_con_lost, loop):
+        def __init__(self, message, on_con_lost):
             self.message = message
-            self.loop = loop
             self.on_con_lost = on_con_lost
 
         def connection_made(self, transport):
@@ -793,7 +797,7 @@ data, and waits until the connection is closed::
         message = 'Hello World!'
 
         transport, protocol = await loop.create_connection(
-            lambda: EchoClientProtocol(message, on_con_lost, loop),
+            lambda: EchoClientProtocol(message, on_con_lost),
             '127.0.0.1', 8888)
 
         # Wait until the protocol signals that the connection
@@ -869,11 +873,10 @@ method, sends data and closes the transport when it receives the answer::
 
 
     class EchoClientProtocol:
-        def __init__(self, message, loop):
+        def __init__(self, message, on_con_lost):
             self.message = message
-            self.loop = loop
+            self.on_con_lost = on_con_lost
             self.transport = None
-            self.on_con_lost = loop.create_future()
 
         def connection_made(self, transport):
             self.transport = transport
@@ -899,13 +902,15 @@ method, sends data and closes the transport when it receives the answer::
         # low-level APIs.
         loop = asyncio.get_running_loop()
 
+        on_con_lost = loop.create_future()
         message = "Hello World!"
+
         transport, protocol = await loop.create_datagram_endpoint(
-            lambda: EchoClientProtocol(message, loop),
+            lambda: EchoClientProtocol(message, on_con_lost),
             remote_addr=('127.0.0.1', 9999))
 
         try:
-            await protocol.on_con_lost
+            await on_con_lost
         finally:
             transport.close()
 
@@ -927,9 +932,9 @@ Wait until a socket receives data using the
 
     class MyProtocol(asyncio.Protocol):
 
-        def __init__(self, loop):
+        def __init__(self, on_con_lost):
             self.transport = None
-            self.on_con_lost = loop.create_future()
+            self.on_con_lost = on_con_lost
 
         def connection_made(self, transport):
             self.transport = transport
@@ -950,13 +955,14 @@ Wait until a socket receives data using the
         # Get a reference to the event loop as we plan to use
         # low-level APIs.
         loop = asyncio.get_running_loop()
+        on_con_lost = loop.create_future()
 
         # Create a pair of connected sockets
         rsock, wsock = socket.socketpair()
 
         # Register the socket to wait for data.
         transport, protocol = await loop.create_connection(
-            lambda: MyProtocol(loop), sock=rsock)
+            lambda: MyProtocol(on_con_lost), sock=rsock)
 
         # Simulate the reception of data from the network.
         loop.call_soon(wsock.send, 'abc'.encode())
@@ -987,7 +993,7 @@ loop.subprocess_exec() and SubprocessProtocol
 An example of a subprocess protocol used to get the output of a
 subprocess and to wait for the subprocess exit.
 
-The subprocess is created by th :meth:`loop.subprocess_exec` method::
+The subprocess is created by the :meth:`loop.subprocess_exec` method::
 
     import asyncio
     import sys

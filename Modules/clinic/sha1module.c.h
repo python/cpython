@@ -9,15 +9,26 @@ PyDoc_STRVAR(SHA1Type_copy__doc__,
 "Return a copy of the hash object.");
 
 #define SHA1TYPE_COPY_METHODDEF    \
-    {"copy", (PyCFunction)SHA1Type_copy, METH_NOARGS, SHA1Type_copy__doc__},
+    {"copy", (PyCFunction)(void(*)(void))SHA1Type_copy, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, SHA1Type_copy__doc__},
 
 static PyObject *
-SHA1Type_copy_impl(SHA1object *self);
+SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls);
 
 static PyObject *
-SHA1Type_copy(SHA1object *self, PyObject *Py_UNUSED(ignored))
+SHA1Type_copy(SHA1object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return SHA1Type_copy_impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":copy", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = SHA1Type_copy_impl(self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(SHA1Type_digest__doc__,
@@ -66,7 +77,7 @@ PyDoc_STRVAR(SHA1Type_update__doc__,
     {"update", (PyCFunction)SHA1Type_update, METH_O, SHA1Type_update__doc__},
 
 PyDoc_STRVAR(_sha1_sha1__doc__,
-"sha1($module, /, string=b\'\')\n"
+"sha1($module, /, string=b\'\', *, usedforsecurity=True)\n"
 "--\n"
 "\n"
 "Return a new SHA1 hash object; optionally initialized with a string.");
@@ -75,17 +86,18 @@ PyDoc_STRVAR(_sha1_sha1__doc__,
     {"sha1", (PyCFunction)(void(*)(void))_sha1_sha1, METH_FASTCALL|METH_KEYWORDS, _sha1_sha1__doc__},
 
 static PyObject *
-_sha1_sha1_impl(PyObject *module, PyObject *string);
+_sha1_sha1_impl(PyObject *module, PyObject *string, int usedforsecurity);
 
 static PyObject *
 _sha1_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"string", NULL};
+    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "sha1", 0};
-    PyObject *argsbuf[1];
+    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *string = NULL;
+    int usedforsecurity = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
     if (!args) {
@@ -94,11 +106,24 @@ _sha1_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    string = args[0];
+    if (args[0]) {
+        string = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
 skip_optional_pos:
-    return_value = _sha1_sha1_impl(module, string);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    usedforsecurity = PyObject_IsTrue(args[1]);
+    if (usedforsecurity < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _sha1_sha1_impl(module, string, usedforsecurity);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1ae7e73ec84a27d5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=abf1ab2545cea5a2 input=a9049054013a1b77]*/

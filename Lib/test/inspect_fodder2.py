@@ -138,18 +138,124 @@ class cls135:
             never_reached1
             never_reached2
 
-#line 141
+# line 141
+class cls142:
+    a = """
+class cls149:
+    ...
+"""
+
+# line 148
+class cls149:
+
+    def func151(self):
+        pass
+
+'''
+class cls160:
+    pass
+'''
+
+# line 159
+class cls160:
+
+    def func162(self):
+        pass
+
+# line 165
+class cls166:
+    a = '''
+    class cls175:
+        ...
+    '''
+
+# line 172
+class cls173:
+
+    class cls175:
+        pass
+
+# line 178
+class cls179:
+    pass
+
+# line 182
+class cls183:
+
+    class cls185:
+
+        def func186(self):
+            pass
+
+def class_decorator(cls):
+    return cls
+
+# line 193
+@class_decorator
+@class_decorator
+class cls196:
+
+    @class_decorator
+    @class_decorator
+    class cls200:
+        pass
+
+class cls203:
+    class cls204:
+        class cls205:
+            pass
+    class cls207:
+        class cls205:
+            pass
+
+# line 211
+def func212():
+    class cls213:
+        pass
+    return cls213
+
+# line 217
+class cls213:
+    def func219(self):
+        class cls220:
+            pass
+        return cls220
+
+# line 224
+async def func225():
+    class cls226:
+        pass
+    return cls226
+
+# line 230
+class cls226:
+    async def func232(self):
+        class cls233:
+            pass
+        return cls233
+
+if True:
+    class cls238:
+        class cls239:
+            '''if clause cls239'''
+else:
+    class cls238:
+        class cls239:
+            '''else clause 239'''
+            pass
+
+#line 247
 def positional_only_arg(a, /):
     pass
 
-#line 145
+#line 251
 def all_markers(a, b, /, c, d, *, e, f):
     pass
 
-# line 149
+# line 255
 def all_markers_with_args_and_kwargs(a, b, /, c, d, *args, e, f, **kwargs):
     pass
 
-#line 153
+#line 259
 def all_markers_with_defaults(a, b=1, /, c=2, d=3, *, e=4, f=5):
     pass

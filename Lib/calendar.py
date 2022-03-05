@@ -15,7 +15,9 @@ __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "monthcalendar", "prmonth", "month", "prcal", "calendar",
            "timegm", "month_name", "month_abbr", "day_name", "day_abbr",
            "Calendar", "TextCalendar", "HTMLCalendar", "LocaleTextCalendar",
-           "LocaleHTMLCalendar", "weekheader"]
+           "LocaleHTMLCalendar", "weekheader",
+           "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY",
+           "SATURDAY", "SUNDAY"]
 
 # Exception raised for bad input (with string parameter for details)
 error = ValueError
@@ -127,18 +129,18 @@ def monthrange(year, month):
     return day1, ndays
 
 
-def monthlen(year, month):
+def _monthlen(year, month):
     return mdays[month] + (month == February and isleap(year))
 
 
-def prevmonth(year, month):
+def _prevmonth(year, month):
     if month == 1:
         return year-1, 12
     else:
         return year, month-1
 
 
-def nextmonth(year, month):
+def _nextmonth(year, month):
     if month == 12:
         return year+1, 1
     else:
@@ -207,13 +209,13 @@ class Calendar(object):
         day1, ndays = monthrange(year, month)
         days_before = (day1 - self.firstweekday) % 7
         days_after = (self.firstweekday - day1 - ndays) % 7
-        y, m = prevmonth(year, month)
-        end = monthlen(y, m) + 1
+        y, m = _prevmonth(year, month)
+        end = _monthlen(y, m) + 1
         for d in range(end-days_before, end):
             yield y, m, d
         for d in range(1, ndays + 1):
             yield year, month, d
-        y, m = nextmonth(year, month)
+        y, m = _nextmonth(year, month)
         for d in range(1, days_after + 1):
             yield y, m, d
 
@@ -546,71 +548,67 @@ class HTMLCalendar(Calendar):
 class different_locale:
     def __init__(self, locale):
         self.locale = locale
+        self.oldlocale = None
 
     def __enter__(self):
-        self.oldlocale = _locale.getlocale(_locale.LC_TIME)
+        self.oldlocale = _locale.setlocale(_locale.LC_TIME, None)
         _locale.setlocale(_locale.LC_TIME, self.locale)
 
     def __exit__(self, *args):
+        if self.oldlocale is None:
+            return
         _locale.setlocale(_locale.LC_TIME, self.oldlocale)
+
+
+def _get_default_locale():
+    locale = _locale.setlocale(_locale.LC_TIME, None)
+    if locale == "C":
+        with different_locale(""):
+            # The LC_TIME locale does not seem to be configured:
+            # get the user preferred locale.
+            locale = _locale.setlocale(_locale.LC_TIME, None)
+    return locale
 
 
 class LocaleTextCalendar(TextCalendar):
     """
     This class can be passed a locale name in the constructor and will return
-    month and weekday names in the specified locale. If this locale includes
-    an encoding all strings containing month and weekday names will be returned
-    as unicode.
+    month and weekday names in the specified locale.
     """
 
     def __init__(self, firstweekday=0, locale=None):
         TextCalendar.__init__(self, firstweekday)
         if locale is None:
-            locale = _locale.getdefaultlocale()
+            locale = _get_default_locale()
         self.locale = locale
 
     def formatweekday(self, day, width):
         with different_locale(self.locale):
-            if width >= 9:
-                names = day_name
-            else:
-                names = day_abbr
-            name = names[day]
-            return name[:width].center(width)
+            return super().formatweekday(day, width)
 
     def formatmonthname(self, theyear, themonth, width, withyear=True):
         with different_locale(self.locale):
-            s = month_name[themonth]
-            if withyear:
-                s = "%s %r" % (s, theyear)
-            return s.center(width)
+            return super().formatmonthname(theyear, themonth, width, withyear)
 
 
 class LocaleHTMLCalendar(HTMLCalendar):
     """
     This class can be passed a locale name in the constructor and will return
-    month and weekday names in the specified locale. If this locale includes
-    an encoding all strings containing month and weekday names will be returned
-    as unicode.
+    month and weekday names in the specified locale.
     """
     def __init__(self, firstweekday=0, locale=None):
         HTMLCalendar.__init__(self, firstweekday)
         if locale is None:
-            locale = _locale.getdefaultlocale()
+            locale = _get_default_locale()
         self.locale = locale
 
     def formatweekday(self, day):
         with different_locale(self.locale):
-            s = day_abbr[day]
-            return '<th class="%s">%s</th>' % (self.cssclasses[day], s)
+            return super().formatweekday(day)
 
     def formatmonthname(self, theyear, themonth, withyear=True):
         with different_locale(self.locale):
-            s = month_name[themonth]
-            if withyear:
-                s = '%s %s' % (s, theyear)
-            return '<tr><th colspan="7" class="month">%s</th></tr>' % s
-
+            return super().formatmonthname(theyear, themonth, withyear)
 
 # Support for old module level interface
 c = TextCalendar()

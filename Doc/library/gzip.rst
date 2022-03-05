@@ -59,6 +59,14 @@ The module defines the following items:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+.. exception:: BadGzipFile
+
+   An exception raised for invalid gzip files.  It inherits :exc:`OSError`.
+   :exc:`EOFError` and :exc:`zlib.error` can also be raised for invalid gzip
+   files.
+
+   .. versionadded:: 3.8
+
 .. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
 
    Constructor for the :class:`GzipFile` class, which simulates most of the
@@ -80,7 +88,8 @@ The module defines the following items:
    The *mode* argument can be any of ``'r'``, ``'rb'``, ``'a'``, ``'ab'``, ``'w'``,
    ``'wb'``, ``'x'``, or ``'xb'``, depending on whether the file will be read or
    written.  The default is the mode of *fileobj* if discernible; otherwise, the
-   default is ``'rb'``.
+   default is ``'rb'``.  In future Python releases the mode of *fileobj* will
+   not be used.  It is better to always specify *mode* for writing.
 
    Note that the file is always opened in binary mode. To open a compressed file
    in text mode, use :func:`.open` (or wrap your :class:`GzipFile` with an
@@ -156,24 +165,39 @@ The module defines the following items:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. deprecated:: 3.9
+      Opening :class:`GzipFile` for writing without specifying the *mode*
+      argument is deprecated.
+
 
 .. function:: compress(data, compresslevel=9, *, mtime=None)
 
    Compress the *data*, returning a :class:`bytes` object containing
    the compressed data.  *compresslevel* and *mtime* have the same meaning as in
-   the :class:`GzipFile` constructor above.
+   the :class:`GzipFile` constructor above. When *mtime* is set to ``0``, this
+   function is equivalent to :func:`zlib.compress` with *wbits* set to ``31``.
+   The zlib function is faster.
 
    .. versionadded:: 3.2
    .. versionchanged:: 3.8
       Added the *mtime* parameter for reproducible output.
+   .. versionchanged:: 3.11
+      Speed is improved by compressing all data at once instead of in a
+      streamed fashion. Calls with *mtime* set to ``0`` are delegated to
+      :func:`zlib.compress` for better speed.
 
 .. function:: decompress(data)
 
    Decompress the *data*, returning a :class:`bytes` object containing the
-   uncompressed data.
+   uncompressed data. This function is capable of decompressing multi-member
+   gzip data (multiple gzip blocks concatenated together). When the data is
+   certain to contain only one member the :func:`zlib.decompress` function with
+   *wbits* set to 31 is faster.
 
    .. versionadded:: 3.2
-
+   .. versionchanged:: 3.11
+      Speed is improved by decompressing members at once in memory instead of in
+      a streamed fashion.
 
 .. _gzip-usage-examples:
 

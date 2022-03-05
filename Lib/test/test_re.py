@@ -1,5 +1,6 @@
 from test.support import (gc_collect, bigmemtest, _2G,
-                          cpython_only, captured_stdout)
+                          cpython_only, captured_stdout,
+                          check_disallow_instantiation)
 import locale
 import re
 import sre_compile
@@ -1761,24 +1762,28 @@ class ReTests(unittest.TestCase):
     def test_match_repr(self):
         for string in '[abracadabra]', S('[abracadabra]'):
             m = re.search(r'(.+)(.*?)\1', string)
-            self.assertEqual(repr(m), "<%s.%s object; "
-                             "span=(1, 12), match='abracadabra'>" %
-                             (type(m).__module__, type(m).__qualname__))
+            pattern = r"<(%s\.)?%s object; span=\(1, 12\), match='abracadabra'>" % (
+                type(m).__module__, type(m).__qualname__
+            )
+            self.assertRegex(repr(m), pattern)
         for string in (b'[abracadabra]', B(b'[abracadabra]'),
                        bytearray(b'[abracadabra]'),
                        memoryview(b'[abracadabra]')):
             m = re.search(br'(.+)(.*?)\1', string)
-            self.assertEqual(repr(m), "<%s.%s object; "
-                             "span=(1, 12), match=b'abracadabra'>" %
-                             (type(m).__module__, type(m).__qualname__))
+            pattern = r"<(%s\.)?%s object; span=\(1, 12\), match=b'abracadabra'>" % (
+                type(m).__module__, type(m).__qualname__
+            )
+            self.assertRegex(repr(m), pattern)
 
         first, second = list(re.finditer("(aa)|(bb)", "aa bb"))
-        self.assertEqual(repr(first), "<%s.%s object; "
-                         "span=(0, 2), match='aa'>" %
-                         (type(second).__module__, type(first).__qualname__))
-        self.assertEqual(repr(second), "<%s.%s object; "
-                         "span=(3, 5), match='bb'>" %
-                         (type(second).__module__, type(second).__qualname__))
+        pattern = r"<(%s\.)?%s object; span=\(0, 2\), match='aa'>" % (
+            type(second).__module__, type(second).__qualname__
+        )
+        self.assertRegex(repr(first), pattern)
+        pattern = r"<(%s\.)?%s object; span=\(3, 5\), match='bb'>" % (
+            type(second).__module__, type(second).__qualname__
+        )
+        self.assertRegex(repr(second), pattern)
 
     def test_zerowidth(self):
         # Issues 852532, 1647489, 3262, 25054.
@@ -2100,6 +2105,12 @@ ELSE
                           {'tag': 'foo', 'text': None},
                           {'tag': 'foo', 'text': None}])
 
+    def test_bug_40736(self):
+        with self.assertRaisesRegex(TypeError, "got 'int'"):
+            re.search("x*", 5)
+        with self.assertRaisesRegex(TypeError, "got 'type'"):
+            re.search("x*", type)
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):
@@ -2166,11 +2177,37 @@ class PatternReprTests(unittest.TestCase):
         self.assertEqual(r[:30], "re.compile('Very long long lon")
         self.assertEqual(r[-16:], ", re.IGNORECASE)")
 
+    def test_flags_repr(self):
+        self.assertEqual(repr(re.I), "re.IGNORECASE")
+        self.assertEqual(repr(re.I|re.S|re.X),
+                         "re.IGNORECASE|re.DOTALL|re.VERBOSE")
+        self.assertEqual(repr(re.I|re.S|re.X|(1<<20)),
+                         "re.IGNORECASE|re.DOTALL|re.VERBOSE|0x100000")
+        self.assertEqual(
+                repr(~re.I),
+                "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.DOTALL|re.VERBOSE|re.TEMPLATE|re.DEBUG")
+        self.assertEqual(repr(~(re.I|re.S|re.X)),
+                         "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.TEMPLATE|re.DEBUG")
+        self.assertEqual(repr(~(re.I|re.S|re.X|(1<<20))),
+                         "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.TEMPLATE|re.DEBUG|0xffe00")
+
 
 class ImplementationTest(unittest.TestCase):
     """
     Test implementation details of the re module.
     """
+
+    @cpython_only
+    def test_immutable(self):
+        # bpo-43908: check that re types are immutable
+        with self.assertRaises(TypeError):
+            re.Match.foo = 1
+        with self.assertRaises(TypeError):
+            re.Pattern.foo = 1
+        with self.assertRaises(TypeError):
+            pat = re.compile("")
+            tp = type(pat.scanner(""))
+            tp.foo = 1
 
     def test_overlap_table(self):
         f = sre_compile._generate_overlap_table
@@ -2180,6 +2217,18 @@ class ImplementationTest(unittest.TestCase):
         self.assertEqual(f("aaaa"), [0, 1, 2, 3])
         self.assertEqual(f("ababba"), [0, 0, 1, 2, 0, 1])
         self.assertEqual(f("abcabdac"), [0, 0, 0, 1, 2, 0, 1, 0])
+
+    def test_signedness(self):
+        self.assertGreaterEqual(sre_compile.MAXREPEAT, 0)
+        self.assertGreaterEqual(sre_compile.MAXGROUPS, 0)
+
+    @cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        check_disallow_instantiation(self, re.Match)
+        check_disallow_instantiation(self, re.Pattern)
+        pat = re.compile("")
+        check_disallow_instantiation(self, type(pat.scanner("")))
 
 
 class ExternalTests(unittest.TestCase):
@@ -2201,7 +2250,7 @@ class ExternalTests(unittest.TestCase):
 
     def test_re_tests(self):
         're_tests test suite'
-        from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR
+        from test.re_tests import tests, FAIL, SYNTAX_ERROR
         for t in tests:
             pattern = s = outcome = repl = expected = None
             if len(t) == 5:

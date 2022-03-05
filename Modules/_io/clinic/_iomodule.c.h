@@ -36,7 +36,6 @@ PyDoc_STRVAR(_io_open__doc__,
 "\'b\'       binary mode\n"
 "\'t\'       text mode (default)\n"
 "\'+\'       open a disk file for updating (reading and writing)\n"
-"\'U\'       universal newline mode (deprecated)\n"
 "========= ===============================================================\n"
 "\n"
 "The default mode is \'rt\' (open for reading text). For binary random\n"
@@ -51,10 +50,6 @@ PyDoc_STRVAR(_io_open__doc__,
 "\'t\' is appended to the mode argument), the contents of the file are\n"
 "returned as strings, the bytes having been first decoded using a\n"
 "platform-dependent encoding or using the specified encoding if given.\n"
-"\n"
-"\'U\' mode is deprecated and will raise an exception in future versions\n"
-"of Python.  It has no effect in Python 3.  Use newline to control\n"
-"universal newlines mode.\n"
 "\n"
 "buffering is an optional integer used to set the buffering policy.\n"
 "Pass 0 to switch buffering off (only allowed in binary mode), 1 to select\n"
@@ -161,7 +156,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     }
     if (args[1]) {
         if (!PyUnicode_Check(args[1])) {
-            _PyArg_BadArgument("open", 2, "str", args[1]);
+            _PyArg_BadArgument("open", "argument 'mode'", "str", args[1]);
             goto exit;
         }
         Py_ssize_t mode_length;
@@ -178,11 +173,6 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         }
     }
     if (args[2]) {
-        if (PyFloat_Check(args[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         buffering = _PyLong_AsInt(args[2]);
         if (buffering == -1 && PyErr_Occurred()) {
             goto exit;
@@ -207,7 +197,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             }
         }
         else {
-            _PyArg_BadArgument("open", 4, "str or None", args[3]);
+            _PyArg_BadArgument("open", "argument 'encoding'", "str or None", args[3]);
             goto exit;
         }
         if (!--noptargs) {
@@ -230,7 +220,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             }
         }
         else {
-            _PyArg_BadArgument("open", 5, "str or None", args[4]);
+            _PyArg_BadArgument("open", "argument 'errors'", "str or None", args[4]);
             goto exit;
         }
         if (!--noptargs) {
@@ -253,7 +243,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             }
         }
         else {
-            _PyArg_BadArgument("open", 6, "str or None", args[5]);
+            _PyArg_BadArgument("open", "argument 'newline'", "str or None", args[5]);
             goto exit;
         }
         if (!--noptargs) {
@@ -261,11 +251,6 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         }
     }
     if (args[6]) {
-        if (PyFloat_Check(args[6])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         closefd = _PyLong_AsInt(args[6]);
         if (closefd == -1 && PyErr_Occurred()) {
             goto exit;
@@ -281,4 +266,92 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=19fc9b69a5166f63 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_io_text_encoding__doc__,
+"text_encoding($module, encoding, stacklevel=2, /)\n"
+"--\n"
+"\n"
+"A helper function to choose the text encoding.\n"
+"\n"
+"When encoding is not None, just return it.\n"
+"Otherwise, return the default text encoding (i.e. \"locale\").\n"
+"\n"
+"This function emits an EncodingWarning if encoding is None and\n"
+"sys.flags.warn_default_encoding is true.\n"
+"\n"
+"This can be used in APIs with an encoding=None parameter.\n"
+"However, please consider using encoding=\"utf-8\" for new APIs.");
+
+#define _IO_TEXT_ENCODING_METHODDEF    \
+    {"text_encoding", (PyCFunction)(void(*)(void))_io_text_encoding, METH_FASTCALL, _io_text_encoding__doc__},
+
+static PyObject *
+_io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel);
+
+static PyObject *
+_io_text_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *encoding;
+    int stacklevel = 2;
+
+    if (!_PyArg_CheckPositional("text_encoding", nargs, 1, 2)) {
+        goto exit;
+    }
+    encoding = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    stacklevel = _PyLong_AsInt(args[1]);
+    if (stacklevel == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _io_text_encoding_impl(module, encoding, stacklevel);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_open_code__doc__,
+"open_code($module, /, path)\n"
+"--\n"
+"\n"
+"Opens the provided file with the intent to import the contents.\n"
+"\n"
+"This may perform extra validation beyond open(), but is otherwise interchangeable\n"
+"with calling open(path, \'rb\').");
+
+#define _IO_OPEN_CODE_METHODDEF    \
+    {"open_code", (PyCFunction)(void(*)(void))_io_open_code, METH_FASTCALL|METH_KEYWORDS, _io_open_code__doc__},
+
+static PyObject *
+_io_open_code_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+_io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "open_code", 0};
+    PyObject *argsbuf[1];
+    PyObject *path;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("open_code", "argument 'path'", "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    path = args[0];
+    return_value = _io_open_code_impl(module, path);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=6ea315343f6a94ba input=a9049054013a1b77]*/

@@ -1,0 +1,3 @@
+Fix test_faulthandler.test_sigfpe() if Python is built with undefined
+behavior sanitizer (UBSAN): disable UBSAN on the faulthandler_sigfpe()
+function. Patch by Victor Stinner.

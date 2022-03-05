@@ -12,16 +12,17 @@ steps:
   inputs:
     versionSpec: '>=3.6'
 
-- script: python -m pip install sphinx==1.8.2 blurb python-docs-theme
+- script: python -m pip install -r requirements.txt
+  workingDirectory: '$(build.sourcesDirectory)/Doc'
   displayName: 'Install build dependencies'
 
 - ${{ if ne(parameters.latex, 'true') }}:
-  - script: make check suspicious html PYTHON=python
+  - script: make check html PYTHON=python
     workingDirectory: '$(build.sourcesDirectory)/Doc'
     displayName: 'Build documentation'
 
 - ${{ if eq(parameters.latex, 'true') }}:
-  - script: sudo apt-get update && sudo apt-get install -qy --force-yes texlive-full 
+  - script: sudo apt-get update && sudo apt-get install -qy --force-yes texlive-full
     displayName: 'Install LaTeX'
 
   - script: make dist PYTHON=python SPHINXBUILD='python -m sphinx' BLURB='python -m blurb'
@@ -31,7 +32,7 @@ steps:
 - ${{ if eq(parameters.upload, 'true') }}:
   - task: PublishBuildArtifacts@1
     displayName: 'Publish docs'
-  
+
     inputs:
       PathToPublish: '$(build.sourcesDirectory)/Doc/build'
       ArtifactName: docs

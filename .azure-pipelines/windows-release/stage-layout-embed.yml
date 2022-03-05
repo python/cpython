@@ -1,0 +1,61 @@
+jobs:
+- job: Make_Embed_Layout
+  displayName: Make embeddable layout
+  condition: and(succeeded(), eq(variables['DoEmbed'], 'true'))
+
+  pool:
+    vmImage: windows-2022
+
+  workspace:
+    clean: all
+
+  strategy:
+    matrix:
+      win32:
+        Name: win32
+        Python: $(Build.BinariesDirectory)\bin\python.exe
+        PYTHONHOME: $(Build.SourcesDirectory)
+      amd64:
+        Name: amd64
+        Python: $(Build.BinariesDirectory)\bin\python.exe
+        PYTHONHOME: $(Build.SourcesDirectory)
+      arm64:
+        Name: arm64
+        HostArch: amd64
+        Python: $(Build.BinariesDirectory)\bin_amd64\python.exe
+        PYTHONHOME: $(Build.SourcesDirectory)
+
+  steps:
+  - template: ./checkout.yml
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: bin_$(Name)'
+    inputs:
+      artifactName: bin_$(Name)
+      targetPath: $(Build.BinariesDirectory)\bin
+
+  - template: ./layout-command.yml
+
+  - powershell: |
+      $d = (.\PCbuild\build.bat -V) | %{ if($_ -match '\s+(\w+):\s*(.+)\s*$') { @{$Matches[1] = $Matches[2];} }};
+      Write-Host "##vso[task.setvariable variable=VersionText]$($d.PythonVersion)"
+    displayName: 'Extract version numbers'
+
+  - powershell: >
+      $(LayoutCmd)
+      --copy "$(Build.ArtifactStagingDirectory)\layout"
+      --zip "$(Build.ArtifactStagingDirectory)\embed\python-$(VersionText)-embed-$(Name).zip"
+      --preset-embed
+    displayName: 'Generate embeddable layout'
+
+  - task: PublishPipelineArtifact@0
+    displayName: 'Publish Artifact: layout_embed_$(Name)'
+    inputs:
+      targetPath: '$(Build.ArtifactStagingDirectory)\layout'
+      artifactName: layout_embed_$(Name)
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact: embed'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)\embed'
+      ArtifactName: embed

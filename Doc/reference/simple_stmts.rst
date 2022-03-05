@@ -11,7 +11,7 @@ A simple statement is comprised within a single logical line. Several simple
 statements may occur on a single line separated by semicolons.  The syntax for
 simple statements is:
 
-.. productionlist::
+.. productionlist:: python-grammar
    simple_stmt: `expression_stmt`
               : | `assert_stmt`
               : | `assignment_stmt`
@@ -46,7 +46,7 @@ result; in Python, procedures return the value ``None``).  Other uses of
 expression statements are allowed and occasionally useful.  The syntax for an
 expression statement is:
 
-.. productionlist::
+.. productionlist:: python-grammar
    expression_stmt: `starred_expression`
 
 An expression statement evaluates the expression list (which may be a single
@@ -82,7 +82,7 @@ Assignment statements
 Assignment statements are used to (re)bind names to values and to modify
 attributes or items of mutable objects:
 
-.. productionlist::
+.. productionlist:: python-grammar
    assignment_stmt: (`target_list` "=")+ (`starred_expression` | `yield_expression`)
    target_list: `target` ("," `target`)* [","]
    target: `identifier`
@@ -280,7 +280,7 @@ Augmented assignment statements
 Augmented assignment is the combination, in a single statement, of a binary
 operation and an assignment statement:
 
-.. productionlist::
+.. productionlist:: python-grammar
    augmented_assignment_stmt: `augtarget` `augop` (`expression_list` | `yield_expression`)
    augtarget: `identifier` | `attributeref` | `subscription` | `slicing`
    augop: "+=" | "-=" | "*=" | "@=" | "/=" | "//=" | "%=" | "**="
@@ -328,11 +328,11 @@ Annotated assignment statements
 :term:`Annotation <variable annotation>` assignment is the combination, in a single
 statement, of a variable or attribute annotation and an optional assignment statement:
 
-.. productionlist::
-   annotated_assignment_stmt: `augtarget` ":" `expression` ["=" `expression`]
+.. productionlist:: python-grammar
+   annotated_assignment_stmt: `augtarget` ":" `expression`
+                            : ["=" (`starred_expression` | `yield_expression`)]
 
-The difference from normal :ref:`assignment` is that only single target and
-only single right hand side value is allowed.
+The difference from normal :ref:`assignment` is that only single target is allowed.
 
 For simple names as assignment targets, if in class or module scope,
 the annotations are evaluated and stored in a special class or module
@@ -366,6 +366,11 @@ target, then the interpreter evaluates the target except for the last
       syntax for type annotations that can be used in static analysis tools and
       IDEs.
 
+.. versionchanged:: 3.8
+   Now annotated assignments allow same expressions in the right hand side as
+   the regular assignments. Previously, some expressions (like un-parenthesized
+   tuple expressions) caused a syntax error.
+
 
 .. _assert:
 
@@ -380,7 +385,7 @@ The :keyword:`!assert` statement
 Assert statements are a convenient way to insert debugging assertions into a
 program:
 
-.. productionlist::
+.. productionlist:: python-grammar
    assert_stmt: "assert" `expression` ["," `expression`]
 
 The simple form, ``assert expression``, is equivalent to ::
@@ -420,7 +425,7 @@ The :keyword:`!pass` statement
    pair: null; operation
            pair: null; operation
 
-.. productionlist::
+.. productionlist:: python-grammar
    pass_stmt: "pass"
 
 :keyword:`pass` is a null operation --- when it is executed, nothing happens.
@@ -442,7 +447,7 @@ The :keyword:`!del` statement
    pair: deletion; target
    triple: deletion; target; list
 
-.. productionlist::
+.. productionlist:: python-grammar
    del_stmt: "del" `target_list`
 
 Deletion is recursively defined very similar to the way assignment is defined.
@@ -481,7 +486,7 @@ The :keyword:`!return` statement
    pair: function; definition
    pair: class; definition
 
-.. productionlist::
+.. productionlist:: python-grammar
    return_stmt: "return" [`expression_list`]
 
 :keyword:`return` may only occur syntactically nested in a function definition,
@@ -520,7 +525,7 @@ The :keyword:`!yield` statement
    single: function; generator
    exception: StopIteration
 
-.. productionlist::
+.. productionlist:: python-grammar
    yield_stmt: `yield_expression`
 
 A :keyword:`yield` statement is semantically equivalent to a :ref:`yield
@@ -555,13 +560,13 @@ The :keyword:`!raise` statement
    pair: raising; exception
    single: __traceback__ (exception attribute)
 
-.. productionlist::
+.. productionlist:: python-grammar
    raise_stmt: "raise" [`expression` ["from" `expression`]]
 
-If no expressions are present, :keyword:`raise` re-raises the last exception
-that was active in the current scope.  If no exception is active in the current
-scope, a :exc:`RuntimeError` exception is raised indicating that this is an
-error.
+If no expressions are present, :keyword:`raise` re-raises the
+exception that is currently being handled, which is also known as the *active exception*.
+If there isn't currently an active exception, a :exc:`RuntimeError` exception is raised
+indicating that this is an error.
 
 Otherwise, :keyword:`raise` evaluates the first expression as the exception
 object.  It must be either a subclass or an instance of :class:`BaseException`.
@@ -576,8 +581,8 @@ The :dfn:`type` of the exception is the exception instance's class, the
 A traceback object is normally created automatically when an exception is raised
 and attached to it as the :attr:`__traceback__` attribute, which is writable.
 You can create an exception and set your own traceback in one step using the
-:meth:`with_traceback` exception method (which returns the same exception
-instance, with its traceback set to its argument), like so::
+:meth:`~BaseException.with_traceback` exception method (which returns the
+same exception instance, with its traceback set to its argument), like so::
 
    raise Exception("foo occurred").with_traceback(tracebackobj)
 
@@ -586,10 +591,13 @@ instance, with its traceback set to its argument), like so::
            __context__ (exception attribute)
 
 The ``from`` clause is used for exception chaining: if given, the second
-*expression* must be another exception class or instance, which will then be
-attached to the raised exception as the :attr:`__cause__` attribute (which is
-writable).  If the raised exception is not handled, both exceptions will be
-printed::
+*expression* must be another exception class or instance. If the second
+expression is an exception instance, it will be attached to the raised
+exception as the :attr:`__cause__` attribute (which is writable). If the
+expression is an exception class, the class will be instantiated and the
+resulting exception instance will be attached to the raised exception as the
+:attr:`__cause__` attribute. If the raised exception is not handled, both
+exceptions will be printed::
 
    >>> try:
    ...     print(1 / 0)
@@ -606,8 +614,10 @@ printed::
      File "<stdin>", line 4, in <module>
    RuntimeError: Something bad happened
 
-A similar mechanism works implicitly if an exception is raised inside an
-exception handler or a :keyword:`finally` clause: the previous exception is then
+A similar mechanism works implicitly if a new exception is raised when
+an exception is already being handled.  An exception may be handled
+when an :keyword:`except` or :keyword:`finally` clause, or a
+:keyword:`with` statement, is used.  The previous exception is then
 attached as the new exception's :attr:`__context__` attribute::
 
    >>> try:
@@ -647,6 +657,12 @@ and information about handling exceptions is in section :ref:`try`.
     The ``__suppress_context__`` attribute to suppress automatic display of the
     exception context.
 
+.. versionchanged:: 3.11
+    If the traceback of the active exception is modified in an :keyword:`except`
+    clause, a subsequent ``raise`` statement re-raises the exception with the
+    modified traceback. Previously, the exception was re-raised with the
+    traceback it had when it was caught.
+
 .. _break:
 
 The :keyword:`!break` statement
@@ -658,7 +674,7 @@ The :keyword:`!break` statement
    statement: while
    pair: loop; statement
 
-.. productionlist::
+.. productionlist:: python-grammar
    break_stmt: "break"
 
 :keyword:`break` may only occur syntactically nested in a :keyword:`for` or
@@ -693,7 +709,7 @@ The :keyword:`!continue` statement
    pair: loop; statement
    keyword: finally
 
-.. productionlist::
+.. productionlist:: python-grammar
    continue_stmt: "continue"
 
 :keyword:`continue` may only occur syntactically nested in a :keyword:`for` or
@@ -720,13 +736,13 @@ The :keyword:`!import` statement
    exception: ImportError
    single: , (comma); import statement
 
-.. productionlist::
+.. productionlist:: python-grammar
    import_stmt: "import" `module` ["as" `identifier`] ("," `module` ["as" `identifier`])*
               : | "from" `relative_module` "import" `identifier` ["as" `identifier`]
               : ("," `identifier` ["as" `identifier`])*
               : | "from" `relative_module` "import" "(" `identifier` ["as" `identifier`]
               : ("," `identifier` ["as" `identifier`])* [","] ")"
-              : | "from" `module` "import" "*"
+              : | "from" `relative_module` "import" "*"
    module: (`identifier` ".")* `identifier`
    relative_module: "."* `module` | "."+
 
@@ -834,6 +850,7 @@ the :ref:`relativeimports` section.
 :func:`importlib.import_module` is provided to support applications that
 determine dynamically the modules to be loaded.
 
+.. audit-event:: import module,filename,sys.path,sys.meta_path,sys.path_hooks import
 
 .. _future:
 
@@ -853,7 +870,7 @@ that introduce incompatible changes to the language.  It allows use of the new
 features on a per-module basis before the release in which the feature becomes
 standard.
 
-.. productionlist:: *
+.. productionlist:: python-grammar
    future_stmt: "from" "__future__" "import" `feature` ["as" `identifier`]
               : ("," `feature` ["as" `identifier`])*
               : | "from" "__future__" "import" "(" `feature` ["as" `identifier`]
@@ -868,8 +885,8 @@ can appear before a future statement are:
 * blank lines, and
 * other future statements.
 
-The only feature in Python 3.7 that requires using the future statement is
-``annotations``.
+The only feature that requires using the future statement is
+``annotations`` (see :pep:`563`).
 
 All historical features enabled by the future statement are still recognized
 by Python 3.  The list includes ``absolute_import``, ``division``,
@@ -931,7 +948,7 @@ The :keyword:`!global` statement
    triple: global; name; binding
    single: , (comma); identifier list
 
-.. productionlist::
+.. productionlist:: python-grammar
    global_stmt: "global" `identifier` ("," `identifier`)*
 
 The :keyword:`global` statement is a declaration which holds for the entire
@@ -944,7 +961,7 @@ Names listed in a :keyword:`global` statement must not be used in the same code
 block textually preceding that :keyword:`!global` statement.
 
 Names listed in a :keyword:`global` statement must not be defined as formal
-parameters or in a :keyword:`for` loop control target, :keyword:`class`
+parameters, or as targets in :keyword:`with` statements or :keyword:`except` clauses, or in a :keyword:`for` target list, :keyword:`class`
 definition, function definition, :keyword:`import` statement, or variable
 annotation.
 
@@ -976,7 +993,7 @@ The :keyword:`!nonlocal` statement
 .. index:: statement: nonlocal
    single: , (comma); identifier list
 
-.. productionlist::
+.. productionlist:: python-grammar
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
 
 .. XXX add when implemented

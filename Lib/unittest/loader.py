@@ -286,8 +286,6 @@ class TestLoader(object):
         self._top_level_dir = top_level_dir
 
         is_not_importable = False
-        is_namespace = False
-        tests = []
         if os.path.isdir(os.path.abspath(start_dir)):
             start_dir = os.path.abspath(start_dir)
             if start_dir != top_level_dir:
@@ -303,50 +301,25 @@ class TestLoader(object):
                 top_part = start_dir.split('.')[0]
                 try:
                     start_dir = os.path.abspath(
-                       os.path.dirname((the_module.__file__)))
+                        os.path.dirname((the_module.__file__)))
                 except AttributeError:
-                    # look for namespace packages
-                    try:
-                        spec = the_module.__spec__
-                    except AttributeError:
-                        spec = None
-
-                    if spec and spec.loader is None:
-                        if spec.submodule_search_locations is not None:
-                            is_namespace = True
-
-                            for path in the_module.__path__:
-                                if (not set_implicit_top and
-                                    not path.startswith(top_level_dir)):
-                                    continue
-                                self._top_level_dir = \
-                                    (path.split(the_module.__name__
-                                         .replace(".", os.path.sep))[0])
-                                tests.extend(self._find_tests(path,
-                                                              pattern,
-                                                              namespace=True))
-                    elif the_module.__name__ in sys.builtin_module_names:
+                    if the_module.__name__ in sys.builtin_module_names:
                         # builtin module
                         raise TypeError('Can not use builtin modules '
                                         'as dotted module names') from None
                     else:
                         raise TypeError(
-                            'don\'t know how to discover from {!r}'
-                            .format(the_module)) from None
+                            f"don't know how to discover from {the_module!r}"
+                            ) from None
 
                 if set_implicit_top:
-                    if not is_namespace:
-                        self._top_level_dir = \
-                           self._get_directory_containing_module(top_part)
-                        sys.path.remove(top_level_dir)
-                    else:
-                        sys.path.remove(top_level_dir)
+                    self._top_level_dir = self._get_directory_containing_module(top_part)
+                    sys.path.remove(top_level_dir)
 
         if is_not_importable:
             raise ImportError('Start directory is not importable: %r' % start_dir)
 
-        if not is_namespace:
-            tests = list(self._find_tests(start_dir, pattern))
+        tests = list(self._find_tests(start_dir, pattern))
         return self.suiteClass(tests)
 
     def _get_directory_containing_module(self, module_name):
@@ -381,7 +354,7 @@ class TestLoader(object):
         # override this method to use alternative matching strategy
         return fnmatch(path, pattern)
 
-    def _find_tests(self, start_dir, pattern, namespace=False):
+    def _find_tests(self, start_dir, pattern):
         """Used by discovery. Yields test suites it loads."""
         # Handle the __init__ in this package
         name = self._get_name_from_path(start_dir)
@@ -390,8 +363,7 @@ class TestLoader(object):
         if name != '.' and name not in self._loading_packages:
             # name is in self._loading_packages while we have called into
             # loadTestsFromModule with name.
-            tests, should_recurse = self._find_test_path(
-                start_dir, pattern, namespace)
+            tests, should_recurse = self._find_test_path(start_dir, pattern)
             if tests is not None:
                 yield tests
             if not should_recurse:
@@ -402,8 +374,7 @@ class TestLoader(object):
         paths = sorted(os.listdir(start_dir))
         for path in paths:
             full_path = os.path.join(start_dir, path)
-            tests, should_recurse = self._find_test_path(
-                full_path, pattern, namespace)
+            tests, should_recurse = self._find_test_path(full_path, pattern)
             if tests is not None:
                 yield tests
             if should_recurse:
@@ -411,11 +382,11 @@ class TestLoader(object):
                 name = self._get_name_from_path(full_path)
                 self._loading_packages.add(name)
                 try:
-                    yield from self._find_tests(full_path, pattern, namespace)
+                    yield from self._find_tests(full_path, pattern)
                 finally:
                     self._loading_packages.discard(name)
 
-    def _find_test_path(self, full_path, pattern, namespace=False):
+    def _find_test_path(self, full_path, pattern):
         """Used by discovery.
 
         Loads tests from a single file, or a directories' __init__.py when
@@ -459,8 +430,7 @@ class TestLoader(object):
                         msg % (mod_name, module_dir, expected_dir))
                 return self.loadTestsFromModule(module, pattern=pattern), False
         elif os.path.isdir(full_path):
-            if (not namespace and
-                not os.path.isfile(os.path.join(full_path, '__init__.py'))):
+            if not os.path.isfile(os.path.join(full_path, '__init__.py')):
                 return None, False
 
             load_tests = None
@@ -494,6 +464,9 @@ class TestLoader(object):
 defaultTestLoader = TestLoader()
 
 
+# These functions are considered obsolete for long time.
+# They will be removed in Python 3.13.
+
 def _makeLoader(prefix, sortUsing, suiteClass=None, testNamePatterns=None):
     loader = TestLoader()
     loader.sortTestMethodsUsing = sortUsing
@@ -504,14 +477,32 @@ def _makeLoader(prefix, sortUsing, suiteClass=None, testNamePatterns=None):
     return loader
 
 def getTestCaseNames(testCaseClass, prefix, sortUsing=util.three_way_cmp, testNamePatterns=None):
+    import warnings
+    warnings.warn(
+        "unittest.getTestCaseNames() is deprecated and will be removed in Python 3.13. "
+        "Please use unittest.TestLoader.getTestCaseNames() instead.",
+        DeprecationWarning, stacklevel=2
+    )
     return _makeLoader(prefix, sortUsing, testNamePatterns=testNamePatterns).getTestCaseNames(testCaseClass)
 
 def makeSuite(testCaseClass, prefix='test', sortUsing=util.three_way_cmp,
               suiteClass=suite.TestSuite):
+    import warnings
+    warnings.warn(
+        "unittest.makeSuite() is deprecated and will be removed in Python 3.13. "
+        "Please use unittest.TestLoader.loadTestsFromTestCase() instead.",
+        DeprecationWarning, stacklevel=2
+    )
     return _makeLoader(prefix, sortUsing, suiteClass).loadTestsFromTestCase(
         testCaseClass)
 
 def findTestCases(module, prefix='test', sortUsing=util.three_way_cmp,
                   suiteClass=suite.TestSuite):
+    import warnings
+    warnings.warn(
+        "unittest.findTestCases() is deprecated and will be removed in Python 3.13. "
+        "Please use unittest.TestLoader.loadTestsFromModule() instead.",
+        DeprecationWarning, stacklevel=2
+    )
     return _makeLoader(prefix, sortUsing, suiteClass).loadTestsFromModule(\
         module)

@@ -1,9 +1,9 @@
 import codecs
 import html.entities
 import sys
-import test.support
 import unicodedata
 import unittest
+
 
 class PosReturn:
     # this can be used for configurable callbacks

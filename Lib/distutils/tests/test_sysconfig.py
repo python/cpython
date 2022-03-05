@@ -10,7 +10,10 @@ import unittest
 from distutils import sysconfig
 from distutils.ccompiler import get_default_compiler
 from distutils.tests import support
-from test.support import TESTFN, run_unittest, check_warnings, swap_item
+from test.support import run_unittest, swap_item, requires_subprocess
+from test.support.os_helper import TESTFN
+from test.support.warnings_helper import check_warnings
+
 
 class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
     def setUp(self):
@@ -244,6 +247,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
         self.assertIsNotNone(vars['SO'])
         self.assertEqual(vars['SO'], vars['EXT_SUFFIX'])
 
+    @requires_subprocess()
     def test_customize_compiler_before_get_config_vars(self):
         # Issue #21923: test that a Distribution compiler
         # instance can be called without an explicit call to
@@ -266,7 +270,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(SysconfigTestCase))
+    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(SysconfigTestCase))
     return suite
 
 

@@ -1,0 +1,3 @@
+Message of AttributeError caused by getting, setting or deleting a property
+without the corresponding function now mentions that the attribute is in fact
+a property and also specifies type of the class that it belongs to.

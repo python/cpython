@@ -117,7 +117,7 @@ The module defines the following:
 .. function:: select(rlist, wlist, xlist[, timeout])
 
    This is a straightforward interface to the Unix :c:func:`select` system call.
-   The first three arguments are sequences of 'waitable objects': either
+   The first three arguments are iterables of 'waitable objects': either
    integers representing file descriptors or objects with a parameterless method
    named :meth:`~io.IOBase.fileno` returning such an integer:
 
@@ -126,7 +126,7 @@ The module defines the following:
    * *xlist*: wait for an "exceptional condition" (see the manual page for what
      your system considers such a condition)
 
-   Empty sequences are allowed, but acceptance of three empty sequences is
+   Empty iterables are allowed, but acceptance of three empty iterables is
    platform-dependent. (It is known to work on Unix but not on Windows.)  The
    optional *timeout* argument specifies a time-out as a floating point number
    in seconds.  When the *timeout* argument is omitted the function blocks until
@@ -141,7 +141,7 @@ The module defines the following:
       single: socket() (in module socket)
       single: popen() (in module os)
 
-   Among the acceptable object types in the sequences are Python :term:`file
+   Among the acceptable object types in the iterables are Python :term:`file
    objects <file object>` (e.g. ``sys.stdin``, or objects returned by
    :func:`open` or :func:`os.popen`), socket objects returned by
    :func:`socket.socket`.  You may also define a :dfn:`wrapper` class yourself,
@@ -355,6 +355,9 @@ Edge and Level Trigger Polling (epoll) Objects
 
    Remove a registered file descriptor from the epoll object.
 
+   .. versionchanged:: 3.9
+      The method no longer ignores the :data:`~errno.EBADF` error.
+
 
 .. method:: epoll.poll(timeout=None, maxevents=-1)
 
@@ -480,13 +483,14 @@ Kqueue Objects
    Create a kqueue object from a given file descriptor.
 
 
-.. method:: kqueue.control(changelist, max_events[, timeout=None]) -> eventlist
+.. method:: kqueue.control(changelist, max_events[, timeout]) -> eventlist
 
    Low level interface to kevent
 
-   - changelist must be an iterable of kevent object or ``None``
+   - changelist must be an iterable of kevent objects or ``None``
    - max_events must be 0 or a positive integer
-   - timeout in seconds (floats possible)
+   - timeout in seconds (floats possible); the default is ``None``,
+     to wait forever
 
    .. versionchanged:: 3.5
       The function is now retried with a recomputed timeout when interrupted by
@@ -530,7 +534,7 @@ https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
    | :const:`KQ_FILTER_PROC`   | Watch for events on a process id            |
    +---------------------------+---------------------------------------------+
    | :const:`KQ_FILTER_NETDEV` | Watch for events on a network device        |
-   |                           | [not available on Mac OS X]                 |
+   |                           | [not available on macOS]                    |
    +---------------------------+---------------------------------------------+
    | :const:`KQ_FILTER_SIGNAL` | Returns whenever the watched signal is      |
    |                           | delivered to the process                    |
@@ -622,7 +626,7 @@ https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
    | :const:`KQ_NOTE_TRACKERR`  | unable to attach to a child                |
    +----------------------------+--------------------------------------------+
 
-   :const:`KQ_FILTER_NETDEV` filter flags (not available on Mac OS X):
+   :const:`KQ_FILTER_NETDEV` filter flags (not available on macOS):
 
    +----------------------------+--------------------------------------------+
    | Constant                   | Meaning                                    |

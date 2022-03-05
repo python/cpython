@@ -77,7 +77,7 @@ def _get_default_invalidation_mode():
 
 
 def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
-            invalidation_mode=None):
+            invalidation_mode=None, quiet=0):
     """Byte-compile one Python source file to Python bytecode.
 
     :param file: The source file name.
@@ -95,6 +95,8 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
         are -1, 0, 1 and 2.  A value of -1 means to use the optimization
         level of the current interpreter, as given by -O command line options.
     :param invalidation_mode:
+    :param quiet: Return full output with False or 0, errors only with 1,
+        and no output with 2.
 
     :return: Path to the resulting byte compiled file.
 
@@ -143,11 +145,12 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
                                      _optimize=optimize)
     except Exception as err:
         py_exc = PyCompileError(err.__class__, err, dfile or file)
-        if doraise:
-            raise py_exc
-        else:
-            sys.stderr.write(py_exc.msg + '\n')
-            return
+        if quiet < 2:
+            if doraise:
+                raise py_exc
+            else:
+                sys.stderr.write(py_exc.msg + '\n')
+        return
     try:
         dirname = os.path.dirname(cfile)
         if dirname:
@@ -170,43 +173,40 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
     return cfile
 
 
-def main(args=None):
-    """Compile several source files.
+def main():
+    import argparse
 
-    The files named in 'args' (or on the command line, if 'args' is
-    not specified) are compiled and the resulting bytecode is cached
-    in the normal manner.  This function does not search a directory
-    structure to locate source files; it only compiles files named
-    explicitly.  If '-' is the only parameter in args, the list of
-    files is taken from standard input.
-
-    """
-    if args is None:
-        args = sys.argv[1:]
-    rv = 0
-    if args == ['-']:
-        while True:
-            filename = sys.stdin.readline()
-            if not filename:
-                break
-            filename = filename.rstrip('\n')
-            try:
-                compile(filename, doraise=True)
-            except PyCompileError as error:
-                rv = 1
-                sys.stderr.write("%s\n" % error.msg)
-            except OSError as error:
-                rv = 1
-                sys.stderr.write("%s\n" % error)
+    description = 'A simple command-line interface for py_compile module.'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument(
+        '-q', '--quiet',
+        action='store_true',
+        help='Suppress error output',
+    )
+    parser.add_argument(
+        'filenames',
+        nargs='+',
+        help='Files to compile',
+    )
+    args = parser.parse_args()
+    if args.filenames == ['-']:
+        filenames = [filename.rstrip('\n') for filename in sys.stdin.readlines()]
     else:
-        for filename in args:
-            try:
-                compile(filename, doraise=True)
-            except PyCompileError as error:
-                # return value to indicate at least one failure
-                rv = 1
-                sys.stderr.write("%s\n" % error.msg)
-    return rv
+        filenames = args.filenames
+    for filename in filenames:
+        try:
+            compile(filename, doraise=True)
+        except PyCompileError as error:
+            if args.quiet:
+                parser.exit(1)
+            else:
+                parser.exit(1, error.msg)
+        except OSError as error:
+            if args.quiet:
+                parser.exit(1)
+            else:
+                parser.exit(1, str(error))
+
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

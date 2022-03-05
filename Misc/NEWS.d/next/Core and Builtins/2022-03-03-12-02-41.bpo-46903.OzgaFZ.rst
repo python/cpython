@@ -1,0 +1,2 @@
+Make sure that str subclasses can be used as attribute names for instances
+with virtual dictionaries. Fixes regression in 3.11alpha
