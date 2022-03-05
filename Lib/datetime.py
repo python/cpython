@@ -1487,8 +1487,8 @@ class time:
         return name
 
     def dst(self):
-         """Returns the DST offset as a timedelta object, or timedelta(0) if
-         DST is not in effect.
+        """Returns the DST offset as a timedelta object, or timedelta(0) if
+        DST is not in effect.
 
         This is purely informational; the DST offset has already been added to
         the UTC offset returned by utcoffset() if applicable, so there's no
