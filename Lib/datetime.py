@@ -1123,11 +1123,11 @@ class tzinfo:
         raise NotImplementedError("tzinfo subclass must override tzname()")
 
     def utcoffset(self, dt):
-        "datetime -> timedelta, positive for east of UTC, negative for west of UTC"
+        "Returns the difference between local time and UTC as a timedelta object."
         raise NotImplementedError("tzinfo subclass must override utcoffset()")
 
     def dst(self, dt):
-        """datetime -> DST offset as timedelta, positive for east of UTC.
+        """Returns the DST offset as a timedelta object.
 
         Return 0 if DST not in effect.  utcoffset() must include the DST
         offset.
@@ -1466,8 +1466,7 @@ class time:
     # Timezone functions
 
     def utcoffset(self):
-        """Return the timezone offset as timedelta, positive east of UTC
-         (negative west of UTC)."""
+        """Returns the difference between local time and UTC as a timedelta object."""
         if self._tzinfo is None:
             return None
         offset = self._tzinfo.utcoffset(None)
@@ -1488,8 +1487,8 @@ class time:
         return name
 
     def dst(self):
-        """Return 0 if DST is not in effect, or the DST offset (as timedelta
-        positive eastward) if DST is in effect.
+         """Returns the DST offset as a timedelta object, or timedelta(0) if
+         DST is not in effect.
 
         This is purely informational; the DST offset has already been added to
         the UTC offset returned by utcoffset() if applicable, so there's no
@@ -1951,8 +1950,7 @@ class datetime(date):
         return _strptime._strptime_datetime(cls, date_string, format)
 
     def utcoffset(self):
-        """Return the timezone offset as timedelta positive east of UTC (negative west of
-        UTC)."""
+        """Returns the difference between local time and UTC as a timedelta object."""
         if self._tzinfo is None:
             return None
         offset = self._tzinfo.utcoffset(self)
@@ -1973,8 +1971,8 @@ class datetime(date):
         return name
 
     def dst(self):
-        """Return 0 if DST is not in effect, or the DST offset (as timedelta
-        positive eastward) if DST is in effect.
+        """Returns the DST offset as a timedelta object, or timedelta(0) if
+        DST is not in effect.
 
         This is purely informational; the DST offset has already been added to
         the UTC offset returned by utcoffset() if applicable, so there's no
