@@ -367,8 +367,12 @@ MAP_* Constants
           MAP_ANON
           MAP_ANONYMOUS
           MAP_POPULATE
+          MAP_STACK
 
     These are the various flags that can be passed to :meth:`mmap.mmap`. Note that some options might not be present on some systems.
 
     .. versionchanged:: 3.10
        Added MAP_POPULATE constant.
+
+    .. versionadded:: 3.11
+       Added MAP_STACK constant.

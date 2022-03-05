@@ -14,6 +14,7 @@ extern "C" {
 extern void _PyFloat_InitState(PyInterpreterState *);
 extern PyStatus _PyFloat_InitTypes(PyInterpreterState *);
 extern void _PyFloat_Fini(PyInterpreterState *);
+extern void _PyFloat_FiniType(PyInterpreterState *);
 
 
 /* other API */

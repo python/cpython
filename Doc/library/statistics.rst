@@ -116,10 +116,11 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. note::
 
-      The mean is strongly affected by outliers and is not a robust estimator
-      for central location: the mean is not necessarily a typical example of
-      the data points.  For more robust measures of central location, see
-      :func:`median` and :func:`mode`.
+      The mean is strongly affected by `outliers
+      <https://en.wikipedia.org/wiki/Outlier>`_ and is not necessarily a
+      typical example of the data points. For a more robust, although less
+      efficient, measure of `central tendency
+      <https://en.wikipedia.org/wiki/Central_tendency>`_, see :func:`median`.
 
       The sample mean gives an unbiased estimate of the true population mean,
       so that when taken on average over all the possible samples,

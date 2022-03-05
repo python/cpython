@@ -3,6 +3,7 @@
 # ---
 # Built-in modules required to get a functioning interpreter;
 # cannot be built as shared!
+*static*
 
 # module C APIs are used in core
 atexit atexitmodule.c

@@ -787,12 +787,6 @@ class PyDictObjectPtr(PyObjectPtr):
     def _get_entries(keys):
         dk_nentries = int(keys['dk_nentries'])
         dk_size = 1<<int(keys['dk_log2_size'])
-        try:
-            # <= Python 3.5
-            return keys['dk_entries'], dk_size
-        except RuntimeError:
-            # >= Python 3.6
-            pass
 
         if dk_size <= 0xFF:
             offset = dk_size
@@ -805,7 +799,10 @@ class PyDictObjectPtr(PyObjectPtr):
 
         ent_addr = keys['dk_indices'].address
         ent_addr = ent_addr.cast(_type_unsigned_char_ptr()) + offset
-        ent_ptr_t = gdb.lookup_type('PyDictKeyEntry').pointer()
+        if int(keys['dk_kind']) == 0:  # DICT_KEYS_GENERAL
+            ent_ptr_t = gdb.lookup_type('PyDictKeyEntry').pointer()
+        else:
+            ent_ptr_t = gdb.lookup_type('PyDictUnicodeEntry').pointer()
         ent_addr = ent_addr.cast(ent_ptr_t)
 
         return ent_addr, dk_nentries
@@ -1044,8 +1041,8 @@ class PyFramePtr:
     def _f_lasti(self):
         return self._f_special("f_lasti", int_from_int)
 
-    def depth(self):
-        return self._f_special("depth", int_from_int)
+    def is_entry(self):
+        return self._f_special("is_entry", bool)
 
     def previous(self):
         return self._f_special("previous", PyFramePtr)
@@ -1860,7 +1857,7 @@ class Frame(object):
                         line = interp_frame.current_line()
                         if line is not None:
                             sys.stdout.write('    %s\n' % line.strip())
-                    if interp_frame.depth() == 0:
+                    if interp_frame.is_entry():
                         break
                 else:
                     sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
@@ -1883,7 +1880,7 @@ class Frame(object):
                         line = interp_frame.current_line()
                         if line is not None:
                             sys.stdout.write('    %s\n' % line.strip())
-                    if interp_frame.depth() == 0:
+                    if interp_frame.is_entry():
                         break
                 else:
                     sys.stdout.write('  (unable to read python frame information)\n')
@@ -2147,7 +2144,7 @@ class PyLocals(gdb.Command):
                     % (pyop_name.proxyval(set()),
                         pyop_value.get_truncated_repr(MAX_OUTPUT_LEN)))
 
-            if pyop_frame.depth() == 0:
+            if pyop_frame.is_entry():
                 break
 
             pyop_frame = pyop_frame.previous()

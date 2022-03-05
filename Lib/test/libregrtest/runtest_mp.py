@@ -392,16 +392,12 @@ class MultiprocessTestRunner:
             worker.wait_stopped(start_time)
 
     def _get_result(self) -> QueueOutput | None:
-        if not any(worker.is_alive() for worker in self.workers):
-            # all worker threads are done: consume pending results
-            try:
-                return self.output.get(timeout=0)
-            except queue.Empty:
-                return None
-
         use_faulthandler = (self.ns.timeout is not None)
         timeout = PROGRESS_UPDATE
-        while True:
+
+        # bpo-46205: check the status of workers every iteration to avoid
+        # waiting forever on an empty queue.
+        while any(worker.is_alive() for worker in self.workers):
             if use_faulthandler:
                 faulthandler.dump_traceback_later(MAIN_PROCESS_TIMEOUT,
                                                   exit=True)
@@ -416,6 +412,12 @@ class MultiprocessTestRunner:
             running = get_running(self.workers)
             if running and not self.ns.pgo:
                 self.log('running: %s' % ', '.join(running))
+
+        # all worker threads are done: consume pending results
+        try:
+            return self.output.get(timeout=0)
+        except queue.Empty:
+            return None
 
     def display_result(self, mp_result: MultiprocessResult) -> None:
         result = mp_result.result

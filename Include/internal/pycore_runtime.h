@@ -8,10 +8,12 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_atomic.h"    /* _Py_atomic_address */
-#include "pycore_gil.h"       // struct _gil_runtime_state
-#include "pycore_long_state.h"  // struct _Py_long_state
-#include "pycore_unicodeobject.h"  // struct _Py_unicode_runtime_ids
+#include "pycore_atomic.h"          /* _Py_atomic_address */
+#include "pycore_gil.h"             // struct _gil_runtime_state
+#include "pycore_global_objects.h"  // struct _Py_global_objects
+#include "pycore_interp.h"          // PyInterpreterState
+#include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
+
 
 /* ceval state */
 
@@ -53,6 +55,9 @@ typedef struct _Py_AuditHookEntry {
 
 /* Full Python runtime state */
 
+/* _PyRuntimeState holds the global state for the CPython runtime.
+   That data is exposed in the internal API as a static variable (_PyRuntime).
+   */
 typedef struct pyruntimestate {
     /* Has been initialized to a safe state.
 
@@ -81,7 +86,11 @@ typedef struct pyruntimestate {
 
     struct pyinterpreters {
         PyThread_type_lock mutex;
+        /* The linked list of interpreters, newest first. */
         PyInterpreterState *head;
+        /* The runtime's initial interpreter, which has a special role
+           in the operation of the runtime.  It is also often the only
+           interpreter. */
         PyInterpreterState *main;
         /* _next_interp_id is an auto-numbered sequence of small
            integers.  It gets initialized in _PyInterpreterState_Init(),
@@ -101,8 +110,6 @@ typedef struct pyruntimestate {
 
     unsigned long main_thread;
 
-    struct _Py_long_state int_state;
-
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;
@@ -120,22 +127,29 @@ typedef struct pyruntimestate {
 
     struct _Py_unicode_runtime_ids unicode_ids;
 
-    // XXX Consolidate globals found via the check-c-globals script.
+    /* All the objects that are shared by the runtime's interpreters. */
+    struct _Py_global_objects global_objects;
+
+    /* The following fields are here to avoid allocation during init.
+       The data is exposed through _PyRuntimeState pointer fields.
+       These fields should not be accessed directly outside of init.
+
+       All other _PyRuntimeState pointer fields are populated when
+       needed and default to NULL.
+
+       For now there are some exceptions to that rule, which require
+       allocation during init.  These will be addressed on a case-by-case
+       basis.  Most notably, we don't pre-allocated the several mutex
+       (PyThread_type_lock) fields, because on Windows we only ever get
+       a pointer type.
+       */
+
+    /* PyInterpreterState.interpreters.main */
+    PyInterpreterState _main_interpreter;
 } _PyRuntimeState;
 
-#define _PyRuntimeState_INIT \
-    { \
-        ._initialized = 0, \
-    }
-/* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
-static inline void
-_PyRuntimeState_reset(_PyRuntimeState *runtime)
-{
-    /* Make it match _PyRuntimeState_INIT. */
-    memset(runtime, 0, sizeof(*runtime));
-}
-
+/* other API */
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
 

@@ -746,12 +746,16 @@ x = (
         # differently inside f-strings.
         self.assertAllRaise(SyntaxError, r"\(unicode error\) 'unicodeescape' codec can't decode bytes in position .*: malformed \\N character escape",
                             [r"f'\N'",
+                             r"f'\N '",
+                             r"f'\N  '",  # See bpo-46503.
                              r"f'\N{'",
                              r"f'\N{GREEK CAPITAL LETTER DELTA'",
 
                              # Here are the non-f-string versions,
                              #  which should give the same errors.
                              r"'\N'",
+                             r"'\N '",
+                             r"'\N  '",
                              r"'\N{'",
                              r"'\N{GREEK CAPITAL LETTER DELTA'",
                              ])
@@ -1049,6 +1053,8 @@ x = (
                              "f'{{{'",
                              "f'{{}}{'",
                              "f'{'",
+                             "f'x{<'",  # See bpo-46762.
+                             "f'x{>'",
                              ])
 
         # But these are just normal strings.

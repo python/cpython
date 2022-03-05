@@ -848,12 +848,9 @@ class UtimeTests(unittest.TestCase):
     def test_utime_dir_fd(self):
         def set_time(filename, ns):
             dirname, name = os.path.split(filename)
-            dirfd = os.open(dirname, os.O_RDONLY)
-            try:
+            with os_helper.open_dir_fd(dirname) as dirfd:
                 # pass dir_fd to test utimensat(timespec) or futimesat(timeval)
                 os.utime(name, dir_fd=dirfd, ns=ns)
-            finally:
-                os.close(dirfd)
         self._test_utime(set_time)
 
     def test_utime_directory(self):
@@ -995,6 +992,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     @unittest.skipUnless(unix_shell and os.path.exists(unix_shell),
                          'requires a shell')
     @unittest.skipUnless(hasattr(os, 'popen'), "needs os.popen()")
+    @support.requires_subprocess()
     def test_update2(self):
         os.environ.clear()
         os.environ.update(HELLO="World")
@@ -1005,6 +1003,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     @unittest.skipUnless(unix_shell and os.path.exists(unix_shell),
                          'requires a shell')
     @unittest.skipUnless(hasattr(os, 'popen'), "needs os.popen()")
+    @support.requires_subprocess()
     def test_os_popen_iter(self):
         with os.popen("%s -c 'echo \"line1\nline2\nline3\"'"
                       % unix_shell) as popen:
@@ -1099,6 +1098,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         value_str = value.decode(sys.getfilesystemencoding(), 'surrogateescape')
         self.assertEqual(os.environ['bytes'], value_str)
 
+    @support.requires_subprocess()
     def test_putenv_unsetenv(self):
         name = "PYTHONTESTVAR"
         value = "testvalue"
@@ -1174,6 +1174,8 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
     def _test_underlying_process_env(self, var, expected):
         if not (unix_shell and os.path.exists(unix_shell)):
+            return
+        elif not support.has_subprocess_support:
             return
 
         with os.popen(f"{unix_shell} -c 'echo ${var}'") as popen:
@@ -2282,6 +2284,7 @@ class PosixUidGidTests(unittest.TestCase):
         self.assertRaises(OverflowError, os.setreuid, 0, self.UID_OVERFLOW)
 
     @unittest.skipUnless(hasattr(os, 'setreuid'), 'test needs os.setreuid()')
+    @support.requires_subprocess()
     def test_setreuid_neg1(self):
         # Needs to accept -1.  We run this in a subprocess to avoid
         # altering the test runner's process state (issue8045).
@@ -2290,6 +2293,7 @@ class PosixUidGidTests(unittest.TestCase):
                 'import os,sys;os.setreuid(-1,-1);sys.exit(0)'])
 
     @unittest.skipUnless(hasattr(os, 'setregid'), 'test needs os.setregid()')
+    @support.requires_subprocess()
     def test_setregid(self):
         if os.getuid() != 0 and not HAVE_WHEEL_GROUP:
             self.assertRaises(OSError, os.setregid, 0, 0)
@@ -2299,6 +2303,7 @@ class PosixUidGidTests(unittest.TestCase):
         self.assertRaises(OverflowError, os.setregid, 0, self.GID_OVERFLOW)
 
     @unittest.skipUnless(hasattr(os, 'setregid'), 'test needs os.setregid()')
+    @support.requires_subprocess()
     def test_setregid_neg1(self):
         # Needs to accept -1.  We run this in a subprocess to avoid
         # altering the test runner's process state (issue8045).
@@ -2472,6 +2477,7 @@ class Win32KillTests(unittest.TestCase):
             self.fail("subprocess did not stop on {}".format(name))
 
     @unittest.skip("subprocesses aren't inheriting Ctrl+C property")
+    @support.requires_subprocess()
     def test_CTRL_C_EVENT(self):
         from ctypes import wintypes
         import ctypes
@@ -2490,6 +2496,7 @@ class Win32KillTests(unittest.TestCase):
 
         self._kill_with_event(signal.CTRL_C_EVENT, "CTRL_C_EVENT")
 
+    @support.requires_subprocess()
     def test_CTRL_BREAK_EVENT(self):
         self._kill_with_event(signal.CTRL_BREAK_EVENT, "CTRL_BREAK_EVENT")
 
@@ -2927,6 +2934,7 @@ class DeviceEncodingTests(unittest.TestCase):
         self.assertTrue(codecs.lookup(encoding))
 
 
+@support.requires_subprocess()
 class PidTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'getppid'), "test needs os.getppid")
     def test_getppid(self):
@@ -2999,6 +3007,7 @@ class PidTests(unittest.TestCase):
         self.check_waitpid(code, exitcode=-signum, callback=kill_process)
 
 
+@support.requires_subprocess()
 class SpawnTests(unittest.TestCase):
     def create_args(self, *, with_env=False, use_bytes=False):
         self.exitcode = 17
@@ -4341,8 +4350,7 @@ class TestScandir(unittest.TestCase):
             os.symlink('file.txt', os.path.join(self.path, 'link'))
             expected_names.append('link')
 
-        fd = os.open(self.path, os.O_RDONLY)
-        try:
+        with os_helper.open_dir_fd(self.path) as fd:
             with os.scandir(fd) as it:
                 entries = list(it)
             names = [entry.name for entry in entries]
@@ -4357,8 +4365,6 @@ class TestScandir(unittest.TestCase):
                     self.assertEqual(entry.stat(), st)
                     st = os.stat(entry.name, dir_fd=fd, follow_symlinks=False)
                     self.assertEqual(entry.stat(follow_symlinks=False), st)
-        finally:
-            os.close(fd)
 
     def test_empty_path(self):
         self.assertRaises(FileNotFoundError, os.scandir, '')

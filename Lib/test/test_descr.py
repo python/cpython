@@ -13,6 +13,7 @@ import warnings
 import weakref
 
 from copy import deepcopy
+from contextlib import redirect_stdout
 from test import support
 
 try:
@@ -1445,12 +1446,9 @@ order (MRO) for bases """
                 raise AttributeError
             return object.__setattr__(self, name, value)
         C.__setattr__ = mysetattr
-        try:
+        with self.assertRaises(AttributeError):
             a.spam = "not spam"
-        except AttributeError:
-            pass
-        else:
-            self.fail("expected AttributeError")
+
         self.assertEqual(a.spam, "spam")
         class D(C):
             pass
@@ -2063,7 +2061,6 @@ order (MRO) for bases """
             ("__format__", format, format_impl, set(), {}),
             ("__floor__", math.floor, zero, set(), {}),
             ("__trunc__", math.trunc, zero, set(), {}),
-            ("__trunc__", int, zero, set(), {}),
             ("__ceil__", math.ceil, zero, set(), {}),
             ("__dir__", dir, empty_seq, set(), {}),
             ("__round__", round, zero, set(), {}),
@@ -2431,12 +2428,8 @@ order (MRO) for bases """
             else:
                 self.fail("no TypeError from dict(%r)" % badarg)
 
-        try:
+        with self.assertRaises(TypeError):
             dict({}, {})
-        except TypeError:
-            pass
-        else:
-            self.fail("no TypeError from dict({}, {})")
 
         class Mapping:
             # Lacks a .keys() method; will be added later.
@@ -2545,10 +2538,8 @@ order (MRO) for bases """
         m2instance.b = 2
         m2instance.a = 1
         self.assertEqual(m2instance.__dict__, "Not a dict!")
-        try:
+        with self.assertRaises(TypeError):
             dir(m2instance)
-        except TypeError:
-            pass
 
         # Two essentially featureless objects, (Ellipsis just inherits stuff
         # from object.
@@ -3591,12 +3582,8 @@ order (MRO) for bases """
             pass
 
         A.__call__ = A()
-        try:
+        with self.assertRaises(RecursionError):
             A()()
-        except RecursionError:
-            pass
-        else:
-            self.fail("Recursion limit should have been reached for __call__()")
 
     def test_delete_hook(self):
         # Testing __del__ hook...
@@ -4066,7 +4053,7 @@ order (MRO) for bases """
         except TypeError:
             pass
         else:
-            assert 0, "best_base calculation found wanting"
+            self.fail("best_base calculation found wanting")
 
     def test_unsubclassable_types(self):
         with self.assertRaises(TypeError):
@@ -4442,18 +4429,14 @@ order (MRO) for bases """
 
     def test_file_fault(self):
         # Testing sys.stdout is changed in getattr...
-        test_stdout = sys.stdout
         class StdoutGuard:
             def __getattr__(self, attr):
                 sys.stdout = sys.__stdout__
-                raise RuntimeError("Premature access to sys.stdout.%s" % attr)
-        sys.stdout = StdoutGuard()
-        try:
-            print("Oops!")
-        except RuntimeError:
-            pass
-        finally:
-            sys.stdout = test_stdout
+                raise RuntimeError(f"Premature access to sys.stdout.{attr}")
+
+        with redirect_stdout(StdoutGuard()):
+             with self.assertRaises(RuntimeError):
+                 print("Oops!")
 
     def test_vicious_descriptor_nonsense(self):
         # Testing vicious_descriptor_nonsense...
@@ -4938,6 +4921,23 @@ order (MRO) for bases """
                 # Create this large list to corrupt some unused memory
                 cls.lst = [2**i for i in range(10000)]
         X.descr
+
+    def test_remove_subclass(self):
+        # bpo-46417: when the last subclass of a type is deleted,
+        # remove_subclass() clears the internal dictionary of subclasses:
+        # set PyTypeObject.tp_subclasses to NULL. remove_subclass() is called
+        # when a type is deallocated.
+        class Parent:
+            pass
+        self.assertEqual(Parent.__subclasses__(), [])
+
+        class Child(Parent):
+            pass
+        self.assertEqual(Parent.__subclasses__(), [Child])
+
+        del Child
+        gc.collect()
+        self.assertEqual(Parent.__subclasses__(), [])
 
 
 class DictProxyTests(unittest.TestCase):
@@ -5505,7 +5505,7 @@ class SharedKeyTests(unittest.TestCase):
             pass
 
         #Shrink keys by repeatedly creating instances
-        [(A(), B()) for _ in range(20)]
+        [(A(), B()) for _ in range(30)]
 
         a, b = A(), B()
         self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))

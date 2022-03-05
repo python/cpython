@@ -1,5 +1,4 @@
 import socket
-import time
 import asyncio
 import sys
 import unittest
@@ -9,6 +8,10 @@ from itertools import cycle, islice
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support import socket_helper
+
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
 
 
 class MyProto(asyncio.Protocol):
@@ -23,24 +26,28 @@ class MyProto(asyncio.Protocol):
             self.connected = loop.create_future()
             self.done = loop.create_future()
 
+    def _assert_state(self, *expected):
+        if self.state not in expected:
+            raise AssertionError(f'state: {self.state!r}, expected: {expected!r}')
+
     def connection_made(self, transport):
         self.transport = transport
-        assert self.state == 'INITIAL', self.state
+        self._assert_state('INITIAL')
         self.state = 'CONNECTED'
         if self.connected:
             self.connected.set_result(None)
         transport.write(b'GET / HTTP/1.0\r\nHost: example.com\r\n\r\n')
 
     def data_received(self, data):
-        assert self.state == 'CONNECTED', self.state
+        self._assert_state('CONNECTED')
         self.nbytes += len(data)
 
     def eof_received(self):
-        assert self.state == 'CONNECTED', self.state
+        self._assert_state('CONNECTED')
         self.state = 'EOF'
 
     def connection_lost(self, exc):
-        assert self.state in ('CONNECTED', 'EOF'), self.state
+        self._assert_state('CONNECTED', 'EOF')
         self.state = 'CLOSED'
         if self.done:
             self.done.set_result(None)
@@ -451,7 +458,7 @@ class BaseSockTestsMixin:
                 else:
                     break
             else:
-                assert False, 'Can not create socket.'
+                self.fail('Can not create socket.')
 
             f = self.loop.create_connection(
                 lambda: MyProto(loop=self.loop), sock=sock)
@@ -508,3 +515,7 @@ else:
 
         def create_event_loop(self):
             return asyncio.SelectorEventLoop(selectors.SelectSelector())
+
+
+if __name__ == '__main__':
+    unittest.main()

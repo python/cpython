@@ -19,6 +19,7 @@
           def __init__(self):
               # In the C class, "_x_attr" is not accessible from Python code
               self._x_attr = {}
+              self._x_exports = 0
 
           def __getattr__(self, name):
               return self._x_attr[name]
@@ -28,6 +29,13 @@
 
           def __delattr__(self, name):
               del self._x_attr[name]
+
+          @property
+          def x_exports(self):
+              """Return the number of times an internal buffer is exported."""
+              # Each Xxo instance has a 10-byte buffer that can be
+              # accessed via the buffer interface (e.g. `memoryview`).
+              return self._x_exports
 
           def demo(o, /):
               if isinstance(o, str):
@@ -57,6 +65,9 @@
 #define Py_LIMITED_API 0x030b0000
 
 #include "Python.h"
+#include <string.h>
+
+#define BUFSIZE 10
 
 // Module state
 typedef struct {
@@ -70,7 +81,9 @@ typedef struct {
 // Instance state
 typedef struct {
     PyObject_HEAD
-    PyObject            *x_attr;        /* Attributes dictionary */
+    PyObject            *x_attr;           /* Attributes dictionary */
+    char                x_buffer[BUFSIZE]; /* buffer for Py_buffer */
+    Py_ssize_t          x_exports;         /* how many buffer are exported */
 } XxoObject;
 
 // XXX: no good way to do this yet
@@ -89,6 +102,8 @@ newXxoObject(PyObject *module)
         return NULL;
     }
     self->x_attr = NULL;
+    memset(self->x_buffer, 0, BUFSIZE);
+    self->x_exports = 0;
     return self;
 }
 
@@ -212,10 +227,42 @@ static PyMethodDef Xxo_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+/* Xxo buffer interface */
+
+static int
+Xxo_getbuffer(XxoObject *self, Py_buffer *view, int flags)
+{
+    int res = PyBuffer_FillInfo(view, (PyObject*)self,
+                               (void *)self->x_buffer, BUFSIZE,
+                               0, flags);
+    if (res == 0) {
+        self->x_exports++;
+    }
+    return res;
+}
+
+static void
+Xxo_releasebuffer(XxoObject *self, Py_buffer *view)
+{
+    self->x_exports--;
+}
+
+static PyObject *
+Xxo_get_x_exports(XxoObject *self, void *c)
+{
+    return PyLong_FromSsize_t(self->x_exports);
+}
+
 /* Xxo type definition */
 
 PyDoc_STRVAR(Xxo_doc,
              "A class that explicitly stores attributes in an internal dict");
+
+static PyGetSetDef Xxo_getsetlist[] = {
+    {"x_exports", (getter) Xxo_get_x_exports, NULL, NULL},
+    {NULL},
+};
+
 
 static PyType_Slot Xxo_Type_slots[] = {
     {Py_tp_doc, (char *)Xxo_doc},
@@ -226,6 +273,9 @@ static PyType_Slot Xxo_Type_slots[] = {
     {Py_tp_getattro, Xxo_getattro},
     {Py_tp_setattro, Xxo_setattro},
     {Py_tp_methods, Xxo_methods},
+    {Py_bf_getbuffer, Xxo_getbuffer},
+    {Py_bf_releasebuffer, Xxo_releasebuffer},
+    {Py_tp_getset, Xxo_getsetlist},
     {0, 0},  /* sentinel */
 };
 
