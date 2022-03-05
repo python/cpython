@@ -2734,6 +2734,12 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             check()
 
 
+
+class PathSubclassTest(_BasePathTest, unittest.TestCase):
+    class cls(pathlib.Path):
+        pass
+
+
 class CompatiblePathTest(unittest.TestCase):
     """
     Test that a type can be made compatible with PurePath
