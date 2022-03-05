@@ -9089,15 +9089,18 @@ super_vectorcall(PyObject *self, PyObject *const *args,
     if (!_PyArg_NoKwnames("super", kwnames)) {
         return NULL;
     }
-
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("super()", nargs, 0, 2)) {
+        return NULL;
+    }
     PyTypeObject *type = NULL;
     PyObject *obj = NULL;
     PyTypeObject *self_type = (PyTypeObject *)self;
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     PyObject *su = self_type->tp_alloc(self_type, 0);
     if (su == NULL) {
         return NULL;
     }
+    // 1 or 2 argument form super().
     if (nargs != 0) {
         PyObject *arg0 = args[0];
         if (!PyType_Check(arg0)) {
