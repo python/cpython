@@ -211,10 +211,19 @@ PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
 PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
                                  void *extra);
 
-/** API for debug code object */
+/* API for debug code object */
 void _PyCode_DebugDump(PyCodeObject *code, const char *debug_tag);
 
-/** Dump the specified `code` by co_name and co_filename */
+/* Dump the specified `code` by co_name and co_filename.
+ *
+ * Dump current interpreter frame's code in lldb/gdb command:
+ *  (lldb) exp _PyCode_DebugDump(frame->f_code, "lldb")
+ *
+ * Write source when debug mode:
+ *  #ifdef Py_DEBUG
+ *      PyCode_DUMP_IF(code, "foo", "foo", "foo.py");
+ *  #endif
+*/
 #define PyCode_DUMP_IF(code, TAG, CO_NAME, CO_FILENAME) \
 	if (((CO_NAME) == NULL || strcmp(PyUnicode_AsUTF8((code)->co_name), CO_NAME) == 0) && \
 		((CO_FILENAME) == NULL || strcmp(PyUnicode_AsUTF8((code)->co_filename), CO_FILENAME) == 0)) {\
