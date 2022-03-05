@@ -64,7 +64,7 @@ Building the Installer
 
 Before building the installer, download extra build dependencies using
 Tools\msi\get_externals.bat. (Note that this is in addition to the
-similarly named file in PCBuild.)
+similarly named file in PCbuild.)
 
 For testing, the installer should be built with the Tools/msi/build.bat
 script:
@@ -72,7 +72,7 @@ script:
     build.bat [-x86] [-x64] [--doc] [--test-marker] [--pack]
 
 This script will build the required configurations of Python and
-generate an installer layout in PCBuild/(win32|amd64)/en-us.
+generate an installer layout in PCbuild/(win32|amd64)/en-us.
 
 Specify -x86 and/or -x64 to build for each platform. If neither is
 specified, both platforms will be built. Currently, both the debug and

@@ -81,7 +81,10 @@ main(int argc, char *argv[])
 
     Py_SetProgramName(L"./_freeze_importlib");
     /* Don't install importlib, since it could execute outdated bytecode. */
-    _Py_InitializeEx_Private(1, 0);
+    _PyInitError err = _Py_InitializeEx_Private(1, 0);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_FatalInitError(err);
+    }
 
     if (strstr(inpath, "_external") != NULL) {
         is_bootstrap = 0;

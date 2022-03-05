@@ -226,23 +226,27 @@ dis_annot_stmt_str = """\
               2 LOAD_CONST               0 (1)
               4 STORE_NAME               0 (x)
               6 LOAD_NAME                1 (int)
-              8 STORE_ANNOTATION         0 (x)
+              8 LOAD_NAME                2 (__annotations__)
+             10 LOAD_CONST               1 ('x')
+             12 STORE_SUBSCR
 
-  3          10 LOAD_NAME                2 (fun)
-             12 LOAD_CONST               0 (1)
-             14 CALL_FUNCTION            1
-             16 STORE_ANNOTATION         3 (y)
+  3          14 LOAD_NAME                3 (fun)
+             16 LOAD_CONST               0 (1)
+             18 CALL_FUNCTION            1
+             20 LOAD_NAME                2 (__annotations__)
+             22 LOAD_CONST               2 ('y')
+             24 STORE_SUBSCR
 
-  4          18 LOAD_CONST               0 (1)
-             20 LOAD_NAME                4 (lst)
-             22 LOAD_NAME                2 (fun)
-             24 LOAD_CONST               1 (0)
-             26 CALL_FUNCTION            1
-             28 STORE_SUBSCR
-             30 LOAD_NAME                1 (int)
-             32 POP_TOP
-             34 LOAD_CONST               2 (None)
-             36 RETURN_VALUE
+  4          26 LOAD_CONST               0 (1)
+             28 LOAD_NAME                4 (lst)
+             30 LOAD_NAME                3 (fun)
+             32 LOAD_CONST               3 (0)
+             34 CALL_FUNCTION            1
+             36 STORE_SUBSCR
+             38 LOAD_NAME                1 (int)
+             40 POP_TOP
+             42 LOAD_CONST               4 (None)
+             44 RETURN_VALUE
 """
 
 compound_stmt_str = """\
@@ -284,18 +288,18 @@ dis_traceback = """\
              22 POP_TOP
              24 STORE_FAST               0 (e)
              26 POP_TOP
-             28 SETUP_FINALLY           12 (to 42)
+             28 SETUP_FINALLY           10 (to 40)
 
 %3d          30 LOAD_FAST                0 (e)
              32 LOAD_ATTR                1 (__traceback__)
              34 STORE_FAST               1 (tb)
              36 POP_BLOCK
-             38 POP_EXCEPT
-             40 LOAD_CONST               0 (None)
-        >>   42 LOAD_CONST               0 (None)
-             44 STORE_FAST               0 (e)
-             46 DELETE_FAST              0 (e)
-             48 END_FINALLY
+             38 LOAD_CONST               0 (None)
+        >>   40 LOAD_CONST               0 (None)
+             42 STORE_FAST               0 (e)
+             44 DELETE_FAST              0 (e)
+             46 END_FINALLY
+             48 POP_EXCEPT
              50 JUMP_FORWARD             2 (to 54)
         >>   52 END_FINALLY
 
@@ -330,6 +334,13 @@ dis_fstring = """\
 
 def _g(x):
     yield x
+
+async def _ag(x):
+    yield x
+
+async def _co(x):
+    async for item in _ag(x):
+        pass
 
 def _h(y):
     def foo(x):
@@ -389,6 +400,7 @@ Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
        _h.__code__.co_firstlineno + 3,
        _h.__code__.co_firstlineno + 3,
 )
+
 
 class DisTests(unittest.TestCase):
 
@@ -531,9 +543,21 @@ class DisTests(unittest.TestCase):
         self.do_disassembly_test(_C.cm, dis_c_class_method)
 
     def test_disassemble_generator(self):
-        gen_func_disas = self.get_disassembly(_g)  # Disassemble generator function
-        gen_disas = self.get_disassembly(_g(1))  # Disassemble generator itself
+        gen_func_disas = self.get_disassembly(_g)  # Generator function
+        gen_disas = self.get_disassembly(_g(1))  # Generator iterator
         self.assertEqual(gen_disas, gen_func_disas)
+
+    def test_disassemble_async_generator(self):
+        agen_func_disas = self.get_disassembly(_ag)  # Async generator function
+        agen_disas = self.get_disassembly(_ag(1))  # Async generator iterator
+        self.assertEqual(agen_disas, agen_func_disas)
+
+    def test_disassemble_coroutine(self):
+        coro_func_disas = self.get_disassembly(_co)  # Coroutine function
+        coro = _co(1)  # Coroutine object
+        coro.close()  # Avoid a RuntimeWarning (never awaited)
+        coro_disas = self.get_disassembly(coro)
+        self.assertEqual(coro_disas, coro_func_disas)
 
     def test_disassemble_fstring(self):
         self.do_disassembly_test(_fstring, dis_fstring)
@@ -721,7 +745,7 @@ Filename:          (.*)
 Argument count:    0
 Kw-only arguments: 0
 Number of locals:  2
-Stack size:        17
+Stack size:        10
 Flags:             OPTIMIZED, NEWLOCALS, NOFREE, COROUTINE
 Constants:
    0: None
@@ -1051,11 +1075,13 @@ class BytecodeTests(unittest.TestCase):
 
     def test_source_line_in_disassembly(self):
         # Use the line in the source code
-        actual = dis.Bytecode(simple).dis()[:3]
-        expected = "{:>3}".format(simple.__code__.co_firstlineno)
+        actual = dis.Bytecode(simple).dis()
+        actual = actual.strip().partition(" ")[0]  # extract the line no
+        expected = str(simple.__code__.co_firstlineno)
         self.assertEqual(actual, expected)
         # Use an explicit first line number
-        actual = dis.Bytecode(simple, first_line=350).dis()[:3]
+        actual = dis.Bytecode(simple, first_line=350).dis()
+        actual = actual.strip().partition(" ")[0]  # extract the line no
         self.assertEqual(actual, "350")
 
     def test_info(self):

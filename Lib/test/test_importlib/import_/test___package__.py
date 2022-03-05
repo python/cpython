@@ -11,7 +11,7 @@ from .. import util
 
 class Using__package__:
 
-    """Use of __package__ supercedes the use of __name__/__path__ to calculate
+    """Use of __package__ supersedes the use of __name__/__path__ to calculate
     what package a module belongs to. The basic algorithm is [__package__]::
 
       def resolve_name(name, package, level):

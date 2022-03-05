@@ -1,0 +1,4 @@
+The default cipher suite selection of the ssl module now uses a blacklist
+approach rather than a hard-coded whitelist. Python no longer re-enables
+ciphers that have been blocked by OpenSSL security update. Default cipher
+suite selection can be configured on compile time.

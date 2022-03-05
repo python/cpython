@@ -379,7 +379,8 @@ The rules for what is allowed are as follows: names that start and end with
 a single underscore are reserved by enum and cannot be used; all other
 attributes defined within an enumeration will become members of this
 enumeration, with the exception of special methods (:meth:`__str__`,
-:meth:`__add__`, etc.) and descriptors (methods are also descriptors).
+:meth:`__add__`, etc.), descriptors (methods are also descriptors), and
+variable names listed in :attr:`_ignore_`.
 
 Note:  if your enumeration defines :meth:`__new__` and/or :meth:`__init__` then
 whatever value(s) were given to the enum member will be passed into those
@@ -654,7 +655,7 @@ value and let :class:`Flag` select an appropriate value.
 Like :class:`IntFlag`, if a combination of :class:`Flag` members results in no
 flags being set, the boolean evaluation is :data:`False`::
 
-    >>> from enum import Flag
+    >>> from enum import Flag, auto
     >>> class Color(Flag):
     ...     RED = auto()
     ...     BLUE = auto()
@@ -943,6 +944,25 @@ will be passed to those methods::
     9.802652743337129
 
 
+TimePeriod
+^^^^^^^^^^
+
+An example to show the :attr:`_ignore_` attribute in use::
+
+    >>> from datetime import timedelta
+    >>> class Period(timedelta, Enum):
+    ...     "different lengths of time"
+    ...     _ignore_ = 'Period i'
+    ...     Period = vars()
+    ...     for i in range(367):
+    ...         Period['day_%d' % i] = i
+    ...
+    >>> list(Period)[:2]
+    [<Period.day_0: datetime.timedelta(0)>, <Period.day_1: datetime.timedelta(days=1)>]
+    >>> list(Period)[-2:]
+    [<Period.day_365: datetime.timedelta(days=365)>, <Period.day_366: datetime.timedelta(days=366)>]
+
+
 How are Enums different?
 ------------------------
 
@@ -994,6 +1014,9 @@ Supported ``_sunder_`` names
 
 - ``_missing_`` -- a lookup function used when a value is not found; may be
   overridden
+- ``_ignore_`` -- a list of names, either as a :func:`list` or a :func:`str`,
+  that will not be transformed into members, and will be removed from the final
+  class
 - ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
   (class attribute, removed during class creation)
 - ``_generate_next_value_`` -- used by the `Functional API`_ and by
@@ -1001,6 +1024,7 @@ Supported ``_sunder_`` names
   overridden
 
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
+.. versionadded:: 3.7 ``_ignore_``
 
 To help keep Python 2 / Python 3 code in sync an :attr:`_order_` attribute can
 be provided.  It will be checked against the actual order of the enumeration

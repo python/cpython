@@ -224,7 +224,6 @@ EXPORTS
   PyExc_PermissionError=python37.PyExc_PermissionError DATA
   PyExc_ProcessLookupError=python37.PyExc_ProcessLookupError DATA
   PyExc_RecursionError=python37.PyExc_RecursionError DATA
-  PyExc_RecursionErrorInst=python37.PyExc_RecursionErrorInst DATA
   PyExc_ReferenceError=python37.PyExc_ReferenceError DATA
   PyExc_ResourceWarning=python37.PyExc_ResourceWarning DATA
   PyExc_RuntimeError=python37.PyExc_RuntimeError DATA
@@ -570,6 +569,13 @@ EXPORTS
   PyThreadState_New=python37.PyThreadState_New
   PyThreadState_SetAsyncExc=python37.PyThreadState_SetAsyncExc
   PyThreadState_Swap=python37.PyThreadState_Swap
+  PyThread_tss_alloc=python37.PyThread_tss_alloc
+  PyThread_tss_create=python37.PyThread_tss_create
+  PyThread_tss_delete=python37.PyThread_tss_delete
+  PyThread_tss_free=python37.PyThread_tss_free
+  PyThread_tss_get=python37.PyThread_tss_get
+  PyThread_tss_is_created=python37.PyThread_tss_is_created
+  PyThread_tss_set=python37.PyThread_tss_set
   PyTraceBack_Here=python37.PyTraceBack_Here
   PyTraceBack_Print=python37.PyTraceBack_Print
   PyTraceBack_Type=python37.PyTraceBack_Type DATA

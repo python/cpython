@@ -16,14 +16,14 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
     if (return_bytes) {
         /* If _PyBytes_FromSize() were public we could avoid malloc+copy. */
         retbuf = (Py_UCS1*) PyMem_Malloc(arglen*2);
-	if (!retbuf)
-	    return PyErr_NoMemory();
+        if (!retbuf)
+            return PyErr_NoMemory();
         retval = NULL;  /* silence a compiler warning, assigned later. */
     } else {
-	retval = PyUnicode_New(arglen*2, 127);
-	if (!retval)
-	    return NULL;
-	retbuf = PyUnicode_1BYTE_DATA(retval);
+        retval = PyUnicode_New(arglen*2, 127);
+        if (!retval)
+            return NULL;
+        retbuf = PyUnicode_1BYTE_DATA(retval);
     }
 
     /* make hex version of string, taken from shamodule.c */

@@ -1,0 +1,2 @@
+Fix bug where :meth:`datetime.datetime.fromtimestamp` did not call __new__
+in :class:`datetime.datetime` subclasses.

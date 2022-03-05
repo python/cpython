@@ -170,11 +170,11 @@ class TestFamilyDetection(unittest.TestCase):
 
     @unittest.skipUnless(support.IPV6_ENABLED, "IPv6 not enabled")
     def test_socket_uses_IPv6(self):
-        server = smtpd.SMTPServer((support.HOSTv6, 0), (support.HOST, 0))
+        server = smtpd.SMTPServer((support.HOSTv6, 0), (support.HOSTv4, 0))
         self.assertEqual(server.socket.family, socket.AF_INET6)
 
     def test_socket_uses_IPv4(self):
-        server = smtpd.SMTPServer((support.HOST, 0), (support.HOSTv6, 0))
+        server = smtpd.SMTPServer((support.HOSTv4, 0), (support.HOSTv6, 0))
         self.assertEqual(server.socket.family, socket.AF_INET)
 
 

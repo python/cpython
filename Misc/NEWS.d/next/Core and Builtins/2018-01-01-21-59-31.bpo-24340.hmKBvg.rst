@@ -1,0 +1,1 @@
+Fixed estimation of the code stack size.

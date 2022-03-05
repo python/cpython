@@ -1,0 +1,4 @@
+The ssl module now uses OpenSSL's X509_VERIFY_PARAM_set1_host() and
+X509_VERIFY_PARAM_set1_ip() API to verify hostname and IP addresses. Subject
+common name fallback can be disabled with
+SSLContext.hostname_checks_common_name.

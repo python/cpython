@@ -1,2 +1,0 @@
-IDLE: Remove unused variables in configdialog.  One is a duplicate, one is
-set but cannot be altered by users. Patch by Cheryl Sabella.

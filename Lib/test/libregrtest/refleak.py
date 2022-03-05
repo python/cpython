@@ -38,6 +38,14 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         for obj in abc.__subclasses__() + [abc]:
             abcs[obj] = obj._abc_registry.copy()
 
+    # bpo-31217: Integer pool to get a single integer object for the same
+    # value. The pool is used to prevent false alarm when checking for memory
+    # block leaks. Fill the pool with values in -1000..1000 which are the most
+    # common (reference, memory block, file descriptor) differences.
+    int_pool = {value: value for value in range(-1000, 1000)}
+    def get_pooled_int(value):
+        return int_pool.setdefault(value, value)
+
     nwarmup, ntracked, fname = huntrleaks
     fname = os.path.join(support.SAVEDCWD, fname)
     repcount = nwarmup + ntracked
@@ -56,9 +64,9 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
                                                          abcs)
         print('.', end='', file=sys.stderr, flush=True)
         if i >= nwarmup:
-            rc_deltas[i] = rc_after - rc_before
-            alloc_deltas[i] = alloc_after - alloc_before
-            fd_deltas[i] = fd_after - fd_before
+            rc_deltas[i] = get_pooled_int(rc_after - rc_before)
+            alloc_deltas[i] = get_pooled_int(alloc_after - alloc_before)
+            fd_deltas[i] = get_pooled_int(fd_after - fd_before)
         alloc_before = alloc_after
         rc_before = rc_after
         fd_before = fd_after
@@ -127,11 +135,6 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     # Clear ABC registries, restoring previously saved ABC registries.
     abs_classes = [getattr(collections.abc, a) for a in collections.abc.__all__]
     abs_classes = filter(isabstract, abs_classes)
-    if 'typing' in sys.modules:
-        t = sys.modules['typing']
-        # These classes require special treatment because they do not appear
-        # in direct subclasses of collections.abc classes
-        abs_classes = list(abs_classes) + [t.ChainMap, t.Counter, t.DefaultDict]
     for abc in abs_classes:
         for obj in abc.__subclasses__() + [abc]:
             obj._abc_registry = abcs.get(obj, WeakSet()).copy()

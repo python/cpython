@@ -46,6 +46,7 @@ class Get_signatureTest(unittest.TestCase):
 
         # Python class that inherits builtin methods
         class List(list): "List() doc"
+
         # Simulate builtin with no docstring for default tip test
         class SB:  __call__ = None
 
@@ -53,18 +54,28 @@ class Get_signatureTest(unittest.TestCase):
             self.assertEqual(signature(obj), out)
 
         if List.__doc__ is not None:
-            gtest(List, List.__doc__)
+            gtest(List, '(iterable=(), /)' + ct._argument_positional + '\n' +
+                  List.__doc__)
         gtest(list.__new__,
-               'Create and return a new object.  See help(type) for accurate signature.')
+               '(*args, **kwargs)\nCreate and return a new object.  See help(type) for accurate signature.')
         gtest(list.__init__,
+               '(self, /, *args, **kwargs)' + ct._argument_positional + '\n' +
                'Initialize self.  See help(type(self)) for accurate signature.')
-        append_doc =  "Append object to the end of the list."
-        gtest(list.append, append_doc)
-        gtest([].append, append_doc)
-        gtest(List.append, append_doc)
+        append_doc = ct._argument_positional + "\nAppend object to the end of the list."
+        gtest(list.append, '(self, object, /)' + append_doc)
+        gtest(List.append, '(self, object, /)' + append_doc)
+        gtest([].append, '(object, /)' + append_doc)
 
         gtest(types.MethodType, "method(function, instance)")
         gtest(SB(), default_tip)
+        import re
+        p = re.compile('')
+        gtest(re.sub, '''(pattern, repl, string, count=0, flags=0)\nReturn the string obtained by replacing the leftmost
+non-overlapping occurrences of the pattern in string by the
+replacement repl.  repl can be either a string or a callable;
+if a string, backslash escapes in it are processed.  If it is
+a callable, it's passed the Match object and must return''')
+        gtest(p.sub, '''(repl, string, count=0)\nReturn the string obtained by replacing the leftmost non-overlapping occurrences o...''')
 
     def test_signature_wrap(self):
         if textwrap.TextWrapper.__doc__ is not None:
@@ -132,11 +143,19 @@ bytes() -> empty bytes object''')
         # test that starred first parameter is *not* removed from argspec
         class C:
             def m1(*args): pass
-            def m2(**kwds): pass
         c = C()
-        for meth, mtip  in ((C.m1, '(*args)'), (c.m1, "(*args)"),
-                                      (C.m2, "(**kwds)"), (c.m2, "(**kwds)"),):
+        for meth, mtip  in ((C.m1, '(*args)'), (c.m1, "(*args)"),):
             self.assertEqual(signature(meth), mtip)
+
+    def test_invalid_method_signature(self):
+        class C:
+            def m2(**kwargs): pass
+        class Test:
+            def __call__(*, a): pass
+
+        mtip = ct._invalid_method
+        self.assertEqual(signature(C().m2), mtip)
+        self.assertEqual(signature(Test()), mtip)
 
     def test_non_ascii_name(self):
         # test that re works to delete a first parameter name that
@@ -156,16 +175,22 @@ bytes() -> empty bytes object''')
         class NoCall:
             def __getattr__(self, name):
                 raise BaseException
-        class Call(NoCall):
+        class CallA(NoCall):
+            def __call__(oui, a, b, c):
+                pass
+        class CallB(NoCall):
             def __call__(self, ci):
                 pass
-        for meth, mtip  in ((NoCall, default_tip), (Call, default_tip),
-                            (NoCall(), ''), (Call(), '(ci)')):
+
+        for meth, mtip  in ((NoCall, default_tip), (CallA, default_tip),
+                            (NoCall(), ''), (CallA(), '(a, b, c)'),
+                            (CallB(), '(ci)')):
             self.assertEqual(signature(meth), mtip)
 
     def test_non_callables(self):
         for obj in (0, 0.0, '0', b'0', [], {}):
             self.assertEqual(signature(obj), '')
+
 
 class Get_entityTest(unittest.TestCase):
     def test_bad_entity(self):

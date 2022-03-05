@@ -1,0 +1,1 @@
+Fix email address header parsing error when the username is an empty quoted string. Patch by Xiang Zhang.

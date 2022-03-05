@@ -208,6 +208,30 @@ class TestKQueue(unittest.TestCase):
         b.close()
         kq.close()
 
+    def test_issue30058(self):
+        # changelist must be an iterable
+        kq = select.kqueue()
+        a, b = socket.socketpair()
+        ev = select.kevent(a, select.KQ_FILTER_READ, select.KQ_EV_ADD | select.KQ_EV_ENABLE)
+
+        kq.control([ev], 0)
+        # not a list
+        kq.control((ev,), 0)
+        # __len__ is not consistent with __iter__
+        class BadList:
+            def __len__(self):
+                return 0
+            def __iter__(self):
+                for i in range(100):
+                    yield ev
+        kq.control(BadList(), 0)
+        # doesn't have __len__
+        kq.control(iter([ev]), 0)
+
+        a.close()
+        b.close()
+        kq.close()
+
     def test_close(self):
         open_file = open(__file__, "rb")
         self.addCleanup(open_file.close)

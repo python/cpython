@@ -78,7 +78,7 @@ static PyObject *
 _sha512_sha512_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha512_sha512(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sha512_sha512(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
@@ -108,7 +108,7 @@ static PyObject *
 _sha512_sha384_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha512_sha384(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sha512_sha384(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
@@ -124,4 +124,4 @@ _sha512_sha384(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2f6ad0831d16c35f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f963a543bf3c72e8 input=a9049054013a1b77]*/

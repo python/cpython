@@ -1,0 +1,3 @@
+``repr()`` on a dict containing its own ``values()`` or ``items()`` no
+longer raises ``RecursionError``; OrderedDict similarly.  Instead, use
+``...``, as for other recursive structures.  Patch by Ben North.

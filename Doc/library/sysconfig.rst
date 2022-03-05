@@ -173,23 +173,19 @@ Other functions
 
    This is used mainly to distinguish platform-specific build directories and
    platform-specific built distributions.  Typically includes the OS name and
-   version and the architecture (as supplied by :func:`os.uname`), although the
-   exact information included depends on the OS; e.g. for IRIX the architecture
-   isn't particularly important (IRIX only runs on SGI hardware), but for Linux
-   the kernel version isn't particularly important.
+   version and the architecture (as supplied by 'os.uname()'), although the
+   exact information included depends on the OS; e.g., on Linux, the kernel
+   version isn't particularly important.
 
    Examples of returned values:
 
    - linux-i586
    - linux-alpha (?)
    - solaris-2.6-sun4u
-   - irix-5.3
-   - irix64-6.2
 
    Windows will return one of:
 
    - win-amd64 (64bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
-   - win-ia64 (64bit Windows on Itanium)
    - win32 (all others - specifically, sys.platform is returned)
 
    Mac OS X can return:

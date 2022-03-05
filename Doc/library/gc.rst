@@ -33,6 +33,34 @@ The :mod:`gc` module provides the following functions:
    Disable automatic garbage collection.
 
 
+.. class:: ensure_disabled()
+
+   Return a context manager object that disables the garbage collector and reenables the previous
+   state upon completion of the block. This is basically equivalent to::
+
+     from gc import enable, disable, isenabled
+
+     @contextmanager
+     def ensure_disabled():
+         was_enabled_previously = isenabled()
+         gc.disable()
+         yield
+         if was_enabled_previously:
+             gc.enable()
+
+   And lets you write code like this::
+
+     with ensure_disabled():
+         run_some_timing()
+
+     with ensure_disabled():
+         # do_something_that_has_real_time_guarantees
+         # such as a pair trade, robotic braking, etc
+
+   without needing to explicitly enable and disable the garbage collector yourself.
+   This context manager is implemented in C to assure atomicity, thread safety and speed.
+
+
 .. function:: isenabled()
 
    Returns true if automatic collection is enabled.
@@ -172,6 +200,33 @@ The :mod:`gc` module provides the following functions:
       True
 
    .. versionadded:: 3.1
+
+
+.. function:: freeze()
+
+   Freeze all the objects tracked by gc - move them to a permanent generation
+   and ignore all the future collections. This can be used before a POSIX
+   fork() call to make the gc copy-on-write friendly or to speed up collection.
+   Also collection before a POSIX fork() call may free pages for future
+   allocation which can cause copy-on-write too so it's advised to disable gc
+   in master process and freeze before fork and enable gc in child process.
+
+   .. versionadded:: 3.7
+
+
+.. function:: unfreeze()
+
+   Unfreeze the objects in the permanent generation, put them back into the
+   oldest generation.
+
+   .. versionadded:: 3.7
+
+
+.. function:: get_freeze_count()
+
+   Return the number of objects in the permanent generation.
+
+   .. versionadded:: 3.7
 
 
 The following variables are provided for read-only access (you can mutate the

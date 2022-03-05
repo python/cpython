@@ -746,7 +746,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
             hostname = hostname.replace(':', r'\072')
         pid = os.getpid()
         pattern = re.compile(r"(?P<time>\d+)\.M(?P<M>\d{1,6})P(?P<P>\d+)"
-                             r"Q(?P<Q>\d+)\.(?P<host>[^:/]+)")
+                             r"Q(?P<Q>\d+)\.(?P<host>[^:/]*)")
         previous_groups = None
         for x in range(repetitions):
             tmp_file = self._box._create_tmp()

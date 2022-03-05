@@ -1,0 +1,5 @@
+Enforce PEP 479 for all code.
+
+This means that manually raising a StopIteration exception from a generator
+is prohibited for all code, regardless of whether 'from __future__ import
+generator_stop' was used or not.

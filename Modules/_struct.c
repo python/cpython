@@ -1453,7 +1453,8 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
     if (!PyBytes_Check(format)) {
         Py_DECREF(format);
         PyErr_Format(PyExc_TypeError,
-                     "Struct() argument 1 must be a bytes object, not %.200s",
+                     "Struct() argument 1 must be a str or bytes object, "
+                     "not %.200s",
                      Py_TYPE(format)->tp_name);
         return -1;
     }
@@ -1535,7 +1536,7 @@ Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer)
     assert(self->s_codes != NULL);
     if (buffer->len != self->s_size) {
         PyErr_Format(StructError,
-                     "unpack requires a bytes object of length %zd",
+                     "unpack requires a buffer of %zd bytes",
                      self->s_size);
         return NULL;
     }
@@ -1589,6 +1590,8 @@ typedef struct {
 static void
 unpackiter_dealloc(unpackiterobject *self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(self);
     Py_XDECREF(self->so);
     PyBuffer_Release(&self->buf);
     PyObject_GC_Del(self);
@@ -1706,8 +1709,8 @@ Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
     }
     if (iter->buf.len % self->s_size != 0) {
         PyErr_Format(StructError,
-                     "iterative unpacking requires a bytes length "
-                     "multiple of %zd",
+                     "iterative unpacking requires a buffer of "
+                     "a multiple of %zd bytes",
                      self->s_size);
         Py_DECREF(iter);
         return NULL;
@@ -1730,7 +1733,7 @@ Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
  *
  */
 static int
-s_pack_internal(PyStructObject *soself, PyObject **args, int offset, char* buf)
+s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset, char* buf)
 {
     formatcode *code;
     /* XXX(nnorwitz): why does i need to be a local?  can we use
@@ -1817,7 +1820,7 @@ to the format string S.format.  See help(struct) for more on format\n\
 strings.");
 
 static PyObject *
-s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs)
+s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyStructObject *soself;
     PyObject *result;
@@ -1856,7 +1859,7 @@ offset.  Note that the offset is a required argument.  See\n\
 help(struct) for more on format strings.");
 
 static PyObject *
-s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs)
+s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyStructObject *soself;
     Py_buffer buffer;
@@ -2120,7 +2123,7 @@ Return a bytes object containing the values v1, v2, ... packed according\n\
 to the format string.  See help(struct) for more on format strings.");
 
 static PyObject *
-pack(PyObject *self, PyObject **args, Py_ssize_t nargs)
+pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *s_object = NULL;
     PyObject *format, *result;
@@ -2148,7 +2151,7 @@ that the offset is a required argument.  See help(struct) for more\n\
 on format strings.");
 
 static PyObject *
-pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs)
+pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *s_object = NULL;
     PyObject *format, *result;

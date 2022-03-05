@@ -1210,7 +1210,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     DWORD off_lo;       /* lower 32 bits of offset */
     DWORD size_hi;      /* upper 32 bits of size */
     DWORD size_lo;      /* lower 32 bits of size */
-    char *tagname = "";
+    const char *tagname = "";
     DWORD dwErr = 0;
     int fileno;
     HANDLE fh = 0;
@@ -1466,6 +1466,7 @@ PyInit_mmap(void)
 
     setint(dict, "ALLOCATIONGRANULARITY", (long)my_getallocationgranularity());
 
+    setint(dict, "ACCESS_DEFAULT", ACCESS_DEFAULT);
     setint(dict, "ACCESS_READ", ACCESS_READ);
     setint(dict, "ACCESS_WRITE", ACCESS_WRITE);
     setint(dict, "ACCESS_COPY", ACCESS_COPY);

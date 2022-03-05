@@ -538,7 +538,7 @@ class HTTPResponse(io.BufferedIOBase):
         chunk_left = self.chunk_left
         if not chunk_left: # Can be 0 or None
             if chunk_left is not None:
-                # We are at the end of chunk. dicard chunk end
+                # We are at the end of chunk, discard chunk end
                 self._safe_read(2)  # toss the CRLF at the end of the chunk
             try:
                 chunk_left = self._read_next_chunk_size()
@@ -825,9 +825,10 @@ class HTTPConnection:
         return None
 
     def __init__(self, host, port=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                 source_address=None):
+                 source_address=None, blocksize=8192):
         self.timeout = timeout
         self.source_address = source_address
+        self.blocksize = blocksize
         self.sock = None
         self._buffer = []
         self.__response = None
@@ -958,7 +959,6 @@ class HTTPConnection:
 
         if self.debuglevel > 0:
             print("send:", repr(data))
-        blocksize = 8192
         if hasattr(data, "read") :
             if self.debuglevel > 0:
                 print("sendIng a read()able")
@@ -966,7 +966,7 @@ class HTTPConnection:
             if encode and self.debuglevel > 0:
                 print("encoding file using iso-8859-1")
             while 1:
-                datablock = data.read(blocksize)
+                datablock = data.read(self.blocksize)
                 if not datablock:
                     break
                 if encode:
@@ -991,14 +991,13 @@ class HTTPConnection:
         self._buffer.append(s)
 
     def _read_readable(self, readable):
-        blocksize = 8192
         if self.debuglevel > 0:
             print("sendIng a read()able")
         encode = self._is_textIO(readable)
         if encode and self.debuglevel > 0:
             print("encoding file using iso-8859-1")
         while True:
-            datablock = readable.read(blocksize)
+            datablock = readable.read(self.blocksize)
             if not datablock:
                 break
             if encode:
@@ -1353,9 +1352,10 @@ else:
         def __init__(self, host, port=None, key_file=None, cert_file=None,
                      timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
                      source_address=None, *, context=None,
-                     check_hostname=None):
+                     check_hostname=None, blocksize=8192):
             super(HTTPSConnection, self).__init__(host, port, timeout,
-                                                  source_address)
+                                                  source_address,
+                                                  blocksize=blocksize)
             if (key_file is not None or cert_file is not None or
                         check_hostname is not None):
                 import warnings
@@ -1375,7 +1375,8 @@ else:
             if key_file or cert_file:
                 context.load_cert_chain(cert_file, key_file)
             self._context = context
-            self._check_hostname = check_hostname
+            if check_hostname is not None:
+                self._context.check_hostname = check_hostname
 
         def connect(self):
             "Connect to a host on a given (SSL) port."
@@ -1389,13 +1390,6 @@ else:
 
             self.sock = self._context.wrap_socket(self.sock,
                                                   server_hostname=server_hostname)
-            if not self._context.check_hostname and self._check_hostname:
-                try:
-                    ssl.match_hostname(self.sock.getpeercert(), server_hostname)
-                except Exception:
-                    self.sock.shutdown(socket.SHUT_RDWR)
-                    self.sock.close()
-                    raise
 
     __all__.append("HTTPSConnection")
 

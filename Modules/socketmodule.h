@@ -80,7 +80,10 @@ typedef int socklen_t;
 #endif
 
 #ifdef HAVE_LINUX_CAN_H
-#include <linux/can.h>
+# include <linux/can.h>
+#else
+# undef AF_CAN
+# undef PF_CAN
 #endif
 
 #ifdef HAVE_LINUX_CAN_RAW_H
@@ -105,6 +108,12 @@ typedef int socklen_t;
 #endif
 #ifndef SOL_ALG
 #define SOL_ALG 279
+#endif
+
+#ifdef HAVE_LINUX_VM_SOCKETS_H
+# include <linux/vm_sockets.h>
+#else
+# undef AF_VSOCK
 #endif
 
 /* Linux 3.19 */
@@ -192,6 +201,9 @@ typedef union sock_addr {
 #endif
 #ifdef HAVE_SOCKADDR_ALG
     struct sockaddr_alg alg;
+#endif
+#ifdef AF_VSOCK
+    struct sockaddr_vm vm;
 #endif
 } sock_addr_t;
 

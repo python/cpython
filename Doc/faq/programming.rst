@@ -100,7 +100,7 @@ which don't. One is Thomas Heller's py2exe (Windows only) at
 
     http://www.py2exe.org/
 
-Another tool is Anthony Tuininga's `cx_Freeze <http://cx-freeze.sourceforge.net/>`_.
+Another tool is Anthony Tuininga's `cx_Freeze <https://anthony-tuininga.github.io/cx_Freeze/>`_.
 
 
 Are there coding standards or a style guide for Python programs?
@@ -1638,7 +1638,7 @@ collected.
 
 Despite the cycle collector, it's still a good idea to define an explicit
 ``close()`` method on objects to be called whenever you're done with them.  The
-``close()`` method can then remove attributes that refer to subobjecs.  Don't
+``close()`` method can then remove attributes that refer to subobjects.  Don't
 call :meth:`__del__` directly -- :meth:`__del__` should call ``close()`` and
 ``close()`` should make sure that it can be called more than once for the same
 object.

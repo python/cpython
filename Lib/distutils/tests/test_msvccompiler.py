@@ -76,12 +76,12 @@ class msvccompilerTestCase(support.TempdirManager,
         compiler = _msvccompiler.MSVCCompiler()
         compiler.initialize()
         dll = compiler._vcruntime_redist
-        self.assertTrue(os.path.isfile(dll))
+        self.assertTrue(os.path.isfile(dll), dll or "<None>")
 
         compiler._copy_vcruntime(tempdir)
 
         self.assertFalse(os.path.isfile(os.path.join(
-            tempdir, os.path.basename(dll))))
+            tempdir, os.path.basename(dll))), dll or "<None>")
 
     def test_get_vc_env_unicode(self):
         import distutils._msvccompiler as _msvccompiler
@@ -100,6 +100,30 @@ class msvccompilerTestCase(support.TempdirManager,
             os.environ.pop(test_var)
             if old_distutils_use_sdk:
                 os.environ['DISTUTILS_USE_SDK'] = old_distutils_use_sdk
+
+    def test_get_vc2017(self):
+        import distutils._msvccompiler as _msvccompiler
+
+        # This function cannot be mocked, so pass it if we find VS 2017
+        # and mark it skipped if we do not.
+        version, path = _msvccompiler._find_vc2017()
+        if version:
+            self.assertGreaterEqual(version, 15)
+            self.assertTrue(os.path.isdir(path))
+        else:
+            raise unittest.SkipTest("VS 2017 is not installed")
+
+    def test_get_vc2015(self):
+        import distutils._msvccompiler as _msvccompiler
+
+        # This function cannot be mocked, so pass it if we find VS 2015
+        # and mark it skipped if we do not.
+        version, path = _msvccompiler._find_vc2015()
+        if version:
+            self.assertGreaterEqual(version, 14)
+            self.assertTrue(os.path.isdir(path))
+        else:
+            raise unittest.SkipTest("VS 2015 is not installed")
 
 def test_suite():
     return unittest.makeSuite(msvccompilerTestCase)

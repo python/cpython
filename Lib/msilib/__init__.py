@@ -8,8 +8,6 @@ import string
 import sys
 
 AMD64 = "AMD64" in sys.version
-Itanium = "Itanium" in sys.version
-Win64 = AMD64 or Itanium
 
 # Partially taken from Wine
 datasizemask=      0x00ff
@@ -150,9 +148,7 @@ def init_database(name, schema,
     si.SetProperty(PID_TITLE, "Installation Database")
     si.SetProperty(PID_SUBJECT, ProductName)
     si.SetProperty(PID_AUTHOR, Manufacturer)
-    if Itanium:
-        si.SetProperty(PID_TEMPLATE, "Intel64;1033")
-    elif AMD64:
+    if AMD64:
         si.SetProperty(PID_TEMPLATE, "x64;1033")
     else:
         si.SetProperty(PID_TEMPLATE, "Intel;1033")
@@ -272,7 +268,7 @@ class Directory:
         if component is None:
             component = self.logical
         self.component = component
-        if Win64:
+        if AMD64:
             flags |= 256
         if keyfile:
             keyid = self.cab.gen_id(self.absolute, keyfile)

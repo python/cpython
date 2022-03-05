@@ -418,7 +418,7 @@ class TestPEP380Operation(unittest.TestCase):
             "Yielded g2 spam",
             "Yielded g2 more spam",
             "Finishing g2",
-            "g2 returned StopIteration(3,)",
+            "g2 returned StopIteration(3)",
             "Yielded g1 eggs",
             "Finishing g1",
         ])
@@ -696,15 +696,15 @@ class TestPEP380Operation(unittest.TestCase):
             "g starting",
             "f resuming g",
             "g returning 1",
-            "f caught StopIteration(1,)",
+            "f caught StopIteration(1)",
             "g starting",
             "f resuming g",
             "g returning (2,)",
-            "f caught StopIteration((2,),)",
+            "f caught StopIteration((2,))",
             "g starting",
             "f resuming g",
-            "g returning StopIteration(3,)",
-            "f caught StopIteration(StopIteration(3,),)",
+            "g returning StopIteration(3)",
+            "f caught StopIteration(StopIteration(3))",
         ])
 
     def test_send_and_return_with_value(self):
@@ -741,17 +741,17 @@ class TestPEP380Operation(unittest.TestCase):
             "f sending spam to g",
             "g received 'spam'",
             "g returning 1",
-            'f caught StopIteration(1,)',
+            'f caught StopIteration(1)',
             'g starting',
             'f sending spam to g',
             "g received 'spam'",
             'g returning (2,)',
-            'f caught StopIteration((2,),)',
+            'f caught StopIteration((2,))',
             'g starting',
             'f sending spam to g',
             "g received 'spam'",
-            'g returning StopIteration(3,)',
-            'f caught StopIteration(StopIteration(3,),)'
+            'g returning StopIteration(3)',
+            'f caught StopIteration(StopIteration(3))'
         ])
 
     def test_catching_exception_from_subgen_and_returning(self):

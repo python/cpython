@@ -19,7 +19,7 @@ class _Method(_namedtuple('_Method', 'name ident salt_chars total_size')):
         return '<crypt.METHOD_{}>'.format(self.name)
 
 
-def mksalt(method=None):
+def mksalt(method=None, *, rounds=None):
     """Generate a salt for the specified method.
 
     If not specified, the strongest available method will be used.
@@ -27,7 +27,32 @@ def mksalt(method=None):
     """
     if method is None:
         method = methods[0]
-    s = '${}$'.format(method.ident) if method.ident else ''
+    if rounds is not None and not isinstance(rounds, int):
+        raise TypeError(f'{rounds.__class__.__name__} object cannot be '
+                        f'interpreted as an integer')
+    if not method.ident:  # traditional
+        s = ''
+    else:  # modular
+        s = f'${method.ident}$'
+
+    if method.ident and method.ident[0] == '2':  # Blowfish variants
+        if rounds is None:
+            log_rounds = 12
+        else:
+            log_rounds = int.bit_length(rounds-1)
+            if rounds != 1 << log_rounds:
+                raise ValueError('rounds must be a power of 2')
+            if not 4 <= log_rounds <= 31:
+                raise ValueError('rounds out of the range 2**4 to 2**31')
+        s += f'{log_rounds:02d}$'
+    elif method.ident in ('5', '6'):  # SHA-2
+        if rounds is not None:
+            if not 1000 <= rounds <= 999_999_999:
+                raise ValueError('rounds out of the range 1000 to 999_999_999')
+            s += f'rounds={rounds}$'
+    elif rounds is not None:
+        raise ValueError(f"{method} doesn't support the rounds argument")
+
     s += ''.join(_sr.choice(_saltchars) for char in range(method.salt_chars))
     return s
 
@@ -48,14 +73,31 @@ def crypt(word, salt=None):
 
 
 #  available salting/crypto methods
-METHOD_CRYPT = _Method('CRYPT', None, 2, 13)
-METHOD_MD5 = _Method('MD5', '1', 8, 34)
-METHOD_SHA256 = _Method('SHA256', '5', 16, 63)
-METHOD_SHA512 = _Method('SHA512', '6', 16, 106)
-
 methods = []
-for _method in (METHOD_SHA512, METHOD_SHA256, METHOD_MD5, METHOD_CRYPT):
-    _result = crypt('', _method)
-    if _result and len(_result) == _method.total_size:
-        methods.append(_method)
-del _result, _method
+
+def _add_method(name, *args, rounds=None):
+    method = _Method(name, *args)
+    globals()['METHOD_' + name] = method
+    salt = mksalt(method, rounds=rounds)
+    result = crypt('', salt)
+    if result and len(result) == method.total_size:
+        methods.append(method)
+        return True
+    return False
+
+_add_method('SHA512', '6', 16, 106)
+_add_method('SHA256', '5', 16, 63)
+
+# Choose the strongest supported version of Blowfish hashing.
+# Early versions have flaws.  Version 'a' fixes flaws of
+# the initial implementation, 'b' fixes flaws of 'a'.
+# 'y' is the same as 'b', for compatibility
+# with openwall crypt_blowfish.
+for _v in 'b', 'y', 'a', '':
+    if _add_method('BLOWFISH', '2' + _v, 22, 59 + len(_v), rounds=1<<4):
+        break
+
+_add_method('MD5', '1', 8, 34)
+_add_method('CRYPT', None, 2, 13)
+
+del _v, _add_method

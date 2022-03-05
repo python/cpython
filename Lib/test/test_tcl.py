@@ -662,32 +662,44 @@ class BigmemTclTest(unittest.TestCase):
     @support.bigmemtest(size=INT_MAX + 1, memuse=5, dry_run=False)
     def test_huge_string_call(self, size):
         value = ' ' * size
-        self.assertRaises(OverflowError, self.interp.call, 'set', '_', value)
+        self.assertRaises(OverflowError, self.interp.call, 'string', 'index', value, 0)
 
     @support.cpython_only
     @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
-    @support.bigmemtest(size=INT_MAX + 1, memuse=9, dry_run=False)
+    @support.bigmemtest(size=INT_MAX + 1, memuse=2, dry_run=False)
     def test_huge_string_builtins(self, size):
+        tk = self.interp.tk
         value = '1' + ' ' * size
-        self.assertRaises(OverflowError, self.interp.tk.getint, value)
-        self.assertRaises(OverflowError, self.interp.tk.getdouble, value)
-        self.assertRaises(OverflowError, self.interp.tk.getboolean, value)
-        self.assertRaises(OverflowError, self.interp.eval, value)
-        self.assertRaises(OverflowError, self.interp.evalfile, value)
-        self.assertRaises(OverflowError, self.interp.record, value)
-        self.assertRaises(OverflowError, self.interp.adderrorinfo, value)
-        self.assertRaises(OverflowError, self.interp.setvar, value, 'x', 'a')
-        self.assertRaises(OverflowError, self.interp.setvar, 'x', value, 'a')
-        self.assertRaises(OverflowError, self.interp.unsetvar, value)
-        self.assertRaises(OverflowError, self.interp.unsetvar, 'x', value)
-        self.assertRaises(OverflowError, self.interp.adderrorinfo, value)
-        self.assertRaises(OverflowError, self.interp.exprstring, value)
-        self.assertRaises(OverflowError, self.interp.exprlong, value)
-        self.assertRaises(OverflowError, self.interp.exprboolean, value)
-        self.assertRaises(OverflowError, self.interp.splitlist, value)
-        self.assertRaises(OverflowError, self.interp.split, value)
-        self.assertRaises(OverflowError, self.interp.createcommand, value, max)
-        self.assertRaises(OverflowError, self.interp.deletecommand, value)
+        self.assertRaises(OverflowError, tk.getint, value)
+        self.assertRaises(OverflowError, tk.getdouble, value)
+        self.assertRaises(OverflowError, tk.getboolean, value)
+        self.assertRaises(OverflowError, tk.eval, value)
+        self.assertRaises(OverflowError, tk.evalfile, value)
+        self.assertRaises(OverflowError, tk.record, value)
+        self.assertRaises(OverflowError, tk.adderrorinfo, value)
+        self.assertRaises(OverflowError, tk.setvar, value, 'x', 'a')
+        self.assertRaises(OverflowError, tk.setvar, 'x', value, 'a')
+        self.assertRaises(OverflowError, tk.unsetvar, value)
+        self.assertRaises(OverflowError, tk.unsetvar, 'x', value)
+        self.assertRaises(OverflowError, tk.adderrorinfo, value)
+        self.assertRaises(OverflowError, tk.exprstring, value)
+        self.assertRaises(OverflowError, tk.exprlong, value)
+        self.assertRaises(OverflowError, tk.exprboolean, value)
+        self.assertRaises(OverflowError, tk.splitlist, value)
+        self.assertRaises(OverflowError, tk.split, value)
+        self.assertRaises(OverflowError, tk.createcommand, value, max)
+        self.assertRaises(OverflowError, tk.deletecommand, value)
+
+    @support.cpython_only
+    @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
+    @support.bigmemtest(size=INT_MAX + 1, memuse=6, dry_run=False)
+    def test_huge_string_builtins2(self, size):
+        # These commands require larger memory for possible error messages
+        tk = self.interp.tk
+        value = '1' + ' ' * size
+        self.assertRaises(OverflowError, tk.evalfile, value)
+        self.assertRaises(OverflowError, tk.unsetvar, value)
+        self.assertRaises(OverflowError, tk.unsetvar, 'x', value)
 
 
 def setUpModule():

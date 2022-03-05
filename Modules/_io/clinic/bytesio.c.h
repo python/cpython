@@ -164,7 +164,7 @@ static PyObject *
 _io_BytesIO_read_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_read(bytesio *self, PyObject **args, Py_ssize_t nargs)
+_io_BytesIO_read(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
@@ -195,7 +195,7 @@ static PyObject *
 _io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_read1(bytesio *self, PyObject **args, Py_ssize_t nargs)
+_io_BytesIO_read1(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
@@ -227,7 +227,7 @@ static PyObject *
 _io_BytesIO_readline_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_readline(bytesio *self, PyObject **args, Py_ssize_t nargs)
+_io_BytesIO_readline(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
@@ -259,7 +259,7 @@ static PyObject *
 _io_BytesIO_readlines_impl(bytesio *self, PyObject *arg);
 
 static PyObject *
-_io_BytesIO_readlines(bytesio *self, PyObject **args, Py_ssize_t nargs)
+_io_BytesIO_readlines(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *arg = Py_None;
@@ -326,7 +326,7 @@ static PyObject *
 _io_BytesIO_truncate_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_truncate(bytesio *self, PyObject **args, Py_ssize_t nargs)
+_io_BytesIO_truncate(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = self->pos;
@@ -360,7 +360,7 @@ static PyObject *
 _io_BytesIO_seek_impl(bytesio *self, Py_ssize_t pos, int whence);
 
 static PyObject *
-_io_BytesIO_seek(bytesio *self, PyObject **args, Py_ssize_t nargs)
+_io_BytesIO_seek(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t pos;
@@ -444,4 +444,4 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=20946f5a2ed4492b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9ba9a68c8c5669e7 input=a9049054013a1b77]*/

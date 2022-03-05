@@ -2,8 +2,8 @@
 
 # objgraph
 #
-# Read "nm -o" input (on IRIX: "nm -Bo") of a set of libraries or modules
-# and print various interesting listings, such as:
+# Read "nm -o" input of a set of libraries or modules and print various
+# interesting listings, such as:
 #
 # - which names are used but not defined in the set (and used where),
 # - which names are defined in the set (and where),
@@ -15,7 +15,7 @@
 # -d: print callees per objectfile
 # -u: print usage of undefined symbols
 # If none of -cdu is specified, all are assumed.
-# Use "nm -o" to generate the input (on IRIX: "nm -Bo"),
+# Use "nm -o" to generate the input
 # e.g.: nm -o /lib/libc.a | objgraph
 
 
@@ -161,7 +161,7 @@ def main():
         print('-d: print callees per objectfile')
         print('-u: print usage of undefined symbols')
         print('If none of -cdu is specified, all are assumed.')
-        print('Use "nm -o" to generate the input (on IRIX: "nm -Bo"),')
+        print('Use "nm -o" to generate the input')
         print('e.g.: nm -o /lib/libc.a | objgraph')
         return 1
     optu = optc = optd = 0

@@ -28,16 +28,24 @@ class TestInteractiveConsole(unittest.TestCase):
         self.sysmod = stack.enter_context(prepatch)
         if sys.excepthook is sys.__excepthook__:
             self.sysmod.excepthook = self.sysmod.__excepthook__
+        del self.sysmod.ps1
+        del self.sysmod.ps2
 
     def test_ps1(self):
         self.infunc.side_effect = EOFError('Finished')
         self.console.interact()
         self.assertEqual(self.sysmod.ps1, '>>> ')
+        self.sysmod.ps1 = 'custom1> '
+        self.console.interact()
+        self.assertEqual(self.sysmod.ps1, 'custom1> ')
 
     def test_ps2(self):
         self.infunc.side_effect = EOFError('Finished')
         self.console.interact()
         self.assertEqual(self.sysmod.ps2, '... ')
+        self.sysmod.ps1 = 'custom2> '
+        self.console.interact()
+        self.assertEqual(self.sysmod.ps1, 'custom2> ')
 
     def test_console_stderr(self):
         self.infunc.side_effect = ["'antioch'", "", EOFError('Finished')]

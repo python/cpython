@@ -3,9 +3,11 @@
 import fnmatch
 import sys
 import os
-from inspect import CO_GENERATOR
+from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
 
 __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
+
+GENERATOR_AND_COROUTINE_FLAGS = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR
 
 
 class BdbQuit(Exception):
@@ -127,7 +129,7 @@ class Bdb:
             # No need to trace this function
             return # None
         # Ignore call events in generator except when stepping.
-        if self.stopframe and frame.f_code.co_flags & CO_GENERATOR:
+        if self.stopframe and frame.f_code.co_flags & GENERATOR_AND_COROUTINE_FLAGS:
             return self.trace_dispatch
         self.user_call(frame, arg)
         if self.quitting: raise BdbQuit
@@ -142,7 +144,7 @@ class Bdb:
         """
         if self.stop_here(frame) or frame == self.returnframe:
             # Ignore return events in generator except when stepping.
-            if self.stopframe and frame.f_code.co_flags & CO_GENERATOR:
+            if self.stopframe and frame.f_code.co_flags & GENERATOR_AND_COROUTINE_FLAGS:
                 return self.trace_dispatch
             try:
                 self.frame_returning = frame
@@ -166,7 +168,7 @@ class Bdb:
             # When stepping with next/until/return in a generator frame, skip
             # the internal StopIteration exception (with no traceback)
             # triggered by a subiterator run with the 'yield from' statement.
-            if not (frame.f_code.co_flags & CO_GENERATOR
+            if not (frame.f_code.co_flags & GENERATOR_AND_COROUTINE_FLAGS
                     and arg[0] is StopIteration and arg[2] is None):
                 self.user_exception(frame, arg)
                 if self.quitting: raise BdbQuit
@@ -175,7 +177,7 @@ class Bdb:
         # next/until command at the last statement in the generator before the
         # exception.
         elif (self.stopframe and frame is not self.stopframe
-                and self.stopframe.f_code.co_flags & CO_GENERATOR
+                and self.stopframe.f_code.co_flags & GENERATOR_AND_COROUTINE_FLAGS
                 and arg[0] in (StopIteration, GeneratorExit)):
             self.user_exception(frame, arg)
             if self.quitting: raise BdbQuit
@@ -309,7 +311,7 @@ class Bdb:
 
     def set_return(self, frame):
         """Stop when returning from the given frame."""
-        if frame.f_code.co_flags & CO_GENERATOR:
+        if frame.f_code.co_flags & GENERATOR_AND_COROUTINE_FLAGS:
             self._set_stopinfo(frame, None, -1)
         else:
             self._set_stopinfo(frame.f_back, frame)

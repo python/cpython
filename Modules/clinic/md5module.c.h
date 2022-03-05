@@ -78,7 +78,7 @@ static PyObject *
 _md5_md5_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_md5_md5(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_md5_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
@@ -94,4 +94,4 @@ _md5_md5(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3139ae340ad1ea4e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=50a95670913de8fb input=a9049054013a1b77]*/

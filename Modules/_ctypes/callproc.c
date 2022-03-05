@@ -745,9 +745,7 @@ static int _call_function_pointer(int flags,
                                   void *resmem,
                                   int argcount)
 {
-#ifdef WITH_THREAD
     PyThreadState *_save = NULL; /* For Py_BLOCK_THREADS and Py_UNBLOCK_THREADS */
-#endif
     PyObject *error_object = NULL;
     int *space;
     ffi_cif cif;
@@ -786,10 +784,8 @@ static int _call_function_pointer(int flags,
         if (error_object == NULL)
             return -1;
     }
-#ifdef WITH_THREAD
     if ((flags & FUNCFLAG_PYTHONAPI) == 0)
         Py_UNBLOCK_THREADS
-#endif
     if (flags & FUNCFLAG_USE_ERRNO) {
         int temp = space[0];
         space[0] = errno;
@@ -826,10 +822,8 @@ static int _call_function_pointer(int flags,
         space[0] = errno;
         errno = temp;
     }
-#ifdef WITH_THREAD
     if ((flags & FUNCFLAG_PYTHONAPI) == 0)
         Py_BLOCK_THREADS
-#endif
     Py_XDECREF(error_object);
 #ifdef MS_WIN32
 #ifndef DONT_USE_SEH
@@ -982,9 +976,7 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
     /* We absolutely have to release the GIL during COM method calls,
        otherwise we may get a deadlock!
     */
-#ifdef WITH_THREAD
     Py_BEGIN_ALLOW_THREADS
-#endif
 
     hr = pIunk->lpVtbl->QueryInterface(pIunk, &IID_ISupportErrorInfo, (void **)&psei);
     if (FAILED(hr))
@@ -1008,9 +1000,7 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
     pei->lpVtbl->Release(pei);
 
   failed:
-#ifdef WITH_THREAD
     Py_END_ALLOW_THREADS
-#endif
 
     progid = NULL;
     ProgIDFromCLSID(&guid, &progid);
@@ -1346,7 +1336,7 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
     handle = ctypes_dlopen(name_str, mode);
     Py_XDECREF(name2);
     if (!handle) {
-        char *errmsg = ctypes_dlerror();
+        const char *errmsg = ctypes_dlerror();
         if (!errmsg)
             errmsg = "dlopen() error";
         PyErr_SetString(PyExc_OSError,

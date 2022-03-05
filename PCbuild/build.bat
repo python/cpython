@@ -20,9 +20,10 @@ echo.  -h  Display this help message
 echo.  -V  Display version information for the current build
 echo.  -r  Target Rebuild instead of Build
 echo.  -d  Set the configuration to Debug
-echo.  -e  Build external libraries fetched by get_externals.bat
-echo.      Extension modules that depend on external libraries will not attempt
-echo.      to build if this flag is not present
+echo.  -E  Don't fetch or build external libraries.  Extension modules that
+echo.      depend on external libraries will not attempt to build if this flag
+echo.      is present; -e is also accepted to explicitly enable fetching and
+echo.      building externals.
 echo.  -m  Enable parallel build (enabled by default)
 echo.  -M  Disable parallel build
 echo.  -v  Increased output messages
@@ -79,10 +80,11 @@ rem These use the actual property names used by MSBuild.  We could just let
 rem them in through the environment, but we specify them on the command line
 rem anyway for visibility so set defaults after this
 if "%~1"=="-e" (set IncludeExternals=true) & shift & goto CheckOpts
+if "%~1"=="-E" (set IncludeExternals=false) & shift & goto CheckOpts
 if "%~1"=="--no-ssl" (set IncludeSSL=false) & shift & goto CheckOpts
 if "%~1"=="--no-tkinter" (set IncludeTkinter=false) & shift & goto CheckOpts
 
-if "%IncludeExternals%"=="" set IncludeExternals=false
+if "%IncludeExternals%"=="" set IncludeExternals=true
 if "%IncludeSSL%"=="" set IncludeSSL=true
 if "%IncludeTkinter%"=="" set IncludeTkinter=true
 

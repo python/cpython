@@ -25,7 +25,7 @@ static PyObject *
 fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg);
 
 static PyObject *
-fcntl_fcntl(PyObject *module, PyObject **args, Py_ssize_t nargs)
+fcntl_fcntl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -83,7 +83,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
                  PyObject *ob_arg, int mutate_arg);
 
 static PyObject *
-fcntl_ioctl(PyObject *module, PyObject **args, Py_ssize_t nargs)
+fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -117,7 +117,7 @@ static PyObject *
 fcntl_flock_impl(PyObject *module, int fd, int code);
 
 static PyObject *
-fcntl_flock(PyObject *module, PyObject **args, Py_ssize_t nargs)
+fcntl_flock(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -168,7 +168,7 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
                  PyObject *startobj, int whence);
 
 static PyObject *
-fcntl_lockf(PyObject *module, PyObject **args, Py_ssize_t nargs)
+fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -186,4 +186,4 @@ fcntl_lockf(PyObject *module, PyObject **args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6105e3ada306f434 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2f6e70ae67ec8ac9 input=a9049054013a1b77]*/

@@ -33,7 +33,7 @@ On Windows, invoke the ``venv`` command as follows::
 Alternatively, if you configured the ``PATH`` and ``PATHEXT`` variables for
 your :ref:`Python installation <using-on-windows>`::
 
-    c:\>python -m venv myenv c:\path\to\myenv
+    c:\>python -m venv c:\path\to\myenv
 
 The command, if run with ``-h``, will show the available options::
 

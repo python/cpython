@@ -10,6 +10,7 @@ import xmlrpc.server
 import http.client
 import http, http.server
 import socket
+import threading
 import re
 import io
 import contextlib
@@ -19,10 +20,6 @@ try:
     import gzip
 except ImportError:
     gzip = None
-try:
-    import threading
-except ImportError:
-    threading = None
 
 alist = [{'astring': 'foo@bar.baz.spam',
           'afloat': 7283.43,
@@ -307,7 +304,6 @@ class XMLRPCTestCase(unittest.TestCase):
         except OSError:
             self.assertTrue(has_ssl)
 
-    @unittest.skipUnless(threading, "Threading required for this test.")
     def test_keepalive_disconnect(self):
         class RequestHandler(http.server.BaseHTTPRequestHandler):
             protocol_version = "HTTP/1.1"
@@ -327,6 +323,10 @@ class XMLRPCTestCase(unittest.TestCase):
                 self.wfile.write(response)
                 self.handled = True
                 self.close_connection = False
+
+            def log_message(self, format, *args):
+                # don't clobber sys.stderr
+                pass
 
         def run_server():
             server.socket.settimeout(float(1))  # Don't hang if client fails
@@ -743,7 +743,6 @@ def make_request_and_skipIf(condition, reason):
         return make_request_and_skip
     return decorator
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class BaseServerTestCase(unittest.TestCase):
     requestHandler = None
     request_count = 1
@@ -756,7 +755,9 @@ class BaseServerTestCase(unittest.TestCase):
         self.evt = threading.Event()
         # start server thread to handle requests
         serv_args = (self.evt, self.request_count, self.requestHandler)
-        threading.Thread(target=self.threadFunc, args=serv_args).start()
+        thread = threading.Thread(target=self.threadFunc, args=serv_args)
+        thread.start()
+        self.addCleanup(thread.join)
 
         # wait for the server to be ready
         self.evt.wait()
@@ -1174,13 +1175,7 @@ class GzipUtilTestCase(unittest.TestCase):
 class ServerProxyTestCase(unittest.TestCase):
     def setUp(self):
         unittest.TestCase.setUp(self)
-        if threading:
-            self.url = URL
-        else:
-            # Without threading, http_server() and http_multi_server() will not
-            # be executed and URL is still equal to None. 'http://' is a just
-            # enough to choose the scheme (HTTP)
-            self.url = 'http://'
+        self.url = URL
 
     def test_close(self):
         p = xmlrpclib.ServerProxy(self.url)
@@ -1202,13 +1197,14 @@ class FailingMessageClass(http.client.HTTPMessage):
         return super().get(key, failobj)
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class FailingServerTestCase(unittest.TestCase):
     def setUp(self):
         self.evt = threading.Event()
         # start server thread to handle requests
         serv_args = (self.evt, 1)
-        threading.Thread(target=http_server, args=serv_args).start()
+        thread = threading.Thread(target=http_server, args=serv_args)
+        thread.start()
+        self.addCleanup(thread.join)
 
         # wait for the server to be ready
         self.evt.wait()

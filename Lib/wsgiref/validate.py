@@ -390,7 +390,6 @@ def check_headers(headers):
     assert_(type(headers) is list,
         "Headers (%r) must be of type list: %r"
         % (headers, type(headers)))
-    header_names = {}
     for item in headers:
         assert_(type(item) is tuple,
             "Individual headers (%r) must be of type tuple: %r"
@@ -403,7 +402,6 @@ def check_headers(headers):
             "The Status header cannot be used; it conflicts with CGI "
             "script, and HTTP status is not given through headers "
             "(value: %r)." % value)
-        header_names[name.lower()] = None
         assert_('\n' not in name and ':' not in name,
             "Header names may not contain ':' or '\\n': %r" % name)
         assert_(header_re.search(name), "Bad header name: %r" % name)

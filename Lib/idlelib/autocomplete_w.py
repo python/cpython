@@ -246,7 +246,7 @@ class AutoCompleteWindow:
         acw.wm_geometry("+%d+%d" % (new_x, new_y))
 
         if platform.system().startswith('Windows'):
-            # See issue 15786. When on windows platform, Tk will misbehaive
+            # See issue 15786. When on windows platform, Tk will misbehave
             # to call winconfig_event multiple times, we need to prevent this,
             # otherwise mouse button double click will not be able to used.
             acw.unbind(WINCONFIG_SEQUENCE, self.winconfigid)

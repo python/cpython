@@ -1,0 +1,1 @@
+Add close(fd) function to the socket module.

@@ -1,0 +1,4 @@
+contextlib.contextmanager now releases the arguments passed to the
+underlying generator as soon as the context manager is entered. Previously
+it would keep them alive for as long as the context manager was alive, even
+when not being used as a function decorator. Patch by Martin Teichmann.

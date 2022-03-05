@@ -14,8 +14,14 @@ class Popen(object):
     method = 'fork'
 
     def __init__(self, process_obj):
-        sys.stdout.flush()
-        sys.stderr.flush()
+        try:
+            sys.stdout.flush()
+        except (AttributeError, ValueError):
+            pass
+        try:
+            sys.stderr.flush()
+        except (AttributeError, ValueError):
+            pass
         self.returncode = None
         self.finalizer = None
         self._launch(process_obj)
@@ -35,7 +41,7 @@ class Popen(object):
                 if os.WIFSIGNALED(sts):
                     self.returncode = -os.WTERMSIG(sts)
                 else:
-                    assert os.WIFEXITED(sts)
+                    assert os.WIFEXITED(sts), "Status is {:n}".format(sts)
                     self.returncode = os.WEXITSTATUS(sts)
         return self.returncode
 

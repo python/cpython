@@ -58,7 +58,7 @@ class ParenMatchTest(unittest.TestCase):
                 ('expression', ('1.10', '1.15'), ('1.10', '1.16'))):
             with self.subTest(style=style):
                 text.delete('1.0', 'end')
-                pm.set_style(style)
+                pm.STYLE = style
                 text.insert('insert', 'def foobar(a, b')
 
                 pm.flash_paren_event('event')

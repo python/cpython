@@ -31,7 +31,7 @@
 #if BUFSIZ < (16*1024)
 #define SMALLCHUNK (2*1024)
 #elif (BUFSIZ >= (2 << 25))
-#error "unreasonable BUFSIZ > 64MB defined"
+#error "unreasonable BUFSIZ > 64 MiB defined"
 #else
 #define SMALLCHUNK BUFSIZ
 #endif

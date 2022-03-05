@@ -16,6 +16,9 @@ import urllib.request
 
 __all__ = ["RobotFileParser"]
 
+RequestRate = collections.namedtuple("RequestRate", "requests seconds")
+
+
 class RobotFileParser:
     """ This class provides a set of methods to read, parse and answer
     questions about a single robots.txt file.
@@ -136,11 +139,7 @@ class RobotFileParser:
                         # check if all values are sane
                         if (len(numbers) == 2 and numbers[0].strip().isdigit()
                             and numbers[1].strip().isdigit()):
-                            req_rate = collections.namedtuple('req_rate',
-                                                              'requests seconds')
-                            entry.req_rate = req_rate
-                            entry.req_rate.requests = int(numbers[0])
-                            entry.req_rate.seconds = int(numbers[1])
+                            entry.req_rate = RequestRate(int(numbers[0]), int(numbers[1]))
                         state = 2
         if state == 2:
             self._add_entry(entry)

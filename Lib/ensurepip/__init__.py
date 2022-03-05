@@ -25,7 +25,7 @@ def _run_pip(args, additional_paths=None):
 
     # Install the bundled software
     import pip
-    pip.main(args)
+    return pip.main(args)
 
 
 def version():
@@ -52,6 +52,21 @@ def bootstrap(*, root=None, upgrade=False, user=False,
     """
     Bootstrap pip into the current Python installation (or the given root
     directory).
+
+    Note that calling this function will alter both sys.path and os.environ.
+    """
+    # Discard the return value
+    _bootstrap(root=root, upgrade=upgrade, user=user,
+               altinstall=altinstall, default_pip=default_pip,
+               verbosity=verbosity)
+
+
+def _bootstrap(*, root=None, upgrade=False, user=False,
+              altinstall=False, default_pip=False,
+              verbosity=0):
+    """
+    Bootstrap pip into the current Python installation (or the given root
+    directory). Returns pip command status code.
 
     Note that calling this function will alter both sys.path and os.environ.
     """
@@ -99,7 +114,7 @@ def bootstrap(*, root=None, upgrade=False, user=False,
         if verbosity:
             args += ["-" + "v" * verbosity]
 
-        _run_pip(args + [p[0] for p in _PROJECTS], additional_paths)
+        return _run_pip(args + [p[0] for p in _PROJECTS], additional_paths)
 
 def _uninstall_helper(*, verbosity=0):
     """Helper to support a clean default uninstall process on Windows
@@ -126,7 +141,7 @@ def _uninstall_helper(*, verbosity=0):
     if verbosity:
         args += ["-" + "v" * verbosity]
 
-    _run_pip(args + [p[0] for p in reversed(_PROJECTS)])
+    return _run_pip(args + [p[0] for p in reversed(_PROJECTS)])
 
 
 def _main(argv=None):
@@ -180,7 +195,7 @@ def _main(argv=None):
 
     args = parser.parse_args(argv)
 
-    bootstrap(
+    return _bootstrap(
         root=args.root,
         upgrade=args.upgrade,
         user=args.user,

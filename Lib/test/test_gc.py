@@ -1,18 +1,16 @@
 import unittest
 from test.support import (verbose, refcount_test, run_unittest,
                           strip_python_stderr, cpython_only, start_threads,
-                          temp_dir, requires_type_collecting)
+                          temp_dir, requires_type_collecting,reap_threads)
 from test.support.script_helper import assert_python_ok, make_script
 
 import sys
 import time
 import gc
 import weakref
+import threading
+import warnings
 
-try:
-    import threading
-except ImportError:
-    threading = None
 
 try:
     from _testcapi import with_tp_del
@@ -352,7 +350,6 @@ class GCTests(unittest.TestCase):
                 v = {1: v, 2: Ouch()}
         gc.disable()
 
-    @unittest.skipUnless(threading, "test meaningless on builds without threads")
     def test_trashcan_threads(self):
         # Issue #13992: trashcan mechanism should be thread-safe
         NESTING = 60
@@ -739,6 +736,12 @@ class GCTests(unittest.TestCase):
         self.assertEqual(new[1]["collections"], old[1]["collections"])
         self.assertEqual(new[2]["collections"], old[2]["collections"] + 1)
 
+    def test_freeze(self):
+        gc.freeze()
+        self.assertGreater(gc.get_freeze_count(), 0)
+        gc.unfreeze()
+        self.assertEqual(gc.get_freeze_count(), 0)
+
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):
@@ -1005,6 +1008,73 @@ class GCTogglingTests(unittest.TestCase):
             # If __del__ resurrected c2, the instance would be damaged, with an
             # empty __dict__.
             self.assertEqual(x, None)
+
+    def test_ensure_disabled(self):
+        original_status = gc.isenabled()
+
+        with gc.ensure_disabled():
+            inside_status = gc.isenabled()
+
+        after_status = gc.isenabled()
+        self.assertEqual(original_status, True)
+        self.assertEqual(inside_status, False)
+        self.assertEqual(after_status, True)
+
+    def test_ensure_disabled_with_gc_disabled(self):
+        gc.disable()
+
+        original_status = gc.isenabled()
+
+        with gc.ensure_disabled():
+            inside_status = gc.isenabled()
+
+        after_status = gc.isenabled()
+        self.assertEqual(original_status, False)
+        self.assertEqual(inside_status, False)
+        self.assertEqual(after_status, False)
+
+    @reap_threads
+    def test_ensure_disabled_thread(self):
+
+        thread_original_status = None
+        thread_inside_status = None
+        thread_after_status = None
+
+        def disabling_thread():
+            nonlocal thread_original_status
+            nonlocal thread_inside_status
+            nonlocal thread_after_status
+            thread_original_status = gc.isenabled()
+
+            with gc.ensure_disabled():
+                time.sleep(0.01)
+                thread_inside_status = gc.isenabled()
+
+            thread_after_status = gc.isenabled()
+
+        original_status = gc.isenabled()
+
+        with warnings.catch_warnings(record=True) as w, gc.ensure_disabled():
+            inside_status_before_thread = gc.isenabled()
+            thread = threading.Thread(target=disabling_thread)
+            thread.start()
+            inside_status_after_thread = gc.isenabled()
+
+        after_status = gc.isenabled()
+        thread.join()
+
+        self.assertEqual(len(w), 1)
+        self.assertTrue(issubclass(w[-1].category, RuntimeWarning))
+        self.assertEqual("Garbage collector enabled while another thread is "
+                         "inside gc.ensure_enabled", str(w[-1].message))
+        self.assertEqual(original_status, True)
+        self.assertEqual(inside_status_before_thread, False)
+        self.assertEqual(thread_original_status, False)
+        self.assertEqual(thread_inside_status, True)
+        self.assertEqual(thread_after_status, False)
+        self.assertEqual(inside_status_after_thread, False)
+        self.assertEqual(after_status, True)
+
 
 def test_main():
     enabled = gc.isenabled()

@@ -12,12 +12,6 @@ import sysconfig
 import textwrap
 import unittest
 
-# Is this Python configured to support threads?
-try:
-    import _thread
-except ImportError:
-    _thread = None
-
 from test import support
 from test.support import run_unittest, findfile, python_is_optimized
 
@@ -755,8 +749,6 @@ Traceback \(most recent call first\):
     foo\(1, 2, 3\)
 ''')
 
-    @unittest.skipUnless(_thread,
-                         "Python was compiled without thread support")
     def test_threads(self):
         'Verify that "py-bt" indicates threads that are waiting for the GIL'
         cmd = '''
@@ -794,8 +786,6 @@ id(42)
     # Some older versions of gdb will fail with
     #  "Cannot find new threads: generic error"
     # unless we add LD_PRELOAD=PATH-TO-libpthread.so.1 as a workaround
-    @unittest.skipUnless(_thread,
-                         "Python was compiled without thread support")
     def test_gc(self):
         'Verify that "py-bt" indicates if a thread is garbage-collecting'
         cmd = ('from gc import collect\n'
@@ -822,8 +812,6 @@ id(42)
     # Some older versions of gdb will fail with
     #  "Cannot find new threads: generic error"
     # unless we add LD_PRELOAD=PATH-TO-libpthread.so.1 as a workaround
-    @unittest.skipUnless(_thread,
-                         "Python was compiled without thread support")
     def test_pycfunction(self):
         'Verify that "py-bt" displays invocations of PyCFunction instances'
         # Tested function must not be defined with METH_NOARGS or METH_O,

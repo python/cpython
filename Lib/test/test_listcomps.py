@@ -139,7 +139,7 @@ def test_main(verbose=None):
         import gc
         counts = [None] * 5
         for i in range(len(counts)):
-            support.run_doctest(test_genexps, verbose)
+            support.run_doctest(test_listcomps, verbose)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
         print(counts)

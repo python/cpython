@@ -1643,7 +1643,6 @@ MODULE_INITFUNC(void)
     PyObject *errors_module;
     PyObject *modelmod_name;
     PyObject *model_module;
-    PyObject *sys_modules;
     PyObject *tmpnum, *tmpstr;
     PyObject *codes_dict;
     PyObject *rev_codes_dict;
@@ -1693,11 +1692,6 @@ MODULE_INITFUNC(void)
     */
     PyModule_AddStringConstant(m, "native_encoding", "UTF-8");
 
-    sys_modules = PySys_GetObject("modules");
-    if (sys_modules == NULL) {
-        Py_DECREF(m);
-        return NULL;
-    }
     d = PyModule_GetDict(m);
     if (d == NULL) {
         Py_DECREF(m);
@@ -1707,7 +1701,7 @@ MODULE_INITFUNC(void)
     if (errors_module == NULL) {
         errors_module = PyModule_New(MODULE_NAME ".errors");
         if (errors_module != NULL) {
-            PyDict_SetItem(sys_modules, errmod_name, errors_module);
+            _PyImport_SetModule(errmod_name, errors_module);
             /* gives away the reference to errors_module */
             PyModule_AddObject(m, "errors", errors_module);
         }
@@ -1717,7 +1711,7 @@ MODULE_INITFUNC(void)
     if (model_module == NULL) {
         model_module = PyModule_New(MODULE_NAME ".model");
         if (model_module != NULL) {
-            PyDict_SetItem(sys_modules, modelmod_name, model_module);
+            _PyImport_SetModule(modelmod_name, model_module);
             /* gives away the reference to model_module */
             PyModule_AddObject(m, "model", model_module);
         }

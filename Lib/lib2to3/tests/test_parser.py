@@ -8,11 +8,15 @@ test_grammar.py files from both Python 2 and Python 3.
 
 # Testing imports
 from . import support
-from .support import driver
+from .support import driver, driver_no_print_statement
 from test.support import verbose
 
 # Python imports
+import difflib
+import importlib
+import operator
 import os
+import pickle
 import shutil
 import subprocess
 import sys
@@ -99,6 +103,18 @@ pgen2_driver.load_grammar(%r, save=True, force=True)
         finally:
             shutil.rmtree(tmpdir)
 
+    def test_load_packaged_grammar(self):
+        modname = __name__ + '.load_test'
+        class MyLoader:
+            def get_data(self, where):
+                return pickle.dumps({'elephant': 19})
+        class MyModule:
+            __file__ = 'parsertestmodule'
+            __spec__ = importlib.util.spec_from_loader(modname, MyLoader())
+        sys.modules[modname] = MyModule()
+        self.addCleanup(operator.delitem, sys.modules, modname)
+        g = pgen2_driver.load_packaged_grammar(modname, 'Grammar.txt')
+        self.assertEqual(g.elephant, 19)
 
 
 class GrammarTest(support.TestCase):
@@ -167,34 +183,34 @@ class TestAsyncAwait(GrammarTest):
             async def foo(): await x
         """)
 
-        self.invalid_syntax("await x")
-        self.invalid_syntax("""def foo():
-                                   await x""")
+        self.validate("await x")
+        self.validate("""def foo():
+                        await x""")
 
-        self.invalid_syntax("""def foo():
+        self.validate("""def foo():
             def foo(): pass
             async def foo(): pass
             await x
         """)
 
     def test_async_var(self):
-        self.validate("""async = 1""")
-        self.validate("""await = 1""")
-        self.validate("""def async(): pass""")
+        self.invalid_syntax("""async = 1""")
+        self.invalid_syntax("""await = 1""")
+        self.invalid_syntax("""def async(): pass""")
 
     def test_async_with(self):
         self.validate("""async def foo():
                              async for a in b: pass""")
 
-        self.invalid_syntax("""def foo():
-                                   async for a in b: pass""")
+        self.validate("""def foo():
+                             async for a in b: pass""")
 
     def test_async_for(self):
         self.validate("""async def foo():
                              async with a: pass""")
 
-        self.invalid_syntax("""def foo():
-                                   async with a: pass""")
+        self.validate("""def foo():
+                             async with a: pass""")
 
 
 class TestRaiseChanges(GrammarTest):
@@ -398,8 +414,6 @@ class TestParserIdempotency(support.TestCase):
 
     """A cut-down version of pytree_idempotency.py."""
 
-    # Issue 13125
-    @unittest.expectedFailure
     def test_all_project_files(self):
         for filepath in support.all_project_files():
             with open(filepath, "rb") as fp:
@@ -410,13 +424,14 @@ class TestParserIdempotency(support.TestCase):
                 source = fp.read()
             try:
                 tree = driver.parse_string(source)
-            except ParseError as err:
-                if verbose > 0:
-                    warnings.warn('ParseError on file %s (%s)' % (filepath, err))
-                continue
+            except ParseError:
+                try:
+                    tree = driver_no_print_statement.parse_string(source)
+                except ParseError as err:
+                    self.fail('ParseError on file %s (%s)' % (filepath, err))
             new = str(tree)
-            x = diff(filepath, new)
-            if x:
+            if new != source:
+                print(diff_texts(source, new, filepath))
                 self.fail("Idempotency failed: %s" % filepath)
 
     def test_extended_unpacking(self):
@@ -459,14 +474,20 @@ class TestLiterals(GrammarTest):
         self.validate(s)
 
 
-def diff(fn, result):
-    try:
-        with open('@', 'w') as f:
-            f.write(str(result))
-        fn = fn.replace('"', '\\"')
-        return subprocess.call(['diff', '-u', fn, '@'], stdout=(subprocess.DEVNULL if verbose < 1 else None))
-    finally:
-        try:
-            os.remove("@")
-        except OSError:
-            pass
+class TestGeneratorExpressions(GrammarTest):
+
+    def test_trailing_comma_after_generator_expression_argument_works(self):
+        # BPO issue 27494
+        self.validate("set(x for x in [],)")
+
+
+def diff_texts(a, b, filename):
+    a = a.splitlines()
+    b = b.splitlines()
+    return difflib.unified_diff(a, b, filename, filename,
+                                "(original)", "(reserialized)",
+                                lineterm="")
+
+
+if __name__ == '__main__':
+    unittest.main()

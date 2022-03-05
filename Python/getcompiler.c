@@ -5,15 +5,14 @@
 
 #ifndef COMPILER
 
-#ifdef __GNUC__
+// Note the __clang__ conditional has to come before the __GNUC__ one because
+// clang pretends to be GCC.
+#if defined(__clang__)
+#define COMPILER "\n[Clang " __clang_version__ "]"
+#elif defined(__GNUC__)
 #define COMPILER "\n[GCC " __VERSION__ "]"
-#endif
-
-#endif /* !COMPILER */
-
-#ifndef COMPILER
-
-#ifdef __cplusplus
+// Generic fallbacks.
+#elif defined(__cplusplus)
 #define COMPILER "[C++]"
 #else
 #define COMPILER "[C]"
@@ -24,5 +23,5 @@
 const char *
 Py_GetCompiler(void)
 {
-	return COMPILER;
+    return COMPILER;
 }

@@ -155,6 +155,14 @@ Standard names are defined for the following types:
    .. versionadded:: 3.7
 
 
+.. data:: ClassMethodDescriptorType
+
+   The type of *unbound* class methods of some built-in data types such as
+   ``dict.__dict__['fromkeys']``.
+
+   .. versionadded:: 3.7
+
+
 .. class:: ModuleType(name, doc=None)
 
    The type of :term:`modules <module>`. Constructor takes the name of the

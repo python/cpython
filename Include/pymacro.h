@@ -95,4 +95,6 @@
 #define Py_UNUSED(name) _unused_ ## name
 #endif
 
+#define Py_UNREACHABLE() abort()
+
 #endif /* Py_PYMACRO_H */

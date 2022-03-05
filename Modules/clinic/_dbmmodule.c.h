@@ -52,7 +52,7 @@ _dbm_dbm_get_impl(dbmobject *self, const char *key,
                   Py_ssize_clean_t key_length, PyObject *default_value);
 
 static PyObject *
-_dbm_dbm_get(dbmobject *self, PyObject **args, Py_ssize_t nargs)
+_dbm_dbm_get(dbmobject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *key;
@@ -86,7 +86,7 @@ _dbm_dbm_setdefault_impl(dbmobject *self, const char *key,
                          PyObject *default_value);
 
 static PyObject *
-_dbm_dbm_setdefault(dbmobject *self, PyObject **args, Py_ssize_t nargs)
+_dbm_dbm_setdefault(dbmobject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *key;
@@ -125,7 +125,7 @@ dbmopen_impl(PyObject *module, const char *filename, const char *flags,
              int mode);
 
 static PyObject *
-dbmopen(PyObject *module, PyObject **args, Py_ssize_t nargs)
+dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *filename;
@@ -141,4 +141,4 @@ dbmopen(PyObject *module, PyObject **args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=627d28ce1f3188dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8ce71abac849155f input=a9049054013a1b77]*/

@@ -20,7 +20,7 @@ unicodedata_UCD_decimal_impl(PyObject *self, int chr,
                              PyObject *default_value);
 
 static PyObject *
-unicodedata_UCD_decimal(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicodedata_UCD_decimal(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int chr;
@@ -53,7 +53,7 @@ static PyObject *
 unicodedata_UCD_digit_impl(PyObject *self, int chr, PyObject *default_value);
 
 static PyObject *
-unicodedata_UCD_digit(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicodedata_UCD_digit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int chr;
@@ -87,7 +87,7 @@ unicodedata_UCD_numeric_impl(PyObject *self, int chr,
                              PyObject *default_value);
 
 static PyObject *
-unicodedata_UCD_numeric(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicodedata_UCD_numeric(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int chr;
@@ -300,7 +300,7 @@ unicodedata_UCD_normalize_impl(PyObject *self, const char *form,
                                PyObject *input);
 
 static PyObject *
-unicodedata_UCD_normalize(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicodedata_UCD_normalize(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *form;
@@ -332,7 +332,7 @@ static PyObject *
 unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value);
 
 static PyObject *
-unicodedata_UCD_name(PyObject *self, PyObject **args, Py_ssize_t nargs)
+unicodedata_UCD_name(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int chr;
@@ -379,4 +379,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7ec9a3c8fbfd3c3a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dc899bff0ecd14c1 input=a9049054013a1b77]*/

@@ -544,6 +544,19 @@ class FileInputTests(unittest.TestCase):
         finally:
             remove_tempfiles(t1)
 
+    def test_pathlib_file_inplace(self):
+        t1 = None
+        try:
+            t1 = Path(writeTmp(1, ['Pathlib file.']))
+            with FileInput(t1, inplace=True) as fi:
+                line = fi.readline()
+                self.assertEqual(line, 'Pathlib file.')
+                print('Modified %s' % line)
+            with open(t1) as f:
+                self.assertEqual(f.read(), 'Modified Pathlib file.\n')
+        finally:
+            remove_tempfiles(t1)
+
 
 class MockFileInput:
     """A class that mocks out fileinput.FileInput for use during unit tests"""

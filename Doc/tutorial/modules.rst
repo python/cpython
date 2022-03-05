@@ -29,16 +29,16 @@ called :file:`fibo.py` in the current directory with the following contents::
 
    def fib(n):    # write Fibonacci series up to n
        a, b = 0, 1
-       while b < n:
-           print(b, end=' ')
+       while a < n:
+           print(a, end=' ')
            a, b = b, a+b
        print()
 
    def fib2(n):   # return Fibonacci series up to n
        result = []
        a, b = 0, 1
-       while b < n:
-           result.append(b)
+       while a < n:
+           result.append(a)
            a, b = b, a+b
        return result
 
@@ -52,9 +52,9 @@ the current symbol table; it only enters the module name ``fibo`` there. Using
 the module name you can access the functions::
 
    >>> fibo.fib(1000)
-   1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987
+   0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987
    >>> fibo.fib2(100)
-   [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
+   [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
    >>> fibo.__name__
    'fibo'
 
@@ -62,7 +62,7 @@ If you intend to use a function often you can assign it to a local name::
 
    >>> fib = fibo.fib
    >>> fib(500)
-   1 1 2 3 5 8 13 21 34 55 89 144 233 377
+   0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
 
 
 .. _tut-moremodules:
@@ -92,7 +92,7 @@ module directly into the importing module's symbol table.  For example::
 
    >>> from fibo import fib, fib2
    >>> fib(500)
-   1 1 2 3 5 8 13 21 34 55 89 144 233 377
+   0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
 
 This does not introduce the module name from which the imports are taken in the
 local symbol table (so in the example, ``fibo`` is not defined).
@@ -101,7 +101,7 @@ There is even a variant to import all names that a module defines::
 
    >>> from fibo import *
    >>> fib(500)
-   1 1 2 3 5 8 13 21 34 55 89 144 233 377
+   0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
 
 This imports all names except those beginning with an underscore (``_``).
 In most cases Python programmers do not use this facility since it introduces
@@ -145,7 +145,7 @@ executed as the "main" file:
 .. code-block:: shell-session
 
    $ python fibo.py 50
-   1 1 2 3 5 8 13 21 34
+   0 1 1 2 3 5 8 13 21 34
 
 If the module is imported, the code is not run::
 

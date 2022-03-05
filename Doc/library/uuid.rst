@@ -156,10 +156,18 @@ The :mod:`uuid` module defines the following functions:
 
    Get the hardware address as a 48-bit positive integer.  The first time this
    runs, it may launch a separate program, which could be quite slow.  If all
-   attempts to obtain the hardware address fail, we choose a random 48-bit number
-   with its eighth bit set to 1 as recommended in RFC 4122.  "Hardware address"
-   means the MAC address of a network interface, and on a machine with multiple
-   network interfaces the MAC address of any one of them may be returned.
+   attempts to obtain the hardware address fail, we choose a random 48-bit
+   number with the multicast bit (least significant bit of the first octet)
+   set to 1 as recommended in RFC 4122.  "Hardware address" means the MAC
+   address of a network interface.  On a machine with multiple network
+   interfaces, universally administered MAC addresses (i.e. where the second
+   least significant bit of the first octet is *unset*) will be preferred over
+   locally administered MAC addresses, but with no other ordering guarantees.
+
+   .. versionchanged:: 3.7
+      Universally administered MAC addresses are preferred over locally
+      administered MAC addresses, since the former are guaranteed to be
+      globally unique, while the latter are not.
 
 .. index:: single: getnode
 

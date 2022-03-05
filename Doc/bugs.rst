@@ -68,7 +68,7 @@ taken on the bug.
 
 .. seealso::
 
-   `How to Report Bugs Effectively <http://www.chiark.greenend.org.uk/~sgtatham/bugs.html>`_
+   `How to Report Bugs Effectively <https://www.chiark.greenend.org.uk/~sgtatham/bugs.html>`_
       Article which goes into some detail about how to create a useful bug report.
       This describes what kind of information is useful and why it is useful.
 
@@ -88,5 +88,5 @@ the `core-mentorship mailing list`_ is a friendly place to get answers to
 any and all questions pertaining to the process of fixing issues in Python.
 
 .. _Documentation bugs: https://bugs.python.org/issue?@filter=status&@filter=components&components=4&status=1&@columns=id,activity,title,status&@sort=-activity
-.. _Python Developer's Guide: https://docs.python.org/devguide/
+.. _Python Developer's Guide: https://devguide.python.org/
 .. _core-mentorship mailing list: https://mail.python.org/mailman/listinfo/core-mentorship/

@@ -5,12 +5,9 @@ import os
 import shutil
 import sys
 import sysconfig
+import threading
 import warnings
 from test import support
-try:
-    import threading
-except ImportError:
-    threading = None
 try:
     import _multiprocessing, multiprocessing.process
 except ImportError:
@@ -181,13 +178,9 @@ class saved_test_environment:
     # Controlling dangling references to Thread objects can make it easier
     # to track reference leaks.
     def get_threading__dangling(self):
-        if not threading:
-            return None
         # This copies the weakrefs without making any strong reference
         return threading._dangling.copy()
     def restore_threading__dangling(self, saved):
-        if not threading:
-            return
         threading._dangling.clear()
         threading._dangling.update(saved)
 

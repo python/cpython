@@ -941,7 +941,7 @@ Using file rotation
 -------------------
 
 .. sectionauthor:: Doug Hellmann, Vinay Sajip (changes)
-.. (see <http://blog.doughellmann.com/2007/05/pymotw-logging.html>)
+.. (see <https://pymotw.com/3/logging/>)
 
 Sometimes you want to let a log file grow to a certain size, then open a new
 file and log to that. You may want to keep a certain number of these files, and
@@ -1055,7 +1055,7 @@ to indicate additional contextual information to be added to the log). So
 you cannot directly make logging calls using :meth:`str.format` or
 :class:`string.Template` syntax, because internally the logging package
 uses %-formatting to merge the format string and the variable arguments.
-There would no changing this while preserving backward compatibility, since
+There would be no changing this while preserving backward compatibility, since
 all logging calls which are out there in existing code will be using %-format
 strings.
 
@@ -1258,8 +1258,8 @@ socket is created separately and passed to the handler (as its 'queue')::
 
     class ZeroMQSocketHandler(QueueHandler):
         def enqueue(self, record):
-            data = json.dumps(record.__dict__)
-            self.queue.send(data)
+            self.queue.send_json(record.__dict__)
+
 
     handler = ZeroMQSocketHandler(sock)
 
@@ -1272,11 +1272,10 @@ data needed by the handler to create the socket::
             self.ctx = ctx or zmq.Context()
             socket = zmq.Socket(self.ctx, socktype)
             socket.bind(uri)
-            QueueHandler.__init__(self, socket)
+            super().__init__(socket)
 
         def enqueue(self, record):
-            data = json.dumps(record.__dict__)
-            self.queue.send(data)
+            self.queue.send_json(record.__dict__)
 
         def close(self):
             self.queue.close()
@@ -1292,12 +1291,13 @@ of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
         def __init__(self, uri, *handlers, **kwargs):
             self.ctx = kwargs.get('ctx') or zmq.Context()
             socket = zmq.Socket(self.ctx, zmq.SUB)
-            socket.setsockopt(zmq.SUBSCRIBE, '')  # subscribe to everything
+            socket.setsockopt_string(zmq.SUBSCRIBE, '')  # subscribe to everything
             socket.connect(uri)
+            super().__init__(socket, *handlers, **kwargs)
 
         def dequeue(self):
-            msg = self.queue.recv()
-            return logging.makeLogRecord(json.loads(msg))
+            msg = self.queue.recv_json()
+            return logging.makeLogRecord(msg)
 
 
 .. seealso::

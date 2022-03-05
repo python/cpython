@@ -1,0 +1,3 @@
+``hasattr(obj, name)`` and ``getattr(obj, name, default)`` are about 4 times
+faster than before when ``name`` is not found and ``obj`` doesn't override
+``__getattr__`` or ``__getattribute__``.

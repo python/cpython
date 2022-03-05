@@ -22,7 +22,7 @@ import tarfile
 import zipfile
 
 from test import support
-from test.support import TESTFN, android_not_root
+from test.support import TESTFN
 
 TESTFN2 = TESTFN + "2"
 
@@ -183,7 +183,7 @@ class TestShutil(unittest.TestCase):
             errors.append(args)
         shutil.rmtree(filename, onerror=onerror)
         self.assertEqual(len(errors), 2)
-        self.assertIs(errors[0][0], os.listdir)
+        self.assertIs(errors[0][0], os.scandir)
         self.assertEqual(errors[0][1], filename)
         self.assertIsInstance(errors[0][2][1], NotADirectoryError)
         self.assertIn(errors[0][2][1].filename, possible_args)
@@ -769,7 +769,6 @@ class TestShutil(unittest.TestCase):
 
     @unittest.skipIf(os.name == 'nt', 'temporarily disabled on Windows')
     @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
-    @unittest.skipIf(android_not_root, "hard links not allowed, non root user")
     def test_dont_copy_file_onto_link_to_itself(self):
         # bug 851123.
         os.mkdir(TESTFN)
@@ -778,7 +777,10 @@ class TestShutil(unittest.TestCase):
         try:
             with open(src, 'w') as f:
                 f.write('cheddar')
-            os.link(src, dst)
+            try:
+                os.link(src, dst)
+            except PermissionError as e:
+                self.skipTest('os.link(): %s' % e)
             self.assertRaises(shutil.SameFileError, shutil.copyfile, src, dst)
             with open(src, 'r') as f:
                 self.assertEqual(f.read(), 'cheddar')
@@ -822,9 +824,11 @@ class TestShutil(unittest.TestCase):
 
     # Issue #3002: copyfile and copytree block indefinitely on named pipes
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
-    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def test_copyfile_named_pipe(self):
-        os.mkfifo(TESTFN)
+        try:
+            os.mkfifo(TESTFN)
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
         try:
             self.assertRaises(shutil.SpecialFileError,
                                 shutil.copyfile, TESTFN, TESTFN2)
@@ -833,7 +837,6 @@ class TestShutil(unittest.TestCase):
         finally:
             os.remove(TESTFN)
 
-    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @support.skip_unless_symlink
     def test_copytree_named_pipe(self):
@@ -842,7 +845,10 @@ class TestShutil(unittest.TestCase):
             subdir = os.path.join(TESTFN, "subdir")
             os.mkdir(subdir)
             pipe = os.path.join(subdir, "mypipe")
-            os.mkfifo(pipe)
+            try:
+                os.mkfifo(pipe)
+            except PermissionError as e:
+                self.skipTest('os.mkfifo(): %s' % e)
             try:
                 shutil.copytree(TESTFN, TESTFN2)
             except shutil.Error as e:

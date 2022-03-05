@@ -473,7 +473,7 @@ Buffer-related functions
    (*order* is ``'A'``).  Return ``0`` otherwise.
 
 
-.. c:function:: void PyBuffer_FillContiguousStrides(int ndim, Py_ssize_t *shape, Py_ssize_t *strides, Py_ssize_t itemsize, char order)
+.. c:function:: void PyBuffer_FillContiguousStrides(int ndims, Py_ssize_t *shape, Py_ssize_t *strides, int itemsize, char order)
 
    Fill the *strides* array with byte-strides of a :term:`contiguous` (C-style if
    *order* is ``'C'`` or Fortran-style if *order* is ``'F'``) array of the

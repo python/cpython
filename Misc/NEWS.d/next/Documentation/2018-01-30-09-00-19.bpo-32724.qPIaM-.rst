@@ -1,0 +1,2 @@
+Add references to some commands in the documentation of Pdb. Patch by
+Stéphane Wirtel

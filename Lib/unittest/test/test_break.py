@@ -10,8 +10,6 @@ import unittest
 
 @unittest.skipUnless(hasattr(os, 'kill'), "Test requires os.kill")
 @unittest.skipIf(sys.platform =="win32", "Test cannot run on Windows")
-@unittest.skipIf(sys.platform == 'freebsd6', "Test kills regrtest on freebsd6 "
-    "if threads have been used")
 class TestBreak(unittest.TestCase):
     int_handler = None
 
@@ -267,22 +265,16 @@ class TestBreak(unittest.TestCase):
 
 @unittest.skipUnless(hasattr(os, 'kill'), "Test requires os.kill")
 @unittest.skipIf(sys.platform =="win32", "Test cannot run on Windows")
-@unittest.skipIf(sys.platform == 'freebsd6', "Test kills regrtest on freebsd6 "
-    "if threads have been used")
 class TestBreakDefaultIntHandler(TestBreak):
     int_handler = signal.default_int_handler
 
 @unittest.skipUnless(hasattr(os, 'kill'), "Test requires os.kill")
 @unittest.skipIf(sys.platform =="win32", "Test cannot run on Windows")
-@unittest.skipIf(sys.platform == 'freebsd6', "Test kills regrtest on freebsd6 "
-    "if threads have been used")
 class TestBreakSignalIgnored(TestBreak):
     int_handler = signal.SIG_IGN
 
 @unittest.skipUnless(hasattr(os, 'kill'), "Test requires os.kill")
 @unittest.skipIf(sys.platform =="win32", "Test cannot run on Windows")
-@unittest.skipIf(sys.platform == 'freebsd6', "Test kills regrtest on freebsd6 "
-    "if threads have been used")
 class TestBreakSignalDefault(TestBreak):
     int_handler = signal.SIG_DFL
 

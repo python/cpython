@@ -5,6 +5,7 @@ import _imp as imp
 import os
 import signal
 import sys
+import threading
 import time
 import unittest
 
@@ -12,7 +13,6 @@ from test.fork_wait import ForkWait
 from test.support import (reap_children, get_attribute,
                           import_module, verbose)
 
-threading = import_module('threading')
 
 # Skip test if fork does not exist.
 get_attribute(os, 'fork')

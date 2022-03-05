@@ -26,7 +26,7 @@ appearance.
 
 .. seealso::
 
-   `Tk Widget Styling Support <https://www.tcl.tk/cgi-bin/tct/tip/48>`_
+   `Tk Widget Styling Support <https://core.tcl.tk/tips/doc/trunk/tip/48.md>`_
       A document introducing theming support for Tk
 
 
@@ -1099,25 +1099,41 @@ ttk.Treeview
       If *selop* is not specified, returns selected items. Otherwise, it will
       act according to the following selection methods.
 
+      .. deprecated-removed:: 3.6 3.8
+         Using ``selection()`` for changing the selection state is deprecated.
+         Use the following selection methods instead.
 
-   .. method:: selection_set(items)
+
+   .. method:: selection_set(*items)
 
       *items* becomes the new selection.
 
+      .. versionchanged:: 3.6
+         *items* can be passed as separate arguments, not just as a single tuple.
 
-   .. method:: selection_add(items)
+
+   .. method:: selection_add(*items)
 
       Add *items* to the selection.
 
+      .. versionchanged:: 3.6
+         *items* can be passed as separate arguments, not just as a single tuple.
 
-   .. method:: selection_remove(items)
+
+   .. method:: selection_remove(*items)
 
       Remove *items* from the selection.
 
+      .. versionchanged:: 3.6
+         *items* can be passed as separate arguments, not just as a single tuple.
 
-   .. method:: selection_toggle(items)
+
+   .. method:: selection_toggle(*items)
 
       Toggle the selection state of each item in *items*.
+
+      .. versionchanged:: 3.6
+         *items* can be passed as separate arguments, not just as a single tuple.
 
 
    .. method:: set(item, column=None, value=None)
