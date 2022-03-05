@@ -1,0 +1,2 @@
+Instantiating a direct subclass of :class:`pathlib.Path` raised
+:exc:`AttributeError`.
