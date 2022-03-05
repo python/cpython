@@ -4153,7 +4153,7 @@ AC_CHECK_FUNCS([ \
   gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
   getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
   getpeername getpgid getpid getppid getpriority _getpty \
-  getpwent getpwnam_r getpwuid_r getresgid getresuid getrusage getsid getspent \
+  getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
@@ -6396,6 +6396,7 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
       grp
       nis
       ossaudiodev
+      pwd
       resource
       readline
       spwd
@@ -6418,6 +6419,7 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
       grp
       nis
       ossaudiodev
+      pwd
       spwd
       syslog
     ])"
@@ -6556,6 +6558,7 @@ dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
 PY_STDLIB_MOD([ossaudiodev],
   [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes])
+PY_STDLIB_MOD([pwd], [], [test "$ac_cv_func_getpwuid" = yes -o "$ac_cv_func_getpwuid_r" = yes])
 PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],
   [test "$ac_sys_system" = "Darwin"], [],
@@ -6645,7 +6648,7 @@ AC_SUBST([MODULE_BLOCK])
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
-AC_CONFIG_FILES([Modules/Setup.stdlib])
+AC_CONFIG_FILES([Modules/Setup.bootstrap Modules/Setup.stdlib])
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 
@@ -6658,7 +6661,7 @@ fi
 AC_MSG_NOTICE([creating Makefile])
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $MODULES_SETUP_STDLIB $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local $MODULES_SETUP_STDLIB Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then

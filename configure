@@ -708,6 +708,8 @@ MODULE__SCPROXY_FALSE
 MODULE__SCPROXY_TRUE
 MODULE_RESOURCE_FALSE
 MODULE_RESOURCE_TRUE
+MODULE_PWD_FALSE
+MODULE_PWD_TRUE
 MODULE_OSSAUDIODEV_FALSE
 MODULE_OSSAUDIODEV_TRUE
 MODULE_GRP_FALSE
@@ -13767,7 +13769,7 @@ for ac_func in  \
   gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
   getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
   getpeername getpgid getpid getppid getpriority _getpty \
-  getpwent getpwnam_r getpwuid_r getresgid getresuid getrusage getsid getspent \
+  getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
@@ -21346,11 +21348,11 @@ case $ac_sys_system/$ac_sys_emscripten_target in #(
     py_stdlib_not_available="_scproxy spwd" ;; #(
   Emscripten/browser) :
 
-    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _multiprocessing _posixshmem _posixsubprocess _scproxy _tkinter _xxsubinterpreters fcntl grp nis ossaudiodev resource readline spwd syslog termios"
+    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _multiprocessing _posixshmem _posixsubprocess _scproxy _tkinter _xxsubinterpreters fcntl grp nis ossaudiodev pwd resource readline spwd syslog termios"
    ;; #(
       Emscripten/node) :
 
-    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _scproxy _tkinter _xxsubinterpreters grp nis ossaudiodev spwd syslog"
+    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _scproxy _tkinter _xxsubinterpreters grp nis ossaudiodev pwd spwd syslog"
    ;; #(
   *) :
     py_stdlib_not_available="_scproxy"
@@ -22246,6 +22248,42 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_ossaudiodev" >&5
 $as_echo "$py_cv_module_ossaudiodev" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module pwd" >&5
+$as_echo_n "checking for stdlib extension module pwd... " >&6; }
+      case $py_stdlib_not_available in #(
+  *pwd*) :
+    py_cv_module_pwd=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$ac_cv_func_getpwuid" = yes -o "$ac_cv_func_getpwuid_r" = yes; then :
+  py_cv_module_pwd=yes
+else
+  py_cv_module_pwd=missing
+fi
+else
+  py_cv_module_pwd=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_PWD=$py_cv_module_pwd$as_nl"
+  if test "x$py_cv_module_pwd" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module_pwd" = yes; then
+  MODULE_PWD_TRUE=
+  MODULE_PWD_FALSE='#'
+else
+  MODULE_PWD_TRUE='#'
+  MODULE_PWD_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_pwd" >&5
+$as_echo "$py_cv_module_pwd" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module resource" >&5
@@ -23665,7 +23703,7 @@ $as_echo "$py_cv_module_xxlimited_35" >&6; }
 # generate output files
 ac_config_files="$ac_config_files Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh"
 
-ac_config_files="$ac_config_files Modules/Setup.stdlib"
+ac_config_files="$ac_config_files Modules/Setup.bootstrap Modules/Setup.stdlib"
 
 ac_config_files="$ac_config_files Modules/ld_so_aix"
 
@@ -23905,6 +23943,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_OSSAUDIODEV_TRUE}" && test -z "${MODULE_OSSAUDIODEV_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_OSSAUDIODEV\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_PWD_TRUE}" && test -z "${MODULE_PWD_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_PWD\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_RESOURCE_TRUE}" && test -z "${MODULE_RESOURCE_FALSE}"; then
@@ -24666,6 +24708,7 @@ do
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
     "Misc/python-embed.pc") CONFIG_FILES="$CONFIG_FILES Misc/python-embed.pc" ;;
     "Misc/python-config.sh") CONFIG_FILES="$CONFIG_FILES Misc/python-config.sh" ;;
+    "Modules/Setup.bootstrap") CONFIG_FILES="$CONFIG_FILES Modules/Setup.bootstrap" ;;
     "Modules/Setup.stdlib") CONFIG_FILES="$CONFIG_FILES Modules/Setup.stdlib" ;;
     "Modules/ld_so_aix") CONFIG_FILES="$CONFIG_FILES Modules/ld_so_aix" ;;
 
@@ -25277,7 +25320,7 @@ fi
 $as_echo "$as_me: creating Makefile" >&6;}
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $MODULES_SETUP_STDLIB $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local $MODULES_SETUP_STDLIB Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
