@@ -277,7 +277,7 @@ elif os_name == 'darwin':
     # executable path was provided in the config.
     real_executable = executable
 
-if not executable and program_name:
+if not executable and program_name and ENV_PATH:
     # Resolve names against PATH.
     # NOTE: The use_environment value is ignored for this lookup.
     # To properly isolate, launch Python with a full path.
