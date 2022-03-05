@@ -1077,7 +1077,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
     PyTypeObject *owner_cls = Py_TYPE(owner);
 
     if (PyModule_CheckExact(owner)) {
-        assert(INLINE_CACHE_ENTRIES_LOAD_ATTR <= 
+        assert(INLINE_CACHE_ENTRIES_LOAD_ATTR <=
                INLINE_CACHE_ENTRIES_LOAD_METHOD);
         int err = specialize_module_load_attr(owner, instr, name, LOAD_METHOD,
                                               LOAD_METHOD_MODULE);
