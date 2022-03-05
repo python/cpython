@@ -152,6 +152,14 @@ classify_argument(
 		case FFI_TYPE_UINT64:
 		case FFI_TYPE_SINT64:
 		case FFI_TYPE_POINTER:
+#if 0
+			if (byte_offset + type->size <= 4)
+				classes[0] = X86_64_INTEGERSI_CLASS;
+			else
+				classes[0] = X86_64_INTEGER_CLASS;
+
+			return 1;
+#else
 		{
 			int size = byte_offset + type->size;
 
@@ -179,6 +187,7 @@ classify_argument(
 			else
 				FFI_ASSERT (0);
 		}
+#endif
 
 		case FFI_TYPE_FLOAT:
 			if (byte_offset == 0)
