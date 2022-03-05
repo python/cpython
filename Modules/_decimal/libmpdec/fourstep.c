@@ -186,6 +186,13 @@ four_step_fnt(mpd_uint_t *a, mpd_size_t n, int modnum)
         }
     }
 
+#if 0
+    /* An unordered transform is sufficient for convolution. */
+    /* Transpose the matrix. */
+    #include "transpose.h"
+    transpose_3xpow2(a, R, C);
+#endif
+
     return 1;
 }
 
@@ -209,6 +216,13 @@ inv_four_step_fnt(mpd_uint_t *a, mpd_size_t n, int modnum)
     assert(n >= 48);
     assert(n <= 3*MPD_MAXTRANSFORM_2N);
 
+
+#if 0
+    /* An unordered transform is sufficient for convolution. */
+    /* Transpose the matrix, producing an R*C matrix. */
+    #include "transpose.h"
+    transpose_3xpow2(a, C, R);
+#endif
 
     /* Length C transform on the rows. */
     for (s = a; s < a+n; s += C) {
