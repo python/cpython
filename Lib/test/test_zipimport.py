@@ -6,6 +6,7 @@ import importlib.util
 import struct
 import time
 import unittest
+import unittest.mock
 
 from test import support
 
@@ -202,6 +203,21 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                  TESTMOD + ".pyc": (NOW - 20, bytecode)}
         def check(mod):
             self.assertEqual(mod.state, 'old')
+        self.doTest(None, files, TESTMOD, call=check)
+
+    @unittest.mock.patch('_imp.check_hash_based_pycs', 'always')
+    def test_checked_hash_based_change_pyc(self):
+        source = b"state = 'old'"
+        source_hash = importlib.util.source_hash(source)
+        bytecode = importlib._bootstrap_external._code_to_hash_pyc(
+            compile(source, "???", "exec"),
+            source_hash,
+            False,
+        )
+        files = {TESTMOD + ".py": (NOW, "state = 'new'"),
+                 TESTMOD + ".pyc": (NOW - 20, bytecode)}
+        def check(mod):
+            self.assertEqual(mod.state, 'new')
         self.doTest(None, files, TESTMOD, call=check)
 
     def testEmptyPy(self):

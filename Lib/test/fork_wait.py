@@ -11,7 +11,7 @@ active threads survive in the child after a fork(); this is an error.
 
 import os, sys, time, unittest
 import threading
-import test.support as support
+from test import support
 
 
 LONGSLEEP = 2
@@ -62,7 +62,7 @@ class ForkWait(unittest.TestCase):
             self.threads.append(thread)
 
         # busy-loop to wait for threads
-        deadline = time.monotonic() + 10.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
         while len(self.alive) < NUM_THREADS:
             time.sleep(0.1)
             if deadline < time.monotonic():

@@ -3,11 +3,12 @@
 # written by Fredrik Lundh, February 1998
 #
 
-__version__ = "0.9"
-
 import itertools
 import tkinter
 
+__version__ = "0.9"
+__all__ = ["NORMAL", "ROMAN", "BOLD", "ITALIC",
+           "nametofont", "Font", "families", "names"]
 
 # weight/slant
 NORMAL = "normal"
@@ -100,7 +101,9 @@ class Font:
         return self.name
 
     def __eq__(self, other):
-        return isinstance(other, Font) and self.name == other.name
+        if not isinstance(other, Font):
+            return NotImplemented
+        return self.name == other.name
 
     def __getitem__(self, key):
         return self.cget(key)

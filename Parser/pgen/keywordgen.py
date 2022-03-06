@@ -32,17 +32,16 @@ EXTRA_KEYWORDS = ["async", "await"]
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate the Lib/keywords.py "
-                                                 "file from the grammar.")
+    parser = argparse.ArgumentParser(
+        description="Generate the Lib/keywords.py " "file from the grammar."
+    )
     parser.add_argument(
         "grammar", type=str, help="The file with the grammar definition in EBNF format"
     )
-    parser.add_argument(
-        "tokens", type=str, help="The file with the token definitions"
-    )
+    parser.add_argument("tokens", type=str, help="The file with the token definitions")
     parser.add_argument(
         "keyword_file",
-        type=argparse.FileType('w'),
+        type=argparse.FileType("w"),
         help="The path to write the keyword definitions",
     )
     args = parser.parse_args()

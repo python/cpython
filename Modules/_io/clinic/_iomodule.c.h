@@ -36,7 +36,6 @@ PyDoc_STRVAR(_io_open__doc__,
 "\'b\'       binary mode\n"
 "\'t\'       text mode (default)\n"
 "\'+\'       open a disk file for updating (reading and writing)\n"
-"\'U\'       universal newline mode (deprecated)\n"
 "========= ===============================================================\n"
 "\n"
 "The default mode is \'rt\' (open for reading text). For binary random\n"
@@ -51,10 +50,6 @@ PyDoc_STRVAR(_io_open__doc__,
 "\'t\' is appended to the mode argument), the contents of the file are\n"
 "returned as strings, the bytes having been first decoded using a\n"
 "platform-dependent encoding or using the specified encoding if given.\n"
-"\n"
-"\'U\' mode is deprecated and will raise an exception in future versions\n"
-"of Python.  It has no effect in Python 3.  Use newline to control\n"
-"universal newlines mode.\n"
 "\n"
 "buffering is an optional integer used to set the buffering policy.\n"
 "Pass 0 to switch buffering off (only allowed in binary mode), 1 to select\n"
@@ -161,7 +156,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     }
     if (args[1]) {
         if (!PyUnicode_Check(args[1])) {
-            _PyArg_BadArgument("open", 2, "str", args[1]);
+            _PyArg_BadArgument("open", "argument 'mode'", "str", args[1]);
             goto exit;
         }
         Py_ssize_t mode_length;
@@ -207,7 +202,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             }
         }
         else {
-            _PyArg_BadArgument("open", 4, "str or None", args[3]);
+            _PyArg_BadArgument("open", "argument 'encoding'", "str or None", args[3]);
             goto exit;
         }
         if (!--noptargs) {
@@ -230,7 +225,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             }
         }
         else {
-            _PyArg_BadArgument("open", 5, "str or None", args[4]);
+            _PyArg_BadArgument("open", "argument 'errors'", "str or None", args[4]);
             goto exit;
         }
         if (!--noptargs) {
@@ -253,7 +248,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             }
         }
         else {
-            _PyArg_BadArgument("open", 6, "str or None", args[5]);
+            _PyArg_BadArgument("open", "argument 'newline'", "str or None", args[5]);
             goto exit;
         }
         if (!--noptargs) {
@@ -311,7 +306,7 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("open_code", 1, "str", args[0]);
+        _PyArg_BadArgument("open_code", "argument 'path'", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -323,4 +318,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d479285078750d68 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=680e4b488c7da8a1 input=a9049054013a1b77]*/

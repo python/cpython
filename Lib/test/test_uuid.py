@@ -1,4 +1,4 @@
-import unittest.mock
+import unittest
 from test import support
 import builtins
 import contextlib
@@ -14,7 +14,6 @@ from unittest import mock
 
 py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
-
 
 def importable(name):
     try:
@@ -459,11 +458,10 @@ class BaseTestUUID:
         # uuid.getnode to fall back on uuid._random_getnode, which will
         # generate a valid value.
         too_large_getter = lambda: 1 << 48
-        with unittest.mock.patch.multiple(
+        with mock.patch.multiple(
             self.uuid,
             _node=None,  # Ignore any cached node value.
-            _NODE_GETTERS_WIN32=[too_large_getter],
-            _NODE_GETTERS_UNIX=[too_large_getter],
+            _GETTERS=[too_large_getter],
         ):
             node = self.uuid.getnode()
         self.assertTrue(0 < node < (1 << 48), '%012x' % node)
@@ -473,7 +471,7 @@ class BaseTestUUID:
         # the value from too_large_getter above.
         try:
             self.uuid.uuid1(node=node)
-        except ValueError as e:
+        except ValueError:
             self.fail('uuid1 was given an invalid node ID')
 
     def test_uuid1(self):
@@ -539,8 +537,8 @@ class BaseTestUUID:
         f = self.uuid._generate_time_safe
         if f is None:
             self.skipTest('need uuid._generate_time_safe')
-        with unittest.mock.patch.object(self.uuid, '_generate_time_safe',
-                                        lambda: (f()[0], safe_value)):
+        with mock.patch.object(self.uuid, '_generate_time_safe',
+                               lambda: (f()[0], safe_value)):
             yield
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
@@ -673,29 +671,59 @@ class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
 
 
 class BaseTestInternals:
-    uuid = None
+    _uuid = py_uuid
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    def test_find_mac(self):
+
+    def test_find_under_heading(self):
+        data = '''\
+Name  Mtu   Network     Address           Ipkts Ierrs    Opkts Oerrs  Coll
+en0   1500  link#2      fe.ad.c.1.23.4   1714807956     0 711348489     0     0
+                        01:00:5e:00:00:01
+en0   1500  192.168.129 x071             1714807956     0 711348489     0     0
+                        224.0.0.1
+en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
+                        224.0.0.1
+'''
+
+        def mock_get_command_stdout(command, args):
+            return io.BytesIO(data.encode())
+
+        # The above data is from AIX - with '.' as _MAC_DELIM and strings
+        # shorter than 17 bytes (no leading 0). (_MAC_OMITS_LEADING_ZEROES=True)
+        with mock.patch.multiple(self.uuid,
+                                 _MAC_DELIM=b'.',
+                                 _MAC_OMITS_LEADING_ZEROES=True,
+                                 _get_command_stdout=mock_get_command_stdout):
+            mac = self.uuid._find_mac_under_heading(
+                command='netstat',
+                args='-ian',
+                heading=b'Address',
+            )
+
+        self.assertEqual(mac, 0xfead0c012304)
+
+    def test_find_mac_near_keyword(self):
+        # key and value are on the same line
         data = '''
-fake hwaddr
+fake      Link encap:UNSPEC  hwaddr 00-00
 cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
 eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 '''
 
-        popen = unittest.mock.MagicMock()
-        popen.stdout = io.BytesIO(data.encode())
+        def mock_get_command_stdout(command, args):
+            return io.BytesIO(data.encode())
 
-        with unittest.mock.patch.object(shutil, 'which',
-                                        return_value='/sbin/ifconfig'):
-            with unittest.mock.patch.object(subprocess, 'Popen',
-                                            return_value=popen):
-                mac = self.uuid._find_mac(
-                    command='ifconfig',
-                    args='',
-                    hw_identifiers=[b'hwaddr'],
-                    get_index=lambda x: x + 1,
-                )
+        # The above data will only be parsed properly on non-AIX unixes.
+        with mock.patch.multiple(self.uuid,
+                                 _MAC_DELIM=b':',
+                                 _MAC_OMITS_LEADING_ZEROES=False,
+                                 _get_command_stdout=mock_get_command_stdout):
+            mac = self.uuid._find_mac_near_keyword(
+                command='ifconfig',
+                args='',
+                keywords=[b'hwaddr'],
+                get_word_index=lambda x: x + 1,
+            )
 
         self.assertEqual(mac, 0x1234567890ab)
 
@@ -708,27 +736,32 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         self.assertTrue(0 < node < (1 << 48),
                         "%s is not an RFC 4122 node ID" % hex)
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._ifconfig_getnode in _uuid._GETTERS,
+        "ifconfig is not used for introspection on this platform")
     def test_ifconfig_getnode(self):
         node = self.uuid._ifconfig_getnode()
         self.check_node(node, 'ifconfig')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._ip_getnode in _uuid._GETTERS,
+        "ip is not used for introspection on this platform")
     def test_ip_getnode(self):
         node = self.uuid._ip_getnode()
         self.check_node(node, 'ip')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._arp_getnode in _uuid._GETTERS,
+        "arp is not used for introspection on this platform")
     def test_arp_getnode(self):
         node = self.uuid._arp_getnode()
         self.check_node(node, 'arp')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._lanscan_getnode in _uuid._GETTERS,
+        "lanscan is not used for introspection on this platform")
     def test_lanscan_getnode(self):
         node = self.uuid._lanscan_getnode()
         self.check_node(node, 'lanscan')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._netstat_getnode in _uuid._GETTERS,
+        "netstat is not used for introspection on this platform")
     def test_netstat_getnode(self):
         node = self.uuid._netstat_getnode()
         self.check_node(node, 'netstat')

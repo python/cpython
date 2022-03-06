@@ -4,7 +4,7 @@
 
 import unittest
 from test.support import requires
-from tkinter import Tk
+from tkinter import Text, Tk, Toplevel
 from tkinter.ttk import Frame
 from idlelib import searchengine as se
 from idlelib import searchbase as sdb
@@ -47,16 +47,17 @@ class SearchDialogBaseTest(unittest.TestCase):
         # open calls create_widgets, which needs default_command
         self.dialog.default_command = None
 
-        # Since text parameter of .open is not used in base class,
-        # pass dummy 'text' instead of tk.Text().
-        self.dialog.open('text')
+        toplevel = Toplevel(self.root)
+        text = Text(toplevel)
+        self.dialog.open(text)
         self.assertEqual(self.dialog.top.state(), 'normal')
         self.dialog.close()
         self.assertEqual(self.dialog.top.state(), 'withdrawn')
 
-        self.dialog.open('text', searchphrase="hello")
+        self.dialog.open(text, searchphrase="hello")
         self.assertEqual(self.dialog.ent.get(), 'hello')
-        self.dialog.close()
+        toplevel.update_idletasks()
+        toplevel.destroy()
 
     def test_create_widgets(self):
         self.dialog.create_entries = Func()

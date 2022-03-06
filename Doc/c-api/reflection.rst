@@ -14,18 +14,18 @@ Reflection
 .. c:function:: PyObject* PyEval_GetLocals()
 
    Return a dictionary of the local variables in the current execution frame,
-   or *NULL* if no frame is currently executing.
+   or ``NULL`` if no frame is currently executing.
 
 
 .. c:function:: PyObject* PyEval_GetGlobals()
 
    Return a dictionary of the global variables in the current execution frame,
-   or *NULL* if no frame is currently executing.
+   or ``NULL`` if no frame is currently executing.
 
 
 .. c:function:: PyFrameObject* PyEval_GetFrame()
 
-   Return the current thread state's frame, which is *NULL* if no frame is
+   Return the current thread state's frame, which is ``NULL`` if no frame is
    currently executing.
 
 

@@ -1,4 +1,4 @@
-"""HMAC (Keyed-Hashing for Message Authentication) Python module.
+"""HMAC (Keyed-Hashing for Message Authentication) module.
 
 Implements the HMAC algorithm as described by RFC 2104.
 """
@@ -30,23 +30,25 @@ class HMAC:
     """
     blocksize = 64  # 512-bit HMAC; can be changed in subclasses.
 
-    def __init__(self, key, msg = None, digestmod = None):
+    def __init__(self, key, msg=None, digestmod=''):
         """Create a new HMAC object.
 
-        key:       key for the keyed hash object.
-        msg:       Initial input for the hash, if provided.
-        digestmod: Required.  A module supporting PEP 247.  *OR*
-                   A hashlib constructor returning a new hash object.  *OR*
-                   A hash name suitable for hashlib.new().
+        key: bytes or buffer, key for the keyed hash object.
+        msg: bytes or buffer, Initial input for the hash or None.
+        digestmod: A hash name suitable for hashlib.new(). *OR*
+                   A hashlib constructor returning a new hash object. *OR*
+                   A module supporting PEP 247.
 
-        Note: key and msg must be a bytes or bytearray objects.
+                   Required as of 3.8, despite its position after the optional
+                   msg argument.  Passing it as a keyword argument is
+                   recommended, though not required for legacy API reasons.
         """
 
         if not isinstance(key, (bytes, bytearray)):
             raise TypeError("key: expected bytes or bytearray, but got %r" % type(key).__name__)
 
-        if digestmod is None:
-            raise ValueError('`digestmod` is required.')
+        if not digestmod:
+            raise TypeError("Missing required parameter 'digestmod'.")
 
         if callable(digestmod):
             self.digest_cons = digestmod
@@ -90,8 +92,7 @@ class HMAC:
         return "hmac-" + self.inner.name
 
     def update(self, msg):
-        """Update this hashing object with the string msg.
-        """
+        """Feed data from msg into this hashing object."""
         self.inner.update(msg)
 
     def copy(self):
@@ -119,7 +120,7 @@ class HMAC:
     def digest(self):
         """Return the hash value of this hashing object.
 
-        This returns a string containing 8-bit data.  The object is
+        This returns the hmac value as bytes.  The object is
         not altered in any way by this function; you can continue
         updating the object after calling this function.
         """
@@ -132,30 +133,34 @@ class HMAC:
         h = self._current()
         return h.hexdigest()
 
-def new(key, msg = None, digestmod = None):
+def new(key, msg=None, digestmod=''):
     """Create a new hashing object and return it.
 
-    key: The starting key for the hash.
-    msg: if available, will immediately be hashed into the object's starting
-    state.
+    key: bytes or buffer, The starting key for the hash.
+    msg: bytes or buffer, Initial input for the hash, or None.
+    digestmod: A hash name suitable for hashlib.new(). *OR*
+               A hashlib constructor returning a new hash object. *OR*
+               A module supporting PEP 247.
 
-    You can now feed arbitrary strings into the object using its update()
+               Required as of 3.8, despite its position after the optional
+               msg argument.  Passing it as a keyword argument is
+               recommended, though not required for legacy API reasons.
+
+    You can now feed arbitrary bytes into the object using its update()
     method, and can ask for the hash value at any time by calling its digest()
-    method.
+    or hexdigest() methods.
     """
     return HMAC(key, msg, digestmod)
 
 
 def digest(key, msg, digest):
-    """Fast inline implementation of HMAC
+    """Fast inline implementation of HMAC.
 
-    key:    key for the keyed hash object.
-    msg:    input message
+    key: bytes or buffer, The key for the keyed hash object.
+    msg: bytes or buffer, Input message.
     digest: A hash name suitable for hashlib.new() for best performance. *OR*
             A hashlib constructor returning a new hash object. *OR*
             A module supporting PEP 247.
-
-    Note: key and msg must be a bytes or bytearray objects.
     """
     if (_hashopenssl is not None and
             isinstance(digest, str) and digest in _openssl_md_meths):

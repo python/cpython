@@ -25,6 +25,9 @@ width constraint.
 
 Dictionaries are sorted by key before the display is computed.
 
+.. versionchanged:: 3.9
+   Added support for pretty-printing :class:`types.SimpleNamespace`.
+
 The :mod:`pprint` module defines one class:
 
 .. First the implementation class:

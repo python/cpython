@@ -29,7 +29,7 @@ _bz2_BZ2Compressor_compress(BZ2Compressor *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("compress", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("compress", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _bz2_BZ2Compressor_compress_impl(self, &data);
@@ -156,7 +156,7 @@ _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("decompress", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("decompress", "argument 'data'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -220,4 +220,4 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8e123f4eec497655 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ec3d1b3652c98823 input=a9049054013a1b77]*/

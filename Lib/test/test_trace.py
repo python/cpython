@@ -180,7 +180,7 @@ class TestLineCounts(unittest.TestCase):
         firstlineno_called = get_firstlineno(traced_doubler)
         expected = {
             (self.my_py_filename, firstlineno_calling + 1): 1,
-            # List compehentions work differently in 3.x, so the count
+            # List comprehensions work differently in 3.x, so the count
             # below changed compared to 2.x.
             (self.my_py_filename, firstlineno_calling + 2): 12,
             (self.my_py_filename, firstlineno_calling + 3): 1,
@@ -276,9 +276,8 @@ class TestFuncs(unittest.TestCase):
     def test_arg_errors(self):
         res = self.tracer.runfunc(traced_capturer, 1, 2, self=3, func=4)
         self.assertEqual(res, ((1, 2), {'self': 3, 'func': 4}))
-        with self.assertWarns(DeprecationWarning):
-            res = self.tracer.runfunc(func=traced_capturer, arg=1)
-        self.assertEqual(res, ((), {'arg': 1}))
+        with self.assertRaises(TypeError):
+            self.tracer.runfunc(func=traced_capturer, arg=1)
         with self.assertRaises(TypeError):
             self.tracer.runfunc()
 

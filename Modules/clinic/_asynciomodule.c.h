@@ -119,7 +119,7 @@ PyDoc_STRVAR(_asyncio_Future_set_exception__doc__,
     {"set_exception", (PyCFunction)_asyncio_Future_set_exception, METH_O, _asyncio_Future_set_exception__doc__},
 
 PyDoc_STRVAR(_asyncio_Future_add_done_callback__doc__,
-"add_done_callback($self, fn, /, *, context=None)\n"
+"add_done_callback($self, fn, /, *, context=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Add a callback to be run when the future becomes done.\n"
@@ -832,4 +832,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=51c50219f6a0863a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=585ba1f8de5b4103 input=a9049054013a1b77]*/

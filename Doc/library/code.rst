@@ -76,7 +76,7 @@ Interactive Interpreter Objects
 
    Compile and run some source in the interpreter. Arguments are the same as for
    :func:`compile_command`; the default for *filename* is ``'<input>'``, and for
-   *symbol* is ``'single'``.  One several things can happen:
+   *symbol* is ``'single'``.  One of several things can happen:
 
    * The input is incorrect; :func:`compile_command` raised an exception
      (:exc:`SyntaxError` or :exc:`OverflowError`).  A syntax traceback will be

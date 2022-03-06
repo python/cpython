@@ -99,7 +99,7 @@ syslog_get_argv(void)
     if (slash == -2)
         return NULL;
     if (slash != -1) {
-        return PyUnicode_Substring(scriptobj, slash, scriptlen);
+        return PyUnicode_Substring(scriptobj, slash + 1, scriptlen);
     } else {
         Py_INCREF(scriptobj);
         return(scriptobj);

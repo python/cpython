@@ -85,6 +85,10 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
         factory = (PyObject*)&pysqlite_ConnectionType;
     }
 
+    if (PySys_Audit("sqlite3.connect", "O", database) < 0) {
+        return NULL;
+    }
+
     result = PyObject_Call(factory, args, kwargs);
 
     return result;
@@ -101,7 +105,7 @@ RAM instead of on disk.");
 static PyObject* module_complete(PyObject* self, PyObject* args, PyObject*
         kwargs)
 {
-    static char *kwlist[] = {"statement", NULL, NULL};
+    static char *kwlist[] = {"statement", NULL};
     char* statement;
 
     PyObject* result;
@@ -131,7 +135,7 @@ Checks if a string contains a complete SQL statement. Non-standard.");
 static PyObject* module_enable_shared_cache(PyObject* self, PyObject* args, PyObject*
         kwargs)
 {
-    static char *kwlist[] = {"do_enable", NULL, NULL};
+    static char *kwlist[] = {"do_enable", NULL};
     int do_enable;
     int rc;
 
@@ -199,7 +203,7 @@ static PyObject* module_register_converter(PyObject* self, PyObject* args)
     }
 
     /* convert the name to upper case */
-    name = _PyObject_CallMethodId(orig_name, &PyId_upper, NULL);
+    name = _PyObject_CallMethodIdNoArgs(orig_name, &PyId_upper);
     if (!name) {
         goto error;
     }

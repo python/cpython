@@ -7,7 +7,6 @@ from unittest import TestCase, mock
 from unittest import mock
 import errno
 import os
-import sys
 import tabnanny
 import tokenize
 import tempfile

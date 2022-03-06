@@ -21,11 +21,11 @@ _io__BufferedIOBase_readinto(PyObject *self, PyObject *arg)
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
-        _PyArg_BadArgument("readinto", 0, "read-write bytes-like object", arg);
+        _PyArg_BadArgument("readinto", "argument", "read-write bytes-like object", arg);
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("readinto", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io__BufferedIOBase_readinto_impl(self, &buffer);
@@ -58,11 +58,11 @@ _io__BufferedIOBase_readinto1(PyObject *self, PyObject *arg)
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
-        _PyArg_BadArgument("readinto1", 0, "read-write bytes-like object", arg);
+        _PyArg_BadArgument("readinto1", "argument", "read-write bytes-like object", arg);
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto1", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("readinto1", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io__BufferedIOBase_readinto1_impl(self, &buffer);
@@ -243,11 +243,11 @@ _io__Buffered_readinto(buffered *self, PyObject *arg)
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
-        _PyArg_BadArgument("readinto", 0, "read-write bytes-like object", arg);
+        _PyArg_BadArgument("readinto", "argument", "read-write bytes-like object", arg);
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("readinto", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io__Buffered_readinto_impl(self, &buffer);
@@ -280,11 +280,11 @@ _io__Buffered_readinto1(buffered *self, PyObject *arg)
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
-        _PyArg_BadArgument("readinto1", 0, "read-write bytes-like object", arg);
+        _PyArg_BadArgument("readinto1", "argument", "read-write bytes-like object", arg);
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto1", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("readinto1", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io__Buffered_readinto1_impl(self, &buffer);
@@ -538,7 +538,7 @@ _io_BufferedWriter_write(buffered *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("write", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("write", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io_BufferedWriter_write_impl(self, &buffer);
@@ -672,4 +672,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b22b4aedd53c340a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7246104f6c7d3167 input=a9049054013a1b77]*/

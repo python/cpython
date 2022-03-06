@@ -1,0 +1,2 @@
+Convert :c:func:`PyType_HasFeature`, :c:func:`PyType_Check` and
+:c:func:`PyType_CheckExact` macros to static inline functions.

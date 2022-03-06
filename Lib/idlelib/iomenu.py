@@ -15,6 +15,7 @@ from idlelib.config import idleConf
 
 if idlelib.testing:  # Set True by test.test_idle to avoid setlocale.
     encoding = 'utf-8'
+    errors = 'surrogateescape'
 else:
     # Try setting the locale, so that we can find out
     # what encoding to use
@@ -24,15 +25,9 @@ else:
     except (ImportError, locale.Error):
         pass
 
-    locale_decode = 'ascii'
     if sys.platform == 'win32':
-        # On Windows, we could use "mbcs". However, to give the user
-        # a portable encoding name, we need to find the code page
-        try:
-            locale_encoding = locale.getdefaultlocale()[1]
-            codecs.lookup(locale_encoding)
-        except LookupError:
-            pass
+        encoding = 'utf-8'
+        errors = 'surrogateescape'
     else:
         try:
             # Different things can fail here: the locale module may not be
@@ -40,30 +35,30 @@ else:
             # resulting codeset may be unknown to Python. We ignore all
             # these problems, falling back to ASCII
             locale_encoding = locale.nl_langinfo(locale.CODESET)
-            if locale_encoding is None or locale_encoding == '':
-                # situation occurs on macOS
-                locale_encoding = 'ascii'
-            codecs.lookup(locale_encoding)
+            if locale_encoding:
+                codecs.lookup(locale_encoding)
         except (NameError, AttributeError, LookupError):
             # Try getdefaultlocale: it parses environment variables,
             # which may give a clue. Unfortunately, getdefaultlocale has
             # bugs that can cause ValueError.
             try:
                 locale_encoding = locale.getdefaultlocale()[1]
-                if locale_encoding is None or locale_encoding == '':
-                    # situation occurs on macOS
-                    locale_encoding = 'ascii'
-                codecs.lookup(locale_encoding)
+                if locale_encoding:
+                    codecs.lookup(locale_encoding)
             except (ValueError, LookupError):
                 pass
 
-    locale_encoding = locale_encoding.lower()
-
-    encoding = locale_encoding
-    # Encoding is used in multiple files; locale_encoding nowhere.
-    # The only use of 'encoding' below is in _decode as initial value
-    # of deprecated block asking user for encoding.
-    # Perhaps use elsewhere should be reviewed.
+        if locale_encoding:
+            encoding = locale_encoding.lower()
+            errors = 'strict'
+        else:
+            # POSIX locale or macOS
+            encoding = 'ascii'
+            errors = 'surrogateescape'
+        # Encoding is used in multiple files; locale_encoding nowhere.
+        # The only use of 'encoding' below is in _decode as initial value
+        # of deprecated block asking user for encoding.
+        # Perhaps use elsewhere should be reviewed.
 
 coding_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(r'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
@@ -376,10 +371,7 @@ class IOBinding:
         return "break"
 
     def writefile(self, filename):
-        self.fixlastline()
-        text = self.text.get("1.0", "end-1c")
-        if self.eol_convention != "\n":
-            text = text.replace("\n", self.eol_convention)
+        text = self.fixnewlines()
         chars = self.encode(text)
         try:
             with open(filename, "wb") as f:
@@ -391,6 +383,16 @@ class IOBinding:
             tkMessageBox.showerror("I/O Error", str(msg),
                                    parent=self.text)
             return False
+
+    def fixnewlines(self):
+        "Return text with final \n if needed and os eols."
+        if (self.text.get("end-2c") != '\n'
+            and not hasattr(self.editwin, "interp")):  # Not shell.
+            self.text.insert("end-1c", "\n")
+        text = self.text.get("1.0", "end-1c")
+        if self.eol_convention != "\n":
+            text = text.replace("\n", self.eol_convention)
+        return text
 
     def encode(self, chars):
         if isinstance(chars, bytes):
@@ -430,11 +432,6 @@ class IOBinding:
         # Fallback: save as UTF-8, with BOM - ignoring the incorrect
         # declared encoding
         return BOM_UTF8 + chars.encode("utf-8")
-
-    def fixlastline(self):
-        c = self.text.get("end-2c")
-        if c != '\n':
-            self.text.insert("end-1c", "\n")
 
     def print_window(self, event):
         confirm = tkMessageBox.askokcancel(

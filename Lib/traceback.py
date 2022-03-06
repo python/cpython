@@ -538,7 +538,9 @@ class TracebackException:
             self.__cause__._load_lines()
 
     def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+        if isinstance(other, TracebackException):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
 
     def __str__(self):
         return self._str

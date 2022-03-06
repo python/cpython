@@ -22,7 +22,9 @@ The following are blocks: a module, a function body, and a class definition.
 Each command typed interactively is a block.  A script file (a file given as
 standard input to the interpreter or specified as a command line argument to the
 interpreter) is a code block.  A script command (a command specified on the
-interpreter command line with the :option:`-c` option) is a code block.  The string
+interpreter command line with the :option:`-c` option) is a code block.
+A module run as a top level script (as module ``__main__``) from the command
+line using a :option:`-m` argument is also a code block. The string
 argument passed to the built-in functions :func:`eval` and :func:`exec` is a
 code block.
 

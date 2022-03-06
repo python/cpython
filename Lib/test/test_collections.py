@@ -13,7 +13,7 @@ from test import support
 import types
 import unittest
 
-from collections import namedtuple, Counter, OrderedDict, _count_elements, _tuplegetter
+from collections import namedtuple, Counter, OrderedDict, _count_elements
 from collections import UserDict, UserString, UserList
 from collections import ChainMap
 from collections import deque
@@ -424,8 +424,8 @@ class TestNamedTuple(unittest.TestCase):
 
         self.assertIsInstance(p, tuple)
         self.assertEqual(p, (11, 22))                                       # matches a real tuple
-        self.assertEqual(tuple(p), (11, 22))                                # coercable to a real tuple
-        self.assertEqual(list(p), [11, 22])                                 # coercable to a list
+        self.assertEqual(tuple(p), (11, 22))                                # coercible to a real tuple
+        self.assertEqual(list(p), [11, 22])                                 # coercible to a list
         self.assertEqual(max(p), 22)                                        # iterable
         self.assertEqual(max(*p), 22)                                       # star-able
         x, y = p
@@ -1472,9 +1472,6 @@ class TestCollectionABCs(ABCTestCase):
 
     def test_issue26915(self):
         # Container membership test should check identity first
-        class CustomEqualObject:
-            def __eq__(self, other):
-                return False
         class CustomSequence(Sequence):
             def __init__(self, seq):
                 self._seq = seq
@@ -1484,7 +1481,7 @@ class TestCollectionABCs(ABCTestCase):
                 return len(self._seq)
 
         nan = float('nan')
-        obj = CustomEqualObject()
+        obj = support.NEVER_EQ
         seq = CustomSequence([nan, obj, nan])
         containers = [
             seq,
@@ -1930,7 +1927,7 @@ class TestCounter(unittest.TestCase):
                  'r', 'c', 'd', ' ', 's', 's', 'i', 'i', 'm', 'm', 'l'])
 
         # Math operations order first by the order encountered in the left
-        # operand and then by the order encounted in the right operand.
+        # operand and then by the order encountered in the right operand.
         ps = 'aaabbcdddeefggghhijjjkkl'
         qs = 'abbcccdeefffhkkllllmmnno'
         order = {letter: i for i, letter in enumerate(dict.fromkeys(ps + qs))}
@@ -2066,6 +2063,29 @@ class TestCounter(unittest.TestCase):
                 counter_result = counterop(p, q)
                 set_result = setop(set(p.elements()), set(q.elements()))
                 self.assertEqual(counter_result, dict.fromkeys(set_result, 1))
+
+    def test_subset_superset_not_implemented(self):
+        # Verify that multiset comparison operations are not implemented.
+
+        # These operations were intentionally omitted because multiset
+        # comparison semantics conflict with existing dict equality semantics.
+
+        # For multisets, we would expect that if p<=q and p>=q are both true,
+        # then p==q.  However, dict equality semantics require that p!=q when
+        # one of sets contains an element with a zero count and the other
+        # doesn't.
+
+        p = Counter(a=1, b=0)
+        q = Counter(a=1, c=0)
+        self.assertNotEqual(p, q)
+        with self.assertRaises(TypeError):
+            p < q
+        with self.assertRaises(TypeError):
+            p <= q
+        with self.assertRaises(TypeError):
+            p > q
+        with self.assertRaises(TypeError):
+            p >= q
 
     def test_inplace_operations(self):
         elements = 'abcd'

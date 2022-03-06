@@ -34,7 +34,7 @@ _codecs_lookup(PyObject *module, PyObject *arg)
     const char *encoding;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("lookup", 0, "str", arg);
+        _PyArg_BadArgument("lookup", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t encoding_length;
@@ -93,7 +93,7 @@ _codecs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[1]) {
         if (!PyUnicode_Check(args[1])) {
-            _PyArg_BadArgument("encode", 2, "str", args[1]);
+            _PyArg_BadArgument("encode", "argument 'encoding'", "str", args[1]);
             goto exit;
         }
         Py_ssize_t encoding_length;
@@ -110,7 +110,7 @@ _codecs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         }
     }
     if (!PyUnicode_Check(args[2])) {
-        _PyArg_BadArgument("encode", 3, "str", args[2]);
+        _PyArg_BadArgument("encode", "argument 'errors'", "str", args[2]);
         goto exit;
     }
     Py_ssize_t errors_length;
@@ -170,7 +170,7 @@ _codecs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[1]) {
         if (!PyUnicode_Check(args[1])) {
-            _PyArg_BadArgument("decode", 2, "str", args[1]);
+            _PyArg_BadArgument("decode", "argument 'encoding'", "str", args[1]);
             goto exit;
         }
         Py_ssize_t encoding_length;
@@ -187,7 +187,7 @@ _codecs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         }
     }
     if (!PyUnicode_Check(args[2])) {
-        _PyArg_BadArgument("decode", 3, "str", args[2]);
+        _PyArg_BadArgument("decode", "argument 'errors'", "str", args[2]);
         goto exit;
     }
     Py_ssize_t errors_length;
@@ -225,7 +225,7 @@ _codecs__forget_codec(PyObject *module, PyObject *arg)
     const char *encoding;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("_forget_codec", 0, "str", arg);
+        _PyArg_BadArgument("_forget_codec", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t encoding_length;
@@ -278,7 +278,7 @@ _codecs_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             goto exit;
         }
         if (!PyBuffer_IsContiguous(&data, 'C')) {
-            _PyArg_BadArgument("escape_decode", 1, "contiguous buffer", args[0]);
+            _PyArg_BadArgument("escape_decode", "argument 1", "contiguous buffer", args[0]);
             goto exit;
         }
     }
@@ -300,7 +300,7 @@ _codecs_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("escape_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("escape_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -338,7 +338,7 @@ _codecs_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBytes_Check(args[0])) {
-        _PyArg_BadArgument("escape_encode", 1, "bytes", args[0]);
+        _PyArg_BadArgument("escape_encode", "argument 1", "bytes", args[0]);
         goto exit;
     }
     data = args[0];
@@ -360,7 +360,7 @@ _codecs_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("escape_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("escape_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -397,7 +397,7 @@ _codecs_utf_7_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_7_decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("utf_7_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -418,7 +418,7 @@ _codecs_utf_7_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("utf_7_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_7_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -472,7 +472,7 @@ _codecs_utf_8_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_8_decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("utf_8_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -493,7 +493,7 @@ _codecs_utf_8_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("utf_8_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_8_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -547,7 +547,7 @@ _codecs_utf_16_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_16_decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("utf_16_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -568,7 +568,7 @@ _codecs_utf_16_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("utf_16_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_16_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -622,7 +622,7 @@ _codecs_utf_16_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_16_le_decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("utf_16_le_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -643,7 +643,7 @@ _codecs_utf_16_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         }
     }
     else {
-        _PyArg_BadArgument("utf_16_le_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_16_le_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -697,7 +697,7 @@ _codecs_utf_16_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_16_be_decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("utf_16_be_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -718,7 +718,7 @@ _codecs_utf_16_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         }
     }
     else {
-        _PyArg_BadArgument("utf_16_be_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_16_be_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -774,7 +774,7 @@ _codecs_utf_16_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_16_ex_decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("utf_16_ex_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -795,7 +795,7 @@ _codecs_utf_16_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         }
     }
     else {
-        _PyArg_BadArgument("utf_16_ex_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_16_ex_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -861,7 +861,7 @@ _codecs_utf_32_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_32_decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("utf_32_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -882,7 +882,7 @@ _codecs_utf_32_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("utf_32_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_32_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -936,7 +936,7 @@ _codecs_utf_32_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_32_le_decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("utf_32_le_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -957,7 +957,7 @@ _codecs_utf_32_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         }
     }
     else {
-        _PyArg_BadArgument("utf_32_le_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_32_le_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -1011,7 +1011,7 @@ _codecs_utf_32_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_32_be_decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("utf_32_be_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -1032,7 +1032,7 @@ _codecs_utf_32_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         }
     }
     else {
-        _PyArg_BadArgument("utf_32_be_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_32_be_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -1088,7 +1088,7 @@ _codecs_utf_32_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_32_ex_decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("utf_32_ex_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -1109,7 +1109,7 @@ _codecs_utf_32_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         }
     }
     else {
-        _PyArg_BadArgument("utf_32_ex_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_32_ex_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -1183,7 +1183,7 @@ _codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_
             goto exit;
         }
         if (!PyBuffer_IsContiguous(&data, 'C')) {
-            _PyArg_BadArgument("unicode_escape_decode", 1, "contiguous buffer", args[0]);
+            _PyArg_BadArgument("unicode_escape_decode", "argument 1", "contiguous buffer", args[0]);
             goto exit;
         }
     }
@@ -1205,7 +1205,7 @@ _codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_
         }
     }
     else {
-        _PyArg_BadArgument("unicode_escape_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("unicode_escape_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -1255,7 +1255,7 @@ _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ss
             goto exit;
         }
         if (!PyBuffer_IsContiguous(&data, 'C')) {
-            _PyArg_BadArgument("raw_unicode_escape_decode", 1, "contiguous buffer", args[0]);
+            _PyArg_BadArgument("raw_unicode_escape_decode", "argument 1", "contiguous buffer", args[0]);
             goto exit;
         }
     }
@@ -1277,7 +1277,7 @@ _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ss
         }
     }
     else {
-        _PyArg_BadArgument("raw_unicode_escape_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("raw_unicode_escape_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -1318,7 +1318,7 @@ _codecs_latin_1_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("latin_1_decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("latin_1_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -1339,7 +1339,7 @@ _codecs_latin_1_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         }
     }
     else {
-        _PyArg_BadArgument("latin_1_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("latin_1_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -1380,7 +1380,7 @@ _codecs_ascii_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("ascii_decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("ascii_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -1401,7 +1401,7 @@ _codecs_ascii_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("ascii_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("ascii_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -1434,7 +1434,7 @@ _codecs_charmap_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
-    PyObject *mapping = NULL;
+    PyObject *mapping = Py_None;
 
     if (!_PyArg_CheckPositional("charmap_decode", nargs, 1, 3)) {
         goto exit;
@@ -1443,7 +1443,7 @@ _codecs_charmap_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("charmap_decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("charmap_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -1464,7 +1464,7 @@ _codecs_charmap_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         }
     }
     else {
-        _PyArg_BadArgument("charmap_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("charmap_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -1512,7 +1512,7 @@ _codecs_mbcs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("mbcs_decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("mbcs_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -1533,7 +1533,7 @@ _codecs_mbcs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("mbcs_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("mbcs_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -1591,7 +1591,7 @@ _codecs_oem_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("oem_decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("oem_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -1612,7 +1612,7 @@ _codecs_oem_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("oem_decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("oem_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -1680,7 +1680,7 @@ _codecs_code_page_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("code_page_decode", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("code_page_decode", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -1701,7 +1701,7 @@ _codecs_code_page_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         }
     }
     else {
-        _PyArg_BadArgument("code_page_decode", 3, "str or None", args[2]);
+        _PyArg_BadArgument("code_page_decode", "argument 3", "str or None", args[2]);
         goto exit;
     }
     if (nargs < 4) {
@@ -1765,7 +1765,7 @@ _codecs_readbuffer_encode(PyObject *module, PyObject *const *args, Py_ssize_t na
             goto exit;
         }
         if (!PyBuffer_IsContiguous(&data, 'C')) {
-            _PyArg_BadArgument("readbuffer_encode", 1, "contiguous buffer", args[0]);
+            _PyArg_BadArgument("readbuffer_encode", "argument 1", "contiguous buffer", args[0]);
             goto exit;
         }
     }
@@ -1787,7 +1787,7 @@ _codecs_readbuffer_encode(PyObject *module, PyObject *const *args, Py_ssize_t na
         }
     }
     else {
-        _PyArg_BadArgument("readbuffer_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("readbuffer_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -1825,7 +1825,7 @@ _codecs_utf_7_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("utf_7_encode", 1, "str", args[0]);
+        _PyArg_BadArgument("utf_7_encode", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -1850,7 +1850,7 @@ _codecs_utf_7_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("utf_7_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_7_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -1883,7 +1883,7 @@ _codecs_utf_8_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("utf_8_encode", 1, "str", args[0]);
+        _PyArg_BadArgument("utf_8_encode", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -1908,7 +1908,7 @@ _codecs_utf_8_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("utf_8_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_8_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -1942,7 +1942,7 @@ _codecs_utf_16_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("utf_16_encode", 1, "str", args[0]);
+        _PyArg_BadArgument("utf_16_encode", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -1967,7 +1967,7 @@ _codecs_utf_16_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("utf_16_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_16_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -2012,7 +2012,7 @@ _codecs_utf_16_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("utf_16_le_encode", 1, "str", args[0]);
+        _PyArg_BadArgument("utf_16_le_encode", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -2037,7 +2037,7 @@ _codecs_utf_16_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         }
     }
     else {
-        _PyArg_BadArgument("utf_16_le_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_16_le_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -2070,7 +2070,7 @@ _codecs_utf_16_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("utf_16_be_encode", 1, "str", args[0]);
+        _PyArg_BadArgument("utf_16_be_encode", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -2095,7 +2095,7 @@ _codecs_utf_16_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         }
     }
     else {
-        _PyArg_BadArgument("utf_16_be_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_16_be_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -2129,7 +2129,7 @@ _codecs_utf_32_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("utf_32_encode", 1, "str", args[0]);
+        _PyArg_BadArgument("utf_32_encode", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -2154,7 +2154,7 @@ _codecs_utf_32_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("utf_32_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_32_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -2199,7 +2199,7 @@ _codecs_utf_32_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("utf_32_le_encode", 1, "str", args[0]);
+        _PyArg_BadArgument("utf_32_le_encode", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -2224,7 +2224,7 @@ _codecs_utf_32_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         }
     }
     else {
-        _PyArg_BadArgument("utf_32_le_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_32_le_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -2257,7 +2257,7 @@ _codecs_utf_32_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("utf_32_be_encode", 1, "str", args[0]);
+        _PyArg_BadArgument("utf_32_be_encode", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -2282,7 +2282,7 @@ _codecs_utf_32_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         }
     }
     else {
-        _PyArg_BadArgument("utf_32_be_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("utf_32_be_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -2315,7 +2315,7 @@ _codecs_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("unicode_escape_encode", 1, "str", args[0]);
+        _PyArg_BadArgument("unicode_escape_encode", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -2340,7 +2340,7 @@ _codecs_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_
         }
     }
     else {
-        _PyArg_BadArgument("unicode_escape_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("unicode_escape_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -2373,7 +2373,7 @@ _codecs_raw_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ss
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("raw_unicode_escape_encode", 1, "str", args[0]);
+        _PyArg_BadArgument("raw_unicode_escape_encode", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -2398,7 +2398,7 @@ _codecs_raw_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ss
         }
     }
     else {
-        _PyArg_BadArgument("raw_unicode_escape_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("raw_unicode_escape_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -2431,7 +2431,7 @@ _codecs_latin_1_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("latin_1_encode", 1, "str", args[0]);
+        _PyArg_BadArgument("latin_1_encode", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -2456,7 +2456,7 @@ _codecs_latin_1_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         }
     }
     else {
-        _PyArg_BadArgument("latin_1_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("latin_1_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -2489,7 +2489,7 @@ _codecs_ascii_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("ascii_encode", 1, "str", args[0]);
+        _PyArg_BadArgument("ascii_encode", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -2514,7 +2514,7 @@ _codecs_ascii_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("ascii_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("ascii_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -2542,13 +2542,13 @@ _codecs_charmap_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
-    PyObject *mapping = NULL;
+    PyObject *mapping = Py_None;
 
     if (!_PyArg_CheckPositional("charmap_encode", nargs, 1, 3)) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("charmap_encode", 1, "str", args[0]);
+        _PyArg_BadArgument("charmap_encode", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -2573,7 +2573,7 @@ _codecs_charmap_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         }
     }
     else {
-        _PyArg_BadArgument("charmap_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("charmap_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -2605,7 +2605,7 @@ _codecs_charmap_build(PyObject *module, PyObject *arg)
     PyObject *map;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("charmap_build", 0, "str", arg);
+        _PyArg_BadArgument("charmap_build", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -2642,7 +2642,7 @@ _codecs_mbcs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("mbcs_encode", 1, "str", args[0]);
+        _PyArg_BadArgument("mbcs_encode", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -2667,7 +2667,7 @@ _codecs_mbcs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("mbcs_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("mbcs_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -2703,7 +2703,7 @@ _codecs_oem_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("oem_encode", 1, "str", args[0]);
+        _PyArg_BadArgument("oem_encode", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -2728,7 +2728,7 @@ _codecs_oem_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("oem_encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("oem_encode", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -2775,7 +2775,7 @@ _codecs_code_page_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("code_page_encode", 2, "str", args[1]);
+        _PyArg_BadArgument("code_page_encode", "argument 2", "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -2800,7 +2800,7 @@ _codecs_code_page_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         }
     }
     else {
-        _PyArg_BadArgument("code_page_encode", 3, "str or None", args[2]);
+        _PyArg_BadArgument("code_page_encode", "argument 3", "str or None", args[2]);
         goto exit;
     }
 skip_optional:
@@ -2840,7 +2840,7 @@ _codecs_register_error(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("register_error", 1, "str", args[0]);
+        _PyArg_BadArgument("register_error", "argument 1", "str", args[0]);
         goto exit;
     }
     Py_ssize_t errors_length;
@@ -2881,7 +2881,7 @@ _codecs_lookup_error(PyObject *module, PyObject *arg)
     const char *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("lookup_error", 0, "str", arg);
+        _PyArg_BadArgument("lookup_error", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t name_length;
@@ -2922,4 +2922,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=da3c47709a55a05e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=51b42d170889524c input=a9049054013a1b77]*/

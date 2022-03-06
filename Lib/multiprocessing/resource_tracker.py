@@ -50,6 +50,19 @@ class ResourceTracker(object):
         self._fd = None
         self._pid = None
 
+    def _stop(self):
+        with self._lock:
+            if self._fd is None:
+                # not running
+                return
+
+            # closing the "alive" file descriptor stops main()
+            os.close(self._fd)
+            self._fd = None
+
+            os.waitpid(self._pid, 0)
+            self._pid = None
+
     def getfd(self):
         self.ensure_running()
         return self._fd

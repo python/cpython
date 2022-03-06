@@ -601,13 +601,15 @@ static PyTypeObject SHA256type = {
 _sha256.sha256
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new SHA-256 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha256_sha256_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=fa644436dcea5c31 input=09cce3fb855056b2]*/
+_sha256_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=a1de327e8e1185cf input=9be86301aeb14ea5]*/
 {
     SHAobject *new;
     Py_buffer buf;
@@ -641,13 +643,15 @@ _sha256_sha256_impl(PyObject *module, PyObject *string)
 _sha256.sha224
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new SHA-224 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha256_sha224_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=21e3ba22c3404f93 input=27a04ba24c353a73]*/
+_sha256_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=08be6b36569bc69c input=9fcfb46e460860ac]*/
 {
     SHAobject *new;
     Py_buffer buf;

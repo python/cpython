@@ -963,6 +963,26 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     SSL_set_mode(self->ssl,
                  SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER | SSL_MODE_AUTO_RETRY);
 
+#ifdef TLS1_3_VERSION
+    if (sslctx->post_handshake_auth == 1) {
+        if (socket_type == PY_SSL_SERVER) {
+            /* bpo-37428: OpenSSL does not ignore SSL_VERIFY_POST_HANDSHAKE.
+             * Set SSL_VERIFY_POST_HANDSHAKE flag only for server sockets and
+             * only in combination with SSL_VERIFY_PEER flag. */
+            int mode = SSL_get_verify_mode(self->ssl);
+            if (mode & SSL_VERIFY_PEER) {
+                int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
+                verify_cb = SSL_get_verify_callback(self->ssl);
+                mode |= SSL_VERIFY_POST_HANDSHAKE;
+                SSL_set_verify(self->ssl, mode, verify_cb);
+            }
+        } else {
+            /* client socket */
+            SSL_set_post_handshake_auth(self->ssl, 1);
+        }
+    }
+#endif
+
     if (server_hostname != NULL) {
         if (_ssl_configure_hostname(self, server_hostname) < 0) {
             Py_DECREF(self);
@@ -1390,6 +1410,54 @@ _get_peer_alt_names (X509 *certificate) {
                 PyTuple_SET_ITEM(t, 1, v);
                 break;
 
+            case GEN_IPADD:
+                /* OpenSSL < 3.0.0 adds a trailing \n to IPv6. 3.0.0 removed
+                 * the trailing newline. Remove it in all versions
+                 */
+                t = PyTuple_New(2);
+                if (t == NULL)
+                    goto fail;
+
+                v = PyUnicode_FromString("IP Address");
+                if (v == NULL) {
+                    Py_DECREF(t);
+                    goto fail;
+                }
+                PyTuple_SET_ITEM(t, 0, v);
+
+                if (name->d.ip->length == 4) {
+                    unsigned char *p = name->d.ip->data;
+                    v = PyUnicode_FromFormat(
+                        "%d.%d.%d.%d",
+                        p[0], p[1], p[2], p[3]
+                    );
+                } else if (name->d.ip->length == 16) {
+                    /* PyUnicode_FromFormat() does not support %X */
+                    unsigned char *p = name->d.ip->data;
+                    len = sprintf(
+                        buf,
+                        "%X:%X:%X:%X:%X:%X:%X:%X",
+                        p[0] << 8 | p[1],
+                        p[2] << 8 | p[3],
+                        p[4] << 8 | p[5],
+                        p[6] << 8 | p[7],
+                        p[8] << 8 | p[9],
+                        p[10] << 8 | p[11],
+                        p[12] << 8 | p[13],
+                        p[14] << 8 | p[15]
+                    );
+                    v = PyUnicode_FromStringAndSize(buf, len);
+                } else {
+                    v = PyUnicode_FromString("<invalid>");
+                }
+
+                if (v == NULL) {
+                    Py_DECREF(t);
+                    goto fail;
+                }
+                PyTuple_SET_ITEM(t, 1, v);
+                break;
+
             default:
                 /* for everything else, we use the OpenSSL print form */
                 switch (gntype) {
@@ -1397,7 +1465,6 @@ _get_peer_alt_names (X509 *certificate) {
                     case GEN_OTHERNAME:
                     case GEN_X400:
                     case GEN_EDIPARTY:
-                    case GEN_IPADD:
                     case GEN_RID:
                         break;
                     default:
@@ -1802,7 +1869,7 @@ _ssl__test_decode_cert_impl(PyObject *module, PyObject *path)
         goto fail0;
     }
 
-    x = PEM_read_bio_X509_AUX(cert,NULL, NULL, NULL);
+    x = PEM_read_bio_X509(cert, NULL, NULL, NULL);
     if (x == NULL) {
         PyErr_SetString(PySSLErrorObject,
                         "Error decoding PEM-encoded file");
@@ -2986,10 +3053,10 @@ _set_verify_mode(PySSLContext *self, enum py_ssl_cert_requirements n)
                         "invalid value for verify_mode");
         return -1;
     }
-#ifdef TLS1_3_VERSION
-    if (self->post_handshake_auth)
-        mode |= SSL_VERIFY_POST_HANDSHAKE;
-#endif
+
+    /* bpo-37428: newPySSLSocket() sets SSL_VERIFY_POST_HANDSHAKE flag for
+     * server sockets and SSL_set_post_handshake_auth() for client. */
+
     /* keep current verify cb */
     verify_cb = SSL_CTX_get_verify_callback(self->ctx);
     SSL_CTX_set_verify(self->ctx, mode, verify_cb);
@@ -3621,7 +3688,7 @@ set_maximum_version(PySSLContext *self, PyObject *arg, void *c)
 static PyObject *
 get_num_tickets(PySSLContext *self, void *c)
 {
-    return PyLong_FromLong(SSL_CTX_get_num_tickets(self->ctx));
+    return PyLong_FromSize_t(SSL_CTX_get_num_tickets(self->ctx));
 }
 
 static int
@@ -3735,8 +3802,6 @@ get_post_handshake_auth(PySSLContext *self, void *c) {
 #if TLS1_3_VERSION
 static int
 set_post_handshake_auth(PySSLContext *self, PyObject *arg, void *c) {
-    int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
-    int mode = SSL_CTX_get_verify_mode(self->ctx);
     if (arg == NULL) {
         PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
@@ -3748,17 +3813,8 @@ set_post_handshake_auth(PySSLContext *self, PyObject *arg, void *c) {
     }
     self->post_handshake_auth = pha;
 
-    /* client-side socket setting, ignored by server-side */
-    SSL_CTX_set_post_handshake_auth(self->ctx, pha);
-
-    /* server-side socket setting, ignored by client-side */
-    verify_cb = SSL_CTX_get_verify_callback(self->ctx);
-    if (pha) {
-        mode |= SSL_VERIFY_POST_HANDSHAKE;
-    } else {
-        mode ^= SSL_VERIFY_POST_HANDSHAKE;
-    }
-    SSL_CTX_set_verify(self->ctx, mode, verify_cb);
+    /* bpo-37428: newPySSLSocket() sets SSL_VERIFY_POST_HANDSHAKE flag for
+     * server sockets and SSL_set_post_handshake_auth() for client. */
 
     return 0;
 }
@@ -3874,15 +3930,15 @@ error:
 /*[clinic input]
 _ssl._SSLContext.load_cert_chain
     certfile: object
-    keyfile: object = NULL
-    password: object = NULL
+    keyfile: object = None
+    password: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
                                       PyObject *keyfile, PyObject *password)
-/*[clinic end generated code: output=9480bc1c380e2095 input=7cf9ac673cbee6fc]*/
+/*[clinic end generated code: output=9480bc1c380e2095 input=30bc7e967ea01a58]*/
 {
     PyObject *certfile_bytes = NULL, *keyfile_bytes = NULL;
     pem_password_cb *orig_passwd_cb = SSL_CTX_get_default_passwd_cb(self->ctx);
@@ -3908,7 +3964,7 @@ _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
         }
         goto error;
     }
-    if (password && password != Py_None) {
+    if (password != Py_None) {
         if (PyCallable_Check(password)) {
             pw_info.callable = password;
         } else if (!_pwinfo_set(&pw_info, password,
@@ -4066,9 +4122,9 @@ _add_ca_certs(PySSLContext *self, void *data, Py_ssize_t len,
 
 /*[clinic input]
 _ssl._SSLContext.load_verify_locations
-    cafile: object = NULL
-    capath: object = NULL
-    cadata: object = NULL
+    cafile: object = None
+    capath: object = None
+    cadata: object = None
 
 [clinic start generated code]*/
 
@@ -4077,7 +4133,7 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
                                             PyObject *cafile,
                                             PyObject *capath,
                                             PyObject *cadata)
-/*[clinic end generated code: output=454c7e41230ca551 input=997f1fb3a784ef88]*/
+/*[clinic end generated code: output=454c7e41230ca551 input=42ecfe258233e194]*/
 {
     PyObject *cafile_bytes = NULL, *capath_bytes = NULL;
     const char *cafile_buf = NULL, *capath_buf = NULL;
@@ -4167,7 +4223,6 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
         r = SSL_CTX_load_verify_locations(self->ctx, cafile_buf, capath_buf);
         PySSL_END_ALLOW_THREADS
         if (r != 1) {
-            ok = 0;
             if (errno != 0) {
                 ERR_clear_error();
                 PyErr_SetFromErrno(PyExc_OSError);
@@ -5508,7 +5563,7 @@ parseKeyUsage(PCCERT_CONTEXT pCertCtx, DWORD flags)
         }
         return PyErr_SetFromWindowsErr(error);
     }
-    retval = PySet_New(NULL);
+    retval = PyFrozenSet_New(NULL);
     if (retval == NULL) {
         goto error;
     }
@@ -5572,6 +5627,7 @@ ssl_collect_certificates(const char *store_name)
             if (result) {
                 ++storesAdded;
             }
+            CertCloseStore(hSystemStore, 0);  /* flag must be 0 */
         }
     }
     if (storesAdded == 0) {
@@ -5580,20 +5636,6 @@ ssl_collect_certificates(const char *store_name)
     }
 
     return hCollectionStore;
-}
-
-/* code from Objects/listobject.c */
-
-static int
-list_contains(PyListObject *a, PyObject *el)
-{
-    Py_ssize_t i;
-    int cmp;
-
-    for (i = 0, cmp = 0 ; cmp == 0 && i < Py_SIZE(a); ++i)
-        cmp = PyObject_RichCompareBool(el, PyList_GET_ITEM(a, i),
-                                           Py_EQ);
-    return cmp;
 }
 
 /*[clinic input]
@@ -5618,7 +5660,7 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
     PyObject *keyusage = NULL, *cert = NULL, *enc = NULL, *tup = NULL;
     PyObject *result = NULL;
 
-    result = PyList_New(0);
+    result = PySet_New(NULL);
     if (result == NULL) {
         return NULL;
     }
@@ -5658,11 +5700,10 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
         enc = NULL;
         PyTuple_SET_ITEM(tup, 2, keyusage);
         keyusage = NULL;
-        if (!list_contains((PyListObject*)result, tup)) {
-            if (PyList_Append(result, tup) < 0) {
-                Py_CLEAR(result);
-                break;
-            }
+        if (PySet_Add(result, tup) == -1) {
+            Py_CLEAR(result);
+            Py_CLEAR(tup);
+            break;
         }
         Py_CLEAR(tup);
     }
@@ -5686,7 +5727,14 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
         return PyErr_SetFromWindowsErr(GetLastError());
     }
 
-    return result;
+    /* convert set to list */
+    if (result == NULL) {
+        return NULL;
+    } else {
+        PyObject *lst = PySequence_List(result);
+        Py_DECREF(result);
+        return lst;
+    }
 }
 
 /*[clinic input]
@@ -5710,7 +5758,7 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
     PyObject *crl = NULL, *enc = NULL, *tup = NULL;
     PyObject *result = NULL;
 
-    result = PyList_New(0);
+    result = PySet_New(NULL);
     if (result == NULL) {
         return NULL;
     }
@@ -5740,11 +5788,10 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
         PyTuple_SET_ITEM(tup, 1, enc);
         enc = NULL;
 
-        if (!list_contains((PyListObject*)result, tup)) {
-            if (PyList_Append(result, tup) < 0) {
-                Py_CLEAR(result);
-                break;
-            }
+        if (PySet_Add(result, tup) == -1) {
+            Py_CLEAR(result);
+            Py_CLEAR(tup);
+            break;
         }
         Py_CLEAR(tup);
     }
@@ -5766,7 +5813,14 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
         Py_XDECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
     }
-    return result;
+    /* convert set to list */
+    if (result == NULL) {
+        return NULL;
+    } else {
+        PyObject *lst = PySequence_List(result);
+        Py_DECREF(result);
+        return lst;
+    }
 }
 
 #endif /* _MSC_VER */

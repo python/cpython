@@ -37,14 +37,14 @@ called with a non-bytes parameter.
 .. c:function:: PyObject* PyBytes_FromString(const char *v)
 
    Return a new bytes object with a copy of the string *v* as value on success,
-   and *NULL* on failure.  The parameter *v* must not be *NULL*; it will not be
+   and ``NULL`` on failure.  The parameter *v* must not be ``NULL``; it will not be
    checked.
 
 
 .. c:function:: PyObject* PyBytes_FromStringAndSize(const char *v, Py_ssize_t len)
 
    Return a new bytes object with a copy of the string *v* as value and length
-   *len* on success, and *NULL* on failure.  If *v* is *NULL*, the contents of
+   *len* on success, and ``NULL`` on failure.  If *v* is ``NULL``, the contents of
    the bytes object are uninitialized.
 
 
@@ -145,7 +145,7 @@ called with a non-bytes parameter.
    whether there are any other null bytes.  The data must not be
    modified in any way, unless the object was just created using
    ``PyBytes_FromStringAndSize(NULL, size)``. It must not be deallocated.  If
-   *o* is not a bytes object at all, :c:func:`PyBytes_AsString` returns *NULL*
+   *o* is not a bytes object at all, :c:func:`PyBytes_AsString` returns ``NULL``
    and raises :exc:`TypeError`.
 
 
@@ -159,7 +159,7 @@ called with a non-bytes parameter.
    Return the null-terminated contents of the object *obj*
    through the output variables *buffer* and *length*.
 
-   If *length* is *NULL*, the bytes object
+   If *length* is ``NULL``, the bytes object
    may not contain embedded null bytes;
    if it does, the function returns ``-1`` and a :exc:`ValueError` is raised.
 
@@ -181,7 +181,7 @@ called with a non-bytes parameter.
    appended to *bytes*; the caller will own the new reference.  The reference to
    the old value of *bytes* will be stolen.  If the new object cannot be
    created, the old reference to *bytes* will still be discarded and the value
-   of *\*bytes* will be set to *NULL*; the appropriate exception will be set.
+   of *\*bytes* will be set to ``NULL``; the appropriate exception will be set.
 
 
 .. c:function:: void PyBytes_ConcatAndDel(PyObject **bytes, PyObject *newpart)
@@ -201,5 +201,5 @@ called with a non-bytes parameter.
    desired.  On success, *\*bytes* holds the resized bytes object and ``0`` is
    returned; the address in *\*bytes* may differ from its input value.  If the
    reallocation fails, the original bytes object at *\*bytes* is deallocated,
-   *\*bytes* is set to *NULL*, :exc:`MemoryError` is set, and ``-1`` is
+   *\*bytes* is set to ``NULL``, :exc:`MemoryError` is set, and ``-1`` is
    returned.

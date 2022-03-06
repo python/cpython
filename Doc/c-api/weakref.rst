@@ -33,9 +33,9 @@ as much as it can.
    reference object may be returned.  The second parameter, *callback*, can be a
    callable object that receives notification when *ob* is garbage collected; it
    should accept a single parameter, which will be the weak reference object
-   itself. *callback* may also be ``None`` or *NULL*.  If *ob* is not a
+   itself. *callback* may also be ``None`` or ``NULL``.  If *ob* is not a
    weakly-referencable object, or if *callback* is not callable, ``None``, or
-   *NULL*, this will return *NULL* and raise :exc:`TypeError`.
+   ``NULL``, this will return ``NULL`` and raise :exc:`TypeError`.
 
 
 .. c:function:: PyObject* PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
@@ -45,9 +45,9 @@ as much as it can.
    existing proxy object may be returned.  The second parameter, *callback*, can
    be a callable object that receives notification when *ob* is garbage
    collected; it should accept a single parameter, which will be the weak
-   reference object itself. *callback* may also be ``None`` or *NULL*.  If *ob*
+   reference object itself. *callback* may also be ``None`` or ``NULL``.  If *ob*
    is not a weakly-referencable object, or if *callback* is not callable,
-   ``None``, or *NULL*, this will return *NULL* and raise :exc:`TypeError`.
+   ``None``, or ``NULL``, this will return ``NULL`` and raise :exc:`TypeError`.
 
 
 .. c:function:: PyObject* PyWeakref_GetObject(PyObject *ref)

@@ -24,7 +24,3 @@
 
 #define STRINGLIB_TOSTR          PyObject_Str
 #define STRINGLIB_TOASCII        PyObject_ASCII
-
-#define _Py_InsertThousandsGrouping _PyUnicode_ucs1_InsertThousandsGrouping
-
-

@@ -1890,7 +1890,7 @@ class Grid(TixWidget, XView, YView):
         containing the current size setting of the given column.  When
         option-value pairs are given, the corresponding options of the
         size setting of the given column are changed. Options may be one
-        of the follwing:
+        of the following:
               pad0 pixels
                      Specifies the paddings to the left of a column.
               pad1 pixels
@@ -1915,7 +1915,7 @@ class Grid(TixWidget, XView, YView):
         When no option-value pair is given, this command returns a list con-
         taining the current size setting of the given row . When option-value
         pairs are given, the corresponding options of the size setting of the
-        given row are changed. Options may be one of the follwing:
+        given row are changed. Options may be one of the following:
               pad0 pixels
                      Specifies the paddings to the top of a row.
               pad1 pixels

@@ -1,0 +1,1 @@
+Add remaining configdialog tests for buttons and highlights and keys tabs.

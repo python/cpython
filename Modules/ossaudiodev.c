@@ -14,8 +14,6 @@
  * (c) 2002 Gregory P. Ward.  All Rights Reserved.
  * (c) 2002 Python Software Foundation.  All Rights Reserved.
  *
- * XXX need a license statement
- *
  * $Id$
  */
 
@@ -539,7 +537,7 @@ oss_exit(PyObject *self, PyObject *unused)
 {
     _Py_IDENTIFIER(close);
 
-    PyObject *ret = _PyObject_CallMethodId(self, &PyId_close, NULL);
+    PyObject *ret = _PyObject_CallMethodIdNoArgs(self, &PyId_close);
     if (!ret)
         return NULL;
     Py_DECREF(ret);

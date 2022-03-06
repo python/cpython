@@ -3,7 +3,6 @@ import gc
 import pickle
 import sys
 import unittest
-import warnings
 import weakref
 import inspect
 

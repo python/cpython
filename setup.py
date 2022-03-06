@@ -43,6 +43,7 @@ HOST_PLATFORM = get_platform()
 MS_WINDOWS = (HOST_PLATFORM == 'win32')
 CYGWIN = (HOST_PLATFORM == 'cygwin')
 MACOS = (HOST_PLATFORM == 'darwin')
+AIX = (HOST_PLATFORM.startswith('aix'))
 VXWORKS = ('vxworks' in HOST_PLATFORM)
 
 
@@ -784,6 +785,8 @@ class PyBuildExt(build_ext):
         self.add(Extension("_abc", ["_abc.c"]))
         # _queue module
         self.add(Extension("_queue", ["_queuemodule.c"]))
+        # _statistics module
+        self.add(Extension("_statistics", ["_statisticsmodule.c"]))
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be
@@ -805,7 +808,9 @@ class PyBuildExt(build_ext):
         if (self.config_h_vars.get('HAVE_GETSPNAM', False) or
                 self.config_h_vars.get('HAVE_GETSPENT', False)):
             self.add(Extension('spwd', ['spwdmodule.c']))
-        else:
+        # AIX has shadow passwords, but access is not via getspent(), etc.
+        # module support is not expected so it not 'missing'
+        elif not AIX:
             self.missing.append('spwd')
 
         # select(2); not on ancient System V
@@ -909,6 +914,10 @@ class PyBuildExt(build_ext):
             curses_library = readline_termcap_library
         elif self.compiler.find_library_file(self.lib_dirs, 'ncursesw'):
             curses_library = 'ncursesw'
+        # Issue 36210: OSS provided ncurses does not link on AIX
+        # Use IBM supplied 'curses' for successful build of _curses
+        elif AIX and self.compiler.find_library_file(self.lib_dirs, 'curses'):
+            curses_library = 'curses'
         elif self.compiler.find_library_file(self.lib_dirs, 'ncurses'):
             curses_library = 'ncurses'
         elif self.compiler.find_library_file(self.lib_dirs, 'curses'):
@@ -1004,13 +1013,15 @@ class PyBuildExt(build_ext):
             self.missing.append('_curses')
 
         # If the curses module is enabled, check for the panel module
-        if (curses_enabled and
-            self.compiler.find_library_file(self.lib_dirs, panel_library)):
+        # _curses_panel needs some form of ncurses
+        skip_curses_panel = True if AIX else False
+        if (curses_enabled and not skip_curses_panel and
+                self.compiler.find_library_file(self.lib_dirs, panel_library)):
             self.add(Extension('_curses_panel', ['_curses_panel.c'],
-                               include_dirs=curses_includes,
-                               define_macros=curses_defines,
-                               libraries=[panel_library, *curses_libs]))
-        else:
+                           include_dirs=curses_includes,
+                           define_macros=curses_defines,
+                           libraries=[panel_library, *curses_libs]))
+        elif not skip_curses_panel:
             self.missing.append('_curses_panel')
 
     def detect_crypt(self):
@@ -1348,7 +1359,7 @@ class PyBuildExt(build_ext):
                              ]
         if CROSS_COMPILING:
             sqlite_inc_paths = []
-        MIN_SQLITE_VERSION_NUMBER = (3, 3, 9)
+        MIN_SQLITE_VERSION_NUMBER = (3, 7, 2)
         MIN_SQLITE_VERSION = ".".join([str(x)
                                     for x in MIN_SQLITE_VERSION_NUMBER])
 
@@ -1463,7 +1474,7 @@ class PyBuildExt(build_ext):
         # Platform-specific libraries
         if HOST_PLATFORM.startswith(('linux', 'freebsd', 'gnukfreebsd')):
             self.add(Extension('ossaudiodev', ['ossaudiodev.c']))
-        else:
+        elif not AIX:
             self.missing.append('ossaudiodev')
 
         if MACOS:
@@ -1599,9 +1610,9 @@ class PyBuildExt(build_ext):
 
             cc = sysconfig.get_config_var('CC').split()[0]
             ret = os.system(
-                      '"%s" -Werror -Wimplicit-fallthrough -E -xc /dev/null >/dev/null 2>&1' % cc)
+                      '"%s" -Werror -Wno-unreachable-code -E -xc /dev/null >/dev/null 2>&1' % cc)
             if ret >> 8 == 0:
-                extra_compile_args.append('-Wno-implicit-fallthrough')
+                extra_compile_args.append('-Wno-unreachable-code')
 
         self.add(Extension('pyexpat',
                            define_macros=define_macros,
@@ -2086,7 +2097,7 @@ class PyBuildExt(build_ext):
               '_decimal/libmpdec/fnt.c',
               '_decimal/libmpdec/fourstep.c',
               '_decimal/libmpdec/io.c',
-              '_decimal/libmpdec/memory.c',
+              '_decimal/libmpdec/mpalloc.c',
               '_decimal/libmpdec/mpdecimal.c',
               '_decimal/libmpdec/numbertheory.c',
               '_decimal/libmpdec/sixstep.c',

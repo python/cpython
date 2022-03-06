@@ -196,7 +196,7 @@ function is then made with::
 
    pValue = PyObject_CallObject(pFunc, pArgs);
 
-Upon return of the function, ``pValue`` is either *NULL* or it contains a
+Upon return of the function, ``pValue`` is either ``NULL`` or it contains a
 reference to the return value of the function.  Be sure to release the reference
 after examining the value.
 

@@ -32,6 +32,7 @@
 #define PyTZInfo_Check(op) PyObject_TypeCheck(op, &PyDateTime_TZInfoType)
 #define PyTZInfo_CheckExact(op) (Py_TYPE(op) == &PyDateTime_TZInfoType)
 
+#define PyTimezone_Check(op) PyObject_TypeCheck(op, &PyDateTime_TimeZoneType)
 
 /*[clinic input]
 module datetime
@@ -1099,7 +1100,9 @@ new_timezone(PyObject *offset, PyObject *name)
         Py_INCREF(PyDateTime_TimeZone_UTC);
         return PyDateTime_TimeZone_UTC;
     }
-    if ((GET_TD_DAYS(offset) == -1 && GET_TD_SECONDS(offset) == 0) ||
+    if ((GET_TD_DAYS(offset) == -1 &&
+            GET_TD_SECONDS(offset) == 0 &&
+            GET_TD_MICROSECONDS(offset) < 1) ||
         GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
         PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
                      " strictly between -timedelta(hours=24) and"
@@ -1169,7 +1172,9 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
     if (offset == Py_None || offset == NULL)
         return offset;
     if (PyDelta_Check(offset)) {
-        if ((GET_TD_DAYS(offset) == -1 && GET_TD_SECONDS(offset) == 0) ||
+        if ((GET_TD_DAYS(offset) == -1 &&
+                GET_TD_SECONDS(offset) == 0 &&
+                GET_TD_MICROSECONDS(offset) < 1) ||
             GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
             Py_DECREF(offset);
             PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
@@ -1237,8 +1242,7 @@ call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
     if (tzinfo == Py_None)
         Py_RETURN_NONE;
 
-    result = _PyObject_CallMethodIdObjArgs(tzinfo, &PyId_tzname,
-                                           tzinfoarg, NULL);
+    result = _PyObject_CallMethodIdOneArg(tzinfo, &PyId_tzname, tzinfoarg);
 
     if (result == NULL || result == Py_None)
         return result;
@@ -1528,8 +1532,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = 1;
         }
         else if ((ch = *pin++) == '\0') {
-        /* Null byte follows %, copy only '%'. 
-         * 
+        /* Null byte follows %, copy only '%'.
+         *
          * Back the pin up one char so that we catch the null check
          * the next time through the loop.*/
             pin--;
@@ -1619,7 +1623,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         usednew += ntoappend;
         assert(usednew <= totalnew);
     }  /* end while() */
-    
+
     if (_PyBytes_Resize(&newfmt, usednew) < 0)
         goto Done;
     {
@@ -1659,7 +1663,7 @@ time_time(void)
     if (time != NULL) {
         _Py_IDENTIFIER(time);
 
-        result = _PyObject_CallMethodId(time, &PyId_time, NULL);
+        result = _PyObject_CallMethodIdNoArgs(time, &PyId_time);
         Py_DECREF(time);
     }
     return result;
@@ -1693,8 +1697,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
         return NULL;
     }
 
-    result = _PyObject_CallMethodIdObjArgs(time, &PyId_struct_time,
-                                           args, NULL);
+    result = _PyObject_CallMethodIdOneArg(time, &PyId_struct_time, args);
     Py_DECREF(time);
     Py_DECREF(args);
     return result;
@@ -1918,7 +1921,7 @@ get_float_as_integer_ratio(PyObject *floatobj)
     PyObject *ratio;
 
     assert(floatobj && PyFloat_Check(floatobj));
-    ratio = _PyObject_CallMethodId(floatobj, &PyId_as_integer_ratio, NULL);
+    ratio = _PyObject_CallMethodIdNoArgs(floatobj, &PyId_as_integer_ratio);
     if (ratio == NULL) {
         return NULL;
     }
@@ -2486,7 +2489,6 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         int x_is_odd;
         PyObject *temp;
 
-        whole_us = round(leftover_us);
         if (fabs(whole_us - leftover_us) == 0.5) {
             /* We're exactly halfway between two integers.  In order
              * to do round-half-to-even, we must determine whether x
@@ -2894,8 +2896,7 @@ date_today(PyObject *cls, PyObject *dummy)
      * time.time() delivers; if someone were gonzo about optimization,
      * date.today() could get away with plain C time().
      */
-    result = _PyObject_CallMethodIdObjArgs(cls, &PyId_fromtimestamp,
-                                           time, NULL);
+    result = _PyObject_CallMethodIdOneArg(cls, &PyId_fromtimestamp, time);
     Py_DECREF(time);
     return result;
 }
@@ -3162,7 +3163,7 @@ date_isoformat(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 date_str(PyDateTime_Date *self)
 {
-    return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, NULL);
+    return _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_isoformat);
 }
 
 
@@ -3188,7 +3189,7 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
                                       &format))
         return NULL;
 
-    tuple = _PyObject_CallMethodId((PyObject *)self, &PyId_timetuple, NULL);
+    tuple = _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_timetuple);
     if (tuple == NULL)
         return NULL;
     result = wrap_strftime((PyObject *)self, format, tuple,
@@ -3209,8 +3210,8 @@ date_format(PyDateTime_Date *self, PyObject *args)
     if (PyUnicode_GetLength(format) == 0)
         return PyObject_Str((PyObject *)self);
 
-    return _PyObject_CallMethodIdObjArgs((PyObject *)self, &PyId_strftime,
-                                         format, NULL);
+    return _PyObject_CallMethodIdOneArg((PyObject *)self, &PyId_strftime,
+                                        format);
 }
 
 /* ISO methods. */
@@ -3604,21 +3605,18 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *getinitargs;
     _Py_IDENTIFIER(__getinitargs__);
 
-    getinitargs = _PyObject_GetAttrId(self, &PyId___getinitargs__);
+    if (_PyObject_LookupAttrId(self, &PyId___getinitargs__, &getinitargs) < 0) {
+        return NULL;
+    }
     if (getinitargs != NULL) {
-        args = _PyObject_CallNoArg(getinitargs);
+        args = PyObject_CallNoArgs(getinitargs);
         Py_DECREF(getinitargs);
-        if (args == NULL) {
-            return NULL;
-        }
     }
     else {
-        PyErr_Clear();
-
         args = PyTuple_New(0);
-        if (args == NULL) {
-            return NULL;
-        }
+    }
+    if (args == NULL) {
+        return NULL;
     }
 
     state = _PyObject_GetState(self);
@@ -3724,11 +3722,8 @@ timezone_richcompare(PyDateTime_TimeZone *self,
 {
     if (op != Py_EQ && op != Py_NE)
         Py_RETURN_NOTIMPLEMENTED;
-    if (Py_TYPE(other) != &PyDateTime_TimeZoneType) {
-        if (op == Py_EQ)
-            Py_RETURN_FALSE;
-        else
-            Py_RETURN_TRUE;
+    if (!PyTimezone_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
     }
     return delta_richcompare(self->offset, other->offset, op);
 }
@@ -4059,7 +4054,7 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                 return NULL;
             }
             if (PyUnicode_GET_LENGTH(state) == _PyDateTime_TIME_DATASIZE &&
-                (0x7F & PyUnicode_READ_CHAR(state, 2)) < 24)
+                (0x7F & PyUnicode_READ_CHAR(state, 0)) < 24)
             {
                 state = PyUnicode_AsLatin1String(state);
                 if (state == NULL) {
@@ -4155,7 +4150,7 @@ time_repr(PyDateTime_Time *self)
 static PyObject *
 time_str(PyDateTime_Time *self)
 {
-    return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, NULL);
+    return _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_isoformat);
 }
 
 static PyObject *
@@ -5940,7 +5935,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 
     temp = (PyObject *)result;
     result = (PyDateTime_DateTime *)
-        _PyObject_CallMethodIdObjArgs(tzinfo, &PyId_fromutc, temp, NULL);
+        _PyObject_CallMethodIdOneArg(tzinfo, &PyId_fromutc, temp);
     Py_DECREF(temp);
 
     return result;
@@ -6467,6 +6462,9 @@ PyInit__datetime(void)
     PyDateTime_TimeZone_UTC = x;
     CAPI.TimeZone_UTC = PyDateTime_TimeZone_UTC;
 
+    /* bpo-37642: These attributes are rounded to the nearest minute for backwards
+     * compatibility, even though the constructor will accept a wider range of
+     * values. This may change in the future.*/
     delta = new_delta(-1, 60, 0, 1); /* -23:59 */
     if (delta == NULL)
         return NULL;

@@ -111,7 +111,7 @@ module Python
     excepthandler = ExceptHandler(expr? type, identifier? name, stmt* body)
                     attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
 
-    arguments = (arg* args, arg* posonlyargs, arg? vararg, arg* kwonlyargs,
+    arguments = (arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs,
                  expr* kw_defaults, arg? kwarg, expr* defaults)
 
     arg = (identifier arg, expr? annotation, string? type_comment)

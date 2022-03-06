@@ -104,7 +104,7 @@ Scheduler Objects
 
 .. method:: scheduler.empty()
 
-   Return true if the event queue is empty.
+   Return ``True`` if the event queue is empty.
 
 
 .. method:: scheduler.run(blocking=True)

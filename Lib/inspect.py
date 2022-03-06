@@ -48,7 +48,7 @@ import warnings
 import functools
 import builtins
 from operator import attrgetter
-from collections import namedtuple, OrderedDict
+from collections import namedtuple
 
 # Create constants for the compiler flags in Include/code.h
 # We try to get them from dis to avoid duplication
@@ -659,9 +659,9 @@ def getfile(object):
         raise TypeError('{!r} is a built-in module'.format(object))
     if isclass(object):
         if hasattr(object, '__module__'):
-            object = sys.modules.get(object.__module__)
-            if getattr(object, '__file__', None):
-                return object.__file__
+            module = sys.modules.get(object.__module__)
+            if getattr(module, '__file__', None):
+                return module.__file__
         raise TypeError('{!r} is a built-in class'.format(object))
     if ismethod(object):
         object = object.__func__
@@ -1136,7 +1136,6 @@ def getfullargspec(func):
     varkw = None
     posonlyargs = []
     kwonlyargs = []
-    defaults = ()
     annotations = {}
     defaults = ()
     kwdefaults = {}
@@ -1558,7 +1557,7 @@ def _shadowed_dict(klass):
         except KeyError:
             pass
         else:
-            if not (isinstance(class_dict, types.GetSetDescriptorType) and
+            if not (type(class_dict) is types.GetSetDescriptorType and
                     class_dict.__name__ == "__dict__" and
                     class_dict.__objclass__ is entry):
                 return class_dict
@@ -1580,7 +1579,7 @@ def getattr_static(obj, attr, default=_sentinel):
         klass = type(obj)
         dict_attr = _shadowed_dict(klass)
         if (dict_attr is _sentinel or
-            isinstance(dict_attr, types.MemberDescriptorType)):
+            type(dict_attr) is types.MemberDescriptorType):
             instance_result = _check_instance(obj, attr)
     else:
         klass = obj
@@ -1728,7 +1727,7 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
     """
 
     old_params = wrapped_sig.parameters
-    new_params = OrderedDict(old_params.items())
+    new_params = {}
 
     partial_args = partial.args or ()
     partial_keywords = partial.keywords or {}
@@ -1744,6 +1743,7 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
 
 
     transform_to_kwonly = False
+    kwonly_params = {}  # Keyword only parameters are moved to end.
     for param_name, param in old_params.items():
         try:
             arg_value = ba.arguments[param_name]
@@ -1753,7 +1753,6 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
             if param.kind is _POSITIONAL_ONLY:
                 # If positional-only parameter is bound by partial,
                 # it effectively disappears from the signature
-                new_params.pop(param_name)
                 continue
 
             if param.kind is _POSITIONAL_OR_KEYWORD:
@@ -1772,28 +1771,26 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
                     # multiple values.
                     transform_to_kwonly = True
                     # Set the new default value
-                    new_params[param_name] = param.replace(default=arg_value)
+                    param = param.replace(default=arg_value)
                 else:
                     # was passed as a positional argument
-                    new_params.pop(param.name)
                     continue
 
             if param.kind is _KEYWORD_ONLY:
                 # Set the new default value
-                new_params[param_name] = param.replace(default=arg_value)
+                param = param.replace(default=arg_value)
 
         if transform_to_kwonly:
             assert param.kind is not _POSITIONAL_ONLY
 
             if param.kind is _POSITIONAL_OR_KEYWORD:
-                new_param = new_params[param_name].replace(kind=_KEYWORD_ONLY)
-                new_params[param_name] = new_param
-                new_params.move_to_end(param_name)
+                kwonly_params[param_name] = param.replace(kind=_KEYWORD_ONLY)
             elif param.kind in (_KEYWORD_ONLY, _VAR_KEYWORD):
-                new_params.move_to_end(param_name)
-            elif param.kind is _VAR_POSITIONAL:
-                new_params.pop(param.name)
+                kwonly_params[param_name] = param
+        else:
+            new_params[param_name] = param
 
+    new_params.update(kwonly_params)
     return wrapped_sig.replace(parameters=new_params.values())
 
 
@@ -2367,7 +2364,7 @@ def _signature_from_callable(obj, *,
                 if (obj.__init__ is object.__init__ and
                     obj.__new__ is object.__new__):
                     # Return a signature of 'object' builtin.
-                    return signature(object)
+                    return sigcls.from_callable(object)
                 else:
                     raise ValueError(
                         'no signature found for builtin type {!r}'.format(obj))
@@ -2603,7 +2600,7 @@ class BoundArguments:
 
     Has the following public attributes:
 
-    * arguments : OrderedDict
+    * arguments : dict
         An ordered mutable mapping of parameters' names to arguments' values.
         Does not contain arguments' default values.
     * signature : Signature
@@ -2703,7 +2700,7 @@ class BoundArguments:
                     # Signature.bind_partial().
                     continue
                 new_arguments.append((name, val))
-        self.arguments = OrderedDict(new_arguments)
+        self.arguments = dict(new_arguments)
 
     def __eq__(self, other):
         if self is other:
@@ -2734,7 +2731,7 @@ class Signature:
 
     A Signature object has the following public attributes and methods:
 
-    * parameters : OrderedDict
+    * parameters : dict
         An ordered mapping of parameters' names to the corresponding
         Parameter objects (keyword-only arguments are in the same order
         as listed in `code.co_varnames`).
@@ -2764,14 +2761,14 @@ class Signature:
         """
 
         if parameters is None:
-            params = OrderedDict()
+            params = {}
         else:
             if __validate_parameters__:
-                params = OrderedDict()
+                params = {}
                 top_kind = _POSITIONAL_ONLY
                 kind_defaults = False
 
-                for idx, param in enumerate(parameters):
+                for param in parameters:
                     kind = param.kind
                     name = param.name
 
@@ -2806,8 +2803,7 @@ class Signature:
 
                     params[name] = param
             else:
-                params = OrderedDict(((param.name, param)
-                                                for param in parameters))
+                params = {param.name: param for param in parameters}
 
         self._parameters = types.MappingProxyType(params)
         self._return_annotation = return_annotation
@@ -2889,7 +2885,7 @@ class Signature:
     def _bind(self, args, kwargs, *, partial=False):
         """Private method. Don't use directly."""
 
-        arguments = OrderedDict()
+        arguments = {}
 
         parameters = iter(self.parameters.values())
         parameters_ex = ()
@@ -2960,7 +2956,7 @@ class Signature:
                         arguments[param.name] = tuple(values)
                         break
 
-                    if param.name in kwargs:
+                    if param.name in kwargs and param.kind != _POSITIONAL_ONLY:
                         raise TypeError(
                             'multiple values for argument {arg!r}'.format(
                                 arg=param.name)) from None
@@ -3118,7 +3114,7 @@ def _main():
                                                     type(exc).__name__,
                                                     exc)
         print(msg, file=sys.stderr)
-        exit(2)
+        sys.exit(2)
 
     if has_attrs:
         parts = attrs.split(".")
@@ -3128,7 +3124,7 @@ def _main():
 
     if module.__name__ in sys.builtin_module_names:
         print("Can't get info for builtin modules.", file=sys.stderr)
-        exit(1)
+        sys.exit(1)
 
     if args.details:
         print('Target: {}'.format(target))

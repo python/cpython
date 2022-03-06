@@ -43,7 +43,7 @@ typedef struct arrayobject {
     Py_ssize_t allocated;
     const struct arraydescr *ob_descr;
     PyObject *weakreflist; /* List of weak references */
-    int ob_exports;  /* Number of exported buffers */
+    Py_ssize_t ob_exports;  /* Number of exported buffers */
 } arrayobject;
 
 static PyTypeObject Arraytype;
@@ -185,9 +185,7 @@ in bounds; that's the responsibility of the caller.
 static PyObject *
 b_getitem(arrayobject *ap, Py_ssize_t i)
 {
-    long x = ((char *)ap->ob_item)[i];
-    if (x >= 128)
-        x -= 256;
+    long x = ((signed char *)ap->ob_item)[i];
     return PyLong_FromLong(x);
 }
 
@@ -1507,7 +1505,7 @@ array_array_tofile(arrayobject *self, PyObject *f)
         bytes = PyBytes_FromStringAndSize(ptr, size);
         if (bytes == NULL)
             return NULL;
-        res = _PyObject_CallMethodIdObjArgs(f, &PyId_write, bytes, NULL);
+        res = _PyObject_CallMethodIdOneArg(f, &PyId_write, bytes);
         Py_DECREF(bytes);
         if (res == NULL)
             return NULL;
@@ -1626,27 +1624,6 @@ frombytes(arrayobject *self, Py_buffer *buffer)
 }
 
 /*[clinic input]
-array.array.fromstring
-
-    buffer: Py_buffer(accept={str, buffer})
-    /
-
-Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method).
-
-This method is deprecated. Use frombytes instead.
-[clinic start generated code]*/
-
-static PyObject *
-array_array_fromstring_impl(arrayobject *self, Py_buffer *buffer)
-/*[clinic end generated code: output=31c4baa779df84ce input=a3341a512e11d773]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "fromstring() is deprecated. Use frombytes() instead.", 2) != 0)
-        return NULL;
-    return frombytes(self, buffer);
-}
-
-/*[clinic input]
 array.array.frombytes
 
     buffer: Py_buffer
@@ -1678,24 +1655,6 @@ array_array_tobytes_impl(arrayobject *self)
     } else {
         return PyErr_NoMemory();
     }
-}
-
-/*[clinic input]
-array.array.tostring
-
-Convert the array to an array of machine values and return the bytes representation.
-
-This method is deprecated. Use tobytes instead.
-[clinic start generated code]*/
-
-static PyObject *
-array_array_tostring_impl(arrayobject *self)
-/*[clinic end generated code: output=7d6bd92745a2c8f3 input=b6c0ddee7b30457e]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "tostring() is deprecated. Use tobytes() instead.", 2) != 0)
-        return NULL;
-    return array_array_tobytes_impl(self);
 }
 
 /*[clinic input]
@@ -2285,7 +2244,6 @@ static PyMethodDef array_methods[] = {
     ARRAY_ARRAY_EXTEND_METHODDEF
     ARRAY_ARRAY_FROMFILE_METHODDEF
     ARRAY_ARRAY_FROMLIST_METHODDEF
-    ARRAY_ARRAY_FROMSTRING_METHODDEF
     ARRAY_ARRAY_FROMBYTES_METHODDEF
     ARRAY_ARRAY_FROMUNICODE_METHODDEF
     ARRAY_ARRAY_INDEX_METHODDEF
@@ -2296,7 +2254,6 @@ static PyMethodDef array_methods[] = {
     ARRAY_ARRAY_REVERSE_METHODDEF
     ARRAY_ARRAY_TOFILE_METHODDEF
     ARRAY_ARRAY_TOLIST_METHODDEF
-    ARRAY_ARRAY_TOSTRING_METHODDEF
     ARRAY_ARRAY_TOBYTES_METHODDEF
     ARRAY_ARRAY_TOUNICODE_METHODDEF
     ARRAY_ARRAY___SIZEOF___METHODDEF
@@ -3042,9 +2999,15 @@ array_modexec(PyObject *m)
     Py_TYPE(&PyArrayIter_Type) = &PyType_Type;
 
     Py_INCREF((PyObject *)&Arraytype);
-    PyModule_AddObject(m, "ArrayType", (PyObject *)&Arraytype);
+    if (PyModule_AddObject(m, "ArrayType", (PyObject *)&Arraytype) < 0) {
+        Py_DECREF((PyObject *)&Arraytype);
+        return -1;
+    }
     Py_INCREF((PyObject *)&Arraytype);
-    PyModule_AddObject(m, "array", (PyObject *)&Arraytype);
+    if (PyModule_AddObject(m, "array", (PyObject *)&Arraytype) < 0) {
+        Py_DECREF((PyObject *)&Arraytype);
+        return -1;
+    }
 
     for (descr=descriptors; descr->typecode != '\0'; descr++) {
         size++;
@@ -3055,13 +3018,11 @@ array_modexec(PyObject *m)
         *p++ = (char)descr->typecode;
     }
     typecodes = PyUnicode_DecodeASCII(buffer, p - buffer, NULL);
-
-    PyModule_AddObject(m, "typecodes", typecodes);
-
-    if (PyErr_Occurred()) {
-        Py_DECREF(m);
-        m = NULL;
+    if (PyModule_AddObject(m, "typecodes", typecodes) < 0) {
+        Py_XDECREF(typecodes);
+        return -1;
     }
+
     return 0;
 }
 

@@ -6,6 +6,7 @@
 extern "C" {
 #endif
 
+#ifndef Py_LIMITED_API
 #include "asdl.h"
 
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
@@ -426,8 +427,8 @@ struct _excepthandler {
 };
 
 struct _arguments {
-    asdl_seq *args;
     asdl_seq *posonlyargs;
+    asdl_seq *args;
     arg_ty vararg;
     asdl_seq *kwonlyargs;
     asdl_seq *kw_defaults;
@@ -687,7 +688,7 @@ excepthandler_ty _Py_ExceptHandler(expr_ty type, identifier name, asdl_seq *
                                    end_lineno, int end_col_offset, PyArena
                                    *arena);
 #define arguments(a0, a1, a2, a3, a4, a5, a6, a7) _Py_arguments(a0, a1, a2, a3, a4, a5, a6, a7)
-arguments_ty _Py_arguments(asdl_seq * args, asdl_seq * posonlyargs, arg_ty
+arguments_ty _Py_arguments(asdl_seq * posonlyargs, asdl_seq * args, arg_ty
                            vararg, asdl_seq * kwonlyargs, asdl_seq *
                            kw_defaults, arg_ty kwarg, asdl_seq * defaults,
                            PyArena *arena);
@@ -707,8 +708,8 @@ type_ignore_ty _Py_TypeIgnore(int lineno, string tag, PyArena *arena);
 
 PyObject* PyAST_mod2obj(mod_ty t);
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);
-mod_ty PyAST_obj2mod_ex(PyObject* ast, PyArena* arena, int mode, int feature_version);
 int PyAST_Check(PyObject* obj);
+#endif /* !Py_LIMITED_API */
 
 #ifdef __cplusplus
 }

@@ -7,7 +7,6 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PySeqIter_Type;
 PyAPI_DATA(PyTypeObject) PyCallIter_Type;
-PyAPI_DATA(PyTypeObject) PyCmpWrapper_Type;
 
 #define PySeqIter_Check(op) (Py_TYPE(op) == &PySeqIter_Type)
 

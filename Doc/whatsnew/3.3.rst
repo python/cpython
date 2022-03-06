@@ -2002,8 +2002,8 @@ platform-independent fashion.  (Contributed by Ross Lagerwall in
 sys
 ---
 
-The :mod:`sys` module has a new :data:`~sys.thread_info` :term:`struct
-sequence` holding information about the thread implementation
+The :mod:`sys` module has a new :data:`~sys.thread_info` :term:`named
+tuple` holding information about the thread implementation
 (:issue:`11223`).
 
 

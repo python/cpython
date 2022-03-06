@@ -10,6 +10,7 @@ import warnings
 import collections
 import contextlib
 import traceback
+import types
 
 from . import result
 from .util import (strclass, safe_repr, _count_diff_all_purpose,
@@ -122,6 +123,10 @@ def skip(reason):
         test_item.__unittest_skip__ = True
         test_item.__unittest_skip_why__ = reason
         return test_item
+    if isinstance(reason, types.FunctionType):
+        test_item = reason
+        reason = ''
+        return decorator(test_item)
     return decorator
 
 def skipIf(condition, reason):
@@ -463,30 +468,13 @@ class TestCase(object):
         """
         self._type_equality_funcs[typeobj] = function
 
-    def addCleanup(*args, **kwargs):
+    def addCleanup(self, function, /, *args, **kwargs):
         """Add a function, with arguments, to be called when the test is
         completed. Functions added are called on a LIFO basis and are
         called after tearDown on test failure or success.
 
         Cleanup items are called even if setUp fails (unlike tearDown)."""
-        if len(args) >= 2:
-            self, function, *args = args
-        elif not args:
-            raise TypeError("descriptor 'addCleanup' of 'TestCase' object "
-                            "needs an argument")
-        elif 'function' in kwargs:
-            function = kwargs.pop('function')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'function' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError('addCleanup expected at least 1 positional '
-                            'argument, got %d' % (len(args)-1))
-        args = tuple(args)
-
         self._cleanups.append((function, args, kwargs))
-    addCleanup.__text_signature__ = '($self, function, /, *args, **kwargs)'
 
     @classmethod
     def addClassCleanup(cls, function, /, *args, **kwargs):
@@ -524,7 +512,7 @@ class TestCase(object):
         the specified test method's docstring.
         """
         doc = self._testMethodDoc
-        return doc and doc.split("\n")[0].strip() or None
+        return doc.strip().split("\n")[0].strip() if doc else None
 
 
     def id(self):
@@ -724,7 +712,7 @@ class TestCase(object):
             function, args, kwargs = cls._class_cleanups.pop()
             try:
                 function(*args, **kwargs)
-            except Exception as exc:
+            except Exception:
                 cls.tearDown_exceptions.append(sys.exc_info())
 
     def __call__(self, *args, **kwds):

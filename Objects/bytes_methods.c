@@ -743,7 +743,7 @@ tailmatch(const char *str, Py_ssize_t len, PyObject *substr,
 
     if (direction < 0) {
         /* startswith */
-        if (start + slen > len)
+        if (start > len - slen)
             goto notfound;
     } else {
         /* endswith */

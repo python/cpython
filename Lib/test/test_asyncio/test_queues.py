@@ -35,7 +35,8 @@ class QueueBasicTests(_QueueTestBase):
 
         loop = self.new_test_loop(gen)
 
-        q = asyncio.Queue(loop=loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=loop)
         self.assertTrue(fn(q).startswith('<Queue'), fn(q))
         id_is_present = hex(id(q)) in fn(q)
         self.assertEqual(expect_id, id_is_present)
@@ -43,38 +44,41 @@ class QueueBasicTests(_QueueTestBase):
         async def add_getter():
             q = asyncio.Queue(loop=loop)
             # Start a task that waits to get.
-            asyncio.Task(q.get(), loop=loop)
+            loop.create_task(q.get())
             # Let it start waiting.
             await asyncio.sleep(0.1)
             self.assertTrue('_getters[1]' in fn(q))
             # resume q.get coroutine to finish generator
             q.put_nowait(0)
 
-        loop.run_until_complete(add_getter())
+        with self.assertWarns(DeprecationWarning):
+            loop.run_until_complete(add_getter())
 
         async def add_putter():
             q = asyncio.Queue(maxsize=1, loop=loop)
             q.put_nowait(1)
             # Start a task that waits to put.
-            asyncio.Task(q.put(2), loop=loop)
+            loop.create_task(q.put(2))
             # Let it start waiting.
             await asyncio.sleep(0.1)
             self.assertTrue('_putters[1]' in fn(q))
             # resume q.put coroutine to finish generator
             q.get_nowait()
 
-        loop.run_until_complete(add_putter())
-
-        q = asyncio.Queue(loop=loop)
+        with self.assertWarns(DeprecationWarning):
+            loop.run_until_complete(add_putter())
+            q = asyncio.Queue(loop=loop)
         q.put_nowait(1)
         self.assertTrue('_queue=[1]' in fn(q))
 
     def test_ctor_loop(self):
         loop = mock.Mock()
-        q = asyncio.Queue(loop=loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=loop)
         self.assertIs(q._loop, loop)
 
-        q = asyncio.Queue(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=self.loop)
         self.assertIs(q._loop, self.loop)
 
     def test_ctor_noloop(self):
@@ -89,7 +93,8 @@ class QueueBasicTests(_QueueTestBase):
         self._test_repr_or_str(str, False)
 
     def test_empty(self):
-        q = asyncio.Queue(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=self.loop)
         self.assertTrue(q.empty())
         q.put_nowait(1)
         self.assertFalse(q.empty())
@@ -97,15 +102,18 @@ class QueueBasicTests(_QueueTestBase):
         self.assertTrue(q.empty())
 
     def test_full(self):
-        q = asyncio.Queue(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=self.loop)
         self.assertFalse(q.full())
 
-        q = asyncio.Queue(maxsize=1, loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(maxsize=1, loop=self.loop)
         q.put_nowait(1)
         self.assertTrue(q.full())
 
     def test_order(self):
-        q = asyncio.Queue(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=self.loop)
         for i in [1, 3, 2]:
             q.put_nowait(i)
 
@@ -123,7 +131,8 @@ class QueueBasicTests(_QueueTestBase):
 
         loop = self.new_test_loop(gen)
 
-        q = asyncio.Queue(maxsize=2, loop=loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(maxsize=2, loop=loop)
         self.assertEqual(2, q.maxsize)
         have_been_put = []
 
@@ -134,7 +143,7 @@ class QueueBasicTests(_QueueTestBase):
             return True
 
         async def test():
-            t = asyncio.Task(putter(), loop=loop)
+            t = loop.create_task(putter())
             await asyncio.sleep(0.01)
 
             # The putter is blocked after putting two items.
@@ -157,7 +166,8 @@ class QueueBasicTests(_QueueTestBase):
 class QueueGetTests(_QueueTestBase):
 
     def test_blocking_get(self):
-        q = asyncio.Queue(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=self.loop)
         q.put_nowait(1)
 
         async def queue_get():
@@ -167,10 +177,11 @@ class QueueGetTests(_QueueTestBase):
         self.assertEqual(1, res)
 
     def test_get_with_putters(self):
-        q = asyncio.Queue(1, loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(1, loop=self.loop)
         q.put_nowait(1)
 
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         q._putters.append(waiter)
 
         res = self.loop.run_until_complete(q.get())
@@ -187,8 +198,9 @@ class QueueGetTests(_QueueTestBase):
 
         loop = self.new_test_loop(gen)
 
-        q = asyncio.Queue(loop=loop)
-        started = asyncio.Event(loop=loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=loop)
+            started = asyncio.Event(loop=loop)
         finished = False
 
         async def queue_get():
@@ -200,7 +212,7 @@ class QueueGetTests(_QueueTestBase):
 
         async def queue_put():
             loop.call_later(0.01, q.put_nowait, 1)
-            queue_get_task = asyncio.Task(queue_get(), loop=loop)
+            queue_get_task = loop.create_task(queue_get())
             await started.wait()
             self.assertFalse(finished)
             res = await queue_get_task
@@ -212,12 +224,14 @@ class QueueGetTests(_QueueTestBase):
         self.assertAlmostEqual(0.01, loop.time())
 
     def test_nonblocking_get(self):
-        q = asyncio.Queue(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=self.loop)
         q.put_nowait(1)
         self.assertEqual(1, q.get_nowait())
 
     def test_nonblocking_get_exception(self):
-        q = asyncio.Queue(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=self.loop)
         self.assertRaises(asyncio.QueueEmpty, q.get_nowait)
 
     def test_get_cancelled(self):
@@ -231,13 +245,14 @@ class QueueGetTests(_QueueTestBase):
 
         loop = self.new_test_loop(gen)
 
-        q = asyncio.Queue(loop=loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=loop)
 
         async def queue_get():
             return await asyncio.wait_for(q.get(), 0.051)
 
         async def test():
-            get_task = asyncio.Task(queue_get(), loop=loop)
+            get_task = loop.create_task(queue_get())
             await asyncio.sleep(0.01)  # let the task start
             q.put_nowait(1)
             return await get_task
@@ -246,10 +261,11 @@ class QueueGetTests(_QueueTestBase):
         self.assertAlmostEqual(0.06, loop.time())
 
     def test_get_cancelled_race(self):
-        q = asyncio.Queue(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=self.loop)
 
-        t1 = asyncio.Task(q.get(), loop=self.loop)
-        t2 = asyncio.Task(q.get(), loop=self.loop)
+        t1 = self.loop.create_task(q.get())
+        t2 = self.loop.create_task(q.get())
 
         test_utils.run_briefly(self.loop)
         t1.cancel()
@@ -260,9 +276,10 @@ class QueueGetTests(_QueueTestBase):
         self.assertEqual(t2.result(), 'a')
 
     def test_get_with_waiting_putters(self):
-        q = asyncio.Queue(loop=self.loop, maxsize=1)
-        asyncio.Task(q.put('a'), loop=self.loop)
-        asyncio.Task(q.put('b'), loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=self.loop, maxsize=1)
+        self.loop.create_task(q.put('a'))
+        self.loop.create_task(q.put('b'))
         test_utils.run_briefly(self.loop)
         self.assertEqual(self.loop.run_until_complete(q.get()), 'a')
         self.assertEqual(self.loop.run_until_complete(q.get()), 'b')
@@ -280,7 +297,9 @@ class QueueGetTests(_QueueTestBase):
 
         queue_size = 1
         producer_num_items = 5
-        q = asyncio.Queue(queue_size, loop=self.loop)
+
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(queue_size, loop=self.loop)
 
         self.loop.run_until_complete(
             asyncio.gather(producer(q, producer_num_items),
@@ -301,7 +320,8 @@ class QueueGetTests(_QueueTestBase):
             except asyncio.TimeoutError:
                 pass
 
-        queue = asyncio.Queue(loop=self.loop, maxsize=5)
+        with self.assertWarns(DeprecationWarning):
+            queue = asyncio.Queue(loop=self.loop, maxsize=5)
         self.loop.run_until_complete(self.loop.create_task(consumer(queue)))
         self.assertEqual(len(queue._getters), 0)
 
@@ -309,7 +329,8 @@ class QueueGetTests(_QueueTestBase):
 class QueuePutTests(_QueueTestBase):
 
     def test_blocking_put(self):
-        q = asyncio.Queue(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=self.loop)
 
         async def queue_put():
             # No maxsize, won't block.
@@ -326,8 +347,9 @@ class QueuePutTests(_QueueTestBase):
 
         loop = self.new_test_loop(gen)
 
-        q = asyncio.Queue(maxsize=1, loop=loop)
-        started = asyncio.Event(loop=loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(maxsize=1, loop=loop)
+            started = asyncio.Event(loop=loop)
         finished = False
 
         async def queue_put():
@@ -339,7 +361,7 @@ class QueuePutTests(_QueueTestBase):
 
         async def queue_get():
             loop.call_later(0.01, q.get_nowait)
-            queue_put_task = asyncio.Task(queue_put(), loop=loop)
+            queue_put_task = loop.create_task(queue_put())
             await started.wait()
             self.assertFalse(finished)
             await queue_put_task
@@ -349,7 +371,8 @@ class QueuePutTests(_QueueTestBase):
         self.assertAlmostEqual(0.01, loop.time())
 
     def test_nonblocking_put(self):
-        q = asyncio.Queue(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=self.loop)
         q.put_nowait(1)
         self.assertEqual(1, q.get_nowait())
 
@@ -360,7 +383,8 @@ class QueuePutTests(_QueueTestBase):
 
         loop = self.new_test_loop(gen)
 
-        q = asyncio.Queue(loop=loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=loop)
 
         reader = loop.create_task(q.get())
 
@@ -389,7 +413,8 @@ class QueuePutTests(_QueueTestBase):
         loop = self.new_test_loop(gen)
         loop.set_debug(True)
 
-        q = asyncio.Queue(loop=loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=loop)
 
         reader1 = loop.create_task(q.get())
         reader2 = loop.create_task(q.get())
@@ -418,7 +443,9 @@ class QueuePutTests(_QueueTestBase):
             yield 0.1
 
         loop = self.new_test_loop(gen)
-        q = asyncio.Queue(1, loop=loop)
+
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(1, loop=loop)
 
         q.put_nowait(1)
 
@@ -442,18 +469,21 @@ class QueuePutTests(_QueueTestBase):
         self.assertEqual(q.qsize(), 0)
 
     def test_nonblocking_put_exception(self):
-        q = asyncio.Queue(maxsize=1, loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(maxsize=1, loop=self.loop)
         q.put_nowait(1)
         self.assertRaises(asyncio.QueueFull, q.put_nowait, 2)
 
     def test_float_maxsize(self):
-        q = asyncio.Queue(maxsize=1.3, loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(maxsize=1.3, loop=self.loop)
         q.put_nowait(1)
         q.put_nowait(2)
         self.assertTrue(q.full())
         self.assertRaises(asyncio.QueueFull, q.put_nowait, 3)
 
-        q = asyncio.Queue(maxsize=1.3, loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(maxsize=1.3, loop=self.loop)
 
         async def queue_put():
             await q.put(1)
@@ -462,7 +492,8 @@ class QueuePutTests(_QueueTestBase):
         self.loop.run_until_complete(queue_put())
 
     def test_put_cancelled(self):
-        q = asyncio.Queue(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=self.loop)
 
         async def queue_put():
             await q.put(1)
@@ -471,17 +502,18 @@ class QueuePutTests(_QueueTestBase):
         async def test():
             return await q.get()
 
-        t = asyncio.Task(queue_put(), loop=self.loop)
+        t = self.loop.create_task(queue_put())
         self.assertEqual(1, self.loop.run_until_complete(test()))
         self.assertTrue(t.done())
         self.assertTrue(t.result())
 
     def test_put_cancelled_race(self):
-        q = asyncio.Queue(loop=self.loop, maxsize=1)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=self.loop, maxsize=1)
 
-        put_a = asyncio.Task(q.put('a'), loop=self.loop)
-        put_b = asyncio.Task(q.put('b'), loop=self.loop)
-        put_c = asyncio.Task(q.put('X'), loop=self.loop)
+        put_a = self.loop.create_task(q.put('a'))
+        put_b = self.loop.create_task(q.put('b'))
+        put_c = self.loop.create_task(q.put('X'))
 
         test_utils.run_briefly(self.loop)
         self.assertTrue(put_a.done())
@@ -497,8 +529,9 @@ class QueuePutTests(_QueueTestBase):
         self.loop.run_until_complete(put_b)
 
     def test_put_with_waiting_getters(self):
-        q = asyncio.Queue(loop=self.loop)
-        t = asyncio.Task(q.get(), loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=self.loop)
+        t = self.loop.create_task(q.get())
         test_utils.run_briefly(self.loop)
         self.loop.run_until_complete(q.put('a'))
         self.assertEqual(self.loop.run_until_complete(t), 'a')
@@ -506,7 +539,8 @@ class QueuePutTests(_QueueTestBase):
     def test_why_are_putters_waiting(self):
         # From issue #265.
 
-        queue = asyncio.Queue(2, loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            queue = asyncio.Queue(2, loop=self.loop)
 
         async def putter(item):
             await queue.put(item)
@@ -532,7 +566,8 @@ class QueuePutTests(_QueueTestBase):
         loop = self.new_test_loop(a_generator)
 
         # Full queue.
-        queue = asyncio.Queue(loop=loop, maxsize=1)
+        with self.assertWarns(DeprecationWarning):
+            queue = asyncio.Queue(loop=loop, maxsize=1)
         queue.put_nowait(1)
 
         # Task waiting for space to put an item in the queue.
@@ -555,7 +590,8 @@ class QueuePutTests(_QueueTestBase):
         loop = self.new_test_loop(gen)
 
         # Full Queue.
-        queue = asyncio.Queue(1, loop=loop)
+        with self.assertWarns(DeprecationWarning):
+            queue = asyncio.Queue(1, loop=loop)
         queue.put_nowait(1)
 
         # Task waiting for space to put a item in the queue.
@@ -578,7 +614,8 @@ class QueuePutTests(_QueueTestBase):
 class LifoQueueTests(_QueueTestBase):
 
     def test_order(self):
-        q = asyncio.LifoQueue(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.LifoQueue(loop=self.loop)
         for i in [1, 3, 2]:
             q.put_nowait(i)
 
@@ -589,7 +626,8 @@ class LifoQueueTests(_QueueTestBase):
 class PriorityQueueTests(_QueueTestBase):
 
     def test_order(self):
-        q = asyncio.PriorityQueue(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.PriorityQueue(loop=self.loop)
         for i in [1, 3, 2]:
             q.put_nowait(i)
 
@@ -602,11 +640,13 @@ class _QueueJoinTestMixin:
     q_class = None
 
     def test_task_done_underflow(self):
-        q = self.q_class(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = self.q_class(loop=self.loop)
         self.assertRaises(ValueError, q.task_done)
 
     def test_task_done(self):
-        q = self.q_class(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = self.q_class(loop=self.loop)
         for i in range(100):
             q.put_nowait(i)
 
@@ -625,7 +665,7 @@ class _QueueJoinTestMixin:
                 q.task_done()
 
         async def test():
-            tasks = [asyncio.Task(worker(), loop=self.loop)
+            tasks = [self.loop.create_task(worker())
                      for index in range(2)]
 
             await q.join()
@@ -641,7 +681,8 @@ class _QueueJoinTestMixin:
         self.loop.run_until_complete(asyncio.wait(tasks))
 
     def test_join_empty_queue(self):
-        q = self.q_class(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = self.q_class(loop=self.loop)
 
         # Test that a queue join()s successfully, and before anything else
         # (done twice for insurance).
@@ -653,7 +694,8 @@ class _QueueJoinTestMixin:
         self.loop.run_until_complete(join())
 
     def test_format(self):
-        q = self.q_class(loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            q = self.q_class(loop=self.loop)
         self.assertEqual(q._format(), 'maxsize=0')
 
         q._unfinished_tasks = 2

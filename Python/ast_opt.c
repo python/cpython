@@ -617,6 +617,7 @@ astfold_comprehension(comprehension_ty node_, PyArena *ctx_, int optimize_)
 static int
 astfold_arguments(arguments_ty node_, PyArena *ctx_, int optimize_)
 {
+    CALL_SEQ(astfold_arg, arg_ty, node_->posonlyargs);
     CALL_SEQ(astfold_arg, arg_ty, node_->args);
     CALL_OPT(astfold_arg, arg_ty, node_->vararg);
     CALL_SEQ(astfold_arg, arg_ty, node_->kwonlyargs);

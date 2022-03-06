@@ -2521,7 +2521,7 @@ _curses_ungetmouse(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyLong_Check(args[4])) {
-        _PyArg_BadArgument("ungetmouse", 5, "int", args[4]);
+        _PyArg_BadArgument("ungetmouse", "argument 5", "int", args[4]);
         goto exit;
     }
     bstate = PyLong_AsUnsignedLongMask(args[4]);
@@ -3017,7 +3017,7 @@ _curses_setupterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
             }
         }
         else {
-            _PyArg_BadArgument("setupterm", 1, "str or None", args[0]);
+            _PyArg_BadArgument("setupterm", "argument 'term'", "str or None", args[0]);
             goto exit;
         }
         if (!--noptargs) {
@@ -3035,6 +3035,128 @@ _curses_setupterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     }
 skip_optional_pos:
     return_value = _curses_setupterm_impl(module, term, fd);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_get_escdelay__doc__,
+"get_escdelay($module, /)\n"
+"--\n"
+"\n"
+"Gets the curses ESCDELAY setting.\n"
+"\n"
+"Gets the number of milliseconds to wait after reading an escape character,\n"
+"to distinguish between an individual escape character entered on the\n"
+"keyboard from escape sequences sent by cursor and function keys.");
+
+#define _CURSES_GET_ESCDELAY_METHODDEF    \
+    {"get_escdelay", (PyCFunction)_curses_get_escdelay, METH_NOARGS, _curses_get_escdelay__doc__},
+
+static PyObject *
+_curses_get_escdelay_impl(PyObject *module);
+
+static PyObject *
+_curses_get_escdelay(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_get_escdelay_impl(module);
+}
+
+PyDoc_STRVAR(_curses_set_escdelay__doc__,
+"set_escdelay($module, ms, /)\n"
+"--\n"
+"\n"
+"Sets the curses ESCDELAY setting.\n"
+"\n"
+"  ms\n"
+"    length of the delay in milliseconds.\n"
+"\n"
+"Sets the number of milliseconds to wait after reading an escape character,\n"
+"to distinguish between an individual escape character entered on the\n"
+"keyboard from escape sequences sent by cursor and function keys.");
+
+#define _CURSES_SET_ESCDELAY_METHODDEF    \
+    {"set_escdelay", (PyCFunction)_curses_set_escdelay, METH_O, _curses_set_escdelay__doc__},
+
+static PyObject *
+_curses_set_escdelay_impl(PyObject *module, int ms);
+
+static PyObject *
+_curses_set_escdelay(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int ms;
+
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    ms = _PyLong_AsInt(arg);
+    if (ms == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_set_escdelay_impl(module, ms);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_get_tabsize__doc__,
+"get_tabsize($module, /)\n"
+"--\n"
+"\n"
+"Gets the curses TABSIZE setting.\n"
+"\n"
+"Gets the number of columns used by the curses library when converting a tab\n"
+"character to spaces as it adds the tab to a window.");
+
+#define _CURSES_GET_TABSIZE_METHODDEF    \
+    {"get_tabsize", (PyCFunction)_curses_get_tabsize, METH_NOARGS, _curses_get_tabsize__doc__},
+
+static PyObject *
+_curses_get_tabsize_impl(PyObject *module);
+
+static PyObject *
+_curses_get_tabsize(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_get_tabsize_impl(module);
+}
+
+PyDoc_STRVAR(_curses_set_tabsize__doc__,
+"set_tabsize($module, size, /)\n"
+"--\n"
+"\n"
+"Sets the curses TABSIZE setting.\n"
+"\n"
+"  size\n"
+"    rendered cell width of a tab character.\n"
+"\n"
+"Sets the number of columns used by the curses library when converting a tab\n"
+"character to spaces as it adds the tab to a window.");
+
+#define _CURSES_SET_TABSIZE_METHODDEF    \
+    {"set_tabsize", (PyCFunction)_curses_set_tabsize, METH_O, _curses_set_tabsize__doc__},
+
+static PyObject *
+_curses_set_tabsize_impl(PyObject *module, int size);
+
+static PyObject *
+_curses_set_tabsize(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int size;
+
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    size = _PyLong_AsInt(arg);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_set_tabsize_impl(module, size);
 
 exit:
     return return_value;
@@ -3326,7 +3448,7 @@ _curses_mousemask(PyObject *module, PyObject *arg)
     unsigned long newmask;
 
     if (!PyLong_Check(arg)) {
-        _PyArg_BadArgument("mousemask", 0, "int", arg);
+        _PyArg_BadArgument("mousemask", "argument", "int", arg);
         goto exit;
     }
     newmask = PyLong_AsUnsignedLongMask(arg);
@@ -3799,23 +3921,13 @@ PyDoc_STRVAR(_curses_update_lines_cols__doc__,
 #define _CURSES_UPDATE_LINES_COLS_METHODDEF    \
     {"update_lines_cols", (PyCFunction)_curses_update_lines_cols, METH_NOARGS, _curses_update_lines_cols__doc__},
 
-static int
+static PyObject *
 _curses_update_lines_cols_impl(PyObject *module);
 
 static PyObject *
 _curses_update_lines_cols(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-    int _return_value;
-
-    _return_value = _curses_update_lines_cols_impl(module);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong((long)_return_value);
-
-exit:
-    return return_value;
+    return _curses_update_lines_cols_impl(module);
 }
 
 #endif /* (defined(HAVE_CURSES_RESIZETERM) || defined(HAVE_CURSES_RESIZE_TERM)) */
@@ -4201,7 +4313,7 @@ _curses_tigetflag(PyObject *module, PyObject *arg)
     const char *capname;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("tigetflag", 0, "str", arg);
+        _PyArg_BadArgument("tigetflag", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t capname_length;
@@ -4244,7 +4356,7 @@ _curses_tigetnum(PyObject *module, PyObject *arg)
     const char *capname;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("tigetnum", 0, "str", arg);
+        _PyArg_BadArgument("tigetnum", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t capname_length;
@@ -4287,7 +4399,7 @@ _curses_tigetstr(PyObject *module, PyObject *arg)
     const char *capname;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("tigetstr", 0, "str", arg);
+        _PyArg_BadArgument("tigetstr", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t capname_length;
@@ -4569,4 +4681,4 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=1350eeb0c1e06af6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ca4f95323c5d585 input=a9049054013a1b77]*/

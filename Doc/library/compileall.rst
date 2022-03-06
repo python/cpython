@@ -52,6 +52,13 @@ compile Python sources.
    cases where the source file does not exist at the time the byte-code file is
    executed.
 
+.. cmdoption:: -s strip_prefix
+.. cmdoption:: -p prepend_prefix
+
+   Remove (``-s``) or append (``-p``) the given prefix of paths
+   recorded in the ``.pyc`` files.
+   Cannot be combined with ``-d``.
+
 .. cmdoption:: -x regex
 
    regex is used to search the full path to each file considered for
@@ -96,6 +103,16 @@ compile Python sources.
    variable is not set, and ``checked-hash`` if the ``SOURCE_DATE_EPOCH``
    environment variable is set.
 
+.. cmdoption:: -o level
+
+   Compile with the given optimization level. May be used multiple times
+   to compile for multiple levels at a time (for example,
+   ``compileall -o 1 -o 2``).
+
+.. cmdoption:: -e dir
+
+   Ignore symlinks pointing outside the given directory.
+
 .. versionchanged:: 3.2
    Added the ``-i``, ``-b`` and ``-h`` options.
 
@@ -106,6 +123,12 @@ compile Python sources.
 
 .. versionchanged:: 3.7
    Added the ``--invalidation-mode`` option.
+
+.. versionchanged:: 3.9
+   Added the ``-s``, ``-p``, ``-e`` options.
+   Raised the default recursion limit from 10 to
+   :py:func:`sys.getrecursionlimit()`.
+   Added the possibility to specify the ``-o`` option multiple times.
 
 
 There is no command-line option to control the optimization level used by the
@@ -120,7 +143,7 @@ runtime.
 Public functions
 ----------------
 
-.. function:: compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, workers=1, invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP)
+.. function:: compile_dir(dir, maxlevels=sys.getrecursionlimit(), ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, workers=1, invalidation_mode=None, stripdir=None, prependdir=None, limit_sl_dest=None)
 
    Recursively descend the directory tree named by *dir*, compiling all :file:`.py`
    files along the way. Return a true value if all the files compiled successfully,
@@ -166,6 +189,10 @@ Public functions
    :class:`py_compile.PycInvalidationMode` enum and controls how the generated
    pycs are invalidated at runtime.
 
+   The *stripdir*, *prependdir* and *limit_sl_dest* arguments correspond to
+   the ``-s``, ``-p`` and ``-e`` options described above.
+   They may be specified as ``str``, ``bytes`` or :py:class:`os.PathLike`.
+
    .. versionchanged:: 3.2
       Added the *legacy* and *optimize* parameter.
 
@@ -185,10 +212,16 @@ Public functions
    .. versionchanged:: 3.7
       The *invalidation_mode* parameter was added.
 
+   .. versionchanged:: 3.7.2
+      The *invalidation_mode* parameter's default value is updated to None.
+
    .. versionchanged:: 3.8
       Setting *workers* to 0 now chooses the optimal number of cores.
 
-.. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP)
+   .. versionchanged:: 3.9
+      Added *stripdir*, *prependdir* and *limit_sl_dest* arguments.
+
+.. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, invalidation_mode=None)
 
    Compile the file with path *fullname*. Return a true value if the file
    compiled successfully, and a false value otherwise.
@@ -220,6 +253,10 @@ Public functions
    :class:`py_compile.PycInvalidationMode` enum and controls how the generated
    pycs are invalidated at runtime.
 
+   The *stripdir*, *prependdir* and *limit_sl_dest* arguments correspond to
+   the ``-s``, ``-p`` and ``-e`` options described above.
+   They may be specified as ``str``, ``bytes`` or :py:class:`os.PathLike`.
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.5
@@ -232,7 +269,13 @@ Public functions
    .. versionchanged:: 3.7
       The *invalidation_mode* parameter was added.
 
-.. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, quiet=0, legacy=False, optimize=-1, invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP)
+   .. versionchanged:: 3.7.2
+      The *invalidation_mode* parameter's default value is updated to None.
+
+   .. versionchanged:: 3.9
+      Added *stripdir*, *prependdir* and *limit_sl_dest* arguments.
+
+.. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, quiet=0, legacy=False, optimize=-1, invalidation_mode=None)
 
    Byte-compile all the :file:`.py` files found along ``sys.path``. Return a
    true value if all the files compiled successfully, and a false value otherwise.
@@ -254,6 +297,9 @@ Public functions
 
    .. versionchanged:: 3.7
       The *invalidation_mode* parameter was added.
+
+   .. versionchanged:: 3.7.2
+      The *invalidation_mode* parameter's default value is updated to None.
 
 To force a recompile of all the :file:`.py` files in the :file:`Lib/`
 subdirectory and all its subdirectories::

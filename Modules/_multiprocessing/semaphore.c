@@ -268,11 +268,8 @@ static PyObject *
 semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
 {
     int blocking = 1, res, err = 0;
-    double timeout;
     PyObject *timeout_obj = Py_None;
     struct timespec deadline = {0};
-    struct timeval now;
-    long sec, nsec;
 
     static char *kwlist[] = {"block", "timeout", NULL};
 
@@ -285,19 +282,23 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
         Py_RETURN_TRUE;
     }
 
-    if (timeout_obj != Py_None) {
-        timeout = PyFloat_AsDouble(timeout_obj);
-        if (PyErr_Occurred())
+    int use_deadline = (timeout_obj != Py_None);
+    if (use_deadline) {
+        double timeout = PyFloat_AsDouble(timeout_obj);
+        if (PyErr_Occurred()) {
             return NULL;
-        if (timeout < 0.0)
+        }
+        if (timeout < 0.0) {
             timeout = 0.0;
+        }
 
+        struct timeval now;
         if (gettimeofday(&now, NULL) < 0) {
             PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
         }
-        sec = (long) timeout;
-        nsec = (long) (1e9 * (timeout - sec) + 0.5);
+        long sec = (long) timeout;
+        long nsec = (long) (1e9 * (timeout - sec) + 0.5);
         deadline.tv_sec = now.tv_sec + sec;
         deadline.tv_nsec = now.tv_usec * 1000 + nsec;
         deadline.tv_sec += (deadline.tv_nsec / 1000000000);
@@ -315,7 +316,7 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
         /* Couldn't acquire immediately, need to block */
         do {
             Py_BEGIN_ALLOW_THREADS
-            if (timeout_obj == Py_None) {
+            if (!use_deadline) {
                 res = sem_wait(self->handle);
             }
             else {

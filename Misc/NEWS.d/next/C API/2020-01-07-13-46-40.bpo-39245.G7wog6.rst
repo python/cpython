@@ -1,0 +1,5 @@
+The Vectorcall API (PEP 590) was made public, adding the functions
+``PyObject_Vectorcall``, ``PyObject_VectorcallMethod``,
+``PyVectorcall_Function``, ``PyObject_CallOneArg``,
+``PyObject_CallMethodNoArgs``, ``PyObject_CallMethodOneArg``,
+``PyObject_FastCallDict``, and the flag ``Py_TPFLAGS_HAVE_VECTORCALL``.

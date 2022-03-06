@@ -79,24 +79,24 @@ class CreationTestCase(unittest.TestCase):
     def testTimeoutThenBlocking(self):
         # Test settimeout() followed by setblocking()
         self.sock.settimeout(10)
-        self.sock.setblocking(1)
+        self.sock.setblocking(True)
         self.assertEqual(self.sock.gettimeout(), None)
-        self.sock.setblocking(0)
+        self.sock.setblocking(False)
         self.assertEqual(self.sock.gettimeout(), 0.0)
 
         self.sock.settimeout(10)
-        self.sock.setblocking(0)
+        self.sock.setblocking(False)
         self.assertEqual(self.sock.gettimeout(), 0.0)
-        self.sock.setblocking(1)
+        self.sock.setblocking(True)
         self.assertEqual(self.sock.gettimeout(), None)
 
     def testBlockingThenTimeout(self):
         # Test setblocking() followed by settimeout()
-        self.sock.setblocking(0)
+        self.sock.setblocking(False)
         self.sock.settimeout(1)
         self.assertEqual(self.sock.gettimeout(), 1)
 
-        self.sock.setblocking(1)
+        self.sock.setblocking(True)
         self.sock.settimeout(1)
         self.assertEqual(self.sock.gettimeout(), 1)
 
@@ -150,6 +150,7 @@ class TCPTimeoutTestCase(TimeoutTestCase):
     def tearDown(self):
         self.sock.close()
 
+    @unittest.skipIf(True, 'need to replace these hosts; see bpo-35518')
     def testConnectTimeout(self):
         # Testing connect timeout is tricky: we need to have IP connectivity
         # to a host that silently drops our packets.  We can't simulate this
@@ -198,10 +199,7 @@ class TCPTimeoutTestCase(TimeoutTestCase):
 
         skip = True
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # Use a timeout of 3 seconds.  Why 3?  Because it's more than 1, and
-        # less than 5.  i.e. no particular reason.  Feel free to tweak it if
-        # you feel a different value would be more appropriate.
-        timeout = 3
+        timeout = support.LOOPBACK_TIMEOUT
         sock.settimeout(timeout)
         try:
             sock.connect((whitehole))

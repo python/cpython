@@ -35,7 +35,7 @@ _posixshmem_shm_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("shm_open", 1, "str", args[0]);
+        _PyArg_BadArgument("shm_open", "argument 'path'", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -108,7 +108,7 @@ _posixshmem_shm_unlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("shm_unlink", 1, "str", args[0]);
+        _PyArg_BadArgument("shm_unlink", "argument 'path'", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -130,4 +130,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=be42e23c18677c0f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9132861c61d8c2d8 input=a9049054013a1b77]*/

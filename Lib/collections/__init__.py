@@ -39,21 +39,6 @@ except ImportError:
     pass
 
 
-def __getattr__(name):
-    # For backwards compatibility, continue to make the collections ABCs
-    # through Python 3.6 available through the collections module.
-    # Note, no new collections ABCs were added in Python 3.7
-    if name in _collections_abc.__all__:
-        obj = getattr(_collections_abc, name)
-        import warnings
-        warnings.warn("Using or importing the ABCs from 'collections' instead "
-                      "of from 'collections.abc' is deprecated since Python 3.3,"
-                      "and in 3.9 it will stop working",
-                      DeprecationWarning, stacklevel=2)
-        globals()[name] = obj
-        return obj
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
-
 ################################################################################
 ### OrderedDict
 ################################################################################
@@ -452,8 +437,6 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '__slots__': (),
         '_fields': field_names,
         '_field_defaults': field_defaults,
-        # alternate spelling for backward compatiblity
-        '_fields_defaults': field_defaults,
         '__new__': __new__,
         '_make': _make,
         '_replace': _replace,
@@ -983,28 +966,12 @@ class ChainMap(_collections_abc.MutableMapping):
 class UserDict(_collections_abc.MutableMapping):
 
     # Start by filling-out the abstract methods
-    def __init__(*args, **kwargs):
-        if not args:
-            raise TypeError("descriptor '__init__' of 'UserDict' object "
-                            "needs an argument")
-        self, *args = args
-        if len(args) > 1:
-            raise TypeError('expected at most 1 arguments, got %d' % len(args))
-        if args:
-            dict = args[0]
-        elif 'dict' in kwargs:
-            dict = kwargs.pop('dict')
-            import warnings
-            warnings.warn("Passing 'dict' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            dict = None
+    def __init__(self, dict=None, /, **kwargs):
         self.data = {}
         if dict is not None:
             self.update(dict)
         if kwargs:
             self.update(kwargs)
-    __init__.__text_signature__ = '($self, dict=None, /, **kwargs)'
 
     def __len__(self): return len(self.data)
     def __getitem__(self, key):
@@ -1212,12 +1179,10 @@ class UserString(_collections_abc.Sequence):
         if isinstance(sub, UserString):
             sub = sub.data
         return self.data.count(sub, start, end)
-    def encode(self, encoding=None, errors=None): # XXX improve this?
-        if encoding:
-            if errors:
-                return self.__class__(self.data.encode(encoding, errors))
-            return self.__class__(self.data.encode(encoding))
-        return self.__class__(self.data.encode())
+    def encode(self, encoding='utf-8', errors='strict'):
+        encoding = 'utf-8' if encoding is None else encoding
+        errors = 'strict' if errors is None else errors
+        return self.data.encode(encoding, errors)
     def endswith(self, suffix, start=0, end=_sys.maxsize):
         return self.data.endswith(suffix, start, end)
     def expandtabs(self, tabsize=8):

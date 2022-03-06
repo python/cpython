@@ -214,7 +214,7 @@ _curses_panel_panel_replace(PyCursesPanelObject *self, PyObject *arg)
     PyCursesWindowObject *win;
 
     if (!PyObject_TypeCheck(arg, &PyCursesWindow_Type)) {
-        _PyArg_BadArgument("replace", 0, (&PyCursesWindow_Type)->tp_name, arg);
+        _PyArg_BadArgument("replace", "argument", (&PyCursesWindow_Type)->tp_name, arg);
         goto exit;
     }
     win = (PyCursesWindowObject *)arg;
@@ -288,7 +288,7 @@ _curses_panel_new_panel(PyObject *module, PyObject *arg)
     PyCursesWindowObject *win;
 
     if (!PyObject_TypeCheck(arg, &PyCursesWindow_Type)) {
-        _PyArg_BadArgument("new_panel", 0, (&PyCursesWindow_Type)->tp_name, arg);
+        _PyArg_BadArgument("new_panel", "argument", (&PyCursesWindow_Type)->tp_name, arg);
         goto exit;
     }
     win = (PyCursesWindowObject *)arg;
@@ -335,4 +335,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=3cc16062281b7e07 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d96dc1fd68e898d9 input=a9049054013a1b77]*/

@@ -25,7 +25,7 @@ class Popen(object):
         if self.returncode is None:
             try:
                 pid, sts = os.waitpid(self.pid, flag)
-            except OSError as e:
+            except OSError:
                 # Child process not yet created. See #1731717
                 # e.errno == errno.ECHILD == 10
                 return None

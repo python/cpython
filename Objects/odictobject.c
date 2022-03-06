@@ -526,6 +526,8 @@ struct _odictnode {
 #define _odict_FOREACH(od, node) \
     for (node = _odict_FIRST(od); node != NULL; node = _odictnode_NEXT(node))
 
+_Py_IDENTIFIER(items);
+
 /* Return the index into the hash table, regardless of a valid node. */
 static Py_ssize_t
 _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
@@ -909,7 +911,7 @@ odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     if (args == NULL)
         goto Done;
 
-    items = _PyObject_CallMethodIdObjArgs((PyObject *)od, &PyId_items, NULL);
+    items = _PyObject_CallMethodIdNoArgs((PyObject *)od, &PyId_items);
     if (items == NULL)
         goto Done;
 
@@ -1364,7 +1366,6 @@ static PyObject *
 odict_repr(PyODictObject *self)
 {
     int i;
-    _Py_IDENTIFIER(items);
     PyObject *pieces = NULL, *result = NULL;
 
     if (PyODict_SIZE(self) == 0)
@@ -1410,8 +1411,8 @@ odict_repr(PyODictObject *self)
             Py_SIZE(pieces) = count;
     }
     else {
-        PyObject *items = _PyObject_CallMethodIdObjArgs((PyObject *)self,
-                                                        &PyId_items, NULL);
+        PyObject *items = _PyObject_CallMethodIdNoArgs((PyObject *)self,
+                                                       &PyId_items);
         if (items == NULL)
             goto Done;
         pieces = PySequence_List(items);
@@ -2184,7 +2185,6 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int res = 0;
     Py_ssize_t len;
-    _Py_IDENTIFIER(items);
     _Py_IDENTIFIER(keys);
 
     /* first handle args, if any */

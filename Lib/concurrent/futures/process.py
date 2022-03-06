@@ -435,6 +435,24 @@ def _queue_management_worker(executor_reference,
                 # is not gc-ed yet.
                 if executor is not None:
                     executor._shutdown_thread = True
+                    # Unless there are pending work items, we have nothing to cancel.
+                    if pending_work_items and executor._cancel_pending_futures:
+                        # Cancel all pending futures and update pending_work_items
+                        # to only have futures that are currently running.
+                        new_pending_work_items = {}
+                        for work_id, work_item in pending_work_items.items():
+                            if not work_item.future.cancel():
+                                new_pending_work_items[work_id] = work_item
+
+                        pending_work_items = new_pending_work_items
+                        # Drain work_ids_queue since we no longer need to
+                        # add items to the call queue.
+                        while True:
+                            try:
+                                work_ids_queue.get_nowait()
+                            except queue.Empty:
+                                break
+
                 # Since no new work items can be added, it is safe to shutdown
                 # this thread if there are no pending work items.
                 if not pending_work_items:
@@ -505,7 +523,7 @@ class ProcessPoolExecutor(_base.Executor):
                 worker processes will be created as the machine has processors.
             mp_context: A multiprocessing context to launch the workers. This
                 object should provide SimpleQueue, Queue and Process.
-            initializer: An callable used to initialize worker processes.
+            initializer: A callable used to initialize worker processes.
             initargs: A tuple of arguments to pass to the initializer.
         """
         _check_system_limits()
@@ -546,6 +564,7 @@ class ProcessPoolExecutor(_base.Executor):
         self._broken = False
         self._queue_count = 0
         self._pending_work_items = {}
+        self._cancel_pending_futures = False
 
         # Create communication channels for the executor
         # Make the call queue slightly larger than the number of processes to
@@ -608,22 +627,7 @@ class ProcessPoolExecutor(_base.Executor):
             p.start()
             self._processes[p.pid] = p
 
-    def submit(*args, **kwargs):
-        if len(args) >= 2:
-            self, fn, *args = args
-        elif not args:
-            raise TypeError("descriptor 'submit' of 'ProcessPoolExecutor' object "
-                            "needs an argument")
-        elif 'fn' in kwargs:
-            fn = kwargs.pop('fn')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'fn' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError('submit expected at least 1 positional argument, '
-                            'got %d' % (len(args)-1))
-
+    def submit(self, fn, /, *args, **kwargs):
         with self._shutdown_lock:
             if self._broken:
                 raise BrokenProcessPool(self._broken)
@@ -644,7 +648,6 @@ class ProcessPoolExecutor(_base.Executor):
 
             self._start_queue_management_thread()
             return f
-    submit.__text_signature__ = _base.Executor.submit.__text_signature__
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def map(self, fn, *iterables, timeout=None, chunksize=1):
@@ -676,9 +679,11 @@ class ProcessPoolExecutor(_base.Executor):
                               timeout=timeout)
         return _chain_from_iterable_of_lists(results)
 
-    def shutdown(self, wait=True):
+    def shutdown(self, wait=True, *, cancel_futures=False):
         with self._shutdown_lock:
+            self._cancel_pending_futures = cancel_futures
             self._shutdown_thread = True
+
         if self._queue_management_thread:
             # Wake up queue management thread
             self._queue_management_thread_wakeup.wakeup()

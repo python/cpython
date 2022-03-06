@@ -60,7 +60,7 @@
     <!-- _ssl will build _socket as well, which may cause conflicts in parallel builds -->
     <ExtensionModules Include="_socket" Condition="!$(IncludeSSL) or !$(IncludeExternals)" />
     <ExternalModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
-    <ExternalModules Include="_tkinter" Condition="$(IncludeTkinter)" />
+    <ExternalModules Include="_tkinter" Condition="$(IncludeTkinter) and $(Platform) != 'ARM' and $(Platform) != 'ARM64'" />
     <ExtensionModules Include="@(ExternalModules->'%(Identity)')" Condition="$(IncludeExternals)" />
     <Projects Include="@(ExtensionModules->'%(Identity).vcxproj')" Condition="$(IncludeExtensions)" />
     <!-- Test modules -->

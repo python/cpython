@@ -49,15 +49,16 @@ int PyCodec_Register(PyObject *search_function)
     return -1;
 }
 
-/* Convert a string to a normalized Python string: all characters are
-   converted to lower case, spaces are replaced with underscores. */
+extern int _Py_normalize_encoding(const char *, char *, size_t);
+
+/* Convert a string to a normalized Python string(decoded from UTF-8): all characters are
+   converted to lower case, spaces and hyphens are replaced with underscores. */
 
 static
 PyObject *normalizestring(const char *string)
 {
-    size_t i;
     size_t len = strlen(string);
-    char *p;
+    char *encoding;
     PyObject *v;
 
     if (len > PY_SSIZE_T_MAX) {
@@ -65,20 +66,19 @@ PyObject *normalizestring(const char *string)
         return NULL;
     }
 
-    p = PyMem_Malloc(len + 1);
-    if (p == NULL)
+    encoding = PyMem_Malloc(len + 1);
+    if (encoding == NULL)
         return PyErr_NoMemory();
-    for (i = 0; i < len; i++) {
-        char ch = string[i];
-        if (ch == ' ')
-            ch = '-';
-        else
-            ch = Py_TOLOWER(Py_CHARMASK(ch));
-        p[i] = ch;
+
+    if (!_Py_normalize_encoding(string, encoding, len + 1))
+    {
+        PyErr_SetString(PyExc_RuntimeError, "_Py_normalize_encoding() failed");
+        PyMem_Free(encoding);
+        return NULL;
     }
-    p[i] = '\0';
-    v = PyUnicode_FromString(p);
-    PyMem_Free(p);
+
+    v = PyUnicode_FromString(encoding);
+    PyMem_Free(encoding);
     return v;
 }
 
@@ -99,47 +99,38 @@ PyObject *normalizestring(const char *string)
 
 PyObject *_PyCodec_Lookup(const char *encoding)
 {
-    PyObject *result, *args = NULL, *v;
-    Py_ssize_t i, len;
-
     if (encoding == NULL) {
         PyErr_BadArgument();
-        goto onError;
+        return NULL;
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
-        goto onError;
+    if (interp->codec_search_path == NULL && _PyCodecRegistry_Init()) {
+        return NULL;
+    }
 
     /* Convert the encoding to a normalized Python string: all
        characters are converted to lower case, spaces and hyphens are
        replaced with underscores. */
-    v = normalizestring(encoding);
-    if (v == NULL)
-        goto onError;
+    PyObject *v = normalizestring(encoding);
+    if (v == NULL) {
+        return NULL;
+    }
     PyUnicode_InternInPlace(&v);
 
     /* First, try to lookup the name in the registry dictionary */
-    result = PyDict_GetItemWithError(interp->codec_search_cache, v);
+    PyObject *result = PyDict_GetItemWithError(interp->codec_search_cache, v);
     if (result != NULL) {
         Py_INCREF(result);
         Py_DECREF(v);
         return result;
     }
     else if (PyErr_Occurred()) {
-        Py_DECREF(v);
-        return NULL;
+        goto onError;
     }
 
     /* Next, scan the search functions in order of registration */
-    args = PyTuple_New(1);
-    if (args == NULL) {
-        Py_DECREF(v);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(args,0,v);
-
-    len = PyList_Size(interp->codec_search_path);
+    const Py_ssize_t len = PyList_Size(interp->codec_search_path);
     if (len < 0)
         goto onError;
     if (len == 0) {
@@ -149,13 +140,14 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         goto onError;
     }
 
+    Py_ssize_t i;
     for (i = 0; i < len; i++) {
         PyObject *func;
 
         func = PyList_GetItem(interp->codec_search_path, i);
         if (func == NULL)
             goto onError;
-        result = PyEval_CallObject(func, args);
+        result = _PyObject_CallOneArg(func, v);
         if (result == NULL)
             goto onError;
         if (result == Py_None) {
@@ -182,11 +174,11 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         Py_DECREF(result);
         goto onError;
     }
-    Py_DECREF(args);
+    Py_DECREF(v);
     return result;
 
  onError:
-    Py_XDECREF(args);
+    Py_DECREF(v);
     return NULL;
 }
 
@@ -325,7 +317,7 @@ PyObject *codec_getstreamcodec(const char *encoding,
     if (errors != NULL)
         streamcodec = PyObject_CallFunction(codeccls, "Os", stream, errors);
     else
-        streamcodec = PyObject_CallFunctionObjArgs(codeccls, stream, NULL);
+        streamcodec = _PyObject_CallOneArg(codeccls, stream);
     Py_DECREF(codecs);
     return streamcodec;
 }
@@ -424,7 +416,7 @@ _PyCodec_EncodeInternal(PyObject *object,
     if (args == NULL)
         goto onError;
 
-    result = PyEval_CallObject(encoder, args);
+    result = PyObject_Call(encoder, args, NULL);
     if (result == NULL) {
         wrap_codec_error("encoding", encoding);
         goto onError;
@@ -470,7 +462,7 @@ _PyCodec_DecodeInternal(PyObject *object,
     if (args == NULL)
         goto onError;
 
-    result = PyEval_CallObject(decoder,args);
+    result = PyObject_Call(decoder, args, NULL);
     if (result == NULL) {
         wrap_codec_error("decoding", encoding);
         goto onError;
@@ -666,7 +658,7 @@ static void wrong_exception_type(PyObject *exc)
 {
     PyErr_Format(PyExc_TypeError,
                  "don't know how to handle %.200s in error callback",
-                 exc->ob_type->tp_name);
+                 Py_TYPE(exc)->tp_name);
 }
 
 PyObject *PyCodec_StrictErrors(PyObject *exc)
@@ -1502,32 +1494,37 @@ static int _PyCodecRegistry_Init(void)
 
     PyInterpreterState *interp = _PyInterpreterState_Get();
     PyObject *mod;
-    unsigned i;
 
     if (interp->codec_search_path != NULL)
         return 0;
 
     interp->codec_search_path = PyList_New(0);
-    interp->codec_search_cache = PyDict_New();
-    interp->codec_error_registry = PyDict_New();
-
-    if (interp->codec_error_registry) {
-        for (i = 0; i < Py_ARRAY_LENGTH(methods); ++i) {
-            PyObject *func = PyCFunction_NewEx(&methods[i].def, NULL, NULL);
-            int res;
-            if (!func)
-                Py_FatalError("can't initialize codec error registry");
-            res = PyCodec_RegisterError(methods[i].name, func);
-            Py_DECREF(func);
-            if (res)
-                Py_FatalError("can't initialize codec error registry");
-        }
+    if (interp->codec_search_path == NULL) {
+        return -1;
     }
 
-    if (interp->codec_search_path == NULL ||
-        interp->codec_search_cache == NULL ||
-        interp->codec_error_registry == NULL)
-        Py_FatalError("can't initialize codec registry");
+    interp->codec_search_cache = PyDict_New();
+    if (interp->codec_search_cache == NULL) {
+        return -1;
+    }
+
+    interp->codec_error_registry = PyDict_New();
+    if (interp->codec_error_registry == NULL) {
+        return -1;
+    }
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(methods); ++i) {
+        PyObject *func = PyCFunction_NewEx(&methods[i].def, NULL, NULL);
+        if (!func) {
+            return -1;
+        }
+
+        int res = PyCodec_RegisterError(methods[i].name, func);
+        Py_DECREF(func);
+        if (res) {
+            return -1;
+        }
+    }
 
     mod = PyImport_ImportModuleNoBlock("encodings");
     if (mod == NULL) {

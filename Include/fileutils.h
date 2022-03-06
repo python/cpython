@@ -84,6 +84,7 @@ struct _Py_stat_struct {
     time_t st_ctime;
     int st_ctime_nsec;
     unsigned long st_file_attributes;
+    unsigned long st_reparse_tag;
 };
 #else
 #  define _Py_stat_struct stat
@@ -153,6 +154,12 @@ PyAPI_FUNC(wchar_t*) _Py_wrealpath(
        including the trailing NUL character */
     size_t resolved_path_len);
 #endif
+
+#ifndef MS_WINDOWS
+PyAPI_FUNC(int) _Py_isabs(const wchar_t *path);
+#endif
+
+PyAPI_FUNC(int) _Py_abspath(const wchar_t *path, wchar_t **abspath_p);
 
 PyAPI_FUNC(wchar_t*) _Py_wgetcwd(
     wchar_t *buf,

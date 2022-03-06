@@ -130,7 +130,7 @@ static const unsigned char table_a2b_hqx[256] = {
 static const unsigned char table_b2a_hqx[] =
 "!\"#$%&'()*+,-012345689@ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr";
 
-static const char table_a2b_base64[] = {
+static const unsigned char table_a2b_base64[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,62, -1,-1,-1,63,
@@ -138,7 +138,16 @@ static const char table_a2b_base64[] = {
     -1, 0, 1, 2,  3, 4, 5, 6,  7, 8, 9,10, 11,12,13,14,
     15,16,17,18, 19,20,21,22, 23,24,25,-1, -1,-1,-1,-1,
     -1,26,27,28, 29,30,31,32, 33,34,35,36, 37,38,39,40,
-    41,42,43,44, 45,46,47,48, 49,50,51,-1, -1,-1,-1,-1
+    41,42,43,44, 45,46,47,48, 49,50,51,-1, -1,-1,-1,-1,
+
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
 };
 
 #define BASE64_PAD '='
@@ -413,32 +422,6 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     return _PyBytesWriter_Finish(&writer, ascii_data);
 }
 
-
-static int
-binascii_find_valid(const unsigned char *s, Py_ssize_t slen, int num)
-{
-    /* Finds & returns the (num+1)th
-    ** valid character for base64, or -1 if none.
-    */
-
-    int ret = -1;
-    unsigned char c, b64val;
-
-    while ((slen > 0) && (ret == -1)) {
-        c = *s;
-        b64val = table_a2b_base64[c & 0x7f];
-        if ( ((c <= 0x7f) && (b64val != (unsigned char)-1)) ) {
-            if (num == 0)
-                ret = *s;
-            num--;
-        }
-
-        s++;
-        slen--;
-    }
-    return ret;
-}
-
 /*[clinic input]
 binascii.a2b_base64
 
@@ -452,88 +435,74 @@ static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
 /*[clinic end generated code: output=0628223f19fd3f9b input=5872acf6e1cac243]*/
 {
-    const unsigned char *ascii_data;
-    unsigned char *bin_data;
-    unsigned char *bin_data_start;
-    int leftbits = 0;
-    unsigned char this_ch;
-    unsigned int leftchar = 0;
-    Py_ssize_t ascii_len, bin_len;
-    int quad_pos = 0;
-    _PyBytesWriter writer;
-    binascii_state *state;
+    assert(data->len >= 0);
 
-    ascii_data = data->buf;
-    ascii_len = data->len;
-
-    assert(ascii_len >= 0);
-
-    if (ascii_len > PY_SSIZE_T_MAX - 3)
-        return PyErr_NoMemory();
-
-    bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
-
-    _PyBytesWriter_Init(&writer);
+    const unsigned char *ascii_data = data->buf;
+    size_t ascii_len = data->len;
 
     /* Allocate the buffer */
-    bin_data = _PyBytesWriter_Alloc(&writer, bin_len);
+    Py_ssize_t bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
+    _PyBytesWriter writer;
+    _PyBytesWriter_Init(&writer);
+    unsigned char *bin_data = _PyBytesWriter_Alloc(&writer, bin_len);
     if (bin_data == NULL)
         return NULL;
-    bin_data_start = bin_data;
+    unsigned char *bin_data_start = bin_data;
 
-    for( ; ascii_len > 0; ascii_len--, ascii_data++) {
-        this_ch = *ascii_data;
-
-        if (this_ch > 0x7f ||
-            this_ch == '\r' || this_ch == '\n' || this_ch == ' ')
-            continue;
+    int quad_pos = 0;
+    unsigned char leftchar = 0;
+    int pads = 0;
+    for (size_t i = 0; i < ascii_len; i++) {
+        unsigned char this_ch = ascii_data[i];
 
         /* Check for pad sequences and ignore
         ** the invalid ones.
         */
         if (this_ch == BASE64_PAD) {
-            if ( (quad_pos < 2) ||
-                 ((quad_pos == 2) &&
-                  (binascii_find_valid(ascii_data, ascii_len, 1)
-                   != BASE64_PAD)) )
-            {
-                continue;
-            }
-            else {
+            if (quad_pos >= 2 && quad_pos + ++pads >= 4) {
                 /* A pad sequence means no more input.
                 ** We've already interpreted the data
                 ** from the quad at this point.
                 */
-                leftbits = 0;
-                break;
+                goto done;
             }
+            continue;
         }
 
-        this_ch = table_a2b_base64[*ascii_data];
-        if ( this_ch == (unsigned char) -1 )
+        this_ch = table_a2b_base64[this_ch];
+        if (this_ch >= 64) {
             continue;
+        }
+        pads = 0;
 
-        /*
-        ** Shift it in on the low end, and see if there's
-        ** a byte ready for output.
-        */
-        quad_pos = (quad_pos + 1) & 0x03;
-        leftchar = (leftchar << 6) | (this_ch);
-        leftbits += 6;
-
-        if ( leftbits >= 8 ) {
-            leftbits -= 8;
-            *bin_data++ = (leftchar >> leftbits) & 0xff;
-            leftchar &= ((1 << leftbits) - 1);
+        switch (quad_pos) {
+            case 0:
+                quad_pos = 1;
+                leftchar = this_ch;
+                break;
+            case 1:
+                quad_pos = 2;
+                *bin_data++ = (leftchar << 2) | (this_ch >> 4);
+                leftchar = this_ch & 0x0f;
+                break;
+            case 2:
+                quad_pos = 3;
+                *bin_data++ = (leftchar << 4) | (this_ch >> 2);
+                leftchar = this_ch & 0x03;
+                break;
+            case 3:
+                quad_pos = 0;
+                *bin_data++ = (leftchar << 6) | (this_ch);
+                leftchar = 0;
+                break;
         }
     }
 
-    if (leftbits != 0) {
-        state = PyModule_GetState(module);
+    if (quad_pos != 0) {
+        binascii_state *state = PyModule_GetState(module);
         if (state == NULL) {
-            return NULL;
-        }
-        if (leftbits == 6) {
+            /* error already set, from PyModule_GetState */
+        } else if (quad_pos == 1) {
             /*
             ** There is exactly one extra valid, non-padding, base64 character.
             ** This is an invalid length, as there is no possible input that
@@ -551,6 +520,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
         return NULL;
     }
 
+done:
     return _PyBytesWriter_Finish(&writer, bin_data);
 }
 
@@ -643,6 +613,11 @@ static PyObject *
 binascii_a2b_hqx_impl(PyObject *module, Py_buffer *data)
 /*[clinic end generated code: output=4d6d8c54d54ea1c1 input=0d914c680e0eed55]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "binascii.a2b_hqx() is deprecated", 1) < 0) {
+        return NULL;
+    }
+
     const unsigned char *ascii_data;
     unsigned char *bin_data;
     int leftbits = 0;
@@ -731,6 +706,11 @@ static PyObject *
 binascii_rlecode_hqx_impl(PyObject *module, Py_buffer *data)
 /*[clinic end generated code: output=393d79338f5f5629 input=e1f1712447a82b09]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "binascii.rlecode_hqx() is deprecated", 1) < 0) {
+        return NULL;
+    }
+
     const unsigned char *in_data;
     unsigned char *out_data;
     unsigned char ch;
@@ -793,6 +773,11 @@ static PyObject *
 binascii_b2a_hqx_impl(PyObject *module, Py_buffer *data)
 /*[clinic end generated code: output=d0aa5a704bc9f7de input=9596ebe019fe12ba]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "binascii.b2a_hqx() is deprecated", 1) < 0) {
+        return NULL;
+    }
+
     unsigned char *ascii_data;
     const unsigned char *bin_data;
     int leftbits = 0;
@@ -848,6 +833,11 @@ static PyObject *
 binascii_rledecode_hqx_impl(PyObject *module, Py_buffer *data)
 /*[clinic end generated code: output=9826619565de1c6c input=54cdd49fc014402c]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "binascii.rledecode_hqx() is deprecated", 1) < 0) {
+        return NULL;
+    }
+
     const unsigned char *in_data;
     unsigned char *out_data;
     unsigned char in_byte, in_repeat;
@@ -962,7 +952,7 @@ error:
 
 
 /*[clinic input]
-binascii.crc_hqx -> unsigned_int
+binascii.crc_hqx
 
     data: Py_buffer
     crc: unsigned_int(bitwise=True)
@@ -971,9 +961,9 @@ binascii.crc_hqx -> unsigned_int
 Compute CRC-CCITT incrementally.
 [clinic start generated code]*/
 
-static unsigned int
+static PyObject *
 binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc)
-/*[clinic end generated code: output=8ec2a78590d19170 input=f18240ff8c705b79]*/
+/*[clinic end generated code: output=2fde213d0f547a98 input=56237755370a951c]*/
 {
     const unsigned char *bin_data;
     Py_ssize_t len;
@@ -986,7 +976,7 @@ binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc)
         crc = ((crc<<8)&0xff00) ^ crctab_hqx[(crc>>8)^*bin_data++];
     }
 
-    return crc;
+    return PyLong_FromUnsignedLong(crc);
 }
 
 #ifndef USE_ZLIB_CRC32

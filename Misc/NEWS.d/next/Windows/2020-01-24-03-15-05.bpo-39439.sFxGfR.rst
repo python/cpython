@@ -1,0 +1,1 @@
+Honor the Python path when a virtualenv is active on Windows.

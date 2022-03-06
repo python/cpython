@@ -1,0 +1,5 @@
+:meth:`~pathlib.Path.home()` and :meth:`~pathlib.Path.expanduser()` on Windows
+now prefer :envvar:`USERPROFILE` and no longer use :envvar:`HOME`, which is not
+normally set for regular user accounts. This makes them again behave like
+:func:`os.path.expanduser`, which was changed to ignore :envvar:`HOME` in 3.8,
+see :issue:`36264`.

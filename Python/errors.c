@@ -24,10 +24,10 @@ extern char *strerror(int);
 extern "C" {
 #endif
 
+_Py_IDENTIFIER(__module__);
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(stderr);
 _Py_IDENTIFIER(flush);
-
 
 /* Forward declarations */
 static PyObject *
@@ -93,7 +93,7 @@ _PyErr_CreateException(PyObject *exception, PyObject *value)
         return PyObject_Call(exception, value, NULL);
     }
     else {
-        return PyObject_CallFunctionObjArgs(exception, value, NULL);
+        return _PyObject_CallOneArg(exception, value);
     }
 }
 
@@ -218,6 +218,9 @@ PyErr_SetString(PyObject *exception, const char *string)
 PyObject* _Py_HOT_FUNCTION
 PyErr_Occurred(void)
 {
+    /* The caller must hold the GIL. */
+    assert(PyGILState_Check());
+
     PyThreadState *tstate = _PyThreadState_GET();
     return _PyErr_Occurred(tstate);
 }
@@ -430,19 +433,25 @@ PyErr_Clear(void)
 
 
 void
-PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
+_PyErr_GetExcInfo(PyThreadState *tstate,
+                  PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-
     _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
     *p_type = exc_info->exc_type;
     *p_value = exc_info->exc_value;
     *p_traceback = exc_info->exc_traceback;
 
-
     Py_XINCREF(*p_type);
     Py_XINCREF(*p_value);
     Py_XINCREF(*p_traceback);
+}
+
+
+void
+PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_GetExcInfo(tstate, p_type, p_value, p_traceback);
 }
 
 void
@@ -521,6 +530,21 @@ _PyErr_FormatVFromCause(PyThreadState *tstate, PyObject *exception,
 }
 
 PyObject *
+_PyErr_FormatFromCauseTstate(PyThreadState *tstate, PyObject *exception,
+                             const char *format, ...)
+{
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    _PyErr_FormatVFromCause(tstate, exception, format, vargs);
+    va_end(vargs);
+    return NULL;
+}
+
+PyObject *
 _PyErr_FormatFromCause(PyObject *exception, const char *format, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -547,9 +571,8 @@ PyErr_BadArgument(void)
 }
 
 PyObject *
-PyErr_NoMemory(void)
+_PyErr_NoMemory(PyThreadState *tstate)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     if (Py_TYPE(PyExc_MemoryError) == NULL) {
         /* PyErr_NoMemory() has been called before PyExc_MemoryError has been
            initialized by _PyExc_Init() */
@@ -558,6 +581,13 @@ PyErr_NoMemory(void)
     }
     _PyErr_SetNone(tstate, PyExc_MemoryError);
     return NULL;
+}
+
+PyObject *
+PyErr_NoMemory(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyErr_NoMemory(tstate);
 }
 
 PyObject *
@@ -979,7 +1009,6 @@ PyObject *
 PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _Py_IDENTIFIER(__module__);
     PyObject *modulename = NULL;
     PyObject *classname = NULL;
     PyObject *mydict = NULL;
@@ -1205,7 +1234,6 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
         }
     }
 
-    _Py_IDENTIFIER(__module__);
     PyObject *moduleName = _PyObject_GetAttrId(exc_type, &PyId___module__);
     if (moduleName == NULL || !PyUnicode_Check(moduleName)) {
         Py_XDECREF(moduleName);
@@ -1257,7 +1285,7 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
     }
 
     /* Explicitly call file.flush() */
-    PyObject *res = _PyObject_CallMethodId(file, &PyId_flush, NULL);
+    PyObject *res = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
     if (!res) {
         return -1;
     }
@@ -1367,43 +1395,52 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
         }
     }
 
+    PyObject *hook_args = make_unraisable_hook_args(
+        tstate, exc_type, exc_value, exc_tb, err_msg, obj);
+    if (hook_args == NULL) {
+        err_msg_str = ("Exception ignored on building "
+                       "sys.unraisablehook arguments");
+        goto error;
+    }
+
     _Py_IDENTIFIER(unraisablehook);
     PyObject *hook = _PySys_GetObjectId(&PyId_unraisablehook);
-    if (hook != NULL && hook != Py_None) {
-        PyObject *hook_args;
-
-        hook_args = make_unraisable_hook_args(tstate, exc_type, exc_value,
-                                              exc_tb, err_msg, obj);
-        if (hook_args != NULL) {
-            PyObject *args[1] = {hook_args};
-            PyObject *res = _PyObject_FastCall(hook, args, 1);
-            Py_DECREF(hook_args);
-            if (res != NULL) {
-                Py_DECREF(res);
-                goto done;
-            }
-
-            err_msg_str = "Exception ignored in sys.unraisablehook";
-        }
-        else {
-            err_msg_str = ("Exception ignored on building "
-                           "sys.unraisablehook arguments");
-        }
-
-        Py_XDECREF(err_msg);
-        err_msg = PyUnicode_FromString(err_msg_str);
-        if (err_msg == NULL) {
-            PyErr_Clear();
-        }
-
-        /* sys.unraisablehook failed: log its error using default hook */
-        Py_XDECREF(exc_type);
-        Py_XDECREF(exc_value);
-        Py_XDECREF(exc_tb);
-        _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
-
-        obj = hook;
+    if (hook == NULL) {
+        Py_DECREF(hook_args);
+        goto default_hook;
     }
+
+    if (PySys_Audit("sys.unraisablehook", "OO", hook, hook_args) < 0) {
+        Py_DECREF(hook_args);
+        err_msg_str = "Exception ignored in audit hook";
+        obj = NULL;
+        goto error;
+    }
+
+    if (hook == Py_None) {
+        Py_DECREF(hook_args);
+        goto default_hook;
+    }
+
+    PyObject *res = _PyObject_CallOneArg(hook, hook_args);
+    Py_DECREF(hook_args);
+    if (res != NULL) {
+        Py_DECREF(res);
+        goto done;
+    }
+
+    /* sys.unraisablehook failed: log its error using default hook */
+    obj = hook;
+    err_msg_str = NULL;
+
+error:
+    /* err_msg_str and obj have been updated and we have a new exception */
+    Py_XSETREF(err_msg, PyUnicode_FromString(err_msg_str ?
+        err_msg_str : "Exception ignored in sys.unraisablehook"));
+    Py_XDECREF(exc_type);
+    Py_XDECREF(exc_value);
+    Py_XDECREF(exc_tb);
+    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
 
 default_hook:
     /* Call the default unraisable hook (ignore failure) */

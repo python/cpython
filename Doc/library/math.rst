@@ -71,6 +71,9 @@ Number-theoretic and representation functions
    Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integral or
    is negative.
 
+   .. deprecated:: 3.9
+      Accepting floats with integral values (like ``5.0``) is deprecated.
+
 
 .. function:: floor(x)
 
@@ -210,13 +213,33 @@ Number-theoretic and representation functions
    of *x* and are floats.
 
 
-.. function:: perm(n, k)
+.. function:: nextafter(x, y)
+
+   Return the next floating-point value after *x* towards *y*.
+
+   If *x* is equal to *y*, return *y*.
+
+   Examples:
+
+   * ``math.nextafter(x, math.inf)`` goes up: towards positive infinity.
+   * ``math.nextafter(x, -math.inf)`` goes down: towards minus infinity.
+   * ``math.nextafter(x, 0.0)`` goes towards zero.
+   * ``math.nextafter(x, math.copysign(math.inf, x))`` goes away from zero.
+
+   See also :func:`math.ulp`.
+
+   .. versionadded:: 3.9
+
+.. function:: perm(n, k=None)
 
    Return the number of ways to choose *k* items from *n* items
    without repetition and with order.
 
    Evaluates to ``n! / (n - k)!`` when ``k <= n`` and evaluates
    to zero when ``k > n``.
+
+   If *k* is not specified or is None, then *k* defaults to *n*
+   and the function returns ``n!``.
 
    Raises :exc:`TypeError` if either of the arguments are not integers.
    Raises :exc:`ValueError` if either of the arguments are negative.
@@ -262,6 +285,30 @@ Number-theoretic and representation functions
    Return the :class:`~numbers.Real` value *x* truncated to an
    :class:`~numbers.Integral` (usually an integer). Delegates to
    :meth:`x.__trunc__() <object.__trunc__>`.
+
+.. function:: ulp(x)
+
+   Return the value of the least significant bit of the float *x*:
+
+   * If *x* is a NaN (not a number), return *x*.
+   * If *x* is negative, return ``ulp(-x)``.
+   * If *x* is a positive infinity, return *x*.
+   * If *x* is equal to zero, return the smallest positive
+     *denormalized* representable float (smaller than the minimum positive
+     *normalized* float, :data:`sys.float_info.min <sys.float_info>`).
+   * If *x* is equal to the largest positive representable float,
+     return the value of the least significant bit of *x*, such that the first
+     float smaller than *x* is ``x - ulp(x)``.
+   * Otherwise (*x* is a positive finite number), return the value of the least
+     significant bit of *x*, such that the first float bigger than *x*
+     is ``x + ulp(x)``.
+
+   ULP stands for "Unit in the Last Place".
+
+   See also :func:`math.nextafter` and :data:`sys.float_info.epsilon
+   <sys.float_info>`.
+
+   .. versionadded:: 3.9
 
 
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern
@@ -360,17 +407,20 @@ Trigonometric functions
 
 .. function:: acos(x)
 
-   Return the arc cosine of *x*, in radians.
+   Return the arc cosine of *x*, in radians. The result is between ``0`` and
+   ``pi``.
 
 
 .. function:: asin(x)
 
-   Return the arc sine of *x*, in radians.
+   Return the arc sine of *x*, in radians. The result is between ``-pi/2`` and
+   ``pi/2``.
 
 
 .. function:: atan(x)
 
-   Return the arc tangent of *x*, in radians.
+   Return the arc tangent of *x*, in radians. The result is between ``-pi/2`` and
+   ``pi/2``.
 
 
 .. function:: atan2(y, x)
@@ -391,7 +441,8 @@ Trigonometric functions
 .. function:: dist(p, q)
 
    Return the Euclidean distance between two points *p* and *q*, each
-   given as a tuple of coordinates.  The two tuples must be the same size.
+   given as a sequence (or iterable) of coordinates.  The two points
+   must have the same dimension.
 
    Roughly equivalent to::
 

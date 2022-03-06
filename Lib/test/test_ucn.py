@@ -12,7 +12,6 @@ import unicodedata
 
 from test import support
 from http.client import HTTPException
-from test.test_normalization import check_version
 
 try:
     from _testcapi import INT_MAX, PY_SSIZE_T_MAX, UINT_MAX
@@ -172,6 +171,9 @@ class UnicodeNamesTest(unittest.TestCase):
 
     def test_named_sequences_full(self):
         # Check all the named sequences
+        def check_version(testfile):
+            hdr = testfile.readline()
+            return unicodedata.unidata_version in hdr
         url = ("http://www.pythontest.net/unicode/%s/NamedSequences.txt" %
                unicodedata.unidata_version)
         try:

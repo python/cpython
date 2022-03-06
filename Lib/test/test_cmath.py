@@ -6,7 +6,7 @@ import cmath, math
 from cmath import phase, polar, rect, pi
 import platform
 import sys
-import sysconfig
+
 
 INF = float('inf')
 NAN = float('nan')

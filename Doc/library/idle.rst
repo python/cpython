@@ -199,7 +199,8 @@ Format Paragraph
 Strip trailing whitespace
    Remove trailing space and other whitespace characters after the last
    non-whitespace character of a line by applying str.rstrip to each line,
-   including lines within multiline strings.
+   including lines within multiline strings.  Except for Shell windows,
+   remove extra newlines at the end of the file.
 
 .. index::
    single: Run script
@@ -207,8 +208,25 @@ Strip trailing whitespace
 Run menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Python Shell
-   Open or wake up the Python Shell window.
+.. _run-module:
+
+Run Module
+   Do :ref:`Check Module <check-module>`.  If no error, restart the shell to clean the
+   environment, then execute the module.  Output is displayed in the Shell
+   window.  Note that output requires use of ``print`` or ``write``.
+   When execution is complete, the Shell retains focus and displays a prompt.
+   At this point, one may interactively explore the result of execution.
+   This is similar to executing a file with ``python -i file`` at a command
+   line.
+
+.. _run-custom:
+
+Run... Customized
+   Same as :ref:`Run Module <run-module>`, but run the module with customized
+   settings.  *Command Line Arguments* extend :data:`sys.argv` as if passed
+   on a command line. The module can be run in the Shell without restarting.
+
+.. _check-module:
 
 Check Module
    Check the syntax of the module currently open in the Editor window. If the
@@ -217,14 +235,11 @@ Check Module
    there is a syntax error, the approximate location is indicated in the
    Editor window.
 
-Run Module
-   Do Check Module (above).  If no error, restart the shell to clean the
-   environment, then execute the module.  Output is displayed in the Shell
-   window.  Note that output requires use of ``print`` or ``write``.
-   When execution is complete, the Shell retains focus and displays a prompt.
-   At this point, one may interactively explore the result of execution.
-   This is similar to executing a file with ``python -i file`` at a command
-   line.
+.. _python-shell:
+
+Python Shell
+   Open or wake up the Python Shell window.
+
 
 Shell menu (Shell window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -276,20 +291,32 @@ Options menu (Shell and Editor)
 Configure IDLE
    Open a configuration dialog and change preferences for the following:
    fonts, indentation, keybindings, text color themes, startup windows and
-   size, additional help sources, and extensions.  On macOS,  open the
+   size, additional help sources, and extensions.  On macOS, open the
    configuration dialog by selecting Preferences in the application
-   menu. For more, see
+   menu. For more details, see
    :ref:`Setting preferences <preferences>` under Help and preferences.
+
+Most configuration options apply to all windows or all future windows.
+The option items below only apply to the active window.
 
 Show/Hide Code Context (Editor Window only)
    Open a pane at the top of the edit window which shows the block context
    of the code which has scrolled above the top of the window.  See
-   :ref:`Code Context <code-context>` in the Editing and Navigation section below.
+   :ref:`Code Context <code-context>` in the Editing and Navigation section
+   below.
+
+Show/Hide Line Numbers (Editor Window only)
+   Open a column to the left of the edit window which shows the number
+   of each line of text.  The default is off, which may be changed in the
+   preferences (see :ref:`Setting preferences <preferences>`).
 
 Zoom/Restore Height
    Toggles the window between normal size and maximum height. The initial size
    defaults to 40 lines by 80 chars unless changed on the General tab of the
-   Configure IDLE dialog.
+   Configure IDLE dialog.  The maximum height for a screen is determined by
+   momentarily maximizing a window the first time one is zoomed on the screen.
+   Changing screen settings may invalidate the saved height.  This toggle has
+   no effect when a window is maximized.
 
 Window menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -343,7 +370,8 @@ Paste
 
 Editor windows also have breakpoint functions.  Lines with a breakpoint set are
 specially marked.  Breakpoints only have an effect when running under the
-debugger.  Breakpoints for a file are saved in the user's .idlerc directory.
+debugger.  Breakpoints for a file are saved in the user's ``.idlerc``
+directory.
 
 Set Breakpoint
    Set a breakpoint on the current line.
@@ -658,14 +686,14 @@ crash or Keyboard Interrupt (control-C) may fail to connect.  Dismissing
 the error box or Restart Shell on the Shell menu may fix a temporary problem.
 
 When IDLE first starts, it attempts to read user configuration files in
-~/.idlerc/ (~ is one's home directory).  If there is a problem, an error
+``~/.idlerc/`` (~ is one's home directory).  If there is a problem, an error
 message should be displayed.  Leaving aside random disk glitches, this can
 be prevented by never editing the files by hand, using the configuration
 dialog, under Options, instead Options.  Once it happens, the solution may
 be to delete one or more of the configuration files.
 
 If IDLE quits with no message, and it was not started from a console, try
-starting from a console (``python -m idlelib)`` and see if a message appears.
+starting from a console (``python -m idlelib``) and see if a message appears.
 
 Running user code
 ^^^^^^^^^^^^^^^^^
@@ -695,6 +723,10 @@ such as multiprocessing.  If such subprocess use ``input`` from sys.stdin
 or ``print`` or ``write`` to sys.stdout or sys.stderr,
 IDLE should be started in a command line window.  The secondary subprocess
 will then be attached to that window for input and output.
+
+The IDLE code running in the execution process adds frames to the call stack
+that would not be there otherwise.  IDLE wraps ``sys.getrecursionlimit`` and
+``sys.setrecursionlimit`` to reduce the effect of the additional stack frames.
 
 If ``sys`` is reset by user code, such as with ``importlib.reload(sys)``,
 IDLE's changes are lost and input from the keyboard and output to the screen
@@ -832,13 +864,13 @@ Or click the TOC (Table of Contents) button and select a section
 header in the opened box.
 
 Help menu entry "Python Docs" opens the extensive sources of help,
-including tutorials, available at docs.python.org/x.y, where 'x.y'
+including tutorials, available at ``docs.python.org/x.y``, where 'x.y'
 is the currently running Python version.  If your system
 has an off-line copy of the docs (this may be an installation option),
 that will be opened instead.
 
 Selected URLs can be added or removed from the help menu at any time using the
-General tab of the Configure IDLE dialog .
+General tab of the Configure IDLE dialog.
 
 .. _preferences:
 
@@ -847,9 +879,9 @@ Setting preferences
 
 The font preferences, highlighting, keys, and general preferences can be
 changed via Configure IDLE on the Option menu.
-Non-default user settings are saved in a .idlerc directory in the user's
+Non-default user settings are saved in a ``.idlerc`` directory in the user's
 home directory.  Problems caused by bad user configuration files are solved
-by editing or deleting one or more of the files in .idlerc.
+by editing or deleting one or more of the files in ``.idlerc``.
 
 On the Font tab, see the text sample for the effect of font face and size
 on multiple characters in multiple languages.  Edit the sample to add

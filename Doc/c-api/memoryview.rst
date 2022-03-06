@@ -57,7 +57,7 @@ any other object.
 .. c:function:: Py_buffer *PyMemoryView_GET_BASE(PyObject *mview)
 
    Return either a pointer to the exporting object that the memoryview is based
-   on or *NULL* if the memoryview has been created by one of the functions
+   on or ``NULL`` if the memoryview has been created by one of the functions
    :c:func:`PyMemoryView_FromMemory` or :c:func:`PyMemoryView_FromBuffer`.
    *mview* **must** be a memoryview instance.
 

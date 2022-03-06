@@ -14,30 +14,27 @@
 # with embedded macros that you may find superior to what is in here.
 # See Tools/gdb/libpython.py and http://bugs.python.org/issue8032.
 
-document pyo
-  Prints a representation of the object to stderr, along with the
-  number of reference counts it currently has and the hex address the
-  object is allocated at.  The argument must be a PyObject*
-end
 define pyo
     # side effect of calling _PyObject_Dump is to dump the object's
     # info - assigning just prevents gdb from printing the
     # NULL return value
     set $_unused_void = _PyObject_Dump($arg0)
 end
+document pyo
+  Prints a representation of the object to stderr, along with the
+  number of reference counts it currently has and the hex address the
+  object is allocated at.  The argument must be a PyObject*
+end
 
+define pyg
+    print _PyGC_Dump($arg0)
+end
 document pyg
   Prints a representation of the object to stderr, along with the
   number of reference counts it currently has and the hex address the
   object is allocated at.  The argument must be a PyGC_Head*
 end
-define pyg
-    print _PyGC_Dump($arg0)
-end
 
-document pylocals
-  Print the local variables of the current frame.
-end
 define pylocals
     set $_i = 0
     while $_i < f->f_code->co_nlocals
@@ -49,6 +46,9 @@ define pylocals
 	end
         set $_i = $_i + 1
     end
+end
+document pylocals
+  Print the local variables of the current frame.
 end
 
 # A rewrite of the Python interpreter's line number calculator in GDB's
@@ -75,12 +75,12 @@ define lineno
     printf "%d", $__li
 end
 
-document pyframev
-  Print the current frame - verbose
-end
 define pyframev
     pyframe
     pylocals
+end
+document pyframev
+  Print the current frame - verbose
 end
 
 define pyframe
@@ -134,9 +134,6 @@ end
 # the interpreter you may will have to change the functions you compare with
 # $pc.
 
-document pystack
-  Print the entire Python call stack
-end
 define pystack
     while $pc < Py_Main || $pc > Py_GetArgcArgv
         if $pc > PyEval_EvalFrameEx && $pc < _PyEval_EvalFrameDefault
@@ -146,10 +143,10 @@ define pystack
     end
     select-frame 0
 end
-
-document pystackv
-  Print the entire Python call stack - verbose mode
+document pystack
+  Print the entire Python call stack
 end
+
 define pystackv
     while $pc < Py_Main || $pc > Py_GetArgcArgv
         if $pc > PyEval_EvalFrameEx && $pc < _PyEval_EvalFrameDefault
@@ -159,10 +156,10 @@ define pystackv
     end
     select-frame 0
 end
-
-document pu
-  Generally useful macro to print a Unicode string
+document pystackv
+  Print the entire Python call stack - verbose mode
 end
+
 def pu
   set $uni = $arg0
   set $i = 0
@@ -173,4 +170,7 @@ def pu
       print /x *(short*)$uni++
     end
   end
+end
+document pu
+  Generally useful macro to print a Unicode string
 end

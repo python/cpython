@@ -5600,13 +5600,13 @@ class SignatureTest(unittest.TestCase):
                     args, kwds = mkargs(C, c_sig)
                     try:
                         getattr(c_type(9), attr)(*args, **kwds)
-                    except Exception as err:
+                    except Exception:
                         raise TestFailed("invalid signature for %s: %s %s" % (c_func, args, kwds))
 
                     args, kwds = mkargs(P, p_sig)
                     try:
                         getattr(p_type(9), attr)(*args, **kwds)
-                    except Exception as err:
+                    except Exception:
                         raise TestFailed("invalid signature for %s: %s %s" % (p_func, args, kwds))
 
         doit('Decimal')

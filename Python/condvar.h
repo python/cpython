@@ -178,7 +178,7 @@ _PyCOND_WAIT_MS(PyCOND_T *cv, PyMUTEX_T *cs, DWORD ms)
          * just means an extra spurious wakeup for a waiting thread.
          * ('waiting' corresponds to the semaphore's "negative" count and
          * we may end up with e.g. (waiting == -1 && sem.count == 1).  When
-         * a new thread comes along, it will pass right throuhgh, having
+         * a new thread comes along, it will pass right through, having
          * adjusted it to (waiting == 0 && sem.count == 0).
          */
 

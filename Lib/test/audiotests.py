@@ -1,7 +1,6 @@
 from test.support import findfile, TESTFN, unlink
 import array
 import io
-from unittest import mock
 import pickle
 
 
@@ -48,17 +47,6 @@ class AudioTests:
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             dump = pickle.dumps(params, proto)
             self.assertEqual(pickle.loads(dump), params)
-
-
-class AudioMiscTests(AudioTests):
-
-    def test_openfp_deprecated(self):
-        arg = "arg"
-        mode = "mode"
-        with mock.patch(f"{self.module.__name__}.open") as mock_open, \
-             self.assertWarns(DeprecationWarning):
-            self.module.openfp(arg, mode=mode)
-            mock_open.assert_called_with(arg, mode=mode)
 
 
 class AudioWriteTests(AudioTests):

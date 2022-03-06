@@ -182,6 +182,7 @@ _symtable symtablemodule.c
 #_heapq _heapqmodule.c	# Heap queue algorithm
 #_asyncio _asynciomodule.c  # Fast asyncio Future
 #_json -I$(srcdir)/Include/internal -DPy_BUILD_CORE_BUILTIN _json.c	# _json speedups
+#_statistics _statisticsmodule.c # statistics accelerator
 
 #unicodedata unicodedata.c    # static Unicode character database
 
@@ -338,7 +339,7 @@ _symtable symtablemodule.c
 # Interface to the Expat XML parser
 # More information on Expat can be found at www.libexpat.org.
 #
-#pyexpat expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DXML_POOR_ENTROPY=1 -DUSE_PYEXPAT_CAPI
+#pyexpat expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DXML_POOR_ENTROPY -DUSE_PYEXPAT_CAPI
 
 # Hye-Shik Chang's CJKCodecs
 

@@ -573,13 +573,6 @@ text
         for html, expected in data:
             self._run_check(html, expected)
 
-    def test_unescape_method(self):
-        from html import unescape
-        p = self.get_collector()
-        with self.assertWarns(DeprecationWarning):
-            s = '&quot;&#34;&#x22;&quot&#34&#x22&#bad;'
-            self.assertEqual(p.unescape(s), unescape(s))
-
     def test_broken_comments(self):
         html = ('<! not really a comment >'
                 '<! not a comment either -->'

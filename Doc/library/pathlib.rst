@@ -273,7 +273,7 @@ Methods and properties
 
 .. testsetup::
 
-   from pathlib import PurePosixPath, PureWindowsPath
+   from pathlib import PurePath, PurePosixPath, PureWindowsPath
 
 Pure paths provide the following methods and properties:
 
@@ -460,6 +460,19 @@ Pure paths provide the following methods and properties:
       False
       >>> PureWindowsPath('//some/share').is_absolute()
       True
+
+
+.. method:: PurePath.is_relative_to(*other)
+
+   Return whether or not this path is relative to the *other* path.
+
+      >>> p = PurePath('/etc/passwd')
+      >>> p.is_relative_to('/etc')
+      True
+      >>> p.is_relative_to('/usr')
+      False
+
+   .. versionadded:: 3.9
 
 
 .. method:: PurePath.is_reserved()
@@ -931,25 +944,47 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
+.. method:: Path.readlink()
+
+   Return the path to which the symbolic link points (as returned by
+   :func:`os.readlink`)::
+
+      >>> p = Path('mylink')
+      >>> p.symlink_to('setup.py')
+      >>> p.readlink()
+      PosixPath('setup.py')
+
+   .. versionadded:: 3.9
+
+
 .. method:: Path.rename(target)
 
-   Rename this file or directory to the given *target*.  On Unix, if
-   *target* exists and is a file, it will be replaced silently if the user
-   has permission.  *target* can be either a string or another path object::
+   Rename this file or directory to the given *target*, and return a new Path
+   instance pointing to *target*.  On Unix, if *target* exists and is a file,
+   it will be replaced silently if the user has permission.  *target* can be
+   either a string or another path object::
 
       >>> p = Path('foo')
       >>> p.open('w').write('some text')
       9
       >>> target = Path('bar')
       >>> p.rename(target)
+      PosixPath('bar')
       >>> target.open().read()
       'some text'
+
+   .. versionchanged:: 3.8
+      Added return value, return the new Path instance.
 
 
 .. method:: Path.replace(target)
 
-   Rename this file or directory to the given *target*.  If *target* points
-   to an existing file or directory, it will be unconditionally replaced.
+   Rename this file or directory to the given *target*, and return a new Path
+   instance pointing to *target*.  If *target* points to an existing file or
+   directory, it will be unconditionally replaced.
+
+   .. versionchanged:: 3.8
+      Added return value, return the new Path instance.
 
 
 .. method:: Path.resolve(strict=False)
@@ -1097,6 +1132,9 @@ call fails (for example because the path doesn't exist).
       >>> p.read_text()
       'Text file contents'
 
+   An existing file of the same name is overwritten. The optional parameters
+   have the same meaning as in :func:`open`.
+
    .. versionadded:: 3.5
 
 Correspondence to tools in the :mod:`os` module
@@ -1128,6 +1166,7 @@ os and os.path                         pathlib
 :func:`os.path.isdir`                  :meth:`Path.is_dir`
 :func:`os.path.isfile`                 :meth:`Path.is_file`
 :func:`os.path.islink`                 :meth:`Path.is_symlink`
+:func:`os.readlink`                    :meth:`Path.readlink`
 :func:`os.stat`                        :meth:`Path.stat`,
                                        :meth:`Path.owner`,
                                        :meth:`Path.group`

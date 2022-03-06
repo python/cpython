@@ -1,0 +1,158 @@
+jobs:
+- job: Publish_Python
+  displayName: Publish python.org packages
+  condition: and(succeeded(), and(eq(variables['DoMSI'], 'true'), eq(variables['DoEmbed'], 'true')))
+
+  pool:
+    #vmName: win2016-vs2017
+    name: 'Windows Release'
+
+  workspace:
+    clean: all
+
+  steps:
+  - template: ./checkout.yml
+
+  - task: UsePythonVersion@0
+    displayName: 'Use Python 3.6 or later'
+    inputs:
+      versionSpec: '>=3.6'
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: Doc'
+    condition: and(succeeded(), not(variables['BuildToPublish']))
+    inputs:
+      artifactName: Doc
+      targetPath: $(Build.BinariesDirectory)\Doc
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: msi'
+    condition: and(succeeded(), not(variables['BuildToPublish']))
+    inputs:
+      artifactName: msi
+      targetPath: $(Build.BinariesDirectory)\msi
+
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download artifact: embed'
+    condition: and(succeeded(), not(variables['BuildToPublish']))
+    inputs:
+      artifactName: embed
+      downloadPath: $(Build.BinariesDirectory)
+
+  - powershell: 'gci *embed-arm*.zip | %{ Write-Host "Not publishing: $($_.Name)"; gi $_ } | del'
+    displayName: 'Prevent publishing ARM/ARM64 packages'
+    workingDirectory: '$(Build.BinariesDirectory)\embed'
+    condition: and(succeeded(), not(variables['PublishArmPackages']))
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact from $(BuildToPublish): Doc'
+    condition: and(succeeded(), variables['BuildToPublish'])
+    inputs:
+      artifactName: Doc
+      targetPath: $(Build.BinariesDirectory)\Doc
+      buildType: specific
+      project: cpython
+      pipeline: 21
+      buildVersionToDownload: specific
+      buildId: $(BuildToPublish)
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact from $(BuildToPublish): msi'
+    condition: and(succeeded(), variables['BuildToPublish'])
+    inputs:
+      artifactName: msi
+      targetPath: $(Build.BinariesDirectory)\msi
+      buildType: specific
+      project: cpython
+      pipeline: 21
+      buildVersionToDownload: specific
+      buildId: $(BuildToPublish)
+
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download artifact from $(BuildToPublish): embed'
+    condition: and(succeeded(), variables['BuildToPublish'])
+    inputs:
+      artifactName: embed
+      downloadPath: $(Build.BinariesDirectory)
+      buildType: specific
+      project: cpython
+      pipeline: Windows-Release
+      buildVersionToDownload: specific
+      buildId: $(BuildToPublish)
+
+
+  - template: ./gpg-sign.yml
+    parameters:
+      GPGKeyFile: 'python-signing.key'
+      Files: 'doc\htmlhelp\*.chm, msi\*\*, embed\*.zip'
+
+  - powershell: >
+      $(Build.SourcesDirectory)\Tools\msi\uploadrelease.ps1
+      -build msi
+      -user $(PyDotOrgUsername)
+      -server $(PyDotOrgServer)
+      -doc_htmlhelp doc\htmlhelp
+      -embed embed
+      -skippurge
+      -skiptest
+      -skiphash
+    condition: and(succeeded(), eq(variables['SigningCertificate'], variables['__RealSigningCertificate']))
+    workingDirectory: $(Build.BinariesDirectory)
+    displayName: 'Upload files to python.org'
+
+  - powershell: >
+      python
+      "$(Build.SourcesDirectory)\Tools\msi\purge.py"
+      (gci msi\*\python-*.exe | %{ $_.Name -replace 'python-(.+?)(-|\.exe).+', '$1' } | select -First 1)
+    workingDirectory: $(Build.BinariesDirectory)
+    displayName: 'Purge CDN'
+
+  - powershell: |
+      $failures = 0
+      gci "msi\*\*-webinstall.exe" -File | %{
+          $d = mkdir "tests\$($_.BaseName)" -Force
+          gci $d -r -File | del
+          $ic = copy $_ $d -PassThru
+          "Checking layout for $($ic.Name)"
+          Start-Process -wait $ic "/passive", "/layout", "$d\layout", "/log", "$d\log\install.log"
+          if (-not $?) {
+              Write-Error "Failed to validate layout of $($inst.Name)"
+              $failures += 1
+          }
+      }
+      if ($failures) {
+        Write-Error "Failed to validate $failures installers"
+        exit 1
+      }
+    #condition: and(succeeded(), eq(variables['SigningCertificate'], variables['__RealSigningCertificate']))
+    workingDirectory: $(Build.BinariesDirectory)
+    displayName: 'Test layouts'
+
+  - powershell: |
+      $hashes = gci doc\htmlhelp\python*.chm, msi\*\*.exe, embed\*.zip | `
+          Sort-Object Name | `
+          Format-Table Name, @{
+            Label="MD5";
+            Expression={(Get-FileHash $_ -Algorithm MD5).Hash}
+          }, Length -AutoSize | `
+          Out-String -Width 4096
+      $d = mkdir "$(Build.ArtifactStagingDirectory)\hashes" -Force
+      $hashes | Out-File "$d\hashes.txt" -Encoding ascii
+      $hashes
+    workingDirectory: $(Build.BinariesDirectory)
+    displayName: 'Generate hashes'
+
+  - powershell: |
+      "Copying:"
+      (gci msi\*\python*.asc, doc\htmlhelp\*.asc, embed\*.asc).FullName
+      $d = mkdir "$(Build.ArtifactStagingDirectory)\hashes" -Force
+      move msi\*\python*.asc, doc\htmlhelp\*.asc, embed\*.asc $d -Force
+      gci msi -Directory | %{ move "msi\$_\*.asc" (mkdir "$d\$_" -Force) }
+    workingDirectory: $(Build.BinariesDirectory)
+    displayName: 'Copy GPG signatures for build'
+
+  - task: PublishPipelineArtifact@0
+    displayName: 'Publish Artifact: hashes'
+    inputs:
+      targetPath: '$(Build.ArtifactStagingDirectory)\hashes'
+      artifactName: hashes

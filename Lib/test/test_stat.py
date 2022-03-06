@@ -16,10 +16,10 @@ class TestFilemode:
                   'UF_IMMUTABLE', 'UF_NODUMP', 'UF_NOUNLINK', 'UF_OPAQUE'}
 
     formats = {'S_IFBLK', 'S_IFCHR', 'S_IFDIR', 'S_IFIFO', 'S_IFLNK',
-               'S_IFREG', 'S_IFSOCK'}
+               'S_IFREG', 'S_IFSOCK', 'S_IFDOOR', 'S_IFPORT', 'S_IFWHT'}
 
     format_funcs = {'S_ISBLK', 'S_ISCHR', 'S_ISDIR', 'S_ISFIFO', 'S_ISLNK',
-                    'S_ISREG', 'S_ISSOCK'}
+                    'S_ISREG', 'S_ISSOCK', 'S_ISDOOR', 'S_ISPORT', 'S_ISWHT'}
 
     stat_struct = {
         'ST_MODE': 0,
@@ -230,10 +230,6 @@ class TestFilemode:
 
 class TestFilemodeCStat(TestFilemode, unittest.TestCase):
     statmod = c_stat
-
-    formats = TestFilemode.formats | {'S_IFDOOR', 'S_IFPORT', 'S_IFWHT'}
-    format_funcs = TestFilemode.format_funcs | {'S_ISDOOR', 'S_ISPORT',
-                                                'S_ISWHT'}
 
 
 class TestFilemodePyStat(TestFilemode, unittest.TestCase):

@@ -494,7 +494,7 @@ Path objects are traversable using the ``/`` operator.
    Invoke :meth:`ZipFile.open` on the current path. Accepts
    the same arguments as :meth:`ZipFile.open`.
 
-.. method:: Path.listdir()
+.. method:: Path.iterdir()
 
    Enumerate the children of the current directory.
 
@@ -816,5 +816,45 @@ Command-line options
 
    Test whether the zipfile is valid or not.
 
+Decompression pitfalls
+----------------------
 
+The extraction in zipfile module might fail due to some pitfalls listed below.
+
+From file itself
+~~~~~~~~~~~~~~~~
+
+Decompression may fail due to incorrect password / CRC checksum / ZIP format or
+unsupported compression method / decryption.
+
+File System limitations
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Exceeding limitations on different file systems can cause decompression failed.
+Such as allowable characters in the directory entries, length of the file name,
+length of the pathname, size of a single file, and number of files, etc.
+
+Resources limitations
+~~~~~~~~~~~~~~~~~~~~~
+
+The lack of memory or disk volume would lead to decompression
+failed. For example, decompression bombs (aka `ZIP bomb`_)
+apply to zipfile library that can cause disk volume exhaustion.
+
+Interruption
+~~~~~~~~~~~~
+
+Interruption during the decompression, such as pressing control-C or killing the
+decompression process may result in incomplete decompression of the archive.
+
+Default behaviors of extraction
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Not knowing the default extraction behaviors
+can cause unexpected decompression results.
+For example, when extracting the same archive twice,
+it overwrites files without asking.
+
+
+.. _ZIP bomb: https://en.wikipedia.org/wiki/Zip_bomb
 .. _PKZIP Application Note: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT

@@ -3,6 +3,7 @@ import tempfile
 import errno
 import io
 import os
+import pathlib
 import signal
 import sys
 import re
@@ -56,6 +57,9 @@ class TestLowLevelInternals(unittest.TestCase):
         with self.assertRaises(TypeError):
             tempfile._infer_return_type(b'', None, '')
 
+    def test_infer_return_type_pathlib(self):
+        self.assertIs(str, tempfile._infer_return_type(pathlib.Path('/')))
+
 
 # Common functionality.
 
@@ -79,8 +83,13 @@ class BaseTestCase(unittest.TestCase):
         nsuf  = nbase[len(nbase)-len(suf):]
 
         if dir is not None:
-            self.assertIs(type(name), str if type(dir) is str else bytes,
-                          "unexpected return type")
+            self.assertIs(
+                type(name),
+                str
+                if type(dir) is str or isinstance(dir, os.PathLike) else
+                bytes,
+                "unexpected return type",
+            )
         if pre is not None:
             self.assertIs(type(name), str if type(pre) is str else bytes,
                           "unexpected return type")
@@ -425,6 +434,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             self.do_create(dir=dir).write(b"blat")
+            self.do_create(dir=pathlib.Path(dir)).write(b"blat")
         finally:
             os.rmdir(dir)
 
@@ -659,6 +669,7 @@ class TestMkstemp(BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             self.do_create(dir=dir)
+            self.do_create(dir=pathlib.Path(dir))
         finally:
             os.rmdir(dir)
 
@@ -728,6 +739,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             os.rmdir(self.do_create(dir=dir))
+            os.rmdir(self.do_create(dir=pathlib.Path(dir)))
         finally:
             os.rmdir(dir)
 
@@ -1102,7 +1114,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
     def test_text_mode(self):
         # Creating a SpooledTemporaryFile with a text mode should produce
         # a file object reading and writing (Unicode) text strings.
-        f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10)
+        f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10,
+                                          encoding="utf-8")
         f.write("abc\n")
         f.seek(0)
         self.assertEqual(f.read(), "abc\n")
@@ -1112,9 +1125,9 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertFalse(f._rolled)
         self.assertEqual(f.mode, 'w+')
         self.assertIsNone(f.name)
-        self.assertIsNone(f.newlines)
-        self.assertIsNone(f.encoding)
-        self.assertIsNone(f.errors)
+        self.assertEqual(f.newlines, os.linesep)
+        self.assertEqual(f.encoding, "utf-8")
+        self.assertEqual(f.errors, "strict")
 
         f.write("xyzzy\n")
         f.seek(0)
@@ -1127,8 +1140,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertEqual(f.mode, 'w+')
         self.assertIsNotNone(f.name)
         self.assertEqual(f.newlines, os.linesep)
-        self.assertIsNotNone(f.encoding)
-        self.assertIsNotNone(f.errors)
+        self.assertEqual(f.encoding, "utf-8")
+        self.assertEqual(f.errors, "strict")
 
     def test_text_newline_and_encoding(self):
         f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10,
@@ -1140,13 +1153,15 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertFalse(f._rolled)
         self.assertEqual(f.mode, 'w+')
         self.assertIsNone(f.name)
-        self.assertIsNone(f.newlines)
-        self.assertIsNone(f.encoding)
-        self.assertIsNone(f.errors)
+        self.assertIsNotNone(f.newlines)
+        self.assertEqual(f.encoding, "utf-8")
+        self.assertEqual(f.errors, "ignore")
 
-        f.write("\u039B" * 20 + "\r\n")
+        f.write("\u039C" * 10 + "\r\n")
+        f.write("\u039D" * 20)
         f.seek(0)
-        self.assertEqual(f.read(), "\u039B\r\n" + ("\u039B" * 20) + "\r\n")
+        self.assertEqual(f.read(),
+                "\u039B\r\n" + ("\u039C" * 10) + "\r\n" + ("\u039D" * 20))
         self.assertTrue(f._rolled)
         self.assertEqual(f.mode, 'w+')
         self.assertIsNotNone(f.name)
@@ -1214,6 +1229,9 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertTrue(f._rolled)
         self.assertEqual(os.fstat(f.fileno()).st_size, 20)
 
+    def test_class_getitem(self):
+        self.assertIs(tempfile.SpooledTemporaryFile[bytes],
+                      tempfile.SpooledTemporaryFile)
 
 if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
 

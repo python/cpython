@@ -77,9 +77,7 @@ PyAPI_FUNC(PyObject *) PyBytes_DecodeEscape(const char *, Py_ssize_t,
 #ifndef Py_LIMITED_API
 /* Helper for PyBytes_DecodeEscape that detects invalid escape chars. */
 PyAPI_FUNC(PyObject *) _PyBytes_DecodeEscape(const char *, Py_ssize_t,
-                                             const char *, Py_ssize_t,
-                                             const char *,
-                                             const char **);
+                                             const char *, const char **);
 #endif
 
 /* Macro, trading safety for speed */
@@ -107,28 +105,6 @@ PyAPI_FUNC(int) PyBytes_AsStringAndSize(
                            (only possible for 0-terminated
                            strings) */
     );
-
-/* Using the current locale, insert the thousands grouping
-   into the string pointed to by buffer.  For the argument descriptions,
-   see Objects/stringlib/localeutil.h */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(Py_ssize_t) _PyBytes_InsertThousandsGroupingLocale(char *buffer,
-                                                   Py_ssize_t n_buffer,
-                                                   char *digits,
-                                                   Py_ssize_t n_digits,
-                                                   Py_ssize_t min_width);
-
-/* Using explicit passed-in values, insert the thousands grouping
-   into the string pointed to by buffer.  For the argument descriptions,
-   see Objects/stringlib/localeutil.h */
-PyAPI_FUNC(Py_ssize_t) _PyBytes_InsertThousandsGrouping(char *buffer,
-                                                   Py_ssize_t n_buffer,
-                                                   char *digits,
-                                                   Py_ssize_t n_digits,
-                                                   Py_ssize_t min_width,
-                                                   const char *grouping,
-                                                   const char *thousands_sep);
-#endif
 
 /* Flags used by string formatting */
 #define F_LJUST (1<<0)
