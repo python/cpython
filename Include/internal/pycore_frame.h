@@ -19,8 +19,22 @@ extern "C" {
  * Python objects during code execution, providing a significant speed gain
  * over the previous approach of using full Python objects for both
  * introspection and code execution.
+ *
+ * Field naming conventions:
+ *
+ *   * full frame object fields have an "f_*" prefix
+ *   * frame data struct fields have no prefix
+ *
+ * Variable naming conventions:
+ *
+ *   * "frame" and "f" are used for full frame objects
+ *   * "fdata" is used for frame data structs
+ *
+ * Function/macro naming conventions:
+ *
+ *   * "PyFrame_*"" and "_PyFrame_*" functions accept a full frame object
+ *   * "_Py_framedata_*" functions accept a frame data struct
  */
-// Declaration of _Py_framedata is in cpython/pystate.h for use in PyThreadState
 
 
 struct _frame {
