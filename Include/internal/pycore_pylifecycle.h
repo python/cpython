@@ -122,6 +122,7 @@ PyAPI_FUNC(PyStatus) _Py_PreInitializeFromConfig(
     const PyConfig *config,
     const struct _PyArgv *args);
 
+PyAPI_FUNC(wchar_t *) _Py_GetStdlibDir(void);
 
 PyAPI_FUNC(int) _Py_HandleSystemExit(int *exitcode_p);
 

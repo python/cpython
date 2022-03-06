@@ -481,6 +481,32 @@ _abc__abc_init(PyObject *module, PyObject *self)
     Py_RETURN_NONE;
 }
 
+static void
+set_collection_flag_recursive(PyTypeObject *child, unsigned long flag)
+{
+    assert(flag == Py_TPFLAGS_MAPPING || flag == Py_TPFLAGS_SEQUENCE);
+    if (PyType_HasFeature(child, Py_TPFLAGS_IMMUTABLETYPE) ||
+        (child->tp_flags & COLLECTION_FLAGS) == flag)
+    {
+        return;
+    }
+    child->tp_flags &= ~COLLECTION_FLAGS;
+    child->tp_flags |= flag;
+    PyObject *grandchildren = child->tp_subclasses;
+    if (grandchildren == NULL) {
+        return;
+    }
+    assert(PyDict_CheckExact(grandchildren));
+    Py_ssize_t i = 0;
+    while (PyDict_Next(grandchildren, &i, NULL, &grandchildren)) {
+        assert(PyWeakref_CheckRef(grandchildren));
+        PyObject *grandchild = PyWeakref_GET_OBJECT(grandchildren);
+        if (PyType_Check(grandchild)) {
+            set_collection_flag_recursive((PyTypeObject *)grandchild, flag);
+        }
+    }
+}
+
 /*[clinic input]
 _abc._abc_register
 
@@ -532,12 +558,11 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     get_abc_state(module)->abc_invalidation_counter++;
 
     /* Set Py_TPFLAGS_SEQUENCE  or Py_TPFLAGS_MAPPING flag */
-    if (PyType_Check(self) &&
-        !PyType_HasFeature((PyTypeObject *)subclass, Py_TPFLAGS_IMMUTABLETYPE) &&
-        ((PyTypeObject *)self)->tp_flags & COLLECTION_FLAGS)
-    {
-        ((PyTypeObject *)subclass)->tp_flags &= ~COLLECTION_FLAGS;
-        ((PyTypeObject *)subclass)->tp_flags |= (((PyTypeObject *)self)->tp_flags & COLLECTION_FLAGS);
+    if (PyType_Check(self)) {
+        unsigned long collection_flag = ((PyTypeObject *)self)->tp_flags & COLLECTION_FLAGS;
+        if (collection_flag) {
+            set_collection_flag_recursive((PyTypeObject *)subclass, collection_flag);
+        }
     }
     Py_INCREF(subclass);
     return subclass;

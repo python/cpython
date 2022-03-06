@@ -391,7 +391,7 @@ PySymtable_Lookup(struct symtable *st, void *key)
     return (PySTEntryObject *)v;
 }
 
-static long
+long
 _PyST_GetSymbol(PySTEntryObject *ste, PyObject *name)
 {
     PyObject *v = PyDict_GetItemWithError(ste->ste_symbols, name);
@@ -2056,7 +2056,14 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
         return 0;
     }
     st->st_cur->ste_generator = is_generator;
-    return symtable_exit_block(st);
+    int is_async = st->st_cur->ste_coroutine && !is_generator;
+    if (!symtable_exit_block(st)) {
+        return 0;
+    }
+    if (is_async) {
+        st->st_cur->ste_coroutine = 1;
+    }
+    return 1;
 }
 
 static int

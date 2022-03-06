@@ -710,7 +710,7 @@ faulthandler_dump_traceback_later(PyObject *self,
         return NULL;
     }
     /* Limit to LONG_MAX seconds for format_timeout() */
-    if (timeout_us >= PY_TIMEOUT_MAX || timeout_us / SEC_TO_US >= LONG_MAX) {
+    if (timeout_us > PY_TIMEOUT_MAX || timeout_us / SEC_TO_US > LONG_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "timeout value is too large");
         return NULL;

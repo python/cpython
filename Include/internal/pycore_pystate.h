@@ -30,6 +30,17 @@ _Py_IsMainInterpreter(PyInterpreterState *interp)
 }
 
 
+static inline const PyConfig *
+_Py_GetMainConfig(void)
+{
+    PyInterpreterState *interp = _PyRuntime.interpreters.main;
+    if (interp == NULL) {
+        return NULL;
+    }
+    return _PyInterpreterState_GetConfig(interp);
+}
+
+
 /* Only handle signals on the main thread of the main interpreter. */
 static inline int
 _Py_ThreadCanHandleSignals(PyInterpreterState *interp)

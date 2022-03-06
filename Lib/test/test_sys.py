@@ -13,6 +13,7 @@ from test import support
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
+from test.support import import_helper
 import textwrap
 import unittest
 import warnings
@@ -22,6 +23,7 @@ import warnings
 # strings to intern in test_intern()
 INTERN_NUMRUNS = 0
 
+DICT_KEY_STRUCT_FORMAT = 'n2BI2n'
 
 class DisplayHookTest(unittest.TestCase):
 
@@ -379,7 +381,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertTrue(frame is sys._getframe())
 
         # Verify that the captured thread frame is blocked in g456, called
-        # from f123.  This is a litte tricky, since various bits of
+        # from f123.  This is a little tricky, since various bits of
         # threading.py are also in the thread's call stack.
         frame = d.pop(thread_id)
         stack = traceback.extract_stack(frame)
@@ -446,7 +448,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual((None, None, None), d.pop(main_id))
 
         # Verify that the captured thread frame is blocked in g456, called
-        # from f123.  This is a litte tricky, since various bits of
+        # from f123.  This is a little tricky, since various bits of
         # threading.py are also in the thread's call stack.
         exc_type, exc_value, exc_tb = d.pop(thread_id)
         stack = traceback.extract_stack(exc_tb.tb_frame)
@@ -506,7 +508,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.hash_info.nan, int)
         self.assertIsInstance(sys.hash_info.imag, int)
         algo = sysconfig.get_config_var("Py_HASH_ALGORITHM")
-        if sys.hash_info.algorithm in {"fnv", "siphash24"}:
+        if sys.hash_info.algorithm in {"fnv", "siphash13", "siphash24"}:
             self.assertIn(sys.hash_info.hash_bits, {32, 64})
             self.assertIn(sys.hash_info.seed_bits, {32, 64, 128})
 
@@ -514,8 +516,10 @@ class SysModuleTest(unittest.TestCase):
                 self.assertEqual(sys.hash_info.algorithm, "siphash24")
             elif algo == 2:
                 self.assertEqual(sys.hash_info.algorithm, "fnv")
+            elif algo == 3:
+                self.assertEqual(sys.hash_info.algorithm, "siphash13")
             else:
-                self.assertIn(sys.hash_info.algorithm, {"fnv", "siphash24"})
+                self.assertIn(sys.hash_info.algorithm, {"fnv", "siphash13", "siphash24"})
         else:
             # PY_HASH_EXTERNAL
             self.assertEqual(algo, 0)
@@ -993,6 +997,15 @@ class SysModuleTest(unittest.TestCase):
         for name in sys.stdlib_module_names:
             self.assertIsInstance(name, str)
 
+    def test_stdlib_dir(self):
+        os = import_helper.import_fresh_module('os')
+        marker = getattr(os, '__file__', None)
+        if marker and not os.path.exists(marker):
+            marker = None
+        expected = os.path.dirname(marker) if marker else None
+        self.assertEqual(os.path.normpath(sys._stdlib_dir),
+                         os.path.normpath(expected))
+
 
 @test.support.cpython_only
 class UnraisableHookTest(unittest.TestCase):
@@ -1069,6 +1082,30 @@ class UnraisableHookTest(unittest.TestCase):
                     self.assertIn("del is broken", report)
                 self.assertTrue(report.endswith("\n"))
 
+    def test_original_unraisablehook_exception_qualname(self):
+        # See bpo-41031, bpo-45083.
+        # Check that the exception is printed with its qualified name
+        # rather than just classname, and the module names appears
+        # unless it is one of the hard-coded exclusions.
+        class A:
+            class B:
+                class X(Exception):
+                    pass
+
+        for moduleName in 'builtins', '__main__', 'some_module':
+            with self.subTest(moduleName=moduleName):
+                A.B.X.__module__ = moduleName
+                with test.support.captured_stderr() as stderr, \
+                     test.support.swap_attr(sys, 'unraisablehook',
+                                            sys.__unraisablehook__):
+                         expected = self.write_unraisable_exc(
+                             A.B.X(), "msg", "obj");
+                report = stderr.getvalue()
+                self.assertIn(A.B.X.__qualname__, report)
+                if moduleName in ['builtins', '__main__']:
+                    self.assertNotIn(moduleName + '.', report)
+                else:
+                    self.assertIn(moduleName + '.', report)
 
     def test_original_unraisablehook_wrong_type(self):
         exc = ValueError(42)
@@ -1229,9 +1266,9 @@ class SizeofTest(unittest.TestCase):
         # empty dict
         check({}, size('nQ2P'))
         # dict
-        check({"a": 1}, size('nQ2P') + calcsize('2nP2n') + 8 + (8*2//3)*calcsize('n2P'))
+        check({"a": 1}, size('nQ2P') + calcsize(DICT_KEY_STRUCT_FORMAT) + 8 + (8*2//3)*calcsize('n2P'))
         longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
-        check(longdict, size('nQ2P') + calcsize('2nP2n') + 16 + (16*2//3)*calcsize('n2P'))
+        check(longdict, size('nQ2P') + calcsize(DICT_KEY_STRUCT_FORMAT) + 16 + (16*2//3)*calcsize('n2P'))
         # dictionary-keyview
         check({}.keys(), size('P'))
         # dictionary-valueview
@@ -1273,16 +1310,11 @@ class SizeofTest(unittest.TestCase):
         check(sys.float_info, vsize('') + self.P * len(sys.float_info))
         # frame
         import inspect
-        CO_MAXBLOCKS = 20
         x = inspect.currentframe()
-        ncells = len(x.f_code.co_cellvars)
-        nfrees = len(x.f_code.co_freevars)
-        extras = x.f_code.co_stacksize + x.f_code.co_nlocals +\
-                  ncells + nfrees - 1
-        check(x, vsize('4Pi2c4P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
+        check(x, size('3Pi3c'))
         # function
         def func(): pass
-        check(func, size('14P'))
+        check(func, size('14Pi'))
         class c():
             @staticmethod
             def foo():
@@ -1390,13 +1422,13 @@ class SizeofTest(unittest.TestCase):
                   '5P')
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
-        check(newstyleclass, s + calcsize("2nP2n0P") + 8 + 5*calcsize("n2P"))
+        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 8 + 5*calcsize("n2P"))
         # dict with shared keys
         check(newstyleclass().__dict__, size('nQ2P') + 5*self.P)
         o = newstyleclass()
         o.a = o.b = o.c = o.d = o.e = o.f = o.g = o.h = 1
         # Separate block for PyDictKeysObject with 16 keys and 10 entries
-        check(newstyleclass, s + calcsize("2nP2n0P") + 16 + 10*calcsize("n2P"))
+        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 16 + 10*calcsize("n2P"))
         # dict with shared keys
         check(newstyleclass().__dict__, size('nQ2P') + 10*self.P)
         # unicode

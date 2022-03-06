@@ -137,14 +137,22 @@ pydoc-topics: build
 htmlview: html
 	 $(PYTHON) -c "import webbrowser; webbrowser.open('build/html/index.html')"
 
-clean:
-	-rm -rf build/* $(VENVDIR)/*
+clean: clean-venv
+	-rm -rf build/*
+
+clean-venv:
+	rm -rf $(VENVDIR)
 
 venv:
-	$(PYTHON) -m venv $(VENVDIR)
-	$(VENVDIR)/bin/python3 -m pip install -U pip setuptools
-	$(VENVDIR)/bin/python3 -m pip install -r requirements.txt
-	@echo "The venv has been created in the $(VENVDIR) directory"
+	@if [ -d $(VENVDIR) ] ; then \
+		echo "venv already exists."; \
+		echo "To recreate it, remove it first with \`make clean-venv'."; \
+	else \
+		$(PYTHON) -m venv $(VENVDIR); \
+		$(VENVDIR)/bin/python3 -m pip install -U pip setuptools; \
+		$(VENVDIR)/bin/python3 -m pip install -r requirements.txt; \
+		echo "The venv has been created in the $(VENVDIR) directory"; \
+	fi
 
 dist:
 	rm -rf dist

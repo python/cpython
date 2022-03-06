@@ -94,7 +94,7 @@ class ConfigTestCase(support.LoggingSilencer,
             self.assertFalse(os.path.exists(f))
 
 def test_suite():
-    return unittest.makeSuite(ConfigTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(ConfigTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

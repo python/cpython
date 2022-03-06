@@ -6,7 +6,7 @@ dnl Python's configure script requires autoconf 2.69 and autoconf-archive.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define(PYTHON_VERSION, 3.10)
+m4_define(PYTHON_VERSION, 3.11)
 
 AC_PREREQ([2.69])
 
@@ -128,21 +128,21 @@ VERSION=PYTHON_VERSION
 AC_SUBST(SOVERSION)
 SOVERSION=1.0
 
-# The later defininition of _XOPEN_SOURCE disables certain features
+# The later definition of _XOPEN_SOURCE disables certain features
 # on Linux, so we need _GNU_SOURCE to re-enable them (makedev, tm_zone).
 AC_DEFINE(_GNU_SOURCE, 1, [Define on Linux to activate all library features])
 
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on NetBSD, so we need _NETBSD_SOURCE to re-enable
 # them.
 AC_DEFINE(_NETBSD_SOURCE, 1, [Define on NetBSD to activate all library features])
 
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on FreeBSD, so we need __BSD_VISIBLE to re-enable
 # them.
 AC_DEFINE(__BSD_VISIBLE, 1, [Define on FreeBSD to activate all library features])
 
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on Mac OS X, so we need _DARWIN_C_SOURCE to re-enable
 # them.
 AC_DEFINE(_DARWIN_C_SOURCE, 1, [Define on Darwin to activate all library features])
@@ -1360,16 +1360,34 @@ fi
 
 # Enable LTO flags
 AC_MSG_CHECKING(for --with-lto)
-AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [enable Link-Time-Optimization in any build (default is no)]),
+AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto=@<:@full|thin|no|yes@:>@], [enable Link-Time-Optimization in any build (default is no)]),
 [
-if test "$withval" != no
-then
-  Py_LTO='true'
-  AC_MSG_RESULT(yes);
-else
-  Py_LTO='false'
-  AC_MSG_RESULT(no);
-fi],
+case "$withval" in
+    full)
+        Py_LTO='true'
+        Py_LTO_POLICY='full'
+        AC_MSG_RESULT(yes)
+        ;;
+    thin)
+        Py_LTO='true'
+        Py_LTO_POLICY='thin'
+        AC_MSG_RESULT(yes)
+        ;;
+    yes)
+        Py_LTO='true'
+        Py_LTO_POLICY='default'
+        AC_MSG_RESULT(yes)
+        ;;
+    no)
+        Py_LTO='false'
+        AC_MSG_RESULT(no)
+        ;;
+    *)
+        Py_LTO='false'
+        AC_MSG_ERROR([unknown lto option: '$withval'])
+        ;;
+esac
+],
 [AC_MSG_RESULT(no)])
 if test "$Py_LTO" = 'true' ; then
   case $CC in
@@ -1385,10 +1403,11 @@ if test "$Py_LTO" = 'true' ; then
       fi
       if test "$ac_sys_system" = "Darwin" -a "${LLVM_AR_FOUND}" = "not-found"
       then
-        found_llvm_ar=`/usr/bin/xcrun -find llvm-ar 2>/dev/null`
+        # The Apple-supplied ar in Xcode or the Command Line Tools is apparently sufficient
+        found_llvm_ar=`/usr/bin/xcrun -find ar 2>/dev/null`
         if test -n "${found_llvm_ar}"
         then
-          LLVM_AR='/usr/bin/xcrun llvm-ar'
+          LLVM_AR='/usr/bin/xcrun ar'
           LLVM_AR_FOUND=found
           AC_MSG_NOTICE([llvm-ar found via xcrun: ${LLVM_AR}])
         fi
@@ -1404,17 +1423,34 @@ if test "$Py_LTO" = 'true' ; then
       case $ac_sys_system in
         Darwin*)
           # Any changes made here should be reflected in the GCC+Darwin case below
-          LTOFLAGS="-flto -Wl,-export_dynamic"
+          if test $Py_LTO_POLICY = default
+          then
+            LTOFLAGS="-flto -Wl,-export_dynamic"
+            LTOCFLAGS="-flto"
+          else
+            LTOFLAGS="-flto=${Py_LTO_POLICY} -Wl,-export_dynamic"
+            LTOCFLAGS="-flto=${Py_LTO_POLICY}"
+          fi
           ;;
         *)
-          LTOFLAGS="-flto"
+          if test $Py_LTO_POLICY = default
+          then
+            LTOFLAGS="-flto"
+          else
+            LTOFLAGS="-flto=${Py_LTO_POLICY}"
+          fi
           ;;
       esac
       ;;
     *gcc*)
+      if test $Py_LTO_POLICY = thin
+      then
+        AC_MSG_ERROR([thin lto is not supported under gcc compiler.])
+      fi
       case $ac_sys_system in
         Darwin*)
           LTOFLAGS="-flto -Wl,-export_dynamic"
+          LTOCFLAGS="-flto"
           ;;
         *)
           LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects -flto-partition=none"
@@ -1430,7 +1466,7 @@ if test "$Py_LTO" = 'true' ; then
       LTOFLAGS="$LTOFLAGS -g"
   fi
 
-  CFLAGS_NODIST="$CFLAGS_NODIST $LTOFLAGS"
+  CFLAGS_NODIST="$CFLAGS_NODIST ${LTOCFLAGS-$LTOFLAGS}"
   LDFLAGS_NODIST="$LDFLAGS_NODIST $LTOFLAGS"
 fi
 
@@ -2559,6 +2595,47 @@ case $ac_sys_system/$ac_sys_release in
 	;;
 esac
 
+AC_MSG_CHECKING(for --with-address-sanitizer)
+AC_ARG_WITH(address_sanitizer,
+            AS_HELP_STRING([--with-address-sanitizer],
+                           [enable AddressSanitizer memory error detector, 'asan' (default is no)]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=address $LDFLAGS"
+# ASan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+],
+[AC_MSG_RESULT(no)])
+
+AC_MSG_CHECKING(for --with-memory-sanitizer)
+AC_ARG_WITH(memory_sanitizer,
+            AS_HELP_STRING([--with-memory-sanitizer],
+                           [enable MemorySanitizer allocation error detector, 'msan' (default is no)]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+# MSan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+],
+[AC_MSG_RESULT(no)])
+
+AC_MSG_CHECKING(for --with-undefined-behavior-sanitizer)
+AC_ARG_WITH(undefined_behavior_sanitizer,
+            AS_HELP_STRING([--with-undefined-behavior-sanitizer],
+                           [enable UndefinedBehaviorSanitizer undefined behaviour detector, 'ubsan' (default is no)]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
+LDFLAGS="-fsanitize=undefined $LDFLAGS"
+with_ubsan="yes"
+],
+[
+AC_MSG_RESULT(no)
+with_ubsan="no"
+])
+
 # Set info about shared libraries.
 AC_SUBST(SHLIB_SUFFIX)
 AC_SUBST(LDSHARED)
@@ -2659,7 +2736,7 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
-	Linux*|GNU*|QNX*|VxWorks*)
+	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	FreeBSD*)
@@ -2728,6 +2805,7 @@ then
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
+	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
 		then CCSHARED="-fPIC"
@@ -2762,9 +2840,18 @@ then
 		# Issue #18075: the default maximum stack size (8MBytes) is too
 		# small for the default recursion limit. Increase the stack size
 		# to ensure that tests don't crash
-		# Note: This matches the value of THREAD_STACK_SIZE in
-		# thread_pthread.h
-		LINKFORSHARED="-Wl,-stack_size,1000000 $LINKFORSHARED"
+    stack_size="1000000"  # 16 MB
+    if test "$with_ubsan" == "yes"
+    then
+        # Undefined behavior sanitizer requires an even deeper stack
+        stack_size="4000000"  # 64 MB
+    fi
+
+    LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
+
+    AC_DEFINE_UNQUOTED(THREAD_STACK_SIZE,
+        0x$stack_size,
+        [Custom thread stack size depending on chosen sanitizer runtimes.])
 
 		if test "$enable_framework"
 		then
@@ -2949,16 +3036,19 @@ fi
 # str, bytes and memoryview hash algorithm
 AH_TEMPLATE(Py_HASH_ALGORITHM,
   [Define hash algorithm for str, bytes and memoryview.
-   SipHash24: 1, FNV: 2, externally defined: 0])
+   SipHash24: 1, FNV: 2, SipHash13: 3, externally defined: 0])
 
 AC_MSG_CHECKING(for --with-hash-algorithm)
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_WITH(hash_algorithm,
-            AS_HELP_STRING([--with-hash-algorithm=@<:@fnv|siphash24@:>@],
-                           [select hash algorithm for use in Python/pyhash.c (default is SipHash24)]),
+            AS_HELP_STRING([--with-hash-algorithm=@<:@fnv|siphash13|siphash24@:>@],
+                           [select hash algorithm for use in Python/pyhash.c (default is SipHash13)]),
 [
 AC_MSG_RESULT($withval)
 case "$withval" in
+    siphash13)
+        AC_DEFINE(Py_HASH_ALGORITHM, 3)
+        ;;
     siphash24)
         AC_DEFINE(Py_HASH_ALGORITHM, 1)
         ;;
@@ -2973,7 +3063,7 @@ esac
 [AC_MSG_RESULT(default)])
 
 validate_tzpath() {
-    # Checks that each element of hte path is an absolute path
+    # Checks that each element of the path is an absolute path
     if test -z "$1"; then
         # Empty string is allowed: it indicates no system TZPATH
         return 0
@@ -3008,46 +3098,15 @@ esac
  AC_MSG_RESULT("$TZPATH")])
 AC_SUBST(TZPATH)
 
-AC_MSG_CHECKING(for --with-address-sanitizer)
-AC_ARG_WITH(address_sanitizer,
-            AS_HELP_STRING([--with-address-sanitizer],
-                           [enable AddressSanitizer memory error detector, 'asan' (default is no)]),
-[
-AC_MSG_RESULT($withval)
-BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=address $LDFLAGS"
-# ASan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
-],
-[AC_MSG_RESULT(no)])
-
-AC_MSG_CHECKING(for --with-memory-sanitizer)
-AC_ARG_WITH(memory_sanitizer,
-            AS_HELP_STRING([--with-memory-sanitizer],
-                           [enable MemorySanitizer allocation error detector, 'msan' (default is no)]),
-[
-AC_MSG_RESULT($withval)
-BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
-# MSan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
-],
-[AC_MSG_RESULT(no)])
-
-AC_MSG_CHECKING(for --with-undefined-behavior-sanitizer)
-AC_ARG_WITH(undefined_behavior_sanitizer,
-            AS_HELP_STRING([--with-undefined-behavior-sanitizer],
-                           [enable UndefinedBehaviorSanitizer undefined behaviour detector, 'ubsan' (default is no)]),
-[
-AC_MSG_RESULT($withval)
-BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
-LDFLAGS="-fsanitize=undefined $LDFLAGS"
-],
-[AC_MSG_RESULT(no)])
-
 # Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
 AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
+
+case $ac_sys_system/$ac_sys_release in
+    Haiku*)
+        AC_CHECK_LIB(network, socket, [LIBS="-lnetwork $LIBS"], [], $LIBS)
+    ;;
+esac
 
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs,
@@ -3691,7 +3750,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
  pthread_condattr_setclock pthread_init pthread_kill pwrite pwritev pwritev2 \
  readlink readlinkat readv realpath renameat \
- sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
+ sem_open sem_timedwait sem_clockwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
@@ -4059,6 +4118,18 @@ AC_CHECK_FUNCS(clock_getres, [], [
 AC_CHECK_FUNCS(clock_settime, [], [
     AC_CHECK_LIB(rt, clock_settime, [
         AC_DEFINE(HAVE_CLOCK_SETTIME, 1)
+    ])
+])
+
+AC_CHECK_FUNCS(clock_nanosleep, [], [
+    AC_CHECK_LIB(rt, clock_nanosleep, [
+        AC_DEFINE(HAVE_CLOCK_NANOSLEEP, 1)
+    ])
+])
+
+AC_CHECK_FUNCS(nanosleep, [], [
+    AC_CHECK_LIB(rt, nanosleep, [
+        AC_DEFINE(HAVE_NANOSLEEP, 1)
     ])
 ])
 

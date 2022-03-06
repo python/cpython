@@ -145,7 +145,8 @@ class DebuggerTests(unittest.TestCase):
     def get_stack_trace(self, source=None, script=None,
                         breakpoint=BREAKPOINT_FN,
                         cmds_after_breakpoint=None,
-                        import_site=False):
+                        import_site=False,
+                        ignore_stderr=False):
         '''
         Run 'python -c SOURCE' under gdb with a breakpoint.
 
@@ -224,8 +225,9 @@ class DebuggerTests(unittest.TestCase):
         # Use "args" to invoke gdb, capturing stdout, stderr:
         out, err = run_gdb(*args, PYTHONHASHSEED=PYTHONHASHSEED)
 
-        for line in err.splitlines():
-            print(line, file=sys.stderr)
+        if not ignore_stderr:
+            for line in err.splitlines():
+                print(line, file=sys.stderr)
 
         # bpo-34007: Sometimes some versions of the shared libraries that
         # are part of the traceback are compiled in optimised mode and the
@@ -566,7 +568,7 @@ id(foo)''')
         #  http://bugs.python.org/issue8032#msg100537 )
         gdb_repr, gdb_output = self.get_gdb_repr('id(__builtins__.help)', import_site=True)
 
-        m = re.match(r'<_Helper at remote 0x-?[0-9a-f]+>', gdb_repr)
+        m = re.match(r'<_Helper\(\) at remote 0x-?[0-9a-f]+>', gdb_repr)
         self.assertTrue(m,
                         msg='Unexpected rendering %r' % gdb_repr)
 
@@ -666,15 +668,16 @@ id(a)''')
 
     def test_frames(self):
         gdb_output = self.get_stack_trace('''
+import sys
 def foo(a, b, c):
-    pass
+    return sys._getframe(0)
 
-foo(3, 4, 5)
-id(foo.__code__)''',
+f = foo(3, 4, 5)
+id(f)''',
                                           breakpoint='builtin_id',
-                                          cmds_after_breakpoint=['print (PyFrameObject*)(((PyCodeObject*)v)->co_zombieframe)']
+                                          cmds_after_breakpoint=['print (PyFrameObject*)v']
                                           )
-        self.assertTrue(re.match(r'.*\s+\$1 =\s+Frame 0x-?[0-9a-f]+, for file <string>, line 3, in foo \(\)\s+.*',
+        self.assertTrue(re.match(r'.*\s+\$1 =\s+Frame 0x-?[0-9a-f]+, for file <string>, line 4, in foo \(a=3.*',
                                  gdb_output,
                                  re.DOTALL),
                         'Unexpected gdb representation: %r\n%s' % (gdb_output, gdb_output))
@@ -731,8 +734,14 @@ class StackNavigationTests(DebuggerTests):
                                   cmds_after_breakpoint=['py-up', 'py-up'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 10, in baz \(args=\(1, 2, 3\)\)
+    id\(42\)
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
     baz\(a, b, c\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 4, in foo \(a=1, b=2, c=3\)
+    bar\(a=a, b=b, c=c\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 12, in <module> \(\)
+    foo\(1, 2, 3\)
 $''')
 
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
@@ -760,10 +769,18 @@ $''')
                                   cmds_after_breakpoint=['py-up', 'py-up', 'py-down'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
-    baz\(a, b, c\)
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 10, in baz \(args=\(1, 2, 3\)\)
     id\(42\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
+    baz\(a, b, c\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 4, in foo \(a=1, b=2, c=3\)
+    bar\(a=a, b=b, c=c\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 12, in <module> \(\)
+    foo\(1, 2, 3\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 10, in baz \(args=\(1, 2, 3\)\)
+    id\(42\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
+    baz\(a, b, c\)
 $''')
 
 class PyBtTests(DebuggerTests):
@@ -782,7 +799,7 @@ Traceback \(most recent call first\):
   File ".*gdb_sample.py", line 7, in bar
     baz\(a, b, c\)
   File ".*gdb_sample.py", line 4, in foo
-    bar\(a, b, c\)
+    bar\(a=a, b=b, c=c\)
   File ".*gdb_sample.py", line 12, in <module>
     foo\(1, 2, 3\)
 ''')
@@ -798,7 +815,7 @@ Traceback \(most recent call first\):
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
     baz\(a, b, c\)
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 4, in foo \(a=1, b=2, c=3\)
-    bar\(a, b, c\)
+    bar\(a=a, b=b, c=c\)
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 12, in <module> \(\)
     foo\(1, 2, 3\)
 ''')
@@ -908,6 +925,9 @@ id(42)
                         cmd,
                         breakpoint=func_name,
                         cmds_after_breakpoint=['bt', 'py-bt'],
+                        # bpo-45207: Ignore 'Function "meth_varargs" not
+                        # defined.' message in stderr.
+                        ignore_stderr=True,
                     )
                     self.assertIn(f'<built-in method {func_name}', gdb_output)
 
@@ -916,6 +936,9 @@ id(42)
                         cmd,
                         breakpoint=func_name,
                         cmds_after_breakpoint=['py-bt-full'],
+                        # bpo-45207: Ignore 'Function "meth_varargs" not
+                        # defined.' message in stderr.
+                        ignore_stderr=True,
                     )
                     self.assertIn(
                         f'#{expected_frame} <built-in method {func_name}',
@@ -999,7 +1022,13 @@ class PyLocalsTests(DebuggerTests):
         bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up', 'py-up', 'py-locals'])
         self.assertMultilineMatches(bt,
-                                    r".*\na = 1\nb = 2\nc = 3\n.*")
+                                    r'''^.*
+Locals for foo
+a = 1
+b = 2
+c = 3
+Locals for <module>
+.*$''')
 
 
 def setUpModule():

@@ -7,7 +7,7 @@ valid C code.
 
 Furthermore, the grammar rules for the C syntax (particularly as
 described in the K&R book) actually describe a superset, of which the
-full C langage is a proper subset.  Here are some of the extra
+full C language is a proper subset.  Here are some of the extra
 conditions that must be applied when parsing C code:
 
 * ...
@@ -90,7 +90,7 @@ Here are the cases where we've taken shortcuts or made assumptions:
 * no "inline" type declarations (struct, union, enum) in function
   parameters ~(including function pointers)~
 * no "inline" type decls in function return types
-* no superflous parentheses in declarators
+* no superfluous parentheses in declarators
 * var decls in for loops are always "simple" (e.g. no inline types)
 * only inline struct/union/enum decls may be anonymouns (without a name)
 * no function pointers in function pointer parameters

@@ -95,6 +95,13 @@ static const char usage_3[] = "\
          -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the\n\
              given directory instead of to the code tree\n\
          -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'\n\
+         -X no_debug_ranges: disable the inclusion of the tables mapping extra location \n\
+            information (end line, start column offset and end column offset) to every \n\
+            instruction in code objects. This is useful when smaller code objects and pyc \n\
+            files are desired as well as suppressing the extra visual location indicators \n\
+            when the interpreter displays tracebacks.\n\
+         -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
+            The default is \"on\" (or \"off\" if you are running a local build).\n\
 \n\
 --check-hash-based-pycs always|default|never:\n\
     control how Python invalidates hash-based .pyc files\n\
@@ -131,7 +138,12 @@ static const char usage_6[] =
 "   debugger. It can be set to the callable of your debugger of choice.\n"
 "PYTHONDEVMODE: enable the development mode.\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n"
-"PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'.\n";
+"PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'.\n"
+"PYTHONNODEBUGRANGES: If this variable is set, it disables the inclusion of the \n"
+"   tables mapping extra location information (end line, start column offset \n"
+"   and end column offset) to every instruction in code objects. This is useful \n"
+"   when smaller cothe de objects and pyc files are desired as well as suppressing the \n"
+"   extra visual location indicators when the interpreter displays tracebacks.\n";
 
 #if defined(MS_WINDOWS)
 #  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
@@ -575,11 +587,6 @@ Py_GetArgcArgv(int *argc, wchar_t ***argv)
 
 /* --- PyConfig ---------------------------------------------- */
 
-#define DECODE_LOCALE_ERR(NAME, LEN) \
-    (((LEN) == -2) \
-     ? _PyStatus_ERR("cannot decode " NAME) \
-     : _PyStatus_NO_MEMORY())
-
 #define MAX_HASH_SEED 4294967295UL
 
 
@@ -597,6 +604,7 @@ config_check_consistency(const PyConfig *config)
     assert(config->faulthandler >= 0);
     assert(config->tracemalloc >= 0);
     assert(config->import_time >= 0);
+    assert(config->no_debug_ranges >= 0);
     assert(config->show_ref_count >= 0);
     assert(config->dump_refs >= 0);
     assert(config->malloc_stats >= 0);
@@ -661,6 +669,7 @@ PyConfig_Clear(PyConfig *config)
     _PyWideStringList_Clear(&config->xoptions);
     _PyWideStringList_Clear(&config->module_search_paths);
     config->module_search_paths_set = 0;
+    CLEAR(config->stdlib_dir);
 
     CLEAR(config->executable);
     CLEAR(config->base_executable);
@@ -884,8 +893,10 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(faulthandler);
     COPY_ATTR(tracemalloc);
     COPY_ATTR(import_time);
+    COPY_ATTR(no_debug_ranges);
     COPY_ATTR(show_ref_count);
     COPY_ATTR(dump_refs);
+    COPY_ATTR(dump_refs_file);
     COPY_ATTR(malloc_stats);
 
     COPY_WSTR_ATTR(pycache_prefix);
@@ -899,6 +910,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTRLIST(xoptions);
     COPY_WSTRLIST(module_search_paths);
     COPY_ATTR(module_search_paths_set);
+    COPY_WSTR_ATTR(stdlib_dir);
 
     COPY_WSTR_ATTR(executable);
     COPY_WSTR_ATTR(base_executable);
@@ -936,6 +948,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(pathconfig_warnings);
     COPY_ATTR(_init_main);
     COPY_ATTR(_isolated_interpreter);
+    COPY_ATTR(use_frozen_modules);
     COPY_WSTRLIST(orig_argv);
 
 #undef COPY_ATTR
@@ -988,6 +1001,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(faulthandler);
     SET_ITEM_INT(tracemalloc);
     SET_ITEM_INT(import_time);
+    SET_ITEM_INT(no_debug_ranges);
     SET_ITEM_INT(show_ref_count);
     SET_ITEM_INT(dump_refs);
     SET_ITEM_INT(malloc_stats);
@@ -1003,6 +1017,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_WSTR(home);
     SET_ITEM_INT(module_search_paths_set);
     SET_ITEM_WSTRLIST(module_search_paths);
+    SET_ITEM_WSTR(stdlib_dir);
     SET_ITEM_WSTR(executable);
     SET_ITEM_WSTR(base_executable);
     SET_ITEM_WSTR(prefix);
@@ -1038,6 +1053,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(_init_main);
     SET_ITEM_INT(_isolated_interpreter);
     SET_ITEM_WSTRLIST(orig_argv);
+    SET_ITEM_INT(use_frozen_modules);
 
     return dict;
 
@@ -1264,6 +1280,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(faulthandler);
     GET_UINT(tracemalloc);
     GET_UINT(import_time);
+    GET_UINT(no_debug_ranges);
     GET_UINT(show_ref_count);
     GET_UINT(dump_refs);
     GET_UINT(malloc_stats);
@@ -1304,6 +1321,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     // Path configuration output
     GET_UINT(module_search_paths_set);
     GET_WSTRLIST(module_search_paths);
+    GET_WSTR_OPT(stdlib_dir);
     GET_WSTR_OPT(executable);
     GET_WSTR_OPT(base_executable);
     GET_WSTR_OPT(prefix);
@@ -1319,6 +1337,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(_install_importlib);
     GET_UINT(_init_main);
     GET_UINT(_isolated_interpreter);
+    GET_UINT(use_frozen_modules);
 
 #undef CHECK_VALUE
 #undef GET_UINT
@@ -1575,6 +1594,17 @@ config_get_xoption(const PyConfig *config, wchar_t *name)
     return _Py_get_xoption(&config->xoptions, name);
 }
 
+static const wchar_t*
+config_get_xoption_value(const PyConfig *config, wchar_t *name)
+{
+    const wchar_t *xoption = config_get_xoption(config, name);
+    if (xoption == NULL) {
+        return NULL;
+    }
+    const wchar_t *sep = wcschr(xoption, L'=');
+    return sep ? sep + 1 : L"";
+}
+
 
 static PyStatus
 config_init_home(PyConfig *config)
@@ -1685,6 +1715,14 @@ config_read_env_vars(PyConfig *config)
     }
     if (config_get_env(config, "PYTHONMALLOCSTATS")) {
         config->malloc_stats = 1;
+    }
+
+    if (config->dump_refs_file == NULL) {
+        status = CONFIG_GET_ENV_DUP(config, &config->dump_refs_file,
+                                    L"PYTHONDUMPREFSFILE", "PYTHONDUMPREFSFILE");
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
     if (config->pythonpath_env == NULL) {
@@ -1800,6 +1838,11 @@ config_read_complex_options(PyConfig *config)
     if (config_get_env(config, "PYTHONPROFILEIMPORTTIME")
        || config_get_xoption(config, L"importtime")) {
         config->import_time = 1;
+    }
+
+    if (config_get_env(config, "PYTHONNODEBUGRANGES")
+       || config_get_xoption(config, L"no_debug_ranges")) {
+        config->no_debug_ranges = 1;
     }
 
     PyStatus status;
@@ -2038,6 +2081,48 @@ config_init_fs_encoding(PyConfig *config, const PyPreConfig *preconfig)
 
 
 static PyStatus
+config_init_import(PyConfig *config, int compute_path_config)
+{
+    PyStatus status;
+
+    status = _PyConfig_InitPathConfig(config, compute_path_config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    /* -X frozen_modules=[on|off] */
+    const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
+    if (value == NULL) {
+        // For now we always default to "off".
+        // In the near future we will be factoring in PGO and in-development.
+        config->use_frozen_modules = 0;
+    }
+    else if (wcscmp(value, L"on") == 0) {
+        config->use_frozen_modules = 1;
+    }
+    else if (wcscmp(value, L"off") == 0) {
+        config->use_frozen_modules = 0;
+    }
+    else if (wcslen(value) == 0) {
+        // "-X frozen_modules" and "-X frozen_modules=" both imply "on".
+        config->use_frozen_modules = 1;
+    }
+    else {
+        return PyStatus_Error("bad value for option -X frozen_modules "
+                              "(expected \"on\" or \"off\")");
+    }
+
+    return _PyStatus_OK();
+}
+
+PyStatus
+_PyConfig_InitImportConfig(PyConfig *config)
+{
+    return config_init_import(config, 1);
+}
+
+
+static PyStatus
 config_read(PyConfig *config, int compute_path_config)
 {
     PyStatus status;
@@ -2083,7 +2168,7 @@ config_read(PyConfig *config, int compute_path_config)
     }
 
     if (config->_install_importlib) {
-        status = _PyConfig_InitPathConfig(config, compute_path_config);
+        status = config_init_import(config, compute_path_config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -2464,7 +2549,7 @@ warnoptions_append(PyConfig *config, PyWideStringList *options,
 {
     /* config_init_warnoptions() add existing config warnoptions at the end:
        ensure that the new option is not already present in this list to
-       prevent change the options order whne config_init_warnoptions() is
+       prevent change the options order when config_init_warnoptions() is
        called twice. */
     if (_PyWideStringList_Find(&config->warnoptions, option)) {
         /* Already present: do nothing */
@@ -3013,6 +3098,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     PySys_WriteStderr("  environment = %i\n", config->use_environment);
     PySys_WriteStderr("  user site = %i\n", config->user_site_directory);
     PySys_WriteStderr("  import site = %i\n", config->site_import);
+    DUMP_CONFIG("stdlib dir", stdlib_dir);
 #undef DUMP_CONFIG
 
 #define DUMP_SYS(NAME) \

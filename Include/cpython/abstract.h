@@ -71,6 +71,7 @@ PyVectorcall_Function(PyObject *callable)
         return NULL;
     }
     assert(PyCallable_Check(callable));
+
     offset = tp->tp_vectorcall_offset;
     assert(offset > 0);
     memcpy(&ptr, (char *) callable + offset, sizeof(ptr));

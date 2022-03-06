@@ -91,14 +91,6 @@ PyAPI_FUNC(void) _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, Py
 
 PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
 
-/* Convenience functions */
-
-#ifdef MS_WINDOWS
-Py_DEPRECATED(3.3)
-PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithUnicodeFilename(
-    PyObject *, const Py_UNICODE *);
-#endif /* MS_WINDOWS */
-
 /* Like PyErr_Format(), but saves current exception as __context__ and
    __cause__.
  */
@@ -107,16 +99,6 @@ PyAPI_FUNC(PyObject *) _PyErr_FormatFromCause(
     const char *format,   /* ASCII-encoded string  */
     ...
     );
-
-#ifdef MS_WINDOWS
-/* XXX redeclare to use WSTRING */
-Py_DEPRECATED(3.3)
-PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithUnicodeFilename(
-    int, const Py_UNICODE *);
-Py_DEPRECATED(3.3)
-PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithUnicodeFilename(
-    PyObject *,int, const Py_UNICODE *);
-#endif
 
 /* In exceptions.c */
 
@@ -161,30 +143,6 @@ PyAPI_FUNC(PyObject *) PyErr_ProgramTextObject(
     PyObject *filename,
     int lineno);
 
-/* Create a UnicodeEncodeError object.
- *
- * TODO: This API will be removed in Python 3.11.
- */
-Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_Create(
-    const char *encoding,       /* UTF-8 encoded string */
-    const Py_UNICODE *object,
-    Py_ssize_t length,
-    Py_ssize_t start,
-    Py_ssize_t end,
-    const char *reason          /* UTF-8 encoded string */
-    );
-
-/* Create a UnicodeTranslateError object.
- *
- * TODO: This API will be removed in Python 3.11.
- */
-Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_Create(
-    const Py_UNICODE *object,
-    Py_ssize_t length,
-    Py_ssize_t start,
-    Py_ssize_t end,
-    const char *reason          /* UTF-8 encoded string */
-    );
 PyAPI_FUNC(PyObject *) _PyUnicodeTranslateError_Create(
     PyObject *object,
     Py_ssize_t start,

@@ -212,11 +212,6 @@ f'{a * f"-{x()}-"}'"""
         self.assertEqual(call.col_offset, 11)
 
     def test_ast_line_numbers_duplicate_expression(self):
-        """Duplicate expression
-
-        NOTE: this is currently broken, always sets location of the first
-        expression.
-        """
         expr = """
 a = 10
 f'{a * x()} {a * x()} {a * x()}'
@@ -266,9 +261,9 @@ f'{a * x()} {a * x()} {a * x()}'
         self.assertEqual(binop.lineno, 3)
         self.assertEqual(binop.left.lineno, 3)
         self.assertEqual(binop.right.lineno, 3)
-        self.assertEqual(binop.col_offset, 3)  # FIXME: this is wrong
-        self.assertEqual(binop.left.col_offset, 3)  # FIXME: this is wrong
-        self.assertEqual(binop.right.col_offset, 7)  # FIXME: this is wrong
+        self.assertEqual(binop.col_offset, 13)
+        self.assertEqual(binop.left.col_offset, 13)
+        self.assertEqual(binop.right.col_offset, 17)
         # check the third binop location
         binop = t.body[1].value.values[4].value
         self.assertEqual(type(binop), ast.BinOp)
@@ -278,9 +273,32 @@ f'{a * x()} {a * x()} {a * x()}'
         self.assertEqual(binop.lineno, 3)
         self.assertEqual(binop.left.lineno, 3)
         self.assertEqual(binop.right.lineno, 3)
-        self.assertEqual(binop.col_offset, 3)  # FIXME: this is wrong
-        self.assertEqual(binop.left.col_offset, 3)  # FIXME: this is wrong
-        self.assertEqual(binop.right.col_offset, 7)  # FIXME: this is wrong
+        self.assertEqual(binop.col_offset, 23)
+        self.assertEqual(binop.left.col_offset, 23)
+        self.assertEqual(binop.right.col_offset, 27)
+
+    def test_ast_numbers_fstring_with_formatting(self):
+
+        t = ast.parse('f"Here is that pesky {xxx:.3f} again"')
+        self.assertEqual(len(t.body), 1)
+        self.assertEqual(t.body[0].lineno, 1)
+
+        self.assertEqual(type(t.body[0]), ast.Expr)
+        self.assertEqual(type(t.body[0].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[0].value.values), 3)
+
+        self.assertEqual(type(t.body[0].value.values[0]), ast.Constant)
+        self.assertEqual(type(t.body[0].value.values[1]), ast.FormattedValue)
+        self.assertEqual(type(t.body[0].value.values[2]), ast.Constant)
+
+        _, expr, _ = t.body[0].value.values
+
+        name = expr.value
+        self.assertEqual(type(name), ast.Name)
+        self.assertEqual(name.lineno, 1)
+        self.assertEqual(name.end_lineno, 1)
+        self.assertEqual(name.col_offset, 22)
+        self.assertEqual(name.end_col_offset, 25)
 
     def test_ast_line_numbers_multiline_fstring(self):
         # See bpo-30465 for details.

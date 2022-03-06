@@ -1,0 +1,3 @@
+Migrated pydoc to HTML5 (without changing the look of it). Side effect is to
+update xmlrpc's ``ServerHTMLDoc`` which now uses the CSS too. cgitb now
+relies less on pydoc (as it can't use the CSS file).

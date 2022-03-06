@@ -464,12 +464,15 @@ and off individually.  They are described here in more detail.
 
 --------------
 
-.. deprecated:: 3.10
-   Python 3.9 will switch to a PEG parser (see :pep:`617`), and Python 3.10 may
-   include new language syntax that is not parsable by lib2to3's LL(1) parser.
-   The ``lib2to3`` module may be removed from the standard library in a future
-   Python version. Consider third-party alternatives such as `LibCST`_ or
-   `parso`_.
+.. deprecated-removed:: 3.11 3.13
+   Python 3.9 switched to a PEG parser (see :pep:`617`) while lib2to3 is
+   using a less flexible LL(1) parser.  Python 3.10 includes new language
+   syntax that is not parsable by lib2to3's LL(1) parser (see :pep:`634`).
+   The ``lib2to3`` module was marked pending for deprecation in Python 3.9
+   (raising :exc:`PendingDeprecationWarning` on import) and fully deprecated
+   in Python 3.11 (raising :exc:`DeprecationWarning`).
+   It will be removed from the standard library in Python 3.13.
+   Consider third-party alternatives such as `LibCST`_ or `parso`_.
 
 .. note::
 

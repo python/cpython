@@ -279,16 +279,13 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    This subclass of :class:`TextCalendar` can be passed a locale name in the
    constructor and will return month and weekday names in the specified locale.
-   If this locale includes an encoding all strings containing month and weekday
-   names will be returned as unicode.
 
 
 .. class:: LocaleHTMLCalendar(firstweekday=0, locale=None)
 
    This subclass of :class:`HTMLCalendar` can be passed a locale name in the
    constructor and will return month and weekday names in the specified
-   locale. If this locale includes an encoding all strings containing month and
-   weekday names will be returned as unicode.
+   locale.
 
 .. note::
 

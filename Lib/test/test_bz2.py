@@ -1,6 +1,7 @@
 from test import support
 from test.support import bigmemtest, _4G
 
+import array
 import unittest
 from io import BytesIO, DEFAULT_BUFFER_SIZE
 import os
@@ -620,6 +621,14 @@ class BZ2FileTest(BaseTest):
             with BZ2File(BytesIO(truncated[:i])) as f:
                 self.assertRaises(EOFError, f.read, 1)
 
+    def test_issue44439(self):
+        q = array.array('Q', [1, 2, 3, 4, 5])
+        LENGTH = len(q) * q.itemsize
+
+        with BZ2File(BytesIO(), 'w') as f:
+            self.assertEqual(f.write(q), LENGTH)
+            self.assertEqual(f.tell(), LENGTH)
+
 
 class BZ2CompressorTest(BaseTest):
     def testCompress(self):
@@ -996,15 +1005,9 @@ class OpenTest(BaseTest):
             self.assertEqual(f.readlines(), [text])
 
 
-def test_main():
-    support.run_unittest(
-        BZ2FileTest,
-        BZ2CompressorTest,
-        BZ2DecompressorTest,
-        CompressDecompressTest,
-        OpenTest,
-    )
+def tearDownModule():
     support.reap_children()
 
+
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

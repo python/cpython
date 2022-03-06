@@ -510,19 +510,19 @@ class ShellSidebarTest(unittest.TestCase):
         )
         self.assert_sidebar_lines_synced()
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_single_empty_input(self):
         self.do_input('\n')
         yield
         self.assert_sidebar_lines_end_with(['>>>', '>>>'])
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_single_line_statement(self):
         self.do_input('1\n')
         yield
         self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_multi_line_statement(self):
         # Block statements are not indented because IDLE auto-indents.
         self.do_input(dedent('''\
@@ -540,14 +540,14 @@ class ShellSidebarTest(unittest.TestCase):
             '>>>',
         ])
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_single_long_line_wraps(self):
         self.do_input('1' * 200 + '\n')
         yield
         self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
         self.assert_sidebar_lines_synced()
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_squeeze_multi_line_output(self):
         shell = self.shell
         text = shell.text
@@ -567,7 +567,7 @@ class ShellSidebarTest(unittest.TestCase):
         self.assert_sidebar_lines_end_with(['>>>', None, None, None, '>>>'])
         self.assert_sidebar_lines_synced()
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_interrupt_recall_undo_redo(self):
         text = self.shell.text
         # Block statements are not indented because IDLE auto-indents.
@@ -613,7 +613,7 @@ class ShellSidebarTest(unittest.TestCase):
             ['>>>', '...', '...', '...', None, '>>>']
         )
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_very_long_wrapped_line(self):
         with swap_attr(self.shell, 'squeezer', None):
             self.do_input('x = ' + '1'*10_000 + '\n')
@@ -678,7 +678,7 @@ class ShellSidebarTest(unittest.TestCase):
         sidebar.update_colors()
         self.assertEqual(get_sidebar_colors(), test_colors)
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_mousewheel(self):
         sidebar = self.shell.shell_sidebar
         text = self.shell.text
@@ -703,7 +703,7 @@ class ShellSidebarTest(unittest.TestCase):
         yield
         self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_copy(self):
         sidebar = self.shell.shell_sidebar
         text = self.shell.text
@@ -728,7 +728,7 @@ class ShellSidebarTest(unittest.TestCase):
         copied_text = text.clipboard_get()
         self.assertEqual(copied_text, selected_text)
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_copy_with_prompts(self):
         sidebar = self.shell.shell_sidebar
         text = self.shell.text

@@ -168,7 +168,7 @@ _PyObject_IS_GC(PyObject *obj)
 // Fast inlined version of PyType_IS_GC()
 #define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
 
-// Usage: assert(_Py_CheckSlotResult(obj, "__getitem__", result != NULL)));
+// Usage: assert(_Py_CheckSlotResult(obj, "__getitem__", result != NULL));
 extern int _Py_CheckSlotResult(
     PyObject *obj,
     const char *slot_name,
@@ -177,6 +177,10 @@ extern int _Py_CheckSlotResult(
 // PyType_Ready() must be called if _PyType_IsReady() is false.
 // See also the Py_TPFLAGS_READY flag.
 #define _PyType_IsReady(type) ((type)->tp_dict != NULL)
+
+extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
+
+extern int _PyObject_InitializeDict(PyObject *obj);
 
 #ifdef __cplusplus
 }

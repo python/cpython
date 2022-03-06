@@ -269,7 +269,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(SysconfigTestCase))
+    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(SysconfigTestCase))
     return suite
 
 

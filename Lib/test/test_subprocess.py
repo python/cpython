@@ -171,6 +171,14 @@ class ProcessTestCase(BaseTestCase):
                 [sys.executable, "-c", "print('BDFL')"])
         self.assertIn(b'BDFL', output)
 
+        with self.assertRaisesRegex(ValueError,
+                "stdout argument not allowed, it will be overridden"):
+            subprocess.check_output([], stdout=None)
+
+        with self.assertRaisesRegex(ValueError,
+                "check argument not allowed, it will be overridden"):
+            subprocess.check_output([], check=False)
+
     def test_check_output_nonzero(self):
         # check_call() function with non-zero return code
         with self.assertRaises(subprocess.CalledProcessError) as c:
@@ -719,6 +727,8 @@ class ProcessTestCase(BaseTestCase):
             # However, this function is not yet in _winapi.
             p.stdin.write(b"pear")
             p.stdin.close()
+            p.stdout.close()
+            p.stderr.close()
         finally:
             p.kill()
             p.wait()
@@ -746,6 +756,8 @@ class ProcessTestCase(BaseTestCase):
             # On other platforms we cannot test the pipe size (yet). But above
             # code using pipesize=-1 should not crash.
             p.stdin.close()
+            p.stdout.close()
+            p.stderr.close()
         finally:
             p.kill()
             p.wait()
@@ -3022,6 +3034,7 @@ class POSIXProcessTestCase(BaseTestCase):
         pid = p.pid
         with warnings_helper.check_warnings(('', ResourceWarning)):
             p = None
+            support.gc_collect()  # For PyPy or other GCs.
 
         os.kill(pid, signal.SIGKILL)
         if mswindows:
@@ -3243,6 +3256,7 @@ class POSIXProcessTestCase(BaseTestCase):
         with mock.patch.object(p, 'poll', new=lambda: None):
             p.returncode = None
             p.send_signal(signal.SIGTERM)
+        p.kill()
 
     def test_communicate_repeated_call_after_stdout_close(self):
         proc = subprocess.Popen([sys.executable, '-c',

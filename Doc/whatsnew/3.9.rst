@@ -671,7 +671,7 @@ time
 
 On AIX, :func:`~time.thread_time` is now implemented with ``thread_cputime()``
 which has nanosecond resolution, rather than
-``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` which has a resolution of 10 ms.
+``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` which has a resolution of 10 milliseconds.
 (Contributed by Batuhan Taskaya in :issue:`40192`)
 
 sys
@@ -1494,7 +1494,7 @@ and to match the behavior of static type checkers specified in the PEP.
    now ``False``.  To support this change, the internally used type cache now
    supports differentiating types.
 4. ``Literal`` objects will now raise a :exc:`TypeError` exception during
-   equality comparisons if one of their parameters are not :term:`immutable`.
+   equality comparisons if any of their parameters are not :term:`hashable`.
    Note that declaring ``Literal`` with mutable parameters will not throw
    an error::
 

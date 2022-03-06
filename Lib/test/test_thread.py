@@ -132,6 +132,7 @@ class ThreadRunningTests(BasicThreadTest):
             del task
             while not done:
                 time.sleep(POLL_SLEEP)
+                support.gc_collect()  # For PyPy or other GCs.
             self.assertEqual(thread._count(), orig)
 
     def test_unraisable_exception(self):

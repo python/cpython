@@ -1,0 +1,4 @@
+Remove ``Py_UNICODE_COPY()`` and ``Py_UNICODE_FILL()`` macros, deprecated
+since Python 3.3. Use ``PyUnicode_CopyCharacters()`` or ``memcpy()``
+(``wchar_t*`` string), and ``PyUnicode_Fill()`` functions instead. Patch by
+Victor Stinner.

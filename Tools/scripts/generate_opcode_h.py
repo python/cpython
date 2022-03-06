@@ -16,13 +16,11 @@ extern "C" {
 """.lstrip()
 
 footer = """
-/* EXCEPT_HANDLER is a special, implicit block type which is created when
-   entering an except handler. It is not an opcode but we define it here
-   as we want it to be available to both frameobject.c and ceval.c, while
-   remaining private.*/
-#define EXCEPT_HANDLER 257
-
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
+
+/* Reserve some bytecodes for internal use in the compiler.
+ * The value of 240 is arbitrary. */
+#define IS_ARTIFICIAL(op) ((op) > 240)
 
 #ifdef __cplusplus
 }
@@ -53,8 +51,13 @@ def main(opcode_py, outfile='Include/opcode.h'):
         code = fp.read()
     exec(code, opcode)
     opmap = opcode['opmap']
+    hasconst = opcode['hasconst']
     hasjrel = opcode['hasjrel']
     hasjabs = opcode['hasjabs']
+    used = [ False ] * 256
+    next_op = 1
+    for name, op in opmap.items():
+        used[op] = True
     with open(outfile, 'w') as fobj:
         fobj.write(header)
         for name in opcode['opname']:
@@ -63,10 +66,24 @@ def main(opcode_py, outfile='Include/opcode.h'):
             if name == 'POP_EXCEPT': # Special entry for HAVE_ARGUMENT
                 fobj.write("#define %-23s %3d\n" %
                             ('HAVE_ARGUMENT', opcode['HAVE_ARGUMENT']))
+
+        for name in opcode['_specialized_instructions']:
+            while used[next_op]:
+                next_op += 1
+            fobj.write("#define %-23s %3s\n" % (name, next_op))
+            used[next_op] = True
+        fobj.write("#define DO_TRACING              255\n")
         fobj.write("#ifdef NEED_OPCODE_JUMP_TABLES\n")
         write_int_array_from_ops("_PyOpcode_RelativeJump", opcode['hasjrel'], fobj)
         write_int_array_from_ops("_PyOpcode_Jump", opcode['hasjrel'] + opcode['hasjabs'], fobj)
         fobj.write("#endif /* OPCODE_TABLES */\n")
+
+        fobj.write("\n")
+        fobj.write("#define HAS_CONST(op) (false\\")
+        for op in hasconst:
+            fobj.write(f"\n    || ((op) == {op}) \\")
+        fobj.write("\n    )\n")
+
         fobj.write(footer)
 
 

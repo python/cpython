@@ -1,6 +1,0 @@
-:mod:`ipaddress` module no longer accepts any leading zeros in IPv4 address
-strings. Leading zeros are ambiguous and interpreted as octal notation by
-some libraries. For example the legacy function :func:`socket.inet_aton`
-treats leading zeros as octal notatation. glibc implementation of modern
-:func:`~socket.inet_pton` does not accept any leading zeros. For a while
-the :mod:`ipaddress` module used to accept ambiguous leading zeros.

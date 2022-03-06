@@ -64,6 +64,11 @@
 #define PLATFORM_BYTE_ORDER IS_BIG_ENDIAN
 #endif
 
+/* Prevent bus errors on platforms requiring aligned accesses such ARM. */
+#if HAVE_ALIGNED_REQUIRED && !defined(NO_MISALIGNED_ACCESSES)
+#define NO_MISALIGNED_ACCESSES
+#endif
+
 /* mangle names */
 #define KeccakF1600_FastLoop_Absorb _PySHA3_KeccakF1600_FastLoop_Absorb
 #define Keccak_HashFinal _PySHA3_Keccak_HashFinal

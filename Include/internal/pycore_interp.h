@@ -246,6 +246,9 @@ struct _is {
     PyObject *builtins;
     // importlib module
     PyObject *importlib;
+    // override for config->use_frozen_modules (for tests)
+    // (-1: "off", 1: "on", 0: no override)
+    int override_frozen_modules;
 
     /* Used in Modules/_threadmodule.c. */
     long num_threads;

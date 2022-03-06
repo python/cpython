@@ -1,2 +1,0 @@
-Certificate and PrivateKey classes were added to the ssl module.
-Certificates and keys can now be loaded from memory buffer, too.

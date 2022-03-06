@@ -24,7 +24,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import run_unittest, cpython_only
+from test.support import cpython_only
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath
 from test.support.os_helper import TESTFN
@@ -584,6 +584,17 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     def test_getsource_on_code_object(self):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
+
+class TestGetsourceInteractive(unittest.TestCase):
+    def test_getclasses_interactive(self):
+        # bpo-44648: simulate a REPL session;
+        # there is no `__file__` in the __main__ module
+        code = "import sys, inspect; \
+                assert not hasattr(sys.modules['__main__'], '__file__'); \
+                A = type('A', (), {}); \
+                inspect.getsource(A)"
+        _, _, stderr = assert_python_failure("-c", code, __isolated=True)
+        self.assertIn(b'OSError: source code not available', stderr)
 
 class TestGettingSourceOfToplevelFrames(GetSourceBase):
     fodderModule = mod
@@ -3063,6 +3074,47 @@ class TestSignatureObject(unittest.TestCase):
                            ('bar', 2, ..., "keyword_only")),
                           ...))
 
+    def test_signature_on_subclass(self):
+        class A:
+            def __new__(cls, a=1, *args, **kwargs):
+                return object.__new__(cls)
+        class B(A):
+            def __init__(self, b):
+                pass
+        class C(A):
+            def __new__(cls, a=1, b=2, *args, **kwargs):
+                return object.__new__(cls)
+        class D(A):
+            pass
+
+        self.assertEqual(self.signature(B),
+                         ((('b', ..., ..., "positional_or_keyword"),),
+                          ...))
+        self.assertEqual(self.signature(C),
+                         ((('a', 1, ..., 'positional_or_keyword'),
+                           ('b', 2, ..., 'positional_or_keyword'),
+                           ('args', ..., ..., 'var_positional'),
+                           ('kwargs', ..., ..., 'var_keyword')),
+                          ...))
+        self.assertEqual(self.signature(D),
+                         ((('a', 1, ..., 'positional_or_keyword'),
+                           ('args', ..., ..., 'var_positional'),
+                           ('kwargs', ..., ..., 'var_keyword')),
+                          ...))
+
+    def test_signature_on_generic_subclass(self):
+        from typing import Generic, TypeVar
+
+        T = TypeVar('T')
+
+        class A(Generic[T]):
+            def __init__(self, *, a: int) -> None:
+                pass
+
+        self.assertEqual(self.signature(A),
+                         ((('a', ..., int, 'keyword_only'),),
+                          None))
+
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_signature_on_class_without_init(self):
@@ -4014,13 +4066,6 @@ class TestBoundArguments(unittest.TestCase):
         self.assertIs(type(ba.arguments), dict)
 
 class TestSignaturePrivateHelpers(unittest.TestCase):
-    def test_signature_get_bound_param(self):
-        getter = inspect._signature_get_bound_param
-
-        self.assertEqual(getter('($self)'), 'self')
-        self.assertEqual(getter('($self, obj)'), 'self')
-        self.assertEqual(getter('($cls, /, obj)'), 'cls')
-
     def _strip_non_python_syntax(self, input,
         clean_signature, self_parameter, last_positional_only):
         computed_clean_signature, \
@@ -4298,18 +4343,5 @@ def foo():
             self.assertInspectEqual(path, module)
 
 
-def test_main():
-    run_unittest(
-        TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBlockComments,
-        TestBuggyCases, TestInterpreterStack, TestClassesAndFunctions, TestPredicates,
-        TestGetcallargsFunctions, TestGetcallargsMethods,
-        TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState,
-        TestNoEOL, TestSignatureObject, TestSignatureBind, TestParameterObject,
-        TestBoundArguments, TestSignaturePrivateHelpers,
-        TestSignatureDefinitions, TestIsDataDescriptor,
-        TestGetClosureVars, TestUnwrap, TestMain, TestReload,
-        TestGetCoroutineState, TestGettingSourceOfToplevelFrames
-    )
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

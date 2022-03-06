@@ -1,5 +1,0 @@
-For backwards compatbility with previous minor versions of Python,
-if :func:`typing.get_type_hints` receives no namespace dictionary arguments,
-:func:`typing.get_type_hints` will search through the global then local
-namespaces during evaluation of stringized type annotations
-(string forward references) inside a class.

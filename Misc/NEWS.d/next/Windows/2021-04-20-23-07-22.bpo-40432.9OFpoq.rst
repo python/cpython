@@ -1,3 +1,0 @@
-Updated pegen regeneration script on Windows to find and use Python 3.8 or
-higher.  Prior to this, pegen regeneration already required 3.8 or higher,
-but the script may have used lower versions of Python.

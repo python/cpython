@@ -61,9 +61,11 @@ PyAPI_FUNC(int) _PyThread_at_fork_reinit(PyThread_type_lock *lock);
       convert microseconds to nanoseconds. */
 #  define PY_TIMEOUT_MAX (LLONG_MAX / 1000)
 #elif defined (NT_THREADS)
-   /* In the NT API, the timeout is a DWORD and is expressed in milliseconds */
-#  if 0xFFFFFFFFLL * 1000 < LLONG_MAX
-#    define PY_TIMEOUT_MAX (0xFFFFFFFFLL * 1000)
+   // WaitForSingleObject() accepts timeout in milliseconds in the range
+   // [0; 0xFFFFFFFE] (DWORD type). INFINITE value (0xFFFFFFFF) means no
+   // timeout. 0xFFFFFFFE milliseconds is around 49.7 days.
+#  if 0xFFFFFFFELL * 1000 < LLONG_MAX
+#    define PY_TIMEOUT_MAX (0xFFFFFFFELL * 1000)
 #  else
 #    define PY_TIMEOUT_MAX LLONG_MAX
 #  endif

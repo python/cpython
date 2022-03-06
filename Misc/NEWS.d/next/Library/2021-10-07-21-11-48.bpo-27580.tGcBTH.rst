@@ -1,0 +1,1 @@
+Add support of null characters in :mod:`csv`.

@@ -57,7 +57,7 @@ static const char unable_allocate_msg[] = "Unable to allocate output buffer.";
 /* Block size sequence */
 #define KB (1024)
 #define MB (1024*1024)
-const Py_ssize_t BUFFER_BLOCK_SIZE[] =
+static const Py_ssize_t BUFFER_BLOCK_SIZE[] =
     { 32*KB, 64*KB, 256*KB, 1*MB, 4*MB, 8*MB, 16*MB, 16*MB,
       32*MB, 32*MB, 32*MB, 32*MB, 64*MB, 64*MB, 128*MB, 128*MB,
       OUTPUT_BUFFER_MAX_BLOCK_SIZE };

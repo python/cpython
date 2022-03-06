@@ -22,7 +22,7 @@ There are two kinds of configuration:
 * The :ref:`Isolated Configuration <init-isolated-conf>` can be used to embed
   Python into an application. It isolates Python from the system. For example,
   environments variables are ignored, the LC_CTYPE locale is left unchanged and
-  no signal handler is registred.
+  no signal handler is registered.
 
 The :c:func:`Py_RunMain` function can be used to write a customized Python
 program.
@@ -596,6 +596,16 @@ PyConfig
 
       .. versionadded:: 3.10
 
+   .. c:member:: int no_debug_ranges
+
+      If equals to ``1``, disables the inclusion of the end line and column
+      mappings in code objects. Also disables traceback printing carets to
+      specific error locations.
+
+      Default: ``0``.
+
+      .. versionadded:: 3.11
+
    .. c:member:: wchar_t* check_hash_pycs_mode
 
       Control the validation behavior of hash-based ``.pyc`` files:
@@ -696,7 +706,7 @@ PyConfig
       * Otherwise, use the :term:`locale encoding`:
         ``nl_langinfo(CODESET)`` result.
 
-      At Python statup, the encoding name is normalized to the Python codec
+      At Python startup, the encoding name is normalized to the Python codec
       name. For example, ``"ANSI_X3.4-1968"`` is replaced with ``"ascii"``.
 
       See also the :c:member:`~PyConfig.filesystem_errors` member.
@@ -1193,7 +1203,10 @@ The caller is responsible to handle exceptions (error or exit) using
 
 If :c:func:`PyImport_FrozenModules`, :c:func:`PyImport_AppendInittab` or
 :c:func:`PyImport_ExtendInittab` are used, they must be set or called after
-Python preinitialization and before the Python initialization.
+Python preinitialization and before the Python initialization. If Python is
+initialized multiple times, :c:func:`PyImport_AppendInittab` or
+:c:func:`PyImport_ExtendInittab` must be called before each Python
+initialization.
 
 The current configuration (``PyConfig`` type) is stored in
 ``PyInterpreterState.config``.

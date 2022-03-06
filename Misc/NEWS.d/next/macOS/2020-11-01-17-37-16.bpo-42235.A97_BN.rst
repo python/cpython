@@ -1,2 +1,0 @@
-``Mac/BuildScript/build-installer.py`` will now use "--enable-optimizations"
-and ``--with-lto`` when building on macOS 10.15 or later.

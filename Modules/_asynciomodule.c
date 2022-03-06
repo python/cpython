@@ -1764,8 +1764,7 @@ static PyTypeObject FutureIterType = {
     .tp_dealloc = (destructor)FutureIter_dealloc,
     .tp_as_async = &FutureIterType_as_async,
     .tp_getattro = PyObject_GenericGetAttr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_HAVE_AM_SEND,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)FutureIter_traverse,
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = (iternextfunc)FutureIter_iternext,
@@ -3240,6 +3239,9 @@ new_running_loop_holder(PyObject *loop)
 static void
 PyRunningLoopHolder_tp_dealloc(PyRunningLoopHolder *rl)
 {
+    if (cached_running_holder == (PyObject *)rl) {
+        cached_running_holder = NULL;
+    }
     Py_CLEAR(rl->rl_loop);
     PyObject_Free(rl);
 }

@@ -352,7 +352,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See https://www.unicode.org/Public/13.0.0/ucd/extracted/DerivedNumericType.txt
+   See https://www.unicode.org/Public/14.0.0/ucd/extracted/DerivedNumericType.txt
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -499,7 +499,7 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.10
 
-.. method:: int.to_bytes(length, byteorder, *, signed=False)
+.. method:: int.to_bytes(length=1, byteorder='big', *, signed=False)
 
     Return an array of bytes representing an integer.
 
@@ -513,25 +513,45 @@ class`. In addition, it provides a few more methods:
         >>> x.to_bytes((x.bit_length() + 7) // 8, byteorder='little')
         b'\xe8\x03'
 
-    The integer is represented using *length* bytes.  An :exc:`OverflowError`
-    is raised if the integer is not representable with the given number of
-    bytes.
+    The integer is represented using *length* bytes, and defaults to 1.  An
+    :exc:`OverflowError` is raised if the integer is not representable with
+    the given number of bytes.
 
     The *byteorder* argument determines the byte order used to represent the
-    integer.  If *byteorder* is ``"big"``, the most significant byte is at the
-    beginning of the byte array.  If *byteorder* is ``"little"``, the most
-    significant byte is at the end of the byte array.  To request the native
-    byte order of the host system, use :data:`sys.byteorder` as the byte order
-    value.
+    integer, and defaults to ``"big"``.  If *byteorder* is
+    ``"big"``, the most significant byte is at the beginning of the byte
+    array.  If *byteorder* is ``"little"``, the most significant byte is at
+    the end of the byte array.
 
     The *signed* argument determines whether two's complement is used to
     represent the integer.  If *signed* is ``False`` and a negative integer is
     given, an :exc:`OverflowError` is raised. The default value for *signed*
     is ``False``.
 
-    .. versionadded:: 3.2
+    The default values can be used to conveniently turn an integer into a
+    single byte object.  However, when using the default arguments, don't try
+    to convert a value greater than 255 or you'll get an :exc:`OverflowError`::
 
-.. classmethod:: int.from_bytes(bytes, byteorder, *, signed=False)
+        >>> (65).to_bytes()
+        b'A'
+
+    Equivalent to::
+
+        def to_bytes(n, length=1, byteorder='big', signed=False):
+            if byteorder == 'little':
+                order = range(length)
+            elif byteorder == 'big':
+                order = reversed(range(length))
+            else:
+                raise ValueError("byteorder must be either 'little' or 'big'")
+
+            return bytes((n >> i*8) & 0xff for i in order)
+
+    .. versionadded:: 3.2
+    .. versionchanged:: 3.11
+       Added default argument values for ``length`` and ``byteorder``.
+
+.. classmethod:: int.from_bytes(bytes, byteorder='big', *, signed=False)
 
     Return the integer represented by the given array of bytes.
 
@@ -550,16 +570,34 @@ class`. In addition, it provides a few more methods:
     iterable producing bytes.
 
     The *byteorder* argument determines the byte order used to represent the
-    integer.  If *byteorder* is ``"big"``, the most significant byte is at the
-    beginning of the byte array.  If *byteorder* is ``"little"``, the most
-    significant byte is at the end of the byte array.  To request the native
-    byte order of the host system, use :data:`sys.byteorder` as the byte order
-    value.
+    integer, and defaults to ``"big"``.  If *byteorder* is
+    ``"big"``, the most significant byte is at the beginning of the byte
+    array.  If *byteorder* is ``"little"``, the most significant byte is at
+    the end of the byte array.  To request the native byte order of the host
+    system, use :data:`sys.byteorder` as the byte order value.
 
     The *signed* argument indicates whether two's complement is used to
     represent the integer.
 
+    Equivalent to::
+
+        def from_bytes(bytes, byteorder='big', signed=False):
+            if byteorder == 'little':
+                little_ordered = list(bytes)
+            elif byteorder == 'big':
+                little_ordered = list(reversed(bytes))
+            else:
+                raise ValueError("byteorder must be either 'little' or 'big'")
+
+            n = sum(b << i*8 for i, b in enumerate(little_ordered))
+            if signed and little_ordered and (little_ordered[-1] & 0x80):
+                n -= 1 << 8*len(little_ordered)
+
+            return n
+
     .. versionadded:: 3.2
+    .. versionchanged:: 3.11
+       Added default argument value for ``byteorder``.
 
 .. method:: int.as_integer_ratio()
 
@@ -739,7 +777,7 @@ number, :class:`float`, or :class:`complex`::
        """Compute the hash of a float x."""
 
        if math.isnan(x):
-           return super().__hash__()
+           return object.__hash__(x)
        elif math.isinf(x):
            return sys.hash_info.inf if x > 0 else -sys.hash_info.inf
        else:
@@ -1112,7 +1150,7 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 |                              | index given by *i*             |                     |
 |                              | (same as ``s[i:i] = [x]``)     |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.pop([i])``               | retrieves the item at *i* and  | \(2)                |
+| ``s.pop()`` or ``s.pop(i)``  | retrieves the item at *i* and  | \(2)                |
 |                              | also removes it from *s*       |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.remove(x)``              | remove the first item from *s* | \(3)                |
@@ -3632,17 +3670,16 @@ Memory Views
 of an object that supports the :ref:`buffer protocol <bufferobjects>` without
 copying.
 
-.. class:: memoryview(obj)
+.. class:: memoryview(object)
 
-   Create a :class:`memoryview` that references *obj*.  *obj* must support the
-   buffer protocol.  Built-in objects that support the buffer protocol include
-   :class:`bytes` and :class:`bytearray`.
+   Create a :class:`memoryview` that references *object*.  *object* must
+   support the buffer protocol.  Built-in objects that support the buffer
+   protocol include :class:`bytes` and :class:`bytearray`.
 
    A :class:`memoryview` has the notion of an *element*, which is the
-   atomic memory unit handled by the originating object *obj*.  For many
-   simple types such as :class:`bytes` and :class:`bytearray`, an element
-   is a single byte, but other types such as :class:`array.array` may have
-   bigger elements.
+   atomic memory unit handled by the originating *object*.  For many simple
+   types such as :class:`bytes` and :class:`bytearray`, an element is a single
+   byte, but other types such as :class:`array.array` may have bigger elements.
 
    ``len(view)`` is equal to the length of :class:`~memoryview.tolist`.
    If ``view.ndim = 0``, the length is 1. If ``view.ndim = 1``, the length
@@ -3779,7 +3816,7 @@ copying.
          Previous versions compared the raw memory disregarding the item format
          and the logical array structure.
 
-   .. method:: tobytes(order=None)
+   .. method:: tobytes(order='C')
 
       Return the data in the buffer as a bytestring.  This is equivalent to
       calling the :class:`bytes` constructor on the memoryview. ::
@@ -5041,16 +5078,16 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       TypeError: isinstance() argument 2 cannot contain a parameterized generic
 
 The user-exposed type for the union object can be accessed from
-:data:`types.Union` and used for :func:`isinstance` checks.  An object cannot be
+:data:`types.UnionType` and used for :func:`isinstance` checks.  An object cannot be
 instantiated from the type::
 
    >>> import types
-   >>> isinstance(int | str, types.Union)
+   >>> isinstance(int | str, types.UnionType)
    True
-   >>> types.Union()
+   >>> types.UnionType()
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: cannot create 'types.Union' instances
+   TypeError: cannot create 'types.UnionType' instances
 
 .. note::
    The :meth:`__or__` method for type objects was added to support the syntax

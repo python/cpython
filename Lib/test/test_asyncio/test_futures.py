@@ -918,6 +918,8 @@ class PyFutureInheritanceTests(BaseFutureInheritanceTests,
         return futures._PyFuture
 
 
+@unittest.skipUnless(hasattr(futures, '_CFuture'),
+                     'requires the C _asyncio module')
 class CFutureInheritanceTests(BaseFutureInheritanceTests,
                               test_utils.TestCase):
     def _get_future_cls(self):

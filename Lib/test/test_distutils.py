@@ -15,16 +15,14 @@ with warnings_helper.check_warnings(
     import distutils.tests
 
 
-def test_main():
-    # used by regrtest
-    support.run_unittest(distutils.tests.test_suite())
-    support.reap_children()
-
-
 def load_tests(*_):
     # used by unittest
     return distutils.tests.test_suite()
 
 
+def tearDownModule():
+    support.reap_children()
+
+
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

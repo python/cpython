@@ -6,6 +6,7 @@
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
@@ -25,13 +26,6 @@ get_tuple_state(void)
 #endif
 
 
-static inline void
-tuple_gc_track(PyTupleObject *op)
-{
-    _PyObject_GC_TRACK(op);
-}
-
-
 /* Print summary info about the state of the optimized allocator */
 void
 _PyTuple_DebugMallocStats(FILE *out)
@@ -48,10 +42,12 @@ _PyTuple_DebugMallocStats(FILE *out)
 #endif
 }
 
-/* Allocate an uninitialized tuple object. Before making it public following
+/* Allocate an uninitialized tuple object. Before making it public, following
    steps must be done:
-   - initialize its items
-   - call tuple_gc_track() on it
+
+   - Initialize its items.
+   - Call _PyObject_GC_TRACK() on it.
+
    Because the empty tuple is always reused and it's already tracked by GC,
    this function must not be called with size == 0 (unless from PyTuple_New()
    which wraps this function).
@@ -161,7 +157,7 @@ PyTuple_New(Py_ssize_t size)
     for (Py_ssize_t i = 0; i < size; i++) {
         op->ob_item[i] = NULL;
     }
-    tuple_gc_track(op);
+    _PyObject_GC_TRACK(op);
     return (PyObject *) op;
 }
 
@@ -257,7 +253,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
         items[i] = o;
     }
     va_end(vargs);
-    tuple_gc_track(result);
+    _PyObject_GC_TRACK(result);
     return (PyObject *)result;
 }
 
@@ -292,6 +288,17 @@ tupledealloc(PyTupleObject *op)
         }
 #endif
     }
+#if defined(Py_DEBUG) && PyTuple_MAXSAVESIZE > 0
+    else {
+        assert(len == 0);
+        struct _Py_tuple_state *state = get_tuple_state();
+        // The empty tuple singleton must only be deallocated by
+        // _PyTuple_Fini(): not before, not after
+        if (op == state->free_list[0] && state->numfree[0] != 0) {
+            _Py_FatalRefcountError("deallocating the empty tuple singleton");
+        }
+    }
+#endif
     Py_TYPE(op)->tp_free((PyObject *)op);
 
 #if PyTuple_MAXSAVESIZE > 0
@@ -473,7 +480,27 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
         Py_INCREF(item);
         dst[i] = item;
     }
-    tuple_gc_track(tuple);
+    _PyObject_GC_TRACK(tuple);
+    return (PyObject *)tuple;
+}
+
+PyObject *
+_PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
+{
+    if (n == 0) {
+        return tuple_get_empty();
+    }
+
+    PyTupleObject *tuple = tuple_alloc(n);
+    if (tuple == NULL) {
+        return NULL;
+    }
+    PyObject **dst = tuple->ob_item;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = src[i];
+        dst[i] = item;
+    }
+    _PyObject_GC_TRACK(tuple);
     return (PyObject *)tuple;
 }
 
@@ -551,7 +578,7 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
         Py_INCREF(v);
         dest[i] = v;
     }
-    tuple_gc_track(np);
+    _PyObject_GC_TRACK(np);
     return (PyObject *)np;
 }
 
@@ -588,7 +615,7 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
             p++;
         }
     }
-    tuple_gc_track(np);
+    _PyObject_GC_TRACK(np);
     return (PyObject *) np;
 }
 
@@ -783,6 +810,9 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
     Py_ssize_t i, n;
 
     assert(PyType_IsSubtype(type, &PyTuple_Type));
+    // tuple subclasses must implement the GC protocol
+    assert(_PyType_IS_GC(type));
+
     tmp = tuple_new_impl(&PyTuple_Type, iterable);
     if (tmp == NULL)
         return NULL;
@@ -798,6 +828,11 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
         PyTuple_SET_ITEM(newobj, i, item);
     }
     Py_DECREF(tmp);
+
+    // Don't track if a subclass tp_alloc is PyType_GenericAlloc()
+    if (!_PyObject_GC_IS_TRACKED(newobj)) {
+        _PyObject_GC_TRACK(newobj);
+    }
     return newobj;
 }
 
@@ -857,7 +892,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
                 dest[i] = it;
             }
 
-            tuple_gc_track(result);
+            _PyObject_GC_TRACK(result);
             return (PyObject *)result;
         }
     }
@@ -884,7 +919,7 @@ static PyMethodDef tuple_methods[] = {
     TUPLE___GETNEWARGS___METHODDEF
     TUPLE_INDEX_METHODDEF
     TUPLE_COUNT_METHODDEF
-    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1045,11 +1080,16 @@ _PyTuple_Fini(PyInterpreterState *interp)
     struct _Py_tuple_state *state = &interp->tuple;
     // The empty tuple singleton must not be tracked by the GC
     assert(!_PyObject_GC_IS_TRACKED(state->free_list[0]));
+
+#ifdef Py_DEBUG
+    state->numfree[0] = 0;
+#endif
     Py_CLEAR(state->free_list[0]);
-    _PyTuple_ClearFreeList(interp);
 #ifdef Py_DEBUG
     state->numfree[0] = -1;
 #endif
+
+    _PyTuple_ClearFreeList(interp);
 #endif
 }
 

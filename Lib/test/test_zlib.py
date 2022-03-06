@@ -132,10 +132,8 @@ class ExceptionTestCase(unittest.TestCase):
     @support.cpython_only
     def test_disallow_instantiation(self):
         # Ensure that the type disallows instantiation (bpo-43916)
-        comp_type = type(zlib.compressobj())
-        decomp_type = type(zlib.decompressobj())
-        self.assertRaises(TypeError, comp_type)
-        self.assertRaises(TypeError, decomp_type)
+        support.check_disallow_instantiation(self, type(zlib.compressobj()))
+        support.check_disallow_instantiation(self, type(zlib.decompressobj()))
 
 
 class BaseCompressTestCase(object):
@@ -833,6 +831,13 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         dco = zlib.decompressobj(32 + 15)
         self.assertEqual(dco.decompress(gzip), HAMLET_SCENE)
 
+        for wbits in (-15, 15, 31):
+            with self.subTest(wbits=wbits):
+                expected = HAMLET_SCENE
+                actual = zlib.decompress(
+                    zlib.compress(HAMLET_SCENE, wbits=wbits), wbits=wbits
+                )
+                self.assertEqual(expected, actual)
 
 def choose_lines(source, number, seed=None, generator=random):
     """Return a list of number lines randomly chosen from the source"""

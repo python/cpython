@@ -1,2 +1,0 @@
-Improve ``SyntaxError`` error messages for invalid comparisons. Patch by
-Pablo Galindo.

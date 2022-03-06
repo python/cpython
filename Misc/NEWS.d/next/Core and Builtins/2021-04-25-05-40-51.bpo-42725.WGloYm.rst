@@ -1,2 +1,0 @@
-Usage of ``await``/``yield``/``yield from`` and named expressions within an
-annotation is now forbidden when PEP 563 is activated.

@@ -1,2 +1,0 @@
-When performing structural pattern matching (:pep:`634`), captured names are
-now left unbound until the *entire* pattern has matched successfully.

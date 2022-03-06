@@ -1,87 +1,49 @@
+// Entry point of the Python C API.
+// C extensions should only #include <Python.h>, and not include directly
+// the other Python header files included by <Python.h>.
+
 #ifndef Py_PYTHON_H
 #define Py_PYTHON_H
-/* Since this is a "meta-include" file, no #ifdef __cplusplus / extern "C" { */
 
-/* Include nearly all Python header files */
+// Since this is a "meta-include" file, no #ifdef __cplusplus / extern "C" {
 
+// Include Python header files
 #include "patchlevel.h"
 #include "pyconfig.h"
 #include "pymacconfig.h"
 
-#include <limits.h>
-
-#ifndef UCHAR_MAX
-#error "Something's broken.  UCHAR_MAX should be defined in limits.h."
-#endif
-
-#if UCHAR_MAX != 255
-#error "Python's source code assumes C's unsigned char is an 8-bit type."
-#endif
-
 #if defined(__sgi) && !defined(_SGI_MP_SOURCE)
-#define _SGI_MP_SOURCE
+#  define _SGI_MP_SOURCE
 #endif
 
-#include <stdio.h>
+#include <stdio.h>                // NULL, FILE*
 #ifndef NULL
 #   error "Python.h requires that stdio.h define NULL."
 #endif
 
-#include <string.h>
+#include <string.h>               // memcpy()
 #ifdef HAVE_ERRNO_H
-#include <errno.h>
+#  include <errno.h>              // errno
 #endif
-#include <stdlib.h>
 #ifndef MS_WINDOWS
-#include <unistd.h>
+#  include <unistd.h>
 #endif
-#ifdef HAVE_CRYPT_H
-#if defined(HAVE_CRYPT_R) && !defined(_GNU_SOURCE)
-/* Required for glibc to expose the crypt_r() function prototype. */
-#  define _GNU_SOURCE
-#  define _Py_GNU_SOURCE_FOR_CRYPT
-#endif
-#include <crypt.h>
-#ifdef _Py_GNU_SOURCE_FOR_CRYPT
-/* Don't leak the _GNU_SOURCE define to other headers. */
-#  undef _GNU_SOURCE
-#  undef _Py_GNU_SOURCE_FOR_CRYPT
-#endif
-#endif
-
-/* For size_t? */
 #ifdef HAVE_STDDEF_H
-#include <stddef.h>
+   // For size_t
+#  include <stddef.h>
 #endif
 
-/* CAUTION:  Build setups should ensure that NDEBUG is defined on the
- * compiler command line when building Python in release mode; else
- * assert() calls won't be removed.
- */
 #include <assert.h>
 
 #include "pyport.h"
 #include "pymacro.h"
-
-/* A convenient way for code to know if clang's memory sanitizer is enabled. */
-#if defined(__has_feature)
-#  if __has_feature(memory_sanitizer)
-#    if !defined(_Py_MEMORY_SANITIZER)
-#      define _Py_MEMORY_SANITIZER
-#    endif
-#  endif
-#endif
-
 #include "pymath.h"
 #include "pymem.h"
-
 #include "object.h"
 #include "objimpl.h"
 #include "typeslots.h"
 #include "pyhash.h"
-
 #include "cpython/pydebug.h"
-
 #include "bytearrayobject.h"
 #include "bytesobject.h"
 #include "unicodeobject.h"
@@ -119,15 +81,12 @@
 #include "namespaceobject.h"
 #include "cpython/picklebufobject.h"
 #include "cpython/pytime.h"
-
 #include "codecs.h"
 #include "pyerrors.h"
-
 #include "cpython/initconfig.h"
 #include "pythread.h"
 #include "pystate.h"
 #include "context.h"
-
 #include "modsupport.h"
 #include "compile.h"
 #include "pythonrun.h"
@@ -137,12 +96,9 @@
 #include "osmodule.h"
 #include "intrcheck.h"
 #include "import.h"
-
 #include "abstract.h"
 #include "bltinmodule.h"
-
 #include "eval.h"
-
 #include "cpython/pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"

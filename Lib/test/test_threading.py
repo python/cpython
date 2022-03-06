@@ -4,7 +4,7 @@ Tests for the threading module.
 
 import test.support
 from test.support import threading_helper
-from test.support import verbose, cpython_only
+from test.support import verbose, cpython_only, os_helper
 from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
@@ -19,6 +19,7 @@ import os
 import subprocess
 import signal
 import textwrap
+import traceback
 
 from unittest import mock
 from test import lock_tests
@@ -30,6 +31,9 @@ from test import support
 # problems with some operating systems (issue #3863): skip problematic tests
 # on platforms known to behave badly.
 platforms_to_skip = ('netbsd5', 'hp-ux11')
+
+# Is Python built with Py_DEBUG macro defined?
+Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 
 
 def restore_default_excepthook(testcase):
@@ -123,8 +127,7 @@ class ThreadTests(BaseTestCase):
     def test_disallow_instantiation(self):
         # Ensure that the type disallows instantiation (bpo-43916)
         lock = threading.Lock()
-        tp = type(lock)
-        self.assertRaises(TypeError, tp)
+        test.support.check_disallow_instantiation(self, type(lock))
 
     # Create a bunch of threads, let each do some work, wait until all are
     # done.
@@ -907,6 +910,56 @@ class ThreadTests(BaseTestCase):
         thread.join()
         self.assertTrue(target.ran)
 
+    def test_leak_without_join(self):
+        # bpo-37788: Test that a thread which is not joined explicitly
+        # does not leak. Test written for reference leak checks.
+        def noop(): pass
+        with threading_helper.wait_threads_exit():
+            threading.Thread(target=noop).start()
+            # Thread.join() is not called
+
+    @unittest.skipUnless(Py_DEBUG, 'need debug build (Py_DEBUG)')
+    def test_debug_deprecation(self):
+        # bpo-44584: The PYTHONTHREADDEBUG environment variable is deprecated
+        rc, out, err = assert_python_ok("-Wdefault", "-c", "pass",
+                                        PYTHONTHREADDEBUG="1")
+        msg = (b'DeprecationWarning: The threading debug '
+               b'(PYTHONTHREADDEBUG environment variable) '
+               b'is deprecated and will be removed in Python 3.12')
+        self.assertIn(msg, err)
+
+    def test_import_from_another_thread(self):
+        # bpo-1596321: If the threading module is first import from a thread
+        # different than the main thread, threading._shutdown() must handle
+        # this case without logging an error at Python exit.
+        code = textwrap.dedent('''
+            import _thread
+            import sys
+
+            event = _thread.allocate_lock()
+            event.acquire()
+
+            def import_threading():
+                import threading
+                event.release()
+
+            if 'threading' in sys.modules:
+                raise Exception('threading is already imported')
+
+            _thread.start_new_thread(import_threading, ())
+
+            # wait until the threading module is imported
+            event.acquire()
+            event.release()
+
+            if 'threading' not in sys.modules:
+                raise Exception('threading is not imported')
+
+            # don't wait until the thread completes
+        ''')
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
 
 
 class ThreadJoinOnShutdown(BaseTestCase):
@@ -1006,8 +1059,9 @@ class ThreadJoinOnShutdown(BaseTestCase):
 
             def random_io():
                 '''Loop for a while sleeping random tiny amounts and doing some I/O.'''
+                import test.test_threading as mod
                 while True:
-                    with open(os.__file__, 'rb') as in_f:
+                    with open(mod.__file__, 'rb') as in_f:
                         stuff = in_f.read(200)
                         with open(os.devnull, 'wb') as null_f:
                             null_f.write(stuff)
@@ -1338,6 +1392,22 @@ class ThreadingExceptionTests(BaseTestCase):
         # explicitly break the reference cycle to not leak a dangling thread
         thread.exc = None
 
+    def test_multithread_modify_file_noerror(self):
+        # See issue25872
+        def modify_file():
+            with open(os_helper.TESTFN, 'w', encoding='utf-8') as fp:
+                fp.write(' ')
+                traceback.format_stack()
+
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        threads = [
+            threading.Thread(target=modify_file)
+            for i in range(100)
+        ]
+        for t in threads:
+            t.start()
+            t.join()
+
 
 class ThreadRunFail(threading.Thread):
     def run(self):
@@ -1580,6 +1650,31 @@ class InterruptMainTests(unittest.TestCase):
         self.assertRaises(ValueError, _thread.interrupt_main, -1)
         self.assertRaises(ValueError, _thread.interrupt_main, signal.NSIG)
         self.assertRaises(ValueError, _thread.interrupt_main, 1000000)
+
+    @threading_helper.reap_threads
+    def test_can_interrupt_tight_loops(self):
+        cont = [True]
+        started = [False]
+        interrupted = [False]
+
+        def worker(started, cont, interrupted):
+            iterations = 100_000_000
+            started[0] = True
+            while cont[0]:
+                if iterations:
+                    iterations -= 1
+                else:
+                    return
+                pass
+            interrupted[0] = True
+
+        t = threading.Thread(target=worker,args=(started, cont, interrupted))
+        t.start()
+        while not started[0]:
+            pass
+        cont[0] = False
+        t.join()
+        self.assertTrue(interrupted[0])
 
 
 class AtexitTests(unittest.TestCase):

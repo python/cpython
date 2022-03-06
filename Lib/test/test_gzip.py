@@ -10,7 +10,6 @@ import struct
 import sys
 import unittest
 from subprocess import PIPE, Popen
-from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import _4G, bigmemtest
@@ -592,6 +591,15 @@ class TestGzip(BaseTest):
         with gzip.open(self.filename, "rb") as f:
             f._buffer.raw._fp.prepend()
 
+    def test_issue44439(self):
+        q = array.array('Q', [1, 2, 3, 4, 5])
+        LENGTH = len(q) * q.itemsize
+
+        with gzip.GzipFile(fileobj=io.BytesIO(), mode='w') as f:
+            self.assertEqual(f.write(q), LENGTH)
+            self.assertEqual(f.tell(), LENGTH)
+
+
 class TestOpen(BaseTest):
     def test_binary_modes(self):
         uncompressed = data1 * 50
@@ -833,9 +841,5 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(out, b'')
 
 
-def test_main(verbose=None):
-    support.run_unittest(TestGzip, TestOpen, TestCommandLine)
-
-
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

@@ -1,3 +1,4 @@
+import doctest
 import unittest
 from test import support
 from itertools import *
@@ -1442,6 +1443,7 @@ class TestBasicOps(unittest.TestCase):
         p = weakref.proxy(a)
         self.assertEqual(getattr(p, '__class__'), type(b))
         del a
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, getattr, p, '__class__')
 
         ans = list('abc')
@@ -2228,16 +2230,57 @@ class RegressionTests(unittest.TestCase):
 class SubclassWithKwargsTest(unittest.TestCase):
     def test_keywords_in_subclass(self):
         # count is not subclassable...
-        for cls in (repeat, zip, filter, filterfalse, chain, map,
-                    starmap, islice, takewhile, dropwhile, cycle, compress):
-            class Subclass(cls):
-                def __init__(self, newarg=None, *args):
-                    cls.__init__(self, *args)
-            try:
-                Subclass(newarg=1)
-            except TypeError as err:
-                # we expect type errors because of wrong argument count
-                self.assertNotIn("keyword arguments", err.args[0])
+        testcases = [
+            (repeat, (1, 2), [1, 1]),
+            (zip, ([1, 2], 'ab'), [(1, 'a'), (2, 'b')]),
+            (filter, (None, [0, 1]), [1]),
+            (filterfalse, (None, [0, 1]), [0]),
+            (chain, ([1, 2], [3, 4]), [1, 2, 3]),
+            (map, (str, [1, 2]), ['1', '2']),
+            (starmap, (operator.pow, ((2, 3), (3, 2))), [8, 9]),
+            (islice, ([1, 2, 3, 4], 1, 3), [2, 3]),
+            (takewhile, (isEven, [2, 3, 4]), [2]),
+            (dropwhile, (isEven, [2, 3, 4]), [3, 4]),
+            (cycle, ([1, 2],), [1, 2, 1]),
+            (compress, ('ABC', [1, 0, 1]), ['A', 'C']),
+        ]
+        for cls, args, result in testcases:
+            with self.subTest(cls):
+                class subclass(cls):
+                    pass
+                u = subclass(*args)
+                self.assertIs(type(u), subclass)
+                self.assertEqual(list(islice(u, 0, 3)), result)
+                with self.assertRaises(TypeError):
+                    subclass(*args, newarg=3)
+
+        for cls, args, result in testcases:
+            # Constructors of repeat, zip, compress accept keyword arguments.
+            # Their subclasses need overriding __new__ to support new
+            # keyword arguments.
+            if cls in [repeat, zip, compress]:
+                continue
+            with self.subTest(cls):
+                class subclass_with_init(cls):
+                    def __init__(self, *args, newarg=None):
+                        self.newarg = newarg
+                u = subclass_with_init(*args, newarg=3)
+                self.assertIs(type(u), subclass_with_init)
+                self.assertEqual(list(islice(u, 0, 3)), result)
+                self.assertEqual(u.newarg, 3)
+
+        for cls, args, result in testcases:
+            with self.subTest(cls):
+                class subclass_with_new(cls):
+                    def __new__(cls, *args, newarg=None):
+                        self = super().__new__(cls, *args)
+                        self.newarg = newarg
+                        return self
+                u = subclass_with_new(*args, newarg=3)
+                self.assertIs(type(u), subclass_with_new)
+                self.assertEqual(list(islice(u, 0, 3)), result)
+                self.assertEqual(u.newarg, 3)
+
 
 @support.cpython_only
 class SizeofTest(unittest.TestCase):
@@ -2393,6 +2436,23 @@ Samuele
 ...     else:
 ...         return starmap(func, repeat(args, times))
 
+>>> def triplewise(iterable):
+...     "Return overlapping triplets from an iterable"
+...     # pairwise('ABCDEFG') -> ABC BCD CDE DEF EFG
+...     for (a, _), (b, c) in pairwise(pairwise(iterable)):
+...         yield a, b, c
+
+>>> import collections
+>>> def sliding_window(iterable, n):
+...     # sliding_window('ABCDEFG', 4) -> ABCD BCDE CDEF DEFG
+...     it = iter(iterable)
+...     window = collections.deque(islice(it, n), maxlen=n)
+...     if len(window) == n:
+...         yield tuple(window)
+...     for x in it:
+...         window.append(x)
+...         yield tuple(window)
+
 >>> def grouper(n, iterable, fillvalue=None):
 ...     "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
 ...     args = [iter(iterable)] * n
@@ -2410,6 +2470,40 @@ Samuele
 ...         except StopIteration:
 ...             pending -= 1
 ...             nexts = cycle(islice(nexts, pending))
+
+>>> def partition(pred, iterable):
+...     "Use a predicate to partition entries into false entries and true entries"
+...     # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
+...     t1, t2 = tee(iterable)
+...     return filterfalse(pred, t1), filter(pred, t2)
+
+>>> def before_and_after(predicate, it):
+...     ''' Variant of takewhile() that allows complete
+...         access to the remainder of the iterator.
+...
+...         >>> all_upper, remainder = before_and_after(str.isupper, 'ABCdEfGhI')
+...         >>> str.join('', all_upper)
+...         'ABC'
+...         >>> str.join('', remainder)
+...         'dEfGhI'
+...
+...         Note that the first iterator must be fully
+...         consumed before the second iterator can
+...         generate valid results.
+...     '''
+...     it = iter(it)
+...     transition = []
+...     def true_iterator():
+...         for elem in it:
+...             if predicate(elem):
+...                 yield elem
+...             else:
+...                 transition.append(elem)
+...                 return
+...     def remainder_iterator():
+...         yield from transition
+...         yield from it
+...     return true_iterator(), remainder_iterator()
 
 >>> def powerset(iterable):
 ...     "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
@@ -2535,8 +2629,30 @@ True
 >>> list(grouper(3, 'abcdefg', 'x'))
 [('a', 'b', 'c'), ('d', 'e', 'f'), ('g', 'x', 'x')]
 
+>>> list(triplewise('ABCDEFG'))
+[('A', 'B', 'C'), ('B', 'C', 'D'), ('C', 'D', 'E'), ('D', 'E', 'F'), ('E', 'F', 'G')]
+
+>>> list(sliding_window('ABCDEFG', 4))
+[('A', 'B', 'C', 'D'), ('B', 'C', 'D', 'E'), ('C', 'D', 'E', 'F'), ('D', 'E', 'F', 'G')]
+
 >>> list(roundrobin('abc', 'd', 'ef'))
 ['a', 'd', 'e', 'b', 'f', 'c']
+
+>>> def is_odd(x):
+...     return x % 2 == 1
+
+>>> evens, odds = partition(is_odd, range(10))
+>>> list(evens)
+[0, 2, 4, 6, 8]
+>>> list(odds)
+[1, 3, 5, 7, 9]
+
+>>> it = iter('ABCdEfGhI')
+>>> all_upper, remainder = before_and_after(str.isupper, it)
+>>> ''.join(all_upper)
+'ABC'
+>>> ''.join(remainder)
+'dEfGhI'
 
 >>> list(powerset([1,2,3]))
 [(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]
@@ -2575,26 +2691,10 @@ True
 
 __test__ = {'libreftest' : libreftest}
 
-def test_main(verbose=None):
-    test_classes = (TestBasicOps, TestVariousIteratorArgs, TestGC,
-                    RegressionTests, LengthTransparency,
-                    SubclassWithKwargsTest, TestExamples,
-                    TestPurePythonRoughEquivalents,
-                    SizeofTest)
-    support.run_unittest(*test_classes)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_unittest(*test_classes)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
-
-    # doctest the examples in the library reference
-    support.run_doctest(sys.modules[__name__], verbose)
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

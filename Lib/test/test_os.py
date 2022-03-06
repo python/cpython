@@ -2,8 +2,6 @@
 # does add tests for a few functions which have been determined to be more
 # portable than they had been thought to be.
 
-import asynchat
-import asyncore
 import codecs
 import contextlib
 import decimal
@@ -38,6 +36,11 @@ from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from platform import win32_is_iot
+
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asynchat
+    import asyncore
 
 try:
     import resource
@@ -1026,9 +1029,11 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     def test___repr__(self):
         """Check that the repr() of os.environ looks like environ({...})."""
         env = os.environ
-        self.assertEqual(repr(env), 'environ({{{}}})'.format(', '.join(
-            '{!r}: {!r}'.format(key, value)
-            for key, value in env.items())))
+        formatted_items = ", ".join(
+            f"{key!r}: {value!r}"
+            for key, value in env.items()
+        )
+        self.assertEqual(repr(env), f"environ({{{formatted_items}}})")
 
     def test_get_exec_path(self):
         defpath_list = os.defpath.split(os.pathsep)

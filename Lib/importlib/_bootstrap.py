@@ -361,6 +361,7 @@ class ModuleSpec:
         self.origin = origin
         self.loader_state = loader_state
         self.submodule_search_locations = [] if is_package else None
+        self._uninitialized_submodules = []
 
         # file-location attributes
         self._set_fileattr = False
@@ -824,11 +825,39 @@ class FrozenImporter:
         return '<module {!r} ({})>'.format(m.__name__, FrozenImporter._ORIGIN)
 
     @classmethod
+    def _setup_module(cls, module):
+        assert not hasattr(module, '__file__'), module.__file__
+        ispkg = hasattr(module, '__path__')
+        assert not ispkg or not module.__path__, module.__path__
+        spec = module.__spec__
+        assert not ispkg or not spec.submodule_search_locations
+
+        if spec.loader_state is None:
+            spec.loader_state = type(sys.implementation)(
+                data=None,
+                origname=None,
+            )
+        elif not hasattr(spec.loader_state, 'data'):
+            spec.loader_state.data = None
+        if not getattr(spec.loader_state, 'origname', None):
+            origname = vars(module).pop('__origname__', None)
+            assert origname, 'see PyImport_ImportFrozenModuleObject()'
+            spec.loader_state.origname = origname
+
+    @classmethod
     def find_spec(cls, fullname, path=None, target=None):
-        if _imp.is_frozen(fullname):
-            return spec_from_loader(fullname, cls, origin=cls._ORIGIN)
-        else:
+        info = _call_with_frames_removed(_imp.find_frozen, fullname)
+        if info is None:
             return None
+        data, ispkg, origname = info
+        spec = spec_from_loader(fullname, cls,
+                                origin=cls._ORIGIN,
+                                is_package=ispkg)
+        spec.loader_state = type(sys.implementation)(
+            data=data,
+            origname=origname,
+        )
+        return spec
 
     @classmethod
     def find_module(cls, fullname, path=None):
@@ -848,11 +877,22 @@ class FrozenImporter:
 
     @staticmethod
     def exec_module(module):
-        name = module.__spec__.name
-        if not _imp.is_frozen(name):
-            raise ImportError('{!r} is not a frozen module'.format(name),
-                              name=name)
-        code = _call_with_frames_removed(_imp.get_frozen_object, name)
+        spec = module.__spec__
+        name = spec.name
+        try:
+            data = spec.loader_state.data
+        except AttributeError:
+            if not _imp.is_frozen(name):
+                raise ImportError('{!r} is not a frozen module'.format(name),
+                                  name=name)
+            data = None
+        else:
+            # We clear the extra data we got from the finder, to save memory.
+            # Note that if this method is called again (e.g. by
+            # importlib.reload()) then _imp.get_frozen_object() will notice
+            # no data was provided and will look it up.
+            spec.loader_state.data = None
+        code = _call_with_frames_removed(_imp.get_frozen_object, name, data)
         exec(code, module.__dict__)
 
     @classmethod
@@ -987,6 +1027,7 @@ _ERR_MSG = _ERR_MSG_PREFIX + '{!r}'
 def _find_and_load_unlocked(name, import_):
     path = None
     parent = name.rpartition('.')[0]
+    parent_spec = None
     if parent:
         if parent not in sys.modules:
             _call_with_frames_removed(import_, parent)
@@ -999,15 +1040,24 @@ def _find_and_load_unlocked(name, import_):
         except AttributeError:
             msg = (_ERR_MSG + '; {!r} is not a package').format(name, parent)
             raise ModuleNotFoundError(msg, name=name) from None
+        parent_spec = parent_module.__spec__
+        child = name.rpartition('.')[2]
     spec = _find_spec(name, path)
     if spec is None:
         raise ModuleNotFoundError(_ERR_MSG.format(name), name=name)
     else:
-        module = _load_unlocked(spec)
+        if parent_spec:
+            # Temporarily add child we are currently importing to parent's
+            # _uninitialized_submodules for circular import tracking.
+            parent_spec._uninitialized_submodules.append(child)
+        try:
+            module = _load_unlocked(spec)
+        finally:
+            if parent_spec:
+                parent_spec._uninitialized_submodules.pop()
     if parent:
         # Set the module as an attribute on its parent.
         parent_module = sys.modules[parent]
-        child = name.rpartition('.')[2]
         try:
             setattr(parent_module, child, module)
         except AttributeError:
@@ -1021,17 +1071,28 @@ _NEEDS_LOADING = object()
 
 def _find_and_load(name, import_):
     """Find and load the module."""
-    with _ModuleLockManager(name):
-        module = sys.modules.get(name, _NEEDS_LOADING)
-        if module is _NEEDS_LOADING:
-            return _find_and_load_unlocked(name, import_)
+
+    # Optimization: we avoid unneeded module locking if the module
+    # already exists in sys.modules and is fully initialized.
+    module = sys.modules.get(name, _NEEDS_LOADING)
+    if (module is _NEEDS_LOADING or
+        getattr(getattr(module, "__spec__", None), "_initializing", False)):
+        with _ModuleLockManager(name):
+            module = sys.modules.get(name, _NEEDS_LOADING)
+            if module is _NEEDS_LOADING:
+                return _find_and_load_unlocked(name, import_)
+
+        # Optimization: only call _bootstrap._lock_unlock_module() if
+        # module.__spec__._initializing is True.
+        # NOTE: because of this, initializing must be set *before*
+        # putting the new module in sys.modules.
+        _lock_unlock_module(name)
 
     if module is None:
         message = ('import of {} halted; '
                    'None in sys.modules'.format(name))
         raise ModuleNotFoundError(message, name=name)
 
-    _lock_unlock_module(name)
     return module
 
 
@@ -1182,6 +1243,8 @@ def _setup(sys_module, _imp_module):
                 continue
             spec = _spec_from_module(module, loader)
             _init_module_attrs(spec, module)
+            if loader is FrozenImporter:
+                loader._setup_module(module)
 
     # Directly load built-in modules needed during bootstrap.
     self_module = sys.modules[__name__]

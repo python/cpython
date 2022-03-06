@@ -12,9 +12,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Modules\_sqlite\cache.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Modules\_sqlite\connection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -41,9 +38,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\_sqlite\cache.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Modules\_sqlite\connection.c">
       <Filter>Source Files</Filter>
     </ClCompile>

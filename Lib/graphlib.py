@@ -17,7 +17,7 @@ class _NodeInfo:
         self.npredecessors = 0
 
         # List of successor nodes. The list can contain duplicated elements as
-        # long as they're all reflected in the successor's npredecessors attribute).
+        # long as they're all reflected in the successor's npredecessors attribute.
         self.successors = []
 
 
