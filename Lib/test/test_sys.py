@@ -1421,8 +1421,8 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn12PIPP'
-        s = vsize(fmt)
+        fmt = 'P2nPI13Pl4Pn9Pn12PIP'
+        s = vsize('2P' + fmt)
         check(int, s)
         # class
         s = vsize(fmt +                 # PyTypeObject

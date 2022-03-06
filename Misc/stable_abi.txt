@@ -1577,9 +1577,6 @@ function _PyObject_CallFunction_SizeT
 function _PyObject_CallMethod_SizeT
     added 3.2
     abi_only
-function _PyObject_GC_Malloc
-    added 3.2
-    abi_only
 function _PyObject_GC_New
     added 3.2
     abi_only

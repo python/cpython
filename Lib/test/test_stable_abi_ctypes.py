@@ -817,7 +817,6 @@ SYMBOL_NAMES = (
     "_PyErr_BadInternalCall",
     "_PyObject_CallFunction_SizeT",
     "_PyObject_CallMethod_SizeT",
-    "_PyObject_GC_Malloc",
     "_PyObject_GC_New",
     "_PyObject_GC_NewVar",
     "_PyObject_GC_Resize",
