@@ -11,7 +11,7 @@ import warnings
 from . import connection
 from . import process
 from .context import reduction
-from . import semaphore_tracker
+from . import resource_tracker
 from . import spawn
 from . import util
 
@@ -69,7 +69,7 @@ class ForkServer(object):
             parent_r, child_w = os.pipe()
             child_r, parent_w = os.pipe()
             allfds = [child_r, child_w, self._forkserver_alive_fd,
-                      semaphore_tracker.getfd()]
+                      resource_tracker.getfd()]
             allfds += fds
             try:
                 reduction.sendfds(client, allfds)
@@ -90,7 +90,7 @@ class ForkServer(object):
         ensure_running() will do nothing.
         '''
         with self._lock:
-            semaphore_tracker.ensure_running()
+            resource_tracker.ensure_running()
             if self._forkserver_pid is not None:
                 # forkserver was launched before, is it still running?
                 pid, status = os.waitpid(self._forkserver_pid, os.WNOHANG)
@@ -290,11 +290,12 @@ def _serve_one(child_r, fds, unused_fds, handlers):
         os.close(fd)
 
     (_forkserver._forkserver_alive_fd,
-     semaphore_tracker._semaphore_tracker._fd,
+     resource_tracker._resource_tracker._fd,
      *_forkserver._inherited_fds) = fds
 
     # Run process object received over pipe
-    code = spawn._main(child_r)
+    parent_sentinel = os.dup(child_r)
+    code = spawn._main(child_r, parent_sentinel)
 
     return code
 

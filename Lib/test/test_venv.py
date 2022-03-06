@@ -14,7 +14,8 @@ import subprocess
 import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr, requires_zlib,
-                          can_symlink, EnvironmentVarGuard, rmtree)
+                          can_symlink, EnvironmentVarGuard, rmtree,
+                          import_module)
 import threading
 import unittest
 import venv
@@ -24,8 +25,12 @@ try:
 except ImportError:
     ctypes = None
 
-skipInVenv = unittest.skipIf(sys.prefix != sys.base_prefix,
-                             'Test not appropriate in a venv')
+# Platforms that set sys._base_executable can create venvs from within
+# another venv, so no need to skip tests that require venv.create().
+requireVenvCreate = unittest.skipUnless(
+    hasattr(sys, '_base_executable')
+    or sys.prefix == sys.base_prefix,
+    'cannot run venv.create from within a venv on this platform')
 
 def check_output(cmd, encoding=None):
     p = subprocess.Popen(cmd,
@@ -35,7 +40,7 @@ def check_output(cmd, encoding=None):
     out, err = p.communicate()
     if p.returncode:
         raise subprocess.CalledProcessError(
-            p.returncode, cmd, None, out, err)
+            p.returncode, cmd, out, err)
     return out, err
 
 class BaseTest(unittest.TestCase):
@@ -52,10 +57,7 @@ class BaseTest(unittest.TestCase):
             self.bindir = 'bin'
             self.lib = ('lib', 'python%d.%d' % sys.version_info[:2])
             self.include = 'include'
-        if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in os.environ:
-            executable = os.environ['__PYVENV_LAUNCHER__']
-        else:
-            executable = sys.executable
+        executable = getattr(sys, '_base_executable', sys.executable)
         self.exe = os.path.split(executable)[-1]
 
     def tearDown(self):
@@ -100,11 +102,7 @@ class BasicTest(BaseTest):
         else:
             self.assertFalse(os.path.exists(p))
         data = self.get_text_file_contents('pyvenv.cfg')
-        if sys.platform == 'darwin' and ('__PYVENV_LAUNCHER__'
-                                         in os.environ):
-            executable =  os.environ['__PYVENV_LAUNCHER__']
-        else:
-            executable = sys.executable
+        executable = getattr(sys, '_base_executable', sys.executable)
         path = os.path.dirname(executable)
         self.assertIn('home = %s' % path, data)
         fn = self.get_env_file(self.bindir, self.exe)
@@ -117,15 +115,23 @@ class BasicTest(BaseTest):
     def test_prompt(self):
         env_name = os.path.split(self.env_dir)[1]
 
+        rmtree(self.env_dir)
         builder = venv.EnvBuilder()
+        self.run_with_capture(builder.create, self.env_dir)
         context = builder.ensure_directories(self.env_dir)
+        data = self.get_text_file_contents('pyvenv.cfg')
         self.assertEqual(context.prompt, '(%s) ' % env_name)
+        self.assertNotIn("prompt = ", data)
 
+        rmtree(self.env_dir)
         builder = venv.EnvBuilder(prompt='My prompt')
+        self.run_with_capture(builder.create, self.env_dir)
         context = builder.ensure_directories(self.env_dir)
+        data = self.get_text_file_contents('pyvenv.cfg')
         self.assertEqual(context.prompt, '(My prompt) ')
+        self.assertIn("prompt = 'My prompt'\n", data)
 
-    @skipInVenv
+    @requireVenvCreate
     def test_prefixes(self):
         """
         Test that the prefix values are as expected.
@@ -261,7 +267,7 @@ class BasicTest(BaseTest):
     # run the test, the pyvenv.cfg in the venv created in the test will
     # point to the venv being used to run the test, and we lose the link
     # to the source build - so Python can't initialise properly.
-    @skipInVenv
+    @requireVenvCreate
     def test_executable(self):
         """
         Test that the sys.executable value is as expected.
@@ -305,7 +311,27 @@ class BasicTest(BaseTest):
         )
         self.assertEqual(out.strip(), '0')
 
-@skipInVenv
+    @requireVenvCreate
+    def test_multiprocessing(self):
+        """
+        Test that the multiprocessing is able to spawn.
+        """
+        # Issue bpo-36342: Instanciation of a Pool object imports the
+        # multiprocessing.synchronize module. Skip the test if this module
+        # cannot be imported.
+        import_module('multiprocessing.synchronize')
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir)
+        envpy = os.path.join(os.path.realpath(self.env_dir),
+                             self.bindir, self.exe)
+        out, err = check_output([envpy, '-c',
+            'from multiprocessing import Pool; '
+            'pool = Pool(1); '
+            'print(pool.apply_async("Python".lower).get(3)); '
+            'pool.terminate()'])
+        self.assertEqual(out.strip(), "python".encode())
+
+@requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
     def assert_pip_not_installed(self):

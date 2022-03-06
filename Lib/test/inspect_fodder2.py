@@ -137,3 +137,19 @@ class cls135:
         def func137():
             never_reached1
             never_reached2
+
+#line 141
+def positional_only_arg(a, /):
+    pass
+
+#line 145
+def all_markers(a, b, /, c, d, *, e, f):
+    pass
+
+# line 149
+def all_markers_with_args_and_kwargs(a, b, /, c, d, *args, e, f, **kwargs):
+    pass
+
+#line 153
+def all_markers_with_defaults(a, b=1, /, c=2, d=3, *, e=4, f=5):
+    pass

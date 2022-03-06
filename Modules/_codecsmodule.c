@@ -21,8 +21,7 @@
         (Unicode object, bytes consumed)
 
    These <encoding>s are available: utf_8, unicode_escape,
-   raw_unicode_escape, unicode_internal, latin_1, ascii (7-bit),
-   mbcs (on win32).
+   raw_unicode_escape, latin_1, ascii (7-bit), mbcs (on win32).
 
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
@@ -250,38 +249,6 @@ _codecs_escape_encode_impl(PyObject *module, PyObject *data,
 }
 
 /* --- Decoder ------------------------------------------------------------ */
-/*[clinic input]
-_codecs.unicode_internal_decode
-    obj: object
-    errors: str(accept={str, NoneType}) = NULL
-    /
-[clinic start generated code]*/
-
-static PyObject *
-_codecs_unicode_internal_decode_impl(PyObject *module, PyObject *obj,
-                                     const char *errors)
-/*[clinic end generated code: output=edbfe175e09eff9a input=8d57930aeda170c6]*/
-{
-    if (PyUnicode_Check(obj)) {
-        if (PyUnicode_READY(obj) < 0)
-            return NULL;
-        Py_INCREF(obj);
-        return codec_tuple(obj, PyUnicode_GET_LENGTH(obj));
-    }
-    else {
-        Py_buffer view;
-        PyObject *result;
-        if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) != 0)
-            return NULL;
-
-        result = codec_tuple(
-                _PyUnicode_DecodeUnicodeInternal(view.buf, view.len, errors),
-                view.len);
-        PyBuffer_Release(&view);
-        return result;
-    }
-}
-
 /*[clinic input]
 _codecs.utf_7_decode
     data: Py_buffer
@@ -687,51 +654,6 @@ _codecs_readbuffer_encode_impl(PyObject *module, Py_buffer *data,
 }
 
 /*[clinic input]
-_codecs.unicode_internal_encode
-    obj: object
-    errors: str(accept={str, NoneType}) = NULL
-    /
-[clinic start generated code]*/
-
-static PyObject *
-_codecs_unicode_internal_encode_impl(PyObject *module, PyObject *obj,
-                                     const char *errors)
-/*[clinic end generated code: output=a72507dde4ea558f input=8628f0280cf5ba61]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "unicode_internal codec has been deprecated",
-                     1))
-        return NULL;
-
-    if (PyUnicode_Check(obj)) {
-        Py_UNICODE *u;
-        Py_ssize_t len, size;
-
-        if (PyUnicode_READY(obj) < 0)
-            return NULL;
-
-        u = PyUnicode_AsUnicodeAndSize(obj, &len);
-        if (u == NULL)
-            return NULL;
-        if ((size_t)len > (size_t)PY_SSIZE_T_MAX / sizeof(Py_UNICODE))
-            return PyErr_NoMemory();
-        size = len * sizeof(Py_UNICODE);
-        return codec_tuple(PyBytes_FromStringAndSize((const char*)u, size),
-                           PyUnicode_GET_LENGTH(obj));
-    }
-    else {
-        Py_buffer view;
-        PyObject *result;
-        if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) != 0)
-            return NULL;
-        result = codec_tuple(PyBytes_FromStringAndSize(view.buf, view.len),
-                             view.len);
-        PyBuffer_Release(&view);
-        return result;
-    }
-}
-
-/*[clinic input]
 _codecs.utf_7_encode
     str: unicode
     errors: str(accept={str, NoneType}) = NULL
@@ -1095,8 +1017,6 @@ static PyMethodDef _codecs_functions[] = {
     _CODECS_UTF_32_EX_DECODE_METHODDEF
     _CODECS_UNICODE_ESCAPE_ENCODE_METHODDEF
     _CODECS_UNICODE_ESCAPE_DECODE_METHODDEF
-    _CODECS_UNICODE_INTERNAL_ENCODE_METHODDEF
-    _CODECS_UNICODE_INTERNAL_DECODE_METHODDEF
     _CODECS_RAW_UNICODE_ESCAPE_ENCODE_METHODDEF
     _CODECS_RAW_UNICODE_ESCAPE_DECODE_METHODDEF
     _CODECS_LATIN_1_ENCODE_METHODDEF

@@ -17,7 +17,7 @@ those of the :mod:`threading` module with two important caveats:
   argument; use the :func:`asyncio.wait_for` function to perform
   operations with timeouts.
 
-asyncio has the following basic sychronization primitives:
+asyncio has the following basic synchronization primitives:
 
 * :class:`Lock`
 * :class:`Event`
@@ -65,6 +65,13 @@ Lock
 
       This method waits until the lock is *unlocked*, sets it to
       *locked* and returns ``True``.
+
+      When more than one coroutine is blocked in :meth:`acquire`
+      waiting for the lock to be unlocked, only one coroutine
+      eventually proceeds.
+
+      Acquiring a lock is *fair*: the coroutine that proceeds will be
+      the first coroutine that started waiting on the lock.
 
    .. method:: release()
 
@@ -180,11 +187,11 @@ Condition
        cond = asyncio.Condition()
 
        # ... later
-       await lock.acquire()
+       await cond.acquire()
        try:
            await cond.wait()
        finally:
-           lock.release()
+           cond.release()
 
    .. coroutinemethod:: acquire()
 

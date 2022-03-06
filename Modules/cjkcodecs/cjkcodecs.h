@@ -149,40 +149,42 @@ static const struct dbcs_map *mapping_list;
         writer->pos += 2;                                                  \
     } while (0)
 
-#define OUTBYTE1(c) \
-    do { ((*outbuf)[0]) = (c); } while (0)
-#define OUTBYTE2(c) \
-    do { ((*outbuf)[1]) = (c); } while (0)
-#define OUTBYTE3(c) \
-    do { ((*outbuf)[2]) = (c); } while (0)
-#define OUTBYTE4(c) \
-    do { ((*outbuf)[3]) = (c); } while (0)
+#define OUTBYTEI(c, i)                     \
+    do {                                   \
+        assert((unsigned char)(c) == (c)); \
+        ((*outbuf)[i]) = (c);              \
+    } while (0)
+
+#define OUTBYTE1(c) OUTBYTEI(c, 0)
+#define OUTBYTE2(c) OUTBYTEI(c, 1)
+#define OUTBYTE3(c) OUTBYTEI(c, 2)
+#define OUTBYTE4(c) OUTBYTEI(c, 3)
 
 #define WRITEBYTE1(c1)              \
     do {                            \
         REQUIRE_OUTBUF(1);          \
-        (*outbuf)[0] = (c1);        \
+        OUTBYTE1(c1);               \
     } while (0)
 #define WRITEBYTE2(c1, c2)          \
     do {                            \
         REQUIRE_OUTBUF(2);          \
-        (*outbuf)[0] = (c1);        \
-        (*outbuf)[1] = (c2);        \
+        OUTBYTE1(c1);               \
+        OUTBYTE2(c2);               \
     } while (0)
 #define WRITEBYTE3(c1, c2, c3)      \
     do {                            \
         REQUIRE_OUTBUF(3);          \
-        (*outbuf)[0] = (c1);        \
-        (*outbuf)[1] = (c2);        \
-        (*outbuf)[2] = (c3);        \
+        OUTBYTE1(c1);               \
+        OUTBYTE2(c2);               \
+        OUTBYTE3(c3);               \
     } while (0)
 #define WRITEBYTE4(c1, c2, c3, c4)  \
     do {                            \
         REQUIRE_OUTBUF(4);          \
-        (*outbuf)[0] = (c1);        \
-        (*outbuf)[1] = (c2);        \
-        (*outbuf)[2] = (c3);        \
-        (*outbuf)[3] = (c4);        \
+        OUTBYTE1(c1);               \
+        OUTBYTE2(c2);               \
+        OUTBYTE3(c3);               \
+        OUTBYTE4(c4);               \
     } while (0)
 
 #define _TRYMAP_ENC(m, assi, val)                               \

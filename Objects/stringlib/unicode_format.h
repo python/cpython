@@ -440,8 +440,13 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs,
 
         /* look up in args */
         obj = PySequence_GetItem(args, index);
-        if (obj == NULL)
-            goto error;
+        if (obj == NULL) {
+            PyErr_Format(PyExc_IndexError,
+                         "Replacement index %zd out of range for positional "
+                         "args tuple",
+                         index);
+             goto error;
+        }
     }
 
     /* iterate over the rest of the field_name */
@@ -1066,10 +1071,10 @@ static PyTypeObject PyFormatterIter_Type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)formatteriter_dealloc,  /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1202,10 +1207,10 @@ static PyTypeObject PyFieldNameIter_Type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)fieldnameiter_dealloc,  /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */

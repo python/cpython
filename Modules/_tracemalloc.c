@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_traceback.h"
 #include "hashtable.h"
 #include "frameobject.h"
 #include "pythread.h"
@@ -1470,6 +1471,12 @@ _PyMem_DumpTraceback(int fd, const void *ptr)
 {
     traceback_t *traceback;
     int i;
+
+    if (!_Py_tracemalloc_config.tracing) {
+        PUTS(fd, "Enable tracemalloc to get the memory block "
+                 "allocation traceback\n\n");
+        return;
+    }
 
     traceback = tracemalloc_get_traceback(DEFAULT_DOMAIN, (uintptr_t)ptr);
     if (traceback == NULL)

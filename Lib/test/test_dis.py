@@ -617,6 +617,7 @@ code_info_code_info = """\
 Name:              code_info
 Filename:          (.*)
 Argument count:    1
+Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  1
 Stack size:        3
@@ -631,50 +632,53 @@ Variable names:
               if sys.flags.optimize < 2 else (None,))
 
 @staticmethod
-def tricky(x, y, z=True, *args, c, d, e=[], **kwds):
+def tricky(a, b, /, x, y, z=True, *args, c, d, e=[], **kwds):
     def f(c=c):
-        print(x, y, z, c, d, e, f)
-    yield x, y, z, c, d, e, f
+        print(a, b, x, y, z, c, d, e, f)
+    yield a, b, x, y, z, c, d, e, f
 
 code_info_tricky = """\
 Name:              tricky
 Filename:          (.*)
-Argument count:    3
+Argument count:    5
+Positional-only arguments: 2
 Kw-only arguments: 3
-Number of locals:  8
-Stack size:        7
+Number of locals:  10
+Stack size:        9
 Flags:             OPTIMIZED, NEWLOCALS, VARARGS, VARKEYWORDS, GENERATOR
 Constants:
    0: None
    1: <code object f at (.*), file "(.*)", line (.*)>
    2: 'tricky.<locals>.f'
 Variable names:
-   0: x
-   1: y
-   2: z
-   3: c
-   4: d
-   5: e
-   6: args
-   7: kwds
+   0: a
+   1: b
+   2: x
+   3: y
+   4: z
+   5: c
+   6: d
+   7: e
+   8: args
+   9: kwds
 Cell variables:
-   0: [edfxyz]
-   1: [edfxyz]
-   2: [edfxyz]
-   3: [edfxyz]
-   4: [edfxyz]
-   5: [edfxyz]"""
+   0: [abedfxyz]
+   1: [abedfxyz]
+   2: [abedfxyz]
+   3: [abedfxyz]
+   4: [abedfxyz]
+   5: [abedfxyz]"""
 # NOTE: the order of the cell variables above depends on dictionary order!
 
 co_tricky_nested_f = tricky.__func__.__code__.co_consts[1]
 
 code_info_tricky_nested_f = """\
-Name:              f
 Filename:          (.*)
 Argument count:    1
+Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  1
-Stack size:        8
+Stack size:        10
 Flags:             OPTIMIZED, NEWLOCALS, NESTED
 Constants:
    0: None
@@ -683,17 +687,18 @@ Names:
 Variable names:
    0: c
 Free variables:
-   0: [edfxyz]
-   1: [edfxyz]
-   2: [edfxyz]
-   3: [edfxyz]
-   4: [edfxyz]
-   5: [edfxyz]"""
+   0: [abedfxyz]
+   1: [abedfxyz]
+   2: [abedfxyz]
+   3: [abedfxyz]
+   4: [abedfxyz]
+   5: [abedfxyz]"""
 
 code_info_expr_str = """\
 Name:              <module>
 Filename:          <disassembly>
 Argument count:    0
+Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  0
 Stack size:        2
@@ -707,6 +712,7 @@ code_info_simple_stmt_str = """\
 Name:              <module>
 Filename:          <disassembly>
 Argument count:    0
+Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  0
 Stack size:        2
@@ -721,6 +727,7 @@ code_info_compound_stmt_str = """\
 Name:              <module>
 Filename:          <disassembly>
 Argument count:    0
+Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  0
 Stack size:        2
@@ -742,6 +749,7 @@ code_info_async_def = """\
 Name:              async_def
 Filename:          (.*)
 Argument count:    0
+Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  2
 Stack size:        10

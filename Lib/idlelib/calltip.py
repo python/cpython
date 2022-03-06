@@ -4,6 +4,7 @@ Call Tips are floating windows which display function, class, and method
 parameter and docstring information when you type an opening parenthesis, and
 which disappear when you type a closing parenthesis.
 """
+import __main__
 import inspect
 import re
 import sys
@@ -12,7 +13,6 @@ import types
 
 from idlelib import calltip_w
 from idlelib.hyperparser import HyperParser
-import __main__
 
 
 class Calltip:
@@ -103,10 +103,9 @@ def get_entity(expression):
     in a namespace spanning sys.modules and __main.dict__.
     """
     if expression:
-        namespace = sys.modules.copy()
-        namespace.update(__main__.__dict__)
+        namespace = {**sys.modules, **__main__.__dict__}
         try:
-            return eval(expression, namespace)
+            return eval(expression, namespace)  # Only protect user code.
         except BaseException:
             # An uncaught exception closes idle, and eval can raise any
             # exception, especially if user classes are involved.
@@ -167,7 +166,7 @@ def get_argspec(ob):
             if len(line) > _MAX_COLS:
                 line = line[: _MAX_COLS - 3] + '...'
             lines.append(line)
-        argspec = '\n'.join(lines)
+    argspec = '\n'.join(lines)
     if not argspec:
         argspec = _default_callable_argspec
     return argspec

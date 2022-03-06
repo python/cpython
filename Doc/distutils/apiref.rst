@@ -4,6 +4,16 @@
 API Reference
 *************
 
+.. seealso::
+
+   `New and changed setup.py arguments in setuptools <setuptools-setup-py>`_
+      The ``setuptools`` project adds new capabilities to the ``setup`` function
+      and other APIs, makes the API consistent across different Python versions,
+      and is hence recommended over using ``distutils`` directly.
+
+.. _setuptools-setup-py: https://setuptools.readthedocs.io/en/latest/setuptools.html#new-and-changed-setup-keywords
+
+.. include:: ./_setuptools_disclaimer.rst
 
 :mod:`distutils.core` --- Core Distutils functionality
 ======================================================
@@ -276,6 +286,11 @@ the full reference.
    |                        | abort the build process, but   |                           |
    |                        | simply skip the extension.     |                           |
    +------------------------+--------------------------------+---------------------------+
+
+   .. versionchanged:: 3.8
+
+      On Unix, C extensions are no longer linked to libpython except on
+      Android and Cygwin.
 
 
 .. class:: Distribution
@@ -941,7 +956,7 @@ timestamp dependency analysis.
 .. function:: newer_group(sources, target[, missing='error'])
 
    Return true if *target* is out-of-date with respect to any file listed in
-   *sources*  In other words, if *target* exists and is newer than every file in
+   *sources*.  In other words, if *target* exists and is newer than every file in
    *sources*, return false; otherwise return true. *missing* controls what we do
    when a source file is missing; the default (``'error'``) is to blow up with an
    :exc:`OSError` from  inside :func:`os.stat`; if it is ``'ignore'``, we silently

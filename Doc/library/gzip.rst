@@ -59,6 +59,14 @@ The module defines the following items:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+.. exception:: BadGzipFile
+
+   An exception raised for invalid gzip files.  It inherits :exc:`OSError`.
+   :exc:`EOFError` and :exc:`zlib.error` can also be raised for invalid gzip
+   files.
+
+   .. versionadded:: 3.8
+
 .. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
 
    Constructor for the :class:`GzipFile` class, which simulates most of the
@@ -157,13 +165,15 @@ The module defines the following items:
       Accepts a :term:`path-like object`.
 
 
-.. function:: compress(data, compresslevel=9)
+.. function:: compress(data, compresslevel=9, *, mtime=None)
 
    Compress the *data*, returning a :class:`bytes` object containing
-   the compressed data.  *compresslevel* has the same meaning as in
+   the compressed data.  *compresslevel* and *mtime* have the same meaning as in
    the :class:`GzipFile` constructor above.
 
    .. versionadded:: 3.2
+   .. versionchanged:: 3.8
+      Added the *mtime* parameter for reproducible output.
 
 .. function:: decompress(data)
 
@@ -211,6 +221,9 @@ Example of how to GZIP compress a binary string::
       The basic data compression module needed to support the :program:`gzip` file
       format.
 
+
+.. program:: gzip
+
 Command Line Interface
 ----------------------
 
@@ -222,25 +235,26 @@ Once executed the :mod:`gzip` module keeps the input file(s).
 .. versionchanged:: 3.8
 
    Add a new command line interface with a usage.
+   By default, when you will execute the CLI, the default compression level is 6.
 
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
 
 .. cmdoption:: file
 
-   .. code-block:: shell-session
-
-      $ python -m gzip file
-
    If *file* is not specified, read from :attr:`sys.stdin`.
+
+.. cmdoption:: --fast
+
+   Indicates the fastest compression method (less compression).
+
+.. cmdoption:: --best
+
+   Indicates the slowest compression method (best compression).
 
 .. cmdoption:: -d, --decompress
 
-   Decompress the given file
-
-   .. code-block:: shell-session
-
-      $ python -m gzip -d file.gz
+   Decompress the given file.
 
 .. cmdoption:: -h, --help
 

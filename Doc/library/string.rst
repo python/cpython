@@ -56,8 +56,7 @@ The constants defined in this module are:
 .. data:: punctuation
 
    String of ASCII characters which are considered punctuation characters
-   in the ``C`` locale.
-
+   in the ``C`` locale: ``!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~``.
 
 .. data:: printable
 
@@ -89,7 +88,7 @@ implementation as the built-in :meth:`~str.format` method.
 
    The :class:`Formatter` class has the following public methods:
 
-   .. method:: format(format_string, *args, **kwargs)
+   .. method:: format(format_string, /, *args, **kwargs)
 
       The primary API method.  It takes a format string and
       an arbitrary set of positional and keyword arguments.
@@ -551,7 +550,7 @@ addition of the ``{}`` and with ``:`` used instead of ``%``.
 For example, ``'%03.2f'`` can be translated to ``'{:03.2f}'``.
 
 The new format syntax also supports new and different options, shown in the
-follow examples.
+following examples.
 
 Accessing arguments by position::
 
@@ -721,7 +720,7 @@ these rules.  The methods of :class:`Template` are:
    The constructor takes a single argument which is the template string.
 
 
-   .. method:: substitute(mapping, **kwds)
+   .. method:: substitute(mapping={}, /, **kwds)
 
       Performs the template substitution, returning a new string.  *mapping* is
       any dictionary-like object with keys that match the placeholders in the
@@ -730,7 +729,7 @@ these rules.  The methods of :class:`Template` are:
       and there are duplicates, the placeholders from *kwds* take precedence.
 
 
-   .. method:: safe_substitute(mapping, **kwds)
+   .. method:: safe_substitute(mapping={}, /, **kwds)
 
       Like :meth:`substitute`, except that if placeholders are missing from
       *mapping* and *kwds*, instead of raising a :exc:`KeyError` exception, the
@@ -739,7 +738,7 @@ these rules.  The methods of :class:`Template` are:
       simply return ``$`` instead of raising :exc:`ValueError`.
 
       While other exceptions may still occur, this method is called "safe"
-      because substitutions always tries to return a usable string instead of
+      because it always tries to return a usable string instead of
       raising an exception.  In another sense, :meth:`safe_substitute` may be
       anything other than safe, since it will silently ignore malformed
       templates containing dangling delimiters, unmatched braces, or

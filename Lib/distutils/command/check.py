@@ -120,7 +120,8 @@ class check(Command):
 
     def _check_rst_data(self, data):
         """Returns warnings when the provided data doesn't compile."""
-        source_path = StringIO()
+        # the include and csv_table directives need this to be a path
+        source_path = self.distribution.script_name or 'setup.py'
         parser = Parser()
         settings = frontend.OptionParser(components=(Parser,)).get_default_values()
         settings.tab_width = 4

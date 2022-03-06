@@ -23,8 +23,13 @@ typedef enum PyLockStatus {
 
 PyAPI_FUNC(void) PyThread_init_thread(void);
 PyAPI_FUNC(unsigned long) PyThread_start_new_thread(void (*)(void *), void *);
-PyAPI_FUNC(void) PyThread_exit_thread(void);
+PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
 PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
+
+#if defined(__APPLE__) || defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(_WIN32)
+#define PY_HAVE_THREAD_NATIVE_ID
+PyAPI_FUNC(unsigned long) PyThread_get_thread_native_id(void);
+#endif
 
 PyAPI_FUNC(PyThread_type_lock) PyThread_allocate_lock(void);
 PyAPI_FUNC(void) PyThread_free_lock(PyThread_type_lock);
@@ -92,14 +97,15 @@ PyAPI_FUNC(PyObject*) PyThread_GetInfo(void);
    platforms, but it is not POSIX-compliant.  Therefore, the new TSS API uses
    opaque data type to represent TSS keys to be compatible (see PEP 539).
 */
-PyAPI_FUNC(int) PyThread_create_key(void) Py_DEPRECATED(3.7);
-PyAPI_FUNC(void) PyThread_delete_key(int key) Py_DEPRECATED(3.7);
-PyAPI_FUNC(int) PyThread_set_key_value(int key, void *value) Py_DEPRECATED(3.7);
-PyAPI_FUNC(void *) PyThread_get_key_value(int key) Py_DEPRECATED(3.7);
-PyAPI_FUNC(void) PyThread_delete_key_value(int key) Py_DEPRECATED(3.7);
+Py_DEPRECATED(3.7) PyAPI_FUNC(int) PyThread_create_key(void);
+Py_DEPRECATED(3.7) PyAPI_FUNC(void) PyThread_delete_key(int key);
+Py_DEPRECATED(3.7) PyAPI_FUNC(int) PyThread_set_key_value(int key,
+                                                          void *value);
+Py_DEPRECATED(3.7) PyAPI_FUNC(void *) PyThread_get_key_value(int key);
+Py_DEPRECATED(3.7) PyAPI_FUNC(void) PyThread_delete_key_value(int key);
 
 /* Cleanup after a fork */
-PyAPI_FUNC(void) PyThread_ReInitTLS(void) Py_DEPRECATED(3.7);
+Py_DEPRECATED(3.7) PyAPI_FUNC(void) PyThread_ReInitTLS(void);
 
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000

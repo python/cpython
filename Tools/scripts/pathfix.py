@@ -103,29 +103,27 @@ def fix(filename):
     except IOError as msg:
         err('%s: cannot open: %r\n' % (filename, msg))
         return 1
-    line = f.readline()
-    fixed = fixline(line)
-    if line == fixed:
-        rep(filename+': no change\n')
-        f.close()
-        return
-    head, tail = os.path.split(filename)
-    tempname = os.path.join(head, '@' + tail)
-    try:
-        g = open(tempname, 'wb')
-    except IOError as msg:
-        f.close()
-        err('%s: cannot create: %r\n' % (tempname, msg))
-        return 1
-    rep(filename + ': updating\n')
-    g.write(fixed)
-    BUFSIZE = 8*1024
-    while 1:
-        buf = f.read(BUFSIZE)
-        if not buf: break
-        g.write(buf)
-    g.close()
-    f.close()
+    with f:
+        line = f.readline()
+        fixed = fixline(line)
+        if line == fixed:
+            rep(filename+': no change\n')
+            return
+        head, tail = os.path.split(filename)
+        tempname = os.path.join(head, '@' + tail)
+        try:
+            g = open(tempname, 'wb')
+        except IOError as msg:
+            err('%s: cannot create: %r\n' % (tempname, msg))
+            return 1
+        with g:
+            rep(filename + ': updating\n')
+            g.write(fixed)
+            BUFSIZE = 8*1024
+            while 1:
+                buf = f.read(BUFSIZE)
+                if not buf: break
+                g.write(buf)
 
     # Finishing touch -- move files
 

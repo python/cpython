@@ -37,7 +37,7 @@ class Mbox_func:
     """Generic mock for messagebox functions, which all have the same signature.
 
     Instead of displaying a message box, the mock's call method saves the
-    arguments as instance attributes, which test functions can then examime.
+    arguments as instance attributes, which test functions can then examine.
     The test can set the result returned to ask function
     """
     def __init__(self, result=None):
@@ -260,7 +260,7 @@ class Text:
         elif op == '!=':
             return line1 != line2 or  char1 != char2
         else:
-            raise TclError('''bad comparison operator "%s":'''
+            raise TclError('''bad comparison operator "%s": '''
                                   '''must be <, <=, ==, >=, >, or !=''' % op)
 
     # The following Text methods normally do something and return None.

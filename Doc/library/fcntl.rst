@@ -28,6 +28,10 @@ descriptor.
    Operations in this module used to raise an :exc:`IOError` where they now
    raise an :exc:`OSError`.
 
+.. versionchanged:: 3.8
+   The fcntl module now contains ``F_ADD_SEALS``, ``F_GET_SEALS``, and
+   ``F_SEAL_*`` constants for sealing of :func:`os.memfd_create` file
+   descriptors.
 
 The module defines the following functions:
 

@@ -17,3 +17,4 @@ The full list of modules described in this chapter is:
    modulefinder.rst
    runpy.rst
    importlib.rst
+   importlib.metadata.rst

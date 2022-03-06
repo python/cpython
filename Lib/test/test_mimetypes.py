@@ -6,6 +6,7 @@ import sys
 import unittest
 
 from test import support
+from platform import win32_edition
 
 # Tell it we don't know about external files:
 mimetypes.knownfiles = []
@@ -116,6 +117,8 @@ class Win32MimeTypesTestCase(unittest.TestCase):
         mimetypes.types_map.clear()
         mimetypes.types_map.update(self.original_types_map)
 
+    @unittest.skipIf(win32_edition() in ('NanoServer', 'WindowsCoreHeadless', 'IoTEdgeOS'),
+                                         "MIME types registry keys unavailable")
     def test_registry_parsing(self):
         # the original, minimum contents of the MIME database in the
         # Windows registry is undocumented AFAIK.

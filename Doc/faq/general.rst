@@ -268,14 +268,8 @@ Python references; or perhaps search for "Python" and "language".
 Where in the world is www.python.org located?
 ---------------------------------------------
 
-The Python project's infrastructure is located all over the world.
-`www.python.org <https://www.python.org>`_ is graciously hosted by `Rackspace
-<https://www.rackspace.com>`_, with CDN caching provided by `Fastly
-<https://www.fastly.com>`_.  `Upfront Systems
-<http://www.upfrontsoftware.co.za>`_ hosts `bugs.python.org
-<https://bugs.python.org>`_.  Many other Python services like `the Wiki
-<https://wiki.python.org>`_ are hosted by `Oregon State
-University Open Source Lab <https://osuosl.org>`_.
+The Python project's infrastructure is located all over the world and is managed
+by the Python Infrastructure Team. Details `here <http://infra.psf.io>`__.
 
 
 Why is it called Python?
@@ -312,14 +306,10 @@ guaranteed that interfaces will remain the same throughout a series of bugfix
 releases.
 
 The latest stable releases can always be found on the `Python download page
-<https://www.python.org/downloads/>`_.  There are two production-ready version
-of Python: 2.x and 3.x, but the recommended one at this times is Python 3.x.
-Although Python 2.x is still widely used, `it will not be
-maintained after January 1, 2020 <https://www.python.org/dev/peps/pep-0373/>`_.
-Python 2.x was known for having more third-party libraries available, however,
-by the time of this writing, most of the widely used libraries support Python 3.x,
-and some are even dropping the Python 2.x support.
-
+<https://www.python.org/downloads/>`_.  There are two production-ready versions
+of Python: 2.x and 3.x. The recommended version is 3.x, which is supported by
+most widely used libraries.  Although 2.x is still widely used, `it will not
+be maintained after January 1, 2020 <https://www.python.org/dev/peps/pep-0373/>`_.
 
 How many people are using Python?
 ---------------------------------

@@ -449,10 +449,12 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
             self.data = bytearray()
             self.fut = loop.create_future()
             self.transport = None
+            self._ready = loop.create_future()
 
         def connection_made(self, transport):
             self.started = True
             self.transport = transport
+            self._ready.set_result(None)
 
         def data_received(self, data):
             self.data.extend(data)
@@ -503,13 +505,11 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         server = self.run_loop(self.loop.create_server(
             lambda: proto, sock=srv_sock))
         self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+        self.run_loop(proto._ready)
 
         def cleanup():
-            if proto.transport is not None:
-                # can be None if the task was cancelled before
-                # connection_made callback
-                proto.transport.close()
-                self.run_loop(proto.wait_closed())
+            proto.transport.close()
+            self.run_loop(proto.wait_closed())
 
             server.close()
             self.run_loop(server.wait_closed())
@@ -977,11 +977,7 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.assertFalse(self.loop.readers)
         self.assertEqual(bytearray(), tr._buffer)
         self.assertTrue(tr.is_closing())
-        m_logexc.assert_called_with(
-            test_utils.MockPattern(
-                'Fatal write error on pipe transport'
-                '\nprotocol:.*\ntransport:.*'),
-            exc_info=(OSError, MOCK_ANY, MOCK_ANY))
+        m_logexc.assert_not_called()
         self.assertEqual(1, tr._conn_lost)
         test_utils.run_briefly(self.loop)
         self.protocol.connection_lost.assert_called_with(err)
@@ -1860,6 +1856,7 @@ class PolicyTests(unittest.TestCase):
             policy.get_event_loop().close()
 
         policy = self.create_policy()
+        policy.set_child_watcher(asyncio.SafeChildWatcher())
 
         th = threading.Thread(target=f)
         th.start()

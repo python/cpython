@@ -47,9 +47,9 @@ PyAPI_FUNC(PyObject *) _PyCFunction_FastCallDict(PyObject *func,
     Py_ssize_t nargs,
     PyObject *kwargs);
 
-PyAPI_FUNC(PyObject *) _PyCFunction_FastCallKeywords(PyObject *func,
+PyAPI_FUNC(PyObject *) _PyCFunction_Vectorcall(PyObject *func,
     PyObject *const *stack,
-    Py_ssize_t nargs,
+    size_t nargsf,
     PyObject *kwnames);
 #endif
 
@@ -105,6 +105,7 @@ typedef struct {
     PyObject    *m_self; /* Passed as 'self' arg to the C func, can be NULL */
     PyObject    *m_module; /* The __module__ attribute, can be anything */
     PyObject    *m_weakreflist; /* List of weak references */
+    vectorcallfunc vectorcall;
 } PyCFunctionObject;
 
 PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallDict(

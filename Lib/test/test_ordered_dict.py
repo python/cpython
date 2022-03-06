@@ -475,7 +475,9 @@ class OrderedDictTests:
         self.assertEqual(list(MyOD(items).items()), items)
 
     def test_highly_nested(self):
-        # Issue 25395: crashes during garbage collection
+        # Issues 25395 and 35983: test that the trashcan mechanism works
+        # correctly for OrderedDict: deleting a highly nested OrderDict
+        # should not crash Python.
         OrderedDict = self.OrderedDict
         obj = None
         for _ in range(1000):
@@ -484,7 +486,9 @@ class OrderedDictTests:
         support.gc_collect()
 
     def test_highly_nested_subclass(self):
-        # Issue 25395: crashes during garbage collection
+        # Issues 25395 and 35983: test that the trashcan mechanism works
+        # correctly for OrderedDict: deleting a highly nested OrderDict
+        # should not crash Python.
         OrderedDict = self.OrderedDict
         deleted = []
         class MyOD(OrderedDict):

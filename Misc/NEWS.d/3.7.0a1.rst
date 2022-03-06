@@ -335,7 +335,6 @@ ImportError rather than SystemError.
 .. section: Core and Builtins
 
 Improve signal delivery.
-
 Avoid using Py_AddPendingCall from signal handler, to avoid calling
 signal-unsafe functions. The tests I'm adding here fail without the rest of the
 patch, on Linux and OS X. This means our signal delivery logic had defects
@@ -2051,7 +2050,6 @@ Support tzinfo objects with sub-minute offsets.
 .. section: Library
 
 Fix shared memory performance regression in multiprocessing in 3.x.
-
 Shared memory used anonymous memory mappings in 2.x, while 3.x mmaps actual
 files. Try to be careful to do as little disk I/O as possible.
 
@@ -2063,7 +2061,6 @@ files. Try to be careful to do as little disk I/O as possible.
 .. section: Library
 
 Fix too many fds in processes started with the "forkserver" method.
-
 A child process would inherit as many fds as the number of still-running
 children.
 
@@ -2181,7 +2178,6 @@ Use keywords in the ``repr`` of ``datetime.timedelta``.
 .. section: Library
 
 signal.setitimer() may disable the timer when passed a tiny value.
-
 Tiny values (such as 1e-6) are valid non-zero values for setitimer(), which
 is specified as taking microsecond-resolution intervals. However, on some
 platform, our conversion routine could convert 1e-6 into a zero interval,
@@ -2214,7 +2210,6 @@ startup is about 5% faster on Linux and 30% faster on macOS.
 .. section: Library
 
 Add missing parameter "n" on multiprocessing.Condition.notify().
-
 The doc claims multiprocessing.Condition behaves like threading.Condition,
 but its notify() method lacked the optional "n" argument (to specify the
 number of sleepers to wake up) that threading.Condition.notify() accepts.
@@ -4376,7 +4371,6 @@ xml.etree.ElementTree.Element.
 .. section: Library
 
 Stop using localtime() and gmtime() in the time module.
-
 Introduced platform independent _PyTime_localtime API that is similar to
 POSIX localtime_r, but available on all platforms.  Patch by Ed Schouten.
 
@@ -4388,7 +4382,6 @@ POSIX localtime_r, but available on all platforms.  Patch by Ed Schouten.
 .. section: Library
 
 Fixed calendar functions for extreme months: 0001-01 and 9999-12.
-
 Methods itermonthdays() and itermonthdays2() are reimplemented so that they
 don't call itermonthdates() which can cause datetime.date under/overflow.
 
@@ -4805,7 +4798,6 @@ the link targets for :func:`bytes` and :func:`bytearray` are now their
 respective type definitions, rather than the corresponding builtin function
 entries. Use :ref:`bytes <func-bytes>` and :ref:`bytearray <func-bytearray>`
 to reference the latter.
-
 In order to ensure this and future cross-reference updates are applied
 automatically, the daily documentation builds now disable the default output
 caching features in Sphinx.
@@ -5094,7 +5086,6 @@ Allow --with-lto to be used on all builds, not just `make profile-opt`.
 .. section: Build
 
 Remove support for building --without-threads.
-
 This option is not really useful anymore in the 21st century. Removing lots
 of conditional paths allows us to simplify the code base, including in
 difficult to maintain low-level internal code.
@@ -5667,7 +5658,6 @@ Windows ._pth file should allow import site
 .. section: IDLE
 
 IDLE code context -- fix code update and font update timers.
-
 Canceling timers prevents a warning message when test_idle completes.
 
 ..
@@ -5710,7 +5700,6 @@ IDLE - make tests pass with zzdummy extension disabled by default.
 
 Document how IDLE runs tkinter programs. IDLE calls tcl/tk update in the
 background in order to make live
-
 interaction and experimentation with tkinter applications much easier.
 
 ..
@@ -5740,7 +5729,6 @@ Rearrange IDLE configdialog GenPage into Window, Editor, and Help sections.
 .. section: IDLE
 
 IDLE - Add docstrings and tests for outwin subclass of editor.
-
 Move some data and functions from the class to module level. Patch by Cheryl
 Sabella.
 
@@ -5761,24 +5749,20 @@ IDLE - Do not modify tkinter.message in test_configdialog.
 .. section: IDLE
 
 Convert IDLE's built-in 'extensions' to regular features.
-
 About 10 IDLE features were implemented as supposedly optional extensions.
 Their different behavior could be confusing or worse for users and not good
 for maintenance.  Hence the conversion.
-
 The main difference for users is that user configurable key bindings for
 builtin features are now handled uniformly.  Now, editing a binding in a
 keyset only affects its value in the keyset.  All bindings are defined
 together in the system-specific default keysets in config-extensions.def.
 All custom keysets are saved as a whole in config-extension.cfg.  All take
 effect as soon as one clicks Apply or Ok.
-
 The affected events are '<<force-open-completions>>', '<<expand-word>>',
 '<<force-open-calltip>>', '<<flash-paren>>', '<<format-paragraph>>',
 '<<run-module>>', '<<check-module>>', and '<<zoom-height>>'.  Any (global)
 customizations made before 3.6.3 will not affect their keyset-specific
 customization after 3.6.3. and vice versa.
-
 Initial patch by Charles Wohlganger.
 
 ..
@@ -5867,7 +5851,6 @@ continue to pass. Patch by Cheryl Sabella.
 .. section: IDLE
 
 IDLE - Factor FontPage(Frame) class from ConfigDialog.
-
 Slightly modified tests continue to pass. Fix General tests. Patch mostly by
 Cheryl Sabella.
 
@@ -5900,7 +5883,6 @@ the tabs and will enable splitting the groups into classes.
 .. section: IDLE
 
 IDLE -- Factor a VarTrace class out of ConfigDialog.
-
 Instance tracers manages pairs consisting of a tk variable and a callback
 function.  When tracing is turned on, setting the variable calls the
 function.  Test coverage for the new class is 100%.
@@ -5922,12 +5904,10 @@ IDLE: Add more tests for General tab.
 .. section: IDLE
 
 IDLE - Improve configdialog font page and tests.
-
 In configdialog: Document causal pathways in create_font_tab docstring.
 Simplify some attribute names. Move set_samples calls to var_changed_font
 (idea from Cheryl Sabella).  Move related functions to positions after the
 create widgets function.
-
 In test_configdialog: Fix test_font_set so not order dependent.  Fix renamed
 test_indent_scale so it tests the widget.  Adjust tests for movement of
 set_samples call.  Add tests for load functions.  Put all font tests in one
@@ -5970,12 +5950,9 @@ Patch by Louie Lu.
 .. section: IDLE
 
 Document coverage details for idlelib tests.
-
-* Add section to idlelib/idle-test/README.txt.
-
-* Include check that branches are taken both ways.
-
-* Exclude IDLE-specific code that does not run during unit tests.
+Add section to idlelib/idle-test/README.txt.
+Include check that branches are taken both ways.
+Exclude IDLE-specific code that does not run during unit tests.
 
 ..
 
@@ -6311,7 +6288,6 @@ C API manual.
 .. section: C API
 
 Remove own implementation for thread-local storage.
-
 CPython has provided the own implementation for thread-local storage (TLS)
 on Python/thread.c, it's used in the case which a platform has not supplied
 native TLS.  However, currently all supported platforms (Windows and

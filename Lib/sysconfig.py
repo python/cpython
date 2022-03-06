@@ -125,9 +125,16 @@ def _is_python_source_dir(d):
     return False
 
 _sys_home = getattr(sys, '_home', None)
-if (_sys_home and os.name == 'nt' and
-    _sys_home.lower().endswith(('\\pcbuild\\win32', '\\pcbuild\\amd64'))):
-    _sys_home = os.path.dirname(os.path.dirname(_sys_home))
+
+if os.name == 'nt':
+    def _fix_pcbuild(d):
+        if d and os.path.normcase(d).startswith(
+                os.path.normcase(os.path.join(_PREFIX, "PCbuild"))):
+            return _PREFIX
+        return d
+    _PROJECT_BASE = _fix_pcbuild(_PROJECT_BASE)
+    _sys_home = _fix_pcbuild(_sys_home)
+
 def is_python_build(check_home=False):
     if check_home and _sys_home:
         return _is_python_source_dir(_sys_home)
@@ -619,6 +626,8 @@ def get_platform():
     if os.name == 'nt':
         if 'amd64' in sys.version.lower():
             return 'win-amd64'
+        if '(arm)' in sys.version.lower():
+            return 'win-arm32'
         return sys.platform
 
     if os.name != "posix" or not hasattr(os, 'uname'):

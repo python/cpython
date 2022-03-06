@@ -18,14 +18,13 @@ function.
 .. section: Core and Builtins
 
 Fixed several issues in printing tracebacks (PyTraceBack_Print()).
-
-* Setting sys.tracebacklimit to 0 or less now suppresses printing tracebacks.
-* Setting sys.tracebacklimit to None now causes using the default limit.
-* Setting sys.tracebacklimit to an integer larger than LONG_MAX now means using
-  the limit LONG_MAX rather than the default limit.
-* Fixed integer overflows in the case of more than 2**31 traceback items on
-  Windows.
-* Fixed output errors handling.
+Setting sys.tracebacklimit to 0 or less now suppresses printing tracebacks.
+Setting sys.tracebacklimit to None now causes using the default limit.
+Setting sys.tracebacklimit to an integer larger than LONG_MAX now means using
+the limit LONG_MAX rather than the default limit.
+Fixed integer overflows in the case of more than 2**31 traceback items on
+Windows.
+Fixed output errors handling.
 
 ..
 
@@ -308,7 +307,6 @@ value of property is ``VT_EMPTY``.  Initial patch by Mark Mc Mahon.
 Fix wrong usage of :func:`collections.namedtuple` in the
 :meth:`RobotFileParser.parse() <urllib.robotparser.RobotFileParser.parse>`
 method.
-
 Initial patch by Robin Wellner.
 
 ..
@@ -340,11 +338,10 @@ characters/bytes for non-negative *n*. This makes it compatible with
 .. section: Library
 
 Fixed issues with binary plists:
-
-* Fixed saving bytearrays.
-* Identical objects will be saved only once.
-* Equal references will be load as identical objects.
-* Added support for saving and loading recursive data structures.
+Fixed saving bytearrays.
+Identical objects will be saved only once.
+Equal references will be load as identical objects.
+Added support for saving and loading recursive data structures.
 
 ..
 
@@ -392,10 +389,8 @@ Reduce performance overhead of asyncio debug mode.
 .. section: Library
 
 Fixed determining the MAC address in the uuid module:
-
-* Using ifconfig on NetBSD and OpenBSD.
-* Using arp on Linux, FreeBSD, NetBSD and OpenBSD.
-
+Using ifconfig on NetBSD and OpenBSD.
+Using arp on Linux, FreeBSD, NetBSD and OpenBSD.
 Based on patch by Takayuki Shimizukawa.
 
 ..
@@ -913,7 +908,6 @@ Avoid wholesale rebuild after `make regen-all` if nothing changed.
 
 Return ``None`` when ``View.Fetch()`` returns ``ERROR_NO_MORE_ITEMS``
 instead of raising ``MSIError``.
-
 Initial patch by Anthony Tuininga.
 
 ..
@@ -997,7 +991,6 @@ persist while IDLE remains open
 .. section: IDLE
 
 Test_code_module now passes if run after test_idle, which sets ps1.
-
 The code module uses sys.ps1 if present or sets it to '>>> ' if not.
 Test_code_module now properly tests both behaviors.  Ditto for ps2.
 
@@ -1034,7 +1027,6 @@ a bit about the additions.
 .. section: IDLE
 
 Simplify the API of IDLE's Module Browser.
-
 Passing a widget instead of an flist with a root widget opens the option of
 creating a browser frame that is only part of a window.  Passing a full file
 name instead of pieces assumed to come from a .py file opens the possibility
@@ -1099,10 +1091,8 @@ for code and tests by Guilherme Polo and Cheryl Sabella, respectively.
 .. section: Tools/Demos
 
 Make redemo work with Python 3.6 and newer versions.
-
 Also, remove the ``LOCALE`` option since it doesn't work with string
 patterns in Python 3.
-
 Patch by Christoph Sarnowski.
 
 ..

@@ -16,7 +16,8 @@ The :func:`signal.signal` function allows defining custom handlers to be
 executed when a signal is received.  A small number of default handlers are
 installed: :const:`SIGPIPE` is ignored (so write errors on pipes and sockets
 can be reported as ordinary Python exceptions) and :const:`SIGINT` is
-translated into a :exc:`KeyboardInterrupt` exception.
+translated into a :exc:`KeyboardInterrupt` exception if the parent process
+has not changed it.
 
 A handler for a particular signal, once set, remains installed until it is
 explicitly reset (Python emulates the BSD style interface regardless of the
@@ -235,6 +236,13 @@ The :mod:`signal` module defines the following functions:
 
    See also :func:`sigwait`, :func:`sigwaitinfo`, :func:`sigtimedwait` and
    :func:`sigpending`.
+
+
+.. function:: raise_signal(signum)
+
+   Sends a signal to the calling process. Returns nothing.
+
+   .. versionadded:: 3.8
 
 
 .. function:: pthread_kill(thread_id, signalnum)

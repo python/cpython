@@ -1,6 +1,5 @@
 """Unit tests for contextlib.py, and other context managers."""
 
-import asyncio
 import io
 import sys
 import tempfile
@@ -575,6 +574,7 @@ class TestBaseExitStack:
             ((), dict(example=1)),
             ((1,), dict(example=1)),
             ((1,2), dict(example=1)),
+            ((1,2), dict(self=3, callback=4)),
         ]
         result = []
         def _exit(*args, **kwds):
@@ -596,6 +596,16 @@ class TestBaseExitStack:
                 self.assertNotEqual(wrapper[1].__name__, _exit.__name__)
                 self.assertIsNone(wrapper[1].__doc__, _exit.__doc__)
         self.assertEqual(result, expected)
+
+        result = []
+        with self.exit_stack() as stack:
+            with self.assertRaises(TypeError):
+                stack.callback(arg=1)
+            with self.assertRaises(TypeError):
+                self.exit_stack.callback(arg=2)
+            with self.assertWarns(DeprecationWarning):
+                stack.callback(callback=_exit, arg=3)
+        self.assertEqual(result, [((), {'arg': 3})])
 
     def test_push(self):
         exc_raised = ZeroDivisionError

@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _initialization:
@@ -37,6 +37,7 @@ The following functions can be safely called before Python is initialized:
 
 * Informative functions:
 
+  * :c:func:`Py_IsInitialized`
   * :c:func:`PyMem_GetAllocator`
   * :c:func:`PyObject_GetArenaAllocator`
   * :c:func:`Py_GetBuildInfo`
@@ -855,6 +856,12 @@ code, or when embedding the Python interpreter:
    created, the current thread must not have acquired it, otherwise deadlock
    ensues.
 
+   .. note::
+      Calling this function from a thread when the runtime is finalizing
+      will terminate the thread, even if the thread was not created by Python.
+      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      check if the interpreter is in process of being finalized before calling
+      this function to avoid unwanted termination.
 
 .. c:function:: PyThreadState* PyThreadState_Get()
 
@@ -868,13 +875,6 @@ code, or when embedding the Python interpreter:
    Swap the current thread state with the thread state given by the argument
    *tstate*, which may be *NULL*.  The global interpreter lock must be held
    and is not released.
-
-
-.. c:function:: void PyEval_ReInitThreads()
-
-   This function is called from :c:func:`PyOS_AfterFork_Child` to ensure
-   that newly created child processes don't hold locks referring to threads
-   which are not running in the child process.
 
 
 The following functions use thread-local storage, and are not compatible
@@ -902,6 +902,12 @@ with sub-interpreters:
    When the function returns, the current thread will hold the GIL and be able
    to call arbitrary Python code.  Failure is a fatal error.
 
+   .. note::
+      Calling this function from a thread when the runtime is finalizing
+      will terminate the thread, even if the thread was not created by Python.
+      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      check if the interpreter is in process of being finalized before calling
+      this function to avoid unwanted termination.
 
 .. c:function:: void PyGILState_Release(PyGILState_STATE)
 
@@ -1026,6 +1032,18 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.7
 
 
+.. c:function:: PyObject* PyInterpreterState_GetDict(PyInterpreterState *interp)
+
+   Return a dictionary in which interpreter-specific data may be stored.
+   If this function returns *NULL* then no exception has been raised and
+   the caller should assume no interpreter-specific dict is available.
+
+   This is not a replacement for :c:func:`PyModule_GetState()`, which
+   extensions should use to store interpreter-specific state information.
+
+   .. versionadded:: 3.8
+
+
 .. c:function:: PyObject* PyThreadState_GetDict()
 
    Return a dictionary in which extensions can store thread-specific state
@@ -1055,6 +1073,18 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    *tstate*, which should not be *NULL*.  The lock must have been created earlier.
    If this thread already has the lock, deadlock ensues.
 
+   .. note::
+      Calling this function from a thread when the runtime is finalizing
+      will terminate the thread, even if the thread was not created by Python.
+      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      check if the interpreter is in process of being finalized before calling
+      this function to avoid unwanted termination.
+
+   .. versionchanged:: 3.8
+      Updated to be consistent with :c:func:`PyEval_RestoreThread`,
+      :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`,
+      and terminate the current thread if called while the interpreter is finalizing.
+
    :c:func:`PyEval_RestoreThread` is a higher-level function which is always
    available (even when threads have not been initialized).
 
@@ -1080,6 +1110,18 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
       This function does not update the current thread state.  Please use
       :c:func:`PyEval_RestoreThread` or :c:func:`PyEval_AcquireThread`
       instead.
+
+   .. note::
+      Calling this function from a thread when the runtime is finalizing
+      will terminate the thread, even if the thread was not created by Python.
+      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      check if the interpreter is in process of being finalized before calling
+      this function to avoid unwanted termination.
+
+   .. versionchanged:: 3.8
+      Updated to be consistent with :c:func:`PyEval_RestoreThread`,
+      :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`,
+      and terminate the current thread if called while the interpreter is finalizing.
 
 
 .. c:function:: void PyEval_ReleaseLock()
@@ -1380,6 +1422,11 @@ These functions are only intended to be used by advanced debugging tools.
 .. c:function:: PyInterpreterState* PyInterpreterState_Head()
 
    Return the interpreter state object at the head of the list of all such objects.
+
+
+.. c:function:: PyInterpreterState* PyInterpreterState_Main()
+
+   Return the main interpreter state object.
 
 
 .. c:function:: PyInterpreterState* PyInterpreterState_Next(PyInterpreterState *interp)

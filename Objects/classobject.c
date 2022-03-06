@@ -1,8 +1,9 @@
 /* Class object implementation (dead now except for methods) */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 
 #define TP_DESCR_GET(t) ((t)->tp_descr_get)
@@ -39,6 +40,45 @@ PyMethod_Self(PyObject *im)
     return ((PyMethodObject *)im)->im_self;
 }
 
+
+static PyObject *
+method_vectorcall(PyObject *method, PyObject *const *args,
+                  size_t nargsf, PyObject *kwnames)
+{
+    assert(Py_TYPE(method) == &PyMethod_Type);
+    PyObject *self, *func, *result;
+    self = PyMethod_GET_SELF(method);
+    func = PyMethod_GET_FUNCTION(method);
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    if (nargsf & PY_VECTORCALL_ARGUMENTS_OFFSET) {
+        /* PY_VECTORCALL_ARGUMENTS_OFFSET is set, so we are allowed to mutate the vector */
+        PyObject **newargs = (PyObject**)args - 1;
+        nargs += 1;
+        PyObject *tmp = newargs[0];
+        newargs[0] = self;
+        result = _PyObject_Vectorcall(func, newargs, nargs, kwnames);
+        newargs[0] = tmp;
+    }
+    else {
+        Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
+        PyObject **newargs;
+        Py_ssize_t totalargs = nargs + nkwargs;
+        newargs = PyMem_Malloc((totalargs+1) * sizeof(PyObject *));
+        if (newargs == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        /* use borrowed references */
+        newargs[0] = self;
+        memcpy(newargs + 1, args, totalargs * sizeof(PyObject *));
+        result = _PyObject_Vectorcall(func, newargs, nargs+1, kwnames);
+        PyMem_Free(newargs);
+    }
+    return result;
+}
+
+
 /* Method objects are used for bound instance methods returned by
    instancename.methodname. ClassName.methodname returns an ordinary
    function.
@@ -55,7 +95,7 @@ PyMethod_New(PyObject *func, PyObject *self)
     im = free_list;
     if (im != NULL) {
         free_list = (PyMethodObject *)(im->im_self);
-        (void)PyObject_INIT((PyObject *)im, &PyMethod_Type);
+        (void)PyObject_INIT(im, &PyMethod_Type);
         numfree--;
     }
     else {
@@ -68,6 +108,7 @@ PyMethod_New(PyObject *func, PyObject *self)
     im->im_func = func;
     Py_XINCREF(self);
     im->im_self = self;
+    im->vectorcall = method_vectorcall;
     _PyObject_GC_TRACK(im);
     return (PyObject *)im;
 }
@@ -77,8 +118,6 @@ method_reduce(PyMethodObject *im, PyObject *Py_UNUSED(ignored))
 {
     PyObject *self = PyMethod_GET_SELF(im);
     PyObject *func = PyMethod_GET_FUNCTION(im);
-    PyObject *builtins;
-    PyObject *getattr;
     PyObject *funcname;
     _Py_IDENTIFIER(getattr);
 
@@ -86,9 +125,8 @@ method_reduce(PyMethodObject *im, PyObject *Py_UNUSED(ignored))
     if (funcname == NULL) {
         return NULL;
     }
-    builtins = PyEval_GetBuiltins();
-    getattr = _PyDict_GetItemId(builtins, &PyId_getattr);
-    return Py_BuildValue("O(ON)", getattr, self, funcname);
+    return Py_BuildValue("N(ON)", _PyEval_GetBuiltinId(&PyId_getattr),
+                         self, funcname);
 }
 
 static PyMethodDef method_methods[] = {
@@ -269,10 +307,7 @@ static Py_hash_t
 method_hash(PyMethodObject *a)
 {
     Py_hash_t x, y;
-    if (a->im_self == NULL)
-        x = _Py_HashPointer(Py_None);
-    else
-        x = _Py_HashPointer(a->im_self);
+    x = _Py_HashPointer(a->im_self);
     y = PyObject_Hash(a->im_func);
     if (y == -1)
         return -1;
@@ -296,11 +331,6 @@ method_call(PyObject *method, PyObject *args, PyObject *kwargs)
     PyObject *self, *func;
 
     self = PyMethod_GET_SELF(method);
-    if (self == NULL) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-
     func = PyMethod_GET_FUNCTION(method);
 
     return _PyObject_Call_Prepend(func, self, args, kwargs);
@@ -309,15 +339,8 @@ method_call(PyObject *method, PyObject *args, PyObject *kwargs)
 static PyObject *
 method_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
 {
-    /* Don't rebind an already bound method of a class that's not a base
-       class of cls. */
-    if (PyMethod_GET_SELF(meth) != NULL) {
-        /* Already bound */
-        Py_INCREF(meth);
-        return meth;
-    }
-    /* Bind it to obj */
-    return PyMethod_New(PyMethod_GET_FUNCTION(meth), obj);
+    Py_INCREF(meth);
+    return meth;
 }
 
 PyTypeObject PyMethod_Type = {
@@ -326,10 +349,10 @@ PyTypeObject PyMethod_Type = {
     sizeof(PyMethodObject),
     0,
     (destructor)method_dealloc,                 /* tp_dealloc */
-    0,                                          /* tp_print */
+    offsetof(PyMethodObject, vectorcall),       /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)method_repr,                      /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -340,7 +363,8 @@ PyTypeObject PyMethod_Type = {
     method_getattro,                            /* tp_getattro */
     PyObject_GenericSetAttr,                    /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+    _Py_TPFLAGS_HAVE_VECTORCALL,                /* tp_flags */
     method_doc,                                 /* tp_doc */
     (traverseproc)method_traverse,              /* tp_traverse */
     0,                                          /* tp_clear */
@@ -597,10 +621,10 @@ PyTypeObject PyInstanceMethod_Type = {
     sizeof(PyInstanceMethodObject),             /* tp_basicsize */
     0,                                          /* tp_itemsize */
     instancemethod_dealloc,                     /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)instancemethod_repr,              /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

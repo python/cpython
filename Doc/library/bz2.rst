@@ -83,7 +83,7 @@ All of the classes in this module may safely be accessed from multiple threads.
 
    The *buffering* argument is ignored. Its use is deprecated since Python 3.0.
 
-   If *mode* is ``'w'`` or ``'a'``, *compresslevel* can be a number between
+   If *mode* is ``'w'`` or ``'a'``, *compresslevel* can be an integer between
    ``1`` and ``9`` specifying the level of compression: ``1`` produces the
    least compression, and ``9`` (default) produces the most compression.
 
@@ -148,7 +148,7 @@ Incremental (de)compression
    incrementally. For one-shot compression, use the :func:`compress` function
    instead.
 
-   *compresslevel*, if given, must be a number between ``1`` and ``9``. The
+   *compresslevel*, if given, must be an integer between ``1`` and ``9``. The
    default is ``9``.
 
    .. method:: compress(data)
@@ -234,9 +234,9 @@ One-shot (de)compression
 
 .. function:: compress(data, compresslevel=9)
 
-   Compress *data*.
+   Compress *data*, a :term:`bytes-like object <bytes-like object>`.
 
-   *compresslevel*, if given, must be a number between ``1`` and ``9``. The
+   *compresslevel*, if given, must be an integer between ``1`` and ``9``. The
    default is ``9``.
 
    For incremental compression, use a :class:`BZ2Compressor` instead.
@@ -244,7 +244,7 @@ One-shot (de)compression
 
 .. function:: decompress(data)
 
-   Decompress *data*.
+   Decompress *data*, a :term:`bytes-like object <bytes-like object>`.
 
    If *data* is the concatenation of multiple compressed streams, decompress
    all of the streams.
@@ -254,3 +254,77 @@ One-shot (de)compression
    .. versionchanged:: 3.3
       Support for multi-stream inputs was added.
 
+.. _bz2-usage-examples:
+
+Examples of usage
+-----------------
+
+Below are some examples of typical usage of the :mod:`bz2` module.
+
+Using :func:`compress` and :func:`decompress` to demonstrate round-trip compression:
+
+    >>> import bz2
+
+    >>> data = b"""\
+    ... Donec rhoncus quis sapien sit amet molestie. Fusce scelerisque vel augue
+    ... nec ullamcorper. Nam rutrum pretium placerat. Aliquam vel tristique lorem,
+    ... sit amet cursus ante. In interdum laoreet mi, sit amet ultrices purus
+    ... pulvinar a. Nam gravida euismod magna, non varius justo tincidunt feugiat.
+    ... Aliquam pharetra lacus non risus vehicula rutrum. Maecenas aliquam leo
+    ... felis. Pellentesque semper nunc sit amet nibh ullamcorper, ac elementum
+    ... dolor luctus. Curabitur lacinia mi ornare consectetur vestibulum."""
+
+    >>> c = bz2.compress(data)
+    >>> len(data) / len(c)  # Data compression ratio
+    1.513595166163142
+
+    >>> d = bz2.decompress(c)
+    >>> data == d  # Check equality to original object after round-trip
+    True
+
+Using :class:`BZ2Compressor` for incremental compression:
+
+    >>> import bz2
+
+    >>> def gen_data(chunks=10, chunksize=1000):
+    ...     """Yield incremental blocks of chunksize bytes."""
+    ...     for _ in range(chunks):
+    ...         yield b"z" * chunksize
+    ...
+    >>> comp = bz2.BZ2Compressor()
+    >>> out = b""
+    >>> for chunk in gen_data():
+    ...     # Provide data to the compressor object
+    ...     out = out + comp.compress(chunk)
+    ...
+    >>> # Finish the compression process.  Call this once you have
+    >>> # finished providing data to the compressor.
+    >>> out = out + comp.flush()
+
+The example above uses a very "nonrandom" stream of data
+(a stream of `b"z"` chunks).  Random data tends to compress poorly,
+while ordered, repetitive data usually yields a high compression ratio.
+
+Writing and reading a bzip2-compressed file in binary mode:
+
+    >>> import bz2
+
+    >>> data = b"""\
+    ... Donec rhoncus quis sapien sit amet molestie. Fusce scelerisque vel augue
+    ... nec ullamcorper. Nam rutrum pretium placerat. Aliquam vel tristique lorem,
+    ... sit amet cursus ante. In interdum laoreet mi, sit amet ultrices purus
+    ... pulvinar a. Nam gravida euismod magna, non varius justo tincidunt feugiat.
+    ... Aliquam pharetra lacus non risus vehicula rutrum. Maecenas aliquam leo
+    ... felis. Pellentesque semper nunc sit amet nibh ullamcorper, ac elementum
+    ... dolor luctus. Curabitur lacinia mi ornare consectetur vestibulum."""
+
+    >>> with bz2.open("myfile.bz2", "wb") as f:
+    ...     # Write compressed data to file
+    ...     unused = f.write(data)
+
+    >>> with bz2.open("myfile.bz2", "rb") as f:
+    ...     # Decompress data from file
+    ...     content = f.read()
+
+    >>> content == data  # Check equality to original object after round-trip
+    True
