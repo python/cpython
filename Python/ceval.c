@@ -4657,7 +4657,7 @@ handle_eval_breaker:
             if (args == NULL) {
                 goto error;
             }
-            PyObject *self = cls_t->tp_new(cls_t, args, call_shape.kwnames);
+            PyObject *self = PyBaseObject_Type.tp_new(cls_t, args, call_shape.kwnames);
             Py_DECREF(args);
             if (self == NULL) {
                 goto error;
