@@ -217,7 +217,7 @@ static PyObject *
 method_impl(PyTypeObject *type, PyObject *function, PyObject *instance)
 /*[clinic end generated code: output=44aa2fdb91a02860 input=c53ecd305077d0c2]*/
 {
-    if (!PyCallable_Check(func)) {
+    if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError,
                         "first argument must be callable");
         return NULL;
@@ -566,6 +566,7 @@ PyTypeObject PyInstanceMethod_Type = {
     .tp_traverse = instancemethod_traverse,
     .tp_richcompare = instancemethod_richcompare,
     .tp_members = instancemethod_memberlist,
+    .tp_getset = instancemethod_getset,
     .tp_descr_get = instancemethod_descr_get,
     .tp_new = instancemethod,
 };
