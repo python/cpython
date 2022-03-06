@@ -1326,7 +1326,7 @@ These are not used in annotations. They are building blocks for creating generic
 
 .. data:: AnyStr
 
-   ``AnyStr`` is a constrained type variable defined as
+   ``AnyStr`` is a :class:`constrained type variable <TypeVar>` defined as
    ``AnyStr = TypeVar('AnyStr', str, bytes)``.
 
    It is meant to be used for functions that may accept any kind of string
