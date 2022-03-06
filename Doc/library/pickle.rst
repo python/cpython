@@ -632,7 +632,7 @@ methods:
      is ``None`` and whose second item is a dictionary mapping slot names
      to slot values described in the previous bullet.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.11
       Added the default implementation of the ``__getstate__()`` method in the
       :class:`object` class.
 
