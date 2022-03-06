@@ -5,6 +5,7 @@
 #include "Python.h"
 #include "frameobject.h"
 #include "pycore_frame.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "interpreteridobject.h"
 
 
@@ -2017,7 +2018,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Create and initialize the new interpreter.
-    PyThreadState *save_tstate = PyThreadState_Get();
+    PyThreadState *save_tstate = _PyThreadState_GET();
     // XXX Possible GILState issues?
     PyThreadState *tstate = _Py_NewInterpreter(isolated);
     PyThreadState_Swap(save_tstate);

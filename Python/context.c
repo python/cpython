@@ -728,7 +728,7 @@ static int
 contextvar_set(PyContextVar *var, PyObject *val)
 {
     var->var_cached = NULL;
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = _PyThreadState_GET();
 
     PyContext *ctx = context_get();
     if (ctx == NULL) {

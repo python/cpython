@@ -3,6 +3,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 
 #include <ctype.h>
 #include <assert.h>

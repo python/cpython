@@ -80,9 +80,9 @@
 
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_add_relfile()
 #include "pycore_initconfig.h"    // PyStatus
 #include "pycore_pathconfig.h"    // _PyPathConfig
-#include "pycore_fileutils.h"     // _Py_add_relfile()
 #include "osdefs.h"               // SEP, ALTSEP
 #include <wchar.h>
 

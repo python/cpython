@@ -9,11 +9,12 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_code.h"          // _PyCode_New()
+#include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "longintrepr.h"
 #include "code.h"
-#include "marshal.h"
-#include "pycore_hashtable.h"
-#include "pycore_code.h"        // _PyCode_New()
+#include "marshal.h"              // Py_MARSHAL_VERSION
 
 /*[clinic input]
 module marshal

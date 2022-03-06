@@ -1,7 +1,7 @@
 #ifndef Py_UNICODEOBJECT_H
 #define Py_UNICODEOBJECT_H
 
-#include <stdarg.h>
+#include <stdarg.h>               // va_list
 
 /*
 

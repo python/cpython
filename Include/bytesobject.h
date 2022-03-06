@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#include <stdarg.h>
+#include <stdarg.h>               // va_list
 
 /*
 Type PyBytesObject represents a byte string.  An extra zero byte is

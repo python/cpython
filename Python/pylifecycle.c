@@ -472,7 +472,7 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
 int
 _PyInterpreterState_SetConfig(const PyConfig *src_config)
 {
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
     int res = -1;
 
     PyConfig config;

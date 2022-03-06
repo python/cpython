@@ -717,9 +717,6 @@ then
 fi
 
 
-MULTIARCH=$($CC --print-multiarch 2>/dev/null)
-AC_SUBST(MULTIARCH)
-
 AC_MSG_CHECKING([for the platform triplet based on compiler characteristics])
 cat >> conftest.c <<EOF
 #undef bfin
@@ -874,6 +871,11 @@ else
   AC_MSG_RESULT([none])
 fi
 rm -f conftest.c conftest.out
+
+if test x$PLATFORM_TRIPLET != xdarwin; then
+  MULTIARCH=$($CC --print-multiarch 2>/dev/null)
+fi
+AC_SUBST(MULTIARCH)
 
 if test x$PLATFORM_TRIPLET != x && test x$MULTIARCH != x; then
   if test x$PLATFORM_TRIPLET != x$MULTIARCH; then
@@ -4085,6 +4087,8 @@ AC_CHECK_FUNCS(setpgrp,
 
 # We search for both crypt and crypt_r as one or the other may be defined
 # This gets us our -lcrypt in LIBS when required on the target platform.
+# Save/restore LIBS to avoid linking libpython with libcrypt.
+LIBS_SAVE=$LIBS
 AC_SEARCH_LIBS(crypt, crypt)
 AC_SEARCH_LIBS(crypt_r, crypt)
 
@@ -4099,6 +4103,7 @@ char *r = crypt_r("", "", &d);
     [AC_DEFINE(HAVE_CRYPT_R, 1, [Define if you have the crypt_r() function.])],
     [])
 )
+LIBS=$LIBS_SAVE
 
 AC_CHECK_FUNCS(clock_gettime, [], [
     AC_CHECK_LIB(rt, clock_gettime, [

@@ -1319,7 +1319,7 @@ static PyObject *
 thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *wr;
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
     lockobject *lock;
 
     if (tstate->on_delete_data != NULL) {

@@ -1,6 +1,7 @@
 /* Python interpreter main program */
 
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_initconfig.h"    // _PyArgv
 #include "pycore_interp.h"        // _PyInterpreterState.sysdict
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()

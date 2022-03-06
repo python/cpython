@@ -3,6 +3,7 @@
 #include "Python.h"
 #include <ctype.h>
 #include "pycore_ast.h"           // _PyAST_Validate()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
@@ -212,7 +213,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         goto error;
     }
     PyFrameConstructor *f =  PyFunction_AS_FRAME_CONSTRUCTOR(func);
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     cell = _PyEval_Vector(tstate, f, ns, NULL, 0, NULL);
     if (cell != NULL) {
         if (bases != orig_bases) {

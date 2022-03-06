@@ -1,14 +1,15 @@
 /* Generator object implementation */
 
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_EvalFrame()
-#include "pycore_object.h"
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "frameobject.h"
-#include "pycore_frame.h"
+#include "pycore_frame.h"         // InterpreterFrame
+#include "frameobject.h"          // PyFrameObject
 #include "structmember.h"         // PyMemberDef
-#include "opcode.h"
+#include "opcode.h"               // YIELD_FROM
 
 static PyObject *gen_close(PyGenObject *, PyObject *);
 static PyObject *async_gen_asend_new(PyAsyncGenObject *, PyObject *);

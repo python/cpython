@@ -457,6 +457,8 @@ Build Changes
 * CPython can now be built with the ThinLTO option via ``--with-lto=thin``.
   (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
 
+* libpython is no longer linked against libcrypt.
+  (Contributed by Mike Gilbert in :issue:`45433`.)
 
 C API Changes
 =============

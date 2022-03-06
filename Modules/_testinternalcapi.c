@@ -18,7 +18,8 @@
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
 #include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
-#include "pycore_pyerrors.h"      // _Py_UTF8_Edit_Cost()
+#include "pycore_pyerrors.h"     // _Py_UTF8_Edit_Cost()
+#include "pycore_pystate.h"      // _PyThreadState_GET()
 
 
 static PyObject *
@@ -31,7 +32,7 @@ get_configs(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject*
 get_recursion_depth(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
 
     /* subtract one to ignore the frame of the get_recursion_depth() call */
     return PyLong_FromLong(tstate->recursion_depth - 1);

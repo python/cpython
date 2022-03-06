@@ -942,7 +942,8 @@ class PyBuildExt(build_ext):
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         # profiler (_lsprof is for cProfile.py)
-        self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
+        self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # static Unicode character database
         self.add(Extension('unicodedata', ['unicodedata.c'],
                            depends=['unicodedata_db.h', 'unicodename_db.h'],
@@ -999,7 +1000,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('syslog', ['syslogmodule.c']))
 
         # Python interface to subinterpreter C-API.
-        self.add(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c']))
+        self.add(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         #
         # Here ends the simple stuff.  From here on, modules need certain
@@ -2309,7 +2311,7 @@ class PyBuildExt(build_ext):
 
     def detect_decimal(self):
         # Stefan Krah's _decimal module
-        extra_compile_args = []
+        extra_compile_args = ['-DPy_BUILD_CORE_MODULE']
         undef_macros = []
         if '--with-system-libmpdec' in sysconfig.get_config_var("CONFIG_ARGS"):
             include_dirs = []

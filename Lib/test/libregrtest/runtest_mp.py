@@ -1,4 +1,3 @@
-import collections
 import faulthandler
 import json
 import os

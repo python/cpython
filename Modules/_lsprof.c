@@ -1,4 +1,6 @@
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "rotatingtree.h"
 
 /************************************************************/
@@ -671,7 +673,7 @@ profiler_enable(ProfilerObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (_PyEval_SetProfile(tstate, profiler_callback, (PyObject*)self) < 0) {
         return NULL;
     }
@@ -705,7 +707,7 @@ Stop collecting profiling information.\n\
 static PyObject*
 profiler_disable(ProfilerObject *self, PyObject* noarg)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
         return NULL;
     }
@@ -742,7 +744,7 @@ static void
 profiler_dealloc(ProfilerObject *op)
 {
     if (op->flags & POF_ENABLED) {
-        PyThreadState *tstate = PyThreadState_GET();
+        PyThreadState *tstate = _PyThreadState_GET();
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
             PyErr_WriteUnraisable((PyObject *)op);
         }
