@@ -404,14 +404,6 @@ Libraries options
 
    .. versionadded:: 3.10
 
-.. cmdoption:: --with-tcltk-includes='-I...'
-
-   Override search for Tcl and Tk include files.
-
-.. cmdoption:: --with-tcltk-libs='-L...'
-
-   Override search for Tcl and Tk libraries.
-
 .. cmdoption:: --with-libm=STRING
 
    Override ``libm`` math library to *STRING* (default is system-dependent).
