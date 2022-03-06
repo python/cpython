@@ -127,7 +127,7 @@ proxy when 'object' is about to be finalized.
 
 static PyObject *
 _weakref_proxy_impl(PyObject *module, PyObject *object, PyObject *callback)
-/*[clinic end generated code: output=d68fa4ad9ea40519 input=3eeb93c2a190b15f]*/
+/*[clinic end generated code: output=d68fa4ad9ea40519 input=7c42a7bca696a6ec]*/
 {
     return PyWeakref_NewProxy(object, callback);
 }

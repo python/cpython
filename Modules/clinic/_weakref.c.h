@@ -81,7 +81,7 @@ PyDoc_STRVAR(_weakref_proxy__doc__,
 "Create a proxy object that weakly references \'object\'.\n"
 "\n"
 "\'callback\', if given, is called with a reference to the\n"
-"proxy when \'object\' is about to be finalized.\"");
+"proxy when \'object\' is about to be finalized.");
 
 #define _WEAKREF_PROXY_METHODDEF    \
     {"proxy", (PyCFunction)(void(*)(void))_weakref_proxy, METH_FASTCALL, _weakref_proxy__doc__},
@@ -110,4 +110,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c3c6e2d302544355 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ef32e81c20ee44c0 input=a9049054013a1b77]*/
