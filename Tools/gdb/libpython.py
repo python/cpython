@@ -861,7 +861,7 @@ class PyFrameObjectPtr(PyObjectPtr):
         PyObjectPtr.__init__(self, gdbval, cast_to)
 
         if not self.is_optimized_out():
-            self._fdata = _Py_framedataPtr(self.field('f_fdata'))
+            self._fdata = _Py_InterpreterFramePtr(self.field('f_fdata'))
 
     def iter_locals(self):
         '''
@@ -932,7 +932,7 @@ class PyFrameObjectPtr(PyObjectPtr):
             return
         return self._fdata.print_traceback()
 
-class _Py_framedataPtr:
+class _Py_InterpreterFramePtr:
 
     def __init__(self, gdbval):
         self._gdbval = gdbval
@@ -1734,7 +1734,7 @@ class Frame(object):
     def get_pyop(self):
         try:
             fdata = self._gdbframe.read_var('fdata')
-            fdata = _Py_framedataPtr(fdata)
+            fdata = _Py_InterpreterFramePtr(fdata)
             if not fdata.is_optimized_out():
                 return fdata
             # gdb is unable to get the "fdata" argument of PyEval_EvalFrameEx()
@@ -1744,7 +1744,7 @@ class Frame(object):
             caller = self._gdbframe.older()
             if caller:
                 fdata = caller.read_var('fdata')
-                fdata = _Py_framedataPtr(fdata)
+                fdata = _Py_InterpreterFramePtr(fdata)
                 if not fdata.is_optimized_out():
                     return fdata
             return orig_fdata

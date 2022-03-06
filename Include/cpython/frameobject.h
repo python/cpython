@@ -18,12 +18,12 @@
  * over the previous approach of using full Python objects for both
  * introspection and code execution.
  */
-// Declaration of _Py_framedata is in cpython/pystate.h for use in PyThreadState
+// Declaration of _Py_InterpreterFrame is in cpython/pystate.h for use in PyThreadState
 
 struct _frame {
     PyObject_HEAD
     struct _frame *f_back;      /* previous frame, or NULL */
-    _Py_framedata *f_fdata;     /* points to the frame runtime data */
+    _Py_InterpreterFrame *f_fdata;     /* points to the frame runtime data */
     PyObject *f_trace;          /* Trace function */
     int f_lineno;               /* Current line number. Only valid if non-zero */
     char f_trace_lines;         /* Emit per-line trace events? */

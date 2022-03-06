@@ -38,11 +38,11 @@ end
 define pylocals
     set $_i = 0
     while $_i < f->f_fdata->code->co_nlocals
-      if _Py_framedata_GetLocalsArray(f->f_fdata) + $_i != 0
+      if _Py_InterpreterFrame_GetLocalsArray(f->f_fdata) + $_i != 0
         set $_names = f->f_fdata->code->co_varnames
         set $_name = PyUnicode_AsUTF8(PyTuple_GetItem($_names, $_i))
         printf "%s:\n", $_name
-        pyo _Py_framedata_GetLocalsArray(f->f_fdata)[$_i]
+        pyo _Py_InterpreterFrame_GetLocalsArray(f->f_fdata)[$_i]
       end
       set $_i = $_i + 1
     end

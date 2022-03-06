@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "frameobject.h"
-#include "pycore_framedata.h"
+#include "pycore_frame.h"
 
 #include "pycore_pyerrors.h"
 #include "pycore_code.h"        // _PyCode_GetVarnames()

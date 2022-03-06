@@ -16,7 +16,7 @@ extern "C" {
 #define _PyGenObject_HEAD(prefix)                                           \
     PyObject_HEAD                                                           \
     /* Note: gi_fdata can be NULL if the generator is "finished" */        \
-    _Py_framedata *prefix##_fdata;                                          \
+    _Py_InterpreterFrame *prefix##_fdata;                                          \
     /* The code object backing the generator */                             \
     PyCodeObject *prefix##_code;                                            \
     /* List of weak reference. */                                           \

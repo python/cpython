@@ -3,7 +3,7 @@
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
 #include "pycore_traceback.h"
 #include "pycore_hashtable.h"
-#include <pycore_framedata.h>
+#include <pycore_frame.h>
 
 #include "clinic/_tracemalloc.c.h"
 /*[clinic input]
@@ -299,7 +299,7 @@ hashtable_compare_traceback(const void *key1, const void *key2)
 
 
 static void
-tracemalloc_get_frame(_Py_framedata *fdata, frame_t *frame)
+tracemalloc_get_frame(_Py_InterpreterFrame *fdata, frame_t *frame)
 {
     frame->filename = unknown_filename;
     int lineno = PyCode_Addr2Line(fdata->code, fdata->lasti*2);
@@ -393,7 +393,7 @@ traceback_get_frames(traceback_t *traceback)
         return;
     }
 
-    _Py_framedata *fdata = tstate->fdata;
+    _Py_InterpreterFrame *fdata = tstate->fdata;
     for (; fdata != NULL;) {
         if (traceback->nframe < _Py_tracemalloc_config.max_nframe) {
             tracemalloc_get_frame(fdata, &traceback->frames[traceback->nframe]);
@@ -404,7 +404,7 @@ traceback_get_frames(traceback_t *traceback)
             traceback->total_nframe++;
         }
 
-        _Py_framedata *back = fdata->previous;
+        _Py_InterpreterFrame *back = fdata->previous;
         fdata = back;
     }
 }

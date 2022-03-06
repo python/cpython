@@ -2,7 +2,7 @@ Refactored internal APIs for the new lazy frame object creation to more
 consistently distinguish between the full ``PyFrameObject`` Python object
 implementation that is still used in the Python and C runtime state
 introspection APIs (function prefix ``PyFrame``, field prefix ``f_``, typical
-variable names ``frame`` and ``f``) and the new ``_Py_framedata`` internal
+variable names ``frame`` and ``f``) and the new ``_Py_InterpreterFrame`` internal
 frame data storage (C structs with no intrinsic instance lifecycle management)
-that is now used for code execution (function prefix ``_Py_framedata``, no
+that is now used for code execution (function prefix ``_Py_InterpreterFrame``, no
 field prefix, typical variable name ``fdata``).
