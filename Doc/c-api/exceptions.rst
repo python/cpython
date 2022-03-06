@@ -281,7 +281,7 @@ For convenience, some of these functions will always return a
 
 .. c:function:: void PyErr_SyntaxLocation(const char *filename, int lineno)
 
-   Like :c:func:`PyErr_SyntaxLocationEx`, but the col_offset parameter is
+   Like :c:func:`PyErr_SyntaxLocationEx`, but the *col_offset* parameter is
    omitted.
 
 
@@ -333,7 +333,7 @@ an error value).
 
    Issue a warning message with explicit control over all warning attributes.  This
    is a straightforward wrapper around the Python function
-   :func:`warnings.warn_explicit`, see there for more information.  The *module*
+   :func:`warnings.warn_explicit`; see there for more information.  The *module*
    and *registry* arguments may be set to ``NULL`` to get the default effect
    described there.
 
@@ -441,7 +441,7 @@ Querying the error indicator
       error indicator.
 
 
-.. c:function:: void PyErr_NormalizeException(PyObject**exc, PyObject**val, PyObject**tb)
+.. c:function:: void PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 
    Under certain circumstances, the values returned by :c:func:`PyErr_Fetch` below
    can be "unnormalized", meaning that ``*exc`` is a class object but ``*val`` is
