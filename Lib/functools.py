@@ -654,6 +654,38 @@ def cache(user_function, /):
 
 
 ################################################################################
+### Function variant registry
+################################################################################
+
+# {key: (max lineno, [variant])}
+_variant_registry = {}
+
+
+def register_variant(key, variant, *, test) -> None:
+    """Register a function variant."""
+    _variant_registry.setdefault(key, []).append(variant)
+
+
+def get_variants(key):
+    """Get all function variants for the given key."""
+    return _variant_registry.get(key, [])
+
+
+def get_key_for_callable(func):
+    """Return a key for the given callable.
+
+    This key can be used to register the callable in the variant registry
+    with register_variant() or to get variants for this callable with get_variants().
+
+    If no key can be created, return None.
+    """
+    try:
+        return f"{func.__module__}.{func.__qualname__}"
+    except AttributeError:
+        return None
+
+
+################################################################################
 ### singledispatch() - single-dispatch generic function decorator
 ################################################################################
 

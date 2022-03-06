@@ -2184,6 +2184,9 @@ def overload(func):
       def utf8(value):
           # implementation goes here
     """
+    key = functools.get_key_for_callable(func)
+    if key is not None:
+        functools.register_variant(key, func)
     return _overload_dummy
 
 
