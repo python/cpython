@@ -38,7 +38,7 @@ get_struct_state(PyObject *module)
 static struct PyModuleDef _structmodule;
 
 #define get_struct_state_structinst(self) \
-    (get_struct_state(_PyType_GetModuleByDef(Py_TYPE(self), &_structmodule)))
+    (get_struct_state(PyType_GetModuleByDef(Py_TYPE(self), &_structmodule)))
 #define get_struct_state_iterinst(self) \
     (get_struct_state(PyType_GetModule(Py_TYPE(self))))
 

@@ -137,6 +137,7 @@ from decimal import Decimal
 from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
+from functools import reduce
 from operator import mul
 from collections import Counter, namedtuple, defaultdict
 
@@ -183,11 +184,12 @@ def _sum(data):
     allowed.
     """
     count = 0
+    types = set()
+    types_add = types.add
     partials = {}
     partials_get = partials.get
-    T = int
     for typ, values in groupby(data, type):
-        T = _coerce(T, typ)  # or raise TypeError
+        types_add(typ)
         for n, d in map(_exact_ratio, values):
             count += 1
             partials[d] = partials_get(d, 0) + n
@@ -199,6 +201,7 @@ def _sum(data):
     else:
         # Sum all the partial sums using builtin sum.
         total = sum(Fraction(n, d) for d, n in partials.items())
+    T = reduce(_coerce, types, int)  # or raise TypeError
     return (T, total, count)
 
 
@@ -214,11 +217,12 @@ def _ss(data, c=None):
         T, total, count = _sum((d := x - c) * d for x in data)
         return (T, total, count)
     count = 0
+    types = set()
+    types_add = types.add
     sx_partials = defaultdict(int)
     sxx_partials = defaultdict(int)
-    T = int
     for typ, values in groupby(data, type):
-        T = _coerce(T, typ)  # or raise TypeError
+        types_add(typ)
         for n, d in map(_exact_ratio, values):
             count += 1
             sx_partials[d] += n
@@ -236,6 +240,7 @@ def _ss(data, c=None):
         # This formula has poor numeric properties for floats,
         # but with fractions it is exact.
         total = (count * sxx - sx * sx) / count
+    T = reduce(_coerce, types, int)  # or raise TypeError
     return (T, total, count)
 
 

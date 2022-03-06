@@ -1,0 +1,2 @@
+Adds Tcl and Tk support for Windows ARM64. This also adds IDLE to the
+installation.

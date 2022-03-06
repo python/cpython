@@ -11,7 +11,7 @@ extern "C" {
 #include "pycore_atomic.h"          /* _Py_atomic_address */
 #include "pycore_gil.h"             // struct _gil_runtime_state
 #include "pycore_global_objects.h"  // struct _Py_global_objects
-#include "pycore_interp.h"          // struct _is
+#include "pycore_interp.h"          // PyInterpreterState
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
 

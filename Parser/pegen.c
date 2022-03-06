@@ -785,7 +785,6 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->known_err_token = NULL;
     p->level = 0;
     p->call_invalid_rules = 0;
-    p->in_raw_rule = 0;
     return p;
 }
 

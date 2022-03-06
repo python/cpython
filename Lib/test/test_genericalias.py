@@ -109,7 +109,7 @@ class BaseTest(unittest.TestCase):
         for t in int, str, float, Sized, Hashable:
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
-                with self.assertRaises(TypeError):
+                with self.assertRaisesRegex(TypeError, tname):
                     t[int]
 
     def test_instantiate(self):
@@ -275,7 +275,7 @@ class BaseTest(unittest.TestCase):
     def test_type_subclass_generic(self):
         class MyType(type):
             pass
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, 'MyType'):
             MyType[int]
 
     def test_pickle(self):

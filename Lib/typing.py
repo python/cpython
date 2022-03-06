@@ -181,7 +181,8 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
-    if isinstance(arg, (type, TypeVar, ForwardRef, types.UnionType, ParamSpec)):
+    if isinstance(arg, (type, TypeVar, ForwardRef, types.UnionType, ParamSpec,
+                        ParamSpecArgs, ParamSpecKwargs)):
         return arg
     if not callable(arg):
         raise TypeError(f"{msg} Got {arg!r:.100}.")
@@ -329,8 +330,8 @@ def _tp_cache(func=None, /, *, typed=False):
 def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
     """Evaluate all forward references in the given type t.
     For use of globalns and localns see the docstring for get_type_hints().
-    recursive_guard is used to prevent prevent infinite recursion
-    with recursive ForwardRef.
+    recursive_guard is used to prevent infinite recursion with a recursive
+    ForwardRef.
     """
     if isinstance(t, ForwardRef):
         return t._evaluate(globalns, localns, recursive_guard)
@@ -767,10 +768,11 @@ class ForwardRef(_Final, _root=True):
         if self.__forward_evaluated__ and other.__forward_evaluated__:
             return (self.__forward_arg__ == other.__forward_arg__ and
                     self.__forward_value__ == other.__forward_value__)
-        return self.__forward_arg__ == other.__forward_arg__
+        return (self.__forward_arg__ == other.__forward_arg__ and
+                self.__forward_module__ == other.__forward_module__)
 
     def __hash__(self):
-        return hash(self.__forward_arg__)
+        return hash((self.__forward_arg__, self.__forward_module__))
 
     def __or__(self, other):
         return Union[self, other]
@@ -779,7 +781,11 @@ class ForwardRef(_Final, _root=True):
         return Union[other, self]
 
     def __repr__(self):
-        return f'ForwardRef({self.__forward_arg__!r})'
+        if self.__forward_module__ is None:
+            module_repr = ''
+        else:
+            module_repr = f', module={self.__forward_module__!r}'
+        return f'ForwardRef({self.__forward_arg__!r}{module_repr})'
 
 class _TypeVarLike:
     """Mixin for TypeVar-like types (TypeVar and ParamSpec)."""
@@ -1030,7 +1036,7 @@ class _BaseGenericAlias(_Final, _root=True):
             return self._name or self.__origin__.__name__
 
         # We are careful for copy and pickle.
-        # Also for simplicity we just don't relay all dunder names
+        # Also for simplicity we don't relay any dunder names
         if '__origin__' in self.__dict__ and not _is_dunder(attr):
             return getattr(self.__origin__, attr)
         raise AttributeError(attr)
@@ -1874,26 +1880,6 @@ def cast(typ, val):
     return val
 
 
-def _get_defaults(func):
-    """Internal helper to extract the default arguments, by name."""
-    try:
-        code = func.__code__
-    except AttributeError:
-        # Some built-in functions don't have __code__, __defaults__, etc.
-        return {}
-    pos_count = code.co_argcount
-    arg_names = code.co_varnames
-    arg_names = arg_names[:pos_count]
-    defaults = func.__defaults__ or ()
-    kwdefaults = func.__kwdefaults__
-    res = dict(kwdefaults) if kwdefaults else {}
-    pos_offset = pos_count - len(defaults)
-    for name, value in zip(arg_names[pos_offset:], defaults):
-        assert name not in res
-        res[name] = value
-    return res
-
-
 _allowed_types = (types.FunctionType, types.BuiltinFunctionType,
                   types.MethodType, types.ModuleType,
                   WrapperDescriptorType, MethodWrapperType, MethodDescriptorType)
@@ -1903,8 +1889,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     """Return type hints for an object.
 
     This is often the same as obj.__annotations__, but it handles
-    forward references encoded as string literals, adds Optional[t] if a
-    default value equal to None is set and recursively replaces all
+    forward references encoded as string literals and recursively replaces all
     'Annotated[T, ...]' with 'T' (unless 'include_extras=True').
 
     The argument may be a module, class, method, or function. The annotations
@@ -1984,7 +1969,6 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         else:
             raise TypeError('{!r} is not a module, class, method, '
                             'or function.'.format(obj))
-    defaults = _get_defaults(obj)
     hints = dict(hints)
     for name, value in hints.items():
         if value is None:
@@ -1997,10 +1981,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 is_argument=not isinstance(obj, types.ModuleType),
                 is_class=False,
             )
-        value = _eval_type(value, globalns, localns)
-        if name in defaults and defaults[name] is None:
-            value = Optional[value]
-        hints[name] = value
+        hints[name] = _eval_type(value, globalns, localns)
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
 
@@ -2126,13 +2107,23 @@ def no_type_check(arg):
     This mutates the function(s) or class(es) in place.
     """
     if isinstance(arg, type):
-        arg_attrs = arg.__dict__.copy()
-        for attr, val in arg.__dict__.items():
-            if val in arg.__bases__ + (arg,):
-                arg_attrs.pop(attr)
-        for obj in arg_attrs.values():
+        for key in dir(arg):
+            obj = getattr(arg, key)
+            if (
+                not hasattr(obj, '__qualname__')
+                or obj.__qualname__ != f'{arg.__qualname__}.{obj.__name__}'
+                or getattr(obj, '__module__', None) != arg.__module__
+            ):
+                # We only modify objects that are defined in this type directly.
+                # If classes / methods are nested in multiple layers,
+                # we will modify them when processing their direct holders.
+                continue
+            # Instance, class, and static methods:
             if isinstance(obj, types.FunctionType):
                 obj.__no_type_check__ = True
+            if isinstance(obj, types.MethodType):
+                obj.__func__.__no_type_check__ = True
+            # Nested types:
             if isinstance(obj, type):
                 no_type_check(obj)
     try:
@@ -2565,9 +2556,8 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
 
     The type info can be accessed via the Point2D.__annotations__ dict, and
     the Point2D.__required_keys__ and Point2D.__optional_keys__ frozensets.
-    TypedDict supports two additional equivalent forms::
+    TypedDict supports an additional equivalent form::
 
-        Point2D = TypedDict('Point2D', x=int, y=int, label=str)
         Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
 
     By default, all keys must be present in a TypedDict. It is possible
@@ -2583,14 +2573,22 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
     the total argument. True is the default, and makes all items defined in the
     class body be required.
 
-    The class syntax is only supported in Python 3.6+, while two other
-    syntax forms work for Python 2.7 and 3.2+
+    The class syntax is only supported in Python 3.6+, while the other
+    syntax form works for Python 2.7 and 3.2+
     """
     if fields is None:
         fields = kwargs
     elif kwargs:
         raise TypeError("TypedDict takes either a dict or keyword arguments,"
                         " but not both")
+    if kwargs:
+        warnings.warn(
+            "The kwargs-based syntax for TypedDict definitions is deprecated "
+            "in Python 3.11, will be removed in Python 3.13, and may not be "
+            "understood by third-party type checkers.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     ns = {'__annotations__': dict(fields)}
     module = _caller()

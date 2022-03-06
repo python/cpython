@@ -852,7 +852,7 @@ class Thread:
         *name* is the thread name. By default, a unique name is constructed of
         the form "Thread-N" where N is a small decimal number.
 
-        *args* is the argument tuple for the target invocation. Defaults to ().
+        *args* is a list or tuple of arguments for the target invocation. Defaults to ().
 
         *kwargs* is a dictionary of keyword arguments for the target
         invocation. Defaults to {}.

@@ -1,0 +1,1 @@
+Use inline caching for :opcode:`COMPARE_OP`.

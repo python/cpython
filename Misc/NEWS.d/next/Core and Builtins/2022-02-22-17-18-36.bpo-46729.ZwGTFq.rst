@@ -1,0 +1,1 @@
+Add number of sub-exceptions to :meth:`BaseException.__str__`.
