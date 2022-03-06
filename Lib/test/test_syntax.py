@@ -1630,8 +1630,8 @@ def fib(n):
             self.assertEqual(compile(s1, '<string>', 'exec'), compile(s2, '<string>', 'exec'))
         except SyntaxError:
             self.fail("Indented statement over multiple lines is valid")
-    
-    def test_continuation_bad_indentation(self): 
+
+    def test_continuation_bad_indentation(self):
         # Check that code that breaks indentation across multiple lines raises a syntax error
 
         code = r"""\

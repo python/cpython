@@ -2093,7 +2093,7 @@ join_relfile(wchar_t *buffer, size_t bufsize,
              const wchar_t *dirname, const wchar_t *relfile)
 {
 #ifdef MS_WINDOWS
-    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile, 
+    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile,
         PATHCCH_ALLOW_LONG_PATHS))) {
         return -1;
     }
