@@ -1839,7 +1839,7 @@ _is_running(PyInterpreterState *interp)
     }
 
     assert(!PyErr_Occurred());
-    _PyInterpreterFrame *fdata = tstate->cframe->current_frame;
+    _Py_framedata *fdata = tstate->cframe->current_frame;
     if (fdata == NULL) {
         return 0;
     }

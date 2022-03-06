@@ -20,13 +20,13 @@ extern "C" {
  * over the previous approach of using full Python objects for both
  * introspection and code execution.
  */
-// Declaration of _PyInterpreterFrame is in cpython/pystate.h for use in PyThreadState
+// Declaration of _Py_framedata is in cpython/pystate.h for use in PyThreadState
 
 
 struct _frame {
     PyObject_HEAD
     PyFrameObject *f_back;      /* previous frame, or NULL */
-    struct _PyInterpreterFrame *f_fdata; /* points to the frame data */
+    struct _Py_framedata *f_fdata; /* points to the frame data */
     PyObject *f_trace;          /* Trace function */
     int f_lineno;               /* Current line number. Only valid if non-zero */
     char f_trace_lines;         /* Emit per-line trace events? */
@@ -65,63 +65,63 @@ typedef signed char PyFrameState;
     unless it's -1 in which case next_instr should be first_instr.
 */
 
-typedef struct _PyInterpreterFrame {
+typedef struct _Py_framedata {
     PyFunctionObject *func; /* Strong reference */
     PyObject *globals; /* Borrowed reference */
     PyObject *builtins; /* Borrowed reference */
     PyObject *locals; /* Strong reference, may be NULL */
     PyCodeObject *code; /* Strong reference */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL */
-    struct _PyInterpreterFrame *previous;
+    struct _Py_framedata *previous;
     int lasti;       /* Last instruction if called */
     int stacktop;     /* Offset of TOS from localsplus  */
     PyFrameState state;  /* What state the frame is in */
     bool is_entry;  // Whether this is the "root" frame for the current _PyCFrame.
     bool is_generator;
     PyObject *localsplus[1];
-} _PyInterpreterFrame;
+} _Py_framedata;
 
-static inline int _PyFrame_IsRunnable(_PyInterpreterFrame *f) {
+static inline int _PyFrame_IsRunnable(_Py_framedata *f) {
     return f->state < FRAME_EXECUTING;
 }
 
-static inline int _PyFrame_IsExecuting(_PyInterpreterFrame *f) {
+static inline int _PyFrame_IsExecuting(_Py_framedata *f) {
     return f->state == FRAME_EXECUTING;
 }
 
-static inline int _PyFrameHasCompleted(_PyInterpreterFrame *f) {
+static inline int _PyFrameHasCompleted(_Py_framedata *f) {
     return f->state > FRAME_EXECUTING;
 }
 
-static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
+static inline PyObject **_PyFrame_Stackbase(_Py_framedata *f) {
     return f->localsplus + f->code->co_nlocalsplus;
 }
 
-static inline PyObject *_PyFrame_StackPeek(_PyInterpreterFrame *f) {
+static inline PyObject *_PyFrame_StackPeek(_Py_framedata *f) {
     assert(f->stacktop > f->code->co_nlocalsplus);
     assert(f->localsplus[f->stacktop-1] != NULL);
     return f->localsplus[f->stacktop-1];
 }
 
-static inline PyObject *_PyFrame_StackPop(_PyInterpreterFrame *f) {
+static inline PyObject *_PyFrame_StackPop(_Py_framedata *f) {
     assert(f->stacktop > f->code->co_nlocalsplus);
     f->stacktop--;
     return f->localsplus[f->stacktop];
 }
 
-static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, PyObject *value) {
+static inline void _PyFrame_StackPush(_Py_framedata *f, PyObject *value) {
     f->localsplus[f->stacktop] = value;
     f->stacktop++;
 }
 
-#define FRAME_SPECIALS_SIZE ((sizeof(_PyInterpreterFrame)-1)/sizeof(PyObject *))
+#define FRAME_SPECIALS_SIZE ((sizeof(_Py_framedata)-1)/sizeof(PyObject *))
 
-void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
+void _PyFrame_Copy(_Py_framedata *src, _Py_framedata *dest);
 
 /* Consumes reference to func */
 static inline void
 _PyFrame_InitializeSpecials(
-    _PyInterpreterFrame *frame, PyFunctionObject *func,
+    _Py_framedata *frame, PyFunctionObject *func,
     PyObject *locals, int nlocalsplus)
 {
     frame->func = func;
@@ -141,19 +141,19 @@ _PyFrame_InitializeSpecials(
  * that precedes this frame.
  */
 static inline PyObject**
-_PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
+_PyFrame_GetLocalsArray(_Py_framedata *frame)
 {
     return frame->localsplus;
 }
 
 static inline PyObject**
-_PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
+_PyFrame_GetStackPointer(_Py_framedata *frame)
 {
     return frame->localsplus+frame->stacktop;
 }
 
 static inline void
-_PyFrame_SetStackPointer(_PyInterpreterFrame *frame, PyObject **stack_pointer)
+_PyFrame_SetStackPointer(_Py_framedata *frame, PyObject **stack_pointer)
 {
     frame->stacktop = (int)(stack_pointer - frame->localsplus);
 }
@@ -161,13 +161,13 @@ _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 /* For use by _PyFrame_GetFrameObject
   Do not call directly. */
 PyFrameObject *
-_PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame);
+_PyFrame_MakeAndSetFrameObject(_Py_framedata *frame);
 
 /* Gets the PyFrameObject for this frame, lazily
  * creating it if necessary.
  * Returns a borrowed referennce */
 static inline PyFrameObject *
-_PyFrame_GetFrameObject(_PyInterpreterFrame *fdata)
+_PyFrame_GetFrameObject(_Py_framedata *fdata)
 {
     PyFrameObject *res = fdata->frame_obj;
     if (res != NULL) {
@@ -186,21 +186,21 @@ _PyFrame_GetFrameObject(_PyInterpreterFrame *fdata)
  * frames like the ones in generators and coroutines.
  */
 void
-_PyFrame_Clear(_PyInterpreterFrame * frame);
+_PyFrame_Clear(_Py_framedata * frame);
 
 int
-_PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg);
+_PyFrame_Traverse(_Py_framedata *frame, visitproc visit, void *arg);
 
 int
-_PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame);
+_PyFrame_FastToLocalsWithError(_Py_framedata *frame);
 
 void
-_PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear);
+_PyFrame_LocalsToFast(_Py_framedata *frame, int clear);
 
-extern _PyInterpreterFrame *
+extern _Py_framedata *
 _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size);
 
-static inline _PyInterpreterFrame *
+static inline _Py_framedata *
 _PyThreadState_BumpFramePointer(PyThreadState *tstate, size_t size)
 {
     PyObject **base = tstate->datastack_top;
@@ -209,16 +209,16 @@ _PyThreadState_BumpFramePointer(PyThreadState *tstate, size_t size)
         assert(tstate->datastack_limit);
         if (top < tstate->datastack_limit) {
             tstate->datastack_top = top;
-            return (_PyInterpreterFrame *)base;
+            return (_Py_framedata *)base;
         }
     }
     return _PyThreadState_BumpFramePointerSlow(tstate, size);
 }
 
-void _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
+void _PyThreadState_PopFrame(PyThreadState *tstate, _Py_framedata *frame);
 
 /* Consume reference to func */
-_PyInterpreterFrame *
+_Py_framedata *
 _PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func);
 
 #ifdef __cplusplus

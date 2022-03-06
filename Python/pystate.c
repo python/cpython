@@ -1410,7 +1410,7 @@ _PyThread_CurrentFrames(void)
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->threads.head; t != NULL; t = t->next) {
-            _PyInterpreterFrame *frame = t->cframe->current_frame;
+            _Py_framedata *frame = t->cframe->current_frame;
             if (frame == NULL) {
                 continue;
             }
@@ -2197,7 +2197,7 @@ push_chunk(PyThreadState *tstate, int size)
     return res;
 }
 
-_PyInterpreterFrame *
+_Py_framedata *
 _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size)
 {
     assert(size < INT_MAX/sizeof(PyObject *));
@@ -2209,11 +2209,11 @@ _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size)
     else {
         tstate->datastack_top = top;
     }
-    return (_PyInterpreterFrame *)base;
+    return (_Py_framedata *)base;
 }
 
 void
-_PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame * frame)
+_PyThreadState_PopFrame(PyThreadState *tstate, _Py_framedata * frame)
 {
     assert(tstate->datastack_chunk);
     PyObject **base = (PyObject **)frame;

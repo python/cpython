@@ -914,7 +914,7 @@ class PyFrameObjectPtr(PyObjectPtr):
         PyObjectPtr.__init__(self, gdbval, cast_to)
 
         if not self.is_optimized_out():
-            self._fdata = _PyInterpreterFramePtr(self.field('f_fdata'))
+            self._fdata = _Py_framedataPtr(self.field('f_fdata'))
 
     def iter_locals(self):
         '''

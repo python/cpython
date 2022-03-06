@@ -629,8 +629,8 @@ frame_dealloc(PyFrameObject *f)
     /* Kill all local variables including specials, if we own them */
     if (f->f_owns_frame) {
         f->f_owns_frame = 0;
-        assert(f->f_fdata == (_PyInterpreterFrame *)f->_f_frame_data);
-        _PyInterpreterFrame *frame = (_PyInterpreterFrame *)f->_f_frame_data;
+        assert(f->f_fdata == (_Py_framedata *)f->_f_frame_data);
+        _Py_framedata *frame = (_Py_framedata *)f->_f_frame_data;
         /* Don't clear code object until the end */
         co = frame->code;
         frame->code = NULL;
@@ -707,7 +707,7 @@ static PyObject *
 frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res;
-    res = offsetof(PyFrameObject, _f_frame_data) + offsetof(_PyInterpreterFrame, localsplus);
+    res = offsetof(PyFrameObject, _f_frame_data) + offsetof(_Py_framedata, localsplus);
     PyCodeObject *code = f->f_fdata->code;
     res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
@@ -738,7 +738,7 @@ PyTypeObject PyFrame_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "frame",
     offsetof(PyFrameObject, _f_frame_data) +
-    offsetof(_PyInterpreterFrame, localsplus),
+    offsetof(_Py_framedata, localsplus),
     sizeof(PyObject *),
     (destructor)frame_dealloc,                  /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
@@ -771,7 +771,7 @@ PyTypeObject PyFrame_Type = {
 };
 
 static void
-init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
+init_frame(_Py_framedata *frame, PyFunctionObject *func, PyObject *locals)
 {
     /* _PyFrame_InitializeSpecials consumes reference to func */
     Py_INCREF(func);
@@ -827,8 +827,8 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
         Py_DECREF(func);
         return NULL;
     }
-    init_frame((_PyInterpreterFrame *)f->_f_frame_data, func, locals);
-    f->f_fdata = (_PyInterpreterFrame *)f->_f_frame_data;
+    init_frame((_Py_framedata *)f->_f_frame_data, func, locals);
+    f->f_fdata = (_Py_framedata *)f->_f_frame_data;
     f->f_owns_frame = 1;
     Py_DECREF(func);
     _PyObject_GC_TRACK(f);
@@ -836,7 +836,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
 }
 
 static int
-_PyFrame_OpAlreadyRan(_PyInterpreterFrame *fdata, int opcode, int oparg)
+_PyFrame_OpAlreadyRan(_Py_framedata *fdata, int opcode, int oparg)
 {
     const _Py_CODEUNIT *code =
         (const _Py_CODEUNIT *)PyBytes_AS_STRING(fdata->code->co_code);
@@ -849,7 +849,7 @@ _PyFrame_OpAlreadyRan(_PyInterpreterFrame *fdata, int opcode, int oparg)
 }
 
 int
-_PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
+_PyFrame_FastToLocalsWithError(_Py_framedata *frame) {
     /* Merge fast locals into f->locals */
     PyObject *locals;
     PyObject **fast;
@@ -960,7 +960,7 @@ PyFrame_FastToLocals(PyFrameObject *f)
 }
 
 void
-_PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
+_PyFrame_LocalsToFast(_Py_framedata *frame, int clear)
 {
     /* Merge locals into fast locals */
     PyObject *locals;
