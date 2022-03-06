@@ -843,7 +843,7 @@ PyTypeObject PyGen_Type = {
 };
 
 static PyObject *
-make_gen(PyTypeObject *type, PyFrameConstructor *con, _PyInterpreterFrame *fdata)
+make_gen(PyTypeObject *type, PyFrameConstructor *con, struct _PyInterpreterFrame *fdata)
 {
     PyGenObject *gen = PyObject_GC_New(PyGenObject, type);
     if (gen == NULL) {
@@ -878,7 +878,7 @@ static PyObject *
 compute_cr_origin(int origin_depth);
 
 PyObject *
-_Py_MakeCoro(PyFrameConstructor *con, _PyInterpreterFrame *fdata)
+_Py_MakeCoro(PyFrameConstructor *con, struct _PyInterpreterFrame *fdata)
 {
     int coro_flags = ((PyCodeObject *)con->fc_code)->co_flags &
         (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);

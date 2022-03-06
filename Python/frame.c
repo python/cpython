@@ -72,7 +72,7 @@ clear_specials(_PyInterpreterFrame *fdata)
 }
 
 static void
-take_ownership(PyFrameObject *f, _PyInterpreterFrame *fdata)
+take_ownership(PyFrameObject *f, struct _PyInterpreterFrame *fdata)
 {
     assert(f->f_own_locals_memory == 0);
     assert(fdata->frame_obj == NULL);

@@ -125,7 +125,7 @@ _PyInterpreterFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear);
 _PyInterpreterFrame *_PyThreadState_PushFrame(
     PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals);
 
-void _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
+void _PyThreadState_PopFrame(PyThreadState *tstate, struct _PyInterpreterFrame *frame);
 
 #ifdef __cplusplus
 }

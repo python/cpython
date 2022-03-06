@@ -1024,7 +1024,7 @@ _Py_DumpASCII(int fd, PyObject *text)
    This function is signal safe. */
 
 static void
-dump_frame(int fd, _PyInterpreterFrame *fdata)
+dump_frame(int fd, struct _PyInterpreterFrame *fdata)
 {
     PyCodeObject *code = fdata->code;
     PUTS(fd, "  File ");

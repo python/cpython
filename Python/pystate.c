@@ -2065,7 +2065,7 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObjec
 }
 
 void
-_PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame * fdata)
+_PyThreadState_PopFrame(PyThreadState *tstate, struct _PyInterpreterFrame * fdata)
 {
     PyObject **locals = _PyInterpreterFrame_GetLocalsArray(fdata);
     if (locals == &tstate->datastack_chunk->data[0]) {
