@@ -4668,7 +4668,6 @@ handle_eval_breaker:
             Py_DECREF(cls);
 
             /* For use in RETURN_VALUE later */
-            Py_INCREF(self);
             assert(call_shape.init_pass_self == false);
             call_shape.init_pass_self = true;
             DISPATCH();
@@ -4708,8 +4707,11 @@ handle_eval_breaker:
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 new_frame->previous = frame;
                 cframe.current_frame = frame = new_frame;
-                frame->self = call_shape.init_pass_self ? frame->localsplus[0] : NULL;
-                call_shape.init_pass_self = false;
+                if (call_shape.init_pass_self) {
+                    assert(frame->self == NULL);
+                    frame->self = Py_NewRef(frame->localsplus[0]);
+                    call_shape.init_pass_self = false;
+                }
                 CALL_STAT_INC(inlined_py_calls);
                 goto start_frame;
             }
@@ -4821,8 +4823,11 @@ handle_eval_breaker:
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
-            frame->self = call_shape.init_pass_self ? frame->localsplus[0] : NULL;
-            call_shape.init_pass_self = false;
+            if (call_shape.init_pass_self) {
+                assert(frame->self == NULL);
+                frame->self = Py_NewRef(frame->localsplus[0]);
+                call_shape.init_pass_self = false;
+            }
             goto start_frame;
         }
 
@@ -4864,8 +4869,11 @@ handle_eval_breaker:
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
-            frame->self = call_shape.init_pass_self ? frame->localsplus[0] : NULL;
-            call_shape.init_pass_self = false;
+            if (call_shape.init_pass_self) {
+                assert(frame->self == NULL);
+                frame->self = Py_NewRef(frame->localsplus[0]);
+                call_shape.init_pass_self = false;
+            }
             goto start_frame;
         }
 
@@ -5310,10 +5318,6 @@ handle_eval_breaker:
             assert(PyTuple_CheckExact(callargs));
 
             result = do_call_core(tstate, func, callargs, kwargs, cframe.use_tracing);
-            if (call_shape.init_pass_self) {
-                Py_SETREF(result, PyTuple_GET_ITEM(callargs, 0));
-                call_shape.init_pass_self = false;
-            }
             Py_DECREF(func);
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
@@ -5684,6 +5688,7 @@ unbound_local_error:
 
 error:
         call_shape.kwnames = NULL;
+        call_shape.init_pass_self = false;
         /* Double-check exception status. */
 #ifdef NDEBUG
         if (!_PyErr_Occurred(tstate)) {

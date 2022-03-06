@@ -61,7 +61,7 @@ typedef struct _PyInterpreterFrame {
     PyFrameState f_state;  /* What state the frame is in */
     bool is_entry;  // Whether this is the "root" frame for the current _PyCFrame.
     bool is_generator;
-    PyObject *self; /* Strong reference consumed by __init__ frames to return self in RETURN_VALUE */
+    PyObject *self; /* Borrowed reference used by __init__ frames to return self in RETURN_VALUE */
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
 
