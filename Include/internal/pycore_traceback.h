@@ -55,7 +55,8 @@ PyAPI_FUNC(void) _Py_DumpTraceback(
 PyAPI_FUNC(const char*) _Py_DumpTracebackThreads(
     int fd,
     PyInterpreterState *interp,
-    PyThreadState *current_tstate);
+    PyThreadState *current_tstate,
+    bool include_context);
 
 /* Write a Unicode object into the file descriptor fd. Encode the string to
    ASCII using the backslashreplace error handler.

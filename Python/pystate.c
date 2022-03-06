@@ -806,6 +806,7 @@ init_threadstate(PyThreadState *tstate,
     tstate->datastack_chunk = NULL;
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
+    tstate->segfault_context[0] = '\0';
 
     tstate->_initialized = 1;
 }
