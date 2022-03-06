@@ -8,9 +8,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include <stdbool.h>
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_runtime.h"       // _PyRuntime
 
 
 #define _PyObject_IMMORTAL_INIT(type) \
@@ -235,6 +237,8 @@ extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 // Access macro to the members which are floating "behind" the object
 #define _PyHeapType_GET_MEMBERS(etype) \
     ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
+
+PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
 
 #ifdef __cplusplus
 }
