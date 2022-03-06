@@ -444,7 +444,7 @@ class GCTests(unittest.TestCase):
         # 0, thus mutating the trash graph as a side effect of merely asking
         # whether __del__ exists.  This used to (before 2.3b1) crash Python.
         # Now __getattr__ isn't called.
-        self.assertEqual(gc.collect(), 4)
+        self.assertEqual(gc.collect(), 2)
         self.assertEqual(len(gc.garbage), garbagelen)
 
     def test_boom2(self):
@@ -471,7 +471,7 @@ class GCTests(unittest.TestCase):
         # there isn't a second time, so this simply cleans up the trash cycle.
         # We expect a, b, a.__dict__ and b.__dict__ (4 objects) to get
         # reclaimed this way.
-        self.assertEqual(gc.collect(), 4)
+        self.assertEqual(gc.collect(), 2)
         self.assertEqual(len(gc.garbage), garbagelen)
 
     def test_boom_new(self):
@@ -491,7 +491,7 @@ class GCTests(unittest.TestCase):
         gc.collect()
         garbagelen = len(gc.garbage)
         del a, b
-        self.assertEqual(gc.collect(), 4)
+        self.assertEqual(gc.collect(), 2)
         self.assertEqual(len(gc.garbage), garbagelen)
 
     def test_boom2_new(self):
@@ -513,7 +513,7 @@ class GCTests(unittest.TestCase):
         gc.collect()
         garbagelen = len(gc.garbage)
         del a, b
-        self.assertEqual(gc.collect(), 4)
+        self.assertEqual(gc.collect(), 2)
         self.assertEqual(len(gc.garbage), garbagelen)
 
     def test_get_referents(self):
@@ -943,8 +943,8 @@ class GCTests(unittest.TestCase):
             A()
         t = gc.collect()
         c, nc = getstats()
-        self.assertEqual(t, 2*N) # instance object & its dict
-        self.assertEqual(c - oldc, 2*N)
+        self.assertEqual(t, N) # instance objects
+        self.assertEqual(c - oldc, N)
         self.assertEqual(nc - oldnc, 0)
 
         # But Z() is not actually collected.
@@ -964,8 +964,8 @@ class GCTests(unittest.TestCase):
         Z()
         t = gc.collect()
         c, nc = getstats()
-        self.assertEqual(t, 2*N)
-        self.assertEqual(c - oldc, 2*N)
+        self.assertEqual(t, N)
+        self.assertEqual(c - oldc, N)
         self.assertEqual(nc - oldnc, 0)
 
         # The A() trash should have been reclaimed already but the
@@ -974,8 +974,8 @@ class GCTests(unittest.TestCase):
         zs.clear()
         t = gc.collect()
         c, nc = getstats()
-        self.assertEqual(t, 4)
-        self.assertEqual(c - oldc, 4)
+        self.assertEqual(t, 2)
+        self.assertEqual(c - oldc, 2)
         self.assertEqual(nc - oldnc, 0)
 
         gc.enable()
@@ -1128,8 +1128,7 @@ class GCCallbackTests(unittest.TestCase):
     @cpython_only
     def test_collect_garbage(self):
         self.preclean()
-        # Each of these cause four objects to be garbage: Two
-        # Uncollectables and their instance dicts.
+        # Each of these cause two objects to be garbage:
         Uncollectable()
         Uncollectable()
         C1055820(666)
@@ -1138,8 +1137,8 @@ class GCCallbackTests(unittest.TestCase):
             if v[1] != "stop":
                 continue
             info = v[2]
-            self.assertEqual(info["collected"], 2)
-            self.assertEqual(info["uncollectable"], 8)
+            self.assertEqual(info["collected"], 1)
+            self.assertEqual(info["uncollectable"], 4)
 
         # We should now have the Uncollectables in gc.garbage
         self.assertEqual(len(gc.garbage), 4)
@@ -1156,7 +1155,7 @@ class GCCallbackTests(unittest.TestCase):
                 continue
             info = v[2]
             self.assertEqual(info["collected"], 0)
-            self.assertEqual(info["uncollectable"], 4)
+            self.assertEqual(info["uncollectable"], 2)
 
         # Uncollectables should be gone
         self.assertEqual(len(gc.garbage), 0)
