@@ -531,22 +531,22 @@ instancemethod_hash(PyObject *self)
 @classmethod
 instancemethod.__new__
 
-    func: object
+    function: object
 
 Bind a function to a class.
 [clinic start generated code]*/
 
 static PyObject *
-instancemethod_impl(PyTypeObject *type, PyObject *func)
-/*[clinic end generated code: output=55343da102e9e6b6 input=d0d97099412c0445]*/
+instancemethod_impl(PyTypeObject *type, PyObject *function)
+/*[clinic end generated code: output=7be73374f08a55df input=9379eb562f0e77df]*/
 {
-    if (!PyCallable_Check(func)) {
+    if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError,
                         "first argument must be callable");
         return NULL;
     }
 
-    return PyInstanceMethod_New(func);
+    return PyInstanceMethod_New(function);
 }
 
 PyTypeObject PyInstanceMethod_Type = {

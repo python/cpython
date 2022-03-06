@@ -52,33 +52,33 @@ exit:
 }
 
 PyDoc_STRVAR(instancemethod__doc__,
-"instancemethod(func)\n"
+"instancemethod(function)\n"
 "--\n"
 "\n"
 "Bind a function to a class.");
 
 static PyObject *
-instancemethod_impl(PyTypeObject *type, PyObject *func);
+instancemethod_impl(PyTypeObject *type, PyObject *function);
 
 static PyObject *
 instancemethod(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"func", NULL};
+    static const char * const _keywords[] = {"function", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "instancemethod", 0};
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    PyObject *func;
+    PyObject *function;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
-    func = fastargs[0];
-    return_value = instancemethod_impl(type, func);
+    function = fastargs[0];
+    return_value = instancemethod_impl(type, function);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=87d655932436f47d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d94eba8f36b962e input=a9049054013a1b77]*/
