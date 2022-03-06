@@ -59,7 +59,7 @@ _PyInterpreterFrame_HeapAlloc(PyFrameConstructor *con, PyObject *locals);
 
 static inline void
 _PyInterpreterFrame_InitializeSpecials(
-    _PyInterpreterFrame *fdata, PyFrameConstructor *con,
+    _PyInterpreterFrame *f, PyFrameConstructor *con,
     PyObject *locals, int nlocalsplus)
 {
     fdata->code = (PyCodeObject *)Py_NewRef(con->fc_code);
@@ -111,10 +111,10 @@ _PyInterpreterFrame_GetFrameObject(_PyInterpreterFrame *fdata)
  * frames like the ones in generators and coroutines.
  */
 int
-_PyInterpreterFrame_Clear(_PyInterpreterFrame *fdata, int take);
+_PyInterpreterFrame_Clear(_PyInterpreterFrame *f, int take);
 
 int
-_PyInterpreterFrame_Traverse(_PyInterpreterFrame *fdata, visitproc visit, void *arg);
+_PyInterpreterFrame_Traverse(_PyInterpreterFrame *f, visitproc visit, void *arg);
 
 int
 _PyInterpreterFrame_FastToLocalsWithError(_PyInterpreterFrame *frame);

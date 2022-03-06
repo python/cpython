@@ -60,7 +60,7 @@ static PyObject * do_call_core(
 #ifdef LLTRACE
 static int lltrace;
 static int prtrace(PyThreadState *, PyObject *, const char *);
-static void lltrace_instruction(_PyInterpreterFrame *fdata, int opcode, int oparg)
+static void lltrace_instruction(_PyInterpreterFrame *f, int opcode, int oparg)
 {
     if (HAS_ARG(opcode)) {
         printf("%d: %d, %d\n",
@@ -1500,7 +1500,7 @@ trace_function_entry(PyThreadState *tstate, _PyInterpreterFrame *fdata)
 }
 
 PyObject* _Py_HOT_FUNCTION
-_PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *fdata, int throwflag)
+_PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *f, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
 
@@ -5836,7 +5836,7 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
 
 static int
 call_trace_protected(Py_tracefunc func, PyObject *obj,
-                     PyThreadState *tstate, _PyInterpreterFrame *fdata,
+                     PyThreadState *tstate, _PyInterpreterFrame *f,
                      int what, PyObject *arg)
 {
     PyObject *type, *value, *traceback;
@@ -5868,7 +5868,7 @@ initialize_trace_info(PyTraceInfo *trace_info, _PyInterpreterFrame *fdata)
 
 static int
 call_trace(Py_tracefunc func, PyObject *obj,
-           PyThreadState *tstate, _PyInterpreterFrame *fdata,
+           PyThreadState *tstate, _PyInterpreterFrame *f,
            int what, PyObject *arg)
 {
     int result;
@@ -5915,7 +5915,7 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
 /* See Objects/lnotab_notes.txt for a description of how tracing works. */
 static int
 maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
-                      PyThreadState *tstate, _PyInterpreterFrame *fdata, int instr_prev)
+                      PyThreadState *tstate, _PyInterpreterFrame *f, int instr_prev)
 {
     int result = 0;
 
@@ -6409,7 +6409,7 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
 }
 
 static PyObject *
-import_name(PyThreadState *tstate, _PyInterpreterFrame *fdata,
+import_name(PyThreadState *tstate, _PyInterpreterFrame *f,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
     _Py_IDENTIFIER(__import__);
@@ -6748,7 +6748,7 @@ format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int prevprevop
 
 static PyObject *
 unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
-                    _PyInterpreterFrame *fdata, const _Py_CODEUNIT *next_instr)
+                    _PyInterpreterFrame *f, const _Py_CODEUNIT *next_instr)
 {
     PyObject *res;
     if (Py_REFCNT(v) == 2) {
@@ -6890,7 +6890,7 @@ dtrace_function_return(_PyInterpreterFrame *fdata)
 
 /* DTrace equivalent of maybe_call_line_trace. */
 static void
-maybe_dtrace_line(_PyInterpreterFrame *fdata,
+maybe_dtrace_line(_PyInterpreterFrame *f,
                   PyTraceInfo *trace_info,
                   int instr_prev)
 {

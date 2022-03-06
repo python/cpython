@@ -808,7 +808,7 @@ allocate_heap_frame(PyFrameConstructor *con, PyObject *locals)
 }
 
 static inline PyFrameObject*
-frame_alloc(_PyInterpreterFrame *fdata, int owns)
+frame_alloc(_PyInterpreterFrame *f, int owns)
 {
     PyFrameObject *f;
     struct _Py_frame_state *state = get_frame_state();
@@ -843,7 +843,7 @@ frame_alloc(_PyInterpreterFrame *fdata, int owns)
 }
 
 PyFrameObject* _Py_HOT_FUNCTION
-_PyFrame_New_NoTrack(_PyInterpreterFrame *fdata, int owns)
+_PyFrame_New_NoTrack(_PyInterpreterFrame *f, int owns)
 {
     PyFrameObject *f = frame_alloc(fdata, owns);
     if (f == NULL) {
@@ -888,7 +888,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
 }
 
 static int
-_PyInterpreterFrame_OpAlreadyRan(_PyInterpreterFrame *fdata, int opcode, int oparg)
+_PyInterpreterFrame_OpAlreadyRan(_PyInterpreterFrame *f, int opcode, int oparg)
 {
     const _Py_CODEUNIT *code =
         (const _Py_CODEUNIT *)PyBytes_AS_STRING(fdata->code->co_code);
@@ -1001,7 +1001,7 @@ PyFrame_FastToLocals(PyFrameObject *f)
 }
 
 void
-_PyInterpreterFrame_LocalsToFast(_PyInterpreterFrame *fdata, int clear)
+_PyInterpreterFrame_LocalsToFast(_PyInterpreterFrame *f, int clear)
 {
     /* Merge locals into fast locals */
     PyObject *locals;

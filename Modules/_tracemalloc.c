@@ -299,7 +299,7 @@ hashtable_compare_traceback(const void *key1, const void *key2)
 
 
 static void
-tracemalloc_get_frame(_PyInterpreterFrame *fdata, frame_t *frame)
+tracemalloc_get_frame(_PyInterpreterFrame *f, frame_t *frame)
 {
     frame->filename = unknown_filename;
     int lineno = PyCode_Addr2Line(fdata->code, fdata->lasti*2);

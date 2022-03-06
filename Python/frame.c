@@ -5,7 +5,7 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 
 int
-_PyInterpreterFrame_Traverse(_PyInterpreterFrame *fdata, visitproc visit, void *arg)
+_PyInterpreterFrame_Traverse(_PyInterpreterFrame *f, visitproc visit, void *arg)
 {
     Py_VISIT(fdata->frame_obj);
     Py_VISIT(fdata->globals);
