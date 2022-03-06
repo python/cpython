@@ -1161,7 +1161,7 @@ These are not used in annotations. They are building blocks for creating generic
     Usage::
 
       T = TypeVar('T')  # Can be anything
-      S = TypeVar('S', bound=str)  # Can be any subtype or subclass of str
+      S = TypeVar('S', bound=str)  # Can be any subtype of str
       A = TypeVar('A', str, bytes)  # Must be exactly str or bytes
 
     Type variables exist primarily for the benefit of static type
@@ -1175,13 +1175,13 @@ These are not used in annotations. They are building blocks for creating generic
 
 
        def print_capitalized(x: S) -> S:
-           """Print x capitalized, and return x"""
+           """Print x capitalized, and return x."""
            print(x.capitalize())
            return x
 
 
        def concatenate(x: A, y: A) -> A:
-           """Add two strings together."""
+           """Add two strings or bytes objects together."""
            return x + y
 
     Note that type variables can be *bound*, *constrained*, or neither, but
