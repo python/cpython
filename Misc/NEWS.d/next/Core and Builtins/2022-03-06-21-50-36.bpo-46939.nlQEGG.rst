@@ -1,0 +1,2 @@
+Calls to Python classes are now specialized. Creating objects from Python
+classes should now be faster. Patch by Ken Jin.
