@@ -416,7 +416,7 @@ validate_and_copy_tuple(PyObject *tup)
                 PyExc_TypeError,
                 "name tuples must contain only "
                 "strings, not '%.500s'",
-                item->ob_type->tp_name);
+                Py_TYPE(item)->tp_name);
             Py_DECREF(newtuple);
             return NULL;
         }

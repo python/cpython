@@ -856,7 +856,7 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             PyErr_Format(PyExc_TypeError,
                          "cannot convert '%.200s' object to bytearray",
-                         arg->ob_type->tp_name);
+                         Py_TYPE(arg)->tp_name);
         }
         return -1;
     }
@@ -1630,7 +1630,7 @@ bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             PyErr_Format(PyExc_TypeError,
                          "can't extend bytearray with %.100s",
-                         iterable_of_ints->ob_type->tp_name);
+                         Py_TYPE(iterable_of_ints)->tp_name);
         }
         return NULL;
     }

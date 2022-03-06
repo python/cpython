@@ -121,7 +121,7 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                             "range expected at least 1 argument, got 0");
             return NULL;
         default:
-            PyErr_Format(PyExc_TypeError, 
+            PyErr_Format(PyExc_TypeError,
                          "range expected at most 3 arguments, got %zd",
                          num_args);
             return NULL;
@@ -631,7 +631,7 @@ range_subscript(rangeobject* self, PyObject* item)
     }
     PyErr_Format(PyExc_TypeError,
                  "range indices must be integers or slices, not %.200s",
-                 item->ob_type->tp_name);
+                 Py_TYPE(item)->tp_name);
     return NULL;
 }
 
