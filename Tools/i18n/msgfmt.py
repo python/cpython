@@ -89,7 +89,7 @@ def generate():
                          7*4,               # start of key index
                          7*4+len(keys)*8,   # start of value index
                          0, 0)              # size and offset of hash table
-    output += array.array("i", offsets).tostring()
+    output += array.array("i", offsets).tobytes()
     output += ids
     output += strs
     return output
@@ -109,7 +109,8 @@ def make(filename, outfile):
         outfile = os.path.splitext(infile)[0] + '.mo'
 
     try:
-        lines = open(infile, 'rb').readlines()
+        with open(infile, 'rb') as f:
+            lines = f.readlines()
     except IOError as msg:
         print(msg, file=sys.stderr)
         sys.exit(1)
@@ -199,7 +200,8 @@ def make(filename, outfile):
     output = generate()
 
     try:
-        open(outfile,"wb").write(output)
+        with open(outfile,"wb") as f:
+            f.write(output)
     except IOError as msg:
         print(msg, file=sys.stderr)
 

@@ -1,2 +1,0 @@
-glibc has removed Sun RPC. Use replacement libtirpc headers and library in
-nis module.

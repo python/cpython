@@ -1,0 +1,4 @@
+``random.Random()`` and its subclassing mechanism got optimized to check only
+once at class/subclass instantiation time whether its ``getrandbits()`` method
+can be relied on by other methods, including ``randrange()``, for the
+generation of arbitrarily large random integers.  Patch by Wolfgang Maier.

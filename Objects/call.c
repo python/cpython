@@ -352,7 +352,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs
             Py_INCREF(k[i+1]);
             i += 2;
         }
-        nk = i / 2;
+        assert(i / 2 == nk);
     }
     else {
         kwtuple = NULL;
@@ -1271,7 +1271,7 @@ PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 
 /* Issue #29234: Inlining _PyStack_AsTuple() into callers increases their
    stack consumption, Disable inlining to optimize the stack consumption. */
-PyObject* _Py_NO_INLINE
+_Py_NO_INLINE PyObject *
 _PyStack_AsTuple(PyObject *const *stack, Py_ssize_t nargs)
 {
     PyObject *args;

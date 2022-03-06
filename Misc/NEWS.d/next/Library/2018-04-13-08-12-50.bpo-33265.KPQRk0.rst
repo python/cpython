@@ -1,0 +1,2 @@
+``contextlib.ExitStack`` and ``contextlib.AsyncExitStack`` now use a method
+instead of a wrapper function for exit callbacks.

@@ -4,7 +4,7 @@ This script is used to build "official" universal installers on macOS.
 
 NEW for 3.7.0:
 - support Intel 64-bit-only () and 32-bit-only installer builds
-- use external Tcl/Tk 8.6 for 10.9+ builds
+- build and use internal Tcl/Tk 8.6 for 10.6+ builds
 - deprecate use of explicit SDK (--sdk-path=) since all but the oldest
   versions of Xcode support implicit setting of an SDK via environment
   variables (SDKROOT and friends, see the xcrun man page for more info).
@@ -24,7 +24,9 @@ Sphinx and dependencies are installed into a venv using the python3's pip
 so will fetch them from PyPI if necessary.  Since python3 is now used for
 Sphinx, build-installer.py should also be converted to use python3!
 
-build-installer currently requires an installed third-party version of
+For 3.7.0, when building for a 10.6 or higher deployment target,
+build-installer builds and links with its own copy of Tcl/Tk 8.6.
+Otherwise, it requires an installed third-party version of
 Tcl/Tk 8.4 (for OS X 10.4 and 10.5 deployment targets), Tcl/TK 8.5
 (for 10.6 or later), or Tcl/TK 8.6 (for 10.9 or later)
 installed in /Library/Frameworks.  When installed,
@@ -161,7 +163,7 @@ def getTargetCompilers():
         '10.5': ('gcc', 'g++'),
         '10.6': ('gcc', 'g++'),
     }
-    return target_cc_map.get(DEPTARGET, ('gcc', 'gcc++') )
+    return target_cc_map.get(DEPTARGET, ('gcc', 'g++') )
 
 CC, CXX = getTargetCompilers()
 
@@ -189,6 +191,11 @@ USAGE = textwrap.dedent("""\
 #                       '/Library/Frameworks/Tk.framework/Versions/8.5/Tk']
 EXPECTED_SHARED_LIBS = {}
 
+# Are we building and linking with our own copy of Tcl/TK?
+#   For now, do so if deployment target is 10.6+.
+def internalTk():
+    return getDeptargetTuple() >= (10, 6)
+
 # List of names of third party software built with this installer.
 # The names will be inserted into the rtf version of the License.
 THIRD_PARTY_LIBS = []
@@ -208,22 +215,21 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.0g",
-              url="https://www.openssl.org/source/openssl-1.1.0g.tar.gz",
-              checksum='ba5f1b8b835b88cadbce9b35ed9531a6',
+              name="OpenSSL 1.1.0i",
+              url="https://www.openssl.org/source/openssl-1.1.0i.tar.gz",
+              checksum='9495126aafd2659d357ea66a969c3fe1',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
           ),
     ])
 
-#   Disable for now
-    if False:   # if getDeptargetTuple() > (10, 5):
+    if internalTk():
         result.extend([
           dict(
-              name="Tcl 8.5.15",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_5/tcl8.5.15-src.tar.gz",
-              checksum='f3df162f92c69b254079c4d0af7a690f',
+              name="Tcl 8.6.8",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl8.6.8-src.tar.gz",
+              checksum='81656d3367af032e0ae6157eff134f89',
               buildDir="unix",
               configure_pre=[
                     '--enable-shared',
@@ -233,15 +239,15 @@ def library_recipes():
               useLDFlags=False,
               install='make TCL_LIBRARY=%(TCL_LIBRARY)s && make install TCL_LIBRARY=%(TCL_LIBRARY)s DESTDIR=%(DESTDIR)s'%{
                   "DESTDIR": shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  "TCL_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tcl8.5'%(getVersion())),
+                  "TCL_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tcl8.6'%(getVersion())),
                   },
               ),
           dict(
-              name="Tk 8.5.15",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_5/tk8.5.15-src.tar.gz",
-              checksum='55b8e33f903210a4e1c8bce0f820657f',
+              name="Tk 8.6.8",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.8-src.tar.gz",
+              checksum='5e0faecba458ee1386078fb228d008ba',
               patches=[
-                  "issue19373_tk_8_5_15_source.patch",
+                  "tk868_on_10_8_10_9.patch",
                    ],
               buildDir="unix",
               configure_pre=[
@@ -253,8 +259,8 @@ def library_recipes():
               useLDFlags=False,
               install='make TCL_LIBRARY=%(TCL_LIBRARY)s TK_LIBRARY=%(TK_LIBRARY)s && make install TCL_LIBRARY=%(TCL_LIBRARY)s TK_LIBRARY=%(TK_LIBRARY)s DESTDIR=%(DESTDIR)s'%{
                   "DESTDIR": shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  "TCL_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tcl8.5'%(getVersion())),
-                  "TK_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tk8.5'%(getVersion())),
+                  "TCL_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tcl8.6'%(getVersion())),
+                  "TK_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tk8.6'%(getVersion())),
                   },
                 ),
         ])
@@ -547,41 +553,44 @@ def checkEnvironment():
         fatal("This script should be run on a macOS 10.5 (or later) system")
 
     # Because we only support dynamic load of only one major/minor version of
+    # Tcl/Tk, if we are not using building and using our own private copy of
     # Tcl/Tk, ensure:
     # 1. there is a user-installed framework (usually ActiveTcl) in (or linked
     #       in) SDKROOT/Library/Frameworks.  As of Python 3.7.0, we no longer
     #       enforce that the version of the user-installed framework also
     #       exists in the system-supplied Tcl/Tk frameworks.  Time to support
     #       Tcl/Tk 8.6 even if Apple does not.
+    if not internalTk():
+        frameworks = {}
+        for framework in ['Tcl', 'Tk']:
+            fwpth = 'Library/Frameworks/%s.framework/Versions/Current' % framework
+            libfw = os.path.join('/', fwpth)
+            usrfw = os.path.join(os.getenv('HOME'), fwpth)
+            frameworks[framework] = os.readlink(libfw)
+            if not os.path.exists(libfw):
+                fatal("Please install a link to a current %s %s as %s so "
+                        "the user can override the system framework."
+                        % (framework, frameworks[framework], libfw))
+            if os.path.exists(usrfw):
+                fatal("Please rename %s to avoid possible dynamic load issues."
+                        % usrfw)
 
-    frameworks = {}
-    for framework in ['Tcl', 'Tk']:
-        fwpth = 'Library/Frameworks/%s.framework/Versions/Current' % framework
-        libfw = os.path.join('/', fwpth)
-        usrfw = os.path.join(os.getenv('HOME'), fwpth)
-        frameworks[framework] = os.readlink(libfw)
-        if not os.path.exists(libfw):
-            fatal("Please install a link to a current %s %s as %s so "
-                    "the user can override the system framework."
-                    % (framework, frameworks[framework], libfw))
-        if os.path.exists(usrfw):
-            fatal("Please rename %s to avoid possible dynamic load issues."
-                    % usrfw)
+        if frameworks['Tcl'] != frameworks['Tk']:
+            fatal("The Tcl and Tk frameworks are not the same version.")
 
-    if frameworks['Tcl'] != frameworks['Tk']:
-        fatal("The Tcl and Tk frameworks are not the same version.")
+        print(" -- Building with external Tcl/Tk %s frameworks"
+                    % frameworks['Tk'])
 
-    print(" -- Building with Tcl/Tk %s frameworks"
-                % frameworks['Tk'])
+        # add files to check after build
+        EXPECTED_SHARED_LIBS['_tkinter.so'] = [
+                "/Library/Frameworks/Tcl.framework/Versions/%s/Tcl"
+                    % frameworks['Tcl'],
+                "/Library/Frameworks/Tk.framework/Versions/%s/Tk"
+                    % frameworks['Tk'],
+                ]
+    else:
+        print(" -- Building private copy of Tcl/Tk")
     print("")
-
-    # add files to check after build
-    EXPECTED_SHARED_LIBS['_tkinter.so'] = [
-            "/Library/Frameworks/Tcl.framework/Versions/%s/Tcl"
-                % frameworks['Tcl'],
-            "/Library/Frameworks/Tk.framework/Versions/%s/Tk"
-                % frameworks['Tk'],
-            ]
 
     # Remove inherited environment variables which might influence build
     environ_var_prefixes = ['CPATH', 'C_INCLUDE_', 'DYLD_', 'LANG', 'LC_',
@@ -1086,12 +1095,18 @@ def buildPython():
                "--with-universal-archs=%s "
                "%s "
                "%s "
+               "%s "
+               "%s "
                "LDFLAGS='-g -L%s/libraries/usr/local/lib' "
                "CFLAGS='-g -I%s/libraries/usr/local/include' 2>&1"%(
         shellQuote(os.path.join(SRCDIR, 'configure')),
         UNIVERSALARCHS,
         (' ', '--with-computed-gotos ')[PYTHON_3],
         (' ', '--without-ensurepip ')[PYTHON_3],
+        (' ', "--with-tcltk-includes='-I%s/libraries/usr/local/include'"%(
+                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
+        (' ', "--with-tcltk-libs='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
+                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
@@ -1126,14 +1141,22 @@ def buildPython():
     del os.environ['DYLD_LIBRARY_PATH']
     print("Copying required shared libraries")
     if os.path.exists(os.path.join(WORKDIR, 'libraries', 'Library')):
-        runCommand("mv %s/* %s"%(
-            shellQuote(os.path.join(
+        build_lib_dir = os.path.join(
                 WORKDIR, 'libraries', 'Library', 'Frameworks',
-                'Python.framework', 'Versions', getVersion(),
-                'lib')),
-            shellQuote(os.path.join(WORKDIR, '_root', 'Library', 'Frameworks',
-                'Python.framework', 'Versions', getVersion(),
-                'lib'))))
+                'Python.framework', 'Versions', getVersion(), 'lib')
+        fw_lib_dir = os.path.join(
+                WORKDIR, '_root', 'Library', 'Frameworks',
+                'Python.framework', 'Versions', getVersion(), 'lib')
+        if internalTk():
+            # move Tcl and Tk pkgconfig files
+            runCommand("mv %s/pkgconfig/* %s/pkgconfig"%(
+                        shellQuote(build_lib_dir),
+                        shellQuote(fw_lib_dir) ))
+            runCommand("rm -r %s/pkgconfig"%(
+                        shellQuote(build_lib_dir), ))
+        runCommand("mv %s/* %s"%(
+                    shellQuote(build_lib_dir),
+                    shellQuote(fw_lib_dir) ))
 
     frmDir = os.path.join(rootDir, 'Library', 'Frameworks', 'Python.framework')
     frmDirVersioned = os.path.join(frmDir, 'Versions', version)
@@ -1501,6 +1524,10 @@ def buildDMG():
             shellQuote(os.path.join(WORKDIR, 'installer')),
             shellQuote(imagepath + ".tmp.dmg" )))
 
+    # Try to mitigate race condition in certain versions of macOS, e.g. 10.9,
+    # when hdiutil fails with  "Resource busy"
+
+    time.sleep(10)
 
     if not os.path.exists(os.path.join(WORKDIR, "mnt")):
         os.mkdir(os.path.join(WORKDIR, "mnt"))

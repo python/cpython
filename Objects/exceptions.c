@@ -126,7 +126,7 @@ BaseException_repr(PyBaseExceptionObject *self)
 
 /* Pickling support */
 static PyObject *
-BaseException_reduce(PyBaseExceptionObject *self)
+BaseException_reduce(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->args && self->dict)
         return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
@@ -342,6 +342,13 @@ PyException_SetContext(PyObject *self, PyObject *context)
     Py_XSETREF(((PyBaseExceptionObject *)self)->context, context);
 }
 
+#undef PyExceptionClass_Name
+
+const char *
+PyExceptionClass_Name(PyObject *ob)
+{
+    return ((PyTypeObject*)ob)->tp_name;
+}
 
 static struct PyMemberDef BaseException_members[] = {
     {"__suppress_context__", T_BOOL,
@@ -713,7 +720,7 @@ ImportError_getstate(PyImportErrorObject *self)
 
 /* Pickling support */
 static PyObject *
-ImportError_reduce(PyImportErrorObject *self)
+ImportError_reduce(PyImportErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *res;
     PyObject *args;
@@ -1123,7 +1130,7 @@ OSError_str(PyOSErrorObject *self)
 }
 
 static PyObject *
-OSError_reduce(PyOSErrorObject *self)
+OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *args = self->args;
     PyObject *res = NULL, *tmp;
@@ -2899,7 +2906,7 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
      */
     static PyObject *print_prefix = NULL;
     static PyObject *exec_prefix = NULL;
-    Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
+    Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text), match;
     int kind = PyUnicode_KIND(self->text);
     void *data = PyUnicode_DATA(self->text);
 
@@ -2922,9 +2929,12 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
             return -1;
         }
     }
-    if (PyUnicode_Tailmatch(self->text, print_prefix,
-                            start, text_len, -1)) {
-
+    match = PyUnicode_Tailmatch(self->text, print_prefix,
+                                start, text_len, -1);
+    if (match == -1) {
+        return -1;
+    }
+    if (match) {
         return _set_legacy_print_statement_msg(self, start);
     }
 
@@ -2935,10 +2945,17 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
             return -1;
         }
     }
-    if (PyUnicode_Tailmatch(self->text, exec_prefix,
-                            start, text_len, -1)) {
-        Py_XSETREF(self->msg,
-                  PyUnicode_FromString("Missing parentheses in call to 'exec'"));
+    match = PyUnicode_Tailmatch(self->text, exec_prefix, start, text_len, -1);
+    if (match == -1) {
+        return -1;
+    }
+    if (match) {
+        PyObject *msg = PyUnicode_FromString("Missing parentheses in call "
+                                             "to 'exec'");
+        if (msg == NULL) {
+            return -1;
+        }
+        Py_XSETREF(self->msg, msg);
         return 1;
     }
     /* Fall back to the default error message */

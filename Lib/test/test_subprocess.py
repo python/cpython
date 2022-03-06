@@ -6,6 +6,7 @@ import sys
 import platform
 import signal
 import io
+import itertools
 import os
 import errno
 import tempfile
@@ -17,6 +18,7 @@ import shutil
 import threading
 import gc
 import textwrap
+from test.support import FakePath
 
 try:
     import ctypes
@@ -359,12 +361,7 @@ class ProcessTestCase(BaseTestCase):
     def test_cwd_with_pathlike(self):
         temp_dir = tempfile.gettempdir()
         temp_dir = self._normalize_cwd(temp_dir)
-
-        class _PathLikeObj:
-            def __fspath__(self):
-                return temp_dir
-
-        self._assert_cwd(temp_dir, sys.executable, cwd=_PathLikeObj())
+        self._assert_cwd(temp_dir, sys.executable, cwd=FakePath(temp_dir))
 
     @unittest.skipIf(mswindows, "pending resolution of issue #15533")
     def test_cwd_with_relative_arg(self):
@@ -1139,7 +1136,8 @@ class ProcessTestCase(BaseTestCase):
         # line is not flushed in binary mode with bufsize=1.
         # we should get empty response
         line = b'line' + os.linesep.encode() # assume ascii-based locale
-        self._test_bufsize_equal_one(line, b'', universal_newlines=False)
+        with self.assertWarnsRegex(RuntimeWarning, 'line buffering'):
+            self._test_bufsize_equal_one(line, b'', universal_newlines=False)
 
     def test_leaking_fds_on_error(self):
         # see bug #5179: Popen leaks file descriptors to PIPEs if
@@ -1179,7 +1177,7 @@ class ProcessTestCase(BaseTestCase):
                 msvcrt.CrtSetReportFile(report_type, msvcrt.CRTDBG_FILE_STDERR)
 
             try:
-                subprocess.Popen([cmd],
+                subprocess.Popen(cmd,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
             except OSError:
@@ -1475,37 +1473,6 @@ class RunFuncTestCase(BaseTestCase):
                              env=newenv)
         self.assertEqual(cp.returncode, 33)
 
-    def test_run_with_pathlike_path(self):
-        # bpo-31961: test run(pathlike_object)
-        class Path:
-            def __fspath__(self):
-                # the name of a command that can be run without
-                # any argumenets that exit fast
-                return 'dir' if mswindows else 'ls'
-
-        path = Path()
-        if mswindows:
-            res = subprocess.run(path, stdout=subprocess.DEVNULL, shell=True)
-        else:
-            res = subprocess.run(path, stdout=subprocess.DEVNULL)
-
-        self.assertEqual(res.returncode, 0)
-
-    def test_run_with_pathlike_path_and_arguments(self):
-        # bpo-31961: test run([pathlike_object, 'additional arguments'])
-        class Path:
-            def __fspath__(self):
-                # the name of a command that can be run without
-                # any argumenets that exits fast
-                return sys.executable
-
-        path = Path()
-
-        args = [path, '-c', 'import sys; sys.exit(57)']
-        res = subprocess.run(args)
-
-        self.assertEqual(res.returncode, 57)
-
     def test_capture_output(self):
         cp = self.run_python(("import sys;"
                               "sys.stdout.write('BDFL'); "
@@ -1554,7 +1521,6 @@ class POSIXProcessTestCase(BaseTestCase):
             # string and instead capture the exception that we want to see
             # below for comparison.
             desired_exception = e
-            desired_exception.strerror += ': ' + repr(self._nonexistent_dir)
         else:
             self.fail("chdir to nonexistent directory %s succeeded." %
                       self._nonexistent_dir)
@@ -1571,6 +1537,7 @@ class POSIXProcessTestCase(BaseTestCase):
             # it up to the parent process as the correct exception.
             self.assertEqual(desired_exception.errno, e.errno)
             self.assertEqual(desired_exception.strerror, e.strerror)
+            self.assertEqual(desired_exception.filename, e.filename)
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
@@ -1585,6 +1552,7 @@ class POSIXProcessTestCase(BaseTestCase):
             # it up to the parent process as the correct exception.
             self.assertEqual(desired_exception.errno, e.errno)
             self.assertEqual(desired_exception.strerror, e.strerror)
+            self.assertEqual(desired_exception.filename, e.filename)
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
@@ -1598,6 +1566,7 @@ class POSIXProcessTestCase(BaseTestCase):
             # it up to the parent process as the correct exception.
             self.assertEqual(desired_exception.errno, e.errno)
             self.assertEqual(desired_exception.strerror, e.strerror)
+            self.assertEqual(desired_exception.filename, e.filename)
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
@@ -1651,13 +1620,29 @@ class POSIXProcessTestCase(BaseTestCase):
 
         self.assertIn(repr(error_data), str(e.exception))
 
-
+    @unittest.skipIf(not os.path.exists('/proc/self/status'),
+                     "need /proc/self/status")
     def test_restore_signals(self):
-        # Code coverage for both values of restore_signals to make sure it
-        # at least does not blow up.
-        # A test for behavior would be complex.  Contributions welcome.
-        subprocess.call([sys.executable, "-c", ""], restore_signals=True)
-        subprocess.call([sys.executable, "-c", ""], restore_signals=False)
+        # Blindly assume that cat exists on systems with /proc/self/status...
+        default_proc_status = subprocess.check_output(
+                ['cat', '/proc/self/status'],
+                restore_signals=False)
+        for line in default_proc_status.splitlines():
+            if line.startswith(b'SigIgn'):
+                default_sig_ign_mask = line
+                break
+        else:
+            self.skipTest("SigIgn not found in /proc/self/status.")
+        restored_proc_status = subprocess.check_output(
+                ['cat', '/proc/self/status'],
+                restore_signals=True)
+        for line in restored_proc_status.splitlines():
+            if line.startswith(b'SigIgn'):
+                restored_sig_ign_mask = line
+                break
+        self.assertNotEqual(default_sig_ign_mask, restored_sig_ign_mask,
+                            msg="restore_signals=True should've unblocked "
+                            "SIGPIPE and friends.")
 
     def test_start_new_session(self):
         # For code coverage of calling setsid().  We don't care if we get an
@@ -2169,6 +2154,55 @@ class POSIXProcessTestCase(BaseTestCase):
         self.check_swap_fds(2, 0, 1)
         self.check_swap_fds(2, 1, 0)
 
+    def _check_swap_std_fds_with_one_closed(self, from_fds, to_fds):
+        saved_fds = self._save_fds(range(3))
+        try:
+            for from_fd in from_fds:
+                with tempfile.TemporaryFile() as f:
+                    os.dup2(f.fileno(), from_fd)
+
+            fd_to_close = (set(range(3)) - set(from_fds)).pop()
+            os.close(fd_to_close)
+
+            arg_names = ['stdin', 'stdout', 'stderr']
+            kwargs = {}
+            for from_fd, to_fd in zip(from_fds, to_fds):
+                kwargs[arg_names[to_fd]] = from_fd
+
+            code = textwrap.dedent(r'''
+                import os, sys
+                skipped_fd = int(sys.argv[1])
+                for fd in range(3):
+                    if fd != skipped_fd:
+                        os.write(fd, str(fd).encode('ascii'))
+            ''')
+
+            skipped_fd = (set(range(3)) - set(to_fds)).pop()
+
+            rc = subprocess.call([sys.executable, '-c', code, str(skipped_fd)],
+                                 **kwargs)
+            self.assertEqual(rc, 0)
+
+            for from_fd, to_fd in zip(from_fds, to_fds):
+                os.lseek(from_fd, 0, os.SEEK_SET)
+                read_bytes = os.read(from_fd, 1024)
+                read_fds = list(map(int, read_bytes.decode('ascii')))
+                msg = textwrap.dedent(f"""
+                    When testing {from_fds} to {to_fds} redirection,
+                    parent descriptor {from_fd} got redirected
+                    to descriptor(s) {read_fds} instead of descriptor {to_fd}.
+                """)
+                self.assertEqual([to_fd], read_fds, msg)
+        finally:
+            self._restore_fds(saved_fds)
+
+    # Check that subprocess can remap std fds correctly even
+    # if one of them is closed (#32844).
+    def test_swap_std_fds_with_one_closed(self):
+        for from_fds in itertools.combinations(range(3), 2):
+            for to_fds in itertools.permutations(range(3), 2):
+                self._check_swap_std_fds_with_one_closed(from_fds, to_fds)
+
     def test_surrogates_error_message(self):
         def prepare():
             raise ValueError("surrogate:\uDCff")
@@ -2197,15 +2231,9 @@ class POSIXProcessTestCase(BaseTestCase):
             env = os.environ.copy()
             env[key] = value
             # Use C locale to get ASCII for the locale encoding to force
-            # surrogate-escaping of \xFF in the child process; otherwise it can
-            # be decoded as-is if the default locale is latin-1.
+            # surrogate-escaping of \xFF in the child process
             env['LC_ALL'] = 'C'
-            if sys.platform.startswith("aix"):
-                # On AIX, the C locale uses the Latin1 encoding
-                decoded_value = encoded_value.decode("latin1", "surrogateescape")
-            else:
-                # On other UNIXes, the C locale uses the ASCII encoding
-                decoded_value = value
+            decoded_value = value
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
                 env=env)
@@ -2504,6 +2532,36 @@ class POSIXProcessTestCase(BaseTestCase):
         self.assertEqual(os.get_inheritable(inheritable), True)
         self.assertEqual(os.get_inheritable(non_inheritable), False)
 
+
+    # bpo-32270: Ensure that descriptors specified in pass_fds
+    # are inherited even if they are used in redirections.
+    # Contributed by @izbyshev.
+    def test_pass_fds_redirected(self):
+        """Regression test for https://bugs.python.org/issue32270."""
+        fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
+        pass_fds = []
+        for _ in range(2):
+            fd = os.open(os.devnull, os.O_RDWR)
+            self.addCleanup(os.close, fd)
+            pass_fds.append(fd)
+
+        stdout_r, stdout_w = os.pipe()
+        self.addCleanup(os.close, stdout_r)
+        self.addCleanup(os.close, stdout_w)
+        pass_fds.insert(1, stdout_w)
+
+        with subprocess.Popen([sys.executable, fd_status],
+                              stdin=pass_fds[0],
+                              stdout=pass_fds[1],
+                              stderr=pass_fds[2],
+                              close_fds=True,
+                              pass_fds=pass_fds):
+            output = os.read(stdout_r, 1024)
+        fds = {int(num) for num in output.split(b',')}
+
+        self.assertEqual(fds, {0, 1, 2} | frozenset(pass_fds), f"output={output!a}")
+
+
     def test_stdout_stdin_are_single_inout_fd(self):
         with io.open(os.devnull, "r+") as inout:
             p = subprocess.Popen([sys.executable, "-c", "import sys; sys.exit(0)"],
@@ -2790,6 +2848,33 @@ class Win32ProcessTestCase(BaseTestCase):
         # ignored
         subprocess.call([sys.executable, "-c", "import sys; sys.exit(0)"],
                         startupinfo=startupinfo)
+
+    def test_startupinfo_copy(self):
+        # bpo-34044: Popen must not modify input STARTUPINFO structure
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags = subprocess.STARTF_USESHOWWINDOW
+        startupinfo.wShowWindow = subprocess.SW_HIDE
+
+        # Call Popen() twice with the same startupinfo object to make sure
+        # that it's not modified
+        for _ in range(2):
+            cmd = [sys.executable, "-c", "pass"]
+            with open(os.devnull, 'w') as null:
+                proc = subprocess.Popen(cmd,
+                                        stdout=null,
+                                        stderr=subprocess.STDOUT,
+                                        startupinfo=startupinfo)
+                with proc:
+                    proc.communicate()
+                self.assertEqual(proc.returncode, 0)
+
+            self.assertEqual(startupinfo.dwFlags,
+                             subprocess.STARTF_USESHOWWINDOW)
+            self.assertIsNone(startupinfo.hStdInput)
+            self.assertIsNone(startupinfo.hStdOutput)
+            self.assertIsNone(startupinfo.hStdError)
+            self.assertEqual(startupinfo.wShowWindow, subprocess.SW_HIDE)
+            self.assertEqual(startupinfo.lpAttributeList, {"handle_list": []})
 
     def test_creationflags(self):
         # creationflags argument

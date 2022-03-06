@@ -2611,7 +2611,7 @@ changes, or look through the Subversion logs for all the details.
 
 * The XML-RPC :class:`SimpleXMLRPCServer` and :class:`DocXMLRPCServer`
   classes can now be prevented from immediately opening and binding to
-  their socket by passing True as the ``bind_and_activate``
+  their socket by passing ``False`` as the *bind_and_activate*
   constructor parameter.  This can be used to modify the instance's
   :attr:`allow_reuse_address` attribute before calling the
   :meth:`server_bind` and :meth:`server_activate` methods to

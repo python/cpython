@@ -105,7 +105,7 @@ is possible to let the range start at another number, or to specify a different
 increment (even negative; sometimes this is called the 'step')::
 
     range(5, 10)
-       5 through 9
+       5, 6, 7, 8, 9
 
     range(0, 10, 3)
        0, 3, 6, 9
@@ -526,7 +526,7 @@ Arbitrary Argument Lists
 ------------------------
 
 .. index::
-  statement: *
+   single: * (asterisk); in function calls
 
 Finally, the least frequently used option is to specify that a function can be
 called with an arbitrary number of arguments.  These arguments will be wrapped
@@ -570,10 +570,10 @@ or tuple::
    [3, 4, 5]
 
 .. index::
-  statement: **
+   single: **; in function calls
 
-In the same fashion, dictionaries can deliver keyword arguments with the ``**``\
--operator::
+In the same fashion, dictionaries can deliver keyword arguments with the
+``**``\ -operator::
 
    >>> def parrot(voltage, state='a stiff', action='voom'):
    ...     print("-- This parrot wouldn't", action, end=' ')
@@ -675,11 +675,12 @@ Function Annotations
 .. sectionauthor:: Zachary Ware <zachary.ware@gmail.com>
 .. index::
    pair: function; annotations
-   single: -> (return annotation assignment)
+   single: ->; function annotations
+   single: : (colon); function annotations
 
 :ref:`Function annotations <function>` are completely optional metadata
-information about the types used by user-defined functions (see :pep:`484`
-for more information).
+information about the types used by user-defined functions (see :pep:`3107` and
+:pep:`484` for more information).
 
 Annotations are stored in the :attr:`__annotations__` attribute of the function
 as a dictionary and have no effect on any other part of the function.  Parameter

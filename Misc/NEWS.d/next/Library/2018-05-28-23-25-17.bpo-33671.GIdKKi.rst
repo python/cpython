@@ -1,0 +1,10 @@
+:func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
+:func:`shutil.copytree` and :func:`shutil.move` use platform-specific
+fast-copy syscalls on Linux, Solaris and macOS in order to copy the file
+more efficiently.
+On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
+instead of 16 KiB) and a :func:`memoryview`-based variant of
+:func:`shutil.copyfileobj` is used.
+The speedup for copying a 512MiB file is about +26% on Linux, +50% on macOS and
++40% on Windows. Also, much less CPU cycles are consumed.
+(Contributed by Giampaolo Rodola' in :issue:`25427`.)

@@ -4,12 +4,16 @@ import unittest
 
 from collections import namedtuple
 import os
+import platform
 import re
 import subprocess
 import sys
 
 
-class EmbeddingTests(unittest.TestCase):
+# AIX libc prints an empty string as '' rather than the string '(null)'
+NULL_STR = '' if platform.system() == 'AIX' else '(null)'
+
+class EmbeddingTestsMixin:
     def setUp(self):
         here = os.path.abspath(__file__)
         basepath = os.path.dirname(os.path.dirname(os.path.dirname(here)))
@@ -51,7 +55,7 @@ class EmbeddingTests(unittest.TestCase):
         if p.returncode != 0 and support.verbose:
             print(f"--- {cmd} failed ---")
             print(f"stdout:\n{out}")
-            print(f"stderr:\n{out}")
+            print(f"stderr:\n{err}")
             print(f"------")
 
         self.assertEqual(p.returncode, 0,
@@ -83,7 +87,7 @@ class EmbeddingTests(unittest.TestCase):
         for line in out.splitlines():
             if line == "--- Pass {} ---".format(numloops):
                 self.assertEqual(len(current_run), 0)
-                if support.verbose:
+                if support.verbose > 1:
                     print(line)
                 numloops += 1
                 continue
@@ -96,7 +100,7 @@ class EmbeddingTests(unittest.TestCase):
             # Parse the line from the loop.  The first line is the main
             # interpreter and the 3 afterward are subinterpreters.
             interp = Interp(*match.groups())
-            if support.verbose:
+            if support.verbose > 1:
                 print(interp)
             self.assertTrue(interp.interp)
             self.assertTrue(interp.tstate)
@@ -110,6 +114,8 @@ class EmbeddingTests(unittest.TestCase):
                 yield current_run
                 current_run = []
 
+
+class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_subinterps_main(self):
         for run in self.run_repeated_init_and_subinterpreters():
             main = run[0]
@@ -169,17 +175,17 @@ class EmbeddingTests(unittest.TestCase):
         "stdout: {out_encoding}:ignore",
         "stderr: {out_encoding}:backslashreplace",
         "--- Set encoding only ---",
-        "Expected encoding: latin-1",
+        "Expected encoding: iso8859-1",
         "Expected errors: default",
-        "stdin: latin-1:{errors}",
-        "stdout: latin-1:{errors}",
-        "stderr: latin-1:backslashreplace",
+        "stdin: iso8859-1:{errors}",
+        "stdout: iso8859-1:{errors}",
+        "stderr: iso8859-1:backslashreplace",
         "--- Set encoding and errors ---",
-        "Expected encoding: latin-1",
+        "Expected encoding: iso8859-1",
         "Expected errors: replace",
-        "stdin: latin-1:replace",
-        "stdout: latin-1:replace",
-        "stderr: latin-1:backslashreplace"])
+        "stdin: iso8859-1:replace",
+        "stdout: iso8859-1:replace",
+        "stderr: iso8859-1:backslashreplace"])
         expected_output = expected_output.format(
                                 in_encoding=expected_stream_encoding,
                                 out_encoding=expected_stream_encoding,
@@ -190,12 +196,33 @@ class EmbeddingTests(unittest.TestCase):
 
     def test_pre_initialization_api(self):
         """
-        Checks the few parts of the C-API that work before the runtine
+        Checks some key parts of the C-API that need to work before the runtine
         is initialized (via Py_Initialize()).
         """
         env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
         out, err = self.run_embedded_interpreter("pre_initialization_api", env=env)
-        self.assertEqual(out, '')
+        if sys.platform == "win32":
+            expected_path = self.test_exe
+        else:
+            expected_path = os.path.join(os.getcwd(), "spam")
+        expected_output = f"sys.executable: {expected_path}\n"
+        self.assertIn(expected_output, out)
+        self.assertEqual(err, '')
+
+    def test_pre_initialization_sys_options(self):
+        """
+        Checks that sys.warnoptions and sys._xoptions can be set before the
+        runtime is initialized (otherwise they won't be effective).
+        """
+        env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
+        out, err = self.run_embedded_interpreter(
+                        "pre_initialization_sys_options", env=env)
+        expected_output = (
+            "sys.warnoptions: ['once', 'module', 'default']\n"
+            "sys._xoptions: {'not_an_option': '1', 'also_not_an_option': '2'}\n"
+            "warnings.filters[:3]: ['default', 'module', 'once']\n"
+        )
+        self.assertIn(expected_output, out)
         self.assertEqual(err, '')
 
     def test_bpo20891(self):
@@ -207,6 +234,250 @@ class EmbeddingTests(unittest.TestCase):
         out, err = self.run_embedded_interpreter("bpo20891")
         self.assertEqual(out, '')
         self.assertEqual(err, '')
+
+    def test_initialize_twice(self):
+        """
+        bpo-33932: Calling Py_Initialize() twice should do nothing (and not
+        crash!).
+        """
+        out, err = self.run_embedded_interpreter("initialize_twice")
+        self.assertEqual(out, '')
+        self.assertEqual(err, '')
+
+    def test_initialize_pymain(self):
+        """
+        bpo-34008: Calling Py_Main() after Py_Initialize() must not fail.
+        """
+        out, err = self.run_embedded_interpreter("initialize_pymain")
+        self.assertEqual(out.rstrip(), "Py_Main() after Py_Initialize: sys.argv=['-c', 'arg2']")
+        self.assertEqual(err, '')
+
+
+class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
+    maxDiff = 4096
+    UTF8_MODE_ERRORS = ('surrogatepass' if sys.platform == 'win32'
+                        else 'surrogateescape')
+    DEFAULT_CONFIG = {
+        'install_signal_handlers': 1,
+        'use_environment': 1,
+        'use_hash_seed': 0,
+        'hash_seed': 0,
+        'allocator': NULL_STR,
+        'dev_mode': 0,
+        'faulthandler': 0,
+        'tracemalloc': 0,
+        'import_time': 0,
+        'show_ref_count': 0,
+        'show_alloc_count': 0,
+        'dump_refs': 0,
+        'malloc_stats': 0,
+
+        # None means that the value is get by get_locale_encoding()
+        'filesystem_encoding': None,
+        'filesystem_errors': None,
+
+        'utf8_mode': 0,
+        'coerce_c_locale': 0,
+        'coerce_c_locale_warn': 0,
+
+        'pycache_prefix': NULL_STR,
+        'program_name': './_testembed',
+        'argc': 0,
+        'argv': '[]',
+        'program': NULL_STR,
+
+        'isolated': 0,
+        'site_import': 1,
+        'bytes_warning': 0,
+        'inspect': 0,
+        'interactive': 0,
+        'optimization_level': 0,
+        'parser_debug': 0,
+        'write_bytecode': 1,
+        'verbose': 0,
+        'quiet': 0,
+        'user_site_directory': 1,
+        'buffered_stdio': 1,
+
+        # None means that the value is get by get_stdio_encoding()
+        'stdio_encoding': None,
+        'stdio_errors': None,
+
+        '_install_importlib': 1,
+        '_check_hash_pycs_mode': 'default',
+        '_frozen': 0,
+    }
+
+    def get_stdio_encoding(self, env):
+        code = 'import sys; print(sys.stdout.encoding, sys.stdout.errors)'
+        args = (sys.executable, '-c', code)
+        proc = subprocess.run(args, env=env, text=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT)
+        if proc.returncode:
+            raise Exception(f"failed to get the stdio encoding: stdout={proc.stdout!r}")
+        out = proc.stdout.rstrip()
+        return out.split()
+
+    def get_filesystem_encoding(self, isolated, env):
+        code = ('import codecs, locale, sys; '
+                'print(sys.getfilesystemencoding(), '
+                'sys.getfilesystemencodeerrors())')
+        args = (sys.executable, '-c', code)
+        env = dict(env)
+        if not isolated:
+            env['PYTHONCOERCECLOCALE'] = '0'
+            env['PYTHONUTF8'] = '0'
+        proc = subprocess.run(args, text=True, env=env,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+        if proc.returncode:
+            raise Exception(f"failed to get the locale encoding: "
+                            f"stdout={proc.stdout!r} stderr={proc.stderr!r}")
+        out = proc.stdout.rstrip()
+        return out.split()
+
+    def check_config(self, testname, expected):
+        expected = dict(self.DEFAULT_CONFIG, **expected)
+
+        env = dict(os.environ)
+        for key in list(env):
+            if key.startswith('PYTHON'):
+                del env[key]
+        # Disable C locale coercion and UTF-8 mode to not depend
+        # on the current locale
+        env['PYTHONCOERCECLOCALE'] = '0'
+        env['PYTHONUTF8'] = '0'
+
+        if expected['stdio_encoding'] is None or expected['stdio_errors'] is None:
+            res = self.get_stdio_encoding(env)
+            if expected['stdio_encoding'] is None:
+                expected['stdio_encoding'] = res[0]
+            if expected['stdio_errors'] is None:
+                expected['stdio_errors'] = res[1]
+        if expected['filesystem_encoding'] is None or expected['filesystem_errors'] is None:
+            res = self.get_filesystem_encoding(expected['isolated'], env)
+            if expected['filesystem_encoding'] is None:
+                expected['filesystem_encoding'] = res[0]
+            if expected['filesystem_errors'] is None:
+                expected['filesystem_errors'] = res[1]
+        for key, value in expected.items():
+            expected[key] = str(value)
+
+        out, err = self.run_embedded_interpreter(testname, env=env)
+        # Ignore err
+
+        config = {}
+        for line in out.splitlines():
+            key, value = line.split(' = ', 1)
+            config[key] = value
+        self.assertEqual(config, expected)
+
+    def test_init_default_config(self):
+        self.check_config("init_default_config", {})
+
+    def test_init_global_config(self):
+        config = {
+            'program_name': './globalvar',
+            'site_import': 0,
+            'bytes_warning': 1,
+            'inspect': 1,
+            'interactive': 1,
+            'optimization_level': 2,
+            'write_bytecode': 0,
+            'verbose': 1,
+            'quiet': 1,
+            'buffered_stdio': 0,
+
+            'utf8_mode': 1,
+            'stdio_encoding': 'utf-8',
+            'stdio_errors': 'surrogateescape',
+            'filesystem_encoding': 'utf-8',
+            'filesystem_errors': self.UTF8_MODE_ERRORS,
+            'user_site_directory': 0,
+            '_frozen': 1,
+        }
+        self.check_config("init_global_config", config)
+
+    def test_init_from_config(self):
+        config = {
+            'install_signal_handlers': 0,
+            'use_hash_seed': 1,
+            'hash_seed': 123,
+            'allocator': 'malloc_debug',
+            'tracemalloc': 2,
+            'import_time': 1,
+            'show_ref_count': 1,
+            'show_alloc_count': 1,
+            'malloc_stats': 1,
+
+            'utf8_mode': 1,
+            'stdio_encoding': 'iso8859-1',
+            'stdio_errors': 'replace',
+            'filesystem_encoding': 'utf-8',
+            'filesystem_errors': self.UTF8_MODE_ERRORS,
+
+            'pycache_prefix': 'conf_pycache_prefix',
+            'program_name': './conf_program_name',
+            'program': 'conf_program',
+
+            'site_import': 0,
+            'bytes_warning': 1,
+            'inspect': 1,
+            'interactive': 1,
+            'optimization_level': 2,
+            'write_bytecode': 0,
+            'verbose': 1,
+            'quiet': 1,
+            'buffered_stdio': 0,
+            'user_site_directory': 0,
+            'faulthandler': 1,
+
+            '_check_hash_pycs_mode': 'always',
+            '_frozen': 1,
+        }
+        self.check_config("init_from_config", config)
+
+    def test_init_env(self):
+        config = {
+            'use_hash_seed': 1,
+            'hash_seed': 42,
+            'allocator': 'malloc_debug',
+            'tracemalloc': 2,
+            'import_time': 1,
+            'malloc_stats': 1,
+            'utf8_mode': 1,
+            'filesystem_encoding': 'utf-8',
+            'filesystem_errors': self.UTF8_MODE_ERRORS,
+            'inspect': 1,
+            'optimization_level': 2,
+            'pycache_prefix': 'env_pycache_prefix',
+            'write_bytecode': 0,
+            'verbose': 1,
+            'buffered_stdio': 0,
+            'stdio_encoding': 'iso8859-1',
+            'stdio_errors': 'replace',
+            'user_site_directory': 0,
+            'faulthandler': 1,
+            'dev_mode': 1,
+        }
+        self.check_config("init_env", config)
+
+    def test_init_dev_mode(self):
+        config = {
+            'dev_mode': 1,
+            'faulthandler': 1,
+            'allocator': 'debug',
+        }
+        self.check_config("init_dev_mode", config)
+
+    def test_init_isolated(self):
+        config = {
+            'isolated': 1,
+            'use_environment': 0,
+            'user_site_directory': 0,
+        }
+        self.check_config("init_isolated", config)
 
 
 if __name__ == "__main__":

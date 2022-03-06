@@ -1,0 +1,2 @@
+Fix a crash in Python initialization when parsing the command line options.
+Thanks Christoph Gohlke for the bug report and the fix!

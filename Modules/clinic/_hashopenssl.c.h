@@ -58,7 +58,7 @@ PyDoc_STRVAR(_hashlib_hmac_digest__doc__,
 "hmac_digest($module, /, key, msg, digest)\n"
 "--\n"
 "\n"
-"Single-shot HMAC");
+"Single-shot HMAC.");
 
 #define _HASHLIB_HMAC_DIGEST_METHODDEF    \
     {"hmac_digest", (PyCFunction)_hashlib_hmac_digest, METH_FASTCALL|METH_KEYWORDS, _hashlib_hmac_digest__doc__},
@@ -99,4 +99,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=b5b90821caf05391 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b129f1a6ec7b8503 input=a9049054013a1b77]*/

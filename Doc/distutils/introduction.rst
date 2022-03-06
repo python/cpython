@@ -94,7 +94,7 @@ containing your setup script :file:`setup.py`, and your module :file:`foo.py`.
 The archive file will be named :file:`foo-1.0.tar.gz` (or :file:`.zip`), and
 will unpack into a directory :file:`foo-1.0`.
 
-If an end-user wishes to install your :mod:`foo` module, all she has to do is
+If an end-user wishes to install your :mod:`foo` module, all they have to do is
 download :file:`foo-1.0.tar.gz` (or :file:`.zip`), unpack it, and---from the
 :file:`foo-1.0` directory---run ::
 
@@ -193,8 +193,8 @@ modules using the Distutils:
 module distribution
    a collection of Python modules distributed together as a single downloadable
    resource and meant to be installed *en masse*.  Examples of some well-known
-   module distributions are NumPy, SciPy, PIL (the Python Imaging
-   Library), or mxBase.  (This would be called a *package*, except that term is
+   module distributions are NumPy, SciPy, Pillow,
+   or mxBase.  (This would be called a *package*, except that term is
    already taken in the Python context: a single module distribution may contain
    zero, one, or many Python packages.)
 

@@ -71,6 +71,11 @@ length, whether variable names are well-formed according to your coding
 standard, whether declared interfaces are fully implemented, and more.
 https://docs.pylint.org/ provides a full list of Pylint's features.
 
+Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
+`Pyre <https://pyre-check.org/>`_, and
+`Pytype <https://github.com/google/pytype>`_ can check type hints in Python
+source code.
+
 
 How can I create a stand-alone binary from a Python script?
 -----------------------------------------------------------
@@ -371,8 +376,8 @@ compute, a common technique is to cache the parameters and the resulting value
 of each call to the function, and return the cached value if the same value is
 requested again.  This is called "memoizing", and can be implemented like this::
 
-   # Callers will never provide a third parameter for this function.
-   def expensive(arg1, arg2, _cache={}):
+   # Callers can only provide two parameters and optionally pass _cache by keyword
+   def expensive(arg1, arg2, *, _cache={}):
        if (arg1, arg2) in _cache:
            return _cache[(arg1, arg2)]
 
@@ -1314,11 +1319,6 @@ that final assignment still results in an error, because tuples are immutable.
 
 Dictionaries
 ============
-
-How can I get a dictionary to store and display its keys in a consistent order?
--------------------------------------------------------------------------------
-
-Use :class:`collections.OrderedDict`.
 
 I want to do a complicated sort: can you do a Schwartzian Transform in Python?
 ------------------------------------------------------------------------------

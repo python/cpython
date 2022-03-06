@@ -88,7 +88,7 @@ Managing Packages with pip
 
 You can install, upgrade, and remove packages using a program called
 :program:`pip`.  By default ``pip`` will install packages from the Python
-Package Index, <https://pypi.python.org/pypi>.  You can browse the Python
+Package Index, <https://pypi.org>.  You can browse the Python
 Package Index by going to it in your web browser, or you can use ``pip``'s
 limited search feature:
 

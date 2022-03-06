@@ -1,0 +1,1 @@
+Fix buffer overflow while converting unicode to numeric values.

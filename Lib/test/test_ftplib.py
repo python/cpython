@@ -257,6 +257,7 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
     def __init__(self, address, af=socket.AF_INET):
         threading.Thread.__init__(self)
         asyncore.dispatcher.__init__(self)
+        self.daemon = True
         self.create_socket(af, socket.SOCK_STREAM)
         self.bind(address)
         self.listen(5)
@@ -403,7 +404,7 @@ if ssl is not None:
 
         def close(self):
             if (isinstance(self.socket, ssl.SSLSocket) and
-                self.socket._sslobj is not None):
+                    self.socket._sslobj is not None):
                 self._do_ssl_shutdown()
             else:
                 super(SSLConnection, self).close()
@@ -879,18 +880,23 @@ class TestTLS_FTPClass(TestCase):
         # clear text
         with self.client.transfercmd('list') as sock:
             self.assertNotIsInstance(sock, ssl.SSLSocket)
+            self.assertEqual(sock.recv(1024), LIST_DATA.encode('ascii'))
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
         # secured, after PROT P
         self.client.prot_p()
         with self.client.transfercmd('list') as sock:
             self.assertIsInstance(sock, ssl.SSLSocket)
+            # consume from SSL socket to finalize handshake and avoid
+            # "SSLError [SSL] shutdown while in init"
+            self.assertEqual(sock.recv(1024), LIST_DATA.encode('ascii'))
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
         # PROT C is issued, the connection must be in cleartext again
         self.client.prot_c()
         with self.client.transfercmd('list') as sock:
             self.assertNotIsInstance(sock, ssl.SSLSocket)
+            self.assertEqual(sock.recv(1024), LIST_DATA.encode('ascii'))
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
     def test_login(self):
@@ -976,6 +982,7 @@ class TestTimeouts(TestCase):
         self.sock.settimeout(20)
         self.port = support.bind_port(self.sock)
         self.server_thread = threading.Thread(target=self.server)
+        self.server_thread.daemon = True
         self.server_thread.start()
         # Wait for the server to be ready.
         self.evt.wait()

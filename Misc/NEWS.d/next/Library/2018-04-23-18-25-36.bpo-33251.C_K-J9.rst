@@ -1,0 +1,2 @@
+`ConfigParser.items()` was fixed so that key-value pairs passed in via `vars`
+are not included in the resulting output.

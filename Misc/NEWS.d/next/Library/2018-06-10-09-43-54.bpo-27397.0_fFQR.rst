@@ -1,0 +1,1 @@
+Make email module properly handle invalid-length base64 strings.

@@ -47,11 +47,10 @@ Xxo_traverse(XxoObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-static int
+static void
 Xxo_finalize(XxoObject *self)
 {
     Py_CLEAR(self->x_attr);
-    return 0;
 }
 
 static PyObject *

@@ -2,7 +2,7 @@
 # Test tools for mocking and patching.
 # Maintained by Michael Foord
 # Backport for other versions of Python available from
-# http://pypi.python.org/pypi/mock
+# https://pypi.org/project/mock
 
 __all__ = (
     'Mock',
@@ -30,6 +30,7 @@ import pprint
 import sys
 import builtins
 from types import ModuleType
+from unittest.util import safe_repr
 from functools import wraps, partial
 
 
@@ -778,8 +779,10 @@ class NonCallableMock(Base):
         """
         self = _mock_self
         if self.call_count != 0:
-            msg = ("Expected '%s' to not have been called. Called %s times." %
-                   (self._mock_name or 'mock', self.call_count))
+            msg = ("Expected '%s' to not have been called. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
             raise AssertionError(msg)
 
     def assert_called(_mock_self):
@@ -796,8 +799,10 @@ class NonCallableMock(Base):
         """
         self = _mock_self
         if not self.call_count == 1:
-            msg = ("Expected '%s' to have been called once. Called %s times." %
-                   (self._mock_name or 'mock', self.call_count))
+            msg = ("Expected '%s' to have been called once. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
             raise AssertionError(msg)
 
     def assert_called_with(_mock_self, *args, **kwargs):
@@ -825,8 +830,10 @@ class NonCallableMock(Base):
         with the specified arguments."""
         self = _mock_self
         if not self.call_count == 1:
-            msg = ("Expected '%s' to be called once. Called %s times." %
-                   (self._mock_name or 'mock', self.call_count))
+            msg = ("Expected '%s' to be called once. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
             raise AssertionError(msg)
         return self.assert_called_with(*args, **kwargs)
 
@@ -847,8 +854,8 @@ class NonCallableMock(Base):
         if not any_order:
             if expected not in all_calls:
                 raise AssertionError(
-                    'Calls not found.\nExpected: %r\n'
-                    'Actual: %r' % (_CallList(calls), self.mock_calls)
+                    'Calls not found.\nExpected: %r%s'
+                    % (_CallList(calls), self._calls_repr(prefix="Actual"))
                 ) from cause
             return
 
@@ -862,7 +869,9 @@ class NonCallableMock(Base):
                 not_found.append(kall)
         if not_found:
             raise AssertionError(
-                '%r not all found in call list' % (tuple(not_found),)
+                '%r does not contain all of %r in its call list, '
+                'found %r instead' % (self._mock_name or 'mock',
+                                      tuple(not_found), all_calls)
             ) from cause
 
 
@@ -905,6 +914,19 @@ class NonCallableMock(Base):
             raise AttributeError(mock_name)
 
         return klass(**kw)
+
+
+    def _calls_repr(self, prefix="Calls"):
+        """Renders self.mock_calls as a string.
+
+        Example: "\nCalls: [call(1), call(2)]."
+
+        If self.mock_calls is empty, an empty string is returned. The
+        output will be truncated if very long.
+        """
+        if not self.mock_calls:
+            return ""
+        return f"\n{prefix}: {safe_repr(self.mock_calls)}."
 
 
 
@@ -1709,8 +1731,9 @@ magic_methods = (
     # because there is no idivmod
     "divmod rdivmod neg pos abs invert "
     "complex int float index "
-    "trunc floor ceil "
+    "round trunc floor ceil "
     "bool next "
+    "fspath "
 )
 
 numerics = (
@@ -1758,6 +1781,7 @@ _calculate_return_value = {
     '__hash__': lambda self: object.__hash__(self),
     '__str__': lambda self: object.__str__(self),
     '__sizeof__': lambda self: object.__sizeof__(self),
+    '__fspath__': lambda self: f"{type(self).__name__}/{self._extract_mock_name()}/{id(self)}",
 }
 
 _return_values = {
@@ -2356,14 +2380,16 @@ def mock_open(mock=None, read_data=''):
         return type(read_data)().join(_state[0])
 
     def _readline_side_effect():
+        yield from _iter_side_effect()
+        while True:
+            yield type(read_data)()
+
+    def _iter_side_effect():
         if handle.readline.return_value is not None:
             while True:
                 yield handle.readline.return_value
         for line in _state[0]:
             yield line
-        while True:
-            yield type(read_data)()
-
 
     global file_spec
     if file_spec is None:
@@ -2387,6 +2413,7 @@ def mock_open(mock=None, read_data=''):
     _state[1] = _readline_side_effect()
     handle.readline.side_effect = _state[1]
     handle.readlines.side_effect = _readlines_side_effect
+    handle.__iter__.side_effect = _iter_side_effect
 
     def reset_data(*args, **kwargs):
         _state[0] = _iterate_read_data(read_data)
@@ -2420,15 +2447,14 @@ class PropertyMock(Mock):
 
 
 def seal(mock):
-    """Disable the automatic generation of "submocks"
+    """Disable the automatic generation of child mocks.
 
     Given an input Mock, seals it to ensure no further mocks will be generated
     when accessing an attribute that was not already defined.
 
-    Submocks are defined as all mocks which were created DIRECTLY from the
-    parent. If a mock is assigned to an attribute of an existing mock,
-    it is not considered a submock.
-
+    The operation recursively seals the mock passed in, meaning that
+    the mock itself, any mocks generated by accessing one of its attributes,
+    and all assigned mocks without a name or spec will be sealed.
     """
     mock._mock_sealed = True
     for attr in dir(mock):

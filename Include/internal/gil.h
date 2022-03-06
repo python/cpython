@@ -4,11 +4,11 @@
 extern "C" {
 #endif
 
-#include "pyatomic.h"
-
 #include "internal/condvar.h"
+#include "internal/pyatomic.h"
+
 #ifndef Py_HAVE_CONDVAR
-#error You need either a POSIX-compatible or a Windows system!
+#  error You need either a POSIX-compatible or a Windows system!
 #endif
 
 /* Enable if you want to force the switching of threads at least

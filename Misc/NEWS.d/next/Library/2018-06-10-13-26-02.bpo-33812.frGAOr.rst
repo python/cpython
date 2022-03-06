@@ -1,0 +1,2 @@
+Datetime instance d with non-None tzinfo, but with d.tzinfo.utcoffset(d)
+returning None is now treated as naive by the astimezone() method.

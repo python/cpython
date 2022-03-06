@@ -3,7 +3,7 @@
 __all__ = (
     'AbstractEventLoopPolicy',
     'AbstractEventLoop', 'AbstractServer',
-    'Handle', 'TimerHandle', 'SendfileNotAvailableError',
+    'Handle', 'TimerHandle',
     'get_event_loop_policy', 'set_event_loop_policy',
     'get_event_loop', 'set_event_loop', 'new_event_loop',
     'get_child_watcher', 'set_child_watcher',
@@ -19,14 +19,7 @@ import sys
 import threading
 
 from . import format_helpers
-
-
-class SendfileNotAvailableError(RuntimeError):
-    """Sendfile syscall is not available.
-
-    Raised if OS does not support senfile syscall for given socket or
-    file type.
-    """
+from . import exceptions
 
 
 class Handle:
@@ -156,6 +149,14 @@ class TimerHandle(Handle):
             self._loop._timer_handle_cancelled(self)
         super().cancel()
 
+    def when(self):
+        """Return a scheduled callback time.
+
+        The time is an absolute timestamp, using the same time
+        reference as loop.time().
+        """
+        return self._when
+
 
 class AbstractServer:
     """Abstract server returned by create_server()."""
@@ -269,7 +270,7 @@ class AbstractEventLoop:
 
     # Method scheduling a coroutine object: create a task.
 
-    def create_task(self, coro):
+    def create_task(self, coro, *, name=None):
         raise NotImplementedError
 
     # Methods for interacting with threads.
@@ -344,8 +345,7 @@ class AbstractEventLoop:
 
         ssl_handshake_timeout is the time in seconds that an SSL server
         will wait for completion of the SSL handshake before aborting the
-        connection. Default is 10s, longer timeouts may increase vulnerability
-        to DoS attacks (see https://support.f5.com/csp/article/K13834)
+        connection. Default is 60s.
 
         start_serving set to True (default) causes the created server
         to start accepting connections immediately.  When set to False,
@@ -403,7 +403,7 @@ class AbstractEventLoop:
         accepted connections.
 
         ssl_handshake_timeout is the time in seconds that an SSL server
-        will wait for the SSL handshake to complete (defaults to 10s).
+        will wait for the SSL handshake to complete (defaults to 60s).
 
         start_serving set to True (default) causes the created server
         to start accepting connections immediately.  When set to False,

@@ -1,0 +1,3 @@
+Fixed clang ubsan (undefined behavior sanitizer) warnings in dictobject.c by
+adjusting how the internal struct _dictkeysobject shared keys structure is
+declared.

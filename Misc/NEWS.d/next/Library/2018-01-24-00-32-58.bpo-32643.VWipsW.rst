@@ -1,2 +1,0 @@
-Make Task._step, Task._wakeup and Future._schedule_callbacks methods
-private.

@@ -1,0 +1,5 @@
+gcc 8 has added a new warning heuristic to detect invalid function casts and
+a stock python build seems to hit that warning quite often.  The most common
+is the cast of a METH_NOARGS function (that uses just one argument) to a
+PyCFunction. Fix this by adding a dummy argument to all functions that
+implement METH_NOARGS.

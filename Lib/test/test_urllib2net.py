@@ -177,6 +177,7 @@ class OtherNetworkTests(unittest.TestCase):
             opener.open(request)
             self.assertEqual(request.get_header('User-agent'),'Test-Agent')
 
+    @unittest.skip('XXX: http://www.imdb.com is gone')
     def test_sites_no_connection_close(self):
         # Some sites do not send Connection: close header.
         # Verify that those work properly. (#issue12576)

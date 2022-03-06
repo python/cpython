@@ -22,6 +22,10 @@ from test.test_asyncio import utils as test_utils
 MOCK_ANY = mock.ANY
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class TestBaseSelectorEventLoop(BaseSelectorEventLoop):
 
     def _make_self_pipe(self):
@@ -191,7 +195,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop._sock_recv = mock.Mock()
 
         f = self.loop.create_task(self.loop.sock_recv(sock, 1024))
-        self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0.01))
 
         self.assertEqual(self.loop._sock_recv.call_args[0][1:],
                          (None, sock, 1024))
@@ -211,7 +215,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         fut = self.loop.create_task(
             self.loop.sock_recv(sock, 1024))
 
-        self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0.01))
 
         callback = self.loop.add_reader.call_args[0][1]
         params = self.loop.add_reader.call_args[0][2:]
@@ -222,7 +226,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         sock.recv.side_effect = OSError(9)
         callback(*params)
 
-        self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0.01))
 
         self.assertIsInstance(fut.exception(), OSError)
         self.assertEqual((10,), self.loop.remove_reader.call_args[0])
@@ -274,7 +278,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         f = self.loop.create_task(
             self.loop.sock_sendall(sock, b'data'))
 
-        self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0.01))
 
         self.assertEqual(
             (None, sock, b'data'),
@@ -289,7 +293,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop._sock_sendall = mock.Mock()
 
         f = self.loop.create_task(self.loop.sock_sendall(sock, b''))
-        self.loop.run_until_complete(asyncio.sleep(0, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0))
 
         self.assertTrue(f.done())
         self.assertIsNone(f.result())
@@ -305,7 +309,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop.remove_writer = mock.Mock()
         fut = self.loop.create_task(self.loop.sock_sendall(sock, b'data'))
 
-        self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0.01))
 
         callback = self.loop.add_writer.call_args[0][1]
         params = self.loop.add_writer.call_args[0][2:]
@@ -316,7 +320,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         sock.send.side_effect = OSError(9)
         callback(*params)
 
-        self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0.01))
 
         self.assertIsInstance(fut.exception(), OSError)
         self.assertEqual((10,), self.loop.remove_writer.call_args[0])
@@ -527,7 +531,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop._sock_accept = mock.Mock()
 
         f = self.loop.create_task(self.loop.sock_accept(sock))
-        self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(0.01))
 
         self.assertFalse(self.loop._sock_accept.call_args[0][1])
         self.assertIs(self.loop._sock_accept.call_args[0][2], sock)
@@ -772,7 +776,8 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
             accept2_mock.return_value = None
             with mock_obj(self.loop, 'create_task') as task_mock:
                 task_mock.return_value = None
-                self.loop._accept_connection(mock.Mock(), sock, backlog=backlog)
+                self.loop._accept_connection(
+                    mock.Mock(), sock, backlog=backlog)
         self.assertEqual(sock.accept.call_count, backlog)
 
 
@@ -870,6 +875,21 @@ class SelectorTransportTests(test_utils.TestCase):
 
         self.assertIsNone(tr._protocol)
         self.assertIsNone(tr._loop)
+
+    def test__add_reader(self):
+        tr = self.create_transport()
+        tr._buffer.extend(b'1')
+        tr._add_reader(7, mock.sentinel)
+        self.assertTrue(self.loop.readers)
+
+        tr._force_close(None)
+
+        self.assertTrue(tr.is_closing())
+        self.assertFalse(self.loop.readers)
+
+        # can not add readers after closing
+        tr._add_reader(7, mock.sentinel)
+        self.assertFalse(self.loop.readers)
 
 
 class SelectorSocketTransportTests(test_utils.TestCase):
@@ -1248,6 +1268,12 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.sock.shutdown.assert_called_with(socket.SHUT_WR)
         tr.close()
 
+    def test_write_eof_after_close(self):
+        tr = self.socket_transport()
+        tr.close()
+        self.loop.run_until_complete(asyncio.sleep(0))
+        tr.write_eof()
+
     @mock.patch('asyncio.base_events.logger')
     def test_transport_close_remove_writer(self, m_log):
         remove_writer = self.loop._remove_writer = mock.Mock()
@@ -1264,8 +1290,8 @@ class SelectorSocketTransportBufferedProtocolTests(test_utils.TestCase):
         self.loop = self.new_test_loop()
 
         self.protocol = test_utils.make_test_protocol(asyncio.BufferedProtocol)
-        self.buf = mock.Mock()
-        self.protocol.get_buffer.side_effect = lambda: self.buf
+        self.buf = bytearray(1)
+        self.protocol.get_buffer.side_effect = lambda hint: self.buf
 
         self.sock = mock.Mock(socket.socket)
         self.sock_fd = self.sock.fileno.return_value = 7
@@ -1297,6 +1323,42 @@ class SelectorSocketTransportBufferedProtocolTests(test_utils.TestCase):
         self.assertTrue(transport._fatal_error.called)
         self.assertTrue(self.protocol.get_buffer.called)
         self.assertFalse(self.protocol.buffer_updated.called)
+
+    def test_get_buffer_zerosized(self):
+        transport = self.socket_transport()
+        transport._fatal_error = mock.Mock()
+
+        self.loop.call_exception_handler = mock.Mock()
+        self.protocol.get_buffer.side_effect = lambda hint: bytearray(0)
+
+        transport._read_ready()
+
+        self.assertTrue(transport._fatal_error.called)
+        self.assertTrue(self.protocol.get_buffer.called)
+        self.assertFalse(self.protocol.buffer_updated.called)
+
+    def test_proto_type_switch(self):
+        self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
+        transport = self.socket_transport()
+
+        self.sock.recv.return_value = b'data'
+        transport._read_ready()
+
+        self.protocol.data_received.assert_called_with(b'data')
+
+        # switch protocol to a BufferedProtocol
+
+        buf_proto = test_utils.make_test_protocol(asyncio.BufferedProtocol)
+        buf = bytearray(4)
+        buf_proto.get_buffer.side_effect = lambda hint: buf
+
+        transport.set_protocol(buf_proto)
+
+        self.sock.recv_into.return_value = 10
+        transport._read_ready()
+
+        buf_proto.get_buffer.assert_called_with(-1)
+        buf_proto.buffer_updated.assert_called_with(10)
 
     def test_buffer_updated_error(self):
         transport = self.socket_transport()
@@ -1333,7 +1395,7 @@ class SelectorSocketTransportBufferedProtocolTests(test_utils.TestCase):
         self.sock.recv_into.return_value = 10
         transport._read_ready()
 
-        self.protocol.get_buffer.assert_called_with()
+        self.protocol.get_buffer.assert_called_with(-1)
         self.protocol.buffer_updated.assert_called_with(10)
 
     def test_read_ready_eof(self):

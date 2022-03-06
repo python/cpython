@@ -31,6 +31,9 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`Py_SetProgramName`
   * :c:func:`Py_SetPythonHome`
   * :c:func:`Py_SetStandardStreamEncoding`
+  * :c:func:`PySys_AddWarnOption`
+  * :c:func:`PySys_AddXOption`
+  * :c:func:`PySys_ResetWarnOptions`
 
 * Informative functions:
 
@@ -153,7 +156,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    See :pep:`529` for more details.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
 .. c:var:: Py_LegacyWindowsStdioFlag
 
@@ -165,7 +168,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    See :pep:`528` for more details.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
 .. c:var:: Py_NoSiteFlag
 
@@ -273,8 +276,8 @@ Initializing and finalizing the interpreter
    the last call to :c:func:`Py_Initialize`.  Ideally, this frees all memory
    allocated by the Python interpreter.  This is a no-op when called for a second
    time (without calling :c:func:`Py_Initialize` again first).  Normally the
-   return value is 0.  If there were errors during finalization
-   (flushing buffered data), -1 is returned.
+   return value is ``0``.  If there were errors during finalization
+   (flushing buffered data), ``-1`` is returned.
 
    This function is provided for a number of reasons.  An embedding application
    might want to restart Python without having to restart the application itself.
@@ -839,18 +842,18 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
 
-   Release the global interpreter lock (if it has been created and thread
-   support is enabled) and reset the thread state to *NULL*, returning the
-   previous thread state (which is not *NULL*).  If the lock has been created,
-   the current thread must have acquired it.
+   Release the global interpreter lock (if it has been created) and reset the
+   thread state to *NULL*, returning the previous thread state (which is not
+   *NULL*).  If the lock has been created, the current thread must have
+   acquired it.
 
 
 .. c:function:: void PyEval_RestoreThread(PyThreadState *tstate)
 
-   Acquire the global interpreter lock (if it has been created and thread
-   support is enabled) and set the thread state to *tstate*, which must not be
-   *NULL*.  If the lock has been created, the current thread must not have
-   acquired it, otherwise deadlock ensues.
+   Acquire the global interpreter lock (if it has been created) and set the
+   thread state to *tstate*, which must not be *NULL*.  If the lock has been
+   created, the current thread must not have acquired it, otherwise deadlock
+   ensues.
 
 
 .. c:function:: PyThreadState* PyThreadState_Get()
@@ -1018,7 +1021,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 .. c:function:: PY_INT64_T PyInterpreterState_GetID(PyInterpreterState *interp)
 
    Return the interpreter's unique ID.  If there was any error in doing
-   so then -1 is returned and an error is set.
+   so then ``-1`` is returned and an error is set.
 
    .. versionadded:: 3.7
 

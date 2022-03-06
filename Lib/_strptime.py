@@ -77,15 +77,6 @@ class LocaleTime(object):
         if time.tzname != self.tzname or time.daylight != self.daylight:
             raise ValueError("timezone changed during initialization")
 
-    def __pad(self, seq, front):
-        # Add '' to seq to either the front (is True), else the back.
-        seq = list(seq)
-        if front:
-            seq.insert(0, '')
-        else:
-            seq.append('')
-        return seq
-
     def __calc_weekday(self):
         # Set self.a_weekday and self.f_weekday using the calendar
         # module.
@@ -463,7 +454,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     z = z[:3] + z[4:]
                     if len(z) > 5:
                         if z[5] != ':':
-                            msg = f"Unconsistent use of : in {found_dict['z']}"
+                            msg = f"Inconsistent use of : in {found_dict['z']}"
                             raise ValueError(msg)
                         z = z[:5] + z[6:]
                 hours = int(z[1:3])

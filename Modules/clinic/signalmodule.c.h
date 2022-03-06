@@ -129,6 +129,36 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(signal_strsignal__doc__,
+"strsignal($module, signalnum, /)\n"
+"--\n"
+"\n"
+"Return the system description of the given signal.\n"
+"\n"
+"The return values can be such as \"Interrupt\", \"Segmentation fault\", etc.\n"
+"Returns None if the signal is not recognized.");
+
+#define SIGNAL_STRSIGNAL_METHODDEF    \
+    {"strsignal", (PyCFunction)signal_strsignal, METH_O, signal_strsignal__doc__},
+
+static PyObject *
+signal_strsignal_impl(PyObject *module, int signalnum);
+
+static PyObject *
+signal_strsignal(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int signalnum;
+
+    if (!PyArg_Parse(arg, "i:strsignal", &signalnum)) {
+        goto exit;
+    }
+    return_value = signal_strsignal_impl(module, signalnum);
+
+exit:
+    return return_value;
+}
+
 #if defined(HAVE_SIGINTERRUPT)
 
 PyDoc_STRVAR(signal_siginterrupt__doc__,
@@ -248,17 +278,17 @@ PyDoc_STRVAR(signal_pthread_sigmask__doc__,
     {"pthread_sigmask", (PyCFunction)signal_pthread_sigmask, METH_FASTCALL, signal_pthread_sigmask__doc__},
 
 static PyObject *
-signal_pthread_sigmask_impl(PyObject *module, int how, PyObject *mask);
+signal_pthread_sigmask_impl(PyObject *module, int how, sigset_t mask);
 
 static PyObject *
 signal_pthread_sigmask(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int how;
-    PyObject *mask;
+    sigset_t mask;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO:pthread_sigmask",
-        &how, &mask)) {
+    if (!_PyArg_ParseStack(args, nargs, "iO&:pthread_sigmask",
+        &how, _Py_Sigset_Converter, &mask)) {
         goto exit;
     }
     return_value = signal_pthread_sigmask_impl(module, how, mask);
@@ -309,7 +339,50 @@ PyDoc_STRVAR(signal_sigwait__doc__,
 #define SIGNAL_SIGWAIT_METHODDEF    \
     {"sigwait", (PyCFunction)signal_sigwait, METH_O, signal_sigwait__doc__},
 
+static PyObject *
+signal_sigwait_impl(PyObject *module, sigset_t sigset);
+
+static PyObject *
+signal_sigwait(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    sigset_t sigset;
+
+    if (!PyArg_Parse(arg, "O&:sigwait", _Py_Sigset_Converter, &sigset)) {
+        goto exit;
+    }
+    return_value = signal_sigwait_impl(module, sigset);
+
+exit:
+    return return_value;
+}
+
 #endif /* defined(HAVE_SIGWAIT) */
+
+#if (defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS))
+
+PyDoc_STRVAR(signal_valid_signals__doc__,
+"valid_signals($module, /)\n"
+"--\n"
+"\n"
+"Return a set of valid signal numbers on this platform.\n"
+"\n"
+"The signal numbers returned by this function can be safely passed to\n"
+"functions like `pthread_sigmask`.");
+
+#define SIGNAL_VALID_SIGNALS_METHODDEF    \
+    {"valid_signals", (PyCFunction)signal_valid_signals, METH_NOARGS, signal_valid_signals__doc__},
+
+static PyObject *
+signal_valid_signals_impl(PyObject *module);
+
+static PyObject *
+signal_valid_signals(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return signal_valid_signals_impl(module);
+}
+
+#endif /* (defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS)) */
 
 #if defined(HAVE_SIGWAITINFO)
 
@@ -323,6 +396,24 @@ PyDoc_STRVAR(signal_sigwaitinfo__doc__,
 
 #define SIGNAL_SIGWAITINFO_METHODDEF    \
     {"sigwaitinfo", (PyCFunction)signal_sigwaitinfo, METH_O, signal_sigwaitinfo__doc__},
+
+static PyObject *
+signal_sigwaitinfo_impl(PyObject *module, sigset_t sigset);
+
+static PyObject *
+signal_sigwaitinfo(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    sigset_t sigset;
+
+    if (!PyArg_Parse(arg, "O&:sigwaitinfo", _Py_Sigset_Converter, &sigset)) {
+        goto exit;
+    }
+    return_value = signal_sigwaitinfo_impl(module, sigset);
+
+exit:
+    return return_value;
+}
 
 #endif /* defined(HAVE_SIGWAITINFO) */
 
@@ -340,19 +431,18 @@ PyDoc_STRVAR(signal_sigtimedwait__doc__,
     {"sigtimedwait", (PyCFunction)signal_sigtimedwait, METH_FASTCALL, signal_sigtimedwait__doc__},
 
 static PyObject *
-signal_sigtimedwait_impl(PyObject *module, PyObject *sigset,
+signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
                          PyObject *timeout_obj);
 
 static PyObject *
 signal_sigtimedwait(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *sigset;
+    sigset_t sigset;
     PyObject *timeout_obj;
 
-    if (!_PyArg_UnpackStack(args, nargs, "sigtimedwait",
-        2, 2,
-        &sigset, &timeout_obj)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&O:sigtimedwait",
+        _Py_Sigset_Converter, &sigset, &timeout_obj)) {
         goto exit;
     }
     return_value = signal_sigtimedwait_impl(module, sigset, timeout_obj);
@@ -429,6 +519,10 @@ exit:
     #define SIGNAL_SIGWAIT_METHODDEF
 #endif /* !defined(SIGNAL_SIGWAIT_METHODDEF) */
 
+#ifndef SIGNAL_VALID_SIGNALS_METHODDEF
+    #define SIGNAL_VALID_SIGNALS_METHODDEF
+#endif /* !defined(SIGNAL_VALID_SIGNALS_METHODDEF) */
+
 #ifndef SIGNAL_SIGWAITINFO_METHODDEF
     #define SIGNAL_SIGWAITINFO_METHODDEF
 #endif /* !defined(SIGNAL_SIGWAITINFO_METHODDEF) */
@@ -440,4 +534,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=36132f4189381fe0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=549f0efdc7405834 input=a9049054013a1b77]*/

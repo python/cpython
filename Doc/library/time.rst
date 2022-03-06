@@ -170,8 +170,8 @@ Functions
       Passing an invalid or expired *thread_id* may result in
       undefined behavior, such as segmentation fault.
 
-   Availability: Unix (see the man page for :manpage:`pthread_getcpuclockid(3)` for
-   further information)
+   .. availability:: Unix (see the man page for :manpage:`pthread_getcpuclockid(3)` for
+      further information).
 
    .. versionadded:: 3.7
 
@@ -180,7 +180,7 @@ Functions
    Return the resolution (precision) of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -190,7 +190,7 @@ Functions
    Return the time of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -199,7 +199,7 @@ Functions
 
    Similar to :func:`clock_gettime` but return time as nanoseconds.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -209,7 +209,7 @@ Functions
    Set the time of the specified clock *clk_id*.  Currently,
    :data:`CLOCK_REALTIME` is the only accepted value for *clk_id*.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -218,7 +218,7 @@ Functions
 
    Similar to :func:`clock_settime` but set time with nanoseconds.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -369,6 +369,9 @@ Functions
       :pep:`475` for the rationale).
 
 
+.. index::
+   single: % (percent); datetime format
+
 .. function:: strftime(format[, t])
 
    Convert a tuple or :class:`struct_time` representing a time as returned by
@@ -500,6 +503,9 @@ Functions
    it is 3.
 
 
+.. index::
+   single: % (percent); datetime format
+
 .. function:: strptime(string[, format])
 
    Parse a string representing a time according to a format.  The return value
@@ -617,8 +623,8 @@ Functions
    returned value is undefined, so that only the difference between the results
    of consecutive calls in the same thread is valid.
 
-   Availability:  Windows, Linux, Unix systems supporting
-   ``CLOCK_THREAD_CPUTIME_ID``.
+   .. availability::  Windows, Linux, Unix systems supporting
+      ``CLOCK_THREAD_CPUTIME_ID``.
 
    .. versionadded:: 3.7
 
@@ -647,7 +653,7 @@ Functions
    nonzero if there is a time, past, present or future when daylight saving time
    applies).
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. note::
 
@@ -743,7 +749,7 @@ These constants are used as parameters for :func:`clock_getres` and
    have  discontinuities if the time is changed using ``settimeofday()`` or
    similar.
 
-   Availability: Linux 2.6.39 or later.
+   .. availability:: Linux 2.6.39 or later.
 
    .. versionadded:: 3.7
 
@@ -754,7 +760,7 @@ These constants are used as parameters for :func:`clock_getres` and
    hardware source, and may give close to nanosecond resolution.
    ``CLOCK_HIGHRES`` is the nonadjustable, high-resolution clock.
 
-   Availability: Solaris.
+   .. availability:: Solaris.
 
    .. versionadded:: 3.3
 
@@ -764,7 +770,7 @@ These constants are used as parameters for :func:`clock_getres` and
    Clock that cannot be set and represents monotonic time since some unspecified
    starting point.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -783,7 +789,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
    High-resolution per-process timer from the CPU.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -792,7 +798,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
    High-resolution per-process timer from the CPU.
 
-   Availability: FreeBSD, NetBSD 7 or later, OpenBSD.
+   .. availability:: FreeBSD, NetBSD 7 or later, OpenBSD.
 
    .. versionadded:: 3.7
 
@@ -812,7 +818,7 @@ These constants are used as parameters for :func:`clock_getres` and
    suspended, providing accurate uptime measurement, both absolute and
    interval.
 
-   Availability: FreeBSD, OpenBSD 5.5 or later.
+   .. availability:: FreeBSD, OpenBSD 5.5 or later.
 
    .. versionadded:: 3.7
 
@@ -825,7 +831,7 @@ The following constant is the only parameter that can be sent to
    System-wide real-time clock.  Setting this clock requires appropriate
    privileges.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 

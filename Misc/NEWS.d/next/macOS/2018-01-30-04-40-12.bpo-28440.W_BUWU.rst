@@ -1,2 +1,0 @@
-No longer add /Library/Python/3.x/site-packages to sys.path for macOS
-framework builds to avoid future conflicts.

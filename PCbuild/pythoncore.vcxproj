@@ -95,6 +95,7 @@
     <ClInclude Include="..\Include\compile.h" />
     <ClInclude Include="..\Include\complexobject.h" />
     <ClInclude Include="..\Include\context.h" />
+    <ClInclude Include="..\Include\coreconfig.h" />
     <ClInclude Include="..\Include\datetime.h" />
     <ClInclude Include="..\Include\descrobject.h" />
     <ClInclude Include="..\Include\dictobject.h" />
@@ -117,6 +118,7 @@
     <ClInclude Include="..\Include\internal\gil.h" />
     <ClInclude Include="..\Include\internal\hamt.h" />
     <ClInclude Include="..\Include\internal\mem.h" />
+    <ClInclude Include="..\Include\internal\pyatomic.h" />
     <ClInclude Include="..\Include\internal\pystate.h" />
     <ClInclude Include="..\Include\internal\warnings.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
@@ -176,6 +178,7 @@
     <ClInclude Include="..\Include\sysmodule.h" />
     <ClInclude Include="..\Include\token.h" />
     <ClInclude Include="..\Include\traceback.h" />
+    <ClInclude Include="..\Include\tracemalloc.h" />
     <ClInclude Include="..\Include\tupleobject.h" />
     <ClInclude Include="..\Include\ucnhash.h" />
     <ClInclude Include="..\Include\unicodeobject.h" />
@@ -228,6 +231,7 @@
     <ClInclude Include="$(zlibDir)\zutil.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Modules\_abc.c" />
     <ClCompile Include="..\Modules\_asynciomodule.c" />
     <ClCompile Include="..\Modules\_bisectmodule.c" />
     <ClCompile Include="..\Modules\_blake2\blake2module.c" />
@@ -279,7 +283,7 @@
     <ClCompile Include="..\Modules\_tracemalloc.c" />
     <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\xxsubtype.c" />
-    <ClCompile Include="..\Modules\zipimport.c" />
+    <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c" />
     <ClCompile Include="..\Modules\_io\fileio.c" />
     <ClCompile Include="..\Modules\_io\bytesio.c" />
     <ClCompile Include="..\Modules\_io\stringio.c" />
@@ -365,6 +369,7 @@
     <ClCompile Include="..\Python\codecs.c" />
     <ClCompile Include="..\Python\compile.c" />
     <ClCompile Include="..\Python\context.c" />
+    <ClCompile Include="..\Python\coreconfig.c" />
     <ClCompile Include="..\Python\dynamic_annotations.c" />
     <ClCompile Include="..\Python\dynload_win.c" />
     <ClCompile Include="..\Python\errors.c" />

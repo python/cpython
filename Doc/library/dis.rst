@@ -149,7 +149,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
 .. function:: dis(x=None, *, file=None, depth=None)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
-   method, a function, a generator, an asynchronous generator, a couroutine,
+   method, a function, a generator, an asynchronous generator, a coroutine,
    a code object, a string of source code or a byte sequence of raw bytecode.
    For a module, it disassembles all functions. For a class, it disassembles
    all methods (including class and static methods). For a code object or
@@ -248,11 +248,20 @@ operation is being performed, so the intermediate analysis object isn't useful:
    return a list of these offsets.
 
 
-.. function:: stack_effect(opcode, [oparg])
+.. function:: stack_effect(opcode, oparg=None, *, jump=None)
 
    Compute the stack effect of *opcode* with argument *oparg*.
 
+   If the code has a jump target and *jump* is ``True``, :func:`~stack_effect`
+   will return the stack effect of jumping.  If *jump* is ``False``,
+   it will return the stack effect of not jumping. And if *jump* is
+   ``None`` (default), it will return the maximal stack effect of both cases.
+
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.8
+      Added *jump* parameter.
+
 
 .. _bytecodes:
 
@@ -335,15 +344,27 @@ The Python compiler currently generates the following bytecode instructions.
    three.
 
 
+.. opcode:: ROT_FOUR
+
+   Lifts second, third and forth stack items one position up, moves top down
+   to position four.
+
+   .. versionadded:: 3.8
+
+
 .. opcode:: DUP_TOP
 
    Duplicates the reference on top of the stack.
+
+   .. versionadded:: 3.2
 
 
 .. opcode:: DUP_TOP_TWO
 
    Duplicates the two references on top of the stack, leaving them in the
    same order.
+
+   .. versionadded:: 3.2
 
 
 **Unary operations**
@@ -555,11 +576,14 @@ the original TOS1.
    the CO_ITERABLE_COROUTINE flag, or resolves
    ``o.__await__``.
 
+   .. versionadded:: 3.5
+
 
 .. opcode:: GET_AITER
 
    Implements ``TOS = TOS.__aiter__()``.
 
+   .. versionadded:: 3.5
    .. versionchanged:: 3.7
       Returning awaitable objects from ``__aiter__`` is no longer
       supported.
@@ -570,16 +594,33 @@ the original TOS1.
    Implements ``PUSH(get_awaitable(TOS.__anext__()))``.  See ``GET_AWAITABLE``
    for details about ``get_awaitable``
 
+   .. versionadded:: 3.5
+
+
+.. opcode:: END_ASYNC_FOR
+
+   Terminates an :keyword:`async for` loop.  Handles an exception raised
+   when awaiting a next item.  If TOS is :exc:`StopAsyncIteration` pop 7
+   values from the stack and restore the exception state using the second
+   three of them.  Otherwise re-raise the exception using the three values
+   from the stack.  An exception handler block is removed from the block stack.
+
+   .. versionadded:: 3.8
+
 
 .. opcode:: BEFORE_ASYNC_WITH
 
    Resolves ``__aenter__`` and ``__aexit__`` from the object on top of the
    stack.  Pushes ``__aexit__`` and result of ``__aenter__()`` to the stack.
 
+   .. versionadded:: 3.5
+
 
 .. opcode:: SETUP_ASYNC_WITH
 
    Creates a new frame object.
+
+   .. versionadded:: 3.5
 
 
 
@@ -590,17 +631,6 @@ the original TOS1.
    Implements the expression statement for the interactive mode.  TOS is removed
    from the stack and printed.  In non-interactive mode, an expression statement
    is terminated with :opcode:`POP_TOP`.
-
-
-.. opcode:: BREAK_LOOP
-
-   Terminates a loop due to a :keyword:`break` statement.
-
-
-.. opcode:: CONTINUE_LOOP (target)
-
-   Continues a loop due to a :keyword:`continue` statement.  *target* is the
-   address to jump to (which should be a :opcode:`FOR_ITER` instruction).
 
 
 .. opcode:: SET_ADD (i)
@@ -617,6 +647,8 @@ the original TOS1.
 
    Calls ``dict.setitem(TOS1[-i], TOS, TOS1)``.  Used to implement dict
    comprehensions.
+
+   .. versionadded:: 3.1
 
 For all of the :opcode:`SET_ADD`, :opcode:`LIST_APPEND` and :opcode:`MAP_ADD`
 instructions, while the added value or key/value pair is popped off, the
@@ -640,6 +672,7 @@ iterations of the loop.
 
    .. versionadded:: 3.3
 
+
 .. opcode:: SETUP_ANNOTATIONS
 
    Checks whether ``__annotations__`` is defined in ``locals()``, if not it is
@@ -648,6 +681,7 @@ iterations of the loop.
    statically.
 
    .. versionadded:: 3.6
+
 
 .. opcode:: IMPORT_STAR
 
@@ -659,7 +693,7 @@ iterations of the loop.
 .. opcode:: POP_BLOCK
 
    Removes one block from the block stack.  Per frame, there is a stack of
-   blocks, denoting nested loops, try statements, and such.
+   blocks, denoting :keyword:`try` statements, and such.
 
 
 .. opcode:: POP_EXCEPT
@@ -670,11 +704,50 @@ iterations of the loop.
    popped values are used to restore the exception state.
 
 
+.. opcode:: POP_FINALLY (preserve_tos)
+
+   Cleans up the value stack and the block stack.  If *preserve_tos* is not
+   ``0`` TOS first is popped from the stack and pushed on the stack after
+   perfoming other stack operations:
+
+   * If TOS is ``NULL`` or an integer (pushed by :opcode:`BEGIN_FINALLY`
+     or :opcode:`CALL_FINALLY`) it is popped from the stack.
+   * If TOS is an exception type (pushed when an exception has been raised)
+     6 values are popped from the stack, the last three popped values are
+     used to restore the exception state.  An exception handler block is
+     removed from the block stack.
+
+   It is similar to :opcode:`END_FINALLY`, but doesn't change the bytecode
+   counter nor raise an exception.  Used for implementing :keyword:`break`,
+   :keyword:`continue` and :keyword:`return` in the :keyword:`finally` block.
+
+   .. versionadded:: 3.8
+
+
+.. opcode:: BEGIN_FINALLY
+
+   Pushes ``NULL`` onto the stack for using it in :opcode:`END_FINALLY`,
+   :opcode:`POP_FINALLY`, :opcode:`WITH_CLEANUP_START` and
+   :opcode:`WITH_CLEANUP_FINISH`.  Starts the :keyword:`finally` block.
+
+   .. versionadded:: 3.8
+
+
 .. opcode:: END_FINALLY
 
    Terminates a :keyword:`finally` clause.  The interpreter recalls whether the
-   exception has to be re-raised, or whether the function returns, and continues
-   with the outer-next block.
+   exception has to be re-raised or execution has to be continued depending on
+   the value of TOS.
+
+   * If TOS is ``NULL`` (pushed by :opcode:`BEGIN_FINALLY`) continue from
+     the next instruction. TOS is popped.
+   * If TOS is an integer (pushed by :opcode:`CALL_FINALLY`), sets the
+     bytecode counter to TOS.  TOS is popped.
+   * If TOS is an exception type (pushed when an exception has been raised)
+     6 values are popped from the stack, the first three popped values are
+     used to re-raise the exception and the last three popped values are used
+     to restore the exception state.  An exception handler block is removed
+     from the block stack.
 
 
 .. opcode:: LOAD_BUILD_CLASS
@@ -687,40 +760,43 @@ iterations of the loop.
 
    This opcode performs several operations before a with block starts.  First,
    it loads :meth:`~object.__exit__` from the context manager and pushes it onto
-   the stack for later use by :opcode:`WITH_CLEANUP`.  Then,
+   the stack for later use by :opcode:`WITH_CLEANUP_START`.  Then,
    :meth:`~object.__enter__` is called, and a finally block pointing to *delta*
-   is pushed.  Finally, the result of calling the enter method is pushed onto
+   is pushed.  Finally, the result of calling the ``__enter__()`` method is pushed onto
    the stack.  The next opcode will either ignore it (:opcode:`POP_TOP`), or
    store it in (a) variable(s) (:opcode:`STORE_FAST`, :opcode:`STORE_NAME`, or
    :opcode:`UNPACK_SEQUENCE`).
 
+   .. versionadded:: 3.2
+
 
 .. opcode:: WITH_CLEANUP_START
 
-   Cleans up the stack when a :keyword:`with` statement block exits.  TOS is the
-   context manager's :meth:`__exit__` bound method. Below TOS are 1--3 values
-   indicating how/why the finally clause was entered:
+   Starts cleaning up the stack when a :keyword:`with` statement block exits.
 
-   * SECOND = ``None``
-   * (SECOND, THIRD) = (``WHY_{RETURN,CONTINUE}``), retval
-   * SECOND = ``WHY_*``; no retval below it
-   * (SECOND, THIRD, FOURTH) = exc_info()
+   At the top of the stack are either ``NULL`` (pushed by
+   :opcode:`BEGIN_FINALLY`) or 6 values pushed if an exception has been
+   raised in the with block.  Below is the context manager's
+   :meth:`~object.__exit__` or :meth:`~object.__aexit__` bound method.
 
-   In the last case, ``TOS(SECOND, THIRD, FOURTH)`` is called, otherwise
-   ``TOS(None, None, None)``.  Pushes SECOND and result of the call
-   to the stack.
+   If TOS is ``NULL``, calls ``SECOND(None, None, None)``,
+   removes the function from the stack, leaving TOS, and pushes ``None``
+   to the stack.  Otherwise calls ``SEVENTH(TOP, SECOND, THIRD)``,
+   shifts the bottom 3 values of the stack down, replaces the empty spot
+   with ``NULL`` and pushes TOS.  Finally pushes the result of the call.
 
 
 .. opcode:: WITH_CLEANUP_FINISH
 
-   Pops exception type and result of 'exit' function call from the stack.
+   Finishes cleaning up the stack when a :keyword:`with` statement block exits.
 
-   If the stack represents an exception, *and* the function call returns a
-   'true' value, this information is "zapped" and replaced with a single
-   ``WHY_SILENCED`` to prevent :opcode:`END_FINALLY` from re-raising the
-   exception.  (But non-local gotos will still be resumed.)
+   TOS is result of ``__exit__()`` or ``__aexit__()`` function call pushed
+   by :opcode:`WITH_CLEANUP_START`.  SECOND is ``None`` or an exception type
+   (pushed when an exception has been raised).
 
-   .. XXX explain the WHY stuff!
+   Pops two values from the stack.  If SECOND is not None and TOS is true
+   unwinds the EXCEPT_HANDLER block which was created when the exception
+   was caught and pushes ``NULL`` to the stack.
 
 
 All of the following opcodes use their arguments.
@@ -924,10 +1000,14 @@ All of the following opcodes use their arguments.
 
    If TOS is true, sets the bytecode counter to *target*.  TOS is popped.
 
+   .. versionadded:: 3.1
+
 
 .. opcode:: POP_JUMP_IF_FALSE (target)
 
    If TOS is false, sets the bytecode counter to *target*.  TOS is popped.
+
+   .. versionadded:: 3.1
 
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (target)
@@ -935,11 +1015,15 @@ All of the following opcodes use their arguments.
    If TOS is true, sets the bytecode counter to *target* and leaves TOS on the
    stack.  Otherwise (TOS is false), TOS is popped.
 
+   .. versionadded:: 3.1
+
 
 .. opcode:: JUMP_IF_FALSE_OR_POP (target)
 
    If TOS is false, sets the bytecode counter to *target* and leaves TOS on the
    stack.  Otherwise (TOS is true), TOS is popped.
+
+   .. versionadded:: 3.1
 
 
 .. opcode:: JUMP_ABSOLUTE (target)
@@ -960,22 +1044,19 @@ All of the following opcodes use their arguments.
    Loads the global named ``co_names[namei]`` onto the stack.
 
 
-.. opcode:: SETUP_LOOP (delta)
-
-   Pushes a block for a loop onto the block stack.  The block spans from the
-   current instruction with a size of *delta* bytes.
-
-
-.. opcode:: SETUP_EXCEPT (delta)
-
-   Pushes a try block from a try-except clause onto the block stack. *delta*
-   points to the first except block.
-
-
 .. opcode:: SETUP_FINALLY (delta)
 
-   Pushes a try block from a try-except clause onto the block stack. *delta*
-   points to the finally block.
+   Pushes a try block from a try-finally or try-except clause onto the block
+   stack.  *delta* points to the finally block or the first except block.
+
+
+.. opcode:: CALL_FINALLY (delta)
+
+   Pushes the address of the next instruction onto the stack and increments
+   bytecode counter by *delta*.  Used for calling the finally block as a
+   "subroutine".
+
+   .. versionadded:: 3.8
 
 
 .. opcode:: LOAD_FAST (var_num)
@@ -1013,6 +1094,8 @@ All of the following opcodes use their arguments.
    consulting the cell.  This is used for loading free variables in class
    bodies.
 
+   .. versionadded:: 3.4
+
 
 .. opcode:: STORE_DEREF (i)
 
@@ -1025,21 +1108,25 @@ All of the following opcodes use their arguments.
    Empties the cell contained in slot *i* of the cell and free variable storage.
    Used by the :keyword:`del` statement.
 
+   .. versionadded:: 3.2
+
 
 .. opcode:: RAISE_VARARGS (argc)
 
-   Raises an exception. *argc* indicates the number of parameters to the raise
+   Raises an exception. *argc* indicates the number of arguments to the raise
    statement, ranging from 0 to 3.  The handler will find the traceback as TOS2,
    the parameter as TOS1, and the exception as TOS.
 
 
 .. opcode:: CALL_FUNCTION (argc)
 
-   Calls a function.  *argc* indicates the number of positional arguments.
-   The positional arguments are on the stack, with the right-most argument
-   on top.  Below the arguments, the function object to call is on the stack.
-   Pops all function arguments, and the function itself off the stack, and
-   pushes the return value.
+   Calls a callable object with positional arguments.
+   *argc* indicates the number of positional arguments.
+   The top of the stack contains positional arguments, with the right-most
+   argument on top.  Below the arguments is a callable object to call.
+   ``CALL_FUNCTION`` pops all arguments and the callable object off the stack,
+   calls the callable object with those arguments, and pushes the return value
+   returned by the callable object.
 
    .. versionchanged:: 3.6
       This opcode is used only for calls with positional arguments.
@@ -1047,31 +1134,36 @@ All of the following opcodes use their arguments.
 
 .. opcode:: CALL_FUNCTION_KW (argc)
 
-   Calls a function.  *argc* indicates the number of arguments (positional
-   and keyword).  The top element on the stack contains a tuple of keyword
-   argument names.  Below the tuple, keyword arguments are on the stack, in
-   the order corresponding to the tuple.  Below the keyword arguments, the
-   positional arguments are on the stack, with the right-most parameter on
-   top.  Below the arguments, the function object to call is on the stack.
-   Pops all function arguments, and the function itself off the stack, and
-   pushes the return value.
+   Calls a callable object with positional (if any) and keyword arguments.
+   *argc* indicates the total number of positional and keyword arguments.
+   The top element on the stack contains a tuple of keyword argument names.
+   Below that are keyword arguments in the order corresponding to the tuple.
+   Below that are positional arguments, with the right-most parameter on
+   top.  Below the arguments is a callable object to call.
+   ``CALL_FUNCTION_KW`` pops all arguments and the callable object off the stack,
+   calls the callable object with those arguments, and pushes the return value
+   returned by the callable object.
 
    .. versionchanged:: 3.6
       Keyword arguments are packed in a tuple instead of a dictionary,
-      *argc* indicates the total number of arguments
+      *argc* indicates the total number of arguments.
 
 
 .. opcode:: CALL_FUNCTION_EX (flags)
 
-   Calls a function. The lowest bit of *flags* indicates whether the
-   var-keyword argument is placed at the top of the stack.  Below the
-   var-keyword argument, the var-positional argument is on the stack.
-   Below the arguments, the function object to call is placed.
-   Pops all function arguments, and the function itself off the stack, and
-   pushes the return value. Note that this opcode pops at most three items
-   from the stack. Var-positional and var-keyword arguments are packed
-   by :opcode:`BUILD_TUPLE_UNPACK_WITH_CALL` and
-   :opcode:`BUILD_MAP_UNPACK_WITH_CALL`.
+   Calls a callable object with variable set of positional and keyword
+   arguments.  If the lowest bit of *flags* is set, the top of the stack
+   contains a mapping object containing additional keyword arguments.
+   Below that is an iterable object containing positional arguments and
+   a callable object to call.  :opcode:`BUILD_MAP_UNPACK_WITH_CALL` and
+   :opcode:`BUILD_TUPLE_UNPACK_WITH_CALL` can be used for merging multiple
+   mapping objects and iterables containing arguments.
+   Before the callable is called, the mapping object and iterable object
+   are each "unpacked" and their contents passed in as keyword and
+   positional arguments respectively.
+   ``CALL_FUNCTION_EX`` pops all arguments and the callable object off the stack,
+   calls the callable object with those arguments, and pushes the return value
+   returned by the callable object.
 
    .. versionadded:: 3.6
 
@@ -1103,7 +1195,8 @@ All of the following opcodes use their arguments.
    Pushes a new function object on the stack.  From bottom to top, the consumed
    stack must consist of values if the argument carries a specified flag value
 
-   * ``0x01`` a tuple of default argument objects in positional order
+   * ``0x01`` a tuple of default values for positional-only and
+     positional-or-keyword parameters in positional order
    * ``0x02`` a dictionary of keyword-only parameters' default values
    * ``0x04`` an annotation dictionary
    * ``0x08`` a tuple containing cells for free variables, making a closure
@@ -1186,7 +1279,7 @@ instructions:
 
 .. data:: hasconst
 
-   Sequence of bytecodes that have a constant parameter.
+   Sequence of bytecodes that access a constant.
 
 
 .. data:: hasfree

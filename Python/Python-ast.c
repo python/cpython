@@ -10,10 +10,8 @@ static PyTypeObject *mod_type;
 static PyObject* ast2obj_mod(void*);
 static PyTypeObject *Module_type;
 _Py_IDENTIFIER(body);
-_Py_IDENTIFIER(docstring);
 static char *Module_fields[]={
     "body",
-    "docstring",
 };
 static PyTypeObject *Interactive_type;
 static char *Interactive_fields[]={
@@ -46,7 +44,6 @@ static char *FunctionDef_fields[]={
     "body",
     "decorator_list",
     "returns",
-    "docstring",
 };
 static PyTypeObject *AsyncFunctionDef_type;
 static char *AsyncFunctionDef_fields[]={
@@ -55,7 +52,6 @@ static char *AsyncFunctionDef_fields[]={
     "body",
     "decorator_list",
     "returns",
-    "docstring",
 };
 static PyTypeObject *ClassDef_type;
 _Py_IDENTIFIER(bases);
@@ -66,7 +62,6 @@ static char *ClassDef_fields[]={
     "keywords",
     "body",
     "decorator_list",
-    "docstring",
 };
 static PyTypeObject *Return_type;
 _Py_IDENTIFIER(value);
@@ -289,16 +284,6 @@ static char *Call_fields[]={
     "args",
     "keywords",
 };
-static PyTypeObject *Num_type;
-_Py_IDENTIFIER(n);
-static char *Num_fields[]={
-    "n",
-};
-static PyTypeObject *Str_type;
-_Py_IDENTIFIER(s);
-static char *Str_fields[]={
-    "s",
-};
 static PyTypeObject *FormattedValue_type;
 _Py_IDENTIFIER(conversion);
 _Py_IDENTIFIER(format_spec);
@@ -311,15 +296,6 @@ static PyTypeObject *JoinedStr_type;
 static char *JoinedStr_fields[]={
     "values",
 };
-static PyTypeObject *Bytes_type;
-static char *Bytes_fields[]={
-    "s",
-};
-static PyTypeObject *NameConstant_type;
-static char *NameConstant_fields[]={
-    "value",
-};
-static PyTypeObject *Ellipsis_type;
 static PyTypeObject *Constant_type;
 static char *Constant_fields[]={
     "value",
@@ -533,10 +509,11 @@ ast_traverse(AST_object *self, visitproc visit, void *arg)
     return 0;
 }
 
-static void
+static int
 ast_clear(AST_object *self)
 {
     Py_CLEAR(self->dict);
+    return 0;
 }
 
 static int
@@ -740,17 +717,6 @@ static PyObject* ast2obj_int(long b)
 
 /* Conversion Python -> AST */
 
-static int obj2ast_singleton(PyObject *obj, PyObject** out, PyArena* arena)
-{
-    if (obj != Py_None && obj != Py_True && obj != Py_False) {
-        PyErr_SetString(PyExc_ValueError,
-                        "AST singleton must be True, False, or None");
-        return 1;
-    }
-    *out = obj;
-    return 0;
-}
-
 static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 {
     if (obj == Py_None)
@@ -768,13 +734,11 @@ static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 
 static int obj2ast_constant(PyObject* obj, PyObject** out, PyArena* arena)
 {
-    if (obj) {
-        if (PyArena_AddPyObject(arena, obj) < 0) {
-            *out = NULL;
-            return -1;
-        }
-        Py_INCREF(obj);
+    if (PyArena_AddPyObject(arena, obj) < 0) {
+        *out = NULL;
+        return -1;
     }
+    Py_INCREF(obj);
     *out = obj;
     return 0;
 }
@@ -783,24 +747,6 @@ static int obj2ast_identifier(PyObject* obj, PyObject** out, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && obj != Py_None) {
         PyErr_SetString(PyExc_TypeError, "AST identifier must be of type str");
-        return 1;
-    }
-    return obj2ast_object(obj, out, arena);
-}
-
-static int obj2ast_string(PyObject* obj, PyObject** out, PyArena* arena)
-{
-    if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
-        PyErr_SetString(PyExc_TypeError, "AST string must be of type str");
-        return 1;
-    }
-    return obj2ast_object(obj, out, arena);
-}
-
-static int obj2ast_bytes(PyObject* obj, PyObject** out, PyArena* arena)
-{
-    if (!PyBytes_CheckExact(obj)) {
-        PyErr_SetString(PyExc_TypeError, "AST bytes must be of type bytes");
         return 1;
     }
     return obj2ast_object(obj, out, arena);
@@ -847,7 +793,7 @@ static int init_types(void)
     mod_type = make_type("mod", &AST_type, NULL, 0);
     if (!mod_type) return 0;
     if (!add_attributes(mod_type, NULL, 0)) return 0;
-    Module_type = make_type("Module", mod_type, Module_fields, 2);
+    Module_type = make_type("Module", mod_type, Module_fields, 1);
     if (!Module_type) return 0;
     Interactive_type = make_type("Interactive", mod_type, Interactive_fields,
                                  1);
@@ -860,12 +806,12 @@ static int init_types(void)
     if (!stmt_type) return 0;
     if (!add_attributes(stmt_type, stmt_attributes, 2)) return 0;
     FunctionDef_type = make_type("FunctionDef", stmt_type, FunctionDef_fields,
-                                 6);
+                                 5);
     if (!FunctionDef_type) return 0;
     AsyncFunctionDef_type = make_type("AsyncFunctionDef", stmt_type,
-                                      AsyncFunctionDef_fields, 6);
+                                      AsyncFunctionDef_fields, 5);
     if (!AsyncFunctionDef_type) return 0;
-    ClassDef_type = make_type("ClassDef", stmt_type, ClassDef_fields, 6);
+    ClassDef_type = make_type("ClassDef", stmt_type, ClassDef_fields, 5);
     if (!ClassDef_type) return 0;
     Return_type = make_type("Return", stmt_type, Return_fields, 1);
     if (!Return_type) return 0;
@@ -947,22 +893,11 @@ static int init_types(void)
     if (!Compare_type) return 0;
     Call_type = make_type("Call", expr_type, Call_fields, 3);
     if (!Call_type) return 0;
-    Num_type = make_type("Num", expr_type, Num_fields, 1);
-    if (!Num_type) return 0;
-    Str_type = make_type("Str", expr_type, Str_fields, 1);
-    if (!Str_type) return 0;
     FormattedValue_type = make_type("FormattedValue", expr_type,
                                     FormattedValue_fields, 3);
     if (!FormattedValue_type) return 0;
     JoinedStr_type = make_type("JoinedStr", expr_type, JoinedStr_fields, 1);
     if (!JoinedStr_type) return 0;
-    Bytes_type = make_type("Bytes", expr_type, Bytes_fields, 1);
-    if (!Bytes_type) return 0;
-    NameConstant_type = make_type("NameConstant", expr_type,
-                                  NameConstant_fields, 1);
-    if (!NameConstant_type) return 0;
-    Ellipsis_type = make_type("Ellipsis", expr_type, NULL, 0);
-    if (!Ellipsis_type) return 0;
     Constant_type = make_type("Constant", expr_type, Constant_fields, 1);
     if (!Constant_type) return 0;
     Attribute_type = make_type("Attribute", expr_type, Attribute_fields, 3);
@@ -1192,7 +1127,7 @@ static int obj2ast_alias(PyObject* obj, alias_ty* out, PyArena* arena);
 static int obj2ast_withitem(PyObject* obj, withitem_ty* out, PyArena* arena);
 
 mod_ty
-Module(asdl_seq * body, string docstring, PyArena *arena)
+Module(asdl_seq * body, PyArena *arena)
 {
     mod_ty p;
     p = (mod_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1200,7 +1135,6 @@ Module(asdl_seq * body, string docstring, PyArena *arena)
         return NULL;
     p->kind = Module_kind;
     p->v.Module.body = body;
-    p->v.Module.docstring = docstring;
     return p;
 }
 
@@ -1247,8 +1181,8 @@ Suite(asdl_seq * body, PyArena *arena)
 
 stmt_ty
 FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
-            decorator_list, expr_ty returns, string docstring, int lineno, int
-            col_offset, PyArena *arena)
+            decorator_list, expr_ty returns, int lineno, int col_offset,
+            PyArena *arena)
 {
     stmt_ty p;
     if (!name) {
@@ -1270,7 +1204,6 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
     p->v.FunctionDef.body = body;
     p->v.FunctionDef.decorator_list = decorator_list;
     p->v.FunctionDef.returns = returns;
-    p->v.FunctionDef.docstring = docstring;
     p->lineno = lineno;
     p->col_offset = col_offset;
     return p;
@@ -1278,8 +1211,8 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
 
 stmt_ty
 AsyncFunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq
-                 * decorator_list, expr_ty returns, string docstring, int
-                 lineno, int col_offset, PyArena *arena)
+                 * decorator_list, expr_ty returns, int lineno, int col_offset,
+                 PyArena *arena)
 {
     stmt_ty p;
     if (!name) {
@@ -1301,7 +1234,6 @@ AsyncFunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq
     p->v.AsyncFunctionDef.body = body;
     p->v.AsyncFunctionDef.decorator_list = decorator_list;
     p->v.AsyncFunctionDef.returns = returns;
-    p->v.AsyncFunctionDef.docstring = docstring;
     p->lineno = lineno;
     p->col_offset = col_offset;
     return p;
@@ -1309,8 +1241,8 @@ AsyncFunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq
 
 stmt_ty
 ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords, asdl_seq *
-         body, asdl_seq * decorator_list, string docstring, int lineno, int
-         col_offset, PyArena *arena)
+         body, asdl_seq * decorator_list, int lineno, int col_offset, PyArena
+         *arena)
 {
     stmt_ty p;
     if (!name) {
@@ -1327,7 +1259,6 @@ ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords, asdl_seq *
     p->v.ClassDef.keywords = keywords;
     p->v.ClassDef.body = body;
     p->v.ClassDef.decorator_list = decorator_list;
-    p->v.ClassDef.docstring = docstring;
     p->lineno = lineno;
     p->col_offset = col_offset;
     return p;
@@ -2098,44 +2029,6 @@ Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, int lineno, int
 }
 
 expr_ty
-Num(object n, int lineno, int col_offset, PyArena *arena)
-{
-    expr_ty p;
-    if (!n) {
-        PyErr_SetString(PyExc_ValueError,
-                        "field n is required for Num");
-        return NULL;
-    }
-    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = Num_kind;
-    p->v.Num.n = n;
-    p->lineno = lineno;
-    p->col_offset = col_offset;
-    return p;
-}
-
-expr_ty
-Str(string s, int lineno, int col_offset, PyArena *arena)
-{
-    expr_ty p;
-    if (!s) {
-        PyErr_SetString(PyExc_ValueError,
-                        "field s is required for Str");
-        return NULL;
-    }
-    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = Str_kind;
-    p->v.Str.s = s;
-    p->lineno = lineno;
-    p->col_offset = col_offset;
-    return p;
-}
-
-expr_ty
 FormattedValue(expr_ty value, int conversion, expr_ty format_spec, int lineno,
                int col_offset, PyArena *arena)
 {
@@ -2166,57 +2059,6 @@ JoinedStr(asdl_seq * values, int lineno, int col_offset, PyArena *arena)
         return NULL;
     p->kind = JoinedStr_kind;
     p->v.JoinedStr.values = values;
-    p->lineno = lineno;
-    p->col_offset = col_offset;
-    return p;
-}
-
-expr_ty
-Bytes(bytes s, int lineno, int col_offset, PyArena *arena)
-{
-    expr_ty p;
-    if (!s) {
-        PyErr_SetString(PyExc_ValueError,
-                        "field s is required for Bytes");
-        return NULL;
-    }
-    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = Bytes_kind;
-    p->v.Bytes.s = s;
-    p->lineno = lineno;
-    p->col_offset = col_offset;
-    return p;
-}
-
-expr_ty
-NameConstant(singleton value, int lineno, int col_offset, PyArena *arena)
-{
-    expr_ty p;
-    if (!value) {
-        PyErr_SetString(PyExc_ValueError,
-                        "field value is required for NameConstant");
-        return NULL;
-    }
-    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = NameConstant_kind;
-    p->v.NameConstant.value = value;
-    p->lineno = lineno;
-    p->col_offset = col_offset;
-    return p;
-}
-
-expr_ty
-Ellipsis(int lineno, int col_offset, PyArena *arena)
-{
-    expr_ty p;
-    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = Ellipsis_kind;
     p->lineno = lineno;
     p->col_offset = col_offset;
     return p;
@@ -2591,11 +2433,6 @@ ast2obj_mod(void* _o)
         if (_PyObject_SetAttrId(result, &PyId_body, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_string(o->v.Module.docstring);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_docstring, value) == -1)
-            goto failed;
-        Py_DECREF(value);
         break;
     case Interactive_kind:
         result = PyType_GenericNew(Interactive_type, NULL, NULL);
@@ -2670,11 +2507,6 @@ ast2obj_stmt(void* _o)
         if (_PyObject_SetAttrId(result, &PyId_returns, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_string(o->v.FunctionDef.docstring);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_docstring, value) == -1)
-            goto failed;
-        Py_DECREF(value);
         break;
     case AsyncFunctionDef_kind:
         result = PyType_GenericNew(AsyncFunctionDef_type, NULL, NULL);
@@ -2705,11 +2537,6 @@ ast2obj_stmt(void* _o)
         if (_PyObject_SetAttrId(result, &PyId_returns, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_string(o->v.AsyncFunctionDef.docstring);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_docstring, value) == -1)
-            goto failed;
-        Py_DECREF(value);
         break;
     case ClassDef_kind:
         result = PyType_GenericNew(ClassDef_type, NULL, NULL);
@@ -2737,11 +2564,6 @@ ast2obj_stmt(void* _o)
         value = ast2obj_list(o->v.ClassDef.decorator_list, ast2obj_expr);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_decorator_list, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        value = ast2obj_string(o->v.ClassDef.docstring);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_docstring, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -3317,24 +3139,6 @@ ast2obj_expr(void* _o)
             goto failed;
         Py_DECREF(value);
         break;
-    case Num_kind:
-        result = PyType_GenericNew(Num_type, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_object(o->v.Num.n);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_n, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        break;
-    case Str_kind:
-        result = PyType_GenericNew(Str_type, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_string(o->v.Str.s);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_s, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        break;
     case FormattedValue_kind:
         result = PyType_GenericNew(FormattedValue_type, NULL, NULL);
         if (!result) goto failed;
@@ -3362,28 +3166,6 @@ ast2obj_expr(void* _o)
         if (_PyObject_SetAttrId(result, &PyId_values, value) == -1)
             goto failed;
         Py_DECREF(value);
-        break;
-    case Bytes_kind:
-        result = PyType_GenericNew(Bytes_type, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_bytes(o->v.Bytes.s);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_s, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        break;
-    case NameConstant_kind:
-        result = PyType_GenericNew(NameConstant_type, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_singleton(o->v.NameConstant.value);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_value, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        break;
-    case Ellipsis_kind:
-        result = PyType_GenericNew(Ellipsis_type, NULL, NULL);
-        if (!result) goto failed;
         break;
     case Constant_kind:
         result = PyType_GenericNew(Constant_type, NULL, NULL);
@@ -3984,7 +3766,6 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
     }
     if (isinstance) {
         asdl_seq* body;
-        string docstring;
 
         if (_PyObject_LookupAttrId(obj, &PyId_body, &tmp) < 0) {
             return 1;
@@ -4016,20 +3797,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttrId(obj, &PyId_docstring, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            docstring = NULL;
-        }
-        else {
-            int res;
-            res = obj2ast_string(tmp, &docstring, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = Module(body, docstring, arena);
+        *out = Module(body, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -4195,7 +3963,6 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         asdl_seq* body;
         asdl_seq* decorator_list;
         expr_ty returns;
-        string docstring;
 
         if (_PyObject_LookupAttrId(obj, &PyId_name, &tmp) < 0) {
             return 1;
@@ -4296,21 +4063,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttrId(obj, &PyId_docstring, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            docstring = NULL;
-        }
-        else {
-            int res;
-            res = obj2ast_string(tmp, &docstring, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = FunctionDef(name, args, body, decorator_list, returns,
-                           docstring, lineno, col_offset, arena);
+        *out = FunctionDef(name, args, body, decorator_list, returns, lineno,
+                           col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -4324,7 +4078,6 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         asdl_seq* body;
         asdl_seq* decorator_list;
         expr_ty returns;
-        string docstring;
 
         if (_PyObject_LookupAttrId(obj, &PyId_name, &tmp) < 0) {
             return 1;
@@ -4425,21 +4178,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttrId(obj, &PyId_docstring, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            docstring = NULL;
-        }
-        else {
-            int res;
-            res = obj2ast_string(tmp, &docstring, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
         *out = AsyncFunctionDef(name, args, body, decorator_list, returns,
-                                docstring, lineno, col_offset, arena);
+                                lineno, col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -4453,7 +4193,6 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         asdl_seq* keywords;
         asdl_seq* body;
         asdl_seq* decorator_list;
-        string docstring;
 
         if (_PyObject_LookupAttrId(obj, &PyId_name, &tmp) < 0) {
             return 1;
@@ -4588,21 +4327,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttrId(obj, &PyId_docstring, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            docstring = NULL;
-        }
-        else {
-            int res;
-            res = obj2ast_string(tmp, &docstring, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = ClassDef(name, bases, keywords, body, decorator_list, docstring,
-                        lineno, col_offset, arena);
+        *out = ClassDef(name, bases, keywords, body, decorator_list, lineno,
+                        col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6690,54 +6416,6 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         if (*out == NULL) goto failed;
         return 0;
     }
-    isinstance = PyObject_IsInstance(obj, (PyObject*)Num_type);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        object n;
-
-        if (_PyObject_LookupAttrId(obj, &PyId_n, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"n\" missing from Num");
-            return 1;
-        }
-        else {
-            int res;
-            res = obj2ast_object(tmp, &n, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = Num(n, lineno, col_offset, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-    isinstance = PyObject_IsInstance(obj, (PyObject*)Str_type);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        string s;
-
-        if (_PyObject_LookupAttrId(obj, &PyId_s, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"s\" missing from Str");
-            return 1;
-        }
-        else {
-            int res;
-            res = obj2ast_string(tmp, &s, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = Str(s, lineno, col_offset, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
     isinstance = PyObject_IsInstance(obj, (PyObject*)FormattedValue_type);
     if (isinstance == -1) {
         return 1;
@@ -6829,64 +6507,6 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_CLEAR(tmp);
         }
         *out = JoinedStr(values, lineno, col_offset, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-    isinstance = PyObject_IsInstance(obj, (PyObject*)Bytes_type);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        bytes s;
-
-        if (_PyObject_LookupAttrId(obj, &PyId_s, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"s\" missing from Bytes");
-            return 1;
-        }
-        else {
-            int res;
-            res = obj2ast_bytes(tmp, &s, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = Bytes(s, lineno, col_offset, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-    isinstance = PyObject_IsInstance(obj, (PyObject*)NameConstant_type);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        singleton value;
-
-        if (_PyObject_LookupAttrId(obj, &PyId_value, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from NameConstant");
-            return 1;
-        }
-        else {
-            int res;
-            res = obj2ast_singleton(tmp, &value, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = NameConstant(value, lineno, col_offset, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-    isinstance = PyObject_IsInstance(obj, (PyObject*)Ellipsis_type);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-
-        *out = Ellipsis(lineno, col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8328,17 +7948,9 @@ PyInit__ast(void)
     if (PyDict_SetItemString(d, "Compare", (PyObject*)Compare_type) < 0) return
         NULL;
     if (PyDict_SetItemString(d, "Call", (PyObject*)Call_type) < 0) return NULL;
-    if (PyDict_SetItemString(d, "Num", (PyObject*)Num_type) < 0) return NULL;
-    if (PyDict_SetItemString(d, "Str", (PyObject*)Str_type) < 0) return NULL;
     if (PyDict_SetItemString(d, "FormattedValue",
         (PyObject*)FormattedValue_type) < 0) return NULL;
     if (PyDict_SetItemString(d, "JoinedStr", (PyObject*)JoinedStr_type) < 0)
-        return NULL;
-    if (PyDict_SetItemString(d, "Bytes", (PyObject*)Bytes_type) < 0) return
-        NULL;
-    if (PyDict_SetItemString(d, "NameConstant", (PyObject*)NameConstant_type) <
-        0) return NULL;
-    if (PyDict_SetItemString(d, "Ellipsis", (PyObject*)Ellipsis_type) < 0)
         return NULL;
     if (PyDict_SetItemString(d, "Constant", (PyObject*)Constant_type) < 0)
         return NULL;

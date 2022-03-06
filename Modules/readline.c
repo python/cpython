@@ -1078,6 +1078,9 @@ setup_readline(readlinestate *mod_state)
         Py_FatalError("not enough memory to save locale");
 #endif
 
+    /* The name must be defined before initialization */
+    rl_readline_name = "python";
+
 #ifdef __APPLE__
     /* the libedit readline emulation resets key bindings etc
      * when calling rl_initialize.  So call it upfront
@@ -1099,7 +1102,6 @@ setup_readline(readlinestate *mod_state)
 
     using_history();
 
-    rl_readline_name = "python";
     /* Force rebind of TAB to insert-tab */
     rl_bind_key('\t', rl_insert);
     /* Bind both ESC-TAB and ESC-ESC to the completion function */

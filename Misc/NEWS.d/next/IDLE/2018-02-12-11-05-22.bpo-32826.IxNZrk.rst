@@ -1,0 +1,5 @@
+Add "encoding=utf-8" to open() in IDLE's test_help_about.
+GUI test test_file_buttons() only looks at initial ascii-only lines,
+but failed on systems where open() defaults to 'ascii' because
+readline() internally reads and decodes far enough ahead to encounter
+a non-ascii character in CREDITS.txt.

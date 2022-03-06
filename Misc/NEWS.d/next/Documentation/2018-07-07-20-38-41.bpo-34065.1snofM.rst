@@ -1,0 +1,1 @@
+Fix wrongly written basicConfig documentation markup syntax

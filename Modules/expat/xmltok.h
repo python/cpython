@@ -167,9 +167,6 @@ enum XML_Convert_Result {
 struct encoding {
   SCANNER scanners[XML_N_STATES];
   SCANNER literalScanners[XML_N_LITERAL_TYPES];
-  int (PTRCALL *sameName)(const ENCODING *,
-                          const char *,
-                          const char *);
   int (PTRCALL *nameMatchesAscii)(const ENCODING *,
                                   const char *,
                                   const char *,
@@ -259,8 +256,6 @@ struct encoding {
 
 #define XmlEntityValueTok(enc, ptr, end, nextTokPtr) \
    XmlLiteralTok(enc, XML_ENTITY_VALUE_LITERAL, ptr, end, nextTokPtr)
-
-#define XmlSameName(enc, ptr1, ptr2) (((enc)->sameName)(enc, ptr1, ptr2))
 
 #define XmlNameMatchesAscii(enc, ptr1, end1, ptr2) \
   (((enc)->nameMatchesAscii)(enc, ptr1, end1, ptr2))

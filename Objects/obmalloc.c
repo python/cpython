@@ -63,6 +63,12 @@ static void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 #endif
 
 
+/* bpo-35053: Declare tracemalloc configuration here rather than
+   Modules/_tracemalloc.c because _tracemalloc can be compiled as dynamic
+   library, whereas _Py_NewReference() requires it. */
+struct _PyTraceMalloc_Config _Py_tracemalloc_config = _PyTraceMalloc_Config_INIT;
+
+
 static void *
 _PyMem_RawMalloc(void *ctx, size_t size)
 {
@@ -849,30 +855,6 @@ static int running_on_valgrind = -1;
 
 /*==========================================================================*/
 
-/*
- * Locking
- *
- * To reduce lock contention, it would probably be better to refine the
- * crude function locking with per size class locking. I'm not positive
- * however, whether it's worth switching to such locking policy because
- * of the performance penalty it might introduce.
- *
- * The following macros describe the simplest (should also be the fastest)
- * lock object on a particular platform and the init/fini/lock/unlock
- * operations on it. The locks defined here are not expected to be recursive
- * because it is assumed that they will always be called in the order:
- * INIT, [LOCK, UNLOCK]*, FINI.
- */
-
-/*
- * Python's threads are serialized, so object malloc locking is disabled.
- */
-#define SIMPLELOCK_DECL(lock)   /* simple lock declaration              */
-#define SIMPLELOCK_INIT(lock)   /* allocate (if needed) and initialize  */
-#define SIMPLELOCK_FINI(lock)   /* free/destroy an existing lock        */
-#define SIMPLELOCK_LOCK(lock)   /* acquire released lock */
-#define SIMPLELOCK_UNLOCK(lock) /* release acquired lock */
-
 /* When you say memory, my mind reasons in terms of (pointers to) blocks */
 typedef uint8_t block;
 
@@ -943,15 +925,6 @@ struct arena_object {
 #define NUMBLOCKS(I) ((uint)(POOL_SIZE - POOL_OVERHEAD) / INDEX2SIZE(I))
 
 /*==========================================================================*/
-
-/*
- * This malloc lock
- */
-SIMPLELOCK_DECL(_malloc_lock)
-#define LOCK()          SIMPLELOCK_LOCK(_malloc_lock)
-#define UNLOCK()        SIMPLELOCK_UNLOCK(_malloc_lock)
-#define LOCK_INIT()     SIMPLELOCK_INIT(_malloc_lock)
-#define LOCK_FINI()     SIMPLELOCK_FINI(_malloc_lock)
 
 /*
  * Pool table -- headed, circular, doubly-linked lists of partially used pools.
@@ -1381,7 +1354,6 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
         return 0;
     }
 
-    LOCK();
     /*
      * Most frequent paths first
      */
@@ -1537,13 +1509,11 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
     goto init_pool;
 
 success:
-    UNLOCK();
     assert(bp != NULL);
     *ptr_p = (void *)bp;
     return 1;
 
 failed:
-    UNLOCK();
     return 0;
 }
 
@@ -1611,8 +1581,6 @@ pymalloc_free(void *ctx, void *p)
         return 0;
     }
     /* We allocated this address. */
-
-    LOCK();
 
     /* Link p to the start of the pool's freeblock list.  Since
      * the pool had at least the p block outstanding, the pool
@@ -1798,7 +1766,6 @@ pymalloc_free(void *ctx, void *p)
     goto success;
 
 success:
-    UNLOCK();
     return 1;
 }
 
@@ -2069,6 +2036,22 @@ _PyMem_DebugRawCalloc(void *ctx, size_t nelem, size_t elsize)
     assert(elsize == 0 || nelem <= (size_t)PY_SSIZE_T_MAX / elsize);
     nbytes = nelem * elsize;
     return _PyMem_DebugRawAlloc(1, ctx, nbytes);
+}
+
+
+/* Heuristic checking if the memory has been freed. Rely on the debug hooks on
+   Python memory allocators which fills the memory with DEADBYTE (0xDB) when
+   memory is deallocated. */
+int
+_PyMem_IsFreed(void *ptr, size_t size)
+{
+    unsigned char *bytes = ptr;
+    for (size_t i=0; i < size; i++) {
+        if (bytes[i] != DEADBYTE) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 
@@ -2469,7 +2452,7 @@ pool_is_in_list(const poolp target, poolp list)
  * checks.
  *
  * Return 0 if the memory debug hooks are not installed or no statistics was
- * writen into out, return 1 otherwise.
+ * written into out, return 1 otherwise.
  */
 int
 _PyObject_DebugMallocStats(FILE *out)

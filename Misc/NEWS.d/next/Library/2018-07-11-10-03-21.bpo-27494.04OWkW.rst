@@ -1,0 +1,2 @@
+Reverted :issue:`27494`. 2to3 rejects now a trailing comma in generator
+expressions.

@@ -1,12 +1,9 @@
--- ASDL's 7 builtin types are:
--- identifier, int, string, bytes, object, singleton, constant
---
--- singleton: None, True or False
--- constant can be None, whereas None means "no value" for object.
+-- ASDL's 5 builtin types are:
+-- identifier, int, string, object, constant
 
 module Python
 {
-    mod = Module(stmt* body, string? docstring)
+    mod = Module(stmt* body)
         | Interactive(stmt* body)
         | Expression(expr body)
 
@@ -14,18 +11,15 @@ module Python
         | Suite(stmt* body)
 
     stmt = FunctionDef(identifier name, arguments args,
-                       stmt* body, expr* decorator_list, expr? returns,
-                       string? docstring)
+                       stmt* body, expr* decorator_list, expr? returns)
           | AsyncFunctionDef(identifier name, arguments args,
-                             stmt* body, expr* decorator_list, expr? returns,
-                             string? docstring)
+                             stmt* body, expr* decorator_list, expr? returns)
 
           | ClassDef(identifier name,
              expr* bases,
              keyword* keywords,
              stmt* body,
-             expr* decorator_list,
-             string? docstring)
+             expr* decorator_list)
           | Return(expr? value)
 
           | Delete(expr* targets)
@@ -78,13 +72,8 @@ module Python
          -- x < 4 < 3 and (x < 4) < 3
          | Compare(expr left, cmpop* ops, expr* comparators)
          | Call(expr func, expr* args, keyword* keywords)
-         | Num(object n) -- a number as a PyObject.
-         | Str(string s) -- need to specify raw, unicode, etc?
          | FormattedValue(expr value, int? conversion, expr? format_spec)
          | JoinedStr(expr* values)
-         | Bytes(bytes s)
-         | NameConstant(singleton value)
-         | Ellipsis
          | Constant(constant value)
 
          -- the following expression can appear in assignment context

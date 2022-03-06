@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-#include "pyatomic.h"
+#include "internal/pyatomic.h"
 #include "pythread.h"
 
 struct _pending_calls {

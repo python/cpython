@@ -147,7 +147,7 @@ of available options is shown below.
 |                           | ``.pyc``.                            |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | PrependPath               | Add install and Scripts directories  | 0                        |
-|                           | tho :envvar:`PATH` and ``.PY`` to    |                          |
+|                           | to :envvar:`PATH` and ``.PY`` to     |                          |
 |                           | :envvar:`PATHEXT`                    |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Shortcuts                 | Create shortcuts for the interpreter,| 1                        |
@@ -210,7 +210,9 @@ The options listed above can also be provided in a file named ``unattend.xml``
 alongside the executable. This file specifies a list of options and values.
 When a value is provided as an attribute, it will be converted to a number if
 possible. Values provided as element text are always left as strings. This
-example file sets the same options and the previous example::
+example file sets the same options as the previous example:
+
+.. code-block:: xml
 
     <Options>
         <Option Name="InstallAllUsers" Value="no" />
@@ -343,7 +345,9 @@ Windows allows environment variables to be configured permanently at both the
 User level and the System level, or temporarily in a command prompt.
 
 To temporarily set environment variables, open Command Prompt and use the
-:command:`set` command::
+:command:`set` command:
+
+.. code-block:: doscon
 
     C:\>set PATH=C:\Program Files\Python 3.6;%PATH%
     C:\>set PYTHONPATH=%PYTHONPATH%;C:\My_python_lib
@@ -377,7 +381,7 @@ System variables, you need non-restricted access to your machine
 
 .. seealso::
 
-    https://support.microsoft.com/en-us/help/100843/environment-variables-in-windows-nt
+    https://www.microsoft.com/en-us/wdsi/help/folder-variables
       Environment variables in Windows NT
 
     https://technet.microsoft.com/en-us/library/cc754250.aspx
@@ -503,7 +507,7 @@ From a script
 Let's create a test Python script - create a file called ``hello.py`` with the
 following contents
 
-::
+.. code-block:: python
 
     #! python
     import sys
@@ -518,7 +522,7 @@ From the directory in which hello.py lives, execute the command:
 You should notice the version number of your latest Python 2.x installation
 is printed.  Now try changing the first line to be:
 
-::
+.. code-block:: python
 
     #! python3
 
@@ -566,7 +570,7 @@ which interpreter to use.  The supported virtual commands are:
 
 For example, if the first line of your script starts with
 
-::
+.. code-block:: sh
 
   #! /usr/bin/python
 
@@ -592,7 +596,7 @@ Arguments in shebang lines
 The shebang lines can also specify additional options to be passed to the
 Python interpreter.  For example, if you have a shebang line:
 
-::
+.. code-block:: sh
 
   #! /usr/bin/python -v
 
@@ -606,7 +610,7 @@ Customization via INI files
 
 Two .ini files will be searched by the launcher - ``py.ini`` in the current
 user's "application data" directory (i.e. the directory returned by calling the
-Windows function SHGetFolderPath with CSIDL_LOCAL_APPDATA) and ``py.ini`` in the
+Windows function ``SHGetFolderPath`` with ``CSIDL_LOCAL_APPDATA``) and ``py.ini`` in the
 same directory as the launcher. The same .ini files are used for both the
 'console' version of the launcher (i.e. py.exe) and for the 'windows' version
 (i.e. pyw.exe)
@@ -683,7 +687,7 @@ For example:
 
 * Setting ``PY_PYTHON=3.1`` is equivalent to the INI file containing:
 
-::
+.. code-block:: ini
 
   [defaults]
   python=3.1
@@ -691,7 +695,7 @@ For example:
 * Setting ``PY_PYTHON=3`` and ``PY_PYTHON3=3.1`` is equivalent to the INI file
   containing:
 
-::
+.. code-block:: ini
 
   [defaults]
   python=3
@@ -812,7 +816,7 @@ following advice will prevent conflicts with other installations:
 These will ensure that the files in a system-wide installation will not take
 precedence over the copy of the standard library bundled with your application.
 Otherwise, your users may experience problems using your application. Note that
-the first suggestion is the best, as the other may still be susceptible to
+the first suggestion is the best, as the others may still be susceptible to
 non-standard paths in the registry and user site-packages.
 
 .. versionchanged::
@@ -844,7 +848,7 @@ The Windows-specific standard modules are documented in
 PyWin32
 -------
 
-The `PyWin32 <https://pypi.python.org/pypi/pywin32>`_ module by Mark Hammond
+The `PyWin32 <https://pypi.org/project/pywin32>`_ module by Mark Hammond
 is a collection of modules for advanced Windows-specific support.  This includes
 utilities for:
 

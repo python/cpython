@@ -1,0 +1,2 @@
+Fix test_dbm_gnu on macOS with gdbm 1.15: add a larger value to make sure that
+the file size changes.

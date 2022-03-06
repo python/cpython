@@ -57,7 +57,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         if self._closed:
             info.append('closed')
         if self._pid is not None:
-            info.append(f'pid={self.pid}')
+            info.append(f'pid={self._pid}')
         if self._returncode is not None:
             info.append(f'returncode={self._returncode}')
         elif self._pid is not None:

@@ -78,10 +78,12 @@ _global_shutdown = False
 
 
 class _ThreadWakeup:
-    __slot__ = ["_state"]
-
     def __init__(self):
         self._reader, self._writer = mp.Pipe(duplex=False)
+
+    def close(self):
+        self._writer.close()
+        self._reader.close()
 
     def wakeup(self):
         self._writer.send_bytes(b"")
@@ -421,6 +423,10 @@ def _queue_management_worker(executor_reference,
         #   - The executor that owns this worker has been shutdown.
         if shutting_down():
             try:
+                # Flag the executor as shutting down as early as possible if it
+                # is not gc-ed yet.
+                if executor is not None:
+                    executor._shutdown_thread = True
                 # Since no new work items can be added, it is safe to shutdown
                 # this thread if there are no pending work items.
                 if not pending_work_items:
@@ -593,6 +599,9 @@ class ProcessPoolExecutor(_base.Executor):
                 raise BrokenProcessPool(self._broken)
             if self._shutdown_thread:
                 raise RuntimeError('cannot schedule new futures after shutdown')
+            if _global_shutdown:
+                raise RuntimeError('cannot schedule new futures after '
+                                   'interpreter shutdown')
 
             f = _base.Future()
             w = _WorkItem(f, fn, args, kwargs)
@@ -654,6 +663,11 @@ class ProcessPoolExecutor(_base.Executor):
             self._call_queue = None
         self._result_queue = None
         self._processes = None
+
+        if self._queue_management_thread_wakeup:
+            self._queue_management_thread_wakeup.close()
+            self._queue_management_thread_wakeup = None
+
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
 
 atexit.register(_python_exit)

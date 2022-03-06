@@ -1,0 +1,2 @@
+Fixed `asyncio.Condition` issue which silently ignored cancellation after
+notifying and cancelling a conditional lock. Patch by Bar Harel.

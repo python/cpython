@@ -1,0 +1,4 @@
+Fix a crash on fork when using a custom memory allocator (ex: using
+PYTHONMALLOC env var). _PyGILState_Reinit() and _PyInterpreterState_Enable()
+now use the default RAW memory allocator to allocate a new interpreters mutex
+on fork.

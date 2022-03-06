@@ -1,4 +1,0 @@
-``concurrent.futures`` imports ``ThreadPoolExecutor`` and
-``ProcessPoolExecutor`` lazily (using :pep:`562`).
-It makes ``import asyncio`` about 15% faster because asyncio
-uses only ``ThreadPoolExecutor`` by default.

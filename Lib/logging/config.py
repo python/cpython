@@ -73,8 +73,8 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True):
     # critical section
     logging._acquireLock()
     try:
-        logging._handlers.clear()
-        del logging._handlerList[:]
+        _clearExistingHandlers()
+
         # Handlers add themselves to logging._handlers
         handlers = _install_handlers(cp, formatters)
         _install_loggers(cp, handlers, disable_existing_loggers)
@@ -264,6 +264,14 @@ def _install_loggers(cp, handlers, disable_existing):
     #    elif disable_existing_loggers:
     #        logger.disabled = 1
     _handle_existing_loggers(existing, child_loggers, disable_existing)
+
+
+def _clearExistingHandlers():
+    """Clear and close existing handlers"""
+    logging._handlers.clear()
+    logging.shutdown(logging._handlerList[:])
+    del logging._handlerList[:]
+
 
 IDENTIFIER = re.compile('^[a-z_][a-z0-9_]*$', re.I)
 
@@ -460,7 +468,7 @@ class BaseConfigurator(object):
             c = self.resolve(c)
         props = config.pop('.', None)
         # Check for valid identifiers
-        kwargs = dict((k, config[k]) for k in config if valid_ident(k))
+        kwargs = {k: config[k] for k in config if valid_ident(k)}
         result = c(**kwargs)
         if props:
             for name, value in props.items():
@@ -524,8 +532,7 @@ class DictConfigurator(BaseConfigurator):
             else:
                 disable_existing = config.pop('disable_existing_loggers', True)
 
-                logging._handlers.clear()
-                del logging._handlerList[:]
+                _clearExistingHandlers()
 
                 # Do formatters first - they don't refer to anything else
                 formatters = config.get('formatters', EMPTY_DICT)
@@ -659,11 +666,19 @@ class DictConfigurator(BaseConfigurator):
             dfmt = config.get('datefmt', None)
             style = config.get('style', '%')
             cname = config.get('class', None)
+
             if not cname:
                 c = logging.Formatter
             else:
                 c = _resolve(cname)
-            result = c(fmt, dfmt, style)
+
+            # A TypeError would be raised if "validate" key is passed in with a formatter callable
+            # that does not accept "validate" as a parameter
+            if 'validate' in config:  # if user hasn't mentioned it, the default will be fine
+                result = c(fmt, dfmt, style, config['validate'])
+            else:
+                result = c(fmt, dfmt, style)
+
         return result
 
     def configure_filter(self, config):
@@ -723,7 +738,7 @@ class DictConfigurator(BaseConfigurator):
                 config['address'] = self.as_tuple(config['address'])
             factory = klass
         props = config.pop('.', None)
-        kwargs = dict((k, config[k]) for k in config if valid_ident(k))
+        kwargs = {k: config[k] for k in config if valid_ident(k)}
         try:
             result = factory(**kwargs)
         except TypeError as te:

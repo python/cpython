@@ -385,7 +385,7 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: reload
 
-   Converts :func:`reload` to :func:`imp.reload`.
+   Converts :func:`reload` to :func:`importlib.reload`.
 
 .. 2to3fixer:: renames
 

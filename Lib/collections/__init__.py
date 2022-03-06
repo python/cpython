@@ -17,16 +17,7 @@ list, set, and tuple.
 __all__ = ['deque', 'defaultdict', 'namedtuple', 'UserDict', 'UserList',
             'UserString', 'Counter', 'OrderedDict', 'ChainMap']
 
-# For backwards compatibility, continue to make the collections ABCs
-# through Python 3.6 available through the collections module.
-# Note, no new collections ABCs were added in Python 3.7
 import _collections_abc
-from _collections_abc import (AsyncGenerator, AsyncIterable, AsyncIterator,
-    Awaitable, ByteString, Callable, Collection, Container, Coroutine,
-    Generator, Hashable, ItemsView, Iterable, Iterator, KeysView, Mapping,
-    MappingView, MutableMapping, MutableSequence, MutableSet, Reversible,
-    Sequence, Set, Sized, ValuesView)
-
 from operator import itemgetter as _itemgetter, eq as _eq
 from keyword import iskeyword as _iskeyword
 import sys as _sys
@@ -40,7 +31,7 @@ try:
 except ImportError:
     pass
 else:
-    MutableSequence.register(deque)
+    _collections_abc.MutableSequence.register(deque)
 
 try:
     from _collections import defaultdict
@@ -48,22 +39,37 @@ except ImportError:
     pass
 
 
+def __getattr__(name):
+    # For backwards compatibility, continue to make the collections ABCs
+    # through Python 3.6 available through the collections module.
+    # Note, no new collections ABCs were added in Python 3.7
+    if name in _collections_abc.__all__:
+        obj = getattr(_collections_abc, name)
+        import warnings
+        warnings.warn("Using or importing the ABCs from 'collections' instead "
+                      "of from 'collections.abc' is deprecated, "
+                      "and in 3.8 it will stop working",
+                      DeprecationWarning, stacklevel=2)
+        globals()[name] = obj
+        return obj
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+
 ################################################################################
 ### OrderedDict
 ################################################################################
 
-class _OrderedDictKeysView(KeysView):
+class _OrderedDictKeysView(_collections_abc.KeysView):
 
     def __reversed__(self):
         yield from reversed(self._mapping)
 
-class _OrderedDictItemsView(ItemsView):
+class _OrderedDictItemsView(_collections_abc.ItemsView):
 
     def __reversed__(self):
         for key in reversed(self._mapping):
             yield (key, self._mapping[key])
 
-class _OrderedDictValuesView(ValuesView):
+class _OrderedDictValuesView(_collections_abc.ValuesView):
 
     def __reversed__(self):
         for key in reversed(self._mapping):
@@ -215,7 +221,7 @@ class OrderedDict(dict):
         size += sizeof(self.__root) * n         # proxy objects
         return size
 
-    update = __update = MutableMapping.update
+    update = __update = _collections_abc.MutableMapping.update
 
     def keys(self):
         "D.keys() -> a set-like object providing a view on D's keys"
@@ -229,7 +235,7 @@ class OrderedDict(dict):
         "D.values() -> an object providing a view on D's values"
         return _OrderedDictValuesView(self)
 
-    __ne__ = MutableMapping.__ne__
+    __ne__ = _collections_abc.MutableMapping.__ne__
 
     __marker = object()
 
@@ -615,8 +621,13 @@ class Counter(dict):
 
     @classmethod
     def fromkeys(cls, iterable, v=None):
-        # There is no equivalent method for counters because setting v=1
-        # means that no element can have a count greater than one.
+        # There is no equivalent method for counters because the semantics
+        # would be ambiguous in cases such as Counter.fromkeys('aaabbc', v=2).
+        # Initializing counters to zero values isn't necessary because zero
+        # is already the default value for counter lookups.  Initializing
+        # to one is easily accomplished with Counter(set(iterable)).  For
+        # more exotic cases, create a dictionary first using a dictionary
+        # comprehension or dict.fromkeys().
         raise NotImplementedError(
             'Counter.fromkeys() is undefined.  Use Counter(iterable) instead.')
 
@@ -648,7 +659,7 @@ class Counter(dict):
             raise TypeError('expected at most 1 arguments, got %d' % len(args))
         iterable = args[0] if args else None
         if iterable is not None:
-            if isinstance(iterable, Mapping):
+            if isinstance(iterable, _collections_abc.Mapping):
                 if self:
                     self_get = self.get
                     for elem, count in iterable.items():
@@ -685,7 +696,7 @@ class Counter(dict):
         iterable = args[0] if args else None
         if iterable is not None:
             self_get = self.get
-            if isinstance(iterable, Mapping):
+            if isinstance(iterable, _collections_abc.Mapping):
                 for elem, count in iterable.items():
                     self[elem] = self_get(elem, 0) - count
             else:
@@ -887,7 +898,7 @@ class Counter(dict):
 ###  ChainMap
 ########################################################################
 
-class ChainMap(MutableMapping):
+class ChainMap(_collections_abc.MutableMapping):
     ''' A ChainMap groups multiple dicts (or other mappings) together
     to create a single, updateable view.
 
@@ -926,7 +937,10 @@ class ChainMap(MutableMapping):
         return len(set().union(*self.maps))     # reuses stored hash values if possible
 
     def __iter__(self):
-        return iter(set().union(*self.maps))
+        d = {}
+        for mapping in reversed(self.maps):
+            d.update(mapping)                   # reuses stored hash values if possible
+        return iter(d)
 
     def __contains__(self, key):
         return any(key in m for m in self.maps)
@@ -936,8 +950,7 @@ class ChainMap(MutableMapping):
 
     @_recursive_repr()
     def __repr__(self):
-        return '{0.__class__.__name__}({1})'.format(
-            self, ', '.join(map(repr, self.maps)))
+        return f'{self.__class__.__name__}({", ".join(map(repr, self.maps))})'
 
     @classmethod
     def fromkeys(cls, iterable, *args):
@@ -995,7 +1008,7 @@ class ChainMap(MutableMapping):
 ### UserDict
 ################################################################################
 
-class UserDict(MutableMapping):
+class UserDict(_collections_abc.MutableMapping):
 
     # Start by filling-out the abstract methods
     def __init__(*args, **kwargs):
@@ -1062,7 +1075,7 @@ class UserDict(MutableMapping):
 ### UserList
 ################################################################################
 
-class UserList(MutableSequence):
+class UserList(_collections_abc.MutableSequence):
     """A more or less complete user-defined wrapper around list objects."""
     def __init__(self, initlist=None):
         self.data = []
@@ -1135,7 +1148,7 @@ class UserList(MutableSequence):
 ### UserString
 ################################################################################
 
-class UserString(Sequence):
+class UserString(_collections_abc.Sequence):
     def __init__(self, seq):
         if isinstance(seq, str):
             self.data = seq

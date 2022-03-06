@@ -10,7 +10,8 @@
 
 
 static PyObject *
-py_uuid_generate_time_safe(void)
+py_uuid_generate_time_safe(PyObject *Py_UNUSED(context),
+                           PyObject *Py_UNUSED(ignored))
 {
     uuid_t uuid;
 #ifdef HAVE_UUID_GENERATE_TIME_SAFE
@@ -18,10 +19,16 @@ py_uuid_generate_time_safe(void)
 
     res = uuid_generate_time_safe(uuid);
     return Py_BuildValue("y#i", (const char *) uuid, sizeof(uuid), res);
-#elif HAVE_UUID_CREATE
+#elif defined(HAVE_UUID_CREATE)
     uint32_t status;
     uuid_create(&uuid, &status);
+# if defined(HAVE_UUID_ENC_BE)
+    unsigned char buf[sizeof(uuid)];
+    uuid_enc_be(buf, &uuid);
+    return Py_BuildValue("y#i", buf, sizeof(uuid), (int) status);
+# else
     return Py_BuildValue("y#i", (const char *) &uuid, sizeof(uuid), (int) status);
+# endif
 #else
     uuid_generate_time(uuid);
     return Py_BuildValue("y#O", (const char *) uuid, sizeof(uuid), Py_None);
@@ -30,7 +37,7 @@ py_uuid_generate_time_safe(void)
 
 
 static PyMethodDef uuid_methods[] = {
-    {"generate_time_safe", (PyCFunction) py_uuid_generate_time_safe, METH_NOARGS, NULL},
+    {"generate_time_safe", py_uuid_generate_time_safe, METH_NOARGS, NULL},
     {NULL, NULL, 0, NULL}           /* sentinel */
 };
 
@@ -57,6 +64,7 @@ PyInit__uuid(void)
     }
     if (PyModule_AddIntConstant(mod, "has_uuid_generate_time_safe",
                                 has_uuid_generate_time_safe) < 0) {
+        Py_DECREF(mod);
         return NULL;
     }
 

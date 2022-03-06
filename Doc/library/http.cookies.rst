@@ -137,10 +137,15 @@ Morsel Objects
    * ``secure``
    * ``version``
    * ``httponly``
+   * ``samesite``
 
    The attribute :attr:`httponly` specifies that the cookie is only transferred
    in HTTP requests, and is not accessible through JavaScript. This is intended
    to mitigate some forms of cross-site scripting.
+
+   The attribute :attr:`samesite` specifies that the browser is not allowed to
+   send the cookie along with cross-site requests. This helps to mitigate CSRF
+   attacks. Valid values for this attribute are "Strict" and "Lax".
 
    The keys are case-insensitive and their default value is ``''``.
 
@@ -152,6 +157,9 @@ Morsel Objects
       Attributes :attr:`~Morsel.key`, :attr:`~Morsel.value` and
       :attr:`~Morsel.coded_value` are read-only.  Use :meth:`~Morsel.set` for
       setting them.
+
+   .. versionchanged:: 3.8
+      Added support for the :attr:`samesite` attribute.
 
 
 .. attribute:: Morsel.value

@@ -1,0 +1,2 @@
+Fix failing ``test_asyncio`` on macOS 10.12.2+ due to transport of
+``KqueueSelector`` loop was not being closed.

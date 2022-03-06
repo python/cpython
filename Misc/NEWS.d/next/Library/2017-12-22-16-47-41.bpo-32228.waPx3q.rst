@@ -1,1 +1,0 @@
-Ensure that ``truncate()`` preserves the file position (as reported by ``tell()``) after writes longer than the buffer size.

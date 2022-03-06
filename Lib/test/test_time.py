@@ -19,7 +19,7 @@ except ImportError:
 # Max year is only limited by the size of C int.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
 TIME_MAXYEAR = (1 << 8 * SIZEOF_INT - 1) - 1
-TIME_MINYEAR = -TIME_MAXYEAR - 1
+TIME_MINYEAR = -TIME_MAXYEAR - 1 + 1900
 
 SEC_TO_US = 10 ** 6
 US_TO_NS = 10 ** 3
@@ -496,18 +496,23 @@ class TimeTestCase(unittest.TestCase):
         # on Windows
         self.assertLess(stop - start, 0.020)
 
+        # bpo-33723: A busy loop of 100 ms should increase process_time()
+        # by at least 15 ms
+        min_time = 0.015
+        busy_time = 0.100
+
         # process_time() should include CPU time spent in any thread
         start = time.process_time()
-        busy_wait(0.100)
+        busy_wait(busy_time)
         stop = time.process_time()
-        self.assertGreaterEqual(stop - start, 0.020)  # machine busy?
+        self.assertGreaterEqual(stop - start, min_time)
 
-        t = threading.Thread(target=busy_wait, args=(0.100,))
+        t = threading.Thread(target=busy_wait, args=(busy_time,))
         start = time.process_time()
         t.start()
         t.join()
         stop = time.process_time()
-        self.assertGreaterEqual(stop - start, 0.020)  # machine busy?
+        self.assertGreaterEqual(stop - start, min_time)
 
         info = time.get_clock_info('process_time')
         self.assertTrue(info.monotonic)
@@ -529,19 +534,24 @@ class TimeTestCase(unittest.TestCase):
         # on Windows
         self.assertLess(stop - start, 0.020)
 
+        # bpo-33723: A busy loop of 100 ms should increase thread_time()
+        # by at least 15 ms
+        min_time = 0.015
+        busy_time = 0.100
+
         # thread_time() should include CPU time spent in current thread...
         start = time.thread_time()
-        busy_wait(0.100)
+        busy_wait(busy_time)
         stop = time.thread_time()
-        self.assertGreaterEqual(stop - start, 0.020)  # machine busy?
+        self.assertGreaterEqual(stop - start, min_time)
 
         # ...but not in other threads
-        t = threading.Thread(target=busy_wait, args=(0.100,))
+        t = threading.Thread(target=busy_wait, args=(busy_time,))
         start = time.thread_time()
         t.start()
         t.join()
         stop = time.thread_time()
-        self.assertLess(stop - start, 0.020)
+        self.assertLess(stop - start, min_time)
 
         info = time.get_clock_info('thread_time')
         self.assertTrue(info.monotonic)
@@ -693,9 +703,9 @@ class _Test4dYear:
         self.assertEqual(func(9999), fmt % 9999)
 
     def test_large_year(self):
-        self.assertEqual(self.yearstr(12345), '12345')
-        self.assertEqual(self.yearstr(123456789), '123456789')
-        self.assertEqual(self.yearstr(TIME_MAXYEAR), str(TIME_MAXYEAR))
+        self.assertEqual(self.yearstr(12345).lstrip('+'), '12345')
+        self.assertEqual(self.yearstr(123456789).lstrip('+'), '123456789')
+        self.assertEqual(self.yearstr(TIME_MAXYEAR).lstrip('+'), str(TIME_MAXYEAR))
         self.assertRaises(OverflowError, self.yearstr, TIME_MAXYEAR + 1)
 
     def test_negative(self):
@@ -704,12 +714,11 @@ class _Test4dYear:
         self.assertEqual(self.yearstr(-123456), '-123456')
         self.assertEqual(self.yearstr(-123456789), str(-123456789))
         self.assertEqual(self.yearstr(-1234567890), str(-1234567890))
-        self.assertEqual(self.yearstr(TIME_MINYEAR + 1900), str(TIME_MINYEAR + 1900))
-        # Issue #13312: it may return wrong value for year < TIME_MINYEAR + 1900
-        # Skip the value test, but check that no error is raised
-        self.yearstr(TIME_MINYEAR)
-        # self.assertEqual(self.yearstr(TIME_MINYEAR), str(TIME_MINYEAR))
+        self.assertEqual(self.yearstr(TIME_MINYEAR), str(TIME_MINYEAR))
+        # Modules/timemodule.c checks for underflow
         self.assertRaises(OverflowError, self.yearstr, TIME_MINYEAR - 1)
+        with self.assertRaises(OverflowError):
+            self.yearstr(-TIME_MAXYEAR - 1)
 
 
 class TestAsctime4dyear(_TestAsctimeYear, _Test4dYear, unittest.TestCase):
@@ -862,19 +871,19 @@ class CPyTimeTestCase:
         ns_timestamps = self._rounding_values(use_float)
         valid_values = convert_values(ns_timestamps)
         for time_rnd, decimal_rnd in ROUNDING_MODES :
-            context = decimal.getcontext()
-            context.rounding = decimal_rnd
+            with decimal.localcontext() as context:
+                context.rounding = decimal_rnd
 
-            for value in valid_values:
-                debug_info = {'value': value, 'rounding': decimal_rnd}
-                try:
-                    result = pytime_converter(value, time_rnd)
-                    expected = expected_func(value)
-                except Exception as exc:
-                    self.fail("Error on timestamp conversion: %s" % debug_info)
-                self.assertEqual(result,
-                                 expected,
-                                 debug_info)
+                for value in valid_values:
+                    debug_info = {'value': value, 'rounding': decimal_rnd}
+                    try:
+                        result = pytime_converter(value, time_rnd)
+                        expected = expected_func(value)
+                    except Exception as exc:
+                        self.fail("Error on timestamp conversion: %s" % debug_info)
+                    self.assertEqual(result,
+                                     expected,
+                                     debug_info)
 
         # test overflow
         ns = self.OVERFLOW_SECONDS * SEC_TO_NS

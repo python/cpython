@@ -1,2 +1,0 @@
-Add ``_ignore_`` to ``Enum`` so temporary variables can be used during class
-construction without being turned into members.

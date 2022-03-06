@@ -122,7 +122,7 @@ incr_false(void)
 }
 
 
-static PyContextVar *current_context_var;
+static PyObject *current_context_var;
 
 /* Template for creating new thread contexts, calling Context() without
  * arguments and initializing the module_context on first access. */
@@ -1500,7 +1500,7 @@ init_current_context(void)
     }
     CTX(tl_context)->status = 0;
 
-    PyContextToken *tok = PyContextVar_Set(current_context_var, tl_context);
+    PyObject *tok = PyContextVar_Set(current_context_var, tl_context);
     if (tok == NULL) {
         Py_DECREF(tl_context);
         return NULL;
@@ -1561,7 +1561,7 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
         Py_INCREF(v);
     }
 
-    PyContextToken *tok = PyContextVar_Set(current_context_var, v);
+    PyObject *tok = PyContextVar_Set(current_context_var, v);
     Py_DECREF(v);
     if (tok == NULL) {
         return NULL;
@@ -5521,6 +5521,7 @@ PyInit__decimal(void)
     PyObject *numbers = NULL;
     PyObject *Number = NULL;
     PyObject *collections = NULL;
+    PyObject *collections_abc = NULL;
     PyObject *MutableMapping = NULL;
     PyObject *obj = NULL;
     DecCondMap *cm;
@@ -5595,7 +5596,8 @@ PyInit__decimal(void)
     Py_CLEAR(obj);
 
     /* MutableMapping */
-    ASSIGN_PTR(MutableMapping, PyObject_GetAttrString(collections,
+    ASSIGN_PTR(collections_abc, PyImport_ImportModule("collections.abc"));
+    ASSIGN_PTR(MutableMapping, PyObject_GetAttrString(collections_abc,
                                                       "MutableMapping"));
     /* Create SignalDict type */
     ASSIGN_PTR(PyDecSignalDict_Type,
@@ -5606,6 +5608,7 @@ PyInit__decimal(void)
 
     /* Done with collections, MutableMapping */
     Py_CLEAR(collections);
+    Py_CLEAR(collections_abc);
     Py_CLEAR(MutableMapping);
 
 
@@ -5765,6 +5768,7 @@ error:
     Py_CLEAR(Number); /* GCOV_NOT_REACHED */
     Py_CLEAR(Rational); /* GCOV_NOT_REACHED */
     Py_CLEAR(collections); /* GCOV_NOT_REACHED */
+    Py_CLEAR(collections_abc); /* GCOV_NOT_REACHED */
     Py_CLEAR(MutableMapping); /* GCOV_NOT_REACHED */
     Py_CLEAR(SignalTuple); /* GCOV_NOT_REACHED */
     Py_CLEAR(DecimalTuple); /* GCOV_NOT_REACHED */

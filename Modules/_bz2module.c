@@ -277,11 +277,11 @@ BZ2_Malloc(void* ctx, int items, int size)
 {
     if (items < 0 || size < 0)
         return NULL;
-    if ((size_t)items > (size_t)PY_SSIZE_T_MAX / (size_t)size)
+    if (size != 0 && (size_t)items > (size_t)PY_SSIZE_T_MAX / (size_t)size)
         return NULL;
     /* PyMem_Malloc() cannot be used: compress() and decompress()
        release the GIL */
-    return PyMem_RawMalloc(items * size);
+    return PyMem_RawMalloc((size_t)items * (size_t)size);
 }
 
 static void
@@ -634,17 +634,21 @@ _bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self)
 {
     int bzerror;
 
-    self->lock = PyThread_allocate_lock();
-    if (self->lock == NULL) {
+    PyThread_type_lock lock = PyThread_allocate_lock();
+    if (lock == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
         return -1;
     }
+    if (self->lock != NULL) {
+        PyThread_free_lock(self->lock);
+    }
+    self->lock = lock;
 
     self->needs_input = 1;
     self->bzs_avail_in_real = 0;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
+    Py_XSETREF(self->unused_data, PyBytes_FromStringAndSize(NULL, 0));
     if (self->unused_data == NULL)
         goto error;
 

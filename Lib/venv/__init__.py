@@ -9,6 +9,7 @@ import os
 import shutil
 import subprocess
 import sys
+import sysconfig
 import types
 
 logger = logging.getLogger(__name__)
@@ -208,7 +209,8 @@ class EnvBuilder:
                     if not os.path.islink(path):
                         os.chmod(path, 0o755)
         else:
-            subdir = 'DLLs'
+            # See bpo-34011. When using a proper install, we should only need to
+            # copy the top-level of DLLs.
             include = self.include_binary
             files = [f for f in os.listdir(dirname) if include(f)]
             for f in files:
@@ -216,24 +218,28 @@ class EnvBuilder:
                 dst = os.path.join(binpath, f)
                 if dst != context.env_exe:  # already done, above
                     copier(src, dst)
-            dirname = os.path.join(dirname, subdir)
-            if os.path.isdir(dirname):
-                files = [f for f in os.listdir(dirname) if include(f)]
-                for f in files:
-                    src = os.path.join(dirname, f)
-                    dst = os.path.join(binpath, f)
-                    copier(src, dst)
-            # copy init.tcl over
-            for root, dirs, files in os.walk(context.python_dir):
-                if 'init.tcl' in files:
-                    tcldir = os.path.basename(root)
-                    tcldir = os.path.join(context.env_dir, 'Lib', tcldir)
-                    if not os.path.exists(tcldir):
-                        os.makedirs(tcldir)
-                    src = os.path.join(root, 'init.tcl')
-                    dst = os.path.join(tcldir, 'init.tcl')
-                    shutil.copyfile(src, dst)
-                    break
+
+            # When creating from a build directory, we continue to copy all files.
+            if sysconfig.is_python_build(True):
+                subdir = 'DLLs'
+                dirname = os.path.join(dirname, subdir)
+                if os.path.isdir(dirname):
+                    files = [f for f in os.listdir(dirname) if include(f)]
+                    for f in files:
+                        src = os.path.join(dirname, f)
+                        dst = os.path.join(binpath, f)
+                        copier(src, dst)
+                # copy init.tcl over
+                for root, dirs, files in os.walk(context.python_dir):
+                    if 'init.tcl' in files:
+                        tcldir = os.path.basename(root)
+                        tcldir = os.path.join(context.env_dir, 'Lib', tcldir)
+                        if not os.path.exists(tcldir):
+                            os.makedirs(tcldir)
+                        src = os.path.join(root, 'init.tcl')
+                        dst = os.path.join(tcldir, 'init.tcl')
+                        shutil.copyfile(src, dst)
+                        break
 
     def _setup_pip(self, context):
         """Installs or upgrades pip in a virtual environment"""

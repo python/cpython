@@ -1,0 +1,2 @@
+Remove unused private method ``_strptime.LocaleTime.__pad`` (a.k.a.
+``_LocaleTime__pad``).

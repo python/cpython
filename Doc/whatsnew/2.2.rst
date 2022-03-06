@@ -576,9 +576,9 @@ similar to a :keyword:`return` statement.  The big difference between
 variables are preserved.  On the next call to the generator's ``next()`` method,
 the function will resume executing immediately after the :keyword:`yield`
 statement.  (For complicated reasons, the :keyword:`yield` statement isn't
-allowed inside the :keyword:`try` block of a :keyword:`try`...\
-:keyword:`finally` statement; read :pep:`255` for a full explanation of the
-interaction between :keyword:`yield` and exceptions.)
+allowed inside the :keyword:`try` block of a
+:keyword:`try`...\ :keyword:`finally` statement; read :pep:`255` for a full
+explanation of the interaction between :keyword:`yield` and exceptions.)
 
 Here's a sample usage of the :func:`generate_ints` generator::
 

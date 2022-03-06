@@ -451,7 +451,8 @@ be finalized; only the internally used file object will be closed. See the
    (directory, fifo, symbolic link, etc.). If given, *arcname* specifies an
    alternative name for the file in the archive. Directories are added
    recursively by default. This can be avoided by setting *recursive* to
-   :const:`False`.  If *filter* is given, it
+   :const:`False`. Recursion adds entries in sorted order.
+   If *filter* is given, it
    should be a function that takes a :class:`TarInfo` object argument and
    returns the changed :class:`TarInfo` object. If it instead returns
    :const:`None` the :class:`TarInfo` object will be excluded from the
@@ -459,6 +460,9 @@ be finalized; only the internally used file object will be closed. See the
 
    .. versionchanged:: 3.2
       Added the *filter* parameter.
+
+   .. versionchanged:: 3.7
+      Recursion adds entries in sorted order.
 
 
 .. method:: TarFile.addfile(tarinfo, fileobj=None)

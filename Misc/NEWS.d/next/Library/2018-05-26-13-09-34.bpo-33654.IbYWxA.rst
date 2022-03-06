@@ -1,0 +1,3 @@
+Fix transport.set_protocol() to support switching between asyncio.Protocol
+and asyncio.BufferedProtocol.  Fix loop.start_tls() to work with
+asyncio.BufferedProtocols.
