@@ -98,7 +98,9 @@ provides three different variants:
 
    .. attribute:: path
 
-      Contains the request path.
+      Contains the request path. If query component of the URL is present,
+      then ``path`` includes the query. Using the terminology of :rfc:`3986`,
+      ``path`` here includes ``hier-part`` and the ``query``.
 
    .. attribute:: request_version
 

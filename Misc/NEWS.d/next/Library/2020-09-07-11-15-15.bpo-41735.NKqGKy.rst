@@ -1,0 +1,1 @@
+Fix thread locks in zlib module may go wrong in rare case. Patch by Ma Lin.

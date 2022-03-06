@@ -221,6 +221,10 @@ class LZMAFile(_compression.BaseStream):
         self._check_can_read()
         return self._buffer.readline(size)
 
+    def __iter__(self):
+        self._check_can_read()
+        return self._buffer.__iter__()
+
     def write(self, data):
         """Write a bytes object to the file.
 
@@ -302,6 +306,7 @@ def open(filename, mode="rb", *,
                            preset=preset, filters=filters)
 
     if "t" in mode:
+        encoding = io.text_encoding(encoding)
         return io.TextIOWrapper(binary_file, encoding, errors, newline)
     else:
         return binary_file

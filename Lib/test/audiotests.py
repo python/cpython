@@ -1,4 +1,5 @@
-from test.support import findfile, TESTFN, unlink
+from test.support import findfile
+from test.support.os_helper import TESTFN, unlink
 import array
 import io
 import pickle

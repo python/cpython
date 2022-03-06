@@ -1,0 +1,3 @@
+:func:`os.path.expanduser()` now refuses to guess Windows home directories if the basename of current user's home directory does not match their username.
+
+:meth:`pathlib.Path.expanduser()` and :meth:`~pathlib.Path.home()` now consistently raise :exc:`RuntimeError` exception when a home directory cannot be resolved. Previously a :exc:`KeyError` exception could be raised on Windows when the ``"USERNAME"``  environment variable was unset.

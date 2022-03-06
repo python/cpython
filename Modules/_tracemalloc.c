@@ -319,10 +319,6 @@ tracemalloc_get_frame(PyFrameObject *pyframe, frame_t *frame)
         return;
     }
 
-    assert(filename != NULL);
-    if (filename == NULL)
-        return;
-
     if (!PyUnicode_Check(filename)) {
 #ifdef TRACE_DEBUG
         tracemalloc_error("filename is not a unicode string");
@@ -1203,7 +1199,7 @@ tracemalloc_copy_trace(_Py_hashtable_t *traces,
     trace_t *trace = (trace_t *)value;
 
     trace_t *trace2 = raw_malloc(sizeof(trace_t));
-    if (traces2 == NULL) {
+    if (trace2 == NULL) {
         return -1;
     }
     *trace2 = *trace;
@@ -1643,6 +1639,30 @@ _tracemalloc_get_traced_memory_impl(PyObject *module)
     return Py_BuildValue("nn", size, peak_size);
 }
 
+/*[clinic input]
+_tracemalloc.reset_peak
+
+Set the peak size of memory blocks traced by tracemalloc to the current size.
+
+Do nothing if the tracemalloc module is not tracing memory allocations.
+
+[clinic start generated code]*/
+
+static PyObject *
+_tracemalloc_reset_peak_impl(PyObject *module)
+/*[clinic end generated code: output=140c2870f691dbb2 input=18afd0635066e9ce]*/
+{
+    if (!_Py_tracemalloc_config.tracing) {
+        Py_RETURN_NONE;
+    }
+
+    TABLES_LOCK();
+    tracemalloc_peak_traced_memory = tracemalloc_traced_memory;
+    TABLES_UNLOCK();
+
+    Py_RETURN_NONE;
+}
+
 
 static PyMethodDef module_methods[] = {
     _TRACEMALLOC_IS_TRACING_METHODDEF
@@ -1654,6 +1674,7 @@ static PyMethodDef module_methods[] = {
     _TRACEMALLOC_GET_TRACEBACK_LIMIT_METHODDEF
     _TRACEMALLOC_GET_TRACEMALLOC_MEMORY_METHODDEF
     _TRACEMALLOC_GET_TRACED_MEMORY_METHODDEF
+    _TRACEMALLOC_RESET_PEAK_METHODDEF
     /* sentinel */
     {NULL, NULL}
 };

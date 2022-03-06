@@ -35,27 +35,12 @@ iso_calendar_date_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!fastargs) {
         goto exit;
     }
-    if (PyFloat_Check(fastargs[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     year = _PyLong_AsInt(fastargs[0]);
     if (year == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (PyFloat_Check(fastargs[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     week = _PyLong_AsInt(fastargs[1]);
     if (week == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(fastargs[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     weekday = _PyLong_AsInt(fastargs[2]);
@@ -109,4 +94,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5e17549f29a439a5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f61310936e3d8091 input=a9049054013a1b77]*/

@@ -1,0 +1,1 @@
+Covariance, Pearson's correlation, and simple linear regression functionality was added to statistics module. Patch by Tymoteusz Wołodźko.

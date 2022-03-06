@@ -414,7 +414,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             method = getattr(self, mname)
             method()
             self.wfile.flush() #actually send the response if not already done.
-        except socket.timeout as e:
+        except TimeoutError as e:
             #a read or a write timed out.  Discard this connection
             self.log_error("Request timed out: %r", e)
             self.close_connection = True
@@ -1092,8 +1092,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         env['PATH_INFO'] = uqrest
         env['PATH_TRANSLATED'] = self.translate_path(uqrest)
         env['SCRIPT_NAME'] = scriptname
-        if query:
-            env['QUERY_STRING'] = query
+        env['QUERY_STRING'] = query
         env['REMOTE_ADDR'] = self.client_address[0]
         authorization = self.headers.get("authorization")
         if authorization:
@@ -1123,12 +1122,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         referer = self.headers.get('referer')
         if referer:
             env['HTTP_REFERER'] = referer
-        accept = []
-        for line in self.headers.getallmatchingheaders('accept'):
-            if line[:1] in "\t\n\r ":
-                accept.append(line.strip())
-            else:
-                accept = accept + line[7:].split(',')
+        accept = self.headers.get_all('accept', ())
         env['HTTP_ACCEPT'] = ','.join(accept)
         ua = self.headers.get('user-agent')
         if ua:

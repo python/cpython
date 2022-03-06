@@ -1,5 +1,5 @@
 import dis
-from test.support import import_module
+from test.support.import_helper import import_module
 import unittest
 
 _opcode = import_module("_opcode")

@@ -1,3 +1,4 @@
+from test import support
 import unittest
 
 def funcattrs(**kwds):
@@ -76,11 +77,32 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(C.foo(), 42)
         self.assertEqual(C().foo(), 42)
 
-    def test_staticmethod_function(self):
-        @staticmethod
-        def notamethod(x):
+    def check_wrapper_attrs(self, method_wrapper, format_str):
+        def func(x):
             return x
-        self.assertRaises(TypeError, notamethod, 1)
+        wrapper = method_wrapper(func)
+
+        self.assertIs(wrapper.__func__, func)
+        self.assertIs(wrapper.__wrapped__, func)
+
+        for attr in ('__module__', '__qualname__', '__name__',
+                     '__doc__', '__annotations__'):
+            self.assertIs(getattr(wrapper, attr),
+                          getattr(func, attr))
+
+        self.assertEqual(repr(wrapper), format_str.format(func))
+        return wrapper
+
+    def test_staticmethod(self):
+        wrapper = self.check_wrapper_attrs(staticmethod, '<staticmethod({!r})>')
+
+        # bpo-43682: Static methods are callable since Python 3.10
+        self.assertEqual(wrapper(1), 1)
+
+    def test_classmethod(self):
+        wrapper = self.check_wrapper_attrs(classmethod, '<classmethod({!r})>')
+
+        self.assertRaises(TypeError, wrapper, 1)
 
     def test_dotted(self):
         decorators = MiscDecorators()

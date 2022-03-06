@@ -1,0 +1,2 @@
+Fix an issue where :data:`~object.__match_args__` generation could fail for
+some :mod:`dataclasses`.

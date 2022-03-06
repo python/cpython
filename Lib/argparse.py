@@ -857,7 +857,6 @@ class BooleanOptionalAction(Action):
     def __init__(self,
                  option_strings,
                  dest,
-                 const=None,
                  default=None,
                  type=None,
                  choices=None,
@@ -1720,7 +1719,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         add_group = self.add_argument_group
         self._positionals = add_group(_('positional arguments'))
-        self._optionals = add_group(_('optional arguments'))
+        self._optionals = add_group(_('options'))
         self._subparsers = None
 
         # register types

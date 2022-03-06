@@ -10,13 +10,13 @@ Using the Python Interpreter
 Invoking the Interpreter
 ========================
 
-The Python interpreter is usually installed as :file:`/usr/local/bin/python3.9`
+The Python interpreter is usually installed as :file:`/usr/local/bin/python3.10`
 on those machines where it is available; putting :file:`/usr/local/bin` in your
 Unix shell's search path makes it possible to start it by typing the command:
 
 .. code-block:: text
 
-   python3.9
+   python3.10
 
 to the shell. [#]_ Since the choice of the directory where the interpreter lives
 is an installation option, other places are possible; check with your local
@@ -24,7 +24,7 @@ Python guru or system administrator.  (E.g., :file:`/usr/local/python` is a
 popular alternative location.)
 
 On Windows machines where you have installed Python from the :ref:`Microsoft Store
-<windows-store>`, the :file:`python3.9` command will be available. If you have
+<windows-store>`, the :file:`python3.10` command will be available. If you have
 the :ref:`py.exe launcher <launcher>` installed, you can use the :file:`py`
 command. See :ref:`setting-envvars` for other ways to launch Python.
 
@@ -97,8 +97,8 @@ before printing the first prompt:
 
 .. code-block:: shell-session
 
-   $ python3.9
-   Python 3.9 (default, June 4 2019, 09:25:04)
+   $ python3.10
+   Python 3.10 (default, June 4 2019, 09:25:04)
    [GCC 4.8.2] on linux
    Type "help", "copyright", "credits" or "license" for more information.
    >>>

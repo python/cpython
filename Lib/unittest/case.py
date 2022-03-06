@@ -252,7 +252,7 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
     def __enter__(self):
         # The __warningregistry__'s need to be in a pristine state for tests
         # to work properly.
-        for v in sys.modules.values():
+        for v in list(sys.modules.values()):
             if getattr(v, '__warningregistry__', None):
                 v.__warningregistry__ = {}
         self.warnings_manager = warnings.catch_warnings(record=True)
@@ -293,7 +293,6 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
                                                                self.obj_name))
         else:
             self._raiseFailure("{} not triggered".format(exc_name))
-
 
 
 class _OrderedChainMap(collections.ChainMap):
@@ -788,7 +787,16 @@ class TestCase(object):
         """
         # Lazy import to avoid importing logging if it is not needed.
         from ._log import _AssertLogsContext
-        return _AssertLogsContext(self, logger, level)
+        return _AssertLogsContext(self, logger, level, no_logs=False)
+
+    def assertNoLogs(self, logger=None, level=None):
+        """ Fail unless no log messages of level *level* or higher are emitted
+        on *logger_name* or its children.
+
+        This method must be used as a context manager.
+        """
+        from ._log import _AssertLogsContext
+        return _AssertLogsContext(self, logger, level, no_logs=True)
 
     def _getAssertEqualityFunc(self, first, second):
         """Get a detailed comparison function for the types of the two args.

@@ -14,6 +14,7 @@ import traceback
 from typing import Tuple
 
 from pegen.build import Grammar, Parser, Tokenizer, ParserGenerator
+from pegen.validator import validate_grammar
 
 
 def generate_c_code(
@@ -127,6 +128,8 @@ def main() -> None:
     t0 = time.time()
     grammar, parser, tokenizer, gen = args.func(args)
     t1 = time.time()
+
+    validate_grammar(grammar)
 
     if not args.quiet:
         if args.verbose:

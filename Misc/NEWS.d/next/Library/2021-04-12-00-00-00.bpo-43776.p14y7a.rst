@@ -1,0 +1,1 @@
+When :class:`subprocess.Popen` args are provided as a string or as :class:`pathlib.Path`, the Popen instance repr now shows the right thing.

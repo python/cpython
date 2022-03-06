@@ -27,7 +27,7 @@ class RuleCheckingVisitor(GrammarVisitor):
             # TODO: Add line/col info to (leaf) nodes
             raise GrammarError(f"Dangling reference to rule {node.value!r}")
 
-    def visit_NamedItem(self, node: NameLeaf) -> None:
+    def visit_NamedItem(self, node: NamedItem) -> None:
         if node.name and node.name.startswith("_"):
             raise GrammarError(f"Variable names cannot start with underscore: '{node.name}'")
         self.visit(node.item)
@@ -57,7 +57,7 @@ class ParserGenerator:
         self.all_rules: Dict[str, Rule] = {}  # Rules + temporal rules
         self._local_variable_stack: List[List[str]] = []
 
-    def validate_rule_names(self):
+    def validate_rule_names(self) -> None:
         for rule in self.rules:
             if rule.startswith("_"):
                 raise GrammarError(f"Rule names cannot start with underscore: '{rule}'")

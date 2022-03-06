@@ -1,0 +1,1 @@
+Fix Regular Expression Denial of Service (ReDoS) vulnerability in :class:`urllib.request.AbstractBasicAuthHandler`.  The ReDoS-vulnerable regex has quadratic worst-case complexity and it allows cause a denial of service when identifying crafted invalid RFCs. This ReDoS issue is on the client side and needs remote attackers to control the HTTP server.

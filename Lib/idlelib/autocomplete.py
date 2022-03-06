@@ -4,6 +4,7 @@ Either on demand or after a user-selected delay after a key character,
 pop up a list of candidates.
 """
 import __main__
+import keyword
 import os
 import string
 import sys
@@ -30,10 +31,11 @@ TRIGGERS = f".{SEPS}"
 
 class AutoComplete:
 
-    def __init__(self, editwin=None):
+    def __init__(self, editwin=None, tags=None):
         self.editwin = editwin
         if editwin is not None:   # not in subprocess or no-gui test
             self.text = editwin.text
+        self.tags = tags
         self.autocompletewindow = None
         # id of delayed call, and the index of the text insert when
         # the delayed call was issued. If _delayed_completion_id is
@@ -47,7 +49,7 @@ class AutoComplete:
             "extensions", "AutoComplete", "popupwait", type="int", default=0)
 
     def _make_autocomplete_window(self):  # Makes mocking easier.
-        return autocomplete_w.AutoCompleteWindow(self.text)
+        return autocomplete_w.AutoCompleteWindow(self.text, tags=self.tags)
 
     def _remove_autocomplete_window(self, event=None):
         if self.autocompletewindow:
@@ -171,10 +173,13 @@ class AutoComplete:
                                      (what, mode), {})
         else:
             if mode == ATTRS:
-                if what == "":
+                if what == "":  # Main module names.
                     namespace = {**__main__.__builtins__.__dict__,
                                  **__main__.__dict__}
                     bigl = eval("dir()", namespace)
+                    kwds = (s for s in keyword.kwlist
+                            if s not in {'True', 'False', 'None'})
+                    bigl.extend(kwds)
                     bigl.sort()
                     if "__all__" in bigl:
                         smalll = sorted(eval("__all__", namespace))

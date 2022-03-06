@@ -22,13 +22,13 @@ Dictionary Objects
 .. c:function:: int PyDict_Check(PyObject *p)
 
    Return true if *p* is a dict object or an instance of a subtype of the dict
-   type.
+   type.  This function always succeeds.
 
 
 .. c:function:: int PyDict_CheckExact(PyObject *p)
 
    Return true if *p* is a dict object, but not an instance of a subtype of
-   the dict type.
+   the dict type.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyDict_New()
@@ -73,7 +73,7 @@ Dictionary Objects
    .. index:: single: PyUnicode_FromString()
 
    Insert *val* into the dictionary *p* using *key* as a key. *key* should
-   be a :c:type:`const char\*`.  The key object is created using
+   be a :c:type:`const char*`.  The key object is created using
    ``PyUnicode_FromString(key)``.  Return ``0`` on success or ``-1`` on
    failure.  This function *does not* steal a reference to *val*.
 
@@ -81,14 +81,16 @@ Dictionary Objects
 .. c:function:: int PyDict_DelItem(PyObject *p, PyObject *key)
 
    Remove the entry in dictionary *p* with key *key*. *key* must be hashable;
-   if it isn't, :exc:`TypeError` is raised.  Return ``0`` on success or ``-1``
-   on failure.
+   if it isn't, :exc:`TypeError` is raised.
+   If *key* is not in the dictionary, :exc:`KeyError` is raised.
+   Return ``0`` on success or ``-1`` on failure.
 
 
 .. c:function:: int PyDict_DelItemString(PyObject *p, const char *key)
 
-   Remove the entry in dictionary *p* which has a key specified by the string
-   *key*.  Return ``0`` on success or ``-1`` on failure.
+   Remove the entry in dictionary *p* which has a key specified by the string *key*.
+   If *key* is not in the dictionary, :exc:`KeyError` is raised.
+   Return ``0`` on success or ``-1`` on failure.
 
 
 .. c:function:: PyObject* PyDict_GetItem(PyObject *p, PyObject *key)
@@ -99,6 +101,10 @@ Dictionary Objects
    Note that exceptions which occur while calling :meth:`__hash__` and
    :meth:`__eq__` methods will get suppressed.
    To get error reporting use :c:func:`PyDict_GetItemWithError()` instead.
+
+   .. versionchanged:: 3.10
+      Calling this API without :term:`GIL` held had been allowed for historical
+      reason. It is no longer allowed.
 
 
 .. c:function:: PyObject* PyDict_GetItemWithError(PyObject *p, PyObject *key)
@@ -112,7 +118,7 @@ Dictionary Objects
 .. c:function:: PyObject* PyDict_GetItemString(PyObject *p, const char *key)
 
    This is the same as :c:func:`PyDict_GetItem`, but *key* is specified as a
-   :c:type:`const char\*`, rather than a :c:type:`PyObject\*`.
+   :c:type:`const char*`, rather than a :c:type:`PyObject*`.
 
    Note that exceptions which occur while calling :meth:`__hash__` and
    :meth:`__eq__` methods and creating a temporary string object
@@ -161,7 +167,7 @@ Dictionary Objects
    prior to the first call to this function to start the iteration; the
    function returns true for each pair in the dictionary, and false once all
    pairs have been reported.  The parameters *pkey* and *pvalue* should either
-   point to :c:type:`PyObject\*` variables that will be filled in with each key
+   point to :c:type:`PyObject*` variables that will be filled in with each key
    and value, respectively, or may be ``NULL``.  Any references returned through
    them are borrowed.  *ppos* should not be altered during iteration. Its
    value represents offsets within the internal dictionary structure, and

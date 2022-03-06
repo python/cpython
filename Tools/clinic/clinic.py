@@ -1777,6 +1777,30 @@ legacy_converters = {}
 # The callable should not call builtins.print.
 return_converters = {}
 
+
+def write_file(filename, new_contents):
+    try:
+        with open(filename, 'r', encoding="utf-8") as fp:
+            old_contents = fp.read()
+
+        if old_contents == new_contents:
+            # no change: avoid modifying the file modification time
+            return
+    except FileNotFoundError:
+        pass
+
+    # Atomic write using a temporary file and os.replace()
+    filename_new = f"{filename}.new"
+    with open(filename_new, "w", encoding="utf-8") as fp:
+        fp.write(new_contents)
+
+    try:
+        os.replace(filename_new, filename)
+    except:
+        os.unlink(filename_new)
+        raise
+
+
 clinic = None
 class Clinic:
 
@@ -1823,7 +1847,7 @@ impl_definition block
 
 """
 
-    def __init__(self, language, printer=None, *, force=False, verify=True, filename=None):
+    def __init__(self, language, printer=None, *, verify=True, filename=None):
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
         self.parsers = {}
@@ -1832,7 +1856,6 @@ impl_definition block
             fail("Custom printers are broken right now")
         self.printer = printer or BlockPrinter(language)
         self.verify = verify
-        self.force = force
         self.filename = filename
         self.modules = collections.OrderedDict()
         self.classes = collections.OrderedDict()
@@ -1965,8 +1988,7 @@ impl_definition block
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
                     printer_2.print_block(block)
-                    with open(destination.filename, "wt") as f:
-                        f.write(printer_2.f.getvalue())
+                    write_file(destination.filename, printer_2.f.getvalue())
                     continue
         text = printer.f.getvalue()
 
@@ -2018,7 +2040,10 @@ impl_definition block
         return module, cls
 
 
-def parse_file(filename, *, force=False, verify=True, output=None, encoding='utf-8'):
+def parse_file(filename, *, verify=True, output=None):
+    if not output:
+        output = filename
+
     extension = os.path.splitext(filename)[1][1:]
     if not extension:
         fail("Can't extract file type for file " + repr(filename))
@@ -2028,7 +2053,7 @@ def parse_file(filename, *, force=False, verify=True, output=None, encoding='utf
     except KeyError:
         fail("Can't identify file type for file " + repr(filename))
 
-    with open(filename, 'r', encoding=encoding) as f:
+    with open(filename, 'r', encoding="utf-8") as f:
         raw = f.read()
 
     # exit quickly if there are no clinic markers in the file
@@ -2036,19 +2061,10 @@ def parse_file(filename, *, force=False, verify=True, output=None, encoding='utf
     if not find_start_re.search(raw):
         return
 
-    clinic = Clinic(language, force=force, verify=verify, filename=filename)
+    clinic = Clinic(language, verify=verify, filename=filename)
     cooked = clinic.parse(raw)
-    if (cooked == raw) and not force:
-        return
 
-    directory = os.path.dirname(filename) or '.'
-
-    with tempfile.TemporaryDirectory(prefix="clinic", dir=directory) as tmpdir:
-        bytes = cooked.encode(encoding)
-        tmpfilename = os.path.join(tmpdir, os.path.basename(filename))
-        with open(tmpfilename, "wb") as f:
-            f.write(bytes)
-        os.replace(tmpfilename, output or filename)
+    write_file(output, cooked)
 
 
 def compute_checksum(input, length=None):
@@ -2143,7 +2159,6 @@ __matmul__
 __mod__
 __mul__
 __neg__
-__new__
 __next__
 __or__
 __pos__
@@ -2736,11 +2751,6 @@ class bool_converter(CConverter):
             # XXX PyFloat_Check can be removed after the end of the
             # deprecation in _PyLong_FromNbIndexOrNbInt.
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {paramname} = _PyLong_AsInt({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
@@ -2821,11 +2831,6 @@ class unsigned_char_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'b':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {{{{
                     long ival = PyLong_AsLong({argname});
                     if (ival == -1 && PyErr_Occurred()) {{{{
@@ -2848,14 +2853,9 @@ class unsigned_char_converter(CConverter):
                 """.format(argname=argname, paramname=self.name)
         elif self.format_unit == 'B':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {{{{
-                    long ival = PyLong_AsUnsignedLongMask({argname});
-                    if (ival == -1 && PyErr_Occurred()) {{{{
+                    unsigned long ival = PyLong_AsUnsignedLongMask({argname});
+                    if (ival == (unsigned long)-1 && PyErr_Occurred()) {{{{
                         goto exit;
                     }}}}
                     else {{{{
@@ -2876,11 +2876,6 @@ class short_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'h':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {{{{
                     long ival = PyLong_AsLong({argname});
                     if (ival == -1 && PyErr_Occurred()) {{{{
@@ -2917,11 +2912,6 @@ class unsigned_short_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'H':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {paramname} = (unsigned short)PyLong_AsUnsignedLongMask({argname});
                 if ({paramname} == (unsigned short)-1 && PyErr_Occurred()) {{{{
                     goto exit;
@@ -2947,11 +2937,6 @@ class int_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'i':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {paramname} = _PyLong_AsInt({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
@@ -2989,11 +2974,6 @@ class unsigned_int_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'I':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {paramname} = (unsigned int)PyLong_AsUnsignedLongMask({argname});
                 if ({paramname} == (unsigned int)-1 && PyErr_Occurred()) {{{{
                     goto exit;
@@ -3010,11 +2990,6 @@ class long_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'l':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {paramname} = PyLong_AsLong({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
@@ -3054,11 +3029,6 @@ class long_long_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'L':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {paramname} = PyLong_AsLongLong({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
@@ -3105,14 +3075,9 @@ class Py_ssize_t_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'n':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {{{{
                     Py_ssize_t ival = -1;
-                    PyObject *iobj = PyNumber_Index({argname});
+                    PyObject *iobj = _PyNumber_Index({argname});
                     if (iobj != NULL) {{{{
                         ival = PyLong_AsSsize_t(iobj);
                         Py_DECREF(iobj);
@@ -3151,6 +3116,19 @@ class size_t_converter(CConverter):
                 }}}}
                 """.format(argname=argname, paramname=self.name)
         return super().parse_arg(argname, displayname)
+
+
+class fildes_converter(CConverter):
+    type = 'int'
+    converter = '_PyLong_FileDescriptor_Converter'
+
+    def _parse_arg(self, argname, displayname):
+        return """
+            {paramname} = PyObject_AsFileDescriptor({argname});
+            if ({paramname} == -1) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.name)
 
 
 class float_converter(CConverter):
@@ -3424,20 +3402,75 @@ class unicode_converter(CConverter):
                            displayname=displayname)
         return super().parse_arg(argname, displayname)
 
+@add_legacy_c_converter('u')
 @add_legacy_c_converter('u#', zeroes=True)
 @add_legacy_c_converter('Z', accept={str, NoneType})
 @add_legacy_c_converter('Z#', accept={str, NoneType}, zeroes=True)
 class Py_UNICODE_converter(CConverter):
     type = 'const Py_UNICODE *'
     default_type = (str, Null, NoneType)
-    format_unit = 'u'
 
     def converter_init(self, *, accept={str}, zeroes=False):
         format_unit = 'Z' if accept=={str, NoneType} else 'u'
         if zeroes:
             format_unit += '#'
             self.length = True
-        self.format_unit = format_unit
+            self.format_unit = format_unit
+        else:
+            self.accept = accept
+            if accept == {str}:
+                self.converter = '_PyUnicode_WideCharString_Converter'
+            elif accept == {str, NoneType}:
+                self.converter = '_PyUnicode_WideCharString_Opt_Converter'
+            else:
+                fail("Py_UNICODE_converter: illegal 'accept' argument " + repr(accept))
+
+    def cleanup(self):
+        if not self.length:
+            return """\
+#if !USE_UNICODE_WCHAR_CACHE
+PyMem_Free((void *){name});
+#endif /* USE_UNICODE_WCHAR_CACHE */
+""".format(name=self.name)
+
+    def parse_arg(self, argname, argnum):
+        if not self.length:
+            if self.accept == {str}:
+                return """
+                    if (!PyUnicode_Check({argname})) {{{{
+                        _PyArg_BadArgument("{{name}}", {argnum}, "str", {argname});
+                        goto exit;
+                    }}}}
+                    #if USE_UNICODE_WCHAR_CACHE
+                    {paramname} = _PyUnicode_AsUnicode({argname});
+                    #else /* USE_UNICODE_WCHAR_CACHE */
+                    {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
+                    #endif /* USE_UNICODE_WCHAR_CACHE */
+                    if ({paramname} == NULL) {{{{
+                        goto exit;
+                    }}}}
+                    """.format(argname=argname, paramname=self.name, argnum=argnum)
+            elif self.accept == {str, NoneType}:
+                return """
+                    if ({argname} == Py_None) {{{{
+                        {paramname} = NULL;
+                    }}}}
+                    else if (PyUnicode_Check({argname})) {{{{
+                        #if USE_UNICODE_WCHAR_CACHE
+                        {paramname} = _PyUnicode_AsUnicode({argname});
+                        #else /* USE_UNICODE_WCHAR_CACHE */
+                        {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
+                        #endif /* USE_UNICODE_WCHAR_CACHE */
+                        if ({paramname} == NULL) {{{{
+                            goto exit;
+                        }}}}
+                    }}}}
+                    else {{{{
+                        _PyArg_BadArgument("{{name}}", {argnum}, "str or None", {argname});
+                        goto exit;
+                    }}}}
+                    """.format(argname=argname, paramname=self.name, argnum=argnum)
+        return super().parse_arg(argname, argnum)
 
 @add_legacy_c_converter('s*', accept={str, buffer})
 @add_legacy_c_converter('z*', accept={str, buffer, NoneType})
@@ -4193,6 +4226,9 @@ class DSLParser:
         module, cls = self.clinic._module_and_class(fields)
 
         fields = full_name.split('.')
+        if fields[-1] in unsupported_special_methods:
+            fail(f"{fields[-1]} is a special method and cannot be converted to Argument Clinic!  (Yet.)")
+
         if fields[-1] == '__new__':
             if (self.kind != CLASS_METHOD) or (not cls):
                 fail("__new__ must be a class method!")
@@ -4203,8 +4239,6 @@ class DSLParser:
             self.kind = METHOD_INIT
             if not return_converter:
                 return_converter = init_return_converter()
-        elif fields[-1] in unsupported_special_methods:
-            fail(fields[-1] + " is a special method and cannot be converted to Argument Clinic!  (Yet.)")
 
         if not return_converter:
             return_converter = CReturnConverter()
@@ -4428,7 +4462,7 @@ class DSLParser:
 
                 if 'c_default' not in kwargs:
                     # we can only represent very simple data values in C.
-                    # detect whether default is okay, via a blacklist
+                    # detect whether default is okay, via a denylist
                     # of disallowed ast nodes.
                     class DetectBadNodes(ast.NodeVisitor):
                         bad = False
@@ -4451,9 +4485,9 @@ class DSLParser:
                         # "starred": "a = [1, 2, 3]; *a"
                         visit_Starred = bad_node
 
-                    blacklist = DetectBadNodes()
-                    blacklist.visit(module)
-                    bad = blacklist.bad
+                    denylist = DetectBadNodes()
+                    denylist.visit(module)
+                    bad = denylist.bad
                 else:
                     # if they specify a c_default, we can be more lenient about the default value.
                     # but at least make an attempt at ensuring it's a valid expression.
@@ -5087,7 +5121,7 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
                 path = os.path.join(root, filename)
                 if ns.verbose:
                     print(path)
-                parse_file(path, force=ns.force, verify=not ns.force)
+                parse_file(path, verify=not ns.force)
         return
 
     if not ns.filename:
@@ -5103,7 +5137,7 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
     for filename in ns.filename:
         if ns.verbose:
             print(filename)
-        parse_file(filename, output=ns.output, force=ns.force, verify=not ns.force)
+        parse_file(filename, output=ns.output, verify=not ns.force)
 
 
 if __name__ == "__main__":

@@ -147,7 +147,7 @@ static PyMethodDef tb_methods[] = {
 };
 
 static PyMemberDef tb_memberlist[] = {
-    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY},
+    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY|PY_AUDIT_READ},
     {"tb_lasti",        T_INT,          OFF(tb_lasti),  READONLY},
     {"tb_lineno",       T_INT,          OFF(tb_lineno), READONLY},
     {NULL}      /* Sentinel */
@@ -233,7 +233,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
 
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_lasti,
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_lasti*2,
                          PyFrame_GetLineNumber(frame));
 }
 
@@ -419,12 +419,12 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
         Py_DECREF(io);
         Py_DECREF(binary);
-        PyMem_FREE(found_encoding);
+        PyMem_Free(found_encoding);
         return 0;
     }
     fob = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "Os", binary, encoding);
     Py_DECREF(io);
-    PyMem_FREE(found_encoding);
+    PyMem_Free(found_encoding);
 
     if (fob == NULL) {
         PyErr_Clear();
@@ -622,17 +622,18 @@ PyTraceBack_Print(PyObject *v, PyObject *f)
     return err;
 }
 
-/* Reverse a string. For example, "abcd" becomes "dcba".
+/* Format an integer in range [0; 0xffffffff] to decimal and write it
+   into the file fd.
 
    This function is signal safe. */
 
 void
-_Py_DumpDecimal(int fd, unsigned long value)
+_Py_DumpDecimal(int fd, size_t value)
 {
     /* maximum number of characters required for output of %lld or %p.
        We need at most ceil(log10(256)*SIZEOF_LONG_LONG) digits,
        plus 1 for the null byte.  53/22 is an upper bound for log10(256). */
-    char buffer[1 + (sizeof(unsigned long)*53-1) / 22 + 1];
+    char buffer[1 + (sizeof(size_t)*53-1) / 22 + 1];
     char *ptr, *end;
 
     end = &buffer[Py_ARRAY_LENGTH(buffer) - 1];
@@ -648,15 +649,12 @@ _Py_DumpDecimal(int fd, unsigned long value)
     _Py_write_noraise(fd, ptr, end - ptr);
 }
 
-/* Format an integer in range [0; 0xffffffff] to hexadecimal of 'width' digits,
-   and write it into the file fd.
-
-   This function is signal safe. */
-
+/* Format an integer as hexadecimal with width digits into fd file descriptor.
+   The function is signal safe. */
 void
-_Py_DumpHexadecimal(int fd, unsigned long value, Py_ssize_t width)
+_Py_DumpHexadecimal(int fd, uintptr_t value, Py_ssize_t width)
 {
-    char buffer[sizeof(unsigned long) * 2 + 1], *ptr, *end;
+    char buffer[sizeof(uintptr_t) * 2 + 1], *ptr, *end;
     const Py_ssize_t size = Py_ARRAY_LENGTH(buffer) - 1;
 
     if (width > size)
@@ -765,11 +763,10 @@ dump_frame(int fd, PyFrameObject *frame)
         PUTS(fd, "???");
     }
 
-    /* PyFrame_GetLineNumber() was introduced in Python 2.7.0 and 3.2.0 */
-    int lineno = PyCode_Addr2Line(code, frame->f_lasti);
+    int lineno = PyFrame_GetLineNumber(frame);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
-        _Py_DumpDecimal(fd, (unsigned long)lineno);
+        _Py_DumpDecimal(fd, (size_t)lineno);
     }
     else {
         PUTS(fd, "???");

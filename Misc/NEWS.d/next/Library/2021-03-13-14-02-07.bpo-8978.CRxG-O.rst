@@ -1,0 +1,2 @@
+Improve error message for :func:`tarfile.open` when :mod:`lzma` / :mod:`bz2`
+are unavailable.  Patch by Anthony Sottile.

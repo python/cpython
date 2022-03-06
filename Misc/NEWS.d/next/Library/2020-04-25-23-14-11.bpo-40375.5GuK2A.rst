@@ -1,1 +1,0 @@
-:meth:`imaplib.IMAP4.unselect` is added. Patch by Dong-hee Na.

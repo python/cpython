@@ -1,0 +1,6 @@
+platform.win32_ver derives the windows version from
+sys.getwindowsversion().platform_version which in turn derives the version
+from kernel32.dll (which can be of a different version than Windows itself).
+Therefore change the platform.win32_ver to determine the version using the
+platform module's _syscmd_ver private function to return an accurate
+version.

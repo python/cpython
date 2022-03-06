@@ -30,7 +30,11 @@ extern "C" {
 #define BINARY_TRUE_DIVIDE       27
 #define INPLACE_FLOOR_DIVIDE     28
 #define INPLACE_TRUE_DIVIDE      29
-#define RERAISE                  48
+#define GET_LEN                  30
+#define MATCH_MAPPING            31
+#define MATCH_SEQUENCE           32
+#define MATCH_KEYS               33
+#define COPY_DICT_WITHOUT_KEYS   34
 #define WITH_EXCEPT_START        49
 #define GET_AITER                50
 #define GET_ANEXT                51
@@ -77,6 +81,7 @@ extern "C" {
 #define DELETE_ATTR              96
 #define STORE_GLOBAL             97
 #define DELETE_GLOBAL            98
+#define ROT_N                    99
 #define LOAD_CONST              100
 #define LOAD_NAME               101
 #define BUILD_TUPLE             102
@@ -96,11 +101,13 @@ extern "C" {
 #define LOAD_GLOBAL             116
 #define IS_OP                   117
 #define CONTAINS_OP             118
+#define RERAISE                 119
 #define JUMP_IF_NOT_EXC_MATCH   121
 #define SETUP_FINALLY           122
 #define LOAD_FAST               124
 #define STORE_FAST              125
 #define DELETE_FAST             126
+#define GEN_START               129
 #define RAISE_VARARGS           130
 #define CALL_FUNCTION           131
 #define MAKE_FUNCTION           132
@@ -117,6 +124,7 @@ extern "C" {
 #define SET_ADD                 146
 #define MAP_ADD                 147
 #define LOAD_CLASSDEREF         148
+#define MATCH_CLASS             152
 #define SETUP_ASYNC_WITH        154
 #define FORMAT_VALUE            155
 #define BUILD_CONST_KEY_MAP     156
@@ -127,6 +135,28 @@ extern "C" {
 #define SET_UPDATE              163
 #define DICT_MERGE              164
 #define DICT_UPDATE             165
+#ifdef NEED_OPCODE_JUMP_TABLES
+static uint32_t _PyOpcode_RelativeJump[8] = {
+    0U,
+    0U,
+    536870912U,
+    67125248U,
+    67141632U,
+    0U,
+    0U,
+    0U,
+};
+static uint32_t _PyOpcode_Jump[8] = {
+    0U,
+    0U,
+    536870912U,
+    101695488U,
+    67141632U,
+    0U,
+    0U,
+    0U,
+};
+#endif /* OPCODE_TABLES */
 
 /* EXCEPT_HANDLER is a special, implicit block type which is created when
    entering an except handler. It is not an opcode but we define it here

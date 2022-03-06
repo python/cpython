@@ -1,0 +1,2 @@
+Added a *total()* method to collections.Counter() to compute the sum of the
+counts.

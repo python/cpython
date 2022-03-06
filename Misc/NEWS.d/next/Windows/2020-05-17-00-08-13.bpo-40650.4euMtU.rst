@@ -1,1 +1,0 @@
-Include winsock2.h in pytime.c for timeval.

@@ -1,0 +1,2 @@
+Fix invalid free in _sha3 module. The issue was introduced in 3.10.0a1.
+Python 3.9 and earlier are not affected.

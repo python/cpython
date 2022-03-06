@@ -1,0 +1,1 @@
+:meth:`pathlib.Path.stat` and :meth:`~pathlib.Path.chmod` now accept a *follow_symlinks* keyword-only argument for consistency with corresponding functions in the :mod:`os` module.

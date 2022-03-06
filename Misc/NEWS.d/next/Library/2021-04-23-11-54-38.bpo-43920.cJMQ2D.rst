@@ -1,0 +1,2 @@
+OpenSSL 3.0.0: :meth:`~ssl.SSLContext.load_verify_locations` now returns a
+consistent error message when cadata contains no valid certificate.

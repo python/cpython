@@ -386,10 +386,8 @@ class TixWidget(tkinter.Widget):
             self.tk.call(name, 'configure', '-' + option, value)
     # These are missing from Tkinter
     def image_create(self, imgtype, cnf={}, master=None, **kw):
-        if not master:
-            master = tkinter._default_root
-            if not master:
-                raise RuntimeError('Too early to create image')
+        if master is None:
+            master = self
         if kw and cnf: cnf = _cnfmerge((cnf, kw))
         elif kw: cnf = kw
         options = ()
@@ -469,16 +467,13 @@ class DisplayStyle:
     (multiple) Display Items"""
 
     def __init__(self, itemtype, cnf={}, *, master=None, **kw):
-        if not master:
+        if master is None:
             if 'refwindow' in kw:
                 master = kw['refwindow']
             elif 'refwindow' in cnf:
                 master = cnf['refwindow']
             else:
-                master = tkinter._default_root
-                if not master:
-                    raise RuntimeError("Too early to create display style: "
-                                       "no root window")
+                master = tkinter._get_default_root('create display style')
         self.tk = master.tk
         self.stylename = self.tk.call('tixDisplayStyle', itemtype,
                             *self._options(cnf,kw) )
@@ -867,7 +862,7 @@ class HList(TixWidget, XView, YView):
         return self.tk.call(self._w, 'add', entry, *self._options(cnf, kw))
 
     def add_child(self, parent=None, cnf={}, **kw):
-        if not parent:
+        if parent is None:
             parent = ''
         return self.tk.call(
                      self._w, 'addchild', parent, *self._options(cnf, kw))

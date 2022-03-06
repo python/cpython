@@ -1,0 +1,1 @@
+Data stack usage is much reduced for large literal and call expressions.

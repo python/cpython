@@ -1,0 +1,3 @@
+Improve :meth:`sqlite3.Connection.backup` error handling. The error message
+for non-existant target database names is now ``unknown database <database
+name>`` instead of ``SQL logic error``. Patch by Erlend E. Aasland.

@@ -1,0 +1,4 @@
+Provide "python3.x-intel64" executable to allow reliably forcing macOS
+universal2 framework builds to run under Rosetta 2 Intel-64 emulation on
+Apple Silicon Macs.  This can be useful for testing or when universal2
+wheels are not yet available.

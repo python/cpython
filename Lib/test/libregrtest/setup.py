@@ -10,7 +10,8 @@ try:
 except ImportError:
     gc = None
 
-from test.libregrtest.utils import setup_unraisable_hook
+from test.libregrtest.utils import (setup_unraisable_hook,
+                                    setup_threading_excepthook)
 
 
 def setup_tests(ns):
@@ -62,6 +63,7 @@ def setup_tests(ns):
 
     if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
+        sys._deactivate_opcache()
 
     if ns.memlimit is not None:
         support.set_memlimit(ns.memlimit)
@@ -69,7 +71,7 @@ def setup_tests(ns):
     if ns.threshold is not None:
         gc.set_threshold(ns.threshold)
 
-    suppress_msvcrt_asserts(ns.verbose and ns.verbose >= 2)
+    support.suppress_msvcrt_asserts(ns.verbose and ns.verbose >= 2)
 
     support.use_resources = ns.use_resources
 
@@ -80,6 +82,7 @@ def setup_tests(ns):
         sys.addaudithook(_test_audit_hook)
 
     setup_unraisable_hook()
+    setup_threading_excepthook()
 
     if ns.timeout is not None:
         # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT
@@ -92,30 +95,9 @@ def setup_tests(ns):
         support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, ns.timeout)
         support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, ns.timeout)
 
-
-def suppress_msvcrt_asserts(verbose):
-    try:
-        import msvcrt
-    except ImportError:
-        return
-
-    msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
-                        msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
-                        msvcrt.SEM_NOGPFAULTERRORBOX|
-                        msvcrt.SEM_NOOPENFILEERRORBOX)
-    try:
-        msvcrt.CrtSetReportMode
-    except AttributeError:
-        # release build
-        return
-
-    for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
-        if verbose:
-            msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
-            msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
-        else:
-            msvcrt.CrtSetReportMode(m, 0)
-
+    if ns.xmlpath:
+        from test.support.testresult import RegressionTestResult
+        RegressionTestResult.USE_XML = True
 
 
 def replace_stdout():

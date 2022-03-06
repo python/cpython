@@ -1,1 +1,0 @@
-Fix an incorrect signature for :func:`pickle.loads` in the docs

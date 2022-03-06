@@ -11,6 +11,7 @@ __all__ = ("date", "datetime", "time", "timedelta", "timezone", "tzinfo",
 import time as _time
 import math as _math
 import sys
+from operator import index as _index
 
 def _cmp(x, y):
     return 0 if x == y else 1 if x > y else -1
@@ -380,42 +381,10 @@ def _check_utc_offset(name, offset):
                          "-timedelta(hours=24) and timedelta(hours=24)" %
                          (name, offset))
 
-def _check_int_field(value):
-    if isinstance(value, int):
-        return value
-    if isinstance(value, float):
-        raise TypeError('integer argument expected, got float')
-    try:
-        value = value.__index__()
-    except AttributeError:
-        pass
-    else:
-        if not isinstance(value, int):
-            raise TypeError('__index__ returned non-int (type %s)' %
-                            type(value).__name__)
-        return value
-    orig = value
-    try:
-        value = value.__int__()
-    except AttributeError:
-        pass
-    else:
-        if not isinstance(value, int):
-            raise TypeError('__int__ returned non-int (type %s)' %
-                            type(value).__name__)
-        import warnings
-        warnings.warn("an integer is required (got type %s)"  %
-                      type(orig).__name__,
-                      DeprecationWarning,
-                      stacklevel=2)
-        return value
-    raise TypeError('an integer is required (got type %s)' %
-                    type(value).__name__)
-
 def _check_date_fields(year, month, day):
-    year = _check_int_field(year)
-    month = _check_int_field(month)
-    day = _check_int_field(day)
+    year = _index(year)
+    month = _index(month)
+    day = _index(day)
     if not MINYEAR <= year <= MAXYEAR:
         raise ValueError('year must be in %d..%d' % (MINYEAR, MAXYEAR), year)
     if not 1 <= month <= 12:
@@ -426,10 +395,10 @@ def _check_date_fields(year, month, day):
     return year, month, day
 
 def _check_time_fields(hour, minute, second, microsecond, fold):
-    hour = _check_int_field(hour)
-    minute = _check_int_field(minute)
-    second = _check_int_field(second)
-    microsecond = _check_int_field(microsecond)
+    hour = _index(hour)
+    minute = _index(minute)
+    second = _index(second)
+    microsecond = _index(microsecond)
     if not 0 <= hour <= 23:
         raise ValueError('hour must be in 0..23', hour)
     if not 0 <= minute <= 59:
@@ -1444,7 +1413,8 @@ class time:
         part is omitted if self.microsecond == 0.
 
         The optional argument timespec specifies the number of additional
-        terms of the time to include.
+        terms of the time to include. Valid options are 'auto', 'hours',
+        'minutes', 'seconds', 'milliseconds' and 'microseconds'.
         """
         s = _format_time(self._hour, self._minute, self._second,
                           self._microsecond, timespec)
@@ -1570,7 +1540,7 @@ class time:
         self._tzinfo = tzinfo
 
     def __reduce_ex__(self, protocol):
-        return (time, self._getstate(protocol))
+        return (self.__class__, self._getstate(protocol))
 
     def __reduce__(self):
         return self.__reduce_ex__(2)
@@ -1929,7 +1899,8 @@ class datetime(date):
         time, default 'T'.
 
         The optional argument timespec specifies the number of additional
-        terms of the time to include.
+        terms of the time to include. Valid options are 'auto', 'hours',
+        'minutes', 'seconds', 'milliseconds' and 'microseconds'.
         """
         s = ("%04d-%02d-%02d%c" % (self._year, self._month, self._day, sep) +
              _format_time(self._hour, self._minute, self._second,
@@ -2348,7 +2319,7 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 #    This is again a requirement for a sane tzinfo class.
 #
 # 4. (x+k).s = x.s
-#    This follows from #2, and that datimetimetz+timedelta preserves tzinfo.
+#    This follows from #2, and that datetime.timetz+timedelta preserves tzinfo.
 #
 # 5. (x+k).n = x.n + k
 #    Again follows from how arithmetic is defined.
@@ -2531,10 +2502,10 @@ else:
     # Clean up unused names
     del (_DAYNAMES, _DAYS_BEFORE_MONTH, _DAYS_IN_MONTH, _DI100Y, _DI400Y,
          _DI4Y, _EPOCH, _MAXORDINAL, _MONTHNAMES, _build_struct_time,
-         _check_date_fields, _check_int_field, _check_time_fields,
+         _check_date_fields, _check_time_fields,
          _check_tzinfo_arg, _check_tzname, _check_utc_offset, _cmp, _cmperror,
          _date_class, _days_before_month, _days_before_year, _days_in_month,
-         _format_time, _format_offset, _is_leap, _isoweek1monday, _math,
+         _format_time, _format_offset, _index, _is_leap, _isoweek1monday, _math,
          _ord2ymd, _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord,
          _divide_and_round, _parse_isoformat_date, _parse_isoformat_time,
          _parse_hh_mm_ss_ff, _IsoCalendarDate)

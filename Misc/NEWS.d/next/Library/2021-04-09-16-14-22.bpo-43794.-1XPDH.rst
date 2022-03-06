@@ -1,0 +1,1 @@
+Add :data:`ssl.OP_IGNORE_UNEXPECTED_EOF` constants (OpenSSL 3.0.0)

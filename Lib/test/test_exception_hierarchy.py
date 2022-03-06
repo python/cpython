@@ -40,10 +40,10 @@ class HierarchyTest(unittest.TestCase):
         self.assertIs(EnvironmentError, OSError)
 
     def test_socket_errors(self):
-        self.assertIs(socket.error, IOError)
+        self.assertIs(socket.error, OSError)
         self.assertIs(socket.gaierror.__base__, OSError)
         self.assertIs(socket.herror.__base__, OSError)
-        self.assertIs(socket.timeout.__base__, OSError)
+        self.assertIs(socket.timeout, TimeoutError)
 
     def test_select_error(self):
         self.assertIs(select.error, OSError)

@@ -480,8 +480,8 @@ input, output, and error streams.
    rarely used and is not guaranteed by WSGI. On IIS<7, though, the
    setting can only be made on a vhost level, affecting all other script
    mappings, many of which break when exposed to the ``PATH_TRANSLATED`` bug.
-   For this reason IIS<7 is almost never deployed with the fix. (Even IIS7
-   rarely uses it because there is still no UI for it.)
+   For this reason IIS<7 is almost never deployed with the fix (Even IIS7
+   rarely uses it because there is still no UI for it.).
 
    There is no way for CGI code to tell whether the option was set, so a
    separate handler class is provided.  It is used in the same way as

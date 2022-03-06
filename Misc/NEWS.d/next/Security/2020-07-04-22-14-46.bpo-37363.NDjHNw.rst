@@ -1,0 +1,1 @@
+Add audit events to the :mod:`http.client` module.

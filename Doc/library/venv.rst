@@ -249,7 +249,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
 There is also a module-level convenience function:
 
 .. function:: create(env_dir, system_site_packages=False, clear=False, \
-                     symlinks=False, with_pip=False, prompt=None)
+                     symlinks=False, with_pip=False, prompt=None, \
+                     upgrade_deps=False)
 
     Create an :class:`EnvBuilder` with the given keyword arguments, and call its
     :meth:`~EnvBuilder.create` method with the *env_dir* argument.
@@ -261,6 +262,9 @@ There is also a module-level convenience function:
 
     .. versionchanged:: 3.6
        Added the ``prompt`` parameter
+
+    .. versionchanged:: 3.9
+       Added the ``upgrade_deps`` parameter
 
 An example of extending ``EnvBuilder``
 --------------------------------------
@@ -400,7 +404,7 @@ subclass which installs setuptools and pip into a created virtual environment::
             :param context: The information for the virtual environment
                             creation request being processed.
             """
-            url = 'https://raw.github.com/pypa/pip/master/contrib/get-pip.py'
+            url = 'https://bootstrap.pypa.io/get-pip.py'
             self.install_script(context, 'pip', url)
 
     def main(args=None):

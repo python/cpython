@@ -9,15 +9,26 @@ PyDoc_STRVAR(SHA256Type_copy__doc__,
 "Return a copy of the hash object.");
 
 #define SHA256TYPE_COPY_METHODDEF    \
-    {"copy", (PyCFunction)SHA256Type_copy, METH_NOARGS, SHA256Type_copy__doc__},
+    {"copy", (PyCFunction)(void(*)(void))SHA256Type_copy, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, SHA256Type_copy__doc__},
 
 static PyObject *
-SHA256Type_copy_impl(SHAobject *self);
+SHA256Type_copy_impl(SHAobject *self, PyTypeObject *cls);
 
 static PyObject *
-SHA256Type_copy(SHAobject *self, PyObject *Py_UNUSED(ignored))
+SHA256Type_copy(SHAobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return SHA256Type_copy_impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":copy", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = SHA256Type_copy_impl(self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(SHA256Type_digest__doc__,
@@ -166,4 +177,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c8cca8adbe72ec9a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b7283f75c9d08f30 input=a9049054013a1b77]*/

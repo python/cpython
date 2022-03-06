@@ -1,0 +1,2 @@
+:func:`ssl.RAND_status` now returns a boolean value (as documented) instead
+of ``1`` or ``0``.

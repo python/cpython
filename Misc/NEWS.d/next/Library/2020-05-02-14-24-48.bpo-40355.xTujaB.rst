@@ -1,2 +1,0 @@
-Improve error reporting in :func:`ast.literal_eval` in the presence of malformed :class:`ast.Dict`
-nodes instead of silently ignoring any non-conforming elements. Patch by Curtis Bucher.

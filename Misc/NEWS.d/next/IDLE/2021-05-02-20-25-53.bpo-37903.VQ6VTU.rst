@@ -1,0 +1,4 @@
+Add mouse actions to the shell sidebar.  Left click and optional drag
+selects one or more lines, as with the editor line number sidebar.  Right
+click after selecting raises a context menu with 'copy with prompts'.  This
+zips together prompts from the sidebar with lines from the selected text.

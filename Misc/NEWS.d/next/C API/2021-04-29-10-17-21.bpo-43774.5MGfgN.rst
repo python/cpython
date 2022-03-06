@@ -1,0 +1,5 @@
+Remove the now unused ``PYMALLOC_DEBUG`` macro. Debug hooks on memory
+allocators are now installed by default if Python is built in debug mode (if
+``Py_DEBUG`` macro is defined). Moreover, they can now be used on Python
+build in release mode (ex: using ``PYTHONMALLOC=debug`` environment
+variable).

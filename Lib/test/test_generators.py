@@ -371,6 +371,32 @@ class GeneratorThrowTest(unittest.TestCase):
         context = cm.exception.__context__
         self.assertEqual((type(context), context.args), (KeyError, ('a',)))
 
+    def test_exception_context_with_yield_from_with_context_cycle(self):
+        # Check trying to create an exception context cycle:
+        # https://bugs.python.org/issue40696
+        has_cycle = None
+
+        def f():
+            yield
+
+        def g(exc):
+            nonlocal has_cycle
+            try:
+                raise exc
+            except Exception:
+                try:
+                    yield from f()
+                except Exception as exc:
+                    has_cycle = (exc is exc.__context__)
+            yield
+
+        exc = KeyError('a')
+        gen = g(exc)
+        gen.send(None)
+        gen.throw(exc)
+        # This also distinguishes from the initial has_cycle=None.
+        self.assertEqual(has_cycle, False)
+
     def test_throw_after_none_exc_type(self):
         def g():
             try:
@@ -387,6 +413,55 @@ class GeneratorThrowTest(unittest.TestCase):
         gen.send(None)
         with self.assertRaises(RuntimeError) as cm:
             gen.throw(ValueError)
+
+
+class GeneratorStackTraceTest(unittest.TestCase):
+
+    def check_stack_names(self, frame, expected):
+        names = []
+        while frame:
+            name = frame.f_code.co_name
+            # Stop checking frames when we get to our test helper.
+            if name.startswith('check_') or name.startswith('call_'):
+                break
+
+            names.append(name)
+            frame = frame.f_back
+
+        self.assertEqual(names, expected)
+
+    def check_yield_from_example(self, call_method):
+        def f():
+            self.check_stack_names(sys._getframe(), ['f', 'g'])
+            try:
+                yield
+            except Exception:
+                pass
+            self.check_stack_names(sys._getframe(), ['f', 'g'])
+
+        def g():
+            self.check_stack_names(sys._getframe(), ['g'])
+            yield from f()
+            self.check_stack_names(sys._getframe(), ['g'])
+
+        gen = g()
+        gen.send(None)
+        try:
+            call_method(gen)
+        except StopIteration:
+            pass
+
+    def test_send_with_yield_from(self):
+        def call_send(gen):
+            gen.send(None)
+
+        self.check_yield_from_example(call_send)
+
+    def test_throw_with_yield_from(self):
+        def call_throw(gen):
+            gen.throw(RuntimeError)
+
+        self.check_yield_from_example(call_throw)
 
 
 class YieldFromTests(unittest.TestCase):
@@ -806,7 +881,7 @@ And more, added later.
 >>> i.gi_running = 42
 Traceback (most recent call last):
   ...
-AttributeError: readonly attribute
+AttributeError: attribute 'gi_running' of 'generator' objects is not writable
 >>> def g():
 ...     yield me.gi_running
 >>> me = g()
@@ -1938,7 +2013,7 @@ SyntaxError: 'yield' outside function
 >>> def f(): (yield bar) = y
 Traceback (most recent call last):
   ...
-SyntaxError: cannot assign to yield expression
+SyntaxError: cannot assign to yield expression here. Maybe you meant '==' instead of '='?
 
 >>> def f(): (yield bar) += y
 Traceback (most recent call last):

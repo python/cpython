@@ -1,0 +1,9 @@
+Deprecated use of :func:`asyncio.get_event_loop` without running event loop.
+Emit deprecation warning for :mod:`asyncio` functions which implicitly
+create a :class:`~asyncio.Future` or :class:`~asyncio.Task` objects if there
+is no running event loop and no explicit *loop* argument is passed:
+:func:`~asyncio.ensure_future`, :func:`~asyncio.wrap_future`,
+:func:`~asyncio.gather`, :func:`~asyncio.shield`,
+:func:`~asyncio.as_completed` and constructors of :class:`~asyncio.Future`,
+:class:`~asyncio.Task`, :class:`~asyncio.StreamReader`,
+:class:`~asyncio.StreamReaderProtocol`.

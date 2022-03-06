@@ -1,0 +1,2 @@
+fix issue with enum member name matching the start of a private variable
+name

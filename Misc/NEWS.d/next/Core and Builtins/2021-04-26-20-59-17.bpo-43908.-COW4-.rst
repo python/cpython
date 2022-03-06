@@ -1,0 +1,2 @@
+Make the :class:`array.array` type immutable. Patch by
+Erlend E. Aasland.

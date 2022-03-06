@@ -219,7 +219,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
     /* The special case for 0-padding (backwards compat) */
     if (!fill_char_specified && end-pos >= 1 && READ_spec(pos) == '0') {
         format->fill_char = '0';
-        if (!align_specified) {
+        if (!align_specified && default_align == '>') {
             format->align = '=';
         }
         ++pos;
@@ -252,8 +252,10 @@ parse_internal_render_format_spec(PyObject *format_spec,
         ++pos;
     }
     if (end-pos && READ_spec(pos) == ',') {
-        invalid_comma_and_underscore();
-        return 0;
+        if (format->thousands_separators == LT_UNDERSCORE_LOCALE) {
+            invalid_comma_and_underscore();
+            return 0;
+        }
     }
 
     /* Parse field precision */

@@ -1,0 +1,5 @@
+The :mod:`ssl` module sets more secure cipher suites defaults. Ciphers
+without forward secrecy and with SHA-1 MAC are disabled by default. Security
+level 2 prohibits weak RSA, DH, and ECC keys with less than 112 bits of
+security. :class:`~ssl.SSLContext` defaults to minimum protocol version TLS
+1.2. Settings are based on Hynek Schlawack's research.

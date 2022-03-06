@@ -1,0 +1,6 @@
+The Python :func:`_pyio.open` function becomes a static method to behave as
+:func:`io.open` built-in function: don't become a bound method when stored as a
+class variable. It becomes possible since static methods are now callable in
+Python 3.10. Moreover, :func:`_pyio.OpenWrapper` becomes a simple alias to
+:func:`_pyio.open`.
+Patch by Victor Stinner.

@@ -14,8 +14,8 @@ extern "C" {
 #ifndef MS_WINDOWS
 PyAPI_FUNC(PyObject *) _PyLong_FromUid(uid_t);
 PyAPI_FUNC(PyObject *) _PyLong_FromGid(gid_t);
-PyAPI_FUNC(int) _Py_Uid_Converter(PyObject *, void *);
-PyAPI_FUNC(int) _Py_Gid_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _Py_Uid_Converter(PyObject *, uid_t *);
+PyAPI_FUNC(int) _Py_Gid_Converter(PyObject *, gid_t *);
 #endif /* MS_WINDOWS */
 
 #if defined(PYPTHREAD_SIGMASK) || defined(HAVE_SIGWAIT) || \

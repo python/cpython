@@ -1,1 +1,0 @@
-Port _stat module to multiphase initialization (:pep:`489`).

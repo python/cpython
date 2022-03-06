@@ -1,0 +1,1 @@
+Drop support for MACOSX_DEPLOYMENT_TARGET < 10.3

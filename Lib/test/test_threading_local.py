@@ -2,6 +2,7 @@ import sys
 import unittest
 from doctest import DocTestSuite
 from test import support
+from test.support import threading_helper
 import weakref
 import gc
 
@@ -65,8 +66,8 @@ class BaseLocalTest:
             # Simply check that the variable is correctly set
             self.assertEqual(local.x, i)
 
-        with support.start_threads(threading.Thread(target=f, args=(i,))
-                                   for i in range(10)):
+        with threading_helper.start_threads(threading.Thread(target=f, args=(i,))
+                                            for i in range(10)):
             pass
 
     def test_derived_cycle_dealloc(self):

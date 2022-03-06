@@ -36,6 +36,33 @@ class AbstractTkTest:
             w.destroy()
         self.root.withdraw()
 
+
+class AbstractDefaultRootTest:
+
+    def setUp(self):
+        self._old_support_default_root = tkinter._support_default_root
+        destroy_default_root()
+        tkinter._support_default_root = True
+        self.wantobjects = tkinter.wantobjects
+
+    def tearDown(self):
+        destroy_default_root()
+        tkinter._default_root = None
+        tkinter._support_default_root = self._old_support_default_root
+
+    def _test_widget(self, constructor):
+        # no master passing
+        x = constructor()
+        self.assertIsNotNone(tkinter._default_root)
+        self.assertIs(x.master, tkinter._default_root)
+        self.assertIs(x.tk, tkinter._default_root.tk)
+        x.destroy()
+        destroy_default_root()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, constructor)
+        self.assertFalse(hasattr(tkinter, '_default_root'))
+
+
 def destroy_default_root():
     if getattr(tkinter, '_default_root', None):
         tkinter._default_root.update_idletasks()

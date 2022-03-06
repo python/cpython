@@ -229,7 +229,7 @@ In regular release builds, the default warning filter has the following entries
     ignore::ImportWarning
     ignore::ResourceWarning
 
-In debug builds, the list of default warning filters is empty.
+In a :ref:`debug build <debug-build>`, the list of default warning filters is empty.
 
 .. versionchanged:: 3.2
    :exc:`DeprecationWarning` is now ignored by default in addition to
@@ -491,7 +491,7 @@ Available Functions
 Available Context Managers
 --------------------------
 
-.. class:: catch_warnings(\*, record=False, module=None)
+.. class:: catch_warnings(*, record=False, module=None)
 
     A context manager that copies and, upon exit, restores the warnings filter
     and the :func:`showwarning` function.

@@ -1,0 +1,1 @@
+Fix reference leak in test_squeezer. Patch by Pablo Galindo

@@ -1,0 +1,3 @@
+In ``importlib.metadata``, incorporate changes from importlib_metadata 3.10:
+Add mtime-based caching during distribution discovery. Flagged use of dict
+result from ``entry_points()`` as deprecated.

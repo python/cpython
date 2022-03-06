@@ -1,0 +1,2 @@
+Change :class:`netrc.netrc` to use UTF-8 encoding before using locale
+encoding.

@@ -61,4 +61,5 @@ BaseException
            +-- ImportWarning
            +-- UnicodeWarning
            +-- BytesWarning
+           +-- EncodingWarning
            +-- ResourceWarning

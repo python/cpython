@@ -28,8 +28,9 @@ class ExceptionClassTests(unittest.TestCase):
             except TypeError:
                 pass
 
-        inheritance_tree = open(os.path.join(os.path.split(__file__)[0],
-                                                'exception_hierarchy.txt'))
+        inheritance_tree = open(
+                os.path.join(os.path.split(__file__)[0], 'exception_hierarchy.txt'),
+                encoding="utf-8")
         try:
             superclass_name = inheritance_tree.readline().rstrip()
             try:

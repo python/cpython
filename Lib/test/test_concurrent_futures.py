@@ -1,10 +1,11 @@
 from test import support
+from test.support import import_helper
+from test.support import threading_helper
 
 # Skip tests if _multiprocessing wasn't built.
-support.import_module('_multiprocessing')
-# Skip tests if sem_open implementation is broken.
-support.import_module('multiprocessing.synchronize')
+import_helper.import_module('_multiprocessing')
 
+from test.support import hashlib_helper
 from test.support.script_helper import assert_python_ok
 
 import contextlib
@@ -24,7 +25,7 @@ from concurrent import futures
 from concurrent.futures._base import (
     PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future,
     BrokenExecutor)
-from concurrent.futures.process import BrokenProcessPool
+from concurrent.futures.process import BrokenProcessPool, _check_system_limits
 from multiprocessing import get_context
 
 import multiprocessing.process
@@ -100,11 +101,11 @@ def make_dummy_object(_):
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self._thread_key = support.threading_setup()
+        self._thread_key = threading_helper.threading_setup()
 
     def tearDown(self):
         support.reap_children()
-        support.threading_cleanup(*self._thread_key)
+        threading_helper.threading_cleanup(*self._thread_key)
 
 
 class ExecutorMixin:
@@ -158,6 +159,10 @@ class ProcessPoolForkMixin(ExecutorMixin):
     ctx = "fork"
 
     def get_context(self):
+        try:
+            _check_system_limits()
+        except NotImplementedError:
+            self.skipTest("ProcessPoolExecutor unavailable on this system")
         if sys.platform == "win32":
             self.skipTest("require unix system")
         return super().get_context()
@@ -167,12 +172,23 @@ class ProcessPoolSpawnMixin(ExecutorMixin):
     executor_type = futures.ProcessPoolExecutor
     ctx = "spawn"
 
+    def get_context(self):
+        try:
+            _check_system_limits()
+        except NotImplementedError:
+            self.skipTest("ProcessPoolExecutor unavailable on this system")
+        return super().get_context()
+
 
 class ProcessPoolForkserverMixin(ExecutorMixin):
     executor_type = futures.ProcessPoolExecutor
     ctx = "forkserver"
 
     def get_context(self):
+        try:
+            _check_system_limits()
+        except NotImplementedError:
+            self.skipTest("ProcessPoolExecutor unavailable on this system")
         if sys.platform == "win32":
             self.skipTest("require unix system")
         return super().get_context()
@@ -952,6 +968,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
         self.assertIn('raise RuntimeError(123) # some comment',
                       f1.getvalue())
 
+    @hashlib_helper.requires_hashdigest('md5')
     def test_ressources_gced_in_workers(self):
         # Ensure that argument for a job are correctly gc-ed after the job
         # is finished
@@ -1496,11 +1513,11 @@ _threads_key = None
 
 def setUpModule():
     global _threads_key
-    _threads_key = support.threading_setup()
+    _threads_key = threading_helper.threading_setup()
 
 
 def tearDownModule():
-    support.threading_cleanup(*_threads_key)
+    threading_helper.threading_cleanup(*_threads_key)
     multiprocessing.util._cleanup_tests()
 
 

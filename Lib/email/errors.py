@@ -108,3 +108,6 @@ class NonASCIILocalPartDefect(HeaderDefect):
     """local_part contains non-ASCII characters"""
     # This defect only occurs during unicode parsing, not when
     # parsing messages decoded from binary.
+
+class InvalidDateDefect(HeaderDefect):
+    """Header has unparseable or invalid date"""

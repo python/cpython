@@ -8,6 +8,7 @@ import unittest
 import warnings
 
 from test import support
+from test.support import os_helper
 
 
 class SortedDict(collections.UserDict):
@@ -713,31 +714,31 @@ boolean {0[0]} NO
         file1 = support.findfile("cfgparser.1")
         # check when we pass a mix of readable and non-readable files:
         cf = self.newconfig()
-        parsed_files = cf.read([file1, "nonexistent-file"])
+        parsed_files = cf.read([file1, "nonexistent-file"], encoding="utf-8")
         self.assertEqual(parsed_files, [file1])
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we pass only a filename:
         cf = self.newconfig()
-        parsed_files = cf.read(file1)
+        parsed_files = cf.read(file1, encoding="utf-8")
         self.assertEqual(parsed_files, [file1])
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we pass only a Path object:
         cf = self.newconfig()
-        parsed_files = cf.read(pathlib.Path(file1))
+        parsed_files = cf.read(pathlib.Path(file1), encoding="utf-8")
         self.assertEqual(parsed_files, [file1])
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we passed both a filename and a Path object:
         cf = self.newconfig()
-        parsed_files = cf.read([pathlib.Path(file1), file1])
+        parsed_files = cf.read([pathlib.Path(file1), file1], encoding="utf-8")
         self.assertEqual(parsed_files, [file1, file1])
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we pass only missing files:
         cf = self.newconfig()
-        parsed_files = cf.read(["nonexistent-file"])
+        parsed_files = cf.read(["nonexistent-file"], encoding="utf-8")
         self.assertEqual(parsed_files, [])
         # check when we pass no files:
         cf = self.newconfig()
-        parsed_files = cf.read([])
+        parsed_files = cf.read([], encoding="utf-8")
         self.assertEqual(parsed_files, [])
 
     def test_read_returns_file_list_with_bytestring_path(self):
@@ -746,15 +747,15 @@ boolean {0[0]} NO
         file1_bytestring = support.findfile("cfgparser.1").encode()
         # check when passing an existing bytestring path
         cf = self.newconfig()
-        parsed_files = cf.read(file1_bytestring)
+        parsed_files = cf.read(file1_bytestring, encoding="utf-8")
         self.assertEqual(parsed_files, [file1_bytestring])
         # check when passing an non-existing bytestring path
         cf = self.newconfig()
-        parsed_files = cf.read(b'nonexistent-file')
+        parsed_files = cf.read(b'nonexistent-file', encoding="utf-8")
         self.assertEqual(parsed_files, [])
         # check when passing both an existing and non-existing bytestring path
         cf = self.newconfig()
-        parsed_files = cf.read([file1_bytestring, b'nonexistent-file'])
+        parsed_files = cf.read([file1_bytestring, b'nonexistent-file'], encoding="utf-8")
         self.assertEqual(parsed_files, [file1_bytestring])
 
     # shared by subclasses
@@ -1063,17 +1064,17 @@ class MultilineValuesTestCase(BasicTestCase, unittest.TestCase):
             cf.add_section(s)
             for j in range(10):
                 cf.set(s, 'lovely_spam{}'.format(j), self.wonderful_spam)
-        with open(support.TESTFN, 'w') as f:
+        with open(os_helper.TESTFN, 'w', encoding="utf-8") as f:
             cf.write(f)
 
     def tearDown(self):
-        os.unlink(support.TESTFN)
+        os.unlink(os_helper.TESTFN)
 
     def test_dominating_multiline_values(self):
         # We're reading from file because this is where the code changed
         # during performance updates in Python 3.2
         cf_from_file = self.newconfig()
-        with open(support.TESTFN) as f:
+        with open(os_helper.TESTFN, encoding="utf-8") as f:
             cf_from_file.read_file(f)
         self.assertEqual(cf_from_file.get('section8', 'lovely_spam4'),
                          self.wonderful_spam.replace('\t\n', '\n'))
@@ -1472,7 +1473,7 @@ class CopyTestCase(BasicTestCase, unittest.TestCase):
 class FakeFile:
     def __init__(self):
         file_path = support.findfile("cfgparser.1")
-        with open(file_path) as f:
+        with open(file_path, encoding="utf-8") as f:
             self.lines = f.readlines()
             self.lines.reverse()
 
@@ -1499,7 +1500,7 @@ class ReadFileTestCase(unittest.TestCase):
             pass   # unfortunately we can't test bytes on this path
         for file_path in file_paths:
             parser = configparser.ConfigParser()
-            with open(file_path) as f:
+            with open(file_path, encoding="utf-8") as f:
                 parser.read_file(f)
             self.assertIn("Foo Bar", parser)
             self.assertIn("foo", parser["Foo Bar"])
@@ -2127,8 +2128,7 @@ class BlatantOverrideConvertersTestCase(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {"Error"}
-        support.check__all__(self, configparser, blacklist=blacklist)
+        support.check__all__(self, configparser, not_exported={"Error"})
 
 
 if __name__ == '__main__':

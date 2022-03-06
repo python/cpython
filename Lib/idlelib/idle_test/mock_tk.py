@@ -3,6 +3,9 @@
 A gui object is anything with a master or parent parameter, which is
 typically required in spite of what the doc strings say.
 """
+import re
+from _tkinter import TclError
+
 
 class Event:
     '''Minimal mock with attributes for testing event handlers.
@@ -22,6 +25,7 @@ class Event:
         "Create event with attributes needed for test"
         self.__dict__.update(kwds)
 
+
 class Var:
     "Use for String/Int/BooleanVar: incomplete"
     def __init__(self, master=None, value=None, name=None):
@@ -32,6 +36,7 @@ class Var:
         self.value = value
     def get(self):
         return self.value
+
 
 class Mbox_func:
     """Generic mock for messagebox functions, which all have the same signature.
@@ -50,30 +55,30 @@ class Mbox_func:
         self.kwds = kwds
         return self.result  # Set by tester for ask functions
 
+
 class Mbox:
     """Mock for tkinter.messagebox with an Mbox_func for each function.
 
-    This module was 'tkMessageBox' in 2.x; hence the 'import as' in  3.x.
     Example usage in test_module.py for testing functions in module.py:
     ---
 from idlelib.idle_test.mock_tk import Mbox
 import module
 
-orig_mbox = module.tkMessageBox
+orig_mbox = module.messagebox
 showerror = Mbox.showerror  # example, for attribute access in test methods
 
 class Test(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        module.tkMessageBox = Mbox
+        module.messagebox = Mbox
 
     @classmethod
     def tearDownClass(cls):
-        module.tkMessageBox = orig_mbox
+        module.messagebox = orig_mbox
     ---
     For 'ask' functions, set func.result return value before calling the method
-    that uses the message function. When tkMessageBox functions are the
+    that uses the message function. When messagebox functions are the
     only gui alls in a method, this replacement makes the method gui-free,
     """
     askokcancel = Mbox_func()     # True or False
@@ -85,7 +90,6 @@ class Test(unittest.TestCase):
     showinfo = Mbox_func()     # None
     showwarning = Mbox_func()  # None
 
-from _tkinter import TclError
 
 class Text:
     """A semi-functional non-gui replacement for tkinter.Text text editors.
@@ -154,6 +158,8 @@ class Text:
         if char.endswith(' lineend') or char == 'end':
             return line, linelength
             # Tk requires that ignored chars before ' lineend' be valid int
+        if m := re.fullmatch(r'end-(\d*)c', char, re.A):  # Used by hyperparser.
+            return line, linelength - int(m.group(1))
 
         # Out of bounds char becomes first or last index of line
         char = int(char)
@@ -177,7 +183,6 @@ class Text:
             n -= 1
             return n, len(self.data[n]) + endflag
 
-
     def insert(self, index, chars):
         "Insert chars before the character at index."
 
@@ -192,7 +197,6 @@ class Text:
         self.data[line] = before + chars[0]
         self.data[line+1:line+1] = chars[1:]
         self.data[line+len(chars)-1] += after
-
 
     def get(self, index1, index2=None):
         "Return slice from index1 to index2 (default is 'index1+1')."
@@ -211,7 +215,6 @@ class Text:
                 lines.append(self.data[i])
             lines.append(self.data[endline][:endchar])
             return ''.join(lines)
-
 
     def delete(self, index1, index2=None):
         '''Delete slice from index1 to index2 (default is 'index1+1').
@@ -296,6 +299,7 @@ class Text:
     def bind(sequence=None, func=None, add=None):
         "Bind to this widget at event sequence a call to function func."
         pass
+
 
 class Entry:
     "Mock for tkinter.Entry."

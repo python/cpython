@@ -184,11 +184,6 @@ object___reduce_ex__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int protocol;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     protocol = _PyLong_AsInt(arg);
     if (protocol == -1 && PyErr_Occurred()) {
         goto exit;
@@ -266,4 +261,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=4f1a4e451174f0bc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a30090032b8e6195 input=a9049054013a1b77]*/

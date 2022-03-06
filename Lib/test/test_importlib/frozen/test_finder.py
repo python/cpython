@@ -4,6 +4,7 @@ from .. import util
 machinery = util.import_importlib('importlib.machinery')
 
 import unittest
+import warnings
 
 
 class FindSpecTests(abc.FinderTests):
@@ -49,7 +50,9 @@ class FinderTests(abc.FinderTests):
 
     def find(self, name, path=None):
         finder = self.machinery.FrozenImporter
-        return finder.find_module(name, path)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return finder.find_module(name, path)
 
     def test_module(self):
         name = '__hello__'

@@ -3,6 +3,7 @@
 import os
 import tempfile
 from test import support
+from test.support import os_helper
 from test.test_tools import skip_if_missing, import_tool
 import unittest
 
@@ -14,7 +15,7 @@ class lllTests(unittest.TestCase):
     def setUp(self):
         self.lll = import_tool('lll')
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_lll_multiple_dirs(self):
         with tempfile.TemporaryDirectory() as dir1, \
              tempfile.TemporaryDirectory() as dir2:

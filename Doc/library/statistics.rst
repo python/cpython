@@ -51,7 +51,7 @@ or sample.
 :func:`median_high`      High median of data.
 :func:`median_grouped`   Median, or 50th percentile, of grouped data.
 :func:`mode`             Single mode (most common value) of discrete or nominal data.
-:func:`multimode`        List of modes (most common values) of discrete or nomimal data.
+:func:`multimode`        List of modes (most common values) of discrete or nominal data.
 :func:`quantiles`        Divide data into intervals with equal probability.
 =======================  ===============================================================
 
@@ -67,6 +67,17 @@ tends to deviate from the typical or average values.
 :func:`stdev`            Sample standard deviation of data.
 :func:`variance`         Sample variance of data.
 =======================  =============================================
+
+Statistics for relations between two inputs
+-------------------------------------------
+
+These functions calculate statistics regarding relations between two inputs.
+
+=========================  =====================================================
+:func:`covariance`         Sample covariance for two variables.
+:func:`correlation`        Pearson's correlation coefficient for two variables.
+:func:`linear_regression`  Intercept and slope for simple linear regression.
+=========================  =====================================================
 
 
 Function details
@@ -156,20 +167,20 @@ However, for reading convenience, most of the examples show sorted sequences.
    .. versionadded:: 3.8
 
 
-.. function:: harmonic_mean(data)
+.. function:: harmonic_mean(data, weights=None)
 
    Return the harmonic mean of *data*, a sequence or iterable of
-   real-valued numbers.
+   real-valued numbers.  If *weights* is omitted or *None*, then
+   equal weighting is assumed.
 
-   The harmonic mean, sometimes called the subcontrary mean, is the
-   reciprocal of the arithmetic :func:`mean` of the reciprocals of the
-   data. For example, the harmonic mean of three values *a*, *b* and *c*
-   will be equivalent to ``3/(1/a + 1/b + 1/c)``.  If one of the values
-   is zero, the result will be zero.
+   The harmonic mean is the reciprocal of the arithmetic :func:`mean` of the
+   reciprocals of the data. For example, the harmonic mean of three values *a*,
+   *b* and *c* will be equivalent to ``3/(1/a + 1/b + 1/c)``.  If one of the
+   values is zero, the result will be zero.
 
    The harmonic mean is a type of average, a measure of the central
    location of the data.  It is often appropriate when averaging
-   rates or ratios, for example speeds.
+   ratios or rates, for example speeds.
 
    Suppose a car travels 10 km at 40 km/hr, then another 10 km at 60 km/hr.
    What is the average speed?
@@ -179,17 +190,17 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> harmonic_mean([40, 60])
       48.0
 
-   Suppose an investor purchases an equal value of shares in each of
-   three companies, with P/E (price/earning) ratios of 2.5, 3 and 10.
-   What is the average P/E ratio for the investor's portfolio?
+   Suppose a car travels 40 km/hr for 5 km, and when traffic clears,
+   speeds-up to 60 km/hr for the remaining 30 km of the journey. What
+   is the average speed?
 
    .. doctest::
 
-      >>> harmonic_mean([2.5, 3, 10])  # For an equal investment portfolio.
-      3.6
+      >>> harmonic_mean([40, 60], weights=[5, 30])
+      56.0
 
-   :exc:`StatisticsError` is raised if *data* is empty, or any element
-   is less than zero.
+   :exc:`StatisticsError` is raised if *data* is empty, any element
+   is less than zero, or if the weighted sum isn't positive.
 
    The current algorithm has an early-out when it encounters a zero
    in the input.  This means that the subsequent inputs are not tested
@@ -197,6 +208,8 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.6
 
+   .. versionchanged:: 3.10
+      Added support for *weights*.
 
 .. function:: median(data)
 
@@ -563,6 +576,98 @@ However, for reading convenience, most of the examples show sorted sequences.
         [81.0, 86.2, 89.0, 99.4, 102.5, 103.6, 106.0, 109.8, 111.0]
 
    .. versionadded:: 3.8
+
+.. function:: covariance(x, y, /)
+
+   Return the sample covariance of two inputs *x* and *y*. Covariance
+   is a measure of the joint variability of two inputs.
+
+   Both inputs must be of the same length (no less than two), otherwise
+   :exc:`StatisticsError` is raised.
+
+   Examples:
+
+   .. doctest::
+
+      >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      >>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
+      >>> covariance(x, y)
+      0.75
+      >>> z = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+      >>> covariance(x, z)
+      -7.5
+      >>> covariance(z, x)
+      -7.5
+
+   .. versionadded:: 3.10
+
+.. function:: correlation(x, y, /)
+
+   Return the `Pearson's correlation coefficient
+   <https://en.wikipedia.org/wiki/Pearson_correlation_coefficient>`_
+   for two inputs. Pearson's correlation coefficient *r* takes values
+   between -1 and +1. It measures the strength and direction of the linear
+   relationship, where +1 means very strong, positive linear relationship,
+   -1 very strong, negative linear relationship, and 0 no linear relationship.
+
+   Both inputs must be of the same length (no less than two), and need
+   not to be constant, otherwise :exc:`StatisticsError` is raised.
+
+   Examples:
+
+   .. doctest::
+
+      >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      >>> y = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+      >>> correlation(x, x)
+      1.0
+      >>> correlation(x, y)
+      -1.0
+
+   .. versionadded:: 3.10
+
+.. function:: linear_regression(regressor, dependent_variable)
+
+   Return the intercept and slope of `simple linear regression
+   <https://en.wikipedia.org/wiki/Simple_linear_regression>`_
+   parameters estimated using ordinary least squares. Simple linear
+   regression describes relationship between *regressor* and
+   *dependent variable* in terms of linear function:
+
+      *dependent_variable = intercept + slope \* regressor + noise*
+
+   where ``intercept`` and ``slope`` are the regression parameters that are
+   estimated, and noise term is an unobserved random variable, for the
+   variability of the data that was not explained by the linear regression
+   (it is equal to the difference between prediction and the actual values
+   of dependent variable).
+
+   Both inputs must be of the same length (no less than two), and regressor
+   needs not to be constant, otherwise :exc:`StatisticsError` is raised.
+
+   For example, if we took the data on the data on `release dates of the Monty
+   Python films <https://en.wikipedia.org/wiki/Monty_Python#Films>`_, and used
+   it to predict the cumulative number of Monty Python films produced, we could
+   predict what would be the number of films they could have made till year
+   2019, assuming that they kept the pace.
+
+   .. doctest::
+
+      >>> year = [1971, 1975, 1979, 1982, 1983]
+      >>> films_total = [1, 2, 3, 4, 5]
+      >>> intercept, slope = linear_regression(year, films_total)
+      >>> round(intercept + slope * 2019)
+      16
+
+   We could also use it to "predict" how many Monty Python films existed when
+   Brian Cohen was born.
+
+   .. doctest::
+
+      >>> round(intercept + slope * 1)
+      -610
+
+   .. versionadded:: 3.10
 
 
 Exceptions

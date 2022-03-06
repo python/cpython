@@ -1,0 +1,3 @@
+New functions :func:`sysconfig.get_preferred_scheme` and
+:func:`sysconfig.get_default_scheme` are added to query a platform for its
+preferred "user", "home", and "prefix" (default) scheme names.

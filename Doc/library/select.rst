@@ -117,7 +117,7 @@ The module defines the following:
 .. function:: select(rlist, wlist, xlist[, timeout])
 
    This is a straightforward interface to the Unix :c:func:`select` system call.
-   The first three arguments are sequences of 'waitable objects': either
+   The first three arguments are iterables of 'waitable objects': either
    integers representing file descriptors or objects with a parameterless method
    named :meth:`~io.IOBase.fileno` returning such an integer:
 
@@ -126,7 +126,7 @@ The module defines the following:
    * *xlist*: wait for an "exceptional condition" (see the manual page for what
      your system considers such a condition)
 
-   Empty sequences are allowed, but acceptance of three empty sequences is
+   Empty iterables are allowed, but acceptance of three empty iterables is
    platform-dependent. (It is known to work on Unix but not on Windows.)  The
    optional *timeout* argument specifies a time-out as a floating point number
    in seconds.  When the *timeout* argument is omitted the function blocks until
@@ -141,7 +141,7 @@ The module defines the following:
       single: socket() (in module socket)
       single: popen() (in module os)
 
-   Among the acceptable object types in the sequences are Python :term:`file
+   Among the acceptable object types in the iterables are Python :term:`file
    objects <file object>` (e.g. ``sys.stdin``, or objects returned by
    :func:`open` or :func:`os.popen`), socket objects returned by
    :func:`socket.socket`.  You may also define a :dfn:`wrapper` class yourself,

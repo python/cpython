@@ -350,7 +350,7 @@ class Server(events.AbstractServer):
         self._start_serving()
         # Skip one loop iteration so that all 'loop.add_reader'
         # go through.
-        await tasks.sleep(0, loop=self._loop)
+        await tasks.sleep(0)
 
     async def serve_forever(self):
         if self._serving_forever_fut is not None:
@@ -541,8 +541,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         results = await tasks.gather(
             *[ag.aclose() for ag in closing_agens],
-            return_exceptions=True,
-            loop=self)
+            return_exceptions=True)
 
         for result, agen in zip(results, closing_agens):
             if isinstance(result, Exception):
@@ -1457,7 +1456,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             fs = [self._create_server_getaddrinfo(host, port, family=family,
                                                   flags=flags)
                   for host in hosts]
-            infos = await tasks.gather(*fs, loop=self)
+            infos = await tasks.gather(*fs)
             infos = set(itertools.chain.from_iterable(infos))
 
             completed = False
@@ -1515,7 +1514,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             server._start_serving()
             # Skip one loop iteration so that all 'loop.add_reader'
             # go through.
-            await tasks.sleep(0, loop=self)
+            await tasks.sleep(0)
 
         if self._debug:
             logger.info("%r is serving", server)
@@ -1525,14 +1524,6 @@ class BaseEventLoop(events.AbstractEventLoop):
             self, protocol_factory, sock,
             *, ssl=None,
             ssl_handshake_timeout=None):
-        """Handle an accepted connection.
-
-        This is used by servers that accept connections outside of
-        asyncio but that use asyncio to handle connections.
-
-        This method is a coroutine.  When completed, the coroutine
-        returns a (transport, protocol) pair.
-        """
         if sock.type != socket.SOCK_STREAM:
             raise ValueError(f'A Stream Socket was expected, got {sock!r}')
 

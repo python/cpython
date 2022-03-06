@@ -1,0 +1,3 @@
+Ensures interpreter-level audit hooks receive the
+``cpython.PyInterpreterState_New`` event when called through the
+``_xxsubinterpreters`` module.
