@@ -1,0 +1,2 @@
+Use inline caching for :opcode:`PRECALL` and :opcode:`CALL`, and remove the
+internal machinery for managing the (now unused) non-inline caches.
