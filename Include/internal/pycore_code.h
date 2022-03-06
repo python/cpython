@@ -11,7 +11,7 @@ extern "C" {
 
 // Inline caches. If you change the number of cache entries for an instruction,
 // you must *also* update the number of cache entries in Lib/opcode.py and bump
-// the magic number in Lib/importlib/_bootstap_external.py!
+// the magic number in Lib/importlib/_bootstrap_external.py!
 
 #define CACHE_ENTRIES(cache) (sizeof(cache)/sizeof(_Py_CODEUNIT))
 
