@@ -4564,12 +4564,12 @@ handle_eval_breaker:
                We'll be passing `oparg + 1` to call_function, to
                make it accept the `self` as a first argument.
             */
-            int is_method = (PEEK(oparg + 2) != NULL);
-            int nargs = oparg + is_method;
+            int is_meth = is_method(stack_pointer, oparg);
+            int nargs = oparg + is_meth;
             /* Move ownership of reference from stack to call_shape
              * and make sure that NULL is cleared from stack */
             PyObject *function = PEEK(nargs + 1);
-            if (!is_method && Py_TYPE(function) == &PyMethod_Type) {
+            if (!is_meth && Py_TYPE(function) == &PyMethod_Type) {
                 PyObject *meth = ((PyMethodObject *)function)->im_func;
                 PyObject *self = ((PyMethodObject *)function)->im_self;
                 Py_INCREF(meth);
@@ -4583,8 +4583,7 @@ handle_eval_breaker:
         }
 
         TARGET(PRECALL_BOUND_METHOD) {
-            int is_method = (PEEK(oparg + 2) != NULL);
-            DEOPT_IF(is_method, PRECALL);
+            DEOPT_IF(is_method(stack_pointer, oparg), PRECALL);
             PyObject *function = PEEK(oparg + 1);
             DEOPT_IF(Py_TYPE(function) != &PyMethod_Type, PRECALL);
             STAT_INC(PRECALL, hit);
@@ -4600,8 +4599,7 @@ handle_eval_breaker:
         }
 
         TARGET(PRECALL_PYFUNC) {
-            int is_method = (PEEK(oparg + 2) != NULL);
-            int nargs = oparg + is_method;
+            int nargs = oparg + is_method(stack_pointer, oparg);
             PyObject *function = PEEK(nargs + 1);
             DEOPT_IF(Py_TYPE(function) != &PyFunction_Type, PRECALL);
             STAT_INC(PRECALL, hit);

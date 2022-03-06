@@ -311,7 +311,7 @@ optimize(_Py_CODEUNIT *instructions, int len)
         else {
             assert(!_PyOpcode_InlineCacheEntries[opcode]);
             switch (opcode) {
-                case JUMP_ABSOLUTE:                                                             
+                case JUMP_ABSOLUTE:
                     instructions[i] = _Py_MAKECODEUNIT(JUMP_ABSOLUTE_QUICK, oparg);
                     break;
                 case RESUME:
@@ -1475,10 +1475,6 @@ builtin_call_fail_kind(int ml_flags)
 }
 #endif
 
-PyObject *builtin_isinstance = NULL;
-PyObject *builtin_len = NULL;
-PyObject *builtin_list_append = NULL;
-
 static int
 specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
                              int nargs, PyObject *kwnames, int oparg)
@@ -1487,14 +1483,6 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
     if (kwnames) {
         SPECIALIZATION_FAIL(PRECALL, SPEC_FAIL_CALL_KWNAMES);
         return -1;
-    }
-    if (builtin_list_append == NULL) {
-        builtin_list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
-    }
-    assert(builtin_list_append != NULL);
-    if (nargs == 2 && (PyObject *)descr == builtin_list_append && oparg == 1) {
-        *instr = _Py_MAKECODEUNIT(PRECALL_NO_KW_LIST_APPEND, _Py_OPARG(*instr));
-        return 0;
     }
 
     switch (descr->d_method->ml_flags &
@@ -1511,8 +1499,15 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
         }
         case METH_O: {
             if (nargs != 2) {
-                SPECIALIZATION_FAIL(PRECALL, SPEC_FAIL_OUT_OF_RANGE);
+                SPECIALIZATION_FAIL(PRECALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
                 return -1;
+            }
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyObject *list_append = interp->callable_cache.list_append;
+            if ((PyObject *)descr == list_append && oparg == 1) {
+                *instr = _Py_MAKECODEUNIT(PRECALL_NO_KW_LIST_APPEND,
+                                          _Py_OPARG(*instr));
+                return 0;
             }
             *instr = _Py_MAKECODEUNIT(PRECALL_NO_KW_METHOD_DESCRIPTOR_O,
                 _Py_OPARG(*instr));
@@ -1705,7 +1700,7 @@ _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
         fail = 0;
     }
     else {
-        SPECIALIZATION_FAIL(CALL, call_fail_kind(callable));
+        SPECIALIZATION_FAIL(PRECALL, call_fail_kind(callable));
         fail = -1;
     }
     if (fail) {
