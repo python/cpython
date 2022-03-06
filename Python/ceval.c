@@ -5730,6 +5730,7 @@ exception_unwind:
             assert(STACK_LEVEL() == 0);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             frame->f_state = FRAME_RAISED;
+            Py_CLEAR(frame->self);
             TRACE_FUNCTION_UNWIND();
             DTRACE_FUNCTION_EXIT();
             goto exit_unwind;
