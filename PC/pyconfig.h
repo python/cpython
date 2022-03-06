@@ -58,7 +58,6 @@ WIN32 is still required for the locale module.
 
 #include <io.h>
 
-#define HAVE_HYPOT
 #define HAVE_STRFTIME
 #define DONT_HAVE_SIG_ALARM
 #define DONT_HAVE_SIG_PAUSE
@@ -67,9 +66,6 @@ WIN32 is still required for the locale module.
 
 #define MS_WIN32 /* only support win32 and greater. */
 #define MS_WINDOWS
-#ifndef PYTHONPATH
-#       define PYTHONPATH L".\\DLLs;.\\lib"
-#endif
 #define NT_THREADS
 #define WITH_THREAD
 #ifndef NETSCAPE_PI
@@ -188,11 +184,6 @@ typedef _W64 int Py_ssize_t;
 #endif /* MS_WIN32 && !MS_WIN64 */
 
 typedef int pid_t;
-
-#include <float.h>
-#define Py_IS_NAN _isnan
-#define Py_IS_INFINITY(X) (!_finite(X) && !_isnan(X))
-#define Py_IS_FINITE(X) _finite(X)
 
 /* define some ANSI types that are not defined in earlier Win headers */
 #if _MSC_VER >= 1200
@@ -353,20 +344,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Fairly standard from here! */
 
-/* Define to 1 if you have the `copysign' function. */
-#define HAVE_COPYSIGN 1
-
-/* Define to 1 if you have the `round' function. */
-#if _MSC_VER >= 1800
-#define HAVE_ROUND 1
-#endif
-
-/* Define to 1 if you have the `isinf' macro. */
-#define HAVE_DECL_ISINF 1
-
-/* Define to 1 if you have the `isnan' function. */
-#define HAVE_DECL_ISNAN 1
-
 /* Define if on AIX 3.
    System headers sometimes define this.
    We just want to avoid a redefinition error message.  */
@@ -483,6 +460,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Use Python's own small-block memory-allocator. */
 #define WITH_PYMALLOC 1
 
+/* Define if you want to compile in object freelists optimization */
+#define WITH_FREELISTS 1
+
 /* Define if you have clock.  */
 /* #define HAVE_CLOCK */
 
@@ -534,6 +514,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have siginterrupt.  */
 /* #undef HAVE_SIGINTERRUPT */
 
+/* Define to 1 if you have the `shutdown' function. */
+#define HAVE_SHUTDOWN 1
+
 /* Define if you have symlink.  */
 /* #undef HAVE_SYMLINK */
 
@@ -545,6 +528,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if you have times.  */
 /* #undef HAVE_TIMES */
+
+/* Define to 1 if you have the `umask' function. */
+#define HAVE_UMASK 1
 
 /* Define if you have uname.  */
 /* #undef HAVE_UNAME */
@@ -684,7 +670,5 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
 #define HAVE_X509_VERIFY_PARAM_SET1_HOST 1
-
-#define PLATLIBDIR "lib"
 
 #endif /* !Py_CONFIG_H */

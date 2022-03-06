@@ -20,6 +20,7 @@ typedef struct {
 } PyGC_Head;
 
 #define _Py_AS_GC(o) ((PyGC_Head *)(o)-1)
+#define _PyGC_Head_UNUSED PyGC_Head
 
 /* True if the object is currently tracked by the GC. */
 #define _PyObject_GC_IS_TRACKED(o) (_Py_AS_GC(o)->_gc_next != 0)
@@ -43,7 +44,7 @@ typedef struct {
 // Lowest bit of _gc_next is used for flags only in GC.
 // But it is always 0 for normal code.
 #define _PyGCHead_NEXT(g)        ((PyGC_Head*)(g)->_gc_next)
-#define _PyGCHead_SET_NEXT(g, p) ((g)->_gc_next = (uintptr_t)(p))
+#define _PyGCHead_SET_NEXT(g, p) _Py_RVALUE((g)->_gc_next = (uintptr_t)(p))
 
 // Lowest two bits of _gc_prev is used for _PyGC_PREV_MASK_* flags.
 #define _PyGCHead_PREV(g) ((PyGC_Head*)((g)->_gc_prev & _PyGC_PREV_MASK))
@@ -56,7 +57,7 @@ typedef struct {
 #define _PyGCHead_FINALIZED(g) \
     (((g)->_gc_prev & _PyGC_PREV_MASK_FINALIZED) != 0)
 #define _PyGCHead_SET_FINALIZED(g) \
-    ((g)->_gc_prev |= _PyGC_PREV_MASK_FINALIZED)
+    _Py_RVALUE((g)->_gc_prev |= _PyGC_PREV_MASK_FINALIZED)
 
 #define _PyGC_FINALIZED(o) \
     _PyGCHead_FINALIZED(_Py_AS_GC(o))
@@ -134,6 +135,7 @@ struct _gc_runtime_state {
     /* Current call-stack depth of tp_dealloc calls. */
     int trash_delete_nesting;
 
+    /* Is automatic collection enabled? */
     int enabled;
     int debug;
     /* linked lists of container objects */
@@ -161,13 +163,13 @@ struct _gc_runtime_state {
     Py_ssize_t long_lived_pending;
 };
 
+
 extern void _PyGC_InitState(struct _gc_runtime_state *);
 
 extern Py_ssize_t _PyGC_CollectNoFail(PyThreadState *tstate);
 
 
 // Functions to clear types free lists
-extern void _PyFrame_ClearFreeList(PyInterpreterState *interp);
 extern void _PyTuple_ClearFreeList(PyInterpreterState *interp);
 extern void _PyFloat_ClearFreeList(PyInterpreterState *interp);
 extern void _PyList_ClearFreeList(PyInterpreterState *interp);

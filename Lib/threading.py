@@ -418,6 +418,11 @@ class Semaphore:
         self._cond = Condition(Lock())
         self._value = value
 
+    def __repr__(self):
+        cls = self.__class__
+        return (f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}:"
+                f" value={self._value}>")
+
     def acquire(self, blocking=True, timeout=None):
         """Acquire a semaphore, decrementing the internal counter by one.
 
@@ -504,6 +509,11 @@ class BoundedSemaphore(Semaphore):
         Semaphore.__init__(self, value)
         self._initial_value = value
 
+    def __repr__(self):
+        cls = self.__class__
+        return (f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}:"
+                f" value={self._value}/{self._initial_value}>")
+
     def release(self, n=1):
         """Release a semaphore, incrementing the internal counter by one or more.
 
@@ -538,6 +548,11 @@ class Event:
     def __init__(self):
         self._cond = Condition(Lock())
         self._flag = False
+
+    def __repr__(self):
+        cls = self.__class__
+        status = 'set' if self._flag else 'unset'
+        return f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}: {status}>"
 
     def _at_fork_reinit(self):
         # Private method called by Thread._reset_internal_locks()
@@ -634,8 +649,15 @@ class Barrier:
         self._action = action
         self._timeout = timeout
         self._parties = parties
-        self._state = 0 #0 filling, 1, draining, -1 resetting, -2 broken
+        self._state = 0  # 0 filling, 1 draining, -1 resetting, -2 broken
         self._count = 0
+
+    def __repr__(self):
+        cls = self.__class__
+        if self.broken:
+            return f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}: broken>"
+        return (f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}:"
+                f" waiters={self.n_waiting}/{self.parties}>")
 
     def wait(self, timeout=None):
         """Wait for the barrier.
@@ -830,7 +852,7 @@ class Thread:
         *name* is the thread name. By default, a unique name is constructed of
         the form "Thread-N" where N is a small decimal number.
 
-        *args* is the argument tuple for the target invocation. Defaults to ().
+        *args* is a list or tuple of arguments for the target invocation. Defaults to ().
 
         *kwargs* is a dictionary of keyword arguments for the target
         invocation. Defaults to {}.
@@ -1094,11 +1116,24 @@ class Thread:
         # If the lock is acquired, the C code is done, and self._stop() is
         # called.  That sets ._is_stopped to True, and ._tstate_lock to None.
         lock = self._tstate_lock
-        if lock is None:  # already determined that the C code is done
+        if lock is None:
+            # already determined that the C code is done
             assert self._is_stopped
-        elif lock.acquire(block, timeout):
-            lock.release()
-            self._stop()
+            return
+
+        try:
+            if lock.acquire(block, timeout):
+                lock.release()
+                self._stop()
+        except:
+            if lock.locked():
+                # bpo-45274: lock.acquire() acquired the lock, but the function
+                # was interrupted with an exception before reaching the
+                # lock.release(). It can happen if a signal handler raises an
+                # exception, like CTRL+C which raises KeyboardInterrupt.
+                lock.release()
+                self._stop()
+            raise
 
     @property
     def name(self):
@@ -1504,19 +1539,28 @@ def _shutdown():
 
     global _SHUTTING_DOWN
     _SHUTTING_DOWN = True
-    # Main thread
-    tlock = _main_thread._tstate_lock
-    # The main thread isn't finished yet, so its thread state lock can't have
-    # been released.
-    assert tlock is not None
-    assert tlock.locked()
-    tlock.release()
-    _main_thread._stop()
 
     # Call registered threading atexit functions before threads are joined.
     # Order is reversed, similar to atexit.
     for atexit_call in reversed(_threading_atexits):
         atexit_call()
+
+    # Main thread
+    if _main_thread.ident == get_ident():
+        tlock = _main_thread._tstate_lock
+        # The main thread isn't finished yet, so its thread state lock can't
+        # have been released.
+        assert tlock is not None
+        assert tlock.locked()
+        tlock.release()
+        _main_thread._stop()
+    else:
+        # bpo-1596321: _shutdown() must be called in the main thread.
+        # If the threading module was not imported by the main thread,
+        # _main_thread is the thread which imported the threading module.
+        # In this case, ignore _main_thread, similar behavior than for threads
+        # spawned by C libraries or using _thread.start_new_thread().
+        pass
 
     # Join all non-deamon threads
     while True:
@@ -1528,7 +1572,7 @@ def _shutdown():
             break
 
         for lock in locks:
-            # mimick Thread.join()
+            # mimic Thread.join()
             lock.acquire()
             lock.release()
 

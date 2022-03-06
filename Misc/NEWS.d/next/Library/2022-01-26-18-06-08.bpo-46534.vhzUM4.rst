@@ -1,0 +1,2 @@
+Implement :pep:`673` :class:`typing.Self`.
+Patch by James Hilton-Balfe.

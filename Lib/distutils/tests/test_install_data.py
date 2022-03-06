@@ -69,7 +69,7 @@ class InstallDataTestCase(support.TempdirManager,
         self.assertTrue(os.path.exists(os.path.join(inst, rone)))
 
 def test_suite():
-    return unittest.makeSuite(InstallDataTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(InstallDataTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

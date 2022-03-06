@@ -465,10 +465,10 @@ later:
 */
 
 #include "Python.h"
-#include "pycore_object.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_dict.h"          // _Py_dict_lookup()
 #include <stddef.h>               // offsetof()
-#include "pycore_dict.h"
-#include <stddef.h>
 
 #include "clinic/odictobject.c.h"
 
@@ -524,8 +524,6 @@ struct _odictnode {
 #define _odict_EMPTY(od) (_odict_FIRST(od) == NULL)
 #define _odict_FOREACH(od, node) \
     for (node = _odict_FIRST(od); node != NULL; node = _odictnode_NEXT(node))
-
-_Py_IDENTIFIER(items);
 
 /* Return the index into the hash table, regardless of a valid node. */
 static Py_ssize_t
@@ -949,12 +947,11 @@ PyDoc_STRVAR(odict_reduce__doc__, "Return state information for pickling");
 static PyObject *
 odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(__dict__);
     PyObject *dict = NULL, *result = NULL;
     PyObject *items_iter, *items, *args = NULL;
 
     /* capture any instance state */
-    dict = _PyObject_GetAttrId((PyObject *)od, &PyId___dict__);
+    dict = PyObject_GetAttr((PyObject *)od, &_Py_ID(__dict__));
     if (dict == NULL)
         goto Done;
     else {
@@ -973,7 +970,7 @@ odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     if (args == NULL)
         goto Done;
 
-    items = _PyObject_CallMethodIdNoArgs((PyObject *)od, &PyId_items);
+    items = PyObject_CallMethodNoArgs((PyObject *)od, &_Py_ID(items));
     if (items == NULL)
         goto Done;
 
@@ -1203,7 +1200,7 @@ odict_copy(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     if (PyODict_CheckExact(od))
         od_copy = PyODict_New();
     else
-        od_copy = _PyObject_CallNoArg((PyObject *)Py_TYPE(od));
+        od_copy = _PyObject_CallNoArgs((PyObject *)Py_TYPE(od));
     if (od_copy == NULL)
         return NULL;
 
@@ -1249,6 +1246,7 @@ PyDoc_STRVAR(odict_reversed__doc__, "od.__reversed__() <==> reversed(od)");
 #define _odict_ITER_REVERSED 1
 #define _odict_ITER_KEYS 2
 #define _odict_ITER_VALUES 4
+#define _odict_ITER_ITEMS (_odict_ITER_KEYS|_odict_ITER_VALUES)
 
 /* forward */
 static PyObject * odictiter_new(PyODictObject *, int);
@@ -1430,8 +1428,8 @@ odict_repr(PyODictObject *self)
         }
     }
     else {
-        PyObject *items = _PyObject_CallMethodIdNoArgs((PyObject *)self,
-                                                       &PyId_items);
+        PyObject *items = PyObject_CallMethodNoArgs(
+                (PyObject *)self, &_Py_ID(items));
         if (items == NULL)
             goto Done;
         pieces = PySequence_List(items);
@@ -1666,7 +1664,7 @@ odictiter_dealloc(odictiterobject *di)
     _PyObject_GC_UNTRACK(di);
     Py_XDECREF(di->di_odict);
     Py_XDECREF(di->di_current);
-    if (di->kind & (_odict_ITER_KEYS | _odict_ITER_VALUES)) {
+    if ((di->kind & _odict_ITER_ITEMS) == _odict_ITER_ITEMS) {
         Py_DECREF(di->di_result);
     }
     PyObject_GC_Del(di);
@@ -1807,7 +1805,6 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling");
 static PyObject *
 odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     /* copy the iterator state */
     odictiterobject tmp = *di;
     Py_XINCREF(tmp.di_odict);
@@ -1820,7 +1817,7 @@ odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(iter)), list);
 }
 
 static PyMethodDef odictiter_methods[] = {
@@ -1872,15 +1869,16 @@ odictiter_new(PyODictObject *od, int kind)
     if (di == NULL)
         return NULL;
 
-    if (kind & (_odict_ITER_KEYS | _odict_ITER_VALUES)){
+    if ((kind & _odict_ITER_ITEMS) == _odict_ITER_ITEMS) {
         di->di_result = PyTuple_Pack(2, Py_None, Py_None);
         if (di->di_result == NULL) {
             Py_DECREF(di);
             return NULL;
         }
     }
-    else
+    else {
         di->di_result = NULL;
+    }
 
     di->kind = kind;
     node = reversed ? _odict_LAST(od) : _odict_FIRST(od);
@@ -2215,13 +2213,12 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         Py_DECREF(items);
         return res;
     }
-    _Py_IDENTIFIER(keys);
     PyObject *func;
-    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+    if (_PyObject_LookupAttr(arg, &_Py_ID(keys), &func) < 0) {
         return -1;
     }
     if (func != NULL) {
-        PyObject *keys = _PyObject_CallNoArg(func);
+        PyObject *keys = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (keys == NULL) {
             return -1;
@@ -2249,11 +2246,11 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         }
         return 0;
     }
-    if (_PyObject_LookupAttrId(arg, &PyId_items, &func) < 0) {
+    if (_PyObject_LookupAttr(arg, &_Py_ID(items), &func) < 0) {
         return -1;
     }
     if (func != NULL) {
-        PyObject *items = _PyObject_CallNoArg(func);
+        PyObject *items = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (items == NULL) {
             return -1;

@@ -137,7 +137,7 @@ __all__ = [
     "findall", "finditer", "compile", "purge", "template", "escape",
     "error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
     "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
-    "UNICODE",
+    "UNICODE", "NOFLAG", "RegexFlag",
 ]
 
 __version__ = "2.2.1"
@@ -145,6 +145,7 @@ __version__ = "2.2.1"
 @enum.global_enum
 @enum._simple_enum(enum.IntFlag, boundary=enum.KEEP)
 class RegexFlag:
+    NOFLAG = 0
     ASCII = A = sre_compile.SRE_FLAG_ASCII # assume ascii "locale"
     IGNORECASE = I = sre_compile.SRE_FLAG_IGNORECASE # ignore case
     LOCALE = L = sre_compile.SRE_FLAG_LOCALE # assume current 8-bit locale
@@ -155,6 +156,8 @@ class RegexFlag:
     # sre extensions (experimental, don't rely on these)
     TEMPLATE = T = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
     DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
+    __str__ = object.__str__
+    _numeric_repr_ = hex
 
 # sre exception
 error = sre_compile.error

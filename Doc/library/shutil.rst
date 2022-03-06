@@ -804,6 +804,10 @@ Querying the size of the output terminal
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.11
+      The ``fallback`` values are also used if :func:`os.get_terminal_size`
+      returns zeroes.
+
 .. _`fcopyfile`:
    http://www.manpagez.com/man/3/copyfile/
 

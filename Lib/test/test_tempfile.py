@@ -62,6 +62,25 @@ class TestLowLevelInternals(unittest.TestCase):
     def test_infer_return_type_pathlib(self):
         self.assertIs(str, tempfile._infer_return_type(pathlib.Path('/')))
 
+    def test_infer_return_type_pathlike(self):
+        class Path:
+            def __init__(self, path):
+                self.path = path
+
+            def __fspath__(self):
+                return self.path
+
+        self.assertIs(str, tempfile._infer_return_type(Path('/')))
+        self.assertIs(bytes, tempfile._infer_return_type(Path(b'/')))
+        self.assertIs(str, tempfile._infer_return_type('', Path('')))
+        self.assertIs(bytes, tempfile._infer_return_type(b'', Path(b'')))
+        self.assertIs(bytes, tempfile._infer_return_type(None, Path(b'')))
+        self.assertIs(str, tempfile._infer_return_type(None, Path('')))
+
+        with self.assertRaises(TypeError):
+            tempfile._infer_return_type('', Path(b''))
+        with self.assertRaises(TypeError):
+            tempfile._infer_return_type(b'', Path(''))
 
 # Common functionality.
 
@@ -179,8 +198,7 @@ class TestRandomNameSequence(BaseTestCase):
             if i == 20:
                 break
 
-    @unittest.skipUnless(hasattr(os, 'fork'),
-        "os.fork is required for this test")
+    @support.requires_fork()
     def test_process_awareness(self):
         # ensure that the random source differs between
         # child and parent.
@@ -430,6 +448,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
             self.do_create(dir=dir).write(b"blat")
             self.do_create(dir=pathlib.Path(dir)).write(b"blat")
         finally:
+            support.gc_collect()  # For PyPy or other GCs.
             os.rmdir(dir)
 
     def test_file_mode(self):
@@ -880,6 +899,8 @@ class TestMktemp(BaseTestCase):
         extant = list(range(TEST_FILES))
         for i in extant:
             extant[i] = self.do_create(pre="aa")
+        del extant
+        support.gc_collect()  # For PyPy or other GCs.
 
 ##     def test_warning(self):
 ##         # mktemp issues a warning when used
@@ -1432,7 +1453,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(
                 temp_path.exists(),
                 sys.platform.startswith("win"),
-                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+                f"TemporaryDirectory {temp_path!s} existence state unexpected")
             temp_dir.cleanup()
             self.assertFalse(
                 temp_path.exists(),
@@ -1491,7 +1512,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(
                 temp_path.exists(),
                 sys.platform.startswith("win"),
-                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+                f"TemporaryDirectory {temp_path!s} existence state unexpected")
 
     def test_del_on_shutdown(self):
         # A TemporaryDirectory may be cleaned up during shutdown
@@ -1556,7 +1577,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(
                 temp_path.exists(),
                 sys.platform.startswith("win"),
-                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+                f"TemporaryDirectory {temp_path!s} existence state unexpected")
             err = err.decode('utf-8', 'backslashreplace')
             self.assertNotIn("Exception", err)
             self.assertNotIn("Error", err)

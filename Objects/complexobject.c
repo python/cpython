@@ -6,8 +6,10 @@
 /* Submitted by Jim Hugunin */
 
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_Init()
+#include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
 #include "structmember.h"         // PyMemberDef
 
 
@@ -279,11 +281,10 @@ static PyObject *
 try_complex_special_method(PyObject *op)
 {
     PyObject *f;
-    _Py_IDENTIFIER(__complex__);
 
-    f = _PyObject_LookupSpecial(op, &PyId___complex__);
+    f = _PyObject_LookupSpecial(op, &_Py_ID(__complex__));
     if (f) {
-        PyObject *res = _PyObject_CallNoArg(f);
+        PyObject *res = _PyObject_CallNoArgs(f);
         Py_DECREF(f);
         if (!res || PyComplex_CheckExact(res)) {
             return res;
@@ -525,7 +526,7 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
         p = _Py_c_pow(a, b);
     }
 
-    Py_ADJUST_ERANGE2(p.real, p.imag);
+    _Py_ADJUST_ERANGE2(p.real, p.imag);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError,
                         "0.0 to a negative or complex power");
@@ -693,8 +694,29 @@ complex___format___impl(PyComplexObject *self, PyObject *format_spec)
     return _PyUnicodeWriter_Finish(&writer);
 }
 
+/*[clinic input]
+complex.__complex__
+
+Convert this value to exact type complex.
+[clinic start generated code]*/
+
+static PyObject *
+complex___complex___impl(PyComplexObject *self)
+/*[clinic end generated code: output=e6b35ba3d275dc9c input=3589ada9d27db854]*/
+{
+    if (PyComplex_CheckExact(self)) {
+        Py_INCREF(self);
+        return (PyObject *)self;
+    }
+    else {
+        return PyComplex_FromCComplex(self->cval);
+    }
+}
+
+
 static PyMethodDef complex_methods[] = {
     COMPLEX_CONJUGATE_METHODDEF
+    COMPLEX___COMPLEX___METHODDEF
     COMPLEX___GETNEWARGS___METHODDEF
     COMPLEX___FORMAT___METHODDEF
     {NULL,              NULL}           /* sentinel */
@@ -823,7 +845,7 @@ complex_from_string_inner(const char *s, Py_ssize_t len, void *type)
     if (s-start != len)
         goto parse_error;
 
-    return complex_subtype_from_doubles((PyTypeObject *)type, x, y);
+    return complex_subtype_from_doubles(_PyType_CAST(type), x, y);
 
   parse_error:
     PyErr_SetString(PyExc_ValueError,

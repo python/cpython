@@ -58,28 +58,36 @@ typedef struct {
     PyTypeObject *PrepareProtocolType;
     PyTypeObject *RowType;
     PyTypeObject *StatementType;
+
+    /* Pointers to interned strings */
+    PyObject *str___adapt__;
+    PyObject *str___conform__;
+    PyObject *str_executescript;
+    PyObject *str_finalize;
+    PyObject *str_step;
+    PyObject *str_upper;
 } pysqlite_state;
 
 extern pysqlite_state pysqlite_global_state;
 
 static inline pysqlite_state *
-pysqlite_get_state(PyObject *Py_UNUSED(module))
+pysqlite_get_state(PyObject *module)
 {
-    return &pysqlite_global_state;  // Replace with PyModule_GetState
+    pysqlite_state *state = (pysqlite_state *)PyModule_GetState(module);
+    assert(state != NULL);
+    return state;
 }
 
+extern struct PyModuleDef _sqlite3module;
 static inline pysqlite_state *
-pysqlite_get_state_by_cls(PyTypeObject *Py_UNUSED(cls))
+pysqlite_get_state_by_type(PyTypeObject *tp)
 {
-    return &pysqlite_global_state;  // Replace with PyType_GetModuleState
+    PyObject *module = PyType_GetModuleByDef(tp, &_sqlite3module);
+    assert(module != NULL);
+    return pysqlite_get_state(module);
 }
 
-static inline pysqlite_state *
-pysqlite_get_state_by_type(PyTypeObject *Py_UNUSED(tp))
-{
-    // Replace with _PyType_GetModuleByDef & PyModule_GetState
-    return &pysqlite_global_state;
-}
+extern const char *pysqlite_error_name(int rc);
 
 #define PARSE_DECLTYPES 1
 #define PARSE_COLNAMES 2

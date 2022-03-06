@@ -3,11 +3,14 @@
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
-#include <signal.h>
+
+#include "frameobject.h"
+
 #include <object.h>
-#include <frameobject.h>
 #include <signal.h>
-#if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
+#include <signal.h>
+#include <stdlib.h>               // abort()
+#if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK) && defined(HAVE_PTHREAD_H)
 #  include <pthread.h>
 #endif
 #ifdef MS_WINDOWS
@@ -29,10 +32,22 @@
 
 #define PUTS(fd, str) _Py_write_noraise(fd, str, strlen(str))
 
-_Py_IDENTIFIER(enable);
-_Py_IDENTIFIER(fileno);
-_Py_IDENTIFIER(flush);
-_Py_IDENTIFIER(stderr);
+
+// clang uses __attribute__((no_sanitize("undefined")))
+// GCC 4.9+ uses __attribute__((no_sanitize_undefined))
+#if defined(__has_feature)  // Clang
+#  if __has_feature(undefined_behavior_sanitizer)
+#    define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
+#  endif
+#endif
+#if defined(__GNUC__) \
+    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 9))
+#  define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
+#endif
+#ifndef _Py_NO_SANITIZE_UNDEFINED
+#  define _Py_NO_SANITIZE_UNDEFINED
+#endif
+
 
 #ifdef HAVE_SIGACTION
 typedef struct sigaction _Py_sighandler_t;
@@ -152,7 +167,8 @@ faulthandler_get_fileno(PyObject **file_ptr)
     PyObject *file = *file_ptr;
 
     if (file == NULL || file == Py_None) {
-        file = _PySys_GetObjectId(&PyId_stderr);
+        PyThreadState *tstate = _PyThreadState_GET();
+        file = _PySys_GetAttr(tstate, &_Py_ID(stderr));
         if (file == NULL) {
             PyErr_SetString(PyExc_RuntimeError, "unable to get sys.stderr");
             return -1;
@@ -175,7 +191,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
         return fd;
     }
 
-    result = _PyObject_CallMethodIdNoArgs(file, &PyId_fileno);
+    result = PyObject_CallMethodNoArgs(file, &_Py_ID(fileno));
     if (result == NULL)
         return -1;
 
@@ -193,7 +209,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
         return -1;
     }
 
-    result = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
+    result = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
     if (result != NULL)
         Py_DECREF(result);
     else {
@@ -710,7 +726,7 @@ faulthandler_dump_traceback_later(PyObject *self,
         return NULL;
     }
     /* Limit to LONG_MAX seconds for format_timeout() */
-    if (timeout_us >= PY_TIMEOUT_MAX || timeout_us / SEC_TO_US >= LONG_MAX) {
+    if (timeout_us > PY_TIMEOUT_MAX || timeout_us / SEC_TO_US > LONG_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "timeout value is too large");
         return NULL;
@@ -1014,7 +1030,7 @@ faulthandler_suppress_crash_report(void)
 #endif
 }
 
-static PyObject *
+static PyObject* _Py_NO_SANITIZE_UNDEFINED
 faulthandler_read_null(PyObject *self, PyObject *args)
 {
     volatile int *x;
@@ -1103,17 +1119,20 @@ faulthandler_fatal_error_c_thread(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *
+static PyObject* _Py_NO_SANITIZE_UNDEFINED
 faulthandler_sigfpe(PyObject *self, PyObject *args)
 {
+    faulthandler_suppress_crash_report();
+
     /* Do an integer division by zero: raise a SIGFPE on Intel CPU, but not on
        PowerPC. Use volatile to disable compile-time optimizations. */
     volatile int x = 1, y = 0, z;
-    faulthandler_suppress_crash_report();
     z = x / y;
+
     /* If the division by zero didn't raise a SIGFPE (e.g. on PowerPC),
        raise it manually. */
     raise(SIGFPE);
+
     /* This line is never reached, but we pretend to make something with z
        to silence a compiler warning. */
     return PyLong_FromLong(z);
@@ -1333,7 +1352,7 @@ faulthandler_init_enable(void)
         return -1;
     }
 
-    PyObject *res = _PyObject_CallMethodIdNoArgs(module, &PyId_enable);
+    PyObject *res = PyObject_CallMethodNoArgs(module, &_Py_ID(enable));
     Py_DECREF(module);
     if (res == NULL) {
         return -1;

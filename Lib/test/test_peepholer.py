@@ -1,8 +1,23 @@
 import dis
 from itertools import combinations, product
+import textwrap
 import unittest
 
 from test.support.bytecode_helper import BytecodeTestCase
+
+
+def compile_pattern_with_fast_locals(pattern):
+    source = textwrap.dedent(
+        f"""
+        def f(x):
+            match x:
+                case {pattern}:
+                    pass
+        """
+    )
+    namespace = {}
+    exec(source, namespace)
+    return namespace["f"].__code__
 
 
 def count_instr_recursively(f, opname):
@@ -72,9 +87,10 @@ class TestTranforms(BytecodeTestCase):
             ('not a in b', 'CONTAINS_OP', 1,),
             ('not a not in b', 'CONTAINS_OP', 0,),
             ):
-            code = compile(line, '', 'single')
-            self.assertInBytecode(code, cmp_op, invert)
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertInBytecode(code, cmp_op, invert)
+                self.check_lnotab(code)
 
     def test_global_as_constant(self):
         # LOAD_GLOBAL None/True/False  -->  LOAD_CONST None/True/False
@@ -90,9 +106,10 @@ class TestTranforms(BytecodeTestCase):
             return x
 
         for func, elem in ((f, None), (g, True), (h, False)):
-            self.assertNotInBytecode(func, 'LOAD_GLOBAL')
-            self.assertInBytecode(func, 'LOAD_CONST', elem)
-            self.check_lnotab(func)
+            with self.subTest(func=func):
+                self.assertNotInBytecode(func, 'LOAD_GLOBAL')
+                self.assertInBytecode(func, 'LOAD_CONST', elem)
+                self.check_lnotab(func)
 
         def f():
             'Adding a docstring made this test fail in Py2.5.0'
@@ -117,14 +134,15 @@ class TestTranforms(BytecodeTestCase):
     def test_pack_unpack(self):
         for line, elem in (
             ('a, = a,', 'LOAD_CONST',),
-            ('a, b = a, b', 'ROT_TWO',),
-            ('a, b, c = a, b, c', 'ROT_THREE',),
+            ('a, b = a, b', 'SWAP',),
+            ('a, b, c = a, b, c', 'SWAP',),
             ):
-            code = compile(line,'','single')
-            self.assertInBytecode(code, elem)
-            self.assertNotInBytecode(code, 'BUILD_TUPLE')
-            self.assertNotInBytecode(code, 'UNPACK_TUPLE')
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line,'','single')
+                self.assertInBytecode(code, elem)
+                self.assertNotInBytecode(code, 'BUILD_TUPLE')
+                self.assertNotInBytecode(code, 'UNPACK_SEQUENCE')
+                self.check_lnotab(code)
 
     def test_folding_of_tuples_of_constants(self):
         for line, elem in (
@@ -134,10 +152,11 @@ class TestTranforms(BytecodeTestCase):
             ('(None, 1, None)', (None, 1, None)),
             ('((1, 2), 3, 4)', ((1, 2), 3, 4)),
             ):
-            code = compile(line,'','single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            self.assertNotInBytecode(code, 'BUILD_TUPLE')
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line,'','single')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.assertNotInBytecode(code, 'BUILD_TUPLE')
+                self.check_lnotab(code)
 
         # Long tuples should be folded too.
         code = compile(repr(tuple(range(10000))),'','single')
@@ -174,10 +193,11 @@ class TestTranforms(BytecodeTestCase):
             ('a in [None, 1, None]', (None, 1, None)),
             ('a not in [(1, 2), 3, 4]', ((1, 2), 3, 4)),
             ):
-            code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            self.assertNotInBytecode(code, 'BUILD_LIST')
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.assertNotInBytecode(code, 'BUILD_LIST')
+                self.check_lnotab(code)
 
     def test_folding_of_sets_of_constants(self):
         for line, elem in (
@@ -188,10 +208,11 @@ class TestTranforms(BytecodeTestCase):
             ('a not in {(1, 2), 3, 4}', frozenset({(1, 2), 3, 4})),
             ('a in {1, 2, 3, 3, 2, 1}', frozenset({1, 2, 3})),
             ):
-            code = compile(line, '', 'single')
-            self.assertNotInBytecode(code, 'BUILD_SET')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertNotInBytecode(code, 'BUILD_SET')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.check_lnotab(code)
 
         # Ensure that the resulting code actually works:
         def f(a):
@@ -227,11 +248,12 @@ class TestTranforms(BytecodeTestCase):
             ('a = 13 ^ 7', 10),                 # binary xor
             ('a = 13 | 7', 15),                 # binary or
             ):
-            code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            for instr in dis.get_instructions(code):
-                self.assertFalse(instr.opname.startswith('BINARY_'))
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                for instr in dis.get_instructions(code):
+                    self.assertFalse(instr.opname.startswith('BINARY_'))
+                self.check_lnotab(code)
 
         # Verify that unfoldables are skipped
         code = compile('a=2+"b"', '', 'single')
@@ -285,11 +307,12 @@ class TestTranforms(BytecodeTestCase):
             ('~-2', 1),                         # unary invert
             ('+1', 1),                          # unary positive
         ):
-            code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            for instr in dis.get_instructions(code):
-                self.assertFalse(instr.opname.startswith('UNARY_'))
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                for instr in dis.get_instructions(code):
+                    self.assertFalse(instr.opname.startswith('UNARY_'))
+                self.check_lnotab(code)
 
         # Check that -0.0 works after marshaling
         def negzero():
@@ -304,10 +327,11 @@ class TestTranforms(BytecodeTestCase):
             ('-"abc"', 'abc', 'UNARY_NEGATIVE'),
             ('~"abc"', 'abc', 'UNARY_INVERT'),
         ):
-            code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            self.assertInBytecode(code, opname)
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.assertInBytecode(code, opname)
+                self.check_lnotab(code)
 
     def test_elim_extra_return(self):
         # RETURN LOAD_CONST None RETURN  -->  RETURN
@@ -415,7 +439,7 @@ class TestTranforms(BytecodeTestCase):
             def g()->1+1:
                 pass
             return g
-        self.assertNotInBytecode(f, 'BINARY_ADD')
+        self.assertNotInBytecode(f, 'BINARY_OP')
         self.check_lnotab(f)
 
     def test_constant_folding(self):
@@ -432,12 +456,13 @@ class TestTranforms(BytecodeTestCase):
             'lambda x: x in {(3 * -5) + (-1 - 6), (1, -2, 3) * 2, None}',
         ]
         for e in exprs:
-            code = compile(e, '', 'single')
-            for instr in dis.get_instructions(code):
-                self.assertFalse(instr.opname.startswith('UNARY_'))
-                self.assertFalse(instr.opname.startswith('BINARY_'))
-                self.assertFalse(instr.opname.startswith('BUILD_'))
-            self.check_lnotab(code)
+            with self.subTest(e=e):
+                code = compile(e, '', 'single')
+                for instr in dis.get_instructions(code):
+                    self.assertFalse(instr.opname.startswith('UNARY_'))
+                    self.assertFalse(instr.opname.startswith('BINARY_'))
+                    self.assertFalse(instr.opname.startswith('BUILD_'))
+                self.check_lnotab(code)
 
     def test_in_literal_list(self):
         def containtest():
@@ -570,6 +595,58 @@ class TestTranforms(BytecodeTestCase):
                     'not all arguments converted during string formatting'):
             eval("'%s, %s' % (x, *y)", {'x': 1, 'y': [2, 3]})
 
+    def test_static_swaps_unpack_two(self):
+        def f(a, b):
+            a, b = a, b
+            b, a = a, b
+        self.assertNotInBytecode(f, "SWAP")
+
+    def test_static_swaps_unpack_three(self):
+        def f(a, b, c):
+            a, b, c = a, b, c
+            a, c, b = a, b, c
+            b, a, c = a, b, c
+            b, c, a = a, b, c
+            c, a, b = a, b, c
+            c, b, a = a, b, c
+        self.assertNotInBytecode(f, "SWAP")
+
+    def test_static_swaps_match_mapping(self):
+        for a, b, c in product("_a", "_b", "_c"):
+            pattern = f"{{'a': {a}, 'b': {b}, 'c': {c}}}"
+            with self.subTest(pattern):
+                code = compile_pattern_with_fast_locals(pattern)
+                self.assertNotInBytecode(code, "SWAP")
+
+    def test_static_swaps_match_class(self):
+        forms = [
+            "C({}, {}, {})",
+            "C({}, {}, c={})",
+            "C({}, b={}, c={})",
+            "C(a={}, b={}, c={})"
+        ]
+        for a, b, c in product("_a", "_b", "_c"):
+            for form in forms:
+                pattern = form.format(a, b, c)
+                with self.subTest(pattern):
+                    code = compile_pattern_with_fast_locals(pattern)
+                    self.assertNotInBytecode(code, "SWAP")
+
+    def test_static_swaps_match_sequence(self):
+        swaps = {"*_, b, c", "a, *_, c", "a, b, *_"}
+        forms = ["{}, {}, {}", "{}, {}, *{}", "{}, *{}, {}", "*{}, {}, {}"]
+        for a, b, c in product("_a", "_b", "_c"):
+            for form in forms:
+                pattern = form.format(a, b, c)
+                with self.subTest(pattern):
+                    code = compile_pattern_with_fast_locals(pattern)
+                    if pattern in swaps:
+                        # If this fails... great! Remove this pattern from swaps
+                        # to prevent regressing on any improvement:
+                        self.assertInBytecode(code, "SWAP")
+                    else:
+                        self.assertNotInBytecode(code, "SWAP")
+
 
 class TestBuglets(unittest.TestCase):
 
@@ -589,6 +666,13 @@ class TestBuglets(unittest.TestCase):
                 raise Exception
             except Exception or Exception:
                 pass
+
+    def test_bpo_45773_pop_jump_if_true(self):
+        compile("while True or spam: pass", "<test>", "exec")
+
+    def test_bpo_45773_pop_jump_if_false(self):
+        compile("while True or not spam: pass", "<test>", "exec")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,12 +2,19 @@
 
 /* much code borrowed from mathmodule.c */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
-#include "pycore_dtoa.h"
-#include "_math.h"
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
+#include "pycore_dtoa.h"          // _Py_dg_stdnan()
 /* we need DBL_MAX, DBL_MIN, DBL_EPSILON, DBL_MANT_DIG and FLT_RADIX from
    float.h.  We assume that FLT_RADIX is either 2 or 16. */
 #include <float.h>
+
+/* For _Py_log1p with workarounds for buggy handling of zeros. */
+#include "_math.h"
 
 #include "clinic/cmathmodule.c.h"
 /*[clinic input]
@@ -83,14 +90,14 @@ else {
 
 /* Constants cmath.inf, cmath.infj, cmath.nan, cmath.nanj.
    cmath.nan and cmath.nanj are defined only when either
-   PY_NO_SHORT_FLOAT_REPR is *not* defined (which should be
+   _PY_SHORT_FLOAT_REPR is 1 (which should be
    the most common situation on machines using an IEEE 754
    representation), or Py_NAN is defined. */
 
 static double
 m_inf(void)
 {
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
     return _Py_dg_infinity(0);
 #else
     return Py_HUGE_VAL;
@@ -106,12 +113,12 @@ c_infj(void)
     return r;
 }
 
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
 
 static double
 m_nan(void)
 {
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
     return _Py_dg_stdnan(0);
 #else
     return Py_NAN;
@@ -242,7 +249,7 @@ cmath_acos_impl(PyObject *module, Py_complex z)
         s2.imag = z.imag;
         s2 = cmath_sqrt_impl(module, s2);
         r.real = 2.*atan2(s1.real, s2.real);
-        r.imag = m_asinh(s2.real*s1.imag - s2.imag*s1.real);
+        r.imag = asinh(s2.real*s1.imag - s2.imag*s1.real);
     }
     errno = 0;
     return r;
@@ -276,7 +283,7 @@ cmath_acosh_impl(PyObject *module, Py_complex z)
         s2.real = z.real + 1.;
         s2.imag = z.imag;
         s2 = cmath_sqrt_impl(module, s2);
-        r.real = m_asinh(s1.real*s2.real + s1.imag*s2.imag);
+        r.real = asinh(s1.real*s2.real + s1.imag*s2.imag);
         r.imag = 2.*atan2(s1.imag, s2.real);
     }
     errno = 0;
@@ -336,7 +343,7 @@ cmath_asinh_impl(PyObject *module, Py_complex z)
         s2.real = 1.-z.imag;
         s2.imag = z.real;
         s2 = cmath_sqrt_impl(module, s2);
-        r.real = m_asinh(s1.real*s2.imag-s2.real*s1.imag);
+        r.real = asinh(s1.real*s2.imag-s2.real*s1.imag);
         r.imag = atan2(z.imag, s1.real*s2.real-s1.imag*s2.imag);
     }
     errno = 0;
@@ -1275,7 +1282,7 @@ cmath_exec(PyObject *mod)
                            PyComplex_FromCComplex(c_infj())) < 0) {
         return -1;
     }
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
     if (PyModule_AddObject(mod, "nan", PyFloat_FromDouble(m_nan())) < 0) {
         return -1;
     }

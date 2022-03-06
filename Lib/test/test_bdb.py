@@ -57,7 +57,6 @@ import importlib
 import linecache
 from contextlib import contextmanager
 from itertools import islice, repeat
-import test.support
 from test.support import import_helper
 from test.support import os_helper
 
@@ -1193,13 +1192,6 @@ class IssuesTestCase(BaseTestCase):
             with TracerRun(self) as tracer:
                 tracer.runcall(tfunc_import)
 
-def test_main():
-    test.support.run_unittest(
-        StateTestCase,
-        RunTestCase,
-        BreakpointTestCase,
-        IssuesTestCase,
-    )
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

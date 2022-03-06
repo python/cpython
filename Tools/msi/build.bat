@@ -5,6 +5,7 @@ set PCBUILD=%D%..\..\PCbuild\
 
 set BUILDX86=
 set BUILDX64=
+set BUILDARM64=
 set BUILDDOC=
 set BUILDTEST=
 set BUILDPACK=
@@ -14,28 +15,35 @@ set REBUILD=
 if "%~1" EQU "-h" goto Help
 if "%~1" EQU "-x86" (set BUILDX86=1) && shift && goto CheckOpts
 if "%~1" EQU "-x64" (set BUILDX64=1) && shift && goto CheckOpts
+if "%~1" EQU "-arm64" (set BUILDARM64=1) && shift && goto CheckOpts
 if "%~1" EQU "--doc" (set BUILDDOC=1) && shift && goto CheckOpts
 if "%~1" EQU "--no-test-marker" (set BUILDTEST=) && shift && goto CheckOpts
 if "%~1" EQU "--test-marker" (set BUILDTEST=--test-marker) && shift && goto CheckOpts
 if "%~1" EQU "--pack" (set BUILDPACK=1) && shift && goto CheckOpts
 if "%~1" EQU "-r" (set REBUILD=-r) && shift && goto CheckOpts
 
-if not defined BUILDX86 if not defined BUILDX64 (set BUILDX86=1) && (set BUILDX64=1)
+if not defined BUILDX86 if not defined BUILDX64 if not defined BUILDARM64 (set BUILDX86=1) && (set BUILDX64=1)
 
 call "%D%get_externals.bat"
 call "%PCBUILD%find_msbuild.bat" %MSBUILD%
 if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 
 if defined BUILDX86 (
-    call "%PCBUILD%build.bat" -d -e %REBUILD% %BUILDTEST%
+    call "%PCBUILD%build.bat" -p Win32 -d -e %REBUILD% %BUILDTEST%
     if errorlevel 1 goto :eof
-    call "%PCBUILD%build.bat" -e %REBUILD% %BUILDTEST%
+    call "%PCBUILD%build.bat" -p Win32 -e %REBUILD% %BUILDTEST%
     if errorlevel 1 goto :eof
 )
 if defined BUILDX64 (
     call "%PCBUILD%build.bat" -p x64 -d -e %REBUILD% %BUILDTEST%
     if errorlevel 1 goto :eof
     call "%PCBUILD%build.bat" -p x64 -e %REBUILD% %BUILDTEST%
+    if errorlevel 1 goto :eof
+)
+if defined BUILDARM64 (
+    call "%PCBUILD%build.bat" -p ARM64 -d -e %REBUILD% %BUILDTEST%
+    if errorlevel 1 goto :eof
+    call "%PCBUILD%build.bat" -p ARM64 -e %REBUILD% %BUILDTEST%
     if errorlevel 1 goto :eof
 )
 
@@ -59,21 +67,26 @@ if defined REBUILD (
 )
 
 if defined BUILDX86 (
-    %MSBUILD% %BUILD_CMD%
+    %MSBUILD% /p:Platform=x86 %BUILD_CMD%
     if errorlevel 1 goto :eof
 )
 if defined BUILDX64 (
     %MSBUILD% /p:Platform=x64 %BUILD_CMD%
     if errorlevel 1 goto :eof
 )
+if defined BUILDARM64 (
+    %MSBUILD% /p:Platform=ARM64 %BUILD_CMD%
+    if errorlevel 1 goto :eof
+)
 
 exit /B 0
 
 :Help
-echo build.bat [-x86] [-x64] [--doc] [-h] [--test-marker] [--pack] [-r]
+echo build.bat [-x86] [-x64] [-arm64] [--doc] [-h] [--test-marker] [--pack] [-r]
 echo.
 echo    -x86                Build x86 installers
 echo    -x64                Build x64 installers
+echo    -ARM64                Build ARM64 installers
 echo    --doc               Build CHM documentation
 echo    --test-marker       Build with test markers
 echo    --no-test-marker    Build without test markers (default)

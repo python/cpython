@@ -101,7 +101,7 @@ if _HAS_USER_BASE:
             'stdlib': '{userbase}/{platlibdir}/python{py_version_short}',
             'platstdlib': '{userbase}/{platlibdir}/python{py_version_short}',
             'purelib': '{userbase}/lib/python{py_version_short}/site-packages',
-            'platlib': '{userbase}/{platlibdir}/python{py_version_short}/site-packages',
+            'platlib': '{userbase}/lib/python{py_version_short}/site-packages',
             'include': '{userbase}/include/python{py_version_short}',
             'scripts': '{userbase}/bin',
             'data': '{userbase}',
@@ -184,7 +184,7 @@ _PYTHON_BUILD = is_python_build(True)
 
 if _PYTHON_BUILD:
     for scheme in ('posix_prefix', 'posix_home'):
-        # On POSIX-y platofrms, Python will:
+        # On POSIX-y platforms, Python will:
         # - Build from .h files in 'headers' (which is only added to the
         #   scheme when building CPython)
         # - Install .h files to 'include'
@@ -192,6 +192,7 @@ if _PYTHON_BUILD:
         scheme['headers'] = scheme['include']
         scheme['include'] = '{srcdir}/Include'
         scheme['platinclude'] = '{projectbase}/.'
+    del scheme
 
 
 def _subst_vars(s, local_vars):
@@ -216,6 +217,11 @@ def _expand_vars(scheme, vars):
     if vars is None:
         vars = {}
     _extend_dict(vars, get_config_vars())
+    if os.name == 'nt':
+        # On Windows we want to substitute 'lib' for schemes rather
+        # than the native value (without modifying vars, in case it
+        # was passed in)
+        vars = vars | {'platlibdir': 'lib'}
 
     for key, value in _INSTALL_SCHEMES[scheme].items():
         if os.name in ('posix', 'nt'):
@@ -611,6 +617,7 @@ def get_config_vars(*args):
 
         if os.name == 'nt':
             _init_non_posix(_CONFIG_VARS)
+            _CONFIG_VARS['VPATH'] = sys._vpath
         if os.name == 'posix':
             _init_posix(_CONFIG_VARS)
         # For backward compatibility, see issue19555

@@ -282,12 +282,12 @@ Glossary
       The decorator syntax is merely syntactic sugar, the following two
       function definitions are semantically equivalent::
 
-         def f(...):
+         def f(arg):
              ...
          f = staticmethod(f)
 
          @staticmethod
-         def f(...):
+         def f(arg):
              ...
 
       The same concept exists for classes, but is less commonly used there.  See
@@ -510,12 +510,13 @@ Glossary
       :func:`functools.singledispatch` decorator, and :pep:`443`.
 
    generic type
-      A :term:`type` that can be parameterized; typically a container like
-      :class:`list`. Used for :term:`type hints <type hint>` and
+      A :term:`type` that can be parameterized; typically a
+      :ref:`container class<sequence-types>` such as :class:`list` or
+      :class:`dict`. Used for :term:`type hints <type hint>` and
       :term:`annotations <annotation>`.
 
-      See :pep:`483` for more details, and :mod:`typing` or
-      :ref:`generic alias type <types-genericalias>` for its uses.
+      For more details, see :ref:`generic alias types<types-genericalias>`,
+      :pep:`483`, :pep:`484`, :pep:`585`, and the :mod:`typing` module.
 
    GIL
       See :term:`global interpreter lock`.
@@ -657,6 +658,11 @@ Glossary
       in the previous iteration pass, making it appear like an empty container.
 
       More information can be found in :ref:`typeiter`.
+
+      .. impl-detail::
+
+         CPython does not consistently apply the requirement that an iterator
+         define :meth:`__iter__`.
 
    key function
       A key function or collation function is a callable that returns a value

@@ -2,6 +2,7 @@ import copy
 import gc
 import pickle
 import sys
+import doctest
 import unittest
 import weakref
 import inspect
@@ -160,6 +161,14 @@ class GeneratorTest(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.assertRaises((TypeError, pickle.PicklingError)):
                 pickle.dumps(g, proto)
+
+    def test_send_non_none_to_new_gen(self):
+        def f():
+            yield 1
+        g = f()
+        with self.assertRaises(TypeError):
+            g.send(0)
+        self.assertEqual(next(g), 1)
 
 
 class ExceptionTest(unittest.TestCase):
@@ -888,7 +897,7 @@ From the Iterators list, about the types of these things.
 >>> type(i)
 <class 'generator'>
 >>> [s for s in dir(i) if not s.startswith('_')]
-['close', 'gi_code', 'gi_frame', 'gi_running', 'gi_yieldfrom', 'send', 'throw']
+['close', 'gi_code', 'gi_frame', 'gi_running', 'gi_suspended', 'gi_yieldfrom', 'send', 'throw']
 >>> from test.support import HAVE_DOCSTRINGS
 >>> print(i.__next__.__doc__ if HAVE_DOCSTRINGS else 'Implement next(self).')
 Implement next(self).
@@ -1966,6 +1975,8 @@ True
 """
 
 coroutine_tests = """\
+>>> from test.support import gc_collect
+
 Sending a value into a started generator:
 
 >>> def f():
@@ -2189,7 +2200,7 @@ And finalization:
 
 >>> g = f()
 >>> next(g)
->>> del g
+>>> del g; gc_collect()  # For PyPy or other GCs.
 exiting
 
 
@@ -2204,7 +2215,7 @@ GeneratorExit is not caught by except Exception:
 
 >>> g = f()
 >>> next(g)
->>> del g
+>>> del g; gc_collect()  # For PyPy or other GCs.
 finally
 
 
@@ -2369,15 +2380,10 @@ __test__ = {"tut":      tutorial_tests,
             "refleaks": refleaks_tests,
             }
 
-# Magic test name that regrtest.py invokes *after* importing this module.
-# This worms around a bootstrap problem.
-# Note that doctest and regrtest both look in sys.argv for a "-v" argument,
-# so this works as expected in both ways of running regrtest.
-def test_main(verbose=None):
-    from test import support, test_generators
-    support.run_unittest(__name__)
-    support.run_doctest(test_generators, verbose)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-# This part isn't needed for regrtest, but for running the test directly.
+
 if __name__ == "__main__":
-    test_main(1)
+    unittest.main()

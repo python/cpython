@@ -115,7 +115,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     s = buf;
 
     const char *first_invalid_escape;
-    v = _PyUnicode_DecodeUnicodeEscape(s, len, NULL, &first_invalid_escape);
+    v = _PyUnicode_DecodeUnicodeEscapeInternal(s, len, NULL, NULL, &first_invalid_escape);
 
     if (v != NULL && first_invalid_escape != NULL) {
         if (warn_invalid_escape_sequence(parser, *first_invalid_escape, t) < 0) {
@@ -386,17 +386,20 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
     str[0] = '(';
     str[len+1] = ')';
 
-    struct tok_state* tok = PyTokenizer_FromString(str, 1);
+    struct tok_state* tok = _PyTokenizer_FromString(str, 1);
     if (tok == NULL) {
         PyMem_Free(str);
         return NULL;
     }
     Py_INCREF(p->tok->filename);
+
     tok->filename = p->tok->filename;
+    tok->lineno = t->lineno + lines - 1;
 
     Parser *p2 = _PyPegen_Parser_New(tok, Py_fstring_input, p->flags, p->feature_version,
                                      NULL, p->arena);
-    p2->starting_lineno = t->lineno + lines - 1;
+
+    p2->starting_lineno = t->lineno + lines;
     p2->starting_col_offset = t->col_offset + cols;
 
     expr = _PyPegen_run_parser(p2);
@@ -409,7 +412,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
 exit:
     PyMem_Free(str);
     _PyPegen_Parser_Free(p2);
-    PyTokenizer_Free(tok);
+    _PyTokenizer_Free(tok);
     return result;
 }
 
@@ -439,12 +442,23 @@ fstring_find_literal(Parser *p, const char **str, const char *end, int raw,
         if (!raw && ch == '\\' && s < end) {
             ch = *s++;
             if (ch == 'N') {
+                /* We need to look at and skip matching braces for "\N{name}"
+                   sequences because otherwise we'll think the opening '{'
+                   starts an expression, which is not the case with "\N".
+                   Keep looking for either a matched '{' '}' pair, or the end
+                   of the string. */
+
                 if (s < end && *s++ == '{') {
                     while (s < end && *s++ != '}') {
                     }
                     continue;
                 }
-                break;
+
+                /* This is an invalid "\N" sequence, since it's a "\N" not
+                   followed by a "{".  Just keep parsing this literal.  This
+                   error will be caught later by
+                   decode_unicode_with_escapes(). */
+                continue;
             }
             if (ch == '{' && warn_invalid_escape_sequence(p, ch, t) < 0) {
                 return -1;
@@ -488,7 +502,8 @@ done:
             *literal = PyUnicode_DecodeUTF8Stateful(literal_start,
                                                     s - literal_start,
                                                     NULL, NULL);
-        } else {
+        }
+        else {
             *literal = decode_unicode_with_escapes(p, literal_start,
                                                    s - literal_start, t);
         }
@@ -651,12 +666,12 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
                     *str += 1;
                     continue;
                 }
-                /* Don't get out of the loop for these, if they're single
-                   chars (not part of 2-char tokens). If by themselves, they
-                   don't end an expression (unlike say '!'). */
-                if (ch == '>' || ch == '<') {
-                    continue;
-                }
+            }
+            /* Don't get out of the loop for these, if they're single
+               chars (not part of 2-char tokens). If by themselves, they
+               don't end an expression (unlike say '!'). */
+            if (ch == '>' || ch == '<') {
+                continue;
             }
 
             /* Normal way out of this loop. */
@@ -683,10 +698,10 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
         }
     }
     expr_end = *str;
-    /* If we leave this loop in a string or with mismatched parens, we
-       don't care. We'll get a syntax error when compiling the
-       expression. But, we can produce a better error message, so
-       let's just do that.*/
+    /* If we leave the above loop in a string or with mismatched parens, we
+       don't really care. We'll get a syntax error when compiling the
+       expression. But, we can produce a better error message, so let's just
+       do that.*/
     if (quote_char) {
         RAISE_SYNTAX_ERROR("f-string: unterminated string");
         goto error;
@@ -1127,9 +1142,7 @@ _PyPegen_FstringParser_ConcatFstring(Parser *p, FstringParser *state, const char
 
         /* We know we have an expression. Convert any existing string
            to a Constant node. */
-        if (!state->last_str) {
-            /* Do nothing. No previous literal. */
-        } else {
+        if (state->last_str) {
             /* Convert the existing last_str literal to a Constant node. */
             expr_ty last_str = make_str_node_and_del(p, &state->last_str, first_token, last_token);
             if (!last_str || ExprList_Append(&state->expr_list, last_str) < 0) {

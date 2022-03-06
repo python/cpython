@@ -1,0 +1,71 @@
+name: tcl$(TkSourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
+
+variables:
+  IntDir: '$(Build.BinariesDirectory)\obj'
+  ExternalsDir: '$(Build.BinariesDirectory)\externals'
+  OutDir: '$(Build.ArtifactStagingDirectory)'
+  Configuration: 'Release'
+  
+  # MUST BE SET AT QUEUE TIME
+  # SigningCertificate: 'Python Software Foundation'
+  # SourcesRepo: 'https://github.com/python/cpython-source-deps'
+  # TclSourceTag: 'tcl-core-8.6.12.0'
+  # TkSourceTag: 'tk-8.6.12.0'
+  # TixSourceTag: 'tix-8.4.3.6'
+
+jobs:
+- job: Build_TclTk
+  displayName: 'Tcl/Tk'
+  pool:
+    name: 'Windows Release'
+    #vmImage: windows-latest
+
+  workspace:
+    clean: all
+
+  steps:
+    - template: ./find-tools.yml
+
+    - powershell: |
+        git clone $(SourcesRepo) -b $(TclSourceTag) --depth 1 "$(ExternalsDir)\$(TclSourceTag)"
+      displayName: 'Check out Tcl sources'
+
+    - powershell: |
+        git clone $(SourcesRepo) -b $(TkSourceTag) --depth 1 "$(ExternalsDir)\$(TkSourceTag)"
+      displayName: 'Check out Tk sources'
+
+    - powershell: |
+        git clone $(SourcesRepo) -b $(TixSourceTag) --depth 1 "$(ExternalsDir)\$(TixSourceTag)"
+      displayName: 'Check out Tix sources'
+
+    # This msbuild.rsp file will be used by the build to forcibly override these variables
+    - powershell: |
+        del -Force -EA 0 msbuild.rsp
+        "/p:IntDir=$(IntDir)\" >> msbuild.rsp
+        "/p:ExternalsDir=$(ExternalsDir)\" >> msbuild.rsp
+        "/p:tclDir=$(ExternalsDir)\$(TclSourceTag)\" >> msbuild.rsp
+        "/p:tkDir=$(ExternalsDir)\$(TkSourceTag)\" >> msbuild.rsp
+        "/p:tixDir=$(ExternalsDir)\$(TixSourceTag)\" >> msbuild.rsp
+      displayName: 'Generate msbuild.rsp'
+
+    - powershell: |
+        & "$(msbuild)" PCbuild\tcl.vcxproj "@msbuild.rsp" /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
+        & "$(msbuild)" PCbuild\tk.vcxproj  "@msbuild.rsp" /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
+        & "$(msbuild)" PCbuild\tix.vcxproj "@msbuild.rsp" /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
+      displayName: 'Build for win32'
+
+    - powershell: |
+        & "$(msbuild)" PCbuild\tcl.vcxproj "@msbuild.rsp" /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
+        & "$(msbuild)" PCbuild\tk.vcxproj  "@msbuild.rsp" /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
+        & "$(msbuild)" PCbuild\tix.vcxproj "@msbuild.rsp" /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
+      displayName: 'Build for amd64'
+
+    - powershell: |
+        & "$(msbuild)" PCbuild\tcl.vcxproj "@msbuild.rsp" /p:Platform=ARM64 /p:tcltkDir="$(OutDir)\arm64"
+        & "$(msbuild)" PCbuild\tk.vcxproj  "@msbuild.rsp" /p:Platform=ARM64 /p:tcltkDir="$(OutDir)\arm64"
+        & "$(msbuild)" PCbuild\tix.vcxproj "@msbuild.rsp" /p:Platform=ARM64 /p:tcltkDir="$(OutDir)\arm64"
+      displayName: 'Build for arm64'
+
+    - publish: '$(OutDir)'
+      artifact: 'tcltk'
+      displayName: 'Publishing tcltk'

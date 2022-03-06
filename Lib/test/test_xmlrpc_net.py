@@ -5,6 +5,9 @@ from test import support
 import xmlrpc.client as xmlrpclib
 
 
+support.requires("network")
+
+
 @unittest.skip('XXX: buildbot.python.org/all/xmlrpc/ is gone')
 class PythonBuildersTest(unittest.TestCase):
 
@@ -24,9 +27,5 @@ class PythonBuildersTest(unittest.TestCase):
         self.assertTrue([x for x in builders if "3.x" in x], builders)
 
 
-def test_main():
-    support.requires("network")
-    support.run_unittest(PythonBuildersTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

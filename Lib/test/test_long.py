@@ -392,7 +392,8 @@ class LongTest(unittest.TestCase):
                 return 42
             def __trunc__(self):
                 return 1729
-        self.assertEqual(int(LongTrunc()), 1729)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(int(LongTrunc()), 1729)
 
     def check_float_conversion(self, n):
         # Check that int -> float conversion behaviour matches
@@ -946,8 +947,13 @@ class LongTest(unittest.TestCase):
         self.assertEqual(1 << (sys.maxsize + 1000), 1 << 1000 << sys.maxsize)
 
     def test_huge_rshift(self):
-        self.assertEqual(42 >> (1 << 1000), 0)
-        self.assertEqual((-42) >> (1 << 1000), -1)
+        huge_shift = 1 << 1000
+        self.assertEqual(42 >> huge_shift, 0)
+        self.assertEqual((-42) >> huge_shift, -1)
+        self.assertEqual(1123 >> huge_shift, 0)
+        self.assertEqual((-1123) >> huge_shift, -1)
+        self.assertEqual(2**128 >> huge_shift, 0)
+        self.assertEqual(-2**128 >> huge_shift, -1)
 
     @support.cpython_only
     @support.bigmemtest(sys.maxsize + 500, memuse=2/15, dry_run=False)
@@ -955,6 +961,60 @@ class LongTest(unittest.TestCase):
         huge = ((1 << 500) + 11) << sys.maxsize
         self.assertEqual(huge >> (sys.maxsize + 1), (1 << 499) + 5)
         self.assertEqual(huge >> (sys.maxsize + 1000), 0)
+
+    def test_small_rshift(self):
+        self.assertEqual(42 >> 1, 21)
+        self.assertEqual((-42) >> 1, -21)
+        self.assertEqual(43 >> 1, 21)
+        self.assertEqual((-43) >> 1, -22)
+
+        self.assertEqual(1122 >> 1, 561)
+        self.assertEqual((-1122) >> 1, -561)
+        self.assertEqual(1123 >> 1, 561)
+        self.assertEqual((-1123) >> 1, -562)
+
+        self.assertEqual(2**128 >> 1, 2**127)
+        self.assertEqual(-2**128 >> 1, -2**127)
+        self.assertEqual((2**128 + 1) >> 1, 2**127)
+        self.assertEqual(-(2**128 + 1) >> 1, -2**127 - 1)
+
+    def test_medium_rshift(self):
+        self.assertEqual(42 >> 9, 0)
+        self.assertEqual((-42) >> 9, -1)
+        self.assertEqual(1122 >> 9, 2)
+        self.assertEqual((-1122) >> 9, -3)
+        self.assertEqual(2**128 >> 9, 2**119)
+        self.assertEqual(-2**128 >> 9, -2**119)
+
+    def test_big_rshift(self):
+        self.assertEqual(42 >> 32, 0)
+        self.assertEqual((-42) >> 32, -1)
+        self.assertEqual(1122 >> 32, 0)
+        self.assertEqual((-1122) >> 32, -1)
+        self.assertEqual(2**128 >> 32, 2**96)
+        self.assertEqual(-2**128 >> 32, -2**96)
+
+    def test_small_lshift(self):
+        self.assertEqual(42 << 1, 84)
+        self.assertEqual((-42) << 1, -84)
+        self.assertEqual(561 << 1, 1122)
+        self.assertEqual((-561) << 1, -1122)
+        self.assertEqual(2**127 << 1, 2**128)
+        self.assertEqual(-2**127 << 1, -2**128)
+
+    def test_medium_lshift(self):
+        self.assertEqual(42 << 9, 21504)
+        self.assertEqual((-42) << 9, -21504)
+        self.assertEqual(1122 << 9, 574464)
+        self.assertEqual((-1122) << 9, -574464)
+
+    def test_big_lshift(self):
+        self.assertEqual(42 << 32, 42 * 2**32)
+        self.assertEqual((-42) << 32, -42 * 2**32)
+        self.assertEqual(1122 << 32, 1122 * 2**32)
+        self.assertEqual((-1122) << 32, -1122 * 2**32)
+        self.assertEqual(2**128 << 32, 2**160)
+        self.assertEqual(-2**128 << 32, -2**160)
 
     @support.cpython_only
     def test_small_ints_in_huge_calculation(self):
@@ -1117,8 +1177,17 @@ class LongTest(unittest.TestCase):
                         expected)
                 except Exception as err:
                     raise AssertionError(
-                        "failed to convert {0} with byteorder={1} and signed={2}"
+                        "failed to convert {} with byteorder={} and signed={}"
                         .format(test, byteorder, signed)) from err
+
+                # Test for all default arguments.
+                if len(expected) == 1 and byteorder == 'big' and not signed:
+                    try:
+                        self.assertEqual(test.to_bytes(), expected)
+                    except Exception as err:
+                        raise AssertionError(
+                            "failed to convert {} with default arguments"
+                            .format(test)) from err
 
                 try:
                     self.assertEqual(
@@ -1240,8 +1309,19 @@ class LongTest(unittest.TestCase):
                         expected)
                 except Exception as err:
                     raise AssertionError(
-                        "failed to convert {0} with byteorder={1!r} and signed={2}"
+                        "failed to convert {} with byteorder={!r} and signed={}"
                         .format(test, byteorder, signed)) from err
+
+                # Test for all default arguments.
+                if byteorder == 'big' and not signed:
+                    try:
+                        self.assertEqual(
+                            int.from_bytes(test),
+                            expected)
+                    except Exception as err:
+                        raise AssertionError(
+                            "failed to convert {} with default arguments"
+                            .format(test)) from err
 
                 try:
                     self.assertEqual(
@@ -1392,6 +1472,13 @@ class LongTest(unittest.TestCase):
         self.assertEqual(i, 1)
         self.assertEqual(getattr(i, 'foo', 'none'), 'bar')
 
+    @support.cpython_only
+    def test_from_bytes_small(self):
+        # bpo-46361
+        for i in range(-5, 257):
+            b = i.to_bytes(2, signed=True)
+            self.assertIs(int.from_bytes(b, signed=True), i)
+
     def test_access_to_nonexistent_digit_0(self):
         # http://bugs.python.org/issue14630: A bug in _PyLong_Copy meant that
         # ob_digit[0] was being incorrectly accessed for instances of a
@@ -1423,6 +1510,17 @@ class LongTest(unittest.TestCase):
             self.assertEqual(type(numerator), int)
             self.assertEqual(type(denominator), int)
 
+    def test_square(self):
+        # Multiplication makes a special case of multiplying an int with
+        # itself, using a special, faster algorithm. This test is mostly
+        # to ensure that no asserts in the implementation trigger, in
+        # cases with a maximal amount of carries.
+        for bitlen in range(1, 400):
+            n = (1 << bitlen) - 1 # solid string of 1 bits
+            with self.subTest(bitlen=bitlen, n=n):
+                # (2**i - 1)**2 = 2**(2*i) - 2*2**i + 1
+                self.assertEqual(n**2,
+                    (1 << (2 * bitlen)) - (1 << (bitlen + 1)) + 1)
 
 if __name__ == "__main__":
     unittest.main()

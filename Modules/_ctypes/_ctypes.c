@@ -98,15 +98,24 @@ bytes(cdata)
  * PyCField_Type
  *
  */
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+#define NEEDS_PY_IDENTIFIER
 
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+// windows.h must be included before pycore internal headers
+#ifdef MS_WIN32
+#  include <windows.h>
+#endif
+
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "structmember.h"         // PyMemberDef
 
 #include <ffi.h>
 #ifdef MS_WIN32
-#include <windows.h>
 #include <malloc.h>
 #ifndef IS_INTRESOURCE
 #define IS_INTRESOURCE(x) (((size_t)(x) >> 16) == 0)
@@ -216,7 +225,7 @@ PyDict_SetItemProxy(PyObject *dict, PyObject *key, PyObject *item)
     PyObject *proxy;
     int result;
 
-    obj = _PyObject_CallNoArg((PyObject *)&DictRemover_Type);
+    obj = _PyObject_CallNoArgs((PyObject *)&DictRemover_Type);
     if (obj == NULL)
         return -1;
 
@@ -506,7 +515,7 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         return NULL;
     }
 
-    dict = (StgDictObject *)_PyObject_CallNoArg((PyObject *)&PyCStgDict_Type);
+    dict = (StgDictObject *)_PyObject_CallNoArgs((PyObject *)&PyCStgDict_Type);
     if (!dict) {
         Py_DECREF(result);
         return NULL;
@@ -1067,7 +1076,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
   stgdict items size, align, length contain info about pointers itself,
   stgdict->proto has info about the pointed to type!
 */
-    stgdict = (StgDictObject *)_PyObject_CallNoArg(
+    stgdict = (StgDictObject *)_PyObject_CallNoArgs(
         (PyObject *)&PyCStgDict_Type);
     if (!stgdict)
         return NULL;
@@ -1550,7 +1559,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    stgdict = (StgDictObject *)_PyObject_CallNoArg(
+    stgdict = (StgDictObject *)_PyObject_CallNoArgs(
         (PyObject *)&PyCStgDict_Type);
     if (!stgdict)
         goto error;
@@ -2006,7 +2015,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     if (result == NULL)
         return NULL;
 
-    stgdict = (StgDictObject *)_PyObject_CallNoArg(
+    stgdict = (StgDictObject *)_PyObject_CallNoArgs(
         (PyObject *)&PyCStgDict_Type);
     if (!stgdict) {
         Py_DECREF(result);
@@ -2120,7 +2129,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    stgdict = (StgDictObject *)_PyObject_CallNoArg(
+    stgdict = (StgDictObject *)_PyObject_CallNoArgs(
         (PyObject *)&PyCStgDict_Type);
     if (!stgdict)
         goto error;
@@ -2374,7 +2383,6 @@ converters_from_argtypes(PyObject *ob)
     _Py_IDENTIFIER(from_param);
     PyObject *converters;
     Py_ssize_t i;
-    Py_ssize_t nArgs;
 
     ob = PySequence_Tuple(ob); /* new reference */
     if (!ob) {
@@ -2383,7 +2391,15 @@ converters_from_argtypes(PyObject *ob)
         return NULL;
     }
 
-    nArgs = PyTuple_GET_SIZE(ob);
+    Py_ssize_t nArgs = PyTuple_GET_SIZE(ob);
+    if (nArgs > CTYPES_MAX_ARGCOUNT) {
+        Py_DECREF(ob);
+        PyErr_Format(PyExc_ArgError,
+                     "_argtypes_ has too many arguments (%zi), maximum is %i",
+                     nArgs, CTYPES_MAX_ARGCOUNT);
+        return NULL;
+    }
+
     converters = PyTuple_New(nArgs);
     if (!converters) {
         Py_DECREF(ob);
@@ -2560,7 +2576,7 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyTypeObject *result;
     StgDictObject *stgdict;
 
-    stgdict = (StgDictObject *)_PyObject_CallNoArg(
+    stgdict = (StgDictObject *)_PyObject_CallNoArgs(
         (PyObject *)&PyCStgDict_Type);
     if (!stgdict)
         return NULL;
@@ -3985,10 +4001,10 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
                 goto error;
             }
             if (PyCArrayTypeObject_Check(ob))
-                ob = _PyObject_CallNoArg(ob);
+                ob = _PyObject_CallNoArgs(ob);
             else
                 /* Create an instance of the pointed-to type */
-                ob = _PyObject_CallNoArg(dict->proto);
+                ob = _PyObject_CallNoArgs(dict->proto);
             /*
                XXX Is the following correct any longer?
                We must not pass a byref() to the array then but
@@ -4795,7 +4811,7 @@ Array_length(PyObject *myself)
 }
 
 static PyMethodDef Array_methods[] = {
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     { NULL, NULL }
 };
@@ -5596,7 +5612,7 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
     CDataObject *result;
     if (0 == cast_check_pointertype(ctype))
         return NULL;
-    result = (CDataObject *)_PyObject_CallNoArg(ctype);
+    result = (CDataObject *)_PyObject_CallNoArgs(ctype);
     if (result == NULL)
         return NULL;
 

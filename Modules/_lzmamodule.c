@@ -10,7 +10,7 @@
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 
-#include <stdarg.h>
+#include <stdlib.h>               // free()
 #include <string.h>
 
 #include <lzma.h>
@@ -430,17 +430,19 @@ parse_filter_chain_spec(_lzma_state *state, lzma_filter filters[], PyObject *fil
    Python-level filter specifiers (represented as dicts). */
 
 static int
-spec_add_field(PyObject *spec, _Py_Identifier *key, unsigned long long value)
+spec_add_field(PyObject *spec, const char *key, unsigned long long value)
 {
-    int status;
-    PyObject *value_object;
-
-    value_object = PyLong_FromUnsignedLongLong(value);
+    PyObject *value_object = PyLong_FromUnsignedLongLong(value);
     if (value_object == NULL) {
         return -1;
     }
-
-    status = _PyDict_SetItemId(spec, key, value_object);
+    PyObject *key_object = PyUnicode_InternFromString(key);
+    if (key_object == NULL) {
+        Py_DECREF(value_object);
+        return -1;
+    }
+    int status = PyDict_SetItem(spec, key_object, value_object);
+    Py_DECREF(key_object);
     Py_DECREF(value_object);
     return status;
 }
@@ -457,8 +459,7 @@ build_filter_spec(const lzma_filter *f)
 
 #define ADD_FIELD(SOURCE, FIELD) \
     do { \
-        _Py_IDENTIFIER(FIELD); \
-        if (spec_add_field(spec, &PyId_##FIELD, SOURCE->FIELD) == -1) \
+        if (spec_add_field(spec, #FIELD, SOURCE->FIELD) == -1) \
             goto error;\
     } while (0)
 
