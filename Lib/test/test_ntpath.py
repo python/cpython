@@ -111,12 +111,35 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitdrive("///conky/mountpoint/foo/bar")',
             ('', '///conky/mountpoint/foo/bar'))
         tester('ntpath.splitdrive("\\\\conky\\\\mountpoint\\foo\\bar")',
-               ('', '\\\\conky\\\\mountpoint\\foo\\bar'))
+               ('\\\\conky\\\\mountpoint', '\\foo\\bar'))
         tester('ntpath.splitdrive("//conky//mountpoint/foo/bar")',
-               ('', '//conky//mountpoint/foo/bar'))
+               ('//conky//mountpoint', '/foo/bar'))
         # Issue #19911: UNC part containing U+0130
         self.assertEqual(ntpath.splitdrive('//conky/MOUNTPOİNT/foo/bar'),
                          ('//conky/MOUNTPOİNT', '/foo/bar'))
+        # bpo-37609: support UNC drives in the device namespace.
+        tester('ntpath.splitdrive("//./UNC")', ("//./UNC", ""))
+        tester('ntpath.splitdrive("//./Global/UNC")', ("//./Global/UNC", ""))
+        tester('ntpath.splitdrive("//./Global/Global/UNC")', ("//./Global/Global/UNC", ""))
+        tester('ntpath.splitdrive("//./Global")', ("", "//./Global"))
+        tester('ntpath.splitdrive("//?/UNC/")', ("", "//?/UNC/"))
+        tester('ntpath.splitdrive("//?/UNC/server/")', ("", "//?/UNC/server/"))
+        tester('ntpath.splitdrive("//?/UNC/server/share")',("//?/UNC/server/share", ""))
+        tester('ntpath.splitdrive("//?/UNC/server/share/dir")', ("//?/UNC/server/share", "/dir"))
+        tester('ntpath.splitdrive("//?/Global/UNC/server/share/dir")',
+               ("//?/Global/UNC/server/share", "/dir"))
+        tester('ntpath.splitdrive("\\\\.\\UNC")', ("\\\\.\\UNC", ""))
+        tester('ntpath.splitdrive("\\\\.\\Global\\UNC")', ("\\\\.\\Global\\UNC", ""))
+        tester('ntpath.splitdrive("\\\\.\\Global\\Global\\UNC")',
+               ("\\\\.\\Global\\Global\\UNC", ""))
+        tester('ntpath.splitdrive("\\\\.\\Global")', ("", "\\\\.\\Global"))
+        tester('ntpath.splitdrive("\\\\?\\UNC\\")', ("", "\\\\?\\UNC\\"))
+        tester('ntpath.splitdrive("\\\\?\\UNC\\server\\")', ("", "\\\\?\\UNC\\server\\"))
+        tester('ntpath.splitdrive("\\\\?\\UNC\\server\\share")',("\\\\?\\UNC\\server\\share", ""))
+        tester('ntpath.splitdrive("\\\\?\\UNC\\server\\share\\dir")',
+               ("\\\\?\\UNC\\server\\share", "\\dir"))
+        tester('ntpath.splitdrive("\\\\?\\Global\\UNC\\server\\share\\dir")',
+               ("\\\\?\\Global\\UNC\\server\\share", "\\dir"))
 
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))

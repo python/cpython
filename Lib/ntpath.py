@@ -122,54 +122,169 @@ def join(path, *paths):
 # colon) and the path specification.
 # It is always true that drivespec + pathspec == p
 def splitdrive(p):
-    """Split a pathname into drive/UNC sharepoint and relative path specifiers.
-    Returns a 2-tuple (drive_or_unc, path); either part may be empty.
+    """Split path p conservatively into a drive and remaining path.
+    Returns a 2-tuple, (drive, rest). Either component may be empty.
 
-    If you assign
-        result = splitdrive(p)
-    It is always true that:
-        result[0] + result[1] == p
+    If the source path contains a DOS drive (i.e. a letter plus a colon), the
+    remaining path is everything after the colon.
 
-    If the path contained a drive letter, drive_or_unc will contain everything
-    up to and including the colon.  e.g. splitdrive("c:/dir") returns ("c:", "/dir")
+    DOS drive examples:
 
-    If the path contained a UNC path, the drive_or_unc will contain the host name
-    and share up to but not including the fourth directory separator character.
-    e.g. splitdrive("//host/computer/dir") returns ("//host/computer", "/dir")
+        splitdrive('C:') == ('C:', '')
+        splitdrive('C:dir') == ('C:', 'dir')
+        splitdrive('C:/') == ('C:', '/')
+        splitdrive('C:/dir') == ('C:', '/dir')
 
-    Paths cannot contain both a drive letter and a UNC path.
+    A UNC path is parsed as follows:
 
+        drive
+        vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+        "//" domain "/" junction ["/" junction] ["/" object]
+                                                ^^^^^^^^^^^^
+                                                rest
+
+    The UNC root must be exactly two separators. Other separators may be
+    repeated.
+
+    This is a generalization of the UNC specification in [MS-DTYP] 2.2.57. The
+    latter specifies the file namespace, for which the domain is referred to
+    as "host-name" (more generally "server") and the junction as "share-name".
+    The server is commonly a local or remote network name (i.e. NETBIOS name,
+    DNS name, or IP address). It can also be a non-network server provided by
+    a local redirector. The share is a resource provided by the server, such
+    as a file-system directory.
+
+    UNC drive examples in the file namespace:
+
+        splitdrive('//server/share') == ('//server/share', '')
+        splitdrive('//server///share') == ('//server///share', '')
+        splitdrive('//server/share/') == ('//server/share', '/')
+        splitdrive('//server/share/dir') == ('//server/share', '/dir')
+
+    The other supported namespace is the device namespace, which is mapped as
+    two domains, "." and "?". These domains are handled differently in some
+    contexts, such as when creating or opening a file, but for our puposes
+    here they are equivalent. In this namespace, the junction is case-
+    insensitive. Any device junction is recognized as a UNC drive, with
+    two exceptions that require additional qualification: "GLOBAL" and "UNC".
+
+    Normally the device namespace includes the local device junctions of a
+    user, such as mapped and subst drives. The "GLOBAL" junction limits this
+    view to just global devices. It must be followed either by a device
+    junction or another "GLOBAL" junction.
+
+    The equivalent of the UNC file namespace in the device namespace is the
+    "UNC" device junction, but only when there is a remaining path (e.g. at
+    least a trailing separator). For consistency with the file namespace, if
+    the "UNC" device junction has a reminaing path, it must include a server
+    and share in order to be recognized as a drive.
+
+    UNC drive examples in the device namespace:
+
+        splitdrive('//./C:') == ('//./C:', '')
+        splitdrive('//?/C:/dir') == ('//?/C:', '/dir')
+
+        splitdrive('//./UNC') == ('//./UNC', '')
+        splitdrive('//?/UNC/server/share') == ('//?/UNC/server/share', '')
+        splitdrive('//?/UNC/server/share/dir') == (
+            '//?/UNC/server/share', '/dir')
+
+        splitdrive('//./Global/C:') == ('//./Global/C:', '')
+        splitdrive('//?/Global/Global/C:/') == ('//?/Global/Global/C:', '/')
+        splitdrive('//?/Global/UNC/server/share/dir') == (
+            '//?/Global/UNC/server/share', '/dir')
+
+    Examples with no drive:
+
+        splitdrive('') == ('', '')
+        splitdrive('dir') == ('', 'dir')
+        splitdrive('/dir') == ('', '/dir')
+
+        splitdrive('//') == ('', '//')
+        splitdrive('//server/') == ('', '//server/')
+        splitdrive('///server/share') == ('', '///server/share')
+
+        splitdrive('//?/UNC/') == ('', '//?/UNC/')
+        splitdrive('//?/UNC/server/') == ('', '//?/UNC/server/')
+        splitdrive('//?/Global') == ('', '//?/Global')
     """
     p = os.fspath(p)
-    if len(p) >= 2:
-        if isinstance(p, bytes):
-            sep = b'\\'
-            altsep = b'/'
-            colon = b':'
-        else:
-            sep = '\\'
-            altsep = '/'
-            colon = ':'
-        normp = p.replace(altsep, sep)
-        if (normp[0:2] == sep*2) and (normp[2:3] != sep):
-            # is a UNC path:
-            # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
-            # \\machine\mountpoint\directory\etc\...
-            #           directory ^^^^^^^^^^^^^^^
-            index = normp.find(sep, 2)
-            if index == -1:
-                return p[:0], p
-            index2 = normp.find(sep, index + 1)
-            # a UNC path can't have two slashes in a row
-            # (after the initial two)
-            if index2 == index + 1:
-                return p[:0], p
-            if index2 == -1:
-                index2 = len(p)
-            return p[:index2], p[index2:]
-        if normp[1:2] == colon:
-            return p[:2], p[2:]
-    return p[:0], p
+    if isinstance(p, bytes):
+        empty = b''
+        colon = b':'
+        sep = b'\\'
+        altsep = b'/'
+        device_domains = (b'?', b'.')
+        global_name = b'GLOBAL'
+        unc_name = b'UNC'
+    else:
+        empty = ''
+        colon = ':'
+        sep = '\\'
+        altsep = '/'
+        device_domains = ('?', '.')
+        global_name = 'GLOBAL'
+        unc_name = 'UNC'
+
+    # Check for a DOS drive.
+    if p[:1].isalpha() and p[1:2] == colon:
+        return p[:2], p[2:]
+
+    # UNC drive for the file and device namespaces.
+    #     \\domain\junction\object
+    # Separators may be repeated, except at the root.
+
+    def _next():
+        '''Get the next component, ignoring repeated separators.'''
+        i0 = index
+        while normp[i0:i0+1] == sep:
+            i0 += 1
+        if i0 >= len(p):
+            return -1, len(p)
+        i1 = normp.find(sep, i0)
+        if i1 == -1:
+            i1 = len(p)
+        return i0, i1
+
+    index = 0
+    normp = p.replace(altsep, sep)
+    # Consume the domain (server).
+    i, index = _next()
+    if i != 2:
+        return empty, p
+    domain = p[i:index]
+    # Consume the junction (share).
+    i, index = _next()
+    if i == -1:
+        return empty, p
+
+    if domain not in device_domains:
+        return p[:index], p[index:]
+
+    # GLOBAL and UNC are special in the device domain.
+    junction = p[i:index].upper()
+    # GLOBAL can be repeated.
+    while junction == global_name:
+        i, index = _next()
+        if i == -1:
+            # GLOBAL must be a prefix.
+            return empty, p
+        junction = p[i:index].upper()
+
+    if junction == unc_name:
+        # Allow the "UNC" device with no remaining path.
+        if index == len(p):
+            return p, empty
+        # Consume the meta-domain (server).
+        i, index = _next()
+        if i == -1:
+            return empty, p
+        # Consume the meta-junction (share).
+        i, index = _next()
+        if i == -1:
+            return empty, p
+
+    return p[:index], p[index:]
 
 
 # Split a path in head (everything up to the last '/') and tail (the

@@ -1,0 +1,2 @@
+:func:`os.path.splitdrive` now understands ``UNC`` and ``GLOBAL`` junctions
+in Windows device paths. Contributed by Barney Gale and Eryk Sun.
