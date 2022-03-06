@@ -5299,7 +5299,7 @@ handle_eval_breaker:
             }
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            _Py_framedata *gen_frame = (_Py_framedata *)gen->gi_iframe;
+            _Py_framedata *gen_frame = (_Py_framedata *)gen->gi_fdata;
             _PyFrame_Copy(frame, gen_frame);
             assert(frame->frame_obj == NULL);
             gen->gi_frame_valid = 1;

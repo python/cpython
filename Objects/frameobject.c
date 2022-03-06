@@ -692,7 +692,7 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
     }
     if (f->f_fdata->is_generator) {
         assert(!f->f_owns_frame);
-        size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
+        size_t offset_in_gen = offsetof(PyGenObject, gi_fdata);
         PyObject *gen = (PyObject *)(((char *)f->f_fdata) - offset_in_gen);
         _PyGen_Finalize(gen);
     }
