@@ -10,7 +10,8 @@ extern "C" {
 
 
 // Inline caches. If you change the number of cache entries for an instruction,
-// you must *also* bump the magic number in Lib/importlib/_bootstap_external.py!
+// you must *also* update the number of cache entries in Lib/opcode.py and bump
+// the magic number in Lib/importlib/_bootstap_external.py!
 
 #define CACHE_ENTRIES(cache) (sizeof(cache)/sizeof(_Py_CODEUNIT))
 
@@ -113,9 +114,12 @@ _Py_IncrementCountAndMaybeQuicken(PyCodeObject *code)
 
 extern Py_ssize_t _Py_QuickenedCount;
 
-extern PyObject *builtin_isinstance;
-extern PyObject *builtin_len;
-extern PyObject *builtin_list_append;
+// Borrowed references to common callables:
+struct callable_cache {
+    PyObject *isinstance;
+    PyObject *len;
+    PyObject *list_append;
+};
 
 /* "Locals plus" for a code object is the set of locals + cell vars +
  * free vars.  This relates to variable names as well as offsets into
@@ -258,8 +262,7 @@ extern int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CO
 extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
                                int nargs, PyObject *kwnames);
 extern int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr,
-                                  int nargs, PyObject *kwnames,
-                                  PyObject *builtins, int oparg);
+                                  int nargs, PyObject *kwnames, int oparg);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                                     int oparg);
 extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,

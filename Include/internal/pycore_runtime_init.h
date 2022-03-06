@@ -884,6 +884,7 @@ extern "C" {
                 INIT_ID(inf), \
                 INIT_ID(intersection), \
                 INIT_ID(isatty), \
+                INIT_ID(isinstance), \
                 INIT_ID(items), \
                 INIT_ID(iter), \
                 INIT_ID(join), \
@@ -893,6 +894,7 @@ extern "C" {
                 INIT_ID(last_type), \
                 INIT_ID(last_value), \
                 INIT_ID(latin1), \
+                INIT_ID(len), \
                 INIT_ID(line), \
                 INIT_ID(lineno), \
                 INIT_ID(listcomp), \

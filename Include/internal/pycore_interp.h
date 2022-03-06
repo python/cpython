@@ -12,6 +12,7 @@ extern "C" {
 
 #include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ast_state.h"     // struct ast_state
+#include "pycore_code.h"          // struct callable_cache
 #include "pycore_context.h"       // struct _Py_context_state
 #include "pycore_dict.h"          // struct _Py_dict_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
@@ -176,6 +177,7 @@ struct _is {
 
     struct ast_state ast;
     struct type_cache type_cache;
+    struct callable_cache callable_cache;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.

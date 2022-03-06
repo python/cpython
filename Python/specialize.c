@@ -1577,7 +1577,7 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
 
 static int
 specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
-                  PyObject *kwnames, PyObject *builtins)
+                  PyObject *kwnames)
 {
     assert(_Py_OPCODE(*instr) == PRECALL_ADAPTIVE);
     if (PyCFunction_GET_FUNCTION(callable) == NULL) {
@@ -1596,12 +1596,8 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                 return 1;
             }
             /* len(o) */
-            if (builtin_len == NULL) {
-                // Use builtins_copy to protect against mutated builtins:
-                builtin_len = PyDict_GetItemString(
-                    _PyInterpreterState_GET()->builtins_copy, "len");
-            }
-            if (callable == builtin_len) {
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            if (callable == interp->callable_cache.len) {
                 *instr = _Py_MAKECODEUNIT(PRECALL_NO_KW_LEN,
                     _Py_OPARG(*instr));
                 return 0;
@@ -1617,12 +1613,8 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
             }
             if (nargs == 2) {
                 /* isinstance(o1, o2) */
-                if (builtin_isinstance == NULL) {
-                    // Use builtins_copy to protect against mutated builtins:
-                    builtin_isinstance = PyDict_GetItemString(
-                        _PyInterpreterState_GET()->builtins_copy, "isinstance");
-                }
-                if (callable == builtin_isinstance) {
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                if (callable == interp->callable_cache.isinstance) {
                     *instr = _Py_MAKECODEUNIT(PRECALL_NO_KW_ISINSTANCE,
                         _Py_OPARG(*instr));
                     return 0;
@@ -1688,14 +1680,14 @@ call_fail_kind(PyObject *callable)
 
 int
 _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
-                       PyObject *kwnames, PyObject *builtins, int oparg)
+                       PyObject *kwnames, int oparg)
 {
     assert(_PyOpcode_InlineCacheEntries[PRECALL] ==
            INLINE_CACHE_ENTRIES_PRECALL);
     _PyPrecallCache *cache = (_PyPrecallCache *)(instr + 1);
     int fail;
     if (PyCFunction_CheckExact(callable)) {
-        fail = specialize_c_call(callable, instr, nargs, kwnames, builtins);
+        fail = specialize_c_call(callable, instr, nargs, kwnames);
     }
     else if (PyFunction_Check(callable)) {
         *instr = _Py_MAKECODEUNIT(PRECALL_PYFUNC, _Py_OPARG(*instr));
@@ -1717,12 +1709,12 @@ _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
         fail = -1;
     }
     if (fail) {
-        STAT_INC(CALL, failure);
+        STAT_INC(PRECALL, failure);
         assert(!PyErr_Occurred());
         cache->counter = ADAPTIVE_CACHE_BACKOFF;
     }
     else {
-        STAT_INC(CALL, success);
+        STAT_INC(PRECALL, success);
         assert(!PyErr_Occurred());
         cache->counter = initial_counter_value();
     }
@@ -2130,12 +2122,6 @@ int
         return SPEC_FAIL_FOR_ITER_ITERTOOLS;
     }
     return SPEC_FAIL_OTHER;
-}
-
-int
-_PySpecialization_ClassifyCallable(PyObject *callable)
-{
-    return call_fail_kind(callable);
 }
 
 #endif

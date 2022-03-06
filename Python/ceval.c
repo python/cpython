@@ -4569,14 +4569,6 @@ handle_eval_breaker:
             /* Move ownership of reference from stack to call_shape
              * and make sure that NULL is cleared from stack */
             PyObject *function = PEEK(nargs + 1);
-#ifdef Py_STATS
-            extern int _PySpecialization_ClassifyCallable(PyObject *);
-            SpecializationStats *stats =
-                &_py_stats.opcode_stats[PRECALL].specialization;
-            stats->failure++;
-            int kind = _PySpecialization_ClassifyCallable(function);
-            stats->failure_kinds[kind]++;
-#endif
             if (!is_method && Py_TYPE(function) == &PyMethod_Type) {
                 PyObject *meth = ((PyMethodObject *)function)->im_func;
                 PyObject *self = ((PyMethodObject *)function)->im_self;
@@ -4694,8 +4686,7 @@ handle_eval_breaker:
                 int nargs = oparg + is_meth;
                 PyObject *callable = PEEK(nargs + 1);
                 int err = _Py_Specialize_Precall(callable, next_instr, nargs,
-                                                 call_shape.kwnames,
-                                                 BUILTINS(), oparg);
+                                                 call_shape.kwnames, oparg);
                 if (err < 0) {
                     goto error;
                 }
@@ -5011,7 +5002,8 @@ handle_eval_breaker:
             int total_args = oparg + is_meth;
             DEOPT_IF(total_args != 1, PRECALL);
             PyObject *callable = PEEK(total_args + 1);
-            DEOPT_IF(callable != builtin_len, PRECALL);
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            DEOPT_IF(callable != interp->callable_cache.len, PRECALL);
             STAT_INC(PRECALL, hit);
             SKIP_CALL();
             PyObject *arg = TOP();
@@ -5040,8 +5032,8 @@ handle_eval_breaker:
             int total_args = oparg + is_meth;
             PyObject *callable = PEEK(total_args + 1);
             DEOPT_IF(total_args != 2, PRECALL);
-
-            DEOPT_IF(callable != builtin_isinstance, PRECALL);
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            DEOPT_IF(callable != interp->callable_cache.isinstance, PRECALL);
             STAT_INC(PRECALL, hit);
             SKIP_CALL();
             PyObject *cls = POP();
@@ -5070,8 +5062,8 @@ handle_eval_breaker:
             assert(call_shape.kwnames == NULL);
             assert(oparg == 1);
             PyObject *callable = PEEK(3);
-            assert(builtin_list_append);
-            DEOPT_IF(callable != builtin_list_append, PRECALL);
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            DEOPT_IF(callable != interp->callable_cache.list_append, PRECALL);
             PyObject *list = SECOND();
             DEOPT_IF(!PyList_Check(list), PRECALL);
             STAT_INC(PRECALL, hit);
