@@ -197,10 +197,14 @@ created.  Socket addresses are represented as follows:
   - *addr* - Optional bytes-like object specifying the hardware physical
     address, whose interpretation depends on the device.
 
+   .. availability:: Linux >= 2.2.
+
 - :const:`AF_QIPCRTR` is a Linux-only socket based interface for communicating
   with services running on co-processors in Qualcomm platforms. The address
   family is represented as a ``(node, port)`` tuple where the *node* and *port*
   are non-negative integers.
+
+   .. availability:: Linux >= 4.7.
 
   .. versionadded:: 3.8
 
@@ -558,7 +562,7 @@ Creating sockets
 The following functions all create :ref:`socket objects <socket-objects>`.
 
 
-.. function:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
+.. class:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
 
    Create a new socket using the given address family, socket type and protocol
    number.  The address family should be :const:`AF_INET` (the default),

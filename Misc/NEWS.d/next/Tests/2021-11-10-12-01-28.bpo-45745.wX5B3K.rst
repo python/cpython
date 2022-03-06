@@ -1,0 +1,3 @@
+Remove the ``--findleaks`` command line option of regrtest: use the
+``--fail-env-changed`` option instead. Since Python 3.7, it was a deprecated
+alias to the ``--fail-env-changed`` option.

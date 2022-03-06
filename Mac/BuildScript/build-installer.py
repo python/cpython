@@ -265,10 +265,10 @@ def library_recipes():
             tk_patches = ['tk868_on_10_8_10_9.patch']
 
         else:
-            tcl_tk_ver='8.6.11'
-            tcl_checksum='8a4c004f48984a03a7747e9ba06e4da4'
+            tcl_tk_ver='8.6.12'
+            tcl_checksum='87ea890821d2221f2ab5157bc5eb885f'
 
-            tk_checksum='c7ee71a2d05bba78dfffd76528dc17c6'
+            tk_checksum='1d6dcf6120356e3d211e056dff5e462a'
             tk_patches = [ ]
 
 
@@ -729,6 +729,10 @@ def extractArchive(builddir, archiveName):
             if ((retval.startswith('tcl') or retval.startswith('tk'))
                     and retval.endswith('-src')):
                 retval = retval[:-4]
+                # Strip rcxx suffix from Tcl/Tk release candidates
+                retval_rc = retval.find('rc')
+                if retval_rc > 0:
+                    retval = retval[:retval_rc]
             if os.path.exists(retval):
                 shutil.rmtree(retval)
             fp = os.popen("tar zxf %s 2>&1"%(shellQuote(archiveName),), 'r')

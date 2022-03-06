@@ -1,0 +1,3 @@
+Path calculation (known as ``getpath``) has been reimplemented as a frozen
+Python module. This should have no visible impact, but may affect
+calculation of all paths referenced in :mod:`sys` and :mod:`sysconfig`.

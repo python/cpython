@@ -11,6 +11,11 @@ contains a rich set of fixers that will handle almost all code.  2to3 supporting
 library :mod:`lib2to3` is, however, a flexible and generic library, so it is
 possible to write your own fixers for 2to3.
 
+.. deprecated-removed:: 3.11 3.13
+   The ``lib2to3`` module was marked pending for deprecation in Python 3.9
+   (raising :exc:`PendingDeprecationWarning` on import) and fully deprecated
+   in Python 3.11 (raising :exc:`DeprecationWarning`).  The ``2to3`` tool is
+   part of that.  It will be removed in Python 3.13.
 
 .. _2to3-using:
 

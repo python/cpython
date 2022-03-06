@@ -1087,7 +1087,9 @@ size, we show only how this table can be read with :mod:`ctypes`::
    >>> class struct_frozen(Structure):
    ...     _fields_ = [("name", c_char_p),
    ...                 ("code", POINTER(c_ubyte)),
-   ...                 ("size", c_int)]
+   ...                 ("size", c_int),
+   ...                 ("get_code", POINTER(c_ubyte)),  # Function pointer
+   ...                ]
    ...
    >>>
 
@@ -1095,7 +1097,7 @@ We have defined the :c:type:`struct _frozen` data type, so we can get the pointe
 to the table::
 
    >>> FrozenTable = POINTER(struct_frozen)
-   >>> table = FrozenTable.in_dll(pythonapi, "PyImport_FrozenModules")
+   >>> table = FrozenTable.in_dll(pythonapi, "_PyImport_FrozenBootstrap")
    >>>
 
 Since ``table`` is a ``pointer`` to the array of ``struct_frozen`` records, we
@@ -1111,9 +1113,7 @@ hit the ``NULL`` entry::
    ...
    _frozen_importlib 31764
    _frozen_importlib_external 41499
-   __hello__ 161
-   __phello__ -161
-   __phello__.spam 161
+   zipimport 12345
    >>>
 
 The fact that standard Python has a frozen module and a frozen package

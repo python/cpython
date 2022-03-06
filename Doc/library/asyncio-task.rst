@@ -271,6 +271,11 @@ Creating Tasks
        task = asyncio.ensure_future(coro())
        ...
 
+   .. important::
+
+      Save a reference to the result of this function, to avoid
+      a task disappearing mid execution.
+
    .. versionadded:: 3.7
 
    .. versionchanged:: 3.8
@@ -293,12 +298,6 @@ Sleeping
    Setting the delay to 0 provides an optimized path to allow other
    tasks to run. This can be used by long-running functions to avoid
    blocking the event loop for the full duration of the function call.
-
-   .. deprecated-removed:: 3.8 3.10
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
 
    .. _asyncio_example_sleep:
 

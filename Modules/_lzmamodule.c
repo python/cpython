@@ -10,6 +10,7 @@
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 
+#include <stdlib.h>               // free()
 #include <string.h>
 
 #include <lzma.h>

@@ -240,17 +240,20 @@ uint64_t _pydict_global_version = 0;
 #include "clinic/dictobject.c.h"
 
 
+#if PyDict_MAXFREELIST > 0
 static struct _Py_dict_state *
 get_dict_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return &interp->dict_state;
 }
+#endif
 
 
 void
 _PyDict_ClearFreeList(PyInterpreterState *interp)
 {
+#if PyDict_MAXFREELIST > 0
     struct _Py_dict_state *state = &interp->dict_state;
     while (state->numfree) {
         PyDictObject *op = state->free_list[--state->numfree];
@@ -260,6 +263,7 @@ _PyDict_ClearFreeList(PyInterpreterState *interp)
     while (state->keys_numfree) {
         PyObject_Free(state->keys_free_list[--state->keys_numfree]);
     }
+#endif
 }
 
 
@@ -267,7 +271,7 @@ void
 _PyDict_Fini(PyInterpreterState *interp)
 {
     _PyDict_ClearFreeList(interp);
-#ifdef Py_DEBUG
+#if defined(Py_DEBUG) && PyDict_MAXFREELIST > 0
     struct _Py_dict_state *state = &interp->dict_state;
     state->numfree = -1;
     state->keys_numfree = -1;
@@ -279,9 +283,11 @@ _PyDict_Fini(PyInterpreterState *interp)
 void
 _PyDict_DebugMallocStats(FILE *out)
 {
+#if PyDict_MAXFREELIST > 0
     struct _Py_dict_state *state = get_dict_state();
     _PyDebugAllocatorStats(out, "free PyDictObject",
                            state->numfree, sizeof(PyDictObject));
+#endif
 }
 
 #define DK_MASK(dk) (DK_SIZE(dk)-1)
@@ -570,6 +576,7 @@ new_keys_object(uint8_t log2_size)
         es = sizeof(Py_ssize_t);
     }
 
+#if PyDict_MAXFREELIST > 0
     struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
     // new_keys_object() must not be called after _PyDict_Fini()
@@ -579,6 +586,7 @@ new_keys_object(uint8_t log2_size)
         dk = state->keys_free_list[--state->keys_numfree];
     }
     else
+#endif
     {
         dk = PyObject_Malloc(sizeof(PyDictKeysObject)
                              + (es<<log2_size)
@@ -611,6 +619,7 @@ free_keys_object(PyDictKeysObject *keys)
         Py_XDECREF(entries[i].me_key);
         Py_XDECREF(entries[i].me_value);
     }
+#if PyDict_MAXFREELIST > 0
     struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
     // free_keys_object() must not be called after _PyDict_Fini()
@@ -620,6 +629,7 @@ free_keys_object(PyDictKeysObject *keys)
         state->keys_free_list[state->keys_numfree++] = keys;
         return;
     }
+#endif
     PyObject_Free(keys);
 }
 
@@ -638,6 +648,7 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values, Py_ssize_t used, int free
 {
     PyDictObject *mp;
     assert(keys != NULL);
+#if PyDict_MAXFREELIST > 0
     struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
     // new_dict() must not be called after _PyDict_Fini()
@@ -649,7 +660,9 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values, Py_ssize_t used, int free
         assert (Py_IS_TYPE(mp, &PyDict_Type));
         _Py_NewReference((PyObject *)mp);
     }
-    else {
+    else
+#endif
+    {
         mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
         if (mp == NULL) {
             dictkeys_decref(keys);
@@ -1042,6 +1055,7 @@ insert_into_dictkeys(PyDictKeysObject *keys, PyObject *name)
 Internal routine to insert a new item into the table.
 Used both by the internal resize routine and by the public insert routine.
 Returns -1 if an error occurred, or 0 on success.
+Consumes key and value references.
 */
 static int
 insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
@@ -1049,8 +1063,6 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
     PyObject *old_value;
     PyDictKeyEntry *ep;
 
-    Py_INCREF(key);
-    Py_INCREF(value);
     if (mp->ma_values != NULL && !PyUnicode_CheckExact(key)) {
         if (insertion_resize(mp) < 0)
             goto Fail;
@@ -1125,6 +1137,7 @@ Fail:
 }
 
 // Same to insertdict but specialized for ma_keys = Py_EMPTY_KEYS.
+// Consumes key and value references.
 static int
 insert_to_emptydict(PyDictObject *mp, PyObject *key, Py_hash_t hash,
                     PyObject *value)
@@ -1133,6 +1146,8 @@ insert_to_emptydict(PyDictObject *mp, PyObject *key, Py_hash_t hash,
 
     PyDictKeysObject *newkeys = new_keys_object(PyDict_LOG_MINSIZE);
     if (newkeys == NULL) {
+        Py_DECREF(key);
+        Py_DECREF(value);
         return -1;
     }
     if (!PyUnicode_CheckExact(key)) {
@@ -1142,8 +1157,6 @@ insert_to_emptydict(PyDictObject *mp, PyObject *key, Py_hash_t hash,
     mp->ma_keys = newkeys;
     mp->ma_values = NULL;
 
-    Py_INCREF(key);
-    Py_INCREF(value);
     MAINTAIN_TRACKING(mp, key, value);
 
     size_t hashpos = (size_t)hash & (PyDict_MINSIZE-1);
@@ -1259,6 +1272,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize)
 #ifdef Py_REF_DEBUG
         _Py_RefTotal--;
 #endif
+#if PyDict_MAXFREELIST > 0
         struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
         // dictresize() must not be called after _PyDict_Fini()
@@ -1269,7 +1283,9 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize)
         {
             state->keys_free_list[state->keys_numfree++] = oldkeys;
         }
-        else {
+        else
+#endif
+        {
             PyObject_Free(oldkeys);
         }
     }
@@ -1513,6 +1529,31 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
     return value;
 }
 
+/* Consumes references to key and value */
+int
+_PyDict_SetItem_Take2(PyDictObject *mp, PyObject *key, PyObject *value)
+{
+    assert(key);
+    assert(value);
+    assert(PyDict_Check(mp));
+    Py_hash_t hash;
+    if (!PyUnicode_CheckExact(key) ||
+        (hash = ((PyASCIIObject *) key)->hash) == -1)
+    {
+        hash = PyObject_Hash(key);
+        if (hash == -1) {
+            Py_DECREF(key);
+            Py_DECREF(value);
+            return -1;
+        }
+    }
+    if (mp->ma_keys == Py_EMPTY_KEYS) {
+        return insert_to_emptydict(mp, key, hash, value);
+    }
+    /* insertdict() handles any resizing that might be necessary */
+    return insertdict(mp, key, hash, value);
+}
+
 /* CAUTION: PyDict_SetItem() must guarantee that it won't resize the
  * dictionary if it's merely replacing the value for an existing key.
  * This means that it's safe to loop over a dictionary with PyDict_Next()
@@ -1522,28 +1563,15 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
 int
 PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
 {
-    PyDictObject *mp;
-    Py_hash_t hash;
     if (!PyDict_Check(op)) {
         PyErr_BadInternalCall();
         return -1;
     }
     assert(key);
     assert(value);
-    mp = (PyDictObject *)op;
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1)
-    {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return -1;
-    }
-
-    if (mp->ma_keys == Py_EMPTY_KEYS) {
-        return insert_to_emptydict(mp, key, hash, value);
-    }
-    /* insertdict() handles any resizing that might be necessary */
-    return insertdict(mp, key, hash, value);
+    Py_INCREF(key);
+    Py_INCREF(value);
+    return _PyDict_SetItem_Take2((PyDictObject *)op, key, value);
 }
 
 int
@@ -1561,6 +1589,8 @@ _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
     assert(hash != -1);
     mp = (PyDictObject *)op;
 
+    Py_INCREF(key);
+    Py_INCREF(value);
     if (mp->ma_keys == Py_EMPTY_KEYS) {
         return insert_to_emptydict(mp, key, hash, value);
     }
@@ -1901,6 +1931,8 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             }
 
             while (_PyDict_Next(iterable, &pos, &key, &oldvalue, &hash)) {
+                Py_INCREF(key);
+                Py_INCREF(value);
                 if (insertdict(mp, key, hash, value)) {
                     Py_DECREF(d);
                     return NULL;
@@ -1920,6 +1952,8 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             }
 
             while (_PySet_NextEntry(iterable, &pos, &key, &hash)) {
+                Py_INCREF(key);
+                Py_INCREF(value);
                 if (insertdict(mp, key, hash, value)) {
                     Py_DECREF(d);
                     return NULL;
@@ -1987,6 +2021,7 @@ dict_dealloc(PyDictObject *mp)
         assert(keys->dk_refcnt == 1);
         dictkeys_decref(keys);
     }
+#if PyDict_MAXFREELIST > 0
     struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
     // new_dict() must not be called after _PyDict_Fini()
@@ -1995,7 +2030,9 @@ dict_dealloc(PyDictObject *mp)
     if (state->numfree < PyDict_MAXFREELIST && Py_IS_TYPE(mp, &PyDict_Type)) {
         state->free_list[state->numfree++] = mp;
     }
-    else {
+    else
+#endif
+    {
         Py_TYPE(mp)->tp_free((PyObject *)mp);
     }
     Py_TRASHCAN_END
@@ -2543,11 +2580,16 @@ dict_merge(PyObject *a, PyObject *b, int override)
                 int err = 0;
                 Py_INCREF(key);
                 Py_INCREF(value);
-                if (override == 1)
+                if (override == 1) {
+                    Py_INCREF(key);
+                    Py_INCREF(value);
                     err = insertdict(mp, key, hash, value);
+                }
                 else {
                     err = _PyDict_Contains_KnownHash(a, key, hash);
                     if (err == 0) {
+                        Py_INCREF(key);
+                        Py_INCREF(value);
                         err = insertdict(mp, key, hash, value);
                     }
                     else if (err > 0) {
@@ -2948,7 +2990,10 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         if (hash == -1)
             return NULL;
     }
+
     if (mp->ma_keys == Py_EMPTY_KEYS) {
+        Py_INCREF(key);
+        Py_INCREF(defaultobj);
         if (insert_to_emptydict(mp, key, hash, defaultobj) < 0) {
             return NULL;
         }

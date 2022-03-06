@@ -1,0 +1,2 @@
+Fix :func:`types.resolve_bases` and :func:`types.new_class` for
+:class:`types.GenericAlias` instance as a base.

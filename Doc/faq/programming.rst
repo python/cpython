@@ -2092,7 +2092,7 @@ Jim Roskind suggests performing steps in the following order in each module:
 * ``import`` statements
 * active code (including globals that are initialized from imported values).
 
-van Rossum doesn't like this approach much because the imports appear in a
+Van Rossum doesn't like this approach much because the imports appear in a
 strange place, but it does work.
 
 Matthias Urlichs recommends restructuring your code so that the recursive import

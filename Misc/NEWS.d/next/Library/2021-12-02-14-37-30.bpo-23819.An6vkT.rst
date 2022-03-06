@@ -1,0 +1,1 @@
+Replaced asserts with exceptions in asyncio, patch by Kumar Aditya.

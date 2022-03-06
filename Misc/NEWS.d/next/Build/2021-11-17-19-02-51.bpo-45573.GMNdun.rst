@@ -1,0 +1,3 @@
+``configure`` now uses a unified format to set state, compiler flags, and
+linker flags in Makefile. The new macro ``PY_STDLIB_MOD`` sets three
+variables that are consumed by ``Modules/Setup`` and ``setup.py``.

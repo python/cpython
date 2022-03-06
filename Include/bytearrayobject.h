@@ -34,7 +34,7 @@ PyAPI_FUNC(int) PyByteArray_Resize(PyObject *, Py_ssize_t);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_BYTEARRAYOBJECT_H
-#  include  "cpython/bytearrayobject.h"
+#  include "cpython/bytearrayobject.h"
 #  undef Py_CPYTHON_BYTEARRAYOBJECT_H
 #endif
 

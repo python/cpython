@@ -1,6 +1,6 @@
 import unittest
 import tkinter
-from test.support import requires, run_unittest
+from test.support import requires
 from tkinter.test.support import AbstractTkTest
 
 requires('gui')
@@ -41,7 +41,5 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(text.search('test', '1.0', 'end'), '1.3')
 
 
-tests_gui = (TextTest, )
-
 if __name__ == "__main__":
-    run_unittest(*tests_gui)
+    unittest.main()

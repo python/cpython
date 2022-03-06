@@ -7,31 +7,40 @@ from .resources import util
 
 class CommonBinaryTests(util.CommonTests, unittest.TestCase):
     def execute(self, package, path):
-        resources.read_binary(package, path)
+        with util.suppress_known_deprecation():
+            resources.read_binary(package, path)
 
 
 class CommonTextTests(util.CommonTests, unittest.TestCase):
     def execute(self, package, path):
-        resources.read_text(package, path)
+        with util.suppress_known_deprecation():
+            resources.read_text(package, path)
 
 
 class ReadTests:
     def test_read_binary(self):
-        result = resources.read_binary(self.data, 'binary.file')
+        with util.suppress_known_deprecation():
+            result = resources.read_binary(self.data, 'binary.file')
         self.assertEqual(result, b'\0\1\2\3')
 
     def test_read_text_default_encoding(self):
-        result = resources.read_text(self.data, 'utf-8.file')
+        with util.suppress_known_deprecation():
+            result = resources.read_text(self.data, 'utf-8.file')
         self.assertEqual(result, 'Hello, UTF-8 world!\n')
 
     def test_read_text_given_encoding(self):
-        result = resources.read_text(self.data, 'utf-16.file', encoding='utf-16')
+        with util.suppress_known_deprecation():
+            result = resources.read_text(self.data, 'utf-16.file', encoding='utf-16')
         self.assertEqual(result, 'Hello, UTF-16 world!\n')
 
     def test_read_text_with_errors(self):
         # Raises UnicodeError without the 'errors' argument.
-        self.assertRaises(UnicodeError, resources.read_text, self.data, 'utf-16.file')
-        result = resources.read_text(self.data, 'utf-16.file', errors='ignore')
+        with util.suppress_known_deprecation():
+            self.assertRaises(
+                UnicodeError, resources.read_text, self.data, 'utf-16.file'
+            )
+        with util.suppress_known_deprecation():
+            result = resources.read_text(self.data, 'utf-16.file', errors='ignore')
         self.assertEqual(
             result,
             'H\x00e\x00l\x00l\x00o\x00,\x00 '
@@ -47,11 +56,13 @@ class ReadDiskTests(ReadTests, unittest.TestCase):
 class ReadZipTests(ReadTests, util.ZipSetup, unittest.TestCase):
     def test_read_submodule_resource(self):
         submodule = import_module('ziptestdata.subdirectory')
-        result = resources.read_binary(submodule, 'binary.file')
+        with util.suppress_known_deprecation():
+            result = resources.read_binary(submodule, 'binary.file')
         self.assertEqual(result, b'\0\1\2\3')
 
     def test_read_submodule_resource_by_name(self):
-        result = resources.read_binary('ziptestdata.subdirectory', 'binary.file')
+        with util.suppress_known_deprecation():
+            result = resources.read_binary('ziptestdata.subdirectory', 'binary.file')
         self.assertEqual(result, b'\0\1\2\3')
 
 

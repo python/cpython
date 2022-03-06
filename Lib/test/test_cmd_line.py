@@ -83,8 +83,17 @@ class CmdLineTest(unittest.TestCase):
         opts = get_xoptions()
         self.assertEqual(opts, {})
 
-        opts = get_xoptions('-Xa', '-Xb=c,d=e')
-        self.assertEqual(opts, {'a': True, 'b': 'c,d=e'})
+        opts = get_xoptions('-Xno_debug_ranges', '-Xdev=1234')
+        self.assertEqual(opts, {'no_debug_ranges': True, 'dev': '1234'})
+
+    @unittest.skipIf(interpreter_requires_environment(),
+                     'Cannot run -E tests when PYTHON env vars are required.')
+    def test_unknown_xoptions(self):
+        rc, out, err = assert_python_failure('-X', 'blech')
+        self.assertIn(b'Unknown value for option -X', err)
+        msg = b'Fatal Python error: Unknown value for option -X'
+        self.assertEqual(err.splitlines().count(msg), 1)
+        self.assertEqual(b'', out)
 
     def test_showrefcount(self):
         def run_python(*args):
@@ -113,6 +122,21 @@ class CmdLineTest(unittest.TestCase):
             self.assertRegex(err, br'^\[\d+ refs, \d+ blocks\]')
         else:
             self.assertEqual(err, b'')
+
+    def test_xoption_frozen_modules(self):
+        tests = {
+            ('=on', 'FrozenImporter'),
+            ('=off', 'SourceFileLoader'),
+            ('=', 'FrozenImporter'),
+            ('', 'FrozenImporter'),
+        }
+        for raw, expected in tests:
+            cmd = ['-X', f'frozen_modules{raw}',
+                   #'-c', 'import os; print(os.__spec__.loader.__name__, end="")']
+                   '-c', 'import os; print(os.__spec__.loader, end="")']
+            with self.subTest(raw):
+                res = assert_python_ok(*cmd)
+                self.assertRegex(res.out.decode('utf-8'), expected)
 
     def test_run_module(self):
         # Test expected operation of the '-m' switch

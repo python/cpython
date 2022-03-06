@@ -11,6 +11,11 @@ from trace import Trace
 
 from test.tracedmodules import testmod
 
+##
+## See also test_sys_settrace.py, which contains tests that cover
+## tracing of many more code blocks.
+##
+
 #------------------------------- Utilities -----------------------------------#
 
 def fix_ext_py(filename):

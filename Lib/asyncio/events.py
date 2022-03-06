@@ -101,7 +101,6 @@ class TimerHandle(Handle):
     __slots__ = ['_scheduled', '_when']
 
     def __init__(self, when, callback, args, loop, context=None):
-        assert when is not None
         super().__init__(callback, args, loop, context)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -661,7 +660,8 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
     def set_event_loop(self, loop):
         """Set the event loop."""
         self._local._set_called = True
-        assert loop is None or isinstance(loop, AbstractEventLoop)
+        if loop is not None and not isinstance(loop, AbstractEventLoop):
+            raise TypeError(f"loop must be an instance of AbstractEventLoop or None, not '{type(loop).__name__}'")
         self._local._loop = loop
 
     def new_event_loop(self):
@@ -745,7 +745,8 @@ def set_event_loop_policy(policy):
 
     If policy is None, the default policy is restored."""
     global _event_loop_policy
-    assert policy is None or isinstance(policy, AbstractEventLoopPolicy)
+    if policy is not None and not isinstance(policy, AbstractEventLoopPolicy):
+        raise TypeError(f"policy must be an instance of AbstractEventLoopPolicy or None, not '{type(policy).__name__}'")
     _event_loop_policy = policy
 
 

@@ -1,6 +1,7 @@
 /* Class object implementation (dead now except for methods) */
 
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()

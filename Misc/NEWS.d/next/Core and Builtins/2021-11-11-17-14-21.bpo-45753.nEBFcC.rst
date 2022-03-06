@@ -1,0 +1,2 @@
+Make recursion checks a bit more efficient by tracking amount of calls left
+before overflow.

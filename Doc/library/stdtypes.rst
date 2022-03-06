@@ -810,21 +810,21 @@ using two distinct methods; these are used to allow user-defined classes to
 support iteration.  Sequences, described below in more detail, always support
 the iteration methods.
 
-One method needs to be defined for container objects to provide iteration
+One method needs to be defined for container objects to provide :term:`iterable`
 support:
 
 .. XXX duplicated in reference/datamodel!
 
 .. method:: container.__iter__()
 
-   Return an iterator object.  The object is required to support the iterator
-   protocol described below.  If a container supports different types of
-   iteration, additional methods can be provided to specifically request
+   Return an :term:`iterator` object.  The object is required to support the
+   iterator protocol described below.  If a container supports different types
+   of iteration, additional methods can be provided to specifically request
    iterators for those iteration types.  (An example of an object supporting
    multiple forms of iteration would be a tree structure which supports both
    breadth-first and depth-first traversal.)  This method corresponds to the
-   :c:member:`~PyTypeObject.tp_iter` slot of the type structure for Python objects in the Python/C
-   API.
+   :c:member:`~PyTypeObject.tp_iter` slot of the type structure for Python
+   objects in the Python/C API.
 
 The iterator objects themselves are required to support the following two
 methods, which together form the :dfn:`iterator protocol`:
@@ -832,18 +832,19 @@ methods, which together form the :dfn:`iterator protocol`:
 
 .. method:: iterator.__iter__()
 
-   Return the iterator object itself.  This is required to allow both containers
-   and iterators to be used with the :keyword:`for` and :keyword:`in` statements.
-   This method corresponds to the :c:member:`~PyTypeObject.tp_iter` slot of the type structure for
-   Python objects in the Python/C API.
+   Return the :term:`iterator` object itself.  This is required to allow both
+   containers and iterators to be used with the :keyword:`for` and
+   :keyword:`in` statements.  This method corresponds to the
+   :c:member:`~PyTypeObject.tp_iter` slot of the type structure for Python
+   objects in the Python/C API.
 
 
 .. method:: iterator.__next__()
 
-   Return the next item from the container.  If there are no further items, raise
-   the :exc:`StopIteration` exception.  This method corresponds to the
-   :c:member:`~PyTypeObject.tp_iternext` slot of the type structure for Python objects in the
-   Python/C API.
+   Return the next item from the :term:`iterator`.  If there are no further
+   items, raise the :exc:`StopIteration` exception.  This method corresponds to
+   the :c:member:`~PyTypeObject.tp_iternext` slot of the type structure for
+   Python objects in the Python/C API.
 
 Python defines several iterator objects to support iteration over general and
 specific sequence types, dictionaries, and other more specialized forms.  The

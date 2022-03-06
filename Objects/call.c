@@ -109,8 +109,7 @@ _Py_CheckSlotResult(PyObject *obj, const char *slot_name, int success)
 PyObject *
 PyObject_CallNoArgs(PyObject *func)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    return _PyObject_CallNoArgsTstate(tstate, func);
+    return _PyObject_CallNoArgs(func);
 }
 
 
@@ -131,7 +130,7 @@ _PyObject_FastCallDictTstate(PyThreadState *tstate, PyObject *callable,
     assert(nargs == 0 || args != NULL);
     assert(kwargs == NULL || PyDict_Check(kwargs));
 
-    vectorcallfunc func = PyVectorcall_Function(callable);
+    vectorcallfunc func = _PyVectorcall_Function(callable);
     if (func == NULL) {
         /* Use tp_call instead */
         return _PyObject_MakeTpCall(tstate, callable, args, nargs, kwargs);
@@ -225,6 +224,13 @@ _PyObject_MakeTpCall(PyThreadState *tstate, PyObject *callable,
 }
 
 
+vectorcallfunc
+PyVectorcall_Function(PyObject *callable)
+{
+    return _PyVectorcall_FunctionInline(callable);
+}
+
+
 static PyObject *
 _PyVectorcall_Call(PyThreadState *tstate, vectorcallfunc func,
                    PyObject *callable, PyObject *tuple, PyObject *kwargs)
@@ -260,7 +266,7 @@ PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *kwargs)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    /* get vectorcallfunc as in PyVectorcall_Function, but without
+    /* get vectorcallfunc as in _PyVectorcall_Function, but without
      * the Py_TPFLAGS_HAVE_VECTORCALL check */
     Py_ssize_t offset = Py_TYPE(callable)->tp_vectorcall_offset;
     if (offset <= 0) {
@@ -285,6 +291,24 @@ PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *kwargs)
 
 
 PyObject *
+PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
+                     size_t nargsf, PyObject *kwnames)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyObject_VectorcallTstate(tstate, callable,
+                                      args, nargsf, kwnames);
+}
+
+
+PyObject *
+_PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyObject_FastCallTstate(tstate, func, args, nargs);
+}
+
+
+PyObject *
 _PyObject_Call(PyThreadState *tstate, PyObject *callable,
                PyObject *args, PyObject *kwargs)
 {
@@ -298,7 +322,7 @@ _PyObject_Call(PyThreadState *tstate, PyObject *callable,
     assert(PyTuple_Check(args));
     assert(kwargs == NULL || PyDict_Check(kwargs));
 
-    vectorcallfunc vector_func = PyVectorcall_Function(callable);
+    vectorcallfunc vector_func = _PyVectorcall_Function(callable);
     if (vector_func != NULL) {
         return _PyVectorcall_Call(tstate, vector_func, callable, args, kwargs);
     }
@@ -339,6 +363,19 @@ PyCFunction_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 }
 
 
+PyObject *
+PyObject_CallOneArg(PyObject *func, PyObject *arg)
+{
+    assert(arg != NULL);
+    PyObject *_args[2];
+    PyObject **args = _args + 1;  // For PY_VECTORCALL_ARGUMENTS_OFFSET
+    args[0] = arg;
+    PyThreadState *tstate = _PyThreadState_GET();
+    size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    return _PyObject_VectorcallTstate(tstate, func, args, nargsf, NULL);
+}
+
+
 /* --- PyFunction call functions ---------------------------------- */
 
 PyObject *
@@ -346,16 +383,16 @@ _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
                        size_t nargsf, PyObject *kwnames)
 {
     assert(PyFunction_Check(func));
-    PyFrameConstructor *f = PyFunction_AS_FRAME_CONSTRUCTOR(func);
+    PyFunctionObject *f = (PyFunctionObject *)func;
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     assert(nargs >= 0);
     PyThreadState *tstate = _PyThreadState_GET();
     assert(nargs == 0 || stack != NULL);
-    if (((PyCodeObject *)f->fc_code)->co_flags & CO_OPTIMIZED) {
+    if (((PyCodeObject *)f->func_code)->co_flags & CO_OPTIMIZED) {
         return _PyEval_Vector(tstate, f, NULL, stack, nargs, kwnames);
     }
     else {
-        return _PyEval_Vector(tstate, f, f->fc_globals, stack, nargs, kwnames);
+        return _PyEval_Vector(tstate, f, f->func_globals, stack, nargs, kwnames);
     }
 }
 

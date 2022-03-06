@@ -390,7 +390,5 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
         self.assertRaises(RuntimeError, tkinter.mainloop)
 
 
-tests_gui = (MiscTest, DefaultRootTest)
-
 if __name__ == "__main__":
-    support.run_unittest(*tests_gui)
+    unittest.main()

@@ -1,0 +1,2 @@
+Settings for :mod:`decimal` internal C extension are now detected by
+``configure``. The bundled ``libmpdec`` library is built in ``Makefile``.

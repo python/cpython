@@ -619,6 +619,8 @@ data PyExc_AttributeError
     added 3.2
 data PyExc_BaseException
     added 3.2
+data PyExc_BaseExceptionGroup
+    added 3.11
 data PyExc_BufferError
     added 3.2
 data PyExc_BytesWarning
@@ -2148,6 +2150,8 @@ function PyGC_IsEnabled
 function PyType_GetName
     added 3.11
 function PyType_GetQualName
+    added 3.11
+data PyStructSequence_UnnamedField
     added 3.11
 
 # (Detailed comments aren't really needed for further entries: from here on

@@ -98,6 +98,9 @@ bytes(cdata)
  * PyCField_Type
  *
  */
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #define PY_SSIZE_T_CLEAN
 

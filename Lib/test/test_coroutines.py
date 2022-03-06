@@ -2191,6 +2191,13 @@ class CoroutineTest(unittest.TestCase):
             return 'end'
         self.assertEqual(run_async(run_gen()), ([], 'end'))
 
+    def test_bpo_45813(self):
+        'This would crash the interpreter in 3.11a2'
+        async def f():
+            pass
+        frame = f().cr_frame
+        frame.clear()
+
 
 class CoroAsyncIOCompatTest(unittest.TestCase):
 

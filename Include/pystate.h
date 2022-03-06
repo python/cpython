@@ -132,7 +132,7 @@ PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_PYSTATE_H
-#  include  "cpython/pystate.h"
+#  include "cpython/pystate.h"
 #  undef Py_CPYTHON_PYSTATE_H
 #endif
 

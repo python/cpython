@@ -213,7 +213,7 @@ class InspectLoader(Loader):
     exec_module = _bootstrap_external._LoaderBasics.exec_module
     load_module = _bootstrap_external._LoaderBasics.load_module
 
-_register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter)
+_register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter, machinery.NamespaceLoader)
 
 
 class ExecutionLoader(InspectLoader):

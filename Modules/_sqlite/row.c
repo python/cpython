@@ -24,7 +24,7 @@
 #include "row.h"
 #include "cursor.h"
 
-#define clinic_state() (pysqlite_get_state(NULL))
+#define clinic_state() (pysqlite_get_state_by_type(type))
 #include "clinic/row.c.h"
 #undef clinic_state
 
@@ -219,7 +219,7 @@ static PyObject* pysqlite_row_richcompare(pysqlite_Row *self, PyObject *_other, 
     if (opid != Py_EQ && opid != Py_NE)
         Py_RETURN_NOTIMPLEMENTED;
 
-    pysqlite_state *state = pysqlite_get_state_by_cls(Py_TYPE(self));
+    pysqlite_state *state = pysqlite_get_state_by_type(Py_TYPE(self));
     if (PyObject_TypeCheck(_other, state->RowType)) {
         pysqlite_Row *other = (pysqlite_Row *)_other;
         int eq = PyObject_RichCompareBool(self->description, other->description, Py_EQ);

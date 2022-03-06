@@ -8,9 +8,7 @@
 #   include <sys/socket.h>
 # endif
 # include <netinet/in.h>
-# if !defined(__CYGWIN__)
-#  include <netinet/tcp.h>
-# endif
+# include <netinet/tcp.h>
 
 #else /* MS_WINDOWS */
 # include <winsock2.h>

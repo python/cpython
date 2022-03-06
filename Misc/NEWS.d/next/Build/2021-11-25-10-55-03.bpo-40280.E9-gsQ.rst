@@ -1,0 +1,3 @@
+``configure`` now accepts machine ``wasm32`` or ``wasm64`` and OS ``wasi``
+or ``emscripten`` for cross building, e.g. ``wasm32-unknown-emscripten``,
+``wasm32-wasi``, or ``wasm32-unknown-wasi``.

@@ -3,7 +3,8 @@
    of int.__float__, etc., that take and return unicode objects */
 
 #include "Python.h"
-#include "pycore_fileutils.h"
+#include "pycore_fileutils.h"     // _Py_GetLocaleconvNumeric()
+#include "pycore_long.h"          // _PyLong_FormatWriter()
 #include <locale.h>
 
 /* Raises an exception about an unknown presentation type for this

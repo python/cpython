@@ -1,0 +1,2 @@
+On Windows, :func:`time.sleep` now uses a waitable timer which supports
+high-resolution timers. Patch by Dong-hee Na and Eryk Sun.

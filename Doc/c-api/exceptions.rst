@@ -482,7 +482,6 @@ Querying the error indicator
    to an exception that was *already caught*, not to an exception that was
    freshly raised.  This function steals the references of the arguments.
    To clear the exception state, pass ``NULL`` for all three arguments.
-   For general rules about the three arguments, see :c:func:`PyErr_Restore`.
 
    .. note::
 
@@ -492,6 +491,12 @@ Querying the error indicator
       state.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.11
+      The ``type`` and ``traceback`` arguments are no longer used and
+      can be NULL. The interpreter now derives them from the exception
+      instance (the ``value`` argument). The function still steals
+      references of all three arguments.
 
 
 Signal Handling

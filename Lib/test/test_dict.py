@@ -8,6 +8,7 @@ import sys
 import unittest
 import weakref
 from test import support
+from test.support import import_helper
 
 
 class DictTest(unittest.TestCase):
@@ -891,6 +892,14 @@ class DictTest(unittest.TestCase):
         gc.collect()
         self.assertTrue(gc.is_tracked(t), t)
 
+    def test_string_keys_can_track_values(self):
+        # Test that this doesn't leak.
+        for i in range(10):
+            d = {}
+            for j in range(10):
+                d[str(j)] = j
+            d["foo"] = d
+
     @support.cpython_only
     def test_track_literals(self):
         # Test GC-optimization of dict literals
@@ -1541,7 +1550,8 @@ class CAPITest(unittest.TestCase):
     # Test _PyDict_GetItem_KnownHash()
     @support.cpython_only
     def test_getitem_knownhash(self):
-        from _testcapi import dict_getitem_knownhash
+        _testcapi = import_helper.import_module('_testcapi')
+        dict_getitem_knownhash = _testcapi.dict_getitem_knownhash
 
         d = {'x': 1, 'y': 2, 'z': 3}
         self.assertEqual(dict_getitem_knownhash(d, 'x', hash('x')), 1)

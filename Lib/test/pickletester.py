@@ -2383,9 +2383,13 @@ class AbstractPickleTests:
         # Issue #3514: crash when there is an infinite loop in __getattr__
         x = BadGetattr()
         for proto in range(2):
-            self.assertRaises(RuntimeError, self.dumps, x, proto)
+            with support.infinite_recursion():
+                self.assertRaises(RuntimeError, self.dumps, x, proto)
         for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
-            self.dumps(x, proto)
+            s = self.dumps(x, proto)
+            print(proto, s)
+            import pickletools
+            pickletools.dis(s)
 
     def test_reduce_bad_iterator(self):
         # Issue4176: crash when 4th and 5th items of __reduce__()

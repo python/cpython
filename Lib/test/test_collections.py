@@ -668,6 +668,7 @@ class TestNamedTuple(unittest.TestCase):
         a.w = 5
         self.assertEqual(a.__dict__, {'w': 5})
 
+    @support.cpython_only
     def test_field_descriptor(self):
         Point = namedtuple('Point', 'x y')
         p = Point(11, 22)

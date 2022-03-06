@@ -631,6 +631,11 @@ Creating network servers
        assumed and a list of multiple sockets will be returned (most likely
        one for IPv4 and another one for IPv6).
 
+   * The *port* parameter can be set to specify which port the server should
+     listen on. If ``0`` or ``None`` (the default), a random unused port will
+     be selected (note that if *host* resolves to multiple network interfaces,
+     a different random port will be selected for each interface).
+
    * *family* can be set to either :data:`socket.AF_INET` or
      :data:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6.
      If not set, the *family* will be determined from host name
@@ -1238,9 +1243,10 @@ async/await code consider using the high-level
 
 .. note::
 
-   The default asyncio event loop on **Windows** does not support
-   subprocesses. See :ref:`Subprocess Support on Windows
-   <asyncio-windows-subprocess>` for details.
+   On Windows, the default event loop :class:`ProactorEventLoop` supports
+   subprocesses, whereas :class:`SelectorEventLoop` does not. See
+   :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>` for
+   details.
 
 .. coroutinemethod:: loop.subprocess_exec(protocol_factory, *args, \
                       stdin=subprocess.PIPE, stdout=subprocess.PIPE, \

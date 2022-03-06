@@ -11,7 +11,7 @@
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\partightenfactor0
 
 \f1\b \cf0 NOTE: 
-\f0\b0 This is a beta test preview of Python 3.10.0, the next feature release of Python 3.  It is not intended for production use.\
+\f0\b0 This is an alpha preview of Python 3.11.0, the next feature release of Python 3.  It is not intended for production use.\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 \cf0 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
@@ -66,17 +66,9 @@ Due to new security checks on macOS 10.15 Catalina, when launching IDLE macOS ma
 \f0\b0  button to proceed.\
 \
 
-\f1\b \ul macOS 11 (Big Sur) and Apple Silicon Mac support\
+\f1\b \ul Apple Silicon Mac support\
 
 \f0\b0 \ulnone \
-For Python 3.10 releases, we provide a new 
-\f4 universal2
-\f0  installer variant that provides universal binaries for both 
-\f4 ARM64
-\f0  and 
-\f4 Intel 64
-\f0  architectures and is also supported on all Macs that support macOS 10.9 or later.  Some of the advantages of the new installer variant: native ARM64 code on Apple Silicon Macs should run significantly faster than Rosetta2-emulated code; some operating system functions and options introduced in macOS releases since 10.9 are now exposed when available (primarily in the os module); and the new installer variant includes Tcl/Tk 8.6.11 rather than 8.6.8.\
-\
 On Apple Silicon Macs, it is possible to run Python either with native ARM64 code or under Intel 64 emulation using Rosetta2. This option might be useful for testing or if binary wheels are not yet available with native ARM64 binaries.  To  easily force Python to run in emulation mode, invoke it from a command line shell with the 
 \f4 python3-intel64
 \f0  command instead of just 

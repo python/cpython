@@ -147,4 +147,11 @@ $(_PGOPath)
     </PropertyGroup>
     <WriteLinesToFile File="$(PySourcePath)python.bat" Lines="$(_Content)" Overwrite="true" Condition="'$(_Content)' != '$(_ExistingContent)'" />
   </Target>
+  <Target Name="GeneratePyBuildDirTxt" BeforeTargets="AfterBuild">
+    <PropertyGroup>
+      <_Content>$(OutDir)</_Content>
+      <_ExistingContent Condition="Exists('$(OutDir)pybuilddir.txt')">$([System.IO.File]::ReadAllText('$(OutDir)pybuilddir.txt'))</_ExistingContent>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(OutDir)pybuilddir.txt" Lines="$(_Content)" Overwrite="true" Condition="'$(_Content)' != '$(_ExistingContent)'" />
+  </Target>
 </Project>

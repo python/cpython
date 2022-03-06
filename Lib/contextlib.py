@@ -1,5 +1,6 @@
 """Utilities for with-statement contexts.  See PEP 343."""
 import abc
+import os
 import sys
 import _collections_abc
 from collections import deque
@@ -9,7 +10,8 @@ from types import MethodType, GenericAlias
 __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
            "AbstractContextManager", "AbstractAsyncContextManager",
            "AsyncExitStack", "ContextDecorator", "ExitStack",
-           "redirect_stdout", "redirect_stderr", "suppress", "aclosing"]
+           "redirect_stdout", "redirect_stderr", "suppress", "aclosing",
+           "chdir"]
 
 
 class AbstractContextManager(abc.ABC):
@@ -762,3 +764,18 @@ class nullcontext(AbstractContextManager, AbstractAsyncContextManager):
 
     async def __aexit__(self, *excinfo):
         pass
+
+
+class chdir(AbstractContextManager):
+    """Non thread-safe context manager to change the current working directory."""
+
+    def __init__(self, path):
+        self.path = path
+        self._old_cwd = []
+
+    def __enter__(self):
+        self._old_cwd.append(os.getcwd())
+        os.chdir(self.path)
+
+    def __exit__(self, *excinfo):
+        os.chdir(self._old_cwd.pop())

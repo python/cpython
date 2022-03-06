@@ -1,0 +1,1 @@
+Improve netrc library. netrc file no longer needs to contain all tokens. And if the login name is anonymous, security check is no longer need.

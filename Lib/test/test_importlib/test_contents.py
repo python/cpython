@@ -15,7 +15,8 @@ class ContentsTests:
     }
 
     def test_contents(self):
-        assert self.expected <= set(resources.contents(self.data))
+        with util.suppress_known_deprecation():
+            assert self.expected <= set(resources.contents(self.data))
 
 
 class ContentsDiskTests(ContentsTests, unittest.TestCase):

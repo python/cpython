@@ -1,8 +1,12 @@
 
 /* Testing module for multi-phase initialization of extension modules (PEP 489)
  */
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
+#include "pycore_namespace.h"     // _PyNamespace_New()
 
 /* State for testing module state access from methods */
 

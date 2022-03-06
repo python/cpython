@@ -372,6 +372,17 @@ def requires_mac_ver(*min_version):
     return decorator
 
 
+def skip_if_buildbot(reason=None):
+    """Decorator raising SkipTest if running on a buildbot."""
+    if not reason:
+        reason = 'not suitable for buildbots'
+    if sys.platform == 'win32':
+        isbuildbot = os.environ.get('USERNAME') == 'Buildbot'
+    else:
+        isbuildbot = os.environ.get('USER') == 'buildbot'
+    return unittest.skipIf(isbuildbot, reason)
+
+
 def system_must_validate_cert(f):
     """Skip the test on TLS certificate validation failures."""
     @functools.wraps(f)
@@ -433,9 +444,12 @@ def requires_lzma(reason='requires lzma'):
     return unittest.skipUnless(lzma, reason)
 
 def has_no_debug_ranges():
-    import _testinternalcapi
+    try:
+        import _testinternalcapi
+    except ImportError:
+        raise unittest.SkipTest("_testinternalcapi required")
     config = _testinternalcapi.get_config()
-    return bool(config['no_debug_ranges'])
+    return not bool(config['code_debug_ranges'])
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
@@ -681,7 +695,10 @@ _TPFLAGS_HAVE_GC = 1<<14
 _TPFLAGS_HEAPTYPE = 1<<9
 
 def check_sizeof(test, o, size):
-    import _testinternalcapi
+    try:
+        import _testinternalcapi
+    except ImportError:
+        raise unittest.SkipTest("_testinternalcapi required")
     result = sys.getsizeof(o)
     # add GC header size
     if ((type(o) == type) and (o.__flags__ & _TPFLAGS_HEAPTYPE) or\

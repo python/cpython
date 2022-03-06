@@ -1,0 +1,2 @@
+``setup.py`` now uses ``CC`` from environment first to discover multiarch
+and cross compile paths.

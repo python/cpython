@@ -380,3 +380,4 @@ library/tkinter,,::,"grid [ttk::button .frm.btn -text ""Quit"" -command ""destro
 library/tkinter,,::,ttk::frame
 library/tkinter,,::,ttk::button
 library/tkinter,,::,ttk::widget
+reference/datamodel,2285,`,"""""""Return the result of the expression `obj[x]`"""""""

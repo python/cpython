@@ -159,7 +159,7 @@ Basic Usage
 
    If *check_circular* is false (default: ``True``), then the circular
    reference check for container types will be skipped and a circular reference
-   will result in an :exc:`OverflowError` (or worse).
+   will result in an :exc:`RecursionError` (or worse).
 
    If *allow_nan* is false (default: ``True``), then it will be a
    :exc:`ValueError` to serialize out of range :class:`float` values (``nan``,
@@ -432,7 +432,7 @@ Encoders and Decoders
 
    If *check_circular* is true (the default), then lists, dicts, and custom
    encoded objects will be checked for circular references during encoding to
-   prevent an infinite recursion (which would cause an :exc:`OverflowError`).
+   prevent an infinite recursion (which would cause an :exc:`RecursionError`).
    Otherwise, no such check takes place.
 
    If *allow_nan* is true (the default), then ``NaN``, ``Infinity``, and

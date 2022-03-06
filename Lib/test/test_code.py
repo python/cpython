@@ -141,6 +141,8 @@ from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
                           gc_collect)
 from test.support.script_helper import assert_python_ok
+from opcode import opmap
+COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
 
 def consts(t):
@@ -185,7 +187,7 @@ class CodeTest(unittest.TestCase):
 
         def new_code(c):
             '''A new code object with a __class__ cell added to freevars'''
-            return c.replace(co_freevars=c.co_freevars + ('__class__',))
+            return c.replace(co_freevars=c.co_freevars + ('__class__',), co_code=bytes([COPY_FREE_VARS, 1])+c.co_code)
 
         def add_foreign_method(cls, name, f):
             code = new_code(f.__code__)

@@ -61,6 +61,7 @@ static const char* _Py_stdlib_module_names[] = {
 "_pyio",
 "_queue",
 "_random",
+"_scproxy",
 "_sha1",
 "_sha256",
 "_sha3",

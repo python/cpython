@@ -1,8 +1,10 @@
 import abc
+import contextlib
 import importlib
 import io
 import sys
 import types
+import warnings
 from pathlib import Path, PurePath
 
 from .. import data01
@@ -65,6 +67,13 @@ def create_package(file=None, path=None, is_package=True, contents=()):
         Reader(file=file, path=path, _contents=contents),
         is_package,
     )
+
+
+@contextlib.contextmanager
+def suppress_known_deprecation():
+    with warnings.catch_warnings(record=True) as ctx:
+        warnings.simplefilter('default', category=DeprecationWarning)
+        yield ctx
 
 
 class CommonTests(metaclass=abc.ABCMeta):

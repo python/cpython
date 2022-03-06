@@ -729,7 +729,6 @@ class BigmemTclTest(unittest.TestCase):
         self.assertRaises(OverflowError, tk.exprlong, value)
         self.assertRaises(OverflowError, tk.exprboolean, value)
         self.assertRaises(OverflowError, tk.splitlist, value)
-        self.assertRaises(OverflowError, tk.split, value)
         self.assertRaises(OverflowError, tk.createcommand, value, max)
         self.assertRaises(OverflowError, tk.deletecommand, value)
 

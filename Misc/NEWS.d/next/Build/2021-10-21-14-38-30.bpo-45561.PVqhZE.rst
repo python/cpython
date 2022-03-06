@@ -1,0 +1,1 @@
+Run smelly.py tool from $(srcdir).

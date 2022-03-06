@@ -642,15 +642,18 @@ class TraceTestCase(unittest.TestCase):
                 2
             except:
                 4
-            finally:
+            else:
                 6
+            finally:
+                8
 
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line'),
              (2, 'line'),
              (6, 'line'),
-             (6, 'return')])
+             (8, 'line'),
+             (8, 'return')])
 
     def test_nested_loops(self):
 
@@ -1016,6 +1019,47 @@ class TraceTestCase(unittest.TestCase):
              (3, 'line'),
              (3, 'return')])
 
+    def test_try_in_try_with_exception(self):
+
+        def func():
+            try:
+                try:
+                    raise TypeError
+                except ValueError as ex:
+                    5
+            except TypeError:
+                7
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'exception'),
+             (4, 'line'),
+             (6, 'line'),
+             (7, 'line'),
+             (7, 'return')])
+
+        def func():
+            try:
+                try:
+                    raise ValueError
+                except ValueError as ex:
+                    5
+            except TypeError:
+                7
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'exception'),
+             (4, 'line'),
+             (5, 'line'),
+             (5, 'return')])
+
     def test_if_in_if_in_if(self):
         def func(a=0, p=1, z=1):
             if p:
@@ -1136,6 +1180,38 @@ class TraceTestCase(unittest.TestCase):
             (5, 'line'),
             (7, 'line'),
             (7, 'return')])
+
+    def test_tracing_exception_raised_in_with(self):
+
+        class NullCtx:
+            def __enter__(self):
+                return self
+            def __exit__(self, *excinfo):
+                pass
+
+        def func():
+            try:
+                with NullCtx():
+                    1/0
+            except ZeroDivisionError:
+                pass
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (-5, 'call'),
+             (-4, 'line'),
+             (-4, 'return'),
+             (3, 'line'),
+             (3, 'exception'),
+             (2, 'line'),
+             (-3, 'call'),
+             (-2, 'line'),
+             (-2, 'return'),
+             (4, 'line'),
+             (5, 'line'),
+             (5, 'return')])
 
 
 class SkipLineEventsTraceTestCase(TraceTestCase):

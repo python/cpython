@@ -668,6 +668,18 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :c:func:`PyObject_GC_Del` if the instance was allocated using
    :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar`.
 
+   If the type supports garbage collection (has the :const:`Py_TPFLAGS_HAVE_GC`
+   flag bit set), the destructor should call :c:func:`PyObject_GC_UnTrack`
+   before clearing any member fields.
+
+   .. code-block:: c
+
+     static void foo_dealloc(foo_object *self) {
+         PyObject_GC_UnTrack(self);
+         Py_CLEAR(self->ref);
+         Py_TYPE(self)->tp_free((PyObject *)self);
+     }
+
    Finally, if the type is heap allocated (:const:`Py_TPFLAGS_HEAPTYPE`), the
    deallocator should decrement the reference count for its type object after
    calling the type deallocator. In order to avoid dangling pointers, the
@@ -1509,9 +1521,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: getiterfunc PyTypeObject.tp_iter
 
-   An optional pointer to a function that returns an iterator for the object.  Its
-   presence normally signals that the instances of this type are iterable (although
-   sequences may be iterable without this function).
+   An optional pointer to a function that returns an :term:`iterator` for the
+   object.  Its presence normally signals that the instances of this type are
+   :term:`iterable` (although sequences may be iterable without this function).
 
    This function has the same signature as :c:func:`PyObject_GetIter`::
 
@@ -1524,8 +1536,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: iternextfunc PyTypeObject.tp_iternext
 
-   An optional pointer to a function that returns the next item in an iterator.
-   The signature is::
+   An optional pointer to a function that returns the next item in an
+   :term:`iterator`. The signature is::
 
       PyObject *tp_iternext(PyObject *self);
 
@@ -2417,8 +2429,8 @@ Async Object Structures
 
       PyObject *am_await(PyObject *self);
 
-   The returned object must be an iterator, i.e. :c:func:`PyIter_Check` must
-   return ``1`` for it.
+   The returned object must be an :term:`iterator`, i.e. :c:func:`PyIter_Check`
+   must return ``1`` for it.
 
    This slot may be set to ``NULL`` if an object is not an :term:`awaitable`.
 

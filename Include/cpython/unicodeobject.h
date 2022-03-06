@@ -777,15 +777,33 @@ PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF16(
 
 /* --- Unicode-Escape Codecs ---------------------------------------------- */
 
-/* Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
-   chars. */
-PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscape(
+/* Variant of PyUnicode_DecodeUnicodeEscape that supports partial decoding. */
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeStateful(
         const char *string,     /* Unicode-Escape encoded string */
         Py_ssize_t length,      /* size of string */
         const char *errors,     /* error handling */
+        Py_ssize_t *consumed    /* bytes consumed */
+);
+/* Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
+   chars. */
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal(
+        const char *string,     /* Unicode-Escape encoded string */
+        Py_ssize_t length,      /* size of string */
+        const char *errors,     /* error handling */
+        Py_ssize_t *consumed,   /* bytes consumed */
         const char **first_invalid_escape  /* on return, points to first
                                               invalid escaped char in
                                               string. */
+);
+
+/* --- Raw-Unicode-Escape Codecs ---------------------------------------------- */
+
+/* Variant of PyUnicode_DecodeRawUnicodeEscape that supports partial decoding. */
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeRawUnicodeEscapeStateful(
+        const char *string,     /* Unicode-Escape encoded string */
+        Py_ssize_t length,      /* size of string */
+        const char *errors,     /* error handling */
+        Py_ssize_t *consumed    /* bytes consumed */
 );
 
 /* --- Latin-1 Codecs ----------------------------------------------------- */
@@ -997,6 +1015,9 @@ PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
 /* Fast equality check when the inputs are known to be exact unicode types
    and where the hash values are equal (i.e. a very probable match) */
 PyAPI_FUNC(int) _PyUnicode_EQ(PyObject *, PyObject *);
+
+/* Equality check. Returns -1 on failure. */
+PyAPI_FUNC(int) _PyUnicode_Equal(PyObject *, PyObject *);
 
 PyAPI_FUNC(int) _PyUnicode_WideCharString_Converter(PyObject *, void *);
 PyAPI_FUNC(int) _PyUnicode_WideCharString_Opt_Converter(PyObject *, void *);

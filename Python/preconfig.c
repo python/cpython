@@ -4,7 +4,9 @@
 #include "pycore_initconfig.h"    // _PyArgv
 #include "pycore_pymem.h"         // _PyMem_GetAllocatorName()
 #include "pycore_runtime.h"       // _PyRuntime_Initialize()
+
 #include <locale.h>               // setlocale()
+#include <stdlib.h>               // getenv()
 
 
 /* Forward declarations */

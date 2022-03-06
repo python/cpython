@@ -304,25 +304,51 @@ class PosixPathTest(unittest.TestCase):
                 for path in ('~', '~/.local', '~vstinner/'):
                     self.assertEqual(posixpath.expanduser(path), path)
 
-    def test_normpath(self):
-        self.assertEqual(posixpath.normpath(""), ".")
-        self.assertEqual(posixpath.normpath("/"), "/")
-        self.assertEqual(posixpath.normpath("//"), "//")
-        self.assertEqual(posixpath.normpath("///"), "/")
-        self.assertEqual(posixpath.normpath("///foo/.//bar//"), "/foo/bar")
-        self.assertEqual(posixpath.normpath("///foo/.//bar//.//..//.//baz"),
-                         "/foo/baz")
-        self.assertEqual(posixpath.normpath("///..//./foo/.//bar"), "/foo/bar")
+    NORMPATH_CASES = [
+        ("", "."),
+        ("/", "/"),
+        ("/.", "/"),
+        ("/./", "/"),
+        ("/.//.", "/"),
+        ("/foo", "/foo"),
+        ("/foo/bar", "/foo/bar"),
+        ("//", "//"),
+        ("///", "/"),
+        ("///foo/.//bar//", "/foo/bar"),
+        ("///foo/.//bar//.//..//.//baz///", "/foo/baz"),
+        ("///..//./foo/.//bar", "/foo/bar"),
+        (".", "."),
+        (".//.", "."),
+        ("..", ".."),
+        ("../", ".."),
+        ("../foo", "../foo"),
+        ("../../foo", "../../foo"),
+        ("../foo/../bar", "../bar"),
+        ("../../foo/../bar/./baz/boom/..", "../../bar/baz"),
+        ("/..", "/"),
+        ("/..", "/"),
+        ("/../", "/"),
+        ("/..//", "/"),
+        ("//..", "//"),
+        ("/../foo", "/foo"),
+        ("/../../foo", "/foo"),
+        ("/../foo/../", "/"),
+        ("/../foo/../bar", "/bar"),
+        ("/../../foo/../bar/./baz/boom/..", "/bar/baz"),
+        ("/../../foo/../bar/./baz/boom/.", "/bar/baz/boom"),
+    ]
 
-        self.assertEqual(posixpath.normpath(b""), b".")
-        self.assertEqual(posixpath.normpath(b"/"), b"/")
-        self.assertEqual(posixpath.normpath(b"//"), b"//")
-        self.assertEqual(posixpath.normpath(b"///"), b"/")
-        self.assertEqual(posixpath.normpath(b"///foo/.//bar//"), b"/foo/bar")
-        self.assertEqual(posixpath.normpath(b"///foo/.//bar//.//..//.//baz"),
-                         b"/foo/baz")
-        self.assertEqual(posixpath.normpath(b"///..//./foo/.//bar"),
-                         b"/foo/bar")
+    def test_normpath(self):
+        for path, expected in self.NORMPATH_CASES:
+            with self.subTest(path):
+                result = posixpath.normpath(path)
+                self.assertEqual(result, expected)
+
+            path = path.encode('utf-8')
+            expected = expected.encode('utf-8')
+            with self.subTest(path, type=bytes):
+                result = posixpath.normpath(path)
+                self.assertEqual(result, expected)
 
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_curdir(self):

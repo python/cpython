@@ -7,6 +7,10 @@
  * the capsule are defined below */
 #define _PY_DATETIME_IMPL
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()

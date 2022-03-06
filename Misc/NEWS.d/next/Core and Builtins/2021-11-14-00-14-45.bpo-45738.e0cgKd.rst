@@ -1,0 +1,2 @@
+Fix computation of error location for invalid continuation characters in the
+parser. Patch by Pablo Galindo.

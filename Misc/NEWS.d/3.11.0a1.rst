@@ -262,7 +262,7 @@ Compiler now removes trailing unused constants from co_consts.
 
 Add a new command line option, "-X frozen_modules=[on|off]" to opt out of
 (or into) using optional frozen modules.  This defaults to "on" (or "off" if
-it's a debug build).
+it's running out of the source tree).
 
 ..
 
@@ -1516,7 +1516,7 @@ available. ``nanosleep()`` allows to sleep with nanosecond precision.
 
 On Windows, :func:`time.sleep` now uses a waitable timer which has a
 resolution of 100 nanoseconds (10\ :sup:`-7` seconds). Previously, it had a
-resolution of 1 millisecond (10\ :sup:`-3` seconds). Patch by Livius and
+resolution of 1 millisecond (10\ :sup:`-3` seconds). Patch by Benjamin Szőke and
 Victor Stinner.
 
 ..

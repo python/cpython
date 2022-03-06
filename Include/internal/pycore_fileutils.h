@@ -74,11 +74,16 @@ extern int _Py_EncodeNonUnicodeWchar_InPlace(
     Py_ssize_t size);
 #endif
 
+extern int _Py_isabs(const wchar_t *path);
+extern int _Py_abspath(const wchar_t *path, wchar_t **abspath_p);
 extern wchar_t * _Py_join_relfile(const wchar_t *dirname,
                                   const wchar_t *relfile);
 extern int _Py_add_relfile(wchar_t *dirname,
                            const wchar_t *relfile,
                            size_t bufsize);
+extern size_t _Py_find_basename(const wchar_t *filename);
+PyAPI_FUNC(wchar_t *) _Py_normpath(wchar_t *path, Py_ssize_t size);
+
 
 // Macros to protect CRT calls against instant termination when passed an
 // invalid parameter (bpo-23524). IPH stands for Invalid Parameter Handler.
@@ -88,6 +93,9 @@ extern int _Py_add_relfile(wchar_t *dirname,
 //      ...
 //      _Py_END_SUPPRESS_IPH
 #if defined _MSC_VER && _MSC_VER >= 1900
+
+#  include <stdlib.h>   // _set_thread_local_invalid_parameter_handler()
+
    extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #  define _Py_BEGIN_SUPPRESS_IPH \
     { _invalid_parameter_handler _Py_old_handler = \

@@ -170,9 +170,10 @@ process and user.
 
 .. data:: environ
 
-   A :term:`mapping` object representing the string environment. For example,
-   ``environ['HOME']`` is the pathname of your home directory (on some platforms),
-   and is equivalent to ``getenv("HOME")`` in C.
+   A :term:`mapping` object where keys and values are strings that represent
+   the process environment.  For example, ``environ['HOME']`` is the pathname
+   of your home directory (on some platforms), and is equivalent to
+   ``getenv("HOME")`` in C.
 
    This mapping is captured the first time the :mod:`os` module is imported,
    typically during Python startup as part of processing :file:`site.py`.  Changes
@@ -209,10 +210,10 @@ process and user.
 
 .. data:: environb
 
-   Bytes version of :data:`environ`: a :term:`mapping` object representing the
-   environment as byte strings. :data:`environ` and :data:`environb` are
-   synchronized (modify :data:`environb` updates :data:`environ`, and vice
-   versa).
+   Bytes version of :data:`environ`: a :term:`mapping` object where both keys
+   and values are :class:`bytes` objects representing the process environment.
+   :data:`environ` and :data:`environb` are synchronized (modifying
+   :data:`environb` updates :data:`environ`, and vice versa).
 
    :data:`environb` is only available if :data:`supports_bytes_environ` is
    ``True``.

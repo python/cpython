@@ -11,6 +11,7 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import captured_stderr
 from test.support.os_helper import TESTFN, EnvironmentVarGuard, change_cwd
+import ast
 import builtins
 import encodings
 import glob
@@ -300,7 +301,8 @@ class HelperFunctionsTests(unittest.TestCase):
             self.assertEqual(len(dirs), 2)
             self.assertEqual(dirs[0], 'xoxo')
             wanted = os.path.join('xoxo', 'lib', 'site-packages')
-            self.assertEqual(dirs[1], wanted)
+            self.assertEqual(os.path.normcase(dirs[1]),
+                             os.path.normcase(wanted))
 
     @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_no_home_directory(self):
@@ -497,13 +499,14 @@ class StartupImportTests(unittest.TestCase):
 
     def test_startup_imports(self):
         # Get sys.path in isolated mode (python3 -I)
-        popen = subprocess.Popen([sys.executable, '-I', '-c',
-                                  'import sys; print(repr(sys.path))'],
+        popen = subprocess.Popen([sys.executable, '-X', 'utf8', '-I',
+                                  '-c', 'import sys; print(repr(sys.path))'],
                                  stdout=subprocess.PIPE,
-                                 encoding='utf-8')
+                                 encoding='utf-8',
+                                 errors='surrogateescape')
         stdout = popen.communicate()[0]
         self.assertEqual(popen.returncode, 0, repr(stdout))
-        isolated_paths = eval(stdout)
+        isolated_paths = ast.literal_eval(stdout)
 
         # bpo-27807: Even with -I, the site module executes all .pth files
         # found in sys.path (see site.addpackage()). Skip the test if at least
@@ -515,14 +518,15 @@ class StartupImportTests(unittest.TestCase):
 
         # This tests checks which modules are loaded by Python when it
         # initially starts upon startup.
-        popen = subprocess.Popen([sys.executable, '-I', '-v', '-c',
-                                  'import sys; print(set(sys.modules))'],
+        popen = subprocess.Popen([sys.executable, '-X', 'utf8', '-I', '-v',
+                                  '-c', 'import sys; print(set(sys.modules))'],
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
-                                 encoding='utf-8')
+                                 encoding='utf-8',
+                                 errors='surrogateescape')
         stdout, stderr = popen.communicate()
         self.assertEqual(popen.returncode, 0, (stdout, stderr))
-        modules = eval(stdout)
+        modules = ast.literal_eval(stdout)
 
         self.assertIn('site', modules)
 

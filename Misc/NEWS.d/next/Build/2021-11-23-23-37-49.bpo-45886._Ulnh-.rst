@@ -1,0 +1,2 @@
+The ``_freeze_module`` program path can now be overridden on the command
+line, e.g. ``make FREEZE_MODULE=../x86_64/Program/_freeze_module``.

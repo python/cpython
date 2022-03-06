@@ -66,6 +66,10 @@
 
 /* ---------------------------------------------------------------*/
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #ifdef HAVE_PROCESS_H

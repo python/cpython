@@ -1,0 +1,2 @@
+Avoid a possible *"RuntimeError: dictionary changed size during iteration"*
+when adjusting the process count of :class:`ProcessPoolExecutor`.

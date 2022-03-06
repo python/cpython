@@ -362,16 +362,16 @@ Functions
    On Windows, if *secs* is zero, the thread relinquishes the remainder of its
    time slice to any other thread that is ready to run. If there are no other
    threads ready to run, the function returns immediately, and the thread
-   continues execution.
+   continues execution.  On Windows 8.1 and newer the implementation uses
+   a `high-resolution timer
+   <https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/high-resolution-timers>`_
+   which provides resolution of 100 nanoseconds. If *secs* is zero, ``Sleep(0)`` is used.
 
    Unix implementation:
 
    * Use ``clock_nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``select()`` (resolution: 1 microsecond).
-
-   On Windows, a waitable timer is used (resolution: 100 nanosecond). If *secs* is
-   zero, ``Sleep(0)`` is used.
 
    .. versionchanged:: 3.11
       On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now

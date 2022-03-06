@@ -1,0 +1,2 @@
+Update the documentation to note that CPython does not consistently
+require iterators to define ``__iter__``.

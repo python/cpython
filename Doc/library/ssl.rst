@@ -1576,7 +1576,7 @@ to speed up repeated connections from the same clients.
 
    Load a set of default "certification authority" (CA) certificates from
    default locations. On Windows it loads CA certs from the ``CA`` and
-   ``ROOT`` system stores. On other systems it calls
+   ``ROOT`` system stores. On all systems it calls
    :meth:`SSLContext.set_default_verify_paths`. In the future the method may
    load CA certificates from other locations, too.
 

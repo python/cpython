@@ -52,7 +52,7 @@ _PyEval_EvalFrame(PyThreadState *tstate, struct _interpreter_frame *frame, int t
 
 extern PyObject *
 _PyEval_Vector(PyThreadState *tstate,
-            PyFrameConstructor *desc, PyObject *locals,
+            PyFunctionObject *func, PyObject *locals,
             PyObject* const* args, size_t argcount,
             PyObject *kwnames);
 
@@ -75,12 +75,12 @@ extern void _PyEval_DeactivateOpCache(void);
 /* With USE_STACKCHECK macro defined, trigger stack checks in
    _Py_CheckRecursiveCall() on every 64th call to Py_EnterRecursiveCall. */
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
-    return (++tstate->recursion_depth > tstate->interp->ceval.recursion_limit
-            || ++tstate->stackcheck_counter > 64);
+    return (tstate->recursion_remaining-- <= 0
+            || (tstate->recursion_remaining & 63) == 0);
 }
 #else
 static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
-    return (++tstate->recursion_depth > tstate->interp->ceval.recursion_limit);
+    return tstate->recursion_remaining-- <= 0;
 }
 #endif
 
@@ -101,7 +101,7 @@ static inline int _Py_EnterRecursiveCall_inline(const char *where) {
 #define Py_EnterRecursiveCall(where) _Py_EnterRecursiveCall_inline(where)
 
 static inline void _Py_LeaveRecursiveCall(PyThreadState *tstate)  {
-    tstate->recursion_depth--;
+    tstate->recursion_remaining++;
 }
 
 static inline void _Py_LeaveRecursiveCall_inline(void)  {
@@ -113,7 +113,7 @@ static inline void _Py_LeaveRecursiveCall_inline(void)  {
 
 struct _interpreter_frame *_PyEval_GetFrame(void);
 
-PyObject *_Py_MakeCoro(PyFrameConstructor *, struct _interpreter_frame *);
+PyObject *_Py_MakeCoro(PyFunctionObject *func);
 
 #ifdef __cplusplus
 }

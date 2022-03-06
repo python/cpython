@@ -418,8 +418,8 @@ usage patterns to be encapsulated for convenient reuse.
 
 The execution of the :keyword:`with` statement with one "item" proceeds as follows:
 
-#. The context expression (the expression given in the :token:`with_item`) is
-   evaluated to obtain a context manager.
+#. The context expression (the expression given in the
+   :token:`~python-grammar:with_item`) is evaluated to obtain a context manager.
 
 #. The context manager's :meth:`__enter__` is loaded for later use.
 
@@ -797,7 +797,8 @@ Syntax:
    capture_pattern: !'_' NAME
 
 A single underscore ``_`` is not a capture pattern (this is what ``!'_'``
-expresses). It is instead treated as a :token:`wildcard_pattern`.
+expresses). It is instead treated as a
+:token:`~python-grammar:wildcard_pattern`.
 
 In a given pattern, a given name can only be bound once.  E.g.
 ``case x, x: ...`` is invalid while ``case [x] | x: ...`` is allowed.
@@ -1182,9 +1183,9 @@ is roughly equivalent to ::
 except that the original function is not temporarily bound to the name ``func``.
 
 .. versionchanged:: 3.9
-   Functions may be decorated with any valid :token:`assignment_expression`.
-   Previously, the grammar was much more restrictive; see :pep:`614` for
-   details.
+   Functions may be decorated with any valid
+   :token:`~python-grammar:assignment_expression`. Previously, the grammar was
+   much more restrictive; see :pep:`614` for details.
 
 .. index::
    triple: default; parameter; value
@@ -1360,9 +1361,9 @@ The evaluation rules for the decorator expressions are the same as for function
 decorators.  The result is then bound to the class name.
 
 .. versionchanged:: 3.9
-   Classes may be decorated with any valid :token:`assignment_expression`.
-   Previously, the grammar was much more restrictive; see :pep:`614` for
-   details.
+   Classes may be decorated with any valid
+   :token:`~python-grammar:assignment_expression`. Previously, the grammar was
+   much more restrictive; see :pep:`614` for details.
 
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a
