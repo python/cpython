@@ -169,20 +169,21 @@ extern "C" {
 #define PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST  81
 #define PRECALL_BOUND_METHOD            140
 #define PRECALL_PYFUNC                  141
-#define RESUME_QUICK                    143
-#define STORE_ATTR_ADAPTIVE             150
-#define STORE_ATTR_INSTANCE_VALUE       153
-#define STORE_ATTR_SLOT                 154
-#define STORE_ATTR_WITH_HINT            158
-#define UNPACK_SEQUENCE_ADAPTIVE        159
-#define UNPACK_SEQUENCE_LIST            161
-#define UNPACK_SEQUENCE_TUPLE           167
-#define UNPACK_SEQUENCE_TWO_TUPLE       168
-#define LOAD_FAST__LOAD_FAST            169
-#define STORE_FAST__LOAD_FAST           170
-#define LOAD_FAST__LOAD_CONST           173
-#define LOAD_CONST__LOAD_FAST           174
-#define STORE_FAST__STORE_FAST          175
+#define PRECALL_PY_CLASS                143
+#define RESUME_QUICK                    150
+#define STORE_ATTR_ADAPTIVE             153
+#define STORE_ATTR_INSTANCE_VALUE       154
+#define STORE_ATTR_SLOT                 158
+#define STORE_ATTR_WITH_HINT            159
+#define UNPACK_SEQUENCE_ADAPTIVE        161
+#define UNPACK_SEQUENCE_LIST            167
+#define UNPACK_SEQUENCE_TUPLE           168
+#define UNPACK_SEQUENCE_TWO_TUPLE       169
+#define LOAD_FAST__LOAD_FAST            170
+#define STORE_FAST__LOAD_FAST           173
+#define LOAD_FAST__LOAD_CONST           174
+#define LOAD_CONST__LOAD_FAST           175
+#define STORE_FAST__STORE_FAST          176
 #define DO_TRACING                      255
 
 extern const uint8_t _PyOpcode_InlineCacheEntries[256];

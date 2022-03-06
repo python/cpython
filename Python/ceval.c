@@ -1587,6 +1587,11 @@ pop_frame(PyThreadState *tstate, _PyInterpreterFrame *frame)
  */
 typedef struct {
     PyObject *kwnames;
+    /* __init__ is special because while it returns None, we need to return self
+      This tells CALL to pass the current self to the new frame (the __init__ frame).
+      Where it is eventually consumed by RETURN_VALUE.
+    */
+    bool init_pass_self;
 } CallShape;
 
 static inline bool
@@ -1618,6 +1623,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _PyCFrame cframe;
     CallShape call_shape;
     call_shape.kwnames = NULL; // Borrowed reference. Reset by CALL instructions.
+    call_shape.init_pass_self = 0;
 
     /* WARNING: Because the _PyCFrame lives on the C stack,
      * but can be accessed from a heap allocated object (tstate)
@@ -2386,6 +2392,18 @@ handle_eval_breaker:
 
         TARGET(RETURN_VALUE) {
             PyObject *retval = POP();
+            if (frame->self != NULL) {
+                if (Py_IsNone(retval)) {
+                    Py_SETREF(retval, frame->self);
+                    frame->self = NULL;
+                }
+                /* We need this to continue raising errors when bad-practice
+                   __init__s return their non-None values. This is later
+                   caught by the interpreter. */
+                else {
+                    Py_CLEAR(frame->self);
+                }
+            }
             assert(EMPTY());
             frame->f_state = FRAME_RETURNED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4617,6 +4635,45 @@ handle_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(PRECALL_PY_CLASS) {
+            SpecializedCacheEntry *cache = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &cache[0].adaptive;
+            _PyCallCache *cache1 = &cache[-1].call;
+            int original_oparg = cache->adaptive.original_oparg;
+            int is_method = (PEEK(original_oparg + 2) != NULL);
+            DEOPT_IF(is_method, PRECALL);
+            PyObject *cls = PEEK(original_oparg + 1);
+            DEOPT_IF(!PyType_Check(cls), PRECALL);
+            PyTypeObject *cls_t = (PyTypeObject *)cls;
+            DEOPT_IF(cls_t->tp_version_tag != cache0->version, PRECALL);
+            assert(cls_t->tp_flags & Py_TPFLAGS_HEAPTYPE);
+            PyObject *init = ((PyHeapTypeObject *)cls_t)->_spec_cache.init;
+            assert(PyFunction_Check(init));
+            DEOPT_IF(((PyFunctionObject *)(init))->func_version != cache1->func_version, PRECALL);
+            DEOPT_IF(cls_t->tp_new != PyBaseObject_Type.tp_new, PRECALL);
+            STAT_INC(PRECALL, hit);
+
+            PyObject *args = _PyTuple_FromArray(&PEEK(original_oparg), original_oparg);
+            if (args == NULL) {
+                goto error;
+            }
+            PyObject *self = cls_t->tp_new(cls_t, args, call_shape.kwnames);
+            Py_DECREF(args);
+            if (self == NULL) {
+                goto error;
+            }
+            Py_INCREF(init);
+            PEEK(original_oparg+1) = self;
+            PEEK(original_oparg+2) = init;
+            Py_DECREF(cls);
+
+            /* For use in RETURN_VALUE later */
+            Py_INCREF(self);
+            assert(call_shape.init_pass_self == false);
+            call_shape.init_pass_self = true;
+            DISPATCH();
+        }
+
         TARGET(KW_NAMES) {
             assert(call_shape.kwnames == NULL);
             assert(oparg < PyTuple_GET_SIZE(consts));
@@ -4651,6 +4708,8 @@ handle_eval_breaker:
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 new_frame->previous = frame;
                 cframe.current_frame = frame = new_frame;
+                frame->self = call_shape.init_pass_self ? frame->localsplus[0] : NULL;
+                call_shape.init_pass_self = false;
                 CALL_STAT_INC(inlined_py_calls);
                 goto start_frame;
             }
@@ -4762,6 +4821,8 @@ handle_eval_breaker:
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
+            frame->self = call_shape.init_pass_self ? frame->localsplus[0] : NULL;
+            call_shape.init_pass_self = false;
             goto start_frame;
         }
 
@@ -4803,6 +4864,8 @@ handle_eval_breaker:
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
+            frame->self = call_shape.init_pass_self ? frame->localsplus[0] : NULL;
+            call_shape.init_pass_self = false;
             goto start_frame;
         }
 
@@ -5247,6 +5310,10 @@ handle_eval_breaker:
             assert(PyTuple_CheckExact(callargs));
 
             result = do_call_core(tstate, func, callargs, kwargs, cframe.use_tracing);
+            if (call_shape.init_pass_self) {
+                Py_SETREF(result, PyTuple_GET_ITEM(callargs, 0));
+                call_shape.init_pass_self = false;
+            }
             Py_DECREF(func);
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
