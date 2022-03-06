@@ -5,7 +5,7 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 
 int
-_Py_InterpreterFrame_Traverse(_Py_InterpreterFrame *fdata, visitproc visit, void *arg)
+_PyInterpreterFrame_Traverse(_PyInterpreterFrame *fdata, visitproc visit, void *arg)
 {
     Py_VISIT(fdata->frame_obj);
     Py_VISIT(fdata->globals);
@@ -13,7 +13,7 @@ _Py_InterpreterFrame_Traverse(_Py_InterpreterFrame *fdata, visitproc visit, void
     Py_VISIT(fdata->locals);
     Py_VISIT(fdata->code);
    /* locals */
-    PyObject **locals = _Py_InterpreterFrame_GetLocalsArray(fdata);
+    PyObject **locals = _PyInterpreterFrame_GetLocalsArray(fdata);
     for (int i = 0; i < fdata->nlocalsplus; i++) {
         Py_VISIT(locals[i]);
     }
@@ -25,7 +25,7 @@ _Py_InterpreterFrame_Traverse(_Py_InterpreterFrame *fdata, visitproc visit, void
 }
 
 PyFrameObject *
-_Py_InterpreterFrame_MakeAndSetFrameObject(_Py_InterpreterFrame *fdata)
+_PyInterpreterFrame_MakeAndSetFrameObject(_PyInterpreterFrame *fdata)
 {
     assert(fdata->frame_obj == NULL);
     PyObject *error_type, *error_value, *error_traceback;
@@ -44,11 +44,11 @@ _Py_InterpreterFrame_MakeAndSetFrameObject(_Py_InterpreterFrame *fdata)
 }
 
 
-static _Py_InterpreterFrame *
-copy_frame_to_heap(_Py_InterpreterFrame *fdata)
+static _PyInterpreterFrame *
+copy_frame_to_heap(_PyInterpreterFrame *fdata)
 {
 
-    PyObject **locals = _Py_InterpreterFrame_GetLocalsArray(fdata);
+    PyObject **locals = _PyInterpreterFrame_GetLocalsArray(fdata);
     Py_ssize_t size = ((char*)&fdata->stack[fdata->stackdepth]) - (char *)locals;
     PyObject **copy = PyMem_Malloc(size);
     if (copy == NULL) {
@@ -56,12 +56,12 @@ copy_frame_to_heap(_Py_InterpreterFrame *fdata)
         return NULL;
     }
     memcpy(copy, locals, size);
-    _Py_InterpreterFrame *res = (_Py_InterpreterFrame *)(copy + fdata->nlocalsplus);
+    _PyInterpreterFrame *res = (_PyInterpreterFrame *)(copy + fdata->nlocalsplus);
     return res;
 }
 
 static inline void
-clear_specials(_Py_InterpreterFrame *fdata)
+clear_specials(_PyInterpreterFrame *fdata)
 {
     fdata->generator = NULL;
     Py_XDECREF(fdata->frame_obj);
@@ -72,7 +72,7 @@ clear_specials(_Py_InterpreterFrame *fdata)
 }
 
 static void
-take_ownership(PyFrameObject *f, _Py_InterpreterFrame *fdata)
+take_ownership(PyFrameObject *f, _PyInterpreterFrame *fdata)
 {
     assert(f->f_own_locals_memory == 0);
     assert(fdata->frame_obj == NULL);
@@ -82,7 +82,7 @@ take_ownership(PyFrameObject *f, _Py_InterpreterFrame *fdata)
     assert(f->f_back == NULL);
     if (fdata->previous != NULL) {
         /* Link frame object's 'f_back' and remove link through frame data's 'previous' field */
-        PyFrameObject *back = _Py_InterpreterFrame_GetFrameObject(fdata->previous);
+        PyFrameObject *back = _PyInterpreterFrame_GetFrameObject(fdata->previous);
         if (back == NULL) {
             /* Memory error here. */
             assert(PyErr_ExceptionMatches(PyExc_MemoryError));
@@ -101,7 +101,7 @@ take_ownership(PyFrameObject *f, _Py_InterpreterFrame *fdata)
 }
 
 int
-_Py_InterpreterFrame_Clear(_Py_InterpreterFrame * fdata, int take)
+_PyInterpreterFrame_Clear(_PyInterpreterFrame * fdata, int take)
 {
     PyObject **localsarray = ((PyObject **)fdata)-fdata->nlocalsplus;
     if (fdata->frame_obj) {
@@ -129,7 +129,7 @@ _Py_InterpreterFrame_Clear(_Py_InterpreterFrame * fdata, int take)
     }
     clear_specials(fdata);
     if (take) {
-        PyMem_Free(_Py_InterpreterFrame_GetLocalsArray(fdata));
+        PyMem_Free(_PyInterpreterFrame_GetLocalsArray(fdata));
     }
     return 0;
 }

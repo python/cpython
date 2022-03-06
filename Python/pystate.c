@@ -1137,7 +1137,7 @@ PyThreadState_GetFrame(PyThreadState *tstate)
     if (tstate->fdata == NULL) {
         return NULL;
     }
-    PyFrameObject *frame = _Py_InterpreterFrame_GetFrameObject(tstate->fdata);
+    PyFrameObject *frame = _PyInterpreterFrame_GetFrameObject(tstate->fdata);
     if (frame == NULL) {
         PyErr_Clear();
     }
@@ -1261,7 +1261,7 @@ _PyThread_CurrentFrames(void)
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->tstate_head; t != NULL; t = t->next) {
-            _Py_InterpreterFrame *fdata = t->fdata;
+            _PyInterpreterFrame *fdata = t->fdata;
             if (fdata == NULL) {
                 continue;
             }
@@ -1269,7 +1269,7 @@ _PyThread_CurrentFrames(void)
             if (id == NULL) {
                 goto fail;
             }
-            int stat = PyDict_SetItem(result, id, (PyObject *)_Py_InterpreterFrame_GetFrameObject(fdata));
+            int stat = PyDict_SetItem(result, id, (PyObject *)_PyInterpreterFrame_GetFrameObject(fdata));
             Py_DECREF(id);
             if (stat < 0) {
                 goto fail;
@@ -2037,7 +2037,7 @@ push_chunk(PyThreadState *tstate, int size)
     return res;
 }
 
-_Py_InterpreterFrame *
+_PyInterpreterFrame *
 _PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)con->fc_code;
@@ -2056,8 +2056,8 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObjec
     else {
         tstate->datastack_top = top;
     }
-    _Py_InterpreterFrame * fdata = (_Py_InterpreterFrame *)(localsarray + nlocalsplus);
-    _Py_InterpreterFrame_InitializeSpecials(fdata, con, locals, nlocalsplus);
+    _PyInterpreterFrame * fdata = (_PyInterpreterFrame *)(localsarray + nlocalsplus);
+    _PyInterpreterFrame_InitializeSpecials(fdata, con, locals, nlocalsplus);
     for (int i=0; i < nlocalsplus; i++) {
         localsarray[i] = NULL;
     }
@@ -2065,9 +2065,9 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObjec
 }
 
 void
-_PyThreadState_PopFrame(PyThreadState *tstate, _Py_InterpreterFrame * fdata)
+_PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame * fdata)
 {
-    PyObject **locals = _Py_InterpreterFrame_GetLocalsArray(fdata);
+    PyObject **locals = _PyInterpreterFrame_GetLocalsArray(fdata);
     if (locals == &tstate->datastack_chunk->data[0]) {
         _PyStackChunk *chunk = tstate->datastack_chunk;
         _PyStackChunk *previous = chunk->previous;

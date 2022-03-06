@@ -6,7 +6,7 @@
 #include "code.h"                 // PyCode_Addr2Line etc
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "frameobject.h"          // PyFrame_GetBack()
-#include "pycore_frame.h"     // _Py_InterpreterFrame_GetCode()
+#include "pycore_frame.h"     // _PyInterpreterFrame_GetCode()
 #include "pycore_pyarena.h"       // _PyArena_Free()
 #include "pycore_ast.h"           // asdl_seq_*
 #include "pycore_compile.h"       // _PyAST_Optimize
@@ -1024,7 +1024,7 @@ _Py_DumpASCII(int fd, PyObject *text)
    This function is signal safe. */
 
 static void
-dump_frame(int fd, _Py_InterpreterFrame *fdata)
+dump_frame(int fd, _PyInterpreterFrame *fdata)
 {
     PyCodeObject *code = fdata->code;
     PUTS(fd, "  File ");
@@ -1062,7 +1062,7 @@ dump_frame(int fd, _Py_InterpreterFrame *fdata)
 static void
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
-    _Py_InterpreterFrame *fdata;
+    _PyInterpreterFrame *fdata;
     unsigned int depth;
 
     if (write_header) {

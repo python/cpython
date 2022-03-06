@@ -1835,12 +1835,12 @@ _is_running(PyInterpreterState *interp)
     }
 
     assert(!PyErr_Occurred());
-    _Py_InterpreterFrame *fdata = tstate->fdata;
+    _PyInterpreterFrame *fdata = tstate->fdata;
     if (fdata == NULL) {
         return 0;
     }
 
-    int executing = _Py_InterpreterFrame_IsExecuting(fdata);
+    int executing = _PyInterpreterFrame_IsExecuting(fdata);
 
     return executing;
 }

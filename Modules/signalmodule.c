@@ -1787,7 +1787,7 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
      */
     _Py_atomic_store(&is_tripped, 0);
 
-    _Py_InterpreterFrame *fdata = tstate->fdata;
+    _PyInterpreterFrame *fdata = tstate->fdata;
     signal_state_t *state = &signal_global_state;
     for (int i = 1; i < NSIG; i++) {
         if (!_Py_atomic_load_relaxed(&Handlers[i].tripped)) {
@@ -1823,7 +1823,7 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
             arglist = Py_BuildValue("(iO)", i, Py_None);
         }
         else {
-            PyFrameObject *f = _Py_InterpreterFrame_GetFrameObject(fdata);
+            PyFrameObject *f = _PyInterpreterFrame_GetFrameObject(fdata);
             if (f != NULL) {
                 arglist = Py_BuildValue("(iO)", i, f);
             }
