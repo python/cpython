@@ -5,7 +5,7 @@ import subprocess
 import shutil
 from copy import copy
 
-from test.support import (captured_stdout, PythonSymlink)
+from test.support import (captured_stdout, PythonSymlink, requires_subprocess)
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
                                     change_cwd)
@@ -273,6 +273,7 @@ class TestSysConfig(unittest.TestCase):
         self.assertEqual(get_scheme_names(), tuple(sorted(wanted)))
 
     @skip_unless_symlink
+    @requires_subprocess()
     def test_symlink(self): # Issue 7880
         with PythonSymlink() as py:
             cmd = "-c", "import sysconfig; print(sysconfig.get_platform())"
@@ -326,6 +327,7 @@ class TestSysConfig(unittest.TestCase):
         self.assertIn(ldflags, ldshared)
 
     @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
+    @requires_subprocess()
     def test_platform_in_subprocess(self):
         my_platform = sysconfig.get_platform()
 
@@ -412,6 +414,8 @@ class TestSysConfig(unittest.TestCase):
                      'EXT_SUFFIX required for this test')
     def test_EXT_SUFFIX_in_vars(self):
         import _imp
+        if not _imp.extension_suffixes():
+            self.skipTest("stub loader has no suffixes")
         vars = sysconfig.get_config_vars()
         self.assertIsNotNone(vars['SO'])
         self.assertEqual(vars['SO'], vars['EXT_SUFFIX'])
@@ -429,11 +433,11 @@ class TestSysConfig(unittest.TestCase):
             self.assertTrue('linux' in suffix, suffix)
         if re.match('(i[3-6]86|x86_64)$', machine):
             if ctypes.sizeof(ctypes.c_char_p()) == 4:
-                self.assertTrue(suffix.endswith('i386-linux-gnu.so') or
-                                suffix.endswith('x86_64-linux-gnux32.so'),
-                                suffix)
+                expected_suffixes = 'i386-linux-gnu.so', 'x86_64-linux-gnux32.so', 'i386-linux-musl.so'
             else: # 8 byte pointer size
-                self.assertTrue(suffix.endswith('x86_64-linux-gnu.so'), suffix)
+                expected_suffixes = 'x86_64-linux-gnu.so', 'x86_64-linux-musl.so'
+            self.assertTrue(suffix.endswith(expected_suffixes),
+                            f'unexpected suffix {suffix!r}')
 
     @unittest.skipUnless(sys.platform == 'darwin', 'OS X-specific test')
     def test_osx_ext_suffix(self):

@@ -64,7 +64,7 @@ an event loop:
 
 .. function:: new_event_loop()
 
-   Create a new event loop object.
+   Create and return a new event loop object.
 
 Note that the behaviour of :func:`get_event_loop`, :func:`set_event_loop`,
 and :func:`new_event_loop` functions can be altered by
@@ -897,7 +897,7 @@ convenient.
 
    .. versionchanged:: 3.7
       Even though the method was always documented as a coroutine
-      method, before Python 3.7 it returned an :class:`Future`.
+      method, before Python 3.7 it returned a :class:`Future`.
       Since Python 3.7, this is an ``async def`` method.
 
 .. coroutinemethod:: loop.sock_connect(sock, address)

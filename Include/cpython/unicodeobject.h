@@ -279,6 +279,10 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 #define SSTATE_INTERNED_MORTAL 1
 #define SSTATE_INTERNED_IMMORTAL 2
 
+/* Use only if you know it's a string */
+#define PyUnicode_CHECK_INTERNED(op) \
+    (((PyASCIIObject *)(op))->state.interned)
+
 /* Return true if the string contains only ASCII characters, or 0 if not. The
    string may be compact (PyUnicode_IS_COMPACT_ASCII) or not, but must be
    ready. */

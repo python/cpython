@@ -40,8 +40,6 @@
 #define PySSL_BEGIN_ALLOW_THREADS { \
             PyThreadState *_save = NULL;  \
             PySSL_BEGIN_ALLOW_THREADS_S(_save);
-#define PySSL_BLOCK_THREADS     PySSL_END_ALLOW_THREADS_S(_save);
-#define PySSL_UNBLOCK_THREADS   PySSL_BEGIN_ALLOW_THREADS_S(_save);
 #define PySSL_END_ALLOW_THREADS PySSL_END_ALLOW_THREADS_S(_save); }
 
 

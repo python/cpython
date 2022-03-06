@@ -20,15 +20,6 @@ static PyMemberDef frame_memberlist[] = {
     {NULL}      /* Sentinel */
 };
 
-#if PyFrame_MAXFREELIST > 0
-static struct _Py_frame_state *
-get_frame_state(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->frame;
-}
-#endif
-
 
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
@@ -192,6 +183,11 @@ mark_stacks(PyCodeObject *code_obj, int len)
         stacks[i] = UNINITIALIZED;
     }
     stacks[0] = 0;
+    if (code_obj->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR))
+    {
+        // Generators get sent None while starting:
+        stacks[0] = push_value(stacks[0], Object);
+    }
     int todo = 1;
     while (todo) {
         todo = 0;
@@ -207,6 +203,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
                 case JUMP_IF_NOT_EXC_MATCH:
+                case JUMP_IF_NOT_EG_MATCH:
                 {
                     int64_t target_stack;
                     int j = get_arg(code, i);
@@ -214,7 +211,9 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     if (stacks[j] == UNINITIALIZED && j < i) {
                         todo = 1;
                     }
-                    if (opcode == JUMP_IF_NOT_EXC_MATCH) {
+                    if (opcode == JUMP_IF_NOT_EXC_MATCH ||
+                        opcode == JUMP_IF_NOT_EG_MATCH)
+                    {
                         next_stack = pop_value(pop_value(next_stack));
                         target_stack = next_stack;
                     }
@@ -234,6 +233,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     break;
                 }
                 case JUMP_ABSOLUTE:
+                case JUMP_NO_INTERRUPT:
                     j = get_arg(code, i);
                     assert(j < len);
                     if (stacks[j] == UNINITIALIZED && j < i) {
@@ -246,7 +246,13 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     next_stack = pop_value(pop_value(pop_value(next_stack)));
                     stacks[i+1] = next_stack;
                     break;
-
+                case SEND:
+                    j = get_arg(code, i) + i + 1;
+                    assert(j < len);
+                    assert(stacks[j] == UNINITIALIZED || stacks[j] == pop_value(next_stack));
+                    stacks[j] = pop_value(next_stack);
+                    stacks[i+1] = next_stack;
+                    break;
                 case JUMP_FORWARD:
                     j = get_arg(code, i) + i + 1;
                     assert(j < len);
@@ -280,11 +286,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case RETURN_VALUE:
                 case RAISE_VARARGS:
                 case RERAISE:
-                case POP_EXCEPT_AND_RERAISE:
                     /* End of block */
-                    break;
-                case GEN_START:
-                    stacks[i+1] = next_stack;
                     break;
                 default:
                 {
@@ -613,6 +615,10 @@ static PyGetSetDef frame_getsetlist[] = {
 static void
 frame_dealloc(PyFrameObject *f)
 {
+    /* It is the responsibility of the owning generator/coroutine
+     * to have cleared the generator pointer */
+    assert(!f->f_frame->is_generator);
+
     if (_PyObject_GC_IS_TRACKED(f)) {
         _PyObject_GC_UNTRACK(f);
     }
@@ -684,9 +690,11 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
                         "cannot clear an executing frame");
         return NULL;
     }
-    if (f->f_frame->generator) {
-        _PyGen_Finalize(f->f_frame->generator);
-        assert(f->f_frame->generator == NULL);
+    if (f->f_frame->is_generator) {
+        assert(!f->f_owns_frame);
+        size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
+        PyObject *gen = (PyObject *)(((char *)f->f_frame) - offset_in_gen);
+        _PyGen_Finalize(gen);
     }
     (void)frame_tp_clear(f);
     Py_RETURN_NONE;
@@ -767,6 +775,8 @@ _Py_IDENTIFIER(__builtins__);
 static void
 init_frame(InterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
+    /* _PyFrame_InitializeSpecials consumes reference to func */
+    Py_INCREF(func);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
     for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
@@ -777,6 +787,7 @@ init_frame(InterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 PyFrameObject*
 _PyFrame_New_NoTrack(PyCodeObject *code)
 {
+    CALL_STAT_INC(frame_objects_created);
     int slots = code->co_nlocalsplus + code->co_stacksize;
     PyFrameObject *f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, slots);
     if (f == NULL) {

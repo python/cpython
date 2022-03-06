@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Target Name="_SetPythonForBuild">
-    <PropertyGroup>
-      <PythonForBuild>$(PYTHON)</PythonForBuild>
-    </PropertyGroup>
-  </Target>
-
   <ItemGroup>
     <_PegenSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\Tokens" />
     <_PegenOutputs Include="$(PySourcePath)Parser\parser.c" />
@@ -44,20 +38,26 @@
            AlwaysCreate="False" />
   </Target>
 
-  <Target Name="_RegenPegen" Inputs="@(_PegenSources)" Outputs="@(_PegenOutputs)">
+  <Target Name="_RegenPegen"
+          Inputs="@(_PegenSources)" Outputs="@(_PegenOutputs)"
+          DependsOnTargets="FindPythonForBuild">
     <Message Text="Regenerate @(_PegenOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
     <!-- Specify python.gram with POSIX-like path because the argument gets written into the file verbatim -->
     <Exec Command="set PYTHONPATH=Tools\peg_generator%0D%0A$(PythonForBuild) -m pegen -q c ./Grammar/python.gram Grammar\Tokens -o Parser\parser.c"
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 
-  <Target Name="_RegenAST_H" Inputs="@(_ASTSources)" Outputs="@(_ASTOutputs)">
+  <Target Name="_RegenAST_H"
+          Inputs="@(_ASTSources)" Outputs="@(_ASTOutputs)"
+          DependsOnTargets="FindPythonForBuild">
     <Message Text="Regenerate @(_ASTOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
     <Exec Command="$(PythonForBuild) Parser\asdl_c.py Parser\Python.asdl @(_ASTOutputs->'%(Argument) &quot;%(Identity)&quot;',' ')"
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 
-  <Target Name="_RegenOpcodes" Inputs="@(_OpcodeSources)" Outputs="@(_OpcodeOutputs)">
+  <Target Name="_RegenOpcodes"
+          Inputs="@(_OpcodeSources)" Outputs="@(_OpcodeOutputs)"
+          DependsOnTargets="FindPythonForBuild">
     <Message Text="Regenerate @(_OpcodeOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
     <Exec Command="$(PythonForBuild) Tools\scripts\generate_opcode_h.py Lib\opcode.py Include\opcode.h"
           WorkingDirectory="$(PySourcePath)" />
@@ -65,14 +65,18 @@
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 
-  <Target Name="_RegenTokens" Inputs="@(_TokenSources)" Outputs="@(_TokenOutputs)">
+  <Target Name="_RegenTokens"
+          Inputs="@(_TokenSources)" Outputs="@(_TokenOutputs)"
+          DependsOnTargets="FindPythonForBuild">
     <Message Text="Regenerate @(_TokenOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
     <Exec Command="$(PythonForBuild) Tools\scripts\generate_token.py %(_TokenOutputs.Format) Grammar\Tokens &quot;%(_TokenOutputs.Identity)&quot;"
           WorkingDirectory="$(PySourcePath)" />
     <Touch Files="@(_TokenOutputs)" />
   </Target>
 
-  <Target Name="_RegenKeywords" Inputs="@(_KeywordSources)" Outputs="@(_KeywordOutputs)">
+  <Target Name="_RegenKeywords"
+          Inputs="@(_KeywordSources)" Outputs="@(_KeywordOutputs)"
+          DependsOnTargets="FindPythonForBuild">
     <Message Text="Regenerate @(_KeywordOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
     <Exec Command="set PYTHONPATH=Tools\peg_generator%0D%0A$(PythonForBuild) -m pegen.keywordgen Grammar\python.gram Grammar\Tokens Lib\keyword.py"
           WorkingDirectory="$(PySourcePath)" />

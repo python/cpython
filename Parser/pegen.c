@@ -88,7 +88,7 @@ init_normalization(Parser *p)
     if (p->normalize) {
         return 1;
     }
-    PyObject *m = PyImport_ImportModuleNoBlock("unicodedata");
+    PyObject *m = PyImport_ImportModule("unicodedata");
     if (!m)
     {
         return 0;
@@ -179,10 +179,10 @@ initialize_token(Parser *p, Token *token, const char *start, const char *end, in
     int col_offset = (start != NULL && start >= line_start) ? (int)(start - line_start) : -1;
     int end_col_offset = (end != NULL && end >= p->tok->line_start) ? (int)(end - p->tok->line_start) : -1;
 
-    token->lineno = p->starting_lineno + lineno;
-    token->col_offset = p->tok->lineno == 1 ? p->starting_col_offset + col_offset : col_offset;
-    token->end_lineno = p->starting_lineno + end_lineno;
-    token->end_col_offset = p->tok->lineno == 1 ? p->starting_col_offset + end_col_offset : end_col_offset;
+    token->lineno = lineno;
+    token->col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + col_offset : col_offset;
+    token->end_lineno = end_lineno;
+    token->end_col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + end_col_offset : end_col_offset;
 
     p->fill += 1;
 
@@ -675,31 +675,13 @@ _PyPegen_number_token(Parser *p)
                            t->end_col_offset, p->arena);
 }
 
-static int // bool
-newline_in_string(Parser *p, const char *cur)
-{
-    for (const char *c = cur; c >= p->tok->buf; c--) {
-        if (*c == '\'' || *c == '"') {
-            return 1;
-        }
-    }
-    return 0;
-}
-
 /* Check that the source for a single input statement really is a single
    statement by looking at what is left in the buffer after parsing.
    Trailing whitespace and comments are OK. */
 static int // bool
 bad_single_statement(Parser *p)
 {
-    const char *cur = strchr(p->tok->buf, '\n');
-
-    /* Newlines are allowed if preceded by a line continuation character
-       or if they appear inside a string. */
-    if (!cur || (cur != p->tok->buf && *(cur - 1) == '\\')
-             || newline_in_string(p, cur)) {
-        return 0;
-    }
+    char *cur = p->tok->cur;
     char c = *cur;
 
     for (;;) {
@@ -743,6 +725,9 @@ compute_parser_flags(PyCompilerFlags *flags)
     }
     if ((flags->cf_flags & PyCF_ONLY_AST) && flags->cf_feature_version < 7) {
         parser_flags |= PyPARSE_ASYNC_HACKS;
+    }
+    if (flags->cf_flags & PyCF_ALLOW_INCOMPLETE_INPUT) {
+        parser_flags |= PyPARSE_ALLOW_INCOMPLETE_INPUT;
     }
     return parser_flags;
 }
@@ -829,15 +814,26 @@ reset_parser_state_for_error_pass(Parser *p)
     p->tok->interactive_underflow = IUNDERFLOW_STOP;
 }
 
+static inline int
+_is_end_of_source(Parser *p) {
+    int err = p->tok->done;
+    return err == E_EOF || err == E_EOFS || err == E_EOLS;
+}
+
 void *
 _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
+    assert(p->level == 0);
     if (res == NULL) {
+        if ((p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) &&  _is_end_of_source(p)) {
+            PyErr_Clear();
+            return RAISE_SYNTAX_ERROR("incomplete input");
+        }
         if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
             return NULL;
         }
-        // Make a second parser pass. In this pass we activate heavier and slower checks
+       // Make a second parser pass. In this pass we activate heavier and slower checks
         // to produce better error messages and more complete diagnostics. Extra "invalid_*"
         // rules will be active during parsing.
         Token *last_token = p->tokens[p->fill - 1];

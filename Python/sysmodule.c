@@ -27,7 +27,7 @@ Data members:
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_structseq.h"     // PyStructSequence_InitType()
+#include "pycore_structseq.h"     // _PyStructSequence_InitType()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "code.h"
@@ -767,6 +767,28 @@ sys_excepthook_impl(PyObject *module, PyObject *exctype, PyObject *value,
 /*[clinic end generated code: output=18d99fdda21b6b5e input=ecf606fa826f19d9]*/
 {
     PyErr_Display(exctype, value, traceback);
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
+sys.exception
+
+Return the current exception.
+
+Return the most recent exception caught by an except clause
+in the current stack frame or in an older stack frame, or None
+if no such exception exists.
+[clinic start generated code]*/
+
+static PyObject *
+sys_exception_impl(PyObject *module)
+/*[clinic end generated code: output=2381ee2f25953e40 input=c88fbb94b6287431]*/
+{
+    _PyErr_StackItem *err_info = _PyErr_GetTopmostException(_PyThreadState_GET());
+    if (err_info->exc_value != NULL) {
+        return Py_NewRef(err_info->exc_value);
+    }
     Py_RETURN_NONE;
 }
 
@@ -1901,7 +1923,7 @@ sys__debugmallocstats_impl(PyObject *module)
 extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
 #endif
 
-#ifdef DYNAMIC_EXECUTION_PROFILE
+#ifdef Py_STATS
 /* Defined in ceval.c because it uses static globals in that file */
 extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
 #endif
@@ -1963,13 +1985,14 @@ static PyMethodDef sys_methods[] = {
     SYS__CURRENT_FRAMES_METHODDEF
     SYS__CURRENT_EXCEPTIONS_METHODDEF
     SYS_DISPLAYHOOK_METHODDEF
+    SYS_EXCEPTION_METHODDEF
     SYS_EXC_INFO_METHODDEF
     SYS_EXCEPTHOOK_METHODDEF
     SYS_EXIT_METHODDEF
     SYS_GETDEFAULTENCODING_METHODDEF
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
-#ifdef DYNAMIC_EXECUTION_PROFILE
+#ifdef Py_STATS
     {"getdxp",          _Py_GetDXProfile, METH_VARARGS},
 #endif
     SYS_GETFILESYSTEMENCODING_METHODDEF
@@ -2457,7 +2480,8 @@ Functions:\n\
 \n\
 displayhook() -- print an object to the screen, and save it in builtins._\n\
 excepthook() -- print an exception and its traceback to sys.stderr\n\
-exc_info() -- return thread-safe information about the current exception\n\
+exception() -- return the current thread's active exception\n\
+exc_info() -- return information about the current thread's active exception\n\
 exit() -- exit the interpreter by raising SystemExit\n\
 getdlopenflags() -- returns flags to be used for dlopen() calls\n\
 getprofile() -- get the global profiling function\n\
@@ -2823,6 +2847,8 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
             goto type_init_failed;
         }
     }
+
+    SET_SYS_FROM_STRING("_vpath", VPATH);
 #endif
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
@@ -3073,6 +3099,21 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
 
 error:
     return _PyStatus_ERR("can't initialize sys module");
+}
+
+
+void
+_PySys_Fini(PyInterpreterState *interp)
+{
+    if (_Py_IsMainInterpreter(interp)) {
+        _PyStructSequence_FiniType(&VersionInfoType);
+        _PyStructSequence_FiniType(&FlagsType);
+#if defined(MS_WINDOWS)
+        _PyStructSequence_FiniType(&WindowsVersionType);
+#endif
+        _PyStructSequence_FiniType(&Hash_InfoType);
+        _PyStructSequence_FiniType(&AsyncGenHooksType);
+    }
 }
 
 

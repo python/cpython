@@ -5,7 +5,8 @@ from textwrap import dedent
 import unittest
 import time
 
-import _xxsubinterpreters as _interpreters
+from test.support import import_helper
+_interpreters = import_helper.import_module('_xxsubinterpreters')
 from test.support import interpreters
 
 

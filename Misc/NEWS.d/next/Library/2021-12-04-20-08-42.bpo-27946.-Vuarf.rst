@@ -1,3 +1,0 @@
-Fix possible crash when getting an attribute of
-class:`xml.etree.ElementTree.Element` simultaneously with
-replacing the ``attrib`` dict.

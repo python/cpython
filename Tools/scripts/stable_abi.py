@@ -174,6 +174,7 @@ def parse_manifest(file):
             parent.abi_only = True
         else:
             raise_error(f"unknown kind {kind!r}")
+            # When adding more, update the comment in stable_abi.txt.
         levels.append((entry, level))
     return manifest
 

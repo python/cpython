@@ -1823,7 +1823,7 @@ Class Binding
 
 Super Binding
    A dotted lookup such as ``super(A, a).x`` searches
-   ``obj.__class__.__mro__`` for a base class ``B`` following ``A`` and then
+   ``a.__class__.__mro__`` for a base class ``B`` following ``A`` and then
    returns ``B.__dict__['x'].__get__(a, A)``.  If not a descriptor, ``x`` is
    returned unchanged.
 
@@ -1843,15 +1843,19 @@ Super Binding
         x = 999
 
         def m(self):
-            'Demonstrate these two calls are equivalent'
-            result1 = super(A, a).x
-            result2 = B.__dict__['x'].__get__(a, A)
+            'Demonstrate these two descriptor invocations are equivalent'
+            result1 = super(A, self).x
+            result2 = B.__dict__['x'].__get__(self, A)
             return result1 == result2
 
 .. doctest::
     :hide:
 
     >>> a = A()
+    >>> a.__class__.__mro__.index(B) > a.__class__.__mro__.index(A)
+    True
+    >>> super(A, a).x == B.__dict__['x'].__get__(a, A)
+    True
     >>> a.m()
     True
 
@@ -1940,9 +1944,12 @@ Notes on using *__slots__*
 * Nonempty *__slots__* does not work for classes derived from "variable-length"
   built-in types such as :class:`int`, :class:`bytes` and :class:`tuple`.
 
-* Any non-string iterable may be assigned to *__slots__*. Mappings may also be
-  used; however, in the future, special meaning may be assigned to the values
-  corresponding to each key.
+* Any non-string :term:`iterable` may be assigned to *__slots__*.
+
+* If a :class:`dictionary <dict>` is used to assign *__slots__*, the dictionary
+  keys will be used as the slot names. The values of the dictionary can be used
+  to provide per-attribute docstrings that will be recognised by
+  :func:`inspect.getdoc` and displayed in the output of :func:`help`.
 
 * :attr:`~instance.__class__` assignment works only if both classes have the
   same *__slots__*.
@@ -2327,7 +2334,7 @@ called::
    from inspect import isclass
 
    def subscribe(obj, x):
-       """Return the result of the expression `obj[x]`"""
+       """Return the result of the expression 'obj[x]'"""
 
        class_of_obj = type(obj)
 
@@ -2752,6 +2759,9 @@ left undefined.
 
    The built-in function :func:`int` falls back to :meth:`__trunc__` if neither
    :meth:`__int__` nor :meth:`__index__` is defined.
+
+   .. versionchanged:: 3.11
+      The delegation of :func:`int` to :meth:`__trunc__` is deprecated.
 
 
 .. _context-managers:

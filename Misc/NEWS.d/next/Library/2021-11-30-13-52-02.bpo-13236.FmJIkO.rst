@@ -1,2 +1,0 @@
-:class:`unittest.TextTestResult` and :class:`unittest.TextTestRunner` flush
-now the output stream more often.

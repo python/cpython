@@ -10,6 +10,32 @@ extern "C" {
 #endif
 
 
+/* runtime lifecycle */
+
+extern void _PyDict_Fini(PyInterpreterState *interp);
+
+
+/* other API */
+
+#ifndef WITH_FREELISTS
+// without freelists
+#  define PyDict_MAXFREELIST 0
+#endif
+
+#ifndef PyDict_MAXFREELIST
+#  define PyDict_MAXFREELIST 80
+#endif
+
+struct _Py_dict_state {
+#if PyDict_MAXFREELIST > 0
+    /* Dictionary reuse scheme to save calls to malloc and free */
+    PyDictObject *free_list[PyDict_MAXFREELIST];
+    int numfree;
+    PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
+    int keys_numfree;
+#endif
+};
+
 typedef struct {
     /* Cached hash code of me_key. */
     Py_hash_t me_hash;
@@ -73,11 +99,17 @@ struct _dictkeysobject {
        see the DK_ENTRIES() macro */
 };
 
-/* This must be no more than 16, for the order vector to fit in 64 bits */
-#define SHARED_KEYS_MAX_SIZE 16
+/* This must be no more than 250, for the prefix size to fit in one byte. */
+#define SHARED_KEYS_MAX_SIZE 30
+#define NEXT_LOG2_SHARED_KEYS_MAX_SIZE 6
 
+/* Layout of dict values:
+ *
+ * The PyObject *values are preceded by an array of bytes holding
+ * the insertion order and size.
+ * [-1] = prefix size. [-2] = used size. size[-2-n...] = insertion order.
+ */
 struct _dictvalues {
-    uint64_t mv_order;
     PyObject *values[1];
 };
 
@@ -104,6 +136,18 @@ extern uint64_t _pydict_global_version;
 #define DICT_NEXT_VERSION() (++_pydict_global_version)
 
 PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
+
+static inline void
+_PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
+{
+    assert(ix < SHARED_KEYS_MAX_SIZE);
+    uint8_t *size_ptr = ((uint8_t *)values)-2;
+    int size = *size_ptr;
+    assert(size+2 < ((uint8_t *)values)[-1]);
+    size++;
+    size_ptr[-size] = (uint8_t)ix;
+    *size_ptr = size;
+}
 
 #ifdef __cplusplus
 }

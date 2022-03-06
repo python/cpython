@@ -4,6 +4,16 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
+
+
+/* runtime lifecycle */
+
+extern void _PyFrame_Fini(PyInterpreterState *interp);
+
+
+/* other API */
+
 /* These values are chosen so that the inline functions below all
  * compare f_state to zero.
  */
@@ -31,12 +41,12 @@ typedef struct _interpreter_frame {
     PyObject *f_locals; /* Strong reference, may be NULL */
     PyCodeObject *f_code; /* Strong reference */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL */
-    PyObject *generator; /* Borrowed reference, may be NULL */
     struct _interpreter_frame *previous;
     int f_lasti;       /* Last instruction if called */
     int stacktop;     /* Offset of TOS from localsplus  */
     PyFrameState f_state;  /* What state the frame is in */
-    int depth; /* Depth of the frame in a ceval loop */
+    bool is_entry;  // Whether this is the "root" frame for the current CFrame.
+    bool is_generator;
     PyObject *localsplus[1];
 } InterpreterFrame;
 
@@ -58,6 +68,7 @@ static inline PyObject **_PyFrame_Stackbase(InterpreterFrame *f) {
 
 static inline PyObject *_PyFrame_StackPeek(InterpreterFrame *f) {
     assert(f->stacktop > f->f_code->co_nlocalsplus);
+    assert(f->localsplus[f->stacktop-1] != NULL);
     return f->localsplus[f->stacktop-1];
 }
 
@@ -76,12 +87,12 @@ static inline void _PyFrame_StackPush(InterpreterFrame *f, PyObject *value) {
 
 void _PyFrame_Copy(InterpreterFrame *src, InterpreterFrame *dest);
 
+/* Consumes reference to func */
 static inline void
 _PyFrame_InitializeSpecials(
     InterpreterFrame *frame, PyFunctionObject *func,
     PyObject *locals, int nlocalsplus)
 {
-    Py_INCREF(func);
     frame->f_func = func;
     frame->f_code = (PyCodeObject *)Py_NewRef(func->func_code);
     frame->f_builtins = func->func_builtins;
@@ -89,10 +100,10 @@ _PyFrame_InitializeSpecials(
     frame->f_locals = Py_XNewRef(locals);
     frame->stacktop = nlocalsplus;
     frame->frame_obj = NULL;
-    frame->generator = NULL;
     frame->f_lasti = -1;
     frame->f_state = FRAME_CREATED;
-    frame->depth = 0;
+    frame->is_entry = false;
+    frame->is_generator = false;
 }
 
 /* Gets the pointer to the locals array
@@ -155,9 +166,6 @@ _PyFrame_FastToLocalsWithError(InterpreterFrame *frame);
 void
 _PyFrame_LocalsToFast(InterpreterFrame *frame, int clear);
 
-InterpreterFrame *_PyThreadState_PushFrame(
-    PyThreadState *tstate, PyFunctionObject *func, PyObject *locals);
-
 extern InterpreterFrame *
 _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size);
 
@@ -165,15 +173,22 @@ static inline InterpreterFrame *
 _PyThreadState_BumpFramePointer(PyThreadState *tstate, size_t size)
 {
     PyObject **base = tstate->datastack_top;
-    PyObject **top = base + size;
-    if (top < tstate->datastack_limit) {
-        tstate->datastack_top = top;
-        return (InterpreterFrame *)base;
+    if (base) {
+        PyObject **top = base + size;
+        assert(tstate->datastack_limit);
+        if (top < tstate->datastack_limit) {
+            tstate->datastack_top = top;
+            return (InterpreterFrame *)base;
+        }
     }
     return _PyThreadState_BumpFramePointerSlow(tstate, size);
 }
 
 void _PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame *frame);
+
+/* Consume reference to func */
+InterpreterFrame *
+_PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func);
 
 #ifdef __cplusplus
 }

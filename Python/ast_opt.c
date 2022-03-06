@@ -660,15 +660,6 @@ static int astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState 
     } \
 }
 
-#define CALL_INT_SEQ(FUNC, TYPE, ARG) { \
-    int i; \
-    asdl_int_seq *seq = (ARG); /* avoid variable capture */ \
-    for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-        TYPE elt = (TYPE)asdl_seq_GET(seq, i); \
-        if (!FUNC(elt, ctx_, state)) \
-            return 0; \
-    } \
-}
 
 static int
 astfold_body(asdl_stmt_seq *stmts, PyArena *ctx_, _PyASTOptimizeState *state)
@@ -972,6 +963,12 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL_SEQ(astfold_stmt, stmt, node_->v.Try.orelse);
         CALL_SEQ(astfold_stmt, stmt, node_->v.Try.finalbody);
         break;
+    case TryStar_kind:
+        CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.body);
+        CALL_SEQ(astfold_excepthandler, excepthandler, node_->v.TryStar.handlers);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.orelse);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.finalbody);
+        break;
     case Assert_kind:
         CALL(astfold_expr, expr_ty, node_->v.Assert.test);
         CALL_OPT(astfold_expr, expr_ty, node_->v.Assert.msg);
@@ -1079,7 +1076,6 @@ astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 #undef CALL
 #undef CALL_OPT
 #undef CALL_SEQ
-#undef CALL_INT_SEQ
 
 /* See comments in symtable.c. */
 #define COMPILER_STACK_FRAME_SCALE 3

@@ -12,6 +12,19 @@ extern "C" {
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
+
+#define _PyObject_IMMORTAL_INIT(type) \
+    { \
+        .ob_refcnt = 999999999, \
+        .ob_type = type, \
+    }
+#define _PyVarObject_IMMORTAL_INIT(type, size) \
+    { \
+        .ob_base = _PyObject_IMMORTAL_INIT(type), \
+        .ob_size = size, \
+    }
+
+
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
 
@@ -187,6 +200,11 @@ extern int _Py_CheckSlotResult(
 // See also the Py_TPFLAGS_READY flag.
 #define _PyType_IsReady(type) ((type)->tp_dict != NULL)
 
+// Test if a type supports weak references
+static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
+    return (type->tp_weaklistoffset > 0);
+}
+
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
 
 extern int _PyObject_InitializeDict(PyObject *obj);
@@ -207,11 +225,16 @@ static inline PyObject **_PyObject_ManagedDictPointer(PyObject *obj)
     return ((PyObject **)obj)-3;
 }
 
-PyObject ** _PyObject_DictPointer(PyObject *);
-int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg);
-void _PyObject_ClearInstanceAttributes(PyObject *self);
-void _PyObject_FreeInstanceAttributes(PyObject *self);
-int _PyObject_IsInstanceDictEmpty(PyObject *);
+extern PyObject ** _PyObject_DictPointer(PyObject *);
+extern int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg);
+extern void _PyObject_ClearInstanceAttributes(PyObject *self);
+extern void _PyObject_FreeInstanceAttributes(PyObject *self);
+extern int _PyObject_IsInstanceDictEmpty(PyObject *);
+extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
+
+// Access macro to the members which are floating "behind" the object
+#define _PyHeapType_GET_MEMBERS(etype) \
+    ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
 
 #ifdef __cplusplus
 }

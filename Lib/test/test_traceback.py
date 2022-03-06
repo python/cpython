@@ -9,7 +9,8 @@ import unittest
 import re
 from test import support
 from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
-                          requires_debug_ranges, has_no_debug_ranges)
+                          requires_debug_ranges, has_no_debug_ranges,
+                          requires_subprocess)
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
@@ -18,6 +19,7 @@ import textwrap
 import traceback
 from functools import partial
 
+MODULE_PREFIX = f'{__name__}.' if __name__ == '__main__' else ''
 
 test_code = namedtuple('code', ['co_filename', 'co_name'])
 test_code.co_positions = lambda _: iter([(6, 6, 0, 0)])
@@ -202,6 +204,7 @@ class TracebackCases(unittest.TestCase):
             str_name = '.'.join([X.__module__, X.__qualname__])
         self.assertEqual(err[0], "%s: %s\n" % (str_name, str_value))
 
+    @requires_subprocess()
     def test_encoded_file(self):
         # Test that tracebacks are correctly printed for encoded source files:
         # - correct line number (Issue2384)
@@ -457,6 +460,42 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
 
+    def test_caret_multiline_expression_syntax_error(self):
+        # Make sure an expression spanning multiple lines that has
+        # a syntax error is correctly marked with carets.
+        code = textwrap.dedent("""
+        def foo(*args, **kwargs):
+            pass
+
+        a, b, c = 1, 2, 3
+
+        foo(a, z
+                for z in
+                    range(10), b, c)
+        """)
+
+        def f_with_multiline():
+            # Need to defer the compilation until in self.get_exception(..)
+            return compile(code, "?", "exec")
+
+        lineno_f = f_with_multiline.__code__.co_firstlineno
+
+        expected_f = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
+            '    return compile(code, "?", "exec")\n'
+            '           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+            '  File "?", line 7\n'
+            '    foo(a, z\n'
+            '           ^'
+            )
+
+        result_lines = self.get_exception(f_with_multiline)
+        self.assertEqual(result_lines, expected_f.splitlines())
+
     def test_caret_multiline_expression_bin_op(self):
         # Make sure no carets are printed for expressions spanning multiple
         # lines.
@@ -616,6 +655,51 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         self.assertSpecialized(lambda: 1// 0,
                                       "~^^~~")
 
+    def test_decorator_application_lineno_correct(self):
+        def dec_error(func):
+            raise TypeError
+        def dec_fine(func):
+            return func
+        def applydecs():
+            @dec_error
+            @dec_fine
+            def g(): pass
+        result_lines = self.get_exception(applydecs)
+        lineno_applydescs = applydecs.__code__.co_firstlineno
+        lineno_dec_error = dec_error.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_applydescs + 1}, in applydecs\n'
+            '    @dec_error\n'
+            '     ^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_dec_error + 1}, in dec_error\n'
+            '    raise TypeError\n'
+            '    ^^^^^^^^^^^^^^^\n'
+        )
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+        def applydecs_class():
+            @dec_error
+            @dec_fine
+            class A: pass
+        result_lines = self.get_exception(applydecs_class)
+        lineno_applydescs_class = applydecs_class.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_applydescs_class + 1}, in applydecs_class\n'
+            '    @dec_error\n'
+            '     ^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_dec_error + 1}, in dec_error\n'
+            '    raise TypeError\n'
+            '    ^^^^^^^^^^^^^^^\n'
+        )
+        self.assertEqual(result_lines, expected_error.splitlines())
 
 @cpython_only
 @requires_debug_ranges()
@@ -624,16 +708,14 @@ class CPythonTracebackErrorCaretTests(TracebackErrorLocationCaretTests):
     Same set of tests as above but with Python's internal traceback printing.
     """
     def get_exception(self, callable):
-        from _testcapi import traceback_print
+        from _testcapi import exception_print
         try:
             callable()
             self.fail("No exception thrown.")
-        except:
-            type_, value, tb = sys.exc_info()
-
-            file_ = StringIO()
-            traceback_print(tb, file_)
-            return file_.getvalue().splitlines()
+        except Exception as e:
+            with captured_output("stderr") as tbstderr:
+                exception_print(e)
+            return tbstderr.getvalue().splitlines()[:-1]
 
     callable_line = get_exception.__code__.co_firstlineno + 3
 
@@ -1015,6 +1097,22 @@ class TracebackFormatTests(unittest.TestCase):
         self.assertIn('ExceptionGroup', output)
         self.assertLessEqual(output.count('ExceptionGroup'), LIMIT)
 
+    @cpython_only
+    def test_print_exception_bad_type_capi(self):
+        from _testcapi import exception_print
+        with captured_output("stderr") as stderr:
+            exception_print(42)
+        self.assertEqual(
+            stderr.getvalue(),
+            ('TypeError: print_exception(): '
+             'Exception expected for value, int found\n')
+        )
+
+    def test_print_exception_bad_type_python(self):
+        msg = "Exception expected for value, int found"
+        with self.assertRaisesRegex(TypeError, msg):
+            traceback.print_exception(42)
+
 
 cause_message = (
     "\nThe above exception was the direct cause "
@@ -1251,7 +1349,7 @@ class BaseExceptionReportingTests:
         str_value = 'I am X'
         str_name = '.'.join([A.B.X.__module__, A.B.X.__qualname__])
         exp = "%s: %s\n" % (str_name, str_value)
-        self.assertEqual(exp, err)
+        self.assertEqual(exp, MODULE_PREFIX + err)
 
     def test_exception_modulename(self):
         class X(Exception):
@@ -1288,7 +1386,7 @@ class BaseExceptionReportingTests:
         err = self.get_report(X())
         str_value = '<exception str() failed>'
         str_name = '.'.join([X.__module__, X.__qualname__])
-        self.assertEqual(err, f"{str_name}: {str_value}\n")
+        self.assertEqual(MODULE_PREFIX + err, f"{str_name}: {str_value}\n")
 
 
     # #### Exception Groups ####

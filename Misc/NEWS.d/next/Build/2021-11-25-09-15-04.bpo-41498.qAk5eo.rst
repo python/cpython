@@ -1,4 +1,0 @@
-Python now compiles on platforms without ``sigset_t``. Several functions
-in :mod:`signal` are not available when ``sigset_t`` is missing.
-
-Based on patch by Roman Yurchak for pyodide.
