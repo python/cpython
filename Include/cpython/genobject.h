@@ -28,7 +28,7 @@ extern "C" {
     char prefix##_running_async;                                            \
     /* The frame */                                                         \
     char prefix##_frame_valid;                                              \
-    PyObject *prefix##_iframe[1];
+    void *prefix##_iframe[1];
 
 typedef struct {
     /* The gi_ prefix is intended to remind of generator-iterator. */
