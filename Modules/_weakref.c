@@ -122,7 +122,7 @@ _weakref.proxy
 Create a proxy object that weakly references 'object'.
 
 'callback', if given, is called with a reference to the
-proxy when 'object' is about to be finalized."
+proxy when 'object' is about to be finalized.
 [clinic start generated code]*/
 
 static PyObject *
