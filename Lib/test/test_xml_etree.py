@@ -663,6 +663,9 @@ class ElementTreeTest(unittest.TestCase):
             it = iterparse(TESTFN)
             del it
 
+        with self.assertRaises(FileNotFoundError):
+            iterparse("nonexistent")
+
     def test_writefile(self):
         elem = ET.Element("tag")
         elem.text = "text"
