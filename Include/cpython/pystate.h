@@ -199,6 +199,9 @@ struct _ts {
 
     /* The bottom-most frame on the stack. */
     _PyCFrame root_cframe;
+
+    /* Context for segfault handling */
+    char segfault_context[120];
 };
 
 

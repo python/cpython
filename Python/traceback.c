@@ -1271,7 +1271,7 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
    handlers if signals were received. */
 const char*
 _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
-                         PyThreadState *current_tstate)
+                         PyThreadState *current_tstate, bool include_context)
 {
     PyThreadState *tstate;
     unsigned int nthreads;
@@ -1327,6 +1327,11 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
             PUTS(fd, "  Garbage-collecting\n");
         }
         dump_traceback(fd, tstate, 0);
+        if (include_context && tstate->segfault_context[0] != '\0') {
+            PUTS(fd, "Context: ");
+            PUTS(fd, tstate->segfault_context);
+            PUTS(fd, "\n");
+        }
         tstate = PyThreadState_Next(tstate);
         nthreads++;
     } while (tstate != NULL);
