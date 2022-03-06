@@ -130,8 +130,8 @@ static PyObject *
 method___reduce___impl(PyMethodObject *self)
 /*[clinic end generated code: output=6c04506d0fa6fdcb input=143a0bf5e96de6e8]*/
 {
-    PyObject *funcself = PyMethod_GET_SELF(im);
-    PyObject *func = PyMethod_GET_FUNCTION(im);
+    PyObject *funcself = PyMethod_GET_SELF(self);
+    PyObject *func = PyMethod_GET_FUNCTION(self);
     PyObject *funcname = PyObject_GetAttr(func, &_Py_ID(__name__));
     if (funcname == NULL) {
         return NULL;
