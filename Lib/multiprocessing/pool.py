@@ -20,8 +20,8 @@ import queue
 import threading
 import time
 import traceback
+import types
 import warnings
-from queue import Empty
 
 # If threading is available then ThreadPool should be provided.  Therefore
 # we avoid top-level imports which are liable to fail on some systems.
@@ -651,8 +651,6 @@ class Pool(object):
     def terminate(self):
         util.debug('terminating pool')
         self._state = TERMINATE
-        self._worker_handler._state = TERMINATE
-        self._change_notifier.put(None)
         self._terminate()
 
     def join(self):
@@ -682,7 +680,12 @@ class Pool(object):
         # this is guaranteed to only be called once
         util.debug('finalizing pool')
 
+        # Notify that the worker_handler state has been changed so the
+        # _handle_workers loop can be unblocked (and exited) in order to
+        # send the finalization sentinel all the workers.
         worker_handler._state = TERMINATE
+        change_notifier.put(None)
+
         task_handler._state = TERMINATE
 
         util.debug('helping task handler/workers to finish')
@@ -776,6 +779,8 @@ class ApplyResult(object):
         self._event.set()
         del self._cache[self._job]
         self._pool = None
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 AsyncResult = ApplyResult       # create alias -- see #17805
 

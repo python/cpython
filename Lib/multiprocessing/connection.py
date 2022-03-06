@@ -73,6 +73,11 @@ def arbitrary_address(family):
     if family == 'AF_INET':
         return ('localhost', 0)
     elif family == 'AF_UNIX':
+        # Prefer abstract sockets if possible to avoid problems with the address
+        # size.  When coding portable applications, some implementations have
+        # sun_path as short as 92 bytes in the sockaddr_un struct.
+        if util.abstract_sockets_supported:
+            return f"\0listener-{os.getpid()}-{next(_mmap_counter)}"
         return tempfile.mktemp(prefix='listener-', dir=util.get_temp_dir())
     elif family == 'AF_PIPE':
         return tempfile.mktemp(prefix=r'\\.\pipe\pyc-%d-%d-' %
@@ -102,7 +107,7 @@ def address_type(address):
         return 'AF_INET'
     elif type(address) is str and address.startswith('\\\\'):
         return 'AF_PIPE'
-    elif type(address) is str:
+    elif type(address) is str or util.is_abstract_socket_namespace(address):
         return 'AF_UNIX'
     else:
         raise ValueError('address type of %r unrecognized' % address)
@@ -597,7 +602,8 @@ class SocketListener(object):
         self._family = family
         self._last_accepted = None
 
-        if family == 'AF_UNIX':
+        if family == 'AF_UNIX' and not util.is_abstract_socket_namespace(address):
+            # Linux abstract socket namespaces do not need to be explicitly unlinked
             self._unlink = util.Finalize(
                 self, os.unlink, args=(address,), exitpriority=0
                 )

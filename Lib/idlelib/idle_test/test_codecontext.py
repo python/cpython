@@ -332,6 +332,14 @@ class CodeContextTest(unittest.TestCase):
         jump()
         eq(cc.topvisible, 8)
 
+        # Context selection stops jump.
+        cc.text.yview('5.0')
+        cc.update_code_context()
+        cc.context.tag_add('sel', '1.0', '2.0')
+        cc.context.mark_set('insert', '1.0')
+        jump()  # Without selection, to line 2.
+        eq(cc.topvisible, 5)
+
     @mock.patch.object(codecontext.CodeContext, 'update_code_context')
     def test_timer_event(self, mock_update):
         # Ensure code context is not active.

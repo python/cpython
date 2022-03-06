@@ -196,6 +196,15 @@ main(int argc, char **argv) {
             }
         }
 
+        /*
+         * The environment variable is used to pass the value of real_path
+         * to the actual python interpreter, and is read by code in
+         * Python/coreconfig.c.
+         *
+         * This way the real interpreter knows how the user invoked the
+         * interpreter and can behave as if this launcher is the real
+         * interpreter (looking for pyvenv configuration, ...)
+         */
         setenv("__PYVENV_LAUNCHER__", real_path, 1);
     }
 

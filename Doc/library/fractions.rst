@@ -84,6 +84,10 @@ another rational number, or from a string.
       The :class:`Fraction` constructor now accepts :class:`float` and
       :class:`decimal.Decimal` instances.
 
+   .. versionchanged:: 3.9
+      The :func:`math.gcd` function is now used to normalize the *numerator*
+      and *denominator*. :func:`math.gcd` always return a :class:`int` type.
+      Previously, the GCD type depended on *numerator* and *denominator*.
 
    .. attribute:: numerator
 

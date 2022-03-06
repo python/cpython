@@ -1,0 +1,2 @@
+Added functools.cache() as a simpler, more discoverable way to access the
+unbounded cache variant of lru_cache(maxsize=None).

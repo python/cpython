@@ -170,13 +170,16 @@ Future Object
       Returns the number of callbacks removed, which is typically 1,
       unless a callback was added more than once.
 
-   .. method:: cancel()
+   .. method:: cancel(msg=None)
 
       Cancel the Future and schedule callbacks.
 
       If the Future is already *done* or *cancelled*, return ``False``.
       Otherwise, change the Future's state to *cancelled*,
       schedule the callbacks, and return ``True``.
+
+      .. versionchanged:: 3.9
+         Added the ``msg`` parameter.
 
    .. method:: exception()
 
@@ -255,3 +258,6 @@ the Future has a result::
    - asyncio Future is not compatible with the
      :func:`concurrent.futures.wait` and
      :func:`concurrent.futures.as_completed` functions.
+
+   - :meth:`asyncio.Future.cancel` accepts an optional ``msg`` argument,
+     but :func:`concurrent.futures.cancel` does not.

@@ -1,0 +1,2 @@
+Add a new :meth:`~multiprocessing.SimpleQueue.close` method to the
+:class:`~multiprocessing.SimpleQueue` class to explicitly close the queue.

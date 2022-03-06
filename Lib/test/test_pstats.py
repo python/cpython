@@ -5,7 +5,6 @@ from io import StringIO
 from pstats import SortKey
 
 import pstats
-import time
 import cProfile
 
 class AddCallersTestCase(unittest.TestCase):

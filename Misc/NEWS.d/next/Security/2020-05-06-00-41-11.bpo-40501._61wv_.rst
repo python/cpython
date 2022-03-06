@@ -1,0 +1,2 @@
+:mod:`uuid` no longer uses :mod:`ctypes` to load :file:`libuuid` or
+:file:`rpcrt4.dll` at runtime.

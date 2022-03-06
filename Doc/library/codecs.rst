@@ -197,9 +197,6 @@ wider range of codecs when working with binary files:
    *buffering* has the same meaning as for the built-in :func:`open` function.
    It defaults to -1 which means that the default buffer size will be used.
 
-   .. versionchanged:: 3.9
-      The ``'U'`` mode has been removed.
-
 
 .. function:: EncodedFile(file, data_encoding, file_encoding=None, errors='strict')
 

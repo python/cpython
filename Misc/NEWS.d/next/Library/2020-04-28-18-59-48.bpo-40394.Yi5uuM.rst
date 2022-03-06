@@ -1,0 +1,1 @@
+Added default arguments to :meth:`difflib.SequenceMatcher.find_longest_match()`.

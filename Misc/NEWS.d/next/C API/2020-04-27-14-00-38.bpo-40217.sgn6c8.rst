@@ -1,0 +1,5 @@
+Ensure that instances of types created with
+:c:func:`PyType_FromSpecWithBases` will visit its class object when
+traversing references in the garbage collector (implemented as an extension
+of the provided :c:member:`~PyTypeObject.tp_traverse`). Patch by Pablo
+Galindo.

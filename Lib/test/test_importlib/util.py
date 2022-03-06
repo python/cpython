@@ -7,6 +7,7 @@ import importlib
 from importlib import machinery, util, invalidate_caches
 from importlib.abc import ResourceReader
 import io
+import marshal
 import os
 import os.path
 from pathlib import Path, PurePath
@@ -116,6 +117,16 @@ def submodule(parent, name, pkg_dir, content=''):
     with open(path, 'w') as subfile:
         subfile.write(content)
     return '{}.{}'.format(parent, name), path
+
+
+def get_code_from_pyc(pyc_path):
+    """Reads a pyc file and returns the unmarshalled code object within.
+
+    No header validation is performed.
+    """
+    with open(pyc_path, 'rb') as pyc_f:
+        pyc_f.seek(16)
+        return marshal.load(pyc_f)
 
 
 @contextlib.contextmanager

@@ -1,0 +1,1 @@
+``repr()`` now returns ``typing.Optional[T]`` when called for ``typing.Union`` of two types, one of which is ``NoneType``.

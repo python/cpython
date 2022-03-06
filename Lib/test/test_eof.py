@@ -26,6 +26,15 @@ class EOFTestCase(unittest.TestCase):
         else:
             raise support.TestFailed
 
+    def test_eof_with_line_continuation(self):
+        expect = "unexpected EOF while parsing (<string>, line 1)"
+        try:
+            compile('"\\xhh" \\',  '<string>', 'exec', dont_inherit=True)
+        except SyntaxError as msg:
+            self.assertEqual(str(msg), expect)
+        else:
+            raise support.TestFailed
+
     def test_line_continuation_EOF(self):
         """A continuation at the end of input must be an error; bpo2180."""
         expect = 'unexpected EOF while parsing (<string>, line 1)'

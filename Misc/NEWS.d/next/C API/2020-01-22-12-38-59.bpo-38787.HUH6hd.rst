@@ -1,0 +1,2 @@
+Module C state is now accessible from C-defined heap type methods (:pep:`573`).
+Patch by Marcel Plch and Petr Viktorin.

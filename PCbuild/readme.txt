@@ -132,6 +132,7 @@ library which are implemented in C; each one builds a DLL (renamed to
 _asyncio
 _ctypes
 _ctypes_test
+_zoneinfo
 _decimal
 _elementtree
 _hashlib
@@ -184,7 +185,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.28.0.0, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.31.1.0, which is itself built by sqlite3.vcxproj
     Homepage:
         http://www.sqlite.org/
 _tkinter

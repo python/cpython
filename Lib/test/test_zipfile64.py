@@ -73,7 +73,7 @@ class TestsWithSourceFile(unittest.TestCase):
             self.assertFalse(f.closed)
         self.zipTest(TESTFN2, zipfile.ZIP_STORED)
 
-    @requires_zlib
+    @requires_zlib()
     def testDeflated(self):
         # Try the temp file first.  If we do TESTFN2 first, then it hogs
         # gigabytes of disk space for the duration of the test.

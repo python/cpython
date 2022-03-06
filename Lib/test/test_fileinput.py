@@ -226,11 +226,19 @@ class FileInputTests(BaseTests, unittest.TestCase):
         self.assertEqual(fi.fileno(), -1)
 
     def test_opening_mode(self):
-        # invalid modes
-        for mode in ('w', 'rU', 'U'):
-            with self.subTest(mode=mode):
-                with self.assertRaises(ValueError):
-                    FileInput(mode=mode)
+        try:
+            # invalid mode, should raise ValueError
+            fi = FileInput(mode="w")
+            self.fail("FileInput should reject invalid mode argument")
+        except ValueError:
+            pass
+        # try opening in universal newline mode
+        t1 = self.writeTmp(b"A\nB\r\nC\rD", mode="wb")
+        with check_warnings(('', DeprecationWarning)):
+            fi = FileInput(files=t1, mode="U")
+        with check_warnings(('', DeprecationWarning)):
+            lines = list(fi)
+        self.assertEqual(lines, ["A\n", "B\n", "C\n", "D"])
 
     def test_stdin_binary_mode(self):
         with mock.patch('sys.stdin') as m_stdin:
@@ -977,6 +985,10 @@ class Test_hook_encoded(unittest.TestCase):
             self.assertEqual(lines, expected_lines)
 
         check('r', ['A\n', 'B\n', 'C\n', 'D\u20ac'])
+        with self.assertWarns(DeprecationWarning):
+            check('rU', ['A\n', 'B\n', 'C\n', 'D\u20ac'])
+        with self.assertWarns(DeprecationWarning):
+            check('U', ['A\n', 'B\n', 'C\n', 'D\u20ac'])
         with self.assertRaises(ValueError):
             check('rb', ['A\n', 'B\r\n', 'C\r', 'D\u20ac'])
 

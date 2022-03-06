@@ -1,1 +1,0 @@
-Delete unused code related to SxS manifests.

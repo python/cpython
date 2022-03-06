@@ -4,7 +4,7 @@ import sys
 import _collections_abc
 from collections import deque
 from functools import wraps
-from types import MethodType
+from types import MethodType, GenericAlias
 
 __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
            "AbstractContextManager", "AbstractAsyncContextManager",
@@ -15,6 +15,8 @@ __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
 class AbstractContextManager(abc.ABC):
 
     """An abstract base class for context managers."""
+
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __enter__(self):
         """Return `self` upon entering the runtime context."""
@@ -35,6 +37,8 @@ class AbstractContextManager(abc.ABC):
 class AbstractAsyncContextManager(abc.ABC):
 
     """An abstract base class for asynchronous context managers."""
+
+    __class_getitem__ = classmethod(GenericAlias)
 
     async def __aenter__(self):
         """Return `self` upon entering the runtime context."""

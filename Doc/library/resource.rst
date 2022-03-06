@@ -78,6 +78,9 @@ this module for those platforms.
 
    VxWorks only supports setting :data:`RLIMIT_NOFILE`.
 
+   .. audit-event:: resource.setrlimit resource,limits resource.setrlimit
+
+
 .. function:: prlimit(pid, resource[, limits])
 
    Combines :func:`setrlimit` and :func:`getrlimit` in one function and
@@ -93,6 +96,8 @@ this module for those platforms.
    Raises :exc:`ProcessLookupError` when *pid* can't be found and
    :exc:`PermissionError` when the user doesn't have ``CAP_SYS_RESOURCE`` for
    the process.
+
+   .. audit-event:: resource.prlimit pid,resource,limits resource.prlimit
 
    .. availability:: Linux 2.6.36 or later with glibc 2.13 or later.
 

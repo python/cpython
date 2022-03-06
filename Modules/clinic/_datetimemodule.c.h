@@ -14,6 +14,60 @@ PyDoc_STRVAR(datetime_date_fromtimestamp__doc__,
 #define DATETIME_DATE_FROMTIMESTAMP_METHODDEF    \
     {"fromtimestamp", (PyCFunction)datetime_date_fromtimestamp, METH_O|METH_CLASS, datetime_date_fromtimestamp__doc__},
 
+static PyObject *
+iso_calendar_date_new_impl(PyTypeObject *type, int year, int week,
+                           int weekday);
+
+static PyObject *
+iso_calendar_date_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"year", "week", "weekday", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "IsoCalendarDate", 0};
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    int year;
+    int week;
+    int weekday;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 3, 3, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (PyFloat_Check(fastargs[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    year = _PyLong_AsInt(fastargs[0]);
+    if (year == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(fastargs[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    week = _PyLong_AsInt(fastargs[1]);
+    if (week == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(fastargs[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    weekday = _PyLong_AsInt(fastargs[2]);
+    if (weekday == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = iso_calendar_date_new_impl(type, year, week, weekday);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(datetime_datetime_now__doc__,
 "now($type, /, tz=None)\n"
 "--\n"
@@ -55,4 +109,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=aae916ab728ca85b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5e17549f29a439a5 input=a9049054013a1b77]*/

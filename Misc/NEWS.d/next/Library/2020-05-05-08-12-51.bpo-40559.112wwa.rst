@@ -1,0 +1,1 @@
+Fix possible memory leak in the C implementation of :class:`asyncio.Task`.

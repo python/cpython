@@ -280,8 +280,6 @@ since it is impossible to detect the termination of alien threads.
    base class constructor (``Thread.__init__()``) before doing anything else to
    the thread.
 
-   Daemon threads must not be used in subinterpreters.
-
    .. versionchanged:: 3.3
       Added the *daemon* argument.
 
@@ -295,12 +293,6 @@ since it is impossible to detect the termination of alien threads.
 
       This method will raise a :exc:`RuntimeError` if called more than once
       on the same thread object.
-
-      Raise a :exc:`RuntimeError` if the thread is a daemon thread and the
-      method is called from a subinterpreter.
-
-      .. versionchanged:: 3.9
-         In a subinterpreter, spawning a daemon thread now raises an exception.
 
    .. method:: run()
 

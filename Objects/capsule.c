@@ -50,7 +50,7 @@ PyCapsule_New(void *pointer, const char *name, PyCapsule_Destructor destructor)
         return NULL;
     }
 
-    capsule = PyObject_NEW(PyCapsule, &PyCapsule_Type);
+    capsule = PyObject_New(PyCapsule, &PyCapsule_Type);
     if (capsule == NULL) {
         return NULL;
     }

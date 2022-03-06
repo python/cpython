@@ -8,7 +8,7 @@ import textwrap
 
 from unittest import mock
 
-from distutils.dist import Distribution, fix_help_options, DistributionMetadata
+from distutils.dist import Distribution, fix_help_options
 from distutils.cmd import Command
 
 from test.support import (

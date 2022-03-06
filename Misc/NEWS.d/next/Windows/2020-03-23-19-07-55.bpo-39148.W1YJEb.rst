@@ -1,0 +1,3 @@
+Add IPv6 support to :mod:`asyncio` datagram endpoints in ProactorEventLoop.
+Change the raised exception for unknown address families to ValueError
+as it's not coming from Windows API.

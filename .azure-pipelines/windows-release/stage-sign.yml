@@ -114,7 +114,7 @@ jobs:
   condition: and(succeeded(), not(variables['SigningCertificate']))
 
   pool:
-    vmName: win2016-vs2017
+    vmImage: windows-2019
 
   steps:
   - checkout: none

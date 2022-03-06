@@ -552,7 +552,10 @@ if hasattr(select, 'kqueue'):
 
         def select(self, timeout=None):
             timeout = None if timeout is None else max(timeout, 0)
-            max_ev = len(self._fd_to_key)
+            # If max_ev is 0, kqueue will ignore the timeout. For consistent
+            # behavior with the other selector classes, we prevent that here
+            # (using max). See https://bugs.python.org/issue29255
+            max_ev = max(len(self._fd_to_key), 1)
             ready = []
             try:
                 kev_list = self._selector.control(None, max_ev, timeout)

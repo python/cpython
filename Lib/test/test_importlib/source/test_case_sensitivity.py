@@ -1,4 +1,6 @@
 """Test case-sensitivity (PEP 235)."""
+import sys
+
 from .. import util
 
 importlib = util.import_importlib('importlib')
@@ -38,6 +40,7 @@ class CaseSensitivityTest(util.CASEOKTestBase):
             insensitive_finder = self.finder(insensitive_path)
             return self.find(sensitive_finder), self.find(insensitive_finder)
 
+    @unittest.skipIf(sys.flags.ignore_environment, 'ignore_environment flag was set')
     def test_sensitive(self):
         with test_support.EnvironmentVarGuard() as env:
             env.unset('PYTHONCASEOK')
@@ -47,6 +50,7 @@ class CaseSensitivityTest(util.CASEOKTestBase):
             self.assertIn(self.name, sensitive.get_filename(self.name))
             self.assertIsNone(insensitive)
 
+    @unittest.skipIf(sys.flags.ignore_environment, 'ignore_environment flag was set')
     def test_insensitive(self):
         with test_support.EnvironmentVarGuard() as env:
             env.set('PYTHONCASEOK', '1')

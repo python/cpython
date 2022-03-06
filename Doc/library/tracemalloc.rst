@@ -202,10 +202,8 @@ ignoring ``<frozen importlib._bootstrap>`` and ``<unknown>`` files::
         print("Top %s lines" % limit)
         for index, stat in enumerate(top_stats[:limit], 1):
             frame = stat.traceback[0]
-            # replace "/path/to/module/file.py" with "module/file.py"
-            filename = os.sep.join(frame.filename.split(os.sep)[-2:])
             print("#%s: %s:%s: %.1f KiB"
-                  % (index, filename, frame.lineno, stat.size / 1024))
+                  % (index, frame.filename, frame.lineno, stat.size / 1024))
             line = linecache.getline(frame.filename, frame.lineno).strip()
             if line:
                 print('    %s' % line)

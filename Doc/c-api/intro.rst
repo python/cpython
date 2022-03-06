@@ -107,10 +107,23 @@ complete listing.
 
 .. c:macro:: Py_UNREACHABLE()
 
-   Use this when you have a code path that you do not expect to be reached.
+   Use this when you have a code path that cannot be reached by design.
    For example, in the ``default:`` clause in a ``switch`` statement for which
    all possible values are covered in ``case`` statements.  Use this in places
    where you might be tempted to put an ``assert(0)`` or ``abort()`` call.
+
+   In release mode, the macro helps the compiler to optimize the code, and
+   avoids a warning about unreachable code.  For example, the macro is
+   implemented with ``__builtin_unreachable()`` on GCC in release mode.
+
+   A use for ``Py_UNREACHABLE()`` is following a call a function that
+   never returns but that is not declared :c:macro:`_Py_NO_RETURN`.
+
+   If a code path is very unlikely code but can be reached under exceptional
+   case, this macro must not be used.  For example, under low memory condition
+   or if a system call returns a value out of the expected range.  In this
+   case, it's better to report the error to the caller.  If the error cannot
+   be reported to caller, :c:func:`Py_FatalError` can be used.
 
    .. versionadded:: 3.7
 
@@ -174,6 +187,39 @@ complete listing.
    .. versionchanged:: 3.8
       MSVC support was added.
 
+.. c:macro:: PyDoc_STRVAR(name, str)
+
+   Creates a variable with name ``name`` that can be used in docstrings.
+   If Python is built without docstrings, the value will be empty.
+
+   Use :c:macro:`PyDoc_STRVAR` for docstrings to support building
+   Python without docstrings, as specified in :pep:`7`.
+
+   Example::
+
+      PyDoc_STRVAR(pop_doc, "Remove and return the rightmost element.");
+
+      static PyMethodDef deque_methods[] = {
+          // ...
+          {"pop", (PyCFunction)deque_pop, METH_NOARGS, pop_doc},
+          // ...
+      }
+
+.. c:macro:: PyDoc_STR(str)
+
+   Creates a docstring for the given input string or an empty string
+   if docstrings are disabled.
+
+   Use :c:macro:`PyDoc_STR` in specifying docstrings to support
+   building Python without docstrings, as specified in :pep:`7`.
+
+   Example::
+
+      static PyMethodDef pysqlite_row_methods[] = {
+          {"keys", (PyCFunction)pysqlite_row_keys, METH_NOARGS,
+              PyDoc_STR("Returns the keys of the row.")},
+          {NULL, NULL}
+      };
 
 .. _api-objects:
 

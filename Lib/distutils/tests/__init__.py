@@ -15,6 +15,7 @@ by import rather than matching pre-defined names.
 import os
 import sys
 import unittest
+import warnings
 from test.support import run_unittest
 
 
@@ -22,6 +23,7 @@ here = os.path.dirname(__file__) or os.curdir
 
 
 def test_suite():
+    old_filters = warnings.filters[:]
     suite = unittest.TestSuite()
     for fn in os.listdir(here):
         if fn.startswith("test") and fn.endswith(".py"):
@@ -29,6 +31,10 @@ def test_suite():
             __import__(modname)
             module = sys.modules[modname]
             suite.addTest(module.test_suite())
+    # bpo-40055: Save/restore warnings filters to leave them unchanged.
+    # Importing tests imports docutils which imports pkg_resources which adds a
+    # warnings filter.
+    warnings.filters[:] = old_filters
     return suite
 
 

@@ -71,8 +71,6 @@ __all__ = __always_supported + ('new', 'algorithms_guaranteed',
 __builtin_constructor_cache = {}
 
 __block_openssl_constructor = {
-    'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
-    'shake_128', 'shake_256',
     'blake2b', 'blake2s',
 }
 
@@ -125,6 +123,8 @@ def __get_openssl_constructor(name):
         # Prefer our blake2 and sha3 implementation.
         return __get_builtin_constructor(name)
     try:
+        # MD5, SHA1, and SHA2 are in all supported OpenSSL versions
+        # SHA3/shake are available in OpenSSL 1.1.1+
         f = getattr(_hashlib, 'openssl_' + name)
         # Allow the C module to raise ValueError.  The function will be
         # defined but the hash not actually available thanks to OpenSSL.

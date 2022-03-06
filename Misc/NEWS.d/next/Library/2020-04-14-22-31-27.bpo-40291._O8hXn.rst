@@ -1,0 +1,1 @@
+Add support for CAN_J1939 sockets (available on Linux 5.4+)

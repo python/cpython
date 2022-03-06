@@ -3781,6 +3781,43 @@ mpd_qdiv(mpd_t *q, const mpd_t *a, const mpd_t *b,
          const mpd_context_t *ctx, uint32_t *status)
 {
     _mpd_qdiv(SET_IDEAL_EXP, q, a, b, ctx, status);
+
+    if (*status & MPD_Malloc_error) {
+        /* Inexact quotients (the usual case) fill the entire context precision,
+         * which can lead to malloc() failures for very high precisions. Retry
+         * the operation with a lower precision in case the result is exact.
+         *
+         * We need an upper bound for the number of digits of a_coeff / b_coeff
+         * when the result is exact.  If a_coeff' * 1 / b_coeff' is in lowest
+         * terms, then maxdigits(a_coeff') + maxdigits(1 / b_coeff') is a suitable
+         * bound.
+         *
+         * 1 / b_coeff' is exact iff b_coeff' exclusively has prime factors 2 or 5.
+         * The largest amount of digits is generated if b_coeff' is a power of 2 or
+         * a power of 5 and is less than or equal to log5(b_coeff') <= log2(b_coeff').
+         *
+         * We arrive at a total upper bound:
+         *
+         *   maxdigits(a_coeff') + maxdigits(1 / b_coeff') <=
+         *   a->digits + log2(b_coeff) =
+         *   a->digits + log10(b_coeff) / log10(2) <=
+         *   a->digits + b->digits * 4;
+         */
+        uint32_t workstatus = 0;
+        mpd_context_t workctx = *ctx;
+        workctx.prec = a->digits + b->digits * 4;
+        if (workctx.prec >= ctx->prec) {
+            return;  /* No point in retrying, keep the original error. */
+        }
+
+        _mpd_qdiv(SET_IDEAL_EXP, q, a, b, &workctx, &workstatus);
+        if (workstatus == 0) { /* The result is exact, unrounded, normal etc. */
+            *status = 0;
+            return;
+        }
+
+        mpd_seterror(q, *status, status);
+    }
 }
 
 /* Internal function. */
@@ -7702,9 +7739,9 @@ mpd_qinvroot(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
 /* END LIBMPDEC_ONLY */
 
 /* Algorithm from decimal.py */
-void
-mpd_qsqrt(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
-          uint32_t *status)
+static void
+_mpd_qsqrt(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
+           uint32_t *status)
 {
     mpd_context_t maxcontext;
     MPD_NEW_STATIC(c,0,0,0,0);
@@ -7834,6 +7871,40 @@ out:
 malloc_error:
     mpd_seterror(result, MPD_Malloc_error, status);
     goto out;
+}
+
+void
+mpd_qsqrt(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
+          uint32_t *status)
+{
+    _mpd_qsqrt(result, a, ctx, status);
+
+    if (*status & (MPD_Malloc_error|MPD_Division_impossible)) {
+        /* The above conditions can occur at very high context precisions
+         * if intermediate values get too large. Retry the operation with
+         * a lower context precision in case the result is exact.
+         *
+         * If the result is exact, an upper bound for the number of digits
+         * is the number of digits in the input.
+         *
+         * NOTE: sqrt(40e9) = 2.0e+5 /\ digits(40e9) = digits(2.0e+5) = 2
+         */
+        uint32_t workstatus = 0;
+        mpd_context_t workctx = *ctx;
+        workctx.prec = a->digits;
+
+        if (workctx.prec >= ctx->prec) {
+            return; /* No point in repeating this, keep the original error. */
+        }
+
+        _mpd_qsqrt(result, a, &workctx, &workstatus);
+        if (workstatus == 0) {
+            *status = 0;
+            return;
+        }
+
+        mpd_seterror(result, *status, status);
+    }
 }
 
 

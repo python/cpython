@@ -25,8 +25,10 @@ def main(regrtest_args):
             '-u',                 # Unbuffered stdout and stderr
             '-W', 'default',      # Warnings set to 'default'
             '-bb',                # Warnings about bytes/bytearray
-            '-E',                 # Ignore environment variables
             ]
+    if 'PYTHONOLDPARSER' not in os.environ:
+        args.append('-E')         # Ignore environment variables
+
     # Allow user-specified interpreter options to override our defaults.
     args.extend(test.support.args_from_interpreter_flags())
 

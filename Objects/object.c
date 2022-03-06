@@ -2,12 +2,14 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_context.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"
+#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"
 #include "interpreteridobject.h"
 
@@ -33,7 +35,6 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
     CHECK(!_PyObject_IsFreed(op));
     CHECK(Py_REFCNT(op) >= 1);
 
-    CHECK(Py_TYPE(op) != NULL);
     _PyType_CheckConsistency(Py_TYPE(op));
 
     if (PyUnicode_Check(op)) {
@@ -144,12 +145,7 @@ PyObject_Init(PyObject *op, PyTypeObject *tp)
         return PyErr_NoMemory();
     }
 
-    Py_TYPE(op) = tp;
-    if (PyType_GetFlags(tp) & Py_TPFLAGS_HEAPTYPE) {
-        Py_INCREF(tp);
-    }
-    _Py_NewReference(op);
-    return op;
+    return PyObject_INIT(op, tp);
 }
 
 PyVarObject *
@@ -160,19 +156,18 @@ PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, Py_ssize_t size)
         return (PyVarObject *) PyErr_NoMemory();
     }
 
-    Py_SIZE(op) = size;
-    PyObject_Init((PyObject *)op, tp);
-    return op;
+    return PyObject_INIT_VAR(op, tp, size);
 }
 
 PyObject *
 _PyObject_New(PyTypeObject *tp)
 {
-    PyObject *op;
-    op = (PyObject *) PyObject_MALLOC(_PyObject_SIZE(tp));
-    if (op == NULL)
+    PyObject *op = (PyObject *) PyObject_MALLOC(_PyObject_SIZE(tp));
+    if (op == NULL) {
         return PyErr_NoMemory();
-    return PyObject_INIT(op, tp);
+    }
+    PyObject_INIT(op, tp);
+    return op;
 }
 
 PyVarObject *
@@ -194,11 +189,11 @@ PyObject_CallFinalizer(PyObject *self)
     if (tp->tp_finalize == NULL)
         return;
     /* tp_finalize should only be called once. */
-    if (PyType_IS_GC(tp) && _PyGC_FINALIZED(self))
+    if (_PyType_IS_GC(tp) && _PyGC_FINALIZED(self))
         return;
 
     tp->tp_finalize(self);
-    if (PyType_IS_GC(tp)) {
+    if (_PyType_IS_GC(tp)) {
         _PyGC_SET_FINALIZED(self);
     }
 }
@@ -235,7 +230,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     Py_SET_REFCNT(self, refcnt);
 
     _PyObject_ASSERT(self,
-                     (!PyType_IS_GC(Py_TYPE(self))
+                     (!_PyType_IS_GC(Py_TYPE(self))
                       || _PyObject_GC_IS_TRACKED(self)));
     /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
        _Py_RefTotal, so we need to undo that. */
@@ -665,7 +660,7 @@ do_richcompare(PyThreadState *tstate, PyObject *v, PyObject *w, int op)
     PyObject *res;
     int checked_reverse_op = 0;
 
-    if (Py_TYPE(v) != Py_TYPE(w) &&
+    if (!Py_IS_TYPE(v, Py_TYPE(w)) &&
         PyType_IsSubtype(Py_TYPE(w), Py_TYPE(v)) &&
         (f = Py_TYPE(w)->tp_richcompare) != NULL) {
         checked_reverse_op = 1;
@@ -1041,13 +1036,11 @@ _PyObject_GetDictPtr(PyObject *obj)
     if (dictoffset == 0)
         return NULL;
     if (dictoffset < 0) {
-        Py_ssize_t tsize;
-        size_t size;
-
-        tsize = ((PyVarObject *)obj)->ob_size;
-        if (tsize < 0)
+        Py_ssize_t tsize = Py_SIZE(obj);
+        if (tsize < 0) {
             tsize = -tsize;
-        size = _PyObject_VAR_SIZE(tp, tsize);
+        }
+        size_t size = _PyObject_VAR_SIZE(tp, tsize);
 
         dictoffset += (long)size;
         _PyObject_ASSERT(obj, dictoffset > 0);
@@ -1112,7 +1105,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     descr = _PyType_Lookup(tp, name);
     if (descr != NULL) {
         Py_INCREF(descr);
-        if (PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+        if (_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
             meth_found = 1;
         } else {
             f = Py_TYPE(descr)->tp_descr_get;
@@ -1219,13 +1212,11 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         dictoffset = tp->tp_dictoffset;
         if (dictoffset != 0) {
             if (dictoffset < 0) {
-                Py_ssize_t tsize;
-                size_t size;
-
-                tsize = ((PyVarObject *)obj)->ob_size;
-                if (tsize < 0)
+                Py_ssize_t tsize = Py_SIZE(obj);
+                if (tsize < 0) {
                     tsize = -tsize;
-                size = _PyObject_VAR_SIZE(tp, tsize);
+                }
+                size_t size = _PyObject_VAR_SIZE(tp, tsize);
                 _PyObject_ASSERT(obj, size <= PY_SSIZE_T_MAX);
 
                 dictoffset += (Py_ssize_t)size;
@@ -1677,6 +1668,22 @@ notimplemented_dealloc(PyObject* ignore)
     Py_FatalError("deallocating NotImplemented");
 }
 
+static int
+notimplemented_bool(PyObject *v)
+{
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "NotImplemented should not be used in a boolean context",
+                     1) < 0)
+    {
+        return -1;
+    }
+    return 1;
+}
+
+static PyNumberMethods notimplemented_as_number = {
+    .nb_bool = notimplemented_bool,
+};
+
 PyTypeObject _PyNotImplemented_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NotImplementedType",
@@ -1687,8 +1694,8 @@ PyTypeObject _PyNotImplemented_Type = {
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
     0,                  /*tp_as_async*/
-    NotImplemented_repr, /*tp_repr*/
-    0,                  /*tp_as_number*/
+    NotImplemented_repr,        /*tp_repr*/
+    &notimplemented_as_number,  /*tp_as_number*/
     0,                  /*tp_as_sequence*/
     0,                  /*tp_as_mapping*/
     0,                  /*tp_hash */
@@ -1782,6 +1789,7 @@ _PyTypes_Init(void)
     INIT_TYPE(&PyCode_Type, "code");
     INIT_TYPE(&PyFrame_Type, "frame");
     INIT_TYPE(&PyCFunction_Type, "builtin function");
+    INIT_TYPE(&PyCMethod_Type, "builtin method");
     INIT_TYPE(&PyMethod_Type, "method");
     INIT_TYPE(&PyFunction_Type, "function");
     INIT_TYPE(&PyDictProxy_Type, "dict proxy");
@@ -1903,7 +1911,7 @@ _Py_GetObjects(PyObject *self, PyObject *args)
         return NULL;
     for (i = 0; (n == 0 || i < n) && op != &refchain; i++) {
         while (op == self || op == args || op == res || op == t ||
-               (t != NULL && Py_TYPE(op) != (PyTypeObject *) t)) {
+               (t != NULL && !Py_IS_TYPE(op, (PyTypeObject *) t))) {
             op = op->_ob_next;
             if (op == &refchain)
                 return res;
@@ -2024,7 +2032,7 @@ _PyTrash_deposit_object(PyObject *op)
     PyThreadState *tstate = _PyThreadState_GET();
     struct _gc_runtime_state *gcstate = &tstate->interp->gc;
 
-    _PyObject_ASSERT(op, PyObject_IS_GC(op));
+    _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), gcstate->trash_delete_later);
@@ -2036,7 +2044,7 @@ void
 _PyTrash_thread_deposit_object(PyObject *op)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyObject_ASSERT(op, PyObject_IS_GC(op));
+    _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), tstate->trash_delete_later);
@@ -2111,6 +2119,30 @@ _PyTrash_thread_destroy_chain(void)
 }
 
 
+int
+_PyTrash_begin(PyThreadState *tstate, PyObject *op)
+{
+    if (tstate->trash_delete_nesting >= PyTrash_UNWIND_LEVEL) {
+        /* Store the object (to be deallocated later) and jump past
+         * Py_TRASHCAN_END, skipping the body of the deallocator */
+        _PyTrash_thread_deposit_object(op);
+        return 1;
+    }
+    ++tstate->trash_delete_nesting;
+    return 0;
+}
+
+
+void
+_PyTrash_end(PyThreadState *tstate)
+{
+    --tstate->trash_delete_nesting;
+    if (tstate->trash_delete_later && tstate->trash_delete_nesting <= 0) {
+        _PyTrash_thread_destroy_chain();
+    }
+}
+
+
 void _Py_NO_RETURN
 _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
                        const char *file, int line, const char *function)
@@ -2147,7 +2179,7 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
            to crash than dumping the traceback. */
         void *ptr;
         PyTypeObject *type = Py_TYPE(obj);
-        if (PyType_IS_GC(type)) {
+        if (_PyType_IS_GC(type)) {
             ptr = (void *)((char *)obj - sizeof(PyGC_Head));
         }
         else {
@@ -2176,6 +2208,14 @@ _Py_Dealloc(PyObject *op)
 #endif
     (*dealloc)(op);
 }
+
+
+PyObject **
+PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
+{
+    return _PyObject_GET_WEAKREFS_LISTPTR(op);
+}
+
 
 #ifdef __cplusplus
 }

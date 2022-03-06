@@ -12,7 +12,7 @@
 
 #ifdef MS_WINDOWS
 
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif

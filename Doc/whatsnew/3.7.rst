@@ -493,6 +493,11 @@ description.
 Other Language Changes
 ======================
 
+* An :keyword:`await` expression and comprehensions containing an
+  :keyword:`async for` clause were illegal in the expressions in
+  :ref:`formatted string literals <f-strings>` due to a problem with the
+  implementation.  In Python 3.7 this restriction was lifted.
+
 * More than 255 arguments can now be passed to a function, and a function can
   now have more than 255 parameters. (Contributed by Serhiy Storchaka in
   :issue:`12844` and :issue:`18896`.)

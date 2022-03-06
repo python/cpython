@@ -58,6 +58,18 @@ class PyParseTest(unittest.TestCase):
         p = self.parser
         setcode = p.set_code
         start = p.find_good_parse_start
+        def char_in_string_false(index): return False
+
+        # First line starts with 'def' and ends with ':', then 0 is the pos.
+        setcode('def spam():\n')
+        eq(start(char_in_string_false), 0)
+
+        # First line begins with a keyword in the list and ends
+        # with an open brace, then 0 is the pos.  This is how
+        # hyperparser calls this function as the newline is not added
+        # in the editor, but rather on the call to setcode.
+        setcode('class spam( ' + ' \n')
+        eq(start(char_in_string_false), 0)
 
         # Split def across lines.
         setcode('"""This is a module docstring"""\n'
@@ -79,7 +91,7 @@ class PyParseTest(unittest.TestCase):
 
         # Make all text look like it's not in a string.  This means that it
         # found a good start position.
-        eq(start(is_char_in_string=lambda index: False), 44)
+        eq(start(char_in_string_false), 44)
 
         # If the beginning of the def line is not in a string, then it
         # returns that as the index.
@@ -98,7 +110,7 @@ class PyParseTest(unittest.TestCase):
                 '    def __init__(self, a, b=True):\n'
                 '        pass\n'
                 )
-        eq(start(is_char_in_string=lambda index: False), 44)
+        eq(start(char_in_string_false), 44)
         eq(start(is_char_in_string=lambda index: index > 44), 44)
         eq(start(is_char_in_string=lambda index: index >= 44), 33)
         # When the def line isn't split, this returns which doesn't match the

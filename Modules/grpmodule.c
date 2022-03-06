@@ -37,8 +37,16 @@ static PyStructSequence_Desc struct_group_type_desc = {
 typedef struct {
   PyTypeObject *StructGrpType;
 } grpmodulestate;
-#define modulestate(o) ((grpmodulestate *)PyModule_GetState(o))
-#define modulestate_global modulestate(PyState_FindModule(&grpmodule))
+
+static inline grpmodulestate*
+get_grp_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (grpmodulestate *)state;
+}
+
+#define modulestate_global get_grp_state(PyState_FindModule(&grpmodule))
 
 static struct PyModuleDef grpmodule;
 
@@ -116,7 +124,7 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
         PyErr_Clear();
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                              "group id must be int, not %.200",
-                             id->ob_type->tp_name) < 0) {
+                             Py_TYPE(id)->tp_name) < 0) {
             return NULL;
         }
         py_int_id = PyNumber_Long(id);
@@ -320,12 +328,12 @@ according to the password database.  Check both databases to get\n\
 complete membership information.)");
 
 static int grpmodule_traverse(PyObject *m, visitproc visit, void *arg) {
-    Py_VISIT(modulestate(m)->StructGrpType);
+    Py_VISIT(get_grp_state(m)->StructGrpType);
     return 0;
 }
 
 static int grpmodule_clear(PyObject *m) {
-    Py_CLEAR(modulestate(m)->StructGrpType);
+    Py_CLEAR(get_grp_state(m)->StructGrpType);
     return 0;
 }
 

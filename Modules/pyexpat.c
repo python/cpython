@@ -1,7 +1,7 @@
 #include "Python.h"
 #include <ctype.h>
 
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "frameobject.h"
 #include "expat.h"
 
@@ -119,7 +119,7 @@ set_error(xmlparseobject *self, enum XML_Error code)
                                   XML_ErrorString(code), lineno, column);
     if (buffer == NULL)
         return NULL;
-    err = _PyObject_CallOneArg(ErrorObject, buffer);
+    err = PyObject_CallOneArg(ErrorObject, buffer);
     Py_DECREF(buffer);
     if (  err != NULL
           && set_error_attr(err, "code", code)
@@ -1060,7 +1060,7 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     static unsigned char template_buffer[256] = {0};
     PyObject* u;
     int i;
-    void *data;
+    const void *data;
     unsigned int kind;
 
     if (PyErr_Occurred())

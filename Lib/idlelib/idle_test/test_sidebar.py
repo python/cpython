@@ -1,6 +1,5 @@
 """Test sidebar, coverage 93%"""
 import idlelib.sidebar
-from sys import platform
 from itertools import chain
 import unittest
 import unittest.mock

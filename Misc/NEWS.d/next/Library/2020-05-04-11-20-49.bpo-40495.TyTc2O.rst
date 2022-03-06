@@ -1,0 +1,2 @@
+:mod:`compileall` is now able to use hardlinks to prevent duplicates in a
+case when ``.pyc`` files for different optimization levels have the same content.

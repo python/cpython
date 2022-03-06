@@ -64,7 +64,7 @@ typedef struct {
     char *encoding;
 } PyCursesWindowObject;
 
-#define PyCursesWindow_Check(v)  (Py_TYPE(v) == &PyCursesWindow_Type)
+#define PyCursesWindow_Check(v) Py_IS_TYPE(v, &PyCursesWindow_Type)
 
 #define PyCurses_CAPSULE_NAME "_curses._C_API"
 
@@ -96,5 +96,4 @@ static const char catchall_NULL[] = "curses function returned NULL";
 #endif
 
 #endif /* !defined(Py_CURSES_H) */
-
 

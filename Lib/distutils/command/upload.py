@@ -7,7 +7,6 @@ index).
 
 import os
 import io
-import platform
 import hashlib
 from base64 import standard_b64encode
 from urllib.request import urlopen, Request, HTTPError

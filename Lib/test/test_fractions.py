@@ -9,7 +9,6 @@ import fractions
 import functools
 import sys
 import unittest
-import warnings
 from copy import copy, deepcopy
 from pickle import dumps, loads
 F = fractions.Fraction
@@ -702,6 +701,28 @@ class FractionTest(unittest.TestCase):
         # Issue 4998
         r = F(13, 7)
         self.assertRaises(AttributeError, setattr, r, 'a', 10)
+
+    def test_int_subclass(self):
+        class myint(int):
+            def __mul__(self, other):
+                return type(self)(int(self) * int(other))
+            def __floordiv__(self, other):
+                return type(self)(int(self) // int(other))
+            def __mod__(self, other):
+                x = type(self)(int(self) % int(other))
+                return x
+            @property
+            def numerator(self):
+                return type(self)(int(self))
+            @property
+            def denominator(self):
+                return type(self)(1)
+
+        f = fractions.Fraction(myint(1 * 3), myint(2 * 3))
+        self.assertEqual(f.numerator, 1)
+        self.assertEqual(f.denominator, 2)
+        self.assertEqual(type(f.numerator), myint)
+        self.assertEqual(type(f.denominator), myint)
 
 
 if __name__ == '__main__':

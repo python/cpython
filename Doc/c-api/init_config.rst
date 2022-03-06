@@ -472,7 +472,7 @@ PyConfig
 
       If non-zero, dump all objects which are still alive at exit.
 
-      Require a debug build of Python (``Py_REF_DEBUG`` macro must be defined).
+      ``Py_TRACE_REFS`` macro must be defined in build.
 
    .. c:member:: wchar_t* exec_prefix
 
@@ -685,6 +685,16 @@ PyConfig
    .. c:member:: PyWideStringList xoptions
 
       :data:`sys._xoptions`.
+
+   .. c:member:: int _use_peg_parser
+
+      Enable PEG parser? Default: 1.
+
+      Set to 0 by :option:`-X oldparser <-X>` and :envvar:`PYTHONOLDPARSER`.
+
+      See also :pep:`617`.
+
+      .. deprecated-removed:: 3.9 3.10
 
 If ``parse_argv`` is non-zero, ``argv`` arguments are parsed the same
 way the regular Python parses command line arguments, and Python
@@ -994,6 +1004,8 @@ Private provisional API:
 
 * :c:member:`PyConfig._init_main`: if set to 0,
   :c:func:`Py_InitializeFromConfig` stops at the "Core" initialization phase.
+* :c:member:`PyConfig._isolated_interpreter`: if non-zero,
+  disallow threads, subprocesses and fork.
 
 .. c:function:: PyStatus _Py_InitializeMain(void)
 

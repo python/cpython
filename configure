@@ -631,6 +631,7 @@ SRCDIRS
 THREADHEADERS
 LIBPL
 PY_ENABLE_SHARED
+PLATLIBDIR
 LIBPYTHON
 EXT_SUFFIX
 ALT_SOABI
@@ -657,6 +658,7 @@ LIBFFI_INCLUDEDIR
 PKG_CONFIG_LIBDIR
 PKG_CONFIG_PATH
 PKG_CONFIG
+TZPATH
 SHLIBS
 CFLAGSFORSHARED
 LINKFORSHARED
@@ -818,6 +820,7 @@ with_assertions
 enable_optimizations
 with_lto
 with_hash_algorithm
+with_tzpath
 with_address_sanitizer
 with_memory_sanitizer
 with_undefined_behavior_sanitizer
@@ -825,6 +828,7 @@ with_libs
 with_system_expat
 with_system_ffi
 with_system_libmpdec
+with_decimal_contextvar
 enable_loadable_sqlite_extensions
 with_tcltk_includes
 with_tcltk_libs
@@ -838,10 +842,13 @@ with_dtrace
 with_libm
 with_libc
 enable_big_digits
+with_platlibdir
 with_computed_gotos
 with_ensurepip
 with_openssl
 with_ssl_default_suites
+with_builtin_hashlib_hashes
+with_experimental_isolated_subinterpreters
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1520,6 +1527,9 @@ Optional Packages:
   --with-hash-algorithm=[fnv|siphash24]
                           select hash algorithm for use in Python/pyhash.c
                           (default is SipHash24)
+  --with-tzpath=<list of absolute paths separated by pathsep>
+                           Select the default time zone search path for zoneinfo.TZPATH
+
   --with-address-sanitizer
                           enable AddressSanitizer memory error detector,
                           'asan' (default is no)
@@ -1536,6 +1546,9 @@ Optional Packages:
                           system-dependent)
   --with-system-libmpdec  build _decimal module using an installed libmpdec
                           library, see Doc/library/decimal.rst (default is no)
+  --with-decimal-contextvar
+                          build _decimal module using a coroutine-local rather
+                          than a thread-local context (default is yes)
   --with-tcltk-includes='-I...'
                           override search for Tcl and Tk include files
   --with-tcltk-libs='-L...'
@@ -1555,6 +1568,8 @@ Optional Packages:
                           system-dependent)
   --with-libc=STRING      override libc C library to STRING (default is
                           system-dependent)
+  --with-platlibdir=DIRNAME
+                          Python library directory name (default is "lib")
   --with-computed-gotos   enable computed gotos in evaluation loop (enabled by
                           default on supported compilers)
   --with-ensurepip[=install|upgrade|no]
@@ -1567,6 +1582,12 @@ Optional Packages:
                           leave OpenSSL's defaults untouched, STRING: use a
                           custom string, PROTOCOL_SSLv2 ignores the setting,
                           see Doc/library/ssl.rst
+  --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
+                          builtin hash modules, md5, sha1, sha256, sha512,
+                          sha3 (with shake), blake2
+  --with-experimental-isolated-subinterpreters
+                          better isolate subinterpreters, experimental build
+                          mode (default is no)
 
 Some influential environment variables:
   MACHDEP     name for machine-dependent library files
@@ -3424,6 +3445,12 @@ $as_echo "#define _BSD_SOURCE 1" >>confdefs.h
   # On VxWorks, defining _XOPEN_SOURCE causes compile failures
   # in network headers still using system V types.
   VxWorks/*)
+    define_xopen_source=no
+    ;;
+
+  # On HP-UX, defining _XOPEN_SOURCE to 600 or greater hides
+  # chroot() and other functions
+  hp*|HP*)
     define_xopen_source=no
     ;;
 
@@ -8268,8 +8295,8 @@ fi
 done
 
 
-# On Linux, can.h and can/raw.h require sys/socket.h
-for ac_header in linux/can.h linux/can/raw.h linux/can/bcm.h
+# On Linux, can.h, can/bcm.h, can/j1939.h, can/raw.h require sys/socket.h
+for ac_header in linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "
@@ -10132,6 +10159,47 @@ $as_echo "default" >&6; }
 fi
 
 
+validate_tzpath() {
+    # Checks that each element of hte path is an absolute path
+    if test -z "$1"; then
+        # Empty string is allowed: it indicates no system TZPATH
+        return 0
+    fi
+
+    # Bad paths are those that don't start with /
+        if ( echo $1 | grep -qE '(^|:)([^/]|$)' ); then
+        as_fn_error $? "--with-tzpath must contain only absolute paths, not $1" "$LINENO" 5
+        return 1;
+    fi
+}
+
+TZPATH="/usr/share/zoneinfo:/usr/lib/zoneinfo:/usr/share/lib/zoneinfo:/etc/zoneinfo"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-tzpath" >&5
+$as_echo_n "checking for --with-tzpath... " >&6; }
+
+# Check whether --with-tzpath was given.
+if test "${with_tzpath+set}" = set; then :
+  withval=$with_tzpath;
+case "$withval" in
+    yes)
+        as_fn_error $? "--with-tzpath requires a value" "$LINENO" 5
+        ;;
+    *)
+        validate_tzpath "$withval"
+        TZPATH="$withval"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$withval\"" >&5
+$as_echo "\"$withval\"" >&6; }
+        ;;
+esac
+
+else
+  validate_tzpath "$TZPATH"
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$TZPATH\"" >&5
+$as_echo "\"$TZPATH\"" >&6; }
+fi
+
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-address-sanitizer" >&5
 $as_echo_n "checking for --with-address-sanitizer... " >&6; }
 
@@ -10477,6 +10545,28 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_system_libmpdec" >&5
 $as_echo "$with_system_libmpdec" >&6; }
+
+# Check whether _decimal should use a coroutine-local or thread-local context
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-decimal-contextvar" >&5
+$as_echo_n "checking for --with-decimal-contextvar... " >&6; }
+
+# Check whether --with-decimal_contextvar was given.
+if test "${with_decimal_contextvar+set}" = set; then :
+  withval=$with_decimal_contextvar;
+else
+  with_decimal_contextvar="yes"
+fi
+
+
+if test "$with_decimal_contextvar" != "no"
+then
+
+$as_echo "#define WITH_DECIMAL_CONTEXTVAR 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_decimal_contextvar" >&5
+$as_echo "$with_decimal_contextvar" >&6; }
 
 # Check for support for loadable sqlite extensions
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-loadable-sqlite-extensions" >&5
@@ -11271,6 +11361,36 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CAN_RAW_JOIN_FILTERS" >&5
+$as_echo_n "checking for CAN_RAW_JOIN_FILTERS... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <linux/can/raw.h>
+int
+main ()
+{
+int can_raw_join_filters = CAN_RAW_JOIN_FILTERS;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+
+$as_echo "#define HAVE_LINUX_CAN_RAW_JOIN_FILTERS 1" >>confdefs.h
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 # Check for --with-doc-strings
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-doc-strings" >&5
 $as_echo_n "checking for --with-doc-strings... " >&6; }
@@ -11451,7 +11571,7 @@ if ${ac_cv_dtrace_link+:} false; then :
 else
               ac_cv_dtrace_link=no
             echo 'BEGIN{}' > conftest.d
-            "$DTRACE" "$DFLAGS" -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
+            "$DTRACE" $DFLAGS -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
                 ac_cv_dtrace_link=yes
 
 fi
@@ -14304,10 +14424,10 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
 
-if grep noonsees conftest.$ac_objext >/dev/null ; then
+if $GREP noonsees conftest.$ac_objext >/dev/null ; then
   ax_cv_c_float_words_bigendian=yes
 fi
-if grep seesnoon conftest.$ac_objext >/dev/null ; then
+if $GREP seesnoon conftest.$ac_objext >/dev/null ; then
   if test "$ax_cv_c_float_words_bigendian" = unknown; then
     ax_cv_c_float_words_bigendian=no
   else
@@ -15214,10 +15334,41 @@ else
 fi
 
 
-if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}"
+# Check for --with-libdir-name
+# /usr/$LIDIRNAME/python$VERSION
+
+PLATLIBDIR="lib"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-platlibdir" >&5
+$as_echo_n "checking for --with-platlibdir... " >&6; }
+
+# Check whether --with-platlibdir was given.
+if test "${with_platlibdir+set}" = set; then :
+  withval=$with_platlibdir;
+# ignore 3 options:
+#   --with-platlibdir
+#   --with-platlibdir=
+#   --without-platlibdir
+if test -n "$withval" -a "$withval" != yes -a "$withval" != no
+then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  PLATLIBDIR="$withval"
 else
-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+
+if test x$PLATFORM_TRIPLET = x; then
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}"
+else
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 
 
@@ -16649,7 +16800,7 @@ do
 done
 
 
-SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
+SRCDIRS="Parser Parser/pegen Objects Python Modules Modules/_io Programs"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for build directories" >&5
 $as_echo_n "checking for build directories... " >&6; }
 for dir in $SRCDIRS; do
@@ -17389,6 +17540,68 @@ $as_echo "python" >&6; }
 $as_echo "#define PY_SSL_DEFAULT_CIPHERS 1" >>confdefs.h
 
 
+fi
+
+
+# builtin hash modules
+default_hashlib_hashes="md5,sha1,sha256,sha512,sha3,blake2"
+
+$as_echo "#define PY_BUILTIN_HASHLIB_HASHES /**/" >>confdefs.h
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-builtin-hashlib-hashes" >&5
+$as_echo_n "checking for --with-builtin-hashlib-hashes... " >&6; }
+
+# Check whether --with-builtin-hashlib-hashes was given.
+if test "${with_builtin_hashlib_hashes+set}" = set; then :
+  withval=$with_builtin_hashlib_hashes;
+case "$withval" in
+    yes)
+        withval=$default_hashlib_hashes
+        ;;
+    no)
+        withval=""
+        ;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+$as_echo "$withval" >&6; }
+cat >>confdefs.h <<_ACEOF
+#define PY_BUILTIN_HASHLIB_HASHES "$withval"
+_ACEOF
+
+
+else
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $default_hashlib_hashes" >&5
+$as_echo "$default_hashlib_hashes" >&6; };
+cat >>confdefs.h <<_ACEOF
+#define PY_BUILTIN_HASHLIB_HASHES "$default_hashlib_hashes"
+_ACEOF
+
+
+fi
+
+
+# --with-experimental-isolated-subinterpreters
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-experimental-isolated-subinterpreters" >&5
+$as_echo_n "checking for --with-experimental-isolated-subinterpreters... " >&6; }
+
+# Check whether --with-experimental-isolated-subinterpreters was given.
+if test "${with_experimental_isolated_subinterpreters+set}" = set; then :
+  withval=$with_experimental_isolated_subinterpreters;
+if test "$withval" != no
+then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; };
+  $as_echo "#define EXPERIMENTAL_ISOLATED_SUBINTERPRETERS 1" >>confdefs.h
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; };
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 

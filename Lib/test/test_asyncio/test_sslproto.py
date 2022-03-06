@@ -2,7 +2,6 @@
 
 import logging
 import socket
-import sys
 from test import support
 import unittest
 import weakref

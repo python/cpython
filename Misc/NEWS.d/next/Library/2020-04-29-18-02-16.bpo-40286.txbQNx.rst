@@ -1,0 +1,3 @@
+Remove ``_random.Random.randbytes()``: the C implementation of
+``randbytes()``. Implement the method in Python to ease subclassing:
+``randbytes()`` now directly reuses ``getrandbits()``.

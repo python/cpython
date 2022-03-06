@@ -75,6 +75,8 @@ extern PyObject* PyInit__opcode(void);
 
 extern PyObject* PyInit__contextvars(void);
 
+extern PyObject* PyInit__peg_parser(void);
+
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
 
@@ -169,6 +171,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_opcode", PyInit__opcode},
 
     {"_contextvars", PyInit__contextvars},
+    {"_peg_parser", PyInit__peg_parser},
 
     /* Sentinel */
     {0, 0}

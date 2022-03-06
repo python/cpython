@@ -547,7 +547,7 @@ PyCursesWindow_New(WINDOW *win, const char *encoding)
             encoding = "utf-8";
     }
 
-    wo = PyObject_NEW(PyCursesWindowObject, &PyCursesWindow_Type);
+    wo = PyObject_New(PyCursesWindowObject, &PyCursesWindow_Type);
     if (wo == NULL) return NULL;
     wo->win = win;
     wo->encoding = _PyMem_Strdup(encoding);
@@ -709,7 +709,7 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
-        char *str = PyBytes_AS_STRING(bytesobj);
+        const char *str = PyBytes_AS_STRING(bytesobj);
         funcname = "addstr";
         if (use_xy)
             rtn = mvwaddstr(self->win,y,x,str);
@@ -792,7 +792,7 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
-        char *str = PyBytes_AS_STRING(bytesobj);
+        const char *str = PyBytes_AS_STRING(bytesobj);
         funcname = "addnstr";
         if (use_xy)
             rtn = mvwaddnstr(self->win,y,x,str,n);
@@ -1710,7 +1710,7 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
-        char *str = PyBytes_AS_STRING(bytesobj);
+        const char *str = PyBytes_AS_STRING(bytesobj);
         funcname = "insstr";
         if (use_xy)
             rtn = mvwinsstr(self->win,y,x,str);
@@ -1795,7 +1795,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
-        char *str = PyBytes_AS_STRING(bytesobj);
+        const char *str = PyBytes_AS_STRING(bytesobj);
         funcname = "insnstr";
         if (use_xy)
             rtn = mvwinsnstr(self->win,y,x,str,n);
@@ -2924,7 +2924,7 @@ _curses_getwin(PyObject *module, PyObject *file)
     if (!PyBytes_Check(data)) {
         PyErr_Format(PyExc_TypeError,
                      "f.read() returned %.100s instead of bytes",
-                     data->ob_type->tp_name);
+                     Py_TYPE(data)->tp_name);
         Py_DECREF(data);
         goto error;
     }
@@ -3255,6 +3255,9 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     Py_RETURN_NONE;
 }
 
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
+// https://invisible-island.net/ncurses/NEWS.html#index-t20080119
+
 /*[clinic input]
 _curses.get_escdelay
 
@@ -3334,6 +3337,7 @@ _curses_set_tabsize_impl(PyObject *module, int size)
 
     return PyCursesCheckERR(set_tabsize(size), "set_tabsize");
 }
+#endif
 
 /*[clinic input]
 _curses.intrflush
@@ -3810,7 +3814,7 @@ update_lines_cols(void)
         return 0;
     }
     /* PyId_LINES.object will be initialized here. */
-    if (PyDict_SetItem(ModDict, PyId_LINES.object, o)) {
+    if (PyDict_SetItem(ModDict, _PyUnicode_FromId(&PyId_LINES), o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
@@ -3826,7 +3830,7 @@ update_lines_cols(void)
         Py_DECREF(o);
         return 0;
     }
-    if (PyDict_SetItem(ModDict, PyId_COLS.object, o)) {
+    if (PyDict_SetItem(ModDict, _PyUnicode_FromId(&PyId_COLS), o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
@@ -4508,8 +4512,10 @@ static PyMethodDef PyCurses_methods[] = {
     _CURSES_RESIZETERM_METHODDEF
     _CURSES_RESIZE_TERM_METHODDEF
     _CURSES_SAVETTY_METHODDEF
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
     _CURSES_GET_ESCDELAY_METHODDEF
     _CURSES_SET_ESCDELAY_METHODDEF
+#endif
     _CURSES_GET_TABSIZE_METHODDEF
     _CURSES_SET_TABSIZE_METHODDEF
     _CURSES_SETSYX_METHODDEF
@@ -4734,7 +4740,8 @@ PyInit__curses(void)
         SetDictInt("KEY_MAX", KEY_MAX);
     }
 
-    Py_INCREF(&PyCursesWindow_Type);
-    PyModule_AddObject(m, "window", (PyObject *)&PyCursesWindow_Type);
+    if (PyModule_AddType(m, &PyCursesWindow_Type) < 0) {
+        return NULL;
+    }
     return m;
 }

@@ -8,8 +8,9 @@ import unittest
 import socket
 import shutil
 import threading
-from test.support import TESTFN, requires, unlink, bigmemtest, find_unused_port
+from test.support import TESTFN, requires, unlink, bigmemtest
 from test.support import SHORT_TIMEOUT
+from test.support import socket_helper
 import io  # C implementation of io
 import _pyio as pyio # Python implementation of io
 
@@ -219,7 +220,7 @@ class TestSocketSendfile(LargeFileTest, unittest.TestCase):
     # bit more tolerance.
     @skip_no_disk_space(TESTFN, size * 2.5)
     def test_it(self):
-        port = find_unused_port()
+        port = socket_helper.find_unused_port()
         with socket.create_server(("", port)) as sock:
             self.tcp_server(sock)
             with socket.create_connection(("127.0.0.1", port)) as client:

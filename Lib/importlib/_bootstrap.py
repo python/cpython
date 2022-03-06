@@ -67,6 +67,7 @@ class _ModuleLock:
         # Deadlock avoidance for concurrent circular imports.
         me = _thread.get_ident()
         tid = self.owner
+        seen = set()
         while True:
             lock = _blocking_on.get(tid)
             if lock is None:
@@ -74,6 +75,14 @@ class _ModuleLock:
             tid = lock.owner
             if tid == me:
                 return True
+            if tid in seen:
+                # bpo 38091: the chain of tid's we encounter here
+                # eventually leads to a fixpoint or a cycle, but
+                # does not reach 'me'.  This means we would not
+                # actually deadlock.  This can happen if other
+                # threads are at the beginning of acquire() below.
+                return False
+            seen.add(tid)
 
     def acquire(self):
         """

@@ -1,0 +1,3 @@
+Fix multissltest tool. OpenSSL has changed download URL for old releases.
+The multissltest tool now tries to download from current and old download
+URLs.

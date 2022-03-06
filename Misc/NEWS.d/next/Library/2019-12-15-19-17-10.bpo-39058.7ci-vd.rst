@@ -1,0 +1,4 @@
+In the argparse module, the repr for Namespace() and other argument holders
+now displayed in the order attributes were added.  Formerly, it displayed in
+alphabetical order even though argument order is preserved the user visible
+parts of the module.

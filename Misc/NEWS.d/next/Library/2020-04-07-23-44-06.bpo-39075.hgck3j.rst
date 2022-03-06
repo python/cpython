@@ -1,0 +1,2 @@
+The repr for :class:`types.SimpleNamespace` is now insertion ordered rather
+than alphabetical.

@@ -1,0 +1,3 @@
+Declare ``_PyErr_GetTopmostException()`` with ``PyAPI_FUNC()`` to properly
+export the function in the C API. The function remains private (``_Py``)
+prefix.

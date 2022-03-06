@@ -70,7 +70,7 @@ class PtyTest(unittest.TestCase):
         self.addCleanup(signal.signal, signal.SIGALRM, old_alarm)
 
         old_sighup = signal.signal(signal.SIGHUP, self.handle_sighup)
-        self.addCleanup(signal.signal, signal.SIGHUP, old_alarm)
+        self.addCleanup(signal.signal, signal.SIGHUP, old_sighup)
 
         # isatty() and close() can hang on some platforms. Set an alarm
         # before running the test to make sure we don't hang forever.
@@ -81,8 +81,8 @@ class PtyTest(unittest.TestCase):
         self.fail("isatty hung")
 
     @staticmethod
-    def handle_sighup(sig, frame):
-        # if the process is the session leader, os.close(master_fd)
+    def handle_sighup(signum, frame):
+        # bpo-38547: if the process is the session leader, os.close(master_fd)
         # of "master_fd, slave_name = pty.master_open()" raises SIGHUP
         # signal: just ignore the signal.
         pass
@@ -200,8 +200,8 @@ class PtyTest(unittest.TestCase):
             ##    raise TestFailed("Unexpected output from child: %r" % line)
 
             (pid, status) = os.waitpid(pid, 0)
-            res = status >> 8
-            debug("Child (%d) exited with status %d (%d)." % (pid, res, status))
+            res = os.waitstatus_to_exitcode(status)
+            debug("Child (%d) exited with code %d (status %d)." % (pid, res, status))
             if res == 1:
                 self.fail("Child raised an unexpected exception in os.setsid()")
             elif res == 2:

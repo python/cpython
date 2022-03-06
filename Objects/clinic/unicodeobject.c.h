@@ -754,6 +754,77 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicode_removeprefix__doc__,
+"removeprefix($self, prefix, /)\n"
+"--\n"
+"\n"
+"Return a str with the given prefix string removed if present.\n"
+"\n"
+"If the string starts with the prefix string, return string[len(prefix):].\n"
+"Otherwise, return a copy of the original string.");
+
+#define UNICODE_REMOVEPREFIX_METHODDEF    \
+    {"removeprefix", (PyCFunction)unicode_removeprefix, METH_O, unicode_removeprefix__doc__},
+
+static PyObject *
+unicode_removeprefix_impl(PyObject *self, PyObject *prefix);
+
+static PyObject *
+unicode_removeprefix(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *prefix;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("removeprefix", "argument", "str", arg);
+        goto exit;
+    }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    prefix = arg;
+    return_value = unicode_removeprefix_impl(self, prefix);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicode_removesuffix__doc__,
+"removesuffix($self, suffix, /)\n"
+"--\n"
+"\n"
+"Return a str with the given suffix string removed if present.\n"
+"\n"
+"If the string ends with the suffix string and that suffix is not empty,\n"
+"return string[:-len(suffix)]. Otherwise, return a copy of the original\n"
+"string.");
+
+#define UNICODE_REMOVESUFFIX_METHODDEF    \
+    {"removesuffix", (PyCFunction)unicode_removesuffix, METH_O, unicode_removesuffix__doc__},
+
+static PyObject *
+unicode_removesuffix_impl(PyObject *self, PyObject *suffix);
+
+static PyObject *
+unicode_removesuffix(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *suffix;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("removesuffix", "argument", "str", arg);
+        goto exit;
+    }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    suffix = arg;
+    return_value = unicode_removesuffix_impl(self, suffix);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicode_rjust__doc__,
 "rjust($self, width, fillchar=\' \', /)\n"
 "--\n"
@@ -1232,4 +1303,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=e4ed33400979c7e8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b91233f3722643be input=a9049054013a1b77]*/

@@ -15,7 +15,6 @@
 
 #include "Python.h"
 #include "pystrhex.h"
-#include "pythread.h"
 
 #include "../hashlib.h"
 #include "blake2ns.h"

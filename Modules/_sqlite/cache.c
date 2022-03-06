@@ -183,7 +183,7 @@ PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* key)
             }
         }
 
-        /* We cannot replace this by _PyObject_CallOneArg() since
+        /* We cannot replace this by PyObject_CallOneArg() since
          * PyObject_CallFunction() has a special case when using a
          * single tuple as argument. */
         data = PyObject_CallFunction(self->factory, "O", key);

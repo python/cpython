@@ -453,7 +453,8 @@ Timeouts
    wrap it in :func:`shield`.
 
    The function will wait until the future is actually cancelled,
-   so the total wait time may exceed the *timeout*.
+   so the total wait time may exceed the *timeout*. If an exception
+   happens during cancellation, it is propagated.
 
    If the wait is cancelled, the future *aw* is also cancelled.
 
@@ -497,6 +498,8 @@ Waiting Primitives
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
    set concurrently and block until the condition specified
    by *return_when*.
+
+   The *aws* set must not be empty.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
@@ -573,7 +576,7 @@ Waiting Primitives
           if task in done:
               # Everything will work as expected now.
 
-   .. deprecated:: 3.8
+   .. deprecated-removed:: 3.8 3.11
 
       Passing coroutine objects to ``wait()`` directly is
       deprecated.
@@ -721,7 +724,7 @@ Task Object
    .. deprecated-removed:: 3.8 3.10
       The *loop* parameter.
 
-   .. method:: cancel()
+   .. method:: cancel(msg=None)
 
       Request the Task to be cancelled.
 
@@ -735,6 +738,9 @@ Task Object
       not guarantee that the Task will be cancelled, although
       suppressing cancellation completely is not common and is actively
       discouraged.
+
+      .. versionchanged:: 3.9
+         Added the ``msg`` parameter.
 
       .. _asyncio_example_task_cancel:
 

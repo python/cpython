@@ -174,6 +174,29 @@ class Test_OSXSupport(unittest.TestCase):
                             _osx_support._remove_universal_flags(
                                     config_vars))
 
+    def test__remove_universal_flags_alternate(self):
+        # bpo-38360: also test the alternate single-argument form of -isysroot
+        config_vars = {
+        'CFLAGS': '-fno-strict-aliasing  -g -O3 -arch ppc -arch i386  ',
+        'LDFLAGS': '-arch ppc -arch i386   -g',
+        'CPPFLAGS': '-I. -isysroot/Developer/SDKs/MacOSX10.4u.sdk',
+        'BLDSHARED': 'gcc-4.0 -bundle  -arch ppc -arch i386 -g',
+        'LDSHARED': 'gcc-4.0 -bundle  -arch ppc -arch i386 '
+                        '-isysroot/Developer/SDKs/MacOSX10.4u.sdk -g',
+        }
+        expected_vars = {
+        'CFLAGS': '-fno-strict-aliasing  -g -O3    ',
+        'LDFLAGS': '    -g',
+        'CPPFLAGS': '-I.  ',
+        'BLDSHARED': 'gcc-4.0 -bundle    -g',
+        'LDSHARED': 'gcc-4.0 -bundle      -g',
+        }
+        self.add_expected_saved_initial_values(config_vars, expected_vars)
+
+        self.assertEqual(expected_vars,
+                            _osx_support._remove_universal_flags(
+                                    config_vars))
+
     def test__remove_unsupported_archs(self):
         config_vars = {
         'CC': 'clang',
@@ -244,6 +267,34 @@ class Test_OSXSupport(unittest.TestCase):
         'BLDSHARED': 'gcc-4.0 -bundle  -arch ppc -arch i386 -g',
         'LDSHARED': 'gcc-4.0 -bundle  -arch ppc -arch i386 '
                         '-isysroot /Developer/SDKs/MacOSX10.1.sdk -g',
+        }
+        expected_vars = {
+        'CC': 'clang',
+        'CFLAGS': '-fno-strict-aliasing  -g -O3 -arch ppc -arch i386  '
+                        ' ',
+        'LDFLAGS': '-arch ppc -arch i386   -g',
+        'CPPFLAGS': '-I.  ',
+        'BLDSHARED': 'gcc-4.0 -bundle  -arch ppc -arch i386 -g',
+        'LDSHARED': 'gcc-4.0 -bundle  -arch ppc -arch i386 '
+                        ' -g',
+        }
+        self.add_expected_saved_initial_values(config_vars, expected_vars)
+
+        self.assertEqual(expected_vars,
+                            _osx_support._check_for_unavailable_sdk(
+                                    config_vars))
+
+    def test__check_for_unavailable_sdk_alternate(self):
+        # bpo-38360: also test the alternate single-argument form of -isysroot
+        config_vars = {
+        'CC': 'clang',
+        'CFLAGS': '-fno-strict-aliasing  -g -O3 -arch ppc -arch i386  '
+                        '-isysroot/Developer/SDKs/MacOSX10.1.sdk',
+        'LDFLAGS': '-arch ppc -arch i386   -g',
+        'CPPFLAGS': '-I. -isysroot/Developer/SDKs/MacOSX10.1.sdk',
+        'BLDSHARED': 'gcc-4.0 -bundle  -arch ppc -arch i386 -g',
+        'LDSHARED': 'gcc-4.0 -bundle  -arch ppc -arch i386 '
+                        '-isysroot/Developer/SDKs/MacOSX10.1.sdk -g',
         }
         expected_vars = {
         'CC': 'clang',

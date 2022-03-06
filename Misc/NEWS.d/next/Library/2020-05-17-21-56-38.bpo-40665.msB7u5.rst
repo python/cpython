@@ -1,0 +1,1 @@
+Convert :mod:`bisect` to use Argument Clinic.

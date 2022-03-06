@@ -500,6 +500,17 @@ class AsyncArguments(IsolatedAsyncioTestCase):
         mock.assert_awaited()
         self.assertTrue(ran)
 
+    async def test_await_args_list_order(self):
+        async_mock = AsyncMock()
+        mock2 = async_mock(2)
+        mock1 = async_mock(1)
+        await mock1
+        await mock2
+        async_mock.assert_has_awaits([call(1), call(2)])
+        self.assertEqual(async_mock.await_args_list, [call(1), call(2)])
+        self.assertEqual(async_mock.call_args_list, [call(2), call(1)])
+
+
 class AsyncMagicMethods(unittest.TestCase):
     def test_async_magic_methods_return_async_mocks(self):
         m_mock = MagicMock()

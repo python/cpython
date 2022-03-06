@@ -19,6 +19,8 @@ in :pep:`557`.
 The member variables to use in these generated methods are defined
 using :pep:`526` type annotations.  For example this code::
 
+  from dataclasses import dataclass
+
   @dataclass
   class InventoryItem:
       '''Class for keeping track of an item in inventory.'''

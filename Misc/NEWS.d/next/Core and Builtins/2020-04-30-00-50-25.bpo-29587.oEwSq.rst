@@ -1,0 +1,1 @@
+Enable implicit exception chaining when calling :meth:`generator.throw`.

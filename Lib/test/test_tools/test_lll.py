@@ -1,7 +1,6 @@
 """Tests for the lll script in the Tools/script directory."""
 
 import os
-import sys
 import tempfile
 from test import support
 from test.test_tools import skip_if_missing, import_tool

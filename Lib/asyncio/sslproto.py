@@ -5,7 +5,6 @@ try:
 except ImportError:  # pragma: no cover
     ssl = None
 
-from . import base_events
 from . import constants
 from . import protocols
 from . import transports

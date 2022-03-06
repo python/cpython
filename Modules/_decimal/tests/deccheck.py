@@ -125,6 +125,12 @@ ContextFunctions = {
     'special': ('context.__reduce_ex__', 'context.create_decimal_from_float')
 }
 
+# Functions that set no context flags but whose result can differ depending
+# on prec, Emin and Emax.
+MaxContextSkip = ['is_normal', 'is_subnormal', 'logical_invert', 'next_minus',
+                  'next_plus', 'number_class', 'logical_and', 'logical_or',
+                  'logical_xor', 'next_toward', 'rotate', 'shift']
+
 # Functions that require a restricted exponent range for reasonable runtimes.
 UnaryRestricted = [
   '__ceil__', '__floor__', '__int__', '__trunc__',
@@ -344,6 +350,20 @@ class TestSet(object):
         self.pex = RestrictedList()      # Python exceptions for P.Decimal
         self.presults = RestrictedList() # P.Decimal results
 
+        # If the above results are exact, unrounded and not clamped, repeat
+        # the operation with a maxcontext to ensure that huge intermediate
+        # values do not cause a MemoryError.
+        self.with_maxcontext = False
+        self.maxcontext = context.c.copy()
+        self.maxcontext.prec = C.MAX_PREC
+        self.maxcontext.Emax = C.MAX_EMAX
+        self.maxcontext.Emin = C.MIN_EMIN
+        self.maxcontext.clear_flags()
+
+        self.maxop = RestrictedList()       # converted C.Decimal operands
+        self.maxex = RestrictedList()       # Python exceptions for C.Decimal
+        self.maxresults = RestrictedList()  # C.Decimal results
+
 
 # ======================================================================
 #                SkipHandler: skip known discrepancies
@@ -545,13 +565,17 @@ def function_as_string(t):
     if t.contextfunc:
         cargs = t.cop
         pargs = t.pop
+        maxargs = t.maxop
         cfunc = "c_func: %s(" % t.funcname
         pfunc = "p_func: %s(" % t.funcname
+        maxfunc = "max_func: %s(" % t.funcname
     else:
         cself, cargs = t.cop[0], t.cop[1:]
         pself, pargs = t.pop[0], t.pop[1:]
+        maxself, maxargs = t.maxop[0], t.maxop[1:]
         cfunc = "c_func: %s.%s(" % (repr(cself), t.funcname)
         pfunc = "p_func: %s.%s(" % (repr(pself), t.funcname)
+        maxfunc = "max_func: %s.%s(" % (repr(maxself), t.funcname)
 
     err = cfunc
     for arg in cargs:
@@ -565,6 +589,14 @@ def function_as_string(t):
     err = err.rstrip(", ")
     err += ")"
 
+    if t.with_maxcontext:
+        err += "\n"
+        err += maxfunc
+        for arg in maxargs:
+            err += "%s, " % repr(arg)
+        err = err.rstrip(", ")
+        err += ")"
+
     return err
 
 def raise_error(t):
@@ -577,9 +609,24 @@ def raise_error(t):
     err = "Error in %s:\n\n" % t.funcname
     err += "input operands: %s\n\n" % (t.op,)
     err += function_as_string(t)
-    err += "\n\nc_result: %s\np_result: %s\n\n" % (t.cresults, t.presults)
-    err += "c_exceptions: %s\np_exceptions: %s\n\n" % (t.cex, t.pex)
-    err += "%s\n\n" % str(t.context)
+
+    err += "\n\nc_result: %s\np_result: %s\n" % (t.cresults, t.presults)
+    if t.with_maxcontext:
+        err += "max_result: %s\n\n" % (t.maxresults)
+    else:
+        err += "\n"
+
+    err += "c_exceptions: %s\np_exceptions: %s\n" % (t.cex, t.pex)
+    if t.with_maxcontext:
+        err += "max_exceptions: %s\n\n" % t.maxex
+    else:
+        err += "\n"
+
+    err += "%s\n" % str(t.context)
+    if t.with_maxcontext:
+        err += "%s\n" % str(t.maxcontext)
+    else:
+        err += "\n"
 
     raise VerifyError(err)
 
@@ -603,6 +650,13 @@ def raise_error(t):
 #                are printed to stdout.
 # ======================================================================
 
+def all_nan(a):
+    if isinstance(a, C.Decimal):
+        return a.is_nan()
+    elif isinstance(a, tuple):
+        return all(all_nan(v) for v in a)
+    return False
+
 def convert(t, convstr=True):
     """ t is the testset. At this stage the testset contains a tuple of
         operands t.op of various types. For decimal methods the first
@@ -617,10 +671,12 @@ def convert(t, convstr=True):
     for i, op in enumerate(t.op):
 
         context.clear_status()
+        t.maxcontext.clear_flags()
 
         if op in RoundModes:
             t.cop.append(op)
             t.pop.append(op)
+            t.maxop.append(op)
 
         elif not t.contextfunc and i == 0 or \
              convstr and isinstance(op, str):
@@ -638,10 +694,24 @@ def convert(t, convstr=True):
                 p = None
                 pex = e.__class__
 
+            try:
+                C.setcontext(t.maxcontext)
+                maxop = C.Decimal(op)
+                maxex = None
+            except (TypeError, ValueError, OverflowError) as e:
+                maxop = None
+                maxex = e.__class__
+            finally:
+                C.setcontext(context.c)
+
             t.cop.append(c)
             t.cex.append(cex)
+
             t.pop.append(p)
             t.pex.append(pex)
+
+            t.maxop.append(maxop)
+            t.maxex.append(maxex)
 
             if cex is pex:
                 if str(c) != str(p) or not context.assert_eq_status():
@@ -652,14 +722,21 @@ def convert(t, convstr=True):
             else:
                 raise_error(t)
 
+            # The exceptions in the maxcontext operation can legitimately
+            # differ, only test that maxex implies cex:
+            if maxex is not None and cex is not maxex:
+                raise_error(t)
+
         elif isinstance(op, Context):
             t.context = op
             t.cop.append(op.c)
             t.pop.append(op.p)
+            t.maxop.append(t.maxcontext)
 
         else:
             t.cop.append(op)
             t.pop.append(op)
+            t.maxop.append(op)
 
     return 1
 
@@ -673,6 +750,7 @@ def callfuncs(t):
         t.rc and t.rp are the results of the operation.
     """
     context.clear_status()
+    t.maxcontext.clear_flags()
 
     try:
         if t.contextfunc:
@@ -700,6 +778,35 @@ def callfuncs(t):
         t.rp = None
         t.pex.append(e.__class__)
 
+    # If the above results are exact, unrounded, normal etc., repeat the
+    # operation with a maxcontext to ensure that huge intermediate values
+    # do not cause a MemoryError.
+    if (t.funcname not in MaxContextSkip and
+        not context.c.flags[C.InvalidOperation] and
+        not context.c.flags[C.Inexact] and
+        not context.c.flags[C.Rounded] and
+        not context.c.flags[C.Subnormal] and
+        not context.c.flags[C.Clamped] and
+        not context.clamp and # results are padded to context.prec if context.clamp==1.
+        not any(isinstance(v, C.Context) for v in t.cop)): # another context is used.
+        t.with_maxcontext = True
+        try:
+            if t.contextfunc:
+                maxargs = t.maxop
+                t.rmax = getattr(t.maxcontext, t.funcname)(*maxargs)
+            else:
+                maxself = t.maxop[0]
+                maxargs = t.maxop[1:]
+                try:
+                    C.setcontext(t.maxcontext)
+                    t.rmax = getattr(maxself, t.funcname)(*maxargs)
+                finally:
+                    C.setcontext(context.c)
+            t.maxex.append(None)
+        except (TypeError, ValueError, OverflowError, MemoryError) as e:
+            t.rmax = None
+            t.maxex.append(e.__class__)
+
 def verify(t, stat):
     """ t is the testset. At this stage the testset contains the following
         tuples:
@@ -714,6 +821,9 @@ def verify(t, stat):
     """
     t.cresults.append(str(t.rc))
     t.presults.append(str(t.rp))
+    if t.with_maxcontext:
+        t.maxresults.append(str(t.rmax))
+
     if isinstance(t.rc, C.Decimal) and isinstance(t.rp, P.Decimal):
         # General case: both results are Decimals.
         t.cresults.append(t.rc.to_eng_string())
@@ -725,6 +835,12 @@ def verify(t, stat):
         t.presults.append(str(t.rp.imag))
         t.presults.append(str(t.rp.real))
 
+        if t.with_maxcontext and isinstance(t.rmax, C.Decimal):
+            t.maxresults.append(t.rmax.to_eng_string())
+            t.maxresults.append(t.rmax.as_tuple())
+            t.maxresults.append(str(t.rmax.imag))
+            t.maxresults.append(str(t.rmax.real))
+
         nc = t.rc.number_class().lstrip('+-s')
         stat[nc] += 1
     else:
@@ -732,6 +848,9 @@ def verify(t, stat):
         if not isinstance(t.rc, tuple) and not isinstance(t.rp, tuple):
             if t.rc != t.rp:
                 raise_error(t)
+            if t.with_maxcontext and not isinstance(t.rmax, tuple):
+                if t.rmax != t.rc:
+                    raise_error(t)
         stat[type(t.rc).__name__] += 1
 
     # The return value lists must be equal.
@@ -743,6 +862,20 @@ def verify(t, stat):
     # The context flags must be equal.
     if not t.context.assert_eq_status():
         raise_error(t)
+
+    if t.with_maxcontext:
+        # NaN payloads etc. depend on precision and clamp.
+        if all_nan(t.rc) and all_nan(t.rmax):
+            return
+        # The return value lists must be equal.
+        if t.maxresults != t.cresults:
+            raise_error(t)
+        # The Python exception lists (TypeError, etc.) must be equal.
+        if t.maxex != t.cex:
+            raise_error(t)
+        # The context flags must be equal.
+        if t.maxcontext.flags != t.context.c.flags:
+            raise_error(t)
 
 
 # ======================================================================

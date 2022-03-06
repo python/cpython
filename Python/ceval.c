@@ -10,13 +10,17 @@
 #define PY_LOCAL_AGGRESSIVE
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_code.h"
+#include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"
+#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_sysmodule.h"
 #include "pycore_tupleobject.h"
 
 #include "code.h"
@@ -25,7 +29,6 @@
 #include "opcode.h"
 #include "pydtrace.h"
 #include "setobject.h"
-#include "structmember.h"
 
 #include <ctype.h>
 
@@ -119,131 +122,222 @@ static size_t opcache_global_hits = 0;
 static size_t opcache_global_misses = 0;
 #endif
 
-#define GIL_REQUEST _Py_atomic_load_relaxed(&ceval->gil_drop_request)
+
+#ifndef NDEBUG
+/* Ensure that tstate is valid: sanity check for PyEval_AcquireThread() and
+   PyEval_RestoreThread(). Detect if tstate memory was freed. It can happen
+   when a thread continues to run after Python finalization, especially
+   daemon threads. */
+static int
+is_tstate_valid(PyThreadState *tstate)
+{
+    assert(!_PyMem_IsPtrFreed(tstate));
+    assert(!_PyMem_IsPtrFreed(tstate->interp));
+    return 1;
+}
+#endif
+
 
 /* This can set eval_breaker to 0 even though gil_drop_request became
    1.  We believe this is all right because the eval loop will release
    the GIL eventually anyway. */
-#define COMPUTE_EVAL_BREAKER(ceval) \
-    _Py_atomic_store_relaxed( \
-        &(ceval)->eval_breaker, \
-        GIL_REQUEST | \
-        _Py_atomic_load_relaxed(&(ceval)->signals_pending) | \
-        _Py_atomic_load_relaxed(&(ceval)->pending.calls_to_do) | \
-        (ceval)->pending.async_exc)
+static inline void
+COMPUTE_EVAL_BREAKER(PyInterpreterState *interp,
+                     struct _ceval_runtime_state *ceval,
+                     struct _ceval_state *ceval2)
+{
+    _Py_atomic_store_relaxed(&ceval2->eval_breaker,
+        _Py_atomic_load_relaxed(&ceval2->gil_drop_request)
+        | (_Py_atomic_load_relaxed(&ceval->signals_pending)
+           && _Py_ThreadCanHandleSignals(interp))
+        | (_Py_atomic_load_relaxed(&ceval2->pending.calls_to_do)
+           && _Py_ThreadCanHandlePendingCalls())
+        | ceval2->pending.async_exc);
+}
 
-#define SET_GIL_DROP_REQUEST(ceval) \
-    do { \
-        _Py_atomic_store_relaxed(&(ceval)->gil_drop_request, 1); \
-        _Py_atomic_store_relaxed(&(ceval)->eval_breaker, 1); \
-    } while (0)
 
-#define RESET_GIL_DROP_REQUEST(ceval) \
-    do { \
-        _Py_atomic_store_relaxed(&(ceval)->gil_drop_request, 0); \
-        COMPUTE_EVAL_BREAKER(ceval); \
-    } while (0)
+static inline void
+SET_GIL_DROP_REQUEST(PyInterpreterState *interp)
+{
+    struct _ceval_state *ceval2 = &interp->ceval;
+    _Py_atomic_store_relaxed(&ceval2->gil_drop_request, 1);
+    _Py_atomic_store_relaxed(&ceval2->eval_breaker, 1);
+}
 
-/* Pending calls are only modified under pending_lock */
-#define SIGNAL_PENDING_CALLS(ceval) \
-    do { \
-        _Py_atomic_store_relaxed(&(ceval)->pending.calls_to_do, 1); \
-        _Py_atomic_store_relaxed(&(ceval)->eval_breaker, 1); \
-    } while (0)
 
-#define UNSIGNAL_PENDING_CALLS(ceval) \
-    do { \
-        _Py_atomic_store_relaxed(&(ceval)->pending.calls_to_do, 0); \
-        COMPUTE_EVAL_BREAKER(ceval); \
-    } while (0)
+static inline void
+RESET_GIL_DROP_REQUEST(PyInterpreterState *interp)
+{
+    struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
+    struct _ceval_state *ceval2 = &interp->ceval;
+    _Py_atomic_store_relaxed(&ceval2->gil_drop_request, 0);
+    COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
+}
 
-#define SIGNAL_PENDING_SIGNALS(ceval) \
-    do { \
-        _Py_atomic_store_relaxed(&(ceval)->signals_pending, 1); \
-        _Py_atomic_store_relaxed(&(ceval)->eval_breaker, 1); \
-    } while (0)
 
-#define UNSIGNAL_PENDING_SIGNALS(ceval) \
-    do { \
-        _Py_atomic_store_relaxed(&(ceval)->signals_pending, 0); \
-        COMPUTE_EVAL_BREAKER(ceval); \
-    } while (0)
+static inline void
+SIGNAL_PENDING_CALLS(PyInterpreterState *interp)
+{
+    struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
+    struct _ceval_state *ceval2 = &interp->ceval;
+    _Py_atomic_store_relaxed(&ceval2->pending.calls_to_do, 1);
+    COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
+}
 
-#define SIGNAL_ASYNC_EXC(ceval) \
-    do { \
-        (ceval)->pending.async_exc = 1; \
-        _Py_atomic_store_relaxed(&(ceval)->eval_breaker, 1); \
-    } while (0)
 
-#define UNSIGNAL_ASYNC_EXC(ceval) \
-    do { \
-        (ceval)->pending.async_exc = 0; \
-        COMPUTE_EVAL_BREAKER(ceval); \
-    } while (0)
+static inline void
+UNSIGNAL_PENDING_CALLS(PyInterpreterState *interp)
+{
+    struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
+    struct _ceval_state *ceval2 = &interp->ceval;
+    _Py_atomic_store_relaxed(&ceval2->pending.calls_to_do, 0);
+    COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
+}
+
+
+static inline void
+SIGNAL_PENDING_SIGNALS(PyInterpreterState *interp)
+{
+    struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
+    struct _ceval_state *ceval2 = &interp->ceval;
+    _Py_atomic_store_relaxed(&ceval->signals_pending, 1);
+    /* eval_breaker is not set to 1 if thread_can_handle_signals() is false */
+    COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
+}
+
+
+static inline void
+UNSIGNAL_PENDING_SIGNALS(PyInterpreterState *interp)
+{
+    struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
+    struct _ceval_state *ceval2 = &interp->ceval;
+    _Py_atomic_store_relaxed(&ceval->signals_pending, 0);
+    COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
+}
+
+
+static inline void
+SIGNAL_ASYNC_EXC(PyInterpreterState *interp)
+{
+    struct _ceval_state *ceval2 = &interp->ceval;
+    ceval2->pending.async_exc = 1;
+    _Py_atomic_store_relaxed(&ceval2->eval_breaker, 1);
+}
+
+
+static inline void
+UNSIGNAL_ASYNC_EXC(PyInterpreterState *interp)
+{
+    struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
+    struct _ceval_state *ceval2 = &interp->ceval;
+    ceval2->pending.async_exc = 0;
+    COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
+}
 
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
-#include "pythread.h"
 #include "ceval_gil.h"
+
+static void
+ensure_tstate_not_null(const char *func, PyThreadState *tstate)
+{
+    if (tstate == NULL) {
+        _Py_FatalErrorFunc(func,
+                           "current thread state is NULL (released GIL?)");
+    }
+}
+
+
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+int
+_PyEval_ThreadsInitialized(PyInterpreterState *interp)
+{
+    return gil_created(&interp->ceval.gil);
+}
+
+int
+PyEval_ThreadsInitialized(void)
+{
+    // Fatal error if there is no current interpreter
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    return _PyEval_ThreadsInitialized(interp);
+}
+#else
+int
+_PyEval_ThreadsInitialized(_PyRuntimeState *runtime)
+{
+    return gil_created(&runtime->ceval.gil);
+}
 
 int
 PyEval_ThreadsInitialized(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    return gil_created(&runtime->ceval.gil);
+    return _PyEval_ThreadsInitialized(runtime);
 }
+#endif
 
-void
-PyEval_InitThreads(void)
+PyStatus
+_PyEval_InitGIL(PyThreadState *tstate)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    struct _ceval_runtime_state *ceval = &runtime->ceval;
-    struct _gil_runtime_state *gil = &ceval->gil;
-    if (gil_created(gil)) {
-        return;
+#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    if (!_Py_IsMainInterpreter(tstate)) {
+        /* Currently, the GIL is shared by all interpreters,
+           and only the main interpreter is responsible to create
+           and destroy it. */
+        return _PyStatus_OK();
     }
+#endif
+
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    struct _gil_runtime_state *gil = &tstate->interp->ceval.gil;
+#else
+    struct _gil_runtime_state *gil = &tstate->interp->runtime->ceval.gil;
+#endif
+    assert(!gil_created(gil));
 
     PyThread_init_thread();
     create_gil(gil);
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    take_gil(ceval, tstate);
 
-    struct _pending_calls *pending = &ceval->pending;
-    pending->lock = PyThread_allocate_lock();
-    if (pending->lock == NULL) {
-        Py_FatalError("Can't initialize threads for pending calls");
-    }
+    take_gil(tstate);
+
+    assert(gil_created(gil));
+    return _PyStatus_OK();
 }
 
 void
-_PyEval_FiniThreads(struct _ceval_runtime_state *ceval)
+_PyEval_FiniGIL(PyThreadState *tstate)
 {
-    struct _gil_runtime_state *gil = &ceval->gil;
+#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    if (!_Py_IsMainInterpreter(tstate)) {
+        /* Currently, the GIL is shared by all interpreters,
+           and only the main interpreter is responsible to create
+           and destroy it. */
+        return;
+    }
+#endif
+
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    struct _gil_runtime_state *gil = &tstate->interp->ceval.gil;
+#else
+    struct _gil_runtime_state *gil = &tstate->interp->runtime->ceval.gil;
+#endif
     if (!gil_created(gil)) {
+        /* First Py_InitializeFromConfig() call: the GIL doesn't exist
+           yet: do nothing. */
         return;
     }
 
     destroy_gil(gil);
     assert(!gil_created(gil));
-
-    struct _pending_calls *pending = &ceval->pending;
-    if (pending->lock != NULL) {
-        PyThread_free_lock(pending->lock);
-        pending->lock = NULL;
-    }
 }
 
-static inline void
-exit_thread_if_finalizing(PyThreadState *tstate)
+void
+PyEval_InitThreads(void)
 {
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    /* _Py_Finalizing is protected by the GIL */
-    if (runtime->finalizing != NULL && !_Py_CURRENTLY_FINALIZING(runtime, tstate)) {
-        drop_gil(&runtime->ceval, tstate);
-        PyThread_exit_thread();
-    }
+    /* Do nothing: kept for backward compatibility */
 }
 
 void
@@ -279,13 +373,10 @@ void
 PyEval_AcquireLock(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    struct _ceval_runtime_state *ceval = &runtime->ceval;
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    if (tstate == NULL) {
-        Py_FatalError("PyEval_AcquireLock: current thread state is NULL");
-    }
-    take_gil(ceval, tstate);
-    exit_thread_if_finalizing(tstate);
+    ensure_tstate_not_null(__func__, tstate);
+
+    take_gil(tstate);
 }
 
 void
@@ -295,41 +386,53 @@ PyEval_ReleaseLock(void)
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     /* This function must succeed when the current thread state is NULL.
        We therefore avoid PyThreadState_Get() which dumps a fatal error
-       in debug mode.
-    */
-    drop_gil(&runtime->ceval, tstate);
+       in debug mode. */
+    struct _ceval_runtime_state *ceval = &runtime->ceval;
+    struct _ceval_state *ceval2 = &tstate->interp->ceval;
+    drop_gil(ceval, ceval2, tstate);
+}
+
+void
+_PyEval_ReleaseLock(PyThreadState *tstate)
+{
+    struct _ceval_runtime_state *ceval = &tstate->interp->runtime->ceval;
+    struct _ceval_state *ceval2 = &tstate->interp->ceval;
+    drop_gil(ceval, ceval2, tstate);
 }
 
 void
 PyEval_AcquireThread(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    ensure_tstate_not_null(__func__, tstate);
 
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    struct _ceval_runtime_state *ceval = &runtime->ceval;
+    take_gil(tstate);
 
-    /* Check someone has called PyEval_InitThreads() to create the lock */
-    assert(gil_created(&ceval->gil));
-    take_gil(ceval, tstate);
-    exit_thread_if_finalizing(tstate);
-    if (_PyThreadState_Swap(&runtime->gilstate, tstate) != NULL) {
-        Py_FatalError("PyEval_AcquireThread: non-NULL old thread state");
+    struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    (void)_PyThreadState_Swap(gilstate, tstate);
+#else
+    if (_PyThreadState_Swap(gilstate, tstate) != NULL) {
+        Py_FatalError("non-NULL old thread state");
     }
+#endif
 }
 
 void
 PyEval_ReleaseThread(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    assert(is_tstate_valid(tstate));
 
     _PyRuntimeState *runtime = tstate->interp->runtime;
     PyThreadState *new_tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
     if (new_tstate != tstate) {
-        Py_FatalError("PyEval_ReleaseThread: wrong thread state");
+        Py_FatalError("wrong thread state");
     }
-    drop_gil(&runtime->ceval, tstate);
+    struct _ceval_runtime_state *ceval = &runtime->ceval;
+    struct _ceval_state *ceval2 = &tstate->interp->ceval;
+    drop_gil(ceval, ceval2, tstate);
 }
 
+#ifdef HAVE_FORK
 /* This function is called from PyOS_AfterFork_Child to destroy all threads
  * which are not running in the child process, and clear internal locks
  * which might be held by those threads.
@@ -338,62 +441,73 @@ PyEval_ReleaseThread(PyThreadState *tstate)
 void
 _PyEval_ReInitThreads(_PyRuntimeState *runtime)
 {
-    struct _ceval_runtime_state *ceval = &runtime->ceval;
-    if (!gil_created(&ceval->gil)) {
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    ensure_tstate_not_null(__func__, tstate);
+
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    struct _gil_runtime_state *gil = &tstate->interp->ceval.gil;
+#else
+    struct _gil_runtime_state *gil = &runtime->ceval.gil;
+#endif
+    if (!gil_created(gil)) {
         return;
     }
-    recreate_gil(&ceval->gil);
-    PyThreadState *current_tstate = _PyRuntimeState_GetThreadState(runtime);
-    take_gil(ceval, current_tstate);
+    recreate_gil(gil);
 
-    struct _pending_calls *pending = &ceval->pending;
-    pending->lock = PyThread_allocate_lock();
-    if (pending->lock == NULL) {
+    take_gil(tstate);
+
+    struct _pending_calls *pending = &tstate->interp->ceval.pending;
+    if (_PyThread_at_fork_reinit(&pending->lock) < 0) {
         Py_FatalError("Can't initialize threads for pending calls");
     }
 
     /* Destroy all threads except the current one */
-    _PyThreadState_DeleteExcept(runtime, current_tstate);
+    _PyThreadState_DeleteExcept(runtime, tstate);
 }
+#endif
 
 /* This function is used to signal that async exceptions are waiting to be
    raised. */
 
 void
-_PyEval_SignalAsyncExc(struct _ceval_runtime_state *ceval)
+_PyEval_SignalAsyncExc(PyThreadState *tstate)
 {
-    SIGNAL_ASYNC_EXC(ceval);
+    assert(is_tstate_valid(tstate));
+    SIGNAL_ASYNC_EXC(tstate->interp);
 }
 
 PyThreadState *
 PyEval_SaveThread(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    struct _ceval_runtime_state *ceval = &runtime->ceval;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    PyThreadState *old_tstate = _PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_Swap(&runtime->gilstate, old_tstate);
+#else
     PyThreadState *tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
-    if (tstate == NULL) {
-        Py_FatalError("PyEval_SaveThread: NULL tstate");
-    }
+#endif
+    ensure_tstate_not_null(__func__, tstate);
+
+    struct _ceval_runtime_state *ceval = &runtime->ceval;
+    struct _ceval_state *ceval2 = &tstate->interp->ceval;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    assert(gil_created(&ceval2->gil));
+#else
     assert(gil_created(&ceval->gil));
-    drop_gil(ceval, tstate);
+#endif
+    drop_gil(ceval, ceval2, tstate);
     return tstate;
 }
 
 void
 PyEval_RestoreThread(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    ensure_tstate_not_null(__func__, tstate);
 
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    struct _ceval_runtime_state *ceval = &runtime->ceval;
-    assert(gil_created(&ceval->gil));
+    take_gil(tstate);
 
-    int err = errno;
-    take_gil(ceval, tstate);
-    exit_thread_if_finalizing(tstate);
-    errno = err;
-
-    _PyThreadState_Swap(&runtime->gilstate, tstate);
+    struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
+    _PyThreadState_Swap(gilstate, tstate);
 }
 
 
@@ -420,12 +534,12 @@ PyEval_RestoreThread(PyThreadState *tstate)
 */
 
 void
-_PyEval_SignalReceived(struct _ceval_runtime_state *ceval)
+_PyEval_SignalReceived(PyInterpreterState *interp)
 {
     /* bpo-30703: Function called when the C signal handler of Python gets a
-       signal. We cannot queue a callback using Py_AddPendingCall() since
+       signal. We cannot queue a callback using _PyEval_AddPendingCall() since
        that function is not async-signal-safe. */
-    SIGNAL_PENDING_SIGNALS(ceval);
+    SIGNAL_PENDING_SIGNALS(interp);
 }
 
 /* Push one item onto the queue while holding the lock. */
@@ -465,91 +579,96 @@ _pop_pending_call(struct _pending_calls *pending,
  */
 
 int
-_PyEval_AddPendingCall(PyThreadState *tstate,
-                       struct _ceval_runtime_state *ceval,
+_PyEval_AddPendingCall(PyInterpreterState *interp,
                        int (*func)(void *), void *arg)
 {
-    struct _pending_calls *pending = &ceval->pending;
+    struct _pending_calls *pending = &interp->ceval.pending;
+
+    /* Ensure that _PyEval_InitPendingCalls() was called
+       and that _PyEval_FiniPendingCalls() is not called yet. */
+    assert(pending->lock != NULL);
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);
-    if (pending->finishing) {
-        PyThread_release_lock(pending->lock);
-
-        PyObject *exc, *val, *tb;
-        _PyErr_Fetch(tstate, &exc, &val, &tb);
-        _PyErr_SetString(tstate, PyExc_SystemError,
-                        "Py_AddPendingCall: cannot add pending calls "
-                        "(Python shutting down)");
-        _PyErr_Print(tstate);
-        _PyErr_Restore(tstate, exc, val, tb);
-        return -1;
-    }
     int result = _push_pending_call(pending, func, arg);
     PyThread_release_lock(pending->lock);
 
     /* signal main loop */
-    SIGNAL_PENDING_CALLS(ceval);
+    SIGNAL_PENDING_CALLS(interp);
     return result;
 }
 
 int
 Py_AddPendingCall(int (*func)(void *), void *arg)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    return _PyEval_AddPendingCall(tstate, &runtime->ceval, func, arg);
+    /* Best-effort to support subinterpreters and calls with the GIL released.
+
+       First attempt _PyThreadState_GET() since it supports subinterpreters.
+
+       If the GIL is released, _PyThreadState_GET() returns NULL . In this
+       case, use PyGILState_GetThisThreadState() which works even if the GIL
+       is released.
+
+       Sadly, PyGILState_GetThisThreadState() doesn't support subinterpreters:
+       see bpo-10915 and bpo-15751.
+
+       Py_AddPendingCall() doesn't require the caller to hold the GIL. */
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate == NULL) {
+        tstate = PyGILState_GetThisThreadState();
+    }
+
+    PyInterpreterState *interp;
+    if (tstate != NULL) {
+        interp = tstate->interp;
+    }
+    else {
+        /* Last resort: use the main interpreter */
+        interp = _PyRuntime.interpreters.main;
+    }
+    return _PyEval_AddPendingCall(interp, func, arg);
 }
 
 static int
-handle_signals(_PyRuntimeState *runtime)
+handle_signals(PyThreadState *tstate)
 {
-    /* Only handle signals on main thread.  PyEval_InitThreads must
-     * have been called already.
-     */
-    if (PyThread_get_thread_ident() != runtime->main_thread) {
-        return 0;
-    }
-    /*
-     * Ensure that the thread isn't currently running some other
-     * interpreter.
-     */
-    PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
-    if (interp != runtime->interpreters.main) {
+    assert(is_tstate_valid(tstate));
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
 
-    struct _ceval_runtime_state *ceval = &runtime->ceval;
-    UNSIGNAL_PENDING_SIGNALS(ceval);
-    if (_PyErr_CheckSignals() < 0) {
-        SIGNAL_PENDING_SIGNALS(ceval); /* We're not done yet */
+    UNSIGNAL_PENDING_SIGNALS(tstate->interp);
+    if (_PyErr_CheckSignalsTstate(tstate) < 0) {
+        /* On failure, re-schedule a call to handle_signals(). */
+        SIGNAL_PENDING_SIGNALS(tstate->interp);
         return -1;
     }
     return 0;
 }
 
 static int
-make_pending_calls(_PyRuntimeState *runtime)
+make_pending_calls(PyThreadState *tstate)
 {
-    static int busy = 0;
+    assert(is_tstate_valid(tstate));
 
-    /* only service pending calls on main thread */
-    if (PyThread_get_thread_ident() != runtime->main_thread) {
+    /* only execute pending calls on main thread */
+    if (!_Py_ThreadCanHandlePendingCalls()) {
         return 0;
     }
 
     /* don't perform recursive pending calls */
+    static int busy = 0;
     if (busy) {
         return 0;
     }
     busy = 1;
-    struct _ceval_runtime_state *ceval = &runtime->ceval;
+
     /* unsignal before starting to call callbacks, so that any callback
        added in-between re-signals */
-    UNSIGNAL_PENDING_CALLS(ceval);
+    UNSIGNAL_PENDING_CALLS(tstate->interp);
     int res = 0;
 
     /* perform a bounded number of calls, in case of recursion */
-    struct _pending_calls *pending = &ceval->pending;
+    struct _pending_calls *pending = &tstate->interp->ceval.pending;
     for (int i=0; i<NPENDINGCALLS; i++) {
         int (*func)(void *) = NULL;
         void *arg = NULL;
@@ -574,7 +693,7 @@ make_pending_calls(_PyRuntimeState *runtime)
 
 error:
     busy = 0;
-    SIGNAL_PENDING_CALLS(ceval);
+    SIGNAL_PENDING_CALLS(tstate->interp);
     return res;
 }
 
@@ -583,18 +702,13 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
 {
     assert(PyGILState_Check());
 
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    struct _pending_calls *pending = &runtime->ceval.pending;
-
-    PyThread_acquire_lock(pending->lock, WAIT_LOCK);
-    pending->finishing = 1;
-    PyThread_release_lock(pending->lock);
+    struct _pending_calls *pending = &tstate->interp->ceval.pending;
 
     if (!_Py_atomic_load_relaxed(&(pending->calls_to_do))) {
         return;
     }
 
-    if (make_pending_calls(runtime) < 0) {
+    if (make_pending_calls(tstate) < 0) {
         PyObject *exc, *val, *tb;
         _PyErr_Fetch(tstate, &exc, &val, &tb);
         PyErr_BadInternalCall();
@@ -610,15 +724,16 @@ Py_MakePendingCalls(void)
 {
     assert(PyGILState_Check());
 
+    PyThreadState *tstate = _PyThreadState_GET();
+
     /* Python signal handler doesn't really queue a callback: it only signals
        that a signal was received, see _PyEval_SignalReceived(). */
-    _PyRuntimeState *runtime = &_PyRuntime;
-    int res = handle_signals(runtime);
+    int res = handle_signals(tstate);
     if (res != 0) {
         return res;
     }
 
-    res = make_pending_calls(runtime);
+    res = make_pending_calls(tstate);
     if (res != 0) {
         return res;
     }
@@ -635,26 +750,59 @@ Py_MakePendingCalls(void)
 int _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
 
 void
-_PyEval_Initialize(struct _ceval_runtime_state *state)
+_PyEval_InitRuntimeState(struct _ceval_runtime_state *ceval)
 {
-    state->recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
     _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
-    _gil_initialize(&state->gil);
+#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    _gil_initialize(&ceval->gil);
+#endif
+}
+
+int
+_PyEval_InitState(struct _ceval_state *ceval)
+{
+    ceval->recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
+
+    struct _pending_calls *pending = &ceval->pending;
+    assert(pending->lock == NULL);
+
+    pending->lock = PyThread_allocate_lock();
+    if (pending->lock == NULL) {
+        return -1;
+    }
+
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    _gil_initialize(&ceval->gil);
+#endif
+
+    return 0;
+}
+
+void
+_PyEval_FiniState(struct _ceval_state *ceval)
+{
+    struct _pending_calls *pending = &ceval->pending;
+    if (pending->lock != NULL) {
+        PyThread_free_lock(pending->lock);
+        pending->lock = NULL;
+    }
 }
 
 int
 Py_GetRecursionLimit(void)
 {
-    struct _ceval_runtime_state *ceval = &_PyRuntime.ceval;
-    return ceval->recursion_limit;
+    PyThreadState *tstate = _PyThreadState_GET();
+    return tstate->interp->ceval.recursion_limit;
 }
 
 void
 Py_SetRecursionLimit(int new_limit)
 {
-    struct _ceval_runtime_state *ceval = &_PyRuntime.ceval;
-    ceval->recursion_limit = new_limit;
-    _Py_CheckRecursionLimit = ceval->recursion_limit;
+    PyThreadState *tstate = _PyThreadState_GET();
+    tstate->interp->ceval.recursion_limit = new_limit;
+    if (_Py_IsMainInterpreter(tstate)) {
+        _Py_CheckRecursionLimit = new_limit;
+    }
 }
 
 /* The function _Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
@@ -665,8 +813,7 @@ Py_SetRecursionLimit(int new_limit)
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    int recursion_limit = runtime->ceval.recursion_limit;
+    int recursion_limit = tstate->interp->ceval.recursion_limit;
 
 #ifdef USE_STACKCHECK
     tstate->stackcheck_counter = 0;
@@ -675,8 +822,10 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
         _PyErr_SetString(tstate, PyExc_MemoryError, "Stack overflow");
         return -1;
     }
-    /* Needed for ABI backwards-compatibility (see bpo-31857) */
-    _Py_CheckRecursionLimit = recursion_limit;
+    if (_Py_IsMainInterpreter(tstate)) {
+        /* Needed for ABI backwards-compatibility (see bpo-31857) */
+        _Py_CheckRecursionLimit = recursion_limit;
+    }
 #endif
     if (tstate->recursion_critical)
         /* Somebody asked that we don't check for recursion. */
@@ -722,9 +871,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 PyObject *
 PyEval_EvalFrame(PyFrameObject *f)
 {
-    /* This is for backward compatibility with extension modules that
-       used this API; core interpreter code should call
-       PyEval_EvalFrameEx() */
+    /* Function kept for backward compatibility */
     PyThreadState *tstate = _PyThreadState_GET();
     return _PyEval_EvalFrame(tstate, f, 0);
 }
@@ -736,9 +883,69 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     return _PyEval_EvalFrame(tstate, f, throwflag);
 }
 
-PyObject* _Py_HOT_FUNCTION
-_PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
+
+/* Handle signals, pending calls, GIL drop request
+   and asynchronous exception */
+static int
+eval_frame_handle_pending(PyThreadState *tstate)
 {
+    _PyRuntimeState * const runtime = &_PyRuntime;
+    struct _ceval_runtime_state *ceval = &runtime->ceval;
+
+    /* Pending signals */
+    if (_Py_atomic_load_relaxed(&ceval->signals_pending)) {
+        if (handle_signals(tstate) != 0) {
+            return -1;
+        }
+    }
+
+    /* Pending calls */
+    struct _ceval_state *ceval2 = &tstate->interp->ceval;
+    if (_Py_atomic_load_relaxed(&ceval2->pending.calls_to_do)) {
+        if (make_pending_calls(tstate) != 0) {
+            return -1;
+        }
+    }
+
+    /* GIL drop request */
+    if (_Py_atomic_load_relaxed(&ceval2->gil_drop_request)) {
+        /* Give another thread a chance */
+        if (_PyThreadState_Swap(&runtime->gilstate, NULL) != tstate) {
+            Py_FatalError("tstate mix-up");
+        }
+        drop_gil(ceval, ceval2, tstate);
+
+        /* Other threads may run now */
+
+        take_gil(tstate);
+
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+        (void)_PyThreadState_Swap(&runtime->gilstate, tstate);
+#else
+        if (_PyThreadState_Swap(&runtime->gilstate, tstate) != NULL) {
+            Py_FatalError("orphan tstate");
+        }
+#endif
+    }
+
+    /* Check for asynchronous exception. */
+    if (tstate->async_exc != NULL) {
+        PyObject *exc = tstate->async_exc;
+        tstate->async_exc = NULL;
+        UNSIGNAL_ASYNC_EXC(tstate->interp);
+        _PyErr_SetNone(tstate, exc);
+        Py_DECREF(exc);
+        return -1;
+    }
+
+    return 0;
+}
+
+PyObject* _Py_HOT_FUNCTION
+_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
+{
+    ensure_tstate_not_null(__func__, tstate);
+
 #ifdef DXPAIRS
     int lastopcode = 0;
 #endif
@@ -748,10 +955,8 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     int oparg;         /* Current opcode argument, if any */
     PyObject **fastlocals, **freevars;
     PyObject *retval = NULL;            /* Return value */
-    _PyRuntimeState * const runtime = &_PyRuntime;
-    PyThreadState * const tstate = _PyRuntimeState_GetThreadState(runtime);
-    struct _ceval_runtime_state * const ceval = &runtime->ceval;
-    _Py_atomic_int * const eval_breaker = &ceval->eval_breaker;
+    struct _ceval_state * const ceval2 = &tstate->interp->ceval;
+    _Py_atomic_int * const eval_breaker = &ceval2->eval_breaker;
     PyCodeObject *co;
 
     /* when tracing we set things up so that
@@ -839,7 +1044,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 #ifdef LLTRACE
 #define FAST_DISPATCH() \
     { \
-        if (!lltrace && !_Py_TracingPossible(ceval) && !PyDTrace_LINE_ENABLED()) { \
+        if (!lltrace && !_Py_TracingPossible(ceval2) && !PyDTrace_LINE_ENABLED()) { \
             f->f_lasti = INSTR_OFFSET(); \
             NEXTOPARG(); \
             goto *opcode_targets[opcode]; \
@@ -849,7 +1054,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 #else
 #define FAST_DISPATCH() \
     { \
-        if (!_Py_TracingPossible(ceval) && !PyDTrace_LINE_ENABLED()) { \
+        if (!_Py_TracingPossible(ceval2) && !PyDTrace_LINE_ENABLED()) { \
             f->f_lasti = INSTR_OFFSET(); \
             NEXTOPARG(); \
             goto *opcode_targets[opcode]; \
@@ -921,21 +1126,23 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
 */
 
+#define PREDICT_ID(op)          PRED_##op
+
 #if defined(DYNAMIC_EXECUTION_PROFILE) || USE_COMPUTED_GOTOS
-#define PREDICT(op)             if (0) goto PRED_##op
+#define PREDICT(op)             if (0) goto PREDICT_ID(op)
 #else
 #define PREDICT(op) \
-    do{ \
+    do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = _Py_OPCODE(word); \
-        if (opcode == op){ \
+        if (opcode == op) { \
             oparg = _Py_OPARG(word); \
             next_instr++; \
-            goto PRED_##op; \
+            goto PREDICT_ID(op); \
         } \
     } while(0)
 #endif
-#define PREDICTED(op)           PRED_##op:
+#define PREDICTED(op)           PREDICT_ID(op):
 
 
 /* Stack manipulation macros */
@@ -1155,7 +1362,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         co->co_opcache_flag++;
         if (co->co_opcache_flag == OPCACHE_MIN_RUNS) {
             if (_PyCode_InitOpcache(co) < 0) {
-                return NULL;
+                goto exit_eval_frame;
             }
 #if OPCACHE_STATS
             opcache_code_objects_extra_mem +=
@@ -1174,7 +1381,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         goto error;
 
 #ifdef Py_DEBUG
-    /* PyEval_EvalFrameEx() must not be called with an exception set,
+    /* _PyEval_EvalFrameDefault() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!_PyErr_Occurred(tstate));
@@ -1189,7 +1396,7 @@ main_loop:
         /* Do periodic things.  Doing this every time through
            the loop would add too much overhead, so we do it
            only every Nth instruction.  We also do it if
-           ``pendingcalls_to_do'' is set, i.e. when an asynchronous
+           ``pending.calls_to_do'' is set, i.e. when an asynchronous
            event needs attention (e.g. a signal handler or
            async I/O handler); see Py_AddPendingCall() and
            Py_MakePendingCalls() above. */
@@ -1219,42 +1426,7 @@ main_loop:
                 goto fast_next_opcode;
             }
 
-            if (_Py_atomic_load_relaxed(&ceval->signals_pending)) {
-                if (handle_signals(runtime) != 0) {
-                    goto error;
-                }
-            }
-            if (_Py_atomic_load_relaxed(&ceval->pending.calls_to_do)) {
-                if (make_pending_calls(runtime) != 0) {
-                    goto error;
-                }
-            }
-
-            if (_Py_atomic_load_relaxed(&ceval->gil_drop_request)) {
-                /* Give another thread a chance */
-                if (_PyThreadState_Swap(&runtime->gilstate, NULL) != tstate) {
-                    Py_FatalError("ceval: tstate mix-up");
-                }
-                drop_gil(ceval, tstate);
-
-                /* Other threads may run now */
-
-                take_gil(ceval, tstate);
-
-                /* Check if we should make a quick exit. */
-                exit_thread_if_finalizing(tstate);
-
-                if (_PyThreadState_Swap(&runtime->gilstate, tstate) != NULL) {
-                    Py_FatalError("ceval: orphan tstate");
-                }
-            }
-            /* Check for asynchronous exceptions. */
-            if (tstate->async_exc != NULL) {
-                PyObject *exc = tstate->async_exc;
-                tstate->async_exc = NULL;
-                UNSIGNAL_ASYNC_EXC(ceval);
-                _PyErr_SetNone(tstate, exc);
-                Py_DECREF(exc);
+            if (eval_frame_handle_pending(tstate) != 0) {
                 goto error;
             }
         }
@@ -1267,7 +1439,7 @@ main_loop:
 
         /* line-by-line tracing support */
 
-        if (_Py_TracingPossible(ceval) &&
+        if (_Py_TracingPossible(ceval2) &&
             tstate->c_tracefunc != NULL && !tstate->tracing) {
             int err;
             /* see maybe_call_line_trace
@@ -1874,7 +2046,7 @@ main_loop:
                 Py_DECREF(value);
                 goto error;
             }
-            res = _PyObject_CallOneArg(hook, value);
+            res = PyObject_CallOneArg(hook, value);
             Py_DECREF(value);
             if (res == NULL)
                 goto error;
@@ -3271,7 +3443,7 @@ main_loop:
             assert(!PyLong_Check(exc));
             exit_func = PEEK(7);
             PyObject *stack[4] = {NULL, exc, val, tb};
-            res = _PyObject_Vectorcall(exit_func, stack + 1,
+            res = PyObject_Vectorcall(exit_func, stack + 1,
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             if (res == NULL)
                 goto error;
@@ -3646,7 +3818,7 @@ exception_unwind:
                 PUSH(val);
                 PUSH(exc);
                 JUMPTO(handler);
-                if (_Py_TracingPossible(ceval)) {
+                if (_Py_TracingPossible(ceval2)) {
                     int needs_new_execution_window = (f->f_lasti < instr_lb || f->f_lasti >= instr_ub);
                     int needs_line_update = (f->f_lasti == instr_lb || f->f_lasti < instr_prev);
                     /* Make sure that we trace line after exception if we are in a new execution
@@ -3698,7 +3870,7 @@ exit_eval_frame:
     f->f_executing = 0;
     tstate->frame = f->f_back;
 
-    return _Py_CheckFunctionResult(tstate, NULL, retval, "PyEval_EvalFrameEx");
+    return _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
 }
 
 static void
@@ -3935,7 +4107,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
            PyObject *kwdefs, PyObject *closure,
            PyObject *name, PyObject *qualname)
 {
-    assert(tstate != NULL);
+    assert(is_tstate_valid(tstate));
 
     PyCodeObject* co = (PyCodeObject*)_co;
     PyFrameObject *f;
@@ -4242,7 +4414,7 @@ special_lookup(PyThreadState *tstate, PyObject *o, _Py_Identifier *id)
     PyObject *res;
     res = _PyObject_LookupSpecial(o, id);
     if (res == NULL && !_PyErr_Occurred(tstate)) {
-        _PyErr_SetObject(tstate, PyExc_AttributeError, id->object);
+        _PyErr_SetObject(tstate, PyExc_AttributeError, _PyUnicode_FromId(id));
         return NULL;
     }
     return res;
@@ -4436,7 +4608,7 @@ unpack_iterable(PyThreadState *tstate, PyObject *v,
         *--sp = PyList_GET_ITEM(l, ll - j);
     }
     /* Resize the list. */
-    Py_SIZE(l) = ll - argcntafter;
+    Py_SET_SIZE(l, ll - argcntafter);
     Py_DECREF(it);
     return 1;
 
@@ -4585,50 +4757,92 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     return result;
 }
 
+int
+_PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
+{
+    assert(is_tstate_valid(tstate));
+    /* The caller must hold the GIL */
+    assert(PyGILState_Check());
+
+    /* Call _PySys_Audit() in the context of the current thread state,
+       even if tstate is not the current thread state. */
+    PyThreadState *current_tstate = _PyThreadState_GET();
+    if (_PySys_Audit(current_tstate, "sys.setprofile", NULL) < 0) {
+        return -1;
+    }
+
+    PyObject *profileobj = tstate->c_profileobj;
+
+    tstate->c_profilefunc = NULL;
+    tstate->c_profileobj = NULL;
+    /* Must make sure that tracing is not ignored if 'profileobj' is freed */
+    tstate->use_tracing = tstate->c_tracefunc != NULL;
+    Py_XDECREF(profileobj);
+
+    Py_XINCREF(arg);
+    tstate->c_profileobj = arg;
+    tstate->c_profilefunc = func;
+
+    /* Flag that tracing or profiling is turned on */
+    tstate->use_tracing = (func != NULL) || (tstate->c_tracefunc != NULL);
+    return 0;
+}
+
 void
 PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 {
-    if (PySys_Audit("sys.setprofile", NULL) < 0) {
-        return;
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_PyEval_SetProfile(tstate, func, arg) < 0) {
+        /* Log _PySys_Audit() error */
+        _PyErr_WriteUnraisableMsg("in PyEval_SetProfile", NULL);
+    }
+}
+
+int
+_PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
+{
+    assert(is_tstate_valid(tstate));
+    /* The caller must hold the GIL */
+    assert(PyGILState_Check());
+
+    /* Call _PySys_Audit() in the context of the current thread state,
+       even if tstate is not the current thread state. */
+    PyThreadState *current_tstate = _PyThreadState_GET();
+    if (_PySys_Audit(current_tstate, "sys.settrace", NULL) < 0) {
+        return -1;
     }
 
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *temp = tstate->c_profileobj;
+    struct _ceval_state *ceval2 = &tstate->interp->ceval;
+    PyObject *traceobj = tstate->c_traceobj;
+    ceval2->tracing_possible += (func != NULL) - (tstate->c_tracefunc != NULL);
+
+    tstate->c_tracefunc = NULL;
+    tstate->c_traceobj = NULL;
+    /* Must make sure that profiling is not ignored if 'traceobj' is freed */
+    tstate->use_tracing = (tstate->c_profilefunc != NULL);
+    Py_XDECREF(traceobj);
+
     Py_XINCREF(arg);
-    tstate->c_profilefunc = NULL;
-    tstate->c_profileobj = NULL;
-    /* Must make sure that tracing is not ignored if 'temp' is freed */
-    tstate->use_tracing = tstate->c_tracefunc != NULL;
-    Py_XDECREF(temp);
-    tstate->c_profilefunc = func;
-    tstate->c_profileobj = arg;
+    tstate->c_traceobj = arg;
+    tstate->c_tracefunc = func;
+
     /* Flag that tracing or profiling is turned on */
-    tstate->use_tracing = (func != NULL) || (tstate->c_tracefunc != NULL);
+    tstate->use_tracing = ((func != NULL)
+                           || (tstate->c_profilefunc != NULL));
+
+    return 0;
 }
 
 void
 PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 {
-    if (PySys_Audit("sys.settrace", NULL) < 0) {
-        return;
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_PyEval_SetTrace(tstate, func, arg) < 0) {
+        /* Log _PySys_Audit() error */
+        _PyErr_WriteUnraisableMsg("in PyEval_SetTrace", NULL);
     }
-
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    PyObject *temp = tstate->c_traceobj;
-    runtime->ceval.tracing_possible += (func != NULL) - (tstate->c_tracefunc != NULL);
-    Py_XINCREF(arg);
-    tstate->c_tracefunc = NULL;
-    tstate->c_traceobj = NULL;
-    /* Must make sure that profiling is not ignored if 'temp' is freed */
-    tstate->use_tracing = tstate->c_profilefunc != NULL;
-    Py_XDECREF(temp);
-    tstate->c_tracefunc = func;
-    tstate->c_traceobj = arg;
-    /* Flag that tracing or profiling is turned on */
-    tstate->use_tracing = ((func != NULL)
-                           || (tstate->c_profilefunc != NULL));
 }
+
 
 void
 _PyEval_SetCoroutineOriginTrackingDepth(PyThreadState *tstate, int new_depth)
@@ -4644,17 +4858,18 @@ _PyEval_GetCoroutineOriginTrackingDepth(void)
     return tstate->coroutine_origin_tracking_depth;
 }
 
-void
+int
 _PyEval_SetAsyncGenFirstiter(PyObject *firstiter)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    if (PySys_Audit("sys.set_asyncgen_hook_firstiter", NULL) < 0) {
-        return;
+    if (_PySys_Audit(tstate, "sys.set_asyncgen_hook_firstiter", NULL) < 0) {
+        return -1;
     }
 
     Py_XINCREF(firstiter);
     Py_XSETREF(tstate->async_gen_firstiter, firstiter);
+    return 0;
 }
 
 PyObject *
@@ -4664,17 +4879,18 @@ _PyEval_GetAsyncGenFirstiter(void)
     return tstate->async_gen_firstiter;
 }
 
-void
+int
 _PyEval_SetAsyncGenFinalizer(PyObject *finalizer)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    if (PySys_Audit("sys.set_asyncgen_hook_finalizer", NULL) < 0) {
-        return;
+    if (_PySys_Audit(tstate, "sys.set_asyncgen_hook_finalizer", NULL) < 0) {
+        return -1;
     }
 
     Py_XINCREF(finalizer);
     Py_XSETREF(tstate->async_gen_finalizer, finalizer);
+    return 0;
 }
 
 PyObject *
@@ -4684,25 +4900,18 @@ _PyEval_GetAsyncGenFinalizer(void)
     return tstate->async_gen_finalizer;
 }
 
-static PyFrameObject *
-_PyEval_GetFrame(PyThreadState *tstate)
-{
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    return runtime->gilstate.getframe(tstate);
-}
-
 PyFrameObject *
 PyEval_GetFrame(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return _PyEval_GetFrame(tstate);
+    return tstate->frame;
 }
 
 PyObject *
 PyEval_GetBuiltins(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFrameObject *current_frame = _PyEval_GetFrame(tstate);
+    PyFrameObject *current_frame = tstate->frame;
     if (current_frame == NULL)
         return tstate->interp->builtins;
     else
@@ -4728,7 +4937,7 @@ PyObject *
 PyEval_GetLocals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFrameObject *current_frame = _PyEval_GetFrame(tstate);
+    PyFrameObject *current_frame = tstate->frame;
     if (current_frame == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
         return NULL;
@@ -4746,7 +4955,7 @@ PyObject *
 PyEval_GetGlobals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFrameObject *current_frame = _PyEval_GetFrame(tstate);
+    PyFrameObject *current_frame = tstate->frame;
     if (current_frame == NULL) {
         return NULL;
     }
@@ -4759,7 +4968,7 @@ int
 PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFrameObject *current_frame = _PyEval_GetFrame(tstate);
+    PyFrameObject *current_frame = tstate->frame;
     int result = cf->cf_flags != 0;
 
     if (current_frame != NULL) {
@@ -4845,11 +5054,11 @@ trace_call_function(PyThreadState *tstate,
                     PyObject *kwnames)
 {
     PyObject *x;
-    if (PyCFunction_Check(func)) {
-        C_TRACE(x, _PyObject_Vectorcall(func, args, nargs, kwnames));
+    if (PyCFunction_CheckExact(func) || PyCMethod_CheckExact(func)) {
+        C_TRACE(x, PyObject_Vectorcall(func, args, nargs, kwnames));
         return x;
     }
-    else if (Py_TYPE(func) == &PyMethodDescr_Type && nargs > 0) {
+    else if (Py_IS_TYPE(func, &PyMethodDescr_Type) && nargs > 0) {
         /* We need to create a temporary bound method as argument
            for profiling.
 
@@ -4862,13 +5071,13 @@ trace_call_function(PyThreadState *tstate,
         if (func == NULL) {
             return NULL;
         }
-        C_TRACE(x, _PyObject_Vectorcall(func,
+        C_TRACE(x, PyObject_Vectorcall(func,
                                         args+1, nargs-1,
                                         kwnames));
         Py_DECREF(func);
         return x;
     }
-    return _PyObject_Vectorcall(func, args, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
+    return PyObject_Vectorcall(func, args, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
 }
 
 /* Issue #29227: Inline call_function() into _PyEval_EvalFrameDefault()
@@ -4887,7 +5096,7 @@ call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyO
         x = trace_call_function(tstate, func, stack, nargs, kwnames);
     }
     else {
-        x = _PyObject_Vectorcall(func, stack, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
+        x = PyObject_Vectorcall(func, stack, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
     }
 
     assert((x != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -4906,11 +5115,11 @@ do_call_core(PyThreadState *tstate, PyObject *func, PyObject *callargs, PyObject
 {
     PyObject *result;
 
-    if (PyCFunction_Check(func)) {
+    if (PyCFunction_CheckExact(func) || PyCMethod_CheckExact(func)) {
         C_TRACE(result, PyObject_Call(func, callargs, kwdict));
         return result;
     }
-    else if (Py_TYPE(func) == &PyMethodDescr_Type) {
+    else if (Py_IS_TYPE(func, &PyMethodDescr_Type)) {
         Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
         if (nargs > 0 && tstate->use_tracing) {
             /* We need to create a temporary bound method as argument
@@ -4950,7 +5159,7 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
     PyThreadState *tstate = _PyThreadState_GET();
     if (v != Py_None) {
         Py_ssize_t x;
-        if (PyIndex_Check(v)) {
+        if (_PyIndex_Check(v)) {
             x = PyNumber_AsSsize_t(v, NULL);
             if (x == -1 && _PyErr_Occurred(tstate))
                 return 0;
@@ -4971,7 +5180,7 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t x;
-    if (PyIndex_Check(v)) {
+    if (_PyIndex_Check(v)) {
         x = PyNumber_AsSsize_t(v, NULL);
         if (x == -1 && _PyErr_Occurred(tstate))
             return 0;
@@ -5418,7 +5627,7 @@ _Py_GetDXProfile(PyObject *self, PyObject *args)
 Py_ssize_t
 _PyEval_RequestCodeExtraIndex(freefunc free)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     Py_ssize_t new_index;
 
     if (interp->co_extra_user_count == MAX_CO_EXTRA_USERS - 1) {
@@ -5436,11 +5645,12 @@ dtrace_function_entry(PyFrameObject *f)
     const char *funcname;
     int lineno;
 
-    filename = PyUnicode_AsUTF8(f->f_code->co_filename);
-    funcname = PyUnicode_AsUTF8(f->f_code->co_name);
-    lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
+    PyCodeObject *code = f->f_code;
+    filename = PyUnicode_AsUTF8(code->co_filename);
+    funcname = PyUnicode_AsUTF8(code->co_name);
+    lineno = PyCode_Addr2Line(code, f->f_lasti);
 
-    PyDTrace_FUNCTION_ENTRY((char *)filename, (char *)funcname, lineno);
+    PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
 }
 
 static void
@@ -5450,11 +5660,12 @@ dtrace_function_return(PyFrameObject *f)
     const char *funcname;
     int lineno;
 
-    filename = PyUnicode_AsUTF8(f->f_code->co_filename);
-    funcname = PyUnicode_AsUTF8(f->f_code->co_name);
-    lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
+    PyCodeObject *code = f->f_code;
+    filename = PyUnicode_AsUTF8(code->co_filename);
+    funcname = PyUnicode_AsUTF8(code->co_name);
+    lineno = PyCode_Addr2Line(code, f->f_lasti);
 
-    PyDTrace_FUNCTION_RETURN((char *)filename, (char *)funcname, lineno);
+    PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
 }
 
 /* DTrace equivalent of maybe_call_line_trace. */
@@ -5486,7 +5697,7 @@ maybe_dtrace_line(PyFrameObject *frame,
         co_name = PyUnicode_AsUTF8(frame->f_code->co_name);
         if (!co_name)
             co_name = "?";
-        PyDTrace_LINE((char *)co_filename, (char *)co_name, line);
+        PyDTrace_LINE(co_filename, co_name, line);
     }
     *instr_prev = frame->f_lasti;
 }

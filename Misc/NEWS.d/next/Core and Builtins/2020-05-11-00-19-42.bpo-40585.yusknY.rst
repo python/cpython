@@ -1,0 +1,2 @@
+Fixed a bug when using :func:`codeop.compile_command` that was causing
+exceptions to be swallowed with the new parser. Patch by Pablo Galindo

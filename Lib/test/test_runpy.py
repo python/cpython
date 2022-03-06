@@ -8,6 +8,7 @@ import tempfile
 import importlib, importlib.machinery, importlib.util
 import py_compile
 import warnings
+import pathlib
 from test.support import (
     forget, make_legacy_pyc, unload, verbose, no_tracing,
     create_empty_file, temp_dir)
@@ -649,6 +650,14 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
         with temp_dir() as script_dir:
             mod_name = 'script'
             script_name = self._make_test_script(script_dir, mod_name)
+            self._check_script(script_name, "<run_path>", script_name,
+                               script_name, expect_spec=False)
+
+    def test_basic_script_with_path_object(self):
+        with temp_dir() as script_dir:
+            mod_name = 'script'
+            script_name = pathlib.Path(self._make_test_script(script_dir,
+                                                              mod_name))
             self._check_script(script_name, "<run_path>", script_name,
                                script_name, expect_spec=False)
 

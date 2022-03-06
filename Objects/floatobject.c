@@ -4,6 +4,7 @@
    for any kind of float exception without losing portability. */
 
 #include "Python.h"
+#include "pycore_dtoa.h"
 
 #include <ctype.h>
 #include <float.h>
@@ -221,7 +222,7 @@ float_dealloc(PyFloatObject *op)
             return;
         }
         numfree++;
-        Py_TYPE(op) = (struct _typeobject *)free_list;
+        Py_SET_TYPE(op, (PyTypeObject *)free_list);
         free_list = op;
     }
     else
@@ -861,27 +862,7 @@ static PyObject *
 float___trunc___impl(PyObject *self)
 /*[clinic end generated code: output=dd3e289dd4c6b538 input=591b9ba0d650fdff]*/
 {
-    double x = PyFloat_AsDouble(self);
-    double wholepart;           /* integral portion of x, rounded toward 0 */
-
-    (void)modf(x, &wholepart);
-    /* Try to get out cheap if this fits in a Python int.  The attempt
-     * to cast to long must be protected, as C doesn't define what
-     * happens if the double is too big to fit in a long.  Some rare
-     * systems raise an exception then (RISCOS was mentioned as one,
-     * and someone using a non-default option on Sun also bumped into
-     * that).  Note that checking for >= and <= LONG_{MIN,MAX} would
-     * still be vulnerable:  if a long has more bits of precision than
-     * a double, casting MIN/MAX to double may yield an approximation,
-     * and if that's rounded up, then, e.g., wholepart=LONG_MAX+1 would
-     * yield true from the C expression wholepart<=LONG_MAX, despite
-     * that wholepart is actually greater than LONG_MAX.
-     */
-    if (LONG_MIN < wholepart && wholepart < LONG_MAX) {
-        const long aslong = (long)wholepart;
-        return PyLong_FromLong(aslong);
-    }
-    return PyLong_FromDouble(wholepart);
+    return PyLong_FromDouble(PyFloat_AS_DOUBLE(self));
 }
 
 /*[clinic input]
@@ -1490,7 +1471,7 @@ float_fromhex(PyTypeObject *type, PyObject *string)
         goto parse_error;
     result = PyFloat_FromDouble(negate ? -x : x);
     if (type != &PyFloat_Type && result != NULL) {
-        Py_SETREF(result, _PyObject_CallOneArg((PyObject *)type, result));
+        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
     }
     return result;
 
@@ -1997,25 +1978,22 @@ _PyFloat_Init(void)
     return 1;
 }
 
-int
-PyFloat_ClearFreeList(void)
+void
+_PyFloat_ClearFreeList(void)
 {
     PyFloatObject *f = free_list, *next;
-    int i = numfree;
-    while (f) {
+    for (; f; f = next) {
         next = (PyFloatObject*) Py_TYPE(f);
         PyObject_FREE(f);
-        f = next;
     }
     free_list = NULL;
     numfree = 0;
-    return i;
 }
 
 void
 _PyFloat_Fini(void)
 {
-    (void)PyFloat_ClearFreeList();
+    _PyFloat_ClearFreeList();
 }
 
 /* Print summary info about the state of the optimized allocator */

@@ -28,7 +28,7 @@ Arithmetic conversions
 .. index:: pair: arithmetic; conversion
 
 When a description of an arithmetic operator below uses the phrase "the numeric
-arguments are converted to a common type," this means that the operator
+arguments are converted to a common type", this means that the operator
 implementation for built-in types works as follows:
 
 * If either argument is a complex number, the other is converted to complex;
@@ -178,7 +178,7 @@ called "displays", each of them in two flavors:
 Common syntax elements for comprehensions are:
 
 .. productionlist::
-   comprehension: `expression` `comp_for`
+   comprehension: `assignment_expression` `comp_for`
    comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
    comp_if: "if" `expression_nocond` [`comp_iter`]
@@ -911,7 +911,8 @@ series of :term:`arguments <argument>`:
                 :   ["," `keywords_arguments`]
                 : | `starred_and_keywords` ["," `keywords_arguments`]
                 : | `keywords_arguments`
-   positional_arguments: ["*"] `expression` ("," ["*"] `expression`)*
+   positional_arguments: positional_item ("," positional_item)*
+   positional_item: `assignment_expression` | "*" `expression`
    starred_and_keywords: ("*" `expression` | `keyword_item`)
                 : ("," "*" `expression` | "," `keyword_item`)*
    keywords_arguments: (`keyword_item` | "**" `expression`)
@@ -1421,8 +1422,9 @@ built-in types.
   The not-a-number values ``float('NaN')`` and ``decimal.Decimal('NaN')`` are
   special.  Any ordered comparison of a number to a not-a-number value is false.
   A counter-intuitive implication is that not-a-number values are not equal to
-  themselves.  For example, if ``x = float('NaN')``, ``3 < x``, ``x < 3``, ``x
-  == x``, ``x != x`` are all false.  This behavior is compliant with IEEE 754.
+  themselves.  For example, if ``x = float('NaN')``, ``3 < x``, ``x < 3`` and
+  ``x == x`` are all false, while ``x != x`` is true.  This behavior is
+  compliant with IEEE 754.
 
 * ``None`` and ``NotImplemented`` are singletons.  :PEP:`8` advises that
   comparisons for singletons should always be done with ``is`` or ``is not``,
@@ -1642,6 +1644,17 @@ returns a boolean value regardless of the type of its argument
 (for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
 
 
+Assignment expressions
+======================
+
+.. productionlist::
+   assignment_expression: [`identifier` ":="] `expression`
+
+.. TODO: BPO-39868
+
+See :pep:`572` for more details about assignment expressions.
+
+
 .. _if_expr:
 
 Conditional expressions
@@ -1711,7 +1724,7 @@ Expression lists
    expression_list: `expression` ("," `expression`)* [","]
    starred_list: `starred_item` ("," `starred_item`)* [","]
    starred_expression: `expression` | (`starred_item` ",")* [`starred_item`]
-   starred_item: `expression` | "*" `or_expr`
+   starred_item: `assignment_expression` | "*" `or_expr`
 
 .. index:: object: tuple
 

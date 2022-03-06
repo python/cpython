@@ -1173,6 +1173,20 @@ class HTTPHandler(logging.Handler):
         """
         return record.__dict__
 
+    def getConnection(self, host, secure):
+        """
+        get a HTTP[S]Connection.
+
+        Override when a custom connection is required, for example if
+        there is a proxy.
+        """
+        import http.client
+        if secure:
+            connection = http.client.HTTPSConnection(host, context=self.context)
+        else:
+            connection = http.client.HTTPConnection(host)
+        return connection
+
     def emit(self, record):
         """
         Emit a record.
@@ -1180,12 +1194,9 @@ class HTTPHandler(logging.Handler):
         Send the record to the Web server as a percent-encoded dictionary
         """
         try:
-            import http.client, urllib.parse
+            import urllib.parse
             host = self.host
-            if self.secure:
-                h = http.client.HTTPSConnection(host, context=self.context)
-            else:
-                h = http.client.HTTPConnection(host)
+            h = self.getConnection(host, self.secure)
             url = self.url
             data = urllib.parse.urlencode(self.mapLogRecord(record))
             if self.method == "GET":

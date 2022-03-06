@@ -334,13 +334,22 @@ def getsitepackages(prefixes=None):
             continue
         seen.add(prefix)
 
+        libdirs = [sys.platlibdir]
+        if sys.platlibdir != "lib":
+            libdirs.append("lib")
+
         if os.sep == '/':
-            sitepackages.append(os.path.join(prefix, "lib",
-                                        "python%d.%d" % sys.version_info[:2],
-                                        "site-packages"))
+            for libdir in libdirs:
+                path = os.path.join(prefix, libdir,
+                                    "python%d.%d" % sys.version_info[:2],
+                                    "site-packages")
+                sitepackages.append(path)
         else:
             sitepackages.append(prefix)
-            sitepackages.append(os.path.join(prefix, "lib", "site-packages"))
+
+            for libdir in libdirs:
+                path = os.path.join(prefix, libdir, "site-packages")
+                sitepackages.append(path)
     return sitepackages
 
 def addsitepackages(known_paths, prefixes=None):

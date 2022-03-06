@@ -62,7 +62,7 @@ def printlist(x, width=70, indent=4, file=None):
 
 
 def print_warning(msg):
-    print(f"Warning -- {msg}", file=sys.stderr, flush=True)
+    support.print_warning(msg)
 
 
 orig_unraisablehook = None
