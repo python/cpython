@@ -866,7 +866,7 @@ module_dir(PyObject *self, PyObject *args)
         if (PyDict_Check(dict)) {
             PyObject *dirfunc = _PyDict_GetItemIdWithError(dict, &PyId___dir__);
             if (dirfunc) {
-                result = _PyObject_CallNoArg(dirfunc);
+                result = _PyObject_CallNoArgs(dirfunc);
             }
             else if (!PyErr_Occurred()) {
                 result = PyDict_Keys(dict);

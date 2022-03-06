@@ -190,7 +190,7 @@ PyObject_AsFileDescriptor(PyObject *o)
         return -1;
     }
     else if (meth != NULL) {
-        PyObject *fno = _PyObject_CallNoArg(meth);
+        PyObject *fno = _PyObject_CallNoArgs(meth);
         Py_DECREF(meth);
         if (fno == NULL)
             return -1;

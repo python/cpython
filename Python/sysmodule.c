@@ -1676,7 +1676,7 @@ _PySys_GetSizeOf(PyObject *o)
         }
     }
     else {
-        res = _PyObject_CallNoArg(method);
+        res = _PyObject_CallNoArgs(method);
         Py_DECREF(method);
     }
 

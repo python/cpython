@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_call.h"          // _PyObject_CallNoArgTstate()
+#include "pycore_call.h"          // _PyObject_CallNoArgsTstate()
 #include "pycore_ceval.h"         // _PyEval_EvalFrame()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -110,7 +110,7 @@ PyObject *
 PyObject_CallNoArgs(PyObject *func)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return _PyObject_CallNoArgTstate(tstate, func);
+    return _PyObject_CallNoArgsTstate(tstate, func);
 }
 
 
@@ -402,7 +402,7 @@ PyObject_CallObject(PyObject *callable, PyObject *args)
     PyThreadState *tstate = _PyThreadState_GET();
     assert(!_PyErr_Occurred(tstate));
     if (args == NULL) {
-        return _PyObject_CallNoArgTstate(tstate, callable);
+        return _PyObject_CallNoArgsTstate(tstate, callable);
     }
     if (!PyTuple_Check(args)) {
         _PyErr_SetString(tstate, PyExc_TypeError,
@@ -468,7 +468,7 @@ _PyObject_CallFunctionVa(PyThreadState *tstate, PyObject *callable,
     }
 
     if (!format || !*format) {
-        return _PyObject_CallNoArgTstate(tstate, callable);
+        return _PyObject_CallNoArgsTstate(tstate, callable);
     }
 
     if (is_size_t) {

@@ -1193,7 +1193,7 @@ odict_copy(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     if (PyODict_CheckExact(od))
         od_copy = PyODict_New();
     else
-        od_copy = _PyObject_CallNoArg((PyObject *)Py_TYPE(od));
+        od_copy = _PyObject_CallNoArgs((PyObject *)Py_TYPE(od));
     if (od_copy == NULL)
         return NULL;
 
@@ -2211,7 +2211,7 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         return -1;
     }
     if (func != NULL) {
-        PyObject *keys = _PyObject_CallNoArg(func);
+        PyObject *keys = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (keys == NULL) {
             return -1;
@@ -2243,7 +2243,7 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         return -1;
     }
     if (func != NULL) {
-        PyObject *items = _PyObject_CallNoArg(func);
+        PyObject *items = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (items == NULL) {
             return -1;

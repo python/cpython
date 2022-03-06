@@ -280,7 +280,7 @@ PyObject *codec_makeincrementalcodec(PyObject *codec_info,
     if (errors)
         ret = PyObject_CallFunction(inccodec, "s", errors);
     else
-        ret = _PyObject_CallNoArg(inccodec);
+        ret = _PyObject_CallNoArgs(inccodec);
     Py_DECREF(inccodec);
     return ret;
 }

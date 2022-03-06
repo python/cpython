@@ -572,7 +572,7 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
     /* does it support __bytes__? */
     func = _PyObject_LookupSpecial(v, &PyId___bytes__);
     if (func != NULL) {
-        result = _PyObject_CallNoArg(func);
+        result = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (result == NULL)
             return NULL;
@@ -2622,7 +2622,7 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
        integer argument before deferring to PyBytes_FromObject, something
        PyObject_Bytes doesn't do. */
     else if ((func = _PyObject_LookupSpecial(x, &PyId___bytes__)) != NULL) {
-        bytes = _PyObject_CallNoArg(func);
+        bytes = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (bytes == NULL)
             return NULL;

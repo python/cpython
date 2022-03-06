@@ -1640,7 +1640,7 @@ call_unbound_noarg(int unbound, PyObject *func, PyObject *self)
         return PyObject_CallOneArg(func, self);
     }
     else {
-        return _PyObject_CallNoArg(func);
+        return _PyObject_CallNoArgs(func);
     }
 }
 
@@ -5034,7 +5034,7 @@ object_getstate(PyObject *obj, int required)
         state = object_getstate_default(obj, required);
     }
     else {
-        state = _PyObject_CallNoArg(getstate);
+        state = _PyObject_CallNoArgs(getstate);
     }
     Py_DECREF(getstate);
     return state;
@@ -5075,7 +5075,7 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
        __getnewargs_ex__ on the object. */
     getnewargs_ex = _PyObject_LookupSpecial(obj, &PyId___getnewargs_ex__);
     if (getnewargs_ex != NULL) {
-        PyObject *newargs = _PyObject_CallNoArg(getnewargs_ex);
+        PyObject *newargs = _PyObject_CallNoArgs(getnewargs_ex);
         Py_DECREF(getnewargs_ex);
         if (newargs == NULL) {
             return -1;
@@ -5128,7 +5128,7 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
        __getnewargs__ instead. */
     getnewargs = _PyObject_LookupSpecial(obj, &PyId___getnewargs__);
     if (getnewargs != NULL) {
-        *args = _PyObject_CallNoArg(getnewargs);
+        *args = _PyObject_CallNoArgs(getnewargs);
         Py_DECREF(getnewargs);
         if (*args == NULL) {
             return -1;
@@ -5388,7 +5388,7 @@ object___reduce_ex___impl(PyObject *self, int protocol)
         override = (clsreduce != objreduce);
         Py_DECREF(clsreduce);
         if (override) {
-            res = _PyObject_CallNoArg(reduce);
+            res = _PyObject_CallNoArgs(reduce);
             Py_DECREF(reduce);
             return res;
         }

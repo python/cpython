@@ -867,7 +867,7 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
         goto fail;
     }
     // dummy = object()
-    dummy = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+    dummy = _PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
     if (dummy == NULL) {
         goto fail;
     }
@@ -4295,7 +4295,7 @@ check_eval_breaker:
             }
             SET_TOP(exit);
             Py_DECREF(mgr);
-            res = _PyObject_CallNoArg(enter);
+            res = _PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL)
                 goto error;
@@ -4333,7 +4333,7 @@ check_eval_breaker:
             }
             SET_TOP(exit);
             Py_DECREF(mgr);
-            res = _PyObject_CallNoArg(enter);
+            res = _PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 goto error;
@@ -5859,7 +5859,7 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
 
     if (PyExceptionClass_Check(exc)) {
         type = exc;
-        value = _PyObject_CallNoArg(exc);
+        value = _PyObject_CallNoArgs(exc);
         if (value == NULL)
             goto raise_error;
         if (!PyExceptionInstance_Check(value)) {
@@ -5890,7 +5890,7 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
     if (cause) {
         PyObject *fixed_cause;
         if (PyExceptionClass_Check(cause)) {
-            fixed_cause = _PyObject_CallNoArg(cause);
+            fixed_cause = _PyObject_CallNoArgs(cause);
             if (fixed_cause == NULL)
                 goto raise_error;
             Py_DECREF(cause);
