@@ -227,7 +227,7 @@ def splitdrive(p):
         unc_name = 'UNC'
 
     # Check for a DOS drive.
-    if p[:1].isalpha() and p[1:2] == colon:
+    if p[1:2] == colon:
         return p[:2], p[2:]
 
     # UNC drive for the file and device namespaces.
