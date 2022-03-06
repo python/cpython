@@ -2090,11 +2090,11 @@ class CANTest(ThreadedCANSocketTest):
         self.cf = self.build_can_frame(0x00, b'\x01\x02\x03\x04\x05')
         self.cli.send(self.cf)
 
-    def testSendMafdata(self):
+    def testSendMaxFrame(self):
         cf, addr = self.s.recvfrom(self.bufsize)
         self.assertEqual(self.cf, cf)
 
-    def _testSendMafdata(self):
+    def _testSendMaxFrame(self):
         self.cf = self.build_can_frame(0x00, b'\x07' * 8)
         self.cli.send(self.cf)
 
