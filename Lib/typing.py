@@ -1339,6 +1339,8 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return tuple(new_args)
 
     def copy_with(self, args):
+        if isinstance(self, _ConcatenateGenericAlias):
+            return self.__class__(self.__origin__, args)
         return self.__class__(self.__origin__, args, name=self._name, inst=self._inst,
                               _typevar_types=self._typevar_types,
                               _paramspec_tvars=self._paramspec_tvars)
