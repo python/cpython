@@ -141,7 +141,7 @@ method___reduce___impl(PyMethodObject *self)
 }
 
 static PyMethodDef method_methods[] = {
-    METHOD___REDUCE___METHODDEF,
+    METHOD___REDUCE___METHODDEF
     {NULL, NULL}
 };
 
