@@ -6460,10 +6460,10 @@ MODULE_BLOCK=
 
 dnl Check for stdlib extension modules
 dnl PY_STDLIB_MOD([NAME], [ENABLED-TEST], [SUPPORTED-TEST], [CFLAGS], [LDFLAGS])
-dnl sets MODULE_$NAME based on $PY_STDLIB_MOD_SET_NA, ENABLED-TEST,
+dnl sets MODULE_$NAME based on PY_STDLIB_MOD_SET_NA(), ENABLED-TEST,
 dnl and SUPPORTED_TEST. ENABLED-TEST and SUPPORTED-TEST default to true if
 dnl empty.
-dnl    n/a: $NAME in $PY_STDLIB_MOD_SET_NA (not available on platform)
+dnl    n/a: marked unavailable on platform by PY_STDLIB_MOD_SET_NA()
 dnl    yes: enabled and supported
 dnl    missing: enabled and not supported
 dnl    disabled: not enabled
@@ -6490,7 +6490,7 @@ AC_DEFUN([PY_STDLIB_MOD], [
 ])
 
 dnl Define simple stdlib extension module
-dnl Always enable unless the module is listed in PY_STDLIB_MOD_SET_NA
+dnl Always enable unless the module is disabled by PY_STDLIB_MOD_SET_NA
 dnl PY_STDLIB_MOD_SIMPLE([NAME], [CFLAGS], [LDFLAGS])
 dnl cflags and ldflags are optional
 AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
