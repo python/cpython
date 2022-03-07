@@ -75,6 +75,7 @@ Mac/pythonw
 Misc/python.pc
 Misc/python-embed.pc
 Misc/python-config.sh
+Modules/Setup.bootstrap
 Modules/Setup.config
 Modules/Setup.local
 Modules/Setup.stdlib

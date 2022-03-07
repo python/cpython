@@ -32,6 +32,7 @@ from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
 from typing import TypeGuard
 import abc
+import textwrap
 import typing
 import weakref
 import types
@@ -2156,6 +2157,45 @@ class GenericTests(BaseTestCase):
         def barfoo2(x: CT): ...
         self.assertIs(get_type_hints(barfoo2, globals(), locals())['x'], CT)
 
+    def test_generic_pep585_forward_ref(self):
+        # See https://bugs.python.org/issue41370
+
+        class C1:
+            a: list['C1']
+        self.assertEqual(
+            get_type_hints(C1, globals(), locals()),
+            {'a': list[C1]}
+        )
+
+        class C2:
+            a: dict['C1', list[List[list['C2']]]]
+        self.assertEqual(
+            get_type_hints(C2, globals(), locals()),
+            {'a': dict[C1, list[List[list[C2]]]]}
+        )
+
+        # Test stringified annotations
+        scope = {}
+        exec(textwrap.dedent('''
+        from __future__ import annotations
+        class C3:
+            a: List[list["C2"]]
+        '''), scope)
+        C3 = scope['C3']
+        self.assertEqual(C3.__annotations__['a'], "List[list['C2']]")
+        self.assertEqual(
+            get_type_hints(C3, globals(), locals()),
+            {'a': List[list[C2]]}
+        )
+
+        # Test recursive types
+        X = list["X"]
+        def f(x: X): ...
+        self.assertEqual(
+            get_type_hints(f, globals(), locals()),
+            {'x': list[list[ForwardRef('X')]]}
+        )
+
     def test_extended_generic_rules_subclassing(self):
         class T1(Tuple[T, KT]): ...
         class T2(Tuple[T, ...]): ...
@@ -3556,7 +3596,7 @@ class GetTypeHintTests(BaseTestCase):
         BA = Tuple[Annotated[T, (1, 0)], ...]
         def barfoo(x: BA): ...
         self.assertEqual(get_type_hints(barfoo, globals(), locals())['x'], Tuple[T, ...])
-        self.assertIs(
+        self.assertEqual(
             get_type_hints(barfoo, globals(), locals(), include_extras=True)['x'],
             BA
         )
@@ -3564,7 +3604,7 @@ class GetTypeHintTests(BaseTestCase):
         BA = tuple[Annotated[T, (1, 0)], ...]
         def barfoo(x: BA): ...
         self.assertEqual(get_type_hints(barfoo, globals(), locals())['x'], tuple[T, ...])
-        self.assertIs(
+        self.assertEqual(
             get_type_hints(barfoo, globals(), locals(), include_extras=True)['x'],
             BA
         )
