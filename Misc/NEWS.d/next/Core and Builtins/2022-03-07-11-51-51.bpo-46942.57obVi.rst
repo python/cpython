@@ -1,0 +1,4 @@
+:func:`idlelib.calltip.get_argspec` now correctly reports that
+:class:`~types.MethodType` constructor has positional-only arguments.
+Previously it was implemented in the interpreter but not reflected in a
+docstring. Patch by Oleg Iarygin.
