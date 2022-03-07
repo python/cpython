@@ -3519,6 +3519,16 @@ AS_VAR_IF([found_tcltk], [no], [
   TCLTK_LIBS=${TCLTK_LIBS-""}
 ])
 
+dnl FreeBSD has an X11 dependency which is not implicitly resolved.
+AS_CASE([$ac_sys_system],
+  [FreeBSD*], [
+    PKG_CHECK_MODULES([X11], [x11], [
+      TCLTK_CFLAGS="$TCLTK_CFLAGS $X11_CFLAGS"
+      TCLTK_LIBS="$TCLTK_LIBS $X11_LIBS"
+    ])
+  ]
+)
+
 WITH_SAVE_ENV([
   CPPFLAGS="$TCLTK_CFLAGS $CFLAGS"
   LIBS="$TCLTK_LIBS $LDFLAGS"
