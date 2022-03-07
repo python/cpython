@@ -1,2 +1,0 @@
-Include the type's name in the error message for subscripting non-generic
-types.
