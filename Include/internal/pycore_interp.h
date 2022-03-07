@@ -132,7 +132,8 @@ struct _is {
     PyObject *codec_error_registry;
     int codecs_initialized;
 
-    PyConfig config;
+    PyConfig global_config;
+
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif

@@ -462,7 +462,7 @@ _Py_SetLocaleFromEnv(int category)
 static int
 interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
 {
-    const PyConfig *config = &tstate->interp->config;
+    const PyConfig *config = &tstate->interp->global_config;
 
     if (!only_update_path_config) {
         PyStatus status = _PyConfig_Write(config, tstate->interp->runtime);
@@ -508,7 +508,7 @@ _Py_SetConfig(const PyConfig *src_config)
         goto done;
     }
 
-    status = _PyConfig_Copy(&tstate->interp->config, &config);
+    status = _PyConfig_Copy(&tstate->interp->global_config, &config);
     if (_PyStatus_EXCEPTION(status)) {
         _PyErr_SetFromPyStatus(status);
         goto done;
@@ -556,7 +556,7 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
         return status;
     }
 
-    status = _PyConfig_Copy(&interp->config, config);
+    status = _PyConfig_Copy(&interp->global_config, config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -651,7 +651,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
     assert(_Py_IsMainInterpreter(interp));
 
-    status = _PyConfig_Copy(&interp->config, config);
+    status = _PyConfig_Copy(&interp->global_config, config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1109,7 +1109,7 @@ init_interp_main(PyThreadState *tstate)
     }
 
     // Initialize the import-related configuration.
-    status = _PyConfig_InitImportConfig(&interp->config);
+    status = _PyConfig_InitImportConfig(&interp->global_config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1787,14 +1787,14 @@ Py_FinalizeEx(void)
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
 #ifdef Py_REF_DEBUG
-    int show_ref_count = tstate->interp->config.show_ref_count;
+    int show_ref_count = tstate->interp->global_config.show_ref_count;
 #endif
 #ifdef Py_TRACE_REFS
-    int dump_refs = tstate->interp->config.dump_refs;
-    wchar_t *dump_refs_file = tstate->interp->config.dump_refs_file;
+    int dump_refs = tstate->interp->global_config.dump_refs;
+    wchar_t *dump_refs_file = tstate->interp->global_config.dump_refs_file;
 #endif
 #ifdef WITH_PYMALLOC
-    int malloc_stats = tstate->interp->config.malloc_stats;
+    int malloc_stats = tstate->interp->global_config.malloc_stats;
 #endif
 
     /* Remaining daemon threads will automatically exit
@@ -1993,23 +1993,21 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
 
     /* Copy the current interpreter config into the new interpreter */
-    const PyConfig *config;
+    const PyConfig *global_config;
     if (save_tstate != NULL) {
-        config = _PyInterpreterState_GetGlobalConfig(save_tstate->interp);
+        global_config = _PyInterpreterState_GetGlobalConfig(save_tstate->interp);
     }
     else
     {
         /* No current thread state, copy from the main interpreter */
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
-        config = _PyInterpreterState_GetGlobalConfig(main_interp);
+        global_config = _PyInterpreterState_GetGlobalConfig(main_interp);
     }
-
-
-    status = _PyConfig_Copy(&interp->config, config);
+    status = _PyConfig_Copy(&interp->global_config, global_config);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
-    interp->config._isolated_interpreter = isolated_subinterpreter;
+    interp->global_config._isolated_interpreter = isolated_subinterpreter;
 
     status = init_interp_create_gil(tstate);
     if (_PyStatus_EXCEPTION(status)) {

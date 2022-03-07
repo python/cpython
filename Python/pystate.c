@@ -307,7 +307,7 @@ init_interpreter(PyInterpreterState *interp,
 
     _PyEval_InitState(&interp->ceval, pending_lock);
     _PyGC_InitState(&interp->gc);
-    PyConfig_InitPythonConfig(&interp->config);
+    PyConfig_InitPythonConfig(&interp->global_config);
     _PyType_InitCache(interp);
 
     interp->_initialized = 1;
@@ -415,7 +415,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
-    PyConfig_Clear(&interp->config);
+    PyConfig_Clear(&interp->global_config);
     Py_CLEAR(interp->codec_search_path);
     Py_CLEAR(interp->codec_search_cache);
     Py_CLEAR(interp->codec_error_registry);
@@ -2142,7 +2142,7 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
 const PyConfig*
 _PyInterpreterState_GetGlobalConfig(PyInterpreterState *interp)
 {
-    return &interp->config;
+    return &interp->global_config;
 }
 
 
@@ -2151,7 +2151,7 @@ _Py_CopyConfig(PyConfig *config)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
 
-    PyStatus status = _PyConfig_Copy(config, &interp->config);
+    PyStatus status = _PyConfig_Copy(config, &interp->global_config);
     if (PyStatus_Exception(status)) {
         _PyErr_SetFromPyStatus(status);
         return -1;
