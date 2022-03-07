@@ -23242,10 +23242,8 @@ $as_echo "$py_cv_module__uuid" >&6; }
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _tkinter" >&5
 $as_echo_n "checking for stdlib extension module _tkinter... " >&6; }
-      case $py_stdlib_not_available in #(
-  *_tkinter*) :
-    py_cv_module__tkinter=n/a ;; #(
-  *) :
+        if test "$py_cv_module__tkinter" != "n/a"; then :
+
     if true; then :
   if test "$have_tcltk" = "yes"; then :
   py_cv_module__tkinter=yes
@@ -23255,8 +23253,8 @@ fi
 else
   py_cv_module__tkinter=disabled
 fi
-   ;;
-esac
+
+fi
   as_fn_append MODULE_BLOCK "MODULE__TKINTER=$py_cv_module__tkinter$as_nl"
   if test "x$py_cv_module__tkinter" = xyes; then :
 
