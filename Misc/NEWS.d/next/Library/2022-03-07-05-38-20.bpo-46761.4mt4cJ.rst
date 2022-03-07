@@ -1,0 +1,1 @@
+Make :func:`inspect.signature()` returns correct signature after :func:`functools.update_wrapper()` is called. Patch by Ofey Chan.
