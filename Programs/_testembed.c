@@ -1651,7 +1651,7 @@ static int tune_config(void)
 {
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
-    if (_PyInterpreterState_GetConfigCopy(&config) < 0) {
+    if (_Py_CopyConfig(&config) < 0) {
         PyConfig_Clear(&config);
         PyErr_Print();
         return -1;

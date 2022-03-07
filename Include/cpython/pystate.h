@@ -283,8 +283,7 @@ PyAPI_FUNC(const PyConfig*) _PyInterpreterState_GetConfig(PyInterpreterState *in
 
    Once done with the configuration, PyConfig_Clear() must be called to clear
    it. */
-PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
-    struct PyConfig *config);
+PyAPI_FUNC(int) _Py_CopyConfig(PyConfig *config);
 
 /* Set the configuration of the current interpreter.
 

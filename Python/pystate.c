@@ -2147,7 +2147,7 @@ _PyInterpreterState_GetConfig(PyInterpreterState *interp)
 
 
 int
-_PyInterpreterState_GetConfigCopy(PyConfig *config)
+_Py_CopyConfig(PyConfig *config)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
 
