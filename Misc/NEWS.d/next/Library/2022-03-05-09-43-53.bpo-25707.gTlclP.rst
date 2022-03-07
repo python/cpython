@@ -1,2 +1,0 @@
-Fixed a file leak in :func:`xml.etree.ElementTree.iterparse` when the
-iterator is not exhausted. Patch by Jacob Walls.

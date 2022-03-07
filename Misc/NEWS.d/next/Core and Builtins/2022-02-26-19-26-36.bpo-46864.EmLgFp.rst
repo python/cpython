@@ -1,1 +1,0 @@
-Deprecate ``PyBytesObject.ob_shash``. It will be removed in Python 3.13.

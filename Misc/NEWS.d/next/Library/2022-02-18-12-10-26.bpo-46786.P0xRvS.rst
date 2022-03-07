@@ -1,2 +1,0 @@
-The HTML serialisation in xml.etree.ElementTree now writes ``embed``,
-``source``, ``track`` and ``wbr`` as empty tags, as defined in HTML 5.
