@@ -301,12 +301,11 @@ optimize(_Py_CODEUNIT *instructions, int len)
         uint8_t adaptive_opcode = adaptive_opcodes[opcode];
         if (adaptive_opcode) {
             instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, oparg);
-            int caches = _PyOpcode_InlineCacheEntries[opcode];
             // Make sure the adaptive counter is zero:
-            assert((caches ? instructions[i + 1] : oparg) == 0);
+            assert(instructions[i + 1] == 0);
             previous_opcode = -1;
             previous_oparg = -1;
-            i += caches;
+            i += _PyOpcode_InlineCacheEntries[opcode];
         }
         else {
             assert(!_PyOpcode_InlineCacheEntries[opcode]);
@@ -1313,6 +1312,7 @@ success:
 int
 _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
 {
+    _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)(instr + 1);
     PyTypeObject *container_type = Py_TYPE(container);
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
@@ -1320,7 +1320,7 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
                 && ((PyLongObject *)sub)->ob_digit[0] < (size_t)PyList_GET_SIZE(container))
             {
                 *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_LIST_INT,
-                                          initial_counter_value());
+                                          _Py_OPARG(*instr));
                 goto success;
             }
             else {
@@ -1338,8 +1338,7 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
         }
     }
     if (container_type == &PyDict_Type) {
-        *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_DICT,
-                                  initial_counter_value());
+        *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_DICT, _Py_OPARG(*instr));
          goto success;
     }
 #ifdef Py_STATS
@@ -1406,11 +1405,12 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
 fail:
     STAT_INC(STORE_SUBSCR, failure);
     assert(!PyErr_Occurred());
-    *instr = _Py_MAKECODEUNIT(_Py_OPCODE(*instr), ADAPTIVE_CACHE_BACKOFF);
+    cache->counter = ADAPTIVE_CACHE_BACKOFF;
     return 0;
 success:
     STAT_INC(STORE_SUBSCR, success);
     assert(!PyErr_Occurred());
+    cache->counter = initial_counter_value();
     return 0;
 }
 
