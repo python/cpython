@@ -1,6 +1,7 @@
 import contextlib
 import collections
 from functools import lru_cache
+import functools
 import inspect
 import pickle
 import re
@@ -9,7 +10,7 @@ import warnings
 from unittest import TestCase, main, skipUnless, skip
 from copy import copy, deepcopy
 
-from typing import Any, NoReturn, Never, assert_never
+from typing import Any, NoReturn, Never, assert_never, overload
 from typing import TypeVar, AnyStr
 from typing import T, KT, VT  # Not in __all__.
 from typing import Union, Optional, Literal
@@ -2930,8 +2931,8 @@ class ForwardRefTests(BaseTestCase):
 
     def test_forward_repr(self):
         self.assertEqual(repr(List['int']), "typing.List[ForwardRef('int')]")
-        self.assertEqual(repr(List[ForwardRef('int', module='mod')]), 
-                         "typing.List[ForwardRef('int', module='mod')]")	
+        self.assertEqual(repr(List[ForwardRef('int', module='mod')]),
+                         "typing.List[ForwardRef('int', module='mod')]")
 
     def test_union_forward(self):
 
@@ -3302,6 +3303,39 @@ class OverloadTests(BaseTestCase):
             pass
 
         blah()
+
+    def test_get_variants(self):
+        def blah():
+            pass
+
+        overload1 = blah
+        overload(blah)
+
+        def blah():
+            pass
+
+        overload2 = blah
+        overload(blah)
+
+        def blah():
+            pass
+
+        key = functools.get_key_for_callable(blah)
+        self.assertEqual(functools.get_variants(key), [overload1, overload2])
+
+    def test_get_variants_repeated(self):
+        for _ in range(2):
+            def blah():
+                pass
+
+            overload_func = blah
+            overload(blah)
+
+            def blah():
+                pass
+
+            key = functools.get_key_for_callable(blah)
+            self.assertEqual(functools.get_variants(key), [overload_func])
 
 
 # Definitions needed for features introduced in Python 3.6

@@ -661,7 +661,7 @@ def cache(user_function, /):
 _variant_registry = {}
 
 
-def register_variant(key, variant, *, test) -> None:
+def register_variant(key, variant):
     """Register a function variant."""
     _variant_registry.setdefault(key, []).append(variant)
 
@@ -669,6 +669,14 @@ def register_variant(key, variant, *, test) -> None:
 def get_variants(key):
     """Get all function variants for the given key."""
     return _variant_registry.get(key, [])
+
+
+def clear_variants(key=None):
+    """Clear all variants for the given key (or all keys)."""
+    if key is None:
+        _variant_registry.clear()
+    else:
+        _variant_registry.pop(key, None)
 
 
 def get_key_for_callable(func):
@@ -679,6 +687,8 @@ def get_key_for_callable(func):
 
     If no key can be created, return None.
     """
+    # classmethod and staticmethod
+    func = getattr(func, "__func__", func)
     try:
         return f"{func.__module__}.{func.__qualname__}"
     except AttributeError:
@@ -921,6 +931,10 @@ def singledispatch(func):
                         f"Invalid annotation for {argname!r}. "
                         f"{cls!r} is not a class."
                     )
+
+        key = get_key_for_callable(func)
+        if key is not None:
+            register_variant(key, func)
 
         if _is_union_type(cls):
             from typing import get_args

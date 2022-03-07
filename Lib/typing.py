@@ -2183,11 +2183,36 @@ def overload(func):
       def utf8(value: str) -> bytes: ...
       def utf8(value):
           # implementation goes here
+
+    Each overload is registered with functools.register_variant and can be
+    retrieved using functools.get_variants.
     """
     key = functools.get_key_for_callable(func)
     if key is not None:
+
+        # If we are registering a variant with a lineno below or equal to that of the
+        # most recent existing variant, we're probably re-creating overloads for a
+        # function that already exists. In that case, we clear the existing variants
+        # to avoid leaking memory.
+        firstlineno = _get_firstlineno(func)
+        if firstlineno is not None:
+            existing = functools.get_variants(key)
+            if existing:
+                existing_lineno = _get_firstlineno(existing[-1])
+                if existing_lineno is not None and firstlineno <= existing_lineno:
+                    functools.clear_variants(key)
+
         functools.register_variant(key, func)
     return _overload_dummy
+
+
+def _get_firstlineno(func):
+    # staticmethod, classmethod
+    if hasattr(func, "__func__"):
+        func = func.__func__
+    if not hasattr(func, '__code__'):
+        return None
+    return func.__code__.co_firstlineno
 
 
 def final(f):
