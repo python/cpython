@@ -2384,7 +2384,7 @@ distclean: clobber
 	for file in $(srcdir)/Lib/test/data/* ; do \
 	    if test "$$file" != "$(srcdir)/Lib/test/data/README"; then rm "$$file"; fi; \
 	done
-	-rm -f core Makefile Makefile.pre config.status Modules/Setup.local
+	-rm -f core Makefile Makefile.pre config.status Modules/Setup.local \
 	    Modules/Setup.bootstrap Modules/Setup.stdlib \
 		Modules/ld_so_aix Modules/python.exp Misc/python.pc \
 		Misc/python-embed.pc Misc/python-config.sh
