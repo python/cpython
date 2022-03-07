@@ -460,26 +460,28 @@ _Py_SetLocaleFromEnv(int category)
 
 
 static int
-interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
+runtime_update_config(_PyRuntimeState *runtime, int only_update_path_config)
 {
-    const PyConfig *config = &tstate->interp->global_config;
-
     if (!only_update_path_config) {
-        PyStatus status = _PyConfig_Write(config, tstate->interp->runtime);
+        PyStatus status = _PyConfig_Write(&runtime->config, runtime);
         if (_PyStatus_EXCEPTION(status)) {
             _PyErr_SetFromPyStatus(status);
             return -1;
         }
     }
 
-    if (_Py_IsMainInterpreter(tstate->interp)) {
-        PyStatus status = _PyPathConfig_UpdateGlobal(config);
-        if (_PyStatus_EXCEPTION(status)) {
-            _PyErr_SetFromPyStatus(status);
-            return -1;
-        }
+    PyStatus status = _PyPathConfig_UpdateGlobal(&runtime->config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyErr_SetFromPyStatus(status);
+        return -1;
     }
 
+    return 0;
+}
+
+static int
+interpreter_update_config(PyThreadState *tstate)
+{
     // Update the sys module for the new configuration
     if (_PySys_UpdateConfig(tstate) < 0) {
         return -1;
@@ -508,13 +510,20 @@ _Py_SetConfig(const PyConfig *src_config)
         goto done;
     }
 
-    status = _PyConfig_Copy(&tstate->interp->global_config, &config);
+    status = _PyConfig_Copy(&tstate->interp->runtime->config, &config);
     if (_PyStatus_EXCEPTION(status)) {
         _PyErr_SetFromPyStatus(status);
         goto done;
     }
 
-    res = interpreter_update_config(tstate, 0);
+    if (_Py_IsMainInterpreter(tstate->interp)) {
+        res = runtime_update_config(tstate->interp->runtime, 0);
+        if (res < 0) {
+            goto done;
+        }
+    }
+
+    res = interpreter_update_config(tstate);
 
 done:
     PyConfig_Clear(&config);
@@ -550,13 +559,15 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     if (interp == NULL) {
         return _PyStatus_ERR("can't make main interpreter");
     }
+    assert(interp->runtime == runtime);
+    assert(_Py_IsMainInterpreter(interp));
 
     status = _PyConfig_Write(config, runtime);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    status = _PyConfig_Copy(&interp->global_config, config);
+    status = _PyConfig_Copy(&runtime->config, config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -649,9 +660,10 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     if (interp == NULL) {
         return _PyStatus_ERR("can't make main interpreter");
     }
+    assert(interp->runtime == runtime);
     assert(_Py_IsMainInterpreter(interp));
 
-    status = _PyConfig_Copy(&interp->global_config, config);
+    status = _PyConfig_Copy(&runtime->config, config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1079,7 +1091,12 @@ done:
 static PyStatus
 pyinit_main_reconfigure(PyThreadState *tstate)
 {
-    if (interpreter_update_config(tstate, 0) < 0) {
+    if (_Py_IsMainInterpreter(tstate->interp)) {
+        if (runtime_update_config(tstate->interp->runtime, 0) < 0) {
+            return _PyStatus_ERR("fail to reconfigure Python");
+        }
+    }
+    if (interpreter_update_config(tstate) < 0) {
         return _PyStatus_ERR("fail to reconfigure Python");
     }
     return _PyStatus_OK();
@@ -1108,13 +1125,18 @@ init_interp_main(PyThreadState *tstate)
         return _PyStatus_OK();
     }
 
-    // Initialize the import-related configuration.
-    status = _PyConfig_InitImportConfig(&interp->global_config);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    if (is_main_interp) {
+        // Initialize the import-related configuration.
+        status = _PyConfig_InitImportConfig(&interp->runtime->config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
 
-    if (interpreter_update_config(tstate, 1) < 0) {
+        if (runtime_update_config(tstate->interp->runtime, 1) < 0) {
+            return _PyStatus_ERR("failed to update the Python config");
+        }
+    }
+    if (interpreter_update_config(tstate) < 0) {
         return _PyStatus_ERR("failed to update the Python config");
     }
 
@@ -1787,14 +1809,14 @@ Py_FinalizeEx(void)
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
 #ifdef Py_REF_DEBUG
-    int show_ref_count = tstate->interp->global_config.show_ref_count;
+    int show_ref_count = runtime->config.show_ref_count;
 #endif
 #ifdef Py_TRACE_REFS
-    int dump_refs = tstate->interp->global_config.dump_refs;
-    wchar_t *dump_refs_file = tstate->interp->global_config.dump_refs_file;
+    int dump_refs = runtime->config.dump_refs;
+    wchar_t *dump_refs_file = runtime->config.dump_refs_file;
 #endif
 #ifdef WITH_PYMALLOC
-    int malloc_stats = tstate->interp->global_config.malloc_stats;
+    int malloc_stats = runtime->config.malloc_stats;
 #endif
 
     /* Remaining daemon threads will automatically exit
@@ -1993,25 +2015,10 @@ new_interpreter(PyThreadState **tstate_p, const _PyInterpreterConfig *config)
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
 
     /* Copy the current interpreter config into the new interpreter */
-    const PyConfig *global_config;
-    if (save_tstate != NULL) {
-        global_config = _PyInterpreterState_GetGlobalConfig(save_tstate->interp);
-        if (config == NULL) {
-            config = _PyInterpreterState_GetConfig(save_tstate->interp);
-        }
-    }
-    else
-    {
+    if (config == NULL) {
         /* No current thread state, copy from the main interpreter */
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
-        global_config = _PyInterpreterState_GetGlobalConfig(main_interp);
-        if (config == NULL) {
-            config = _PyInterpreterState_GetConfig(main_interp);
-        }
-    }
-    status = _PyConfig_Copy(&interp->global_config, global_config);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto error;
+        config = _PyInterpreterState_GetConfig(main_interp);
     }
     status = _PyInterpreterConfig_Copy(&interp->config, config);
     if (_PyStatus_EXCEPTION(status)) {

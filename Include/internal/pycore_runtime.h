@@ -120,6 +120,7 @@ typedef struct pyruntimestate {
     struct _getargs_runtime_state getargs;
 
     PyPreConfig preconfig;
+    PyConfig config;
 
     // Audit values must be preserved when Py_Initialize()/Py_Finalize()
     // is called multiple times.

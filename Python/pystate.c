@@ -134,6 +134,8 @@ init_runtime(_PyRuntimeState *runtime,
     // Set it to the ID of the main thread of the main interpreter.
     runtime->main_thread = PyThread_get_thread_ident();
 
+    PyConfig_InitPythonConfig(&runtime->config);
+
     runtime->unicode_ids.next_index = unicode_next_index;
     runtime->unicode_ids.lock = unicode_ids_mutex;
 
@@ -188,6 +190,8 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 
 #undef FREE_LOCK
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    PyConfig_Clear(&runtime->config);
 }
 
 #ifdef HAVE_FORK
@@ -307,7 +311,6 @@ init_interpreter(PyInterpreterState *interp,
 
     _PyEval_InitState(&interp->ceval, pending_lock);
     _PyGC_InitState(&interp->gc);
-    PyConfig_InitPythonConfig(&interp->global_config);
     _PyType_InitCache(interp);
 
     interp->_initialized = 1;
@@ -415,7 +418,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
-    PyConfig_Clear(&interp->global_config);
     Py_CLEAR(interp->codec_search_path);
     Py_CLEAR(interp->codec_search_cache);
     Py_CLEAR(interp->codec_error_registry);
@@ -2149,7 +2151,7 @@ _PyInterpreterState_GetConfig(PyInterpreterState *interp)
 const PyConfig*
 _PyInterpreterState_GetGlobalConfig(PyInterpreterState *interp)
 {
-    return &interp->global_config;
+    return &interp->runtime->config;
 }
 
 
@@ -2158,7 +2160,7 @@ _Py_CopyConfig(PyConfig *config)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
 
-    PyStatus status = _PyConfig_Copy(config, &interp->global_config);
+    PyStatus status = _PyConfig_Copy(config, &interp->runtime->config);
     if (PyStatus_Exception(status)) {
         _PyErr_SetFromPyStatus(status);
         return -1;
