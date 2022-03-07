@@ -129,6 +129,10 @@ class JSONEncoder(object):
         sorted by key; this is useful for regression tests to ensure
         that JSON serializations can be compared on a day-to-day basis.
 
+        If list_oneline is true, then lists/tuples will be output as arrays
+        on a single line. If false, a newline character will be placed after each 
+        array element.
+
         If indent is a non-negative integer, then JSON array
         elements and object members will be pretty-printed with that
         indent level.  An indent level of 0 will only insert newlines.
@@ -290,7 +294,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         if _indent is not None:
             _current_indent_level += 1
             if not list_oneline:
-                newline_indent = '\n' + _indent * _current_indent_level #here
+                newline_indent = '\n' + _indent * _current_indent_level
             else:
                 newline_indent = ''
             separator = _item_separator + newline_indent
@@ -332,7 +336,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         if newline_indent is not None:
             _current_indent_level -= 1
             if not list_oneline:
-                yield '\n' + _indent * _current_indent_level # here
+                yield '\n' + _indent * _current_indent_level
         yield ']'
         if markers is not None:
             del markers[markerid]
