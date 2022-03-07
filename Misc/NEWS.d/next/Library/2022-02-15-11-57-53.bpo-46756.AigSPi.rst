@@ -1,5 +1,0 @@
-Fix a bug in :meth:`urllib.request.HTTPPasswordMgr.find_user_password` and
-:meth:`urllib.request.HTTPPasswordMgrWithPriorAuth.is_authenticated` which
-allowed to bypass authorization. For example, access to URI
-``example.org/foobar`` was allowed if the user was authorized for URI
-``example.org/foo``.

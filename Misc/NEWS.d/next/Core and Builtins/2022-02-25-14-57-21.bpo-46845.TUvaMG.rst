@@ -1,3 +1,0 @@
-Reduces dict size by removing hash value from hash table when all inserted
-keys are Unicode. For example, ``sys.getsizeof(dict.fromkeys("abcdefg"))``
-becomes 272 bytes from 352 bytes on 64bit platform.

@@ -1,2 +1,0 @@
-Use an oparg to simplify the construction of helpful error messages in
-:opcode:`GET_AWAITABLE`.
