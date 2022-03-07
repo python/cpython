@@ -147,6 +147,20 @@ PyAPI_FUNC(void) PyEval_ReleaseThread(PyThreadState *tstate);
 #define Py_END_ALLOW_THREADS    PyEval_RestoreThread(_save); \
                  }
 
+
+/* Conditionally release and restore the GIL. */
+#define _Py_BEGIN_ALLOW_THREADS_COND(cond) \
+    { \
+        PyThreadState *_save = NULL; \
+        if (cond) { \
+            _save = PyEval_SaveThread(); \
+        }
+#define _Py_END_ALLOW_THREADS_COND \
+        if (_save != NULL) { \
+            PyEval_RestoreThread(_save); \
+        } \
+    }
+
 /* Masks and values used by FORMAT_VALUE opcode. */
 #define FVC_MASK      0x3
 #define FVC_NONE      0x0

@@ -328,10 +328,11 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     }
 
     do {
-        Py_BEGIN_ALLOW_THREADS
+        int timeout_is_zero = (tvp != NULL && tvp->tv_sec == 0 && tvp->tv_usec == 0);
+        _Py_BEGIN_ALLOW_THREADS_COND(!timeout_is_zero)
         errno = 0;
         n = select(max, &ifdset, &ofdset, &efdset, tvp);
-        Py_END_ALLOW_THREADS
+        _Py_END_ALLOW_THREADS_COND
 
         if (errno != EINTR)
             break;
@@ -639,10 +640,10 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
     /* call poll() */
     async_err = 0;
     do {
-        Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_ALLOW_THREADS_COND(ms != 0)
         errno = 0;
         poll_result = poll(self->ufds, self->ufd_len, (int)ms);
-        Py_END_ALLOW_THREADS
+        _Py_END_ALLOW_THREADS_COND
 
         if (errno != EINTR)
             break;
@@ -954,10 +955,10 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
 
     do {
         /* call devpoll() */
-        Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_ALLOW_THREADS_COND(ms != 0)
         errno = 0;
         poll_result = ioctl(self->fd_devpoll, DP_POLL, &dvp);
-        Py_END_ALLOW_THREADS
+        _Py_END_ALLOW_THREADS_COND
 
         if (errno != EINTR)
             break;
@@ -1424,17 +1425,13 @@ pyepoll_internal_ctl(int epfd, int op, int fd, unsigned int events)
     case EPOLL_CTL_MOD:
         ev.events = events;
         ev.data.fd = fd;
-        Py_BEGIN_ALLOW_THREADS
         result = epoll_ctl(epfd, op, fd, &ev);
-        Py_END_ALLOW_THREADS
         break;
     case EPOLL_CTL_DEL:
         /* In kernel versions before 2.6.9, the EPOLL_CTL_DEL
          * operation required a non-NULL pointer in event, even
          * though this argument is ignored. */
-        Py_BEGIN_ALLOW_THREADS
         result = epoll_ctl(epfd, op, fd, &ev);
-        Py_END_ALLOW_THREADS
         break;
     default:
         result = -1;
@@ -1582,10 +1579,10 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
     }
 
     do {
-        Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_ALLOW_THREADS_COND(ms != 0)
         errno = 0;
         nfds = epoll_wait(self->epfd, evs, maxevents, (int)ms);
-        Py_END_ALLOW_THREADS
+        _Py_END_ALLOW_THREADS_COND
 
         if (errno != EINTR)
             break;
@@ -2188,11 +2185,14 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
     }
 
     do {
-        Py_BEGIN_ALLOW_THREADS
+        int timeout_is_zero = (ptimeoutspec != NULL &&
+                               ptimeoutspec->tv_sec == 0 &&
+                               ptimeoutspec->tv_nsec == 0);
+        _Py_BEGIN_ALLOW_THREADS_COND(!timeout_is_zero)
         errno = 0;
         gotevents = kevent(self->kqfd, chl, nchanges,
                            evl, maxevents, ptimeoutspec);
-        Py_END_ALLOW_THREADS
+        _Py_END_ALLOW_THREADS_COND
 
         if (errno != EINTR)
             break;
