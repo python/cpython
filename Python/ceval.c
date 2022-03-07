@@ -1462,6 +1462,13 @@ eval_frame_handle_pending(PyThreadState *tstate)
     STAT_INC(LOAD_##attr_or_method, hit); \
     Py_INCREF(res);
 
+#define CALL_PY_FRAME_PASS_SELF() \
+    if (call_shape.init_pass_self) { \
+        assert(frame->self == NULL); \
+        frame->self = Py_NewRef(frame->localsplus[0]); \
+        call_shape.init_pass_self = false; \
+    }
+
 #define TRACE_FUNCTION_EXIT() \
     if (cframe.use_tracing) { \
         if (trace_function_exit(tstate, frame, retval)) { \
@@ -4701,11 +4708,7 @@ handle_eval_breaker:
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 new_frame->previous = frame;
                 cframe.current_frame = frame = new_frame;
-                if (call_shape.init_pass_self) {
-                    assert(frame->self == NULL);
-                    frame->self = Py_NewRef(frame->localsplus[0]);
-                    call_shape.init_pass_self = false;
-                }
+                CALL_PY_FRAME_PASS_SELF();
                 CALL_STAT_INC(inlined_py_calls);
                 goto start_frame;
             }
@@ -4817,11 +4820,7 @@ handle_eval_breaker:
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
-            if (call_shape.init_pass_self) {
-                assert(frame->self == NULL);
-                frame->self = Py_NewRef(frame->localsplus[0]);
-                call_shape.init_pass_self = false;
-            }
+            CALL_PY_FRAME_PASS_SELF();
             goto start_frame;
         }
 
@@ -4863,11 +4862,7 @@ handle_eval_breaker:
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
-            if (call_shape.init_pass_self) {
-                assert(frame->self == NULL);
-                frame->self = Py_NewRef(frame->localsplus[0]);
-                call_shape.init_pass_self = false;
-            }
+            CALL_PY_FRAME_PASS_SELF();
             goto start_frame;
         }
 
