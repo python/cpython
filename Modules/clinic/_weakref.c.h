@@ -94,7 +94,7 @@ _weakref_proxy(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *object;
-    PyObject *callback = Py_None;
+    PyObject *callback = NULL;
 
     if (!_PyArg_CheckPositional("proxy", nargs, 1, 2)) {
         goto exit;
@@ -110,4 +110,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ef32e81c20ee44c0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a10a1fa43722399 input=a9049054013a1b77]*/

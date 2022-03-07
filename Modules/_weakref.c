@@ -116,7 +116,7 @@ _weakref_getweakrefs(PyObject *module, PyObject *object)
 
 _weakref.proxy
     object: object
-    callback: object = None
+    callback: object(c_default="NULL") = None
     /
 
 Create a proxy object that weakly references 'object'.
@@ -127,7 +127,7 @@ proxy when 'object' is about to be finalized.
 
 static PyObject *
 _weakref_proxy_impl(PyObject *module, PyObject *object, PyObject *callback)
-/*[clinic end generated code: output=d68fa4ad9ea40519 input=7c42a7bca696a6ec]*/
+/*[clinic end generated code: output=d68fa4ad9ea40519 input=4808adf22fd137e7]*/
 {
     return PyWeakref_NewProxy(object, callback);
 }
