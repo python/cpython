@@ -240,11 +240,14 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
     Py_ssize_t length, wchar_t **items);
 
 typedef struct {
-    // If non-zero, disallow threads, subprocesses, and fork.
-    // Default: 0.
-    unsigned int _isolated_interpreter:1;
+    /* Allow forking the process. */
+    unsigned int allow_fork:1;
+    /* Allow creating subprocesses. */
+    unsigned int allow_subprocess:1;
+    /* Allow the creation of threads. */
+    unsigned int allow_threading:1;
     /* Padding to ensure byte alignment. */
-    unsigned int :7;
+    unsigned int :5;
 } _PyInterpreterConfig;
 
 /* --- Helper functions --------------------------------------- */

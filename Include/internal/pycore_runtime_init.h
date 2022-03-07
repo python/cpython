@@ -63,6 +63,11 @@ extern "C" {
             }, \
         }, \
         ._initial_thread = _PyThreadState_INIT, \
+        .config = { \
+            .allow_fork = 1, \
+            .allow_subprocess = 1, \
+            .allow_threading = 1, \
+        }, \
     }
 
 #define _PyThreadState_INIT \

@@ -3185,7 +3185,9 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 void
 _PyInterpreterConfig_Clear(_PyInterpreterConfig *config)
 {
-    config->_isolated_interpreter = 0;
+    config->allow_fork = 0;
+    config->allow_subprocess = 0;
+    config->allow_threading = 0;
 }
 
 
@@ -3197,7 +3199,9 @@ _PyInterpreterConfig_Copy(_PyInterpreterConfig *config,
 
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
 
-    COPY_ATTR(_isolated_interpreter);
+    COPY_ATTR(allow_fork);
+    COPY_ATTR(allow_subprocess);
+    COPY_ATTR(allow_threading);
 
 #undef COPY_ATTR
 
