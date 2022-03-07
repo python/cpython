@@ -390,6 +390,9 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a5 3481 (Use inline cache for BINARY_OP)
 #     Python 3.11a5 3482 (Use inline caching for UNPACK_SEQUENCE and LOAD_GLOBAL)
 #     Python 3.11a5 3483 (Use inline caching for COMPARE_OP and BINARY_SUBSCR)
+#     Python 3.11a5 3484 (Use inline caching for LOAD_ATTR, LOAD_METHOD, and
+#                         STORE_ATTR)
+#     Python 3.11a5 3485 (Add an oparg to GET_AWAITABLE)
 
 #     Python 3.12 will start with magic number 3500
 
@@ -404,7 +407,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3483).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3485).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'

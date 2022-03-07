@@ -1,0 +1,2 @@
+Use inline caching for :opcode:`LOAD_ATTR`, :opcode:`LOAD_METHOD`, and
+:opcode:`STORE_ATTR`.

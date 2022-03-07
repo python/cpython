@@ -33,7 +33,6 @@ extern "C" {
 #define GET_YIELD_FROM_ITER              69
 #define PRINT_EXPR                       70
 #define LOAD_BUILD_CLASS                 71
-#define GET_AWAITABLE                    73
 #define LOAD_ASSERTION_ERROR             74
 #define RETURN_GENERATOR                 75
 #define LIST_TO_TUPLE                    82
@@ -86,6 +85,7 @@ extern "C" {
 #define POP_JUMP_IF_NOT_NONE            128
 #define POP_JUMP_IF_NONE                129
 #define RAISE_VARARGS                   130
+#define GET_AWAITABLE                   131
 #define MAKE_FUNCTION                   132
 #define BUILD_SLICE                     133
 #define JUMP_NO_INTERRUPT               134
@@ -160,13 +160,13 @@ extern "C" {
 #define PRECALL_BUILTIN_FAST_WITH_KEYWORDS  66
 #define PRECALL_NO_KW_LEN                67
 #define PRECALL_NO_KW_ISINSTANCE         72
-#define PRECALL_NO_KW_LIST_APPEND        76
-#define PRECALL_NO_KW_METHOD_DESCRIPTOR_O  77
-#define PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS  78
-#define PRECALL_NO_KW_STR_1              79
-#define PRECALL_NO_KW_TUPLE_1            80
-#define PRECALL_NO_KW_TYPE_1             81
-#define PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST 131
+#define PRECALL_NO_KW_LIST_APPEND        73
+#define PRECALL_NO_KW_METHOD_DESCRIPTOR_O  76
+#define PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS  77
+#define PRECALL_NO_KW_STR_1              78
+#define PRECALL_NO_KW_TUPLE_1            79
+#define PRECALL_NO_KW_TYPE_1             80
+#define PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST  81
 #define PRECALL_BOUND_METHOD            140
 #define PRECALL_PYFUNC                  141
 #define RESUME_QUICK                    143
@@ -183,7 +183,6 @@ extern "C" {
 #define LOAD_FAST__LOAD_CONST           173
 #define LOAD_CONST__LOAD_FAST           174
 #define STORE_FAST__STORE_FAST          175
-#define LOAD_FAST__LOAD_ATTR_INSTANCE_VALUE 176
 #define DO_TRACING                      255
 
 extern const uint8_t _PyOpcode_InlineCacheEntries[256];
@@ -213,9 +212,12 @@ static const uint32_t _PyOpcode_Jump[8] = {
 const uint8_t _PyOpcode_InlineCacheEntries[256] = {
     [BINARY_SUBSCR] = 4,
     [UNPACK_SEQUENCE] = 1,
+    [STORE_ATTR] = 4,
+    [LOAD_ATTR] = 4,
     [COMPARE_OP] = 2,
     [LOAD_GLOBAL] = 5,
     [BINARY_OP] = 1,
+    [LOAD_METHOD] = 10,
 };
 #endif /* OPCODE_TABLES */
 

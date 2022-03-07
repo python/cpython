@@ -1,0 +1,1 @@
+The :mod:`pwd` module is now optional. :func:`os.path.expanduser` returns the path when the :mod:`pwd` module is not available.

@@ -20,14 +20,8 @@ typedef struct {
     uint32_t version;
 } _PyAdaptiveEntry;
 
-
 typedef struct {
-    uint32_t tp_version;
-    uint32_t dk_version;
-} _PyAttrCache;
-
-typedef struct {
-    /* Borrowed ref in LOAD_METHOD */
+    /* Borrowed ref */
     PyObject *obj;
 } _PyObjectCache;
 
@@ -51,7 +45,6 @@ typedef struct {
 typedef union {
     _PyEntryZero zero;
     _PyAdaptiveEntry adaptive;
-    _PyAttrCache attr;
     _PyObjectCache obj;
     _PyCallCache call;
 } SpecializedCacheEntry;
@@ -65,8 +58,7 @@ typedef union {
 typedef struct {
     _Py_CODEUNIT counter;
     _Py_CODEUNIT index;
-    _Py_CODEUNIT module_keys_version;
-    _Py_CODEUNIT _m1;
+    _Py_CODEUNIT module_keys_version[2];
     _Py_CODEUNIT builtin_keys_version;
 } _PyLoadGlobalCache;
 
@@ -94,12 +86,31 @@ typedef struct {
 
 typedef struct {
     _Py_CODEUNIT counter;
-    _Py_CODEUNIT type_version;
-    _Py_CODEUNIT _t1;
+    _Py_CODEUNIT type_version[2];
     _Py_CODEUNIT func_version;
 } _PyBinarySubscrCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_SUBSCR CACHE_ENTRIES(_PyBinarySubscrCache)
+
+typedef struct {
+    _Py_CODEUNIT counter;
+    _Py_CODEUNIT version[2];
+    _Py_CODEUNIT index;
+} _PyAttrCache;
+
+#define INLINE_CACHE_ENTRIES_LOAD_ATTR CACHE_ENTRIES(_PyAttrCache)
+
+#define INLINE_CACHE_ENTRIES_STORE_ATTR CACHE_ENTRIES(_PyAttrCache)
+
+typedef struct {
+    _Py_CODEUNIT counter;
+    _Py_CODEUNIT type_version[2];
+    _Py_CODEUNIT dict_offset;
+    _Py_CODEUNIT keys_version[2];
+    _Py_CODEUNIT descr[4];
+} _PyLoadMethodCache;
+
+#define INLINE_CACHE_ENTRIES_LOAD_METHOD CACHE_ENTRIES(_PyLoadMethodCache)
 
 /* Maximum size of code to quicken, in code units. */
 #define MAX_SIZE_TO_QUICKEN 5000
@@ -328,10 +339,13 @@ cache_backoff(_PyAdaptiveEntry *entry) {
 
 /* Specialization functions */
 
-extern int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
-extern int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+extern int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
+                                   PyObject *name);
+extern int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
+                                    PyObject *name);
 extern int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name);
-extern int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+extern int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr,
+                                     PyObject *name);
 extern int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
 extern int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
 extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
@@ -384,6 +398,7 @@ typedef struct _object_stats {
     uint64_t dict_materialized_on_request;
     uint64_t dict_materialized_new_key;
     uint64_t dict_materialized_too_big;
+    uint64_t dict_materialized_str_subclass;
 } ObjectStats;
 
 typedef struct _stats {
@@ -416,34 +431,107 @@ extern PyObject* _Py_GetSpecializationStats(void);
 #ifdef WORDS_BIGENDIAN
 
 static inline void
-write32(uint16_t *p, uint32_t val)
+write_u32(uint16_t *p, uint32_t val)
 {
-    p[0] = val >> 16;
-    p[1] = (uint16_t)val;
+    p[0] = (uint16_t)(val >> 16);
+    p[1] = (uint16_t)(val >>  0);
+}
+
+static inline void
+write_u64(uint16_t *p, uint64_t val)
+{
+    p[0] = (uint16_t)(val >> 48);
+    p[1] = (uint16_t)(val >> 32);
+    p[2] = (uint16_t)(val >> 16);
+    p[3] = (uint16_t)(val >>  0);
 }
 
 static inline uint32_t
-read32(uint16_t *p)
+read_u32(uint16_t *p)
 {
-    return (p[0] << 16) | p[1];
+    uint32_t val = 0;
+    val |= (uint32_t)p[0] << 16;
+    val |= (uint32_t)p[1] <<  0;
+    return val;
+}
+
+static inline uint64_t
+read_u64(uint16_t *p)
+{
+    uint64_t val = 0;
+    val |= (uint64_t)p[0] << 48;
+    val |= (uint64_t)p[1] << 32;
+    val |= (uint64_t)p[2] << 16;
+    val |= (uint64_t)p[3] <<  0;
+    return val;
 }
 
 #else
 
 static inline void
-write32(uint16_t *p, uint32_t val)
+write_u32(uint16_t *p, uint32_t val)
 {
-    p[0] = (uint16_t)val;
-    p[1] = val >> 16;
+    p[0] = (uint16_t)(val >>  0);
+    p[1] = (uint16_t)(val >> 16);
+}
+
+static inline void
+write_u64(uint16_t *p, uint64_t val)
+{
+    p[0] = (uint16_t)(val >>  0);
+    p[1] = (uint16_t)(val >> 16);
+    p[2] = (uint16_t)(val >> 32);
+    p[3] = (uint16_t)(val >> 48);
 }
 
 static inline uint32_t
-read32(uint16_t *p)
+read_u32(uint16_t *p)
 {
-    return p[0] | (p[1] << 16);
+    uint32_t val = 0;
+    val |= (uint32_t)p[0] <<  0;
+    val |= (uint32_t)p[1] << 16;
+    return val;
+}
+
+static inline uint64_t
+read_u64(uint16_t *p)
+{
+    uint64_t val = 0;
+    val |= (uint64_t)p[0] <<  0;
+    val |= (uint64_t)p[1] << 16;
+    val |= (uint64_t)p[2] << 32;
+    val |= (uint64_t)p[3] << 48;
+    return val;
 }
 
 #endif
+
+static inline void
+write_obj(uint16_t *p, PyObject *obj)
+{
+    uintptr_t val = (uintptr_t)obj;
+#if SIZEOF_VOID_P == 8
+    write_u64(p, val);
+#elif SIZEOF_VOID_P == 4
+    write_u32(p, val);
+#else
+    #error "SIZEOF_VOID_P must be 4 or 8"
+#endif
+}
+
+static inline PyObject *
+read_obj(uint16_t *p)
+{
+    uintptr_t val;
+#if SIZEOF_VOID_P == 8
+    val = read_u64(p);
+#elif SIZEOF_VOID_P == 4
+    val = read_u32(p);
+#else
+    #error "SIZEOF_VOID_P must be 4 or 8"
+#endif
+    return (PyObject *)val;
+}
 
 #ifdef __cplusplus
 }

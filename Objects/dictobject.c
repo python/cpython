@@ -5427,23 +5427,26 @@ int
 _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
                               PyObject *name, PyObject *value)
 {
-    assert(PyUnicode_CheckExact(name));
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
     assert(keys != NULL);
     assert(values != NULL);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    Py_ssize_t ix = insert_into_dictkeys(keys, name);
+    Py_ssize_t ix = DKIX_EMPTY;
+    if (PyUnicode_CheckExact(name)) {
+        ix = insert_into_dictkeys(keys, name);
+    }
     if (ix == DKIX_EMPTY) {
-        if (value == NULL) {
-            PyErr_SetObject(PyExc_AttributeError, name);
-            return -1;
-        }
 #ifdef Py_STATS
-        if (shared_keys_usable_size(keys) == SHARED_KEYS_MAX_SIZE) {
-            OBJECT_STAT_INC(dict_materialized_too_big);
+        if (PyUnicode_CheckExact(name)) {
+            if (shared_keys_usable_size(keys) == SHARED_KEYS_MAX_SIZE) {
+                OBJECT_STAT_INC(dict_materialized_too_big);
+            }
+            else {
+                OBJECT_STAT_INC(dict_materialized_new_key);
+            }
         }
         else {
-            OBJECT_STAT_INC(dict_materialized_new_key);
+            OBJECT_STAT_INC(dict_materialized_str_subclass);
         }
 #endif
         PyObject *dict = make_dict_from_instance_attributes(keys, values);
@@ -5452,7 +5455,12 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
         }
         *_PyObject_ValuesPointer(obj) = NULL;
         *_PyObject_ManagedDictPointer(obj) = dict;
-        return PyDict_SetItem(dict, name, value);
+        if (value == NULL) {
+            return PyDict_DelItem(dict, name);
+        }
+        else {
+            return PyDict_SetItem(dict, name, value);
+        }
     }
     PyObject *old_value = values->values[ix];
     Py_XINCREF(value);
