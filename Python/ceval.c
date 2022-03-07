@@ -6261,9 +6261,12 @@ format_exc_check_arg(PyThreadState *tstate, PyObject *exc,
         PyErr_Fetch(&type, &value, &traceback);
         PyErr_NormalizeException(&type, &value, &traceback);
         if (PyErr_GivenExceptionMatches(value, PyExc_NameError)) {
-            // We do not care if this fails because we are going to restore the
-            // NameError anyway.
-            (void)_PyObject_SetAttrId(value, &PyId_name, obj);
+            PyNameErrorObject* exc = (PyNameErrorObject*) value;
+            if (exc->name == NULL) {
+                // We do not care if this fails because we are going to restore the
+                // NameError anyway.
+                (void)_PyObject_SetAttrId(value, &PyId_name, obj);
+            }
         }
         PyErr_Restore(type, value, traceback);
     }
