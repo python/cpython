@@ -8,50 +8,10 @@ extern "C" {
  * Specialization and quickening structs and helper functions
  */
 
-typedef struct {
-    int32_t cache_count;
-    int32_t _; /* Force 8 byte size */
-} _PyEntryZero;
 
-typedef struct {
-    uint8_t original_oparg;
-    uint8_t counter;
-    uint16_t index;
-    uint32_t version;
-} _PyAdaptiveEntry;
-
-typedef struct {
-    /* Borrowed ref */
-    PyObject *obj;
-} _PyObjectCache;
-
-typedef struct {
-    uint32_t func_version;
-    uint16_t min_args;
-    uint16_t defaults_len;
-} _PyCallCache;
-
-
-/* Add specialized versions of entries to this union.
- *
- * Do not break the invariant: sizeof(SpecializedCacheEntry) == 8
- * Preserving this invariant is necessary because:
-    - If any one form uses more space, then all must and on 64 bit machines
-      this is likely to double the memory consumption of caches
-    - The function for calculating the offset of caches assumes a 4:1
-      cache:instruction size ratio. Changing that would need careful
-      analysis to choose a new function.
- */
-typedef union {
-    _PyEntryZero zero;
-    _PyAdaptiveEntry adaptive;
-    _PyObjectCache obj;
-    _PyCallCache call;
-} SpecializedCacheEntry;
-
-#define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
-
-/* Inline caches */
+// Inline caches. If you change the number of cache entries for an instruction,
+// you must *also* update the number of cache entries in Lib/opcode.py and bump
+// the magic number in Lib/importlib/_bootstrap_external.py!
 
 #define CACHE_ENTRIES(cache) (sizeof(cache)/sizeof(_Py_CODEUNIT))
 
@@ -112,73 +72,22 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_LOAD_METHOD CACHE_ENTRIES(_PyLoadMethodCache)
 
+typedef struct {
+    _Py_CODEUNIT counter;
+    _Py_CODEUNIT func_version[2];
+    _Py_CODEUNIT min_args;
+} _PyCallCache;
+
+#define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
+
+typedef struct {
+    _Py_CODEUNIT counter;
+} _PyPrecallCache;
+
+#define INLINE_CACHE_ENTRIES_PRECALL CACHE_ENTRIES(_PyPrecallCache)
+
 /* Maximum size of code to quicken, in code units. */
-#define MAX_SIZE_TO_QUICKEN 5000
-
-typedef union _cache_or_instruction {
-    _Py_CODEUNIT code[1];
-    SpecializedCacheEntry entry;
-} SpecializedCacheOrInstruction;
-
-/* Get pointer to the nth cache entry, from the first instruction and n.
- * Cache entries are indexed backwards, with [count-1] first in memory, and [0] last.
- * The zeroth entry immediately precedes the instructions.
- */
-static inline SpecializedCacheEntry *
-_GetSpecializedCacheEntry(const _Py_CODEUNIT *first_instr, Py_ssize_t n)
-{
-    SpecializedCacheOrInstruction *last_cache_plus_one = (SpecializedCacheOrInstruction *)first_instr;
-    assert(&last_cache_plus_one->code[0] == first_instr);
-    return &last_cache_plus_one[-1-n].entry;
-}
-
-/* Following two functions form a pair.
- *
- * oparg_from_offset_and_index() is used to compute the oparg
- * when quickening, so that offset_from_oparg_and_nexti()
- * can be used at runtime to compute the offset.
- *
- * The relationship between the three values is currently
- *     offset == (index>>1) + oparg
- * This relation is chosen based on the following observations:
- * 1. typically 1 in 4 instructions need a cache
- * 2. instructions that need a cache typically use 2 entries
- *  These observations imply:  offset ≈ index/2
- *  We use the oparg to fine tune the relation to avoid wasting space
- * and allow consecutive instructions to use caches.
- *
- * If the number of cache entries < number of instructions/2 we will waste
- * some small amoount of space.
- * If the number of cache entries > (number of instructions/2) + 255, then
- * some instructions will not be able to use a cache.
- * In practice, we expect some small amount of wasted space in a shorter functions
- * and only functions exceeding a 1000 lines or more not to have enugh cache space.
- *
- */
-static inline int
-oparg_from_offset_and_nexti(int offset, int nexti)
-{
-    return offset-(nexti>>1);
-}
-
-static inline int
-offset_from_oparg_and_nexti(int oparg, int nexti)
-{
-    return (nexti>>1)+oparg;
-}
-
-/* Get pointer to the cache entry associated with an instruction.
- * nexti is the index of the instruction plus one.
- * nexti is used as it corresponds to the instruction pointer in the interpreter.
- * This doesn't check that an entry has been allocated for that instruction. */
-static inline SpecializedCacheEntry *
-_GetSpecializedCacheEntryForInstruction(const _Py_CODEUNIT *first_instr, int nexti, int oparg)
-{
-    return _GetSpecializedCacheEntry(
-        first_instr,
-        offset_from_oparg_and_nexti(oparg, nexti)
-    );
-}
+#define MAX_SIZE_TO_QUICKEN 10000
 
 #define QUICKENING_WARMUP_DELAY 8
 
@@ -204,6 +113,13 @@ _Py_IncrementCountAndMaybeQuicken(PyCodeObject *code)
 }
 
 extern Py_ssize_t _Py_QuickenedCount;
+
+// Borrowed references to common callables:
+struct callable_cache {
+    PyObject *isinstance;
+    PyObject *len;
+    PyObject *list_append;
+};
 
 /* "Locals plus" for a code object is the set of locals + cell vars +
  * free vars.  This relates to variable names as well as offsets into
@@ -332,11 +248,6 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
 #define ADAPTIVE_CACHE_BACKOFF 64
 
-static inline void
-cache_backoff(_PyAdaptiveEntry *entry) {
-    entry->counter = ADAPTIVE_CACHE_BACKOFF;
-}
-
 /* Specialization functions */
 
 extern int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
@@ -348,10 +259,10 @@ extern int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr,
                                      PyObject *name);
 extern int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
 extern int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
-extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
-    PyObject *kwnames, SpecializedCacheEntry *cache);
-extern int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
-    PyObject *kwnames, SpecializedCacheEntry *cache, PyObject *builtins);
+extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
+                               int nargs, PyObject *kwnames);
+extern int _Py_Specialize_Precall(PyObject *callable, _Py_CODEUNIT *instr,
+                                  int nargs, PyObject *kwnames, int oparg);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                                     int oparg);
 extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
