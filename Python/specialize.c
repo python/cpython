@@ -1525,7 +1525,6 @@ specialize_class_call(
     PyTypeObject *tp = _PyType_CAST(callable);
     if (tp->tp_new == PyBaseObject_Type.tp_new) {
         _PyAdaptiveEntry *cache0 = &cache[0].adaptive;
-        _PyCallCache *cache1 = &cache[-1].call;
         PyObject *descriptor = _PyType_Lookup(tp, &_Py_ID(__init__));
         if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
             if (!(tp->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
@@ -1540,12 +1539,6 @@ specialize_class_call(
             }
             assert(tp->tp_version_tag != 0);
             cache0->version = tp->tp_version_tag;
-            int version = _PyFunction_GetVersionForCurrentState(func);
-            if (version == 0 || version != (uint16_t)version) {
-                SPECIALIZATION_FAIL(PRECALL, SPEC_FAIL_OUT_OF_VERSIONS);
-                return -1;
-            }
-            cache1->func_version = version;
             ((PyHeapTypeObject *)tp)->_spec_cache.init = descriptor;
             *instr = _Py_MAKECODEUNIT(PRECALL_PY_CLASS, _Py_OPARG(*instr));
             return 0;

@@ -4638,7 +4638,6 @@ handle_eval_breaker:
         TARGET(PRECALL_PY_CLASS) {
             SpecializedCacheEntry *cache = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &cache[0].adaptive;
-            _PyCallCache *cache1 = &cache[-1].call;
             int original_oparg = cache->adaptive.original_oparg;
             int is_method = (PEEK(original_oparg + 2) != NULL);
             DEOPT_IF(is_method, PRECALL);
@@ -4649,7 +4648,6 @@ handle_eval_breaker:
             assert(cls_t->tp_flags & Py_TPFLAGS_HEAPTYPE);
             PyObject *init = ((PyHeapTypeObject *)cls_t)->_spec_cache.init;
             assert(PyFunction_Check(init));
-            DEOPT_IF(((PyFunctionObject *)(init))->func_version != cache1->func_version, PRECALL);
             DEOPT_IF(cls_t->tp_new != PyBaseObject_Type.tp_new, PRECALL);
             STAT_INC(PRECALL, hit);
 
