@@ -641,7 +641,7 @@ class ElementTreeTest(unittest.TestCase):
             del cm, it
 
         # Not exhausting the iterator still closes the resource (bpo-43292)
-        with warnings_helper.check_no_resource_warning(self):
+        with support.check_no_resource_warning(self):
             it = iterparse(TESTFN)
             del it
 
