@@ -64,6 +64,11 @@
    compiled with the cdecl calling convention as the default since
    system headers may assume the cdecl convention.
 */
+
+/* Namespace external symbols to allow multiple libexpat version to
+   co-exist. */
+#include "pyexpatns.h"
+
 #ifndef XMLCALL
 #  if defined(_MSC_VER)
 #    define XMLCALL __cdecl
