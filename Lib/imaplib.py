@@ -708,7 +708,7 @@ class IMAP4:
         """
         typ, dat = self._simple_command('LOGIN', user, self._quote(password))
         if typ != 'OK':
-            raise self.error(dat[-1])
+            raise self.error(dat[-1].decode('UTF-8', 'replace'))
         self.state = 'AUTH'
         return typ, dat
 
