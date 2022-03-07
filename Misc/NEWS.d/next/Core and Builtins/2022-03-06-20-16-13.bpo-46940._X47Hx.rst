@@ -1,0 +1,2 @@
+Avoid overriding :exc:`AttributeError` metadata information for nested
+attribute access calls. Patch by Pablo Galindo.
