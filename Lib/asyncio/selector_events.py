@@ -498,7 +498,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         if not hasattr(socket, 'AF_UNIX') or sock.family != socket.AF_UNIX:
             resolved = await self._ensure_resolved(
-                address, family=sock.family, proto=sock.proto, loop=self)
+                address, family=sock.family, type=sock.type, proto=sock.proto,
+                loop=self,
+            )
             _, _, _, _, address = resolved[0]
 
         fut = self.create_future()

@@ -12,7 +12,7 @@
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unionobject.h"   // _Py_union_type_or
 #include "frameobject.h"          // PyFrameObject
-#include "pycore_frame.h"         // InterpreterFrame
+#include "pycore_frame.h"         // _PyInterpreterFrame
 #include "opcode.h"               // MAKE_CELL
 #include "structmember.h"         // PyMemberDef
 
@@ -3716,7 +3716,7 @@ PyType_GetModuleState(PyTypeObject *type)
  * given PyModuleDef.
  */
 PyObject *
-PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
+PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
 {
     assert(PyType_Check(type));
 
@@ -3869,7 +3869,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 }
 
 PyObject *
-_PyType_LookupId(PyTypeObject *type, struct _Py_Identifier *name)
+_PyType_LookupId(PyTypeObject *type, _Py_Identifier *name)
 {
     PyObject *oname;
     oname = _PyUnicode_FromId(name);   /* borrowed */
@@ -8933,7 +8933,7 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static int
-super_init_without_args(InterpreterFrame *cframe, PyCodeObject *co,
+super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
                         PyTypeObject **type_p, PyObject **obj_p)
 {
     if (co->co_argcount == 0) {
@@ -9000,24 +9000,33 @@ super_init_without_args(InterpreterFrame *cframe, PyCodeObject *co,
     return 0;
 }
 
+static int super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj);
+
 static int
 super_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    superobject *su = (superobject *)self;
     PyTypeObject *type = NULL;
     PyObject *obj = NULL;
-    PyTypeObject *obj_type = NULL;
 
     if (!_PyArg_NoKeywords("super", kwds))
         return -1;
     if (!PyArg_ParseTuple(args, "|O!O:super", &PyType_Type, &type, &obj))
         return -1;
+    if (super_init_impl(self, type, obj) < 0) {
+        return -1;
+    }
+    return 0;
+}
 
+static inline int
+super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
+    superobject *su = (superobject *)self;
+    PyTypeObject *obj_type = NULL;
     if (type == NULL) {
         /* Call super(), without args -- fill in from __class__
            and first local variable on the stack. */
         PyThreadState *tstate = _PyThreadState_GET();
-        InterpreterFrame *cframe = tstate->cframe->current_frame;
+        _PyInterpreterFrame *cframe = tstate->cframe->current_frame;
         if (cframe == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no current frame");
@@ -9072,6 +9081,47 @@ super_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
+static PyObject *
+super_vectorcall(PyObject *self, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    assert(PyType_Check(self));
+    if (!_PyArg_NoKwnames("super", kwnames)) {
+        return NULL;
+    }
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("super()", nargs, 0, 2)) {
+        return NULL;
+    }
+    PyTypeObject *type = NULL;
+    PyObject *obj = NULL;
+    PyTypeObject *self_type = (PyTypeObject *)self;
+    PyObject *su = self_type->tp_alloc(self_type, 0);
+    if (su == NULL) {
+        return NULL;
+    }
+    // 1 or 2 argument form super().
+    if (nargs != 0) {
+        PyObject *arg0 = args[0];
+        if (!PyType_Check(arg0)) {
+            PyErr_Format(PyExc_TypeError,
+                "super() argument 1 must be a type, not %.200s", Py_TYPE(arg0)->tp_name);
+            goto fail;
+        }
+        type = (PyTypeObject *)arg0;
+    }
+    if (nargs == 2) {
+        obj = args[1];
+    }
+    if (super_init_impl(su, type, obj) < 0) {
+        goto fail;
+    }
+    return su;
+fail:
+    Py_DECREF(su);
+    return NULL;
+}
+
 PyTypeObject PySuper_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "super",                                    /* tp_name */
@@ -9114,4 +9164,5 @@ PyTypeObject PySuper_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
+    .tp_vectorcall = (vectorcallfunc)super_vectorcall,
 };

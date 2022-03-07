@@ -32,6 +32,7 @@ from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
 from typing import TypeGuard
 import abc
+import textwrap
 import typing
 import weakref
 import types
@@ -2156,6 +2157,45 @@ class GenericTests(BaseTestCase):
         def barfoo2(x: CT): ...
         self.assertIs(get_type_hints(barfoo2, globals(), locals())['x'], CT)
 
+    def test_generic_pep585_forward_ref(self):
+        # See https://bugs.python.org/issue41370
+
+        class C1:
+            a: list['C1']
+        self.assertEqual(
+            get_type_hints(C1, globals(), locals()),
+            {'a': list[C1]}
+        )
+
+        class C2:
+            a: dict['C1', list[List[list['C2']]]]
+        self.assertEqual(
+            get_type_hints(C2, globals(), locals()),
+            {'a': dict[C1, list[List[list[C2]]]]}
+        )
+
+        # Test stringified annotations
+        scope = {}
+        exec(textwrap.dedent('''
+        from __future__ import annotations
+        class C3:
+            a: List[list["C2"]]
+        '''), scope)
+        C3 = scope['C3']
+        self.assertEqual(C3.__annotations__['a'], "List[list['C2']]")
+        self.assertEqual(
+            get_type_hints(C3, globals(), locals()),
+            {'a': List[list[C2]]}
+        )
+
+        # Test recursive types
+        X = list["X"]
+        def f(x: X): ...
+        self.assertEqual(
+            get_type_hints(f, globals(), locals()),
+            {'x': list[list[ForwardRef('X')]]}
+        )
+
     def test_extended_generic_rules_subclassing(self):
         class T1(Tuple[T, KT]): ...
         class T2(Tuple[T, ...]): ...
@@ -2828,16 +2868,15 @@ class ForwardRefTests(BaseTestCase):
         t = Node[int]
         both_hints = get_type_hints(t.add_both, globals(), locals())
         self.assertEqual(both_hints['left'], Optional[Node[T]])
-        self.assertEqual(both_hints['right'], Optional[Node[T]])
-        self.assertEqual(both_hints['left'], both_hints['right'])
-        self.assertEqual(both_hints['stuff'], Optional[int])
+        self.assertEqual(both_hints['right'], Node[T])
+        self.assertEqual(both_hints['stuff'], int)
         self.assertNotIn('blah', both_hints)
 
         left_hints = get_type_hints(t.add_left, globals(), locals())
         self.assertEqual(left_hints['node'], Optional[Node[T]])
 
         right_hints = get_type_hints(t.add_right, globals(), locals())
-        self.assertEqual(right_hints['node'], Optional[Node[T]])
+        self.assertEqual(right_hints['node'], Node[T])
 
     def test_forwardref_instance_type_error(self):
         fr = typing.ForwardRef('int')
@@ -2931,8 +2970,8 @@ class ForwardRefTests(BaseTestCase):
 
     def test_forward_repr(self):
         self.assertEqual(repr(List['int']), "typing.List[ForwardRef('int')]")
-        self.assertEqual(repr(List[ForwardRef('int', module='mod')]), 
-                         "typing.List[ForwardRef('int', module='mod')]")	
+        self.assertEqual(repr(List[ForwardRef('int', module='mod')]),
+                         "typing.List[ForwardRef('int', module='mod')]")
 
     def test_union_forward(self):
 
@@ -3557,7 +3596,7 @@ class GetTypeHintTests(BaseTestCase):
         BA = Tuple[Annotated[T, (1, 0)], ...]
         def barfoo(x: BA): ...
         self.assertEqual(get_type_hints(barfoo, globals(), locals())['x'], Tuple[T, ...])
-        self.assertIs(
+        self.assertEqual(
             get_type_hints(barfoo, globals(), locals(), include_extras=True)['x'],
             BA
         )
@@ -3565,7 +3604,7 @@ class GetTypeHintTests(BaseTestCase):
         BA = tuple[Annotated[T, (1, 0)], ...]
         def barfoo(x: BA): ...
         self.assertEqual(get_type_hints(barfoo, globals(), locals())['x'], tuple[T, ...])
-        self.assertIs(
+        self.assertEqual(
             get_type_hints(barfoo, globals(), locals(), include_extras=True)['x'],
             BA
         )
@@ -3628,6 +3667,18 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(
             get_type_hints(MySet.__ior__, globals(), locals()),
             {'other': MySet[T], 'return': MySet[T]}
+        )
+
+    def test_get_type_hints_annotated_with_none_default(self):
+        # See: https://bugs.python.org/issue46195
+        def annotated_with_none_default(x: Annotated[int, 'data'] = None): ...
+        self.assertEqual(
+            get_type_hints(annotated_with_none_default),
+            {'x': int},
+        )
+        self.assertEqual(
+            get_type_hints(annotated_with_none_default, include_extras=True),
+            {'x': Annotated[int, 'data']},
         )
 
     def test_get_type_hints_classes_str_annotations(self):
@@ -5175,6 +5226,18 @@ class ParamSpecTests(BaseTestCase):
         self.assertNotEqual(P.args, P_2.kwargs)
         self.assertEqual(repr(P.args), "P.args")
         self.assertEqual(repr(P.kwargs), "P.kwargs")
+
+    def test_stringized(self):
+        P = ParamSpec('P')
+        class C(Generic[P]):
+            func: Callable["P", int]
+            def foo(self, *args: "P.args", **kwargs: "P.kwargs"):
+                pass
+
+        self.assertEqual(gth(C, globals(), locals()), {"func": Callable[P, int]})
+        self.assertEqual(
+            gth(C.foo, globals(), locals()), {"args": P.args, "kwargs": P.kwargs}
+        )
 
     def test_user_generics(self):
         T = TypeVar("T")

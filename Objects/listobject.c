@@ -15,7 +15,7 @@ class list "PyListObject *" "&PyList_Type"
 
 #include "clinic/listobject.c.h"
 
-static PyObject *indexerr = NULL;
+_Py_DECLARE_STR(list_err, "list index out of range");
 
 #if PyList_MAXFREELIST > 0
 static struct _Py_list_state *
@@ -125,10 +125,6 @@ _PyList_Fini(PyInterpreterState *interp)
     struct _Py_list_state *state = &interp->list;
     state->numfree = -1;
 #endif
-
-    if (_Py_IsMainInterpreter(interp)) {
-        Py_CLEAR(indexerr);
-    }
 }
 
 /* Print summary info about the state of the optimized allocator */
@@ -238,13 +234,8 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
         return NULL;
     }
     if (!valid_index(i, Py_SIZE(op))) {
-        if (indexerr == NULL) {
-            indexerr = PyUnicode_FromString(
-                "list index out of range");
-            if (indexerr == NULL)
-                return NULL;
-        }
-        PyErr_SetObject(PyExc_IndexError, indexerr);
+        _Py_DECLARE_STR(list_err, "list index out of range");
+        PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
     }
     return ((PyListObject *)op) -> ob_item[i];
@@ -452,13 +443,7 @@ static PyObject *
 list_item(PyListObject *a, Py_ssize_t i)
 {
     if (!valid_index(i, Py_SIZE(a))) {
-        if (indexerr == NULL) {
-            indexerr = PyUnicode_FromString(
-                "list index out of range");
-            if (indexerr == NULL)
-                return NULL;
-        }
-        PyErr_SetObject(PyExc_IndexError, indexerr);
+        PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
     }
     Py_INCREF(a->ob_item[i]);

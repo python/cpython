@@ -79,12 +79,12 @@ struct atexit_state {
    */
 struct _is {
 
-    struct _is *next;
+    PyInterpreterState *next;
 
     struct pythreads {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
-        struct _ts *head;
+        PyThreadState *head;
         /* Used in Modules/_threadmodule.c. */
         long count;
         /* Support for runtime thread stack size tuning.
@@ -190,7 +190,7 @@ struct _is {
        */
 
     /* the initial PyInterpreterState.threads.head */
-    struct _ts _initial_thread;
+    PyThreadState _initial_thread;
 };
 
 
@@ -214,11 +214,11 @@ struct _xidregitem {
     struct _xidregitem *next;
 };
 
-PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(int64_t);
+PyAPI_FUNC(PyInterpreterState*) _PyInterpreterState_LookUpID(int64_t);
 
-PyAPI_FUNC(int) _PyInterpreterState_IDInitref(struct _is *);
-PyAPI_FUNC(int) _PyInterpreterState_IDIncref(struct _is *);
-PyAPI_FUNC(void) _PyInterpreterState_IDDecref(struct _is *);
+PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
 
 #ifdef __cplusplus
 }

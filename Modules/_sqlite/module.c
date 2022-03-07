@@ -590,13 +590,6 @@ module_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->lru_cache);
     Py_VISIT(state->psyco_adapters);
 
-    // Interned strings
-    Py_VISIT(state->str___adapt__);
-    Py_VISIT(state->str___conform__);
-    Py_VISIT(state->str_executescript);
-    Py_VISIT(state->str_finalize);
-    Py_VISIT(state->str_upper);
-
     return 0;
 }
 
@@ -634,6 +627,7 @@ module_clear(PyObject *module)
     Py_CLEAR(state->str___conform__);
     Py_CLEAR(state->str_executescript);
     Py_CLEAR(state->str_finalize);
+    Py_CLEAR(state->str_step);
     Py_CLEAR(state->str_upper);
 
     return 0;
@@ -720,6 +714,7 @@ module_exec(PyObject *module)
     ADD_INTERNED(state, __conform__);
     ADD_INTERNED(state, executescript);
     ADD_INTERNED(state, finalize);
+    ADD_INTERNED(state, step);
     ADD_INTERNED(state, upper);
 
     /* Set error constants */

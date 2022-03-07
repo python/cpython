@@ -452,7 +452,8 @@ class _ProactorWritePipeTransport(_ProactorBaseWritePipeTransport):
             self.close()
 
 
-class _ProactorDatagramTransport(_ProactorBasePipeTransport):
+class _ProactorDatagramTransport(_ProactorBasePipeTransport,
+                                 transports.DatagramTransport):
     max_size = 256 * 1024
     def __init__(self, loop, sock, protocol, address=None,
                  waiter=None, extra=None):
