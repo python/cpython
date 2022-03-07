@@ -12372,7 +12372,7 @@ save_LIBS=$LIBS
 
 
   CPPFLAGS="$TCLTK_CFLAGS $CFLAGS"
-  LDFLAGS="$TCLTK_LIBS $LDFLAGS"
+  LIBS="$TCLTK_LIBS $LDFLAGS"
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
