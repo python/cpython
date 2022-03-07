@@ -43,6 +43,8 @@ extern PyStatus _PyTypes_InitSlotDefs(void);
 
 extern void _PyStaticType_Dealloc(PyTypeObject *type);
 
+extern PyObject *_PyObject_New_Vector(PyTypeObject *type,
+    PyObject *const *args, Py_ssize_t nargs, PyObject *kwds);
 
 #ifdef __cplusplus
 }

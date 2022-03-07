@@ -4653,12 +4653,8 @@ handle_eval_breaker:
             DEOPT_IF(cls_t->tp_new != PyBaseObject_Type.tp_new, PRECALL);
             STAT_INC(PRECALL, hit);
 
-            PyObject *args = _PyTuple_FromArray(&PEEK(original_oparg), original_oparg);
-            if (args == NULL) {
-                goto error;
-            }
-            PyObject *self = PyBaseObject_Type.tp_new(cls_t, args, call_shape.kwnames);
-            Py_DECREF(args);
+            PyObject *self = _PyObject_New_Vector(cls_t, &PEEK(original_oparg),
+                (Py_ssize_t)original_oparg, call_shape.kwnames);
             if (self == NULL) {
                 goto error;
             }

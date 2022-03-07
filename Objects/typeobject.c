@@ -4514,7 +4514,15 @@ object_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    if (excess_args(args, kwds)) {
+    return _PyObject_New_Vector(type, (_PyTuple_CAST(args)->ob_item),
+        PyTuple_GET_SIZE(args), kwds);
+}
+
+PyObject *
+_PyObject_New_Vector(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, PyObject *kwds)
+{
+    if (nargs || (kwds && PyDict_Check(kwds) && PyDict_GET_SIZE(kwds))) {
         if (type->tp_new != object_new) {
             PyErr_SetString(PyExc_TypeError,
                             "object.__new__() takes exactly one argument (the type to instantiate)");
