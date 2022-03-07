@@ -530,7 +530,6 @@ instancemethod_hash(PyObject *self)
 /*[clinic input]
 @classmethod
 instancemethod.__new__
-
     function: object
 
 Bind a function to a class.
@@ -538,7 +537,7 @@ Bind a function to a class.
 
 static PyObject *
 instancemethod_impl(PyTypeObject *type, PyObject *function)
-/*[clinic end generated code: output=7be73374f08a55df input=9379eb562f0e77df]*/
+/*[clinic end generated code: output=7be73374f08a55df input=17197d46a4f0dcd7]*/
 {
     if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError,
