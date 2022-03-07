@@ -1959,7 +1959,7 @@ Py_Finalize(void)
 */
 
 static PyStatus
-new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
+new_interpreter(PyThreadState **tstate_p, const _PyInterpreterConfig *config)
 {
     PyStatus status;
 
@@ -1994,17 +1994,20 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
 
     /* Copy the current interpreter config into the new interpreter */
     const PyConfig *global_config;
-    const _PyInterpreterConfig *config;
     if (save_tstate != NULL) {
         global_config = _PyInterpreterState_GetGlobalConfig(save_tstate->interp);
-        config = _PyInterpreterState_GetConfig(save_tstate->interp);
+        if (config == NULL) {
+            config = _PyInterpreterState_GetConfig(save_tstate->interp);
+        }
     }
     else
     {
         /* No current thread state, copy from the main interpreter */
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
         global_config = _PyInterpreterState_GetGlobalConfig(main_interp);
-        config = _PyInterpreterState_GetConfig(main_interp);
+        if (config == NULL) {
+            config = _PyInterpreterState_GetConfig(main_interp);
+        }
     }
     status = _PyConfig_Copy(&interp->global_config, global_config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2047,10 +2050,10 @@ error:
 }
 
 PyThreadState *
-_Py_NewInterpreter(int isolated_subinterpreter)
+_Py_NewInterpreter(const _PyInterpreterConfig *config)
 {
     PyThreadState *tstate = NULL;
-    PyStatus status = new_interpreter(&tstate, isolated_subinterpreter);
+    PyStatus status = new_interpreter(&tstate, config);
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }
@@ -2061,7 +2064,7 @@ _Py_NewInterpreter(int isolated_subinterpreter)
 PyThreadState *
 Py_NewInterpreter(void)
 {
-    return _Py_NewInterpreter(0);
+    return _Py_NewInterpreter(NULL);
 }
 
 /* Delete an interpreter and its last thread.  This requires that the

@@ -2001,10 +2001,12 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    const _PyInterpreterConfig config;  // isolated by default
+
     // Create and initialize the new interpreter.
     PyThreadState *save_tstate = _PyThreadState_GET();
     // XXX Possible GILState issues?
-    PyThreadState *tstate = _Py_NewInterpreter(isolated);
+    PyThreadState *tstate = _Py_NewInterpreter(isolated ? &config : NULL);
     PyThreadState_Swap(save_tstate);
     if (tstate == NULL) {
         /* Since no new thread state was created, there is no exception to
