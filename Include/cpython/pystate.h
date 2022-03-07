@@ -299,9 +299,8 @@ PyAPI_FUNC(int) _Py_CopyConfig(PyConfig *config);
 
    Return 0 on success. Raise an exception and return -1 on error.
 
-   The configuration should come from _PyInterpreterState_GetConfigCopy(). */
-PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
-    const struct PyConfig *config);
+   The configuration should come from _Py_CopyConfig(). */
+PyAPI_FUNC(int) _Py_SetConfig(const PyConfig *config);
 
 // Get the configuration of the current interpreter.
 // The caller must hold the GIL.

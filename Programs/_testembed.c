@@ -1659,7 +1659,7 @@ static int tune_config(void)
 
     config.bytes_warning = 2;
 
-    if (_PyInterpreterState_SetConfig(&config) < 0) {
+    if (_Py_SetConfig(&config) < 0) {
         PyConfig_Clear(&config);
         return -1;
     }
@@ -1678,7 +1678,7 @@ static int test_init_set_config(void)
     config.bytes_warning = 0;
     init_from_config_clear(&config);
 
-    // Tune the configuration using _PyInterpreterState_SetConfig()
+    // Tune the configuration using _Py_SetConfig()
     if (tune_config() < 0) {
         PyErr_Print();
         return 1;

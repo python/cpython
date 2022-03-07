@@ -270,7 +270,7 @@ test_set_config(PyObject *Py_UNUSED(self), PyObject *dict)
     if (_PyConfig_FromDict(&config, dict) < 0) {
         goto error;
     }
-    if (_PyInterpreterState_SetConfig(&config) < 0) {
+    if (_Py_SetConfig(&config) < 0) {
         goto error;
     }
     PyConfig_Clear(&config);
