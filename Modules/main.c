@@ -552,7 +552,7 @@ pymain_run_python(int *exitcode)
     PyObject *main_importer_path = NULL;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     /* pymain_run_stdin() modify the config */
-    PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
+    PyConfig *config = (PyConfig*)_PyInterpreterState_GetGlobalConfig(interp);
 
     /* ensure path config is written into global variables */
     if (_PyStatus_EXCEPTION(_PyPathConfig_UpdateGlobal(config))) {

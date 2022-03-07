@@ -1017,7 +1017,7 @@ _PyInterpreterState_ClearModules(PyInterpreterState *interp)
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
-    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
+    int verbose = _PyInterpreterState_GetGlobalConfig(tstate->interp)->verbose;
 
     if (verbose && tstate->cframe->current_frame != NULL) {
         /* bpo-20526: After the main thread calls
@@ -2140,7 +2140,7 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
 
 
 const PyConfig*
-_PyInterpreterState_GetConfig(PyInterpreterState *interp)
+_PyInterpreterState_GetGlobalConfig(PyInterpreterState *interp)
 {
     return &interp->config;
 }
@@ -2166,7 +2166,7 @@ _Py_GetConfig(void)
     assert(PyGILState_Check());
     PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
-    return _PyInterpreterState_GetConfig(tstate->interp);
+    return _PyInterpreterState_GetGlobalConfig(tstate->interp);
 }
 
 #define MINIMUM_OVERHEAD 1000

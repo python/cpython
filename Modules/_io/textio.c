@@ -979,7 +979,7 @@ io_check_errors(PyObject *errors)
     PyInterpreterState *interp = _PyInterpreterState_GET();
 #ifndef Py_DEBUG
     /* In release mode, only check in development mode (-X dev) */
-    if (!_PyInterpreterState_GetConfig(interp)->dev_mode) {
+    if (!_PyInterpreterState_GetGlobalConfig(interp)->dev_mode) {
         return 0;
     }
 #else
@@ -1066,7 +1066,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
 
     if (encoding == NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
+        if (_PyInterpreterState_GetGlobalConfig(interp)->warn_default_encoding) {
             if (PyErr_WarnEx(PyExc_EncodingWarning,
                              "'encoding' argument not specified", 1)) {
                 return -1;

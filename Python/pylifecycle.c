@@ -177,7 +177,7 @@ init_importlib(PyThreadState *tstate, PyObject *sysmod)
     assert(!_PyErr_Occurred(tstate));
 
     PyInterpreterState *interp = tstate->interp;
-    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
+    int verbose = _PyInterpreterState_GetGlobalConfig(interp)->verbose;
 
     // Import _importlib through its frozen version, _frozen_importlib.
     if (verbose) {
@@ -560,7 +560,7 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-    config = _PyInterpreterState_GetConfig(interp);
+    config = _PyInterpreterState_GetGlobalConfig(interp);
 
     if (config->_install_importlib) {
         status = _PyPathConfig_UpdateGlobal(config);
@@ -863,7 +863,7 @@ pycore_interp_init(PyThreadState *tstate)
         goto done;
     }
 
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    const PyConfig *config = _PyInterpreterState_GetGlobalConfig(interp);
     if (config->_install_importlib) {
         /* This call sets up builtin and frozen import support */
         if (init_importlib(tstate, sysmod) < 0) {
@@ -1094,7 +1094,7 @@ init_interp_main(PyThreadState *tstate)
     PyStatus status;
     int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
     PyInterpreterState *interp = tstate->interp;
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    const PyConfig *config = _PyInterpreterState_GetGlobalConfig(interp);
 
     if (!config->_install_importlib) {
         /* Special mode for freeze_importlib: run with no import system
@@ -1257,7 +1257,7 @@ Py_InitializeFromConfig(const PyConfig *config)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-    config = _PyInterpreterState_GetConfig(tstate->interp);
+    config = _PyInterpreterState_GetGlobalConfig(tstate->interp);
 
     if (config->_init_main) {
         status = pyinit_main(tstate);
@@ -1530,7 +1530,7 @@ finalize_modules(PyThreadState *tstate)
         // Already done
         return;
     }
-    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
+    int verbose = _PyInterpreterState_GetGlobalConfig(interp)->verbose;
 
     // Delete some special builtins._ and sys attributes first.  These are
     // common places where user values hide and people complain when their
@@ -1995,13 +1995,13 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
     /* Copy the current interpreter config into the new interpreter */
     const PyConfig *config;
     if (save_tstate != NULL) {
-        config = _PyInterpreterState_GetConfig(save_tstate->interp);
+        config = _PyInterpreterState_GetGlobalConfig(save_tstate->interp);
     }
     else
     {
         /* No current thread state, copy from the main interpreter */
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
-        config = _PyInterpreterState_GetConfig(main_interp);
+        config = _PyInterpreterState_GetGlobalConfig(main_interp);
     }
 
 
@@ -2393,7 +2393,7 @@ init_sys_streams(PyThreadState *tstate)
     int fd;
     PyObject * encoding_attr;
     PyStatus res = _PyStatus_OK();
-    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    const PyConfig *config = _PyInterpreterState_GetGlobalConfig(tstate->interp);
 
     /* Check that stdin is not a directory
        Using shell redirection, you can redirect stdin to a directory,

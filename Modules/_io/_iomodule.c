@@ -474,7 +474,7 @@ _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
 {
     if (encoding == NULL || encoding == Py_None) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
+        if (_PyInterpreterState_GetGlobalConfig(interp)->warn_default_encoding) {
             if (PyErr_WarnEx(PyExc_EncodingWarning,
                              "'encoding' argument not specified", stacklevel)) {
                 return NULL;

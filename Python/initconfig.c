@@ -3066,7 +3066,7 @@ _Py_GetConfigsAsDict(void)
     Py_CLEAR(dict);
 
     /* core config */
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    const PyConfig *config = _PyInterpreterState_GetGlobalConfig(interp);
     dict = _PyConfig_AsDict(config);
     if (dict == NULL) {
         goto error;
@@ -3133,7 +3133,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
             PySys_WriteStderr("\n"); \
         } while (0)
 
-    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    const PyConfig *config = _PyInterpreterState_GetGlobalConfig(tstate->interp);
     DUMP_CONFIG("PYTHONHOME", home);
     DUMP_CONFIG("PYTHONPATH", pythonpath_env);
     DUMP_CONFIG("program name", program_name);

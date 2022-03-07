@@ -842,7 +842,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     }
 
     PyInterpreterState *interp = PyInterpreterState_Get();
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    const PyConfig *config = _PyInterpreterState_GetGlobalConfig(interp);
     if (config->_isolated_interpreter) {
         PyErr_SetString(PyExc_RuntimeError,
                         "subprocess not supported for isolated subinterpreters");
