@@ -155,6 +155,9 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
     If *sort_keys* is true (default: ``False``), then the output of
     dictionaries will be sorted by key.
+    
+    If *list_oneline* is true (default: ``False``), then lists/tuples will be
+    encoded as arrays on a single line.
 
     To use a custom ``JSONEncoder`` subclass (e.g. one that overrides the
     ``.default()`` method to serialize additional types), specify it with
