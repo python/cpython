@@ -680,7 +680,7 @@ The :mod:`functools` module defines the following functions:
    The *key* argument is a string that uniquely identifies the function and its
    variants. It should be the result of a call to :func:`get_key_for_callable`.
 
-   .. versionadded: 3.11
+   .. versionadded:: 3.11
 
 .. function:: register_variant(key, variant)
 
@@ -688,14 +688,14 @@ The :mod:`functools` module defines the following functions:
    :func:`get_variants`. The key should be the result of a call to
    :func:`get_key_for_callable`.
 
-   .. versionadded: 3.11
+   .. versionadded:: 3.11
 
 .. function:: clear_variants(key=None)
 
    Clear all registered variants with the given *key*. If *key* is None, clear
    all variants.
 
-   .. versionadded: 3.11
+   .. versionadded:: 3.11
 
 .. function:: get_key_for_callable(func)
 
@@ -704,7 +704,7 @@ The :mod:`functools` module defines the following functions:
    :class:`classmethod`, :class:`staticmethod`, or similar callable.
    If no key can be computed, the function returns None.
 
-   .. versionadded: 3.11
+   .. versionadded:: 3.11
 
 
 .. _partial-objects:
