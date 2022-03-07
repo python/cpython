@@ -62,7 +62,7 @@
     <ExternalsDir Condition="$(ExternalsDir) == ''">$([System.IO.Path]::GetFullPath(`$(PySourcePath)externals`))</ExternalsDir>
     <ExternalsDir Condition="!HasTrailingSlash($(ExternalsDir))">$(ExternalsDir)\</ExternalsDir>
     <sqlite3Dir>$(ExternalsDir)sqlite-3.37.2.0\</sqlite3Dir>
-    <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
+    <bz2Dir>$(ExternalsDir)bzip2-1.0.8\</bz2Dir>
     <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
     <libffiDir>$(ExternalsDir)libffi-3.4.2\</libffiDir>
     <libffiOutDir>$(ExternalsDir)libffi-3.4.2\$(ArchName)\</libffiOutDir>

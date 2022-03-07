@@ -336,6 +336,12 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
     if isinstance(t, ForwardRef):
         return t._evaluate(globalns, localns, recursive_guard)
     if isinstance(t, (_GenericAlias, GenericAlias, types.UnionType)):
+        if isinstance(t, GenericAlias):
+            args = tuple(
+                ForwardRef(arg) if isinstance(arg, str) else arg
+                for arg in t.__args__
+            )
+            t = t.__origin__[args]
         ev_args = tuple(_eval_type(a, globalns, localns, recursive_guard) for a in t.__args__)
         if ev_args == t.__args__:
             return t
