@@ -32,4 +32,4 @@ _stat _stat.c
 _symtable symtablemodule.c
 
 # for systems without $HOME env, used by site._getuserbase()
-pwd pwdmodule.c
+@MODULE_PWD_TRUE@pwd pwdmodule.c
