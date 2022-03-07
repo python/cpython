@@ -48,7 +48,7 @@ if NOT DEFINED PYTHON (
 echo.Fetching external libraries...
 
 set libraries=
-set libraries=%libraries%                                       bzip2-1.0.6
+set libraries=%libraries%                                       bzip2-1.0.8
 if NOT "%IncludeSSLSrc%"=="false" set libraries=%libraries%     openssl-1.1.1g
 set libraries=%libraries%                                       sqlite-3.31.1.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-core-8.6.9.0
