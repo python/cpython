@@ -681,8 +681,6 @@ static int test_init_from_config(void)
 
     config.safe_path = 1;
 
-    config._isolated_interpreter = 1;
-
     init_from_config_clear(&config);
 
     dump_config();

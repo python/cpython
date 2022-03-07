@@ -133,6 +133,7 @@ struct _is {
     int codecs_initialized;
 
     PyConfig global_config;
+    _PyInterpreterConfig config;
 
 #ifdef HAVE_DLOPEN
     int dlopenflags;

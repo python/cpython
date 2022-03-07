@@ -269,6 +269,9 @@ PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
 
+PyAPI_FUNC(const _PyInterpreterConfig*) _PyInterpreterState_GetConfig(
+        PyInterpreterState *interp);
+
 PyAPI_FUNC(const PyConfig*) _PyInterpreterState_GetGlobalConfig(PyInterpreterState *interp);
 
 // Get the configuration of the current interpreter.

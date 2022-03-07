@@ -166,6 +166,11 @@ extern PyStatus _PyConfig_SetPyArgv(
 PyAPI_FUNC(PyObject*) _PyConfig_AsDict(const PyConfig *config);
 PyAPI_FUNC(int) _PyConfig_FromDict(PyConfig *config, PyObject *dict);
 
+extern void _PyInterpreterConfig_Clear(_PyInterpreterConfig *);
+extern PyStatus _PyInterpreterConfig_Copy(
+    _PyInterpreterConfig *config,
+    const _PyInterpreterConfig *config2);
+
 extern void _Py_DumpPathConfig(PyThreadState *tstate);
 
 PyAPI_FUNC(PyObject*) _Py_Get_Getpath_CodeObject(void);

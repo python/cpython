@@ -2139,6 +2139,13 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
 }
 
 
+const _PyInterpreterConfig*
+_PyInterpreterState_GetConfig(PyInterpreterState *interp)
+{
+    return &interp->config;
+}
+
+
 const PyConfig*
 _PyInterpreterState_GetGlobalConfig(PyInterpreterState *interp)
 {

@@ -6777,7 +6777,7 @@ os_fork_impl(PyObject *module)
 {
     pid_t pid;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_PyInterpreterState_GetGlobalConfig(interp)->_isolated_interpreter) {
+    if (_PyInterpreterState_GetConfig(interp)->_isolated_interpreter) {
         PyErr_SetString(PyExc_RuntimeError,
                         "fork not supported for isolated subinterpreters");
         return NULL;

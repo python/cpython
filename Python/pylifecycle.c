@@ -1994,20 +1994,26 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
 
     /* Copy the current interpreter config into the new interpreter */
     const PyConfig *global_config;
+    const _PyInterpreterConfig *config;
     if (save_tstate != NULL) {
         global_config = _PyInterpreterState_GetGlobalConfig(save_tstate->interp);
+        config = _PyInterpreterState_GetConfig(save_tstate->interp);
     }
     else
     {
         /* No current thread state, copy from the main interpreter */
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
         global_config = _PyInterpreterState_GetGlobalConfig(main_interp);
+        config = _PyInterpreterState_GetConfig(main_interp);
     }
     status = _PyConfig_Copy(&interp->global_config, global_config);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
-    interp->global_config._isolated_interpreter = isolated_subinterpreter;
+    status = _PyInterpreterConfig_Copy(&interp->config, config);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto error;
+    }
 
     status = init_interp_create_gil(tstate);
     if (_PyStatus_EXCEPTION(status)) {
