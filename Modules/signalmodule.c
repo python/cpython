@@ -1911,7 +1911,15 @@ PyErr_SetInterruptEx(int signum)
 
     signal_state_t *state = &signal_global_state;
     PyObject *func = get_handler(signum);
-    if (func != state->ignore_handler && func != state->default_handler) {
+    int is_ign = PyObject_RichCompareBool(func, state->ignore_handler, Py_EQ);
+    if (is_ign == -1) {
+        return -1;
+    }
+    int is_dfl = PyObject_RichCompareBool(func, state->default_handler, Py_EQ);
+    if (is_dfl == -1) {
+        return -1;
+    }
+    if ((is_ign == 0) && (is_dfl == 0)) {
         trip_signal(signum);
     }
     return 0;
