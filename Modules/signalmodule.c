@@ -178,14 +178,14 @@ get_signal_state(PyObject *module)
 
 
 static inline int
-compare_handler(PyObject *handler, PyObject *func)
+compare_handler(PyObject *func, PyObject *dfl_ign_handler)
 {
-    assert(PyLong_CheckExact(handler));
+    assert(PyLong_CheckExact(dfl_ign_handler));
     if (!PyLong_CheckExact(func)) {
         return 0;
     }
     // Assume that comparison of two PyLong objects will never fail.
-    return PyObject_RichCompareBool(func, handler, Py_EQ) == 1;
+    return PyObject_RichCompareBool(func, dfl_ign_handler, Py_EQ) == 1;
 }
 
 #ifdef HAVE_GETITIMER
