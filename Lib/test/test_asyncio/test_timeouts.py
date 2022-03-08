@@ -88,7 +88,7 @@ class BaseTimeoutTests:
     async def test_timeout_at_disabled(self):
         loop = asyncio.get_running_loop()
         t0 = loop.time()
-        async with asyncio.timeout(None) as cm:
+        async with asyncio.timeout_at(None) as cm:
             await asyncio.sleep(0.01)
         t1 = loop.time()
 
