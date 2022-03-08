@@ -155,9 +155,9 @@ class BaseTimeoutTests:
         with self.assertRaises(TimeoutError):
             async with asyncio.timeout(0.002):
                 try:
-                    async with asyncio.timeout(0.003):
+                    async with asyncio.timeout(0.1):
                         # Pretend we crunch some numbers.
-                        time.sleep(0.005)
+                        time.sleep(0.01)
                         await asyncio.sleep(1)
                 except asyncio.TimeoutError:
                     pass
@@ -169,21 +169,20 @@ class BaseTimeoutTests:
 
         Note: this fails for now.
         """
-        start = time.perf_counter()
-        try:
+        loop = asyncio.get_running_loop()
+        t0 = loop.time()
+        with self.assertRaises(TimeoutError):
             async with asyncio.timeout(0.002):
                 try:
-                    async with asyncio.timeout(0.001):
+                    async with asyncio.timeout(0.01):
                         # Pretend the loop is busy for a while.
-                        time.sleep(0.010)
-                        await asyncio.sleep(0.001)
+                        time.sleep(0.1)
+                        await asyncio.sleep(0.01)
                 except asyncio.TimeoutError:
                     # This sleep should be interrupted.
                     await asyncio.sleep(10)
-        except asyncio.TimeoutError:
-            pass
-        took = time.perf_counter() - start
-        self.assertTrue(took <= 1)
+        t1 = loop.time()
+        self.assertTrue(t0 <= t1 <= t0 + 1)
 
     async def test_reschedule(self):
         loop = asyncio.get_running_loop()
