@@ -1,5 +1,5 @@
 Classes and functions that unconditionally declared their docstrings
-ignoring --without-doc-strings compilation no longer do so.
+ignoring --without-doc-strings compilation flag no longer do so.
 
 The classes affected are :class:`~ctypes.UnionType`,
 :class:`~pickle.PickleBuffer`, and :class:`~types.GenericAlias`.
