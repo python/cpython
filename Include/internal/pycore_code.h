@@ -86,6 +86,12 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_PRECALL CACHE_ENTRIES(_PyPrecallCache)
 
+typedef struct {
+    _Py_CODEUNIT counter;
+} _PyStoreSubscrCache;
+
+#define INLINE_CACHE_ENTRIES_STORE_SUBSCR CACHE_ENTRIES(_PyStoreSubscrCache)
+
 /* Maximum size of code to quicken, in code units. */
 #define MAX_SIZE_TO_QUICKEN 10000
 
