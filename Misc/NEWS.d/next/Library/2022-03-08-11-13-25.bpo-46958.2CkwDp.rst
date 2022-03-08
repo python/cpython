@@ -1,0 +1,3 @@
+Added new optional list_oneline argument to json.dump() and json.dumps()
+which causes array output to be printed on a single line. Defaults to False
+if not passed.
