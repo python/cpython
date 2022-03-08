@@ -84,7 +84,7 @@ def_op('BEFORE_ASYNC_WITH', 52)
 def_op('BEFORE_WITH', 53)
 def_op('END_ASYNC_FOR', 54)
 
-def_op('STORE_SUBSCR', 60)
+def_op('STORE_SUBSCR', 60, 1)
 def_op('DELETE_SUBSCR', 61)
 
 def_op('GET_ITER', 68)
