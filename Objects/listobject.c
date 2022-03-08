@@ -889,7 +889,7 @@ list_extend(PyListObject *self, PyObject *iterable)
         /* It should not be possible to allocate a list large enough to cause
         an overflow on any relevant platform */
         assert(m < PY_SSIZE_T_MAX - n);
-        if (self->ob_item == NULL) {
+        if (n && self->ob_item == NULL) {
             if (list_preallocate_exact(self, n) < 0) {
                 Py_DECREF(iterable);
                 return NULL;
@@ -935,7 +935,7 @@ list_extend(PyListObject *self, PyObject *iterable)
          */
     }
     else {
-        if (self->ob_item == NULL) {
+        if (n && self->ob_item == NULL) {
             if (list_preallocate_exact(self, n) < 0)
                 goto error;
         }
