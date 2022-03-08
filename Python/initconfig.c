@@ -3193,15 +3193,7 @@ PyStatus
 _PyInterpreterConfig_Copy(_PyInterpreterConfig *config,
                           const _PyInterpreterConfig *config2)
 {
-    _PyInterpreterConfig_Clear(config);
-
-#define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
-
-    COPY_ATTR(allow_fork);
-    COPY_ATTR(allow_subprocess);
-    COPY_ATTR(allow_threading);
-
-#undef COPY_ATTR
+    *config = *config2;
 
     return _PyStatus_OK();
 }
