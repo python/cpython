@@ -1486,6 +1486,9 @@ class _BasePathTest(object):
         self.assertIs(type(p), type(q))
         self.assertTrue(p.is_absolute())
 
+    @unittest.skipIf(
+        pwd is None, reason="Test requires pwd module to get homedir."
+    )
     def test_home(self):
         with os_helper.EnvironmentVarGuard() as env:
             self._test_home(self.cls.home())

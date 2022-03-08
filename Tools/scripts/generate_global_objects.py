@@ -252,11 +252,14 @@ def generate_runtime_init(identifiers, strings):
                         for name in sorted(identifiers):
                             assert name.isidentifier(), name
                             printer.write(f'INIT_ID({name}),')
+                printer.write('')
+                with printer.block('.tuple_empty =', ','):
+                    printer.write('.ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0)')
         printer.write(END)
         printer.write(after)
 
 
-def get_identifiers_and_strings() -> tuple[set[str], dict[str, str]]:
+def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
     identifiers = set(IDENTIFIERS)
     strings = dict(STRING_LITERALS)
     for name, string, *_ in iter_global_strings():

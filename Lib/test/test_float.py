@@ -16,9 +16,6 @@ from math import isinf, isnan, copysign, ldexp
 INF = float("inf")
 NAN = float("nan")
 
-have_getformat = hasattr(float, "__getformat__")
-requires_getformat = unittest.skipUnless(have_getformat,
-                                         "requires __getformat__")
 
 #locate file with float format test values
 test_dir = os.path.dirname(__file__) or os.curdir
@@ -608,6 +605,17 @@ class GeneralFloatCases(unittest.TestCase):
             pass
         value = F('nan')
         self.assertEqual(hash(value), object.__hash__(value))
+
+
+@unittest.skipUnless(hasattr(float, "__getformat__"), "requires __getformat__")
+class FormatFunctionsTestCase(unittest.TestCase):
+    def test_getformat(self):
+        self.assertIn(float.__getformat__('double'),
+                      ['unknown', 'IEEE, big-endian', 'IEEE, little-endian'])
+        self.assertIn(float.__getformat__('float'),
+                      ['unknown', 'IEEE, big-endian', 'IEEE, little-endian'])
+        self.assertRaises(ValueError, float.__getformat__, 'chicken')
+        self.assertRaises(TypeError, float.__getformat__, 1)
 
 
 BE_DOUBLE_INF = b'\x7f\xf0\x00\x00\x00\x00\x00\x00'

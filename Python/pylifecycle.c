@@ -682,11 +682,6 @@ pycore_init_global_objects(PyInterpreterState *interp)
 
     _PyUnicode_InitState(interp);
 
-    status = _PyTuple_InitGlobalObjects(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     return _PyStatus_OK();
 }
 
@@ -778,6 +773,16 @@ pycore_init_builtins(PyThreadState *tstate)
     }
     Py_INCREF(builtins_dict);
     interp->builtins = builtins_dict;
+
+    PyObject *isinstance = PyDict_GetItem(builtins_dict, &_Py_ID(isinstance));
+    assert(isinstance);
+    interp->callable_cache.isinstance = isinstance;
+    PyObject *len = PyDict_GetItem(builtins_dict, &_Py_ID(len));
+    assert(len);
+    interp->callable_cache.len = len;
+    PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
+    assert(list_append);
+    interp->callable_cache.list_append = list_append;
 
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
