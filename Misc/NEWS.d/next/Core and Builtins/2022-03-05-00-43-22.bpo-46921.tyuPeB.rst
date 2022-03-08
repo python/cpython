@@ -1,1 +1,0 @@
-Support vectorcall for ``super()``. Patch by Ken Jin.
