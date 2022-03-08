@@ -9,7 +9,7 @@ The functions affected are :func:`ctypes.addressof`,
 :func:`ctypes.CopyComPointer`, :func:`ctypes.FormatError`,
 :func:`ctypes.FreeLibrary`, :func:`ctypes.LoadLibrary`, and
 :func:`ctypes.sizeof`, along with a bunch of methods in
-:class:`~_ctypes.PyCPointerType:, :class:`~_ctypes.PyCSimpleType:, and
-:class:`~_ctypes.PyCStructType:.
+:class:`~ctypes.PyCPointerType`, :class:`~ctypes.PyCSimpleType`, and
+:class:`~ctypes.PyCStructType`.
 
 Patch by Oleg Iarygin.
