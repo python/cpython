@@ -127,7 +127,7 @@ def timeout(delay: Optional[float]) -> Timeout:
 def timeout_at(when: Optional[float]) -> Timeout:
     """Schedule the timeout at absolute time.
 
-    Like `timeout() but argument gives absolute time in the same clock system
+    Like timeout() but argument gives absolute time in the same clock system
     as loop.time().
 
     Please note: it is not POSIX time but a time with
