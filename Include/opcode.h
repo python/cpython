@@ -219,7 +219,7 @@ const uint8_t _PyOpcode_InlineCacheEntries[256] = {
     [LOAD_GLOBAL] = 5,
     [BINARY_OP] = 1,
     [LOAD_METHOD] = 10,
-    [PRECALL] = 1,
+    [PRECALL] = 3,
     [CALL] = 4,
 };
 #endif /* OPCODE_TABLES */

@@ -1422,7 +1422,7 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     assert(_Py_OPCODE(*instr) == PRECALL_ADAPTIVE);
     PyTypeObject *tp = _PyType_CAST(callable);
     if (tp->tp_new == PyBaseObject_Type.tp_new) {
-        _PyAdaptiveEntry *cache0 = &cache[0].adaptive;
+        _PyPrecallCache *cache = (_PyPrecallCache *)(instr + 1);
         PyObject *descriptor = _PyType_Lookup(tp, &_Py_ID(__init__));
         if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
             if (!(tp->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
@@ -1436,7 +1436,7 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                 return -1;
             }
             assert(tp->tp_version_tag != 0);
-            cache0->version = tp->tp_version_tag;
+            write_u32(cache->type_version, tp->tp_version_tag);
             ((PyHeapTypeObject *)tp)->_spec_cache.init = descriptor;
             *instr = _Py_MAKECODEUNIT(PRECALL_PY_CLASS, _Py_OPARG(*instr));
             return 0;

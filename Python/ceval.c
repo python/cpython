@@ -4633,34 +4633,33 @@ handle_eval_breaker:
         }
 
         TARGET(PRECALL_PY_CLASS) {
-            SpecializedCacheEntry *cache = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &cache[0].adaptive;
-            int original_oparg = cache->adaptive.original_oparg;
-            int is_method = (PEEK(original_oparg + 2) != NULL);
+            _PyPrecallCache *cache = (_PyPrecallCache *)next_instr;
+            int is_method = (PEEK(oparg + 2) != NULL);
             DEOPT_IF(is_method, PRECALL);
-            PyObject *cls = PEEK(original_oparg + 1);
+            PyObject *cls = PEEK(oparg + 1);
             DEOPT_IF(!PyType_Check(cls), PRECALL);
             PyTypeObject *cls_t = (PyTypeObject *)cls;
-            DEOPT_IF(cls_t->tp_version_tag != cache0->version, PRECALL);
+            DEOPT_IF(cls_t->tp_version_tag != read_u32(cache->type_version), PRECALL);
             assert(cls_t->tp_flags & Py_TPFLAGS_HEAPTYPE);
             PyObject *init = ((PyHeapTypeObject *)cls_t)->_spec_cache.init;
             assert(PyFunction_Check(init));
             DEOPT_IF(cls_t->tp_new != PyBaseObject_Type.tp_new, PRECALL);
             STAT_INC(PRECALL, hit);
 
-            PyObject *self = _PyObject_New_Vector(cls_t, &PEEK(original_oparg),
-                (Py_ssize_t)original_oparg, call_shape.kwnames);
+            PyObject *self = _PyObject_New_Vector(cls_t, &PEEK(oparg),
+                (Py_ssize_t)oparg, call_shape.kwnames);
             if (self == NULL) {
                 goto error;
             }
             Py_INCREF(init);
-            PEEK(original_oparg+1) = self;
-            PEEK(original_oparg+2) = init;
+            PEEK(oparg+1) = self;
+            PEEK(oparg+2) = init;
             Py_DECREF(cls);
 
             /* For use in RETURN_VALUE later */
             assert(call_shape.init_pass_self == false);
             call_shape.init_pass_self = true;
+            JUMPBY(INLINE_CACHE_ENTRIES_PRECALL);
             DISPATCH();
         }
 

@@ -82,6 +82,7 @@ typedef struct {
 
 typedef struct {
     _Py_CODEUNIT counter;
+    _Py_CODEUNIT type_version[2];
 } _PyPrecallCache;
 
 #define INLINE_CACHE_ENTRIES_PRECALL CACHE_ENTRIES(_PyPrecallCache)
