@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <WixLocalization Culture="en-us" Language="1033" xmlns="http://schemas.microsoft.com/wix/2006/localization">
   <String Id="Caption">[WixBundleName] Setup</String>
-  <String Id="Title">[WixBundleName]</String>
   <String Id="Installing">Installing</String>
   <String Id="Installation">Setup</String>
   <String Id="Modifying">Updating</String>
@@ -84,6 +83,8 @@ Select Customize to review current options.</String>
   <String Id="ShortcutsLabel">Create shortcuts for installed applications</String>
   <String Id="PrependPathLabel">Add Python to &amp;environment variables</String>
   <String Id="ShortPrependPathLabel">Add &amp;Python [ShortVersion] to PATH</String>
+  <String Id="AppendPathLabel">Append Python to &amp;environment variables</String>
+  <String Id="ShortAppendPathLabel">Append &amp;Python [ShortVersion] to PATH</String>
   <String Id="InstallAllUsersLabel">Install for &amp;all users</String>
   <String Id="InstallLauncherAllUsersLabel">for &amp;all users (requires elevation)</String>
   <String Id="ShortInstallLauncherAllUsersLabel">Install &amp;launcher for all users (recommended)</String>

@@ -21,7 +21,7 @@ from importlib.metadata import (
 @contextlib.contextmanager
 def suppress_known_deprecation():
     with warnings.catch_warnings(record=True) as ctx:
-        warnings.simplefilter('default')
+        warnings.simplefilter('default', category=DeprecationWarning)
         yield ctx
 
 
@@ -113,7 +113,7 @@ class APITests(
             for ep in entries
         )
         # ns:sub doesn't exist in alt_pkg
-        assert 'ns:sub' not in entries
+        assert 'ns:sub' not in entries.names
 
     def test_entry_points_missing_name(self):
         with self.assertRaises(KeyError):
@@ -172,6 +172,11 @@ class APITests(
             entry_points().get('entries', 'default') == entry_points()['entries']
             entry_points().get('missing', ()) == ()
 
+    def test_entry_points_allows_no_attributes(self):
+        ep = entry_points().select(group='entries', name='main')
+        with self.assertRaises(AttributeError):
+            ep.foo = 4
+
     def test_metadata_for_this_package(self):
         md = metadata('egginfo-pkg')
         assert md['author'] == 'Steven Ma'
@@ -194,10 +199,8 @@ class APITests(
                 file.read_text()
 
     def test_file_hash_repr(self):
-        assertRegex = self.assertRegex
-
         util = [p for p in files('distinfo-pkg') if p.name == 'mod.py'][0]
-        assertRegex(repr(util.hash), '<FileHash mode: sha256 value: .*>')
+        self.assertRegex(repr(util.hash), '<FileHash mode: sha256 value: .*>')
 
     def test_files_dist_info(self):
         self._test_files(files('distinfo-pkg'))
@@ -235,6 +238,7 @@ class APITests(
 
             [extra1]
             dep4
+            dep6@ git+https://example.com/python/dep.git@v1.0.0
 
             [extra2:python_version < "3"]
             dep5
@@ -247,6 +251,7 @@ class APITests(
             'dep3; python_version < "3"',
             'dep4; extra == "extra1"',
             'dep5; (python_version < "3") and extra == "extra2"',
+            'dep6@ git+https://example.com/python/dep.git@v1.0.0 ; extra == "extra1"',
         ]
         # It's important that the environment marker expression be
         # wrapped in parentheses to avoid the following 'and' binding more

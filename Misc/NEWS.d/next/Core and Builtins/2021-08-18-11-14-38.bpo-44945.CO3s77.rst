@@ -1,7 +1,0 @@
-Specialize the BINARY_ADD instruction using the PEP 659 machinery. Adds five new instructions:
-
-* BINARY_ADD_ADAPTIVE
-* BINARY_ADD_FLOAT
-* BINARY_ADD_INT
-* BINARY_ADD_UNICODE
-* BINARY_ADD_UNICODE_INPLACE_FAST

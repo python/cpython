@@ -34,15 +34,18 @@ class or one of its subclasses, and not from :exc:`BaseException`.  More
 information on defining exceptions is available in the Python Tutorial under
 :ref:`tut-userexceptions`.
 
-When raising (or re-raising) an exception in an :keyword:`except` or
-:keyword:`finally` clause
-:attr:`__context__` is automatically set to the last exception caught; if the
-new exception is not handled the traceback that is eventually displayed will
-include the originating exception(s) and the final exception.
 
-When raising a new exception (rather than using a bare ``raise`` to re-raise
-the exception currently being handled), the implicit exception context can be
-supplemented with an explicit cause by using :keyword:`from<raise>` with
+Exception context
+-----------------
+
+When raising a new exception while another exception
+is already being handled, the new exception's
+:attr:`__context__` attribute is automatically set to the handled
+exception.  An exception may be handled when an :keyword:`except` or
+:keyword:`finally` clause, or a :keyword:`with` statement, is used.
+
+This implicit exception context can be
+supplemented with an explicit cause by using :keyword:`!from` with
 :keyword:`raise`::
 
    raise new_exc from original_exc
@@ -65,6 +68,25 @@ is :const:`None` and :attr:`__suppress_context__` is false.
 In either case, the exception itself is always shown after any chained
 exceptions so that the final line of the traceback always shows the last
 exception that was raised.
+
+
+Inheriting from built-in exceptions
+-----------------------------------
+
+User code can create subclasses that inherit from an exception type.
+It's recommended to only subclass one exception type at a time to avoid
+any possible conflicts between how the bases handle the ``args``
+attribute, as well as due to possible memory layout incompatibilities.
+
+.. impl-detail::
+
+   Most built-in exceptions are implemented in C for efficiency, see:
+   :source:`Objects/exceptions.c`.  Some have custom memory layouts
+   which makes it impossible to create a subclass that inherits from
+   multiple exception types. The memory layout of a type is an implementation
+   detail and might change between Python versions, leading to new
+   conflicts in the future.  Therefore, it's recommended to avoid
+   subclassing multiple exception types altogether.
 
 
 Base classes
@@ -103,6 +125,14 @@ The following exceptions are used mostly as base classes for other exceptions.
          except SomeException:
              tb = sys.exc_info()[2]
              raise OtherException(...).with_traceback(tb)
+
+   .. attribute:: __note__
+
+      A mutable field which is :const:`None` by default and can be set to a string.
+      If it is not :const:`None`, it is included in the traceback. This field can
+      be used to enrich exceptions after they have been caught.
+
+   .. versionadded:: 3.11
 
 
 .. exception:: Exception
@@ -819,6 +849,102 @@ The following exceptions are used as warning categories; see the
 
    .. versionadded:: 3.2
 
+
+Exception groups
+----------------
+
+The following are used when it is necessary to raise multiple unrelated
+exceptions. They are part of the exception hierarchy so they can be
+handled with :keyword:`except` like all other exceptions. In addition,
+they are recognised by :keyword:`except*<except_star>`, which matches
+their subgroups based on the types of the contained exceptions.
+
+.. exception:: ExceptionGroup(msg, excs)
+.. exception:: BaseExceptionGroup(msg, excs)
+
+   Both of these exception types wrap the exceptions in the sequence ``excs``.
+   The ``msg`` parameter must be a string. The difference between the two
+   classes is that :exc:`BaseExceptionGroup` extends :exc:`BaseException` and
+   it can wrap any exception, while :exc:`ExceptionGroup` extends :exc:`Exception`
+   and it can only wrap subclasses of :exc:`Exception`. This design is so that
+   ``except Exception`` catches an :exc:`ExceptionGroup` but not
+   :exc:`BaseExceptionGroup`.
+
+   The :exc:`BaseExceptionGroup` constructor returns an :exc:`ExceptionGroup`
+   rather than a :exc:`BaseExceptionGroup` if all contained exceptions are
+   :exc:`Exception` instances, so it can be used to make the selection
+   automatic. The :exc:`ExceptionGroup` constructor, on the other hand,
+   raises a :exc:`TypeError` if any contained exception is not an
+   :exc:`Exception` subclass.
+
+   .. attribute:: message
+
+       The ``msg`` argument to the constructor. This is a read-only attribute.
+
+   .. attribute:: exceptions
+
+       A tuple of the exceptions in the ``excs`` sequence given to the
+       constructor. This is a read-only attribute.
+
+   .. method:: subgroup(condition)
+
+      Returns an exception group that contains only the exceptions from the
+      current group that match *condition*, or ``None`` if the result is empty.
+
+      The condition can be either a function that accepts an exception and returns
+      true for those that should be in the subgroup, or it can be an exception type
+      or a tuple of exception types, which is used to check for a match using the
+      same check that is used in an ``except`` clause.
+
+      The nesting structure of the current exception is preserved in the result,
+      as are the values of its :attr:`message`, :attr:`__traceback__`,
+      :attr:`__cause__`, :attr:`__context__` and :attr:`__note__` fields.
+      Empty nested groups are omitted from the result.
+
+      The condition is checked for all exceptions in the nested exception group,
+      including the top-level and any nested exception groups. If the condition is
+      true for such an exception group, it is included in the result in full.
+
+   .. method:: split(condition)
+
+      Like :meth:`subgroup`, but returns the pair ``(match, rest)`` where ``match``
+      is ``subgroup(condition)`` and ``rest`` is the remaining non-matching
+      part.
+
+   .. method:: derive(excs)
+
+      Returns an exception group with the same :attr:`message`,
+      :attr:`__traceback__`, :attr:`__cause__`, :attr:`__context__`
+      and :attr:`__note__` but which wraps the exceptions in ``excs``.
+
+      This method is used by :meth:`subgroup` and :meth:`split`. A
+      subclass needs to override it in order to make :meth:`subgroup`
+      and :meth:`split` return instances of the subclass rather
+      than :exc:`ExceptionGroup`. ::
+
+         >>> class MyGroup(ExceptionGroup):
+         ...     def derive(self, exc):
+         ...         return MyGroup(self.message, exc)
+         ...
+         >>> MyGroup("eg", [ValueError(1), TypeError(2)]).split(TypeError)
+         (MyGroup('eg', [TypeError(2)]), MyGroup('eg', [ValueError(1)]))
+
+   Note that :exc:`BaseExceptionGroup` defines :meth:`__new__`, so
+   subclasses that need a different constructor signature need to
+   override that rather than :meth:`__init__`. For example, the following
+   defines an exception group subclass which accepts an exit_code and
+   and constructs the group's message from it. ::
+
+      class Errors(ExceptionGroup):
+         def __new__(cls, errors, exit_code):
+            self = super().__new__(Errors, f"exit code: {exit_code}", errors)
+            self.exit_code = exit_code
+            return self
+
+         def derive(self, excs):
+            return Errors(excs, self.exit_code)
+
+   .. versionadded:: 3.11
 
 
 Exception hierarchy

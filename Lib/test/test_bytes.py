@@ -1650,8 +1650,8 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
 
     @test.support.cpython_only
     def test_obsolete_write_lock(self):
-        from _testcapi import getbuffer_with_null_view
-        self.assertRaises(BufferError, getbuffer_with_null_view, bytearray())
+        _testcapi = import_helper.import_module('_testcapi')
+        self.assertRaises(BufferError, _testcapi.getbuffer_with_null_view, bytearray())
 
     def test_iterator_pickling2(self):
         orig = bytearray(b'abc')

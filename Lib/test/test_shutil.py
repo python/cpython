@@ -1151,6 +1151,28 @@ class TestCopy(BaseTest, unittest.TestCase):
             rv = fn(src, os.path.join(dst_dir, 'bar'))
             self.assertEqual(rv, os.path.join(dst_dir, 'bar'))
 
+    def test_copy_dir(self):
+        self._test_copy_dir(shutil.copy)
+
+    def test_copy2_dir(self):
+        self._test_copy_dir(shutil.copy2)
+
+    def _test_copy_dir(self, copy_func):
+        src_dir = self.mkdtemp()
+        src_file = os.path.join(src_dir, 'foo')
+        dir2 = self.mkdtemp()
+        dst = os.path.join(src_dir, 'does_not_exist/')
+        write_file(src_file, 'foo')
+        if sys.platform == "win32":
+            err = PermissionError
+        else:
+            err = IsADirectoryError
+        self.assertRaises(err, copy_func, dir2, src_dir)
+
+        # raise *err* because of src rather than FileNotFoundError because of dst
+        self.assertRaises(err, copy_func, dir2, dst)
+        copy_func(src_file, dir2)     # should not raise exceptions
+
     ### shutil.copyfile
 
     @os_helper.skip_unless_symlink
@@ -1258,6 +1280,24 @@ class TestCopy(BaseTest, unittest.TestCase):
         dst = os.path.join(src_dir, 'does_not_exist/')
         write_file(src_file, 'foo')
         self.assertRaises(FileNotFoundError, shutil.copyfile, src_file, dst)
+
+    def test_copyfile_copy_dir(self):
+        # Issue 45234
+        # test copy() and copyfile() raising proper exceptions when src and/or
+        # dst are directories
+        src_dir = self.mkdtemp()
+        src_file = os.path.join(src_dir, 'foo')
+        dir2 = self.mkdtemp()
+        dst = os.path.join(src_dir, 'does_not_exist/')
+        write_file(src_file, 'foo')
+        if sys.platform == "win32":
+            err = PermissionError
+        else:
+            err = IsADirectoryError
+
+        self.assertRaises(err, shutil.copyfile, src_dir, dst)
+        self.assertRaises(err, shutil.copyfile, src_file, src_dir)
+        self.assertRaises(err, shutil.copyfile, dir2, src_dir)
 
 
 class TestArchives(BaseTest, unittest.TestCase):

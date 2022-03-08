@@ -12,7 +12,8 @@ pysqlite_cursor_init(PyObject *self, PyObject *args, PyObject *kwargs)
     int return_value = -1;
     pysqlite_Connection *connection;
 
-    if (Py_IS_TYPE(self, clinic_state()->CursorType) &&
+    if ((Py_IS_TYPE(self, clinic_state()->CursorType) ||
+         Py_TYPE(self)->tp_new == clinic_state()->CursorType->tp_new) &&
         !_PyArg_NoKeywords("Cursor", kwargs)) {
         goto exit;
     }
@@ -114,7 +115,7 @@ PyDoc_STRVAR(pysqlite_cursor_executescript__doc__,
 "executescript($self, sql_script, /)\n"
 "--\n"
 "\n"
-"Executes multiple SQL statements at once. Non-standard.");
+"Executes multiple SQL statements at once.");
 
 #define PYSQLITE_CURSOR_EXECUTESCRIPT_METHODDEF    \
     {"executescript", (PyCFunction)pysqlite_cursor_executescript, METH_O, pysqlite_cursor_executescript__doc__},
@@ -278,25 +279,14 @@ PyDoc_STRVAR(pysqlite_cursor_close__doc__,
 "Closes the cursor.");
 
 #define PYSQLITE_CURSOR_CLOSE_METHODDEF    \
-    {"close", (PyCFunction)(void(*)(void))pysqlite_cursor_close, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_cursor_close__doc__},
+    {"close", (PyCFunction)pysqlite_cursor_close, METH_NOARGS, pysqlite_cursor_close__doc__},
 
 static PyObject *
-pysqlite_cursor_close_impl(pysqlite_Cursor *self, PyTypeObject *cls);
+pysqlite_cursor_close_impl(pysqlite_Cursor *self);
 
 static PyObject *
-pysqlite_cursor_close(pysqlite_Cursor *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":close", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
-    }
-    return_value = pysqlite_cursor_close_impl(self, cls);
-
-exit:
-    return return_value;
+    return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=ace31a7481aa3f41 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab1375c060ff7021 input=a9049054013a1b77]*/

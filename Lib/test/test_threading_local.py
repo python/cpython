@@ -201,22 +201,19 @@ class PyThreadingLocalTest(unittest.TestCase, BaseLocalTest):
     _local = _threading_local.local
 
 
-def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(DocTestSuite('_threading_local'))
-    suite.addTest(unittest.makeSuite(ThreadLocalTest))
-    suite.addTest(unittest.makeSuite(PyThreadingLocalTest))
+def load_tests(loader, tests, pattern):
+    tests.addTest(DocTestSuite('_threading_local'))
 
     local_orig = _threading_local.local
     def setUp(test):
         _threading_local.local = _thread._local
     def tearDown(test):
         _threading_local.local = local_orig
-    suite.addTest(DocTestSuite('_threading_local',
-                               setUp=setUp, tearDown=tearDown)
-                  )
+    tests.addTests(DocTestSuite('_threading_local',
+                                setUp=setUp, tearDown=tearDown)
+                   )
+    return tests
 
-    support.run_unittest(suite)
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

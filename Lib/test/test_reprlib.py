@@ -51,6 +51,13 @@ class ReprTests(unittest.TestCase):
         expected = repr(t3)[:-2] + "...)"
         eq(r2.repr(t3), expected)
 
+        # modified fillvalue:
+        r3 = Repr()
+        r3.fillvalue = '+++'
+        r3.maxtuple = 2
+        expected = repr(t3)[:-2] + "+++)"
+        eq(r3.repr(t3), expected)
+
     def test_container(self):
         from array import array
         from collections import deque

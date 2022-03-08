@@ -697,8 +697,9 @@ compatible with the Python codec registry.
 
    .. method:: writelines(list)
 
-      Writes the concatenated list of strings to the stream (possibly by reusing
-      the :meth:`write` method). The standard bytes-to-bytes codecs
+      Writes the concatenated iterable of strings to the stream (possibly by reusing
+      the :meth:`write` method). Infinite or
+      very large iterables are not supported. The standard bytes-to-bytes codecs
       do not support this method.
 
 
@@ -926,7 +927,7 @@ it's a device to determine the storage layout of the encoded bytes, and vanishes
 once the byte sequence has been decoded into a string; as a ``ZERO WIDTH
 NO-BREAK SPACE`` it's a normal character that will be decoded like any other.
 
-There's another encoding that is able to encoding the full range of Unicode
+There's another encoding that is able to encode the full range of Unicode
 characters: UTF-8. UTF-8 is an 8-bit encoding, which means there are no issues
 with byte order in UTF-8. Each byte in a UTF-8 byte sequence consists of two
 parts: marker bits (the most significant bits) and payload bits. The marker bits

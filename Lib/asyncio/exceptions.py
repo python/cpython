@@ -10,8 +10,7 @@ class CancelledError(BaseException):
     """The Future or Task was cancelled."""
 
 
-class TimeoutError(Exception):
-    """The operation exceeded the given deadline."""
+TimeoutError = TimeoutError  # make local alias for the standard exception
 
 
 class InvalidStateError(Exception):

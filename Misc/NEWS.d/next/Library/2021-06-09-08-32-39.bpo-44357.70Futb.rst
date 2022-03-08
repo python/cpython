@@ -1,1 +1,0 @@
-Added a function that returns cube root of the given number :func:`math.cbrt`

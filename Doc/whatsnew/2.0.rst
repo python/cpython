@@ -791,7 +791,7 @@ Previously the Python virtual machine used 16-bit numbers in its bytecode,
 limiting the size of source files.  In particular, this affected the maximum
 size of literal lists and dictionaries in Python source; occasionally people who
 are generating Python code would run into this limit.  A patch by Charles G.
-Waldman raises the limit from ``2^16`` to ``2^{32}``.
+Waldman raises the limit from ``2**16`` to ``2**32``.
 
 Three new convenience functions intended for adding constants to a module's
 dictionary at module initialization time were added: :func:`PyModule_AddObject`,

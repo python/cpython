@@ -48,6 +48,9 @@ except:
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
+
 mswindows = (sys.platform == "win32")
 
 #
@@ -170,6 +173,14 @@ class ProcessTestCase(BaseTestCase):
         output = subprocess.check_output(
                 [sys.executable, "-c", "print('BDFL')"])
         self.assertIn(b'BDFL', output)
+
+        with self.assertRaisesRegex(ValueError,
+                "stdout argument not allowed, it will be overridden"):
+            subprocess.check_output([], stdout=None)
+
+        with self.assertRaisesRegex(ValueError,
+                "check argument not allowed, it will be overridden"):
+            subprocess.check_output([], check=False)
 
     def test_check_output_nonzero(self):
         # check_call() function with non-zero return code

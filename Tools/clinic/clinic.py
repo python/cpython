@@ -2820,8 +2820,6 @@ class bool_converter(CConverter):
 
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'i':
-            # XXX PyFloat_Check can be removed after the end of the
-            # deprecation in _PyLong_FromNbIndexOrNbInt.
             return """
                 {paramname} = _PyLong_AsInt({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
@@ -3667,8 +3665,7 @@ class self_converter(CConverter):
             self.show_in_signature = False
 
     # tp_new (METHOD_NEW) functions are of type newfunc:
-    #     typedef PyObject *(*newfunc)(struct _typeobject *, PyObject *, PyObject *);
-    # PyTypeObject is a typedef for struct _typeobject.
+    #     typedef PyObject *(*newfunc)(PyTypeObject *, PyObject *, PyObject *);
     #
     # tp_init (METHOD_INIT) functions are of type initproc:
     #     typedef int (*initproc)(PyObject *, PyObject *, PyObject *);
@@ -3735,10 +3732,16 @@ class self_converter(CConverter):
 
         if ((kind in (METHOD_NEW, METHOD_INIT)) and cls and cls.typedef):
             type_object = self.function.cls.type_object
+            prefix = (type_object[1:] + '.' if type_object[0] == '&' else
+                      type_object + '->')
             if kind == METHOD_NEW:
-                type_check = '({} == {})'.format(self.name, type_object)
+                type_check = ('({0} == {1} ||\n        '
+                              ' {0}->tp_init == {2}tp_init)'
+                             ).format(self.name, type_object, prefix)
             else:
-                type_check = 'Py_IS_TYPE({}, {})'.format(self.name, type_object)
+                type_check = ('(Py_IS_TYPE({0}, {1}) ||\n        '
+                              ' Py_TYPE({0})->tp_new == {2}tp_new)'
+                             ).format(self.name, type_object, prefix)
 
             line = '{} &&\n        '.format(type_check)
             template_dict['self_type_check'] = line

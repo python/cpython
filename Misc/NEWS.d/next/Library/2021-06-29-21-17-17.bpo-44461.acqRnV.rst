@@ -1,1 +1,0 @@
-Fix bug with :mod:`pdb`'s handling of import error due to a package which does not have a ``__main__`` module
