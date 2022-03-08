@@ -925,7 +925,40 @@ class date:
             self._day, self._year)
 
     def strftime(self, fmt):
-        "Format using strftime()."
+        """Format date or datetime given the format string `fmt`
+        
+        The following format codes can be used within the format string. Entries
+        marked with * are localised.
+        * %a abbreviated weekday*
+        * %A full weekday*
+        * %w weekday as decimal (Sunday = 0 through to Saturday = 6)
+        * %d day of month as zero-padded decimal (01 - 31)
+        * %b abbreviated month*
+        * %B full month*
+        * %m month as a zero-padded decimal (01 - 12)
+        * %y year without century (00, 01, ...)
+        * %Y year with century (0001, 0002, ..., 2000, ...)
+        * %H hour (24-hour clock)
+        * %I hour (12-hour clock)
+        * %p AM-PM*
+        * %M minutes (zero-padded)
+        * %S seconds (zero-padded)
+        * %f microseconds as a zero-padded 6 digit decimal
+        * %z UTC offset in the form (+-)HHMM[SS[.ffffff]]
+        * %Z Time zone name
+        * %j Day of the year as a zero-padded decimal (001 - 3666)
+        * %U Week number of the year with Sunday as the first day (00 - 53)
+        * %W Week number of the year with Monday as the first day (00 - 53)
+        * %c Date in time in locale's appropriate format
+        * %x Locale's appropriate date representation
+        * %X Locale's appropriate time representation
+        * %G ISO 8601 year with century
+        * %u ISO 8601 weekday where 1 is Monday (1 - 7)
+        * %V ISO 8601 week number (01 - 53)
+        
+        >>> datetime(2010, 1, 1).strftime("%d %b %Y)
+        '01 Jan 2010'
+        """
         return _wrap_strftime(self, fmt, self.timetuple())
 
     def __format__(self, fmt):
@@ -1446,8 +1479,25 @@ class time:
 
 
     def strftime(self, fmt):
-        """Format using strftime().  The date part of the timestamp passed
-        to underlying strftime should not be used.
+        """Format time given the format string `fmt`
+        
+        The following format codes can be used within the format string. Entries
+        marked with * are localised.
+        * %H hour (24-hour clock)
+        * %I hour (12-hour clock)
+        * %p AM-PM*
+        * %M minutes (zero-padded)
+        * %S seconds (zero-padded)
+        * %f microseconds as a zero-padded 6 digit decimal
+        * %z UTC offset in the form (+-)HHMM[SS[.ffffff]]
+        * %Z Time zone name
+        * %X Locale's appropriate time representation
+        
+        The date part of the timestamp passed to underlying strftime should not
+        be used.
+        
+        >>> time(10, 42).strftime('%M:%S')
+        '10:42'
         """
         # The year must be >= 1000 else Python's strftime implementation
         # can raise a bogus exception.
@@ -1946,7 +1996,41 @@ class datetime(date):
 
     @classmethod
     def strptime(cls, date_string, format):
-        'string, format -> new datetime parsed from a string (like time.strptime()).'
+        """Parses a datetime from a string given a format specification, much
+        like strptime() in the time module.
+        
+        The following format codes can be used within the format string. Entries
+        marked with * are localised.
+        * %a abbreviated weekday*
+        * %A full weekday*
+        * %w weekday as decimal (Sunday = 0 through to Saturday = 6)
+        * %d day of month as zero-padded decimal (01 - 31)
+        * %b abbreviated month*
+        * %B full month*
+        * %m month as a zero-padded decimal (01 - 12)
+        * %y year without century (00, 01, ...)
+        * %Y year with century (0001, 0002, ..., 2000, ...)
+        * %H hour (24-hour clock)
+        * %I hour (12-hour clock)
+        * %p AM-PM*
+        * %M minutes (zero-padded)
+        * %S seconds (zero-padded)
+        * %f microseconds as a zero-padded 6 digit decimal
+        * %z UTC offset in the form (+-)HHMM[SS[.ffffff]]
+        * %Z Time zone name
+        * %j Day of the year as a zero-padded decimal (001 - 3666)
+        * %U Week number of the year with Sunday as the first day (00 - 53)
+        * %W Week number of the year with Monday as the first day (00 - 53)
+        * %c Date in time in locale's appropriate format
+        * %x Locale's appropriate date representation
+        * %X Locale's appropriate time representation
+        * %G ISO 8601 year with century
+        * %u ISO 8601 weekday where 1 is Monday (1 - 7)
+        * %V ISO 8601 week number (01 - 53)
+        
+        >>> datetime.strptime('01 Jan 2010', '%d %b %Y')
+        datetime.datetime(2010, 1, 1, 0, 0)
+        """
         import _strptime
         return _strptime._strptime_datetime(cls, date_string, format)
 
