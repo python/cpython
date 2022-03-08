@@ -29,7 +29,7 @@ class Timeout:
         self._state = _State.CREATED
 
         self._timeout_handler: Optional[events.TimerHandle] = None
-        self._task: Optional[tasks.Task[Any]] = None
+        self._task: Optional[tasks.Task] = None
         self._when = when
 
     def when(self) -> Optional[float]:
