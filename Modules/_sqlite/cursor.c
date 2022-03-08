@@ -921,12 +921,12 @@ _sqlite3.Cursor.setinputsizes as pysqlite_cursor_setinputsizes
     sizes: object
     /
 
-Required by DB-API. Is a no-op in sqlite3.
+Required by DB-API. Does nothing in sqlite3.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_setinputsizes(pysqlite_Cursor *self, PyObject *sizes)
-/*[clinic end generated code: output=893c817afe9d08ad input=fb94819915c45e78]*/
+/*[clinic end generated code: output=893c817afe9d08ad input=de7950a3aec79bdf]*/
 {
     Py_RETURN_NONE;
 }
@@ -938,13 +938,13 @@ _sqlite3.Cursor.setoutputsize as pysqlite_cursor_setoutputsize
     column: object = None
     /
 
-Required by DB-API. Is a no-op in sqlite3.
+Required by DB-API. Does nothing in sqlite3.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_setoutputsize_impl(pysqlite_Cursor *self, PyObject *size,
                                    PyObject *column)
-/*[clinic end generated code: output=018d7e9129d45efe input=ba9cf4b3647463f8]*/
+/*[clinic end generated code: output=018d7e9129d45efe input=607a6bece8bbb273]*/
 {
     Py_RETURN_NONE;
 }
