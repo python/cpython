@@ -33,7 +33,9 @@ typedef struct {
     PyCodeAddressRange bounds; // Only valid if code != NULL.
 } PyTraceInfo;
 
-typedef struct _cframe {
+// Internal structure: you should not use it directly, but use public functions
+// like PyThreadState_EnterTracing() and PyThreadState_LeaveTracing().
+typedef struct _PyCFrame {
     /* This struct will be threaded through the C stack
      * allowing fast access to per-thread state that needs
      * to be accessed quickly by the interpreter, but can
@@ -47,8 +49,8 @@ typedef struct _cframe {
     int use_tracing;
     /* Pointer to the currently executing frame (it can be NULL) */
     struct _PyInterpreterFrame *current_frame;
-    struct _cframe *previous;
-} CFrame;
+    struct _PyCFrame *previous;
+} _PyCFrame;
 
 typedef struct _err_stackitem {
     /* This struct represents a single execution context where we might
@@ -102,9 +104,9 @@ struct _ts {
        the trace/profile. */
     int tracing;
 
-    /* Pointer to current CFrame in the C stack frame of the currently,
+    /* Pointer to current _PyCFrame in the C stack frame of the currently,
      * or most recently, executing _PyEval_EvalFrameDefault. */
-    CFrame *cframe;
+    _PyCFrame *cframe;
 
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;
@@ -196,7 +198,7 @@ struct _ts {
     _PyErr_StackItem exc_state;
 
     /* The bottom-most frame on the stack. */
-    CFrame root_cframe;
+    _PyCFrame root_cframe;
 };
 
 

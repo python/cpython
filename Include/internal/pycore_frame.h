@@ -59,7 +59,7 @@ typedef struct _PyInterpreterFrame {
     int f_lasti;       /* Last instruction if called */
     int stacktop;     /* Offset of TOS from localsplus  */
     PyFrameState f_state;  /* What state the frame is in */
-    bool is_entry;  // Whether this is the "root" frame for the current CFrame.
+    bool is_entry;  // Whether this is the "root" frame for the current _PyCFrame.
     bool is_generator;
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
