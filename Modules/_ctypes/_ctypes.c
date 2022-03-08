@@ -579,8 +579,8 @@ UnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return StructUnionType_new(type, args, kwds, 0);
 }
 
-static const char from_address_doc[] =
-"C.from_address(integer) -> C instance\naccess a C instance at the specified address";
+PyDoc_STRVAR(from_address_doc,
+"C.from_address(integer) -> C instance\naccess a C instance at the specified address");
 
 static PyObject *
 CDataType_from_address(PyObject *type, PyObject *value)
@@ -597,8 +597,8 @@ CDataType_from_address(PyObject *type, PyObject *value)
     return PyCData_AtAddress(type, buf);
 }
 
-static const char from_buffer_doc[] =
-"C.from_buffer(object, offset=0) -> C instance\ncreate a C instance from a writeable buffer";
+PyDoc_STRVAR(from_buffer_doc,
+"C.from_buffer(object, offset=0) -> C instance\ncreate a C instance from a writeable buffer");
 
 static int
 KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep);
@@ -677,8 +677,8 @@ CDataType_from_buffer(PyObject *type, PyObject *args)
     return result;
 }
 
-static const char from_buffer_copy_doc[] =
-"C.from_buffer_copy(object, offset=0) -> C instance\ncreate a C instance from a readable buffer";
+PyDoc_STRVAR(from_buffer_copy_doc,
+"C.from_buffer_copy(object, offset=0) -> C instance\ncreate a C instance from a readable buffer");
 
 static PyObject *
 GenericPyCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
@@ -728,8 +728,8 @@ CDataType_from_buffer_copy(PyObject *type, PyObject *args)
     return result;
 }
 
-static const char in_dll_doc[] =
-"C.in_dll(dll, name) -> C instance\naccess a C instance in a dll";
+PyDoc_STRVAR(in_dll_doc,
+"C.in_dll(dll, name) -> C instance\naccess a C instance in a dll");
 
 static PyObject *
 CDataType_in_dll(PyObject *type, PyObject *args)
@@ -790,8 +790,8 @@ CDataType_in_dll(PyObject *type, PyObject *args)
     return PyCData_AtAddress(type, address);
 }
 
-static const char from_param_doc[] =
-"Convert a Python object into a function call parameter.";
+PyDoc_STRVAR(from_param_doc,
+"Convert a Python object into a function call parameter.");
 
 static PyObject *
 CDataType_from_param(PyObject *type, PyObject *value)
@@ -5490,7 +5490,7 @@ PyDoc_STRVAR(_ctypes__doc__,
 
 #ifdef MS_WIN32
 
-static const char comerror_doc[] = "Raised when a COM method call failed.";
+PyDoc_STRVAR(comerror_doc, "Raised when a COM method call failed.");
 
 int
 comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
