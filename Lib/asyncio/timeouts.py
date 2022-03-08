@@ -119,6 +119,10 @@ def timeout(delay: Optional[float]) -> Timeout:
 
 
     delay - value in seconds or None to disable timeout logic
+
+    long_running_task() is interrupted by raising asyncio.CancelledError,
+    the top-most affected timeout() context manager converts CancelledError
+    into TimeoutError.
     """
     loop = events.get_running_loop()
     return Timeout(loop.time() + delay if delay is not None else None)
@@ -137,5 +141,10 @@ def timeout_at(when: Optional[float]) -> Timeout:
     ...     await long_running_task()
 
 
+    when - a deadline when timeout occurs or None to disable timeout logic
+
+    long_running_task() is interrupted by raising asyncio.CancelledError,
+    the top-most affected timeout() context manager converts CancelledError
+    into TimeoutError.
     """
     return Timeout(when)
