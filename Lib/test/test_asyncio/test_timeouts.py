@@ -48,7 +48,7 @@ class BaseTimeoutTests:
         cancel = False
         with self.assertRaises(TimeoutError):
             async with asyncio.timeout(0.01) as cm1:
-                # The only topmost timed out context manager raises TimeoutError
+                # Only the topmost context manager should raise TimeoutError
                 with self.assertRaises(asyncio.CancelledError):
                     async with asyncio.timeout(0.01) as cm2:
                         await asyncio.sleep(10)
@@ -94,8 +94,7 @@ class BaseTimeoutTests:
 
         self.assertFalse(cm.expired())
         self.assertIsNone(cm.when())
-        # finised fast. Very busy CI box requires high enough limit,
-        # that's why 0.01 cannot be used
+        # 2 sec for slow CI boxes
         self.assertLess(t1-t0, 2)
 
     async def test_timeout_zero(self):
