@@ -2267,13 +2267,16 @@ handle_eval_breaker:
             Py_DECREF(v);
             Py_DECREF(container);
             Py_DECREF(sub);
-            if (err != 0)
+            if (err != 0) {
                 goto error;
+            }
+            JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
             DISPATCH();
         }
 
         TARGET(STORE_SUBSCR_ADAPTIVE) {
-            if (oparg == 0) {
+            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
+            if (cache->counter == 0) {
                 PyObject *sub = TOP();
                 PyObject *container = SECOND();
                 next_instr--;
@@ -2284,8 +2287,7 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(STORE_SUBSCR, deferred);
-                // oparg is the adaptive cache counter
-                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
+                cache->counter--;
                 JUMP_TO_INSTRUCTION(STORE_SUBSCR);
             }
         }
@@ -2312,6 +2314,7 @@ handle_eval_breaker:
             Py_DECREF(old_value);
             Py_DECREF(sub);
             Py_DECREF(list);
+            JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
             NOTRACE_DISPATCH();
         }
 
@@ -2328,6 +2331,7 @@ handle_eval_breaker:
             if (err != 0) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
             DISPATCH();
         }
 
@@ -5520,21 +5524,6 @@ opname ## _miss: \
         JUMP_TO_INSTRUCTION(opname); \
     }
 
-#define MISS_WITH_OPARG_COUNTER(opname) \
-opname ## _miss: \
-    { \
-        STAT_INC(opname, miss); \
-        uint8_t oparg = _Py_OPARG(next_instr[-1])-1; \
-        UPDATE_PREV_INSTR_OPARG(next_instr, oparg); \
-        assert(_Py_OPARG(next_instr[-1]) == oparg); \
-        if (oparg == 0) /* too many cache misses */ { \
-            oparg = ADAPTIVE_CACHE_BACKOFF; \
-            next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, oparg); \
-            STAT_INC(opname, deopt); \
-        } \
-        JUMP_TO_INSTRUCTION(opname); \
-    }
-
 MISS_WITH_INLINE_CACHE(LOAD_ATTR)
 MISS_WITH_INLINE_CACHE(STORE_ATTR)
 MISS_WITH_INLINE_CACHE(LOAD_GLOBAL)
@@ -5545,7 +5534,7 @@ MISS_WITH_INLINE_CACHE(BINARY_OP)
 MISS_WITH_INLINE_CACHE(COMPARE_OP)
 MISS_WITH_INLINE_CACHE(BINARY_SUBSCR)
 MISS_WITH_INLINE_CACHE(UNPACK_SEQUENCE)
-MISS_WITH_OPARG_COUNTER(STORE_SUBSCR)
+MISS_WITH_INLINE_CACHE(STORE_SUBSCR)
 
 binary_subscr_dict_error:
         {
