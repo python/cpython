@@ -12376,6 +12376,13 @@ fi
 case $ac_sys_system in #(
   FreeBSD*) :
 
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"x11\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "x11") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for X11" >&5
@@ -12466,8 +12473,10 @@ else
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-      TCLTK_CFLAGS="$TCLTK_CFLAGS $X11_CFLAGS"
-      TCLTK_LIBS="$TCLTK_LIBS $X11_LIBS"
+        TCLTK_CFLAGS="$TCLTK_CFLAGS $X11_CFLAGS"
+        TCLTK_LIBS="$TCLTK_LIBS $X11_LIBS"
+
+fi
 
 fi
 
