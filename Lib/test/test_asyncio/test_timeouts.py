@@ -48,18 +48,10 @@ class BaseTimeoutTests:
         cancel = False
         with self.assertRaises(TimeoutError):
             async with asyncio.timeout(0.01) as cm1:
-                try:
+                # The only topmost timed out context manager raises TimeoutError
+                with self.assertRaises(asyncio.CancelledError):
                     async with asyncio.timeout(0.01) as cm2:
                         await asyncio.sleep(10)
-                except asyncio.CancelledError:
-                    cancel = True
-                    raise
-                except TimeoutError:
-                    self.fail(
-                        "The only topmost timed out context manager "
-                        "raises TimeoutError"
-                    )
-        self.assertTrue(cancel)
         self.assertTrue(cm1.expired())
         self.assertTrue(cm2.expired())
 
@@ -131,33 +123,24 @@ class BaseTimeoutTests:
         self.assertFalse(cm.expired())
 
     async def test_outer_task_is_not_cancelled(self):
-
-        has_timeout = False
-
         async def outer() -> None:
-            nonlocal has_timeout
-            try:
+            with self.assertRaises(TimeoutError):
                 async with asyncio.timeout(0.001):
                     await asyncio.sleep(1)
-            except asyncio.TimeoutError:
-                has_timeout = True
 
         task = asyncio.create_task(outer())
         await task
-        assert has_timeout
-        assert not task.cancelled()
-        assert task.done()
+        self.assertFalse(task.cancelled())
+        self.assertTrue(task.done())
 
     async def test_nested_timeouts_concurrent(self):
         with self.assertRaises(TimeoutError):
             async with asyncio.timeout(0.002):
-                try:
+                with self.assertRaises(TimeoutError):
                     async with asyncio.timeout(0.1):
                         # Pretend we crunch some numbers.
                         time.sleep(0.01)
                         await asyncio.sleep(1)
-                except asyncio.TimeoutError:
-                    pass
 
     async def test_nested_timeouts_loop_busy(self):
         # After the inner timeout is an expensive operation which should
@@ -165,15 +148,14 @@ class BaseTimeoutTests:
         loop = asyncio.get_running_loop()
         t0 = loop.time()
         with self.assertRaises(TimeoutError):
-            async with asyncio.timeout(0.002):
-                try:
-                    async with asyncio.timeout(0.01):
+            async with asyncio.timeout(0.1):  # (1)
+                with self.assertRaises(TimeoutError):
+                    async with asyncio.timeout(0.01):  # (2)
                         # Pretend the loop is busy for a while.
                         time.sleep(0.1)
-                        await asyncio.sleep(0.01)
-                except asyncio.TimeoutError:
-                    # This sleep should be interrupted.
-                    await asyncio.sleep(10)
+                        await asyncio.sleep(1)
+                # TimeoutError was cought by (2)
+                await asyncio.sleep(10) # This sleep should be interrupted by (1)
         t1 = loop.time()
         self.assertTrue(t0 <= t1 <= t0 + 1)
 
