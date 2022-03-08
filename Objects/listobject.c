@@ -895,11 +895,9 @@ list_extend(PyListObject *self, PyObject *iterable)
                 return NULL;
             }
         }
-        else {
-            if (list_resize(self, m + n) < 0) {
-                Py_DECREF(iterable);
-                return NULL;
-            }
+        else if (list_resize(self, m + n) < 0) {
+            Py_DECREF(iterable);
+            return NULL;
         }
         /* note that we may still have self == iterable here for the
          * situation a.extend(a), but the following code works
