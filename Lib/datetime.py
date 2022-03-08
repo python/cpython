@@ -945,18 +945,19 @@ class date:
         * %S seconds (zero-padded)
         * %f microseconds as a zero-padded 6 digit decimal
         * %z UTC offset in the form (+-)HHMM[SS[.ffffff]]
-        * %Z Time zone name
-        * %j Day of the year as a zero-padded decimal (001 - 3666)
-        * %U Week number of the year with Sunday as the first day (00 - 53)
-        * %W Week number of the year with Monday as the first day (00 - 53)
-        * %c Date in time in locale's appropriate format
-        * %x Locale's appropriate date representation
-        * %X Locale's appropriate time representation
+        * %Z time zone name
+        * %j day of the year as a zero-padded decimal (001 - 3666)
+        * %U week number of the year with Sunday as the first day (00 - 53)
+        * %W week number of the year with Monday as the first day (00 - 53)
+        * %c date in time in locale's appropriate format
+        * %x locale's appropriate date representation
+        * %X locale's appropriate time representation
         * %G ISO 8601 year with century
         * %u ISO 8601 weekday where 1 is Monday (1 - 7)
         * %V ISO 8601 week number (01 - 53)
+        * %% the literal '%' character
         
-        >>> datetime(2010, 1, 1).strftime("%d %b %Y)
+        >>> datetime(2010, 1, 1).strftime('%d %b %Y')
         '01 Jan 2010'
         """
         return _wrap_strftime(self, fmt, self.timetuple())
@@ -1490,8 +1491,9 @@ class time:
         * %S seconds (zero-padded)
         * %f microseconds as a zero-padded 6 digit decimal
         * %z UTC offset in the form (+-)HHMM[SS[.ffffff]]
-        * %Z Time zone name
-        * %X Locale's appropriate time representation
+        * %Z time zone name
+        * %X locale's appropriate time representation
+        * %% the literal '%' character
         
         The date part of the timestamp passed to underlying strftime should not
         be used.
@@ -2017,16 +2019,17 @@ class datetime(date):
         * %S seconds (zero-padded)
         * %f microseconds as a zero-padded 6 digit decimal
         * %z UTC offset in the form (+-)HHMM[SS[.ffffff]]
-        * %Z Time zone name
-        * %j Day of the year as a zero-padded decimal (001 - 3666)
-        * %U Week number of the year with Sunday as the first day (00 - 53)
-        * %W Week number of the year with Monday as the first day (00 - 53)
-        * %c Date in time in locale's appropriate format
-        * %x Locale's appropriate date representation
-        * %X Locale's appropriate time representation
+        * %Z time zone name
+        * %j day of the year as a zero-padded decimal (001 - 3666)
+        * %U week number of the year with Sunday as the first day (00 - 53)
+        * %W week number of the year with Monday as the first day (00 - 53)
+        * %c date in time in locale's appropriate format
+        * %x locale's appropriate date representation
+        * %X locale's appropriate time representation
         * %G ISO 8601 year with century
         * %u ISO 8601 weekday where 1 is Monday (1 - 7)
         * %V ISO 8601 week number (01 - 53)
+        * %% the literal '%' character
         
         >>> datetime.strptime('01 Jan 2010', '%d %b %Y')
         datetime.datetime(2010, 1, 1, 0, 0)
