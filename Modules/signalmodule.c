@@ -496,6 +496,7 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
     _signal_module_state *modstate = get_signal_state(module);
     PyObject *old_handler;
     void (*func)(int);
+    int match = 0; // cannot use func == NULL as sentinel, SIG_DFL == 0
 #ifdef MS_WINDOWS
     /* Validate that signalnum is one of the allowable signals */
     switch (signalnum) {
@@ -528,20 +529,37 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
                          "signal number out of range");
         return NULL;
     }
-    if (handler == modstate->ignore_handler) {
-        func = SIG_IGN;
+    if (PyCallable_Check(handler)) {
+        func = signal_handler;
+        match = 1;
     }
-    else if (handler == modstate->default_handler) {
-        func = SIG_DFL;
+    if (!match) {
+        int cmp = PyObject_RichCompareBool(handler, modstate->ignore_handler, Py_EQ);
+        switch (cmp) {
+            case -1:
+                return NULL;
+            case 1:
+                func = SIG_IGN;
+                match = 1;
+                break;
+        }
     }
-    else if (!PyCallable_Check(handler)) {
+    if (!match) {
+        int cmp = PyObject_RichCompareBool(handler, modstate->default_handler, Py_EQ);
+        switch (cmp) {
+            case -1:
+                return NULL;
+            case 1:
+                func = SIG_DFL;
+                match = 1;
+                break;
+        }
+    }
+    if (!match) {
         _PyErr_SetString(tstate, PyExc_TypeError,
                          "signal handler must be signal.SIG_IGN, "
                          "signal.SIG_DFL, or a callable object");
         return NULL;
-    }
-    else {
-        func = signal_handler;
     }
 
     /* Check for pending signals before changing signal handler */
