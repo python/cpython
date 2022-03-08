@@ -119,7 +119,8 @@ class BaseTimeoutTests:
     async def test_foreign_cancel_doesnt_timeout_if_not_expired(self):
         with self.assertRaises(asyncio.CancelledError):
             async with asyncio.timeout(10) as cm:
-                raise asyncio.CancelledError
+                asyncio.current_task().cancel()
+                await asyncio.sleep(10)
         self.assertFalse(cm.expired())
 
     async def test_outer_task_is_not_cancelled(self):
