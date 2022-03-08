@@ -7869,6 +7869,42 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     return co;
 }
 
+
+/* For debugging purposes only */
+#if 0
+static void
+dump_instr(struct instr *i)
+{
+    const char *jrel = (is_relative_jump(i)) ? "jrel " : "";
+    const char *jabs = (is_jump(i) && !is_relative_jump(i))? "jabs " : "";
+
+    char arg[128];
+
+    *arg = '\0';
+    if (HAS_ARG(i->i_opcode)) {
+        sprintf(arg, "arg: %d ", i->i_oparg);
+    }
+    fprintf(stderr, "line: %d, opcode: %d %s%s%s\n",
+                    i->i_lineno, i->i_opcode, arg, jabs, jrel);
+}
+
+static void
+dump_basicblock(const basicblock *b)
+{
+    const char *b_return = b->b_return ? "return " : "";
+    fprintf(stderr, "used: %d, depth: %d, offset: %d %s\n",
+        b->b_iused, b->b_startdepth, b->b_offset, b_return);
+    if (b->b_instr) {
+        int i;
+        for (i = 0; i < b->b_iused; i++) {
+            fprintf(stderr, "  [%02d] ", i);
+            dump_instr(b->b_instr + i);
+        }
+    }
+}
+#endif
+
+
 static int
 normalize_basic_block(basicblock *bb);
 
