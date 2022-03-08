@@ -591,7 +591,8 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
     } else {
         callback_context *ctx = (callback_context *)sqlite3_user_data(context);
         PyErr_Format(ctx->state->ProgrammingError,
-                     "UDF's cannot return '%s' values to SQLite",
+                     "User-defined functions cannot return '%s' values to "
+                     "SQLite",
                      Py_TYPE(py_val)->tp_name);
         return -1;
     }

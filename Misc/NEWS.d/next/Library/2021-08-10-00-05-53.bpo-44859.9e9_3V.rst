@@ -1,7 +1,10 @@
-Raise more accurate exceptions in :mod:`sqlite3`.
+Raise more accurate and :pep:`249` compatible exceptions in :mod:`sqlite3`.
 
-* Raise InterfaceError iso. ProgrammingError for SQLITE_MISUSE
-* Don't overwrite BufferError with ValueError when converting to BLOB
-* Raise ProgrammingError iso. Warning if user tries to execute() more than one
-  statement
-* Raise DataError iso. ValueError if query contains NULL characters
+* Raise :exc:`~sqlite3.InterfaceError` instead of
+  :exc:`~sqlite3.ProgrammingError` for ``SQLITE_MISUSE`` errors.
+* Don't overwrite :exc:`BufferError` with :exc:`ValueError` when conversion to
+  BLOB fails.
+* Raise :exc:`~sqlite3.ProgrammingError` instead of :exc:`~sqlite3.Warning` if
+  user tries to :meth:`~sqlite3.Cursor.execute()` more than one SQL statement.
+* Raise :exc:`~sqlite3.ProgrammingError` instead of :exc:`ValueError` if an SQL
+  query contains null characters.
