@@ -707,13 +707,13 @@ _sqlite3.Cursor.executescript as pysqlite_cursor_executescript
     sql_script: str
     /
 
-Executes multiple SQL statements at once. Non-standard.
+Executes multiple SQL statements at once.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
                                    const char *sql_script)
-/*[clinic end generated code: output=8fd726dde1c65164 input=1ac0693dc8db02a8]*/
+/*[clinic end generated code: output=8fd726dde1c65164 input=78f093be415a8a2c]*/
 {
     if (!check_cursor(self)) {
         return NULL;
