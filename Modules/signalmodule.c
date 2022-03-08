@@ -177,6 +177,17 @@ get_signal_state(PyObject *module)
 }
 
 
+static inline int
+compare_handler(PyObject *handler, PyObject *func)
+{
+    assert(PyLong_CheckExact(handler));
+    if (!PyLong_CheckExact(func)) {
+        return 0;
+    }
+    // Assume that comparison of two PyLong objects will never fail.
+    return PyObject_RichCompareBool(func, handler, Py_EQ) == 1;
+}
+
 #ifdef HAVE_GETITIMER
 /* auxiliary functions for setitimer */
 static int
@@ -496,7 +507,6 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
     _signal_module_state *modstate = get_signal_state(module);
     PyObject *old_handler;
     void (*func)(int);
-    int match = 0; // cannot use func == NULL as sentinel, SIG_DFL == 0
 #ifdef MS_WINDOWS
     /* Validate that signalnum is one of the allowable signals */
     switch (signalnum) {
@@ -531,31 +541,11 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
     }
     if (PyCallable_Check(handler)) {
         func = signal_handler;
-        match = 1;
-    }
-    if (!match) {
-        int cmp = PyObject_RichCompareBool(handler, modstate->ignore_handler, Py_EQ);
-        switch (cmp) {
-            case -1:
-                return NULL;
-            case 1:
-                func = SIG_IGN;
-                match = 1;
-                break;
-        }
-    }
-    if (!match) {
-        int cmp = PyObject_RichCompareBool(handler, modstate->default_handler, Py_EQ);
-        switch (cmp) {
-            case -1:
-                return NULL;
-            case 1:
-                func = SIG_DFL;
-                match = 1;
-                break;
-        }
-    }
-    if (!match) {
+    } else if (compare_handler(handler, modstate->ignore_handler)) {
+        func = SIG_IGN;
+    } else if (compare_handler(handler, modstate->default_handler)) {
+        func = SIG_DFL;
+    } else {
         _PyErr_SetString(tstate, PyExc_TypeError,
                          "signal handler must be signal.SIG_IGN, "
                          "signal.SIG_DFL, or a callable object");
@@ -1770,8 +1760,8 @@ _PySignal_Fini(void)
         set_handler(signum, NULL);
         if (func != NULL
             && func != Py_None
-            && func != state->default_handler
-            && func != state->ignore_handler)
+            && !compare_handler(func, state->default_handler)
+            && !compare_handler(func, state->ignore_handler))
         {
             PyOS_setsig(signum, SIG_DFL);
         }
@@ -1842,8 +1832,9 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
          * (see bpo-43406).
          */
         PyObject *func = get_handler(i);
-        if (func == NULL || func == Py_None || func == state->ignore_handler ||
-            func == state->default_handler) {
+        if (func == NULL || func == Py_None ||
+            compare_handler(func, state->ignore_handler) ||
+            compare_handler(func, state->default_handler)) {
             /* No Python signal handler due to aforementioned race condition.
              * We can't call raise() as it would break the assumption
              * that PyErr_SetInterrupt() only *simulates* an incoming
@@ -1911,15 +1902,8 @@ PyErr_SetInterruptEx(int signum)
 
     signal_state_t *state = &signal_global_state;
     PyObject *func = get_handler(signum);
-    int is_ign = PyObject_RichCompareBool(func, state->ignore_handler, Py_EQ);
-    if (is_ign == -1) {
-        return -1;
-    }
-    int is_dfl = PyObject_RichCompareBool(func, state->default_handler, Py_EQ);
-    if (is_dfl == -1) {
-        return -1;
-    }
-    if ((is_ign == 0) && (is_dfl == 0)) {
+    if (!compare_handler(func, state->ignore_handler)
+            && !compare_handler(func, state->default_handler)) {
         trip_signal(signum);
     }
     return 0;
