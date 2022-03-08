@@ -62,6 +62,7 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.11.
    Brevity is key.
 
+- Python 3.11 is 20% faster than Python 3.10. See `Faster CPython`_ for details.
 
 .. PEP-sized items next.
 
@@ -409,6 +410,156 @@ Optimizations
   becomes 272 bytes from 352 bytes on 64bit platform.
   (Contributed by Inada Naoki in :issue:`46845`.)
 
+
+Faster CPython
+==============
+
+Python 3.11 is on average `1.20x faster <https://speed.python.org/comparison/?exe=12%2BL%2B3.10%2C12%2BL%2Bmaster&ben=741%2C801%2C742%2C743%2C744%2C745%2C746%2C747%2C748%2C749%2C799%2C800%2C750%2C751%2C752%2C753%2C754%2C755%2C756%2C757%2C758%2C759%2C760%2C761%2C762%2C763%2C764%2C765%2C766%2C767%2C768%2C769%2C770%2C771%2C772%2C773%2C774%2C775%2C776%2C777%2C778%2C779%2C780%2C781%2C782%2C783%2C784%2C785%2C786%2C788%2C787%2C789%2C790%2C791%2C792%2C793%2C794%2C797%2C796%2C795%2C798&env=4&hor=true&bas=12%2BL%2B3.10&chart=normal+bars>`_
+than Python 3.10 when measured with the
+`pyperformance <https://github.com/python/pyperformance>`_ benchmark suite, on
+Ubuntu Linux.
+
+The project focuses on two major areas in Python: faster startup and faster
+runtime. Other optimizations not under this project are listed in `Optimizations`_.
+
+Faster Startup
+--------------
+
+Static objects
+~~~~~~~~~~~~~~
+
+Freezing imports
+~~~~~~~~~~~~~~~~
+
+
+Faster Runtime
+--------------
+
+Cheaper, lazy Python frames
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Python frames are created whenever Python calls a Python function. This frame
+holds execution information. The following are new frame optimizations:
+
+- Streamlined the frame creation process.
+- Avoided memory allocation by generously re-using frame space on the C stack.
+- Streamlined the internal frame object to only contain essential information.
+  Frames previously held extra debugging and memory management information.
+  Old-style frames are now created only when required by debuggers. For most
+  user code, no frames are created at all.
+
+Nearly all Python functions calls have sped up significantly.
+This resulted in a 3-7% improvement in pyperformance.
+(Contributed by Mark Shannon in :issue:`44590`.)
+
+.. _inline-calls:
+
+Inlined Python function calls
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+During a Python function call, Python will call a C function to interpret that
+function's code, similar to how a user would call ``eval`` to run arbitrary
+code.
+
+In 3.11, when Python detects code calling another Python function,
+it sets up a new frame, and "jumps" to the new code inside the new frame. This
+avoids calling the C interpreting function altogether.
+
+Python function calls now consume almost no C stack space. This speeds up Python
+to Python function calls. In simple recursive functions like fibonacci or
+factorial, a 1.7x speedup was observed. This also means recursive functions
+can recurse significantly deeper, assuming the recursion limit and memory limit
+is not exceeded. This resulted in a 1-3% improvement in pyperformance.
+(Contributed by Pablo Galindo and Mark Shannon in :issue:`45256`.)
+
+PEP 659: Specializing Adaptive Interpreter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:pep:`659` is one of the key parts of the faster CPython project. The general
+idea is that while Python is a dynamic language, most code have regions where
+objects and types rarely change. This concept is known as *type stability*.
+
+At runtime, Python will try to look for common patterns and type stability
+in the executing code. Python will then replace the current operation with a
+more specialized one. This specialized operation use fast paths available only
+to those use cases/types and will generally outperform their generic
+counterparts. This also brings in another concept called *inline caching*, where
+Python caches the results of expensive operations directly in the bytecode.
+
+Since this exta information requires more memory, Python will only specialize
+when it sees code that is "hot" (executed multiple times). It can also
+de-specialize when code is too dynamic. This is attempted every so often, and
+specialization attempts are not too expensive.
+
+(PEP written by Mark Shannon, with ideas inspired by Stefan Brunthaler.
+See :pep:`659` for more information.)
+
+..
+   If I missed out anyone, please add them.
+
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Operation     | Form               | Specialization                                        | Operation speedup | Contributor(s)    |
+|               |                    |                                                       | (up to)           |                   |
++===============+====================+=======================================================+===================+===================+
+| Binary        | ``o+o; o*o; o-o;`` | Binary add, multiply and subtract for common types    | 10%               | Mark Shannon,     |
+| operations    |                    | such as ``int``, ``float``, and ``str`` take custom   |                   | Dong-hee Na,      |
+|               |                    | fast paths for their underlying types.                |                   | Brandt Bucher,    |
+|               |                    |                                                       |                   | Dennis Sweeney    |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Subscript     | ``o[i]``           | Subscripting container types such as ``list``,        | 10-30%            | Irit Katriel,     |
+|               |                    | ``tuple`` and ``dict``directly index the underlying   |                   | Mark Shannon      |
+|               |                    | data structures. Subscripting custom ``__getitem__``  |                   |                   |
+|               |                    | is also inlined similar to :ref:`inline-calls`.       |                   |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Store         | ``o[i] = z``       | Similar to subscripting specialization above.         | ?                 |                   |
+| subscript     |                    |                                                       |                   |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Calls         | ``f(arg)``         | Calls to common builtin (C) functions such as ``len`` | 20%               | Mark Shannon,     |
+|               |                    | and ``isinstance`` directly call their underlying C   |                   | Ken Jin           |
+|               | ``T(arg)``         | version. This avoids going through the internal       | 170%              |                   |
+|               |                    | calling convention.                                   |                   |                   |
+|               |                    |                                                       | ?                 |                   |
+|               |                    | Calls to certain Python functions are inlined similar |                   |                   |
+|               |                    | to :ref:`inline-calls`.                               |                   |                   |
+|               |                    |                                                       |                   |                   |
+|               |                    | ``__init__`` is also inlined when creating            |                   |                   |
+|               |                    | Python classes.                                       |                   |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Load          | ``print; len``     | The object's index in the globals/builtins namespace  | 0% [1]_           | Mark Shannon      |
+| global        |                    | is cached. Loading globals and builtins requires      |                   |                   |
+| variable      |                    | no namespace lookups.                                 |                   |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | ?                 | Mark Shannon      |
+| attribute     |                    | index inside the class/object's namespace is cached.  |                   |                   |
+|               |                    | In most cases, attribute loading will require zero    |                   |                   |
+|               |                    | namespace lookups.                                    |                   |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Load          | ``o.meth()``       | The actual address of the method is cached. Method    | 10-20% [2]_       | Ken Jin           |
+| methods for   |                    | loading now has no namespace lookups -- even for      |                   |                   |
+| call          |                    | classes with long inheritance chains.                 |                   |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Store         | ``o.attr = z``     | Similar to load attribute optimization.               | ?                 | Mark Shannon      |
+| attribute     |                    |                                                       |                   |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+| Unpack        | ``*seq``           | Specialized for common containers such as ``list``    | ?                 | ?                 |
+| Sequence      |                    | and ``tuple``. Avoids internal calling convention.    |                   |                   |
++---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
+
+.. [1] Note that a similar optimization already existed since Python 3.8.
+
+.. [2] Classes with longer inheritance chains will see greater speedups.
+       This optimization effectively makes method lookup constant time
+       regardless of inheritance.
+
+About
+-----
+
+Faster CPython explores optimizations for :term:`CPython`. The main team is
+funded by Microsoft to work on this full-time. The team also collaborates
+extensively with volunteer contributors in the community. The following list of
+people involved is non-exhaustive:
+
+* Faster CPython team: Guido van Rossum, Mark Shannon, Eric Snow, Brandt Bucher
+* External collaborators: Irit Katriel, Pablo Galindo
+* Additional contributors: Dennis Sweeney, Dong-hee Na, Ken Jin, Jelle Zijlstra, Kumar Aditya
+* There are too many people contributing ideas to list!
 
 CPython bytecode changes
 ========================
