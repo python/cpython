@@ -1,1 +1,0 @@
-Respect `--with-suffix` when building on case-insensitive file systems.

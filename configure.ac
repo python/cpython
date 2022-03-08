@@ -4153,7 +4153,7 @@ AC_CHECK_FUNCS([ \
   gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
   getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
   getpeername getpgid getpid getppid getpriority _getpty \
-  getpwent getpwnam_r getpwuid_r getresgid getresuid getrusage getsid getspent \
+  getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
@@ -6369,61 +6369,71 @@ AS_VAR_IF([TEST_MODULES], [yes],
 )
 AC_SUBST(TEST_MODULES)
 
+AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
+  m4_foreach([mod], [$@], [
+    AS_VAR_SET([py_cv_module_]mod, [n/a])])
+])
+
+# stdlib not available
 dnl Modules that are not available on some platforms
 dnl AIX has shadow passwords, but access is not via getspent()
 dnl VxWorks does not provide crypt() function
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [AIX/*], [py_stdlib_not_available="_scproxy spwd"],
-  [VxWorks*/*], [py_stdlib_not_available="_scproxy _crypt termios grp"],
-  [Darwin/*], [py_stdlib_not_available="ossaudiodev spwd"],
-  [CYGWIN*/*], [py_stdlib_not_available="_scproxy nis"],
-  [QNX*/*], [py_stdlib_not_available="_scproxy nis"],
-  [FreeBSD*/*], [py_stdlib_not_available="_scproxy spwd"],
+  [AIX/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  [VxWorks*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
+  [Darwin/*], [PY_STDLIB_MOD_SET_NA([ossaudiodev], [spwd])],
+  [CYGWIN*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
+  [QNX*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
+  [FreeBSD*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
   [Emscripten/browser], [
-    py_stdlib_not_available="m4_normalize([
-      _ctypes
-      _curses
-      _curses_panel
-      _dbm
-      _gdbm
-      _multiprocessing
-      _posixshmem
-      _posixsubprocess
-      _scproxy
-      _tkinter
-      _xxsubinterpreters
-      fcntl
-      grp
-      nis
-      ossaudiodev
-      resource
-      readline
-      spwd
-      syslog
-      termios
-    ])"
+    PY_STDLIB_MOD_SET_NA(
+      [_ctypes],
+      [_curses],
+      [_curses_panel],
+      [_dbm],
+      [_gdbm],
+      [_multiprocessing],
+      [_posixshmem],
+      [_posixsubprocess],
+      [_scproxy],
+      [_tkinter],
+      [_xxsubinterpreters],
+      [fcntl],
+      [grp],
+      [nis],
+      [ossaudiodev],
+      [pwd],
+      [resource],
+      [readline],
+      [spwd],
+      [syslog],
+      [termios],
+    )
   ],
   dnl Some modules like _posixsubprocess do not work. We build them anyway
   dnl so imports in tests do not fail.
   [Emscripten/node], [
-    py_stdlib_not_available="m4_normalize([
-      _ctypes
-      _curses
-      _curses_panel
-      _dbm
-      _gdbm
-      _scproxy
-      _tkinter
-      _xxsubinterpreters
-      grp
-      nis
-      ossaudiodev
-      spwd
-      syslog
-    ])"
+    PY_STDLIB_MOD_SET_NA(
+      [_ctypes],
+      [_curses],
+      [_curses_panel],
+      [_dbm],
+      [_gdbm],
+      [_scproxy],
+      [_tkinter],
+      [_xxsubinterpreters],
+      [grp],
+      [nis],
+      [ossaudiodev],
+      [pwd],
+      [spwd],
+      [syslog],
+    )
   ],
-  [py_stdlib_not_available="_scproxy"]
+  [PY_STDLIB_MOD_SET_NA([_scproxy])]
 )
+
+dnl AC_MSG_NOTICE([m4_set_list([_PY_STDLIB_MOD_SET_NA])])
 
 dnl Default value for Modules/Setup.stdlib build type
 AS_CASE([$host_cpu],
@@ -6450,10 +6460,10 @@ MODULE_BLOCK=
 
 dnl Check for stdlib extension modules
 dnl PY_STDLIB_MOD([NAME], [ENABLED-TEST], [SUPPORTED-TEST], [CFLAGS], [LDFLAGS])
-dnl sets MODULE_$NAME based on $py_stdlib_not_available, ENABLED-TEST,
+dnl sets MODULE_$NAME based on PY_STDLIB_MOD_SET_NA(), ENABLED-TEST,
 dnl and SUPPORTED_TEST. ENABLED-TEST and SUPPORTED-TEST default to true if
 dnl empty.
-dnl    n/a: $NAME in $py_stdlib_not_available (not available on platform)
+dnl    n/a: marked unavailable on platform by PY_STDLIB_MOD_SET_NA()
 dnl    yes: enabled and supported
 dnl    missing: enabled and not supported
 dnl    disabled: not enabled
@@ -6462,12 +6472,12 @@ AC_DEFUN([PY_STDLIB_MOD], [
   AC_MSG_CHECKING([for stdlib extension module $1])
   m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
   m4_pushdef([modstate], [py_cv_module_$1])dnl
-  AS_CASE([$py_stdlib_not_available],
-    [*$1*], [modstate=n/a],
-    [AS_IF(m4_ifblank([$2], [true], [$2]),
-        [AS_IF([m4_ifblank([$3], [true], [$3])], [modstate=yes], [modstate=missing])],
-        [modstate=disabled])]
-  )
+  dnl Check if module has been disabled by PY_STDLIB_MOD_SET_NA()
+  AS_IF([test "$modstate" != "n/a"], [
+    AS_IF(m4_ifblank([$2], [true], [$2]),
+       [AS_IF([m4_ifblank([$3], [true], [$3])], [modstate=yes], [modstate=missing])],
+       [modstate=disabled])
+  ])
   _MODULE_BLOCK_ADD(modcond, [$modstate])
   AS_VAR_IF([modstate], [yes], [
     m4_ifblank([$4], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$4])])
@@ -6480,16 +6490,14 @@ AC_DEFUN([PY_STDLIB_MOD], [
 ])
 
 dnl Define simple stdlib extension module
-dnl Always enable unless the module is listed in py_stdlib_not_available
+dnl Always enable unless the module is disabled by PY_STDLIB_MOD_SET_NA
 dnl PY_STDLIB_MOD_SIMPLE([NAME], [CFLAGS], [LDFLAGS])
 dnl cflags and ldflags are optional
 AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
   m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
   m4_pushdef([modstate], [py_cv_module_$1])dnl
-  AS_CASE([$py_stdlib_not_available],
-    [*$1*], [modstate=n/a],
-    [modstate=yes]
-  )
+  dnl Check if module has been disabled by PY_STDLIB_MOD_SET_NA()
+  AS_IF([test "$modstate" != "n/a"], [modstate=yes])
   AM_CONDITIONAL(modcond, [test "$modstate" = yes])
   _MODULE_BLOCK_ADD(modcond, [$modstate])
   AS_VAR_IF([modstate], [yes], [
@@ -6556,6 +6564,7 @@ dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
 PY_STDLIB_MOD([ossaudiodev],
   [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes])
+PY_STDLIB_MOD([pwd], [], [test "$ac_cv_func_getpwuid" = yes -o "$ac_cv_func_getpwuid_r" = yes])
 PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],
   [test "$ac_sys_system" = "Darwin"], [],
@@ -6645,7 +6654,7 @@ AC_SUBST([MODULE_BLOCK])
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
-AC_CONFIG_FILES([Modules/Setup.stdlib])
+AC_CONFIG_FILES([Modules/Setup.bootstrap Modules/Setup.stdlib])
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 
@@ -6658,7 +6667,7 @@ fi
 AC_MSG_NOTICE([creating Makefile])
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $MODULES_SETUP_STDLIB $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local $MODULES_SETUP_STDLIB Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then

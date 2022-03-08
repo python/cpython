@@ -90,12 +90,12 @@ _sqlite3.complete_statement as pysqlite_complete_statement
 
     statement: str
 
-Checks if a string contains a complete SQL statement. Non-standard.
+Checks if a string contains a complete SQL statement.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_complete_statement_impl(PyObject *module, const char *statement)
-/*[clinic end generated code: output=e55f1ff1952df558 input=f6b24996b31c5c33]*/
+/*[clinic end generated code: output=e55f1ff1952df558 input=ac45d257375bb828]*/
 {
     if (sqlite3_complete(statement)) {
         return Py_NewRef(Py_True);
@@ -111,12 +111,15 @@ _sqlite3.enable_shared_cache as pysqlite_enable_shared_cache
 
 Enable or disable shared cache mode for the calling thread.
 
-Experimental/Non-standard.
+This method is deprecated and will be removed in Python 3.12.
+Shared cache is strongly discouraged by the SQLite 3 documentation.
+If shared cache must be used, open the database in URI mode using
+the cache=shared query parameter.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_enable_shared_cache_impl(PyObject *module, int do_enable)
-/*[clinic end generated code: output=259c74eedee1516b input=8400e41bc58b6b24]*/
+/*[clinic end generated code: output=259c74eedee1516b input=26e40d5971d3487d]*/
 {
     int rc;
 
@@ -138,13 +141,13 @@ _sqlite3.register_adapter as pysqlite_register_adapter
     caster: object
     /
 
-Registers an adapter with pysqlite's adapter registry. Non-standard.
+Registers an adapter with sqlite3's adapter registry.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
                                PyObject *caster)
-/*[clinic end generated code: output=a287e8db18e8af23 input=839dad90e2492725]*/
+/*[clinic end generated code: output=a287e8db18e8af23 input=b4bd87afcadc535d]*/
 {
     int rc;
 
@@ -173,13 +176,13 @@ _sqlite3.register_converter as pysqlite_register_converter
     converter as callable: object
     /
 
-Registers a converter with pysqlite. Non-standard.
+Registers a converter with sqlite3.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
                                  PyObject *callable)
-/*[clinic end generated code: output=a2f2bfeed7230062 input=e074cf7f4890544f]*/
+/*[clinic end generated code: output=a2f2bfeed7230062 input=90f645419425d6c4]*/
 {
     PyObject* name = NULL;
     PyObject* retval = NULL;
@@ -228,13 +231,13 @@ _sqlite3.adapt as pysqlite_adapt
     alt: object = NULL
     /
 
-Adapt given object to given protocol. Non-standard.
+Adapt given object to given protocol.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_adapt_impl(PyObject *module, PyObject *obj, PyObject *proto,
                     PyObject *alt)
-/*[clinic end generated code: output=0c3927c5fcd23dd9 input=c8995aeb25d0e542]*/
+/*[clinic end generated code: output=0c3927c5fcd23dd9 input=a53dc9993e81e15f]*/
 {
     pysqlite_state *state = pysqlite_get_state(module);
     return pysqlite_microprotocols_adapt(state, obj, proto, alt);

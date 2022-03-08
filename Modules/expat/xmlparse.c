@@ -1,4 +1,4 @@
-/* a30d2613dcfdef81475a9d1a349134d2d42722172fdaa7d5bb12ed2aa74b9596 (2.4.6+)
+/* fcb1a62fefa945567301146eb98e3ad3413e823a41c4378e84e8b6b6f308d824 (2.4.7+)
                             __  __            _
                          ___\ \/ /_ __   __ _| |_
                         / _ \\  /| '_ \ / _` | __|
@@ -34,6 +34,7 @@
    Copyright (c) 2019      Vadim Zeitlin <vadim@zeitlins.org>
    Copyright (c) 2021      Dong-hee Na <donghee.na@python.org>
    Copyright (c) 2022      Samanta Navarro <ferivoz@riseup.net>
+   Copyright (c) 2022      Jeffrey Walton <noloader@gmail.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -133,7 +134,7 @@
       * BSD / macOS (including <10.7) (arc4random): HAVE_ARC4RANDOM, \
       * libbsd (arc4random_buf): HAVE_ARC4RANDOM_BUF + HAVE_LIBBSD, \
       * libbsd (arc4random): HAVE_ARC4RANDOM + HAVE_LIBBSD, \
-      * Linux (including <3.17) / BSD / macOS (including <10.7) (/dev/urandom): XML_DEV_URANDOM, \
+      * Linux (including <3.17) / BSD / macOS (including <10.7) / Solaris >=8 (/dev/urandom): XML_DEV_URANDOM, \
       * Windows >=Vista (rand_s): _WIN32. \
     \
     If insist on not using any of these, bypass this error by defining \
@@ -722,6 +723,7 @@ XML_ParserCreateNS(const XML_Char *encodingName, XML_Char nsSep) {
   return XML_ParserCreate_MM(encodingName, NULL, tmp);
 }
 
+// "xml=http://www.w3.org/XML/1998/namespace"
 static const XML_Char implicitContext[]
     = {ASCII_x,     ASCII_m,     ASCII_l,      ASCII_EQUALS, ASCII_h,
        ASCII_t,     ASCII_t,     ASCII_p,      ASCII_COLON,  ASCII_SLASH,
@@ -3704,12 +3706,124 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
   return XML_ERROR_NONE;
 }
 
+static XML_Bool
+is_rfc3986_uri_char(XML_Char candidate) {
+  // For the RFC 3986 ANBF grammar see
+  // https://datatracker.ietf.org/doc/html/rfc3986#appendix-A
+
+  switch (candidate) {
+  // From rule "ALPHA" (uppercase half)
+  case 'A':
+  case 'B':
+  case 'C':
+  case 'D':
+  case 'E':
+  case 'F':
+  case 'G':
+  case 'H':
+  case 'I':
+  case 'J':
+  case 'K':
+  case 'L':
+  case 'M':
+  case 'N':
+  case 'O':
+  case 'P':
+  case 'Q':
+  case 'R':
+  case 'S':
+  case 'T':
+  case 'U':
+  case 'V':
+  case 'W':
+  case 'X':
+  case 'Y':
+  case 'Z':
+
+  // From rule "ALPHA" (lowercase half)
+  case 'a':
+  case 'b':
+  case 'c':
+  case 'd':
+  case 'e':
+  case 'f':
+  case 'g':
+  case 'h':
+  case 'i':
+  case 'j':
+  case 'k':
+  case 'l':
+  case 'm':
+  case 'n':
+  case 'o':
+  case 'p':
+  case 'q':
+  case 'r':
+  case 's':
+  case 't':
+  case 'u':
+  case 'v':
+  case 'w':
+  case 'x':
+  case 'y':
+  case 'z':
+
+  // From rule "DIGIT"
+  case '0':
+  case '1':
+  case '2':
+  case '3':
+  case '4':
+  case '5':
+  case '6':
+  case '7':
+  case '8':
+  case '9':
+
+  // From rule "pct-encoded"
+  case '%':
+
+  // From rule "unreserved"
+  case '-':
+  case '.':
+  case '_':
+  case '~':
+
+  // From rule "gen-delims"
+  case ':':
+  case '/':
+  case '?':
+  case '#':
+  case '[':
+  case ']':
+  case '@':
+
+  // From rule "sub-delims"
+  case '!':
+  case '$':
+  case '&':
+  case '\'':
+  case '(':
+  case ')':
+  case '*':
+  case '+':
+  case ',':
+  case ';':
+  case '=':
+    return XML_TRUE;
+
+  default:
+    return XML_FALSE;
+  }
+}
+
 /* addBinding() overwrites the value of prefix->binding without checking.
    Therefore one must keep track of the old value outside of addBinding().
 */
 static enum XML_Error
 addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
            const XML_Char *uri, BINDING **bindingsPtr) {
+  // "http://www.w3.org/XML/1998/namespace"
   static const XML_Char xmlNamespace[]
       = {ASCII_h,      ASCII_t,     ASCII_t,     ASCII_p,      ASCII_COLON,
          ASCII_SLASH,  ASCII_SLASH, ASCII_w,     ASCII_w,      ASCII_w,
@@ -3720,6 +3834,7 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
          ASCII_e,      ASCII_s,     ASCII_p,     ASCII_a,      ASCII_c,
          ASCII_e,      '\0'};
   static const int xmlLen = (int)sizeof(xmlNamespace) / sizeof(XML_Char) - 1;
+  // "http://www.w3.org/2000/xmlns/"
   static const XML_Char xmlnsNamespace[]
       = {ASCII_h,     ASCII_t,      ASCII_t, ASCII_p, ASCII_COLON,  ASCII_SLASH,
          ASCII_SLASH, ASCII_w,      ASCII_w, ASCII_w, ASCII_PERIOD, ASCII_w,
@@ -3760,14 +3875,26 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
         && (len > xmlnsLen || uri[len] != xmlnsNamespace[len]))
       isXMLNS = XML_FALSE;
 
-    // NOTE: While Expat does not validate namespace URIs against RFC 3986,
-    //       we have to at least make sure that the XML processor on top of
-    //       Expat (that is splitting tag names by namespace separator into
-    //       2- or 3-tuples (uri-local or uri-local-prefix)) cannot be confused
-    //       by an attacker putting additional namespace separator characters
-    //       into namespace declarations.  That would be ambiguous and not to
-    //       be expected.
-    if (parser->m_ns && (uri[len] == parser->m_namespaceSeparator)) {
+    // NOTE: While Expat does not validate namespace URIs against RFC 3986
+    //       today (and is not REQUIRED to do so with regard to the XML 1.0
+    //       namespaces specification) we have to at least make sure, that
+    //       the application on top of Expat (that is likely splitting expanded
+    //       element names ("qualified names") of form
+    //       "[uri sep] local [sep prefix] '\0'" back into 1, 2 or 3 pieces
+    //       in its element handler code) cannot be confused by an attacker
+    //       putting additional namespace separator characters into namespace
+    //       declarations.  That would be ambiguous and not to be expected.
+    //
+    //       While the HTML API docs of function XML_ParserCreateNS have been
+    //       advising against use of a namespace separator character that can
+    //       appear in a URI for >20 years now, some widespread applications
+    //       are using URI characters (':' (colon) in particular) for a
+    //       namespace separator, in practice.  To keep these applications
+    //       functional, we only reject namespaces URIs containing the
+    //       application-chosen namespace separator if the chosen separator
+    //       is a non-URI character with regard to RFC 3986.
+    if (parser->m_ns && (uri[len] == parser->m_namespaceSeparator)
+        && ! is_rfc3986_uri_char(uri[len])) {
       return XML_ERROR_SYNTAX;
     }
   }
