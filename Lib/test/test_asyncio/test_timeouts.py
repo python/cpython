@@ -227,6 +227,11 @@ class BaseTimeoutTests:
 
         self.assertEqual(repr(cm), "<Timeout [finished]>")
 
+    async def test_repr_disabled(self):
+        async with asyncio.timeout(None) as cm:
+            self.assertEqual(repr(cm), r"<Timeout [active] when=None>")
+
+
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
                      'requires the C _asyncio module')

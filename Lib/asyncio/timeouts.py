@@ -63,7 +63,8 @@ class Timeout:
     def __repr__(self) -> str:
         info = ['']
         if self._state is _State.ENTERED:
-            info.append(f"when={self._when:.3f}")
+            when = round(self._when, 3) if self._when is not None else None
+            info.append(f"when={when}")
         info_str = ' '.join(info)
         return f"<Timeout [{self._state.value}]{info_str}>"
 
