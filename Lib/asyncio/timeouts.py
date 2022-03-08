@@ -109,12 +109,12 @@ class Timeout:
 
 
 def timeout(delay: Optional[float]) -> Timeout:
-    """timeout context manager.
+    """Timeout async context manager.
 
     Useful in cases when you want to apply timeout logic around block
     of code or in cases when asyncio.wait_for is not suitable. For example:
 
-    >>> async with timeout(10):  # 10 seconds timeout
+    >>> async with asyncio.timeout(10):  # 10 seconds timeout
     ...     await long_running_task()
 
 
@@ -133,9 +133,8 @@ def timeout_at(when: Optional[float]) -> Timeout:
     Please note: it is not POSIX time but a time with
     undefined starting base, e.g. the time of the system power on.
 
-    >>> async with timeout_at(loop.time() + 10):
-    ...     async with aiohttp.get('https://github.com') as r:
-    ...         await r.text()
+    >>> async with asyncio.timeout_at(loop.time() + 10):
+    ...     await long_running_task()
 
 
     """
