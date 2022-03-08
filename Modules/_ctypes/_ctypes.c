@@ -5485,8 +5485,8 @@ PyTypeObject PyCPointer_Type = {
  *  Module initialization.
  */
 
-static const char module_docs[] =
-"Create and manipulate C compatible data types in Python.";
+PyDoc_STRVAR(_ctypes__doc__,
+"Create and manipulate C compatible data types in Python.");
 
 #ifdef MS_WIN32
 
@@ -5679,7 +5679,7 @@ wstring_at(const wchar_t *ptr, int size)
 static struct PyModuleDef _ctypesmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_ctypes",
-    .m_doc = module_docs,
+    .m_doc = _ctypes__doc__,
     .m_size = -1,
     .m_methods = _ctypes_module_methods,
 };
