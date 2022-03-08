@@ -3185,9 +3185,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 void
 _PyInterpreterConfig_Clear(_PyInterpreterConfig *config)
 {
-    config->allow_fork = 0;
-    config->allow_subprocess = 0;
-    config->allow_threading = 0;
+    *config = (_PyInterpreterConfig){};
 }
 
 
