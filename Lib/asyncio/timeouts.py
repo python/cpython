@@ -113,7 +113,7 @@ def timeout(delay: Optional[float]) -> Timeout:
     Useful in cases when you want to apply timeout logic around block
     of code or in cases when asyncio.wait_for is not suitable. For example:
 
-    >>> with timeout(10):  # 10 seconds timeout
+    >>> async with timeout(10):  # 10 seconds timeout
     ...     await long_running_task()
 
 
