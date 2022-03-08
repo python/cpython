@@ -2051,7 +2051,7 @@ features:
    Create a directory named *path* with numeric mode *mode*.
 
    If the directory already exists, :exc:`FileExistsError` is raised. If a parent
-   directory in the path doesn't exist, :exc:`FileNotFoundError` is raised.
+   directory in the path does not exist, :exc:`FileNotFoundError` is raised.
 
    .. _mkdir_modebits:
 
