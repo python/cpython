@@ -197,8 +197,8 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         return self._ssl_protocol._get_read_buffer_size()
 
     def get_write_buffer_limits(self):
-        """Get the high and low watermarks for write flow control. 
-        Return a tuple (low, high) where low and high are 
+        """Get the high and low watermarks for write flow control.
+        Return a tuple (low, high) where low and high are
         positive number of bytes."""
         return self._ssl_protocol._transport.get_write_buffer_limits()
 

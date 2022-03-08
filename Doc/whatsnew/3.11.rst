@@ -214,7 +214,8 @@ Other CPython Implementation Changes
 New Modules
 ===========
 
-* None yet.
+* A new module, :mod:`tomllib`, was added for parsing TOML.
+  (Contributed by Taneli Hukkinen in :issue:`40059`.)
 
 
 Improved Modules
@@ -403,6 +404,11 @@ Optimizations
   to 10 times or more faster for large arguments (the speed up is larger for
   larger *k*).
   (Contributed by Serhiy Storchaka in :issue:`37295`.)
+
+* Dict don't store hash value when all inserted keys are Unicode objects.
+  This reduces dict size. For example, ``sys.getsizeof(dict.fromkeys("abcdefg"))``
+  becomes 272 bytes from 352 bytes on 64bit platform.
+  (Contributed by Inada Naoki in :issue:`46845`.)
 
 
 CPython bytecode changes
@@ -904,7 +910,7 @@ Porting to Python 3.11
       #endif
 
   Or use the `pythoncapi_compat project
-  <https://github.com/pythoncapi/pythoncapi_compat>`__ to get these two
+  <https://github.com/python/pythoncapi_compat>`__ to get these two
   functions on older Python versions.
 
 * Changes of the :c:type:`PyThreadState` structure members:
@@ -957,7 +963,7 @@ Porting to Python 3.11
       #endif
 
   Or use `the pythoncapi_compat project
-  <https://github.com/pythoncapi/pythoncapi_compat>`__ to get these functions
+  <https://github.com/python/pythoncapi_compat>`__ to get these functions
   on old Python functions.
 
 
@@ -979,6 +985,9 @@ Deprecated
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
   (Contributed by Victor Stinner in :issue:`44113`.)
+
+* Deprecate the ``ob_shash`` member of the :c:type:`PyBytesObject`. Use :c:func:`PyObject_Hash` instead.
+  (Contributed by Inada Naoki in :issue:`46864`.)
 
 Removed
 -------
