@@ -1660,7 +1660,7 @@ sizeof_func(PyObject *self, PyObject *obj)
     return NULL;
 }
 
-PyDoc_STRVAR(alignment_doc[] =
+PyDoc_STRVAR(alignment_doc
 "alignment(C type) -> integer\n"
 "alignment(C instance) -> integer\n"
 "Return the alignment requirements of a C instance");
