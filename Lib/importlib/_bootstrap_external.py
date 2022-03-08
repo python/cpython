@@ -380,8 +380,24 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a4 3472 (bpo-46009: replace GEN_START with POP_TOP)
 #     Python 3.11a4 3473 (Add POP_JUMP_IF_NOT_NONE/POP_JUMP_IF_NONE opcodes)
 #     Python 3.11a4 3474 (Add RESUME opcode)
+#     Python 3.11a5 3475 (Add RETURN_GENERATOR opcode)
+#     Python 3.11a5 3476 (Add ASYNC_GEN_WRAP opcode)
+#     Python 3.11a5 3477 (Replace DUP_TOP/DUP_TOP_TWO with COPY and
+#                         ROT_TWO/ROT_THREE/ROT_FOUR/ROT_N with SWAP)
+#     Python 3.11a5 3478 (New CALL opcodes)
+#     Python 3.11a5 3479 (Add PUSH_NULL opcode)
+#     Python 3.11a5 3480 (New CALL opcodes, second iteration)
+#     Python 3.11a5 3481 (Use inline cache for BINARY_OP)
+#     Python 3.11a5 3482 (Use inline caching for UNPACK_SEQUENCE and LOAD_GLOBAL)
+#     Python 3.11a5 3483 (Use inline caching for COMPARE_OP and BINARY_SUBSCR)
+#     Python 3.11a5 3484 (Use inline caching for LOAD_ATTR, LOAD_METHOD, and
+#                         STORE_ATTR)
+#     Python 3.11a5 3485 (Add an oparg to GET_AWAITABLE)
+#     Python 3.11a6 3486 (Use inline caching for PRECALL and CALL)
+#     Python 3.11a6 3487 (Remove the adaptive "oparg counter" mechanism)
 
 #     Python 3.12 will start with magic number 3500
+
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -393,7 +409,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3474).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3487).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'

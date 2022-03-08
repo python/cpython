@@ -167,7 +167,7 @@ then re-raise the exception (allowing a caller to handle the exception as well):
        raise
 
 Alternatively the last except clause may omit the exception name(s), however the exception
-value must then be retrieved from ``sys.exc_info()[1]``.
+value must then be retrieved with ``sys.exception()``.
 
 The :keyword:`try` ... :keyword:`except` statement has an optional *else
 clause*, which, when present, must follow all *except clauses*.  It is useful

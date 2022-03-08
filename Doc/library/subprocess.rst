@@ -264,13 +264,14 @@ default values. The arguments that are most commonly needed are:
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
    are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing file object, and ``None``.  :data:`PIPE` indicates
-   that a new pipe to the child should be created.  :data:`DEVNULL` indicates
-   that the special file :data:`os.devnull` will be used.  With the default
-   settings of ``None``, no redirection will occur; the child's file handles
-   will be inherited from the parent.  Additionally, *stderr* can be
-   :data:`STDOUT`, which indicates that the stderr data from the child
-   process should be captured into the same file handle as for *stdout*.
+   integer), an existing file object with a valid file descriptor, and ``None``.
+   :data:`PIPE` indicates that a new pipe to the child should be created.
+   :data:`DEVNULL` indicates that the special file :data:`os.devnull` will
+   be used.  With the default settings of ``None``, no redirection will occur;
+   the child's file handles will be inherited from the parent.
+   Additionally, *stderr* can be :data:`STDOUT`, which indicates that the
+   stderr data from the child process should be captured into the same file
+   handle as for *stdout*.
 
    .. index::
       single: universal newlines; subprocess module
@@ -482,13 +483,14 @@ functions.
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
    are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing :term:`file object`, and ``None``.  :data:`PIPE`
-   indicates that a new pipe to the child should be created.  :data:`DEVNULL`
-   indicates that the special file :data:`os.devnull` will be used. With the
-   default settings of ``None``, no redirection will occur; the child's file
-   handles will be inherited from the parent.  Additionally, *stderr* can be
-   :data:`STDOUT`, which indicates that the stderr data from the applications
-   should be captured into the same file handle as for stdout.
+   integer), an existing :term:`file object` with a valid file descriptor,
+   and ``None``.  :data:`PIPE` indicates that a new pipe to the child should
+   be created.  :data:`DEVNULL` indicates that the special file
+   :data:`os.devnull` will be used. With the default settings of ``None``,
+   no redirection will occur; the child's file handles will be inherited from
+   the parent.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
+   that the stderr data from the applications should be captured into the same
+   file handle as for stdout.
 
    If *preexec_fn* is set to a callable object, this object will be called in the
    child process just before the child is executed.

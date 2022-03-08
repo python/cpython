@@ -328,6 +328,38 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_venv_changed_name_posix(self):
+        "Test a venv layout on *nix."
+        ns = MockPosixNamespace(
+            argv0="python",
+            PREFIX="/usr",
+            ENV_PATH="/venv/bin:/usr/bin",
+        )
+        ns.add_known_xfile("/usr/bin/python3")
+        ns.add_known_xfile("/venv/bin/python")
+        ns.add_known_link("/venv/bin/python", "/usr/bin/python3")
+        ns.add_known_file("/usr/lib/python9.8/os.py")
+        ns.add_known_dir("/usr/lib/python9.8/lib-dynload")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            r"home = /usr/bin"
+        ])
+        expected = dict(
+            executable="/venv/bin/python",
+            prefix="/usr",
+            exec_prefix="/usr",
+            base_executable="/usr/bin/python3",
+            base_prefix="/usr",
+            base_exec_prefix="/usr",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/usr/lib/python98.zip",
+                "/usr/lib/python9.8",
+                "/usr/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
     def test_symlink_normal_posix(self):
         "Test a 'standard' install layout via symlink on *nix"
         ns = MockPosixNamespace(
@@ -734,12 +766,15 @@ class MockWinreg:
                 return n.removeprefix(prefix)
         raise OSError("end of enumeration")
 
-    def QueryValue(self, hkey):
+    def QueryValue(self, hkey, subkey):
         if verbose:
-            print(f"QueryValue({hkey})")
+            print(f"QueryValue({hkey}, {subkey})")
         hkey = hkey.casefold()
         if hkey not in self.open:
             raise RuntimeError("key is not open")
+        if subkey:
+            subkey = subkey.casefold()
+            hkey = f'{hkey}\\{subkey}'
         try:
             return self.keys[hkey]
         except KeyError:

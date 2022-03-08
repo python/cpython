@@ -34,6 +34,7 @@ set EXTERNALS=%D%..\..\externals\windows-installer\
 
 set BUILDX86=
 set BUILDX64=
+set BUILDARM64=
 set TARGET=Rebuild
 set TESTTARGETDIR=
 set PGO=-m test -q --pgo
@@ -58,6 +59,7 @@ if "%1" EQU "-b" (set TARGET=Build) && shift && goto CheckOpts
 if "%1" EQU "--build" (set TARGET=Build) && shift && goto CheckOpts
 if "%1" EQU "-x86" (set BUILDX86=1) && shift && goto CheckOpts
 if "%1" EQU "-x64" (set BUILDX64=1) && shift && goto CheckOpts
+if "%1" EQU "-arm64" (set BUILDARM64=1) && shift && goto CheckOpts
 if "%1" EQU "--pgo" (set PGO=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "--skip-pgo" (set PGO=) && shift && goto CheckOpts
 if "%1" EQU "--skip-nuget" (set BUILDNUGET=) && shift && goto CheckOpts
@@ -66,7 +68,7 @@ if "%1" EQU "--skip-msi" (set BUILDMSI=) && shift && goto CheckOpts
 
 if "%1" NEQ "" echo Invalid option: "%1" && exit /B 1
 
-if not defined BUILDX86 if not defined BUILDX64 (set BUILDX86=1) && (set BUILDX64=1)
+if not defined BUILDX86 if not defined BUILDX64 if not defined BUILDARM64 (set BUILDX86=1) && (set BUILDX64=1)
 
 if not exist "%GIT%" where git > "%TEMP%\git.loc" 2> nul && set /P GIT= < "%TEMP%\git.loc" & del "%TEMP%\git.loc"
 if not exist "%GIT%" echo Cannot find Git on PATH && exit /B 1
@@ -83,14 +85,6 @@ call "%D%..\..\doc\make.bat" htmlhelp
 if errorlevel 1 goto :eof
 :skipdoc
 
-where dlltool /q && goto skipdlltoolsearch
-set _DLLTOOL_PATH=
-where /R "%EXTERNALS%\" dlltool > "%TEMP%\dlltool.loc" 2> nul && set /P _DLLTOOL_PATH= < "%TEMP%\dlltool.loc" & del "%TEMP%\dlltool.loc"
-if not exist "%_DLLTOOL_PATH%" echo Cannot find binutils on PATH or in external && exit /B 1
-for %%f in (%_DLLTOOL_PATH%) do set PATH=%PATH%;%%~dpf
-set _DLLTOOL_PATH=
-:skipdlltoolsearch
-
 if defined BUILDX86 (
     call :build x86
     if errorlevel 1 exit /B
@@ -98,6 +92,11 @@ if defined BUILDX86 (
 
 if defined BUILDX64 (
     call :build x64 "%PGO%"
+    if errorlevel 1 exit /B
+)
+
+if defined BUILDARM64 (
+    call :build ARM64
     if errorlevel 1 exit /B
 )
 
@@ -117,12 +116,21 @@ if "%1" EQU "x86" (
     set BUILD_PLAT=Win32
     set OUTDIR_PLAT=win32
     set OBJDIR_PLAT=x86
-) else (
+) else if "%1" EQU "x64" (
     set BUILD=%Py_OutDir%amd64\
     set PGO=%~2
     set BUILD_PLAT=x64
     set OUTDIR_PLAT=amd64
     set OBJDIR_PLAT=x64
+) else if "%1" EQU "ARM64" (
+    set BUILD=%Py_OutDir%amd64\
+    set PGO=%~2
+    set BUILD_PLAT=ARM64
+    set OUTDIR_PLAT=arm64
+    set OBJDIR_PLAT=arm64
+) else (
+    echo Unknown platform %1
+    exit /B 1
 )
 
 if exist "%BUILD%en-us" (
@@ -179,18 +187,24 @@ set BUILDOPTS=/p:Platform=%1 /p:BuildForRelease=true /p:DownloadUrl=%DOWNLOAD_UR
 if defined BUILDMSI (
     %MSBUILD% "%D%bundle\releaselocal.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=true
     if errorlevel 1 exit /B
-    %MSBUILD% "%D%bundle\releaseweb.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=false
-    if errorlevel 1 exit /B
 )
 
 if defined BUILDZIP (
-    %MSBUILD% "%D%make_zip.proj" /t:Build %BUILDOPTS% %CERTOPTS% /p:OutputPath="%BUILD%en-us"
-    if errorlevel 1 exit /B
+    if "%BUILD_PLAT%" EQU "ARM64" (
+        echo Skipping embeddable ZIP generation for ARM64 platform
+    ) else (
+        %MSBUILD% "%D%make_zip.proj" /t:Build %BUILDOPTS% %CERTOPTS% /p:OutputPath="%BUILD%en-us"
+        if errorlevel 1 exit /B
+    )
 )
 
 if defined BUILDNUGET (
-    %MSBUILD% "%D%..\nuget\make_pkg.proj" /t:Build /p:Configuration=Release /p:Platform=%1 /p:OutputPath="%BUILD%en-us"
-    if errorlevel 1 exit /B
+    if "%BUILD_PLAT%" EQU "ARM64" (
+        echo Skipping Nuget package generation for ARM64 platform
+    ) else (
+        %MSBUILD% "%D%..\nuget\make_pkg.proj" /t:Build /p:Configuration=Release /p:Platform=%1 /p:OutputPath="%BUILD%en-us"
+        if errorlevel 1 exit /B
+    )
 )
 
 if not "%OUTDIR%" EQU "" (
@@ -205,7 +219,7 @@ if not "%OUTDIR%" EQU "" (
 exit /B 0
 
 :Help
-echo buildrelease.bat [--out DIR] [-x86] [-x64] [--certificate CERTNAME] [--build] [--pgo COMMAND]
+echo buildrelease.bat [--out DIR] [-x86] [-x64] [-arm64] [--certificate CERTNAME] [--build] [--pgo COMMAND]
 echo                  [--skip-build] [--skip-doc] [--skip-nuget] [--skip-zip] [--skip-pgo]
 echo                  [--download DOWNLOAD URL] [--test TARGETDIR]
 echo                  [-h]
@@ -213,6 +227,7 @@ echo.
 echo    --out (-o)          Specify an additional output directory for installers
 echo    -x86                Build x86 installers
 echo    -x64                Build x64 installers
+echo    -arm64              Build ARM64 installers
 echo    --build (-b)        Incrementally build Python rather than rebuilding
 echo    --skip-build (-B)   Do not build Python (just do the installers)
 echo    --skip-doc (-D)     Do not build documentation
@@ -230,6 +245,9 @@ echo If --test is not specified, the installer tests are not run.
 echo.
 echo For the --pgo option, any Python command line can be used, or 'default' to
 echo use the default task (-m test --pgo).
+echo.
+echo x86 and ARM64 builds will never use PGO. ARM64 builds will never generate
+echo embeddable or Nuget packages.
 echo.
 echo The following substitutions will be applied to the download URL:
 echo     Variable        Description         Example

@@ -112,6 +112,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build CPython
       run: .\PCbuild\build.bat -e -p Win32
+      timeout-minutes: 30
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
@@ -130,6 +131,7 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
       run: .\PCbuild\build.bat -e -p x64
+      timeout-minutes: 30
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
@@ -304,4 +306,4 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Tests
-      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu -x test_ctypes test_crypt test_decimal test_faulthandler test_interpreters test___all__ test_idle test_tix test_tk test_ttk_guionly test_ttk_textonly test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn"
+      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"

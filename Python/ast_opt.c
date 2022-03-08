@@ -268,15 +268,10 @@ parse_literal(PyObject *fmt, Py_ssize_t *ppos, PyArena *arena)
     PyObject *str = PyUnicode_Substring(fmt, start, pos);
     /* str = str.replace('%%', '%') */
     if (str && has_percents) {
-        _Py_static_string(PyId_double_percent, "%%");
-        _Py_static_string(PyId_percent, "%");
-        PyObject *double_percent = _PyUnicode_FromId(&PyId_double_percent);
-        PyObject *percent = _PyUnicode_FromId(&PyId_percent);
-        if (!double_percent || !percent) {
-            Py_DECREF(str);
-            return NULL;
-        }
-        Py_SETREF(str, PyUnicode_Replace(str, double_percent, percent, -1));
+        _Py_DECLARE_STR(percent, "%");
+        _Py_DECLARE_STR(dbl_percent, "%%");
+        Py_SETREF(str, PyUnicode_Replace(str, &_Py_STR(dbl_percent),
+                                         &_Py_STR(percent), -1));
     }
     if (!str) {
         return NULL;
@@ -660,15 +655,6 @@ static int astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState 
     } \
 }
 
-#define CALL_INT_SEQ(FUNC, TYPE, ARG) { \
-    int i; \
-    asdl_int_seq *seq = (ARG); /* avoid variable capture */ \
-    for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-        TYPE elt = (TYPE)asdl_seq_GET(seq, i); \
-        if (!FUNC(elt, ctx_, state)) \
-            return 0; \
-    } \
-}
 
 static int
 astfold_body(asdl_stmt_seq *stmts, PyArena *ctx_, _PyASTOptimizeState *state)
@@ -1085,7 +1071,6 @@ astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 #undef CALL
 #undef CALL_OPT
 #undef CALL_SEQ
-#undef CALL_INT_SEQ
 
 /* See comments in symtable.c. */
 #define COMPILER_STACK_FRAME_SCALE 3
