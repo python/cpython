@@ -10,7 +10,7 @@ from unittest import TestCase, main, skipUnless, skip
 from copy import copy, deepcopy
 
 from typing import Any, NoReturn, Never, assert_never
-from typing import TypeVar, AnyStr
+from typing import TypeVar, TypeVarTuple, Unpack, AnyStr
 from typing import T, KT, VT  # Not in __all__.
 from typing import Union, Optional, Literal
 from typing import Tuple, List, Dict, MutableMapping
@@ -368,6 +368,431 @@ class TypeVarTests(BaseTestCase):
                     List[T][arg]
                 with self.assertRaises(TypeError):
                     list[T][arg]
+
+
+class UnpackTests(BaseTestCase):
+
+    def test_accepts_single_type(self):
+        Unpack[Tuple[int]]
+
+    def test_rejects_multiple_types(self):
+        with self.assertRaises(TypeError):
+            Unpack[Tuple[int], Tuple[str]]
+
+    def test_rejects_multiple_parameterization(self):
+        with self.assertRaises(TypeError):
+            Unpack[Tuple[int]][Tuple[int]]
+
+    def test_cannot_be_called(self):
+        with self.assertRaises(TypeError):
+            Unpack()
+
+
+class TypeVarTupleTests(BaseTestCase):
+
+    def test_instance_is_equal_to_itself(self):
+        Ts = TypeVarTuple('Ts')
+        self.assertEqual(Ts, Ts)
+
+    def test_different_instances_are_different(self):
+        self.assertNotEqual(TypeVarTuple('Ts'), TypeVarTuple('Ts'))
+
+    def test_instance_isinstance_of_typevartuple(self):
+        Ts = TypeVarTuple('Ts')
+        self.assertIsInstance(Ts, TypeVarTuple)
+
+    def test_cannot_call_instance(self):
+        Ts = TypeVarTuple('Ts')
+        with self.assertRaises(TypeError):
+            Ts()
+
+    def test_unpacked_typevartuple_is_equal_to_itself(self):
+        Ts = TypeVarTuple('Ts')
+        self.assertEqual(Unpack[Ts], Unpack[Ts])
+
+    def test_parameterised_tuple_is_equal_to_itself(self):
+        Ts = TypeVarTuple('Ts')
+        self.assertEqual(tuple[Unpack[Ts]], tuple[Unpack[Ts]])
+        self.assertEqual(Tuple[Unpack[Ts]], Tuple[Unpack[Ts]])
+
+    def tests_tuple_arg_ordering_matters(self):
+        Ts1 = TypeVarTuple('Ts1')
+        Ts2 = TypeVarTuple('Ts2')
+        self.assertNotEqual(
+            tuple[Unpack[Ts1], Unpack[Ts2]],
+            tuple[Unpack[Ts2], Unpack[Ts1]],
+        )
+        self.assertNotEqual(
+            Tuple[Unpack[Ts1], Unpack[Ts2]],
+            Tuple[Unpack[Ts2], Unpack[Ts1]],
+        )
+
+    def test_tuple_args_and_parameters_are_correct(self):
+        Ts = TypeVarTuple('Ts')
+        t1 = tuple[Unpack[Ts]]
+        self.assertEqual(t1.__args__, (Unpack[Ts],))
+        self.assertEqual(t1.__parameters__, (Ts,))
+        t2 = Tuple[Unpack[Ts]]
+        self.assertEqual(t2.__args__, (Unpack[Ts],))
+        self.assertEqual(t2.__parameters__, (Ts,))
+
+    def test_repr_is_correct(self):
+        Ts = TypeVarTuple('Ts')
+        self.assertEqual(repr(Ts), 'Ts')
+        self.assertEqual(repr(Unpack[Ts]), '*Ts')
+        self.assertEqual(repr(tuple[Unpack[Ts]]), 'tuple[*Ts]')
+        self.assertEqual(repr(Tuple[Unpack[Ts]]), 'typing.Tuple[*Ts]')
+        self.assertEqual(repr(Unpack[tuple[Unpack[Ts]]]), '*tuple[*Ts]')
+        self.assertEqual(repr(Unpack[Tuple[Unpack[Ts]]]), '*typing.Tuple[*Ts]')
+
+    def test_variadic_class_repr_is_correct(self):
+        Ts = TypeVarTuple('Ts')
+        class A(Generic[Unpack[Ts]]): pass
+
+        self.assertTrue(repr(A[()]).endswith('A[()]'))
+        self.assertTrue(repr(A[float]).endswith('A[float]'))
+        self.assertTrue(repr(A[float, str]).endswith('A[float, str]'))
+        self.assertTrue(repr(
+            A[Unpack[tuple[int, ...]]]
+        ).endswith(
+            'A[*tuple[int, ...]]'
+        ))
+        self.assertTrue(repr(
+            A[float, Unpack[tuple[int, ...]]]
+        ).endswith(
+            'A[float, *tuple[int, ...]]'
+        ))
+        self.assertTrue(repr(
+            A[Unpack[tuple[int, ...]], str]
+        ).endswith(
+            'A[*tuple[int, ...], str]'
+        ))
+        self.assertTrue(repr(
+            A[float, Unpack[tuple[int, ...]], str]
+        ).endswith(
+            'A[float, *tuple[int, ...], str]'
+        ))
+
+    def test_variadic_class_alias_repr_is_correct(self):
+        Ts = TypeVarTuple('Ts')
+        class A(Generic[Unpack[Ts]]): pass
+
+        B = A[Unpack[Ts]]
+        self.assertTrue(repr(B).endswith('A[*Ts]'))
+        with self.assertRaises(NotImplementedError):
+            B[()]
+        with self.assertRaises(NotImplementedError):
+            B[float]
+        with self.assertRaises(NotImplementedError):
+            B[float, str]
+
+        C = A[Unpack[Ts], int]
+        self.assertTrue(repr(C).endswith('A[*Ts, int]'))
+        with self.assertRaises(NotImplementedError):
+            C[()]
+        with self.assertRaises(NotImplementedError):
+            C[float]
+        with self.assertRaises(NotImplementedError):
+            C[float, str]
+
+        D = A[int, Unpack[Ts]]
+        self.assertTrue(repr(D).endswith('A[int, *Ts]'))
+        with self.assertRaises(NotImplementedError):
+            D[()]
+        with self.assertRaises(NotImplementedError):
+            D[float]
+        with self.assertRaises(NotImplementedError):
+            D[float, str]
+
+        E = A[int, Unpack[Ts], str]
+        self.assertTrue(repr(E).endswith('A[int, *Ts, str]'))
+        with self.assertRaises(NotImplementedError):
+            E[()]
+        with self.assertRaises(NotImplementedError):
+            E[float]
+        with self.assertRaises(NotImplementedError):
+            E[float, bool]
+
+        F = A[Unpack[Ts], Unpack[tuple[str, ...]]]
+        self.assertTrue(repr(F).endswith('A[*Ts, *tuple[str, ...]]'))
+        with self.assertRaises(NotImplementedError):
+            F[()]
+        with self.assertRaises(NotImplementedError):
+            F[float]
+        with self.assertRaises(NotImplementedError):
+            F[float, int]
+
+    def test_cannot_subclass_class(self):
+        with self.assertRaises(TypeError):
+            class C(TypeVarTuple): pass
+
+    def test_cannot_subclass_instance(self):
+        Ts = TypeVarTuple('Ts')
+        with self.assertRaises(TypeError):
+            class C(Ts): pass
+        with self.assertRaises(TypeError):
+            class C(Unpack[Ts]): pass
+
+    def test_variadic_class_args_are_correct(self):
+        T = TypeVar('T')
+        Ts = TypeVarTuple('Ts')
+        class A(Generic[Unpack[Ts]]): pass
+        B = A[()]
+        self.assertEqual(B.__args__, ())
+        C = A[int]
+        self.assertEqual(C.__args__, (int,))
+        D = A[int, str]
+        self.assertEqual(D.__args__, (int, str))
+        E = A[T]
+        self.assertEqual(E.__args__, (T,))
+        F = A[Unpack[Ts]]
+        self.assertEqual(F.__args__, (Unpack[Ts],))
+        G = A[T, Unpack[Ts]]
+        self.assertEqual(G.__args__, (T, Unpack[Ts]))
+        H = A[Unpack[Ts], T]
+        self.assertEqual(H.__args__, (Unpack[Ts], T))
+
+    def test_variadic_class_origin_is_correct(self):
+        Ts = TypeVarTuple('Ts')
+        class D(Generic[Unpack[Ts]]): pass
+        self.assertIs(D[int].__origin__, D)
+        self.assertIs(D[T].__origin__, D)
+        self.assertIs(D[Unpack[Ts]].__origin__, D)
+
+    def test_tuple_args_are_correct(self):
+        Ts = TypeVarTuple('Ts')
+
+        self.assertEqual(tuple[Unpack[Ts]].__args__, (Unpack[Ts],))
+        self.assertEqual(Tuple[Unpack[Ts]].__args__, (Unpack[Ts],))
+
+        self.assertEqual(tuple[Unpack[Ts], int].__args__, (Unpack[Ts], int))
+        self.assertEqual(Tuple[Unpack[Ts], int].__args__, (Unpack[Ts], int))
+
+        self.assertEqual(tuple[int, Unpack[Ts]].__args__, (int, Unpack[Ts]))
+        self.assertEqual(Tuple[int, Unpack[Ts]].__args__, (int, Unpack[Ts]))
+
+        self.assertEqual(tuple[int, Unpack[Ts], str].__args__,
+                         (int, Unpack[Ts], str))
+        self.assertEqual(Tuple[int, Unpack[Ts], str].__args__,
+                         (int, Unpack[Ts], str))
+
+        self.assertEqual(tuple[Unpack[Ts], int].__args__, (Unpack[Ts], int))
+        self.assertEqual(Tuple[Unpack[Ts]].__args__, (Unpack[Ts],))
+
+    def test_callable_args_are_correct(self):
+        Ts = TypeVarTuple('Ts')
+        Ts1 = TypeVarTuple('Ts1')
+        Ts2 = TypeVarTuple('Ts2')
+
+        # TypeVarTuple in the arguments
+
+        a = Callable[[Unpack[Ts]], None]
+        self.assertEqual(a.__args__, (Unpack[Ts], type(None)))
+
+        b = Callable[[int, Unpack[Ts]], None]
+        self.assertEqual(b.__args__, (int, Unpack[Ts], type(None)))
+
+        c = Callable[[Unpack[Ts], int], None]
+        self.assertEqual(c.__args__, (Unpack[Ts], int, type(None)))
+
+        d = Callable[[str, Unpack[Ts], int], None]
+        self.assertEqual(d.__args__, (str, Unpack[Ts], int, type(None)))
+
+        # TypeVarTuple as the return
+
+        e = Callable[[None], Unpack[Ts]]
+        self.assertEqual(e.__args__, (type(None), Unpack[Ts]))
+
+        f = Callable[[None], tuple[int, Unpack[Ts]]]
+        self.assertEqual(f.__args__, (type(None), tuple[int, Unpack[Ts]]))
+
+        g = Callable[[None], tuple[Unpack[Ts], int]]
+        self.assertEqual(g.__args__, (type(None), tuple[Unpack[Ts], int]))
+
+        h = Callable[[None], tuple[str, Unpack[Ts], int]]
+        self.assertEqual(h.__args__, (type(None), tuple[str, Unpack[Ts], int]))
+
+        # TypeVarTuple in both
+
+        i = Callable[[Unpack[Ts]], Unpack[Ts]]
+        self.assertEqual(i.__args__, (Unpack[Ts], Unpack[Ts]))
+
+        j = Callable[[Unpack[Ts1]], Unpack[Ts2]]
+        self.assertEqual(j.__args__, (Unpack[Ts1], Unpack[Ts2]))
+
+    def test_variadic_class_with_duplicate_typevartuples_fails(self):
+        Ts1 = TypeVarTuple('Ts1')
+        Ts2 = TypeVarTuple('Ts2')
+        with self.assertRaises(TypeError):
+            class C(Generic[Unpack[Ts1], Unpack[Ts1]]): pass
+        with self.assertRaises(TypeError):
+            class C(Generic[Unpack[Ts1], Unpack[Ts2], Unpack[Ts1]]): pass
+
+    def test_type_concatenation_in_variadic_class_argument_list_succeeds(self):
+        Ts = TypeVarTuple('Ts')
+        class C(Generic[Unpack[Ts]]): pass
+        C[int, Unpack[Ts]]
+        C[Unpack[Ts], int]
+        C[int, Unpack[Ts], str]
+        C[int, bool, Unpack[Ts], float, str]
+
+    def test_type_concatenation_in_tuple_argument_list_succeeds(self):
+        Ts = TypeVarTuple('Ts')
+
+        tuple[int, Unpack[Ts]]
+        tuple[Unpack[Ts], int]
+        tuple[int, Unpack[Ts], str]
+        tuple[int, bool, Unpack[Ts], float, str]
+
+        Tuple[int, Unpack[Ts]]
+        Tuple[Unpack[Ts], int]
+        Tuple[int, Unpack[Ts], str]
+        Tuple[int, bool, Unpack[Ts], float, str]
+
+    def test_variadic_class_definition_using_packed_typevartuple_fails(self):
+        Ts = TypeVarTuple('Ts')
+        with self.assertRaises(TypeError):
+            class C(Generic[Ts]): pass
+
+    def test_variadic_class_definition_using_concrete_types_fails(self):
+        Ts = TypeVarTuple('Ts')
+        with self.assertRaises(TypeError):
+            class E(Generic[Unpack[Ts], int]): pass
+
+    def test_variadic_class_with_2_typevars_accepts_2_or_more_args(self):
+        Ts = TypeVarTuple('Ts')
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+
+        class A(Generic[T1, T2, Unpack[Ts]]): pass
+        A[int, str]
+        A[int, str, float]
+        A[int, str, float, bool]
+
+        class B(Generic[T1, Unpack[Ts], T2]): pass
+        B[int, str]
+        B[int, str, float]
+        B[int, str, float, bool]
+
+        class C(Generic[Unpack[Ts], T1, T2]): pass
+        C[int, str]
+        C[int, str, float]
+        C[int, str, float, bool]
+
+    def test_variadic_args_annotations_are_correct(self):
+        Ts = TypeVarTuple('Ts')
+        def f(*args: Unpack[Ts]): pass
+        self.assertEqual(f.__annotations__, {'args': Unpack[Ts]})
+
+    def test_variadic_args_with_ellipsis_annotations_are_correct(self):
+        Ts = TypeVarTuple('Ts')
+
+        def a(*args: Unpack[tuple[int, ...]]): pass
+        self.assertEqual(a.__annotations__,
+                         {'args': Unpack[tuple[int, ...]]})
+
+        def b(*args: Unpack[Tuple[int, ...]]): pass
+        self.assertEqual(b.__annotations__,
+                         {'args': Unpack[Tuple[int, ...]]})
+
+    def test_concatenation_in_variadic_args_annotations_are_correct(self):
+        Ts = TypeVarTuple('Ts')
+
+        # Unpacking using `Unpack`, native `tuple` type
+
+        def a(*args: Unpack[tuple[int, Unpack[Ts]]]): pass
+        self.assertEqual(
+            a.__annotations__,
+            {'args': Unpack[tuple[int, Unpack[Ts]]]},
+        )
+
+        def b(*args: Unpack[tuple[Unpack[Ts], int]]): pass
+        self.assertEqual(
+            b.__annotations__,
+            {'args': Unpack[tuple[Unpack[Ts], int]]},
+        )
+
+        def c(*args: Unpack[tuple[str, Unpack[Ts], int]]): pass
+        self.assertEqual(
+            c.__annotations__,
+            {'args': Unpack[tuple[str, Unpack[Ts], int]]},
+        )
+
+        def d(*args: Unpack[tuple[int, bool, Unpack[Ts], float, str]]): pass
+        self.assertEqual(
+            d.__annotations__,
+            {'args': Unpack[tuple[int, bool, Unpack[Ts], float, str]]},
+        )
+
+        # Unpacking using `Unpack`, `Tuple` type from typing.py
+
+        def e(*args: Unpack[Tuple[int, Unpack[Ts]]]): pass
+        self.assertEqual(
+            e.__annotations__,
+            {'args': Unpack[Tuple[int, Unpack[Ts]]]},
+        )
+
+        def f(*args: Unpack[Tuple[Unpack[Ts], int]]): pass
+        self.assertEqual(
+            f.__annotations__,
+            {'args': Unpack[Tuple[Unpack[Ts], int]]},
+        )
+
+        def g(*args: Unpack[Tuple[str, Unpack[Ts], int]]): pass
+        self.assertEqual(
+            g.__annotations__,
+            {'args': Unpack[Tuple[str, Unpack[Ts], int]]},
+        )
+
+        def h(*args: Unpack[Tuple[int, bool, Unpack[Ts], float, str]]): pass
+        self.assertEqual(
+            h.__annotations__,
+            {'args': Unpack[Tuple[int, bool, Unpack[Ts], float, str]]},
+        )
+
+    def test_variadic_class_same_args_results_in_equalty(self):
+        Ts = TypeVarTuple('Ts')
+        class C(Generic[Unpack[Ts]]): pass
+
+        self.assertEqual(C[int], C[int])
+
+        Ts1 = TypeVarTuple('Ts1')
+        Ts2 = TypeVarTuple('Ts2')
+        self.assertEqual(
+            C[Unpack[Ts1]],
+            C[Unpack[Ts1]],
+        )
+        self.assertEqual(
+            C[Unpack[Ts1], Unpack[Ts2]],
+            C[Unpack[Ts1], Unpack[Ts2]],
+        )
+        self.assertEqual(
+            C[int, Unpack[Ts1], Unpack[Ts2]],
+            C[int, Unpack[Ts1], Unpack[Ts2]],
+        )
+
+    def test_variadic_class_arg_ordering_matters(self):
+        Ts = TypeVarTuple('Ts')
+        class C(Generic[Unpack[Ts]]): pass
+
+        self.assertNotEqual(
+            C[int, str],
+            C[str, int],
+        )
+
+        Ts1 = TypeVarTuple('Ts1')
+        Ts2 = TypeVarTuple('Ts2')
+        self.assertNotEqual(
+            C[Unpack[Ts1], Unpack[Ts2]],
+            C[Unpack[Ts2], Unpack[Ts1]],
+        )
+
+    def test_variadic_class_arg_typevartuple_identity_matters(self):
+        Ts = TypeVarTuple('Ts')
+        class C(Generic[Unpack[Ts]]): pass
+        Ts1 = TypeVarTuple('Ts1')
+        Ts2 = TypeVarTuple('Ts2')
+        self.assertNotEqual(C[Unpack[Ts1]], C[Unpack[Ts2]])
 
 
 class UnionTests(BaseTestCase):
@@ -1819,6 +2244,11 @@ class GenericTests(BaseTestCase):
             class MyGeneric(Generic[T], Generic[S]): ...
         with self.assertRaises(TypeError):
             class MyGeneric(List[T], Generic[S]): ...
+        with self.assertRaises(TypeError):
+            Generic[()]
+        class C(Generic[T]): pass
+        with self.assertRaises(TypeError):
+            C[()]
 
     def test_init(self):
         T = TypeVar('T')
