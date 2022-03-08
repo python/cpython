@@ -1,3 +1,2 @@
-Propagates :attribute:`~typing._GenericAlias._typevar_types` and
-:attribute:`~typing._GenericAlias._paramspec_tvars` via
-:method:`~typing._GenericAlias.copy_with`.
+Brings :class:`ParamSpec` propagation for :class:`GenericAlias` in line with
+:class:`Concatenate` (and others).

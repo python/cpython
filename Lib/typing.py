@@ -332,8 +332,8 @@ def _tp_cache(func=None, /, *, typed=False):
 def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
     """Evaluate all forward references in the given type t.
     For use of globalns and localns see the docstring for get_type_hints().
-    recursive_guard is used to prevent prevent infinite recursion
-    with recursive ForwardRef.
+    recursive_guard is used to prevent infinite recursion with a recursive
+    ForwardRef.
     """
     if isinstance(t, ForwardRef):
         return t._evaluate(globalns, localns, recursive_guard)
@@ -670,7 +670,9 @@ def Concatenate(self, parameters):
                         "ParamSpec variable.")
     msg = "Concatenate[arg, ...]: each arg must be a type."
     parameters = (*(_type_check(p, msg) for p in parameters[:-1]), parameters[-1])
-    return _ConcatenateGenericAlias(self, parameters)
+    return _ConcatenateGenericAlias(self, parameters,
+                                    _typevar_types=(TypeVar, ParamSpec),
+                                    _paramspec_tvars=True)
 
 
 @_SpecialForm
@@ -1097,7 +1099,7 @@ class _BaseGenericAlias(_Final, _root=True):
             return self._name or self.__origin__.__name__
 
         # We are careful for copy and pickle.
-        # Also for simplicity we just don't relay all dunder names
+        # Also for simplicity we don't relay any dunder names
         if '__origin__' in self.__dict__ and not _is_dunder(attr):
             return getattr(self.__origin__, attr)
         raise AttributeError(attr)
@@ -1339,8 +1341,6 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return tuple(new_args)
 
     def copy_with(self, args):
-        if isinstance(self, _ConcatenateGenericAlias):
-            return self.__class__(self.__origin__, args)
         return self.__class__(self.__origin__, args, name=self._name, inst=self._inst,
                               _typevar_types=self._typevar_types,
                               _paramspec_tvars=self._paramspec_tvars)
@@ -1552,11 +1552,6 @@ class _LiteralGenericAlias(_GenericAlias, _root=True):
 
 
 class _ConcatenateGenericAlias(_GenericAlias, _root=True):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs,
-                         _typevar_types=(TypeVar, ParamSpec),
-                         _paramspec_tvars=True)
-
     def copy_with(self, params):
         if isinstance(params[-1], (list, tuple)):
             return (*params[:-1], *params[-1])
