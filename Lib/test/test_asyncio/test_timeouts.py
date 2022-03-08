@@ -77,8 +77,7 @@ class BaseTimeoutTests:
         t1 = loop.time()
 
         self.assertFalse(cm.expired())
-        # finised fast. Very busy CI box requires high enough limit,
-        # that's why 0.01 cannot be used
+        # 2 sec for slow CI boxes
         self.assertLess(t1-t0, 2)
         self.assertGreater(cm.when(), t1)
 
@@ -91,8 +90,7 @@ class BaseTimeoutTests:
 
         self.assertFalse(cm.expired())
         self.assertIsNone(cm.when())
-        # finised fast. Very busy CI box requires high enough limit,
-        # that's why 0.01 cannot be used
+        # 2 sec for slow CI boxes
         self.assertLess(t1-t0, 2)
 
     async def test_timeout_at_disabled(self):
@@ -116,8 +114,7 @@ class BaseTimeoutTests:
                 await asyncio.sleep(10)
         t1 = loop.time()
         self.assertTrue(cm.expired())
-        # finised fast. Very busy CI box requires high enough limit,
-        # that's why 0.01 cannot be used
+        # 2 sec for slow CI boxes
         self.assertLess(t1-t0, 2)
         self.assertTrue(t0 <= cm.when() <= t1)
 
