@@ -894,6 +894,7 @@ list_extend(PyListObject *self, PyObject *iterable)
                 Py_DECREF(iterable);
                 return NULL;
             }
+        }
         else {
             if (list_resize(self, m + n) < 0) {
                 Py_DECREF(iterable);
