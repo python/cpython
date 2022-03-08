@@ -214,7 +214,8 @@ Other CPython Implementation Changes
 New Modules
 ===========
 
-* None yet.
+* A new module, :mod:`tomllib`, was added for parsing TOML.
+  (Contributed by Taneli Hukkinen in :issue:`40059`.)
 
 
 Improved Modules
