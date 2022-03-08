@@ -985,6 +985,9 @@ Deprecated
   <init-config>` instead (:pep:`587`).
   (Contributed by Victor Stinner in :issue:`44113`.)
 
+* Deprecate the ``ob_shash`` member of the :c:type:`PyBytesObject`. Use :c:func:`PyObject_Hash` instead.
+  (Contributed by Inada Naoki in :issue:`46864`.)
+
 Removed
 -------
 

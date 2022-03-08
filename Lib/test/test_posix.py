@@ -15,13 +15,17 @@ import signal
 import time
 import os
 import platform
-import pwd
 import stat
 import tempfile
 import unittest
 import warnings
 import textwrap
 from contextlib import contextmanager
+
+try:
+    import pwd
+except ImportError:
+    pwd = None
 
 _DUMMY_SYMLINK = os.path.join(tempfile.gettempdir(),
                               os_helper.TESTFN + '-dummy-symlink')
@@ -126,6 +130,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'initgroups'),
                          "test needs os.initgroups()")
+    @unittest.skipUnless(hasattr(pwd, 'getpwuid'), "test needs pwd.getpwuid()")
     def test_initgroups(self):
         # It takes a string and an integer; check that it raises a TypeError
         # for other argument lists.

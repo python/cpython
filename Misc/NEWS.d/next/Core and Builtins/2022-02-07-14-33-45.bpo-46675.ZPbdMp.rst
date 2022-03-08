@@ -1,2 +1,0 @@
-Allow more than 16 items in a split dict before it is combined. The limit is
-now 254.
