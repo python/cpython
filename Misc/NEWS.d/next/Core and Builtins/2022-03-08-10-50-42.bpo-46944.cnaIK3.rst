@@ -1,0 +1,1 @@
+Speed up throwing exception in generator by 20%. Patch by Kumar Aditya.
