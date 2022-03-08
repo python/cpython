@@ -2639,6 +2639,21 @@ class NewType:
         if def_mod != 'typing':
             self.__module__ = def_mod
 
+    def __mro_entries__(self, bases):
+        # We defined __mro_entries__ to get a better error message
+        # if a user attempts to subclass a NewType instance. bpo-46170
+        superclass_name = self.__name__
+
+        class Dummy:
+            def __init_subclass__(cls):
+                subclass_name = cls.__name__
+                raise TypeError(
+                    f"Cannot subclass an instance of NewType. Perhaps you were looking for: "
+                    f"`{subclass_name} = NewType({subclass_name!r}, {superclass_name})`"
+                )
+
+        return (Dummy,)
+
     def __repr__(self):
         return f'{self.__module__}.{self.__qualname__}'
 

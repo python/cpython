@@ -4423,6 +4423,17 @@ class NewTypeTests:
                 )
         exec(code, {})
 
+    def test_error_message_when_subclassing(self):
+        with self.assertRaisesRegex(
+            TypeError,
+            re.escape(
+                "Cannot subclass an instance of NewType. Perhaps you were looking for: "
+                "`ProUserId = NewType('ProUserId', UserId)`"
+            )
+        ):
+            class ProUserId(UserId):
+                ...
+
 
 class NewTypePythonTests(NewTypeTests, BaseTestCase):
     module = py_typing
