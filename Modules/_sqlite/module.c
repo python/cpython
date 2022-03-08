@@ -121,7 +121,7 @@ static PyObject* module_complete(PyObject* self, PyObject* args, PyObject*
 PyDoc_STRVAR(module_complete_doc,
 "complete_statement(sql)\n\
 \n\
-Checks if a string contains a complete SQL statement. Non-standard.");
+Checks if a string contains a complete SQL statement.");
 
 #ifdef HAVE_SHARED_CACHE
 static PyObject* module_enable_shared_cache(PyObject* self, PyObject* args, PyObject*
@@ -149,8 +149,7 @@ static PyObject* module_enable_shared_cache(PyObject* self, PyObject* args, PyOb
 PyDoc_STRVAR(module_enable_shared_cache_doc,
 "enable_shared_cache(do_enable)\n\
 \n\
-Enable or disable shared cache mode for the calling thread.\n\
-Experimental/Non-standard.");
+Enable or disable shared cache mode for the calling thread.");
 #endif /* HAVE_SHARED_CACHE */
 
 static PyObject* module_register_adapter(PyObject* self, PyObject* args)
@@ -180,7 +179,7 @@ static PyObject* module_register_adapter(PyObject* self, PyObject* args)
 PyDoc_STRVAR(module_register_adapter_doc,
 "register_adapter(type, callable)\n\
 \n\
-Registers an adapter with pysqlite's adapter registry. Non-standard.");
+Registers an adapter with sqlite3's adapter registry.");
 
 static PyObject* module_register_converter(PyObject* self, PyObject* args)
 {
@@ -214,7 +213,7 @@ error:
 PyDoc_STRVAR(module_register_converter_doc,
 "register_converter(typename, callable)\n\
 \n\
-Registers a converter with pysqlite. Non-standard.");
+Registers a converter with sqlite3.");
 
 static PyObject* enable_callback_tracebacks(PyObject* self, PyObject* args)
 {
