@@ -1435,6 +1435,10 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                 SPECIALIZATION_FAIL(PRECALL, kind);
                 return -1;
             }
+            if (fcode->co_flags & (CO_GENERATOR | CO_COROUTINE |
+                CO_ITERABLE_COROUTINE | CO_ASYNC_GENERATOR)) {
+                return -1;
+            }
             assert(tp->tp_version_tag != 0);
             write_u32(cache->type_version, tp->tp_version_tag);
             ((PyHeapTypeObject *)tp)->_spec_cache.init = descriptor;
