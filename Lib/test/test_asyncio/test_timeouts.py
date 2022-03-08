@@ -163,12 +163,8 @@ class BaseTimeoutTests:
                     pass
 
     async def test_nested_timeouts_loop_busy(self):
-        """
-        After the inner timeout is an expensive operation which should
-        be stopped by the outer timeout.
-
-        Note: this fails for now.
-        """
+        # After the inner timeout is an expensive operation which should
+        # be stopped by the outer timeout.
         loop = asyncio.get_running_loop()
         t0 = loop.time()
         with self.assertRaises(TimeoutError):
