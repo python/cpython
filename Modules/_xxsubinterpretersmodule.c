@@ -2001,7 +2001,8 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    const _PyInterpreterConfig config;  // isolated by default
+    // The struct is isolated by default.
+    const _PyInterpreterConfig config = (const _PyInterpreterConfig){};
 
     // Create and initialize the new interpreter.
     PyThreadState *save_tstate = _PyThreadState_GET();
