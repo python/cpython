@@ -1900,58 +1900,58 @@ class MethodHolder:
 
 class TestVariantRegistry(unittest.TestCase):
     def test_get_key_for_callable(self):
-        self.assertEqual(functools.get_key_for_callable(len),
+        self.assertEqual(functools._get_key_for_callable(len),
                          "builtins.len")
-        self.assertEqual(functools.get_key_for_callable(py_cached_func),
+        self.assertEqual(functools._get_key_for_callable(py_cached_func),
                          f"{__name__}.py_cached_func")
-        self.assertEqual(functools.get_key_for_callable(MethodHolder.clsmethod),
+        self.assertEqual(functools._get_key_for_callable(MethodHolder.clsmethod),
                          f"{__name__}.MethodHolder.clsmethod")
-        self.assertEqual(functools.get_key_for_callable(MethodHolder.stmethod),
+        self.assertEqual(functools._get_key_for_callable(MethodHolder.stmethod),
                          f"{__name__}.MethodHolder.stmethod")
-        self.assertEqual(functools.get_key_for_callable(MethodHolder.method),
+        self.assertEqual(functools._get_key_for_callable(MethodHolder.method),
                          f"{__name__}.MethodHolder.method")
 
     def test_get_variants(self):
-        key1 = "key1"
-        key2 = "key2"
+        def func1(): pass
+        def func2(): pass
         obj1 = object()
         obj2 = object()
-        self.assertEqual(functools.get_variants(key1), [])
-        self.assertEqual(functools.get_variants(key2), [])
+        self.assertEqual(functools.get_variants(func1), [])
+        self.assertEqual(functools.get_variants(func2), [])
 
-        functools.register_variant(key1, obj1)
-        self.assertEqual(functools.get_variants(key1), [obj1])
-        self.assertEqual(functools.get_variants(key2), [])
+        functools.register_variant(func1, obj1)
+        self.assertEqual(functools.get_variants(func1), [obj1])
+        self.assertEqual(functools.get_variants(func2), [])
 
-        functools.register_variant(key1, obj2)
-        self.assertEqual(functools.get_variants(key1), [obj1, obj2])
-        self.assertEqual(functools.get_variants(key2), [])
+        functools.register_variant(func1, obj2)
+        self.assertEqual(functools.get_variants(func1), [obj1, obj2])
+        self.assertEqual(functools.get_variants(func2), [])
 
     def test_clear_variants(self):
-        key1 = "key1"
-        key2 = "key2"
+        def func1(): pass
+        def func2(): pass
         obj1 = object()
 
-        functools.register_variant(key1, obj1)
-        self.assertEqual(functools.get_variants(key1), [obj1])
-        self.assertEqual(functools.get_variants(key2), [])
+        functools.register_variant(func1, obj1)
+        self.assertEqual(functools.get_variants(func1), [obj1])
+        self.assertEqual(functools.get_variants(func2), [])
 
-        functools.clear_variants(key2)
-        self.assertEqual(functools.get_variants(key1), [obj1])
-        self.assertEqual(functools.get_variants(key2), [])
+        functools.clear_variants(func2)
+        self.assertEqual(functools.get_variants(func1), [obj1])
+        self.assertEqual(functools.get_variants(func2), [])
 
-        functools.clear_variants(key1)
-        self.assertEqual(functools.get_variants(key1), [])
-        self.assertEqual(functools.get_variants(key2), [])
+        functools.clear_variants(func1)
+        self.assertEqual(functools.get_variants(func1), [])
+        self.assertEqual(functools.get_variants(func2), [])
 
-        functools.register_variant(key1, obj1)
-        functools.register_variant(key2, obj1)
-        self.assertEqual(functools.get_variants(key1), [obj1])
-        self.assertEqual(functools.get_variants(key2), [obj1])
+        functools.register_variant(func1, obj1)
+        functools.register_variant(func2, obj1)
+        self.assertEqual(functools.get_variants(func1), [obj1])
+        self.assertEqual(functools.get_variants(func2), [obj1])
 
         functools.clear_variants()
-        self.assertEqual(functools.get_variants(key1), [])
-        self.assertEqual(functools.get_variants(key2), [])
+        self.assertEqual(functools.get_variants(func1), [])
+        self.assertEqual(functools.get_variants(func2), [])
 
 
 class TestSingleDispatch(unittest.TestCase):

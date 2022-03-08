@@ -3790,8 +3790,7 @@ class OverloadTests(BaseTestCase):
         def blah():
             pass
 
-        key = functools.get_key_for_callable(blah)
-        self.assertEqual(functools.get_variants(key), [overload1, overload2])
+        self.assertEqual(functools.get_variants(blah), [overload1, overload2])
 
     def test_get_variants_repeated(self):
         for _ in range(2):
@@ -3804,8 +3803,7 @@ class OverloadTests(BaseTestCase):
             def blah():
                 pass
 
-            key = functools.get_key_for_callable(blah)
-            self.assertEqual(functools.get_variants(key), [overload_func])
+            self.assertEqual(functools.get_variants(blah), [overload_func])
 
 
 # Definitions needed for features introduced in Python 3.6

@@ -657,35 +657,39 @@ def cache(user_function, /):
 ### Function variant registry
 ################################################################################
 
-# {key: (max lineno, [variant])}
+# {key: [variant]}
 _variant_registry = {}
 
 
-def register_variant(key, variant):
+def register_variant(func, variant):
     """Register a function variant."""
+    key = _get_key_for_callable(func)
     _variant_registry.setdefault(key, []).append(variant)
 
 
-def get_variants(key):
-    """Get all function variants for the given key."""
+def get_variants(func):
+    """Get all function variants for the given function."""
+    key = _get_key_for_callable(func)
     return _variant_registry.get(key, [])
 
 
-def clear_variants(key=None):
-    """Clear all variants for the given key (or all keys)."""
-    if key is None:
+def clear_variants(func=None):
+    """Clear all variants for the given function (or all functions)."""
+    if func is None:
         _variant_registry.clear()
     else:
+        key = _get_key_for_callable(func)
         _variant_registry.pop(key, None)
 
 
-def get_key_for_callable(func):
+def _get_key_for_callable(func):
     """Return a key for the given callable.
 
     This key can be used to register the callable in the variant registry
     with register_variant() or to get variants for this callable with get_variants().
 
-    If no key can be created, return None.
+    If no key can be created (because the object is not of a supported type), raise
+    AttributeError.
     """
     # classmethod and staticmethod
     func = getattr(func, "__func__", func)
@@ -856,6 +860,7 @@ def singledispatch(func):
     registry = {}
     dispatch_cache = weakref.WeakKeyDictionary()
     cache_token = None
+    outer_func = func
 
     def dispatch(cls):
         """generic_func.dispatch(cls) -> <function implementation>
@@ -932,9 +937,10 @@ def singledispatch(func):
                         f"{cls!r} is not a class."
                     )
 
-        key = get_key_for_callable(func)
-        if key is not None:
-            register_variant(key, func)
+        try:
+            register_variant(outer_func, func)
+        except AttributeError:
+            pass
 
         if _is_union_type(cls):
             from typing import get_args
