@@ -79,24 +79,31 @@ whose size is determined when the object is allocated.
 /*
 Immortalization:
 
-This marks the reference count bit that will be used to define immortality which
-is set right after the sign bit. For backwards compatibility the actual
-reference count of an immortal instance is set to higher than the immortal bit.
-This will ensure that the immortal bit will remain active, even with extensions
-compiled without the updated checks in Py_INCREF and Py_DECREF.
-This extra value can be safely changed to a smaller value if additional bits are
-needed in the reference count field.
+This marks the reference count bit that will be used to define immortality. For
+backwards compatibility the actual reference count of an immortal instance is
+set to higher than the immortal bit. This will ensure that the immortal bit will
+remain active, even with extensions compiled without the updated checks in
+Py_INCREF and Py_DECREF. This extra value can be safely changed to a smaller
+value if additional bits are needed in the reference count field.
+
+Proper deallocation of immortal instances requires distinguishing between
+statically allocated immortal instances vs those promoted by the runtime to be
+immortal. The latter which should be the only instances that require proper
+cleanup during runtime finalization.
 */
-#define _Py_IMMORTAL_BIT_OFFSET (8 * sizeof(Py_ssize_t) - 2)
+#define _Py_IMMORTAL_BIT_OFFSET (8 * sizeof(Py_ssize_t) - 3)
 #define _Py_IMMORTAL_BIT (1LL << _Py_IMMORTAL_BIT_OFFSET)
 #define _Py_IMMORTAL_REFCNT (_Py_IMMORTAL_BIT + (_Py_IMMORTAL_BIT / 2))
+#define _Py_IMMORTAL_STATIC_BIT_OFFSET (8 * sizeof(Py_ssize_t) - 2)
+#define _Py_IMMORTAL_STATIC_BIT (1LL << _Py_IMMORTAL_STATIC_BIT_OFFSET)
+#define _Py_IMMORTAL_STATIC_REFCNT (_Py_IMMORTAL_STATIC_BIT + _Py_IMMORTAL_REFCNT)
 
 #define PyObject_HEAD_INIT(type)        \
     { _PyObject_EXTRA_INIT              \
     1, type },
 
 #define PyObject_HEAD_IMMORTAL_INIT(type)        \
-    { _PyObject_EXTRA_INIT _Py_IMMORTAL_REFCNT, type },
+    { _PyObject_EXTRA_INIT _Py_IMMORTAL_STATIC_REFCNT, type },
 
 #define PyVarObject_HEAD_INIT(type, size)       \
     { PyObject_HEAD_IMMORTAL_INIT(type) size },
@@ -158,6 +165,10 @@ static inline Py_ssize_t Py_SIZE(const PyVarObject *ob) {
 }
 #define Py_SIZE(ob) Py_SIZE(_PyVarObject_CAST_CONST(ob))
 
+static inline int _Py_IsStaticImmortal(PyObject *op)
+{
+    return (op->ob_refcnt & _Py_IMMORTAL_STATIC_BIT) != 0;
+}
 
 static inline int _Py_IsImmortal(PyObject *op)
 {

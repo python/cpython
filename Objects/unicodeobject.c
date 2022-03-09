@@ -1942,7 +1942,6 @@ unicode_dealloc(PyObject *unicode)
         break;
 
     case SSTATE_INTERNED_IMMORTAL:
-        _PyObject_ASSERT_FAILED_MSG(unicode, "Immortal interned string died");
         break;
 
     default:
@@ -15592,7 +15591,9 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
-    _Py_SetImmortal(s);
+    if (!_Py_IsStaticImmortal(s)) {
+        _Py_SetImmortal(s);
+    }
     _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
 #else
     // PyDict expects that interned strings have their hash
@@ -15640,7 +15641,35 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     }
     assert(PyDict_CheckExact(interned));
 
-    /* Interned unicode strings are not forcibly deallocated */
+    /* For all non-singleton interned strings, restore the two valid references
+       to that instance from within the intern string dictionary and let the
+       normal reference counting process clean up these instances. */
+    Py_ssize_t pos = 0;
+    PyObject *s, *ignored_value;
+    while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
+        assert(PyUnicode_IS_READY(s));
+        switch (PyUnicode_CHECK_INTERNED(s)) {
+        case SSTATE_INTERNED_IMMORTAL:
+            if (!_Py_IsStaticImmortal(s) && !unicode_is_singleton(s)) {
+                // Skip the Immortal Instance check and directly set the refcnt.
+                s->ob_refcnt = 2;
+#ifdef Py_REF_DEBUG
+                // Update the total ref counts to account for the original
+                // reference to this string that no longer exists.
+                _Py_RefTotal--;
+#endif
+            }
+            break;
+        case SSTATE_INTERNED_MORTAL:
+            /* fall through */
+        case SSTATE_NOT_INTERNED:
+            /* fall through */
+        default:
+            Py_UNREACHABLE();
+        }
+        _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
+    }
+
     PyDict_Clear(interned);
     Py_CLEAR(interned);
 }
