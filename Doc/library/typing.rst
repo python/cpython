@@ -1542,27 +1542,16 @@ These are not used in annotations. They are building blocks for declaring types.
       T = TypeVar('T')
       class XT(X, Generic[T]): pass  # raises TypeError
 
-   The type info for introspection can be accessed via ``Point2D.__annotations__``,
-   ``Point2D.__total__``, ``Point2D.__required_keys__``, and
-   ``Point2D.__optional_keys__``.
-
-   .. attribute:: __annotations__
-
-      ``Point2D.__annotations__`` gives a dict which maps the field names to the field types::
-
-         >>> from typing import TypedDict
-         >>> class Point2D(TypedDict):
-         ...     x: int
-         ...     y: int
-         ...
-         >>> Point2D.__annotations__
-         {'x': <class 'int'>, 'y': <class 'int'>}
+   The type info for introspection can be accessed via annotations dicts
+   (see :ref:`annotations-howto` for more information on annotations best practices),
+   :attr:`__total__`, :attr:`__required_keys__`, and :attr:`__optional_keys__`.
 
    .. attribute:: __total__
 
       ``Point2D.__total__`` gives the value of the ``total`` argument.
       Example::
 
+         >>> from typing import TypedDict
          >>> class Point2D(TypedDict): pass
          >>> Point2D.__total__
          True
