@@ -6058,7 +6058,7 @@ load_persid(UnpicklerObject *self)
     else {
         PickleState *st = _Pickle_GetGlobalState();
         PyErr_SetString(st->UnpicklingError,
-                        "A load persistent id instruction was encountered,\n"
+                        "A load persistent id instruction was encountered, "
                         "but no persistent_load function was specified.");
         return -1;
     }
@@ -6085,7 +6085,7 @@ load_binpersid(UnpicklerObject *self)
     else {
         PickleState *st = _Pickle_GetGlobalState();
         PyErr_SetString(st->UnpicklingError,
-                        "A load persistent id instruction was encountered,\n"
+                        "A load persistent id instruction was encountered, "
                         "but no persistent_load function was specified.");
         return -1;
     }
