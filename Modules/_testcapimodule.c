@@ -5427,7 +5427,7 @@ bad_get(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 static PyObject *
 negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    PyObject *obj = PyUnicode_FromString("negative_refcount");
+    PyObject *obj = PyFloat_FromDouble(123.456);
     if (obj == NULL) {
         return NULL;
     }

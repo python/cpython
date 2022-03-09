@@ -245,9 +245,9 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
                     Py_ssize_t *consumed);
 #ifdef Py_DEBUG
 static inline int unicode_is_finalizing(void);
-static int unicode_is_singleton(PyObject *unicode);
 #endif
 
+static int unicode_is_singleton(PyObject *unicode);
 
 static struct _Py_unicode_state*
 get_unicode_state(void)
@@ -1961,7 +1961,6 @@ unicode_dealloc(PyObject *unicode)
     Py_TYPE(unicode)->tp_free(unicode);
 }
 
-#ifdef Py_DEBUG
 static int
 unicode_is_singleton(PyObject *unicode)
 {
@@ -1979,7 +1978,6 @@ unicode_is_singleton(PyObject *unicode)
     }
     return 0;
 }
-#endif
 
 static int
 unicode_modifiable(PyObject *unicode)
@@ -15668,6 +15666,13 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             Py_UNREACHABLE();
         }
         _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
+    }
+
+    /* Get indentifiers ready to be deleted in _PyUnicode_Fini */
+    struct _Py_unicode_state *state = &interp->unicode;
+    struct _Py_unicode_ids *ids = &state->ids;
+    for (Py_ssize_t i=0; i < ids->size; i++) {
+        Py_XINCREF(ids->array[i]);
     }
 
     PyDict_Clear(interned);
