@@ -5282,6 +5282,11 @@ class TypedDictTests(BaseTestCase):
             {'a': typing.Optional[int], 'b': int}
         )
 
+    def test_generic_subclasses(self):
+        T = TypeVar("T")
+        class GenericNamedTuple(NamedTuple, Generic[T]):
+            pass
+
 
 class IOTests(BaseTestCase):
 

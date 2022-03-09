@@ -2595,13 +2595,15 @@ class SupportsRound(Protocol[T_co]):
         pass
 
 
-def _make_nmtuple(name, types, module, defaults = ()):
-    fields = [n for n, t in types]
-    types = {n: _type_check(t, f"field {n} annotation must be a type")
-             for n, t in types}
-    nm_tpl = collections.namedtuple(name, fields,
-                                    defaults=defaults, module=module)
-    nm_tpl.__annotations__ = nm_tpl.__new__.__annotations__ = types
+def _make_nmtuple(name, types):
+    msg = "NamedTuple('Name', [(f0, t0), (f1, t1), ...]); each t must be a type"
+    types = [(n, _type_check(t, msg)) for n, t in types]
+    nm_tpl = collections.namedtuple(name, [n for n, t in types])
+    nm_tpl.__annotations__ = dict(types)
+    try:
+        nm_tpl.__module__ = sys._getframe(2).f_globals.get('__name__', '__main__')
+    except (AttributeError, ValueError):
+        pass
     return nm_tpl
 
 
@@ -2616,20 +2618,28 @@ _special = frozenset({'__module__', '__name__', '__annotations__'})
 class NamedTupleMeta(type):
 
     def __new__(cls, typename, bases, ns):
-        assert bases[0] is _NamedTuple
+        if ns.get('_root', False):
+            return super().__new__(cls, typename, bases, ns)
+        if len(bases) > 1:
+            raise TypeError("Multiple inheritance with NamedTuple is not supported")
+        assert bases[0] is NamedTuple
         types = ns.get('__annotations__', {})
-        default_names = []
+        nm_tpl = _make_nmtuple(typename, types.items())
+        defaults = []
+        defaults_dict = {}
         for field_name in types:
             if field_name in ns:
-                default_names.append(field_name)
-            elif default_names:
-                raise TypeError(f"Non-default namedtuple field {field_name} "
-                                f"cannot follow default field"
-                                f"{'s' if len(default_names) > 1 else ''} "
-                                f"{', '.join(default_names)}")
-        nm_tpl = _make_nmtuple(typename, types.items(),
-                               defaults=[ns[n] for n in default_names],
-                               module=ns['__module__'])
+                default_value = ns[field_name]
+                defaults.append(default_value)
+                defaults_dict[field_name] = default_value
+            elif defaults:
+                raise TypeError("Non-default namedtuple field {field_name} cannot "
+                                "follow default field(s) {default_names}"
+                                .format(field_name=field_name,
+                                        default_names=', '.join(defaults_dict.keys())))
+        nm_tpl.__new__.__annotations__ = dict(types)
+        nm_tpl.__new__.__defaults__ = tuple(defaults)
+        nm_tpl._field_defaults = defaults_dict
         # update from user namespace without overriding special namedtuple attributes
         for key in ns:
             if key in _prohibited:
@@ -2639,7 +2649,7 @@ class NamedTupleMeta(type):
         return nm_tpl
 
 
-def NamedTuple(typename, fields=None, /, **kwargs):
+class NamedTuple(metaclass=NamedTupleMeta):
     """Typed version of namedtuple.
 
     Usage in Python versions >= 3.6::
@@ -2663,22 +2673,15 @@ def NamedTuple(typename, fields=None, /, **kwargs):
 
         Employee = NamedTuple('Employee', [('name', str), ('id', int)])
     """
-    if fields is None:
-        fields = kwargs.items()
-    elif kwargs:
-        raise TypeError("Either list of fields or keywords"
-                        " can be provided to NamedTuple, not both")
-    return _make_nmtuple(typename, fields, module=_caller())
+    _root = True
 
-_NamedTuple = type.__new__(NamedTupleMeta, 'NamedTuple', (), {})
-
-def _namedtuple_mro_entries(bases):
-    if len(bases) > 1:
-        raise TypeError("Multiple inheritance with NamedTuple is not supported")
-    assert bases[0] is NamedTuple
-    return (_NamedTuple,)
-
-NamedTuple.__mro_entries__ = _namedtuple_mro_entries
+    def __new__(cls, typename, fields=None, /, **kwargs):
+        if fields is None:
+            fields = kwargs.items()
+        elif kwargs:
+            raise TypeError("Either list of fields or keywords"
+                            " can be provided to NamedTuple, not both")
+        return _make_nmtuple(typename, fields)
 
 
 class _TypedDictMeta(type):
