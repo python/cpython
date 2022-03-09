@@ -202,7 +202,7 @@ PyDoc_STRVAR(pysqlite_cursor_setinputsizes__doc__,
 "setinputsizes($self, sizes, /)\n"
 "--\n"
 "\n"
-"Required by DB-API. Does nothing in pysqlite.");
+"Required by DB-API. Does nothing in sqlite3.");
 
 #define PYSQLITE_CURSOR_SETINPUTSIZES_METHODDEF    \
     {"setinputsizes", (PyCFunction)pysqlite_cursor_setinputsizes, METH_O, pysqlite_cursor_setinputsizes__doc__},
@@ -211,7 +211,7 @@ PyDoc_STRVAR(pysqlite_cursor_setoutputsize__doc__,
 "setoutputsize($self, size, column=None, /)\n"
 "--\n"
 "\n"
-"Required by DB-API. Does nothing in pysqlite.");
+"Required by DB-API. Does nothing in sqlite3.");
 
 #define PYSQLITE_CURSOR_SETOUTPUTSIZE_METHODDEF    \
     {"setoutputsize", (PyCFunction)(void(*)(void))pysqlite_cursor_setoutputsize, METH_FASTCALL, pysqlite_cursor_setoutputsize__doc__},
@@ -259,4 +259,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=cdd7e7a541ceb4d2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=98aa7b44c6834d0c input=a9049054013a1b77]*/
