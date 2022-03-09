@@ -1,8 +1,45 @@
-__all__ = 'run',
+__all__ = ('Runner', 'run')
 
 from . import coroutines
 from . import events
 from . import tasks
+
+
+class Runner:
+    def __init__(self, debug=None):
+        self._debug = debug
+        self._loop = None
+
+    def __enter__(self):
+        if events._get_running_loop() is not None:
+            raise RuntimeError(
+                "asyncio.Runner cannot be called from a running event loop")
+
+        self._loop = events.new_event_loop()
+        if self._debug is not None:
+            self._loop.set_debug(self._debug)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        try:
+            _cancel_all_tasks(self._loop)
+            self._loop.run_until_complete(self._loop.shutdown_asyncgens())
+            self._loop.run_until_complete(self._loop.shutdown_default_executor())
+        finally:
+            self._loop.close()
+            self._loop = None
+
+    def run(self, coro):
+        if self._loop is None:
+            raise RuntimeError(
+                "Runner.run() cannot be called outside of "
+                "'with Runner(): ...' context manager"
+            )
+        if not coroutines.iscoroutine(coro):
+            raise ValueError("a coroutine was expected, got {!r}".format(coro))
+
+        return self._loop.run_until_complete(coro)
+
 
 
 def run(main, *, debug=None):
@@ -29,27 +66,8 @@ def run(main, *, debug=None):
 
         asyncio.run(main())
     """
-    if events._get_running_loop() is not None:
-        raise RuntimeError(
-            "asyncio.run() cannot be called from a running event loop")
-
-    if not coroutines.iscoroutine(main):
-        raise ValueError("a coroutine was expected, got {!r}".format(main))
-
-    loop = events.new_event_loop()
-    try:
-        events.set_event_loop(loop)
-        if debug is not None:
-            loop.set_debug(debug)
-        return loop.run_until_complete(main)
-    finally:
-        try:
-            _cancel_all_tasks(loop)
-            loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.run_until_complete(loop.shutdown_default_executor())
-        finally:
-            events.set_event_loop(None)
-            loop.close()
+    with Runner(debug) as runner:
+        return runner.run(main)
 
 
 def _cancel_all_tasks(loop):
