@@ -4,6 +4,7 @@ from types import TracebackType
 from typing import final, Optional, Type
 
 from . import events
+from . import exceptions
 from . import tasks
 
 
@@ -91,7 +92,7 @@ class Timeout:
         if self._state is _State.EXPIRING:
             self._state = _State.EXPIRED
 
-            if self._task.uncancel() == 0:
+            if self._task.uncancel() == 0 and exc_type in (None, exceptions.CancelledError):
                 # Since there are no outstanding cancel requests, we're
                 # handling this.
                 raise TimeoutError
