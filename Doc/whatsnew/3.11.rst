@@ -644,7 +644,7 @@ time
 typing
 ------
 
-* :class:`~typing.NamedTuple` subclasses can be generic.
+* Added support of multiinheritance with :class:`~typing.NamedTuple`.
   (Contributed by Serhiy Storchaka in :issue:`43923`.)
 
 
