@@ -641,6 +641,13 @@ time
   (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
 
 
+typing
+------
+
+* :class:`~typing.NamedTuple` subclasses can be generic.
+  (Contributed by Serhiy Storchaka in :issue:`43923`.)
+
+
 unicodedata
 -----------
 
