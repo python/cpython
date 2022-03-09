@@ -693,10 +693,7 @@ def _get_key_for_callable(func):
     """
     # classmethod and staticmethod
     func = getattr(func, "__func__", func)
-    try:
-        return f"{func.__module__}.{func.__qualname__}"
-    except AttributeError:
-        return None
+    return f"{func.__module__}.{func.__qualname__}"
 
 
 ################################################################################

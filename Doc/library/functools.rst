@@ -669,40 +669,28 @@ The :mod:`functools` module defines the following functions:
    would have been ``'wrapper'``, and the docstring of the original :func:`example`
    would have been lost.
 
-.. function:: get_variants(key)
+.. function:: get_variants(func)
 
-   Return all registered function variants for this key. Function variants are
+   Return all registered function variants for this function. Function variants are
    objects that represent some subset of the functionality of a function, for
    example overloads decorated with :func:`typing.overload` or :func:`singledispatch`
    implementation functions.
 
    Variants are registered by calling :func:`register_variant`.
-   The *key* argument is a string that uniquely identifies the function and its
-   variants. It should be the result of a call to :func:`get_key_for_callable`.
 
    .. versionadded:: 3.11
 
-.. function:: register_variant(key, variant)
+.. function:: register_variant(func, variant)
 
-   Register a function variant that can later be retrieved using
-   :func:`get_variants`. The key should be the result of a call to
-   :func:`get_key_for_callable`.
+   Register *variant* for function *func* that can later be retrieved using
+   :func:`get_variants`.
 
    .. versionadded:: 3.11
 
-.. function:: clear_variants(key=None)
+.. function:: clear_variants(func=None)
 
-   Clear all registered variants with the given *key*. If *key* is None, clear
+   Clear all registered variants for the given *func*. If *func* is None, clear
    all variants.
-
-   .. versionadded:: 3.11
-
-.. function:: get_key_for_callable(func)
-
-   Return a string key that can be used with :func:`get_variants` and
-   :func:`register_variant`. *func* must be a :class:`function`,
-   :class:`classmethod`, :class:`staticmethod`, or similar callable.
-   If no key can be computed, the function returns None.
 
    .. versionadded:: 3.11
 
