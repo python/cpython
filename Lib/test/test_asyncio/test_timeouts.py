@@ -214,6 +214,15 @@ class BaseTimeoutTests:
         async with asyncio.timeout(None) as cm:
             self.assertEqual(repr(cm), r"<Timeout [active] when=None>")
 
+    async def test_nested_timeout_in_finally(self):
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(0.01):
+                try:
+                    await asyncio.sleep(1)
+                finally:
+                    with self.assertRaises(TimeoutError):
+                        async with asyncio.timeout(0.01):
+                            await asyncio.sleep(10)
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
