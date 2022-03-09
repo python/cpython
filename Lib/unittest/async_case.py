@@ -7,10 +7,41 @@ from .case import TestCase
 
 class _AsyncioMixin:
 
+    # Names intentionally have a long prefix
+    # to reduce a chance of clashing with user-defined attributes
+    # from inherited test case
+    #
+    # The class doesn't call loop.run_until_complete(self.setUp()) and family
+    # but uses a different approach:
+    # 1. create a long-running task that reads self.setUp()
+    #    awaitable from queue along with a future
+    # 2. await the awaitable object passing in and set the result
+    #    into the future object
+    # 3. Outer code puts the awaitable and the future object into a queue
+    #    with waiting for the future
+    # The trick is necessary because every run_until_complete() call
+    # creates a new task with embedded ContextVar context.
+    # To share contextvars between setUp(), test and tearDown() we need to execute
+    # them inside the same task.
+
+    # Note: the test case modifies event loop policy if the policy was not instantiated
+    # yet.
+    # asyncio.get_event_loop_policy() creates a default policy on demand but never
+    # returns None
+    # I believe this is not an issue in user level tests but python itself for testing
+    # should reset a policy in every test module
+    # by calling asyncio.set_event_loop_policy(None) in tearDownModule()
+
     def __init__(self, methodName='runTest'):
         super().__init__(methodName)
         self._asyncioTestLoop = None
         self._asyncioCallsQueue = None
+
+    def setUpAsyncioLoop(self):
+        raise NotImplementedError
+
+    def tearDownAsyncioLoop(self, loop):
+        raise NotImplementedError
 
     async def asyncSetUp(self):
         pass
@@ -87,10 +118,24 @@ class _AsyncioMixin:
                     fut.set_exception(ex)
 
     def _setupAsyncioLoop(self):
-        raise NotImplementedError
+        assert self._asyncioTestLoop is None, 'asyncio test loop already initialized'
+        loop = self.setUpAsyncioLoop()
+        if loop is None:
+            raise AssertionError(
+                "setUpAsyncioLoop() should return a loop instance, got None"
+            )
+        self._asyncioTestLoop = loop
+        fut = loop.create_future()
+        self._asyncioCallsTask = loop.create_task(self._asyncioLoopRunner(fut))
+        loop.run_until_complete(fut)
 
     def _tearDownAsyncioLoop(self):
-        raise NotImplementedError
+        assert self._asyncioTestLoop is not None, 'asyncio test loop is not initialized'
+        loop = self._asyncioTestLoop
+        self._asyncioCallsQueue.put_nowait(None)
+        loop.run_until_complete(self._asyncioCallsQueue.join())
+        self.tearDownAsyncioLoop(loop)
+        self._asyncioTestLoop = None
 
     def run(self, result=None):
         self._setupAsyncioLoop()
@@ -104,50 +149,24 @@ class _AsyncioMixin:
         super().debug()
         self._tearDownAsyncioLoop()
 
+    def __del__(self):
+        if self._asyncioTestLoop is not None:
+            self._tearDownAsyncioLoop()
+
 
 class IsolatedAsyncioTestCase(_AsyncioMixin, TestCase):
-    # Names intentionally have a long prefix
-    # to reduce a chance of clashing with user-defined attributes
-    # from inherited test case
-    #
-    # The class doesn't call loop.run_until_complete(self.setUp()) and family
-    # but uses a different approach:
-    # 1. create a long-running task that reads self.setUp()
-    #    awaitable from queue along with a future
-    # 2. await the awaitable object passing in and set the result
-    #    into the future object
-    # 3. Outer code puts the awaitable and the future object into a queue
-    #    with waiting for the future
-    # The trick is necessary because every run_until_complete() call
-    # creates a new task with embedded ContextVar context.
-    # To share contextvars between setUp(), test and tearDown() we need to execute
-    # them inside the same task.
+    """Isolated asyncio test case.
 
-    # Note: the test case modifies event loop policy if the policy was not instantiated
-    # yet.
-    # asyncio.get_event_loop_policy() creates a default policy on demand but never
-    # returns None
-    # I believe this is not an issue in user level tests but python itself for testing
-    # should reset a policy in every test module
-    # by calling asyncio.set_event_loop_policy(None) in tearDownModule()
+    New event loop is created for each test.
+    """
 
-    def _setupAsyncioLoop(self):
-        assert self._asyncioTestLoop is None, 'asyncio test loop already initialized'
+    def setUpAsyncioLoop(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.set_debug(True)
-        self._asyncioTestLoop = loop
-        fut = loop.create_future()
-        self._asyncioCallsTask = loop.create_task(self._asyncioLoopRunner(fut))
-        loop.run_until_complete(fut)
+        return loop
 
-    def _tearDownAsyncioLoop(self):
-        assert self._asyncioTestLoop is not None, 'asyncio test loop is not initialized'
-        loop = self._asyncioTestLoop
-        self._asyncioTestLoop = None
-        self._asyncioCallsQueue.put_nowait(None)
-        loop.run_until_complete(self._asyncioCallsQueue.join())
-
+    def tearDownAsyncioLoop(self, loop):
         try:
             # cancel all tasks
             to_cancel = asyncio.all_tasks(loop)
@@ -169,12 +188,60 @@ class IsolatedAsyncioTestCase(_AsyncioMixin, TestCase):
                         'exception': task.exception(),
                         'task': task,
                     })
-            # shutdown asyncgens
             loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.run_until_complete(loop.shutdown_default_executor())
         finally:
             asyncio.set_event_loop(None)
             loop.close()
 
-    def __del__(self):
-        if self._asyncioTestLoop is not None:
-            self._tearDownAsyncioLoop()
+
+
+class SharedAsyncioTestCase(_AsyncioMixin, TestCase):
+    _globalAsyncioLoop = None
+
+    @classmethod
+    def setUpGlobalAsyncioLoop(cls):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.set_debug(True)
+        return loop
+
+    @classmethod
+    def tearDownGlobalAsyncioLoop(cls, loop):
+        try:
+            # cancel all tasks
+            to_cancel = asyncio.all_tasks(loop)
+            if not to_cancel:
+                return
+
+            for task in to_cancel:
+                task.cancel()
+
+            loop.run_until_complete(
+                asyncio.gather(*to_cancel, return_exceptions=True))
+
+            for task in to_cancel:
+                if task.cancelled():
+                    continue
+                if task.exception() is not None:
+                    loop.call_exception_handler({
+                        'message': 'unhandled exception during test shutdown',
+                        'exception': task.exception(),
+                        'task': task,
+                    })
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.run_until_complete(loop.shutdown_default_executor())
+        finally:
+            asyncio.set_event_loop(None)
+            loop.close()
+
+    def setUpAsyncioLoop(self):
+        loop = self.__class__._globalAsyncioLoop
+        if loop is not None:
+            loop = self.setUpGlobalAsyncioLoop()
+            self.__class__._globalAsyncioLoop = loop
+        return loop
+
+    def tearDownAsyncioLoop(self, loop):
+        # The loop teardown is performed on the process teardown
+        pass
