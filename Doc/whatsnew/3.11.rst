@@ -283,6 +283,13 @@ os
   (Contributed by Dong-hee Na in :issue:`44611`.)
 
 
+shutil
+------
+
+* Add optional parameter *dir_fd* in :func:`shutil.rmtree`.
+  (Contributed by Serhiy Storchaka in :issue:`46245`.)
+
+
 socket
 ------
 
