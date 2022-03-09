@@ -2802,11 +2802,12 @@ class GenericTests(BaseTestCase):
         self.assertEqual(deepcopy(ci).attr, 1)
         self.assertEqual(ci.__orig_class__, C[int])
 
-    def test_copy_with(self):
+    def test_parameter_propagation(self):
         # bpo-46581
         P = ParamSpec('P')
         original = Callable[P, int]
-        copied = original.copy_with((P, int))
+        self.assertEqual(original.__parameters__, (P,))
+        copied = original[P]
         self.assertEqual(original.__parameters__, copied.__parameters__)
 
     def test_weakref_all(self):
