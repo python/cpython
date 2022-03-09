@@ -1,4 +1,5 @@
 import asyncio
+import atexit
 import inspect
 import warnings
 
@@ -240,6 +241,7 @@ class SharedAsyncioTestCase(_AsyncioMixin, TestCase):
         if loop is not None:
             loop = self.setUpGlobalAsyncioLoop()
             self.__class__._globalAsyncioLoop = loop
+            atexit.register(self.tearDownGlobalAsyncioLoop, loop)
         return loop
 
     def tearDownAsyncioLoop(self, loop):
