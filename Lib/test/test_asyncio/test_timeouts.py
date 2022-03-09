@@ -136,7 +136,7 @@ class BaseTimeoutTests:
         async def outer() -> None:
             with self.assertRaises(TimeoutError):
                 async with asyncio.timeout(0.001):
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(10)
 
         task = asyncio.create_task(outer())
         await task
