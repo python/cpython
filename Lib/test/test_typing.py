@@ -2804,7 +2804,6 @@ class GenericTests(BaseTestCase):
 
     def test_copy_with(self):
         # bpo-46581
-        from typing import Callable, ParamSpec
         P = ParamSpec('P')
         original = Callable[P, int]
         copied = original.copy_with((P, int))
