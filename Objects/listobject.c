@@ -68,17 +68,14 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
      *       is PY_SSIZE_T_MAX * (9 / 8) + 6 which always fits in a size_t.
      */
     new_allocated = ((size_t)newsize + (newsize >> 3) + 6) & ~(size_t)3;
-
-    /* Don't overallocate for lists that start empty or are set to empty. */
-    if (newsize == 0 || Py_SIZE(self) == 0)
-        new_allocated = newsize;
-    else if (newsize - Py_SIZE(self) > (Py_ssize_t)(new_allocated - newsize)) {
-        /* Do not overallocate if the new size is closer to overallocated size
-        * than to the old size.
-        */
+    /* Do not overallocate if the new size is closer to overallocated size
+     * than to the old size.
+     */
+    if (newsize - Py_SIZE(self) > (Py_ssize_t)(new_allocated - newsize))
         new_allocated = ((size_t)newsize + 3) & ~(size_t)3;
-    }
 
+    if (newsize == 0)
+        new_allocated = 0;
     num_allocated_bytes = new_allocated * sizeof(PyObject *);
     items = (PyObject **)PyMem_Realloc(self->ob_item, num_allocated_bytes);
     if (items == NULL) {
@@ -882,7 +879,13 @@ list_extend(PyListObject *self, PyObject *iterable)
         /* It should not be possible to allocate a list large enough to cause
         an overflow on any relevant platform */
         assert(m < PY_SSIZE_T_MAX - n);
-        if (list_resize(self, m + n) < 0) {
+        if (self->ob_item == NULL) {
+            if (list_preallocate_exact(self, n) < 0) {
+                return NULL;
+            }
+            Py_SET_SIZE(self, n);
+        }
+        else if (list_resize(self, m + n) < 0) {
             Py_DECREF(iterable);
             return NULL;
         }
@@ -921,13 +924,13 @@ list_extend(PyListObject *self, PyObject *iterable)
          * eventually run out of memory during the loop.
          */
     }
+    else if (self->ob_item == NULL) {
+        if (list_preallocate_exact(self, n) < 0)
+            goto error;
+    }
     else {
         /* Make room. */
-        if (self->ob_item == NULL) {
-            if (list_preallocate_exact(self, n) < 0)
-                goto error;
-        }
-        else if (list_resize(self, m + n) < 0)
+        if (list_resize(self, m + n) < 0)
             goto error;
         /* Make the list sane again. */
         Py_SET_SIZE(self, m);
@@ -2775,19 +2778,6 @@ list___init___impl(PyListObject *self, PyObject *iterable)
         (void)_list_clear(self);
     }
     if (iterable != NULL) {
-        if (_PyObject_HasLen(iterable)) {
-            Py_ssize_t iter_len = PyObject_Size(iterable);
-            if (iter_len == -1) {
-                if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
-                    return -1;
-                }
-                PyErr_Clear();
-            }
-            if (iter_len > 0 && self->ob_item == NULL
-                && list_preallocate_exact(self, iter_len)) {
-                return -1;
-            }
-        }
         PyObject *rv = list_extend(self, iterable);
         if (rv == NULL)
             return -1;
