@@ -8666,6 +8666,7 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
     if (rep==NULL)
         return enc_EXCEPTION;
     else if (rep==Py_None) {
+        Py_DECREF(rep);
         return enc_FAILED;
     } else {
         if (PyLong_Check(rep)) {
@@ -8744,6 +8745,7 @@ charmap_encoding_error(
             Py_DECREF(rep);
             break;
         }
+        Py_DECREF(rep);
         ++collendpos;
     }
     /* cache callback name lookup
@@ -9077,6 +9079,7 @@ charmaptranslate_output(Py_UCS4 ch, PyObject *mapping,
     }
 
     if (item == Py_None) {
+        Py_DECREF(item);
         return 0;
     }
 

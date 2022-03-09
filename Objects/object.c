@@ -674,16 +674,19 @@ do_richcompare(PyThreadState *tstate, PyObject *v, PyObject *w, int op)
         res = (*f)(w, v, _Py_SwappedOp[op]);
         if (res != Py_NotImplemented)
             return res;
+        Py_DECREF(res);
     }
     if ((f = Py_TYPE(v)->tp_richcompare) != NULL) {
         res = (*f)(v, w, op);
         if (res != Py_NotImplemented)
             return res;
+        Py_DECREF(res);
     }
     if (!checked_reverse_op && (f = Py_TYPE(w)->tp_richcompare) != NULL) {
         res = (*f)(w, v, _Py_SwappedOp[op]);
         if (res != Py_NotImplemented)
             return res;
+        Py_DECREF(res);
     }
     /* If neither object implements it, provide a sensible default
        for == and !=, but raise an exception for ordering. */
@@ -702,6 +705,7 @@ do_richcompare(PyThreadState *tstate, PyObject *v, PyObject *w, int op)
                       Py_TYPE(w)->tp_name);
         return NULL;
     }
+    Py_INCREF(res);
     return res;
 }
 
@@ -748,12 +752,11 @@ PyObject_RichCompareBool(PyObject *v, PyObject *w, int op)
     res = PyObject_RichCompare(v, w, op);
     if (res == NULL)
         return -1;
-    if (PyBool_Check(res)) {
+    if (PyBool_Check(res))
         ok = (res == Py_True);
-    } else {
+    else
         ok = PyObject_IsTrue(res);
-        Py_DECREF(res);
-    }
+    Py_DECREF(res);
     return ok;
 }
 
@@ -1706,9 +1709,9 @@ PyTypeObject _PyNone_Type = {
 };
 
 PyObject _Py_NoneStruct = {
-    _PyObject_EXTRA_INIT
-    _Py_IMMORTAL_REFCNT,
-    &_PyNone_Type
+  _PyObject_EXTRA_INIT
+  _Py_IMMORTAL_REFCNT,
+  &_PyNone_Type
 };
 
 /* NotImplemented is an object that can be used to signal that an
@@ -1809,8 +1812,7 @@ PyTypeObject _PyNotImplemented_Type = {
 
 PyObject _Py_NotImplementedStruct = {
     _PyObject_EXTRA_INIT
-    _Py_IMMORTAL_REFCNT,
-    &_PyNotImplemented_Type
+    1, &_PyNotImplemented_Type
 };
 
 PyStatus

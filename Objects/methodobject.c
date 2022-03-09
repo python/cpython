@@ -258,11 +258,10 @@ meth_get__self__(PyCFunctionObject *m, void *closure)
     PyObject *self;
 
     self = PyCFunction_GET_SELF(m);
-    if (self != NULL) {
-        Py_INCREF(self);
-        return self;
-    }
-    Py_RETURN_NONE;
+    if (self == NULL)
+        self = Py_None;
+    Py_INCREF(self);
+    return self;
 }
 
 static PyGetSetDef meth_getsets [] = {
@@ -315,6 +314,7 @@ meth_richcompare(PyObject *self, PyObject *other, int op)
         res = eq ? Py_True : Py_False;
     else
         res = eq ? Py_False : Py_True;
+    Py_INCREF(res);
     return res;
 }
 

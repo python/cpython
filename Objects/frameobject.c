@@ -68,11 +68,11 @@ static PyObject *
 frame_getglobals(PyFrameObject *f, void *closure)
 {
     PyObject *globals = f->f_frame->f_globals;
-    if (globals != NULL) {
-        Py_INCREF(globals);
-        return globals;
+    if (globals == NULL) {
+        globals = Py_None;
     }
-    Py_RETURN_NONE;
+    Py_INCREF(globals);
+    return globals;
 }
 
 static PyObject *

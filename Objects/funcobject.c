@@ -30,6 +30,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_defaults = NULL;
     op->func_kwdefaults = NULL;
     op->func_closure = NULL;
+    Py_INCREF(Py_None);
     op->func_doc = Py_None;
     op->func_dict = NULL;
     op->func_weakreflist = NULL;
@@ -68,8 +69,9 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     PyObject *doc;
     if (PyTuple_Size(consts) >= 1) {
         doc = PyTuple_GetItem(consts, 0);
-        if (!PyUnicode_Check(doc))
+        if (!PyUnicode_Check(doc)) {
             doc = Py_None;
+        }
     }
     else {
         doc = Py_None;

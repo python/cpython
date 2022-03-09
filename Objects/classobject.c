@@ -259,6 +259,7 @@ method_richcompare(PyObject *self, PyObject *other, int op)
         res = eq ? Py_True : Py_False;
     else
         res = eq ? Py_False : Py_True;
+    Py_INCREF(res);
     return res;
 }
 

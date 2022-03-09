@@ -2119,6 +2119,7 @@ _common_reduce(PyByteArrayObject *self, int proto)
     }
     if (dict == NULL) {
         dict = Py_None;
+        Py_INCREF(dict);
     }
 
     buf = PyByteArray_AS_STRING(self);

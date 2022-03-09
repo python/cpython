@@ -124,6 +124,7 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
         return -1;
     }
     else if (result == Py_NotImplemented) {
+        Py_DECREF(result);
         return defaultvalue;
     }
     if (!PyLong_Check(result)) {
@@ -885,6 +886,7 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot
             x = slotw(v, w);
             if (x != Py_NotImplemented)
                 return x;
+            Py_DECREF(x); /* can't do it */
             slotw = NULL;
         }
         x = slotv(v, w);
@@ -892,6 +894,7 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot
         if (x != Py_NotImplemented) {
             return x;
         }
+        Py_DECREF(x); /* can't do it */
     }
     if (slotw) {
         PyObject *x = slotw(v, w);
@@ -899,6 +902,7 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot
         if (x != Py_NotImplemented) {
             return x;
         }
+        Py_DECREF(x); /* can't do it */
     }
     Py_RETURN_NOTIMPLEMENTED;
 }
@@ -926,6 +930,8 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
 {
     PyObject *result = BINARY_OP1(v, w, op_slot, op_name);
     if (result == Py_NotImplemented) {
+        Py_DECREF(result);
+
         if (op_slot == NB_SLOT(nb_rshift) &&
             PyCFunction_CheckExact(v) &&
             strcmp(((PyCFunctionObject *)v)->m_ml->ml_name, "print") == 0)
@@ -989,6 +995,7 @@ ternary_op(PyObject *v,
             if (x != Py_NotImplemented) {
                 return x;
             }
+            Py_DECREF(x); /* can't do it */
             slotw = NULL;
         }
         x = slotv(v, w, z);
@@ -996,6 +1003,7 @@ ternary_op(PyObject *v,
         if (x != Py_NotImplemented) {
             return x;
         }
+        Py_DECREF(x); /* can't do it */
     }
     if (slotw) {
         PyObject *x = slotw(v, w, z);
@@ -1003,6 +1011,7 @@ ternary_op(PyObject *v,
         if (x != Py_NotImplemented) {
             return x;
         }
+        Py_DECREF(x); /* can't do it */
     }
 
     PyNumberMethods *mz = Py_TYPE(z)->tp_as_number;
@@ -1017,6 +1026,7 @@ ternary_op(PyObject *v,
             if (x != Py_NotImplemented) {
                 return x;
             }
+            Py_DECREF(x); /* can't do it */
         }
     }
 
@@ -1063,6 +1073,7 @@ PyNumber_Add(PyObject *v, PyObject *w)
     if (result != Py_NotImplemented) {
         return result;
     }
+    Py_DECREF(result);
 
     PySequenceMethods *m = Py_TYPE(v)->tp_as_sequence;
     if (m && m->sq_concat) {
@@ -1100,6 +1111,7 @@ PyNumber_Multiply(PyObject *v, PyObject *w)
     if (result == Py_NotImplemented) {
         PySequenceMethods *mv = Py_TYPE(v)->tp_as_sequence;
         PySequenceMethods *mw = Py_TYPE(w)->tp_as_sequence;
+        Py_DECREF(result);
         if  (mv && mv->sq_repeat) {
             return sequence_repeat(mv->sq_repeat, v, w);
         }
@@ -1179,6 +1191,7 @@ binary_iop1(PyObject *v, PyObject *w, const int iop_slot, const int op_slot
             if (x != Py_NotImplemented) {
                 return x;
             }
+            Py_DECREF(x);
         }
     }
 #ifdef NDEBUG
@@ -1200,6 +1213,7 @@ binary_iop(PyObject *v, PyObject *w, const int iop_slot, const int op_slot,
 {
     PyObject *result = BINARY_IOP1(v, w, iop_slot, op_slot, op_name);
     if (result == Py_NotImplemented) {
+        Py_DECREF(result);
         return binop_type_error(v, w, op_name);
     }
     return result;
@@ -1217,6 +1231,7 @@ ternary_iop(PyObject *v, PyObject *w, PyObject *z, const int iop_slot, const int
             if (x != Py_NotImplemented) {
                 return x;
             }
+            Py_DECREF(x);
         }
     }
     return ternary_op(v, w, z, op_slot, op_name);
@@ -1246,6 +1261,7 @@ PyNumber_InPlaceAdd(PyObject *v, PyObject *w)
                                    NB_SLOT(nb_add), "+=");
     if (result == Py_NotImplemented) {
         PySequenceMethods *m = Py_TYPE(v)->tp_as_sequence;
+        Py_DECREF(result);
         if (m != NULL) {
             binaryfunc func = m->sq_inplace_concat;
             if (func == NULL)
@@ -1270,6 +1286,7 @@ PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
         ssizeargfunc f = NULL;
         PySequenceMethods *mv = Py_TYPE(v)->tp_as_sequence;
         PySequenceMethods *mw = Py_TYPE(w)->tp_as_sequence;
+        Py_DECREF(result);
         if (mv != NULL) {
             f = mv->sq_inplace_repeat;
             if (f == NULL)
@@ -1753,6 +1770,7 @@ PySequence_Concat(PyObject *s, PyObject *o)
         PyObject *result = BINARY_OP1(s, o, NB_SLOT(nb_add), "+");
         if (result != Py_NotImplemented)
             return result;
+        Py_DECREF(result);
     }
     return type_error("'%.200s' object can't be concatenated", s);
 }
@@ -1783,6 +1801,7 @@ PySequence_Repeat(PyObject *o, Py_ssize_t count)
         Py_DECREF(n);
         if (result != Py_NotImplemented)
             return result;
+        Py_DECREF(result);
     }
     return type_error("'%.200s' object can't be repeated", o);
 }
@@ -1811,6 +1830,7 @@ PySequence_InPlaceConcat(PyObject *s, PyObject *o)
                                        NB_SLOT(nb_add), "+=");
         if (result != Py_NotImplemented)
             return result;
+        Py_DECREF(result);
     }
     return type_error("'%.200s' object can't be concatenated", s);
 }
@@ -1844,6 +1864,7 @@ PySequence_InPlaceRepeat(PyObject *o, Py_ssize_t count)
         Py_DECREF(n);
         if (result != Py_NotImplemented)
             return result;
+        Py_DECREF(result);
     }
     return type_error("'%.200s' object can't be repeated", o);
 }
