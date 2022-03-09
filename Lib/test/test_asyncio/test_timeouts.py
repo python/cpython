@@ -115,7 +115,7 @@ class BaseTimeoutTests:
                 raise KeyError
         self.assertFalse(cm.expired())
 
-        async def test_foreign_exception_on_timeout(self):
+    async def test_foreign_exception_on_timeout(self):
         async def crash():
             try:
                 await asyncio.sleep(1)
@@ -124,6 +124,7 @@ class BaseTimeoutTests:
         with self.assertRaises(ZeroDivisionError):
             async with asyncio.timeout(0.01):
                 await crash()
+
     async def test_foreign_cancel_doesnt_timeout_if_not_expired(self):
         with self.assertRaises(asyncio.CancelledError):
             async with asyncio.timeout(10) as cm:
