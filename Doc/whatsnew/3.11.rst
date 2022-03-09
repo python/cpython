@@ -322,6 +322,10 @@ sqlite3
   Instead we leave it to the SQLite library to handle these cases.
   (Contributed by Erlend E. Aasland in :issue:`44092`.)
 
+* For SQLite 3.14.0 and newer, bound parameters are expanded in the statement
+  string passed to the trace callback. See :meth:`~sqlite3.Connection.set_trace_callback`.
+  (Contributed by Erlend E. Aasland in :issue:`45138`.)
+
 
 sys
 ---
