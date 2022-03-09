@@ -4947,9 +4947,8 @@ class NamedTupleTests(BaseTestCase):
     def test_multiple_inheritance(self):
         class A:
             pass
-        with self.assertRaises(TypeError):
-            class X(NamedTuple, A):
-                x: int
+        class X(NamedTuple, A):
+            x: int
 
     def test_namedtuple_keyword_usage(self):
         LocalEmployee = NamedTuple("LocalEmployee", name=str, age=int)
