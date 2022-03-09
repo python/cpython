@@ -23,6 +23,8 @@ typedef uint16_t _Py_CODEUNIT;
 #  define _Py_MAKECODEUNIT(opcode, oparg) ((opcode)|((oparg)<<8))
 #endif
 
+#define _Py_SET_OPCODE(word, opcode) (((uint8_t *)&(word))[0] = (opcode))
+
 
 /* Bytecode object */
 struct PyCodeObject {
