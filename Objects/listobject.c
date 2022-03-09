@@ -218,6 +218,7 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
 {
     /* The cast to size_t lets us use just a single comparison
        to check whether i is in the range: 0 <= i < limit.
+
        See:  Section 14.2 "Bounds Checking" in the Agner Fog
        optimization manual found at:
        https://www.agner.org/optimize/optimizing_cpp.pdf
@@ -786,9 +787,11 @@ list_ass_item(PyListObject *a, Py_ssize_t i, PyObject *v)
 
 /*[clinic input]
 list.insert
+
     index: Py_ssize_t
     object: object
     /
+
 Insert object before index.
 [clinic start generated code]*/
 
@@ -803,6 +806,7 @@ list_insert_impl(PyListObject *self, Py_ssize_t index, PyObject *object)
 
 /*[clinic input]
 list.clear
+
 Remove all items from list.
 [clinic start generated code]*/
 
@@ -816,6 +820,7 @@ list_clear_impl(PyListObject *self)
 
 /*[clinic input]
 list.copy
+
 Return a shallow copy of the list.
 [clinic start generated code]*/
 
@@ -828,8 +833,10 @@ list_copy_impl(PyListObject *self)
 
 /*[clinic input]
 list.append
+
      object: object
      /
+
 Append object to the end of the list.
 [clinic start generated code]*/
 
@@ -844,8 +851,10 @@ list_append(PyListObject *self, PyObject *object)
 
 /*[clinic input]
 list.extend
+
      iterable: object
      /
+
 Extend list by appending elements from the iterable.
 [clinic start generated code]*/
 
@@ -996,9 +1005,12 @@ list_inplace_concat(PyListObject *self, PyObject *other)
 
 /*[clinic input]
 list.pop
+
     index: Py_ssize_t = -1
     /
+
 Remove and return item at index (default last).
+
 Raises IndexError if list is empty or index is out of range.
 [clinic start generated code]*/
 
@@ -1285,14 +1297,19 @@ binarysort(MergeState *ms, sortslice lo, PyObject **hi, PyObject **start)
 /*
 Return the length of the run beginning at lo, in the slice [lo, hi).  lo < hi
 is required on entry.  "A run" is the longest ascending sequence, with
+
     lo[0] <= lo[1] <= lo[2] <= ...
+
 or the longest descending sequence, with
+
     lo[0] > lo[1] > lo[2] > ...
+
 Boolean *descending is set to 0 in the former case, or to 1 in the latter.
 For its intended use in a stable mergesort, the strictness of the defn of
 "descending" is needed so that the caller can safely reverse a descending
 sequence without violating stability (strict > ensures there are no equal
 elements to get out of order).
+
 Returns -1 in case of error.
 */
 static Py_ssize_t
@@ -1334,14 +1351,20 @@ Locate the proper position of key in a sorted vector; if the vector contains
 an element equal to key, return the position immediately to the left of
 the leftmost equal element.  [gallop_right() does the same except returns
 the position to the right of the rightmost equal element (if any).]
+
 "a" is a sorted vector with n elements, starting at a[0].  n must be > 0.
+
 "hint" is an index at which to begin the search, 0 <= hint < n.  The closer
 hint is to the final result, the faster this runs.
+
 The return value is the int k in 0..n such that
+
     a[k-1] < key <= a[k]
+
 pretending that *(a-1) is minus infinity and a[n] is plus infinity.  IOW,
 key belongs at index k; or, IOW, the first k elements of a should precede
 key, and the last n-k should follow key.
+
 Returns -1 on error.  See listsort.txt for info on the method.
 */
 static Py_ssize_t
@@ -1422,9 +1445,13 @@ fail:
 /*
 Exactly like gallop_left(), except that if key already exists in a[0:n],
 finds the position immediately to the right of the rightmost equal value.
+
 The return value is the int k in 0..n such that
+
     a[k-1] <= key < a[k]
+
 or -1 if error.
+
 The code duplication is massive, but this is enough different given that
 we're sticking to "<" comparisons that it's much harder to follow if
 written as one routine with yet another "left or right?" flag.
@@ -2255,14 +2282,19 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
  */
 /*[clinic input]
 list.sort
+
     *
     key as keyfunc: object = None
     reverse: bool(accept={int}) = False
+
 Sort the list in ascending order and return None.
+
 The sort is in-place (i.e. the list itself is modified) and stable (i.e. the
 order of two equal elements is maintained).
+
 If a key function is given, apply it once to each list item and sort them,
 ascending or descending, according to their function values.
+
 The reverse flag can be set to sort in descending order.
 [clinic start generated code]*/
 
@@ -2548,6 +2580,7 @@ PyList_Sort(PyObject *v)
 
 /*[clinic input]
 list.reverse
+
 Reverse *IN PLACE*.
 [clinic start generated code]*/
 
@@ -2586,11 +2619,14 @@ PyList_AsTuple(PyObject *v)
 
 /*[clinic input]
 list.index
+
     value: object
     start: slice_index(accept={int}) = 0
     stop: slice_index(accept={int}, c_default="PY_SSIZE_T_MAX") = sys.maxsize
     /
+
 Return first index of value.
+
 Raises ValueError if the value is not present.
 [clinic start generated code]*/
 
@@ -2627,8 +2663,10 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
 
 /*[clinic input]
 list.count
+
      value: object
      /
+
 Return number of occurrences of value.
 [clinic start generated code]*/
 
@@ -2658,9 +2696,12 @@ list_count(PyListObject *self, PyObject *value)
 
 /*[clinic input]
 list.remove
+
      value: object
      /
+
 Remove first occurrence of value.
+
 Raises ValueError if the value is not present.
 [clinic start generated code]*/
 
@@ -2756,8 +2797,10 @@ list_richcompare(PyObject *v, PyObject *w, int op)
 
 /*[clinic input]
 list.__init__
+
     iterable: object(c_default="NULL") = ()
     /
+
 Built-in mutable sequence.
 If no argument is given, the constructor creates a new empty list.
 The argument must be an iterable if specified.
@@ -2814,6 +2857,7 @@ list_vectorcall(PyObject *type, PyObject * const*args,
 
 /*[clinic input]
 list.__sizeof__
+
 Return the size of the list in memory, in bytes.
 [clinic start generated code]*/
 
@@ -3341,6 +3385,7 @@ PyTypeObject PyListRevIter_Type = {
 
 /*[clinic input]
 list.__reversed__
+
 Return a reverse iterator over the list.
 [clinic start generated code]*/
 
