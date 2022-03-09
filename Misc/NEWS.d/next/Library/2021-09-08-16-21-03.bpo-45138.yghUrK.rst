@@ -1,3 +1,2 @@
-For SQLite 3.14.0 and newer, bound parameters are expanded in the statement
-string passed to the :mod:`sqlite3` trace callback. Patch by Erlend E.
-Aasland.
+Fix a regression in the :mod:`sqlite3` trace callback where bound parameters were
+not expanded in the passed statement string. Patch by Erlend E. Aasland.
