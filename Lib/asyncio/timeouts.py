@@ -92,9 +92,7 @@ class Timeout:
         if self._state is _State.EXPIRING:
             self._state = _State.EXPIRED
 
-            if (self._task.uncancel() == 0
-                and exc_type in (None, exceptions.CancelledError)
-            ):
+            if self._task.uncancel() == 0 and exc_type is exceptions.CancelledError:
                 # Since there are no outstanding cancel requests, we're
                 # handling this.
                 raise TimeoutError

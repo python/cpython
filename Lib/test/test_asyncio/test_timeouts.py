@@ -45,21 +45,33 @@ class BaseTimeoutTests:
         self.assertEqual(deadline, cm.when())
 
     async def test_nested_timeouts(self):
-        cancel = False
+        loop = asyncio.get_running_loop()
+        cancelled = False
         with self.assertRaises(TimeoutError):
-            async with asyncio.timeout(0.01) as cm1:
+            deadline = loop.time() + 0.01
+            async with asyncio.timeout_at(deadline) as cm1:
                 # Only the topmost context manager should raise TimeoutError
-                with self.assertRaises(asyncio.CancelledError):
-                    async with asyncio.timeout(0.01) as cm2:
+                try:
+                    async with asyncio.timeout_at(deadline) as cm2:
                         await asyncio.sleep(10)
+                except asyncio.CancelledError:
+                    cancelled = True
+                    raise
+        self.assertTrue(cancelled)
         self.assertTrue(cm1.expired())
         self.assertTrue(cm2.expired())
 
     async def test_waiter_cancelled(self):
+        loop = asyncio.get_running_loop()
+        cancelled = False
         with self.assertRaises(TimeoutError):
             async with asyncio.timeout(0.01):
-                with self.assertRaises(asyncio.CancelledError):
+                try:
                     await asyncio.sleep(10)
+                except asyncio.CancelledError:
+                    cancelled = True
+                    raise
+        self.assertTrue(cancelled)
 
     async def test_timeout_not_called(self):
         loop = asyncio.get_running_loop()
