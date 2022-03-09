@@ -21,8 +21,6 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#define NEEDS_PY_IDENTIFIER
-
 #include "cursor.h"
 #include "module.h"
 #include "util.h"
@@ -131,13 +129,12 @@ _pysqlite_get_converter(pysqlite_state *state, const char *keystr,
     PyObject *key;
     PyObject *upcase_key;
     PyObject *retval;
-    _Py_IDENTIFIER(upper);
 
     key = PyUnicode_FromStringAndSize(keystr, keylen);
     if (!key) {
         return NULL;
     }
-    upcase_key = _PyObject_CallMethodIdNoArgs(key, &PyId_upper);
+    upcase_key = PyObject_CallMethodNoArgs(key, state->str_upper);
     Py_DECREF(key);
     if (!upcase_key) {
         return NULL;
@@ -457,7 +454,7 @@ get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
     return PyObject_Vectorcall(cache, args + 1, nargsf, NULL);
 }
 
-static PyObject *
+PyObject *
 _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation, PyObject* second_argument)
 {
     PyObject* parameters_list = NULL;
@@ -710,13 +707,13 @@ _sqlite3.Cursor.executescript as pysqlite_cursor_executescript
     sql_script: str
     /
 
-Executes multiple SQL statements at once. Non-standard.
+Executes multiple SQL statements at once.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
                                    const char *sql_script)
-/*[clinic end generated code: output=8fd726dde1c65164 input=1ac0693dc8db02a8]*/
+/*[clinic end generated code: output=8fd726dde1c65164 input=78f093be415a8a2c]*/
 {
     if (!check_cursor(self)) {
         return NULL;

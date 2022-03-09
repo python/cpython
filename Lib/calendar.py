@@ -548,13 +548,26 @@ class HTMLCalendar(Calendar):
 class different_locale:
     def __init__(self, locale):
         self.locale = locale
+        self.oldlocale = None
 
     def __enter__(self):
-        self.oldlocale = _locale.getlocale(_locale.LC_TIME)
+        self.oldlocale = _locale.setlocale(_locale.LC_TIME, None)
         _locale.setlocale(_locale.LC_TIME, self.locale)
 
     def __exit__(self, *args):
+        if self.oldlocale is None:
+            return
         _locale.setlocale(_locale.LC_TIME, self.oldlocale)
+
+
+def _get_default_locale():
+    locale = _locale.setlocale(_locale.LC_TIME, None)
+    if locale == "C":
+        with different_locale(""):
+            # The LC_TIME locale does not seem to be configured:
+            # get the user preferred locale.
+            locale = _locale.setlocale(_locale.LC_TIME, None)
+    return locale
 
 
 class LocaleTextCalendar(TextCalendar):
@@ -566,7 +579,7 @@ class LocaleTextCalendar(TextCalendar):
     def __init__(self, firstweekday=0, locale=None):
         TextCalendar.__init__(self, firstweekday)
         if locale is None:
-            locale = _locale.getlocale(_locale.LC_TIME)
+            locale = _get_default_locale()
         self.locale = locale
 
     def formatweekday(self, day, width):
@@ -586,7 +599,7 @@ class LocaleHTMLCalendar(HTMLCalendar):
     def __init__(self, firstweekday=0, locale=None):
         HTMLCalendar.__init__(self, firstweekday)
         if locale is None:
-            locale = _locale.getlocale(_locale.LC_TIME)
+            locale = _get_default_locale()
         self.locale = locale
 
     def formatweekday(self, day):

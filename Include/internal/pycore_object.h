@@ -227,6 +227,8 @@ static inline PyObject **_PyObject_ManagedDictPointer(PyObject *obj)
     return ((PyObject **)obj)-3;
 }
 
+#define MANAGED_DICT_OFFSET (((int)sizeof(PyObject *))*-3)
+
 extern PyObject ** _PyObject_DictPointer(PyObject *);
 extern int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg);
 extern void _PyObject_ClearInstanceAttributes(PyObject *self);
