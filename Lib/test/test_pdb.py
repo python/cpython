@@ -1474,6 +1474,27 @@ def bœr():
         self.assertNotIn(b'SyntaxError', stdout,
                          "Got a syntax error running test script under PDB")
 
+    def test_issue46434(self):
+        # Temporarily patch in an extra help command which doesn't have a
+        # docstring to emulate what happens in an embeddable distribution
+        script = """
+            def do_testcmdwithnodocs(self, arg):
+                pass
+
+            import pdb
+            pdb.Pdb.do_testcmdwithnodocs = do_testcmdwithnodocs
+        """
+        commands = """
+            continue
+            help testcmdwithnodocs
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        output = (stdout or '') + (stderr or '')
+        self.assertNotIn('AttributeError', output,
+                         'Calling help on a command with no docs should be handled gracefully')
+        self.assertIn("*** No help for 'testcmdwithnodocs'; __doc__ string missing", output,
+                      'Calling help on a command with no docs should print an error')
+
     def test_issue13183(self):
         script = """
             from bar import bar

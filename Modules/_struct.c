@@ -38,7 +38,7 @@ get_struct_state(PyObject *module)
 static struct PyModuleDef _structmodule;
 
 #define get_struct_state_structinst(self) \
-    (get_struct_state(_PyType_GetModuleByDef(Py_TYPE(self), &_structmodule)))
+    (get_struct_state(PyType_GetModuleByDef(Py_TYPE(self), &_structmodule)))
 #define get_struct_state_iterinst(self) \
     (get_struct_state(PyType_GetModule(Py_TYPE(self))))
 
@@ -2064,8 +2064,6 @@ static PyMemberDef s_members[] = {
     {"__weaklistoffset__", T_PYSSIZET, offsetof(PyStructObject, weakreflist), READONLY},
     {NULL}  /* sentinel */
 };
-
-#define OFF(x) offsetof(PyStructObject, x)
 
 static PyGetSetDef s_getsetlist[] = {
     {"format", (getter)s_get_format, (setter)NULL, "struct format string", NULL},

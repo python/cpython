@@ -125,7 +125,7 @@ Py_DEPRECATED(3.7) PyAPI_FUNC(void) PyThread_ReInitTLS(void);
 typedef struct _Py_tss_t Py_tss_t;  /* opaque */
 
 #ifndef Py_LIMITED_API
-#if defined(_POSIX_THREADS)
+#ifdef HAVE_PTHREAD_H
     /* Darwin needs pthread.h to know type name the pthread_key_t. */
 #   include <pthread.h>
 #   define NATIVE_TSS_KEY_T     pthread_key_t

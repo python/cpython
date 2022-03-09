@@ -2,7 +2,9 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_namespace.h"     // _PyNamespace_New()
+#include "pycore_runtime.h"       // _Py_ID()
 
 #include <ctype.h>
 
@@ -62,6 +64,19 @@
 
 /* Forward declarations */
 static int pysleep(_PyTime_t timeout);
+
+
+typedef struct {
+    PyTypeObject *struct_time_type;
+} time_module_state;
+
+static inline time_module_state*
+get_time_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (time_module_state *)state;
+}
 
 
 static PyObject*
@@ -405,9 +420,6 @@ static PyStructSequence_Desc struct_time_type_desc = {
     9,
 };
 
-static int initialized;
-static PyTypeObject StructTimeType;
-
 #if defined(MS_WINDOWS)
 #ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
   #define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
@@ -417,13 +429,13 @@ static DWORD timer_flags = (DWORD)-1;
 #endif
 
 static PyObject *
-tmtotuple(struct tm *p
+tmtotuple(time_module_state *state, struct tm *p
 #ifndef HAVE_STRUCT_TM_TM_ZONE
         , const char *zone, time_t gmtoff
 #endif
 )
 {
-    PyObject *v = PyStructSequence_New(&StructTimeType);
+    PyObject *v = PyStructSequence_New(state->struct_time_type);
     if (v == NULL)
         return NULL;
 
@@ -480,7 +492,7 @@ parse_time_t_args(PyObject *args, const char *format, time_t *pwhen)
 }
 
 static PyObject *
-time_gmtime(PyObject *self, PyObject *args)
+time_gmtime(PyObject *module, PyObject *args)
 {
     time_t when;
     struct tm buf;
@@ -491,10 +503,12 @@ time_gmtime(PyObject *self, PyObject *args)
     errno = 0;
     if (_PyTime_gmtime(when, &buf) != 0)
         return NULL;
+
+    time_module_state *state = get_time_state(module);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-    return tmtotuple(&buf);
+    return tmtotuple(state, &buf);
 #else
-    return tmtotuple(&buf, "UTC", 0);
+    return tmtotuple(state, &buf, "UTC", 0);
 #endif
 }
 
@@ -522,7 +536,7 @@ If the platform supports the tm_gmtoff and tm_zone, they are available as\n\
 attributes only.");
 
 static PyObject *
-time_localtime(PyObject *self, PyObject *args)
+time_localtime(PyObject *module, PyObject *args)
 {
     time_t when;
     struct tm buf;
@@ -531,8 +545,10 @@ time_localtime(PyObject *self, PyObject *args)
         return NULL;
     if (_PyTime_localtime(when, &buf) != 0)
         return NULL;
+
+    time_module_state *state = get_time_state(module);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-    return tmtotuple(&buf);
+    return tmtotuple(state, &buf);
 #else
     {
         struct tm local = buf;
@@ -540,7 +556,7 @@ time_localtime(PyObject *self, PyObject *args)
         time_t gmtoff;
         strftime(zone, sizeof(zone), "%Z", &buf);
         gmtoff = timegm(&buf) - when;
-        return tmtotuple(&local, zone, gmtoff);
+        return tmtotuple(state, &local, zone, gmtoff);
     }
 #endif
 }
@@ -560,7 +576,8 @@ When 'seconds' is not passed in, convert the current time instead.");
  * an exception and return 0 on error.
  */
 static int
-gettmarg(PyObject *args, struct tm *p, const char *format)
+gettmarg(time_module_state *state, PyObject *args,
+         struct tm *p, const char *format)
 {
     int y;
 
@@ -588,7 +605,7 @@ gettmarg(PyObject *args, struct tm *p, const char *format)
     p->tm_wday = (p->tm_wday + 1) % 7;
     p->tm_yday--;
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-    if (Py_IS_TYPE(args, &StructTimeType)) {
+    if (Py_IS_TYPE(args, state->struct_time_type)) {
         PyObject *item;
         item = PyStructSequence_GET_ITEM(args, 9);
         if (item != Py_None) {
@@ -729,7 +746,7 @@ the C library strftime function.\n"
 #endif
 
 static PyObject *
-time_strftime(PyObject *self, PyObject *args)
+time_strftime(PyObject *module, PyObject *args)
 {
     PyObject *tup = NULL;
     struct tm buf;
@@ -753,12 +770,13 @@ time_strftime(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "U|O:strftime", &format_arg, &tup))
         return NULL;
 
+    time_module_state *state = get_time_state(module);
     if (tup == NULL) {
         time_t tt = time(NULL);
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
     }
-    else if (!gettmarg(tup, &buf,
+    else if (!gettmarg(state, tup, &buf,
                        "iiiiiiiii;strftime(): illegal time tuple argument") ||
              !checktm(&buf))
     {
@@ -893,13 +911,12 @@ static PyObject *
 time_strptime(PyObject *self, PyObject *args)
 {
     PyObject *module, *func, *result;
-    _Py_IDENTIFIER(_strptime_time);
 
     module = PyImport_ImportModule("_strptime");
     if (!module)
         return NULL;
 
-    func = _PyObject_GetAttrId(module, &PyId__strptime_time);
+    func = PyObject_GetAttr(module, &_Py_ID(_strptime_time));
     Py_DECREF(module);
     if (!func) {
         return NULL;
@@ -941,19 +958,21 @@ _asctime(struct tm *timeptr)
 }
 
 static PyObject *
-time_asctime(PyObject *self, PyObject *args)
+time_asctime(PyObject *module, PyObject *args)
 {
     PyObject *tup = NULL;
     struct tm buf;
 
     if (!PyArg_UnpackTuple(args, "asctime", 0, 1, &tup))
         return NULL;
+
+    time_module_state *state = get_time_state(module);
     if (tup == NULL) {
         time_t tt = time(NULL);
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
     }
-    else if (!gettmarg(tup, &buf,
+    else if (!gettmarg(state, tup, &buf,
                        "iiiiiiiii;asctime(): illegal time tuple argument") ||
              !checktm(&buf))
     {
@@ -990,12 +1009,13 @@ not present, current time as returned by localtime() is used.");
 
 #ifdef HAVE_MKTIME
 static PyObject *
-time_mktime(PyObject *self, PyObject *tm_tuple)
+time_mktime(PyObject *module, PyObject *tm_tuple)
 {
     struct tm tm;
     time_t tt;
 
-    if (!gettmarg(tm_tuple, &tm,
+    time_module_state *state = get_time_state(module);
+    if (!gettmarg(state, tm_tuple, &tm,
                   "iiiiiiiii;mktime(): illegal time tuple argument"))
     {
         return NULL;
@@ -1262,7 +1282,7 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 #endif
 
     /* getrusage(RUSAGE_SELF) */
-#if defined(HAVE_SYS_RESOURCE_H)
+#if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRUSAGE)
     struct rusage ru;
 
     if (getrusage(RUSAGE_SELF, &ru) == 0) {
@@ -1888,6 +1908,7 @@ if it is -1, mktime() should guess based on the date and time.\n");
 static int
 time_exec(PyObject *module)
 {
+    time_module_state *state = get_time_state(module);
 #if defined(__APPLE__) && defined(HAVE_CLOCK_GETTIME)
     if (HAVE_CLOCK_GETTIME_RUNTIME) {
         /* pass: ^^^ cannot use '!' here */
@@ -2001,21 +2022,18 @@ time_exec(PyObject *module)
 
 #endif  /* defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES) */
 
-    if (!initialized) {
-        if (PyStructSequence_InitType2(&StructTimeType,
-                                       &struct_time_type_desc) < 0) {
-            return -1;
-        }
-    }
     if (PyModule_AddIntConstant(module, "_STRUCT_TM_ITEMS", 11)) {
         return -1;
     }
-    Py_INCREF(&StructTimeType);
-    if (PyModule_AddObject(module, "struct_time", (PyObject*) &StructTimeType)) {
-        Py_DECREF(&StructTimeType);
+
+    // struct_time type
+    state->struct_time_type = PyStructSequence_NewType(&struct_time_type_desc);
+    if (state->struct_time_type == NULL) {
         return -1;
     }
-    initialized = 1;
+    if (PyModule_AddType(module, state->struct_time_type)) {
+        return -1;
+    }
 
 #if defined(__linux__) && !defined(__GLIBC__)
     struct tm tm;
@@ -2044,6 +2062,32 @@ time_exec(PyObject *module)
     return 0;
 }
 
+
+static int
+time_module_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    time_module_state *state = get_time_state(module);
+    Py_VISIT(state->struct_time_type);
+    return 0;
+}
+
+
+static int
+time_module_clear(PyObject *module)
+{
+    time_module_state *state = get_time_state(module);
+    Py_CLEAR(state->struct_time_type);
+    return 0;
+}
+
+
+static void
+time_module_free(void *module)
+{
+    time_module_clear((PyObject *)module);
+}
+
+
 static struct PyModuleDef_Slot time_slots[] = {
     {Py_mod_exec, time_exec},
     {0, NULL}
@@ -2051,14 +2095,14 @@ static struct PyModuleDef_Slot time_slots[] = {
 
 static struct PyModuleDef timemodule = {
     PyModuleDef_HEAD_INIT,
-    "time",
-    module_doc,
-    0,
-    time_methods,
-    time_slots,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "time",
+    .m_doc = module_doc,
+    .m_size = sizeof(time_module_state),
+    .m_methods = time_methods,
+    .m_slots = time_slots,
+    .m_traverse = time_module_traverse,
+    .m_clear = time_module_clear,
+    .m_free = time_module_free,
 };
 
 PyMODINIT_FUNC

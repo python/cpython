@@ -5,6 +5,7 @@ if __name__ != 'test.support':
 
 import contextlib
 import functools
+import getpass
 import os
 import re
 import stat
@@ -39,12 +40,14 @@ __all__ = [
     "requires_gzip", "requires_bz2", "requires_lzma",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
+    "has_fork_support", "requires_fork",
+    "has_subprocess_support", "requires_subprocess",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
-    "check_disallow_instantiation",
+    "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
     # sys
-    "is_jython", "is_android", "check_impl_detail", "unix_shell",
-    "setswitchinterval",
+    "is_jython", "is_android", "is_emscripten", "is_wasi",
+    "check_impl_detail", "unix_shell", "setswitchinterval",
     # network
     "open_urlresource",
     # processes
@@ -376,11 +379,46 @@ def skip_if_buildbot(reason=None):
     """Decorator raising SkipTest if running on a buildbot."""
     if not reason:
         reason = 'not suitable for buildbots'
-    if sys.platform == 'win32':
-        isbuildbot = os.environ.get('USERNAME') == 'Buildbot'
-    else:
-        isbuildbot = os.environ.get('USER') == 'buildbot'
+    try:
+        isbuildbot = getpass.getuser().lower() == 'buildbot'
+    except (KeyError, EnvironmentError) as err:
+        warnings.warn(f'getpass.getuser() failed {err}.', RuntimeWarning)
+        isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
+
+def check_sanitizer(*, address=False, memory=False, ub=False):
+    """Returns True if Python is compiled with sanitizer support"""
+    if not (address or memory or ub):
+        raise ValueError('At least one of address, memory, or ub must be True')
+
+
+    _cflags = sysconfig.get_config_var('CFLAGS') or ''
+    _config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+    memory_sanitizer = (
+        '-fsanitize=memory' in _cflags or
+        '--with-memory-sanitizer' in _config_args
+    )
+    address_sanitizer = (
+        '-fsanitize=address' in _cflags or
+        '--with-memory-sanitizer' in _config_args
+    )
+    ub_sanitizer = (
+        '-fsanitize=undefined' in _cflags or
+        '--with-undefined-behavior-sanitizer' in _config_args
+    )
+    return (
+        (memory and memory_sanitizer) or
+        (address and address_sanitizer) or
+        (ub and ub_sanitizer)
+    )
+
+
+def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
+    """Decorator raising SkipTest if running with a sanitizer active."""
+    if not reason:
+        reason = 'not working with sanitizers active'
+    skip = check_sanitizer(address=address, memory=memory, ub=ub)
+    return unittest.skipIf(skip, reason)
 
 
 def system_must_validate_cert(f):
@@ -465,6 +503,23 @@ if sys.platform not in ('win32', 'vxworks'):
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
 else:
     unix_shell = None
+
+# wasm32-emscripten and -wasi are POSIX-like but do not
+# have subprocess or fork support.
+is_emscripten = sys.platform == "emscripten"
+is_wasi = sys.platform == "wasi"
+
+has_fork_support = hasattr(os, "fork") and not is_emscripten and not is_wasi
+
+def requires_fork():
+    return unittest.skipUnless(has_fork_support, "requires working os.fork()")
+
+has_subprocess_support = not is_emscripten and not is_wasi
+
+def requires_subprocess():
+    """Used for subprocess, os.spawn calls"""
+    return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
+
 
 # Define the URL of a dedicated HTTP server for the network tests.
 # The URL must use clear-text HTTP: no redirection to encrypted HTTPS.
@@ -1223,6 +1278,8 @@ def reap_children():
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
         return
+    elif not has_subprocess_support:
+        return
 
     # Reap all our dead child processes so we don't leave zombies around.
     # These hog resources and might be causing some of the buildbots to die.
@@ -1364,7 +1421,7 @@ def skip_if_buggy_ucrt_strfptime(test):
     global _buggy_ucrt
     if _buggy_ucrt is None:
         if(sys.platform == 'win32' and
-                locale.getdefaultlocale()[1]  == 'cp65001' and
+                locale.getpreferredencoding(False)  == 'cp65001' and
                 time.localtime().tm_zone == ''):
             _buggy_ucrt = True
         else:

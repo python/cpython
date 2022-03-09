@@ -1971,7 +1971,7 @@ Customizing class creation
 --------------------------
 
 Whenever a class inherits from another class, :meth:`~object.__init_subclass__` is
-called on that class. This way, it is possible to write classes which
+called on the parent class. This way, it is possible to write classes which
 change the behavior of subclasses. This is closely related to class
 decorators, but where class decorators only affect the specific class they're
 applied to, ``__init_subclass__`` solely applies to future subclasses of the
@@ -2759,6 +2759,9 @@ left undefined.
 
    The built-in function :func:`int` falls back to :meth:`__trunc__` if neither
    :meth:`__int__` nor :meth:`__index__` is defined.
+
+   .. versionchanged:: 3.11
+      The delegation of :func:`int` to :meth:`__trunc__` is deprecated.
 
 
 .. _context-managers:
