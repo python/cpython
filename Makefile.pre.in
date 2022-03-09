@@ -1869,6 +1869,7 @@ LIBSUBDIRS=	asyncio \
 		site-packages \
 		sqlite3 \
 		tkinter \
+		tomllib \
 		turtledemo \
 		unittest \
 		urllib \

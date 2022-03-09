@@ -560,6 +560,9 @@ Connection Objects
 
       Passing :const:`None` as *trace_callback* will disable the trace callback.
 
+      For SQLite 3.14.0 and newer, bound parameters are expanded in the passed
+      statement string.
+
       .. note::
          Exceptions raised in the trace callback are not propagated. As a
          development and debugging aid, use
@@ -567,6 +570,9 @@ Connection Objects
          tracebacks from exceptions raised in the trace callback.
 
       .. versionadded:: 3.3
+
+      .. versionchanged:: 3.11
+         Added support for expanded SQL statements.
 
 
    .. method:: enable_load_extension(enabled)
@@ -836,11 +842,11 @@ Cursor Objects
 
    .. method:: setinputsizes(sizes)
 
-      Required by the DB-API. Is a no-op in :mod:`sqlite3`.
+      Required by the DB-API. Does nothing in :mod:`sqlite3`.
 
    .. method:: setoutputsize(size [, column])
 
-      Required by the DB-API. Is a no-op in :mod:`sqlite3`.
+      Required by the DB-API. Does nothing in :mod:`sqlite3`.
 
    .. attribute:: rowcount
 
