@@ -350,6 +350,14 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(write)
         STRUCT_FOR_ID(zipimporter)
     } identifiers;
+    struct {
+        PyASCIIObject _ascii;
+        uint8_t _data[2];
+    } ascii[128];
+    struct {
+        PyCompactUnicodeObject _latin1;
+        uint8_t _data[2];
+    } latin1[128];
 };
 /* End auto-generated code */
 
