@@ -2627,7 +2627,7 @@ with a more verbose initializer::
        0,                              /* tp_setattro */
        0,                              /* tp_as_buffer */
        0,                              /* tp_flags */
-       "My objects",                   /* tp_doc */
+       PyDoc_STR("My objects"),        /* tp_doc */
        0,                              /* tp_traverse */
        0,                              /* tp_clear */
        0,                              /* tp_richcompare */

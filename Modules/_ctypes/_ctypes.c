@@ -196,7 +196,7 @@ static PyTypeObject DictRemover_Type = {
     0,                                          /* tp_as_buffer */
 /* XXX should participate in GC? */
     Py_TPFLAGS_DEFAULT,                         /* tp_flags */
-    "deletes a key from a dictionary",          /* tp_doc */
+    PyDoc_STR("deletes a key from a dictionary"), /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -945,7 +945,7 @@ PyTypeObject PyCStructType_Type = {
     PyCStructType_setattro,                     /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    "metatype for the CData Objects",           /* tp_doc */
+    PyDoc_STR("metatype for the CData Objects"), /* tp_doc */
     (traverseproc)CDataType_traverse,           /* tp_traverse */
     (inquiry)CDataType_clear,                   /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -987,7 +987,7 @@ static PyTypeObject UnionType_Type = {
     UnionType_setattro,                         /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    "metatype for the CData Objects",           /* tp_doc */
+    PyDoc_STR("metatype for the CData Objects"), /* tp_doc */
     (traverseproc)CDataType_traverse,           /* tp_traverse */
     (inquiry)CDataType_clear,                   /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -1245,7 +1245,7 @@ PyTypeObject PyCPointerType_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    "metatype for the Pointer Objects",         /* tp_doc */
+    PyDoc_STR("metatype for the Pointer Objects"), /* tp_doc */
     (traverseproc)CDataType_traverse,           /* tp_traverse */
     (inquiry)CDataType_clear,                   /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -1657,7 +1657,7 @@ PyTypeObject PyCArrayType_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "metatype for the Array Objects",           /* tp_doc */
+    PyDoc_STR("metatype for the Array Objects"), /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -2351,7 +2351,7 @@ PyTypeObject PyCSimpleType_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "metatype for the PyCSimpleType Objects",           /* tp_doc */
+    PyDoc_STR("metatype for the PyCSimpleType Objects"), /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -2640,7 +2640,7 @@ PyTypeObject PyCFuncPtrType_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    "metatype for C function pointers",         /* tp_doc */
+    PyDoc_STR("metatype for C function pointers"), /* tp_doc */
     (traverseproc)CDataType_traverse,           /* tp_traverse */
     (inquiry)CDataType_clear,                   /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -2945,7 +2945,7 @@ PyTypeObject PyCData_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "XXX to be provided",                       /* tp_doc */
+    PyDoc_STR("XXX to be provided"),            /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -4343,7 +4343,7 @@ PyTypeObject PyCFuncPtr_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "Function Pointer",                         /* tp_doc */
+    PyDoc_STR("Function Pointer"),              /* tp_doc */
     (traverseproc)PyCFuncPtr_traverse,          /* tp_traverse */
     (inquiry)PyCFuncPtr_clear,                  /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -4495,7 +4495,7 @@ static PyTypeObject Struct_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "Structure base class",                     /* tp_doc */
+    PyDoc_STR("Structure base class"),          /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -4537,7 +4537,7 @@ static PyTypeObject Union_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "Union base class",                         /* tp_doc */
+    PyDoc_STR("Union base class"),              /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -4857,7 +4857,7 @@ PyTypeObject PyCArray_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "XXX to be provided",                       /* tp_doc */
+    PyDoc_STR("XXX to be provided"),            /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -5076,7 +5076,7 @@ static PyTypeObject Simple_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "XXX to be provided",                       /* tp_doc */
+    PyDoc_STR("XXX to be provided"),            /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -5458,7 +5458,7 @@ PyTypeObject PyCPointer_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "XXX to be provided",                       /* tp_doc */
+    PyDoc_STR("XXX to be provided"),            /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */

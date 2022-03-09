@@ -2,14 +2,9 @@ Classes and functions that unconditionally declared their docstrings
 ignoring --without-doc-strings compilation flag no longer do so.
 
 The classes affected are :class:`~ctypes.UnionType`,
-:class:`~pickle.PickleBuffer`, and :class:`~types.GenericAlias`.
+:class:`~pickle.PickleBuffer`, :class:`~testcapi.RecursingInfinitelyError`,
+and :class:`~types.GenericAlias`.
 
-The functions affected are :func:`ctypes.addressof`,
-:func:`ctypes.alignment`, :func:`ctypes.byref`,
-:func:`ctypes.CopyComPointer`, :func:`ctypes.FormatError`,
-:func:`ctypes.FreeLibrary`, :func:`ctypes.LoadLibrary`, and
-:func:`ctypes.sizeof`, along with a bunch of methods in
-:class:`~ctypes.PyCPointerType`, :class:`~ctypes.PyCSimpleType`, and
-:class:`~ctypes.PyCStructType`.
+The functions affected are 24 methods of :mod:`ctypes`'s classes.
 
 Patch by Oleg Iarygin.
