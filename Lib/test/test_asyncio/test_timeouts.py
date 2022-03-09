@@ -156,6 +156,8 @@ class BaseTimeoutTests:
         # After the inner timeout is an expensive operation which should
         # be stopped by the outer timeout.
         loop = asyncio.get_running_loop()
+        # Disable a message about long running task
+        loop.slow_callback_duration = 10
         t0 = loop.time()
         with self.assertRaises(TimeoutError):
             async with asyncio.timeout(0.1):  # (1)
