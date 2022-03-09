@@ -1094,6 +1094,9 @@ trace_callback(void *ctx, const char *sql)
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
     assert(ctx != NULL);
+    pysqlite_state *state = ((callback_context *)ctx)->state;
+    assert(state != NULL);
+
     PyObject *py_statement = NULL;
 #ifdef HAVE_TRACE_V2
     assert(stmt != NULL);
@@ -1105,8 +1108,6 @@ trace_callback(void *ctx, const char *sql)
             goto exit;
         }
 
-        pysqlite_state *state = ((callback_context *)ctx)->state;
-        assert(state != NULL);
         PyErr_SetString(state->DataError,
                         "Expanded SQL string exceeds the maximum string "
                         "length");
@@ -1120,7 +1121,14 @@ trace_callback(void *ctx, const char *sql)
         sqlite3_free((void *)expanded_sql);
     }
 #else
-    py_statement = PyUnicode_FromString(sql);
+    if (sql == NULL) {
+        PyErr_SetString(state->DataError,
+                "Expanded SQL string exceeds the maximum string length");
+        print_or_clear_traceback((callback_context *)ctx);
+    }
+    else {
+        py_statement = PyUnicode_FromString(sql);
+    }
 #endif
     if (py_statement) {
         PyObject *callable = ((callback_context *)ctx)->callable;

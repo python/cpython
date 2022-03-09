@@ -303,8 +303,6 @@ class TraceCallbackTests(unittest.TestCase):
             con2.close()
         self.assertEqual(traced_statements, queries)
 
-    @unittest.skipIf(sqlite.sqlite_version_info < (3, 14, 0),
-                     "Requires SQLite 3.14.0 or newer")
     def test_trace_expanded_sql(self):
         expected = [
             "create table t(t)",
@@ -335,7 +333,10 @@ class TraceCallbackTests(unittest.TestCase):
             bad_param = "a" * (nextra + 1)
 
             unexpanded_query = template + "?"
-            with self.check_stmt_trace(cx, [unexpanded_query]):
+            expected = [unexpanded_query]
+            if sqlite.sqlite_version_info < (3, 14, 0):
+                expected = []
+            with self.check_stmt_trace(cx, expected):
                 cx.execute(unexpanded_query, (bad_param,))
 
             expanded_query = f"{template}'{ok_param}'"
