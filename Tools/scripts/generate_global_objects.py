@@ -196,6 +196,13 @@ def generate_global_strings(identifiers, strings):
                 for name in sorted(identifiers):
                     assert name.isidentifier(), name
                     printer.write(f'STRUCT_FOR_ID({name})')
+            with printer.block('struct', ' ascii[128];'):
+                printer.write("PyASCIIObject _ascii;")
+                printer.write("uint8_t _data[2];")
+            with printer.block('struct', ' latin1[128];'):
+                printer.write("PyCompactUnicodeObject _latin1;")
+                printer.write("uint8_t _data[2];")
+
         printer.write(END)
         printer.write(after)
 
@@ -252,6 +259,12 @@ def generate_runtime_init(identifiers, strings):
                         for name in sorted(identifiers):
                             assert name.isidentifier(), name
                             printer.write(f'INIT_ID({name}),')
+                    with printer.block('.ascii =', ','):
+                        for i in range(128):
+                            printer.write(f'_PyASCIIObject_INIT("\\x{i:02x}"),')
+                    with printer.block('.latin1 =', ','):
+                        for i in range(128, 256):
+                            printer.write(f'_PyUnicode_LATIN1_INIT("\\x{i:02x}"),')
                 printer.write('')
                 with printer.block('.tuple_empty =', ','):
                     printer.write('.ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0)')
