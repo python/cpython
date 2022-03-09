@@ -199,38 +199,61 @@ def can_xattr():
     if _can_xattr is not None:
         return _can_xattr
     if not hasattr(os, "setxattr"):
-        can = False
-    else:
-        import platform
-        tmp_dir = tempfile.mkdtemp()
-        tmp_fp, tmp_name = tempfile.mkstemp(dir=tmp_dir)
-        try:
-            with open(TESTFN, "wb") as fp:
-                try:
-                    # TESTFN & tempfile may use different file systems with
-                    # different capabilities
-                    os.setxattr(tmp_fp, b"user.test", b"")
-                    os.setxattr(tmp_name, b"trusted.foo", b"42")
-                    os.setxattr(fp.fileno(), b"user.test", b"")
-                    # Kernels < 2.6.39 don't respect setxattr flags.
-                    kernel_version = platform.release()
-                    m = re.match(r"2.6.(\d{1,2})", kernel_version)
-                    can = m is None or int(m.group(1)) >= 39
-                except OSError:
-                    can = False
-        finally:
-            unlink(TESTFN)
-            unlink(tmp_name)
-            rmdir(tmp_dir)
-    _can_xattr = can
-    return can
+        _can_xattr = False, False
+        return _can_xattr
+
+    import platform
+    # Kernels < 2.6.39 don't respect setxattr flags.
+    kernel_version = platform.release()
+    m = re.match(r"2.6.(\d{1,2})", kernel_version)
+    if m is not None and int(m.group(1)) < 39:
+        _can_xattr = False, False
+        return _can_xattr
+
+    try:
+        with open(TESTFN, "wb") as fp:
+            try:
+                os.setxattr(fp.fileno(), b"user.test", b"42")
+                os.setxattr(TESTFN, b"user.test", b"42")
+            except OSError:
+                can_user = False
+            else:
+                can_user = True
+            try:
+                # check write access to trusted namespace
+                os.setxattr(fp.fileno(), b"trusted.test", b"23")
+                os.setxattr(TESTFN, b"trusted.test", b"23")
+            except OSError:
+                can_trusted = False
+            else:
+                can_trusted = True
+    finally:
+        unlink(TESTFN)
+
+    _can_xattr = can_user, can_trusted
+    return _can_xattr
 
 
-def skip_unless_xattr(test):
-    """Skip decorator for tests that require functional extended attributes"""
-    ok = can_xattr()
-    msg = "no non-broken extended attribute support"
-    return test if ok else unittest.skip(msg)(test)
+def skip_unless_xattr_user(test):
+    """Skip decorator for tests that require functional extended attributes
+
+    Only verifies write access to "user" namespace. The "security", "system",
+    and "trusted" namespace are restricted. "trusted" is only writable to
+    processes with CAP_SYS_ADMIN.
+
+    Note: The decorator only checks the filesystem of CWD. /tmp on tmpfs does
+    not support "user" extended attributes.
+    """
+    can_user, can_trusted = can_xattr()
+    msg = "xattr is not available or user namespace not writable"
+    return test if can_user else unittest.skip(msg)(test)
+
+
+def skip_unless_xattr_trusted(test):
+    """Skip decorator for tests that require write access to trusted xattr"""
+    can_user, can_trusted = can_xattr()
+    msg = "xattr is not available or trusted namespace not writable"
+    return test if can_trusted else unittest.skip(msg)(test)
 
 
 def unlink(filename):

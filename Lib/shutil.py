@@ -309,21 +309,25 @@ def copymode(src, dst, *, follow_symlinks=True):
     chmod_func(dst, stat.S_IMODE(st.st_mode))
 
 if hasattr(os, 'listxattr'):
-    def _copyxattr(src, dst, *, follow_symlinks=True):
+    def _copyxattr(src, dst, *, follow_symlinks=True, names_filter=None):
         """Copy extended filesystem attributes from `src` to `dst`.
 
         Overwrite existing attributes.
 
         If `follow_symlinks` is false, symlinks won't be followed.
 
+        `names_filter` is a callback to filter xattr names.
         """
-
         try:
             names = os.listxattr(src, follow_symlinks=follow_symlinks)
         except OSError as e:
             if e.errno not in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
                 raise
             return
+        if not names:
+            return
+        if names_filter is not None:
+            names = names_filter(names)
         for name in names:
             try:
                 value = os.getxattr(src, name, follow_symlinks=follow_symlinks)
@@ -336,7 +340,8 @@ else:
     def _copyxattr(*args, **kwargs):
         pass
 
-def copystat(src, dst, *, follow_symlinks=True):
+def copystat(src, dst, *, follow_symlinks=True,
+             preserve_security_context=False):
     """Copy file metadata
 
     Copy the permission bits, last access time, last modification time, and
@@ -347,6 +352,14 @@ def copystat(src, dst, *, follow_symlinks=True):
 
     If the optional flag `follow_symlinks` is not set, symlinks aren't
     followed if and only if both `src` and `dst` are symlinks.
+
+    If the optional flag `preserve_security_context` is set, extended
+    attributes in the security namespace are copied as well. By default,
+    attributes like `security.selinux` are ignored.
+
+    `preserve_security_context=False` is equivalent to
+    `cp -p --preserve=xattr`. `preserve_security_context=True` behaves like
+    `cp -p --preserve=xattr,context`.
     """
     sys.audit("shutil.copystat", src, dst)
 
@@ -368,6 +381,16 @@ def copystat(src, dst, *, follow_symlinks=True):
                 return fn
             return _nop
 
+    # don't copy security xattr by default
+    # see coreutils src/copy.c:check_selinux_attr()
+    if not preserve_security_context:
+        def names_filter(names):
+            return [
+                name for name in names if not name.startswith("security.")
+            ]
+    else:
+        names_filter = None
+
     if isinstance(src, os.DirEntry):
         st = src.stat(follow_symlinks=follow)
     else:
@@ -377,7 +400,7 @@ def copystat(src, dst, *, follow_symlinks=True):
         follow_symlinks=follow)
     # We must copy extended attributes before the file is (potentially)
     # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
-    _copyxattr(src, dst, follow_symlinks=follow)
+    _copyxattr(src, dst, follow_symlinks=follow, names_filter=names_filter)
     try:
         lookup("chmod")(dst, mode, follow_symlinks=follow)
     except NotImplementedError:
@@ -420,7 +443,7 @@ def copy(src, dst, *, follow_symlinks=True):
     copymode(src, dst, follow_symlinks=follow_symlinks)
     return dst
 
-def copy2(src, dst, *, follow_symlinks=True):
+def copy2(src, dst, *, follow_symlinks=True, preserve_security_context=False):
     """Copy data and metadata. Return the file's destination.
 
     Metadata is copied with copystat(). Please see the copystat function
@@ -430,11 +453,16 @@ def copy2(src, dst, *, follow_symlinks=True):
 
     If follow_symlinks is false, symlinks won't be followed. This
     resembles GNU's "cp -P src dst".
+
+    If the optional flag `preserve_security_context` is set, extended
+    attributes in the security namespace are copied as well. By default,
+    attributes like `security.selinux` are ignored.
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
     copyfile(src, dst, follow_symlinks=follow_symlinks)
-    copystat(src, dst, follow_symlinks=follow_symlinks)
+    copystat(src, dst, follow_symlinks=follow_symlinks,
+             preserve_security_context=preserve_security_context)
     return dst
 
 def ignore_patterns(*patterns):
@@ -450,7 +478,8 @@ def ignore_patterns(*patterns):
     return _ignore_patterns
 
 def _copytree(entries, src, dst, symlinks, ignore, copy_function,
-              ignore_dangling_symlinks, dirs_exist_ok=False):
+              ignore_dangling_symlinks, dirs_exist_ok=False,
+              preserve_security_context=False):
     if ignore is not None:
         ignored_names = ignore(os.fspath(src), [x.name for x in entries])
     else:
@@ -481,7 +510,8 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                     # code with a custom `copy_function` may rely on copytree
                     # doing the right thing.
                     os.symlink(linkto, dstname)
-                    copystat(srcobj, dstname, follow_symlinks=not symlinks)
+                    copystat(srcobj, dstname, follow_symlinks=not symlinks,
+                             preserve_security_context=preserve_security_context)
                 else:
                     # ignore dangling symlink if the flag is on
                     if not os.path.exists(linkto) and ignore_dangling_symlinks:
@@ -494,7 +524,8 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                         copy_function(srcobj, dstname)
             elif srcentry.is_dir():
                 copytree(srcobj, dstname, symlinks, ignore, copy_function,
-                         dirs_exist_ok=dirs_exist_ok)
+                         dirs_exist_ok=dirs_exist_ok,
+                         preserve_security_context=preserve_security_context)
             else:
                 # Will raise a SpecialFileError for unsupported file types
                 copy_function(srcobj, dstname)
@@ -505,7 +536,7 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
         except OSError as why:
             errors.append((srcname, dstname, str(why)))
     try:
-        copystat(src, dst)
+        copystat(src, dst, preserve_security_context=preserve_security_context)
     except OSError as why:
         # Copying file access times may fail on Windows
         if getattr(why, 'winerror', None) is None:
@@ -515,7 +546,8 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
     return dst
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
-             ignore_dangling_symlinks=False, dirs_exist_ok=False):
+             ignore_dangling_symlinks=False, dirs_exist_ok=False,
+             preserve_security_context=False):
     """Recursively copy a directory tree and return the destination directory.
 
     dirs_exist_ok dictates whether to raise an exception in case dst or any
@@ -551,6 +583,9 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     destination path as arguments. By default, copy2() is used, but any
     function that supports the same signature (like copy()) can be used.
 
+    If the optional flag `preserve_security_context` is set, extended
+    attributes in the security namespace are copied as well. By default,
+    attributes like `security.selinux` are ignored.
     """
     sys.audit("shutil.copytree", src, dst)
     with os.scandir(src) as itr:
@@ -558,7 +593,8 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
                      ignore=ignore, copy_function=copy_function,
                      ignore_dangling_symlinks=ignore_dangling_symlinks,
-                     dirs_exist_ok=dirs_exist_ok)
+                     dirs_exist_ok=dirs_exist_ok,
+                     preserve_security_context=preserve_security_context)
 
 if hasattr(os.stat_result, 'st_file_attributes'):
     # Special handling for directory junctions to make them behave like
@@ -770,7 +806,7 @@ def _basename(path):
     sep = os.path.sep + (os.path.altsep or '')
     return os.path.basename(path.rstrip(sep))
 
-def move(src, dst, copy_function=copy2):
+def move(src, dst, copy_function=copy2, preserve_security_context=False):
     """Recursively move a file or directory to another location. This is
     similar to the Unix "mv" command. Return the file or directory's
     destination.
@@ -829,10 +865,17 @@ def move(src, dst, copy_function=copy2):
                                       "'%s': Lacking write permission to '%s'."
                                       % (src, src))
             copytree(src, real_dst, copy_function=copy_function,
-                     symlinks=True)
+                     symlinks=True,
+                     preserve_security_context=preserve_security_context)
             rmtree(src)
         else:
-            copy_function(src, real_dst)
+            if preserve_security_context:
+                copy_function(
+                    src, real_dst,
+                    preserve_security_context=preserve_security_context
+                )
+            else:
+                copy_function(src, real_dst)
             os.unlink(src)
     return real_dst
 

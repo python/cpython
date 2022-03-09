@@ -1,0 +1,3 @@
+:mod:`shutil` functions no longer copy extended file attributes in the
+`security` namespace by default unless new *preserve_security_context*
+argument is given.
