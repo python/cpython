@@ -44,9 +44,6 @@ struct _Py_unicode_ids {
 };
 
 struct _Py_unicode_state {
-    /* Single character Unicode strings in the Latin-1 range are being
-       shared as well. */
-    PyObject *latin1[256];
     struct _Py_unicode_fs_codec fs_codec;
 
     // Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId()
