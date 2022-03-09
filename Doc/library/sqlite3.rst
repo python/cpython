@@ -744,11 +744,11 @@ Cursor Objects
 
    .. method:: setinputsizes(sizes)
 
-      Required by the DB-API. Is a no-op in :mod:`sqlite3`.
+      Required by the DB-API. Does nothing in :mod:`sqlite3`.
 
    .. method:: setoutputsize(size [, column])
 
-      Required by the DB-API. Is a no-op in :mod:`sqlite3`.
+      Required by the DB-API. Does nothing in :mod:`sqlite3`.
 
    .. attribute:: rowcount
 

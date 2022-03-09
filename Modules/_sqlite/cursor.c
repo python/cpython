@@ -882,7 +882,7 @@ static PyMethodDef cursor_methods[] = {
     {"executemany", (PyCFunction)pysqlite_cursor_executemany, METH_VARARGS,
         PyDoc_STR("Repeatedly executes a SQL statement.")},
     {"executescript", (PyCFunction)pysqlite_cursor_executescript, METH_VARARGS,
-        PyDoc_STR("Executes a multiple SQL statements at once.")},
+        PyDoc_STR("Executes multiple SQL statements at once.")},
     {"fetchone", (PyCFunction)pysqlite_cursor_fetchone, METH_NOARGS,
         PyDoc_STR("Fetches one row from the resultset.")},
     {"fetchmany", (PyCFunction)(void(*)(void))pysqlite_cursor_fetchmany, METH_VARARGS|METH_KEYWORDS,
@@ -892,9 +892,9 @@ static PyMethodDef cursor_methods[] = {
     {"close", (PyCFunction)pysqlite_cursor_close, METH_NOARGS,
         PyDoc_STR("Closes the cursor.")},
     {"setinputsizes", (PyCFunction)pysqlite_noop, METH_VARARGS,
-        PyDoc_STR("Required by DB-API. Does nothing in pysqlite.")},
+        PyDoc_STR("Required by DB-API. Does nothing in sqlite3.")},
     {"setoutputsize", (PyCFunction)pysqlite_noop, METH_VARARGS,
-        PyDoc_STR("Required by DB-API. Does nothing in pysqlite.")},
+        PyDoc_STR("Required by DB-API. Does nothing in sqlite3.")},
     {NULL, NULL}
 };
 
