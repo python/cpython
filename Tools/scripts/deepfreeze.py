@@ -283,10 +283,12 @@ class Printer:
             self.write(f".co_cellvars = {co_cellvars},")
             self.write(f".co_freevars = {co_freevars},")
         self.deallocs.append(f"_PyStaticCode_Dealloc(&{name});")
-        self.interns.append(f"_PyStaticCode_InternStrings(&{name});")
+        self.interns.append(f"_PyStaticCode_InternStrings(&{name})")
         return f"& {name}.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
+        if len(t) == 0:
+            return f"(PyObject *)& _Py_SINGLETON(tuple_empty)"
         items = [self.generate(f"{name}_{i}", it) for i, it in enumerate(t)]
         self.write("static")
         with self.indent():
@@ -450,9 +452,11 @@ def generate(args: list[str], output: TextIO) -> None:
     with printer.block(f"void\n_Py_Deepfreeze_Fini(void)"):
             for p in printer.deallocs:
                 printer.write(p)
-    with printer.block(f"void\n_Py_Deepfreeze_Init(void)"):
+    with printer.block(f"int\n_Py_Deepfreeze_Init(void)"):
             for p in printer.interns:
-                printer.write(p)
+                with printer.block(f"if ({p} < 0)"):
+                    printer.write("return -1;")
+            printer.write("return 0;")
     if verbose:
         print(f"Cache hits: {printer.hits}, misses: {printer.misses}")
 

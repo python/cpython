@@ -335,7 +335,7 @@ class CAPITest(unittest.TestCase):
             *_, count = line.split(b' ')
             count = int(count)
             self.assertLessEqual(count, i*5)
-            self.assertGreaterEqual(count, i*5-1)
+            self.assertGreaterEqual(count, i*5-2)
 
     def test_mapping_keys_values_items(self):
         class Mapping1(dict):

@@ -269,6 +269,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(inf)
         STRUCT_FOR_ID(intersection)
         STRUCT_FOR_ID(isatty)
+        STRUCT_FOR_ID(isinstance)
         STRUCT_FOR_ID(items)
         STRUCT_FOR_ID(iter)
         STRUCT_FOR_ID(join)
@@ -278,6 +279,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(last_type)
         STRUCT_FOR_ID(last_value)
         STRUCT_FOR_ID(latin1)
+        STRUCT_FOR_ID(len)
         STRUCT_FOR_ID(line)
         STRUCT_FOR_ID(lineno)
         STRUCT_FOR_ID(listcomp)
@@ -348,6 +350,14 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(write)
         STRUCT_FOR_ID(zipimporter)
     } identifiers;
+    struct {
+        PyASCIIObject _ascii;
+        uint8_t _data[2];
+    } ascii[128];
+    struct {
+        PyCompactUnicodeObject _latin1;
+        uint8_t _data[2];
+    } latin1[128];
 };
 /* End auto-generated code */
 

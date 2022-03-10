@@ -15,13 +15,17 @@ import signal
 import time
 import os
 import platform
-import pwd
 import stat
 import tempfile
 import unittest
 import warnings
 import textwrap
 from contextlib import contextmanager
+
+try:
+    import pwd
+except ImportError:
+    pwd = None
 
 _DUMMY_SYMLINK = os.path.join(tempfile.gettempdir(),
                               os_helper.TESTFN + '-dummy-symlink')
@@ -71,8 +75,9 @@ class PosixTester(unittest.TestCase):
         for name in NO_ARG_FUNCTIONS:
             posix_func = getattr(posix, name, None)
             if posix_func is not None:
-                posix_func()
-                self.assertRaises(TypeError, posix_func, 1)
+                with self.subTest(name):
+                    posix_func()
+                    self.assertRaises(TypeError, posix_func, 1)
 
     @unittest.skipUnless(hasattr(posix, 'getresuid'),
                          'test needs posix.getresuid()')
@@ -126,6 +131,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'initgroups'),
                          "test needs os.initgroups()")
+    @unittest.skipUnless(hasattr(pwd, 'getpwuid'), "test needs pwd.getpwuid()")
     def test_initgroups(self):
         # It takes a string and an integer; check that it raises a TypeError
         # for other argument lists.
@@ -1394,7 +1400,10 @@ class TestPosixDirFd(unittest.TestCase):
                     # whoops!  using both together not supported on this platform.
                     pass
 
-    @unittest.skipUnless(os.link in os.supports_dir_fd, "test needs dir_fd support in os.link()")
+    @unittest.skipUnless(
+        hasattr(os, "link") and os.link in os.supports_dir_fd,
+        "test needs dir_fd support in os.link()"
+    )
     def test_link_dir_fd(self):
         with self.prepare_file() as (dir_fd, name, fullname), \
              self.prepare() as (dir_fd2, linkname, fulllinkname):

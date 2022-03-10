@@ -514,7 +514,11 @@ class BaseTaskTests:
             self.assertTrue(t.cancel())
             self.assertTrue(t.cancelling())
             self.assertIn(" cancelling ", repr(t))
-            self.assertFalse(t.cancel())
+
+            # Since we commented out two lines from Task.cancel(),
+            # this t.cancel() call now returns True.
+            # self.assertFalse(t.cancel())
+            self.assertTrue(t.cancel())
 
             with self.assertRaises(asyncio.CancelledError):
                 loop.run_until_complete(t)

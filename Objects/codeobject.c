@@ -1571,10 +1571,7 @@ code_sizeof(PyCodeObject *co, PyObject *Py_UNUSED(args))
     }
 
     if (co->co_quickened != NULL) {
-        Py_ssize_t count = co->co_quickened[0].entry.zero.cache_count;
-        count += (PyBytes_GET_SIZE(co->co_code)+sizeof(SpecializedCacheEntry)-1)/
-            sizeof(SpecializedCacheEntry);
-        res += count * sizeof(SpecializedCacheEntry);
+        res += PyBytes_GET_SIZE(co->co_code);
     }
 
     return PyLong_FromSsize_t(res);
@@ -1931,14 +1928,20 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
     }
 }
 
-void
+int
 _PyStaticCode_InternStrings(PyCodeObject *co)
 {
     int res = intern_strings(co->co_names);
-    assert(res == 0);
+    if (res < 0) {
+        return -1;
+    }
     res = intern_string_constants(co->co_consts, NULL);
-    assert(res == 0);
+    if (res < 0) {
+        return -1;
+    }
     res = intern_strings(co->co_localsplusnames);
-    assert(res == 0);
-    (void)res;
+    if (res < 0) {
+        return -1;
+    }
+    return 0;
 }
