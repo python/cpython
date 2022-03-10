@@ -6,8 +6,32 @@ from . import tasks
 
 
 class Runner:
-    def __init__(self, *, debug=None):
-        self._loop = self.new_loop()
+    """A context manager that controls event loop life cycle.
+
+    The context manager always creates a new event loop, allows to run async funtions
+    inside it, and properly finalizes the loop at the context manager exit.
+
+    If debug is True, the event loop will be run in debug mode.
+    If factory is passed, it is used for new event loop creation.
+
+    asyncio.run(main(), debug=True)
+
+    is a shortcut for
+
+    with asyncio.Runner(debug=True) as runner:
+        runner.run(main())
+
+
+    .run() method can be called multiple times.
+
+    This can be useful for interactive console (e.g. IPython),
+    unittest runners, console tools, -- everywhere when async code
+    is called from existing sync framework and where the preferred single
+    asyncio.run() call doesn't work.
+
+    """
+    def __init__(self, *, debug=None, factory=events.new_event_loop):
+        self._loop = factory()
         if debug is not None:
             self._loop.set_debug(debug)
 
@@ -15,6 +39,10 @@ class Runner:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def close(self):
+        """Shutdown and close event loop."""
         try:
             _cancel_all_tasks(self._loop)
             self._loop.run_until_complete(self._loop.shutdown_asyncgens())
@@ -24,25 +52,15 @@ class Runner:
             self._loop = None
 
     def run(self, coro):
-        if events._get_running_loop() is not None:
-            raise RuntimeError(
-                "Runner.run() cannot be called from a running event loop")
-
-        if self._loop is None:
-            raise RuntimeError(
-                "Runner.run() cannot be called outside of "
-                "'with Runner(): ...' context manager"
-            )
+        """Run a coroutine inside the embedded event loop."""
         if not coroutines.iscoroutine(coro):
             raise ValueError("a coroutine was expected, got {!r}".format(coro))
 
         return self._loop.run_until_complete(coro)
 
     def get_loop(self):
+        """Returnb embedded event loop."""
         return self._loop
-
-    def new_loop(self):
-        return events.new_event_loop()
 
 
 
@@ -70,7 +88,12 @@ def run(main, *, debug=None):
 
         asyncio.run(main())
     """
-    with Runner(debug) as runner:
+    if events._get_running_loop() is not None:
+        # fail fast with short traceback
+        raise RuntimeError(
+            "asyncio.run() cannot be called from a running event loop")
+
+    with Runner(debug=debug) as runner:
         return runner.run(main)
 
 
