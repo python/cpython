@@ -344,10 +344,10 @@ IO_OBJS=	\
 
 MIMALLOC_HEADERS = \
 		$(srcdir)/Include/internal/pycore_mimalloc.h \
-		$(srcdir)/Include/mimalloc/mimalloc-atomic.h \
-		$(srcdir)/Include/mimalloc/mimalloc.h \
-		$(srcdir)/Include/mimalloc/mimalloc-internal.h \
-		$(srcdir)/Include/mimalloc/mimalloc-types.h \
+		$(srcdir)/Include/internal/mimalloc/mimalloc-atomic.h \
+		$(srcdir)/Include/internal/mimalloc/mimalloc.h \
+		$(srcdir)/Include/internal/mimalloc/mimalloc-internal.h \
+		$(srcdir)/Include/internal/mimalloc/mimalloc-types.h \
 
 MIMALLOC_INCLUDES = \
 		$(srcdir)/Objects/mimalloc/alloc-aligned.c \
@@ -1310,7 +1310,7 @@ Python/dynload_hpux.o: $(srcdir)/Python/dynload_hpux.c Makefile
 
 Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydtrace.h @MIMALLOC_INCLUDES@
 	$(CC) -c $(PY_CORE_CFLAGS) \
-		-I$(srcdir)/Include/mimalloc \
+		-I$(srcdir)/Include/internal/mimalloc \
 		-DABIFLAGS='"$(ABIFLAGS)"' \
 		$(MULTIARCH_CPPFLAGS) \
 		-o $@ $(srcdir)/Python/sysmodule.c
@@ -2242,6 +2242,11 @@ inclinstall:
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY)/internal; \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/internal; \
 	done
+	@for i in $(srcdir)/Include/internal/mimalloc/*.h; \
+	do \
+		echo $(INSTALL_DATA) $$i $(INCLUDEPY)/internal/mimalloc; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/internal/mimalloc; \
+	done
 	$(INSTALL_DATA) pyconfig.h $(DESTDIR)$(CONFINCLUDEPY)/pyconfig.h
 
 # Install the library and miscellaneous stuff needed for extending/embedding
@@ -2406,7 +2411,7 @@ Python/dtoa.o: Python/dtoa.c
 
 # obmalloc includes mimalloc
 Objects/obmalloc.o: Objects/obmalloc.c @MIMALLOC_INCLUDES@
-	$(CC) -c $(PY_CORE_CFLAGS) -I$(srcdir)/Include/mimalloc -o $@ $<
+	$(CC) -c $(PY_CORE_CFLAGS) -I$(srcdir)/Include/internal/mimalloc -o $@ $<
 
 # Run reindent on the library
 reindent:
