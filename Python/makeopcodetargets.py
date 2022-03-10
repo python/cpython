@@ -3,6 +3,7 @@
 (for compilers supporting computed gotos or "labels-as-values", such as gcc).
 """
 
+from itertools import chain
 import os
 import sys
 
@@ -36,7 +37,7 @@ def write_contents(f):
     for opname, op in opcode.opmap.items():
         targets[op] = "TARGET_%s" % opname
     next_op = 1
-    for opname in opcode._specialized_instructions:
+    for opname in chain.from_iterable(opcode._specializations.values()):
         while targets[next_op] != '_unknown_opcode':
             next_op += 1
         targets[next_op] = "TARGET_%s" % opname
