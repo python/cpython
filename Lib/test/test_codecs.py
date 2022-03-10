@@ -3191,13 +3191,16 @@ class CodePageTest(unittest.TestCase):
         self.assertEqual(decoded, ('abc', 3))
 
     def test_mbcs_alias(self):
-        # On Windows, the encoding name must be the ANSI code page
-        encoding = locale.getpreferredencoding(False)
-        self.assertTrue(encoding.startswith('cp'), encoding)
-
-        # The encodings module create a "mbcs" alias to the ANSI code page
-        codec = codecs.lookup(encoding)
-        self.assertEqual(codec.name, "mbcs")
+        # Check that looking up our 'default' codepage will return
+        # mbcs when we don't have a more specific one available
+        code_page = 99_999
+        name = f'cp{code_page}'
+        with mock.patch('_winapi.GetACP', return_value=code_page):
+            try:
+                codec = codecs.lookup(name)
+                self.assertEqual(codec.name, 'mbcs')
+            finally:
+                codecs.unregister(name)
 
     @support.bigmemtest(size=2**31, memuse=7, dry_run=False)
     def test_large_input(self, size):

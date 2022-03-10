@@ -73,8 +73,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
 
     """
 
-    def __init__(self, *, loop=mixins._marker):
-        super().__init__(loop=loop)
+    def __init__(self):
         self._waiters = None
         self._locked = False
 
@@ -163,8 +162,7 @@ class Event(mixins._LoopBoundMixin):
     false.
     """
 
-    def __init__(self, *, loop=mixins._marker):
-        super().__init__(loop=loop)
+    def __init__(self):
         self._waiters = collections.deque()
         self._value = False
 
@@ -226,8 +224,7 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
     A new Lock object is created and used as the underlying lock.
     """
 
-    def __init__(self, lock=None, *, loop=mixins._marker):
-        super().__init__(loop=loop)
+    def __init__(self, lock=None):
         if lock is None:
             lock = Lock()
 
@@ -344,8 +341,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
     ValueError is raised.
     """
 
-    def __init__(self, value=1, *, loop=mixins._marker):
-        super().__init__(loop=loop)
+    def __init__(self, value=1):
         if value < 0:
             raise ValueError("Semaphore initial value must be >= 0")
         self._value = value
@@ -408,9 +404,9 @@ class BoundedSemaphore(Semaphore):
     above the initial value.
     """
 
-    def __init__(self, value=1, *, loop=mixins._marker):
+    def __init__(self, value=1):
         self._bound_value = value
-        super().__init__(value, loop=loop)
+        super().__init__(value)
 
     def release(self):
         if self._value >= self._bound_value:

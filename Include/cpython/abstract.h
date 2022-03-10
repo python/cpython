@@ -133,7 +133,7 @@ PyAPI_FUNC(PyObject *) _PyObject_CallMethodId_SizeT(PyObject *obj,
 
 PyAPI_FUNC(PyObject *) _PyObject_CallMethodIdObjArgs(
     PyObject *obj,
-    struct _Py_Identifier *name,
+    _Py_Identifier *name,
     ...);
 
 static inline PyObject *
