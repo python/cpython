@@ -2802,14 +2802,6 @@ class GenericTests(BaseTestCase):
         self.assertEqual(deepcopy(ci).attr, 1)
         self.assertEqual(ci.__orig_class__, C[int])
 
-    def test_parameter_propagation(self):
-        # bpo-46581
-        P = ParamSpec('P')
-        original = Callable[P, int]
-        self.assertEqual(original.__parameters__, (P,))
-        copied = original[P]
-        self.assertEqual(original.__parameters__, copied.__parameters__)
-
     def test_weakref_all(self):
         T = TypeVar('T')
         things = [Any, Union[T, int], Callable[..., T], Tuple[Any, Any],
@@ -5800,6 +5792,14 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G1[[int, str], float], List[C])
         self.assertEqual(G2[[int, str], float], list[C])
         self.assertEqual(G3[[int, str], float], list[C] | int)
+
+    def test_paramspec_gets_copied(self):
+        # bpo-46581
+        P = ParamSpec('P')
+        original = Callable[P, int]
+        self.assertEqual(original.__parameters__, (P,))
+        copied = original[P]
+        self.assertEqual(original.__parameters__, copied.__parameters__)
 
 
 class ConcatenateTests(BaseTestCase):
