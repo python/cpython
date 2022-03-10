@@ -3637,7 +3637,7 @@ ignore_attribute_error(PyObject *value)
 _elementtree.XMLParser.__init__
 
     *
-    target: object = NULL
+    target: object = None
     encoding: str(accept={str, NoneType}) = None
 
 [clinic start generated code]*/
@@ -3645,7 +3645,7 @@ _elementtree.XMLParser.__init__
 static int
 _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
                                      const char *encoding)
-/*[clinic end generated code: output=3ae45ec6cdf344e4 input=53e35a829ae043e8]*/
+/*[clinic end generated code: output=3ae45ec6cdf344e4 input=7e716dd6e4f3e439]*/
 {
     self->entity = PyDict_New();
     if (!self->entity)
@@ -3670,7 +3670,7 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
                            (unsigned long)_Py_HashSecret.expat.hashsalt);
     }
 
-    if (target) {
+    if (target != Py_None) {
         Py_INCREF(target);
     } else {
         target = treebuilder_new(&TreeBuilder_Type, NULL, NULL);

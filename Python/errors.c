@@ -10,12 +10,6 @@
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 
-#ifndef __STDC__
-#ifndef MS_WINDOWS
-extern char *strerror(int);
-#endif
-#endif
-
 #include <ctype.h>
 #ifdef MS_WINDOWS
 #  include <windows.h>
