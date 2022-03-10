@@ -2595,13 +2595,13 @@ class SupportsRound(Protocol[T_co]):
         pass
 
 
-def _make_nmtuple(name, types, defaults=(), module=None):
+def _make_nmtuple(name, types, module, defaults = ()):
     fields = [n for n, t in types]
     types = {n: _type_check(t, f"field {n} annotation must be a type")
              for n, t in types}
     nm_tpl = collections.namedtuple(name, fields,
                                     defaults=defaults, module=module)
-    nm_tpl.__annotations__ = dict(types)
+    nm_tpl.__annotations__ = types
     return nm_tpl
 
 
@@ -2625,15 +2625,14 @@ class NamedTupleMeta(type):
             if field_name in ns:
                 default_names.append(field_name)
             elif default_names:
-                raise TypeError("Non-default namedtuple field {field_name} cannot "
-                                "follow default field(s) {default_names}"
-                                .format(field_name=field_name,
-                                        default_names=', '.join(default_names)))
+                raise TypeError(f"Non-default namedtuple field {field_name} "
+                                f"cannot follow default field"
+                                f"{'s' if len(default_names) > 1 else ''} "
+                                f"{', '.join(default_names)}")
 
         nm_tpl = _make_nmtuple(typename, types.items(),
                                defaults=[ns[n] for n in default_names],
                                module=ns['__module__'])
-
         # update from user namespace without overriding special namedtuple attributes
         for key in ns:
             if key in _prohibited:
@@ -2675,7 +2674,7 @@ class NamedTuple(metaclass=NamedTupleMeta):
         elif kwargs:
             raise TypeError("Either list of fields or keywords"
                             " can be provided to NamedTuple, not both")
-        return _make_nmtuple(typename, fields)
+        return _make_nmtuple(typename, fields, module=_caller())
 
 
 class _TypedDictMeta(type):
