@@ -15,10 +15,10 @@
 
 
 /* Compatibility aliases */
-PyObject *PyExc_EnvironmentError = NULL;
-PyObject *PyExc_IOError = NULL;
+PyObject *PyExc_EnvironmentError = NULL;  // borrowed ref
+PyObject *PyExc_IOError = NULL;  // borrowed ref
 #ifdef MS_WINDOWS
-PyObject *PyExc_WindowsError = NULL;
+PyObject *PyExc_WindowsError = NULL;  // borrowed ref
 #endif
 
 
@@ -836,7 +836,12 @@ BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
 {
     assert(self->msg);
     assert(PyUnicode_Check(self->msg));
-    return Py_NewRef(self->msg);
+
+    assert(PyTuple_CheckExact(self->excs));
+    Py_ssize_t num_excs = PyTuple_Size(self->excs);
+    return PyUnicode_FromFormat(
+        "%S (%zd sub-exception%s)",
+        self->msg, num_excs, num_excs > 1 ? "s" : "");
 }
 
 static PyObject *
@@ -1499,16 +1504,14 @@ ImportError_getstate(PyImportErrorObject *self)
 {
     PyObject *dict = ((PyBaseExceptionObject *)self)->dict;
     if (self->name || self->path) {
-        _Py_IDENTIFIER(name);
-        _Py_IDENTIFIER(path);
         dict = dict ? PyDict_Copy(dict) : PyDict_New();
         if (dict == NULL)
             return NULL;
-        if (self->name && _PyDict_SetItemId(dict, &PyId_name, self->name) < 0) {
+        if (self->name && PyDict_SetItem(dict, &_Py_ID(name), self->name) < 0) {
             Py_DECREF(dict);
             return NULL;
         }
-        if (self->path && _PyDict_SetItemId(dict, &PyId_path, self->path) < 0) {
+        if (self->path && PyDict_SetItem(dict, &_Py_ID(path), self->path) < 0) {
             Py_DECREF(dict);
             return NULL;
         }
@@ -3644,10 +3647,8 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
 
 #define INIT_ALIAS(NAME, TYPE) \
     do { \
-        Py_INCREF(PyExc_ ## TYPE); \
-        Py_XDECREF(PyExc_ ## NAME); \
         PyExc_ ## NAME = PyExc_ ## TYPE; \
-        if (PyDict_SetItemString(mod_dict, # NAME, PyExc_ ## NAME)) { \
+        if (PyDict_SetItemString(mod_dict, # NAME, PyExc_ ## TYPE)) { \
             return -1; \
         } \
     } while (0)

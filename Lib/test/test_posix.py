@@ -15,13 +15,17 @@ import signal
 import time
 import os
 import platform
-import pwd
 import stat
 import tempfile
 import unittest
 import warnings
 import textwrap
 from contextlib import contextmanager
+
+try:
+    import pwd
+except ImportError:
+    pwd = None
 
 _DUMMY_SYMLINK = os.path.join(tempfile.gettempdir(),
                               os_helper.TESTFN + '-dummy-symlink')
@@ -71,8 +75,9 @@ class PosixTester(unittest.TestCase):
         for name in NO_ARG_FUNCTIONS:
             posix_func = getattr(posix, name, None)
             if posix_func is not None:
-                posix_func()
-                self.assertRaises(TypeError, posix_func, 1)
+                with self.subTest(name):
+                    posix_func()
+                    self.assertRaises(TypeError, posix_func, 1)
 
     @unittest.skipUnless(hasattr(posix, 'getresuid'),
                          'test needs posix.getresuid()')
@@ -126,6 +131,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'initgroups'),
                          "test needs os.initgroups()")
+    @unittest.skipUnless(hasattr(pwd, 'getpwuid'), "test needs pwd.getpwuid()")
     def test_initgroups(self):
         # It takes a string and an integer; check that it raises a TypeError
         # for other argument lists.
@@ -184,7 +190,7 @@ class PosixTester(unittest.TestCase):
         posix.truncate(os_helper.TESTFN, 0)
 
     @unittest.skipUnless(getattr(os, 'execve', None) in os.supports_fd, "test needs execve() to support the fd parameter")
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     def test_fexecve(self):
         fp = os.open(sys.executable, os.O_RDONLY)
         try:
@@ -199,7 +205,7 @@ class PosixTester(unittest.TestCase):
 
 
     @unittest.skipUnless(hasattr(posix, 'waitid'), "test needs posix.waitid()")
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     def test_waitid(self):
         pid = os.fork()
         if pid == 0:
@@ -209,7 +215,7 @@ class PosixTester(unittest.TestCase):
             res = posix.waitid(posix.P_PID, pid, posix.WEXITED)
             self.assertEqual(pid, res.si_pid)
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     def test_register_at_fork(self):
         with self.assertRaises(TypeError, msg="Positional args not allowed"):
             os.register_at_fork(lambda: None)
@@ -1056,6 +1062,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'getegid'), "test needs os.getegid()")
     @unittest.skipUnless(hasattr(os, 'popen'), "test needs os.popen()")
+    @support.requires_subprocess()
     def test_getgroups(self):
         with os.popen('id -G 2>/dev/null') as idg:
             groups = idg.read().strip()
@@ -1393,7 +1400,10 @@ class TestPosixDirFd(unittest.TestCase):
                     # whoops!  using both together not supported on this platform.
                     pass
 
-    @unittest.skipUnless(os.link in os.supports_dir_fd, "test needs dir_fd support in os.link()")
+    @unittest.skipUnless(
+        hasattr(os, "link") and os.link in os.supports_dir_fd,
+        "test needs dir_fd support in os.link()"
+    )
     def test_link_dir_fd(self):
         with self.prepare_file() as (dir_fd, name, fullname), \
              self.prepare() as (dir_fd2, linkname, fulllinkname):
@@ -1481,7 +1491,7 @@ class TestPosixDirFd(unittest.TestCase):
                 self.addCleanup(posix.unlink, fullname)
                 raise
 
-    @unittest.skipUnless(os.mkfifo in os.supports_dir_fd, "test needs dir_fd support in os.mkfifo()")
+    @unittest.skipUnless(hasattr(os, 'mkfifo') and os.mkfifo in os.supports_dir_fd, "test needs dir_fd support in os.mkfifo()")
     def test_mkfifo_dir_fd(self):
         with self.prepare() as (dir_fd, name, fullname):
             try:

@@ -5,6 +5,7 @@ if __name__ != 'test.support':
 
 import contextlib
 import functools
+import getpass
 import os
 import re
 import stat
@@ -378,10 +379,11 @@ def skip_if_buildbot(reason=None):
     """Decorator raising SkipTest if running on a buildbot."""
     if not reason:
         reason = 'not suitable for buildbots'
-    if sys.platform == 'win32':
-        isbuildbot = os.environ.get('USERNAME') == 'Buildbot'
-    else:
-        isbuildbot = os.environ.get('USER') == 'buildbot'
+    try:
+        isbuildbot = getpass.getuser().lower() == 'buildbot'
+    except (KeyError, EnvironmentError) as err:
+        warnings.warn(f'getpass.getuser() failed {err}.', RuntimeWarning)
+        isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
 
 def check_sanitizer(*, address=False, memory=False, ub=False):
@@ -1276,6 +1278,8 @@ def reap_children():
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
         return
+    elif not has_subprocess_support:
+        return
 
     # Reap all our dead child processes so we don't leave zombies around.
     # These hog resources and might be causing some of the buildbots to die.
@@ -1417,7 +1421,7 @@ def skip_if_buggy_ucrt_strfptime(test):
     global _buggy_ucrt
     if _buggy_ucrt is None:
         if(sys.platform == 'win32' and
-                locale.getdefaultlocale()[1]  == 'cp65001' and
+                locale.getpreferredencoding(False)  == 'cp65001' and
                 time.localtime().tm_zone == ''):
             _buggy_ucrt = True
         else:

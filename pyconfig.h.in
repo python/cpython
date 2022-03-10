@@ -522,6 +522,9 @@
 /* Define to 1 if you have the `getpwnam_r' function. */
 #undef HAVE_GETPWNAM_R
 
+/* Define to 1 if you have the `getpwuid' function. */
+#undef HAVE_GETPWUID
+
 /* Define to 1 if you have the `getpwuid_r' function. */
 #undef HAVE_GETPWUID_R
 
@@ -536,6 +539,9 @@
 
 /* Define to 1 if you have the `getresuid' function. */
 #undef HAVE_GETRESUID
+
+/* Define to 1 if you have the `getrusage' function. */
+#undef HAVE_GETRUSAGE
 
 /* Define to 1 if you have the `getsid' function. */
 #undef HAVE_GETSID

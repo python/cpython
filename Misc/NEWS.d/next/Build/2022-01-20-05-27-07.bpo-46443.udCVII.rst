@@ -1,1 +1,0 @@
-Deepfreeze now uses cached small integers as it saves some space for common small integers.

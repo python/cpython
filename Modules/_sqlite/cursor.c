@@ -129,13 +129,12 @@ _pysqlite_get_converter(pysqlite_state *state, const char *keystr,
     PyObject *key;
     PyObject *upcase_key;
     PyObject *retval;
-    _Py_IDENTIFIER(upper);
 
     key = PyUnicode_FromStringAndSize(keystr, keylen);
     if (!key) {
         return NULL;
     }
-    upcase_key = _PyObject_CallMethodIdNoArgs(key, &PyId_upper);
+    upcase_key = PyObject_CallMethodNoArgs(key, state->str_upper);
     Py_DECREF(key);
     if (!upcase_key) {
         return NULL;
@@ -455,7 +454,7 @@ get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
     return PyObject_Vectorcall(cache, args + 1, nargsf, NULL);
 }
 
-static PyObject *
+PyObject *
 _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation, PyObject* second_argument)
 {
     PyObject* parameters_list = NULL;
@@ -708,13 +707,13 @@ _sqlite3.Cursor.executescript as pysqlite_cursor_executescript
     sql_script: str
     /
 
-Executes multiple SQL statements at once. Non-standard.
+Executes multiple SQL statements at once.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
                                    const char *sql_script)
-/*[clinic end generated code: output=8fd726dde1c65164 input=1ac0693dc8db02a8]*/
+/*[clinic end generated code: output=8fd726dde1c65164 input=78f093be415a8a2c]*/
 {
     if (!check_cursor(self)) {
         return NULL;
@@ -922,12 +921,12 @@ _sqlite3.Cursor.setinputsizes as pysqlite_cursor_setinputsizes
     sizes: object
     /
 
-Required by DB-API. Does nothing in pysqlite.
+Required by DB-API. Does nothing in sqlite3.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_setinputsizes(pysqlite_Cursor *self, PyObject *sizes)
-/*[clinic end generated code: output=893c817afe9d08ad input=7cffbb168663bc69]*/
+/*[clinic end generated code: output=893c817afe9d08ad input=de7950a3aec79bdf]*/
 {
     Py_RETURN_NONE;
 }
@@ -939,13 +938,13 @@ _sqlite3.Cursor.setoutputsize as pysqlite_cursor_setoutputsize
     column: object = None
     /
 
-Required by DB-API. Does nothing in pysqlite.
+Required by DB-API. Does nothing in sqlite3.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_setoutputsize_impl(pysqlite_Cursor *self, PyObject *size,
                                    PyObject *column)
-/*[clinic end generated code: output=018d7e9129d45efe input=077b017da58b9389]*/
+/*[clinic end generated code: output=018d7e9129d45efe input=607a6bece8bbb273]*/
 {
     Py_RETURN_NONE;
 }

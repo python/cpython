@@ -871,7 +871,7 @@ class KeysView(MappingView, Set):
     __slots__ = ()
 
     @classmethod
-    def _from_iterable(self, it):
+    def _from_iterable(cls, it):
         return set(it)
 
     def __contains__(self, key):
@@ -889,7 +889,7 @@ class ItemsView(MappingView, Set):
     __slots__ = ()
 
     @classmethod
-    def _from_iterable(self, it):
+    def _from_iterable(cls, it):
         return set(it)
 
     def __contains__(self, item):

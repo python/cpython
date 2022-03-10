@@ -1904,7 +1904,10 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                 name += "_codec"
             elif encoding == "latin_1":
                 name = "latin_1"
-            self.assertEqual(encoding.replace("_", "-"), name.replace("_", "-"))
+            # Skip the mbcs alias on Windows
+            if name != "mbcs":
+                self.assertEqual(encoding.replace("_", "-"),
+                                 name.replace("_", "-"))
 
             (b, size) = codecs.getencoder(encoding)(s)
             self.assertEqual(size, len(s), "encoding=%r" % encoding)
@@ -3190,9 +3193,14 @@ class CodePageTest(unittest.TestCase):
     def test_mbcs_alias(self):
         # Check that looking up our 'default' codepage will return
         # mbcs when we don't have a more specific one available
-        with mock.patch('_winapi.GetACP', return_value=123):
-            codec = codecs.lookup('cp123')
-            self.assertEqual(codec.name, 'mbcs')
+        code_page = 99_999
+        name = f'cp{code_page}'
+        with mock.patch('_winapi.GetACP', return_value=code_page):
+            try:
+                codec = codecs.lookup(name)
+                self.assertEqual(codec.name, 'mbcs')
+            finally:
+                codecs.unregister(name)
 
     @support.bigmemtest(size=2**31, memuse=7, dry_run=False)
     def test_large_input(self, size):

@@ -162,7 +162,7 @@ interpreter, but they do implement several major features.  See the
 about getting the source for building these libraries.  The sub-projects
 are:
 _bz2
-    Python wrapper for version 1.0.6 of the libbzip2 compression library
+    Python wrapper for version 1.0.8 of the libbzip2 compression library
     Homepage:
         http://www.bzip.org/
 _lzma

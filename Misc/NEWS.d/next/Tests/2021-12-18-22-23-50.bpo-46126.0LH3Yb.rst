@@ -1,1 +1,0 @@
-Disable 'descriptions' when running tests internally.

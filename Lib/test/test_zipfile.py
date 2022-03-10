@@ -1,3 +1,4 @@
+import array
 import contextlib
 import importlib.util
 import io
@@ -22,7 +23,9 @@ from random import randint, random, randbytes
 from test.support import script_helper
 from test.support import (findfile, requires_zlib, requires_bz2,
                           requires_lzma, captured_stdout, requires_subprocess)
-from test.support.os_helper import TESTFN, unlink, rmtree, temp_dir, temp_cwd
+from test.support.os_helper import (
+    TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count
+)
 
 
 TESTFN2 = TESTFN + "2"
@@ -1118,6 +1121,14 @@ class AbstractWriterTests:
             self.assertTrue(w.closed)
             self.assertRaises(ValueError, w.write, b'')
             self.assertEqual(zipf.read('test'), data)
+
+    def test_issue44439(self):
+        q = array.array('Q', [1, 2, 3, 4, 5])
+        LENGTH = len(q) * q.itemsize
+        with zipfile.ZipFile(io.BytesIO(), 'w', self.compression) as zip:
+            with zip.open('data', 'w') as data:
+                self.assertEqual(data.write(q), LENGTH)
+            self.assertEqual(zip.getinfo('data').file_size, LENGTH)
 
 class StoredWriterTests(AbstractWriterTests, unittest.TestCase):
     compression = zipfile.ZIP_STORED
@@ -2539,14 +2550,14 @@ class TestsWithMultipleOpens(unittest.TestCase):
     def test_many_opens(self):
         # Verify that read() and open() promptly close the file descriptor,
         # and don't rely on the garbage collector to free resources.
+        startcount = fd_count()
         self.make_test_archive(TESTFN2)
         with zipfile.ZipFile(TESTFN2, mode="r") as zipf:
             for x in range(100):
                 zipf.read('ones')
                 with zipf.open('ones') as zopen1:
                     pass
-        with open(os.devnull, "rb") as f:
-            self.assertLess(f.fileno(), 100)
+        self.assertEqual(startcount, fd_count())
 
     def test_write_while_reading(self):
         with zipfile.ZipFile(TESTFN2, 'w', zipfile.ZIP_DEFLATED) as zipf:
