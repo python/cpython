@@ -44,27 +44,28 @@ set BUILDZIP=1
 
 
 :CheckOpts
-if "%1" EQU "-h" goto Help
-if "%1" EQU "-c" (set CERTNAME=%~2) && shift && shift && goto CheckOpts
-if "%1" EQU "--certificate" (set CERTNAME=%~2) && shift && shift && goto CheckOpts
-if "%1" EQU "-o" (set OUTDIR=%~2) && shift && shift && goto CheckOpts
-if "%1" EQU "--out" (set OUTDIR=%~2) && shift && shift && goto CheckOpts
-if "%1" EQU "-D" (set SKIPDOC=1) && shift && goto CheckOpts
-if "%1" EQU "--skip-doc" (set SKIPDOC=1) && shift && goto CheckOpts
-if "%1" EQU "-B" (set SKIPBUILD=1) && shift && goto CheckOpts
-if "%1" EQU "--skip-build" (set SKIPBUILD=1) && shift && goto CheckOpts
-if "%1" EQU "--download" (set DOWNLOAD_URL=%~2) && shift && shift && goto CheckOpts
-if "%1" EQU "--test" (set TESTTARGETDIR=%~2) && shift && shift && goto CheckOpts
-if "%1" EQU "-b" (set TARGET=Build) && shift && goto CheckOpts
-if "%1" EQU "--build" (set TARGET=Build) && shift && goto CheckOpts
-if "%1" EQU "-x86" (set BUILDX86=1) && shift && goto CheckOpts
-if "%1" EQU "-x64" (set BUILDX64=1) && shift && goto CheckOpts
-if "%1" EQU "-arm64" (set BUILDARM64=1) && shift && goto CheckOpts
-if "%1" EQU "--pgo" (set PGO=%~2) && shift && shift && goto CheckOpts
-if "%1" EQU "--skip-pgo" (set PGO=) && shift && goto CheckOpts
-if "%1" EQU "--skip-nuget" (set BUILDNUGET=) && shift && goto CheckOpts
-if "%1" EQU "--skip-zip" (set BUILDZIP=) && shift && goto CheckOpts
-if "%1" EQU "--skip-msi" (set BUILDMSI=) && shift && goto CheckOpts
+if    "%1" EQU "-h" goto Help
+if    "%1" EQU "-c" (set CERTNAME=%~2) && shift && shift && goto CheckOpts
+if    "%1" EQU "--certificate" (set CERTNAME=%~2) && shift && shift && goto CheckOpts
+if    "%1" EQU "-o" (set OUTDIR=%~2) && shift && shift && goto CheckOpts
+if    "%1" EQU "--out" (set OUTDIR=%~2) && shift && shift && goto CheckOpts
+if    "%1" EQU "-D" (set SKIPDOC=1) && shift && goto CheckOpts
+if    "%1" EQU "--skip-doc" (set SKIPDOC=1) && shift && goto CheckOpts
+if    "%1" EQU "-B" (set SKIPBUILD=1) && shift && goto CheckOpts
+if    "%1" EQU "--skip-build" (set SKIPBUILD=1) && shift && goto CheckOpts
+if    "%1" EQU "--download" (set DOWNLOAD_URL=%~2) && shift && shift && goto CheckOpts
+if    "%1" EQU "--test" (set TESTTARGETDIR=%~2) && shift && shift && goto CheckOpts
+if    "%1" EQU "-b" (set TARGET=Build) && shift && goto CheckOpts
+if    "%1" EQU "--build" (set TARGET=Build) && shift && goto CheckOpts
+if /I "%1" EQU "-x86" (set BUILDX86=1) && shift && goto CheckOpts
+if /I "%1" EQU "-Win32" (set BUILDX86=1) && shift && goto CheckOpts
+if /I "%1" EQU "-x64" (set BUILDX64=1) && shift && goto CheckOpts
+if /I "%1" EQU "-arm64" (set BUILDARM64=1) && shift && goto CheckOpts
+if    "%1" EQU "--pgo" (set PGO=%~2) && shift && shift && goto CheckOpts
+if    "%1" EQU "--skip-pgo" (set PGO=) && shift && goto CheckOpts
+if    "%1" EQU "--skip-nuget" (set BUILDNUGET=) && shift && goto CheckOpts
+if    "%1" EQU "--skip-zip" (set BUILDZIP=) && shift && goto CheckOpts
+if    "%1" EQU "--skip-msi" (set BUILDMSI=) && shift && goto CheckOpts
 
 if "%1" NEQ "" echo Invalid option: "%1" && exit /B 1
 

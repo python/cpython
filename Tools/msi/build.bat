@@ -12,15 +12,16 @@ set BUILDPACK=
 set REBUILD=
 
 :CheckOpts
-if "%~1" EQU "-h" goto Help
-if "%~1" EQU "-x86" (set BUILDX86=1) && shift && goto CheckOpts
-if "%~1" EQU "-x64" (set BUILDX64=1) && shift && goto CheckOpts
-if "%~1" EQU "-arm64" (set BUILDARM64=1) && shift && goto CheckOpts
-if "%~1" EQU "--doc" (set BUILDDOC=1) && shift && goto CheckOpts
-if "%~1" EQU "--no-test-marker" (set BUILDTEST=) && shift && goto CheckOpts
-if "%~1" EQU "--test-marker" (set BUILDTEST=--test-marker) && shift && goto CheckOpts
-if "%~1" EQU "--pack" (set BUILDPACK=1) && shift && goto CheckOpts
-if "%~1" EQU "-r" (set REBUILD=-r) && shift && goto CheckOpts
+if    "%~1" EQU "-h" goto Help
+if /I "%~1" EQU "-x86" (set BUILDX86=1) && shift && goto CheckOpts
+if /I "%~1" EQU "-Win32" (set BUILDX86=1) && shift && goto CheckOpts
+if /I "%~1" EQU "-x64" (set BUILDX64=1) && shift && goto CheckOpts
+if /I "%~1" EQU "-arm64" (set BUILDARM64=1) && shift && goto CheckOpts
+if    "%~1" EQU "--doc" (set BUILDDOC=1) && shift && goto CheckOpts
+if    "%~1" EQU "--no-test-marker" (set BUILDTEST=) && shift && goto CheckOpts
+if    "%~1" EQU "--test-marker" (set BUILDTEST=--test-marker) && shift && goto CheckOpts
+if    "%~1" EQU "--pack" (set BUILDPACK=1) && shift && goto CheckOpts
+if    "%~1" EQU "-r" (set REBUILD=-r) && shift && goto CheckOpts
 
 if not defined BUILDX86 if not defined BUILDX64 if not defined BUILDARM64 (set BUILDX86=1) && (set BUILDX64=1)
 
