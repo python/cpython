@@ -24,6 +24,12 @@ interpreter.
       Use 2 bytes for each instruction. Previously the number of bytes varied
       by instruction.
 
+   .. versionchanged:: 3.11
+      Some instructions are accompanied by one or more inline cache entries,
+      which take the form of :opcode:`CACHE` instructions. These instructions
+      are hidden by default, but can be shown by passing ``show_caches=True`` to
+      any :mod:`dis` utility.
+
 
 Example: Given the function :func:`myfunc`::
 
@@ -34,10 +40,14 @@ the following command can be used to display the disassembly of
 :func:`myfunc`::
 
    >>> dis.dis(myfunc)
-     2           0 LOAD_GLOBAL              0 (len)
-                 2 LOAD_FAST                0 (alist)
-                 4 CALL_NO_KW               1
-                 6 RETURN_VALUE
+     1           0 RESUME                   0
+
+     2           2 PUSH_NULL
+                 4 LOAD_GLOBAL              0 (len)
+                 6 LOAD_FAST                0 (alist)
+                 8 PRECALL                  1
+                10 CALL                     1
+                12 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -50,7 +60,7 @@ The bytecode analysis API allows pieces of Python code to be wrapped in a
 :class:`Bytecode` object that provides easy access to details of the compiled
 code.
 
-.. class:: Bytecode(x, *, first_line=None, current_offset=None)
+.. class:: Bytecode(x, *, first_line=None, current_offset=None, show_caches=False)
 
 
    Analyse the bytecode corresponding to a function, generator, asynchronous
@@ -70,7 +80,7 @@ code.
    disassembled code. Setting this means :meth:`.dis` will display a "current
    instruction" marker against the specified opcode.
 
-   .. classmethod:: from_traceback(tb)
+   .. classmethod:: from_traceback(tb, *, show_caches=False)
 
       Construct a :class:`Bytecode` instance from the given traceback, setting
       *current_offset* to the instruction responsible for the exception.
@@ -96,15 +106,21 @@ code.
    .. versionchanged:: 3.7
       This can now handle coroutine and asynchronous generator objects.
 
+   .. versionchanged:: 3.11
+      Added the ``show_caches`` parameter.
+
 Example::
 
     >>> bytecode = dis.Bytecode(myfunc)
     >>> for instr in bytecode:
     ...     print(instr.opname)
     ...
+    RESUME
+    PUSH_NULL
     LOAD_GLOBAL
     LOAD_FAST
-    CALL_NO_KW
+    PRECALL
+    CALL
     RETURN_VALUE
 
 
@@ -146,7 +162,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added *file* parameter.
 
 
-.. function:: dis(x=None, *, file=None, depth=None)
+.. function:: dis(x=None, *, file=None, depth=None, show_caches=False)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
    method, a function, a generator, an asynchronous generator, a coroutine,
@@ -176,8 +192,11 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.7
       This can now handle coroutine and asynchronous generator objects.
 
+   .. versionchanged:: 3.11
+      Added the ``show_caches`` parameter.
 
-.. function:: distb(tb=None, *, file=None)
+
+.. function:: distb(tb=None, *, file=None, show_caches=False)
 
    Disassemble the top-of-stack function of a traceback, using the last
    traceback if none was passed.  The instruction causing the exception is
@@ -189,9 +208,12 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.4
       Added *file* parameter.
 
+   .. versionchanged:: 3.11
+      Added the ``show_caches`` parameter.
 
-.. function:: disassemble(code, lasti=-1, *, file=None)
-              disco(code, lasti=-1, *, file=None)
+
+.. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False)
+              disco(code, lasti=-1, *, file=None, show_caches=False)
 
    Disassemble a code object, indicating the last instruction if *lasti* was
    provided.  The output is divided in the following columns:
@@ -213,8 +235,11 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.4
       Added *file* parameter.
 
+   .. versionchanged:: 3.11
+      Added the ``show_caches`` parameter.
 
-.. function:: get_instructions(x, *, first_line=None)
+
+.. function:: get_instructions(x, *, first_line=None, show_caches=False)
 
    Return an iterator over the instructions in the supplied function, method,
    source code string or code object.
@@ -228,6 +253,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
    object.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.11
+      Added the ``show_caches`` parameter.
 
 
 .. function:: findlinestarts(code)
@@ -316,7 +344,29 @@ details of bytecode instructions as :class:`Instruction` instances:
 
       ``True`` if other code jumps to here, otherwise ``False``
 
+
+   .. data:: positions
+
+      :class:`dis.Positions` object holding the
+      start and end locations that are covered by this instruction.
+
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.11
+
+      Field ``positions`` is added.
+
+
+.. class:: Positions
+
+   In case the information is not available, some fields might be `None`.
+
+   .. data:: lineno
+   .. data:: end_lineno
+   .. data:: col_offset
+   .. data:: end_col_offset
+
+   .. versionadded:: 3.11
 
 
 The Python compiler currently generates the following bytecode instructions.
@@ -326,7 +376,8 @@ The Python compiler currently generates the following bytecode instructions.
 
 .. opcode:: NOP
 
-   Do nothing code.  Used as a placeholder by the bytecode optimizer.
+   Do nothing code.  Used as a placeholder by the bytecode optimizer, and to
+   generate line tracing events.
 
 
 .. opcode:: POP_TOP
@@ -334,38 +385,19 @@ The Python compiler currently generates the following bytecode instructions.
    Removes the top-of-stack (TOS) item.
 
 
-.. opcode:: ROT_TWO
+.. opcode:: COPY (i)
 
-   Swaps the two top-most stack items.
+   Push the *i*-th item to the top of the stack. The item is not removed from its
+   original location.
 
-
-.. opcode:: ROT_THREE
-
-   Lifts second and third stack item one position up, moves top down to position
-   three.
+   .. versionadded:: 3.11
 
 
-.. opcode:: ROT_FOUR
+.. opcode:: SWAP (i)
 
-   Lifts second, third and fourth stack items one position up, moves top down
-   to position four.
+   Swap TOS with the item at position *i*.
 
-   .. versionadded:: 3.8
-
-
-.. opcode:: DUP_TOP
-
-   Duplicates the reference on top of the stack.
-
-   .. versionadded:: 3.2
-
-
-.. opcode:: DUP_TOP_TWO
-
-   Duplicates the two references on top of the stack, leaving them in the
-   same order.
-
-   .. versionadded:: 3.2
+   .. versionadded:: 3.11
 
 
 **Unary operations**
@@ -443,14 +475,23 @@ the original TOS1.
 
 **Coroutine opcodes**
 
-.. opcode:: GET_AWAITABLE
+.. opcode:: GET_AWAITABLE (where)
 
    Implements ``TOS = get_awaitable(TOS)``, where ``get_awaitable(o)``
    returns ``o`` if ``o`` is a coroutine object or a generator object with
    the CO_ITERABLE_COROUTINE flag, or resolves
    ``o.__await__``.
 
+    If the ``where`` operand is nonzero, it indicates where the instruction
+    occurs:
+
+    * ``1`` After a call to ``__aenter__``
+    * ``2`` After a call to ``__aexit__``
+
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.11
+      Previously, this instruction did not have an oparg.
 
 
 .. opcode:: GET_AITER
@@ -596,8 +637,6 @@ iterations of the loop.
     has occurred in a :keyword:`with` statement.
 
     .. versionadded:: 3.9
-    .. versionchanged:: 3.11
-       The ``__exit__`` function is in position 8 of the stack rather than 7.
 
     .. versionchanged:: 3.11
        The ``__exit__`` function is in position 4 of the stack rather than 7.
@@ -615,7 +654,7 @@ iterations of the loop.
 .. opcode:: LOAD_BUILD_CLASS
 
    Pushes :func:`builtins.__build_class__` onto the stack.  It is later called
-   by :opcode:`CALL_NO_KW` to construct a class.
+   to construct a class.
 
 
 .. opcode:: BEFORE_WITH (delta)
@@ -668,8 +707,6 @@ iterations of the loop.
       Previously, this instruction also pushed a boolean value indicating
       success (``True``) or failure (``False``).
 
-
-All of the following opcodes use their arguments.
 
 .. opcode:: STORE_NAME (namei)
 
@@ -942,6 +979,13 @@ All of the following opcodes use their arguments.
    Set bytecode counter to *target*.
 
 
+.. opcode:: JUMP_NO_INTERRUPT (target)
+
+   Set bytecode counter to *target*. Do not check for interrupts.
+
+   .. versionadded:: 3.11
+
+
 .. opcode:: FOR_ITER (delta)
 
    TOS is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.  If
@@ -1051,30 +1095,29 @@ All of the following opcodes use their arguments.
      with ``__cause__`` set to ``TOS``)
 
 
-.. opcode:: CALL_NO_KW (argc)
+.. opcode:: CALL (argc)
 
-   Calls a callable object with positional arguments.
-   *argc* indicates the number of positional arguments.
-   The top of the stack contains positional arguments, with the right-most
-   argument on top.  Below the arguments is a callable object to call.
-   ``CALL_NO_KW`` pops all arguments and the callable object off the stack,
-   calls the callable object with those arguments, and pushes the return value
-   returned by the callable object.
+   Calls a callable object with the number of arguments specified by ``argc``,
+   including the named arguments specified by the preceding
+   :opcode:`KW_NAMES`, if any.
+   On the stack are (in ascending order), either:
 
-   .. versionadded:: 3.11
+   * NULL
+   * The callable
+   * The positional arguments
+   * The named arguments
 
+   or:
 
-.. opcode:: CALL_KW (argc)
+   * The callable
+   * ``self``
+   * The remaining positional arguments
+   * The named arguments
 
-   Calls a callable object with positional (if any) and keyword arguments.
-   *argc* indicates the total number of positional and keyword arguments.
-   The top element on the stack contains a tuple with the names of the
-   keyword arguments, which must be strings.
-   Below that are the values for the keyword arguments,
-   in the order corresponding to the tuple.
-   Below that are positional arguments, with the right-most parameter on
-   top.  Below the arguments is a callable object to call.
-   ``CALL_KW`` pops all arguments and the callable object off the stack,
+   ``argc`` is the total of the positional and named arguments, excluding
+   ``self`` when a ``NULL`` is not present.
+
+   ``CALL`` pops all arguments and the callable object off the stack,
    calls the callable object with those arguments, and pushes the return value
    returned by the callable object.
 
@@ -1101,19 +1144,36 @@ All of the following opcodes use their arguments.
    Loads a method named ``co_names[namei]`` from the TOS object. TOS is popped.
    This bytecode distinguishes two cases: if TOS has a method with the correct
    name, the bytecode pushes the unbound method and TOS. TOS will be used as
-   the first argument (``self``) by :opcode:`CALL_METHOD` when calling the
+   the first argument (``self``) by :opcode:`CALL` when calling the
    unbound method. Otherwise, ``NULL`` and the object return by the attribute
    lookup are pushed.
 
    .. versionadded:: 3.7
 
 
-.. opcode:: PRECALL_METHOD (argc)
+.. opcode:: PRECALL (argc)
 
-   Prefixes either :opcode:`CALL_NO_KW` or :opcode:`CALL_KW`.
-   This opcode is designed to be used with :opcode:`LOAD_METHOD`.
-   Sets internal variables, so that :opcode:`CALL_NO_KW` or :opcode:`CALL_KW`
-   clean up after :opcode:`LOAD_METHOD` correctly.
+   Prefixes :opcode:`CALL`. Logically this is a no op.
+   It exists to enable effective specialization of calls.
+   ``argc`` is the number of arguments as described in :opcode:`CALL`.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: PUSH_NULL
+
+    Pushes a ``NULL`` to the stack.
+    Used in the call sequence to match the ``NULL`` pushed by
+    :opcode:`LOAD_METHOD` for non-method calls.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: KW_NAMES (i)
+
+   Prefixes :opcode:`PRECALL`.
+   Stores a reference to ``co_consts[consti]`` into an internal variable
+   for use by :opcode:`CALL`. ``co_consts[consti]`` must be a tuple of strings.
 
    .. versionadded:: 3.11
 
@@ -1190,22 +1250,6 @@ All of the following opcodes use their arguments.
       success (``True``) or failure (``False``).
 
 
-.. opcode:: ROT_N (count)
-
-   Lift the top *count* stack items one position up, and move TOS down to
-   position *count*.
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: COPY (i)
-
-   Push the *i*-th item to the top of the stack. The item is not removed from its
-   original location.
-
-   .. versionadded:: 3.11
-
-
 .. opcode:: RESUME (where)
 
     A no-op. Performs internal tracing, debugging and optimization checks.
@@ -1218,6 +1262,30 @@ All of the following opcodes use their arguments.
     * ``3`` After an ``await`` expression
 
    .. versionadded:: 3.11
+
+
+.. opcode:: RETURN_GENERATOR
+
+    Create a generator, coroutine, or async generator from the current frame.
+    Clear the current frame and return the newly created generator.
+
+    .. versionadded:: 3.11
+
+
+.. opcode:: SEND
+
+    Sends ``None`` to the sub-generator of this generator.
+    Used in ``yield from`` and ``await`` statements.
+
+    .. versionadded:: 3.11
+
+
+.. opcode:: ASYNC_GEN_WRAP
+
+    Wraps the value on top of the stack in an ``async_generator_wrapped_value``.
+    Used to yield in async generators.
+
+    .. versionadded:: 3.11
 
 
 .. opcode:: HAVE_ARGUMENT

@@ -39,7 +39,6 @@ struct PyMethodDef {
                                describe the args expected by the C func */
     const char  *ml_doc;    /* The __doc__ attribute, or NULL */
 };
-typedef struct PyMethodDef PyMethodDef;
 
 /* PyCFunction_New is declared as a function for stable ABI (declaration is
  * needed for e.g. GCC with -fvisibility=hidden), but redefined as a macro

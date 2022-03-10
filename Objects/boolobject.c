@@ -1,26 +1,15 @@
 /* Boolean type, a subtype of int */
 
 #include "Python.h"
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
 
 /* We define bool_repr to return "False" or "True" */
 
-static PyObject *false_str = NULL;
-static PyObject *true_str = NULL;
-
 static PyObject *
 bool_repr(PyObject *self)
 {
-    PyObject *s;
-
-    if (self == Py_True)
-        s = true_str ? true_str :
-            (true_str = PyUnicode_InternFromString("True"));
-    else
-        s = false_str ? false_str :
-            (false_str = PyUnicode_InternFromString("False"));
-    Py_XINCREF(s);
-    return s;
+    return self == Py_True ? &_Py_ID(True) : &_Py_ID(False);
 }
 
 /* Function to return a bool from a C long */

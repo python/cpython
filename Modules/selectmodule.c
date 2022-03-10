@@ -570,6 +570,8 @@ select_poll_unregister_impl(pollObject *self, int fd)
 select.poll.poll
 
     timeout as timeout_obj: object = None
+      The maximum time to wait in milliseconds, or else None (or a negative
+      value) to wait indefinitely.
     /
 
 Polls the set of registered file descriptors.
@@ -580,7 +582,7 @@ report, as a list of (fd, event) 2-tuples.
 
 static PyObject *
 select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=876e837d193ed7e4 input=7a446ed45189e894]*/
+/*[clinic end generated code: output=876e837d193ed7e4 input=c2f6953ec45e5622]*/
 {
     PyObject *result_list = NULL;
     int poll_result, i, j;
@@ -894,6 +896,8 @@ select_devpoll_unregister_impl(devpollObject *self, int fd)
 /*[clinic input]
 select.devpoll.poll
     timeout as timeout_obj: object = None
+      The maximum time to wait in milliseconds, or else None (or a negative
+      value) to wait indefinitely.
     /
 
 Polls the set of registered file descriptors.
@@ -904,7 +908,7 @@ report, as a list of (fd, event) 2-tuples.
 
 static PyObject *
 select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=2654e5457cca0b3c input=fd0db698d84f0333]*/
+/*[clinic end generated code: output=2654e5457cca0b3c input=3c3f0a355ec2bedb]*/
 {
     struct dvpoll dvp;
     PyObject *result_list = NULL;

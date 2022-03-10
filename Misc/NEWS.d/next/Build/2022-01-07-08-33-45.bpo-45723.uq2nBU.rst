@@ -1,1 +1,0 @@
-Fixed a regression in ``configure`` check for :func:`select.epoll`.

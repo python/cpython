@@ -230,6 +230,7 @@ class PyCompileCLITestCase(unittest.TestCase):
     def tearDown(self):
         os_helper.rmtree(self.directory)
 
+    @support.requires_subprocess()
     def pycompilecmd(self, *args, **kwargs):
         # assert_python_* helpers don't return proc object. We'll just use
         # subprocess.run() instead of spawn_python() and its friends to test

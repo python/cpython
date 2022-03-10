@@ -17,6 +17,8 @@ import sysconfig
 import tempfile
 import textwrap
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 MS_WINDOWS = (os.name == 'nt')
 MACOS = (sys.platform == 'darwin')
@@ -32,7 +34,7 @@ API_PYTHON = 2
 # _PyCoreConfig_InitIsolatedConfig()
 API_ISOLATED = 3
 
-INIT_LOOPS = 16
+INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
 
 
@@ -328,6 +330,18 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_run_main_loop")
         self.assertEqual(out, "Py_RunMain(): sys.argv=['-c', 'arg2']\n" * nloop)
         self.assertEqual(err, '')
+
+    def test_finalize_structseq(self):
+        # bpo-46417: Py_Finalize() clears structseq static types. Check that
+        # sys attributes using struct types still work when
+        # Py_Finalize()/Py_Initialize() is called multiple times.
+        # print() calls type->tp_repr(instance) and so checks that the types
+        # are still working properly.
+        script = support.findfile('_test_embed_structseq.py')
+        with open(script, encoding="utf-8") as fp:
+            code = fp.read()
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
 
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
@@ -1419,7 +1433,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         ]
         out, err = self.run_embedded_interpreter(
             "test_init_initialize_config",
-            env=dict(PYTHONPATH=os.path.pathsep.join(c[0] for c in CASES))
+            env={**remove_python_envvars(),
+                 "PYTHONPATH": os.path.pathsep.join(c[0] for c in CASES)}
         )
         self.assertEqual(err, "")
         try:
@@ -1625,6 +1640,29 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
             config buffered_stdio: 0
         """).lstrip()
         self.assertEqual(out, expected)
+
+    @unittest.skipUnless(hasattr(sys, 'gettotalrefcount'),
+                         '-X showrefcount requires a Python debug build')
+    def test_no_memleak(self):
+        # bpo-1635741: Python must release all memory at exit
+        cmd = [sys.executable, "-I", "-X", "showrefcount", "-c", "pass"]
+        proc = subprocess.run(cmd,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              text=True)
+        self.assertEqual(proc.returncode, 0)
+        out = proc.stdout.rstrip()
+        match = re.match(r'^\[(-?\d+) refs, (-?\d+) blocks\]', out)
+        if not match:
+            self.fail(f"unexpected output: {out!a}")
+        refs = int(match.group(1))
+        blocks = int(match.group(2))
+        self.assertEqual(refs, 0, out)
+        if not MS_WINDOWS:
+            self.assertEqual(blocks, 0, out)
+        else:
+            # bpo-46857: on Windows, Python still leaks 1 memory block at exit
+            self.assertIn(blocks, (0, 1), out)
 
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):

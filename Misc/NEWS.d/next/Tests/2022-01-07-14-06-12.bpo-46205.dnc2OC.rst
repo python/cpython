@@ -1,1 +1,0 @@
-Fix hang in runtest_mp due to race condition
