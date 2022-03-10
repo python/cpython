@@ -933,7 +933,7 @@ list_extend(PyListObject *self, PyObject *iterable)
          * eventually run out of memory during the loop.
          */
     }
-    else if (self->ob_item == NULL) {
+    else if (n && self->ob_item == NULL) {
         if (list_preallocate_exact(self, n) < 0)
             goto error;
     }
