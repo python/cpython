@@ -1262,6 +1262,11 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             # complexity of typing.py).
             _check_generic(self, args, len(self.__parameters__))
 
+        if any(isinstance(p, TypeVarTuple) for p in self.__parameters__):
+            # Determining the new type arguments is hard if `TypeVarTuple`s are
+            # involved, so we leave arguments unsubstituted.
+            return _UnsubstitutedGenericAlias(generic_alias=self, args=args)
+
         new_args = self._determine_new_args(args)
         r = self.copy_with(new_args)
         return r
@@ -1281,10 +1286,6 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         # anything more exotic than a plain `TypeVar`, we need to consider
         # edge cases.
 
-        if any(isinstance(p, TypeVarTuple) for p in self.__parameters__):
-            raise NotImplementedError(
-                "Type substitution for TypeVarTuples is not yet implemented"
-            )
         # In the example above, this would be {T3: str}
         new_arg_by_param = dict(zip(self.__parameters__, args))
 
@@ -1384,6 +1385,53 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 
     def __iter__(self):
         yield Unpack[self]
+
+
+class _UnsubstitutedGenericAlias:
+    """A generic alias whose type arguments have not been substituted.
+
+    For example, suppose we defined a class `C` such that:
+
+        >>> T1 = TypeVar('T1')
+        >>> T2 = TypeVar('T2')
+        >>> Ts = TypeVar('Ts')
+        >>> class C(Generic[T1, T2, *Ts]): ...
+
+    We could then define a generic alias `A` using this class:
+
+        >>> A = C[T1, int, *Ts]
+        >>> repr(A)
+        C[T1, int, *Ts]
+
+    However, when we then do
+
+        >>> B = A[str, float]
+
+    we need to figure out that the new argument list to `C` is
+    [str, int, float], and for that we need to figure out how to substitute
+    the type arguments `(str, float)` into the remaining free type variables
+    `(T1, *Ts)`.
+
+    This turns out to be rather complicated when `TypeVarTuple`s are involved,
+    so to reduce complexity in typing.py, we instead leave the expression
+    unsubstituted, returning an `_UnsubstitutedGenericAlias` whose repr()
+    is:
+
+        >>> repr(B)
+        C[int, T2, *Ts][str, float]
+    """
+
+    def __init__(self, generic_alias, args):
+        self._generic_alias = generic_alias
+        self._args = args
+
+    def __repr__(self):
+        if self._args:
+            args = ", ".join([_type_repr(a) for a in self._args])
+        else:
+            # To ensure the repr is eval-able.
+            args = "()"
+        return '{}[{}]'.format(repr(self._generic_alias), args)
 
 
 # _nparams is the number of accepted parameters, e.g. 0 for Hashable,

@@ -390,6 +390,10 @@ class UnpackTests(BaseTestCase):
 
 class TypeVarTupleTests(BaseTestCase):
 
+    def assertEndsWith(self, string, tail):
+        if not string.endswith(tail):
+            self.fail(f"String {string!r} does not end with {tail!r}")
+
     def test_instance_is_equal_to_itself(self):
         Ts = TypeVarTuple('Ts')
         self.assertEqual(Ts, Ts)
@@ -449,78 +453,74 @@ class TypeVarTupleTests(BaseTestCase):
         Ts = TypeVarTuple('Ts')
         class A(Generic[Unpack[Ts]]): pass
 
-        self.assertTrue(repr(A[()]).endswith('A[()]'))
-        self.assertTrue(repr(A[float]).endswith('A[float]'))
-        self.assertTrue(repr(A[float, str]).endswith('A[float, str]'))
-        self.assertTrue(repr(
-            A[Unpack[tuple[int, ...]]]
-        ).endswith(
+        self.assertEndsWith(repr(A[()]), 'A[()]')
+        self.assertEndsWith(repr(A[float]), 'A[float]')
+        self.assertEndsWith(repr(A[float, str]), 'A[float, str]')
+        self.assertEndsWith(
+            repr( A[Unpack[tuple[int, ...]]]),
             'A[*tuple[int, ...]]'
-        ))
-        self.assertTrue(repr(
-            A[float, Unpack[tuple[int, ...]]]
-        ).endswith(
+        )
+        self.assertEndsWith(
+            repr(A[float, Unpack[tuple[int, ...]]]),
             'A[float, *tuple[int, ...]]'
-        ))
-        self.assertTrue(repr(
-            A[Unpack[tuple[int, ...]], str]
-        ).endswith(
+        )
+        self.assertEndsWith(
+            repr(A[Unpack[tuple[int, ...]], str]),
             'A[*tuple[int, ...], str]'
-        ))
-        self.assertTrue(repr(
-            A[float, Unpack[tuple[int, ...]], str]
-        ).endswith(
+        )
+        self.assertEndsWith(
+            repr(A[float, Unpack[tuple[int, ...]], str]),
             'A[float, *tuple[int, ...], str]'
-        ))
+        )
 
-    def test_variadic_class_alias_repr_is_correct(self):
+    def test_single_parameters_variadic_class_alias_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
         class A(Generic[Unpack[Ts]]): pass
 
         B = A[Unpack[Ts]]
-        self.assertTrue(repr(B).endswith('A[*Ts]'))
-        with self.assertRaises(NotImplementedError):
-            B[()]
-        with self.assertRaises(NotImplementedError):
-            B[float]
-        with self.assertRaises(NotImplementedError):
-            B[float, str]
+        self.assertEndsWith(repr(B), 'A[*Ts]')
+        self.assertEndsWith(repr(B[()]), 'A[*Ts][()]')
+        self.assertEndsWith(repr(B[float]), 'A[*Ts][float]')
+        self.assertEndsWith(repr(B[float, str]), 'A[*Ts][float, str]')
 
         C = A[Unpack[Ts], int]
-        self.assertTrue(repr(C).endswith('A[*Ts, int]'))
-        with self.assertRaises(NotImplementedError):
-            C[()]
-        with self.assertRaises(NotImplementedError):
-            C[float]
-        with self.assertRaises(NotImplementedError):
-            C[float, str]
+        self.assertEndsWith(repr(C), 'A[*Ts, int]')
+        self.assertEndsWith(repr(C[()]), 'A[*Ts, int][()]')
+        self.assertEndsWith(repr(C[float]), 'A[*Ts, int][float]')
+        self.assertEndsWith(repr(C[float, str]), 'A[*Ts, int][float, str]')
 
         D = A[int, Unpack[Ts]]
-        self.assertTrue(repr(D).endswith('A[int, *Ts]'))
-        with self.assertRaises(NotImplementedError):
-            D[()]
-        with self.assertRaises(NotImplementedError):
-            D[float]
-        with self.assertRaises(NotImplementedError):
-            D[float, str]
+        self.assertEndsWith(repr(D), 'A[int, *Ts]')
+        self.assertEndsWith(repr(D[()]), 'A[int, *Ts][()]')
+        self.assertEndsWith(repr(D[float]), 'A[int, *Ts][float]')
+        self.assertEndsWith(repr(D[float, str]), 'A[int, *Ts][float, str]')
 
         E = A[int, Unpack[Ts], str]
-        self.assertTrue(repr(E).endswith('A[int, *Ts, str]'))
-        with self.assertRaises(NotImplementedError):
-            E[()]
-        with self.assertRaises(NotImplementedError):
-            E[float]
-        with self.assertRaises(NotImplementedError):
-            E[float, bool]
+        self.assertEndsWith(repr(E), 'A[int, *Ts, str]')
+        self.assertEndsWith(repr(E[()]), 'A[int, *Ts, str][()]')
+        self.assertEndsWith(repr(E[float]), 'A[int, *Ts, str][float]')
+        self.assertEndsWith(
+            repr(E[float, bool]),
+            'A[int, *Ts, str][float, bool]'
+        )
 
         F = A[Unpack[Ts], Unpack[tuple[str, ...]]]
-        self.assertTrue(repr(F).endswith('A[*Ts, *tuple[str, ...]]'))
-        with self.assertRaises(NotImplementedError):
-            F[()]
-        with self.assertRaises(NotImplementedError):
-            F[float]
-        with self.assertRaises(NotImplementedError):
-            F[float, int]
+        self.assertEndsWith(repr(F), 'A[*Ts, *tuple[str, ...]]')
+        self.assertEndsWith(repr(F[()]), 'A[*Ts, *tuple[str, ...]][()]')
+        self.assertEndsWith(repr(F[float]), 'A[*Ts, *tuple[str, ...]][float]')
+        self.assertEndsWith(
+            repr(F[float, int]),
+            'A[*Ts, *tuple[str, ...]][float, int]'
+        )
+
+        G = A[T, Unpack[Ts]]
+        self.assertEndsWith(repr(G), 'A[~T, *Ts]')
+        self.assertEndsWith(repr(G[()]), 'A[~T, *Ts][()]')
+        self.assertEndsWith(repr(G[float]), 'A[~T, *Ts][float]')
+        self.assertEndsWith(
+            repr(G[float, int]),
+            'A[~T, *Ts][float, int]'
+        )
 
     def test_cannot_subclass_class(self):
         with self.assertRaises(TypeError):
