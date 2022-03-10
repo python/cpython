@@ -7961,7 +7961,7 @@ typedef struct wrapperbase slotdef;
            NAME "($self, /)\n--\n\n" DOC)
 #define IBSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, \
-           NAME "($self, value, /)\n--\n\nReturn self" DOC "value.")
+           NAME "($self, value, /)\n--\n\nCompute self " DOC " value.")
 #define BINSLOT(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_l, \
            NAME "($self, value, /)\n--\n\nReturn self" DOC "value.")
