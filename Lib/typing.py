@@ -2603,7 +2603,7 @@ def _make_nmtuple(name, types, module, defaults = ()):
                                     defaults=defaults, module=module)
     nm_tpl.__annotations__ = types
     nm_tpl.__new__.__annotations__ = types
-    nm_tpl.__new__.__defaults__ = defaults
+    nm_tpl.__new__.__defaults__ = tuple(defaults)
     return nm_tpl
 
 
