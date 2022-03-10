@@ -292,7 +292,7 @@ class Reader:
             retval.co_columntable = self.r_object()
             retval.co_exceptiontable = self.r_object()
             n = self.r_long()
-            retval.co_code = self.r_string(n * 2)
+            retval.co_code = self.r_string(n)
             return retval
         elif type == Type.REF:
             n = self.r_long()

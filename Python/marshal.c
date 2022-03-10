@@ -563,7 +563,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_endlinetable, p);
         w_object(co->co_columntable, p);
         w_object(co->co_exceptiontable, p);
-        w_pstring(co->co_quickened, _PyCode_GET_SIZE(co), p);
+        w_pstring(co->co_bytecode, _PyCode_GET_SIZE(co), p);
     }
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown bytes-like objects as a bytes object */
@@ -1418,10 +1418,10 @@ r_object(RFILE *p)
             if (exceptiontable == NULL)
                 goto code_error;
             n = r_long(p);
-            if (size == -1 && PyErr_Occurred()) {
+            if (n == -1 && PyErr_Occurred()) {
                 break;
             }
-            const char *quickened = r_pstring(n, p);
+            const char *quickened = r_string(n, p);
             if (quickened == NULL) {
                 break;
             }
