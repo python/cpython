@@ -43,6 +43,8 @@ class Runner:
 
     def close(self):
         """Shutdown and close event loop."""
+        if self._loop is None:
+            return
         try:
             _cancel_all_tasks(self._loop)
             self._loop.run_until_complete(self._loop.shutdown_asyncgens())

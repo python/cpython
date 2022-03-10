@@ -186,5 +186,70 @@ class RunTests(BaseTest):
         self.assertFalse(spinner.ag_running)
 
 
+class RunnerTests(BaseTest):
+
+    def test_non_debug(self):
+        with asyncio.Runner(debug=False) as runner:
+            self.assertFalse(runner.get_loop().get_debug())
+
+    def test_debug(self):
+        with asyncio.Runner(debug=True) as runner:
+            self.assertTrue(runner.get_loop().get_debug())
+
+    def test_custom_factory(self):
+        loop = mock.Mock()
+        with asyncio.Runner(factory=lambda: loop) as runner:
+            self.assertIs(runner.get_loop(), loop)
+
+    def test_run(self):
+        async def f():
+            await asyncio.sleep(0)
+            return 'done'
+
+        with asyncio.Runner() as runner:
+            self.assertEqual('done', runner.run(f()))
+            loop = runner.get_loop()
+
+        self.assertIsNone(runner.get_loop())
+        self.assertTrue(loop.is_closed())
+
+    def test_run_non_coro(self):
+        with asyncio.Runner() as runner:
+            with self.assertRaisesRegex(
+                ValueError,
+                "a coroutine was expected"
+            ):
+                runner.run(123)
+
+    def test_run_future(self):
+        with asyncio.Runner() as runner:
+            with self.assertRaisesRegex(
+                ValueError,
+                "a coroutine was expected"
+            ):
+                fut = runner.get_loop().create_future()
+                runner.run(fut)
+
+    def test_explicit_close(self):
+        runner = asyncio.Runner()
+        loop = runner.get_loop()
+        runner.close()
+
+        self.assertIsNone(runner.get_loop())
+        self.assertTrue(loop.is_closed())
+
+    def test_double_close(self):
+        runner = asyncio.Runner()
+        loop = runner.get_loop()
+
+        runner.close()
+        self.assertIsNone(runner.get_loop())
+        self.assertTrue(loop.is_closed())
+
+        runner.close()
+        self.assertIsNone(runner.get_loop())
+        self.assertTrue(loop.is_closed())
+
+
 if __name__ == '__main__':
     unittest.main()
