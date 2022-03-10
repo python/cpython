@@ -281,6 +281,7 @@ _Py_PrintSpecializationStats(int to_file)
 void
 _Py_Quicken(PyCodeObject *code)
 {
+    assert(code->co_warmup == 0);
     _Py_QuickenedCount++;
     int previous_opcode = -1;
     int previous_oparg = -1;
@@ -342,12 +343,10 @@ _Py_Quicken(PyCodeObject *code)
 }
 
 void
-_Py_SetCountAndUnquicken(PyCodeObject *code)
+_Py_Unquicken(PyCodeObject *code)
 {
-    code->co_warmup = QUICKENING_WARMUP_DELAY;
-    // if (!code->co_quickened) {
-    //     return;
-    // }
+    assert(code->co_warmup == QUICKENING_INITIAL_WARMUP_VALUE);
+    _Py_QuickenedCount--;
     _Py_CODEUNIT *instructions = _PyCode_GET_CODE(code);
     for (int i = 0; i < Py_SIZE(code); i++) {
         int opcode = _Py_OPCODE(instructions[i]);

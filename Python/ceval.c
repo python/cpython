@@ -1325,6 +1325,10 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define SKIP_CALL() \
     JUMPBY(INLINE_CACHE_ENTRIES_PRECALL + 1 + INLINE_CACHE_ENTRIES_CALL)
 
+#define TRACING_NEXTOPARG()  do { \
+        _Py_SetCountAndUnquicken(frame->f_code); \
+        NEXTOPARG(); \
+    } while (0)
 
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
@@ -1562,6 +1566,7 @@ trace_function_exit(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject 
 static int
 skip_backwards_over_extended_args(PyCodeObject *code, int offset)
 {
+    _Py_SetCountAndUnquicken(code);
     _Py_CODEUNIT *instrs = _PyCode_GET_CODE(code);
     while (offset > 0 && _Py_OPCODE(instrs[offset-1]) == EXTENDED_ARG) {
         offset--;
@@ -5419,11 +5424,9 @@ handle_eval_breaker:
 #else
         case DO_TRACING: {
 #endif
-            // Un-quicken in-place:
-            _Py_SetCountAndUnquicken(frame->f_code);
             int instr_prev = skip_backwards_over_extended_args(frame->f_code, frame->f_lasti);
             frame->f_lasti = INSTR_OFFSET();
-            NEXTOPARG();
+            TRACING_NEXTOPARG();
             if (opcode == RESUME) {
                 if (oparg < 2) {
                     CHECK_EVAL_BREAKER();
@@ -5460,7 +5463,7 @@ handle_eval_breaker:
                     frame->stacktop = -1;
                 }
             }
-            NEXTOPARG();
+            TRACING_NEXTOPARG();
             PRE_DISPATCH_GOTO();
             DISPATCH_GOTO();
         }

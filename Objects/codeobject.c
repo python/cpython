@@ -1499,7 +1499,6 @@ code_getundercode(PyCodeObject *code, void *closure)
 static PyObject *
 code_getcode(PyCodeObject *code, void *closure)
 {
-    // XXX
     _Py_SetCountAndUnquicken(code);
     return PyBytes_FromStringAndSize(code->_co_code, _PyCode_GET_SIZE(code));
 }
