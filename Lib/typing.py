@@ -2595,15 +2595,13 @@ class SupportsRound(Protocol[T_co]):
         pass
 
 
-def _make_nmtuple(name, types):
-    msg = "NamedTuple('Name', [(f0, t0), (f1, t1), ...]); each t must be a type"
-    types = [(n, _type_check(t, msg)) for n, t in types]
-    nm_tpl = collections.namedtuple(name, [n for n, t in types])
+def _make_nmtuple(name, types, defaults=(), module=None):
+    fields = [n for n, t in types]
+    types = {n: _type_check(t, f"field {n} annotation must be a type")
+             for n, t in types}
+    nm_tpl = collections.namedtuple(name, fields,
+                                    defaults=defaults, module=module)
     nm_tpl.__annotations__ = dict(types)
-    try:
-        nm_tpl.__module__ = sys._getframe(2).f_globals.get('__name__', '__main__')
-    except (AttributeError, ValueError):
-        pass
     return nm_tpl
 
 
@@ -2620,24 +2618,22 @@ class NamedTupleMeta(type):
     def __new__(cls, typename, bases, ns):
         if ns.get('_root', False):
             return super().__new__(cls, typename, bases, ns)
-        assert bases[0] is NamedTuple
+        assert NamedTuple in bases
         types = ns.get('__annotations__', {})
-        nm_tpl = _make_nmtuple(typename, types.items())
-        defaults = []
-        defaults_dict = {}
+        default_names = []
         for field_name in types:
             if field_name in ns:
-                default_value = ns[field_name]
-                defaults.append(default_value)
-                defaults_dict[field_name] = default_value
-            elif defaults:
+                default_names.append(field_name)
+            elif default_names:
                 raise TypeError("Non-default namedtuple field {field_name} cannot "
                                 "follow default field(s) {default_names}"
                                 .format(field_name=field_name,
-                                        default_names=', '.join(defaults_dict.keys())))
-        nm_tpl.__new__.__annotations__ = dict(types)
-        nm_tpl.__new__.__defaults__ = tuple(defaults)
-        nm_tpl._field_defaults = defaults_dict
+                                        default_names=', '.join(default_names)))
+
+        nm_tpl = _make_nmtuple(typename, types.items(),
+                               defaults=[ns[n] for n in default_names],
+                               module=ns['__module__'])
+
         # update from user namespace without overriding special namedtuple attributes
         for key in ns:
             if key in _prohibited:
