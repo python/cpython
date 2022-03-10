@@ -1542,7 +1542,7 @@ These are not used in annotations. They are building blocks for declaring types.
       T = TypeVar('T')
       class XT(X, Generic[T]): pass  # raises TypeError
 
-   The type info for introspection can be accessed via annotations dicts
+   A ``TypedDict`` can be introspected via annotations dicts
    (see :ref:`annotations-howto` for more information on annotations best practices),
    :attr:`__total__`, :attr:`__required_keys__`, and :attr:`__optional_keys__`.
 
