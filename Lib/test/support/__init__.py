@@ -517,7 +517,7 @@ def requires_fork():
 has_subprocess_support = not is_emscripten and not is_wasi
 
 def requires_subprocess():
-    """Used for subprocess, os.spawn calls"""
+    """Used for subprocess, os.spawn calls, fd inheritance"""
     return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
 
 
