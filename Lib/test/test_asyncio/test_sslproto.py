@@ -4,6 +4,7 @@ import logging
 import socket
 import unittest
 import weakref
+from test import support
 from unittest import mock
 try:
     import ssl
