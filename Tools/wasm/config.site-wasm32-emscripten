@@ -62,6 +62,7 @@ ac_cv_func_pwritev2=no
 ac_cv_func_pwritev=no
 ac_cv_func_pipe2=no
 ac_cv_func_nice=no
+ac_cv_func_setpriority=no
 ac_cv_func_setitimer=no
 # unsupported syscall: __syscall_prlimit64
 ac_cv_func_prlimit=no
@@ -91,11 +92,6 @@ ac_cv_func_getgroups=no
 ac_cv_func_setgroups=no
 ac_cv_func_setresuid=no
 ac_cv_func_setresgid=no
-
-# Emscripten geteuid() / getegid() always return 0 (root), which breaks
-# assumption in tarfile module and some tests.
-ac_cv_func_getegid=no
-ac_cv_func_geteuid=no
 
 # Emscripten does not support hard links, always fails with errno 34
 # "Too many links". See emscripten_syscall_stubs.c

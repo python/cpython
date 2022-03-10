@@ -645,6 +645,9 @@ Build Changes
 * Building Python now requires a C11 compiler without optional C11 features.
   (Contributed by Victor Stinner in :issue:`46656`.)
 
+* Building Python now requires support of IEEE 754 floating point numbers.
+  (Contributed by Victor Stinner in :issue:`46917`.)
+
 * CPython can now be built with the ThinLTO option via ``--with-lto=thin``.
   (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
 

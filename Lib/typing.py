@@ -673,7 +673,8 @@ def Concatenate(self, parameters):
                         "ParamSpec variable.")
     msg = "Concatenate[arg, ...]: each arg must be a type."
     parameters = (*(_type_check(p, msg) for p in parameters[:-1]), parameters[-1])
-    return _ConcatenateGenericAlias(self, parameters)
+    return _ConcatenateGenericAlias(self, parameters,
+                                    _paramspec_tvars=True)
 
 
 @_SpecialForm
@@ -1350,7 +1351,8 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return tuple(new_args)
 
     def copy_with(self, args):
-        return self.__class__(self.__origin__, args, name=self._name, inst=self._inst)
+        return self.__class__(self.__origin__, args, name=self._name, inst=self._inst,
+                              _paramspec_tvars=self._paramspec_tvars)
 
     def __repr__(self):
         if self._name:
@@ -1558,10 +1560,6 @@ class _LiteralGenericAlias(_GenericAlias, _root=True):
 
 
 class _ConcatenateGenericAlias(_GenericAlias, _root=True):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs,
-                         _paramspec_tvars=True)
-
     def copy_with(self, params):
         if isinstance(params[-1], (list, tuple)):
             return (*params[:-1], *params[-1])
