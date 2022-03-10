@@ -74,8 +74,8 @@ jobs:
           grep "aclocal 1.16.3" aclocal.m4
           grep -q "runstatedir" configure
           grep -q "PKG_PROG_PKG_CONFIG" aclocal.m4
-      - name: Regenerate autoconf files
-        run: docker run --rm -v $(pwd):/src quay.io/tiran/cpython_autoconf:269
+      - name: Regenerate autoconf files with container image
+        run: make regen-configure
       - name: Build CPython
         run: |
           # Build Python with the libpython dynamic library
