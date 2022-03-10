@@ -13,6 +13,7 @@
 
 #undef Py_BUILD_CORE_MODULE
 #undef Py_BUILD_CORE_BUILTIN
+#define NEEDS_PY_IDENTIFIER
 
 /* Always enable assertions */
 #undef NDEBUG
@@ -39,6 +40,9 @@
 #  error "_testcapi must test the public Python C API, not CPython internal C API"
 #endif
 
+#ifdef bool
+#  error "The public headers should not include <stdbool.h>, see bpo-46748"
+#endif
 
 // Forward declarations
 static struct PyModuleDef _testcapimodule;
@@ -3865,7 +3869,7 @@ slot_tp_del(PyObject *self)
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
 
     /* Execute __del__ method, if any. */
-    del = _PyObject_LookupSpecial(self, &PyId___tp_del__);
+    del = _PyObject_LookupSpecialId(self, &PyId___tp_del__);
     if (del != NULL) {
         res = PyObject_CallNoArgs(del);
         if (res == NULL)
@@ -6059,8 +6063,6 @@ static PyMethodDef TestMethods[] = {
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
-
-#define AddSym(d, n, f, v) {PyObject *o = f(v); PyDict_SetItemString(d, n, o); Py_DECREF(o);}
 
 typedef struct {
     char bool_member;

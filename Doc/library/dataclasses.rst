@@ -475,6 +475,8 @@ Module contents
    In a single dataclass, it is an error to specify more than one
    field whose type is :const:`KW_ONLY`.
 
+   .. versionadded:: 3.10
+
 .. exception:: FrozenInstanceError
 
    Raised when an implicitly defined :meth:`__setattr__` or

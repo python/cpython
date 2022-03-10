@@ -2203,6 +2203,7 @@ class TestInvalidFD(unittest.TestCase):
         self.check(os.set_blocking, True)
 
 
+@unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
 class LinkTests(unittest.TestCase):
     def setUp(self):
         self.file1 = os_helper.TESTFN

@@ -79,8 +79,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     Py_INCREF(doc);
 
     // __module__: Use globals['__name__'] if it exists, or NULL.
-    _Py_IDENTIFIER(__name__);
-    PyObject *module = _PyDict_GetItemIdWithError(globals, &PyId___name__);
+    PyObject *module = PyDict_GetItemWithError(globals, &_Py_ID(__name__));
     PyObject *builtins = NULL;
     if (module == NULL && _PyErr_Occurred(tstate)) {
         goto error;
@@ -808,12 +807,7 @@ functools_wraps(PyObject *wrapper, PyObject *wrapped)
 {
 #define COPY_ATTR(ATTR) \
     do { \
-        _Py_IDENTIFIER(ATTR); \
-        PyObject *attr = _PyUnicode_FromId(&PyId_ ## ATTR); \
-        if (attr == NULL) { \
-            return -1; \
-        } \
-        if (functools_copy_attr(wrapper, wrapped, attr) < 0) { \
+        if (functools_copy_attr(wrapper, wrapped, &_Py_ID(ATTR)) < 0) { \
             return -1; \
         } \
     } while (0) \

@@ -55,12 +55,14 @@ raised for division by zero and mod by zero.
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
+#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_dtoa.h"          // _Py_dg_infinity()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 /* For DBL_EPSILON in _math.h */
 #include <float.h>
 /* For _Py_log1p with workarounds for buggy handling of zeros. */
@@ -271,7 +273,7 @@ lanczos_sum(double x)
 static double
 m_inf(void)
 {
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
     return _Py_dg_infinity(0);
 #else
     return Py_HUGE_VAL;
@@ -281,12 +283,12 @@ m_inf(void)
 /* Constant nan value, generated in the same way as float('nan'). */
 /* We don't currently assume that Py_NAN is defined everywhere. */
 
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
 
 static double
 m_nan(void)
 {
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
     return _Py_dg_stdnan(0);
 #else
     return Py_NAN;
@@ -1216,7 +1218,7 @@ math_ceil(PyObject *module, PyObject *number)
     _Py_IDENTIFIER(__ceil__);
 
     if (!PyFloat_CheckExact(number)) {
-        PyObject *method = _PyObject_LookupSpecial(number, &PyId___ceil__);
+        PyObject *method = _PyObject_LookupSpecialId(number, &PyId___ceil__);
         if (method != NULL) {
             PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
@@ -1288,7 +1290,7 @@ math_floor(PyObject *module, PyObject *number)
     }
     else
     {
-        PyObject *method = _PyObject_LookupSpecial(number, &PyId___floor__);
+        PyObject *method = _PyObject_LookupSpecialId(number, &PyId___floor__);
         if (method != NULL) {
             PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
@@ -2166,7 +2168,7 @@ math_trunc(PyObject *module, PyObject *x)
             return NULL;
     }
 
-    trunc = _PyObject_LookupSpecial(x, &PyId___trunc__);
+    trunc = _PyObject_LookupSpecialId(x, &PyId___trunc__);
     if (trunc == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,
@@ -3836,7 +3838,7 @@ math_exec(PyObject *module)
     if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(m_inf())) < 0) {
         return -1;
     }
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
     if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(m_nan())) < 0) {
         return -1;
     }

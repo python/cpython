@@ -375,6 +375,18 @@ class CommonReadTest(ReadTest):
         with open(self.tarname, "rb") as fobj:
             self.assertTrue(tarfile.is_tarfile(io.BytesIO(fobj.read())))
 
+    def test_is_tarfile_keeps_position(self):
+        # Test for issue44289: tarfile.is_tarfile() modifies
+        # file object's current position
+        with open(self.tarname, "rb") as fobj:
+            tarfile.is_tarfile(fobj)
+            self.assertEqual(fobj.tell(), 0)
+
+        with open(self.tarname, "rb") as fobj:
+            file_like = io.BytesIO(fobj.read())
+            tarfile.is_tarfile(file_like)
+            self.assertEqual(file_like.tell(), 0)
+
     def test_empty_tarfile(self):
         # Test for issue6123: Allow opening empty archives.
         # This test checks if tarfile.open() is able to open an empty tar
@@ -1898,6 +1910,61 @@ class PaxWriteTest(GNUWriteTest):
             self.assertEqual(t.uid, 123)
         finally:
             tar.close()
+
+    def test_create_pax_header(self):
+        # The ustar header should contain values that can be
+        # represented reasonably, even if a better (e.g. higher
+        # precision) version is set in the pax header.
+        # Issue #45863
+
+        # values that should be kept
+        t = tarfile.TarInfo()
+        t.name = "foo"
+        t.mtime = 1000.1
+        t.size = 100
+        t.uid = 123
+        t.gid = 124
+        info = t.get_info()
+        header = t.create_pax_header(info, encoding="iso8859-1")
+        self.assertEqual(info['name'], "foo")
+        # mtime should be rounded to nearest second
+        self.assertIsInstance(info['mtime'], int)
+        self.assertEqual(info['mtime'], 1000)
+        self.assertEqual(info['size'], 100)
+        self.assertEqual(info['uid'], 123)
+        self.assertEqual(info['gid'], 124)
+        self.assertEqual(header,
+            b'././@PaxHeader' + bytes(86) \
+            + b'0000000\x000000000\x000000000\x0000000000020\x0000000000000\x00010205\x00 x' \
+            + bytes(100) + b'ustar\x0000'+ bytes(247) \
+            + b'16 mtime=1000.1\n' + bytes(496) + b'foo' + bytes(97) \
+            + b'0000644\x000000173\x000000174\x0000000000144\x0000000001750\x00006516\x00 0' \
+            + bytes(100) + b'ustar\x0000' + bytes(247))
+
+        # values that should be changed
+        t = tarfile.TarInfo()
+        t.name = "foo\u3374" # can't be represented in ascii
+        t.mtime = 10**10 # too big
+        t.size = 10**10 # too big
+        t.uid = 8**8 # too big
+        t.gid = 8**8+1 # too big
+        info = t.get_info()
+        header = t.create_pax_header(info, encoding="iso8859-1")
+        # name is kept as-is in info but should be added to pax header
+        self.assertEqual(info['name'], "foo\u3374")
+        self.assertEqual(info['mtime'], 0)
+        self.assertEqual(info['size'], 0)
+        self.assertEqual(info['uid'], 0)
+        self.assertEqual(info['gid'], 0)
+        self.assertEqual(header,
+            b'././@PaxHeader' + bytes(86) \
+            + b'0000000\x000000000\x000000000\x0000000000130\x0000000000000\x00010207\x00 x' \
+            + bytes(100) + b'ustar\x0000' + bytes(247) \
+            + b'15 path=foo\xe3\x8d\xb4\n16 uid=16777216\n' \
+            + b'16 gid=16777217\n20 size=10000000000\n' \
+            + b'21 mtime=10000000000\n'+ bytes(424) + b'foo?' + bytes(96) \
+            + b'0000644\x000000000\x000000000\x0000000000000\x0000000000000\x00006540\x00 0' \
+            + bytes(100) + b'ustar\x0000' + bytes(247))
 
 
 class UnicodeTest:

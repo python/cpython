@@ -1486,6 +1486,9 @@ class _BasePathTest(object):
         self.assertIs(type(p), type(q))
         self.assertTrue(p.is_absolute())
 
+    @unittest.skipIf(
+        pwd is None, reason="Test requires pwd module to get homedir."
+    )
     def test_home(self):
         with os_helper.EnvironmentVarGuard() as env:
             self._test_home(self.cls.home())
@@ -1850,8 +1853,10 @@ class _BasePathTest(object):
         it = p.iterdir()
         it2 = p.iterdir()
         next(it2)
-        with p:
-            pass
+        # bpo-46556: path context managers are deprecated in Python 3.11.
+        with self.assertWarns(DeprecationWarning):
+            with p:
+                pass
         # Using a path as a context manager is a no-op, thus the following
         # operations should still succeed after the context manage exits.
         next(it)
@@ -1859,8 +1864,9 @@ class _BasePathTest(object):
         p.exists()
         p.resolve()
         p.absolute()
-        with p:
-            pass
+        with self.assertWarns(DeprecationWarning):
+            with p:
+                pass
 
     def test_chmod(self):
         p = self.cls(BASE) / 'fileA'

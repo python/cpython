@@ -40,11 +40,6 @@ def _test_selector_event(selector, fd, event):
         return bool(key.events & event)
 
 
-def _check_ssl_socket(sock):
-    if ssl is not None and isinstance(sock, ssl.SSLSocket):
-        raise TypeError("Socket cannot be of type SSLSocket")
-
-
 class BaseSelectorEventLoop(base_events.BaseEventLoop):
     """Selector event loop.
 
@@ -70,11 +65,15 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             self, rawsock, protocol, sslcontext, waiter=None,
             *, server_side=False, server_hostname=None,
             extra=None, server=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT,
+            ssl_shutdown_timeout=constants.SSL_SHUTDOWN_TIMEOUT,
+    ):
         ssl_protocol = sslproto.SSLProtocol(
-                self, protocol, sslcontext, waiter,
-                server_side, server_hostname,
-                ssl_handshake_timeout=ssl_handshake_timeout)
+            self, protocol, sslcontext, waiter,
+            server_side, server_hostname,
+            ssl_handshake_timeout=ssl_handshake_timeout,
+            ssl_shutdown_timeout=ssl_shutdown_timeout
+        )
         _SelectorSocketTransport(self, rawsock, ssl_protocol,
                                  extra=extra, server=server)
         return ssl_protocol._app_transport
@@ -146,15 +145,17 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,
-                       ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+                       ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT,
+                       ssl_shutdown_timeout=constants.SSL_SHUTDOWN_TIMEOUT):
         self._add_reader(sock.fileno(), self._accept_connection,
                          protocol_factory, sock, sslcontext, server, backlog,
-                         ssl_handshake_timeout)
+                         ssl_handshake_timeout, ssl_shutdown_timeout)
 
     def _accept_connection(
             self, protocol_factory, sock,
             sslcontext=None, server=None, backlog=100,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT,
+            ssl_shutdown_timeout=constants.SSL_SHUTDOWN_TIMEOUT):
         # This method is only called once for each event loop tick where the
         # listening socket has triggered an EVENT_READ. There may be multiple
         # connections waiting for an .accept() so it is called in a loop.
@@ -185,20 +186,22 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                     self.call_later(constants.ACCEPT_RETRY_DELAY,
                                     self._start_serving,
                                     protocol_factory, sock, sslcontext, server,
-                                    backlog, ssl_handshake_timeout)
+                                    backlog, ssl_handshake_timeout,
+                                    ssl_shutdown_timeout)
                 else:
                     raise  # The event loop will catch, log and ignore it.
             else:
                 extra = {'peername': addr}
                 accept = self._accept_connection2(
                     protocol_factory, conn, extra, sslcontext, server,
-                    ssl_handshake_timeout)
+                    ssl_handshake_timeout, ssl_shutdown_timeout)
                 self.create_task(accept)
 
     async def _accept_connection2(
             self, protocol_factory, conn, extra,
             sslcontext=None, server=None,
-            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT):
+            ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT,
+            ssl_shutdown_timeout=constants.SSL_SHUTDOWN_TIMEOUT):
         protocol = None
         transport = None
         try:
@@ -208,7 +211,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                 transport = self._make_ssl_transport(
                     conn, protocol, sslcontext, waiter=waiter,
                     server_side=True, extra=extra, server=server,
-                    ssl_handshake_timeout=ssl_handshake_timeout)
+                    ssl_handshake_timeout=ssl_handshake_timeout,
+                    ssl_shutdown_timeout=ssl_shutdown_timeout)
             else:
                 transport = self._make_socket_transport(
                     conn, protocol, waiter=waiter, extra=extra,
@@ -357,7 +361,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         The maximum amount of data to be received at once is specified by
         nbytes.
         """
-        _check_ssl_socket(sock)
+        base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
@@ -398,7 +402,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         The received data is written into *buf* (a writable buffer).
         The return value is the number of bytes written.
         """
-        _check_ssl_socket(sock)
+        base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
@@ -439,7 +443,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         raised, and there is no way to determine how much data, if any, was
         successfully processed by the receiving end of the connection.
         """
-        _check_ssl_socket(sock)
+        base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
@@ -488,13 +492,15 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         This method is a coroutine.
         """
-        _check_ssl_socket(sock)
+        base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
 
         if not hasattr(socket, 'AF_UNIX') or sock.family != socket.AF_UNIX:
             resolved = await self._ensure_resolved(
-                address, family=sock.family, proto=sock.proto, loop=self)
+                address, family=sock.family, type=sock.type, proto=sock.proto,
+                loop=self,
+            )
             _, _, _, _, address = resolved[0]
 
         fut = self.create_future()
@@ -553,7 +559,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         object usable to send and receive data on the connection, and address
         is the address bound to the socket on the other end of the connection.
         """
-        _check_ssl_socket(sock)
+        base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = self.create_future()
