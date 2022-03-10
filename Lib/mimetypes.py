@@ -143,6 +143,7 @@ class MimeTypes:
         base, ext = posixpath.splitext(url)
         while (ext_lower := ext.lower()) in self.suffix_map:
             base, ext = posixpath.splitext(base + self.suffix_map[ext_lower])
+        # encodings_map is case sensitive
         if ext in self.encodings_map:
             encoding = self.encodings_map[ext]
             base, ext = posixpath.splitext(base)
