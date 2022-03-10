@@ -6,18 +6,12 @@ from . import tasks
 
 
 class Runner:
-    def __init__(self, debug=None):
-        self._debug = debug
-        self._loop = None
+    def __init__(self, *, debug=None):
+        self._loop = self.new_loop()
+        if debug is not None:
+            self._loop.set_debug(debug)
 
     def __enter__(self):
-        if events._get_running_loop() is not None:
-            raise RuntimeError(
-                "asyncio.Runner cannot be called from a running event loop")
-
-        self._loop = events.new_event_loop()
-        if self._debug is not None:
-            self._loop.set_debug(self._debug)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -30,6 +24,10 @@ class Runner:
             self._loop = None
 
     def run(self, coro):
+        if events._get_running_loop() is not None:
+            raise RuntimeError(
+                "Runner.run() cannot be called from a running event loop")
+
         if self._loop is None:
             raise RuntimeError(
                 "Runner.run() cannot be called outside of "
@@ -39,6 +37,12 @@ class Runner:
             raise ValueError("a coroutine was expected, got {!r}".format(coro))
 
         return self._loop.run_until_complete(coro)
+
+    def get_loop(self):
+        return self._loop
+
+    def new_loop(self):
+        return events.new_event_loop()
 
 
 
