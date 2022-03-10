@@ -2629,7 +2629,6 @@ class NamedTupleMeta(type):
                                 f"cannot follow default field"
                                 f"{'s' if len(default_names) > 1 else ''} "
                                 f"{', '.join(default_names)}")
-
         nm_tpl = _make_nmtuple(typename, types.items(),
                                defaults=[ns[n] for n in default_names],
                                module=ns['__module__'])

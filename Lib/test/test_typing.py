@@ -4949,6 +4949,8 @@ class NamedTupleTests(BaseTestCase):
             pass
         class X(NamedTuple, A):
             x: int
+        class Y(X, A):
+            y: int
 
     def test_namedtuple_keyword_usage(self):
         LocalEmployee = NamedTuple("LocalEmployee", name=str, age=int)
