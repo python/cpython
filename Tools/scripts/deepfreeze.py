@@ -229,12 +229,8 @@ class Printer:
     def generate_code(self, name: str, code: types.CodeType) -> str:
         # The ordering here matches PyCode_NewWithPosOnlyArgs()
         # (but see below).
-        co_code = self.generate(name + "_code", code.co_code)
         co_consts = self.generate(name + "_consts", code.co_consts)
         co_names = self.generate(name + "_names", code.co_names)
-        co_varnames = self.generate(name + "_varnames", code.co_varnames)
-        co_freevars = self.generate(name + "_freevars", code.co_freevars)
-        co_cellvars = self.generate(name + "_cellvars", code.co_cellvars)
         co_filename = self.generate(name + "_filename", code.co_filename)
         co_name = self.generate(name + "_name", code.co_name)
         co_qualname = self.generate(name + "_qualname", code.co_qualname)
@@ -249,14 +245,43 @@ class Printer:
         # Derived values
         nlocals, nplaincellvars, ncellvars, nfreevars = \
             get_localsplus_counts(code, localsplusnames, localspluskinds)
-        with self.block(f"static struct PyCodeObject {name} =", ";"):
-            self.object_head("PyCode_Type")
+        self.write("static")
+        with self.indent():
+            with self.block("struct"):
+                self.write("PyObject_VAR_HEAD")
+                self.write("PyObject *co_consts;")
+                self.write("PyObject *co_names;")
+                self.write("PyObject *co_exceptiontable;")
+                self.write("int co_flags;")
+                self.write("int co_warmup;")
+                self.write("int co_argcount;")
+                self.write("int co_posonlyargcount;")
+                self.write("int co_kwonlyargcount;")
+                self.write("int co_stacksize;")
+                self.write("int co_firstlineno;")
+                self.write("PyObject *co_localsplusnames;")
+                self.write("PyObject *co_localspluskinds;")
+                self.write("PyObject *co_filename;")
+                self.write("PyObject *co_name;")
+                self.write("PyObject *co_qualname;")
+                self.write("PyObject *co_linetable;")
+                self.write("PyObject *co_endlinetable;")
+                self.write("PyObject *co_columntable;")
+                self.write("int co_nlocalsplus;")
+                self.write("int co_nlocals;")
+                self.write("int co_nplaincellvars;")
+                self.write("int co_ncellvars;")
+                self.write("int co_nfreevars;")
+                self.write("PyObject *co_weakreflist;")
+                self.write("void *co_extra;")
+                self.write(f"char co_quickened[{len(code.co_code)}];")
+        with self.block(f"{name} =", ";"):
+            self.object_var_head("PyCode_Type", len(code.co_code) // 2)
             # But the ordering here must match that in cpython/code.h
             # (which is a pain because we tend to reorder those for perf)
             # otherwise MSVC doesn't like it.
             self.write(f".co_consts = {co_consts},")
             self.write(f".co_names = {co_names},")
-            self.write(f".co_firstinstr = (_Py_CODEUNIT *) {removesuffix(co_code, '.ob_base.ob_base')}.ob_sval,")
             self.write(f".co_exceptiontable = {co_exceptiontable},")
             self.field(code, "co_flags")
             self.write(".co_warmup = QUICKENING_INITIAL_WARMUP_VALUE,")
@@ -265,7 +290,6 @@ class Printer:
             self.field(code, "co_kwonlyargcount")
             self.field(code, "co_stacksize")
             self.field(code, "co_firstlineno")
-            self.write(f".co_code = {co_code},")
             self.write(f".co_localsplusnames = {co_localsplusnames},")
             self.write(f".co_localspluskinds = {co_localspluskinds},")
             self.write(f".co_filename = {co_filename},")
@@ -279,12 +303,10 @@ class Printer:
             self.write(f".co_nplaincellvars = {nplaincellvars},")
             self.write(f".co_ncellvars = {ncellvars},")
             self.write(f".co_nfreevars = {nfreevars},")
-            self.write(f".co_varnames = {co_varnames},")
-            self.write(f".co_cellvars = {co_cellvars},")
-            self.write(f".co_freevars = {co_freevars},")
+            self.write(f".co_quickened = {make_string_literal(code.co_code)},")
         self.deallocs.append(f"_PyStaticCode_Dealloc(&{name});")
         self.interns.append(f"_PyStaticCode_InternStrings(&{name})")
-        return f"& {name}.ob_base"
+        return f"& {name}.ob_base.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
         if len(t) == 0:

@@ -551,7 +551,6 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_long(co->co_kwonlyargcount, p);
         w_long(co->co_stacksize, p);
         w_long(co->co_flags, p);
-        w_object(co->co_code, p);
         w_object(co->co_consts, p);
         w_object(co->co_names, p);
         w_object(co->co_localsplusnames, p);
@@ -564,6 +563,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_endlinetable, p);
         w_object(co->co_columntable, p);
         w_object(co->co_exceptiontable, p);
+        w_pstring(co->co_quickened, _PyCode_GET_SIZE(co), p);
     }
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown bytes-like objects as a bytes object */
@@ -1381,9 +1381,6 @@ r_object(RFILE *p)
             flags = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
-            code = r_object(p);
-            if (code == NULL)
-                goto code_error;
             consts = r_object(p);
             if (consts == NULL)
                 goto code_error;
@@ -1420,6 +1417,18 @@ r_object(RFILE *p)
             exceptiontable = r_object(p);
             if (exceptiontable == NULL)
                 goto code_error;
+            n = r_long(p);
+            if (size == -1 && PyErr_Occurred()) {
+                break;
+            }
+            const char *quickened = r_pstring(n, p);
+            if (quickened == NULL) {
+                break;
+            }
+            code = PyBytes_FromStringAndSize(quickened, n);
+            if (code == NULL) {
+                goto code_error;
+            }
 
             struct _PyCodeConstructor con = {
                 .filename = filename,

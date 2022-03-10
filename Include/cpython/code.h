@@ -26,7 +26,7 @@ typedef uint16_t _Py_CODEUNIT;
 
 /* Bytecode object */
 struct PyCodeObject {
-    PyObject_HEAD
+    PyObject_VAR_HEAD
 
     /* Note only the following fields are used in hash and/or comparisons
      *
@@ -41,9 +41,7 @@ struct PyCodeObject {
      * - co_code
      * - co_consts
      * - co_names
-     * - co_varnames
-     * - co_freevars
-     * - co_cellvars
+     * - co_localsplusnames
      *
      * This is done to preserve the name and line number for tracebacks
      * and debuggers; otherwise, constant de-duplication would collapse
@@ -55,12 +53,9 @@ struct PyCodeObject {
     // The hottest fields (in the eval loop) are grouped here at the top.
     PyObject *co_consts;        /* list (constants used) */
     PyObject *co_names;         /* list of strings (names used) */
-    _Py_CODEUNIT *co_firstinstr; /* Pointer to first instruction, used for quickening.
-                                    Unlike the other "hot" fields, this one is
-                                    actually derived from co_code. */
     PyObject *co_exceptiontable; /* Byte string encoding exception handling table */
     int co_flags;               /* CO_..., see below */
-    int co_warmup;              /* Warmup counter for quickening */
+    int co_warmup;              // XXX
 
     // The rest are not so impactful on performance.
     int co_argcount;            /* #arguments, except *args */
@@ -68,7 +63,6 @@ struct PyCodeObject {
     int co_kwonlyargcount;      /* #keyword only arguments */
     int co_stacksize;           /* #entries needed for evaluation stack */
     int co_firstlineno;         /* first source line number */
-    PyObject *co_code;          /* instruction opcodes */
     PyObject *co_localsplusnames;  /* tuple mapping offsets to names */
     PyObject *co_localspluskinds; /* Bytes mapping to local kinds (one byte per variable) */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
@@ -90,10 +84,6 @@ struct PyCodeObject {
     int co_nplaincellvars;      /* number of non-arg cell variables */
     int co_ncellvars;           /* total number of cell variables */
     int co_nfreevars;           /* number of free variables */
-    // lazily-computed values
-    PyObject *co_varnames;      /* tuple of strings (local variable names) */
-    PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
-    PyObject *co_freevars;      /* tuple of strings (free variable names) */
 
     /* The remaining fields are zeroed out on new code objects. */
 
@@ -105,9 +95,11 @@ struct PyCodeObject {
     /* Quickened instructions and cache, or NULL
      This should be treated as opaque by all code except the specializer and
      interpreter. */
-    _Py_CODEUNIT *co_quickened;
-
+    char co_quickened[1];
 };
+
+#define _PyCode_GET_CODE(CO) ((_Py_CODEUNIT *)(CO)->co_quickened)
+#define _PyCode_GET_SIZE(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
 
 /* Masks for co_flags above */
 #define CO_OPTIMIZED    0x0001

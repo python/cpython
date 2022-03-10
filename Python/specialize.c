@@ -275,27 +275,17 @@ _Py_PrintSpecializationStats(int to_file)
 #define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
 #endif
 
-static _Py_CODEUNIT *
-allocate(int instruction_count)
-{
-    assert(instruction_count > 0);
-    void *array = PyMem_Malloc(sizeof(_Py_CODEUNIT) * instruction_count);
-    if (array == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    _Py_QuickenedCount++;
-    return (_Py_CODEUNIT *)array;
-}
-
 
 // Insert adaptive instructions and superinstructions.
-static void
-optimize(_Py_CODEUNIT *instructions, int len)
+
+void
+_Py_Quicken(PyCodeObject *code)
 {
+    _Py_QuickenedCount++;
     int previous_opcode = -1;
     int previous_oparg = -1;
-    for(int i = 0; i < len; i++) {
+    _Py_CODEUNIT *instructions = _PyCode_GET_CODE(code);
+    for (int i = 0; i < Py_SIZE(code); i++) {
         int opcode = _Py_OPCODE(instructions[i]);
         int oparg = _Py_OPARG(instructions[i]);
         uint8_t adaptive_opcode = adaptive_opcodes[opcode];
@@ -351,26 +341,144 @@ optimize(_Py_CODEUNIT *instructions, int len)
     }
 }
 
-int
-_Py_Quicken(PyCodeObject *code) {
-    if (code->co_quickened) {
-        return 0;
+void
+_Py_SetCountAndUnquicken(PyCodeObject *code)
+{
+    code->co_warmup = QUICKENING_WARMUP_DELAY;
+    // if (!code->co_quickened) {
+    //     return;
+    // }
+    _Py_CODEUNIT *instructions = _PyCode_GET_CODE(code);
+    for (int i = 0; i < Py_SIZE(code); i++) {
+        int opcode = _Py_OPCODE(instructions[i]);
+        // TODO: Generate a table for this:
+        switch (opcode) {
+            case BINARY_OP:
+            case BINARY_OP_ADAPTIVE:
+            case BINARY_OP_ADD_FLOAT:
+            case BINARY_OP_ADD_INT:
+            case BINARY_OP_ADD_UNICODE:
+            case BINARY_OP_INPLACE_ADD_UNICODE:
+            case BINARY_OP_MULTIPLY_FLOAT:
+            case BINARY_OP_MULTIPLY_INT:
+            case BINARY_OP_SUBTRACT_FLOAT:
+            case BINARY_OP_SUBTRACT_INT:
+                opcode = BINARY_OP;
+                break;
+            case BINARY_SUBSCR:
+            case BINARY_SUBSCR_ADAPTIVE:
+            case BINARY_SUBSCR_DICT:
+            case BINARY_SUBSCR_GETITEM:
+            case BINARY_SUBSCR_LIST_INT:
+            case BINARY_SUBSCR_TUPLE_INT:
+                opcode = BINARY_SUBSCR;
+                break;
+            case CALL:
+            case CALL_ADAPTIVE:
+            case CALL_PY_EXACT_ARGS:
+            case CALL_PY_WITH_DEFAULTS:
+                opcode = CALL;
+                break;
+            case COMPARE_OP:
+            case COMPARE_OP_ADAPTIVE:
+            case COMPARE_OP_FLOAT_JUMP:
+            case COMPARE_OP_INT_JUMP:
+            case COMPARE_OP_STR_JUMP:
+                opcode = COMPARE_OP;
+                break;
+            case JUMP_ABSOLUTE:
+            case JUMP_ABSOLUTE_QUICK:
+                opcode = JUMP_ABSOLUTE;
+                break;
+            case LOAD_ATTR:
+            case LOAD_ATTR_ADAPTIVE:
+            case LOAD_ATTR_INSTANCE_VALUE:
+            case LOAD_ATTR_MODULE:
+            case LOAD_ATTR_SLOT:
+            case LOAD_ATTR_WITH_HINT:
+                opcode = LOAD_ATTR;
+                break;
+            case LOAD_CONST:
+            case LOAD_CONST__LOAD_FAST:
+                opcode = LOAD_CONST;
+                break;
+            case LOAD_FAST:
+            case LOAD_FAST__LOAD_CONST:
+            case LOAD_FAST__LOAD_FAST:
+                opcode = LOAD_FAST;
+                break;
+            case LOAD_GLOBAL:
+            case LOAD_GLOBAL_ADAPTIVE:
+            case LOAD_GLOBAL_BUILTIN:
+            case LOAD_GLOBAL_MODULE:
+                opcode = LOAD_GLOBAL;
+                break;
+            case LOAD_METHOD:
+            case LOAD_METHOD_ADAPTIVE:
+            case LOAD_METHOD_CLASS:
+            case LOAD_METHOD_MODULE:
+            case LOAD_METHOD_NO_DICT:
+            case LOAD_METHOD_WITH_DICT:
+            case LOAD_METHOD_WITH_VALUES:
+                opcode = LOAD_METHOD;
+                break;
+            case PRECALL:
+            case PRECALL_ADAPTIVE:
+            case PRECALL_BOUND_METHOD:
+            case PRECALL_BUILTIN_CLASS:
+            case PRECALL_BUILTIN_FAST_WITH_KEYWORDS:
+            case PRECALL_NO_KW_BUILTIN_FAST:
+            case PRECALL_NO_KW_BUILTIN_O:
+            case PRECALL_NO_KW_ISINSTANCE:
+            case PRECALL_NO_KW_LEN:
+            case PRECALL_NO_KW_LIST_APPEND:
+            case PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST:
+            case PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS:
+            case PRECALL_NO_KW_METHOD_DESCRIPTOR_O:
+            case PRECALL_NO_KW_STR_1:
+            case PRECALL_NO_KW_TUPLE_1:
+            case PRECALL_NO_KW_TYPE_1:
+            case PRECALL_PYFUNC:
+                opcode = PRECALL;
+                break;
+            case RESUME:
+            case RESUME_QUICK:
+                opcode = RESUME;
+                break;
+            case STORE_ATTR:
+            case STORE_ATTR_ADAPTIVE:
+            case STORE_ATTR_INSTANCE_VALUE:
+            case STORE_ATTR_SLOT:
+            case STORE_ATTR_WITH_HINT:
+                opcode = STORE_ATTR;
+                break;
+            case STORE_FAST:
+            case STORE_FAST__LOAD_FAST:
+            case STORE_FAST__STORE_FAST:
+                opcode = STORE_FAST;
+                break;
+            case STORE_SUBSCR:
+            case STORE_SUBSCR_ADAPTIVE:
+            case STORE_SUBSCR_DICT:
+            case STORE_SUBSCR_LIST_INT:
+                opcode = STORE_SUBSCR;
+                break;
+            case UNPACK_SEQUENCE:
+            case UNPACK_SEQUENCE_ADAPTIVE:
+            case UNPACK_SEQUENCE_LIST:
+            case UNPACK_SEQUENCE_TUPLE:
+            case UNPACK_SEQUENCE_TWO_TUPLE:
+                opcode = UNPACK_SEQUENCE;
+                break;
+            default:
+                assert(!_PyOpcode_InlineCacheEntries[opcode]);
+                continue;
+        }
+        instructions[i] = _Py_MAKECODEUNIT(opcode, _Py_OPARG(instructions[i]));
+        for (int j = 0; j < _PyOpcode_InlineCacheEntries[opcode]; j++) {
+            instructions[++i] = _Py_MAKECODEUNIT(CACHE, 0);
+        }
     }
-    Py_ssize_t size = PyBytes_GET_SIZE(code->co_code);
-    int instr_count = (int)(size/sizeof(_Py_CODEUNIT));
-    if (instr_count > MAX_SIZE_TO_QUICKEN) {
-        code->co_warmup = QUICKENING_WARMUP_COLDEST;
-        return 0;
-    }
-    _Py_CODEUNIT *quickened = allocate(instr_count);
-    if (quickened == NULL) {
-        return -1;
-    }
-    memcpy(quickened, code->co_firstinstr, size);
-    optimize(quickened, instr_count);
-    code->co_quickened = quickened;
-    code->co_firstinstr = quickened;
-    return 0;
 }
 
 static inline int
