@@ -880,9 +880,11 @@ fail:
 static PyObject *
 _PyLong_FromDev(dev_t dev)
 {
+#ifdef NODEV
     if (dev == NODEV) {
         return PyLong_FromLongLong((long long)dev);
     }
+#endif
     return PyLong_FromUnsignedLongLong((unsigned long long)dev);
 }
 
@@ -891,6 +893,7 @@ _PyLong_FromDev(dev_t dev)
 static int
 _Py_Dev_Converter(PyObject *obj, void *p)
 {
+#ifdef NODEV
     if (PyLong_Check(obj) && Py_SIZE(obj) < 0) {
         int overflow;
         long long result = PyLong_AsLongLongAndOverflow(obj, &overflow);
@@ -902,6 +905,7 @@ _Py_Dev_Converter(PyObject *obj, void *p)
             return 1;
         }
     }
+#endif
 
     unsigned long long result = PyLong_AsUnsignedLongLong(obj);
     if (result == (unsigned long long)-1 && PyErr_Occurred()) {
