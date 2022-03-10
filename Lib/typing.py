@@ -2602,6 +2602,8 @@ def _make_nmtuple(name, types, module, defaults = ()):
     nm_tpl = collections.namedtuple(name, fields,
                                     defaults=defaults, module=module)
     nm_tpl.__annotations__ = types
+    nm_tpl.__new__.__annotations__ = types
+    nm_tpl.__new__.__defaults__ = default
     return nm_tpl
 
 
