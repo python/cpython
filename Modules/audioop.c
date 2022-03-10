@@ -297,7 +297,7 @@ static const int stepsizeTable[89] = {
 #define GETINT16(cp, i)         GETINTX(int16_t, (cp), (i))
 #define GETINT32(cp, i)         GETINTX(int32_t, (cp), (i))
 
-#if WORDS_BIGENDIAN
+#ifdef WORDS_BIGENDIAN
 #define GETINT24(cp, i)  (                              \
         ((unsigned char *)(cp) + (i))[2] +              \
         (((unsigned char *)(cp) + (i))[1] << 8) +       \
@@ -314,7 +314,7 @@ static const int stepsizeTable[89] = {
 #define SETINT16(cp, i, val)    SETINTX(int16_t, (cp), (i), (val))
 #define SETINT32(cp, i, val)    SETINTX(int32_t, (cp), (i), (val))
 
-#if WORDS_BIGENDIAN
+#ifdef WORDS_BIGENDIAN
 #define SETINT24(cp, i, val)  do {                              \
         ((unsigned char *)(cp) + (i))[2] = (int)(val);          \
         ((unsigned char *)(cp) + (i))[1] = (int)(val) >> 8;     \

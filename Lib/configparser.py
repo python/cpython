@@ -633,6 +633,11 @@ class RawConfigParser(MutableMapping):
             self._interpolation = self._DEFAULT_INTERPOLATION
         if self._interpolation is None:
             self._interpolation = Interpolation()
+        if not isinstance(self._interpolation, Interpolation):
+            raise TypeError(
+                f"interpolation= must be None or an instance of Interpolation;"
+                f" got an object of type {type(self._interpolation)}"
+            )
         if converters is not _UNSET:
             self._converters.update(converters)
         if defaults:

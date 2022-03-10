@@ -877,17 +877,20 @@ class Path(PurePath):
         return self._from_parsed_parts(self._drv, self._root, parts)
 
     def __enter__(self):
+        # In previous versions of pathlib, __exit__() marked this path as
+        # closed; subsequent attempts to perform I/O would raise an IOError.
+        # This functionality was never documented, and had the effect of
+        # making Path objects mutable, contrary to PEP 428.
+        # In Python 3.9 __exit__() was made a no-op.
+        # In Python 3.11 __enter__() began emitting DeprecationWarning.
+        # In Python 3.13 __enter__() and __exit__() should be removed.
+        warnings.warn("pathlib.Path.__enter__() is deprecated and scheduled "
+                      "for removal in Python 3.13; Path objects as a context "
+                      "manager is a no-op",
+                      DeprecationWarning, stacklevel=2)
         return self
 
     def __exit__(self, t, v, tb):
-        # https://bugs.python.org/issue39682
-        # In previous versions of pathlib, this method marked this path as
-        # closed; subsequent attempts to perform I/O would raise an IOError.
-        # This functionality was never documented, and had the effect of
-        # making Path objects mutable, contrary to PEP 428. In Python 3.9 the
-        # _closed attribute was removed, and this method made a no-op.
-        # This method and __enter__()/__exit__() should be deprecated and
-        # removed in the future.
         pass
 
     # Public API

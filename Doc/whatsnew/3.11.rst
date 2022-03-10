@@ -65,8 +65,15 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
-PEP-654: Exception Groups and ``except*``.
-(Contributed by Irit Katriel in :issue:`45292`.)
+New syntax features:
+
+* :pep:`654`: Exception Groups and ``except*``.
+  (Contributed by Irit Katriel in :issue:`45292`.)
+
+New typing features:
+
+* :pep:`673`: ``Self`` Type.
+  (Contributed by James Hilton-Balfe and Pradeep Kumar in :issue:`30924`.)
 
 New Features
 ============
@@ -158,6 +165,9 @@ traceback. (Contributed by Irit Katriel in :issue:`45607`.)
 Other Language Changes
 ======================
 
+* Starred expressions can be used in :ref:`for statements<for>`. (See
+  :issue:`46725` for more details.)
+
 * Asynchronous comprehensions are now allowed inside comprehensions in
   asynchronous functions. Outer comprehensions implicitly become
   asynchronous. (Contributed by Serhiy Storchaka in :issue:`33346`.)
@@ -209,7 +219,8 @@ Other CPython Implementation Changes
 New Modules
 ===========
 
-* None yet.
+* A new module, :mod:`tomllib`, was added for parsing TOML.
+  (Contributed by Taneli Hukkinen in :issue:`40059`.)
 
 
 Improved Modules
@@ -226,12 +237,20 @@ fractions
   (Contributed by Mark Dickinson in :issue:`44547`.)
 
 
+IDLE and idlelib
+----------------
+
+* Apply syntax highlighting to `.pyi` files. (Contributed by Alex
+  Waygood and Terry Jan Reedy in :issue:`45447`.)
+
 inspect
 -------
 * Add :func:`inspect.getmembers_static`: return all members without
   triggering dynamic lookup via the descriptor protocol. (Contributed by
   Weipeng Hong in :issue:`30533`.)
 
+* Add :func:`inspect.ismethodwrapper` for checking if the type of an object is a
+  :class:`~types.MethodWrapperType`. (Contributed by Hakan Çelik in :issue:`29418`.)
 
 math
 ----
@@ -262,6 +281,13 @@ os
 * On Windows, :func:`os.urandom` now uses ``BCryptGenRandom()``,
   instead of ``CryptGenRandom()`` which is deprecated.
   (Contributed by Dong-hee Na in :issue:`44611`.)
+
+
+shutil
+------
+
+* Add optional parameter *dir_fd* in :func:`shutil.rmtree`.
+  (Contributed by Serhiy Storchaka in :issue:`46245`.)
 
 
 socket
@@ -391,6 +417,11 @@ Optimizations
   larger *k*).
   (Contributed by Serhiy Storchaka in :issue:`37295`.)
 
+* Dict don't store hash value when all inserted keys are Unicode objects.
+  This reduces dict size. For example, ``sys.getsizeof(dict.fromkeys("abcdefg"))``
+  becomes 272 bytes from 352 bytes on 64bit platform.
+  (Contributed by Inada Naoki in :issue:`46845`.)
+
 
 CPython bytecode changes
 ========================
@@ -400,7 +431,7 @@ CPython bytecode changes
 
 * Replaced the three call instructions: :opcode:`CALL_FUNCTION`,
   :opcode:`CALL_FUNCTION_KW` and :opcode:`CALL_METHOD` with
-  :opcode:`PRECALL_FUNCTION`, :opcode:`PRECALL_METHOD`, :opcode:`CALL`,
+  :opcode:`PUSH_NULL`, :opcode:`PRECALL`, :opcode:`CALL`,
   and :opcode:`KW_NAMES`.
   This decouples the argument shifting for methods from the handling of
   keyword arguments and allows better specialization of calls.
@@ -472,6 +503,12 @@ Deprecated
   * the :meth:`configparser.ParsingError.readfp` method
 
   (Contributed by Hugo van Kemenade in :issue:`45173`.)
+
+* The :func:`locale.getdefaultlocale` function is deprecated and will be
+  removed in Python 3.13. Use :func:`locale.setlocale`,
+  :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
+  :func:`locale.getlocale` functions instead.
+  (Contributed by Victor Stinner in :issue:`46659`.)
 
 
 Removed
@@ -555,6 +592,12 @@ Removed
   because it was not used and added by mistake in previous versions.
   (Contributed by Nikita Sobolev in :issue:`46483`.)
 
+* Remove the undocumented private ``float.__set_format__()`` method, previously
+  known as ``float.__setformat__()`` in Python 3.7. Its docstring said: "You
+  probably don't want to use this function. It exists mainly to be used in
+  Python's test suite."
+  (Contributed by Victor Stinner in :issue:`46852`.)
+
 Porting to Python 3.11
 ======================
 
@@ -589,9 +632,18 @@ Changes in the Python API
   of sorting simply isn't well-defined in the absence of a total ordering
   on list elements.
 
+* :mod:`calendar`: The :class:`calendar.LocaleTextCalendar` and
+  :class:`calendar.LocaleHTMLCalendar` classes now use
+  :func:`locale.getlocale`, instead of using :func:`locale.getdefaultlocale`,
+  if no locale is specified.
+  (Contributed by Victor Stinner in :issue:`46659`.)
+
 
 Build Changes
 =============
+
+* Building Python now requires a C11 compiler without optional C11 features.
+  (Contributed by Victor Stinner in :issue:`46656`.)
 
 * CPython can now be built with the ThinLTO option via ``--with-lto=thin``.
   (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
@@ -605,10 +657,12 @@ Build Changes
   (Contributed by Victor Stinner in :issue:`45440`.)
 
 * Building Python now requires a C99 ``<math.h>`` header file providing
-  a ``NAN`` constant, or the ``__builtin_nan()`` built-in function. If a
-  platform does not support Not-a-Number (NaN), the ``Py_NO_NAN`` macro can be
-  defined in the ``pyconfig.h`` file.
+  a ``NAN`` constant, or the ``__builtin_nan()`` built-in function.
   (Contributed by Victor Stinner in :issue:`46640`.)
+
+* Building Python now requires support for floating point Not-a-Number (NaN):
+  remove the ``Py_NO_NAN`` macro.
+  (Contributed by Victor Stinner in :issue:`46656`.)
 
 * Freelists for object structs can now be disabled. A new :program:`configure`
   option :option:`!--without-freelists` can be used to disable all freelists
@@ -699,6 +753,11 @@ New Features
     :c:member:`~PyBufferProcs.bf_releasebuffer` type slots
 
   (Contributed by Christian Heimes in :issue:`45459`.)
+
+* Added the :c:data:`PyType_GetModuleByDef` function, used to get the module
+  in which a method was defined, in cases where this information is not
+  available directly (via :c:type:`PyCMethod`).
+  (Contributed by Petr Viktorin in :issue:`46613`.)
 
 
 Porting to Python 3.11
@@ -802,38 +861,40 @@ Porting to Python 3.11
   which are not available in the limited C API.
   (Contributed by Victor Stinner in :issue:`46007`.)
 
-* Changes of the private :c:type:`PyFrameObject` structure members.
+* The :c:type:`PyFrameObject` structure member has been moved to the internal C
+  API headers.
 
-  While the documentation notes that the fields of ``PyFrameObject`` are
-  subject to change at any time, they have been stable for a long time
-  and were used in several popular extensions.
+  While the documentation notes that the :c:type:`PyFrameObject` fields are
+  subject to change at any time, they have been stable for a long time and were
+  used in several popular extensions.
+
   In Python 3.11, the frame struct was reorganized to allow performance
-  optimizations. Rather than reading the fields directly, extensions should
-  use functions:
+  optimizations. Some fields were removed entirely, as they were details of the
+  old implementation.
 
-  * ``f_code``: removed, use :c:func:`PyFrame_GetCode` instead.
-    Warning: the function returns a :term:`strong reference`, need to call
-    :c:func:`Py_DECREF`.
-  * ``f_back``: changed (see below), use :c:func:`PyFrame_GetBack`.
-  * ``f_builtins``: removed,
-    use ``PyObject_GetAttrString(frame, "f_builtins")``.
-  * ``f_globals``: removed,
-    use ``PyObject_GetAttrString(frame, "f_globals")``.
-  * ``f_locals``: removed,
-    use ``PyObject_GetAttrString(frame, "f_locals")``.
-  * ``f_lasti``: removed,
-    use ``PyObject_GetAttrString(frame, "f_lasti")``.
+  :c:type:`PyFrameObject` fields:
 
-  The following fields were removed entirely, as they were details
-  of the old implementation:
-
-  * ``f_valuesstack``
-  * ``f_stackdepth``
-  * ``f_gen``
-  * ``f_iblock``
-  * ``f_state``
-  * ``f_blockstack``
-  * ``f_localsplus``
+  * ``f_back``: use :c:func:`PyFrame_GetBack`.
+  * ``f_blockstack``: removed.
+  * ``f_builtins``: use ``PyObject_GetAttrString((PyObject*)frame, "f_builtins")``.
+  * ``f_code``: use :c:func:`PyFrame_GetCode`.
+  * ``f_gen``: removed.
+  * ``f_globals``: use ``PyObject_GetAttrString((PyObject*)frame, "f_globals")``.
+  * ``f_iblock``: removed.
+  * ``f_lasti``: use ``PyObject_GetAttrString((PyObject*)frame, "f_lasti")``.
+    Code using ``f_lasti`` with ``PyCode_Addr2Line()`` must use
+    :c:func:`PyFrame_GetLineNumber` instead.
+  * ``f_lineno``: use :c:func:`PyFrame_GetLineNumber`
+  * ``f_locals``: use ``PyObject_GetAttrString((PyObject*)frame, "f_locals")``.
+  * ``f_stackdepth``: removed.
+  * ``f_state``: no public API (renamed to ``f_frame.f_state``).
+  * ``f_trace``: no public API.
+  * ``f_trace_lines``: use ``PyObject_GetAttrString((PyObject*)frame, "f_trace_lines")``
+    (it also be modified).
+  * ``f_trace_opcodes``: use ``PyObject_GetAttrString((PyObject*)frame, "f_trace_opcodes")``
+    (it also be modified).
+  * ``f_localsplus``: no public API (renamed to ``f_frame.localsplus``).
+  * ``f_valuestack``: removed.
 
   The Python frame object is now created lazily. A side effect is that the
   ``f_back`` member must not be accessed directly, since its value is now also
@@ -860,9 +921,9 @@ Porting to Python 3.11
       }
       #endif
 
-  Or use `the pythoncapi_compat project
-  <https://github.com/pythoncapi/pythoncapi_compat>`__ to get these functions
-  on old Python functions.
+  Or use the `pythoncapi_compat project
+  <https://github.com/python/pythoncapi_compat>`__ to get these two
+  functions on older Python versions.
 
 * Changes of the :c:type:`PyThreadState` structure members:
 
@@ -914,7 +975,7 @@ Porting to Python 3.11
       #endif
 
   Or use `the pythoncapi_compat project
-  <https://github.com/pythoncapi/pythoncapi_compat>`__ to get these functions
+  <https://github.com/python/pythoncapi_compat>`__ to get these functions
   on old Python functions.
 
 
@@ -936,6 +997,9 @@ Deprecated
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
   (Contributed by Victor Stinner in :issue:`44113`.)
+
+* Deprecate the ``ob_shash`` member of the :c:type:`PyBytesObject`. Use :c:func:`PyObject_Hash` instead.
+  (Contributed by Inada Naoki in :issue:`46864`.)
 
 Removed
 -------
@@ -989,3 +1053,7 @@ Removed
   public C API by mistake, it must only be used by Python internally.
   Use the ``PyTypeObject.tp_members`` member instead.
   (Contributed by Victor Stinner in :issue:`40170`.)
+
+* Remove the ``HAVE_PY_SET_53BIT_PRECISION`` macro (moved to the internal C
+  API).
+  (Contributed by Victor Stinner in :issue:`45412`.)

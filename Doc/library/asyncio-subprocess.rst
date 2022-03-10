@@ -75,12 +75,8 @@ Creating Subprocesses
    See the documentation of :meth:`loop.subprocess_exec` for other
    parameters.
 
-   .. deprecated-removed:: 3.8 3.10
-
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
 
 .. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, \
@@ -106,12 +102,8 @@ Creating Subprocesses
       escape whitespace and special shell characters in strings that are going
       to be used to construct shell commands.
 
-   .. deprecated-removed:: 3.8 3.10
-
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
 .. note::
 

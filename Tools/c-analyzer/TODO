@@ -156,8 +156,6 @@ Objects/codeobject.c:PyCode_NewEmpty():emptystring               static PyObject
 Objects/exceptions.c:_check_for_legacy_statements():exec_prefix  static PyObject *exec_prefix
 Objects/exceptions.c:_check_for_legacy_statements():print_prefix static PyObject *print_prefix
 Objects/funcobject.c:PyFunction_NewWithQualName():__name__       static PyObject *__name__
-Objects/typeobject.c:object___reduce_ex___impl():objreduce       static PyObject *objreduce
-Objects/typeobject.c:resolve_slotdups():pname                    static PyObject *pname
 Objects/unicodeobject.c:unicode_empty                            static PyObject *unicode_empty
 Objects/unicodeobject.c:unicode_latin1                           static PyObject *unicode_latin1[256]
 Python/_warnings.c:is_internal_frame():bootstrap_string          static PyObject *bootstrap_string
