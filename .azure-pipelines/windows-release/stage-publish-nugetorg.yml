@@ -1,10 +1,13 @@
+parameters:
+  BuildToPublish: ''
+
 jobs:
 - job: Publish_Nuget
   displayName: Publish Nuget packages
   condition: and(succeeded(), eq(variables['DoNuget'], 'true'))
 
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
 
   workspace:
     clean: all
@@ -12,29 +15,30 @@ jobs:
   steps:
   - checkout: none
 
-  - task: DownloadBuildArtifacts@0
-    displayName: 'Download artifact: nuget'
-    condition: and(succeeded(), not(variables['BuildToPublish']))
-    inputs:
-      artifactName: nuget
-      downloadPath: $(Build.BinariesDirectory)
+  - ${{ if parameters.BuildToPublish }}:
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download artifact from ${{ parameters.BuildToPublish }}'
+      inputs:
+        artifactName: nuget
+        downloadPath: $(Build.BinariesDirectory)
+        buildType: specific
+        project: $(System.TeamProject)
+        pipeline: $(Build.DefinitionName)
+        buildVersionToDownload: specific
+        buildId: ${{ parameters.BuildToPublish }}
 
-  - task: DownloadBuildArtifacts@0
-    displayName: 'Download artifact: nuget'
-    condition: and(succeeded(), variables['BuildToPublish'])
-    inputs:
-      artifactName: nuget
-      downloadPath: $(Build.BinariesDirectory)
-      buildType: specific
-      project: cpython
-      pipeline: Windows-Release
-      buildVersionToDownload: specific
-      buildId: $(BuildToPublish)
+  - ${{ else }}:
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download artifact: nuget'
+      inputs:
+        artifactName: nuget
+        downloadPath: $(Build.BinariesDirectory)
+
 
   - powershell: 'gci pythonarm*.nupkg | %{ Write-Host "Not publishing: $($_.Name)"; gi $_ } | del'
-    displayName: 'Prevent publishing ARM/ARM64 packages'
+    displayName: 'Prevent publishing ARM64 packages'
     workingDirectory: '$(Build.BinariesDirectory)\nuget'
-    condition: and(succeeded(), not(variables['PublishArmPackages']))
+    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
 
   - task: NuGetCommand@2
     displayName: Push packages

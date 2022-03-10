@@ -335,6 +335,3 @@ a custom finder, return instances of this derived ``Distribution`` in the
 .. _`entry point API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points
 .. _`metadata API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#metadata-api
 .. _`importlib_resources`: https://importlib-resources.readthedocs.io/en/latest/index.html
-
-
-.. rubric:: Footnotes

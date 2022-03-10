@@ -756,8 +756,8 @@ callback
 
 color
    Colors can be given as the names of X colors in the rgb.txt file, or as strings
-   representing RGB values in 4 bit: ``"#RGB"``, 8 bit: ``"#RRGGBB"``, 12 bit"
-   ``"#RRRGGGBBB"``, or 16 bit ``"#RRRRGGGGBBBB"`` ranges, where R,G,B here
+   representing RGB values in 4 bit: ``"#RGB"``, 8 bit: ``"#RRGGBB"``, 12 bit:
+   ``"#RRRGGGBBB"``, or 16 bit: ``"#RRRRGGGGBBBB"`` ranges, where R,G,B here
    represent any legal hex digit.  See page 160 of Ousterhout's book for details.
 
 cursor

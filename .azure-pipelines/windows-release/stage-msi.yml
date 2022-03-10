@@ -4,7 +4,7 @@ jobs:
   condition: and(succeeded(), not(variables['SigningCertificate']))
 
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
 
   variables:
     ReleaseUri: http://www.python.org/{arch}

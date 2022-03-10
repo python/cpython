@@ -1078,8 +1078,7 @@ Module(
             ast.literal_eval(node)
 
     def test_literal_eval_syntax_errors(self):
-        msg = "unexpected character after line continuation character"
-        with self.assertRaisesRegex(SyntaxError, msg):
+        with self.assertRaisesRegex(SyntaxError, "unexpected indent"):
             ast.literal_eval(r'''
                 \
                 (\

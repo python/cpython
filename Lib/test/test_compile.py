@@ -158,7 +158,7 @@ if 1:
         s256 = "".join(["\n"] * 256 + ["spam"])
         co = compile(s256, 'fn', 'exec')
         self.assertEqual(co.co_firstlineno, 1)
-        self.assertEqual(list(co.co_lines()), [(0, 8, 257)])
+        self.assertEqual(list(co.co_lines()), [(0, 2, None), (2, 10, 257)])
 
     def test_literals_with_leading_zeroes(self):
         for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",
@@ -759,7 +759,7 @@ if 1:
 
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
-            self.assertLessEqual(len(opcodes), 3)
+            self.assertLessEqual(len(opcodes), 4)
             self.assertEqual('LOAD_CONST', opcodes[-2].opname)
             self.assertEqual(None, opcodes[-2].argval)
             self.assertEqual('RETURN_VALUE', opcodes[-1].opname)
@@ -778,10 +778,10 @@ if 1:
         # Check that we did not raise but we also don't generate bytecode
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
-            self.assertEqual(2, len(opcodes))
-            self.assertEqual('LOAD_CONST', opcodes[0].opname)
-            self.assertEqual(None, opcodes[0].argval)
-            self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+            self.assertEqual(3, len(opcodes))
+            self.assertEqual('LOAD_CONST', opcodes[1].opname)
+            self.assertEqual(None, opcodes[1].argval)
+            self.assertEqual('RETURN_VALUE', opcodes[2].opname)
 
     def test_consts_in_conditionals(self):
         def and_true(x):
@@ -802,9 +802,9 @@ if 1:
         for func in funcs:
             with self.subTest(func=func):
                 opcodes = list(dis.get_instructions(func))
-                self.assertEqual(2, len(opcodes))
-                self.assertIn('LOAD_', opcodes[0].opname)
-                self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+                self.assertLessEqual(len(opcodes), 3)
+                self.assertIn('LOAD_', opcodes[-2].opname)
+                self.assertEqual('RETURN_VALUE', opcodes[-1].opname)
 
     def test_imported_load_method(self):
         sources = [
@@ -837,9 +837,8 @@ if 1:
                 opcodes = list(dis.get_instructions(func))
                 instructions = [opcode.opname for opcode in opcodes]
                 self.assertNotIn('LOAD_METHOD', instructions)
-                self.assertNotIn('CALL_METHOD', instructions)
                 self.assertIn('LOAD_ATTR', instructions)
-                self.assertIn('CALL_NO_KW', instructions)
+                self.assertIn('PRECALL', instructions)
 
     def test_lineno_procedure_call(self):
         def call():
@@ -906,7 +905,7 @@ if 1:
                 o.
                 a
             )
-        load_attr_lines = [ 2, 3, 1 ]
+        load_attr_lines = [ 0, 2, 3, 1 ]
 
         def load_method():
             return (
@@ -915,7 +914,7 @@ if 1:
                     0
                 )
             )
-        load_method_lines = [ 2, 3, 4, 3, 1 ]
+        load_method_lines = [ 0, 2, 3, 4, 3, 1 ]
 
         def store_attr():
             (
@@ -924,7 +923,7 @@ if 1:
             ) = (
                 v
             )
-        store_attr_lines = [ 5, 2, 3 ]
+        store_attr_lines = [ 0, 5, 2, 3 ]
 
         def aug_store_attr():
             (
@@ -933,7 +932,7 @@ if 1:
             ) += (
                 v
             )
-        aug_store_attr_lines = [ 2, 3, 5, 1, 3 ]
+        aug_store_attr_lines = [ 0, 2, 3, 5, 1, 3 ]
 
         funcs = [ load_attr, load_method, store_attr, aug_store_attr]
         func_lines = [ load_attr_lines, load_method_lines,
@@ -942,7 +941,8 @@ if 1:
         for func, lines in zip(funcs, func_lines, strict=True):
             with self.subTest(func=func):
                 code_lines = [ line-func.__code__.co_firstlineno
-                              for (_, _, line) in func.__code__.co_lines() ]
+                              for (_, _, line) in func.__code__.co_lines()
+                              if line is not None ]
                 self.assertEqual(lines, code_lines)
 
     def test_line_number_genexp(self):
@@ -953,7 +953,7 @@ if 1:
                     x
                     in
                     y)
-        genexp_lines = [None, 1, 3, 1]
+        genexp_lines = [1, 3, 1]
 
         genexp_code = return_genexp.__code__.co_consts[1]
         code_lines = [ None if line is None else line-return_genexp.__code__.co_firstlineno
@@ -966,7 +966,7 @@ if 1:
             async for i in aseq:
                 body
 
-        expected_lines = [None, 1, 2, 1]
+        expected_lines = [0, 1, 2, 1]
         code_lines = [ None if line is None else line-test.__code__.co_firstlineno
                       for (_, _, line) in test.__code__.co_lines() ]
         self.assertEqual(expected_lines, code_lines)
@@ -1002,11 +1002,23 @@ if 1:
             'JUMP_FORWARD',
         )
 
-        for line, instr in enumerate(dis.Bytecode(if_else_break)):
+        for line, instr in enumerate(
+            dis.Bytecode(if_else_break, show_caches=True)
+        ):
             if instr.opname == 'JUMP_FORWARD':
                 self.assertNotEqual(instr.arg, 0)
             elif instr.opname in HANDLED_JUMPS:
                 self.assertNotEqual(instr.arg, (line + 1)*INSTR_SIZE)
+
+    def test_no_wraparound_jump(self):
+        # See https://bugs.python.org/issue46724
+
+        def while_not_chained(a, b, c):
+            while not (a < b < c):
+                pass
+
+        for instr in dis.Bytecode(while_not_chained):
+            self.assertNotEqual(instr.opname, "EXTENDED_ARG")
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
@@ -1052,7 +1064,9 @@ class TestSourcePositions(unittest.TestCase):
     def assertOpcodeSourcePositionIs(self, code, opcode,
             line, end_line, column, end_column, occurrence=1):
 
-        for instr, position in zip(dis.Bytecode(code), code.co_positions()):
+        for instr, position in zip(
+            dis.Bytecode(code, show_caches=True), code.co_positions(), strict=True
+        ):
             if instr.opname == opcode:
                 occurrence -= 1
                 if not occurrence:
@@ -1095,7 +1109,7 @@ f(
 )
 """
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_NO_KW',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
             line=1, end_line=3, column=0, end_column=1)
 
     def test_very_long_line_end_offset(self):
@@ -1105,7 +1119,7 @@ f(
         snippet = f"g('{long_string}')"
 
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_NO_KW',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
             line=1, end_line=1, column=None, end_column=None)
 
     def test_complex_single_line_expression(self):
@@ -1175,7 +1189,7 @@ class TestExpressionStackSize(unittest.TestCase):
         kwargs = (f'a{i}=x' for i in range(self.N))
         self.check_stack_size("f(" +  ", ".join(kwargs) + ")")
 
-    def test_func_args(self):
+    def test_meth_args(self):
         self.check_stack_size("o.m(" + "x, " * self.N + ")")
 
     def test_meth_kwargs(self):
