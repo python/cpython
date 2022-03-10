@@ -1490,9 +1490,9 @@ code_getfreevars(PyCodeObject *code, void *closure)
 }
 
 static PyObject *
-code_getbytecode(PyCodeObject *code, void *closure)
+code_getundercode(PyCodeObject *code, void *closure)
 {
-    return PyMemoryView_FromMemory(code->co_bytecode, _PyCode_GET_SIZE(code),
+    return PyMemoryView_FromMemory(code->_co_code, _PyCode_GET_SIZE(code),
                                    PyBUF_READ);
 }
 
@@ -1501,7 +1501,7 @@ code_getcode(PyCodeObject *code, void *closure)
 {
     // XXX
     _Py_SetCountAndUnquicken(code);
-    return PyBytes_FromStringAndSize(code->co_bytecode, _PyCode_GET_SIZE(code));
+    return PyBytes_FromStringAndSize(code->_co_code, _PyCode_GET_SIZE(code));
 }
 
 static PyGetSetDef code_getsetlist[] = {
@@ -1510,7 +1510,7 @@ static PyGetSetDef code_getsetlist[] = {
     {"co_varnames",  (getter)code_getvarnames, NULL, NULL},
     {"co_cellvars",  (getter)code_getcellvars, NULL, NULL},
     {"co_freevars",  (getter)code_getfreevars, NULL, NULL},
-    {"_co_bytecode",  (getter)code_getbytecode, NULL, NULL},
+    {"_co_code",  (getter)code_getundercode, NULL, NULL},
     {"co_code", (getter)code_getcode, NULL, NULL},
     {0}
 };
@@ -1700,7 +1700,7 @@ static struct PyMethodDef code_methods[] = {
 PyTypeObject PyCode_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "code",
-    offsetof(PyCodeObject, co_bytecode),
+    offsetof(PyCodeObject, _co_code),
     sizeof(_Py_CODEUNIT),
     (destructor)code_dealloc,           /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */

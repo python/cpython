@@ -95,10 +95,10 @@ struct PyCodeObject {
     /* Quickened instructions and cache, or NULL
      This should be treated as opaque by all code except the specializer and
      interpreter. */
-    char co_bytecode[1];
+    char _co_code[1];
 };
 
-#define _PyCode_GET_CODE(CO) ((_Py_CODEUNIT *)(CO)->co_bytecode)
+#define _PyCode_GET_CODE(CO) ((_Py_CODEUNIT *)(CO)->_co_code)
 #define _PyCode_GET_SIZE(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
 
 /* Masks for co_flags above */
