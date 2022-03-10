@@ -1321,9 +1321,9 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define JUMPTO(x)       (next_instr = first_instr + (x))
 #define JUMPBY(x)       (next_instr += (x))
 
-// Skip from a PRECALL over a CALL to the next instruction:
+// Skip from a PRECALL over a CALL and POSTCALL to the next instruction:
 #define SKIP_CALL() \
-    JUMPBY(INLINE_CACHE_ENTRIES_PRECALL + 1 + INLINE_CACHE_ENTRIES_CALL)
+    JUMPBY(INLINE_CACHE_ENTRIES_PRECALL + 1 + INLINE_CACHE_ENTRIES_CALL + 1)
 
 /* Get opcode and oparg from original instructions, not quickened form. */
 #define TRACING_NEXTOPARG() do { \
@@ -1463,13 +1463,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
     STAT_INC(LOAD_##attr_or_method, hit); \
     Py_INCREF(res);
 
-#define CALL_PY_FRAME_PASS_SELF() \
-    if (call_shape.init_pass_self) { \
-        assert(frame->self == NULL); \
-        frame->self = Py_NewRef(frame->localsplus[0]); \
-        call_shape.init_pass_self = false; \
-    }
-
 #define TRACE_FUNCTION_EXIT() \
     if (cframe.use_tracing) { \
         if (trace_function_exit(tstate, frame, retval)) { \
@@ -1595,11 +1588,6 @@ pop_frame(PyThreadState *tstate, _PyInterpreterFrame *frame)
  */
 typedef struct {
     PyObject *kwnames;
-    /* __init__ is special because while it returns None, we need to return self
-      This tells CALL to pass the current self to the new frame (the __init__ frame).
-      Where it is eventually consumed by RETURN_VALUE.
-    */
-    bool init_pass_self;
 } CallShape;
 
 static inline bool
@@ -1631,7 +1619,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _PyCFrame cframe;
     CallShape call_shape;
     call_shape.kwnames = NULL; // Borrowed reference. Reset by CALL instructions.
-    call_shape.init_pass_self = 0;
 
     /* WARNING: Because the _PyCFrame lives on the C stack,
      * but can be accessed from a heap allocated object (tstate)
@@ -2404,18 +2391,6 @@ handle_eval_breaker:
 
         TARGET(RETURN_VALUE) {
             PyObject *retval = POP();
-            if (frame->self != NULL) {
-                if (Py_IsNone(retval)) {
-                    Py_SETREF(retval, frame->self);
-                    frame->self = NULL;
-                }
-                /* We need this to continue raising errors when bad-practice
-                   __init__s return their non-None values. This is later
-                   caught by the interpreter. */
-                else {
-                    Py_CLEAR(frame->self);
-                }
-            }
             assert(EMPTY());
             frame->f_state = FRAME_RETURNED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -2425,6 +2400,7 @@ handle_eval_breaker:
             if (!frame->is_entry) {
                 frame = cframe.current_frame = pop_frame(tstate, frame);
                 _PyFrame_StackPush(frame, retval);
+                fprintf(stderr, "resuming");
                 goto resume_frame;
             }
             /* Restore previous cframe and return. */
@@ -2432,6 +2408,7 @@ handle_eval_breaker:
             tstate->cframe->use_tracing = cframe.use_tracing;
             assert(tstate->cframe->current_frame == frame->previous);
             assert(!_PyErr_Occurred(tstate));
+            fprintf(stderr, "returning");
             return retval;
         }
 
@@ -4607,6 +4584,7 @@ handle_eval_breaker:
                 PEEK(oparg+2) = meth;
                 Py_DECREF(function);
             }
+            PUSH(NULL);
             JUMPBY(INLINE_CACHE_ENTRIES_PRECALL);
             DISPATCH();
         }
@@ -4623,6 +4601,7 @@ handle_eval_breaker:
             PEEK(oparg + 1) = self;
             PEEK(oparg + 2) = meth;
             Py_DECREF(function);
+            PUSH(NULL);
             JUMPBY(INLINE_CACHE_ENTRIES_PRECALL);
             DISPATCH();
         }
@@ -4632,11 +4611,28 @@ handle_eval_breaker:
             PyObject *function = PEEK(nargs + 1);
             DEOPT_IF(Py_TYPE(function) != &PyFunction_Type, PRECALL);
             STAT_INC(PRECALL, hit);
+            PUSH(NULL);
             JUMPBY(INLINE_CACHE_ENTRIES_PRECALL);
             DISPATCH();
         }
 
         TARGET(PRECALL_PY_CLASS) {
+            /*
+            Before a call, the stack is:
+                meth, self, arg1, arg2, ..., argN, NULL|self (only when __init__)
+                                                   ^TOS
+            TOS is NULL or self depending on __init__.
+
+            After the call with __init__, the stack should be:
+                NULL|self, retvalue
+                           ^TOS
+
+            After the post call, the stack will become:
+                self|retvalue
+                ^TOS
+
+            CALLs that use SKIP_CALL() do not need to handle this case.
+            */
             _PyPrecallCache *cache = (_PyPrecallCache *)next_instr;
             int is_method = (PEEK(oparg + 2) != NULL);
             DEOPT_IF(is_method, PRECALL);
@@ -4660,10 +4656,23 @@ handle_eval_breaker:
             PEEK(oparg+2) = init;
             Py_DECREF(cls);
 
-            /* For use in RETURN_VALUE later */
-            assert(call_shape.init_pass_self == false);
-            call_shape.init_pass_self = true;
+            /* For POSTCALL */
+            PUSH(Py_NewRef(self));
             JUMPBY(INLINE_CACHE_ENTRIES_PRECALL);
+            DISPATCH();
+        }
+
+        TARGET(POSTCALL) {
+            /* Stack currently is self|NULL, retval */
+            /* __init__ was called, TOS should self.*/
+            if (SECOND() != NULL) {
+                Py_DECREF(POP());
+            }
+            else {
+                PyObject *tmp = POP();
+                assert(TOP() == NULL);
+                SET_TOP(tmp);
+            }
             DISPATCH();
         }
 
@@ -4677,7 +4686,9 @@ handle_eval_breaker:
         TARGET(CALL) {
             PREDICTED(CALL);
             int is_meth;
+            PyObject *self_or_null;
         call_function:
+            self_or_null = POP();
             is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
             PyObject *function = PEEK(total_args + 1);
@@ -4693,20 +4704,27 @@ handle_eval_breaker:
                 );
                 call_shape.kwnames = NULL;
                 STACK_SHRINK(2-is_meth);
+                PUSH(self_or_null);
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
                     goto error;
                 }
+                PUSH(self_or_null);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 frame->f_lasti += INLINE_CACHE_ENTRIES_CALL;
                 new_frame->previous = frame;
-                cframe.current_frame = frame = new_frame;
-                CALL_PY_FRAME_PASS_SELF();
+                frame = cframe.current_frame = new_frame;
                 CALL_STAT_INC(inlined_py_calls);
                 goto start_frame;
             }
             /* Callable is not a normal Python function */
+            if (self_or_null != NULL) {
+                PyObject_Print(self_or_null, stderr, Py_PRINT_RAW);
+                _PyErr_SetString(tstate, PyExc_SystemError, "bad self, supposed to be NULL");
+                goto error;
+            }
+            assert(self_or_null == NULL);
             PyObject *res;
             if (cframe.use_tracing) {
                 res = trace_call_function(
@@ -4732,7 +4750,9 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+
+            /* Skip the POSTCALL too. */
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL+1);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -4762,9 +4782,9 @@ handle_eval_breaker:
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             if (cache->counter == 0) {
                 next_instr--;
-                int is_meth = is_method(stack_pointer, oparg);
+                int is_meth = is_method(stack_pointer-1, oparg);
                 int nargs = oparg + is_meth;
-                PyObject *callable = PEEK(nargs + 1);
+                PyObject *callable = PEEK(nargs + 2);
                 int err = _Py_Specialize_Call(callable, next_instr, nargs,
                                               call_shape.kwnames);
                 if (err < 0) {
@@ -4782,6 +4802,7 @@ handle_eval_breaker:
         TARGET(CALL_PY_EXACT_ARGS) {
             assert(call_shape.kwnames == NULL);
             _PyCallCache *cache = (_PyCallCache *)next_instr;
+            PyObject *self_or_null = POP();
             int is_meth = is_method(stack_pointer, oparg);
             int argcount = oparg + is_meth;
             PyObject *callable = PEEK(argcount + 1);
@@ -4793,6 +4814,7 @@ handle_eval_breaker:
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_Push(tstate, func);
             if (new_frame == NULL) {
+                Py_XDECREF(self_or_null);
                 goto error;
             }
             CALL_STAT_INC(inlined_py_calls);
@@ -4804,17 +4826,18 @@ handle_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(2-is_meth);
+            PUSH(self_or_null);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             frame->f_lasti += INLINE_CACHE_ENTRIES_CALL;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
-            CALL_PY_FRAME_PASS_SELF();
             goto start_frame;
         }
 
         TARGET(CALL_PY_WITH_DEFAULTS) {
             assert(call_shape.kwnames == NULL);
             _PyCallCache *cache = (_PyCallCache *)next_instr;
+            PyObject *self_or_null = POP();
             int is_meth = is_method(stack_pointer, oparg);
             int argcount = oparg + is_meth;
             PyObject *callable = PEEK(argcount + 1);
@@ -4828,6 +4851,7 @@ handle_eval_breaker:
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_Push(tstate, func);
             if (new_frame == NULL) {
+                Py_XDECREF(self_or_null);
                 goto error;
             }
             CALL_STAT_INC(inlined_py_calls);
@@ -4845,11 +4869,11 @@ handle_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(2-is_meth);
+            PUSH(self_or_null);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             frame->f_lasti += INLINE_CACHE_ENTRIES_CALL;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
-            CALL_PY_FRAME_PASS_SELF();
             goto start_frame;
         }
 
@@ -5616,7 +5640,6 @@ unbound_local_error:
 
 error:
         call_shape.kwnames = NULL;
-        call_shape.init_pass_self = false;
         /* Double-check exception status. */
 #ifdef NDEBUG
         if (!_PyErr_Occurred(tstate)) {
@@ -5658,7 +5681,6 @@ exception_unwind:
             assert(STACK_LEVEL() == 0);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             frame->f_state = FRAME_RAISED;
-            Py_CLEAR(frame->self);
             TRACE_FUNCTION_UNWIND();
             DTRACE_FUNCTION_EXIT();
             goto exit_unwind;

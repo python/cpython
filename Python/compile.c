@@ -1043,10 +1043,12 @@ stack_effect(int opcode, int oparg, int jump)
 
         /* Functions and calls */
         case PRECALL:
-            return -oparg;
+            return 1;
         case KW_NAMES:
             return 0;
         case CALL:
+            return -1-oparg;
+        case POSTCALL:
             return -1;
 
         case CALL_FUNCTION_EX:
@@ -1869,6 +1871,7 @@ compiler_call_exit_with_nones(struct compiler *c) {
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_I(c, PRECALL, 2);
     ADDOP_I(c, CALL, 2);
+    ADDOP(c, POSTCALL)
     return 1;
 }
 
@@ -2247,6 +2250,7 @@ compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
         SET_LOC(c, (expr_ty)asdl_seq_GET(decos, i));
         ADDOP_I(c, PRECALL, 0);
         ADDOP_I(c, CALL, 0);
+        ADDOP(c, POSTCALL)
     }
     c->u->u_lineno = old_lineno;
     c->u->u_end_lineno = old_end_lineno;
@@ -3897,6 +3901,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
         VISIT(c, expr, s->v.Assert.msg);
         ADDOP_I(c, PRECALL, 0);
         ADDOP_I(c, CALL, 0);
+        ADDOP(c, POSTCALL)
     }
     ADDOP_I(c, RAISE_VARARGS, 1);
     compiler_use_next_block(c, end);
@@ -4721,6 +4726,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     }
     ADDOP_I(c, PRECALL, argsl + kwdsl);
     ADDOP_I(c, CALL, argsl + kwdsl);
+    ADDOP(c, POSTCALL)
     c->u->u_lineno = old_lineno;
     return 1;
 }
@@ -4786,6 +4792,7 @@ compiler_joined_str(struct compiler *c, expr_ty e)
         }
         ADDOP_I(c, PRECALL, 1);
         ADDOP_I(c, CALL, 1);
+        ADDOP(c, POSTCALL)
     }
     else {
         VISIT_SEQ(c, expr, e->v.JoinedStr.values);
@@ -4960,6 +4967,7 @@ compiler_call_helper(struct compiler *c,
     }
     ADDOP_I(c, PRECALL, n + nelts + nkwelts);
     ADDOP_I(c, CALL, n + nelts + nkwelts);
+    ADDOP(c, POSTCALL)
     return 1;
 
 ex_call:
@@ -5351,6 +5359,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     ADDOP_I(c, PRECALL, 0);
     ADDOP_I(c, CALL, 0);
+    ADDOP(c, POSTCALL);
 
     if (is_async_generator && type != COMP_GENEXP) {
         ADDOP_I(c, GET_AWAITABLE, 0);
