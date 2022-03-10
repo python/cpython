@@ -58,6 +58,7 @@
  */
 #if 1
 #define _mi_abandoned_await_readers _Py__mi_abandoned_await_readers
+#define _mi_abandoned_collect _Py__mi_abandoned_collect
 #define _mi_abandoned_reclaim_all _Py__mi_abandoned_reclaim_all
 #define mi_aligned_alloc _Py_mi_aligned_alloc
 #define mi_aligned_offset_recalloc _Py_mi_aligned_offset_recalloc
@@ -201,7 +202,6 @@
 #define _mi_os_reset _Py__mi_os_reset
 #define _mi_os_shrink _Py__mi_os_shrink
 #define _mi_os_unprotect _Py__mi_os_unprotect
-#define _mi_os_unreset _Py__mi_os_unreset
 #define _mi_page_abandon _Py__mi_page_abandon
 #define _mi_page_empty _Py__mi_page_empty
 #define _mi_page_free_collect _Py__mi_page_free_collect
@@ -224,6 +224,7 @@
 #define mi_realloc_aligned_at _Py_mi_realloc_aligned_at
 #define mi_realloc_aligned _Py_mi_realloc_aligned
 #define mi_reallocarray _Py_mi_reallocarray
+#define mi_reallocarr _Py_mi_reallocarr
 #define mi_reallocf _Py_mi_reallocf
 #define mi_reallocn _Py_mi_reallocn
 #define mi_realloc _Py_mi_realloc
@@ -241,6 +242,7 @@
 #define mi_rezalloc_aligned_at _Py_mi_rezalloc_aligned_at
 #define mi_rezalloc_aligned _Py_mi_rezalloc_aligned
 #define mi_rezalloc _Py_mi_rezalloc
+#define _mi_segment_cache_collect _Py__mi_segment_cache_collect
 #define _mi_segment_cache_pop _Py__mi_segment_cache_pop
 #define _mi_segment_cache_push _Py__mi_segment_cache_push
 #define _mi_segment_huge_page_free _Py__mi_segment_huge_page_free

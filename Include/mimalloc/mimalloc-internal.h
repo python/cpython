@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
-Copyright (c) 2018-2021, Microsoft Research, Daan Leijen
+Copyright (c) 2018-2022, Microsoft Research, Daan Leijen
 This is free software; you can redistribute it and/or modify it under the
 terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
@@ -43,6 +43,11 @@ terms of the MIT license. A copy of the license can be found in the file
 #define mi_decl_externc  
 #endif
 
+#if !defined(_WIN32) && !defined(__wasi__) 
+#define  MI_USE_PTHREADS
+#include <pthread.h>
+#endif
+
 // "options.c"
 void       _mi_fputs(mi_output_fun* out, void* arg, const char* prefix, const char* message);
 void       _mi_fprintf(mi_output_fun* out, void* arg, const char* fmt, ...);
@@ -78,7 +83,7 @@ bool       _mi_os_unprotect(void* addr, size_t size);
 bool       _mi_os_commit(void* addr, size_t size, bool* is_zero, mi_stats_t* stats);
 bool       _mi_os_decommit(void* p, size_t size, mi_stats_t* stats);
 bool       _mi_os_reset(void* p, size_t size, mi_stats_t* stats);
-bool       _mi_os_unreset(void* p, size_t size, bool* is_zero, mi_stats_t* stats);
+// bool       _mi_os_unreset(void* p, size_t size, bool* is_zero, mi_stats_t* stats);
 size_t     _mi_os_good_alloc_size(size_t size);
 bool       _mi_os_has_overcommit(void);
 
@@ -90,6 +95,7 @@ void       _mi_arena_free(void* p, size_t size, size_t memid, bool is_committed,
 // "segment-cache.c"
 void*      _mi_segment_cache_pop(size_t size, mi_commit_mask_t* commit_mask, mi_commit_mask_t* decommit_mask, bool* large, bool* is_pinned, bool* is_zero, size_t* memid, mi_os_tld_t* tld);
 bool       _mi_segment_cache_push(void* start, size_t size, size_t memid, const mi_commit_mask_t* commit_mask, const mi_commit_mask_t* decommit_mask, bool is_large, bool is_pinned, mi_os_tld_t* tld);
+void       _mi_segment_cache_collect(bool force, mi_os_tld_t* tld);
 void       _mi_segment_map_allocated_at(const mi_segment_t* segment);
 void       _mi_segment_map_freed_at(const mi_segment_t* segment);
 
@@ -104,6 +110,7 @@ void       _mi_segment_huge_page_free(mi_segment_t* segment, mi_page_t* page, mi
 uint8_t*   _mi_segment_page_start(const mi_segment_t* segment, const mi_page_t* page, size_t* page_size); // page start for any page
 void       _mi_abandoned_reclaim_all(mi_heap_t* heap, mi_segments_tld_t* tld);
 void       _mi_abandoned_await_readers(void);
+void       _mi_abandoned_collect(mi_heap_t* heap, bool force, mi_segments_tld_t* tld);
 
 
 
@@ -157,8 +164,8 @@ bool        _mi_page_is_valid(mi_page_t* page);
 // ------------------------------------------------------
 
 #if defined(__GNUC__) || defined(__clang__)
-#define mi_unlikely(x)     __builtin_expect((x),0)
-#define mi_likely(x)       __builtin_expect((x),1)
+#define mi_unlikely(x)     __builtin_expect(!!(x),false)
+#define mi_likely(x)       __builtin_expect(!!(x),true)
 #else
 #define mi_unlikely(x)     (x)
 #define mi_likely(x)       (x)
@@ -263,11 +270,6 @@ static inline size_t _mi_wsize_from_size(size_t size) {
   return (size + sizeof(uintptr_t) - 1) / sizeof(uintptr_t);
 }
 
-// Does malloc satisfy the alignment constraints already?
-static inline bool mi_malloc_satisfies_alignment(size_t alignment, size_t size) {
-  return (alignment == sizeof(void*) || (alignment == MI_MAX_ALIGN_SIZE && size > (MI_MAX_ALIGN_SIZE/2)));
-}
-
 // Overflow detecting multiply
 #if __has_builtin(__builtin_umul_overflow) || (defined(__GNUC__) && (__GNUC__ >= 5))
 #include <limits.h>      // UINT_MAX, ULONG_MAX
@@ -318,7 +320,7 @@ We try to circumvent this in an efficient way:
 - macOSX : we use an unused TLS slot from the OS allocated slots (MI_TLS_SLOT). On OSX, the
            loader itself calls `malloc` even before the modules are initialized.
 - OpenBSD: we use an unused slot from the pthread block (MI_TLS_PTHREAD_SLOT_OFS).
-- DragonFly: the uniqueid use is buggy but kept for reference.
+- DragonFly: defaults are working but seem slow compared to freeBSD (see PR #323)
 ------------------------------------------------------------------------------------------- */
 
 extern const mi_heap_t _mi_heap_empty;  // read-only empty heap, initial value of the thread local default heap
@@ -335,16 +337,18 @@ mi_heap_t*  _mi_heap_main_get(void);    // statically allocated main backing hea
 // use end bytes of a name; goes wrong if anyone uses names > 23 characters (ptrhread specifies 16) 
 // see <https://github.com/openbsd/src/blob/master/lib/libc/include/thread_private.h#L371>
 #define MI_TLS_PTHREAD_SLOT_OFS   (6*sizeof(int) + 4*sizeof(void*) + 24)  
-#elif defined(__DragonFly__)
-#warning "mimalloc is not working correctly on DragonFly yet."
-//#define MI_TLS_PTHREAD_SLOT_OFS   (4 + 1*sizeof(void*))  // offset `uniqueid` (also used by gdb?) <https://github.com/DragonFlyBSD/DragonFlyBSD/blob/master/lib/libthread_xu/thread/thr_private.h#L458>
+// #elif defined(__DragonFly__)
+// #warning "mimalloc is not working correctly on DragonFly yet."
+// #define MI_TLS_PTHREAD_SLOT_OFS   (4 + 1*sizeof(void*))  // offset `uniqueid` (also used by gdb?) <https://github.com/DragonFlyBSD/DragonFlyBSD/blob/master/lib/libthread_xu/thread/thr_private.h#L458>
+#elif defined(__ANDROID__)
+// See issue #381
+#define MI_TLS_PTHREAD
 #endif
 #endif
 
 #if defined(MI_TLS_SLOT)
 static inline void* mi_tls_slot(size_t slot) mi_attr_noexcept;   // forward declaration
 #elif defined(MI_TLS_PTHREAD_SLOT_OFS)
-#include <pthread.h>
 static inline mi_heap_t** mi_tls_pthread_heap_slot(void) {
   pthread_t self = pthread_self();
   #if defined(__DragonFly__)
@@ -356,7 +360,6 @@ static inline mi_heap_t** mi_tls_pthread_heap_slot(void) {
   return (mi_heap_t**)((uint8_t*)self + MI_TLS_PTHREAD_SLOT_OFS);
 }
 #elif defined(MI_TLS_PTHREAD)
-#include <pthread.h>
 extern pthread_key_t _mi_heap_default_key;
 #endif
 
@@ -366,11 +369,15 @@ extern pthread_key_t _mi_heap_default_key;
 // However, on the Apple M1 we do use the address of this variable as the unique thread-id (issue #356).
 extern mi_decl_thread mi_heap_t* _mi_heap_default;  // default heap to allocate from
 
-
 static inline mi_heap_t* mi_get_default_heap(void) {
 #if defined(MI_TLS_SLOT)
   mi_heap_t* heap = (mi_heap_t*)mi_tls_slot(MI_TLS_SLOT);
-  if (mi_unlikely(heap == NULL)) { heap = (mi_heap_t*)&_mi_heap_empty; } //_mi_heap_empty_get(); }
+  if (mi_unlikely(heap == NULL)) {
+    #ifdef __GNUC__
+    __asm(""); // prevent conditional load of the address of _mi_heap_empty
+    #endif
+    heap = (mi_heap_t*)&_mi_heap_empty;    
+  }
   return heap;
 #elif defined(MI_TLS_PTHREAD_SLOT_OFS)
   mi_heap_t* heap = *mi_tls_pthread_heap_slot();
@@ -785,8 +792,10 @@ static inline size_t _mi_os_numa_node_count(void) {
 // -------------------------------------------------------------------
 // Getting the thread id should be performant as it is called in the
 // fast path of `_mi_free` and we specialize for various platforms.
+// We only require _mi_threadid() to return a unique id for each thread.
 // -------------------------------------------------------------------
 #if defined(_WIN32)
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 static inline mi_threadid_t _mi_thread_id(void) mi_attr_noexcept {
@@ -794,80 +803,93 @@ static inline mi_threadid_t _mi_thread_id(void) mi_attr_noexcept {
   return (uintptr_t)NtCurrentTeb();
 }
 
-#elif defined(__GNUC__) && \
-      (defined(__x86_64__) || defined(__i386__) || defined(__arm__) || defined(__aarch64__))
+// We use assembly for a fast thread id on the main platforms. The TLS layout depends on 
+// both the OS and libc implementation so we use specific tests for each main platform.
+// If you test on another platform and it works please send a PR :-)
+// see also https://akkadia.org/drepper/tls.pdf for more info on the TLS register.
+#elif defined(__GNUC__) && ( \
+           (defined(__GLIBC__)   && (defined(__x86_64__) || defined(__i386__) || defined(__arm__) || defined(__aarch64__))) \
+        || (defined(__APPLE__)   && (defined(__x86_64__) || defined(__aarch64__))) \
+        || (defined(__BIONIC__)  && (defined(__x86_64__) || defined(__i386__) || defined(__arm__) || defined(__aarch64__))) \
+        || (defined(__FreeBSD__) && (defined(__x86_64__) || defined(__i386__) || defined(__aarch64__))) \
+        || (defined(__OpenBSD__) && (defined(__x86_64__) || defined(__i386__) || defined(__aarch64__))) \
+      )
 
-// TLS register on x86 is in the FS or GS register, see: https://akkadia.org/drepper/tls.pdf
 static inline void* mi_tls_slot(size_t slot) mi_attr_noexcept {
   void* res;
   const size_t ofs = (slot*sizeof(void*));
-#if defined(__i386__)
-  __asm__("movl %%gs:%1, %0" : "=r" (res) : "m" (*((void**)ofs)) : );  // 32-bit always uses GS
-#elif defined(__APPLE__) && defined(__x86_64__)
-  __asm__("movq %%gs:%1, %0" : "=r" (res) : "m" (*((void**)ofs)) : );  // x86_64 macOSX uses GS
-#elif defined(__x86_64__) && (MI_INTPTR_SIZE==4)
-  __asm__("movl %%fs:%1, %0" : "=r" (res) : "m" (*((void**)ofs)) : );  // x32 ABI
-#elif defined(__x86_64__)
-  __asm__("movq %%fs:%1, %0" : "=r" (res) : "m" (*((void**)ofs)) : );  // x86_64 Linux, BSD uses FS
-#elif defined(__arm__)
-  void** tcb; MI_UNUSED(ofs);
-  __asm__ volatile ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tcb));
-  res = tcb[slot];
-#elif defined(__aarch64__)
-  void** tcb; MI_UNUSED(ofs);
-  #if defined(__APPLE__) // M1, issue #343
-  __asm__ volatile ("mrs %0, tpidrro_el0" : "=r" (tcb));
-  tcb = (void**)((uintptr_t)tcb & ~0x07UL);  // clear lower 3 bits
-  #else
-  __asm__ volatile ("mrs %0, tpidr_el0" : "=r" (tcb));
+  #if defined(__i386__)
+    __asm__("movl %%gs:%1, %0" : "=r" (res) : "m" (*((void**)ofs)) : );  // x86 32-bit always uses GS
+  #elif defined(__APPLE__) && defined(__x86_64__)
+    __asm__("movq %%gs:%1, %0" : "=r" (res) : "m" (*((void**)ofs)) : );  // x86_64 macOSX uses GS
+  #elif defined(__x86_64__) && (MI_INTPTR_SIZE==4)
+    __asm__("movl %%fs:%1, %0" : "=r" (res) : "m" (*((void**)ofs)) : );  // x32 ABI
+  #elif defined(__x86_64__)
+    __asm__("movq %%fs:%1, %0" : "=r" (res) : "m" (*((void**)ofs)) : );  // x86_64 Linux, BSD uses FS
+  #elif defined(__arm__)
+    void** tcb; MI_UNUSED(ofs);
+    __asm__ volatile ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tcb));
+    res = tcb[slot];
+  #elif defined(__aarch64__)
+    void** tcb; MI_UNUSED(ofs);
+    #if defined(__APPLE__) // M1, issue #343
+    __asm__ volatile ("mrs %0, tpidrro_el0\nbic %0, %0, #7" : "=r" (tcb));
+    #else
+    __asm__ volatile ("mrs %0, tpidr_el0" : "=r" (tcb));
+    #endif
+    res = tcb[slot];
   #endif
-  res = tcb[slot];
-#endif
   return res;
 }
 
-// setting is only used on macOSX for now
+// setting a tls slot is only used on macOS for now
 static inline void mi_tls_slot_set(size_t slot, void* value) mi_attr_noexcept {
   const size_t ofs = (slot*sizeof(void*));
-#if defined(__i386__)
-  __asm__("movl %1,%%gs:%0" : "=m" (*((void**)ofs)) : "rn" (value) : );  // 32-bit always uses GS
-#elif defined(__APPLE__) && defined(__x86_64__)
-  __asm__("movq %1,%%gs:%0" : "=m" (*((void**)ofs)) : "rn" (value) : );  // x86_64 macOSX uses GS
-#elif defined(__x86_64__) && (MI_INTPTR_SIZE==4)
-  __asm__("movl %1,%%fs:%1" : "=m" (*((void**)ofs)) : "rn" (value) : );  // x32 ABI
-#elif defined(__x86_64__)
-  __asm__("movq %1,%%fs:%1" : "=m" (*((void**)ofs)) : "rn" (value) : );  // x86_64 Linux, BSD uses FS
-#elif defined(__arm__)
-  void** tcb; MI_UNUSED(ofs);
-  __asm__ volatile ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tcb));
-  tcb[slot] = value;
-#elif defined(__aarch64__)
-  void** tcb; MI_UNUSED(ofs);
-  #if defined(__APPLE__) // M1, issue #343
-  __asm__ volatile ("mrs %0, tpidrro_el0" : "=r" (tcb));
-  tcb = (void**)((uintptr_t)tcb & ~0x07UL);  // clear lower 3 bits
-  #else
-  __asm__ volatile ("mrs %0, tpidr_el0" : "=r" (tcb));
+  #if defined(__i386__)
+    __asm__("movl %1,%%gs:%0" : "=m" (*((void**)ofs)) : "rn" (value) : );  // 32-bit always uses GS
+  #elif defined(__APPLE__) && defined(__x86_64__)
+    __asm__("movq %1,%%gs:%0" : "=m" (*((void**)ofs)) : "rn" (value) : );  // x86_64 macOS uses GS
+  #elif defined(__x86_64__) && (MI_INTPTR_SIZE==4)
+    __asm__("movl %1,%%fs:%0" : "=m" (*((void**)ofs)) : "rn" (value) : );  // x32 ABI
+  #elif defined(__x86_64__)
+    __asm__("movq %1,%%fs:%0" : "=m" (*((void**)ofs)) : "rn" (value) : );  // x86_64 Linux, BSD uses FS
+  #elif defined(__arm__)
+    void** tcb; MI_UNUSED(ofs);
+    __asm__ volatile ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tcb));
+    tcb[slot] = value;
+  #elif defined(__aarch64__)
+    void** tcb; MI_UNUSED(ofs);
+    #if defined(__APPLE__) // M1, issue #343
+    __asm__ volatile ("mrs %0, tpidrro_el0\nbic %0, %0, #7" : "=r" (tcb));
+    #else
+    __asm__ volatile ("mrs %0, tpidr_el0" : "=r" (tcb));
+    #endif
+    tcb[slot] = value;
   #endif
-  tcb[slot] = value;
-#endif
 }
 
 static inline mi_threadid_t _mi_thread_id(void) mi_attr_noexcept {
-#if defined(__BIONIC__) && (defined(__arm__) || defined(__aarch64__))
-  // on Android, slot 1 is the thread ID (pointer to pthread internal struct)
-  return (uintptr_t)mi_tls_slot(1);
-#else
-  // in all our other targets, slot 0 is the pointer to the thread control block
-  return (uintptr_t)mi_tls_slot(0);
-#endif
+  #if defined(__BIONIC__)
+    // issue #384, #495: on the Bionic libc (Android), slot 1 is the thread id
+    // see: https://github.com/aosp-mirror/platform_bionic/blob/c44b1d0676ded732df4b3b21c5f798eacae93228/libc/platform/bionic/tls_defines.h#L86
+    return (uintptr_t)mi_tls_slot(1);
+  #else
+    // in all our other targets, slot 0 is the thread id
+    // glibc: https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=sysdeps/x86_64/nptl/tls.h
+    // apple: https://github.com/apple/darwin-xnu/blob/main/libsyscall/os/tsd.h#L36
+    return (uintptr_t)mi_tls_slot(0);
+  #endif
 }
+
 #else
-// otherwise use standard C
+
+// otherwise use portable C, taking the address of a thread local variable (this is still very fast on most platforms).
 static inline mi_threadid_t _mi_thread_id(void) mi_attr_noexcept {
   return (uintptr_t)&_mi_heap_default;
 }
+
 #endif
+
 
 // -----------------------------------------------------------------------
 // Count bits: trailing or leading zeros (with MI_INTPTR_BITS on all zero)

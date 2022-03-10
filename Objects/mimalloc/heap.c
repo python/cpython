@@ -115,17 +115,20 @@ static bool mi_heap_page_never_delayed_free(mi_heap_t* heap, mi_page_queue_t* pq
 static void mi_heap_collect_ex(mi_heap_t* heap, mi_collect_t collect)
 {
   if (heap==NULL || !mi_heap_is_initialized(heap)) return;
-  _mi_deferred_free(heap, collect >= MI_FORCE);
+
+  const bool force = collect >= MI_FORCE;  
+  _mi_deferred_free(heap, force);
 
   // note: never reclaim on collect but leave it to threads that need storage to reclaim 
-  if (
-  #ifdef NDEBUG
+  const bool force_main = 
+    #ifdef NDEBUG
       collect == MI_FORCE
-  #else
+    #else
       collect >= MI_FORCE
-  #endif
-    && _mi_is_main_thread() && mi_heap_is_backing(heap) && !heap->no_reclaim)
-  {
+    #endif
+      && _mi_is_main_thread() && mi_heap_is_backing(heap) && !heap->no_reclaim;
+
+  if (force_main) {
     // the main thread is abandoned (end-of-program), try to reclaim all abandoned segments.
     // if all memory is freed by now, all segments should be freed.
     _mi_abandoned_reclaim_all(heap, &heap->tld->segments);
@@ -141,19 +144,27 @@ static void mi_heap_collect_ex(mi_heap_t* heap, mi_collect_t collect)
   _mi_heap_delayed_free(heap);
 
   // collect retired pages
-  _mi_heap_collect_retired(heap, collect >= MI_FORCE);
+  _mi_heap_collect_retired(heap, force);
 
   // collect all pages owned by this thread
   mi_heap_visit_pages(heap, &mi_heap_page_collect, &collect, NULL);
   mi_assert_internal( collect != MI_ABANDON || mi_atomic_load_ptr_acquire(mi_block_t,&heap->thread_delayed_free) == NULL );
 
-  // collect segment caches
-  if (collect >= MI_FORCE) {
+  // collect abandoned segments (in particular, decommit expired parts of segments in the abandoned segment list)
+  // note: forced decommit can be quite expensive if many threads are created/destroyed so we do not force on abandonment
+  _mi_abandoned_collect(heap, collect == MI_FORCE /* force? */, &heap->tld->segments);
+
+  // collect segment local caches
+  if (force) {
     _mi_segment_thread_collect(&heap->tld->segments);
   }
 
+  // decommit in global segment caches
+  // note: forced decommit can be quite expensive if many threads are created/destroyed so we do not force on abandonment
+  _mi_segment_cache_collect( collect == MI_FORCE, &heap->tld->os);  
+
   // collect regions on program-exit (or shared library unload)
-  if (collect >= MI_FORCE && _mi_is_main_thread() && mi_heap_is_backing(heap)) {
+  if (force && _mi_is_main_thread() && mi_heap_is_backing(heap)) {
     //_mi_mem_collect(&heap->tld->os);
   }
 }

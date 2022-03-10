@@ -53,7 +53,7 @@ static inline bool mi_page_queue_is_special(const mi_page_queue_t* pq) {
 // Returns MI_BIN_HUGE if the size is too large.
 // We use `wsize` for the size in "machine word sizes",
 // i.e. byte size == `wsize*sizeof(void*)`.
-extern inline uint8_t _mi_bin(size_t size) {
+static inline uint8_t mi_bin(size_t size) {
   size_t wsize = _mi_wsize_from_size(size);
   uint8_t bin;
   if (wsize <= 1) {
@@ -98,6 +98,10 @@ extern inline uint8_t _mi_bin(size_t size) {
   Queue of pages with free blocks
 ----------------------------------------------------------- */
 
+uint8_t _mi_bin(size_t size) {
+  return mi_bin(size);
+}
+
 size_t _mi_bin_size(uint8_t bin) {
   return _mi_heap_empty.pages[bin].block_size;
 }
@@ -105,7 +109,7 @@ size_t _mi_bin_size(uint8_t bin) {
 // Good size for allocation
 size_t mi_good_size(size_t size) mi_attr_noexcept {
   if (size <= MI_MEDIUM_OBJ_SIZE_MAX) {
-    return _mi_bin_size(_mi_bin(size));
+    return _mi_bin_size(mi_bin(size));
   }
   else {
     return _mi_align_up(size,_mi_os_page_size());
@@ -134,7 +138,7 @@ static bool mi_heap_contains_queue(const mi_heap_t* heap, const mi_page_queue_t*
 #endif
 
 static mi_page_queue_t* mi_page_queue_of(const mi_page_t* page) {
-  uint8_t bin = (mi_page_is_in_full(page) ? MI_BIN_FULL : _mi_bin(page->xblock_size));
+  uint8_t bin = (mi_page_is_in_full(page) ? MI_BIN_FULL : mi_bin(page->xblock_size));
   mi_heap_t* heap = mi_page_heap(page);
   mi_assert_internal(heap != NULL && bin <= MI_BIN_FULL);
   mi_page_queue_t* pq = &heap->pages[bin];
@@ -144,7 +148,7 @@ static mi_page_queue_t* mi_page_queue_of(const mi_page_t* page) {
 }
 
 static mi_page_queue_t* mi_heap_page_queue_of(mi_heap_t* heap, const mi_page_t* page) {
-  uint8_t bin = (mi_page_is_in_full(page) ? MI_BIN_FULL : _mi_bin(page->xblock_size));
+  uint8_t bin = (mi_page_is_in_full(page) ? MI_BIN_FULL : mi_bin(page->xblock_size));
   mi_assert_internal(bin <= MI_BIN_FULL);
   mi_page_queue_t* pq = &heap->pages[bin];
   mi_assert_internal(mi_page_is_in_full(page) || page->xblock_size == pq->block_size);
@@ -177,9 +181,9 @@ static inline void mi_heap_queue_first_update(mi_heap_t* heap, const mi_page_que
   }
   else {
     // find previous size; due to minimal alignment upto 3 previous bins may need to be skipped
-    uint8_t bin = _mi_bin(size);
+    uint8_t bin = mi_bin(size);
     const mi_page_queue_t* prev = pq - 1;
-    while( bin == _mi_bin(prev->block_size) && prev > &heap->pages[0]) {
+    while( bin == mi_bin(prev->block_size) && prev > &heap->pages[0]) {
       prev--;
     }
     start = 1 + _mi_wsize_from_size(prev->block_size);

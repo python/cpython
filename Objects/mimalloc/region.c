@@ -94,7 +94,7 @@ typedef struct mem_region_s {
   mi_bitmap_field_t         commit;      // track if committed per block
   mi_bitmap_field_t         reset;       // track if reset per block
   _Atomic(size_t)           arena_memid; // if allocated from a (huge page) arena
-  size_t                    padding;     // round to 8 fields
+  _Atomic(size_t)           padding;     // round to 8 fields (needs to be atomic for msvc, see issue #508)
 } mem_region_t;
 
 // The region map

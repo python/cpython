@@ -56,9 +56,9 @@ int mi_posix_memalign(void** p, size_t alignment, size_t size) mi_attr_noexcept 
   // Note: The spec dictates we should not modify `*p` on an error. (issue#27)
   // <http://man7.org/linux/man-pages/man3/posix_memalign.3.html>
   if (p == NULL) return EINVAL;
-  if (alignment % sizeof(void*) != 0) return EINVAL;   // natural alignment
-  if (!_mi_is_power_of_two(alignment)) return EINVAL;  // not a power of 2
-  void* q = (mi_malloc_satisfies_alignment(alignment, size) ? mi_malloc(size) : mi_malloc_aligned(size, alignment));
+  if (alignment % sizeof(void*) != 0) return EINVAL;                   // natural alignment
+  if (alignment==0 || !_mi_is_power_of_two(alignment)) return EINVAL;  // not a power of 2
+  void* q = mi_malloc_aligned(size, alignment);
   if (q==NULL && size != 0) return ENOMEM;
   mi_assert_internal(((uintptr_t)q % alignment) == 0);
   *p = q;
@@ -66,7 +66,7 @@ int mi_posix_memalign(void** p, size_t alignment, size_t size) mi_attr_noexcept 
 }
 
 mi_decl_restrict void* mi_memalign(size_t alignment, size_t size) mi_attr_noexcept {
-  void* p = (mi_malloc_satisfies_alignment(alignment,size) ? mi_malloc(size) : mi_malloc_aligned(size, alignment));
+  void* p = mi_malloc_aligned(size, alignment);
   mi_assert_internal(((uintptr_t)p % alignment) == 0);
   return p;
 }
@@ -83,22 +83,40 @@ mi_decl_restrict void* mi_pvalloc(size_t size) mi_attr_noexcept {
 }
 
 mi_decl_restrict void* mi_aligned_alloc(size_t alignment, size_t size) mi_attr_noexcept {
-  if (alignment==0 || !_mi_is_power_of_two(alignment)) return NULL; 
-  if ((size&(alignment-1)) != 0) return NULL; // C11 requires integral multiple, see <https://en.cppreference.com/w/c/memory/aligned_alloc>
-  void* p = (mi_malloc_satisfies_alignment(alignment, size) ? mi_malloc(size) : mi_malloc_aligned(size, alignment));
+  if (mi_unlikely((size&(alignment-1)) != 0)) { // C11 requires alignment>0 && integral multiple, see <https://en.cppreference.com/w/c/memory/aligned_alloc>
+    #if MI_DEBUG > 0
+    _mi_error_message(EOVERFLOW, "(mi_)aligned_alloc requires the size to be an integral multiple of the alignment (size %zu, alignment %zu)\n", size, alignment);
+    #endif
+    return NULL;
+  }
+  // C11 also requires alignment to be a power-of-two which is checked in mi_malloc_aligned
+  void* p = mi_malloc_aligned(size, alignment);
   mi_assert_internal(((uintptr_t)p % alignment) == 0);
   return p;
 }
 
 void* mi_reallocarray( void* p, size_t count, size_t size ) mi_attr_noexcept {  // BSD
   void* newp = mi_reallocn(p,count,size);
-  if (newp==NULL) errno = ENOMEM;
+  if (newp==NULL) { errno = ENOMEM; }
   return newp;
+}
+
+int mi_reallocarr( void* p, size_t count, size_t size ) mi_attr_noexcept { // NetBSD
+  mi_assert(p != NULL);
+  if (p == NULL) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  void** op = (void**)p;  
+  void* newp = mi_reallocarray(*op, count, size);
+  if (mi_unlikely(newp == NULL)) return errno;
+  *op = newp;
+  return 0;
 }
 
 void* mi__expand(void* p, size_t newsize) mi_attr_noexcept {  // Microsoft
   void* res = mi_expand(p, newsize);
-  if (res == NULL) errno = ENOMEM;
+  if (res == NULL) { errno = ENOMEM; }
   return res;
 }
 

@@ -231,7 +231,6 @@ extern "C" {
   size_t malloc_good_size(size_t size)     { return mi_malloc_good_size(size); }
   int    posix_memalign(void** p, size_t alignment, size_t size) { return mi_posix_memalign(p, alignment, size); }
   
-
   // `aligned_alloc` is only available when __USE_ISOC11 is defined.
   // Note: Conda has a custom glibc where `aligned_alloc` is declared `static inline` and we cannot
   // override it, but both _ISOC11_SOURCE and __USE_ISOC11 are undefined in Conda GCC7 or GCC9.
@@ -246,6 +245,7 @@ extern "C" {
 void  cfree(void* p)                                    { mi_free(p); } 
 void* pvalloc(size_t size)                              { return mi_pvalloc(size); }
 void* reallocarray(void* p, size_t count, size_t size)  { return mi_reallocarray(p, count, size); }
+int   reallocarr(void* p, size_t count, size_t size)    { return mi_reallocarr(p, count, size); }
 void* memalign(size_t alignment, size_t size)           { return mi_memalign(alignment, size); }
 void* _aligned_malloc(size_t alignment, size_t size)    { return mi_aligned_alloc(alignment, size); }
 

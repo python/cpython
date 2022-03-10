@@ -49,54 +49,51 @@ typedef struct mi_option_desc_s {
   mi_init_t   init;   // is it initialized yet? (from the environment)
   mi_option_t option; // for debugging: the option index should match the option
   const char* name;   // option name without `mimalloc_` prefix
+  const char* legacy_name; // potential legacy v1.x option name
 } mi_option_desc_t;
 
-#define MI_OPTION(opt)        mi_option_##opt, #opt
-#define MI_OPTION_DESC(opt)   {0, UNINIT, MI_OPTION(opt) }
+#define MI_OPTION(opt)                  mi_option_##opt, #opt, NULL
+#define MI_OPTION_LEGACY(opt,legacy)    mi_option_##opt, #opt, #legacy
 
 static mi_option_desc_t options[_mi_option_last] =
 {
   // stable options
-#if MI_DEBUG || defined(MI_SHOW_ERRORS)
+  #if MI_DEBUG || defined(MI_SHOW_ERRORS)
   { 1, UNINIT, MI_OPTION(show_errors) },
-#else
+  #else
   { 0, UNINIT, MI_OPTION(show_errors) },
-#endif
+  #endif
   { 0, UNINIT, MI_OPTION(show_stats) },
   { 0, UNINIT, MI_OPTION(verbose) },
 
-  // the following options are experimental and not all combinations make sense.
+  // Some of the following options are experimental and not all combinations are valid. Use with care.
   { 1, UNINIT, MI_OPTION(eager_commit) },        // commit per segment directly (8MiB)  (but see also `eager_commit_delay`)
-  #if defined(_WIN32) || (MI_INTPTR_SIZE <= 4)   // and other OS's without overcommit?
-  { 0, UNINIT, MI_OPTION(eager_region_commit) },
-  { 0, UNINIT, MI_OPTION(reset_decommits) },     // reset decommits memory
-  #else
-  { 1, UNINIT, MI_OPTION(eager_region_commit) },
-  { 0, UNINIT, MI_OPTION(reset_decommits) },     // reset uses MADV_FREE/MADV_DONTNEED
-  #endif
+  { 0, UNINIT, MI_OPTION(deprecated_eager_region_commit) },
+  { 0, UNINIT, MI_OPTION(deprecated_reset_decommits) },
   { 0, UNINIT, MI_OPTION(large_os_pages) },      // use large OS pages, use only with eager commit to prevent fragmentation of VMA's
   { 0, UNINIT, MI_OPTION(reserve_huge_os_pages) },  // per 1GiB huge pages
   { -1, UNINIT, MI_OPTION(reserve_huge_os_pages_at) }, // reserve huge pages at node N
   { 0, UNINIT, MI_OPTION(reserve_os_memory)     },
   { 0, UNINIT, MI_OPTION(segment_cache) },       // cache N segments per thread
   { 0, UNINIT, MI_OPTION(page_reset) },          // reset page memory on free
-  { 0, UNINIT, MI_OPTION(abandoned_page_reset) },// reset free page memory when a thread terminates
-  { 0, UNINIT, MI_OPTION(segment_reset) },       // reset segment memory on free (needs eager commit)
-#if defined(__NetBSD__)
+  { 0, UNINIT, MI_OPTION_LEGACY(abandoned_page_decommit, abandoned_page_reset) },// decommit free page memory when a thread terminates  
+  { 0, UNINIT, MI_OPTION(deprecated_segment_reset) },
+  #if defined(__NetBSD__)
   { 0, UNINIT, MI_OPTION(eager_commit_delay) },  // the first N segments per thread are not eagerly committed
-#elif defined(_WIN32)
+  #elif defined(_WIN32)
   { 4, UNINIT, MI_OPTION(eager_commit_delay) },  // the first N segments per thread are not eagerly committed (but per page in the segment on demand)
-#else
+  #else
   { 1, UNINIT, MI_OPTION(eager_commit_delay) },  // the first N segments per thread are not eagerly committed (but per page in the segment on demand)
-#endif
-  { 1,    UNINIT, MI_OPTION(allow_decommit) },    // decommit slices when no longer used (after reset_delay milli-seconds)
-  { 25,   UNINIT, MI_OPTION(reset_delay) },       // page reset delay in milli-seconds (= decommit)
-  { 500,  UNINIT, MI_OPTION(segment_decommit_delay) },// decommit delay in milli-seconds for freed segments
+  #endif
+  { 25,   UNINIT, MI_OPTION_LEGACY(decommit_delay, reset_delay) }, // page decommit delay in milli-seconds
   { 0,    UNINIT, MI_OPTION(use_numa_nodes) },    // 0 = use available numa nodes, otherwise use at most N nodes. 
   { 0,    UNINIT, MI_OPTION(limit_os_alloc) },    // 1 = do not use OS memory for allocation (but only reserved arenas)
   { 100,  UNINIT, MI_OPTION(os_tag) },            // only apple specific for now but might serve more or less related purpose
   { 16,   UNINIT, MI_OPTION(max_errors) },        // maximum errors that are output
-  { 16,   UNINIT, MI_OPTION(max_warnings) }       // maximum warnings that are output
+  { 16,   UNINIT, MI_OPTION(max_warnings) },      // maximum warnings that are output
+  { 1,    UNINIT, MI_OPTION(allow_decommit) },    // decommit slices when no longer used (after decommit_delay milli-seconds)
+  { 500,  UNINIT, MI_OPTION(segment_decommit_delay) }, // decommit delay in milli-seconds for freed segments
+  { 2,    UNINIT, MI_OPTION(decommit_extend_delay) }  
 };
 
 static void mi_option_init(mi_option_desc_t* desc);
@@ -260,22 +257,37 @@ static _Atomic(size_t) warning_count; // = 0;  // when >= max_warning_count stop
 
 // When overriding malloc, we may recurse into mi_vfprintf if an allocation
 // inside the C runtime causes another message.
+// In some cases (like on macOS) the loader already allocates which
+// calls into mimalloc; if we then access thread locals (like `recurse`)
+// this may crash as the access may call _tlv_bootstrap that tries to 
+// (recursively) invoke malloc again to allocate space for the thread local
+// variables on demand. This is why we use a _mi_preloading test on such
+// platforms. However, C code generator may move the initial thread local address
+// load before the `if` and we therefore split it out in a separate funcion.
 static mi_decl_thread bool recurse = false;
+
+static mi_decl_noinline bool mi_recurse_enter_prim(void) {
+  if (recurse) return false;
+  recurse = true;
+  return true;
+}
+
+static mi_decl_noinline void mi_recurse_exit_prim(void) {
+  recurse = false;
+}
 
 static bool mi_recurse_enter(void) {
   #if defined(__APPLE__) || defined(MI_TLS_RECURSE_GUARD)
   if (_mi_preloading()) return true;
   #endif
-  if (recurse) return false;
-  recurse = true;
-  return true;
+  return mi_recurse_enter_prim();
 }
 
 static void mi_recurse_exit(void) {
   #if defined(__APPLE__) || defined(MI_TLS_RECURSE_GUARD)
   if (_mi_preloading()) return;
   #endif
-  recurse = false;
+  mi_recurse_exit_prim();
 }
 
 void _mi_fputs(mi_output_fun* out, void* arg, const char* prefix, const char* message) {
@@ -403,14 +415,25 @@ void _mi_error_message(int err, const char* fmt, ...) {
 // --------------------------------------------------------
 
 static void mi_strlcpy(char* dest, const char* src, size_t dest_size) {
-  dest[0] = 0;
-  strncpy(dest, src, dest_size - 1);
-  dest[dest_size - 1] = 0;
+  if (dest==NULL || src==NULL || dest_size == 0) return;
+  // copy until end of src, or when dest is (almost) full
+  while (*src != 0 && dest_size > 1) {
+    *dest++ = *src++;
+    dest_size--;
+  }
+  // always zero terminate
+  *dest = 0;
 }
 
 static void mi_strlcat(char* dest, const char* src, size_t dest_size) {
-  strncat(dest, src, dest_size - 1);
-  dest[dest_size - 1] = 0;
+  if (dest==NULL || src==NULL || dest_size == 0) return;
+  // find end of string in the dest buffer
+  while (*dest != 0 && dest_size > 1) {
+    dest++;
+    dest_size--;
+  }
+  // and catenate
+  mi_strlcpy(dest, src, dest_size);
 }
 
 #ifdef MI_NO_GETENV
@@ -500,11 +523,21 @@ static bool mi_getenv(const char* name, char* result, size_t result_size) {
 
 static void mi_option_init(mi_option_desc_t* desc) {  
   // Read option value from the environment
+  char s[64+1];
   char buf[64+1];
   mi_strlcpy(buf, "mimalloc_", sizeof(buf));
   mi_strlcat(buf, desc->name, sizeof(buf));
-  char s[64+1];
-  if (mi_getenv(buf, s, sizeof(s))) {
+  bool found = mi_getenv(buf,s,sizeof(s));
+  if (!found && desc->legacy_name != NULL) {
+    mi_strlcpy(buf, "mimalloc_", sizeof(buf));
+    mi_strlcat(buf, desc->legacy_name, sizeof(buf));
+    found = mi_getenv(buf,s,sizeof(s));
+    if (found) {
+      _mi_warning_message("environment option \"mimalloc_%s\" is deprecated -- use \"mimalloc_%s\" instead.\n", desc->legacy_name, desc->name );
+    }    
+  }
+
+  if (found) {
     size_t len = strlen(s);
     if (len >= sizeof(buf)) len = sizeof(buf) - 1;
     for (size_t i = 0; i < len; i++) {
@@ -528,15 +561,26 @@ static void mi_option_init(mi_option_desc_t* desc) {
         else if (*end == 'M') { value *= MI_KiB; end++; }
         else if (*end == 'G') { value *= MI_MiB; end++; }
         else { value = (value + MI_KiB - 1) / MI_KiB; }
-        if (*end == 'B') { end++; }
+        if (end[0] == 'I' && end[1] == 'B') { end += 2; }
+        else if (*end == 'B') { end++; }
       }
       if (*end == 0) {
         desc->value = value;
         desc->init = INITIALIZED;
       }
       else {
-        _mi_warning_message("environment option mimalloc_%s has an invalid value: %s\n", desc->name, buf);
+        // set `init` first to avoid recursion through _mi_warning_message on mimalloc_verbose.
         desc->init = DEFAULTED;
+        if (desc->option == mi_option_verbose && desc->value == 0) {
+          // if the 'mimalloc_verbose' env var has a bogus value we'd never know
+          // (since the value defaults to 'off') so in that case briefly enable verbose
+          desc->value = 1;
+          _mi_warning_message("environment option mimalloc_%s has an invalid value.\n", desc->name );
+          desc->value = 0;
+        }
+        else {
+          _mi_warning_message("environment option mimalloc_%s has an invalid value.\n", desc->name );
+        }
       }
     }
     mi_assert_internal(desc->init != UNINIT);
