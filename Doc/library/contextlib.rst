@@ -502,7 +502,7 @@ Functions and classes provided:
           # the with statement, even if attempts to open files later
           # in the list raise an exception
 
-   The :meth:`__enter__` method returns the :class:`ExitStack` instance, and 
+   The :meth:`__enter__` method returns the :class:`ExitStack` instance, and
    performs no additional operations.
 
    Each instance maintains a stack of registered callbacks that are called in
