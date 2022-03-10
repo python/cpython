@@ -254,6 +254,7 @@ inspect
 
 math
 ----
+
 * Add :func:`math.exp2`: return 2 raised to the power of x.
   (Contributed by Gideon Mitchell in :issue:`45917`.)
 
@@ -265,6 +266,9 @@ math
   ``math.pow(0.0, -math.inf)`` and ``math.pow(-0.0, -math.inf)`` now return
   ``inf``. Previously they raised :exc:`ValueError`. (Contributed by Mark
   Dickinson in :issue:`44339`.)
+
+* The :data:`math.nan` value is now always available.
+  (Contributed by Victor Stinner in :issue:`46917`.)
 
 
 operator
@@ -644,6 +648,9 @@ Build Changes
 
 * Building Python now requires a C11 compiler without optional C11 features.
   (Contributed by Victor Stinner in :issue:`46656`.)
+
+* Building Python now requires support of IEEE 754 floating point numbers.
+  (Contributed by Victor Stinner in :issue:`46917`.)
 
 * CPython can now be built with the ThinLTO option via ``--with-lto=thin``.
   (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
