@@ -246,8 +246,8 @@ class RunnerTests(BaseTest):
         self.assertIsNone(runner.get_loop())
         self.assertTrue(loop.is_closed())
 
+        # the second call is no-op
         runner.close()
-        self.assertIsNone(runner.get_loop())
         self.assertTrue(loop.is_closed())
 
 
