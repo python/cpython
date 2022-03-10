@@ -1281,10 +1281,8 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         # anything more exotic than a plain `TypeVar`, we need to consider
         # edge cases.
 
-        if any(isinstance(p, TypeVarTuple) for p in self.__parameters__):
-            raise NotImplementedError(
-                "Type substitution for TypeVarTuples is not yet implemented"
-            )
+        if len(self.__parameters__) == 1 and isinstance(self.__parameters__[0], TypeVarTuple):
+            args = args,
         # In the example above, this would be {T3: str}
         new_arg_by_param = dict(zip(self.__parameters__, args))
 
