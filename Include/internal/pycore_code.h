@@ -105,7 +105,7 @@ _Py_IncrementCountAndMaybeQuicken(PyCodeObject *code)
 {
     if (code->co_warmup != 0) {
         code->co_warmup++;
-        if (++code->co_warmup == 0) {
+        if (code->co_warmup == 0) {
             _Py_Quicken(code);
         }
     }
