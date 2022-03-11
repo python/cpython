@@ -1622,10 +1622,14 @@ class _UnpackGenericAlias(_GenericAlias, _root=True):
         return '*' + repr(self.__args__[0])
 
     def __getitem__(self, args):
-        if (len(self.__parameters__) == 1 and
-                isinstance(self.__parameters__[0], TypeVarTuple)):
+        if self.__typing_unpacked__():
             return args
         return super().__getitem__(args)
+
+    def __typing_unpacked__(self):
+        # If x is Unpack[tuple[...]], __parameters__ will be empty.
+        return bool(self.__parameters__ and
+                    isinstance(self.__parameters__[0], TypeVarTuple))
 
 
 class Generic:

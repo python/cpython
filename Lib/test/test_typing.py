@@ -467,7 +467,7 @@ class TypeVarTupleTests(BaseTestCase):
         T2 = TypeVar('T2')
         class G(Generic[Unpack[Ts]]): pass
 
-        for A in G, Tuple:
+        for A in G, Tuple, tuple:
             B = A[Unpack[Ts]]
             if A != Tuple:
                 self.assertEqual(B[()], A[()])
