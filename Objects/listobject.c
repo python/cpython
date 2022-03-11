@@ -934,7 +934,6 @@ list_extend(PyListObject *self, PyObject *iterable)
          */
     }
     else if (self->ob_item == NULL) {
-        /* We have to rely on n being correct in this case. */
         if (n && list_preallocate_exact(self, n) < 0)
             goto error;
     }
