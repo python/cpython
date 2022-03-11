@@ -1343,7 +1343,6 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_exceptiontable);
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)co);
-    }
     if (co->co_warmup == 0) {
         _Py_QuickenedCount--;
     }
@@ -1481,6 +1480,7 @@ static PyMemberDef code_memberlist[] = {
     {"co_kwonlyargcount",  T_INT,    OFF(co_kwonlyargcount),  READONLY},
     {"co_stacksize",       T_INT,    OFF(co_stacksize),       READONLY},
     {"co_flags",           T_INT,    OFF(co_flags),           READONLY},
+    {"co_nlocals",         T_INT,    OFF(co_nlocals),         READONLY},
     {"co_consts",          T_OBJECT, OFF(co_consts),          READONLY},
     {"co_names",           T_OBJECT, OFF(co_names),           READONLY},
     {"co_filename",        T_OBJECT, OFF(co_filename),        READONLY},
@@ -1491,7 +1491,6 @@ static PyMemberDef code_memberlist[] = {
     {"co_endlinetable",    T_OBJECT, OFF(co_endlinetable),    READONLY},
     {"co_columntable",     T_OBJECT, OFF(co_columntable),     READONLY},
     {"co_exceptiontable",  T_OBJECT, OFF(co_exceptiontable),  READONLY},
-    {"co_nlocals",         T_INT,    OFF(co_nlocals),         READONLY},
     {NULL}      /* Sentinel */
 };
 
