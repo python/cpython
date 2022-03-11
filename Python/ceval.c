@@ -1325,7 +1325,8 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define SKIP_CALL() \
     JUMPBY(INLINE_CACHE_ENTRIES_PRECALL + 1 + INLINE_CACHE_ENTRIES_CALL)
 
-#define TRACING_NEXTOPARG()  do { \
+/* Get opcode and oparg from original instructions, not quickened form. */
+#define TRACING_NEXTOPARG() do { \
         _Py_CODEUNIT word = _Py_Unquickened(frame->f_code)[INSTR_OFFSET()]; \
         opcode = _Py_OPCODE(word); \
         oparg = _Py_OPARG(word); \

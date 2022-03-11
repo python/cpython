@@ -3,7 +3,6 @@
 (for compilers supporting computed gotos or "labels-as-values", such as gcc).
 """
 
-from itertools import chain
 import os
 import sys
 

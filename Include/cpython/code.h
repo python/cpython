@@ -38,7 +38,6 @@ struct PyCodeObject {
      * - co_stacksize
      * - co_flags
      * - co_firstlineno
-     * - co_code
      * - co_consts
      * - co_names
      * - co_localsplusnames
@@ -55,7 +54,7 @@ struct PyCodeObject {
     PyObject *co_names;         /* list of strings (names used) */
     PyObject *co_exceptiontable; /* Byte string encoding exception handling table */
     int co_flags;               /* CO_..., see below */
-    int co_warmup;              // XXX
+    int co_warmup;              /* Warmup counter for quickening */
 
     // The rest are not so impactful on performance.
     int co_argcount;            /* #arguments, except *args */
