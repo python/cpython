@@ -677,10 +677,12 @@ unicode_result_ready(PyObject *unicode)
         if (kind == PyUnicode_1BYTE_KIND) {
             const Py_UCS1 *data = PyUnicode_1BYTE_DATA(unicode);
             Py_UCS1 ch = data[0];
-            if (unicode != LATIN1(ch)) {
+            PyObject *latin1_char = LATIN1(ch);
+            if (unicode != latin1_char) {
+                Py_INCREF(latin1_char);
                 Py_DECREF(unicode);
             }
-            return get_latin1_char(ch);
+            return latin1_char;
         }
     }
 
