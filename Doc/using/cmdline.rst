@@ -59,6 +59,7 @@ all consecutive arguments will end up in :data:`sys.argv` -- note that the first
 element, subscript zero (``sys.argv[0]``), is a string reflecting the program's
 source.
 
+.. _using-on-interface-option-c:
 .. cmdoption:: -c <command>
 
    Execute the Python code in *command*.  *command* can be one or more
@@ -72,6 +73,7 @@ source.
 
    .. audit-event:: cpython.run_command command cmdoption-c
 
+.. _using-on-interface-option-m:
 .. cmdoption:: -m <module-name>
 
    Search :data:`sys.path` for the named module and execute its contents as
@@ -252,6 +254,7 @@ Miscellaneous options
    options).  See also :envvar:`PYTHONDEBUG`.
 
 
+.. _using-on-misc-option-uppercase-e:
 .. cmdoption:: -E
 
    Ignore all :envvar:`PYTHON*` environment variables, e.g.
@@ -269,6 +272,7 @@ Miscellaneous options
    raises an exception.  See also :envvar:`PYTHONINSPECT`.
 
 
+.. _using-on-misc-option-uppercase-i:
 .. cmdoption:: -I
 
    Run Python in isolated mode. This also implies -E and -s.
@@ -334,6 +338,7 @@ Miscellaneous options
    .. versionadded:: 3.2.3
 
 
+.. _using-on-misc-option-s:
 .. cmdoption:: -s
 
    Don't add the :data:`user site-packages directory <site.USER_SITE>` to
@@ -344,6 +349,7 @@ Miscellaneous options
       :pep:`370` -- Per user site-packages directory
 
 
+.. _using-on-misc-option-uppercase-s:
 .. cmdoption:: -S
 
    Disable the import of the module :mod:`site` and the site-dependent
@@ -1005,8 +1011,8 @@ may be accessed at :data:`sys.path`.
 
 The first entry in the module search path is the directory that contains the
 input script, if there is one. Otherwise, the first entry is the current
-directory, which is the case when executing the interactive shell, a ``-c``
-command, or ``-m`` module.
+directory, which is the case when executing the interactive shell, a :ref:`-c <using-on-interface-option-c>`
+command, or :ref:`-m <using-on-interface-option-m>` module.
 
 The :envvar:`PYTHONPATH` environment variable is often used to add directories
 to the search path. If this environment variable is found then the contents are
@@ -1020,8 +1026,8 @@ added to the module search path.
 
 The next items added are the directories containing standard Python modules as
 well as any :term:`extension module`\s that these modules depend on. Extension
-modules are .dll files on Windows, .dylib files on macOS and .so files on Linux.
-The directory with the platform-independent Python modules is called ``prefix``.
+modules are .pyd files on Windows and .so files on other platforms. The
+directory with the platform-independent Python modules is called ``prefix``.
 The directory with the extension modules is called ``exec_prefix``.
 
 The :envvar:`PYTHONHOME` environment variable may be used to set the ``prefix``
@@ -1053,15 +1059,8 @@ the :mod:`site` module documentation.
 
 .. note::
 
-   The effect of :mod:`site` on the module search path may be seen by running
-   Python with ``-S`` which will start Python without importing site. ``-s`` will
-   skip adding the :data:`user site-packages directory <site.USER_SITE>` to :data:`sys.path`.
-
-   The effect of :envvar:`PYTHON*` environment variables may be seen by running
-   Python with ``-E`` which will start Python ignoring these environment variables.
-
-   Finally, ``-I`` will start Python in isolated mode, simlar to ``-E`` and ``-s``
-   but with further restrictions.
+   Certain command line options may further affect path calculations.
+   See :ref:`-E <using-on-misc-option-uppercase-e>`, :ref:`-I <using-on-misc-option-uppercase-i>`, :ref:`-s <using-on-misc-option-s>` and :ref:`-S <using-on-misc-option-uppercase-s>` for further details.
 
 Virtual environments
 ~~~~~~~~~~~~~~~~~~~~
@@ -1080,9 +1079,9 @@ _pth files
 ~~~~~~~~~~
 
 To completely override :data:`sys.path`, create a ``._pth`` file with the same
-name as the extension module (``python311._pth``) or the executable (``python._pth``)
+name as the shared library (``python311._pth``) or the executable (``python._pth``)
 and specify one line for each path to add to :data:`sys.path`. The file based on
-the extension module name overrides the one based on the executable, which allows
+the shared library name overrides the one based on the executable, which allows
 paths to be restricted for any program loading the runtime if desired.
 
 When the file exists, all registry and environment variables are ignored,
