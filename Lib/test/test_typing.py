@@ -440,6 +440,51 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertEqual(t2.__args__, (Unpack[Ts],))
         self.assertEqual(t2.__parameters__, (Ts,))
 
+    def test_var_substitution(self):
+        Ts = TypeVarTuple('Ts')
+        T = TypeVar('T')
+        T2 = TypeVar('T2')
+        class A(Generic[Unpack[Ts]]): pass
+
+        B = A[Unpack[Ts]]
+        self.assertEqual(B[()], A[()])
+        self.assertEqual(B[float], A[float])
+        self.assertEqual(B[float, str], A[float, str])
+
+        C = List[A[Unpack[Ts]]]
+        self.assertEqual(C[()], List[A[()]])
+        self.assertEqual(C[float], List[A[float]])
+        self.assertEqual(C[float, str], List[A[float, str]])
+
+        D = A[T, Unpack[Ts], T2]
+        with self.assertRaises(TypeError):
+            D[()]
+        with self.assertRaises(TypeError):
+            D[float]
+        self.assertEqual(D[float, str], A[float, str])
+        self.assertEqual(D[float, str, int], A[float, str, int])
+        self.assertEqual(D[float, str, int, bytes], A[float, str, int, bytes])
+
+        E = Tuple[List[T], A[Unpack[Ts]], List[T2]]
+        with self.assertRaises(TypeError):
+            E[()]
+        with self.assertRaises(TypeError):
+            E[float]
+        self.assertEqual(E[float, str], Tuple[List[float], A[()], List[str]])
+        self.assertEqual(E[float, str, int],
+                         Tuple[List[float], A[str], List[int]])
+        self.assertEqual(E[float, str, int, bytes],
+                         Tuple[List[float], A[str, int], List[bytes]])
+
+    def test_repr_is_correct(self):
+        Ts = TypeVarTuple('Ts')
+        self.assertEqual(repr(Ts), 'Ts')
+        self.assertEqual(repr(Unpack[Ts]), '*Ts')
+        self.assertEqual(repr(tuple[Unpack[Ts]]), 'tuple[*Ts]')
+        self.assertEqual(repr(Tuple[Unpack[Ts]]), 'typing.Tuple[*Ts]')
+        self.assertEqual(repr(Unpack[tuple[Unpack[Ts]]]), '*tuple[*Ts]')
+        self.assertEqual(repr(Unpack[Tuple[Unpack[Ts]]]), '*typing.Tuple[*Ts]')
+
     def test_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
         self.assertEqual(repr(Ts), 'Ts')
