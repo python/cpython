@@ -1376,9 +1376,23 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     if (!eq) goto unequal;
     eq = co->co_firstlineno == cp->co_firstlineno;
     if (!eq) goto unequal;
-    // XXX: Compare code!
-    // eq = PyObject_RichCompareBool(co->co_code, cp->co_code, Py_EQ);
-    // if (eq <= 0) goto unequal;
+    eq = Py_SIZE(co) == Py_SIZE(cp);
+    if (!eq) {
+        goto unequal;
+    }
+    _Py_CODEUNIT *co_code = _PyCode_GET_CODE(co);
+    _Py_CODEUNIT *cp_code = _PyCode_GET_CODE(cp);
+    for (int i = 0; i < Py_SIZE(co); i++) {
+        int opcode = _PyOpcode_Deoptimizations[_Py_OPCODE(co_code[i])];
+        eq = opcode == _PyOpcode_Deoptimizations[_Py_OPCODE(cp_code[i])];
+        if (HAS_ARG(opcode)) {
+            eq &= _Py_OPARG(co_code[i]) == _Py_OPARG(cp_code[i]);
+        }
+        if (!eq) {
+            goto unequal;
+        }
+        i += _PyOpcode_InlineCacheEntries[opcode];
+    }
 
     /* compare constants */
     consts1 = _PyCode_ConstantKey(co->co_consts);
