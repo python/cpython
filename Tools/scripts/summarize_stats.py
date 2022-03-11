@@ -15,7 +15,7 @@ else:
     DEFAULT_DIR = "/tmp/py_stats/"
 
 #Create list of all instruction names
-specialized = itertools.chain.from_iterable(opcode._specializations.values())
+specialized = iter(opcode._specialized_instructions)
 opname = ["<0>"]
 for name in opcode.opname[1:]:
     if name.startswith("<"):
@@ -131,10 +131,10 @@ def categorized_counts(opcode_stats):
     specialized = 0
     not_specialized = 0
     specialized_instructions = {
-        op for op in itertools.chain.from_iterable(opcode._specializations.values())
+        op for op in opcode._specialized_instructions
         if "__" not in op and "ADAPTIVE" not in op}
     adaptive_instructions = {
-        op for op in itertools.chain.from_iterable(opcode._specializations.values())
+        op for op in opcode._specialized_instructions
         if "ADAPTIVE" in op}
     for i, opcode_stat in enumerate(opcode_stats):
         if "execution_count" not in opcode_stat:

@@ -98,7 +98,7 @@ typedef struct {
 #define QUICKENING_INITIAL_WARMUP_VALUE (-QUICKENING_WARMUP_DELAY)
 
 void _Py_Quicken(PyCodeObject *code);
-void _Py_Unquicken(PyCodeObject *code);
+void _Py_Unquicken(_Py_CODEUNIT *instructions, Py_ssize_t size);
 
 static inline void
 _Py_IncrementCountAndMaybeQuicken(PyCodeObject *code)
@@ -116,7 +116,7 @@ _Py_SetCountAndUnquicken(PyCodeObject *code)
 {    
     if (code->co_warmup == 0) {
         code->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
-        _Py_Unquicken(code);
+        _Py_Unquicken(_PyCode_GET_CODE(code), Py_SIZE(code));
     }
 }
 

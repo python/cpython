@@ -230,110 +230,111 @@ _nb_ops = [
 ]
 
 _specializations = {
-    "BINARY_OP": [
-        "BINARY_OP_ADAPTIVE",
-        "BINARY_OP_ADD_INT",
-        "BINARY_OP_ADD_FLOAT",
-        "BINARY_OP_ADD_UNICODE",
-        "BINARY_OP_INPLACE_ADD_UNICODE",
-        "BINARY_OP_MULTIPLY_INT",
-        "BINARY_OP_MULTIPLY_FLOAT",
-        "BINARY_OP_SUBTRACT_INT",
-        "BINARY_OP_SUBTRACT_FLOAT",
+    'BINARY_OP': [
+        'BINARY_OP_ADAPTIVE',
+        'BINARY_OP_ADD_FLOAT',
+        'BINARY_OP_ADD_INT',
+        'BINARY_OP_ADD_UNICODE',
+        'BINARY_OP_INPLACE_ADD_UNICODE',
+        'BINARY_OP_MULTIPLY_FLOAT',
+        'BINARY_OP_MULTIPLY_INT',
+        'BINARY_OP_SUBTRACT_FLOAT',
+        'BINARY_OP_SUBTRACT_INT',
     ],
-    "COMPARE_OP": [
-        "COMPARE_OP_ADAPTIVE",
-        "COMPARE_OP_FLOAT_JUMP",
-        "COMPARE_OP_INT_JUMP",
-        "COMPARE_OP_STR_JUMP",
+    'BINARY_SUBSCR': [
+        'BINARY_SUBSCR_ADAPTIVE',
+        'BINARY_SUBSCR_DICT',
+        'BINARY_SUBSCR_GETITEM',
+        'BINARY_SUBSCR_LIST_INT',
+         'BINARY_SUBSCR_TUPLE_INT',
     ],
-    "BINARY_SUBSCR": [
-        "BINARY_SUBSCR_ADAPTIVE",
-        "BINARY_SUBSCR_GETITEM",
-        "BINARY_SUBSCR_LIST_INT",
-        "BINARY_SUBSCR_TUPLE_INT",
-        "BINARY_SUBSCR_DICT",
+    'CALL': [
+        'CALL_ADAPTIVE',
+        'CALL_PY_EXACT_ARGS',
+        'CALL_PY_WITH_DEFAULTS',
     ],
-    "STORE_SUBSCR": [
-        "STORE_SUBSCR_ADAPTIVE",
-        "STORE_SUBSCR_LIST_INT",
-        "STORE_SUBSCR_DICT",
+    'COMPARE_OP': [
+        'COMPARE_OP_ADAPTIVE',
+        'COMPARE_OP_FLOAT_JUMP',
+        'COMPARE_OP_INT_JUMP',
+        'COMPARE_OP_STR_JUMP',
     ],
-    "CALL": [
-        "CALL_ADAPTIVE",
-        "CALL_PY_EXACT_ARGS",
-        "CALL_PY_WITH_DEFAULTS",
+    'JUMP_ABSOLUTE': [
+        'JUMP_ABSOLUTE_QUICK',
     ],
-    "LOAD_ATTR": [
-        "LOAD_ATTR_ADAPTIVE",
-        "LOAD_ATTR_INSTANCE_VALUE",
-        "LOAD_ATTR_WITH_HINT",
-        "LOAD_ATTR_SLOT",
-        "LOAD_ATTR_MODULE",
+    'LOAD_ATTR': [
+        'LOAD_ATTR_ADAPTIVE',
+        'LOAD_ATTR_INSTANCE_VALUE',
+        'LOAD_ATTR_MODULE',
+        'LOAD_ATTR_SLOT',
+        'LOAD_ATTR_WITH_HINT',
     ],
-    "LOAD_GLOBAL": [
-        "LOAD_GLOBAL_ADAPTIVE",
-        "LOAD_GLOBAL_MODULE",
-        "LOAD_GLOBAL_BUILTIN",
+    'LOAD_CONST': [
+        'LOAD_CONST__LOAD_FAST',
     ],
-    "LOAD_METHOD": [
-        "LOAD_METHOD_ADAPTIVE",
-        "LOAD_METHOD_CLASS",
-        "LOAD_METHOD_MODULE",
-        "LOAD_METHOD_NO_DICT",
-        "LOAD_METHOD_WITH_DICT",
-        "LOAD_METHOD_WITH_VALUES",
+    'LOAD_FAST': [
+        'LOAD_FAST__LOAD_CONST',
+        'LOAD_FAST__LOAD_FAST',
     ],
-    "PRECALL": [
-        "PRECALL_ADAPTIVE",
-        "PRECALL_BUILTIN_CLASS",
-        "PRECALL_NO_KW_BUILTIN_O",
-        "PRECALL_NO_KW_BUILTIN_FAST",
-        "PRECALL_BUILTIN_FAST_WITH_KEYWORDS",
-        "PRECALL_NO_KW_LEN",
-        "PRECALL_NO_KW_ISINSTANCE",
-        "PRECALL_NO_KW_LIST_APPEND",
-        "PRECALL_NO_KW_METHOD_DESCRIPTOR_O",
-        "PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS",
-        "PRECALL_NO_KW_STR_1",
-        "PRECALL_NO_KW_TUPLE_1",
-        "PRECALL_NO_KW_TYPE_1",
-        "PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST",
-        "PRECALL_BOUND_METHOD",
-        "PRECALL_PYFUNC",
+    'LOAD_GLOBAL': [
+        'LOAD_GLOBAL_ADAPTIVE',
+        'LOAD_GLOBAL_BUILTIN',
+        'LOAD_GLOBAL_MODULE',
     ],
-    "STORE_ATTR": [
-        "STORE_ATTR_ADAPTIVE",
-        "STORE_ATTR_INSTANCE_VALUE",
-        "STORE_ATTR_SLOT",
-        "STORE_ATTR_WITH_HINT",
+    'LOAD_METHOD': [
+        'LOAD_METHOD_ADAPTIVE',
+        'LOAD_METHOD_CLASS',
+        'LOAD_METHOD_MODULE',
+        'LOAD_METHOD_NO_DICT',
+        'LOAD_METHOD_WITH_DICT',
+        'LOAD_METHOD_WITH_VALUES',
     ],
-    "UNPACK_SEQUENCE": [
-        "UNPACK_SEQUENCE_ADAPTIVE",
-        "UNPACK_SEQUENCE_LIST",
-        "UNPACK_SEQUENCE_TUPLE",
-        "UNPACK_SEQUENCE_TWO_TUPLE",
+    'PRECALL': [
+        'PRECALL_ADAPTIVE',
+        'PRECALL_BOUND_METHOD',
+        'PRECALL_BUILTIN_CLASS',
+        'PRECALL_BUILTIN_FAST_WITH_KEYWORDS',
+        'PRECALL_NO_KW_BUILTIN_FAST',
+        'PRECALL_NO_KW_BUILTIN_O',
+        'PRECALL_NO_KW_ISINSTANCE',
+        'PRECALL_NO_KW_LEN',
+        'PRECALL_NO_KW_LIST_APPEND',
+        'PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST',
+        'PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS',
+        'PRECALL_NO_KW_METHOD_DESCRIPTOR_O',
+        'PRECALL_NO_KW_STR_1',
+        'PRECALL_NO_KW_TUPLE_1',
+        'PRECALL_NO_KW_TYPE_1',
+        'PRECALL_PYFUNC',
     ],
-    # Super instructions
-    "LOAD_FAST": [
-        "LOAD_FAST__LOAD_FAST",
-        "LOAD_FAST__LOAD_CONST",
+    'RESUME': [
+        'RESUME_QUICK',
     ],
-    "STORE_FAST": [
-        "STORE_FAST__LOAD_FAST",
-        "STORE_FAST__STORE_FAST",
+    'STORE_ATTR': [
+        'STORE_ATTR_ADAPTIVE',
+        'STORE_ATTR_INSTANCE_VALUE',
+        'STORE_ATTR_SLOT',
+        'STORE_ATTR_WITH_HINT',
     ],
-    "LOAD_CONST": [
-        "LOAD_CONST__LOAD_FAST",
+    'STORE_FAST': [
+        'STORE_FAST__LOAD_FAST',
+        'STORE_FAST__STORE_FAST',
     ],
-    # Other instructions
-    "JUMP_ABSOLUTE": [
-        "JUMP_ABSOLUTE_QUICK",
+    'STORE_SUBSCR': [
+        'STORE_SUBSCR_ADAPTIVE',
+        'STORE_SUBSCR_DICT',
+        'STORE_SUBSCR_LIST_INT',
     ],
-    "RESUME": [
-        "RESUME_QUICK",
+    'UNPACK_SEQUENCE': [
+        'UNPACK_SEQUENCE_ADAPTIVE',
+        'UNPACK_SEQUENCE_LIST',
+        'UNPACK_SEQUENCE_TUPLE',
+        'UNPACK_SEQUENCE_TWO_TUPLE',
     ],
 }
+_specialized_instructions = [
+    opcode for family in _specializations.values() for opcode in family
+]
 _specialization_stats = [
     "success",
     "failure",

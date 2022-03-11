@@ -71,7 +71,7 @@ class SpecializationStatsTests(unittest.TestCase):
 
         specialized_opcodes = [
             op[:-len("_ADAPTIVE")].lower() for
-            op in chain.from_iterable(opcode._specializations.values())
+            op in opcode._specialized_instructions
             if op.endswith("_ADAPTIVE")]
         self.assertIn('load_attr', specialized_opcodes)
         self.assertIn('binary_subscr', specialized_opcodes)

@@ -70,14 +70,14 @@ def main(opcode_py, outfile='Include/opcode.h'):
             if name == 'POP_EXCEPT': # Special entry for HAVE_ARGUMENT
                 fobj.write(DEFINE.format("HAVE_ARGUMENT", opcode["HAVE_ARGUMENT"]))
 
-        for name in chain.from_iterable(opcode['_specializations'].values()):
+        for name in opcode['_specialized_instructions']:
             while used[next_op]:
                 next_op += 1
             fobj.write(DEFINE.format(name, next_op))
             used[next_op] = True
         fobj.write(DEFINE.format('DO_TRACING', 255))
         fobj.write("\nextern const uint8_t _PyOpcode_InlineCacheEntries[256];\n")
-        fobj.write("\nextern const uint8_t _PyOpcode_Specializations[256];\n")
+        fobj.write("\nextern const uint8_t _PyOpcode_Deoptimizations[256];\n")
         fobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
         write_int_array_from_ops("_PyOpcode_RelativeJump", opcode['hasjrel'], fobj)
         write_int_array_from_ops("_PyOpcode_Jump", opcode['hasjrel'] + opcode['hasjabs'], fobj)
@@ -87,10 +87,15 @@ def main(opcode_py, outfile='Include/opcode.h'):
             if entries:
                 fobj.write(f"    [{opname[i]}] = {entries},\n")
         fobj.write("};\n")
-        fobj.write("\nconst uint8_t _PyOpcode_Specializations[256] = {\n")
-        for basic, specializations in opcode["_specializations"].items():
-            for specialization in specializations:
-                fobj.write(f"    [{specialization}] = {basic},\n")
+        deoptcodes = {}
+        for basic in opmap:
+            deoptcodes[basic] = basic
+        for basic, family in opcode["_specializations"].items():
+            for specialized in family:
+                deoptcodes[specialized] = basic
+        fobj.write("\nconst uint8_t _PyOpcode_Deoptimizations[256] = {\n")
+        for opt, deopt in sorted(deoptcodes.items()):
+            fobj.write(f"    [{opt}] = {deopt},\n")
         fobj.write("};\n")
         fobj.write("#endif /* OPCODE_TABLES */\n")
 

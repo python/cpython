@@ -343,21 +343,14 @@ _Py_Quicken(PyCodeObject *code)
 }
 
 void
-_Py_Unquicken(PyCodeObject *code)
+_Py_Unquicken(_Py_CODEUNIT *instructions, Py_ssize_t size)
 {
-    assert(code->co_warmup == QUICKENING_INITIAL_WARMUP_VALUE);
-    _Py_QuickenedCount--;
-    _Py_CODEUNIT *instructions = _PyCode_GET_CODE(code);
-    for (int i = 0; i < Py_SIZE(code); i++) {
-        int opcode = _Py_OPCODE(instructions[i]);
-        int deopt = _PyOpcode_Specializations[opcode];
-        if (deopt) {
-            int oparg = _Py_OPARG(instructions[i]);
-            instructions[i] = _Py_MAKECODEUNIT(deopt, oparg);
-            int cache_entries = _PyOpcode_InlineCacheEntries[deopt];
-            for (int j = 0; j < cache_entries; j++) {
-                instructions[++i] = _Py_MAKECODEUNIT(CACHE, 0);
-            }
+    for (Py_ssize_t i = 0; i < size; i++) {
+        int opcode = _PyOpcode_Deoptimizations[_Py_OPCODE(instructions[i])];
+        instructions[i] = _Py_MAKECODEUNIT(opcode, _Py_OPARG(instructions[i]));
+        int cache_entries = _PyOpcode_InlineCacheEntries[opcode];
+        while (cache_entries--) {
+            instructions[++i] = _Py_MAKECODEUNIT(CACHE, 0);
         }
     }
 }

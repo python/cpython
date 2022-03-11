@@ -37,7 +37,7 @@ def write_contents(f):
     for opname, op in opcode.opmap.items():
         targets[op] = "TARGET_%s" % opname
     next_op = 1
-    for opname in chain.from_iterable(opcode._specializations.values()):
+    for opname in opcode._specialized_instructions:
         while targets[next_op] != '_unknown_opcode':
             next_op += 1
         targets[next_op] = "TARGET_%s" % opname
