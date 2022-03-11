@@ -518,7 +518,7 @@ class IocpProactor:
         try:
             ov.WSARecvFromInto(conn.fileno(), buf, flags)
         except BrokenPipeError:
-            return self._result((b'', None))
+            return self._result((0, None))
 
         def finish_recv(trans, key, ov):
             try:
