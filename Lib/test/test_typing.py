@@ -444,37 +444,42 @@ class TypeVarTupleTests(BaseTestCase):
         Ts = TypeVarTuple('Ts')
         T = TypeVar('T')
         T2 = TypeVar('T2')
-        class A(Generic[Unpack[Ts]]): pass
+        class G(Generic[Unpack[Ts]]): pass
 
-        B = A[Unpack[Ts]]
-        self.assertEqual(B[()], A[()])
-        self.assertEqual(B[float], A[float])
-        self.assertEqual(B[float, str], A[float, str])
+        for A in G, Tuple:
+            B = A[Unpack[Ts]]
+            if A != Tuple:
+                self.assertEqual(B[()], A[()])
+            self.assertEqual(B[float], A[float])
+            self.assertEqual(B[float, str], A[float, str])
 
-        C = List[A[Unpack[Ts]]]
-        self.assertEqual(C[()], List[A[()]])
-        self.assertEqual(C[float], List[A[float]])
-        self.assertEqual(C[float, str], List[A[float, str]])
+            C = List[A[Unpack[Ts]]]
+            if A != Tuple:
+                self.assertEqual(C[()], List[A[()]])
+            self.assertEqual(C[float], List[A[float]])
+            self.assertEqual(C[float, str], List[A[float, str]])
 
-        D = A[T, Unpack[Ts], T2]
-        with self.assertRaises(TypeError):
-            D[()]
-        with self.assertRaises(TypeError):
-            D[float]
-        self.assertEqual(D[float, str], A[float, str])
-        self.assertEqual(D[float, str, int], A[float, str, int])
-        self.assertEqual(D[float, str, int, bytes], A[float, str, int, bytes])
+            D = A[T, Unpack[Ts], T2]
+            with self.assertRaises(TypeError):
+                D[()]
+            with self.assertRaises(TypeError):
+                D[float]
+            self.assertEqual(D[float, str], A[float, str])
+            self.assertEqual(D[float, str, int], A[float, str, int])
+            self.assertEqual(D[float, str, int, bytes], A[float, str, int, bytes])
 
-        E = Tuple[List[T], A[Unpack[Ts]], List[T2]]
-        with self.assertRaises(TypeError):
-            E[()]
-        with self.assertRaises(TypeError):
-            E[float]
-        self.assertEqual(E[float, str], Tuple[List[float], A[()], List[str]])
-        self.assertEqual(E[float, str, int],
-                         Tuple[List[float], A[str], List[int]])
-        self.assertEqual(E[float, str, int, bytes],
-                         Tuple[List[float], A[str, int], List[bytes]])
+            E = Tuple[List[T], A[Unpack[Ts]], List[T2]]
+            with self.assertRaises(TypeError):
+                E[()]
+            with self.assertRaises(TypeError):
+                E[float]
+            if A != Tuple:
+                self.assertEqual(E[float, str],
+                                 Tuple[List[float], A[()], List[str]])
+            self.assertEqual(E[float, str, int],
+                             Tuple[List[float], A[str], List[int]])
+            self.assertEqual(E[float, str, int, bytes],
+                             Tuple[List[float], A[str, int], List[bytes]])
 
     def test_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
