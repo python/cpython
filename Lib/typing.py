@@ -1297,30 +1297,39 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         # anything more exotic than a plain `TypeVar`, we need to consider
         # edge cases.
 
-        if any(isinstance(p, TypeVarTuple) for p in self.__parameters__):
-            raise NotImplementedError(
-                "Type substitution for TypeVarTuples is not yet implemented"
-            )
+        params = self.__parameters__
         # In the example above, this would be {T3: str}
-        new_arg_by_param = dict(zip(self.__parameters__, args))
+        new_arg_by_param = {}
+        for i, param in enumerate(params):
+            if isinstance(param, TypeVarTuple):
+                j = len(args) - (len(params) - i - 1)
+                if j < i:
+                    raise TypeError(f"Too few arguments for {self}")
+                new_arg_by_param.update(zip(params[:i], args[:i]))
+                new_arg_by_param[param] = args[i: j]
+                new_arg_by_param.update(zip(params[i + 1:], args[j:]))
+                break
+        else:
+            new_arg_by_param.update(zip(params, args))
 
         new_args = []
         for old_arg in self.__args__:
 
-            if _is_unpacked_typevartuple(old_arg):
-                original_typevartuple = old_arg.__parameters__[0]
-                new_arg = new_arg_by_param[original_typevartuple]
+            substfunc = getattr(old_arg, '__typing_subst__', None)
+            if substfunc:
+                new_arg = substfunc(new_arg_by_param[old_arg])
             else:
-                substfunc = getattr(old_arg, '__typing_subst__', None)
-                if substfunc:
-                    new_arg = substfunc(new_arg_by_param[old_arg])
+                subparams = getattr(old_arg, '__parameters__', ())
+                if not subparams:
+                    new_arg = old_arg
                 else:
-                    subparams = getattr(old_arg, '__parameters__', ())
-                    if not subparams:
-                        new_arg = old_arg
-                    else:
-                        subargs = tuple(new_arg_by_param[x] for x in subparams)
-                        new_arg = old_arg[subargs]
+                    subargs = []
+                    for x in subparams:
+                        if isinstance(x, TypeVarTuple):
+                            subargs.extend(new_arg_by_param[x])
+                        else:
+                            subargs.append(new_arg_by_param[x])
+                    new_arg = old_arg[tuple(subargs)]
 
             if self.__origin__ == collections.abc.Callable and isinstance(new_arg, tuple):
                 # Consider the following `Callable`.
@@ -1611,6 +1620,12 @@ class _UnpackGenericAlias(_GenericAlias, _root=True):
         # `Unpack` only takes one argument, so __args__ should contain only
         # a single item.
         return '*' + repr(self.__args__[0])
+
+    def __getitem__(self, args):
+        if (len(self.__parameters__) == 1 and
+                isinstance(self.__parameters__[0], TypeVarTuple)):
+            return args
+        return super().__getitem__(args)
 
 
 class Generic:

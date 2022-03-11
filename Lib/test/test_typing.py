@@ -411,6 +411,10 @@ class UnpackTests(BaseTestCase):
 
 class TypeVarTupleTests(BaseTestCase):
 
+    def assertEndsWith(self, string, tail):
+        if not string.endswith(tail):
+            self.fail(f"String {string!r} does not end with {tail!r}")
+
     def test_instance_is_equal_to_itself(self):
         Ts = TypeVarTuple('Ts')
         self.assertEqual(Ts, Ts)
@@ -457,6 +461,56 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertEqual(t2.__args__, (Unpack[Ts],))
         self.assertEqual(t2.__parameters__, (Ts,))
 
+    def test_var_substitution(self):
+        Ts = TypeVarTuple('Ts')
+        T = TypeVar('T')
+        T2 = TypeVar('T2')
+        class G(Generic[Unpack[Ts]]): pass
+
+        for A in G, Tuple:
+            B = A[Unpack[Ts]]
+            if A != Tuple:
+                self.assertEqual(B[()], A[()])
+            self.assertEqual(B[float], A[float])
+            self.assertEqual(B[float, str], A[float, str])
+
+            C = List[A[Unpack[Ts]]]
+            if A != Tuple:
+                self.assertEqual(C[()], List[A[()]])
+            self.assertEqual(C[float], List[A[float]])
+            self.assertEqual(C[float, str], List[A[float, str]])
+
+            D = A[T, Unpack[Ts], T2]
+            with self.assertRaises(TypeError):
+                D[()]
+            with self.assertRaises(TypeError):
+                D[float]
+            self.assertEqual(D[float, str], A[float, str])
+            self.assertEqual(D[float, str, int], A[float, str, int])
+            self.assertEqual(D[float, str, int, bytes], A[float, str, int, bytes])
+
+            E = Tuple[List[T], A[Unpack[Ts]], List[T2]]
+            with self.assertRaises(TypeError):
+                E[()]
+            with self.assertRaises(TypeError):
+                E[float]
+            if A != Tuple:
+                self.assertEqual(E[float, str],
+                                 Tuple[List[float], A[()], List[str]])
+            self.assertEqual(E[float, str, int],
+                             Tuple[List[float], A[str], List[int]])
+            self.assertEqual(E[float, str, int, bytes],
+                             Tuple[List[float], A[str, int], List[bytes]])
+
+    def test_repr_is_correct(self):
+        Ts = TypeVarTuple('Ts')
+        self.assertEqual(repr(Ts), 'Ts')
+        self.assertEqual(repr(Unpack[Ts]), '*Ts')
+        self.assertEqual(repr(tuple[Unpack[Ts]]), 'tuple[*Ts]')
+        self.assertEqual(repr(Tuple[Unpack[Ts]]), 'typing.Tuple[*Ts]')
+        self.assertEqual(repr(Unpack[tuple[Unpack[Ts]]]), '*tuple[*Ts]')
+        self.assertEqual(repr(Unpack[Tuple[Unpack[Ts]]]), '*typing.Tuple[*Ts]')
+
     def test_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
         self.assertEqual(repr(Ts), 'Ts')
@@ -470,78 +524,51 @@ class TypeVarTupleTests(BaseTestCase):
         Ts = TypeVarTuple('Ts')
         class A(Generic[Unpack[Ts]]): pass
 
-        self.assertTrue(repr(A[()]).endswith('A[()]'))
-        self.assertTrue(repr(A[float]).endswith('A[float]'))
-        self.assertTrue(repr(A[float, str]).endswith('A[float, str]'))
-        self.assertTrue(repr(
-            A[Unpack[tuple[int, ...]]]
-        ).endswith(
-            'A[*tuple[int, ...]]'
-        ))
-        self.assertTrue(repr(
-            A[float, Unpack[tuple[int, ...]]]
-        ).endswith(
-            'A[float, *tuple[int, ...]]'
-        ))
-        self.assertTrue(repr(
-            A[Unpack[tuple[int, ...]], str]
-        ).endswith(
-            'A[*tuple[int, ...], str]'
-        ))
-        self.assertTrue(repr(
-            A[float, Unpack[tuple[int, ...]], str]
-        ).endswith(
-            'A[float, *tuple[int, ...], str]'
-        ))
+        self.assertEndsWith(repr(A[()]), 'A[()]')
+        self.assertEndsWith(repr(A[float]), 'A[float]')
+        self.assertEndsWith(repr(A[float, str]), 'A[float, str]')
+        self.assertEndsWith(repr(A[Unpack[tuple[int, ...]]]),
+                            'A[*tuple[int, ...]]')
+        self.assertEndsWith(repr(A[float, Unpack[tuple[int, ...]]]),
+                            'A[float, *tuple[int, ...]]')
+        self.assertEndsWith(repr(A[Unpack[tuple[int, ...]], str]),
+                            'A[*tuple[int, ...], str]')
+        self.assertEndsWith(repr(A[float, Unpack[tuple[int, ...]], str]),
+                            'A[float, *tuple[int, ...], str]')
 
     def test_variadic_class_alias_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
         class A(Generic[Unpack[Ts]]): pass
 
         B = A[Unpack[Ts]]
-        self.assertTrue(repr(B).endswith('A[*Ts]'))
-        with self.assertRaises(NotImplementedError):
-            B[()]
-        with self.assertRaises(NotImplementedError):
-            B[float]
-        with self.assertRaises(NotImplementedError):
-            B[float, str]
+        self.assertEndsWith(repr(B), 'A[*Ts]')
+        self.assertEndsWith(repr(B[()]), 'A[()]')
+        self.assertEndsWith(repr(B[float]), 'A[float]')
+        self.assertEndsWith(repr(B[float, str]), 'A[float, str]')
 
         C = A[Unpack[Ts], int]
-        self.assertTrue(repr(C).endswith('A[*Ts, int]'))
-        with self.assertRaises(NotImplementedError):
-            C[()]
-        with self.assertRaises(NotImplementedError):
-            C[float]
-        with self.assertRaises(NotImplementedError):
-            C[float, str]
+        self.assertEndsWith(repr(C), 'A[*Ts, int]')
+        self.assertEndsWith(repr(C[()]), 'A[int]')
+        self.assertEndsWith(repr(C[float]), 'A[float, int]')
+        self.assertEndsWith(repr(C[float, str]), 'A[float, str, int]')
 
         D = A[int, Unpack[Ts]]
-        self.assertTrue(repr(D).endswith('A[int, *Ts]'))
-        with self.assertRaises(NotImplementedError):
-            D[()]
-        with self.assertRaises(NotImplementedError):
-            D[float]
-        with self.assertRaises(NotImplementedError):
-            D[float, str]
+        self.assertEndsWith(repr(D), 'A[int, *Ts]')
+        self.assertEndsWith(repr(D[()]), 'A[int]')
+        self.assertEndsWith(repr(D[float]), 'A[int, float]')
+        self.assertEndsWith(repr(D[float, str]), 'A[int, float, str]')
 
         E = A[int, Unpack[Ts], str]
-        self.assertTrue(repr(E).endswith('A[int, *Ts, str]'))
-        with self.assertRaises(NotImplementedError):
-            E[()]
-        with self.assertRaises(NotImplementedError):
-            E[float]
-        with self.assertRaises(NotImplementedError):
-            E[float, bool]
+        self.assertEndsWith(repr(E), 'A[int, *Ts, str]')
+        self.assertEndsWith(repr(E[()]), 'A[int, str]')
+        self.assertEndsWith(repr(E[float]), 'A[int, float, str]')
+        self.assertEndsWith(repr(E[float, str]), 'A[int, float, str, str]')
 
         F = A[Unpack[Ts], Unpack[tuple[str, ...]]]
-        self.assertTrue(repr(F).endswith('A[*Ts, *tuple[str, ...]]'))
-        with self.assertRaises(NotImplementedError):
-            F[()]
-        with self.assertRaises(NotImplementedError):
-            F[float]
-        with self.assertRaises(NotImplementedError):
-            F[float, int]
+        self.assertEndsWith(repr(F), 'A[*Ts, *tuple[str, ...]]')
+        self.assertEndsWith(repr(F[()]), 'A[*tuple[str, ...]]')
+        self.assertEndsWith(repr(F[float]), 'A[float, *tuple[str, ...]]')
+        self.assertEndsWith(repr(F[float, str]), 'A[float, str, *tuple[str, ...]]')
 
     def test_cannot_subclass_class(self):
         with self.assertRaises(TypeError):
