@@ -1731,7 +1731,7 @@ handle_eval_breaker:
         }
 
         TARGET(RESUME) {
-            _Py_IncrementCountAndMaybeQuicken(frame->f_code);
+            _PyCode_Warmup(frame->f_code);
             JUMP_TO_INSTRUCTION(RESUME_QUICK);
         }
 
@@ -4059,7 +4059,7 @@ handle_eval_breaker:
 
         TARGET(JUMP_ABSOLUTE) {
             PREDICTED(JUMP_ABSOLUTE);
-            _Py_IncrementCountAndMaybeQuicken(frame->f_code);
+            _PyCode_Warmup(frame->f_code);
             JUMP_TO_INSTRUCTION(JUMP_ABSOLUTE_QUICK);
         }
 

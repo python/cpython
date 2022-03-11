@@ -275,7 +275,6 @@ _Py_PrintSpecializationStats(int to_file)
 #define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
 #endif
 
-
 // Insert adaptive instructions and superinstructions. This cannot fail.
 void
 _Py_Quicken(PyCodeObject *code)

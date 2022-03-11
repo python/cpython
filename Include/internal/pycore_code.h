@@ -100,7 +100,7 @@ typedef struct {
 void _Py_Quicken(PyCodeObject *code);
 
 static inline void
-_Py_IncrementCountAndMaybeQuicken(PyCodeObject *code)
+_PyCode_Warmup(PyCodeObject *code)
 {
     if (code->co_warmup != 0) {
         code->co_warmup++;

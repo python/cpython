@@ -1341,8 +1341,9 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_endlinetable);
     Py_XDECREF(co->co_columntable);
     Py_XDECREF(co->co_exceptiontable);
-    if (co->co_weakreflist != NULL)
+    if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)co);
+    }
     if (co->co_warmup == 0) {
         _Py_QuickenedCount--;
     }
