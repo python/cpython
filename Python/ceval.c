@@ -1327,7 +1327,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* Get opcode and oparg from original instructions, not quickened form. */
 #define TRACING_NEXTOPARG() do { \
-        _Py_CODEUNIT word = _Py_Unquickened(frame->f_code)[INSTR_OFFSET()]; \
+        _Py_CODEUNIT word = _PyCode_GetUnquickened(frame->f_code, INSTR_OFFSET()); \
         opcode = _Py_OPCODE(word); \
         oparg = _Py_OPARG(word); \
     } while (0)
@@ -1568,8 +1568,7 @@ trace_function_exit(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject 
 static int
 skip_backwards_over_extended_args(PyCodeObject *code, int offset)
 {
-    _Py_CODEUNIT *instrs = _Py_Unquickened(code);
-    while (offset > 0 && _Py_OPCODE(instrs[offset-1]) == EXTENDED_ARG) {
+    while (offset > 0 && _Py_OPCODE(_PyCode_GetUnquickened(code, offset - 1)) == EXTENDED_ARG) {
         offset--;
     }
     return offset;
@@ -6707,7 +6706,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
        then call the trace function if we're tracing source lines.
     */
     initialize_trace_info(&tstate->trace_info, frame);
-    _Py_CODEUNIT prev = _Py_Unquickened(frame->f_code)[instr_prev];
+    _Py_CODEUNIT prev = _PyCode_GetUnquickened(frame->f_code, instr_prev);
     int lastline;
     if (_Py_OPCODE(prev) == RESUME && _Py_OPARG(prev) == 0) {
         lastline = -1;

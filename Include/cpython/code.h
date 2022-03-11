@@ -93,9 +93,6 @@ struct PyCodeObject {
     char _co_code[1];
 };
 
-#define _PyCode_GET_CODE(CO) ((_Py_CODEUNIT *)(CO)->_co_code)
-#define _PyCode_GET_SIZE(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
-
 /* Masks for co_flags above */
 #define CO_OPTIMIZED    0x0001
 #define CO_NEWLOCALS    0x0002

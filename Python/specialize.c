@@ -340,22 +340,12 @@ _Py_Quicken(PyCodeObject *code)
     }
 }
 
-_Py_CODEUNIT *
-_Py_Unquickened(PyCodeObject *code)
+_Py_CODEUNIT
+_PyCode_GetUnquickened(PyCodeObject *code, int i)
 {
-    _Py_CODEUNIT *instructions = _PyCode_GET_CODE(code);
-    if (code->co_warmup == 0) {
-        _Py_QuickenedCount--;
-        for (Py_ssize_t i = 0; i < Py_SIZE(code); i++) {
-            int opcode = _PyOpcode_Deoptimizations[_Py_OPCODE(instructions[i])];
-            instructions[i] = _Py_MAKECODEUNIT(opcode, _Py_OPARG(instructions[i]));
-            int cache_entries = _PyOpcode_InlineCacheEntries[opcode];
-            while (cache_entries--) {
-                instructions[++i] = _Py_MAKECODEUNIT(CACHE, 0);
-            }
-        }
-    }
-    return instructions;
+    _Py_CODEUNIT instruction = _PyCode_GET_CODE(code)[i];
+    int opcode = _PyOpcode_Deoptimizations[_Py_OPCODE(instruction)];
+    return _Py_MAKECODEUNIT(opcode, _Py_OPARG(instruction));
 }
 
 static inline int

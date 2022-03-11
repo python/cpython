@@ -349,17 +349,16 @@ _PyGen_yf(PyGenObject *gen)
 
     if (gen->gi_frame_valid) {
         _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
-        _Py_CODEUNIT *code = _PyCode_GET_CODE(gen->gi_code);
 
         if (frame->f_lasti < 1) {
             /* Return immediately if the frame didn't start yet. SEND
                always come after LOAD_CONST: a code object should not start
                with SEND */
-            assert(_Py_OPCODE(code[0]) != SEND);
+            assert(_Py_OPCODE(_PyCode_GetUnquickened(gen->gi_code, 0)) != SEND);
             return NULL;
         }
 
-        if (_Py_OPCODE(code[frame->f_lasti - 1]) != SEND || frame->stacktop < 0)
+        if (_Py_OPCODE(_PyCode_GetUnquickened(gen->gi_code, frame->f_lasti - 1)) != SEND || frame->stacktop < 0)
         {
             return NULL;
         }
@@ -485,12 +484,11 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             Py_DECREF(ret);
             /* Termination repetition of SEND loop */
             assert(frame->f_lasti >= 0);
-            _Py_CODEUNIT *code = _PyCode_GET_CODE(gen->gi_code);
             /* Backup to SEND */
             frame->f_lasti--;
-            assert(_Py_OPCODE(code[frame->f_lasti]) == SEND);
+            assert(_Py_OPCODE(_PyCode_GetUnquickened(gen->gi_code, frame->f_lasti)) == SEND);
             // XXX: This doesn't seem to handle EXTENDED_ARGs:
-            int jump = _Py_OPARG(code[frame->f_lasti]);
+            int jump = _Py_OPARG(_PyCode_GetUnquickened(gen->gi_code, frame->f_lasti));
             frame->f_lasti += jump;
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);

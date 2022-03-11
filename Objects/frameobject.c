@@ -170,12 +170,21 @@ top_of_stack(int64_t stack)
 static int64_t *
 mark_stacks(PyCodeObject *code_obj, int len)
 {
-    const _Py_CODEUNIT *code = _PyCode_GET_CODE(code_obj);
+    // XXX: this is one big TODO!!!
+    PyObject *xxx = PyBytes_FromStringAndSize(NULL, _PyCode_GET_SIZE(code_obj));
+    if (xxx == NULL) {
+        return NULL;
+    }
+    _Py_CODEUNIT *code = (_Py_CODEUNIT *)PyBytes_AS_STRING(xxx);
+    for (int i = 0; i < Py_SIZE(code_obj); i++) {
+        code[i] = _PyCode_GetUnquickened(code_obj, i);
+    }
     int64_t *stacks = PyMem_New(int64_t, len+1);
     int i, j, opcode;
 
     if (stacks == NULL) {
         PyErr_NoMemory();
+        Py_DECREF(xxx);
         return NULL;
     }
     for (int i = 1; i <= len; i++) {
@@ -303,6 +312,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
             }
         }
     }
+    Py_DECREF(xxx);
     return stacks;
 }
 
@@ -837,9 +847,10 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
 static int
 _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
 {
-    const _Py_CODEUNIT *code = _PyCode_GET_CODE(frame->f_code);
+    // XXX: Does this handle EXTENDED_ARGs?
     for (int i = 0; i < frame->f_lasti; i++) {
-        if (_Py_OPCODE(code[i]) == opcode && _Py_OPARG(code[i]) == oparg) {
+        _Py_CODEUNIT instruction = _PyCode_GetUnquickened(frame->f_code, i);
+        if (instruction == _Py_MAKECODEUNIT(opcode, oparg)) {
             return 1;
         }
     }

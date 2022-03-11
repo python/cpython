@@ -1380,18 +1380,13 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     if (!eq) {
         goto unequal;
     }
-    _Py_CODEUNIT *co_code = _PyCode_GET_CODE(co);
-    _Py_CODEUNIT *cp_code = _PyCode_GET_CODE(cp);
     for (int i = 0; i < Py_SIZE(co); i++) {
-        int opcode = _PyOpcode_Deoptimizations[_Py_OPCODE(co_code[i])];
-        eq = opcode == _PyOpcode_Deoptimizations[_Py_OPCODE(cp_code[i])];
-        if (HAS_ARG(opcode)) {
-            eq &= _Py_OPARG(co_code[i]) == _Py_OPARG(cp_code[i]);
-        }
+        _Py_CODEUNIT instruction = _PyCode_GetUnquickened(co, i);
+        eq = _PyCode_GetUnquickened(co, i)  == _PyCode_GetUnquickened(cp, i);
         if (!eq) {
             goto unequal;
         }
-        i += _PyOpcode_InlineCacheEntries[opcode];
+        i += _PyOpcode_InlineCacheEntries[_Py_OPCODE(instruction)];
     }
 
     /* compare constants */
@@ -1510,8 +1505,15 @@ code_getundercode(PyCodeObject *code, void *closure)
 static PyObject *
 code_getcode(PyCodeObject *code, void *closure)
 {
-    return PyBytes_FromStringAndSize((char *)_Py_Unquickened(code),
-                                     _PyCode_GET_SIZE(code));
+    PyObject *co_code = PyBytes_FromStringAndSize(NULL, _PyCode_GET_SIZE(code));
+    if (co_code == NULL) {
+        return NULL;
+    }
+    _Py_CODEUNIT *instructions = (_Py_CODEUNIT *)PyBytes_AS_STRING(co_code);
+    for (int i = 0; i < Py_SIZE(code); i++) {
+        instructions[i] = _PyCode_GetUnquickened(code, i);
+    }
+    return co_code;
 }
 
 static PyGetSetDef code_getsetlist[] = {
