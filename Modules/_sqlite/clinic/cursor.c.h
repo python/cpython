@@ -35,7 +35,7 @@ PyDoc_STRVAR(pysqlite_cursor_execute__doc__,
 "execute($self, sql, parameters=(), /)\n"
 "--\n"
 "\n"
-"Executes a SQL statement.");
+"Executes an SQL statement.");
 
 #define PYSQLITE_CURSOR_EXECUTE_METHODDEF    \
     {"execute", (PyCFunction)(void(*)(void))pysqlite_cursor_execute, METH_FASTCALL, pysqlite_cursor_execute__doc__},
@@ -77,7 +77,7 @@ PyDoc_STRVAR(pysqlite_cursor_executemany__doc__,
 "executemany($self, sql, seq_of_parameters, /)\n"
 "--\n"
 "\n"
-"Repeatedly executes a SQL statement.");
+"Repeatedly executes an SQL statement.");
 
 #define PYSQLITE_CURSOR_EXECUTEMANY_METHODDEF    \
     {"executemany", (PyCFunction)(void(*)(void))pysqlite_cursor_executemany, METH_FASTCALL, pysqlite_cursor_executemany__doc__},
@@ -289,4 +289,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=1bee279bc861f6d3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bde165664155b2bf input=a9049054013a1b77]*/
