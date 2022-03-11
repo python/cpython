@@ -12,7 +12,14 @@ from test.support import import_helper
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from math import isinf, isnan, copysign, ldexp
+import math
 
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
+HAVE_IEEE_754 = float.__getformat__("double").startswith("IEEE")
 INF = float("inf")
 NAN = float("nan")
 
@@ -652,8 +659,9 @@ class IEEEFormatTestCase(unittest.TestCase):
             struct.unpack(fmt, data)
 
     @support.requires_IEEE_754
+    @unittest.skipIf(_testcapi is None, 'needs _testcapi')
     def test_serialized_float_rounding(self):
-        FLT_MAX = import_helper.import_module('_testcapi').FLT_MAX
+        FLT_MAX = _testcapi.FLT_MAX
         self.assertEqual(struct.pack("<f", 3.40282356e38), struct.pack("<f", FLT_MAX))
         self.assertEqual(struct.pack("<f", -3.40282356e38), struct.pack("<f", -FLT_MAX))
 
@@ -1486,6 +1494,70 @@ class HexFloatTestCase(unittest.TestCase):
         self.assertIs(type(f), F2)
         self.assertEqual(f, 1.5)
         self.assertEqual(getattr(f, 'foo', 'none'), 'bar')
+
+
+# Test PyFloat_Pack2(), PyFloat_Pack4() and PyFloat_Pack8()
+# Test PyFloat_Unpack2(), PyFloat_Unpack4() and PyFloat_Unpack8()
+BIG_ENDIAN = 0
+LITTLE_ENDIAN = 1
+EPSILON = {
+    2: 2.0 ** -11,  # binary16
+    4: 2.0 ** -24,  # binary32
+    8: 2.0 ** -53,  # binary64
+}
+
+@unittest.skipIf(_testcapi is None, 'needs _testcapi')
+class PackTests(unittest.TestCase):
+    def test_pack(self):
+        self.assertEqual(_testcapi.float_pack(2, 1.5, BIG_ENDIAN),
+                         b'>\x00')
+        self.assertEqual(_testcapi.float_pack(4, 1.5, BIG_ENDIAN),
+                         b'?\xc0\x00\x00')
+        self.assertEqual(_testcapi.float_pack(8, 1.5, BIG_ENDIAN),
+                         b'?\xf8\x00\x00\x00\x00\x00\x00')
+        self.assertEqual(_testcapi.float_pack(2, 1.5, LITTLE_ENDIAN),
+                         b'\x00>')
+        self.assertEqual(_testcapi.float_pack(4, 1.5, LITTLE_ENDIAN),
+                         b'\x00\x00\xc0?')
+        self.assertEqual(_testcapi.float_pack(8, 1.5, LITTLE_ENDIAN),
+                         b'\x00\x00\x00\x00\x00\x00\xf8?')
+
+    def test_unpack(self):
+        self.assertEqual(_testcapi.float_unpack(b'>\x00', BIG_ENDIAN),
+                         1.5)
+        self.assertEqual(_testcapi.float_unpack(b'?\xc0\x00\x00', BIG_ENDIAN),
+                         1.5)
+        self.assertEqual(_testcapi.float_unpack(b'?\xf8\x00\x00\x00\x00\x00\x00', BIG_ENDIAN),
+                         1.5)
+        self.assertEqual(_testcapi.float_unpack(b'\x00>', LITTLE_ENDIAN),
+                         1.5)
+        self.assertEqual(_testcapi.float_unpack(b'\x00\x00\xc0?', LITTLE_ENDIAN),
+                         1.5)
+        self.assertEqual(_testcapi.float_unpack(b'\x00\x00\x00\x00\x00\x00\xf8?', LITTLE_ENDIAN),
+                         1.5)
+
+    def test_roundtrip(self):
+        large = 2.0 ** 100
+        values = [1.0, 1.5, large, 1.0/7, math.pi]
+        if HAVE_IEEE_754:
+            values.extend((INF, NAN))
+        for value in values:
+            for size in (2, 4, 8,):
+                if size == 2 and value == large:
+                    # too large for 16-bit float
+                    continue
+                rel_tol = EPSILON[size]
+                for endian in (BIG_ENDIAN, LITTLE_ENDIAN):
+                    with self.subTest(value=value, size=size, endian=endian):
+                        data = _testcapi.float_pack(size, value, endian)
+                        value2 = _testcapi.float_unpack(data, endian)
+                        if isnan(value):
+                            self.assertTrue(isnan(value2), (value, value2))
+                        elif size < 8:
+                            self.assertTrue(math.isclose(value2, value, rel_tol=rel_tol),
+                                            (value, value2))
+                        else:
+                            self.assertEqual(value2, value)
 
 
 if __name__ == '__main__':
