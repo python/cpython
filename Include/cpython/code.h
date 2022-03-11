@@ -105,7 +105,7 @@ struct PyCodeObject {
     /* Quickened instructions and cache, or NULL
      This should be treated as opaque by all code except the specializer and
      interpreter. */
-    union _cache_or_instruction *co_quickened;
+    _Py_CODEUNIT *co_quickened;
 
 };
 

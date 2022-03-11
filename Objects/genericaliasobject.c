@@ -152,25 +152,6 @@ error:
     return NULL;
 }
 
-// isinstance(obj, TypeVar) without importing typing.py.
-// Returns -1 for errors.
-static int
-is_typevar(PyObject *obj)
-{
-    PyTypeObject *type = Py_TYPE(obj);
-    if (strcmp(type->tp_name, "TypeVar") != 0) {
-        return 0;
-    }
-    PyObject *module = PyObject_GetAttrString((PyObject *)type, "__module__");
-    if (module == NULL) {
-        return -1;
-    }
-    int res = PyUnicode_Check(module)
-        && _PyUnicode_EqualToASCIIString(module, "typing");
-    Py_DECREF(module);
-    return res;
-}
-
 // Index of item in self[:len], or -1 if not found (self is a tuple)
 static Py_ssize_t
 tuple_index(PyObject *self, Py_ssize_t len, PyObject *item)
@@ -205,13 +186,14 @@ _Py_make_parameters(PyObject *args)
     Py_ssize_t iparam = 0;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
-        int typevar = is_typevar(t);
-        if (typevar < 0) {
+        PyObject *subst;
+        if (_PyObject_LookupAttr(t, &_Py_ID(__typing_subst__), &subst) < 0) {
             Py_DECREF(parameters);
             return NULL;
         }
-        if (typevar) {
+        if (subst) {
             iparam += tuple_add(parameters, iparam, t);
+            Py_DECREF(subst);
         }
         else {
             PyObject *subparams;
@@ -295,7 +277,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     Py_ssize_t nparams = PyTuple_GET_SIZE(parameters);
     if (nparams == 0) {
         return PyErr_Format(PyExc_TypeError,
-                            "There are no type variables left in %R",
+                            "%R is not a generic class",
                             self);
     }
     int is_tuple = PyTuple_Check(item);
@@ -320,23 +302,23 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     }
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(args, iarg);
-        int typevar = is_typevar(arg);
-        if (typevar < 0) {
+        PyObject *subst;
+        if (_PyObject_LookupAttr(arg, &_Py_ID(__typing_subst__), &subst) < 0) {
             Py_DECREF(newargs);
             return NULL;
         }
-        if (typevar) {
+        if (subst) {
             Py_ssize_t iparam = tuple_index(parameters, nparams, arg);
             assert(iparam >= 0);
-            arg = argitems[iparam];
-            Py_INCREF(arg);
+            arg = PyObject_CallOneArg(subst, argitems[iparam]);
+            Py_DECREF(subst);
         }
         else {
             arg = subs_tvars(arg, parameters, argitems);
-            if (arg == NULL) {
-                Py_DECREF(newargs);
-                return NULL;
-            }
+        }
+        if (arg == NULL) {
+            Py_DECREF(newargs);
+            return NULL;
         }
         PyTuple_SET_ITEM(newargs, iarg, arg);
     }
