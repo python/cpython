@@ -395,7 +395,6 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a5 3485 (Add an oparg to GET_AWAITABLE)
 #     Python 3.11a6 3486 (Use inline caching for PRECALL and CALL)
 #     Python 3.11a6 3487 (Remove the adaptive "oparg counter" mechanism)
-#     Python 3.11a6 3488 (Change the marshal format for code objects)
 
 #     Python 3.12 will start with magic number 3500
 

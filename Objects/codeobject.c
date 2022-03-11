@@ -1475,22 +1475,22 @@ code_hash(PyCodeObject *co)
 #define OFF(x) offsetof(PyCodeObject, x)
 
 static PyMemberDef code_memberlist[] = {
-    {"co_argcount",     T_INT,          OFF(co_argcount),        READONLY},
-    {"co_posonlyargcount",      T_INT,  OFF(co_posonlyargcount), READONLY},
-    {"co_kwonlyargcount",       T_INT,  OFF(co_kwonlyargcount),  READONLY},
-    {"co_stacksize",T_INT,              OFF(co_stacksize),       READONLY},
-    {"co_flags",        T_INT,          OFF(co_flags),           READONLY},
-    {"co_consts",       T_OBJECT,       OFF(co_consts),          READONLY},
-    {"co_names",        T_OBJECT,       OFF(co_names),           READONLY},
-    {"co_filename",     T_OBJECT,       OFF(co_filename),        READONLY},
-    {"co_name",         T_OBJECT,       OFF(co_name),            READONLY},
-    {"co_qualname",     T_OBJECT,       OFF(co_qualname),        READONLY},
-    {"co_firstlineno",  T_INT,          OFF(co_firstlineno),     READONLY},
-    {"co_linetable",    T_OBJECT,       OFF(co_linetable),       READONLY},
-    {"co_endlinetable", T_OBJECT,       OFF(co_endlinetable),    READONLY},
-    {"co_columntable",  T_OBJECT,       OFF(co_columntable),     READONLY},
-    {"co_exceptiontable",    T_OBJECT,  OFF(co_exceptiontable),  READONLY},
-    {"co_nlocals", T_INT,               OFF(co_nlocals),         READONLY},
+    {"co_argcount",        T_INT,    OFF(co_argcount),        READONLY},
+    {"co_posonlyargcount", T_INT,    OFF(co_posonlyargcount), READONLY},
+    {"co_kwonlyargcount",  T_INT,    OFF(co_kwonlyargcount),  READONLY},
+    {"co_stacksize",       T_INT,    OFF(co_stacksize),       READONLY},
+    {"co_flags",           T_INT,    OFF(co_flags),           READONLY},
+    {"co_consts",          T_OBJECT, OFF(co_consts),          READONLY},
+    {"co_names",           T_OBJECT, OFF(co_names),           READONLY},
+    {"co_filename",        T_OBJECT, OFF(co_filename),        READONLY},
+    {"co_name",            T_OBJECT, OFF(co_name),            READONLY},
+    {"co_qualname",        T_OBJECT, OFF(co_qualname),        READONLY},
+    {"co_firstlineno",     T_INT,    OFF(co_firstlineno),     READONLY},
+    {"co_linetable",       T_OBJECT, OFF(co_linetable),       READONLY},
+    {"co_endlinetable",    T_OBJECT, OFF(co_endlinetable),    READONLY},
+    {"co_columntable",     T_OBJECT, OFF(co_columntable),     READONLY},
+    {"co_exceptiontable",  T_OBJECT, OFF(co_exceptiontable),  READONLY},
+    {"co_nlocals",         T_INT,    OFF(co_nlocals),         READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -1533,13 +1533,13 @@ code_getcode(PyCodeObject *code, void *closure)
 }
 
 static PyGetSetDef code_getsetlist[] = {
-    {"co_lnotab",    (getter)code_getlnotab, NULL, NULL},
+    {"co_lnotab",   (getter)code_getlnotab,    NULL, NULL},
+    {"_co_code",    (getter)code_getundercode, NULL, NULL},
     // The following old names are kept for backward compatibility.
-    {"co_varnames",  (getter)code_getvarnames, NULL, NULL},
-    {"co_cellvars",  (getter)code_getcellvars, NULL, NULL},
-    {"co_freevars",  (getter)code_getfreevars, NULL, NULL},
-    {"_co_code",  (getter)code_getundercode, NULL, NULL},
-    {"co_code", (getter)code_getcode, NULL, NULL},
+    {"co_varnames", (getter)code_getvarnames,  NULL, NULL},
+    {"co_cellvars", (getter)code_getcellvars,  NULL, NULL},
+    {"co_freevars", (getter)code_getfreevars,  NULL, NULL},
+    {"co_code",     (getter)code_getcode,      NULL, NULL},
     {0}
 };
 
@@ -1902,9 +1902,8 @@ _PyCode_ConstantKey(PyObject *op)
 }
 
 void
-_PyStaticCode_Dealloc(void *code)
+_PyStaticCode_Dealloc(PyCodeObject *co)
 {
-    PyCodeObject *co = (PyCodeObject *)code;
     if (co->co_warmup == 0) {
          _Py_QuickenedCount--;
     }
@@ -1918,9 +1917,8 @@ _PyStaticCode_Dealloc(void *code)
 }
 
 int
-_PyStaticCode_InternStrings(void *code)
+_PyStaticCode_InternStrings(PyCodeObject *co)
 {
-    PyCodeObject *co = (PyCodeObject *)code;
     int res = intern_strings(co->co_names);
     if (res < 0) {
         return -1;

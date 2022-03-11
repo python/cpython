@@ -276,7 +276,7 @@ _Py_PrintSpecializationStats(int to_file)
 #endif
 
 
-// Insert adaptive instructions and superinstructions.
+// Insert adaptive instructions and superinstructions. This cannot fail.
 void
 _Py_Quicken(PyCodeObject *code)
 {

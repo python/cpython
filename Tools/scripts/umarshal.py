@@ -279,6 +279,7 @@ class Reader:
             retval.co_kwonlyargcount = self.r_long()
             retval.co_stacksize = self.r_long()
             retval.co_flags = self.r_long()
+            retval.co_code = self.r_object()
             retval.co_consts = self.r_object()
             retval.co_names = self.r_object()
             retval.co_localsplusnames = self.r_object()
@@ -291,8 +292,6 @@ class Reader:
             retval.co_endlinetable = self.r_object()
             retval.co_columntable = self.r_object()
             retval.co_exceptiontable = self.r_object()
-            n = self.r_long()
-            retval.co_code = self.r_string(n)
             return retval
         elif type == Type.REF:
             n = self.r_long()

@@ -97,10 +97,6 @@ typedef struct {
 /* We want to compare to zero for efficiency, so we offset values accordingly */
 #define QUICKENING_INITIAL_WARMUP_VALUE (-QUICKENING_WARMUP_DELAY)
 
-#define _PyCode_CODE(CO)   ((_Py_CODEUNIT *)(CO)->_co_code)
-#define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
-
-
 void _Py_Quicken(PyCodeObject *code);
 
 static inline void
@@ -274,9 +270,9 @@ extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
 
 /* Deallocator function for static codeobjects used in deepfreeze.py */
-extern void _PyStaticCode_Dealloc(void *code);
+extern void _PyStaticCode_Dealloc(PyCodeObject *co);
 /* Function to intern strings of codeobjects */
-extern int _PyStaticCode_InternStrings(void *code);
+extern int _PyStaticCode_InternStrings(PyCodeObject *co);
 
 #ifdef Py_STATS
 

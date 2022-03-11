@@ -28,7 +28,7 @@ footer = """
 #endif /* !Py_OPCODE_H */
 """
 
-DEFINE = "#define {:<31} {:>3}\n"
+DEFINE = "#define {:<38} {:>3}\n"
 
 UINT32_MASK = (1<<32)-1
 

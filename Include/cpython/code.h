@@ -132,6 +132,8 @@ PyAPI_DATA(PyTypeObject) PyCode_Type;
 
 #define PyCode_Check(op) Py_IS_TYPE(op, &PyCode_Type)
 #define PyCode_GetNumFree(op) ((op)->co_nfreevars)
+#define _PyCode_CODE(CO) ((_Py_CODEUNIT *)(CO)->_co_code)
+#define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
 
 /* Public interface */
 PyAPI_FUNC(PyCodeObject *) PyCode_New(
