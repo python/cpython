@@ -1026,7 +1026,7 @@ added to the module search path.
 
 The next items added are the directories containing standard Python modules as
 well as any :term:`extension module`\s that these modules depend on. Extension
-modules are .pyd files on Windows and .so files on other platforms. The
+modules are ``.pyd`` files on Windows and ``.so`` files on other platforms. The
 directory with the platform-independent Python modules is called ``prefix``.
 The directory with the extension modules is called ``exec_prefix``.
 
