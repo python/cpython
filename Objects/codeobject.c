@@ -1425,9 +1425,6 @@ code_hash(PyCodeObject *co)
     Py_hash_t h, h0, h1, h2, h3;
     h0 = PyObject_Hash(co->co_name);
     if (h0 == -1) return -1;
-    // XXX
-    // h1 = PyObject_Hash(co->co_code);
-    // if (h1 == -1) return -1;
     h1 = PyObject_Hash(co->co_consts);
     if (h1 == -1) return -1;
     h2 = PyObject_Hash(co->co_names);
@@ -1499,8 +1496,8 @@ code_getundercode(PyCodeObject *code, void *closure)
 static PyObject *
 code_getcode(PyCodeObject *code, void *closure)
 {
-    _Py_SetCountAndUnquicken(code);
-    return PyBytes_FromStringAndSize(code->_co_code, _PyCode_GET_SIZE(code));
+    return PyBytes_FromStringAndSize((char *)_Py_Unquickened(code),
+                                     _PyCode_GET_SIZE(code));
 }
 
 static PyGetSetDef code_getsetlist[] = {

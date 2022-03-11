@@ -1,5 +1,4 @@
 import dis
-from itertools import chain
 from test.support.import_helper import import_module
 import unittest
 import opcode

@@ -1,6 +1,5 @@
 # This script generates the opcode.h header file.
 
-from itertools import chain
 import sys
 import tokenize
 
