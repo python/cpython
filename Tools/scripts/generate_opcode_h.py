@@ -75,13 +75,13 @@ def main(opcode_py, outfile='Include/opcode.h'):
             fobj.write(DEFINE.format(name, next_op))
             used[next_op] = True
         fobj.write(DEFINE.format('DO_TRACING', 255))
-        fobj.write("\nextern const uint8_t _PyOpcode_InlineCacheEntries[256];\n")
-        fobj.write("\nextern const uint8_t _PyOpcode_Deoptimizations[256];\n")
+        fobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
+        fobj.write("\nextern const uint8_t _PyOpcode_Deopt[256];\n")
         fobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
         write_int_array_from_ops("_PyOpcode_RelativeJump", opcode['hasjrel'], fobj)
         write_int_array_from_ops("_PyOpcode_Jump", opcode['hasjrel'] + opcode['hasjabs'], fobj)
 
-        fobj.write("\nconst uint8_t _PyOpcode_InlineCacheEntries[256] = {\n")
+        fobj.write("\nconst uint8_t _PyOpcode_Caches[256] = {\n")
         for i, entries in enumerate(opcode["_inline_cache_entries"]):
             if entries:
                 fobj.write(f"    [{opname[i]}] = {entries},\n")
@@ -92,7 +92,7 @@ def main(opcode_py, outfile='Include/opcode.h'):
         for basic, family in opcode["_specializations"].items():
             for specialized in family:
                 deoptcodes[specialized] = basic
-        fobj.write("\nconst uint8_t _PyOpcode_Deoptimizations[256] = {\n")
+        fobj.write("\nconst uint8_t _PyOpcode_Deopt[256] = {\n")
         for opt, deopt in sorted(deoptcodes.items()):
             fobj.write(f"    [{opt}] = {deopt},\n")
         fobj.write("};\n")

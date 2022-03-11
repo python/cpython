@@ -1327,9 +1327,8 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* Get opcode and oparg from original instructions, not quickened form. */
 #define TRACING_NEXTOPARG() do { \
-        _Py_CODEUNIT word = _PyCode_GetUnquickened(frame->f_code, INSTR_OFFSET()); \
-        opcode = _Py_OPCODE(word); \
-        oparg = _Py_OPARG(word); \
+        NEXTOPARG(); \
+        opcode = _PyOpcode_Deopt[opcode]; \
     } while (0)
 
 /* OpCode prediction macros
@@ -1568,7 +1567,8 @@ trace_function_exit(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject 
 static int
 skip_backwards_over_extended_args(PyCodeObject *code, int offset)
 {
-    while (offset > 0 && _Py_OPCODE(_PyCode_GetUnquickened(code, offset - 1)) == EXTENDED_ARG) {
+    // XXX: I think this is broken?
+    while (offset > 0 && _Py_OPCODE(_PyCode_CODE(code)[offset]) == EXTENDED_ARG) {
         offset--;
     }
     return offset;
@@ -1659,7 +1659,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         PyCodeObject *co = frame->f_code; \
         names = co->co_names; \
         consts = co->co_consts; \
-        first_instr = _PyCode_GET_CODE(co); \
+        first_instr = _PyCode_CODE(co); \
     } \
     assert(frame->f_lasti >= -1); \
     next_instr = first_instr + frame->f_lasti + 1; \
@@ -6706,9 +6706,10 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
        then call the trace function if we're tracing source lines.
     */
     initialize_trace_info(&tstate->trace_info, frame);
-    _Py_CODEUNIT prev = _PyCode_GetUnquickened(frame->f_code, instr_prev);
+    // XXX: Is this broken?
+    int prev = _PyCode_CODE(frame->f_code)[instr_prev];
     int lastline;
-    if (_Py_OPCODE(prev) == RESUME && _Py_OPARG(prev) == 0) {
+    if (_PyOpcode_Deopt[_Py_OPCODE(prev)] == RESUME && _Py_OPARG(prev) == 0) {
         lastline = -1;
     }
     else {
@@ -6723,7 +6724,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         /* Trace backward edges (except in 'yield from') or if line number has changed */
         int trace = line != lastline ||
             (frame->f_lasti < instr_prev &&
-            _Py_OPCODE(_PyCode_GET_CODE(frame->f_code)[frame->f_lasti]) != SEND);
+            _Py_OPCODE(_PyCode_CODE(frame->f_code)[frame->f_lasti]) != SEND);
         if (trace) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }

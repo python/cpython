@@ -344,7 +344,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_extra = NULL;
 
     co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
-    memcpy(_PyCode_GET_CODE(co), PyBytes_AS_STRING(con->code),
+    memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
 }
 
@@ -381,7 +381,8 @@ _PyCode_New(struct _PyCodeConstructor *con)
         con->columntable = Py_None;
     }
 
-    PyCodeObject *co = PyObject_NewVar(PyCodeObject, &PyCode_Type, PyBytes_GET_SIZE(con->code) / 2);
+    Py_ssize_t size = PyBytes_GET_SIZE(con->code) / sizeof(_Py_CODEUNIT);
+    PyCodeObject *co = PyObject_NewVar(PyCodeObject, &PyCode_Type, size);
     if (co == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -599,7 +600,7 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
     if (addrq < 0) {
         return co->co_firstlineno;
     }
-    assert(addrq >= 0 && addrq < _PyCode_GET_SIZE(co));
+    assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
@@ -627,7 +628,7 @@ _PyCode_Addr2EndLine(PyCodeObject* co, int addrq)
         return -1;
     }
 
-    assert(addrq >= 0 && addrq < _PyCode_GET_SIZE(co));
+    assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     PyCodeAddressRange bounds;
     _PyCode_InitEndAddressRange(co, &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
@@ -983,7 +984,7 @@ _source_offset_converter(int* value) {
 static PyObject*
 positionsiter_next(positionsiterator* pi)
 {
-    if (pi->pi_offset >= _PyCode_GET_SIZE(pi->pi_code)) {
+    if (pi->pi_offset >= _PyCode_NBYTES(pi->pi_code)) {
         return NULL;
     }
 
@@ -1152,6 +1153,26 @@ PyObject *
 _PyCode_GetFreevars(PyCodeObject *co)
 {
     return get_localsplus_names(co, CO_FAST_FREE, co->co_nfreevars);
+}
+
+PyObject *
+_PyCode_GetCode(PyCodeObject *co)
+{
+    PyObject *code = PyBytes_FromStringAndSize(NULL, _PyCode_NBYTES(co));
+    if (code == NULL) {
+        return NULL;
+    }
+    _Py_CODEUNIT *instructions = (_Py_CODEUNIT *)PyBytes_AS_STRING(code);
+    for (int i = 0; i < Py_SIZE(co); i++) {
+        _Py_CODEUNIT instruction = _PyCode_CODE(co)[i];
+        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
+        int caches = _PyOpcode_Caches[opcode];
+        instructions[i] = _Py_MAKECODEUNIT(opcode, _Py_OPARG(instruction));
+        while (caches--) {
+            instructions[++i] = _Py_MAKECODEUNIT(CACHE, 0);
+        }
+    }
+    return code;
 }
 
 
@@ -1376,17 +1397,20 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     if (!eq) goto unequal;
     eq = co->co_firstlineno == cp->co_firstlineno;
     if (!eq) goto unequal;
-    eq = Py_SIZE(co) == Py_SIZE(cp);
-    if (!eq) {
-        goto unequal;
+    PyObject *co_code = _PyCode_GetCode(co);
+    if (co_code == NULL) {
+        return NULL;
     }
-    for (int i = 0; i < Py_SIZE(co); i++) {
-        _Py_CODEUNIT instruction = _PyCode_GetUnquickened(co, i);
-        eq = _PyCode_GetUnquickened(co, i)  == _PyCode_GetUnquickened(cp, i);
-        if (!eq) {
-            goto unequal;
-        }
-        i += _PyOpcode_InlineCacheEntries[_Py_OPCODE(instruction)];
+    PyObject *cp_code = _PyCode_GetCode(cp);
+    if (cp_code == NULL) {
+        Py_DECREF(co_code);
+        return NULL;
+    }
+    eq = PyObject_RichCompareBool(co_code, cp_code, Py_EQ);
+    Py_DECREF(co_code);
+    Py_DECREF(cp_code);
+    if (eq <= 0) {
+        goto unequal;
     }
 
     /* compare constants */
@@ -1498,22 +1522,14 @@ code_getfreevars(PyCodeObject *code, void *closure)
 static PyObject *
 code_getundercode(PyCodeObject *code, void *closure)
 {
-    return PyMemoryView_FromMemory(code->_co_code, _PyCode_GET_SIZE(code),
+    return PyMemoryView_FromMemory(code->_co_code, _PyCode_NBYTES(code),
                                    PyBUF_READ);
 }
 
 static PyObject *
 code_getcode(PyCodeObject *code, void *closure)
 {
-    PyObject *co_code = PyBytes_FromStringAndSize(NULL, _PyCode_GET_SIZE(code));
-    if (co_code == NULL) {
-        return NULL;
-    }
-    _Py_CODEUNIT *instructions = (_Py_CODEUNIT *)PyBytes_AS_STRING(co_code);
-    for (int i = 0; i < Py_SIZE(code); i++) {
-        instructions[i] = _PyCode_GetUnquickened(code, i);
-    }
-    return co_code;
+    return _PyCode_GetCode(code);
 }
 
 static PyGetSetDef code_getsetlist[] = {
@@ -1608,7 +1624,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
 
     PyObject *code = NULL;
     if (co_code == NULL) {
-        code = code_getcode(self, NULL);
+        code = _PyCode_GetCode(self);
         if (code == NULL) {
             return NULL;
         }

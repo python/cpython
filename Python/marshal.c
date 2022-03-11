@@ -563,7 +563,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_endlinetable, p);
         w_object(co->co_columntable, p);
         w_object(co->co_exceptiontable, p);
-        w_pstring(co->_co_code, _PyCode_GET_SIZE(co), p);
+        w_pstring(co->_co_code, _PyCode_NBYTES(co), p);
     }
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown bytes-like objects as a bytes object */

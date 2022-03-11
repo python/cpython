@@ -8949,8 +8949,8 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
         // "firstarg" is a cell here unless (very unlikely) super()
         // was called from the C-API before the first MAKE_CELL op.
         if (cframe->f_lasti >= 0) {
-            assert(_Py_OPCODE(_PyCode_GET_CODE(co)[0]) == MAKE_CELL || 
-                   _Py_OPCODE(_PyCode_GET_CODE(co)[0]) == COPY_FREE_VARS);
+            assert(_Py_OPCODE(_PyCode_CODE(co)[0]) == MAKE_CELL || 
+                   _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS);
             assert(PyCell_Check(firstarg));
             firstarg = PyCell_GET(firstarg);
         }

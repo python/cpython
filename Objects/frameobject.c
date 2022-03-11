@@ -107,6 +107,7 @@ frame_getback(PyFrameObject *f, void *closure)
 
 /* Given the index of the effective opcode,
    scan back to construct the oparg with EXTENDED_ARG */
+// XXX This is broken!
 static unsigned int
 get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
 {
@@ -171,14 +172,11 @@ static int64_t *
 mark_stacks(PyCodeObject *code_obj, int len)
 {
     // XXX: this is one big TODO!!!
-    PyObject *xxx = PyBytes_FromStringAndSize(NULL, _PyCode_GET_SIZE(code_obj));
+    PyObject *xxx = _PyCode_GetCode(code_obj);
     if (xxx == NULL) {
         return NULL;
     }
     _Py_CODEUNIT *code = (_Py_CODEUNIT *)PyBytes_AS_STRING(xxx);
-    for (int i = 0; i < Py_SIZE(code_obj); i++) {
-        code[i] = _PyCode_GetUnquickened(code_obj, i);
-    }
     int64_t *stacks = PyMem_New(int64_t, len+1);
     int i, j, opcode;
 
@@ -847,12 +845,15 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
 static int
 _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
 {
-    // XXX: Does this handle EXTENDED_ARGs?
+    // XXX: Does this handle EXTENDED_ARGs/CACHEs?
     for (int i = 0; i < frame->f_lasti; i++) {
-        _Py_CODEUNIT instruction = _PyCode_GetUnquickened(frame->f_code, i);
+        _Py_CODEUNIT instruction = _PyCode_CODE(frame->f_code)[i];
+        int deopt = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
+        instruction = _Py_MAKECODEUNIT(deopt, oparg);
         if (instruction == _Py_MAKECODEUNIT(opcode, oparg)) {
             return 1;
         }
+        i += _PyOpcode_Caches[deopt];
     }
     return 0;
 }
@@ -871,7 +872,7 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
     }
     co = frame->f_code;
     fast = _PyFrame_GetLocalsArray(frame);
-    if (frame->f_lasti < 0 && _Py_OPCODE(_PyCode_GET_CODE(co)[0]) == COPY_FREE_VARS) {
+    if (frame->f_lasti < 0 && _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS) {
         /* Free vars have not been initialized -- Do that */
         PyCodeObject *co = frame->f_code;
         PyObject *closure = frame->f_func->func_closure;

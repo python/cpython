@@ -185,9 +185,9 @@ extern "C" {
 #define UNPACK_SEQUENCE_TWO_TUPLE       174
 #define DO_TRACING                      255
 
-extern const uint8_t _PyOpcode_InlineCacheEntries[256];
+extern const uint8_t _PyOpcode_Caches[256];
 
-extern const uint8_t _PyOpcode_Deoptimizations[256];
+extern const uint8_t _PyOpcode_Deopt[256];
 
 #ifdef NEED_OPCODE_TABLES
 static const uint32_t _PyOpcode_RelativeJump[8] = {
@@ -211,7 +211,7 @@ static const uint32_t _PyOpcode_Jump[8] = {
     0U,
 };
 
-const uint8_t _PyOpcode_InlineCacheEntries[256] = {
+const uint8_t _PyOpcode_Caches[256] = {
     [BINARY_SUBSCR] = 4,
     [STORE_SUBSCR] = 1,
     [UNPACK_SEQUENCE] = 1,
@@ -225,7 +225,7 @@ const uint8_t _PyOpcode_InlineCacheEntries[256] = {
     [CALL] = 4,
 };
 
-const uint8_t _PyOpcode_Deoptimizations[256] = {
+const uint8_t _PyOpcode_Deopt[256] = {
     [ASYNC_GEN_WRAP] = ASYNC_GEN_WRAP,
     [BEFORE_ASYNC_WITH] = BEFORE_ASYNC_WITH,
     [BEFORE_WITH] = BEFORE_WITH,
