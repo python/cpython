@@ -2106,7 +2106,6 @@ def assert_type(val, typ, /):
 
     At runtime this returns the first argument unchanged and otherwise
     does nothing.
-
     """
     return val
 
