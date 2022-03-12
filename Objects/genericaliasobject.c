@@ -5,13 +5,22 @@
 #include "pycore_unionobject.h"   // _Py_union_type_or, _PyGenericAlias_Check
 #include "structmember.h"         // PyMemberDef
 
+#include <stdbool.h>
+
 typedef struct {
     PyObject_HEAD
     PyObject *origin;
     PyObject *args;
     PyObject *parameters;
     PyObject* weakreflist;
+    // Whether we're a starred type, e.g. *tuple[int].
+    bool starred;
 } gaobject;
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *obj;  /* Set to NULL when iterator is exhausted */
+} gaiterobject;
 
 static void
 ga_dealloc(PyObject *self)
@@ -120,6 +129,11 @@ ga_repr(PyObject *self)
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
 
+    if (alias->starred) {
+        if (_PyUnicodeWriter_WriteASCIIString(&writer, "*", 1) < 0) {
+            goto error;
+        }
+    }
     if (ga_repr_item(&writer, alias->origin) < 0) {
         goto error;
     }
@@ -603,6 +617,66 @@ static PyNumberMethods ga_as_number = {
         .nb_or = _Py_union_type_or, // Add __or__ function
 };
 
+static PyObject *
+ga_iternext(gaiterobject *gi) {
+    if (gi->obj == NULL) {
+        PyErr_SetNone(PyExc_StopIteration);
+        return NULL;
+    }
+    gaobject *alias = (gaobject *)gi->obj;
+    PyObject *starred_alias = Py_GenericAlias(alias->origin, alias->args);
+    if (starred_alias == NULL) {
+        return NULL;
+    }
+    ((gaobject *)starred_alias)->starred = true;
+    Py_SETREF(gi->obj, NULL);
+    return starred_alias;
+}
+
+static void
+ga_iter_dealloc(gaiterobject *gi) {
+    PyObject_GC_UnTrack(gi);
+    Py_XDECREF(gi->obj);
+    PyObject_GC_Del(gi);
+}
+
+static int
+ga_iter_traverse(gaiterobject *gi, visitproc visit, void *arg)
+{
+    Py_VISIT(gi->obj);
+    return 0;
+}
+
+static int
+ga_iter_clear(PyObject *self) {
+    gaiterobject *gi = (gaiterobject *)self;
+    Py_CLEAR(gi->obj);
+    return 0;
+}
+
+static PyTypeObject Py_GenericAliasIterType = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "generic_alias_iterator",
+    .tp_basicsize = sizeof(gaiterobject),
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)ga_iternext,
+    .tp_traverse = (traverseproc)ga_iter_traverse,
+    .tp_dealloc = (destructor)ga_iter_dealloc,
+    .tp_clear = (inquiry)ga_iter_clear,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+};
+
+static PyObject *
+ga_iter(PyObject *self) {
+    gaiterobject *gi = PyObject_GC_New(gaiterobject, &Py_GenericAliasIterType);
+    if (gi == NULL) {
+        return NULL;
+    }
+    gi->obj = Py_NewRef(self);
+    PyObject_GC_Track(gi);
+    return (PyObject *)gi;
+}
+
 // TODO:
 // - argument clinic?
 // - __doc__?
@@ -631,6 +705,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_new = ga_new,
     .tp_free = PyObject_GC_Del,
     .tp_getset = ga_properties,
+    .tp_iter = (getiterfunc)ga_iter,
 };
 
 PyObject *
