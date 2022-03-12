@@ -118,7 +118,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(out.rstrip(), b'{}')
         self.assertEqual(err, b'')
         # "-X showrefcount" shows the refcount, but only in debug builds
-        rc, out, err = run_python('-X', 'showrefcount', '-c', code)
+        rc, out, err = run_python('-I', '-X', 'showrefcount', '-c', code)
         self.assertEqual(out.rstrip(), b"{'showrefcount': True}")
         if Py_DEBUG:
             # bpo-46417: Tolerate negative reference count which can occur

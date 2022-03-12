@@ -517,7 +517,7 @@ def requires_fork():
 has_subprocess_support = not is_emscripten and not is_wasi
 
 def requires_subprocess():
-    """Used for subprocess, os.spawn calls"""
+    """Used for subprocess, os.spawn calls, fd inheritance"""
     return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
 
 
@@ -1421,7 +1421,7 @@ def skip_if_buggy_ucrt_strfptime(test):
     global _buggy_ucrt
     if _buggy_ucrt is None:
         if(sys.platform == 'win32' and
-                locale.getdefaultlocale()[1]  == 'cp65001' and
+                locale.getpreferredencoding(False)  == 'cp65001' and
                 time.localtime().tm_zone == ''):
             _buggy_ucrt = True
         else:
@@ -1441,9 +1441,6 @@ class PythonSymlink:
         self._env = None
 
         self._platform_specific()
-
-    def _platform_specific(self):
-        pass
 
     if sys.platform == "win32":
         def _platform_specific(self):
@@ -1472,6 +1469,9 @@ class PythonSymlink:
             self._env["PYTHONHOME"] = os.path.dirname(self.real)
             if sysconfig.is_python_build(True):
                 self._env["PYTHONPATH"] = STDLIB_DIR
+    else:
+        def _platform_specific(self):
+            pass
 
     def __enter__(self):
         os.symlink(self.real, self.link)

@@ -10,6 +10,10 @@ from test import support
 from test.support import socket_helper
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class MyProto(asyncio.Protocol):
     connected = None
     done = None

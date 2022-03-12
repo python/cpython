@@ -32,6 +32,10 @@ In the function ``greeting``, the argument ``name`` is expected to be of type
 :class:`str` and the return type :class:`str`. Subtypes are accepted as
 arguments.
 
+New features are frequently added to the ``typing`` module.
+The `typing_extensions <https://pypi.org/project/typing-extensions/>`_ package
+provides backports of these new features to older versions of Python.
+
 .. _relevant-peps:
 
 Relevant PEPs
@@ -68,6 +72,8 @@ annotations. These include:
      *Introducing* :data:`TypeAlias`
 * :pep:`647`: User-Defined Type Guards
      *Introducing* :data:`TypeGuard`
+* :pep:`673`: Self type
+    *Introducing* :data:`Self`
 
 .. _type-aliases:
 
@@ -572,6 +578,34 @@ These can be used as types in annotations and do not support ``[]``.
    * Every type is compatible with :data:`Any`.
    * :data:`Any` is compatible with every type.
 
+.. data:: Never
+
+   The `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
+   a type that has no members.
+
+   This can be used to define a function that should never be
+   called, or a function that never returns::
+
+     from typing import Never
+
+     def never_call_me(arg: Never) -> None:
+         pass
+
+     def int_or_str(arg: int | str) -> None:
+         never_call_me(arg)  # type checker error
+         match arg:
+             case int():
+                 print("It's an int")
+             case str():
+                 print("It's a str")
+             case _:
+                 never_call_me(arg)  # ok, arg is of type Never
+
+   .. versionadded:: 3.11
+
+      On older Python versions, :data:`NoReturn` may be used to express the
+      same concept. ``Never`` was added to make the intended meaning more explicit.
+
 .. data:: NoReturn
 
    Special type indicating that a function never returns.
@@ -582,8 +616,59 @@ These can be used as types in annotations and do not support ``[]``.
       def stop() -> NoReturn:
           raise RuntimeError('no way')
 
+   ``NoReturn`` can also be used as a
+   `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_, a type that
+   has no values. Starting in Python 3.11, the :data:`Never` type should
+   be used for this concept instead. Type checkers should treat the two
+   equivalently.
+
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
+
+.. data:: Self
+
+   Special type to represent the current enclosed class.
+   For example::
+
+      from typing import Self
+
+      class Foo:
+         def returns_self(self) -> Self:
+            ...
+            return self
+
+
+   This annotation is semantically equivalent to the following,
+   albeit in a more succinct fashion::
+
+      from typing import TypeVar
+
+      Self = TypeVar("Self", bound="Foo")
+
+      class Foo:
+         def returns_self(self: Self) -> Self:
+            ...
+            return self
+
+   In general if something currently follows the pattern of::
+
+      class Foo:
+         def return_self(self) -> "Foo":
+            ...
+            return self
+
+   You should use use :data:`Self` as calls to ``SubclassOfFoo.returns_self`` would have
+   ``Foo`` as the return type and not ``SubclassOfFoo``.
+
+   Other common use cases include:
+
+      - :class:`classmethod`\s that are used as alternative constructors and return instances
+        of the ``cls`` parameter.
+      - Annotating an :meth:`object.__enter__` method which returns self.
+
+   For more information, see :pep:`673`.
+
+   .. versionadded:: 3.11
 
 .. data:: TypeAlias
 
@@ -1384,15 +1469,33 @@ These are not used in annotations. They are building blocks for declaring types.
 
       assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
-   The type info for introspection can be accessed via ``Point2D.__annotations__``,
-   ``Point2D.__total__``, ``Point2D.__required_keys__``, and
-   ``Point2D.__optional_keys__``.
    To allow using this feature with older versions of Python that do not
    support :pep:`526`, ``TypedDict`` supports two additional equivalent
-   syntactic forms::
+   syntactic forms:
+
+   * Using a literal :class:`dict` as the second argument::
+
+      Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+   * Using keyword arguments::
 
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
-      Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+   .. deprecated-removed:: 3.11 3.13
+      The keyword-argument syntax is deprecated in 3.11 and will be removed
+      in 3.13. It may also be unsupported by static type checkers.
+
+   The functional syntax should also be used when any of the keys are not valid
+   :ref:`identifiers`, for example because they are keywords or contain hyphens.
+   Example::
+
+      # raises SyntaxError
+      class Point2D(TypedDict):
+          in: int  # 'in' is a keyword
+          x-y: int  # name with hyphens
+
+      # OK, functional syntax
+      Point2D = TypedDict('Point2D', {'in': int, 'x-y': int})
 
    By default, all keys must be present in a ``TypedDict``. It is possible to
    override this by specifying totality.
@@ -1402,10 +1505,89 @@ These are not used in annotations. They are building blocks for declaring types.
           x: int
           y: int
 
+      # Alternative syntax
+      Point2D = TypedDict('Point2D', {'x': int, 'y': int}, total=False)
+
    This means that a ``Point2D`` ``TypedDict`` can have any of the keys
    omitted. A type checker is only expected to support a literal ``False`` or
    ``True`` as the value of the ``total`` argument. ``True`` is the default,
    and makes all items defined in the class body required.
+
+   It is possible for a ``TypedDict`` type to inherit from one or more other ``TypedDict`` types
+   using the class-based syntax.
+   Usage::
+
+      class Point3D(Point2D):
+          z: int
+
+   ``Point3D`` has three items: ``x``, ``y`` and ``z``. It is equivalent to this
+   definition::
+
+      class Point3D(TypedDict):
+          x: int
+          y: int
+          z: int
+
+   A ``TypedDict`` cannot inherit from a non-TypedDict class,
+   notably including :class:`Generic`. For example::
+
+      class X(TypedDict):
+          x: int
+
+      class Y(TypedDict):
+          y: int
+
+      class Z(object): pass  # A non-TypedDict class
+
+      class XY(X, Y): pass  # OK
+
+      class XZ(X, Z): pass  # raises TypeError
+
+      T = TypeVar('T')
+      class XT(X, Generic[T]): pass  # raises TypeError
+
+   A ``TypedDict`` can be introspected via annotations dicts
+   (see :ref:`annotations-howto` for more information on annotations best practices),
+   :attr:`__total__`, :attr:`__required_keys__`, and :attr:`__optional_keys__`.
+
+   .. attribute:: __total__
+
+      ``Point2D.__total__`` gives the value of the ``total`` argument.
+      Example::
+
+         >>> from typing import TypedDict
+         >>> class Point2D(TypedDict): pass
+         >>> Point2D.__total__
+         True
+         >>> class Point2D(TypedDict, total=False): pass
+         >>> Point2D.__total__
+         False
+         >>> class Point3D(Point2D): pass
+         >>> Point3D.__total__
+         True
+
+   .. attribute:: __required_keys__
+   .. attribute:: __optional_keys__
+
+      ``Point2D.__required_keys__`` and ``Point2D.__optional_keys__`` return
+      :class:`frozenset` objects containing required and non-required keys, respectively.
+      Currently the only way to declare both required and non-required keys in the
+      same ``TypedDict`` is mixed inheritance, declaring a ``TypedDict`` with one value
+      for the ``total`` argument and then inheriting it from another ``TypedDict`` with
+      a different value for ``total``.
+      Usage::
+
+         >>> class Point2D(TypedDict, total=False):
+         ...     x: int
+         ...     y: int
+         ...
+         >>> class Point3D(Point2D):
+         ...     z: int
+         ...
+         >>> Point3D.__required_keys__ == frozenset({'z'})
+         True
+         >>> Point3D.__optional_keys__ == frozenset({'x', 'y'})
+         True
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
@@ -1932,6 +2114,28 @@ Functions and decorators
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
 
+.. function:: assert_never(arg, /)
+
+   Assert to the type checker that a line of code is unreachable.
+
+   Example::
+
+       def int_or_str(arg: int | str) -> None:
+           match arg:
+               case int():
+                   print("It's an int")
+               case str():
+                   print("It's a str")
+               case _ as unreachable:
+                   assert_never(unreachable)
+
+   If a type checker finds that a call to ``assert_never()`` is
+   reachable, it will emit an error.
+
+   At runtime, this throws an exception when called.
+
+   .. versionadded:: 3.11
+
 .. function:: reveal_type(obj)
 
    Reveal the inferred static type of an expression.
@@ -2030,8 +2234,8 @@ Functions and decorators
    Decorator to indicate that annotations are not type hints.
 
    This works as class or function :term:`decorator`.  With a class, it
-   applies recursively to all methods defined in that class (but not
-   to methods defined in its superclasses or subclasses).
+   applies recursively to all methods and classes defined in that class
+   (but not to methods defined in its superclasses or subclasses).
 
    This mutates the function(s) in place.
 
@@ -2070,9 +2274,7 @@ Introspection helpers
 
    This is often the same as ``obj.__annotations__``. In addition,
    forward references encoded as string literals are handled by evaluating
-   them in ``globals`` and ``locals`` namespaces. If necessary,
-   ``Optional[t]`` is added for function and method annotations if a default
-   value equal to ``None`` is set. For a class ``C``, return
+   them in ``globals`` and ``locals`` namespaces. For a class ``C``, return
    a dictionary constructed by merging all the ``__annotations__`` along
    ``C.__mro__`` in reverse order.
 
@@ -2098,6 +2300,11 @@ Introspection helpers
 
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
+
+   .. versionchanged:: 3.11
+      Previously, ``Optional[t]`` was added for function and method annotations
+      if a default value equal to ``None`` was set.
+      Now the annotation is returned unchanged.
 
 .. function:: get_args(tp)
 .. function:: get_origin(tp)

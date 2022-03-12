@@ -5505,7 +5505,7 @@ class SharedKeyTests(unittest.TestCase):
             pass
 
         #Shrink keys by repeatedly creating instances
-        [(A(), B()) for _ in range(20)]
+        [(A(), B()) for _ in range(30)]
 
         a, b = A(), B()
         self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))

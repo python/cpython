@@ -1003,7 +1003,7 @@ Error handling is set by errors which may also be set to ``NULL`` meaning to use
 the default handling defined for the codec.  Default error handling for all
 built-in codecs is "strict" (:exc:`ValueError` is raised).
 
-The codecs all use a similar interface.  Only deviation from the following
+The codecs all use a similar interface.  Only deviations from the following
 generic ones are documented for simplicity.
 
 
@@ -1171,7 +1171,7 @@ These are the UTF-16 codec APIs:
    ``1``, any byte order mark is copied to the output (where it will result in
    either a ``\ufeff`` or a ``\ufffe`` character).
 
-   After completion, *\*byteorder* is set to the current byte order at the end
+   After completion, ``*byteorder`` is set to the current byte order at the end
    of input data.
 
    If *byteorder* is ``NULL``, the codec starts in native order mode.
@@ -1302,7 +1302,7 @@ Character Map Codecs
 
 This codec is special in that it can be used to implement many different codecs
 (and this is in fact what was done to obtain most of the standard codecs
-included in the :mod:`encodings` package). The codec uses mapping to encode and
+included in the :mod:`encodings` package). The codec uses mappings to encode and
 decode characters.  The mapping objects provided must support the
 :meth:`__getitem__` mapping interface; dictionaries and sequences work well.
 
@@ -1426,7 +1426,7 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 .. c:function:: PyObject* PyUnicode_Splitlines(PyObject *s, int keepend)
 
    Split a Unicode string at line breaks, returning a list of Unicode strings.
-   CRLF is considered to be one line break.  If *keepend* is ``0``, the Line break
+   CRLF is considered to be one line break.  If *keepend* is ``0``, the line break
    characters are not included in the resulting strings.
 
 

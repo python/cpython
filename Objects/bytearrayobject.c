@@ -1074,6 +1074,7 @@ bytearray_dealloc(PyByteArrayObject *self)
 /* -------------------------------------------------------------------- */
 /* Methods */
 
+#define STRINGLIB_IS_UNICODE 0
 #define FASTSEARCH fastsearch
 #define STRINGLIB(F) stringlib_##F
 #define STRINGLIB_CHAR char
@@ -2111,10 +2112,9 @@ static PyObject *
 _common_reduce(PyByteArrayObject *self, int proto)
 {
     PyObject *dict;
-    _Py_IDENTIFIER(__dict__);
     char *buf;
 
-    if (_PyObject_LookupAttrId((PyObject *)self, &PyId___dict__, &dict) < 0) {
+    if (_PyObject_LookupAttr((PyObject *)self, &_Py_ID(__dict__), &dict) < 0) {
         return NULL;
     }
     if (dict == NULL) {
@@ -2427,12 +2427,11 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 bytearrayiter_reduce(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
                              it->it_seq, it->it_index);
     } else {
-        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
     }
 }
 
