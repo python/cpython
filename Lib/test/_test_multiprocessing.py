@@ -20,6 +20,7 @@ import logging
 import subprocess
 import struct
 import operator
+import pathlib
 import pickle
 import weakref
 import warnings
@@ -260,13 +261,13 @@ class _TestProcess(BaseTestCase):
             pathlib.Path(sys.executable)  # os.PathLike
         ]
         for path in paths:
-            multiprocessing.set_executable(path)
-            p = multiprocessing.Process()
+            self.set_executable(path)
+            p = self.Process()
             p.start()
             p.join()
             self.assertEqual(p.exitcode, 0)
-        multiprocessing.set_executable('')
-        p = multiprocessing.Process()
+        self.set_executable('')
+        p = self.Process()
         p.start()
         p.join()
         self.assertNotEqual(p.exitcode, 0)
