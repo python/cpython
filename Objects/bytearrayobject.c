@@ -844,8 +844,23 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
         return -1;
     }
 
-    /* XXX Optimize this if the arguments is a list, tuple */
+    if (PyList_CheckExact(arg) || PyTuple_CheckExact(arg)) {
+        Py_ssize_t size = PySequence_Fast_GET_SIZE(arg);
+        if (PyByteArray_Resize((PyObject *)self, size) < 0) {
+            return -1;
+        }
+        PyObject **items = PySequence_Fast_ITEMS(arg);
 
+        for (Py_ssize_t i = 0; i < size; i++) {
+            int value;
+            int rc = _getbytevalue(items[i], &value);
+            if (!rc) {
+                return -1;
+            }
+            PyByteArray_AS_STRING(self)[i] = value;
+        }
+        return 0;
+    }
     /* Get the iterator */
     it = PyObject_GetIter(arg);
     if (it == NULL) {
