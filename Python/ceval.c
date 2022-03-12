@@ -5517,7 +5517,7 @@ opname ## _miss: \
         _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr; \
         *counter -= 1; \
         if (*counter == 0) { \
-            next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, _Py_OPARG(next_instr[-1])); \
+            _Py_SET_OPCODE(next_instr[-1], opname ## _ADAPTIVE); \
             STAT_INC(opname, deopt); \
             *counter = ADAPTIVE_CACHE_BACKOFF; \
         } \
