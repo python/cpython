@@ -98,7 +98,7 @@ typedef struct {
             // A (number of bytes read, (host, port)) tuple
             PyObject* result;
             /* Buffer passed by the user */
-            Py_buffer user_buffer;
+            Py_buffer *user_buffer;
             struct sockaddr_in6 address;
             int address_length;
         } read_from_into;
@@ -677,9 +677,6 @@ Overlapped_clear(OverlappedObject *self)
             if (self->read_from_into.result) {
                 // We've received a message, free the result tuple.
                 Py_CLEAR(self->read_from_into.result);
-            }
-            if (self->read_from_into.user_buffer.obj) {
-                PyBuffer_Release(&self->read_from_into.user_buffer);
             }
             break;
         }
@@ -1671,8 +1668,8 @@ Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
         break;
     case TYPE_READ_FROM_INTO:
         Py_VISIT(self->read_from_into.result);
-        if (self->read_from_into.user_buffer.obj) {
-            Py_VISIT(&self->read_from_into.user_buffer.obj);
+        if (self->read_from_into.user_buffer->obj) {
+            Py_VISIT(&self->read_from_into.user_buffer->obj);
         }
         break;
     }
@@ -1879,7 +1876,7 @@ _overlapped_Overlapped_WSARecvFrom_impl(OverlappedObject *self,
 _overlapped.Overlapped.WSARecvFromInto
 
     handle: HANDLE
-    buf as bufobj: object
+    buf as bufobj: Py_buffer
     size: DWORD
     flags: DWORD = 0
     /
@@ -1889,9 +1886,9 @@ Start overlapped receive.
 
 static PyObject *
 _overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
-                                            HANDLE handle, PyObject *bufobj,
+                                            HANDLE handle, Py_buffer *bufobj,
                                             DWORD size, DWORD flags)
-/*[clinic end generated code: output=45fc5d883a11c4e5 input=8eacd80d50157434]*/
+/*[clinic end generated code: output=30c7ea171a691757 input=4be4b08d03531e76]*/
 {
     DWORD nread;
     WSABUF wsabuf;
@@ -1903,22 +1900,19 @@ _overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
         return NULL;
     }
 
-    if (!PyArg_Parse(bufobj, "y*", &self->read_from_into.user_buffer))
-        return NULL;
-
 #if SIZEOF_SIZE_T > SIZEOF_LONG
-    if (self->read_from_into.user_buffer.len > (Py_ssize_t)ULONG_MAX) {
-        PyBuffer_Release(&self->read_from_into.user_buffer);
+    if (bufobj->len > (Py_ssize_t)ULONG_MAX) {
         PyErr_SetString(PyExc_ValueError, "buffer too large");
         return NULL;
     }
 #endif
 
-    wsabuf.buf = self->read_from_into.user_buffer.buf;
+    wsabuf.buf = bufobj->buf;
     wsabuf.len = size;
 
     self->type = TYPE_READ_FROM_INTO;
     self->handle = handle;
+    self->read_from_into.user_buffer = bufobj;
     memset(&self->read_from_into.address, 0, sizeof(self->read_from_into.address));
     self->read_from_into.address_length = sizeof(self->read_from_into.address);
 
