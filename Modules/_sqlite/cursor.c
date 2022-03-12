@@ -878,9 +878,9 @@ PyObject* pysqlite_cursor_close(pysqlite_Cursor* self, PyObject* args)
 
 static PyMethodDef cursor_methods[] = {
     {"execute", (PyCFunction)pysqlite_cursor_execute, METH_VARARGS,
-        PyDoc_STR("Executes a SQL statement.")},
+        PyDoc_STR("Executes an SQL statement.")},
     {"executemany", (PyCFunction)pysqlite_cursor_executemany, METH_VARARGS,
-        PyDoc_STR("Repeatedly executes a SQL statement.")},
+        PyDoc_STR("Repeatedly executes an SQL statement.")},
     {"executescript", (PyCFunction)pysqlite_cursor_executescript, METH_VARARGS,
         PyDoc_STR("Executes multiple SQL statements at once.")},
     {"fetchone", (PyCFunction)pysqlite_cursor_fetchone, METH_NOARGS,
