@@ -3,6 +3,7 @@ Various tests for synchronization primitives.
 """
 
 import os
+import gc
 import sys
 import time
 from _thread import start_new_thread, TIMEOUT_MAX
@@ -221,6 +222,7 @@ class BaseLockTests(BaseTestCase):
         lock = self.locktype()
         ref = weakref.ref(lock)
         del lock
+        gc.collect()  # For PyPy or other GCs.
         self.assertIsNone(ref())
 
 
@@ -452,6 +454,12 @@ class EventTests(BaseTestCase):
         evt._at_fork_reinit()
         with evt._cond:
             self.assertFalse(evt._cond.acquire(False))
+
+    def test_repr(self):
+        evt = self.eventtype()
+        self.assertRegex(repr(evt), r"<\w+\.Event at .*: unset>")
+        evt.set()
+        self.assertRegex(repr(evt), r"<\w+\.Event at .*: set>")
 
 
 class ConditionTests(BaseTestCase):
@@ -800,6 +808,15 @@ class SemaphoreTests(BaseSemaphoreTests):
         sem.acquire()
         sem.release()
 
+    def test_repr(self):
+        sem = self.semtype(3)
+        self.assertRegex(repr(sem), r"<\w+\.Semaphore at .*: value=3>")
+        sem.acquire()
+        self.assertRegex(repr(sem), r"<\w+\.Semaphore at .*: value=2>")
+        sem.release()
+        sem.release()
+        self.assertRegex(repr(sem), r"<\w+\.Semaphore at .*: value=4>")
+
 
 class BoundedSemaphoreTests(BaseSemaphoreTests):
     """
@@ -813,6 +830,12 @@ class BoundedSemaphoreTests(BaseSemaphoreTests):
         sem.acquire()
         sem.release()
         self.assertRaises(ValueError, sem.release)
+
+    def test_repr(self):
+        sem = self.semtype(3)
+        self.assertRegex(repr(sem), r"<\w+\.BoundedSemaphore at .*: value=3/3>")
+        sem.acquire()
+        self.assertRegex(repr(sem), r"<\w+\.BoundedSemaphore at .*: value=2/3>")
 
 
 class BarrierTests(BaseTestCase):
@@ -1006,3 +1029,18 @@ class BarrierTests(BaseTestCase):
         b = self.barriertype(1)
         b.wait()
         b.wait()
+
+    def test_repr(self):
+        b = self.barriertype(3)
+        self.assertRegex(repr(b), r"<\w+\.Barrier at .*: waiters=0/3>")
+        def f():
+            b.wait(3)
+        bunch = Bunch(f, 2)
+        bunch.wait_for_started()
+        time.sleep(0.2)
+        self.assertRegex(repr(b), r"<\w+\.Barrier at .*: waiters=2/3>")
+        b.wait(3)
+        bunch.wait_for_finished()
+        self.assertRegex(repr(b), r"<\w+\.Barrier at .*: waiters=0/3>")
+        b.abort()
+        self.assertRegex(repr(b), r"<\w+\.Barrier at .*: broken>")

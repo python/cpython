@@ -8,13 +8,17 @@ from collections import namedtuple
 import contextlib
 import json
 import os
+import os.path
 import re
 import shutil
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import textwrap
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 MS_WINDOWS = (os.name == 'nt')
 MACOS = (sys.platform == 'darwin')
@@ -30,9 +34,16 @@ API_PYTHON = 2
 # _PyCoreConfig_InitIsolatedConfig()
 API_ISOLATED = 3
 
-INIT_LOOPS = 16
+INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
 
+
+# If we are running from a build dir, but the stdlib has been installed,
+# some tests need to expect different results.
+STDLIB_INSTALL = os.path.join(sys.prefix, sys.platlibdir,
+    f'python{sys.version_info.major}.{sys.version_info.minor}')
+if not os.path.isfile(os.path.join(STDLIB_INSTALL, 'os.py')):
+    STDLIB_INSTALL = None
 
 def debug_build(program):
     program = os.path.basename(program)
@@ -51,23 +62,24 @@ def remove_python_envvars():
 
 class EmbeddingTestsMixin:
     def setUp(self):
-        here = os.path.abspath(__file__)
-        basepath = os.path.dirname(os.path.dirname(os.path.dirname(here)))
         exename = "_testembed"
+        builddir = os.path.dirname(sys.executable)
         if MS_WINDOWS:
             ext = ("_d" if debug_build(sys.executable) else "") + ".exe"
             exename += ext
-            exepath = os.path.dirname(sys.executable)
+            exepath = builddir
+            expecteddir = os.path.join(support.REPO_ROOT, builddir)
         else:
-            exepath = os.path.join(basepath, "Programs")
+            exepath = os.path.join(builddir, 'Programs')
+            expecteddir = os.path.join(support.REPO_ROOT, 'Programs')
         self.test_exe = exe = os.path.join(exepath, exename)
-        if not os.path.exists(exe):
+        if exepath != expecteddir or not os.path.exists(exe):
             self.skipTest("%r doesn't exist" % exe)
         # This is needed otherwise we get a fatal error:
         # "Py_Initialize: Unable to get the locale encoding
         # LookupError: no codec search functions registered: can't find encoding"
         self.oldcwd = os.getcwd()
-        os.chdir(basepath)
+        os.chdir(support.REPO_ROOT)
 
     def tearDown(self):
         os.chdir(self.oldcwd)
@@ -250,7 +262,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_pre_initialization_api(self):
         """
-        Checks some key parts of the C-API that need to work before the runtine
+        Checks some key parts of the C-API that need to work before the runtime
         is initialized (via Py_Initialize()).
         """
         env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
@@ -274,7 +286,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                         "test_pre_initialization_sys_options", env=env)
         expected_output = (
             "sys.warnoptions: ['once', 'module', 'default']\n"
-            "sys._xoptions: {'not_an_option': '1', 'also_not_an_option': '2'}\n"
+            "sys._xoptions: {'dev': '2', 'utf8': '1'}\n"
             "warnings.filters[:3]: ['default', 'module', 'once']\n"
         )
         self.assertIn(expected_output, out)
@@ -310,6 +322,26 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_run_main")
         self.assertEqual(out.rstrip(), "Py_RunMain(): sys.argv=['-c', 'arg2']")
         self.assertEqual(err, '')
+
+    def test_run_main_loop(self):
+        # bpo-40413: Calling Py_InitializeFromConfig()+Py_RunMain() multiple
+        # times must not crash.
+        nloop = 5
+        out, err = self.run_embedded_interpreter("test_run_main_loop")
+        self.assertEqual(out, "Py_RunMain(): sys.argv=['-c', 'arg2']\n" * nloop)
+        self.assertEqual(err, '')
+
+    def test_finalize_structseq(self):
+        # bpo-46417: Py_Finalize() clears structseq static types. Check that
+        # sys attributes using struct types still work when
+        # Py_Finalize()/Py_Initialize() is called multiple times.
+        # print() calls type->tp_repr(instance) and so checks that the types
+        # are still working properly.
+        script = support.findfile('_test_embed_structseq.py')
+        with open(script, encoding="utf-8") as fp:
+            code = fp.read()
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
 
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
@@ -369,6 +401,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'faulthandler': 0,
         'tracemalloc': 0,
         'import_time': 0,
+        'code_debug_ranges': 1,
         'show_ref_count': 0,
         'dump_refs': 0,
         'malloc_stats': 0,
@@ -397,6 +430,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'module_search_paths': GET_DEFAULT_CONFIG,
         'module_search_paths_set': 1,
         'platlibdir': sys.platlibdir,
+        'stdlib_dir': GET_DEFAULT_CONFIG,
 
         'site_import': 1,
         'bytes_warning': 0,
@@ -425,6 +459,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pathconfig_warnings': 1,
         '_init_main': 1,
         '_isolated_interpreter': 0,
+        'use_frozen_modules': 1,
+        '_is_python_build': IGNORE_CONFIG,
     }
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
@@ -486,31 +522,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         ))
         COPY_GLOBAL_CONFIG.extend((
             ('Py_LegacyWindowsStdioFlag', 'legacy_windows_stdio'),
-        ))
-
-    # path config
-    if MS_WINDOWS:
-        PATH_CONFIG = {
-            'isolated': -1,
-            'site_import': -1,
-            'python3_dll': GET_DEFAULT_CONFIG,
-        }
-    else:
-        PATH_CONFIG = {}
-    # other keys are copied by COPY_PATH_CONFIG
-
-    COPY_PATH_CONFIG = [
-        # Copy core config to global config for expected values
-        'prefix',
-        'exec_prefix',
-        'program_name',
-        'home',
-        # program_full_path and module_search_path are copied indirectly from
-        # the core configuration in check_path_config().
-    ]
-    if MS_WINDOWS:
-        COPY_PATH_CONFIG.extend((
-            'base_executable',
         ))
 
     EXPECTED_CONFIG = None
@@ -578,20 +589,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         return configs
 
     def get_expected_config(self, expected_preconfig, expected,
-                            expected_pathconfig, env, api,
-                            modify_path_cb=None):
-        cls = self.__class__
+                            env, api, modify_path_cb=None, cwd=None):
         configs = self._get_expected_config()
 
         pre_config = configs['pre_config']
         for key, value in expected_preconfig.items():
             if value is self.GET_DEFAULT_CONFIG:
                 expected_preconfig[key] = pre_config[key]
-
-        path_config = configs['path_config']
-        for key, value in expected_pathconfig.items():
-            if value is self.GET_DEFAULT_CONFIG:
-                expected_pathconfig[key] = path_config[key]
 
         if not expected_preconfig['configure_locale'] or api == API_COMPAT:
             # there is no easy way to get the locale encoding before
@@ -628,6 +632,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected['base_executable'] = default_executable
         if expected['program_name'] is self.GET_DEFAULT_CONFIG:
             expected['program_name'] = './_testembed'
+            if MS_WINDOWS:
+                # follow the calculation in getpath.py
+                tmpname = expected['program_name'] + '.exe'
+                if cwd:
+                    tmpname = os.path.join(cwd, tmpname)
+                if os.path.isfile(tmpname):
+                    expected['program_name'] += '.exe'
+                del tmpname
 
         config = configs['config']
         for key, value in expected.items():
@@ -685,18 +697,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         self.assertEqual(configs['global_config'], expected)
 
-    def check_path_config(self, configs, expected):
-        config = configs['config']
-
-        for key in self.COPY_PATH_CONFIG:
-            expected[key] = config[key]
-        expected['module_search_path'] = os.path.pathsep.join(config['module_search_paths'])
-        expected['program_full_path'] = config['executable']
-
-        self.assertEqual(configs['path_config'], expected)
-
     def check_all_configs(self, testname, expected_config=None,
-                          expected_preconfig=None, expected_pathconfig=None,
+                          expected_preconfig=None,
                           modify_path_cb=None,
                           stderr=None, *, api, preconfig_api=None,
                           env=None, ignore_stderr=False, cwd=None):
@@ -720,10 +722,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         if expected_config is None:
             expected_config = {}
 
-        if expected_pathconfig is None:
-            expected_pathconfig = {}
-        expected_pathconfig = dict(self.PATH_CONFIG, **expected_pathconfig)
-
         if api == API_PYTHON:
             default_config = self.CONFIG_PYTHON
         elif api == API_ISOLATED:
@@ -734,9 +732,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         self.get_expected_config(expected_preconfig,
                                  expected_config,
-                                 expected_pathconfig,
                                  env,
-                                 api, modify_path_cb)
+                                 api, modify_path_cb, cwd)
 
         out, err = self.run_embedded_interpreter(testname,
                                                  env=env, cwd=cwd)
@@ -752,7 +749,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_pre_config(configs, expected_preconfig)
         self.check_config(configs, expected_config)
         self.check_global_config(configs)
-        self.check_path_config(configs, expected_pathconfig)
         return configs
 
     def test_init_default_config(self):
@@ -798,6 +794,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'hash_seed': 123,
             'tracemalloc': 2,
             'import_time': 1,
+            'code_debug_ranges': 0,
             'show_ref_count': 1,
             'malloc_stats': 1,
 
@@ -809,15 +806,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'argv': ['-c', 'arg2'],
             'orig_argv': ['python3',
                           '-W', 'cmdline_warnoption',
-                          '-X', 'cmdline_xoption',
+                          '-X', 'dev',
                           '-c', 'pass',
                           'arg2'],
             'parse_argv': 2,
             'xoptions': [
-                'config_xoption1=3',
-                'config_xoption2=',
-                'config_xoption3',
-                'cmdline_xoption',
+                'dev=3',
+                'utf8',
+                'dev',
             ],
             'warnoptions': [
                 'cmdline_warnoption',
@@ -858,6 +854,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'hash_seed': 42,
             'tracemalloc': 2,
             'import_time': 1,
+            'code_debug_ranges': 0,
             'malloc_stats': 1,
             'inspect': 1,
             'optimization_level': 2,
@@ -887,6 +884,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'hash_seed': 42,
             'tracemalloc': 2,
             'import_time': 1,
+            'code_debug_ranges': 0,
             'malloc_stats': 1,
             'inspect': 1,
             'optimization_level': 2,
@@ -1017,10 +1015,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_dont_configure_locale", {}, preconfig,
                                api=API_PYTHON)
 
+    @unittest.skip('as of 3.11 this test no longer works because '
+                   'path calculations do not occur on read')
     def test_init_read_set(self):
         config = {
             'program_name': './init_read_set',
             'executable': 'my_executable',
+            'base_executable': 'my_executable',
         }
         def modify_path(path):
             path.insert(1, "test_path_insert1")
@@ -1033,9 +1034,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = {
             'faulthandler': 1,
             'xoptions': [
-                'config_xoption',
-                'cmdline_xoption',
-                'sysadd_xoption',
+                'dev',
+                'utf8',
                 'faulthandler',
             ],
             'warnoptions': [
@@ -1045,9 +1045,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             ],
             'orig_argv': ['python3',
                           '-W', 'ignore:::cmdline_warnoption',
-                          '-X', 'cmdline_xoption'],
+                          '-X', 'utf8'],
         }
-        self.check_all_configs("test_init_sys_add", config, api=API_PYTHON)
+        preconfig = {'utf8_mode': 1}
+        self.check_all_configs("test_init_sys_add", config,
+                               expected_preconfig=preconfig,
+                               api=API_PYTHON)
 
     def test_init_run_main(self):
         code = ('import _testinternalcapi, json; '
@@ -1129,6 +1132,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'base_prefix': '',
             'exec_prefix': '',
             'base_exec_prefix': '',
+             # The current getpath.c doesn't determine the stdlib dir
+             # in this case.
+            'stdlib_dir': '',
         }
         self.default_program_name(config)
         env = {'TESTPATH': os.path.pathsep.join(paths)}
@@ -1149,7 +1155,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'base_prefix': '',
             'exec_prefix': '',
             'base_exec_prefix': '',
-            # overriden by PyConfig
+             # The current getpath.c doesn't determine the stdlib dir
+             # in this case.
+            'stdlib_dir': '',
+            'use_frozen_modules': 1,
+            # overridden by PyConfig
             'program_name': 'conf_program_name',
             'base_executable': 'conf_executable',
             'executable': 'conf_executable',
@@ -1178,13 +1188,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             ]
 
     @contextlib.contextmanager
-    def tmpdir_with_python(self):
+    def tmpdir_with_python(self, subdir=None):
         # Temporary directory with a copy of the Python program
         with tempfile.TemporaryDirectory() as tmpdir:
             # bpo-38234: On macOS and FreeBSD, the temporary directory
             # can be symbolic link. For example, /tmp can be a symbolic link
             # to /var/tmp. Call realpath() to resolve all symbolic links.
             tmpdir = os.path.realpath(tmpdir)
+            if subdir:
+                tmpdir = os.path.normpath(os.path.join(tmpdir, subdir))
+                os.makedirs(tmpdir)
 
             if MS_WINDOWS:
                 # Copy pythonXY.dll (or pythonXY_d.dll)
@@ -1227,8 +1240,15 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             self.fail(f"Unable to find home in {paths!r}")
 
         prefix = exec_prefix = home
-        ver = sys.version_info
-        expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
+        if MS_WINDOWS:
+            stdlib = os.path.join(home, "Lib")
+            # Because we are specifying 'home', module search paths
+            # are fairly static
+            expected_paths = [paths[0], stdlib, os.path.join(home, 'DLLs')]
+        else:
+            version = f'{sys.version_info.major}.{sys.version_info.minor}'
+            stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
+            expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
         config = {
             'home': home,
@@ -1238,6 +1258,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'exec_prefix': exec_prefix,
             'base_exec_prefix': exec_prefix,
             'pythonpath_env': paths_str,
+            'stdlib_dir': stdlib,
         }
         self.default_program_name(config)
         env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
@@ -1252,7 +1273,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         env = {'PYTHONPATH': paths_str}
         return env
 
-    @unittest.skipIf(MS_WINDOWS, 'Windows does not use pybuilddir.txt')
+    @unittest.skipIf(MS_WINDOWS, 'See test_init_pybuilddir_win32')
     def test_init_pybuilddir(self):
         # Test path configuration with pybuilddir.txt configuration file
 
@@ -1261,6 +1282,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             # directory (tmpdir)
             subdir = 'libdir'
             libdir = os.path.join(tmpdir, subdir)
+            # The stdlib dir is dirname(executable) + VPATH + 'Lib'
+            stdlibdir = os.path.join(tmpdir, 'Lib')
             os.mkdir(libdir)
 
             filename = os.path.join(tmpdir, 'pybuilddir.txt')
@@ -1268,18 +1291,62 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 fp.write(subdir)
 
             module_search_paths = self.module_search_paths()
+            module_search_paths[-2] = stdlibdir
             module_search_paths[-1] = libdir
 
             executable = self.test_exe
             config = {
+                'base_exec_prefix': sysconfig.get_config_var("exec_prefix"),
+                'base_prefix': sysconfig.get_config_var("prefix"),
                 'base_executable': executable,
                 'executable': executable,
                 'module_search_paths': module_search_paths,
+                'stdlib_dir': stdlibdir,
             }
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
                                    api=API_COMPAT, env=env,
                                    ignore_stderr=True, cwd=tmpdir)
+
+    @unittest.skipUnless(MS_WINDOWS, 'See test_init_pybuilddir')
+    def test_init_pybuilddir_win32(self):
+        # Test path configuration with pybuilddir.txt configuration file
+
+        vpath = sysconfig.get_config_var("VPATH")
+        subdir = r'PCbuild\arch'
+        if os.path.normpath(vpath).count(os.sep) == 2:
+            subdir = os.path.join(subdir, 'instrumented')
+
+        with self.tmpdir_with_python(subdir) as tmpdir:
+            # The prefix is dirname(executable) + VPATH
+            prefix = os.path.normpath(os.path.join(tmpdir, vpath))
+            # The stdlib dir is dirname(executable) + VPATH + 'Lib'
+            stdlibdir = os.path.normpath(os.path.join(tmpdir, vpath, 'Lib'))
+
+            filename = os.path.join(tmpdir, 'pybuilddir.txt')
+            with open(filename, "w", encoding="utf8") as fp:
+                fp.write(tmpdir)
+
+            module_search_paths = self.module_search_paths()
+            module_search_paths[-3] = os.path.join(tmpdir, os.path.basename(module_search_paths[-3]))
+            module_search_paths[-2] = stdlibdir
+            module_search_paths[-1] = tmpdir
+
+            executable = self.test_exe
+            config = {
+                'base_exec_prefix': prefix,
+                'base_prefix': prefix,
+                'base_executable': executable,
+                'executable': executable,
+                'prefix': prefix,
+                'exec_prefix': prefix,
+                'module_search_paths': module_search_paths,
+                'stdlib_dir': stdlibdir,
+            }
+            env = self.copy_paths_by_env(config)
+            self.check_all_configs("test_init_compat_config", config,
+                                   api=API_COMPAT, env=env,
+                                   ignore_stderr=False, cwd=tmpdir)
 
     def test_init_pyvenv_cfg(self):
         # Test path configuration with pyvenv.cfg configuration file
@@ -1295,10 +1362,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                            'lib-dynload')
                 os.makedirs(lib_dynload)
             else:
-                lib_dynload = os.path.join(pyvenv_home, 'lib')
-                os.makedirs(lib_dynload)
-                # getpathp.c uses Lib\os.py as the LANDMARK
-                shutil.copyfile(os.__file__, os.path.join(lib_dynload, 'os.py'))
+                lib_folder = os.path.join(pyvenv_home, 'Lib')
+                os.makedirs(lib_folder)
+                # getpath.py uses Lib\os.py as the LANDMARK
+                shutil.copyfile(
+                    os.path.join(support.STDLIB_DIR, 'os.py'),
+                    os.path.join(lib_folder, 'os.py'),
+                )
 
             filename = os.path.join(tmpdir, 'pyvenv.cfg')
             with open(filename, "w", encoding="utf8") as fp:
@@ -1309,40 +1379,72 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if not MS_WINDOWS:
                 paths[-1] = lib_dynload
             else:
+                # Include DLLs directory as well
+                paths.insert(1, '.\\DLLs')
                 for index, path in enumerate(paths):
                     if index == 0:
+                        # Because we copy the DLLs into tmpdir as well, the zip file
+                        # entry in sys.path will be there. For a regular venv, it will
+                        # usually be in the home directory.
                         paths[index] = os.path.join(tmpdir, os.path.basename(path))
                     else:
                         paths[index] = os.path.join(pyvenv_home, os.path.basename(path))
                 paths[-1] = pyvenv_home
 
             executable = self.test_exe
+            base_executable = os.path.join(pyvenv_home, os.path.basename(executable))
             exec_prefix = pyvenv_home
             config = {
+                'base_prefix': sysconfig.get_config_var("prefix"),
                 'base_exec_prefix': exec_prefix,
                 'exec_prefix': exec_prefix,
-                'base_executable': executable,
+                'base_executable': base_executable,
                 'executable': executable,
                 'module_search_paths': paths,
             }
-            path_config = {}
             if MS_WINDOWS:
                 config['base_prefix'] = pyvenv_home
                 config['prefix'] = pyvenv_home
-
-                ver = sys.version_info
-                dll = f'python{ver.major}'
-                if debug_build(executable):
-                    dll += '_d'
-                dll += '.DLL'
-                dll = os.path.join(os.path.dirname(executable), dll)
-                path_config['python3_dll'] = dll
+                config['stdlib_dir'] = os.path.join(pyvenv_home, 'Lib')
+                config['use_frozen_modules'] = 1
+            else:
+                # cannot reliably assume stdlib_dir here because it
+                # depends too much on our build. But it ought to be found
+                config['stdlib_dir'] = self.IGNORE_CONFIG
+                config['use_frozen_modules'] = 1
 
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
-                                   expected_pathconfig=path_config,
                                    api=API_COMPAT, env=env,
                                    ignore_stderr=True, cwd=tmpdir)
+
+    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    def test_getpath_abspath_win32(self):
+        # Check _Py_abspath() is passed a backslashed path not to fall back to
+        # GetFullPathNameW() on startup, which (re-)normalizes the path overly.
+        # Currently, _Py_normpath() doesn't trim trailing dots and spaces.
+        CASES = [
+            ("C:/a. . .",  "C:\\a. . ."),
+            ("C:\\a. . .", "C:\\a. . ."),
+            ("\\\\?\\C:////a////b. . .", "\\\\?\\C:\\a\\b. . ."),
+            ("//a/b/c. . .", "\\\\a\\b\\c. . ."),
+            ("\\\\a\\b\\c. . .", "\\\\a\\b\\c. . ."),
+            ("a. . .", f"{os.getcwd()}\\a"),  # relpath gets fully normalized
+        ]
+        out, err = self.run_embedded_interpreter(
+            "test_init_initialize_config",
+            env={**remove_python_envvars(),
+                 "PYTHONPATH": os.path.pathsep.join(c[0] for c in CASES)}
+        )
+        self.assertEqual(err, "")
+        try:
+            out = json.loads(out)
+        except json.JSONDecodeError:
+            self.fail(f"fail to decode stdout: {out!r}")
+
+        results = out['config']["module_search_paths"]
+        for (_, expected), result in zip(CASES, results):
+            self.assertEqual(result, expected)
 
     def test_global_pathconfig(self):
         # Test C API functions getting the path configuration:
@@ -1422,14 +1524,43 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.run_embedded_interpreter("test_get_argc_argv")
         # ignore output
 
+    def test_init_use_frozen_modules(self):
+        tests = {
+            ('=on', 1),
+            ('=off', 0),
+            ('=', 1),
+            ('', 1),
+        }
+        for raw, expected in tests:
+            optval = f'frozen_modules{raw}'
+            config = {
+                'parse_argv': 2,
+                'argv': ['-c'],
+                'orig_argv': ['./argv0', '-X', optval, '-c', 'pass'],
+                'program_name': './argv0',
+                'run_command': 'pass\n',
+                'use_environment': 1,
+                'xoptions': [optval],
+                'use_frozen_modules': expected,
+            }
+            env = {'TESTFROZEN': raw[1:]} if raw else None
+            with self.subTest(repr(raw)):
+                self.check_all_configs("test_init_use_frozen_modules", config,
+                                       api=API_PYTHON, env=env)
+
 
 class SetConfigTests(unittest.TestCase):
     def test_set_config(self):
         # bpo-42260: Test _PyInterpreterState_SetConfig()
-        cmd = [sys.executable, '-I', '-m', 'test._test_embed_set_config']
+        import_helper.import_module('_testcapi')
+        cmd = [sys.executable, '-X', 'utf8', '-I', '-m', 'test._test_embed_set_config']
         proc = subprocess.run(cmd,
                               stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
+                              stderr=subprocess.PIPE,
+                              encoding='utf-8', errors='backslashreplace')
+        if proc.returncode and support.verbose:
+            print(proc.stdout)
+            print(proc.stderr)
         self.assertEqual(proc.returncode, 0,
                          (proc.returncode, proc.stdout, proc.stderr))
 
@@ -1510,14 +1641,36 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
         """).lstrip()
         self.assertEqual(out, expected)
 
+    @unittest.skipUnless(hasattr(sys, 'gettotalrefcount'),
+                         '-X showrefcount requires a Python debug build')
+    def test_no_memleak(self):
+        # bpo-1635741: Python must release all memory at exit
+        cmd = [sys.executable, "-I", "-X", "showrefcount", "-c", "pass"]
+        proc = subprocess.run(cmd,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              text=True)
+        self.assertEqual(proc.returncode, 0)
+        out = proc.stdout.rstrip()
+        match = re.match(r'^\[(-?\d+) refs, (-?\d+) blocks\]', out)
+        if not match:
+            self.fail(f"unexpected output: {out!a}")
+        refs = int(match.group(1))
+        blocks = int(match.group(2))
+        self.assertEqual(refs, 0, out)
+        if not MS_WINDOWS:
+            self.assertEqual(blocks, 0, out)
+        else:
+            # bpo-46857: on Windows, Python still leaks 1 memory block at exit
+            self.assertIn(blocks, (0, 1), out)
+
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
     # Test PyStdPrinter_Type which is used by _PySys_SetPreliminaryStderr():
     #   "Set up a preliminary stderr printer until we have enough
     #    infrastructure for the io module in place."
 
-    def get_stdout_fd(self):
-        return sys.__stdout__.fileno()
+    STDOUT_FD = 1
 
     def create_printer(self, fd):
         ctypes = import_helper.import_module('ctypes')
@@ -1529,7 +1682,7 @@ class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_write(self):
         message = "unicode:\xe9-\u20ac-\udc80!\n"
 
-        stdout_fd = self.get_stdout_fd()
+        stdout_fd = self.STDOUT_FD
         stdout_fd_copy = os.dup(stdout_fd)
         self.addCleanup(os.close, stdout_fd_copy)
 
@@ -1550,7 +1703,7 @@ class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(data, message.encode('utf8', 'backslashreplace'))
 
     def test_methods(self):
-        fd = self.get_stdout_fd()
+        fd = self.STDOUT_FD
         printer = self.create_printer(fd)
         self.assertEqual(printer.fileno(), fd)
         self.assertEqual(printer.isatty(), os.isatty(fd))
@@ -1558,7 +1711,7 @@ class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
         printer.close()  # noop
 
     def test_disallow_instantiation(self):
-        fd = self.get_stdout_fd()
+        fd = self.STDOUT_FD
         printer = self.create_printer(fd)
         support.check_disallow_instantiation(self, type(printer))
 

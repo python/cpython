@@ -329,7 +329,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
 
     def test_fstring_debug_annotations(self):
         # f-strings with '=' don't round trip very well, so set the expected
-        # result explicitely.
+        # result explicitly.
         self.assertAnnotationEqual("f'{x=!r}'", expected="f'x={x!r}'")
         self.assertAnnotationEqual("f'{x=:}'", expected="f'x={x:}'")
         self.assertAnnotationEqual("f'{x=:.2f}'", expected="f'x={x:.2f}'")

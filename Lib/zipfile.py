@@ -1147,8 +1147,15 @@ class _ZipWriteFile(io.BufferedIOBase):
     def write(self, data):
         if self.closed:
             raise ValueError('I/O operation on closed file.')
-        nbytes = len(data)
+
+        # Accept any data that supports the buffer protocol
+        if isinstance(data, (bytes, bytearray)):
+            nbytes = len(data)
+        else:
+            data = memoryview(data)
+            nbytes = data.nbytes
         self._file_size += nbytes
+
         self._crc = crc32(data, self._crc)
         if self._compressor:
             data = self._compressor.compress(data)
@@ -1508,8 +1515,6 @@ class ZipFile:
         """
         if mode not in {"r", "w"}:
             raise ValueError('open() requires mode "r" or "w"')
-        if pwd and not isinstance(pwd, bytes):
-            raise TypeError("pwd: expected bytes, got %s" % type(pwd).__name__)
         if pwd and (mode == "w"):
             raise ValueError("pwd is only supported for reading files")
         if not self.fp:
@@ -1577,6 +1582,8 @@ class ZipFile:
             if is_encrypted:
                 if not pwd:
                     pwd = self.pwd
+                if pwd and not isinstance(pwd, bytes):
+                    raise TypeError("pwd: expected bytes, got %s" % type(pwd).__name__)
                 if not pwd:
                     raise RuntimeError("File %r is encrypted, password "
                                        "required for extraction" % name)

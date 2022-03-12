@@ -8,8 +8,7 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-__all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token',
-            'SharedMemoryManager' ]
+__all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token' ]
 
 #
 # Imports
@@ -35,9 +34,11 @@ from . import util
 from . import get_context
 try:
     from . import shared_memory
-    HAS_SHMEM = True
 except ImportError:
     HAS_SHMEM = False
+else:
+    HAS_SHMEM = True
+    __all__.append('SharedMemoryManager')
 
 #
 # Register some things for pickling
@@ -48,11 +49,11 @@ def reduce_array(a):
 reduction.register(array.array, reduce_array)
 
 view_types = [type(getattr({}, name)()) for name in ('items','keys','values')]
-if view_types[0] is not list:       # only needed in Py3.0
-    def rebuild_as_list(obj):
-        return list, (list(obj),)
-    for view_type in view_types:
-        reduction.register(view_type, rebuild_as_list)
+def rebuild_as_list(obj):
+    return list, (list(obj),)
+for view_type in view_types:
+    reduction.register(view_type, rebuild_as_list)
+del view_type, view_types
 
 #
 # Type for identifying shared objects
@@ -1337,7 +1338,6 @@ if HAS_SHMEM:
 
         def __del__(self):
             util.debug(f"{self.__class__.__name__}.__del__ by pid {getpid()}")
-            pass
 
         def get_server(self):
             'Better than monkeypatching for now; merge into Server ultimately'

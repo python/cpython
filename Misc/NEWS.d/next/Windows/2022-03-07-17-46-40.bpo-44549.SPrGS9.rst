@@ -1,0 +1,2 @@
+Update bzip2 to 1.0.8 in Windows builds to mitigate CVE-2016-3189 and
+CVE-2019-12900

@@ -23,7 +23,7 @@ def parse(srclines):
     if isinstance(srclines, str):  # a filename
         raise NotImplementedError
 
-    
+
 
 # This only handles at most 10 nested levels.
 #MATCHED_PARENS = textwrap.dedent(rf'''

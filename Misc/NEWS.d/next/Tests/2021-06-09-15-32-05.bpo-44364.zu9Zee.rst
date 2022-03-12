@@ -1,1 +1,0 @@
-Add non integral tests for :func:`math.sqrt` function.

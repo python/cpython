@@ -67,20 +67,14 @@ and work with streams:
    The rest of the arguments are passed directly to
    :meth:`loop.create_connection`.
 
-   .. versionadded:: 3.7
-
-      The *ssl_handshake_timeout* parameter.
+   .. versionchanged:: 3.7
+      Added the *ssl_handshake_timeout* parameter.
 
    .. versionadded:: 3.8
+      Added *happy_eyeballs_delay* and *interleave* parameters.
 
-      The *happy_eyeballs_delay* and *interleave* parameters.
-
-   .. deprecated-removed:: 3.8 3.10
-
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
 
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
@@ -109,16 +103,11 @@ and work with streams:
    The rest of the arguments are passed directly to
    :meth:`loop.create_server`.
 
-   .. versionadded:: 3.7
+   .. versionchanged:: 3.7
+      Added the *ssl_handshake_timeout* and *start_serving* parameters.
 
-      The *ssl_handshake_timeout* and *start_serving* parameters.
-
-   .. deprecated-removed:: 3.8 3.10
-
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
 
 .. rubric:: Unix Sockets
@@ -136,20 +125,12 @@ and work with streams:
 
    .. availability:: Unix.
 
-   .. versionadded:: 3.7
-
-      The *ssl_handshake_timeout* parameter.
-
    .. versionchanged:: 3.7
-
+      Added the *ssl_handshake_timeout* parameter.
       The *path* parameter can now be a :term:`path-like object`
 
-   .. deprecated-removed:: 3.8 3.10
-
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
@@ -164,20 +145,12 @@ and work with streams:
 
    .. availability:: Unix.
 
-   .. versionadded:: 3.7
-
-      The *ssl_handshake_timeout* and *start_serving* parameters.
-
    .. versionchanged:: 3.7
-
+      Added the *ssl_handshake_timeout* and *start_serving* parameters.
       The *path* parameter can now be a :term:`path-like object`.
 
-   .. deprecated-removed:: 3.8 3.10
-
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
 
 StreamReader
@@ -357,6 +330,7 @@ TCP echo client using the :func:`asyncio.open_connection` function::
 
         print(f'Send: {message!r}')
         writer.write(message.encode())
+        await writer.drain()
 
         data = await reader.read(100)
         print(f'Received: {data.decode()!r}')
@@ -400,8 +374,8 @@ TCP echo server using the :func:`asyncio.start_server` function::
         server = await asyncio.start_server(
             handle_echo, '127.0.0.1', 8888)
 
-        addr = server.sockets[0].getsockname()
-        print(f'Serving on {addr}')
+        addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
+        print(f'Serving on {addrs}')
 
         async with server:
             await server.serve_forever()

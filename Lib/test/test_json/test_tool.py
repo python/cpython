@@ -131,6 +131,15 @@ class TestTool(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+    def test_writing_in_place(self):
+        infile = self._create_infile()
+        rc, out, err = assert_python_ok('-m', 'json.tool', infile, infile)
+        with open(infile, "r", encoding="utf-8") as fp:
+            self.assertEqual(fp.read(), self.expect)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
     def test_jsonlines(self):
         args = sys.executable, '-m', 'json.tool', '--json-lines'
         process = subprocess.run(args, input=self.jsonlines_raw, capture_output=True, text=True, check=True)

@@ -264,13 +264,14 @@ default values. The arguments that are most commonly needed are:
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
    are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing file object, and ``None``.  :data:`PIPE` indicates
-   that a new pipe to the child should be created.  :data:`DEVNULL` indicates
-   that the special file :data:`os.devnull` will be used.  With the default
-   settings of ``None``, no redirection will occur; the child's file handles
-   will be inherited from the parent.  Additionally, *stderr* can be
-   :data:`STDOUT`, which indicates that the stderr data from the child
-   process should be captured into the same file handle as for *stdout*.
+   integer), an existing file object with a valid file descriptor, and ``None``.
+   :data:`PIPE` indicates that a new pipe to the child should be created.
+   :data:`DEVNULL` indicates that the special file :data:`os.devnull` will
+   be used.  With the default settings of ``None``, no redirection will occur;
+   the child's file handles will be inherited from the parent.
+   Additionally, *stderr* can be :data:`STDOUT`, which indicates that the
+   stderr data from the child process should be captured into the same file
+   handle as for *stdout*.
 
    .. index::
       single: universal newlines; subprocess module
@@ -482,13 +483,14 @@ functions.
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
    are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing :term:`file object`, and ``None``.  :data:`PIPE`
-   indicates that a new pipe to the child should be created.  :data:`DEVNULL`
-   indicates that the special file :data:`os.devnull` will be used. With the
-   default settings of ``None``, no redirection will occur; the child's file
-   handles will be inherited from the parent.  Additionally, *stderr* can be
-   :data:`STDOUT`, which indicates that the stderr data from the applications
-   should be captured into the same file handle as for stdout.
+   integer), an existing :term:`file object` with a valid file descriptor,
+   and ``None``.  :data:`PIPE` indicates that a new pipe to the child should
+   be created.  :data:`DEVNULL` indicates that the special file
+   :data:`os.devnull` will be used. With the default settings of ``None``,
+   no redirection will occur; the child's file handles will be inherited from
+   the parent.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
+   that the stderr data from the applications should be captured into the same
+   file handle as for stdout.
 
    If *preexec_fn* is set to a callable object, this object will be called in the
    child process just before the child is executed.
@@ -689,7 +691,10 @@ execute, will be re-raised in the parent.
 
 The most common exception raised is :exc:`OSError`.  This occurs, for example,
 when trying to execute a non-existent file.  Applications should prepare for
-:exc:`OSError` exceptions.
+:exc:`OSError` exceptions. Note that, when ``shell=True``, :exc:`OSError`
+will be raised by the child only if the selected shell itself was not found.
+To determine if the shell failed to find the requested application, it is
+necessary to check the return code or output from the subprocess.
 
 A :exc:`ValueError` will be raised if :class:`Popen` is called with invalid
 arguments.
@@ -707,6 +712,7 @@ Exceptions defined in this module all inherit from :exc:`SubprocessError`.
    .. versionadded:: 3.3
       The :exc:`SubprocessError` base class was added.
 
+.. _subprocess-security:
 
 Security Considerations
 -----------------------
@@ -1145,6 +1151,8 @@ calls these functions.
    code was zero then return, otherwise raise :exc:`CalledProcessError`. The
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`~CalledProcessError.returncode` attribute.
+   If :func:`check_call` was unable to start the process it will propagate the exception
+   that was raised.
 
    Code needing to capture stdout or stderr should use :func:`run` instead::
 
