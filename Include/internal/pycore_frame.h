@@ -123,9 +123,9 @@ static inline PyObject *_PyFrame_StackPop(_Py_framedata *f) {
     return f->localsplus[f->stacktop];
 }
 
-static inline void _PyFrame_StackPush(_Py_framedata *f, PyObject *value) {
-    f->localsplus[f->stacktop] = value;
-    f->stacktop++;
+static inline void _PyFrame_StackPush(_Py_framedata *fdata, PyObject *value) {
+    fdata->localsplus[fdata->stacktop] = value;
+    fdata->stacktop++;
 }
 
 #define FRAME_SPECIALS_SIZE ((sizeof(_Py_framedata)-1)/sizeof(PyObject *))
@@ -135,47 +135,47 @@ void _PyFrame_Copy(_Py_framedata *src, _Py_framedata *dest);
 /* Consumes reference to func */
 static inline void
 _PyFrame_InitializeSpecials(
-    _Py_framedata *frame, PyFunctionObject *func,
+    _Py_framedata *fdata, PyFunctionObject *func,
     PyObject *locals, int nlocalsplus)
 {
-    frame->func = func;
-    frame->code = (PyCodeObject *)Py_NewRef(func->func_code);
-    frame->builtins = func->func_builtins;
-    frame->globals = func->func_globals;
-    frame->locals = Py_XNewRef(locals);
-    frame->stacktop = nlocalsplus;
-    frame->frame_obj = NULL;
-    frame->lasti = -1;
-    frame->state = FRAME_CREATED;
-    frame->is_entry = false;
-    frame->is_generator = false;
+    fdata->func = func;
+    fdata->code = (PyCodeObject *)Py_NewRef(func->func_code);
+    fdata->builtins = func->func_builtins;
+    fdata->globals = func->func_globals;
+    fdata->locals = Py_XNewRef(locals);
+    fdata->stacktop = nlocalsplus;
+    fdata->frame_obj = NULL;
+    fdata->lasti = -1;
+    fdata->state = FRAME_CREATED;
+    fdata->is_entry = false;
+    fdata->is_generator = false;
 }
 
 /* Gets the pointer to the locals array
  * that precedes this frame.
  */
 static inline PyObject**
-_PyFrame_GetLocalsArray(_Py_framedata *frame)
+_PyFrame_GetLocalsArray(_Py_framedata *fdata)
 {
-    return frame->localsplus;
+    return fdata->localsplus;
 }
 
 static inline PyObject**
-_PyFrame_GetStackPointer(_Py_framedata *frame)
+_PyFrame_GetStackPointer(_Py_framedata *fdata)
 {
-    return frame->localsplus+frame->stacktop;
+    return fdata->localsplus+fdata->stacktop;
 }
 
 static inline void
-_PyFrame_SetStackPointer(_Py_framedata *frame, PyObject **stack_pointer)
+_PyFrame_SetStackPointer(_Py_framedata *fdata, PyObject **stack_pointer)
 {
-    frame->stacktop = (int)(stack_pointer - frame->localsplus);
+    fdata->stacktop = (int)(stack_pointer - fdata->localsplus);
 }
 
 /* For use by _PyFrame_GetFrameObject
   Do not call directly. */
 PyFrameObject *
-_PyFrame_MakeAndSetFrameObject(_Py_framedata *frame);
+_PyFrame_MakeAndSetFrameObject(_Py_framedata *fdata);
 
 /* Gets the PyFrameObject for this frame, lazily
  * creating it if necessary.
@@ -200,16 +200,16 @@ _PyFrame_GetFrameObject(_Py_framedata *fdata)
  * frames like the ones in generators and coroutines.
  */
 void
-_PyFrame_Clear(_Py_framedata * frame);
+_PyFrame_Clear(_Py_framedata * fdata);
 
 int
-_PyFrame_Traverse(_Py_framedata *frame, visitproc visit, void *arg);
+_PyFrame_Traverse(_Py_framedata *fdata, visitproc visit, void *arg);
 
 int
-_PyFrame_FastToLocalsWithError(_Py_framedata *frame);
+_PyFrame_FastToLocalsWithError(_Py_framedata *fdata);
 
 void
-_PyFrame_LocalsToFast(_Py_framedata *frame, int clear);
+_PyFrame_LocalsToFast(_Py_framedata *fdata, int clear);
 
 extern _Py_framedata *
 _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size);
@@ -229,7 +229,7 @@ _PyThreadState_BumpFramePointer(PyThreadState *tstate, size_t size)
     return _PyThreadState_BumpFramePointerSlow(tstate, size);
 }
 
-void _PyThreadState_PopFrame(PyThreadState *tstate, _Py_framedata *frame);
+void _PyThreadState_PopFrame(PyThreadState *tstate, _Py_framedata *fdata);
 
 /* Consume reference to func */
 _Py_framedata *

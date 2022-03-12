@@ -630,14 +630,14 @@ frame_dealloc(PyFrameObject *f)
     if (f->f_owns_frame) {
         f->f_owns_frame = 0;
         assert(f->f_fdata == (_Py_framedata *)f->_f_frame_data);
-        _Py_framedata *frame = (_Py_framedata *)f->_f_frame_data;
+        _Py_framedata *fdata = (_Py_framedata *)f->_f_frame_data;
         /* Don't clear code object until the end */
-        co = frame->code;
-        frame->code = NULL;
-        Py_CLEAR(frame->func);
-        Py_CLEAR(frame->locals);
-        PyObject **locals = _PyFrame_GetLocalsArray(frame);
-        for (int i = 0; i < frame->stacktop; i++) {
+        co = fdata->code;
+        fdata->code = NULL;
+        Py_CLEAR(fdata->func);
+        Py_CLEAR(fdata->locals);
+        PyObject **locals = _PyFrame_GetLocalsArray(fdata);
+        for (int i = 0; i < fdata->stacktop; i++) {
             Py_CLEAR(locals[i]);
         }
     }
@@ -771,14 +771,14 @@ PyTypeObject PyFrame_Type = {
 };
 
 static void
-init_frame(_Py_framedata *frame, PyFunctionObject *func, PyObject *locals)
+init_frame(_Py_framedata *fdata, PyFunctionObject *func, PyObject *locals)
 {
     /* _PyFrame_InitializeSpecials consumes reference to func */
     Py_INCREF(func);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
+    _PyFrame_InitializeSpecials(fdata, func, locals, code->co_nlocalsplus);
     for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
-        frame->localsplus[i] = NULL;
+        fdata->localsplus[i] = NULL;
     }
 }
 
@@ -849,30 +849,30 @@ _PyFrame_OpAlreadyRan(_Py_framedata *fdata, int opcode, int oparg)
 }
 
 int
-_PyFrame_FastToLocalsWithError(_Py_framedata *frame) {
+_PyFrame_FastToLocalsWithError(_Py_framedata *fdata) {
     /* Merge fast locals into f->locals */
     PyObject *locals;
     PyObject **fast;
     PyCodeObject *co;
-    locals = frame->locals;
+    locals = fdata->locals;
     if (locals == NULL) {
-        locals = frame->locals = PyDict_New();
+        locals = fdata->locals = PyDict_New();
         if (locals == NULL)
             return -1;
     }
-    co = frame->code;
-    fast = _PyFrame_GetLocalsArray(frame);
-    if (frame->lasti < 0 && _Py_OPCODE(co->co_firstinstr[0]) == COPY_FREE_VARS) {
+    co = fdata->code;
+    fast = _PyFrame_GetLocalsArray(fdata);
+    if (fdata->lasti < 0 && _Py_OPCODE(co->co_firstinstr[0]) == COPY_FREE_VARS) {
         /* Free vars have not been initialized -- Do that */
-        PyCodeObject *co = frame->code;
-        PyObject *closure = frame->func->func_closure;
+        PyCodeObject *co = fdata->code;
+        PyObject *closure = fdata->func->func_closure;
         int offset = co->co_nlocals + co->co_nplaincellvars;
         for (int i = 0; i < co->co_nfreevars; ++i) {
             PyObject *o = PyTuple_GET_ITEM(closure, i);
             Py_INCREF(o);
-            frame->localsplus[offset + i] = o;
+            fdata->localsplus[offset + i] = o;
         }
-        frame->lasti = 0;
+        fdata->lasti = 0;
     }
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
@@ -891,7 +891,7 @@ _PyFrame_FastToLocalsWithError(_Py_framedata *frame) {
 
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         PyObject *value = fast[i];
-        if (frame->state != FRAME_CLEARED) {
+        if (fdata->state != FRAME_CLEARED) {
             if (kind & CO_FAST_FREE) {
                 // The cell was set by COPY_FREE_VARS.
                 assert(value != NULL && PyCell_Check(value));
@@ -904,7 +904,7 @@ _PyFrame_FastToLocalsWithError(_Py_framedata *frame) {
                 // run yet.
                 if (value != NULL) {
                     if (PyCell_Check(value) &&
-                            _PyFrame_OpAlreadyRan(frame, MAKE_CELL, i)) {
+                            _PyFrame_OpAlreadyRan(fdata, MAKE_CELL, i)) {
                         // (likely) MAKE_CELL must have executed already.
                         value = PyCell_GET(value);
                     }
@@ -960,18 +960,18 @@ PyFrame_FastToLocals(PyFrameObject *f)
 }
 
 void
-_PyFrame_LocalsToFast(_Py_framedata *frame, int clear)
+_PyFrame_LocalsToFast(_Py_framedata *fdata, int clear)
 {
     /* Merge locals into fast locals */
     PyObject *locals;
     PyObject **fast;
     PyObject *error_type, *error_value, *error_traceback;
     PyCodeObject *co;
-    locals = frame->locals;
+    locals = fdata->locals;
     if (locals == NULL)
         return;
-    fast = _PyFrame_GetLocalsArray(frame);
-    co = frame->code;
+    fast = _PyFrame_GetLocalsArray(fdata);
+    co = fdata->code;
 
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
     for (int i = 0; i < co->co_nlocalsplus; i++) {
@@ -1001,7 +1001,7 @@ _PyFrame_LocalsToFast(_Py_framedata *frame, int clear)
         else if (kind & CO_FAST_CELL && oldvalue != NULL) {
             /* Same test as in PyFrame_FastToLocals() above. */
             if (PyCell_Check(oldvalue) &&
-                    _PyFrame_OpAlreadyRan(frame, MAKE_CELL, i)) {
+                    _PyFrame_OpAlreadyRan(fdata, MAKE_CELL, i)) {
                 // (likely) MAKE_CELL must have executed already.
                 cell = oldvalue;
             }

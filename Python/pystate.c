@@ -1410,15 +1410,15 @@ _PyThread_CurrentFrames(void)
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->threads.head; t != NULL; t = t->next) {
-            _Py_framedata *frame = t->cframe->current_frame;
-            if (frame == NULL) {
+            _Py_framedata *fdata = t->cframe->current_frame;
+            if (fdata == NULL) {
                 continue;
             }
             PyObject *id = PyLong_FromUnsignedLong(t->thread_id);
             if (id == NULL) {
                 goto fail;
             }
-            int stat = PyDict_SetItem(result, id, (PyObject *)_PyFrame_GetFrameObject(frame));
+            int stat = PyDict_SetItem(result, id, (PyObject *)_PyFrame_GetFrameObject(fdata));
             Py_DECREF(id);
             if (stat < 0) {
                 goto fail;

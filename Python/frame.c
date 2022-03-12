@@ -7,30 +7,30 @@
 #include "opcode.h"
 
 int
-_PyFrame_Traverse(_Py_framedata *frame, visitproc visit, void *arg)
+_PyFrame_Traverse(_Py_framedata *fdata, visitproc visit, void *arg)
 {
-    Py_VISIT(frame->frame_obj);
-    Py_VISIT(frame->locals);
-    Py_VISIT(frame->func);
-    Py_VISIT(frame->code);
+    Py_VISIT(fdata->frame_obj);
+    Py_VISIT(fdata->locals);
+    Py_VISIT(fdata->func);
+    Py_VISIT(fdata->code);
    /* locals */
-    PyObject **locals = _PyFrame_GetLocalsArray(frame);
+    PyObject **locals = _PyFrame_GetLocalsArray(fdata);
     int i = 0;
     /* locals and stack */
-    for (; i <frame->stacktop; i++) {
+    for (; i <fdata->stacktop; i++) {
         Py_VISIT(locals[i]);
     }
     return 0;
 }
 
 PyFrameObject *
-_PyFrame_MakeAndSetFrameObject(_Py_framedata *frame)
+_PyFrame_MakeAndSetFrameObject(_Py_framedata *fdata)
 {
-    assert(frame->frame_obj == NULL);
+    assert(fdata->frame_obj == NULL);
     PyObject *error_type, *error_value, *error_traceback;
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
 
-    PyFrameObject *f = _PyFrame_New_NoTrack(frame->code);
+    PyFrameObject *f = _PyFrame_New_NoTrack(fdata->code);
     if (f == NULL) {
         Py_XDECREF(error_type);
         Py_XDECREF(error_value);
@@ -38,8 +38,8 @@ _PyFrame_MakeAndSetFrameObject(_Py_framedata *frame)
     }
     else {
         f->f_owns_frame = 0;
-        f->f_fdata = frame;
-        frame->frame_obj = f;
+        f->f_fdata = fdata;
+        fdata->frame_obj = f;
         PyErr_Restore(error_type, error_value, error_traceback);
     }
     return f;
@@ -55,18 +55,18 @@ _PyFrame_Copy(_Py_framedata *src, _Py_framedata *dest)
 
 
 static void
-take_ownership(PyFrameObject *f, _Py_framedata *frame)
+take_ownership(PyFrameObject *f, _Py_framedata *fdata)
 {
     assert(f->f_owns_frame == 0);
-    Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;
-    memcpy((_Py_framedata *)f->_f_frame_data, frame, size);
-    frame = (_Py_framedata *)f->_f_frame_data;
+    Py_ssize_t size = ((char*)&fdata->localsplus[fdata->stacktop]) - (char *)fdata;
+    memcpy((_Py_framedata *)f->_f_frame_data, fdata, size);
+    fdata = (_Py_framedata *)f->_f_frame_data;
     f->f_owns_frame = 1;
-    f->f_fdata = frame;
+    f->f_fdata = fdata;
     assert(f->f_back == NULL);
-    if (frame->previous != NULL) {
+    if (fdata->previous != NULL) {
         /* Link PyFrameObjects.f_back and remove link through _Py_framedata.previous */
-        PyFrameObject *back = _PyFrame_GetFrameObject(frame->previous);
+        PyFrameObject *back = _PyFrame_GetFrameObject(fdata->previous);
         if (back == NULL) {
             /* Memory error here. */
             assert(PyErr_ExceptionMatches(PyExc_MemoryError));
@@ -76,7 +76,7 @@ take_ownership(PyFrameObject *f, _Py_framedata *frame)
         else {
             f->f_back = (PyFrameObject *)Py_NewRef(back);
         }
-        frame->previous = NULL;
+        fdata->previous = NULL;
     }
     if (!_PyObject_GC_IS_TRACKED((PyObject *)f)) {
         _PyObject_GC_TRACK((PyObject *)f);
@@ -84,29 +84,29 @@ take_ownership(PyFrameObject *f, _Py_framedata *frame)
 }
 
 void
-_PyFrame_Clear(_Py_framedata *frame)
+_PyFrame_Clear(_Py_framedata *fdata)
 {
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the enclosing generator, if any. */
-    assert(!frame->is_generator);
-    if (frame->frame_obj) {
-        PyFrameObject *f = frame->frame_obj;
-        frame->frame_obj = NULL;
+    assert(!fdata->is_generator);
+    if (fdata->frame_obj) {
+        PyFrameObject *f = fdata->frame_obj;
+        fdata->frame_obj = NULL;
         if (Py_REFCNT(f) > 1) {
-            take_ownership(f, frame);
+            take_ownership(f, fdata);
             Py_DECREF(f);
             return;
         }
         Py_DECREF(f);
     }
-    assert(frame->stacktop >= 0);
-    for (int i = 0; i < frame->stacktop; i++) {
-        Py_XDECREF(frame->localsplus[i]);
+    assert(fdata->stacktop >= 0);
+    for (int i = 0; i < fdata->stacktop; i++) {
+        Py_XDECREF(fdata->localsplus[i]);
     }
-    Py_XDECREF(frame->frame_obj);
-    Py_XDECREF(frame->locals);
-    Py_DECREF(frame->func);
-    Py_DECREF(frame->code);
+    Py_XDECREF(fdata->frame_obj);
+    Py_XDECREF(fdata->locals);
+    Py_DECREF(fdata->func);
+    Py_DECREF(fdata->code);
 }
 
 /* Consumes reference to func */
