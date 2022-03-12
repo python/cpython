@@ -1825,6 +1825,10 @@ _overlapped_Overlapped_WSARecvFrom_impl(OverlappedObject *self,
 /*[clinic end generated code: output=13832a2025b86860 input=1b2663fa130e0286]*/
 {
     PyObject *buf;
+    DWORD nread;
+    WSABUF wsabuf;
+    int ret;
+    DWORD err;
 
     if (self->type != TYPE_NONE) {
         PyErr_SetString(PyExc_ValueError, "operation already attempted");
@@ -1839,11 +1843,6 @@ _overlapped_Overlapped_WSARecvFrom_impl(OverlappedObject *self,
         return NULL;
     }
 
-    DWORD nread;
-    WSABUF wsabuf;
-    int ret;
-    DWORD err;
-
     wsabuf.buf = PyBytes_AS_STRING(buf);
     wsabuf.len = size;
 
@@ -1854,10 +1853,10 @@ _overlapped_Overlapped_WSARecvFrom_impl(OverlappedObject *self,
     self->read_from.address_length = sizeof(self->read_from.address);
 
     Py_BEGIN_ALLOW_THREADS
-        ret = WSARecvFrom((SOCKET)handle, &wsabuf, 1, &nread, &flags,
-            (SOCKADDR*)&self->read_from.address,
-            &self->read_from.address_length,
-            &self->overlapped, NULL);
+    ret = WSARecvFrom((SOCKET)handle, &wsabuf, 1, &nread, &flags,
+                      (SOCKADDR*)&self->read_from.address,
+                      &self->read_from.address_length,
+                      &self->overlapped, NULL);
     Py_END_ALLOW_THREADS
 
     self->error = err = (ret < 0 ? WSAGetLastError() : ERROR_SUCCESS);
@@ -1894,6 +1893,11 @@ _overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
                                             DWORD size, DWORD flags)
 /*[clinic end generated code: output=45fc5d883a11c4e5 input=8eacd80d50157434]*/
 {
+    DWORD nread;
+    WSABUF wsabuf;
+    int ret;
+    DWORD err;
+
     if (self->type != TYPE_NONE) {
         PyErr_SetString(PyExc_ValueError, "operation already attempted");
         return NULL;
@@ -1910,11 +1914,6 @@ _overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
     }
 #endif
 
-    DWORD nread;
-    WSABUF wsabuf;
-    int ret;
-    DWORD err;
-
     wsabuf.buf = self->read_from_into.user_buffer.buf;
     wsabuf.len = size;
 
@@ -1924,10 +1923,10 @@ _overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
     self->read_from_into.address_length = sizeof(self->read_from_into.address);
 
     Py_BEGIN_ALLOW_THREADS
-        ret = WSARecvFrom((SOCKET)handle, &wsabuf, 1, &nread, &flags,
-            (SOCKADDR*)&self->read_from_into.address,
-            &self->read_from_into.address_length,
-            &self->overlapped, NULL);
+    ret = WSARecvFrom((SOCKET)handle, &wsabuf, 1, &nread, &flags,
+                      (SOCKADDR*)&self->read_from_into.address,
+                      &self->read_from_into.address_length,
+                      &self->overlapped, NULL);
     Py_END_ALLOW_THREADS
 
     self->error = err = (ret < 0 ? WSAGetLastError() : ERROR_SUCCESS);
