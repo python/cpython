@@ -570,8 +570,8 @@ As HTTP URLs have both behaviors by default, this is demonstrated in the
 following example:
 
    >>> from urllib.parse import urljoin
-   >>> urljoin('http://example.org/post/x', '../y')
-   'http://example.org/post/y'
+   >>> urljoin('http://example.org/post/x/', '../y/')
+   'http://example.org/post/y/'
 
 Additionally, if it is not indicated that a URL is sensitive to parameters
 (those specified after a semicolon in the path), then they'll be treated as part
@@ -592,9 +592,9 @@ behavior as that of HTTP:
 
    >>> from urllib.parse import urljoin, SchemeClass
    >>> urljoin(
-   ...     'my-protocol://example.org/post/x', '../y',
+   ...     'my-protocol://example.org/post/x/', '../y/',
    ...     classes=[SchemeClass.NETLOC, SchemeClass.RELATIVE])
-   'http://example.org/post/y'
+   'my-protocol://example.org/post/y/'
 
 For reference, the following three scheme classes are present (exactly
 corresponding to the uses lists):
