@@ -36,17 +36,6 @@
 
 /* -------------------------------------------------------------------- */
 
-#if 0
-static int memory = 0;
-#define ALLOC(size, comment)\
-do { memory += size; printf("%8d - %s\n", memory, comment); } while (0)
-#define RELEASE(size, comment)\
-do { memory -= size; printf("%8d - %s\n", memory, comment); } while (0)
-#else
-#define ALLOC(size, comment)
-#define RELEASE(size, comment)
-#endif
-
 /* compiler tweaks */
 #if defined(_MSC_VER)
 #define LOCAL(type) static __inline type __fastcall
@@ -301,7 +290,6 @@ create_new_element(PyObject* tag, PyObject* attrib)
 
     self->weakreflist = NULL;
 
-    ALLOC(sizeof(ElementObject), "create element");
     PyObject_GC_Track(self);
 
     if (attrib != NULL && !is_empty_dict(attrib)) {
@@ -676,7 +664,6 @@ element_dealloc(ElementObject* self)
     */
     element_gc_clear(self);
 
-    RELEASE(sizeof(ElementObject), "destroy element");
     Py_TYPE(self)->tp_free((PyObject *)self);
     Py_TRASHCAN_END
 }

@@ -7933,7 +7933,7 @@ PyInit__socket(void)
 #ifdef  IPPROTO_VRRP
     PyModule_AddIntMacro(m, IPPROTO_VRRP);
 #endif
-#if defined(IPPROTO_SCTP) && !defined(__EMSCRIPTEN__)
+#ifdef  IPPROTO_SCTP
     PyModule_AddIntMacro(m, IPPROTO_SCTP);
 #endif
 #ifdef  IPPROTO_BIP
