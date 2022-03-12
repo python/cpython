@@ -950,7 +950,7 @@ class TypeVarTuple(_Final, _Immutable, _root=True):
         return self._name
 
     def __typing_subst__(self, arg):
-        raise AssertionError
+        raise TypeError("Substitution of bare TypeVarTuple is not supported")
 
 
 class ParamSpecArgs(_Final, _Immutable, _root=True):

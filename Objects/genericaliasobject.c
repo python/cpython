@@ -341,7 +341,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     if (varparam < nparams) {
         if (nitems < nparams - 1) {
             return PyErr_Format(PyExc_TypeError,
-                                "!Too few arguments for %R",
+                                "Too few arguments for %R",
                                 self);
         }
     }
@@ -379,7 +379,13 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         if (subst) {
             Py_ssize_t iparam = tuple_index(parameters, nparams, arg);
             assert(iparam >= 0);
-            assert(iparam != varparam);
+            if (iparam == varparam) {
+                Py_DECREF(subst);
+                Py_DECREF(newargs);
+                PyErr_SetString(PyExc_TypeError,
+                        "Substitution of bare TypeVarTuple is not supported");
+                return NULL;
+            }
             if (iparam > varparam) {
                 iparam += nitems - nparams;
             }
