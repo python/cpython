@@ -592,8 +592,8 @@ behavior as that of HTTP:
 
    >>> from urllib.parse import urljoin, SchemeClass
    >>> urljoin(
-           'my-protocol://example.org/post/x', '../y',
-           classes=[SchemeClass.NETLOC, SchemeClass.RELATIVE])
+   ...     'my-protocol://example.org/post/x', '../y',
+   ...     classes=[SchemeClass.NETLOC, SchemeClass.RELATIVE])
    'http://example.org/post/y'
 
 For reference, the following three scheme classes are present (exactly
