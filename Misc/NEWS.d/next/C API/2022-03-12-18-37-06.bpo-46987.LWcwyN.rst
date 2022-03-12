@@ -1,0 +1,1 @@
+Remove _PySys_GetObjectId and  _PySys_GetObjectId. Patch by Dong-hee Na.
