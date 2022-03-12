@@ -1989,7 +1989,9 @@ PyImport_Import(PyObject *module_name)
     }
     else {
         if (PyErr_Occurred()) {
-            goto err;
+            // It's legitimate to have no Python frame and hence no globals
+            // if importing from C (e.g. during startup, or when embedded)
+            PyErr_Clear();
         }
         /* No globals -- use standard builtins, and fake globals */
         builtins = PyImport_ImportModuleLevel("builtins",
