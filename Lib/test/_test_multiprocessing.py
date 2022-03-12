@@ -268,11 +268,6 @@ class _TestProcess(BaseTestCase):
             p.start()
             p.join()
             self.assertEqual(p.exitcode, 0)
-        self.set_executable('')
-        p = self.Process()
-        p.start()
-        p.join()
-        self.assertNotEqual(p.exitcode, 0)
 
     def test_args_argument(self):
         # bpo-45735: Using list or tuple as *args* in constructor could
