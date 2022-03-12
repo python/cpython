@@ -1988,6 +1988,9 @@ PyImport_Import(PyObject *module_name)
             goto err;
     }
     else {
+        if (PyErr_Occurred()) {
+            goto err;
+        }
         /* No globals -- use standard builtins, and fake globals */
         builtins = PyImport_ImportModuleLevel("builtins",
                                               NULL, NULL, NULL, 0);
