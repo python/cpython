@@ -1244,8 +1244,11 @@ _Py_Specialize_BinarySubscr(
             _Py_SET_OPCODE(*instr, BINARY_SUBSCR_LIST_INT);
             goto success;
         }
-        SPECIALIZATION_FAIL(BINARY_SUBSCR,
-            PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_LIST_SLICE : SPEC_FAIL_OTHER);
+        if (PySlice_Check(sub)) {
+            _Py_SET_OPCODE(*instr, BINARY_SUBSCR_LIST_SLICE);
+            goto success;
+        }
+        SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OTHER);
         goto fail;
     }
     if (container_type == &PyTuple_Type) {

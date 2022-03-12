@@ -2912,6 +2912,44 @@ static PySequenceMethods list_as_sequence = {
     (ssizeargfunc)list_inplace_repeat,          /* sq_inplace_repeat */
 };
 
+PyObject *
+_PyList_Subscript_Slice(PyListObject *self, PyObject *item)
+{
+    Py_ssize_t start, stop, step, slicelength, i;
+    size_t cur;
+    PyObject* result;
+    PyObject* it;
+    PyObject **src, **dest;
+
+    if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
+        return NULL;
+    }
+    slicelength = PySlice_AdjustIndices(Py_SIZE(self), &start, &stop,
+                                        step);
+
+    if (slicelength <= 0) {
+        return PyList_New(0);
+    }
+    else if (step == 1) {
+        return list_slice(self, start, stop);
+    }
+    else {
+        result = list_new_prealloc(slicelength);
+        if (!result) return NULL;
+
+        src = self->ob_item;
+        dest = ((PyListObject *)result)->ob_item;
+        for (cur = start, i = 0; i < slicelength;
+                cur += (size_t)step, i++) {
+            it = src[cur];
+            Py_INCREF(it);
+            dest[i] = it;
+        }
+        Py_SET_SIZE(result, slicelength);
+        return result;
+    }
+}
+
 static PyObject *
 list_subscript(PyListObject* self, PyObject* item)
 {
@@ -2925,39 +2963,7 @@ list_subscript(PyListObject* self, PyObject* item)
         return list_item(self, i);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelength, i;
-        size_t cur;
-        PyObject* result;
-        PyObject* it;
-        PyObject **src, **dest;
-
-        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
-            return NULL;
-        }
-        slicelength = PySlice_AdjustIndices(Py_SIZE(self), &start, &stop,
-                                            step);
-
-        if (slicelength <= 0) {
-            return PyList_New(0);
-        }
-        else if (step == 1) {
-            return list_slice(self, start, stop);
-        }
-        else {
-            result = list_new_prealloc(slicelength);
-            if (!result) return NULL;
-
-            src = self->ob_item;
-            dest = ((PyListObject *)result)->ob_item;
-            for (cur = start, i = 0; i < slicelength;
-                 cur += (size_t)step, i++) {
-                it = src[cur];
-                Py_INCREF(it);
-                dest[i] = it;
-            }
-            Py_SET_SIZE(result, slicelength);
-            return result;
-        }
+        return _PyList_Subscript_Slice(self, item);
     }
     else {
         PyErr_Format(PyExc_TypeError,

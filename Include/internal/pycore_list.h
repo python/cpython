@@ -37,6 +37,7 @@ struct _Py_list_state {
 
 #define _PyList_ITEMS(op) (_PyList_CAST(op)->ob_item)
 
+extern PyObject *_PyList_Subscript_Slice(PyListObject *self, PyObject *item);
 
 #ifdef __cplusplus
 }

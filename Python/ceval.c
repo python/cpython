@@ -2150,6 +2150,24 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
+        TARGET(BINARY_SUBSCR_LIST_SLICE) {
+            assert(cframe.use_tracing == 0);
+            PyObject *sub = TOP();
+            PyObject *list = SECOND();
+            DEOPT_IF(!PySlice_Check(sub), BINARY_SUBSCR);
+            DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
+
+            PyObject *res = _PyList_Subscript_Slice((PyListObject *)list, sub);
+            assert(res != NULL);
+            Py_INCREF(res);
+            STACK_SHRINK(1);
+            Py_DECREF(sub);
+            SET_TOP(res);
+            Py_DECREF(list);
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            NOTRACE_DISPATCH();
+        }
+
         TARGET(BINARY_SUBSCR_TUPLE_INT) {
             assert(cframe.use_tracing == 0);
             PyObject *sub = TOP();
