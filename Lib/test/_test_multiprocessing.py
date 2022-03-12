@@ -247,6 +247,24 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(current.ident, os.getpid())
         self.assertEqual(current.exitcode, None)
 
+    def test_set_executable(self):
+        paths = [
+            sys.executable,               # str
+            sys.executable.encode(),      # bytes
+            pathlib.Path(sys.executable)  # os.PathLike
+        ]
+        for path in paths:
+            multiprocessing.set_executable(path)
+            p = multiprocessing.Process()
+            p.start()
+            p.join()
+            self.assertEqual(p.exitcode, 0)
+        multiprocessing.set_executable('')
+        p = multiprocessing.Process()
+        p.start()
+        p.join()
+        self.assertNotEqual(p.exitcode, 0)
+
     def test_daemon_argument(self):
         if self.TYPE == "threads":
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
