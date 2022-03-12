@@ -2116,7 +2116,7 @@ Functions and decorators
 
 .. function:: assert_type(val, typ, /)
 
-   Assert (to the type checker) that *value* has an inferred type of *type*.
+   Assert (to the type checker) that *val* has an inferred type of *typ*.
 
    When the type checker encounters a call to ``assert_type()``, it
    emits an error if the value is not of the specified type::
