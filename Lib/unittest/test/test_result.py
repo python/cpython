@@ -220,6 +220,61 @@ class Test_TestResult(unittest.TestCase):
         self.assertIs(test_case, test)
         self.assertIsInstance(formatted_exc, str)
 
+    def test_addFailure_filter_traceback_frames(self):
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                pass
+
+        test = Foo('test_1')
+        def get_exc_info():
+            try:
+                test.fail("foo")
+            except:
+                return sys.exc_info()
+
+        exc_info_tuple = get_exc_info()
+
+        full_exc = traceback.format_exception(*exc_info_tuple)
+
+        result = unittest.TestResult()
+        result.startTest(test)
+        result.addFailure(test, exc_info_tuple)
+        result.stopTest(test)
+
+        formatted_exc = result.failures[0][1]
+        dropped = [l for l in full_exc if l not in formatted_exc]
+        self.assertEqual(len(dropped), 1)
+        self.assertIn("raise self.failureException(msg)", dropped[0])
+
+    def test_addFailure_filter_traceback_frames_context(self):
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                pass
+
+        test = Foo('test_1')
+        def get_exc_info():
+            try:
+                try:
+                    test.fail("foo")
+                except:
+                    raise ValueError(42)
+            except:
+                return sys.exc_info()
+
+        exc_info_tuple = get_exc_info()
+
+        full_exc = traceback.format_exception(*exc_info_tuple)
+
+        result = unittest.TestResult()
+        result.startTest(test)
+        result.addFailure(test, exc_info_tuple)
+        result.stopTest(test)
+
+        formatted_exc = result.failures[0][1]
+        dropped = [l for l in full_exc if l not in formatted_exc]
+        self.assertEqual(len(dropped), 1)
+        self.assertIn("raise self.failureException(msg)", dropped[0])
+
     # "addError(test, err)"
     # ...
     # "Called when the test case test raises an unexpected exception err

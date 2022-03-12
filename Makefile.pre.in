@@ -1196,7 +1196,7 @@ regen-all: regen-opcode regen-opcode-targets regen-typeslots \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
 	regen-global-objects
 	@echo
-	@echo "Note: make regen-stdlib-module-names and make autoconf should be run manually"
+	@echo "Note: make regen-stdlib-module-names and make regen-configure should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -1869,6 +1869,7 @@ LIBSUBDIRS=	asyncio \
 		site-packages \
 		sqlite3 \
 		tkinter \
+		tomllib \
 		turtledemo \
 		unittest \
 		urllib \
@@ -2293,10 +2294,16 @@ recheck:
 # Regenerate configure and pyconfig.h.in
 .PHONY: autoconf
 autoconf:
-	# Regenerate the configure script from configure.ac using autoconf
-	(cd $(srcdir); autoconf -Wall)
-	# Regenerate pyconfig.h.in from configure.ac using autoheader
-	(cd $(srcdir); autoheader -Wall)
+	(cd $(srcdir); autoreconf -ivf -Werror)
+
+.PHONY: regen-configure
+regen-configure:
+	@if command -v podman >/dev/null; then RUNTIME="podman"; else RUNTIME="docker"; fi; \
+	if ! command -v $$RUNTIME; then echo "$@ needs either Podman or Docker container runtime." >&2; exit 1; fi; \
+	if command -v selinuxenabled >/dev/null && selinuxenabled; then OPT=":Z"; fi; \
+	CMD="$$RUNTIME run --rm --pull=always -v $(abs_srcdir):/src$$OPT quay.io/tiran/cpython_autoconf:269"; \
+	echo $$CMD; \
+	$$CMD || exit $?
 
 # Create a tags file for vi
 tags::
