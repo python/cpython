@@ -822,7 +822,6 @@ extern "C" {
                 INIT_ID(__subclasshook__), \
                 INIT_ID(__truediv__), \
                 INIT_ID(__trunc__), \
-                INIT_ID(__typing_subst__), \
                 INIT_ID(__warningregistry__), \
                 INIT_ID(__weakref__), \
                 INIT_ID(__xor__), \
