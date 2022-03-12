@@ -47,7 +47,7 @@ struct _frame {
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
     char f_owns_frame;          /* This frame owns the frame */
     /* The frame data, if this frame object owns the frame */
-    PyObject *_f_frame_data[1];
+    struct _Py_framedata *_f_owned_fdata[1];
 };
 
 extern PyFrameObject* _PyFrame_New_NoTrack(PyCodeObject *code);
@@ -60,7 +60,8 @@ extern void _PyFrame_Fini(PyInterpreterState *interp);
 /* other API */
 
 /* These values are chosen so that the inline functions below all
- * compare fdata->state to zero.
+ * compare fdata->state to zero while keeping the property that most
+ * state transitions move to a higher value frame state.
  */
 enum _framestate {
     FRAME_CREATED = -2,

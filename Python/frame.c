@@ -59,8 +59,8 @@ take_ownership(PyFrameObject *f, _Py_framedata *fdata)
 {
     assert(f->f_owns_frame == 0);
     Py_ssize_t size = ((char*)&fdata->localsplus[fdata->stacktop]) - (char *)fdata;
-    memcpy((_Py_framedata *)f->_f_frame_data, fdata, size);
-    fdata = (_Py_framedata *)f->_f_frame_data;
+    memcpy((_Py_framedata *)f->_f_owned_fdata, fdata, size);
+    fdata = (_Py_framedata *)f->_f_owned_fdata;
     f->f_owns_frame = 1;
     f->f_fdata = fdata;
     assert(f->f_back == NULL);
