@@ -377,7 +377,7 @@ class TypeVarTests(BaseTestCase):
         T = TypeVar('T')
         P = ParamSpec("P")
         bad_args = (
-            42, ..., [int], (), (int, str), Union,
+            (), (int, str), Union,
             Generic, Generic[T], Protocol, Protocol[T],
             Final, Final[int], ClassVar, ClassVar[int],
         )
