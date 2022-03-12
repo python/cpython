@@ -1437,7 +1437,7 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
             assert(tp->tp_version_tag != 0);
             write_u32(cache->type_version, tp->tp_version_tag);
             ((PyHeapTypeObject *)tp)->_spec_cache.init = descriptor;
-            *instr = _Py_MAKECODEUNIT(PRECALL_PY_CLASS, _Py_OPARG(*instr));
+            _Py_SET_OPCODE(*instr, PRECALL_PY_CLASS);
             return 0;
         }
         SPECIALIZATION_FAIL(PRECALL, SPEC_FAIL_CALL_PYTHON_CLASS_NON_PY_INIT);
