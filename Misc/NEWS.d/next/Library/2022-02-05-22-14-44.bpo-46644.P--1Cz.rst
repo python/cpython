@@ -1,0 +1,1 @@
+No longer require valid typeforms to be callable. This allows :data:`typing.Annotated` to wrap :data:`typing.ParamSpecArgs` and :data:`dataclasses.InitVar`. Patch by Gregory Beauregard.

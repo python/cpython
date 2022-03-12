@@ -345,7 +345,7 @@ class TypeVarTests(BaseTestCase):
 
     def test_bound_errors(self):
         with self.assertRaises(TypeError):
-            TypeVar('X', bound=42)
+            TypeVar('X', bound=Union)
         with self.assertRaises(TypeError):
             TypeVar('X', str, float, bound=Employee)
 
@@ -2591,9 +2591,6 @@ class GenericTests(BaseTestCase):
         class Base: ...
         class Derived(Base): ...
         self.assertEqual(Union[T, Base][Union[Base, Derived]], Union[Base, Derived])
-        with self.assertRaises(TypeError):
-            Union[T, int][1]
-
         self.assertEqual(Callable[[T], T][KT], Callable[[KT], KT])
         self.assertEqual(Callable[..., List[T]][int], Callable[..., List[int]])
 
@@ -3137,8 +3134,6 @@ class ClassVarTests(BaseTestCase):
 
     def test_basics(self):
         with self.assertRaises(TypeError):
-            ClassVar[1]
-        with self.assertRaises(TypeError):
             ClassVar[int, str]
         with self.assertRaises(TypeError):
             ClassVar[int][str]
@@ -3176,8 +3171,6 @@ class FinalTests(BaseTestCase):
 
     def test_basics(self):
         Final[int]  # OK
-        with self.assertRaises(TypeError):
-            Final[1]
         with self.assertRaises(TypeError):
             Final[int, str]
         with self.assertRaises(TypeError):
@@ -3589,14 +3582,6 @@ class ForwardRefTests(BaseTestCase):
             pass
 
         with self.assertRaises(SyntaxError):
-            get_type_hints(foo)
-
-    def test_type_error(self):
-
-        def foo(a: Tuple['42']):
-            pass
-
-        with self.assertRaises(TypeError):
             get_type_hints(foo)
 
     def test_name_error(self):
@@ -5011,8 +4996,6 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(LocalEmployee.__annotations__, dict(name=str, age=int))
         with self.assertRaises(TypeError):
             NamedTuple('Name', [('x', int)], y=str)
-        with self.assertRaises(TypeError):
-            NamedTuple('Name', x=1, y='a')
 
     def test_namedtuple_special_keyword_names(self):
         NT = NamedTuple("NT", cls=type, self=object, typename=str, fields=list)
@@ -5048,8 +5031,6 @@ class NamedTupleTests(BaseTestCase):
             NamedTuple('Emp', [('_name', str)])
         with self.assertRaises(TypeError):
             NamedTuple(typename='Emp', name=str, id=int)
-        with self.assertRaises(TypeError):
-            NamedTuple('Emp', fields=[('name', str), ('id', int)])
 
     def test_copy_and_pickle(self):
         global Emp  # pickle wants to reference the class by name
@@ -5124,7 +5105,6 @@ class TypedDictTests(BaseTestCase):
             TypedDict()
         with self.assertRaises(TypeError):
             TypedDict('Emp', [('name', str)], None)
-
         with self.assertRaises(TypeError):
             TypedDict(_typename='Emp', name=str, id=int)
 
@@ -5138,13 +5118,6 @@ class TypedDictTests(BaseTestCase):
             isinstance(jim, Emp)
         with self.assertRaises(TypeError):
             issubclass(dict, Emp)
-        # We raise a DeprecationWarning for the keyword syntax
-        # before the TypeError.
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(TypeError):
-                TypedDict('Hi', x=1)
-        with self.assertRaises(TypeError):
-            TypedDict('Hi', [('x', int), ('y', 1)])
         with self.assertRaises(TypeError):
             TypedDict('Hi', [('x', int)], y=int)
 
@@ -5915,6 +5888,9 @@ class TypeGuardTests(BaseTestCase):
 
         def foo(arg) -> TypeGuard[int]: ...
         self.assertEqual(gth(foo), {'return': TypeGuard[int]})
+
+        with self.assertRaises(TypeError):
+            TypeGuard[int, str]
 
     def test_repr(self):
         self.assertEqual(repr(TypeGuard), 'typing.TypeGuard')
