@@ -28,6 +28,7 @@ extern "C" {
  * Local variable and function argument naming conventions:
  *
  *   * "frame", "f", and "frameobj" are used for full frame objects
+ *     * Exception: "current_frame" in the thread state cframe struct is a frame data struct
  *   * "fdata" is used for frame data structs
  *
  * Function/macro naming conventions:
