@@ -917,6 +917,9 @@ Modules/Setup.local:
 	@# Create empty Setup.local when file was deleted by user
 	echo "# Edit this file for local setup changes" > $@
 
+Modules/Setup.bootstrap: $(srcdir)/Modules/Setup.bootstrap.in config.status
+	./config.status $@
+
 Modules/Setup.stdlib: $(srcdir)/Modules/Setup.stdlib.in config.status
 	./config.status $@
 
@@ -925,13 +928,13 @@ Makefile Modules/config.c: Makefile.pre \
 				$(MAKESETUP) \
 				$(srcdir)/Modules/Setup \
 				Modules/Setup.local \
-				$(srcdir)/Modules/Setup.bootstrap \
+				Modules/Setup.bootstrap \
 				Modules/Setup.stdlib
 	$(SHELL) $(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
 				-s Modules \
 				Modules/Setup.local \
 				@MODULES_SETUP_STDLIB@ \
-				$(srcdir)/Modules/Setup.bootstrap \
+				Modules/Setup.bootstrap \
 				$(srcdir)/Modules/Setup
 	@mv config.c Modules
 	@echo "The Makefile was updated, you may need to re-run make."
@@ -1176,8 +1179,8 @@ regen-importlib: regen-frozen
 # Global objects
 
 .PHONY: regen-global-objects
-regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py $(FREEZE_MODULE_DEPS)
-	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/generate_global_objects.py
+regen-global-objects: regen-deepfreeze $(srcdir)/Tools/scripts/generate_global_objects.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
 
 ############################################################################
 # ABI
@@ -1193,7 +1196,7 @@ regen-all: regen-opcode regen-opcode-targets regen-typeslots \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
 	regen-global-objects
 	@echo
-	@echo "Note: make regen-stdlib-module-names and make autoconf should be run manually"
+	@echo "Note: make regen-stdlib-module-names and make regen-configure should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -1439,7 +1442,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/abstract.h \
 		$(srcdir)/Include/bltinmodule.h \
 		$(srcdir)/Include/boolobject.h \
-		$(srcdir)/Include/buffer.h \
 		$(srcdir)/Include/bytearrayobject.h \
 		$(srcdir)/Include/bytesobject.h \
 		$(srcdir)/Include/ceval.h \
@@ -1472,6 +1474,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
+		$(srcdir)/Include/pybuffer.h \
 		$(srcdir)/Include/pycapsule.h \
 		$(srcdir)/Include/pydtrace.h \
 		$(srcdir)/Include/pyerrors.h \
@@ -1488,6 +1491,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pythonrun.h \
 		$(srcdir)/Include/pythread.h \
+		$(srcdir)/Include/pytypedefs.h \
 		$(srcdir)/Include/rangeobject.h \
 		$(srcdir)/Include/setobject.h \
 		$(srcdir)/Include/sliceobject.h \
@@ -1865,6 +1869,7 @@ LIBSUBDIRS=	asyncio \
 		site-packages \
 		sqlite3 \
 		tkinter \
+		tomllib \
 		turtledemo \
 		unittest \
 		urllib \
@@ -2145,7 +2150,7 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 	$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(DESTDIR)$(LIBPL)/config.c.in
 	$(INSTALL_DATA) Makefile $(DESTDIR)$(LIBPL)/Makefile
 	$(INSTALL_DATA) $(srcdir)/Modules/Setup $(DESTDIR)$(LIBPL)/Setup
-	$(INSTALL_DATA) $(srcdir)/Modules/Setup.bootstrap $(DESTDIR)$(LIBPL)/Setup.bootstrap
+	$(INSTALL_DATA) Modules/Setup.bootstrap $(DESTDIR)$(LIBPL)/Setup.bootstrap
 	$(INSTALL_DATA) Modules/Setup.stdlib $(DESTDIR)$(LIBPL)/Setup.stdlib
 	$(INSTALL_DATA) Modules/Setup.local $(DESTDIR)$(LIBPL)/Setup.local
 	$(INSTALL_DATA) Misc/python.pc $(DESTDIR)$(LIBPC)/python-$(VERSION).pc
@@ -2289,10 +2294,16 @@ recheck:
 # Regenerate configure and pyconfig.h.in
 .PHONY: autoconf
 autoconf:
-	# Regenerate the configure script from configure.ac using autoconf
-	(cd $(srcdir); autoconf -Wall)
-	# Regenerate pyconfig.h.in from configure.ac using autoheader
-	(cd $(srcdir); autoheader -Wall)
+	(cd $(srcdir); autoreconf -ivf -Werror)
+
+.PHONY: regen-configure
+regen-configure:
+	@if command -v podman >/dev/null; then RUNTIME="podman"; else RUNTIME="docker"; fi; \
+	if ! command -v $$RUNTIME; then echo "$@ needs either Podman or Docker container runtime." >&2; exit 1; fi; \
+	if command -v selinuxenabled >/dev/null && selinuxenabled; then OPT=":Z"; fi; \
+	CMD="$$RUNTIME run --rm --pull=always -v $(abs_srcdir):/src$$OPT quay.io/tiran/cpython_autoconf:269"; \
+	echo $$CMD; \
+	$$CMD || exit $?
 
 # Create a tags file for vi
 tags::
@@ -2381,7 +2392,8 @@ distclean: clobber
 	    if test "$$file" != "$(srcdir)/Lib/test/data/README"; then rm "$$file"; fi; \
 	done
 	-rm -f core Makefile Makefile.pre config.status Modules/Setup.local \
-		Modules/Setup.stdlib Modules/ld_so_aix Modules/python.exp Misc/python.pc \
+	    Modules/Setup.bootstrap Modules/Setup.stdlib \
+		Modules/ld_so_aix Modules/python.exp Misc/python.pc \
 		Misc/python-embed.pc Misc/python-config.sh
 	-rm -f python*-gdb.py
 	# Issue #28258: set LC_ALL to avoid issues with Estonian locale.
@@ -2435,9 +2447,6 @@ patchcheck: @DEF_MAKE_RULE@
 
 check-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --all $(srcdir)/Misc/stable_abi.txt
-
-check-global-objects: all
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/generate_global_objects.py --check
 
 .PHONY: update-config
 update-config:

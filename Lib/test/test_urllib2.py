@@ -164,7 +164,6 @@ class RequestHdrsTests(unittest.TestCase):
         self.assertEqual(find_user_pass("Some Realm",
                                         "http://example.com/spam"),
                          ('joe', 'password'))
-
         self.assertEqual(find_user_pass("Some Realm",
                                         "http://example.com/spam/spam"),
                          ('joe', 'password'))
@@ -173,12 +172,29 @@ class RequestHdrsTests(unittest.TestCase):
 
         add("c", "http://example.com/foo", "foo", "ni")
         add("c", "http://example.com/bar", "bar", "nini")
+        add("c", "http://example.com/foo/bar", "foobar", "nibar")
 
         self.assertEqual(find_user_pass("c", "http://example.com/foo"),
                          ('foo', 'ni'))
-
         self.assertEqual(find_user_pass("c", "http://example.com/bar"),
                          ('bar', 'nini'))
+        self.assertEqual(find_user_pass("c", "http://example.com/foo/"),
+                         ('foo', 'ni'))
+        self.assertEqual(find_user_pass("c", "http://example.com/foo/bar"),
+                         ('foo', 'ni'))
+        self.assertEqual(find_user_pass("c", "http://example.com/foo/baz"),
+                         ('foo', 'ni'))
+        self.assertEqual(find_user_pass("c", "http://example.com/foobar"),
+                         (None, None))
+
+        add("c", "http://example.com/baz/", "baz", "ninini")
+
+        self.assertEqual(find_user_pass("c", "http://example.com/baz"),
+                         (None, None))
+        self.assertEqual(find_user_pass("c", "http://example.com/baz/"),
+                         ('baz', 'ninini'))
+        self.assertEqual(find_user_pass("c", "http://example.com/baz/bar"),
+                         ('baz', 'ninini'))
 
         # For the same path, newer password should be considered.
 
@@ -1658,8 +1674,9 @@ class HandlerTests(unittest.TestCase):
         auth_prior_handler.add_password(
             None, request_url, user, password, is_authenticated=True)
 
-        is_auth = pwd_manager.is_authenticated(request_url)
-        self.assertTrue(is_auth)
+        self.assertTrue(pwd_manager.is_authenticated(request_url))
+        self.assertTrue(pwd_manager.is_authenticated(request_url + '/nested'))
+        self.assertFalse(pwd_manager.is_authenticated(request_url + 'plain'))
 
         opener = OpenerDirector()
         opener.add_handler(auth_prior_handler)

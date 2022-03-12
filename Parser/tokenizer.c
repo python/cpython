@@ -1253,6 +1253,9 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind)
     else if (c == 'o') {
         r = lookahead(tok, "r");
     }
+    else if (c == 'n') {
+        r = lookahead(tok, "ot");
+    }
     if (r) {
         tok_backup(tok, c);
         if (parser_warn(tok, "invalid %s literal", kind)) {

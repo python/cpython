@@ -157,13 +157,7 @@ static PyMemberDef method_memberlist[] = {
 static PyObject *
 method_get_doc(PyMethodObject *im, void *context)
 {
-    static PyObject *docstr;
-    if (docstr == NULL) {
-        docstr= PyUnicode_InternFromString("__doc__");
-        if (docstr == NULL)
-            return NULL;
-    }
-    return PyObject_GetAttr(im->im_func, docstr);
+    return PyObject_GetAttr(im->im_func, &_Py_ID(__doc__));
 }
 
 static PyGetSetDef method_getset[] = {
@@ -405,13 +399,8 @@ static PyMemberDef instancemethod_memberlist[] = {
 static PyObject *
 instancemethod_get_doc(PyObject *self, void *context)
 {
-    static PyObject *docstr;
-    if (docstr == NULL) {
-        docstr = PyUnicode_InternFromString("__doc__");
-        if (docstr == NULL)
-            return NULL;
-    }
-    return PyObject_GetAttr(PyInstanceMethod_GET_FUNCTION(self), docstr);
+    return PyObject_GetAttr(PyInstanceMethod_GET_FUNCTION(self),
+                            &_Py_ID(__doc__));
 }
 
 static PyGetSetDef instancemethod_getset[] = {
