@@ -1,5 +1,5 @@
-#ifndef Py_INTERNAL_FRAMEDATA_H
-#define Py_INTERNAL_FRAMEDATA_H
+#ifndef Py_INTERNAL_FRAME_H
+#define Py_INTERNAL_FRAME_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -251,4 +251,4 @@ _PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_INTERNAL_FRAMEDATA_H */
+#endif /* !Py_INTERNAL_FRAME_H */
