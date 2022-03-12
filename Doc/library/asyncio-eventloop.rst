@@ -939,7 +939,7 @@ convenient.
    Asynchronous version of
    :meth:`socket.recvfrom_into() <socket.socket.recvfrom_into>`.
 
-   Return a tuple of (received data, remote address).
+   Return a tuple of (number of bytes received, remote address).
 
    *sock* must be a non-blocking socket.
 
