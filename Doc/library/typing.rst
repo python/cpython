@@ -2128,6 +2128,16 @@ Functions and decorators
    At runtime this returns the first argument unchanged and otherwise
    does nothing.
 
+   This function is useful for ensuring the type checker's understanding of a
+   script is in line with the developer's intentions::
+
+       def complex_function(arg: object):
+           # Do some complex type-narrowing logic,
+           # after which we hope the inferred type will be `int`
+           ...
+           # Test whether the type checker correctly understands our function
+           assert_type(arg, int)
+
    .. versionadded:: 3.11
 
 .. function:: assert_never(arg, /)
