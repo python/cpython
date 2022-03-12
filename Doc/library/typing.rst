@@ -1469,9 +1469,6 @@ These are not used in annotations. They are building blocks for declaring types.
 
       assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
-   The type info for introspection can be accessed via ``Point2D.__annotations__``,
-   ``Point2D.__total__``, ``Point2D.__required_keys__``, and
-   ``Point2D.__optional_keys__``.
    To allow using this feature with older versions of Python that do not
    support :pep:`526`, ``TypedDict`` supports two additional equivalent
    syntactic forms:
@@ -1488,6 +1485,18 @@ These are not used in annotations. They are building blocks for declaring types.
       The keyword-argument syntax is deprecated in 3.11 and will be removed
       in 3.13. It may also be unsupported by static type checkers.
 
+   The functional syntax should also be used when any of the keys are not valid
+   :ref:`identifiers`, for example because they are keywords or contain hyphens.
+   Example::
+
+      # raises SyntaxError
+      class Point2D(TypedDict):
+          in: int  # 'in' is a keyword
+          x-y: int  # name with hyphens
+
+      # OK, functional syntax
+      Point2D = TypedDict('Point2D', {'in': int, 'x-y': int})
+
    By default, all keys must be present in a ``TypedDict``. It is possible to
    override this by specifying totality.
    Usage::
@@ -1503,6 +1512,82 @@ These are not used in annotations. They are building blocks for declaring types.
    omitted. A type checker is only expected to support a literal ``False`` or
    ``True`` as the value of the ``total`` argument. ``True`` is the default,
    and makes all items defined in the class body required.
+
+   It is possible for a ``TypedDict`` type to inherit from one or more other ``TypedDict`` types
+   using the class-based syntax.
+   Usage::
+
+      class Point3D(Point2D):
+          z: int
+
+   ``Point3D`` has three items: ``x``, ``y`` and ``z``. It is equivalent to this
+   definition::
+
+      class Point3D(TypedDict):
+          x: int
+          y: int
+          z: int
+
+   A ``TypedDict`` cannot inherit from a non-TypedDict class,
+   notably including :class:`Generic`. For example::
+
+      class X(TypedDict):
+          x: int
+
+      class Y(TypedDict):
+          y: int
+
+      class Z(object): pass  # A non-TypedDict class
+
+      class XY(X, Y): pass  # OK
+
+      class XZ(X, Z): pass  # raises TypeError
+
+      T = TypeVar('T')
+      class XT(X, Generic[T]): pass  # raises TypeError
+
+   A ``TypedDict`` can be introspected via annotations dicts
+   (see :ref:`annotations-howto` for more information on annotations best practices),
+   :attr:`__total__`, :attr:`__required_keys__`, and :attr:`__optional_keys__`.
+
+   .. attribute:: __total__
+
+      ``Point2D.__total__`` gives the value of the ``total`` argument.
+      Example::
+
+         >>> from typing import TypedDict
+         >>> class Point2D(TypedDict): pass
+         >>> Point2D.__total__
+         True
+         >>> class Point2D(TypedDict, total=False): pass
+         >>> Point2D.__total__
+         False
+         >>> class Point3D(Point2D): pass
+         >>> Point3D.__total__
+         True
+
+   .. attribute:: __required_keys__
+   .. attribute:: __optional_keys__
+
+      ``Point2D.__required_keys__`` and ``Point2D.__optional_keys__`` return
+      :class:`frozenset` objects containing required and non-required keys, respectively.
+      Currently the only way to declare both required and non-required keys in the
+      same ``TypedDict`` is mixed inheritance, declaring a ``TypedDict`` with one value
+      for the ``total`` argument and then inheriting it from another ``TypedDict`` with
+      a different value for ``total``.
+      Usage::
+
+         >>> class Point2D(TypedDict, total=False):
+         ...     x: int
+         ...     y: int
+         ...
+         >>> class Point3D(Point2D):
+         ...     z: int
+         ...
+         >>> Point3D.__required_keys__ == frozenset({'z'})
+         True
+         >>> Point3D.__optional_keys__ == frozenset({'x', 'y'})
+         True
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
