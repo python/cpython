@@ -65,10 +65,15 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
-PEP-654: Exception Groups and ``except*``.
-(Contributed by Irit Katriel in :issue:`45292`.)
-PEP-673: ``Self`` Type.
-(Contributed by James Hilton-Balfe and Pradeep Kumar in :issue:`30924`.)
+New syntax features:
+
+* :pep:`654`: Exception Groups and ``except*``.
+  (Contributed by Irit Katriel in :issue:`45292`.)
+
+New typing features:
+
+* :pep:`673`: ``Self`` Type.
+  (Contributed by James Hilton-Balfe and Pradeep Kumar in :issue:`30924`.)
 
 New Features
 ============
@@ -214,7 +219,8 @@ Other CPython Implementation Changes
 New Modules
 ===========
 
-* None yet.
+* A new module, :mod:`tomllib`, was added for parsing TOML.
+  (Contributed by Taneli Hukkinen in :issue:`40059`.)
 
 
 Improved Modules
@@ -248,6 +254,7 @@ inspect
 
 math
 ----
+
 * Add :func:`math.exp2`: return 2 raised to the power of x.
   (Contributed by Gideon Mitchell in :issue:`45917`.)
 
@@ -259,6 +266,9 @@ math
   ``math.pow(0.0, -math.inf)`` and ``math.pow(-0.0, -math.inf)`` now return
   ``inf``. Previously they raised :exc:`ValueError`. (Contributed by Mark
   Dickinson in :issue:`44339`.)
+
+* The :data:`math.nan` value is now always available.
+  (Contributed by Victor Stinner in :issue:`46917`.)
 
 
 operator
@@ -275,6 +285,13 @@ os
 * On Windows, :func:`os.urandom` now uses ``BCryptGenRandom()``,
   instead of ``CryptGenRandom()`` which is deprecated.
   (Contributed by Dong-hee Na in :issue:`44611`.)
+
+
+shutil
+------
+
+* Add optional parameter *dir_fd* in :func:`shutil.rmtree`.
+  (Contributed by Serhiy Storchaka in :issue:`46245`.)
 
 
 socket
@@ -632,6 +649,9 @@ Build Changes
 * Building Python now requires a C11 compiler without optional C11 features.
   (Contributed by Victor Stinner in :issue:`46656`.)
 
+* Building Python now requires support of IEEE 754 floating point numbers.
+  (Contributed by Victor Stinner in :issue:`46917`.)
+
 * CPython can now be built with the ThinLTO option via ``--with-lto=thin``.
   (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
 
@@ -745,6 +765,12 @@ New Features
   in which a method was defined, in cases where this information is not
   available directly (via :c:type:`PyCMethod`).
   (Contributed by Petr Viktorin in :issue:`46613`.)
+
+* Add new functions to pack and unpack C double (serialize and deserialize):
+  :c:func:`PyFloat_Pack2`, :c:func:`PyFloat_Pack4`, :c:func:`PyFloat_Pack8`,
+  :c:func:`PyFloat_Unpack2`, :c:func:`PyFloat_Unpack4` and
+  :c:func:`PyFloat_Unpack8`.
+  (Contributed by Victor Stinner in :issue:`46906`.)
 
 
 Porting to Python 3.11
@@ -984,6 +1010,9 @@ Deprecated
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
   (Contributed by Victor Stinner in :issue:`44113`.)
+
+* Deprecate the ``ob_shash`` member of the :c:type:`PyBytesObject`. Use :c:func:`PyObject_Hash` instead.
+  (Contributed by Inada Naoki in :issue:`46864`.)
 
 Removed
 -------

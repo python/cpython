@@ -1,2 +1,0 @@
-Building Python now requires support for floating point Not-a-Number (NaN):
-remove the ``Py_NO_NAN`` macro. Patch by by Victor Stinner.

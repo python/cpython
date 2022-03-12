@@ -105,7 +105,10 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
         return PyErr_NoMemory();
     }
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     op->ob_shash = -1;
+_Py_COMP_DIAG_POP
     if (!use_calloc) {
         op->ob_sval[size] = '\0';
     }
@@ -169,7 +172,10 @@ PyBytes_FromString(const char *str)
         return PyErr_NoMemory();
     }
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     op->ob_shash = -1;
+_Py_COMP_DIAG_POP
     memcpy(op->ob_sval, str, size+1);
     return (PyObject *) op;
 }
@@ -1446,7 +1452,10 @@ bytes_repeat(PyBytesObject *a, Py_ssize_t n)
         return PyErr_NoMemory();
     }
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     op->ob_shash = -1;
+_Py_COMP_DIAG_POP
     op->ob_sval[size] = '\0';
     if (Py_SIZE(a) == 1 && n > 0) {
         memset(op->ob_sval, a->ob_sval[0] , n);
@@ -1562,11 +1571,14 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
 static Py_hash_t
 bytes_hash(PyBytesObject *a)
 {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (a->ob_shash == -1) {
         /* Can't fail */
         a->ob_shash = _Py_HashBytes(a->ob_sval, Py_SIZE(a));
     }
     return a->ob_shash;
+_Py_COMP_DIAG_POP
 }
 
 static PyObject*
@@ -2868,8 +2880,11 @@ bytes_subtype_new(PyTypeObject *type, PyObject *tmp)
     if (pnew != NULL) {
         memcpy(PyBytes_AS_STRING(pnew),
                   PyBytes_AS_STRING(tmp), n+1);
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         ((PyBytesObject *)pnew)->ob_shash =
             ((PyBytesObject *)tmp)->ob_shash;
+_Py_COMP_DIAG_POP
     }
     return pnew;
 }
@@ -3051,7 +3066,10 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
     sv = (PyBytesObject *) *pv;
     Py_SET_SIZE(sv, newsize);
     sv->ob_sval[newsize] = '\0';
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     sv->ob_shash = -1;          /* invalidate cached hash value */
+_Py_COMP_DIAG_POP
     return 0;
 error:
     *pv = 0;
