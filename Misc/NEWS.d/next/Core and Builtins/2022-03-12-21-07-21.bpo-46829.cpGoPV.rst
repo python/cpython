@@ -1,2 +1,2 @@
-Deprecate passing a message to :meth:`asyncio.Future.cancel` and
+Deprecate passing a message into :meth:`asyncio.Future.cancel` and
 :meth:`asyncio.Task.cancel`
