@@ -8933,7 +8933,7 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static int
-super_init_without_args(_Py_framedata *cframe, PyCodeObject *co,
+super_init_without_args(_Py_framedata *fdata, PyCodeObject *co,
                         PyTypeObject **type_p, PyObject **obj_p)
 {
     if (co->co_argcount == 0) {
@@ -8942,13 +8942,13 @@ super_init_without_args(_Py_framedata *cframe, PyCodeObject *co,
         return -1;
     }
 
-    assert(cframe->code->co_nlocalsplus > 0);
-    PyObject *firstarg = _PyFrame_GetLocalsArray(cframe)[0];
+    assert(fdata->code->co_nlocalsplus > 0);
+    PyObject *firstarg = _PyFrame_GetLocalsArray(fdata)[0];
     // The first argument might be a cell.
     if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
         // "firstarg" is a cell here unless (very unlikely) super()
         // was called from the C-API before the first MAKE_CELL op.
-        if (cframe->lasti >= 0) {
+        if (fdata->lasti >= 0) {
             assert(_Py_OPCODE(*co->co_firstinstr) == MAKE_CELL || _Py_OPCODE(*co->co_firstinstr) == COPY_FREE_VARS);
             assert(PyCell_Check(firstarg));
             firstarg = PyCell_GET(firstarg);
@@ -8968,7 +8968,7 @@ super_init_without_args(_Py_framedata *cframe, PyCodeObject *co,
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_Equal(name, &_Py_ID(__class__))) {
-            PyObject *cell = _PyFrame_GetLocalsArray(cframe)[i];
+            PyObject *cell = _PyFrame_GetLocalsArray(fdata)[i];
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): bad __class__ cell");
@@ -9026,13 +9026,13 @@ super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
         /* Call super(), without args -- fill in from __class__
            and first local variable on the stack. */
         PyThreadState *tstate = _PyThreadState_GET();
-        _Py_framedata *cframe = tstate->cframe->current_frame;
-        if (cframe == NULL) {
+        _Py_framedata *fdata = tstate->cframe->current_frame;
+        if (fdata == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no current frame");
             return -1;
         }
-        int res = super_init_without_args(cframe, cframe->code, &type, &obj);
+        int res = super_init_without_args(fdata, fdata->code, &type, &obj);
 
         if (res < 0) {
             return -1;
