@@ -985,7 +985,7 @@ class PyFrameObjectPtr(PyObjectPtr):
             return
         return self._fdata.print_traceback()
 
-class PyFramePtr:
+class _Py_framedataPtr:
 
     def __init__(self, gdbval):
         self._gdbval = gdbval
@@ -1045,7 +1045,7 @@ class PyFramePtr:
         return self._f_special("is_entry", bool)
 
     def previous(self):
-        return self._f_special("previous", PyFramePtr)
+        return self._f_special("previous", _Py_framedataPtr)
 
     def iter_globals(self):
         '''
@@ -1793,16 +1793,16 @@ class Frame(object):
 
     def get_pyop(self):
         try:
-            frame = self._gdbframe.read_var('frame')
-            frame = PyFramePtr(frame)
-            if not frame.is_optimized_out():
-                return frame
+            _gdbfdata = self._gdbframe.read_var('fdata')
+            fdata = _Py_framedataPtr(_gdbfdata)
+            if not fdata.is_optimized_out():
+                return fdata
             cframe = self._gdbframe.read_var('cframe')
             if cframe is None:
                 return None
-            frame = PyFramePtr(cframe["current_frame"])
-            if frame and not frame.is_optimized_out():
-                return frame
+            fdata = _Py_framedataPtr(cframe["current_frame"])
+            if fdata and not fdata.is_optimized_out():
+                return fdata
             return None
         except ValueError:
             return None
