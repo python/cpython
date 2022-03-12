@@ -2116,17 +2116,16 @@ Functions and decorators
 
 .. function:: assert_type(val, typ, /)
 
-   Assert (to the type checker) that the value is of the given type.
+   Assert (to the type checker) that *value* has an inferred type of *type*.
 
    When the type checker encounters a call to ``assert_type()``, it
    emits an error if the value is not of the specified type::
 
        def greet(name: str) -> None:
-           assert_type(name, str)  # ok
+           assert_type(name, str)  # OK, inferred type of `name` is `str`
            assert_type(name, int)  # type checker error
 
-   At runtime this returns the first argument unchanged and otherwise
-   does nothing.
+   At runtime this returns the first argument unchanged with no side effects.
 
    This function is useful for ensuring the type checker's understanding of a
    script is in line with the developer's intentions::
