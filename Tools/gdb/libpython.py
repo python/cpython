@@ -1042,10 +1042,10 @@ class _Py_framedataPtr:
         return self._special("lasti", int_from_int)
 
     def is_entry(self):
-        return self._f_special("is_entry", bool)
+        return self._special("is_entry", bool)
 
     def previous(self):
-        return self._f_special("previous", _Py_framedataPtr)
+        return self._special("previous", _Py_framedataPtr)
 
     def iter_globals(self):
         '''
