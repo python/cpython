@@ -255,6 +255,8 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(current.exitcode, None)
 
     def test_set_executable(self):
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
         paths = [
             sys.executable,               # str
             sys.executable.encode(),      # bytes
@@ -5798,6 +5800,7 @@ class ProcessesMixin(BaseMixin):
     current_process = staticmethod(multiprocessing.current_process)
     parent_process = staticmethod(multiprocessing.parent_process)
     active_children = staticmethod(multiprocessing.active_children)
+    set_executable = staticmethod(multiprocessing.set_executable)
     Pool = staticmethod(multiprocessing.Pool)
     Pipe = staticmethod(multiprocessing.Pipe)
     Queue = staticmethod(multiprocessing.Queue)
