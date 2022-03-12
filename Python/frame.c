@@ -116,11 +116,11 @@ _PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func)
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
     CALL_STAT_INC(frames_pushed);
-    _Py_framedata *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
-    if (new_frame == NULL) {
+    _Py_framedata *new_fdata = _PyThreadState_BumpFramePointer(tstate, size);
+    if (new_fdata == NULL) {
         Py_DECREF(func);
         return NULL;
     }
-    _PyFrame_InitializeSpecials(new_frame, func, NULL, code->co_nlocalsplus);
-    return new_frame;
+    _PyFrame_InitializeSpecials(new_fdata, func, NULL, code->co_nlocalsplus);
+    return new_fdata;
 }
