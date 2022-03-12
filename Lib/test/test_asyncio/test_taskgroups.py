@@ -190,7 +190,11 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
-        r.cancel("test")
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "Passing 'msg' argument"
+        ):
+            r.cancel("test")
         with self.assertRaises(asyncio.CancelledError) as cm:
             await r
 
@@ -252,7 +256,11 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
-        r.cancel("test")
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "Passing 'msg' argument"
+        ):
+            r.cancel("test")
         with self.assertRaises(asyncio.CancelledError) as cm:
             await r
 
