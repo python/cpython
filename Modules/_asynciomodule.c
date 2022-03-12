@@ -2003,7 +2003,7 @@ _asyncio.Task.__init__
     *
     loop: object = None
     name: object = None
-    context: object = None
+    context: object(c_default='NULL') = None
 
 A coroutine wrapped in a Future.
 [clinic start generated code]*/
@@ -2011,7 +2011,8 @@ A coroutine wrapped in a Future.
 static int
 _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
                             PyObject *name, PyObject *context)
-/*[clinic end generated code: output=49ac96fe33d0e5c7 input=924522490c8ce825]*/
+/*[clinic end generated code: output=49ac96fe33d0e5c7 input=f45c94aefa9c235a]*/
+
 {
     if (future_init((FutureObj*)self, loop)) {
         return -1;
