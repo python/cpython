@@ -25,15 +25,26 @@ extern "C" {
  *   * full frame object fields have an "f_*" prefix
  *   * frame data struct fields have no prefix
  *
- * Variable naming conventions:
+ * Local variable and function argument naming conventions:
  *
- *   * "frame" and "f" are used for full frame objects
+ *   * "frame", "f", and "frameobj" are used for full frame objects
  *   * "fdata" is used for frame data structs
  *
  * Function/macro naming conventions:
  *
- *   * "PyFrame_*"" and "_PyFrame_*" functions accept a full frame object
- *   * "_Py_framedata_*" functions accept a frame data struct
+ *   * "PyFrame_*" functions accept a full frame object
+ *   * "_PyFrame_*" functions accept either a full frame object or a frame
+ *     data struct. Check the specific function signatures for details.
+ *   * Other public C API functions that relate to frames only accept full
+ *     frame objects
+ *   * Other private C API functions that relate to frames may accept either a
+ *     full frame object or a frame data struct. Check the specific function
+ *     signatures for details
+ *
+ * Function return types:
+ *   * Public C API functions will only ever return full frame objects
+ *   * Private C API functions with an underscore prefix may return frame
+ *     data structs instead
  */
 
 
