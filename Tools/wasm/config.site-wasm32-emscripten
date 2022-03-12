@@ -74,8 +74,10 @@ ac_cv_func_posix_fallocate=no
 ac_cv_func_utimensat=no
 ac_cv_header_sys_ioctl_h=no
 
-# sockets are supported, but only in non-blocking mode
-# ac_cv_header_sys_socket_h=no
+# sockets are supported, but only AF_INET / AF_INET6 in non-blocking mode.
+# Disable AF_UNIX and AF_PACKET support, see socketmodule.h.
+ac_cv_header_sys_un_h=no
+ac_cv_header_netpacket_packet_h=no
 
 # aborts with bad ioctl
 ac_cv_func_openpty=no

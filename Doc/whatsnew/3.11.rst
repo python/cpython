@@ -766,6 +766,12 @@ New Features
   available directly (via :c:type:`PyCMethod`).
   (Contributed by Petr Viktorin in :issue:`46613`.)
 
+* Add new functions to pack and unpack C double (serialize and deserialize):
+  :c:func:`PyFloat_Pack2`, :c:func:`PyFloat_Pack4`, :c:func:`PyFloat_Pack8`,
+  :c:func:`PyFloat_Unpack2`, :c:func:`PyFloat_Unpack4` and
+  :c:func:`PyFloat_Unpack8`.
+  (Contributed by Victor Stinner in :issue:`46906`.)
+
 
 Porting to Python 3.11
 ----------------------
