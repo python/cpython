@@ -1253,14 +1253,14 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #ifdef Py_STATS
 #define INSTRUCTION_START(op) \
     do { \
-        frame->lasti = INSTR_OFFSET(); \
+        fdata->lasti = INSTR_OFFSET(); \
         next_instr++; \
         OPCODE_EXE_INC(op); \
         _py_stats.opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
-#define INSTRUCTION_START(op) frame->lasti = INSTR_OFFSET(); next_instr++
+#define INSTRUCTION_START(op) fdata->lasti = INSTR_OFFSET(); next_instr++
 #endif
 
 #if USE_COMPUTED_GOTOS
@@ -1273,7 +1273,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
-#define PRE_DISPATCH_GOTO() if (lltrace) { lltrace_instruction(frame, opcode, oparg); }
+#define PRE_DISPATCH_GOTO() if (lltrace) { lltrace_instruction(fdata, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
@@ -1323,7 +1323,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* Get opcode and oparg from original instructions, not quickened form. */
 #define TRACING_NEXTOPARG() do { \
-        _Py_CODEUNIT word = ((_Py_CODEUNIT *)PyBytes_AS_STRING(frame->code->co_code))[INSTR_OFFSET()]; \
+        _Py_CODEUNIT word = ((_Py_CODEUNIT *)PyBytes_AS_STRING(fdata->code->co_code))[INSTR_OFFSET()]; \
         opcode = _Py_OPCODE(word); \
         oparg = _Py_OPARG(word); \
     } while (0)
@@ -1377,7 +1377,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* The stack can grow at most MAXINT deep, as co_nlocals and
    co_stacksize are ints. */
-#define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
+#define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(fdata)))
 #define EMPTY()           (STACK_LEVEL() == 0)
 #define TOP()             (stack_pointer[-1])
 #define SECOND()          (stack_pointer[-2])
@@ -1393,20 +1393,20 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #ifdef LLTRACE
 #define PUSH(v)         { (void)(BASIC_PUSH(v), \
                           lltrace && prtrace(tstate, TOP(), "push")); \
-                          assert(STACK_LEVEL() <= frame->code->co_stacksize); }
+                          assert(STACK_LEVEL() <= fdata->code->co_stacksize); }
 #define POP()           ((void)(lltrace && prtrace(tstate, TOP(), "pop")), \
                          BASIC_POP())
 #define STACK_GROW(n)   do { \
                           assert(n >= 0); \
                           (void)(BASIC_STACKADJ(n), \
                           lltrace && prtrace(tstate, TOP(), "stackadj")); \
-                          assert(STACK_LEVEL() <= frame->code->co_stacksize); \
+                          assert(STACK_LEVEL() <= fdata->code->co_stacksize); \
                         } while (0)
 #define STACK_SHRINK(n) do { \
                             assert(n >= 0); \
                             (void)(lltrace && prtrace(tstate, TOP(), "stackadj")); \
                             (void)(BASIC_STACKADJ(-(n))); \
-                            assert(STACK_LEVEL() <= frame->code->co_stacksize); \
+                            assert(STACK_LEVEL() <= fdata->code->co_stacksize); \
                         } while (0)
 #else
 #define PUSH(v)                BASIC_PUSH(v)
@@ -1417,7 +1417,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* Local variable macros */
 
-#define GETLOCAL(i)     (frame->localsplus[i])
+#define GETLOCAL(i)     (fdata->localsplus[i])
 
 /* The SETLOCAL() macro must not DECREF the local variable in-place and
    then store the new value; it must copy the old value to a temporary
@@ -1440,9 +1440,9 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define UPDATE_PREV_INSTR_OPARG(instr, oparg) ((uint8_t*)(instr))[-1] = (oparg)
 
 
-#define GLOBALS() frame->globals
-#define BUILTINS() frame->builtins
-#define LOCALS() frame->locals
+#define GLOBALS() fdata->globals
+#define BUILTINS() fdata->builtins
+#define LOCALS() fdata->locals
 
 /* Shared opcode macros */
 
@@ -1464,7 +1464,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define TRACE_FUNCTION_EXIT() \
     if (cframe.use_tracing) { \
-        if (trace_function_exit(tstate, frame, retval)) { \
+        if (trace_function_exit(tstate, fdata, retval)) { \
             Py_DECREF(retval); \
             goto exit_unwind; \
         } \
@@ -1472,21 +1472,21 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define DTRACE_FUNCTION_EXIT() \
     if (PyDTrace_FUNCTION_RETURN_ENABLED()) { \
-        dtrace_function_return(frame); \
+        dtrace_function_return(fdata); \
     }
 
 #define TRACE_FUNCTION_UNWIND()  \
     if (cframe.use_tracing) { \
         /* Since we are already unwinding, \
          * we dont't care if this raises */ \
-        trace_function_exit(tstate, frame, NULL); \
+        trace_function_exit(tstate, fdata, NULL); \
     }
 
 #define TRACE_FUNCTION_ENTRY() \
     if (cframe.use_tracing) { \
-        _PyFrame_SetStackPointer(frame, stack_pointer); \
-        int err = trace_function_entry(tstate, frame); \
-        stack_pointer = _PyFrame_GetStackPointer(frame); \
+        _PyFrame_SetStackPointer(fdata, stack_pointer); \
+        int err = trace_function_entry(tstate, fdata); \
+        stack_pointer = _PyFrame_GetStackPointer(fdata); \
         if (err) { \
             goto error; \
         } \
@@ -1494,15 +1494,15 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define TRACE_FUNCTION_THROW_ENTRY() \
     if (cframe.use_tracing) { \
-        assert(frame->stacktop >= 0); \
-        if (trace_function_entry(tstate, frame)) { \
+        assert(fdata->stacktop >= 0); \
+        if (trace_function_entry(tstate, fdata)) { \
             goto exit_unwind; \
         } \
     }
 
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
-        dtrace_function_entry(frame); \
+        dtrace_function_entry(fdata); \
     }
 
 
@@ -1628,10 +1628,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _Py_framedata *fdata, int throwf
     cframe.previous = prev_cframe;
     tstate->cframe = &cframe;
 
-    frame->is_entry = true;
+    fdata->is_entry = true;
     /* Push frame */
-    frame->previous = prev_cframe->current_frame;
-    cframe.current_frame = frame;
+    fdata->previous = prev_cframe->current_frame;
+    cframe.current_frame = fdata;
 
     /* support for generator.throw() */
     if (throwflag) {
@@ -1656,21 +1656,21 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _Py_framedata *fdata, int throwf
 /* Sets the above local variables from the frame */
 #define SET_LOCALS_FROM_FRAME() \
     { \
-        PyCodeObject *co = frame->code; \
+        PyCodeObject *co = fdata->code; \
         names = co->co_names; \
         consts = co->co_consts; \
         first_instr = co->co_firstinstr; \
     } \
-    assert(frame->lasti >= -1); \
-    next_instr = first_instr + frame->lasti + 1; \
-    stack_pointer = _PyFrame_GetStackPointer(frame); \
+    assert(fdata->lasti >= -1); \
+    next_instr = first_instr + fdata->lasti + 1; \
+    stack_pointer = _PyFrame_GetStackPointer(fdata); \
     /* Set stackdepth to -1. \
         Update when returning or calling trace function. \
         Having stackdepth <= 0 ensures that invalid \
         values are not visible to the cycle GC. \
         We choose -1 rather than 0 to assist debugging. \
         */ \
-    frame->stacktop = -1;
+    fdata->stacktop = -1;
 
 
 start_frame:
@@ -1731,14 +1731,14 @@ handle_eval_breaker:
         }
 
         TARGET(RESUME) {
-            int err = _Py_IncrementCountAndMaybeQuicken(frame->code);
+            int err = _Py_IncrementCountAndMaybeQuicken(fdata->code);
             if (err) {
                 if (err < 0) {
                     goto error;
                 }
                 /* Update first_instr and next_instr to point to newly quickened code */
                 int nexti = INSTR_OFFSET();
-                first_instr = frame->code->co_firstinstr;
+                first_instr = fdata->code->co_firstinstr;
                 next_instr = first_instr + nexti;
             }
             JUMP_TO_INSTRUCTION(RESUME_QUICK);
@@ -1747,8 +1747,8 @@ handle_eval_breaker:
         TARGET(RESUME_QUICK) {
             PREDICTED(RESUME_QUICK);
             assert(tstate->cframe == &cframe);
-            assert(frame == cframe.current_frame);
-            frame->state = FRAME_EXECUTING;
+            assert(fdata == cframe.current_frame);
+            fdata->state = FRAME_EXECUTING;
             if (_Py_atomic_load_relaxed(eval_breaker) && oparg < 2) {
                 goto handle_eval_breaker;
             }
@@ -2208,24 +2208,24 @@ handle_eval_breaker:
             PyCodeObject *code = (PyCodeObject *)getitem->func_code;
             size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
             assert(code->co_argcount == 2);
-            _Py_framedata *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
-            if (new_frame == NULL) {
+            _Py_framedata *new_fdata = _PyThreadState_BumpFramePointer(tstate, size);
+            if (new_fdata == NULL) {
                 goto error;
             }
             CALL_STAT_INC(frames_pushed);
             Py_INCREF(getitem);
-            _PyFrame_InitializeSpecials(new_frame, getitem,
+            _PyFrame_InitializeSpecials(new_fdata, getitem,
                                         NULL, code->co_nlocalsplus);
             STACK_SHRINK(2);
-            new_frame->localsplus[0] = container;
-            new_frame->localsplus[1] = sub;
+            new_fdata->localsplus[0] = container;
+            new_fdata->localsplus[1] = sub;
             for (int i = 2; i < code->co_nlocalsplus; i++) {
-                new_frame->localsplus[i] = NULL;
+                new_fdata->localsplus[i] = NULL;
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            frame->lasti += INLINE_CACHE_ENTRIES_BINARY_SUBSCR;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
+            _PyFrame_SetStackPointer(fdata, stack_pointer);
+            fdata->lasti += INLINE_CACHE_ENTRIES_BINARY_SUBSCR;
+            new_fdata->previous = fdata;
+            fdata = cframe.current_frame = new_fdata;
             CALL_STAT_INC(inlined_py_calls);
             goto start_frame;
         }
@@ -2387,20 +2387,20 @@ handle_eval_breaker:
         TARGET(RETURN_VALUE) {
             PyObject *retval = POP();
             assert(EMPTY());
-            frame->state = FRAME_RETURNED;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            fdata->state = FRAME_RETURNED;
+            _PyFrame_SetStackPointer(fdata, stack_pointer);
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCall(tstate);
-            if (!frame->is_entry) {
-                frame = cframe.current_frame = pop_frame(tstate, frame);
-                _PyFrame_StackPush(frame, retval);
+            if (!fdata->is_entry) {
+                fdata = cframe.current_frame = pop_frame(tstate, fdata);
+                _PyFrame_StackPush(fdata, retval);
                 goto resume_frame;
             }
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;
             tstate->cframe->use_tracing = cframe.use_tracing;
-            assert(tstate->cframe->current_frame == frame->previous);
+            assert(tstate->cframe->current_frame == fdata->previous);
             assert(!_PyErr_Occurred(tstate));
             return retval;
         }
@@ -2536,7 +2536,7 @@ handle_eval_breaker:
         }
 
         TARGET(SEND) {
-            assert(frame->is_entry);
+            assert(fdata->is_entry);
             assert(STACK_LEVEL() >= 2);
             PyObject *v = POP();
             PyObject *receiver = TOP();
@@ -2554,7 +2554,7 @@ handle_eval_breaker:
                 if (retval == NULL) {
                     if (tstate->c_tracefunc != NULL
                             && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
-                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
+                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, fdata);
                     if (_PyGen_FetchStopIterationValue(&retval) == 0) {
                         gen_status = PYGEN_RETURN;
                     }
@@ -2586,7 +2586,7 @@ handle_eval_breaker:
 
         TARGET(ASYNC_GEN_WRAP) {
             PyObject *v = TOP();
-            assert(frame->code->co_flags & CO_ASYNC_GENERATOR);
+            assert(fdata->code->co_flags & CO_ASYNC_GENERATOR);
             PyObject *w = _PyAsyncGenValueWrapperNew(v);
             if (w == NULL) {
                 goto error;
@@ -2597,17 +2597,17 @@ handle_eval_breaker:
         }
 
         TARGET(YIELD_VALUE) {
-            assert(frame->is_entry);
+            assert(fdata->is_entry);
             PyObject *retval = POP();
-            frame->state = FRAME_SUSPENDED;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            fdata->state = FRAME_SUSPENDED;
+            _PyFrame_SetStackPointer(fdata, stack_pointer);
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCall(tstate);
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;
             tstate->cframe->use_tracing = cframe.use_tracing;
-            assert(tstate->cframe->current_frame == frame->previous);
+            assert(tstate->cframe->current_frame == fdata->previous);
             assert(!_PyErr_Occurred(tstate));
             return retval;
         }
@@ -2624,7 +2624,7 @@ handle_eval_breaker:
             if (oparg) {
                 PyObject *lasti = PEEK(oparg + 1);
                 if (PyLong_Check(lasti)) {
-                    frame->lasti = PyLong_AsLong(lasti);
+                    fdata->lasti = PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
                 }
                 else {
@@ -3088,15 +3088,15 @@ handle_eval_breaker:
                 Py_DECREF(oldobj);
                 DISPATCH();
             }
-            format_exc_unbound(tstate, frame->code, oparg);
+            format_exc_unbound(tstate, fdata->code, oparg);
             goto error;
         }
 
         TARGET(LOAD_CLASSDEREF) {
             PyObject *name, *value, *locals = LOCALS();
             assert(locals);
-            assert(oparg >= 0 && oparg < frame->code->co_nlocalsplus);
-            name = PyTuple_GET_ITEM(frame->code->co_localsplusnames, oparg);
+            assert(oparg >= 0 && oparg < fdata->code->co_nlocalsplus);
+            name = PyTuple_GET_ITEM(fdata->code->co_localsplusnames, oparg);
             if (PyDict_CheckExact(locals)) {
                 value = PyDict_GetItemWithError(locals, name);
                 if (value != NULL) {
@@ -3119,7 +3119,7 @@ handle_eval_breaker:
                 PyObject *cell = GETLOCAL(oparg);
                 value = PyCell_GET(cell);
                 if (value == NULL) {
-                    format_exc_unbound(tstate, frame->code, oparg);
+                    format_exc_unbound(tstate, fdata->code, oparg);
                     goto error;
                 }
                 Py_INCREF(value);
@@ -3132,7 +3132,7 @@ handle_eval_breaker:
             PyObject *cell = GETLOCAL(oparg);
             PyObject *value = PyCell_GET(cell);
             if (value == NULL) {
-                format_exc_unbound(tstate, frame->code, oparg);
+                format_exc_unbound(tstate, fdata->code, oparg);
                 goto error;
             }
             Py_INCREF(value);
@@ -3151,14 +3151,14 @@ handle_eval_breaker:
 
         TARGET(COPY_FREE_VARS) {
             /* Copy closure variables to free variables */
-            PyCodeObject *co = frame->code;
-            PyObject *closure = frame->func->func_closure;
+            PyCodeObject *co = fdata->code;
+            PyObject *closure = fdata->func->func_closure;
             int offset = co->co_nlocals + co->co_nplaincellvars;
             assert(oparg == co->co_nfreevars);
             for (int i = 0; i < oparg; ++i) {
                 PyObject *o = PyTuple_GET_ITEM(closure, i);
                 Py_INCREF(o);
-                frame->localsplus[offset + i] = o;
+                fdata->localsplus[offset + i] = o;
             }
             DISPATCH();
         }
@@ -3887,7 +3887,7 @@ handle_eval_breaker:
             PyObject *fromlist = POP();
             PyObject *level = TOP();
             PyObject *res;
-            res = import_name(tstate, frame, name, fromlist, level);
+            res = import_name(tstate, fdata, name, fromlist, level);
             Py_DECREF(level);
             Py_DECREF(fromlist);
             SET_TOP(res);
@@ -3899,7 +3899,7 @@ handle_eval_breaker:
         TARGET(IMPORT_STAR) {
             PyObject *from = POP(), *locals;
             int err;
-            if (_PyFrame_FastToLocalsWithError(frame) < 0) {
+            if (_PyFrame_FastToLocalsWithError(fdata) < 0) {
                 Py_DECREF(from);
                 goto error;
             }
@@ -3912,7 +3912,7 @@ handle_eval_breaker:
                 goto error;
             }
             err = import_all_from(tstate, locals, from);
-            _PyFrame_LocalsToFast(frame, 0);
+            _PyFrame_LocalsToFast(fdata, 0);
             Py_DECREF(from);
             if (err != 0)
                 goto error;
@@ -4064,14 +4064,14 @@ handle_eval_breaker:
 
         TARGET(JUMP_ABSOLUTE) {
             PREDICTED(JUMP_ABSOLUTE);
-            int err = _Py_IncrementCountAndMaybeQuicken(frame->code);
+            int err = _Py_IncrementCountAndMaybeQuicken(fdata->code);
             if (err) {
                 if (err < 0) {
                     goto error;
                 }
                 /* Update first_instr and next_instr to point to newly quickened code */
                 int nexti = INSTR_OFFSET();
-                first_instr = frame->code->co_firstinstr;
+                first_instr = fdata->code->co_firstinstr;
                 next_instr = first_instr + nexti;
             }
             JUMP_TO_INSTRUCTION(JUMP_ABSOLUTE_QUICK);
@@ -4083,7 +4083,7 @@ handle_eval_breaker:
              * generator or coroutine, so we deliberately do not check it here.
              * (see bpo-30039).
              */
-            frame->state = FRAME_EXECUTING;
+            fdata->state = FRAME_EXECUTING;
             JUMPTO(oparg);
             DISPATCH();
         }
@@ -4188,7 +4188,7 @@ handle_eval_breaker:
             PyObject *iter;
             if (PyCoro_CheckExact(iterable)) {
                 /* `iterable` is a coroutine */
-                if (!(frame->code->co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE))) {
+                if (!(fdata->code->co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE))) {
                     /* and it is used in a 'yield from' expression of a
                        regular generator. */
                     Py_DECREF(iterable);
@@ -4232,7 +4232,7 @@ handle_eval_breaker:
                     goto error;
                 }
                 else if (tstate->c_tracefunc != NULL) {
-                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
+                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, fdata);
                 }
                 _PyErr_Clear(tstate);
             }
@@ -4637,7 +4637,7 @@ handle_eval_breaker:
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
                 STACK_SHRINK(total_args);
-                _Py_framedata *new_frame = _PyEvalFramePushAndInit(
+                _Py_framedata *new_fdata = _PyEvalFramePushAndInit(
                     tstate, (PyFunctionObject *)function, locals,
                     stack_pointer, positional_args, call_shape.kwnames
                 );
@@ -4645,12 +4645,12 @@ handle_eval_breaker:
                 STACK_SHRINK(2-is_meth);
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
-                if (new_frame == NULL) {
+                if (new_fdata == NULL) {
                     goto error;
                 }
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                new_frame->previous = frame;
-                cframe.current_frame = frame = new_frame;
+                _PyFrame_SetStackPointer(fdata, stack_pointer);
+                new_fdata->previous = fdata;
+                cframe.current_frame = fdata = new_fdata;
                 CALL_STAT_INC(inlined_py_calls);
                 goto start_frame;
             }
@@ -4746,22 +4746,22 @@ handle_eval_breaker:
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(code->co_argcount != argcount, CALL);
             STAT_INC(CALL, hit);
-            _Py_framedata *new_frame = _PyFrame_Push(tstate, func);
-            if (new_frame == NULL) {
+            _Py_framedata *new_fdata = _PyFrame_Push(tstate, func);
+            if (new_fdata == NULL) {
                 goto error;
             }
             CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
-                new_frame->localsplus[i] = stack_pointer[i];
+                new_fdata->localsplus[i] = stack_pointer[i];
             }
             for (int i = argcount; i < code->co_nlocalsplus; i++) {
-                new_frame->localsplus[i] = NULL;
+                new_fdata->localsplus[i] = NULL;
             }
             STACK_SHRINK(2-is_meth);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
+            _PyFrame_SetStackPointer(fdata, stack_pointer);
+            new_fdata->previous = fdata;
+            fdata = cframe.current_frame = new_fdata;
             goto start_frame;
         }
 
@@ -4781,28 +4781,28 @@ handle_eval_breaker:
             int minargs = cache1->min_args;
             DEOPT_IF(argcount < minargs, CALL);
             STAT_INC(CALL, hit);
-            _Py_framedata *new_frame = _PyFrame_Push(tstate, func);
-            if (new_frame == NULL) {
+            _Py_framedata *new_fdata = _PyFrame_Push(tstate, func);
+            if (new_fdata == NULL) {
                 goto error;
             }
             CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
-                new_frame->localsplus[i] = stack_pointer[i];
+                new_fdata->localsplus[i] = stack_pointer[i];
             }
             int def_offset = cache1->defaults_len - code->co_argcount;
             for (int i = argcount; i < code->co_argcount; i++) {
                 PyObject *def = PyTuple_GET_ITEM(func->func_defaults, i + def_offset);
                 Py_INCREF(def);
-                new_frame->localsplus[i] = def;
+                new_fdata->localsplus[i] = def;
             }
             for (int i = code->co_argcount; i < code->co_nlocalsplus; i++) {
-                new_frame->localsplus[i] = NULL;
+                new_fdata->localsplus[i] = NULL;
             }
             STACK_SHRINK(2-is_meth);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
+            _PyFrame_SetStackPointer(fdata, stack_pointer);
+            new_fdata->previous = fdata;
+            fdata = cframe.current_frame = new_fdata;
             goto start_frame;
         }
 
@@ -5293,35 +5293,35 @@ handle_eval_breaker:
         }
 
         TARGET(RETURN_GENERATOR) {
-            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(frame->func);
+            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(fdata->func);
             if (gen == NULL) {
                 goto error;
             }
             assert(EMPTY());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _Py_framedata *gen_frame = (_Py_framedata *)gen->gi_fdata;
-            _PyFrame_Copy(frame, gen_frame);
-            assert(frame->frame_obj == NULL);
+            _PyFrame_SetStackPointer(fdata, stack_pointer);
+            _Py_framedata *gen_fdata = (_Py_framedata *)gen->gi_fdata;
+            _PyFrame_Copy(fdata, gen_fdata);
+            assert(fdata->frame_obj == NULL);
             gen->gi_frame_valid = 1;
-            gen_frame->is_generator = true;
-            gen_frame->state = FRAME_CREATED;
+            gen_fdata->is_generator = true;
+            gen_fdata->state = FRAME_CREATED;
             _Py_LeaveRecursiveCall(tstate);
-            if (!frame->is_entry) {
-                _Py_framedata *prev = frame->previous;
-                _PyThreadState_PopFrame(tstate, frame);
-                frame = cframe.current_frame = prev;
-                _PyFrame_StackPush(frame, (PyObject *)gen);
+            if (!fdata->is_entry) {
+                _Py_framedata *prev = fdata->previous;
+                _PyThreadState_PopFrame(tstate, fdata);
+                fdata = cframe.current_frame = prev;
+                _PyFrame_StackPush(fdata, (PyObject *)gen);
                 goto resume_frame;
             }
             /* Make sure that frame is in a valid state */
-            frame->stacktop = 0;
-            frame->locals = NULL;
-            Py_INCREF(frame->func);
-            Py_INCREF(frame->code);
+            fdata->stacktop = 0;
+            fdata->locals = NULL;
+            Py_INCREF(fdata->func);
+            Py_INCREF(fdata->code);
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;
             tstate->cframe->use_tracing = cframe.use_tracing;
-            assert(tstate->cframe->current_frame == frame->previous);
+            assert(tstate->cframe->current_frame == fdata->previous);
             assert(!_PyErr_Occurred(tstate));
             return (PyObject *)gen;
         }
@@ -5472,8 +5472,8 @@ handle_eval_breaker:
 #else
         case DO_TRACING: {
 #endif
-            int instr_prev = skip_backwards_over_extended_args(frame->code, frame->lasti);
-            frame->lasti = INSTR_OFFSET();
+            int instr_prev = skip_backwards_over_extended_args(fdata->code, fdata->lasti);
+            fdata->lasti = INSTR_OFFSET();
             TRACING_NEXTOPARG();
             if (opcode == RESUME) {
                 if (oparg < 2) {
@@ -5483,10 +5483,10 @@ handle_eval_breaker:
                 TRACE_FUNCTION_ENTRY();
                 DTRACE_FUNCTION_ENTRY();
             }
-            else if (frame->state > FRAME_CREATED) {
+            else if (fdata->state > FRAME_CREATED) {
                 /* line-by-line tracing support */
                 if (PyDTrace_LINE_ENABLED()) {
-                    maybe_dtrace_line(frame, &tstate->trace_info, instr_prev);
+                    maybe_dtrace_line(fdata, &tstate->trace_info, instr_prev);
                 }
 
                 if (cframe.use_tracing &&
@@ -5494,21 +5494,21 @@ handle_eval_breaker:
                     int err;
                     /* see maybe_call_line_trace()
                     for expository comments */
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyFrame_SetStackPointer(fdata, stack_pointer);
 
                     err = maybe_call_line_trace(tstate->c_tracefunc,
                                                 tstate->c_traceobj,
-                                                tstate, frame, instr_prev);
+                                                tstate, fdata, instr_prev);
                     if (err) {
                         /* trace function raised an exception */
                         next_instr++;
                         goto error;
                     }
                     /* Reload possibly changed frame fields */
-                    JUMPTO(frame->lasti);
+                    JUMPTO(fdata->lasti);
 
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                    frame->stacktop = -1;
+                    stack_pointer = _PyFrame_GetStackPointer(fdata);
+                    fdata->stacktop = -1;
                 }
             }
             TRACING_NEXTOPARG();
@@ -5524,7 +5524,7 @@ handle_eval_breaker:
 #endif
             fprintf(stderr,
                 "XXX lineno: %d, opcode: %d\n",
-                PyCode_Addr2Line(frame->code, frame->lasti*sizeof(_Py_CODEUNIT)),
+                PyCode_Addr2Line(fdata->code, fdata->lasti*sizeof(_Py_CODEUNIT)),
                 opcode);
             _PyErr_SetString(tstate, PyExc_SystemError, "unknown opcode");
             goto error;
@@ -5610,7 +5610,7 @@ unbound_local_error:
         {
             format_exc_check_arg(tstate, PyExc_UnboundLocalError,
                 UNBOUNDLOCAL_ERROR_MSG,
-                PyTuple_GetItem(frame->code->co_localsplusnames, oparg)
+                PyTuple_GetItem(fdata->code->co_localsplusnames, oparg)
             );
             goto error;
         }
@@ -5628,50 +5628,50 @@ error:
 #endif
 
         /* Log traceback info. */
-        PyFrameObject *f = _PyFrame_GetFrameObject(frame);
+        PyFrameObject *f = _PyFrame_GetFrameObject(fdata);
         if (f != NULL) {
             PyTraceBack_Here(f);
         }
 
         if (tstate->c_tracefunc != NULL) {
             /* Make sure state is set to FRAME_UNWINDING for tracing */
-            frame->state = FRAME_UNWINDING;
+            fdata->state = FRAME_UNWINDING;
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
-                           tstate, frame);
+                           tstate, fdata);
         }
 
 exception_unwind:
-        frame->state = FRAME_UNWINDING;
+        fdata->state = FRAME_UNWINDING;
         /* We can't use fdata->lasti here, as RERAISE may have set it */
         int offset = INSTR_OFFSET()-1;
         int level, handler, lasti;
-        if (get_exception_handler(frame->code, offset, &level, &handler, &lasti) == 0) {
+        if (get_exception_handler(fdata->code, offset, &level, &handler, &lasti) == 0) {
             // No handlers, so exit.
             assert(_PyErr_Occurred(tstate));
 
             /* Pop remaining stack entries. */
-            PyObject **stackbase = _PyFrame_Stackbase(frame);
+            PyObject **stackbase = _PyFrame_Stackbase(fdata);
             while (stack_pointer > stackbase) {
                 PyObject *o = POP();
                 Py_XDECREF(o);
             }
             assert(STACK_LEVEL() == 0);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            frame->state = FRAME_RAISED;
+            _PyFrame_SetStackPointer(fdata, stack_pointer);
+            fdata->state = FRAME_RAISED;
             TRACE_FUNCTION_UNWIND();
             DTRACE_FUNCTION_EXIT();
             goto exit_unwind;
         }
 
         assert(STACK_LEVEL() >= level);
-        PyObject **new_top = _PyFrame_Stackbase(frame) + level;
+        PyObject **new_top = _PyFrame_Stackbase(fdata) + level;
         while (stack_pointer > new_top) {
             PyObject *v = POP();
             Py_XDECREF(v);
         }
         PyObject *exc, *val, *tb;
         if (lasti) {
-            PyObject *lasti = PyLong_FromLong(frame->lasti);
+            PyObject *lasti = PyLong_FromLong(fdata->lasti);
             if (lasti == NULL) {
                 goto exception_unwind;
             }
@@ -5692,21 +5692,21 @@ exception_unwind:
         PUSH(val);
         JUMPTO(handler);
         /* Resume normal execution */
-        frame->state = FRAME_EXECUTING;
+        fdata->state = FRAME_EXECUTING;
         DISPATCH();
     }
 
 exit_unwind:
     assert(_PyErr_Occurred(tstate));
     _Py_LeaveRecursiveCall(tstate);
-    if (frame->is_entry) {
+    if (fdata->is_entry) {
         /* Restore previous cframe and exit */
         tstate->cframe = cframe.previous;
         tstate->cframe->use_tracing = cframe.use_tracing;
-        assert(tstate->cframe->current_frame == frame->previous);
+        assert(tstate->cframe->current_frame == fdata->previous);
         return NULL;
     }
-    frame = cframe.current_frame = pop_frame(tstate, frame);
+    fdata = cframe.current_frame = pop_frame(tstate, fdata);
 
 resume_with_error:
     SET_LOCALS_FROM_FRAME();
@@ -6277,13 +6277,13 @@ fail:
 }
 
 static void
-_PyEvalFrameClearAndPop(PyThreadState *tstate, _Py_framedata * frame)
+_PyEvalFrameClearAndPop(PyThreadState *tstate, _Py_framedata * fdata)
 {
     tstate->recursion_remaining--;
-    assert(frame->frame_obj == NULL || frame->frame_obj->f_owns_frame == 0);
-    _PyFrame_Clear(frame);
+    assert(fdata->frame_obj == NULL || fdata->frame_obj->f_owns_frame == 0);
+    _PyFrame_Clear(fdata);
     tstate->recursion_remaining++;
-    _PyThreadState_PopFrame(tstate, frame);
+    _PyThreadState_PopFrame(tstate, fdata);
 }
 
 PyObject *

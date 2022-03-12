@@ -431,7 +431,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             PyFrameState state = fdata->state;
             fdata->state = FRAME_EXECUTING;
             err = gen_close_iter(yf);
-            frame->state = state;
+            fdata->state = state;
             Py_DECREF(yf);
             if (err < 0)
                 return gen_send_ex(gen, Py_None, 1, 0);
@@ -456,7 +456,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                              typ, val, tb);
             fdata->state = state;
             tstate->cframe->current_frame = prev;
-            frame->previous = NULL;
+            fdata->previous = NULL;
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
             PyObject *meth;
