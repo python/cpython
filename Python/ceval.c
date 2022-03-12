@@ -6959,7 +6959,7 @@ PyEval_GetLocals(void)
     PyThreadState *tstate = _PyThreadState_GET();
      _Py_framedata *fdata = tstate->cframe->current_frame;
     if (fdata == NULL) {
-        _PyErr_SetString(tstate, PyExc_SystemError, "frame data does not exist");
+        _PyErr_SetString(tstate, PyExc_SystemError, "cannot get locals; frame data does not exist");
         return NULL;
     }
 
@@ -6978,7 +6978,7 @@ PyEval_GetGlobals(void)
     PyThreadState *tstate = _PyThreadState_GET();
     _Py_framedata *fdata = tstate->cframe->current_frame;
     if (fdata == NULL) {
-        _PyErr_SetString(tstate, PyExc_SystemError, "frame data does not exist");
+        _PyErr_SetString(tstate, PyExc_SystemError, "cannot get globals; frame data does not exist");
         return NULL;
     }
     return fdata->globals;
