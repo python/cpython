@@ -153,6 +153,8 @@ class MimeTypesTestCase(unittest.TestCase):
     @unittest.skipIf(sys.platform.startswith("win"), "Non-Windows only")
     def test_guess_known_extensions(self):
         # Issue 37529
+        # The test fails on Windows because Windows adds mime types from the Registry
+        # and that creates some duplicates.
         from mimetypes import types_map
         for v in types_map.values():
             self.assertIsNotNone(mimetypes.guess_extension(v))
