@@ -24,7 +24,6 @@ from . import coroutines
 from . import events
 from . import exceptions
 from . import futures
-from . import taskgroups
 from . import timeouts
 from .coroutines import _is_coroutine
 
@@ -420,11 +419,6 @@ def _release_waiter(waiter, *args):
         waiter.set_result(None)
 
 
-async def _wait_for(fut, timeout):
-    async with timeouts.timeout(timeout):
-        return await fut
-
-
 async def wait_for(fut, timeout):
     """Wait for the single Future or coroutine to complete, with timeout.
 
@@ -439,12 +433,12 @@ async def wait_for(fut, timeout):
     This function is a coroutine.
     """
 
-    if timeout is None:
-        return await fut
+    if not futures.isfuture(fut):
+        # wrap a coroutine
+        fut = create_task(fut)
 
-    async with taskgroups.TaskGroup() as tg:
-        subtask = tg.create_task(_wait_for(fut, timeout))
-        return await subtask
+    async with timeouts.timeout(timeout):
+        return await fut
 
 
 async def _wait(fs, timeout, return_when, loop):
