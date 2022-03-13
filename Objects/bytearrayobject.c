@@ -854,6 +854,12 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
         for (Py_ssize_t i = 0; i < size; i++) {
             int value;
             if (!PyLong_CheckExact(items[i])) {
+                /* Resize to 0 and go through slowpath */
+                if (Py_SIZE(self) != 0) {
+                   if (PyByteArray_Resize((PyObject *)self, 0) < 0) {
+                       return -1;
+                   }
+                }
                 goto slowpath;
             }
             int rc = _getbytevalue(items[i], &value);
@@ -865,10 +871,6 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
         return 0;
     }
 slowpath:
-    if (Py_SIZE(self) != 0) {
-        if (PyByteArray_Resize((PyObject *)self, 0) < 0)
-            return -1;
-    }
     /* Get the iterator */
     it = PyObject_GetIter(arg);
     if (it == NULL) {
