@@ -264,6 +264,7 @@ Python packages or modules::
 
 .. versionadded:: 3.10
 
+.. _distributions:
 
 Distributions
 =============
