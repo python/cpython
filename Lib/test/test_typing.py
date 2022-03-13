@@ -31,6 +31,7 @@ from typing import Self
 from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
 from typing import TypeGuard
+from typing import _determine_typevar_substitution
 import abc
 import textwrap
 import typing
@@ -841,6 +842,125 @@ class TypeVarTupleTests(BaseTestCase):
         Ts1 = TypeVarTuple('Ts1')
         Ts2 = TypeVarTuple('Ts2')
         self.assertNotEqual(C[Unpack[Ts1]], C[Unpack[Ts2]])
+
+
+class TypeVarSubstitutionTests(BaseTestCase):
+
+    def test_valid_substitution(self):
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+        Ts = TypeVarTuple('Ts')
+
+        # These are tuples of (typevars, args, expected_result).
+        test_cases = [
+            # TypeVars only
+            ((T1,),        (int,),                                               {T1: int}),
+            ((T1,),        (tuple[int, ...],),                                   {T1: tuple[int, ...]}),
+            ((T1,),        (Unpack[tuple[int]],),                                {T1: int}),
+            ((T1, T2),     (int, str),                                           {T1: int, T2: str}),
+            ((T1, T2),     (tuple[int, ...], tuple[str, ...]),                   {T1: tuple[int, ...], T2: tuple[str, ...]}),
+            ((T1, T2),     (Unpack[tuple[int, str]],),                           {T1: int, T2: str}),
+            # TypeVarTuple only
+            ((Ts,),        (),                                                   {Ts: ()}),
+            ((Ts,),        (int,),                                               {Ts: (int,)}),
+            ((Ts,),        (tuple[int, ...],),                                   {Ts: (tuple[int, ...],)}),
+            ((Ts,),        (Unpack[tuple[int]],),                                {Ts: (int,)}),
+            ((Ts,),        (int, str),                                           {Ts: (int, str)}),
+            ((Ts,),        (tuple[int, ...], tuple[str, ...]),                   {Ts: (tuple[int, ...], tuple[str, ...])}),
+            ((Ts,),        (Unpack[tuple[int, ...]],),                           {Ts: (Unpack[tuple[int, ...]],)}),
+            # TypeVarTuple at the beginning
+            ((Ts, T1),     (int,),                                               {Ts: (), T1: int}),
+            ((Ts, T1),     (tuple[int, ...],),                                   {Ts: (), T1: tuple[int, ...]}),
+            ((Ts, T1),     (int, str),                                           {Ts: (int,), T1: str}),
+            ((Ts, T1),     (int, str, float),                                    {Ts: (int, str), T1: float}),
+            ((Ts, T1),     (Unpack[tuple[int, ...]], str),                       {Ts: (Unpack[tuple[int, ...]],), T1: str}),
+            ((Ts, T1),     (Unpack[tuple[int, ...]], str, bool),                 {Ts: (Unpack[tuple[int, ...]], str), T1: bool}),
+            # TypeVarTuple at the end
+            ((T1, Ts),     (int,),                                               {T1: int, Ts: ()}),
+            ((T1, Ts),     (int, str),                                           {T1: int, Ts: (str,)}),
+            ((T1, Ts),     (int, str, float),                                    {T1: int, Ts: (str, float)}),
+            ((T1, Ts),     (int, Unpack[tuple[str, ...]]),                       {T1: int, Ts: (Unpack[tuple[str, ...]],)}),
+            ((T1, Ts),     (int, str, Unpack[tuple[float, ...]]),                {T1: int, Ts: (str, Unpack[tuple[float, ...]],)}),
+            # TypeVarTuple in the middle
+            ((T1, Ts, T2), (int, str),                                           {T1: int, Ts: (), T2: str}),
+            ((T1, Ts, T2), (int, float, str),                                    {T1: int, Ts: (float,), T2: str}),
+            ((T1, Ts, T2), (int, Unpack[tuple[int, ...]], str),                  {T1: int, Ts: (Unpack[tuple[int, ...]],), T2: str}),
+            ((T1, Ts, T2), (int, float, Unpack[tuple[bool, ...]], str),          {T1: int, Ts: (float, Unpack[tuple[bool, ...]],), T2: str}),
+            ((T1, Ts, T2), (int, Unpack[tuple[bool, ...]], float, str),          {T1: int, Ts: (Unpack[tuple[bool, ...]], float), T2: str}),
+            ((T1, Ts, T2), (int, complex, Unpack[tuple[bool, ...]], float, str), {T1: int, Ts: (complex, Unpack[tuple[bool, ...]], float), T2: str})
+        ]
+        for typevars, args, expected_result in test_cases:
+            with self.subTest(f'typevars={typevars}, args={args}'):
+                self.assertEqual(
+                    expected_result,
+                    _determine_typevar_substitution(
+                        cls=None, params=typevars, args=args
+                    )
+                )
+
+    def test_too_few_args_raises_exception(self):
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+
+        # We don't include test cases including TypeVarTuples because we
+        # decided not to implement arity checking of variadic generics
+        # in order to reduce complexity.
+        test_cases = [
+            # One TypeVar: invalid if 0 args
+            ((T1,),        ()),
+            ((T1,),        (Unpack[tuple[()]],)),
+            # Two TypeVars: invalid if <= 1 args
+            ((T1, T2),     (int,)),
+            ((T1, T2),     (Unpack[tuple[int]],)),
+        ]
+        for typevars, args in test_cases:
+            with self.subTest(f'typevars={typevars}, args={args}'):
+                with self.assertRaises(TypeError):
+                    _determine_typevar_substitution(
+                        cls=None, params=typevars, args=args
+                    )
+
+    def test_too_many_args_raises_exception(self):
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+
+        # We don't include test cases including TypeVarTuples because we
+        # decided not to implement arity checking of variadic generics
+        # in order to reduce complexity.
+        test_cases = [
+            # One TypeVar: invalid if >= 2 args
+            ((T1,),        (int, int)),
+            ((T1,),        (Unpack[tuple[int, int]],)),
+            ((T1,),        (Unpack[tuple[int]], Unpack[tuple[int]])),
+            # Two TypeVars: invalid if >= 3 args
+            ((T1, T2),     (int, int, int)),
+            ((T1, T2),     (Unpack[tuple[int, int, int]],)),
+            ((T1, T2),     (Unpack[tuple[int]], Unpack[tuple[int]], Unpack[tuple[int]])),
+        ]
+
+        for typevars, args in test_cases:
+            with self.subTest(f'typevars={typevars}, args={args}'):
+                with self.assertRaises(TypeError):
+                    _determine_typevar_substitution(
+                        cls=None, params=typevars, args=args
+                    )
+
+    def test_too_many_typevartuples_raises_exception(self):
+        T = TypeVar('T')
+        Ts = TypeVarTuple('Ts')
+
+        test_cases = [
+            ((T, Ts, Ts),     (int, str)),
+            ((Ts, T, Ts),     (int, str)),
+            ((Ts, Ts, T),     (int, str))
+        ]
+
+        for typevars, args in test_cases:
+            with self.subTest(f'typevars={typevars}, args={args}'):
+                with self.assertRaises(TypeError):
+                    _determine_typevar_substitution(
+                        cls=None, params=typevars, args=args
+                    )
 
 
 class UnionTests(BaseTestCase):
