@@ -1888,7 +1888,6 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             /* Try reading the parent directory. */
             if (!attributes_from_dir(path, &fileInfo, &tagInfo.ReparseTag)) {
                 /* Cannot read the parent directory. */
-                DWORD dir_error = GetLastError();
                 switch (GetLastError()) {
                 case ERROR_FILE_NOT_FOUND: /* File cannot be found */
                 case ERROR_PATH_NOT_FOUND: /* File parent directory cannot be found */
