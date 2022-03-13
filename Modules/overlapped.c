@@ -707,10 +707,10 @@ Overlapped_dealloc(OverlappedObject *self)
     if (!HasOverlappedIoCompleted(&self->overlapped) &&
         self->type != TYPE_NOT_STARTED)
     {
+        Py_BEGIN_ALLOW_THREADS
         if (CancelIoEx(self->handle, &self->overlapped))
             wait = TRUE;
 
-        Py_BEGIN_ALLOW_THREADS
         ret = GetOverlappedResult(self->handle, &self->overlapped,
                                   &bytes, wait);
         Py_END_ALLOW_THREADS
