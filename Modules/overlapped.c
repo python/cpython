@@ -79,7 +79,7 @@ typedef struct {
         /* Buffer allocated by us: TYPE_READ and TYPE_ACCEPT */
         PyObject *allocated_buffer;
         /* Buffer passed by the user: TYPE_WRITE, TYPE_WRITE_TO, and TYPE_READINTO */
-        Py_buffer user_buffer;
+        Py_buffer *user_buffer;
 
         /* Data used for reading from a connectionless socket:
            TYPE_READ_FROM */
@@ -163,7 +163,6 @@ initialize_function_pointers(void)
     GUID GuidConnectEx = WSAID_CONNECTEX;
     GUID GuidDisconnectEx = WSAID_DISCONNECTEX;
     GUID GuidTransmitFile = WSAID_TRANSMITFILE;
-    HINSTANCE hKernel32;
     SOCKET s;
     DWORD dwBytes;
 
@@ -645,7 +644,7 @@ _overlapped_Overlapped_impl(PyTypeObject *type, HANDLE event)
     self->type = TYPE_NONE;
     self->allocated_buffer = NULL;
     memset(&self->overlapped, 0, sizeof(OVERLAPPED));
-    memset(&self->user_buffer, 0, sizeof(Py_buffer));
+    memset(self->user_buffer, 0, sizeof(Py_buffer));
     if (event)
         self->overlapped.hEvent = event;
     return (PyObject *)self;
@@ -686,8 +685,8 @@ Overlapped_clear(OverlappedObject *self)
         case TYPE_WRITE:
         case TYPE_WRITE_TO:
         case TYPE_READINTO: {
-            if (self->user_buffer.obj) {
-                PyBuffer_Release(&self->user_buffer);
+            if (self->user_buffer->obj) {
+                PyBuffer_Release(self->user_buffer);
             }
             break;
         }
@@ -1061,8 +1060,8 @@ _overlapped_Overlapped_ReadFileInto_impl(OverlappedObject *self,
     self->type = TYPE_READINTO;
     self->handle = handle;
 
-    return do_ReadFile(self, handle, self->user_buffer.buf,
-                       (DWORD)self->user_buffer.len);
+    return do_ReadFile(self, handle, self->user_buffer->buf,
+                       (DWORD)self->user_buffer->len);
 }
 
 static PyObject *
@@ -1168,8 +1167,8 @@ _overlapped_Overlapped_WSARecvInto_impl(OverlappedObject *self,
     self->type = TYPE_READINTO;
     self->handle = handle;
 
-    return do_WSARecv(self, handle, self->user_buffer.buf,
-                      (DWORD)self->user_buffer.len, flags);
+    return do_WSARecv(self, handle, self->user_buffer->buf,
+                      (DWORD)self->user_buffer->len, flags);
 }
 
 /*[clinic input]
@@ -1208,8 +1207,8 @@ _overlapped_Overlapped_WriteFile_impl(OverlappedObject *self, HANDLE handle,
     self->handle = handle;
 
     Py_BEGIN_ALLOW_THREADS
-    ret = WriteFile(handle, self->user_buffer.buf,
-                    (DWORD)self->user_buffer.len,
+    ret = WriteFile(handle, self->user_buffer->buf,
+                    (DWORD)self->user_buffer->len,
                     &written, &self->overlapped);
     Py_END_ALLOW_THREADS
 
@@ -1260,8 +1259,8 @@ _overlapped_Overlapped_WSASend_impl(OverlappedObject *self, HANDLE handle,
 
     self->type = TYPE_WRITE;
     self->handle = handle;
-    wsabuf.len = (DWORD)self->user_buffer.len;
-    wsabuf.buf = self->user_buffer.buf;
+    wsabuf.len = (DWORD)self->user_buffer->len;
+    wsabuf.buf = self->user_buffer->buf;
 
     Py_BEGIN_ALLOW_THREADS
     ret = WSASend((SOCKET)handle, &wsabuf, 1, &written, flags,
@@ -1646,8 +1645,8 @@ Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
     case TYPE_WRITE:
     case TYPE_WRITE_TO:
     case TYPE_READINTO:
-        if (self->user_buffer.obj) {
-            Py_VISIT(&self->user_buffer.obj);
+        if (self->user_buffer->obj) {
+            Py_VISIT(&self->user_buffer->obj);
         }
         break;
     case TYPE_READ_FROM:
@@ -1760,8 +1759,8 @@ _overlapped_Overlapped_WSASendTo_impl(OverlappedObject *self, HANDLE handle,
 
     self->type = TYPE_WRITE_TO;
     self->handle = handle;
-    wsabuf.len = (DWORD)self->user_buffer.len;
-    wsabuf.buf = self->user_buffer.buf;
+    wsabuf.len = (DWORD)self->user_buffer->len;
+    wsabuf.buf = self->user_buffer->buf;
 
     Py_BEGIN_ALLOW_THREADS
     ret = WSASendTo((SOCKET)handle, &wsabuf, 1, &written, flags,
