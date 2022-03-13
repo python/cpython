@@ -661,6 +661,9 @@
 /* Define to 1 if you have the `linkat' function. */
 #undef HAVE_LINKAT
 
+/* Define to 1 if you have the <linux/auxvec.h> header file. */
+#undef HAVE_LINUX_AUXVEC_H
+
 /* Define to 1 if you have the <linux/can/bcm.h> header file. */
 #undef HAVE_LINUX_CAN_BCM_H
 
