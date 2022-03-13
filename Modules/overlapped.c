@@ -79,7 +79,7 @@ typedef struct {
         /* Buffer allocated by us: TYPE_READ and TYPE_ACCEPT */
         PyObject *allocated_buffer;
         /* Buffer passed by the user: TYPE_WRITE, TYPE_WRITE_TO, and TYPE_READINTO */
-        Py_buffer *user_buffer;
+        Py_buffer user_buffer;
 
         /* Data used for reading from a connectionless socket:
            TYPE_READ_FROM */
@@ -98,7 +98,7 @@ typedef struct {
             // A (number of bytes read, (host, port)) tuple
             PyObject* result;
             /* Buffer passed by the user */
-            Py_buffer *user_buffer;
+            Py_buffer user_buffer;
             struct sockaddr_in6 address;
             int address_length;
         } read_from_into;
@@ -117,6 +117,13 @@ overlapped_get_state(PyObject *module)
     return (OverlappedState *)state;
 }
 
+
+static inline void
+steal_buffer(Py_buffer * dst, Py_buffer * src)
+{
+    memcpy(dst, src, sizeof(Py_buffer));
+    memset(src, 0, sizeof(Py_buffer));
+}
 
 /*
  * Map Windows error codes to subclasses of OSError
@@ -644,7 +651,7 @@ _overlapped_Overlapped_impl(PyTypeObject *type, HANDLE event)
     self->type = TYPE_NONE;
     self->allocated_buffer = NULL;
     memset(&self->overlapped, 0, sizeof(OVERLAPPED));
-    memset(self->user_buffer, 0, sizeof(Py_buffer));
+    memset(&self->user_buffer, 0, sizeof(Py_buffer));
     if (event)
         self->overlapped.hEvent = event;
     return (PyObject *)self;
@@ -680,13 +687,16 @@ Overlapped_clear(OverlappedObject *self)
                 // We've received a message, free the result tuple.
                 Py_CLEAR(self->read_from_into.result);
             }
+            if (self->read_from_into->user_buffer.obj) {
+                PyBuffer_Release(&self->read_from_into->user_buffer);
+            }
             break;
         }
         case TYPE_WRITE:
         case TYPE_WRITE_TO:
         case TYPE_READINTO: {
-            if (self->user_buffer->obj) {
-                PyBuffer_Release(self->user_buffer);
+            if (self->user_buffer.obj) {
+                PyBuffer_Release(&self->user_buffer);
             }
             break;
         }
@@ -1055,13 +1065,13 @@ _overlapped_Overlapped_ReadFileInto_impl(OverlappedObject *self,
         return NULL;
     }
 #endif
-    self->user_buffer = bufobj;
+    steal_buffer(&self->user_buffer, bufobj);
 
     self->type = TYPE_READINTO;
     self->handle = handle;
 
-    return do_ReadFile(self, handle, self->user_buffer->buf,
-                       (DWORD)self->user_buffer->len);
+    return do_ReadFile(self, handle, self->user_buffer.buf,
+                       (DWORD)self->user_buffer.len);
 }
 
 static PyObject *
@@ -1162,13 +1172,13 @@ _overlapped_Overlapped_WSARecvInto_impl(OverlappedObject *self,
         return NULL;
     }
 #endif
-    self->user_buffer = bufobj;
+    steal_buffer(&self->user_buffer, bufobj);
 
     self->type = TYPE_READINTO;
     self->handle = handle;
 
-    return do_WSARecv(self, handle, self->user_buffer->buf,
-                      (DWORD)self->user_buffer->len, flags);
+    return do_WSARecv(self, handle, self->user_buffer.buf,
+                      (DWORD)self->user_buffer.len, flags);
 }
 
 /*[clinic input]
@@ -1201,14 +1211,14 @@ _overlapped_Overlapped_WriteFile_impl(OverlappedObject *self, HANDLE handle,
         return NULL;
     }
 #endif
-    self->user_buffer = bufobj;
+    steal_buffer(&self->user_buffer, bufobj);
 
     self->type = TYPE_WRITE;
     self->handle = handle;
 
     Py_BEGIN_ALLOW_THREADS
-    ret = WriteFile(handle, self->user_buffer->buf,
-                    (DWORD)self->user_buffer->len,
+    ret = WriteFile(handle, self->user_buffer.buf,
+                    (DWORD)self->user_buffer.len,
                     &written, &self->overlapped);
     Py_END_ALLOW_THREADS
 
@@ -1255,12 +1265,12 @@ _overlapped_Overlapped_WSASend_impl(OverlappedObject *self, HANDLE handle,
         return NULL;
     }
 #endif
-    self->user_buffer = bufobj;
+    steal_buffer(&self->user_buffer, bufobj);
 
     self->type = TYPE_WRITE;
     self->handle = handle;
-    wsabuf.len = (DWORD)self->user_buffer->len;
-    wsabuf.buf = self->user_buffer->buf;
+    wsabuf.len = (DWORD)self->user_buffer.len;
+    wsabuf.buf = self->user_buffer.buf;
 
     Py_BEGIN_ALLOW_THREADS
     ret = WSASend((SOCKET)handle, &wsabuf, 1, &written, flags,
@@ -1645,8 +1655,8 @@ Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
     case TYPE_WRITE:
     case TYPE_WRITE_TO:
     case TYPE_READINTO:
-        if (self->user_buffer->obj) {
-            Py_VISIT(&self->user_buffer->obj);
+        if (self->user_buffer.obj) {
+            Py_VISIT(&self->user_buffer.obj);
         }
         break;
     case TYPE_READ_FROM:
@@ -1655,8 +1665,8 @@ Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
         break;
     case TYPE_READ_FROM_INTO:
         Py_VISIT(self->read_from_into.result);
-        if (self->read_from_into.user_buffer->obj) {
-            Py_VISIT(&self->read_from_into.user_buffer->obj);
+        if (self->read_from_into.user_buffer.obj) {
+            Py_VISIT(&self->read_from_into.user_buffer.obj);
         }
         break;
     }
@@ -1755,12 +1765,12 @@ _overlapped_Overlapped_WSASendTo_impl(OverlappedObject *self, HANDLE handle,
         return NULL;
     }
 #endif
-    self->user_buffer = bufobj;
+    steal_buffer(&self->user_buffer, bufobj);
 
     self->type = TYPE_WRITE_TO;
     self->handle = handle;
-    wsabuf.len = (DWORD)self->user_buffer->len;
-    wsabuf.buf = self->user_buffer->buf;
+    wsabuf.len = (DWORD)self->user_buffer.len;
+    wsabuf.buf = self->user_buffer.buf;
 
     Py_BEGIN_ALLOW_THREADS
     ret = WSASendTo((SOCKET)handle, &wsabuf, 1, &written, flags,
@@ -1895,7 +1905,7 @@ _overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
 
     self->type = TYPE_READ_FROM_INTO;
     self->handle = handle;
-    self->read_from_into.user_buffer = bufobj;
+    steal_buffer(&self->read_from_into.user_buffer, bufobj);
     memset(&self->read_from_into.address, 0, sizeof(self->read_from_into.address));
     self->read_from_into.address_length = sizeof(self->read_from_into.address);
 
