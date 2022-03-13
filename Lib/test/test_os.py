@@ -2873,6 +2873,53 @@ class Win32NtTests(unittest.TestCase):
 
         self.assertEqual(0, handle_delta)
 
+    @support.requires_subprocess()
+    def test_stat_unlink_race(self):
+        # bpo-46785: the implementation of os.stat() falls back to reading
+        # the parent directory if CreateFileW() fails with a permission
+        # error. If reading the parent directory fails because the file or
+        # directory are subsequently unlinked, or because the volume or
+        # share are no longer available, then the original permission error
+        # should not be restored.
+        # TODO: Figure out why can't `fname` be simply `os_helper.TESTFN`?
+        fname = os.path.join(os.environ['TEMP'], os_helper.TESTFN + '_46785')
+        self.addCleanup(os_helper.unlink, fname)
+        # TODO: Think about putting this in an actual file?
+        command = '''if 1:
+            import os
+            import sys
+            fname = sys.argv[1]
+            while True:
+                try:
+                    with open(fname, "w") as f:
+                        pass
+                except OSError:
+                    pass
+                try:
+                    os.remove(fname)
+                except OSError:
+                    pass
+        '''
+        ignored_errors = (
+            2,  # ERROR_FILE_NOT_FOUND
+            3,  # ERROR_PATH_NOT_FOUND
+            21, # ERROR_NOT_READY
+            67, # ERROR_BAD_NET_NAME
+        )
+        deadline = time.time() + 5
+        p = subprocess.Popen([sys.executable, '-c', command, fname])
+
+        try:
+            while time.time() < deadline:
+                try:
+                    os.stat(fname)
+                except OSError as e:
+                    if e.winerror not in ignored_errors:
+                        raise
+        finally:
+            p.terminate()
+
+
 @os_helper.skip_unless_symlink
 class NonLocalSymlinkTests(unittest.TestCase):
 
