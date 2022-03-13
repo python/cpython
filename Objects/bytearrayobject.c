@@ -342,8 +342,9 @@ bytearray_repeat(PyByteArrayObject *self, Py_ssize_t count)
                 memcpy(result->ob_bytes, buf, mysize);
                 i = mysize;
             }
+            // repeatedly double the number of bytes copied
             while (i < size) {
-                j = (i <= size - i) ? i : size - i;
+                j = Py_MIN(i, size - i);
                 memcpy(result->ob_bytes + i, result->ob_bytes, j);
                 i += j;
             }
@@ -375,8 +376,9 @@ bytearray_irepeat(PyByteArrayObject *self, Py_ssize_t count)
         Py_ssize_t i, j;
 
         i = mysize;
+        // repeatedly double the number of bytes copied
         while (i < size) {
-            j = (i <= size - i) ? i : size - i;
+            j = Py_MIN(i, size - i);
             memcpy(buf + i, buf, j);
             i += j;
         }
