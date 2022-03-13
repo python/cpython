@@ -12,7 +12,6 @@ import sys
 import textwrap
 import traceback
 import unittest
-import weakref
 from unittest import mock
 from types import GenericAlias
 
