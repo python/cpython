@@ -1385,7 +1385,23 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         yield Unpack[self]
 
 
+def _replace_degenerate_unpacked_tuples(
+        args: tuple[type, ...]
+) -> tuple[type, ...]:
+    """Replaces e.g. `*tuple[int]` with just `int` in `args`."""
+    new_args = []
+    for arg in args:
+        if (_is_unpacked_tuple(arg)
+                and not _is_unpacked_arbitrary_length_tuple(arg)):
+            arg_tuple = arg.__args__[0]  # The actual tuple[int]
+            new_args.extend(arg_tuple.__args__)
+        else:
+            new_args.append(arg)
+    return tuple(new_args)
+
+
 def _determine_typevar_substitution(cls, params, args):
+    args = _replace_degenerate_unpacked_tuples(args)
     new_arg_by_param = {}
     for i, param in enumerate(params):
         if isinstance(param, TypeVarTuple):
