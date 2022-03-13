@@ -687,8 +687,8 @@ Overlapped_clear(OverlappedObject *self)
                 // We've received a message, free the result tuple.
                 Py_CLEAR(self->read_from_into.result);
             }
-            if (self->read_from_into->user_buffer.obj) {
-                PyBuffer_Release(&self->read_from_into->user_buffer);
+            if (self->read_from_into.user_buffer.obj) {
+                PyBuffer_Release(&self->read_from_into.user_buffer);
             }
             break;
         }
