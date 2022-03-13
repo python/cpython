@@ -104,6 +104,16 @@ class APITests(
             for dep in deps
             )
 
+    def test_requires_egg_info_empty(self):
+        fixtures.build_files(
+            {
+                'requires.txt': '',
+            },
+            self.site_dir.joinpath('egginfo_pkg.egg-info'),
+        )
+        deps = requires('egginfo-pkg')
+        assert deps == []
+
     def test_requires_dist_info(self):
         deps = requires('distinfo-pkg')
         assert len(deps) == 2

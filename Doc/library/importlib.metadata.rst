@@ -199,6 +199,8 @@ function::
     ["pytest (>=3.0.0) ; extra == 'test'", "pytest-cov ; extra == 'test'"]
 
 
+.. _distributions:
+
 Distributions
 =============
 
