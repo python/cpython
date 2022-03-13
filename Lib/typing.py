@@ -1269,11 +1269,6 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         if (self._paramspec_tvars
                 and any(isinstance(t, ParamSpec) for t in self.__parameters__)):
             args = _prepare_paramspec_params(self, args)
-        elif not any(isinstance(p, TypeVarTuple) for p in self.__parameters__):
-            # We only run this if there are no TypeVarTuples, because we
-            # don't check variadic generic arity at runtime (to reduce
-            # complexity of typing.py).
-            _check_generic(self, args, len(self.__parameters__))
 
         new_args = self._determine_new_args(args)
         r = self.copy_with(new_args)
@@ -1296,18 +1291,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 
         params = self.__parameters__
         # In the example above, this would be {T3: str}
-        new_arg_by_param = {}
-        for i, param in enumerate(params):
-            if isinstance(param, TypeVarTuple):
-                j = len(args) - (len(params) - i - 1)
-                if j < i:
-                    raise TypeError(f"Too few arguments for {self}")
-                new_arg_by_param.update(zip(params[:i], args[:i]))
-                new_arg_by_param[param] = args[i: j]
-                new_arg_by_param.update(zip(params[i + 1:], args[j:]))
-                break
-        else:
-            new_arg_by_param.update(zip(params, args))
+        new_arg_by_param = _determine_typevar_substitution(self, params, args)
 
         new_args = []
         for old_arg in self.__args__:
@@ -1399,6 +1383,28 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 
     def __iter__(self):
         yield Unpack[self]
+
+
+def _determine_typevar_substitution(cls, params, args):
+    new_arg_by_param = {}
+    for i, param in enumerate(params):
+        if isinstance(param, TypeVarTuple):
+            j = len(args) - (len(params) - i - 1)
+            if j < i:
+                raise TypeError("Too few type arguments")
+            new_arg_by_param.update(zip(params[:i], args[:i]))
+            new_arg_by_param[param] = args[i: j]
+            new_arg_by_param.update(zip(params[i + 1:], args[j:]))
+            if any(isinstance(param, TypeVarTuple) for param in params[i + 1:]):
+                raise TypeError("Only one TypeVarTuple may be used in type parameters")
+            break
+    else:
+        # We only run this if there are no TypeVarTuples, because we
+        # don't check variadic generic arity at runtime (to reduce
+        # complexity of typing.py).
+        _check_generic(cls, args, len(params))
+        new_arg_by_param.update(zip(params, args))
+    return new_arg_by_param
 
 
 # _nparams is the number of accepted parameters, e.g. 0 for Hashable,
