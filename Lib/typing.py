@@ -1218,9 +1218,11 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         super().__init__(origin, inst=inst, name=name)
         if not isinstance(args, tuple):
             args = (args,)
-        self.__args__ = tuple(... if a is _TypingEllipsis else
-                              () if a is _TypingEmpty else
-                              a for a in args)
+        if args == (_TypingEmpty,):
+            self.__args__ = ()
+        else:
+            self.__args__ = tuple(... if a is _TypingEllipsis else
+                                  a for a in args)
         self.__parameters__ = _collect_parameters(args)
         self._paramspec_tvars = _paramspec_tvars
         if not name:

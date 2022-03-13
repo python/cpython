@@ -4232,7 +4232,7 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(Union[int, Callable[[Tuple[T, ...]], str]]),
                          (int, Callable[[Tuple[T, ...]], str]))
         self.assertEqual(get_args(Tuple[int, ...]), (int, ...))
-        self.assertEqual(get_args(Tuple[()]), ((),))
+        self.assertEqual(get_args(Tuple[()]), ())
         self.assertEqual(get_args(Annotated[T, 'one', 2, ['three']]), (T, 'one', 2, ['three']))
         self.assertEqual(get_args(List), ())
         self.assertEqual(get_args(Tuple), ())
