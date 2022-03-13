@@ -1888,7 +1888,19 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             /* Try reading the parent directory. */
             if (!attributes_from_dir(path, &fileInfo, &tagInfo.ReparseTag)) {
                 /* Cannot read the parent directory. */
-                SetLastError(error);
+                DWORD dir_error = GetLastError();
+                switch (GetLastError()) {
+                case ERROR_FILE_NOT_FOUND:
+                // TODO: Check why should I catch these?
+                case ERROR_PATH_NOT_FOUND:
+                case ERROR_NOT_READY:
+                case ERROR_BAD_NET_NAME:
+                    break;
+                // restore the error from CreateFileW()
+                default:
+                    SetLastError(error);
+                }
+
                 return -1;
             }
             if (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
