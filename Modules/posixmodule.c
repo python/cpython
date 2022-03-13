@@ -1891,7 +1891,6 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                 DWORD dir_error = GetLastError();
                 switch (GetLastError()) {
                 case ERROR_FILE_NOT_FOUND:
-                // TODO: Check why should I catch these?
                 case ERROR_PATH_NOT_FOUND:
                 case ERROR_NOT_READY:
                 case ERROR_BAD_NET_NAME:

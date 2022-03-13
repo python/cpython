@@ -2881,21 +2881,20 @@ class Win32NtTests(unittest.TestCase):
         # directory are subsequently unlinked, or because the volume or
         # share are no longer available, then the original permission error
         # should not be restored.
-        # TODO: Figure out why can't `fname` be simply `os_helper.TESTFN`?
-        fname = os.path.join(os.environ['TEMP'], os_helper.TESTFN + '_46785')
-        self.addCleanup(os_helper.unlink, fname)
+        filename =  os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
         command = '''if 1:
             import os
             import sys
-            fname = sys.argv[1]
+            filename = sys.argv[1]
             while True:
                 try:
-                    with open(fname, "w") as f:
+                    with open(filename, "w") as f:
                         pass
                 except OSError:
                     pass
                 try:
-                    os.remove(fname)
+                    os.remove(filename)
                 except OSError:
                     pass
         '''
@@ -2906,12 +2905,12 @@ class Win32NtTests(unittest.TestCase):
             67, # ERROR_BAD_NET_NAME
         )
         deadline = time.time() + 5
-        p = subprocess.Popen([sys.executable, '-c', command, fname])
+        p = subprocess.Popen([sys.executable, '-c', command, filename])
 
         try:
             while time.time() < deadline:
                 try:
-                    os.stat(fname)
+                    os.stat(filename)
                 except OSError as e:
                     if e.winerror not in ignored_errors:
                         raise
