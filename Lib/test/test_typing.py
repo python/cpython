@@ -105,7 +105,6 @@ class AnyTests(BaseTestCase):
 
         class Something: pass
         self.assertFalse(issubclass(Something, Any))
-        self.assertNotIsInstance(Something(), Any)
 
         class MockSomething(Something, Any): pass
         self.assertTrue(issubclass(MockSomething, Any))
