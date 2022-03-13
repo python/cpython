@@ -929,6 +929,29 @@ convenient.
 
    .. versionadded:: 3.7
 
+.. coroutinemethod:: loop.sock_recvfrom(sock, bufsize)
+
+   Receive a datagram of up to *bufsize* from *sock*.  Asynchronous version of
+   :meth:`socket.recvfrom() <socket.socket.recvfrom>`.
+
+   Return a tuple of (received data, remote address).
+
+   *sock* must be a non-blocking socket.
+
+   .. versionadded:: 3.11
+
+.. coroutinemethod:: loop.sock_recvfrom_into(sock, buf, nbytes=0)
+
+   Receive a datagram of up to *nbytes* from *sock* into *buf*.
+   Asynchronous version of
+   :meth:`socket.recvfrom_into() <socket.socket.recvfrom_into>`.
+
+   Return a tuple of (number of bytes received, remote address).
+
+   *sock* must be a non-blocking socket.
+
+   .. versionadded:: 3.11
+
 .. coroutinemethod:: loop.sock_sendall(sock, data)
 
    Send *data* to the *sock* socket. Asynchronous version of
@@ -946,6 +969,18 @@ convenient.
       Even though the method was always documented as a coroutine
       method, before Python 3.7 it returned a :class:`Future`.
       Since Python 3.7, this is an ``async def`` method.
+
+.. coroutinemethod:: loop.sock_sendto(sock, data, address)
+
+   Send a datagram from *sock* to *address*.
+   Asynchronous version of
+   :meth:`socket.sendto() <socket.socket.sendto>`.
+
+   Return the number of bytes sent.
+
+   *sock* must be a non-blocking socket.
+
+   .. versionadded:: 3.11
 
 .. coroutinemethod:: loop.sock_connect(sock, address)
 
