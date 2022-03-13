@@ -226,6 +226,15 @@ New Modules
 Improved Modules
 ================
 
+asyncio
+-------
+
+* Add raw datagram socket functions to the event loop:
+  :meth:`~asyncio.AbstractEventLoop.sock_sendto`,
+  :meth:`~asyncio.AbstractEventLoop.sock_recvfrom` and
+  :meth:`~asyncio.AbstractEventLoop.sock_recvfrom_into`.
+  (Contributed by Alex Grönholm in :issue:`46805`.)
+
 fractions
 ---------
 
