@@ -67,11 +67,16 @@ uses_params = ['', 'ftp', 'hdl', 'prospero', 'http', 'imap',
                'https', 'shttp', 'rtsp', 'rtspu', 'sip', 'sips',
                'mms', 'sftp', 'tel']
 
+
 def _scheme_classes(scheme, overrides=set()):
-    """Find out what scheme classes a given scheme fits in. This consults the
-    variables uses_relative, uses_netloc, and uses_params. It returns a set of
-    all the classes that apply, with at least the unique classes specified by
-    the optional overrides parameter."""
+    """Find out what scheme classes a given scheme fits in.
+
+    This consults the variables uses_relative, uses_netloc, and
+    uses_params. It returns a set of all the classes that apply, with
+    at least the unique classes specified by the optional overrides
+    parameter.
+
+    """
     scheme_classes = set(overrides)
 
     if scheme in uses_relative:
@@ -84,6 +89,7 @@ def _scheme_classes(scheme, overrides=set()):
         scheme_classes.add(SchemeClass.PARAMS)
 
     return scheme_classes
+
 
 # These are not actually used anymore, but should stay for backwards
 # compatibility.  (They are undocumented, but have a public-looking name.)
