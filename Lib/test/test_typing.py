@@ -99,8 +99,19 @@ class AnyTests(BaseTestCase):
             Any[int]  # Any is not a generic type.
 
     def test_can_subclass(self):
-        class X(Any): pass
-        X()
+        class Mock(Any): pass
+        self.assertTrue(issubclass(Mock, Any))
+        self.assertIsInstance(Mock(), Mock)
+
+        class Something: pass
+        self.assertFalse(issubclass(Something, Any))
+        self.assertNotIsInstance(Something(), Any)
+
+        class MockSomething(Something, Any): pass
+        self.assertTrue(issubclass(MockSomething, Any))
+        ms = MockSomething()
+        self.assertIsInstance(ms, Mock)
+        self.assertIsInstance(ms, Something)
 
     def test_cannot_instantiate(self):
         with self.assertRaises(TypeError):
