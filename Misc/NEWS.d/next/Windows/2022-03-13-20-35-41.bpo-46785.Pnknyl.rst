@@ -1,0 +1,1 @@
+Fix race condition between :func:`os.stat` and unlinking a file on Windows, by gracefully handling expected errors returned by ``FindFirstFileW()`` in ``win32_xstat_impl``.
