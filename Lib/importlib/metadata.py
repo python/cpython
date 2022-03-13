@@ -45,6 +45,15 @@ class EntryPoint(
     See `the packaging docs on entry points
     <https://packaging.python.org/specifications/entry-points/>`_
     for more information.
+
+    >>> ep = EntryPoint(
+    ...     name=None, group=None, value='package.module:attr [extra1, extra2]')
+    >>> ep.module
+    'package.module'
+    >>> ep.attr
+    'attr'
+    >>> ep.extras
+    ['extra1', 'extra2']
     """
 
     pattern = re.compile(
@@ -91,7 +100,7 @@ class EntryPoint(
     @property
     def extras(self):
         match = self.pattern.match(self.value)
-        return list(re.finditer(r'\w+', match.group('extras') or ''))
+        return re.findall(r'\w+', match.group('extras') or '')
 
     @classmethod
     def _from_config(cls, config):
@@ -308,7 +317,7 @@ class Distribution:
 
     def _read_egg_info_reqs(self):
         source = self.read_text('requires.txt')
-        return source and self._deps_from_requires_text(source)
+        return None if source is None else self._deps_from_requires_text(source)
 
     @classmethod
     def _deps_from_requires_text(cls, source):
