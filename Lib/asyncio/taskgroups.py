@@ -143,7 +143,7 @@ class TaskGroup:
             raise RuntimeError(f"TaskGroup {self!r} has not been entered")
         if self._exiting and self._unfinished_tasks == 0:
             raise RuntimeError(f"TaskGroup {self!r} is finished")
-        if cotext is None:
+        if context is None:
             task = self._loop.create_task(coro)
         else:
             task = self._loop.create_task(coro, context=context)
