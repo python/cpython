@@ -905,4 +905,42 @@ _overlapped_Overlapped_WSARecvFrom(OverlappedObject *self, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ee2ec2f93c8d334b input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_overlapped_Overlapped_WSARecvFromInto__doc__,
+"WSARecvFromInto($self, handle, buf, size, flags=0, /)\n"
+"--\n"
+"\n"
+"Start overlapped receive.");
+
+#define _OVERLAPPED_OVERLAPPED_WSARECVFROMINTO_METHODDEF    \
+    {"WSARecvFromInto", (PyCFunction)(void(*)(void))_overlapped_Overlapped_WSARecvFromInto, METH_FASTCALL, _overlapped_Overlapped_WSARecvFromInto__doc__},
+
+static PyObject *
+_overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
+                                            HANDLE handle, Py_buffer *bufobj,
+                                            DWORD size, DWORD flags);
+
+static PyObject *
+_overlapped_Overlapped_WSARecvFromInto(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    HANDLE handle;
+    Py_buffer bufobj = {NULL, NULL};
+    DWORD size;
+    DWORD flags = 0;
+
+    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"y*k|k:WSARecvFromInto",
+        &handle, &bufobj, &size, &flags)) {
+        goto exit;
+    }
+    return_value = _overlapped_Overlapped_WSARecvFromInto_impl(self, handle, &bufobj, size, flags);
+
+exit:
+    /* Cleanup for bufobj */
+    if (bufobj.obj) {
+       PyBuffer_Release(&bufobj);
+    }
+
+    return return_value;
+}
+/*[clinic end generated code: output=5c9b17890ef29d52 input=a9049054013a1b77]*/
