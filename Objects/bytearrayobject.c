@@ -850,17 +850,21 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
             return -1;
         }
         PyObject **items = PySequence_Fast_ITEMS(arg);
-
+        char *s = PyByteArray_AS_STRING(self);
         for (Py_ssize_t i = 0; i < size; i++) {
             int value;
+            if (!PyLong_CheckExact(items[i])) {
+                goto slowpath;
+            }
             int rc = _getbytevalue(items[i], &value);
             if (!rc) {
                 return -1;
             }
-            PyByteArray_AS_STRING(self)[i] = value;
+            s[i] = value;
         }
         return 0;
     }
+slowpath:
     /* Get the iterator */
     it = PyObject_GetIter(arg);
     if (it == NULL) {
