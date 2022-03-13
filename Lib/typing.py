@@ -430,7 +430,9 @@ class _LiteralSpecialForm(_SpecialForm, _root=True):
 
 class _AnyMeta(type):
     def __instancecheck__(self, obj):
-        raise TypeError("typing.Any cannot be used with isinstance()")
+        if self is Any:
+            raise TypeError("typing.Any cannot be used with isinstance()")
+        return super().__instancecheck__(obj)
 
     def __repr__(self):
         return "typing.Any"

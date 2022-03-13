@@ -105,15 +105,14 @@ class AnyTests(BaseTestCase):
 
         class Something: pass
         self.assertFalse(issubclass(Something, Any))
+        self.assertNotIsInstance(Something(), Mock)
 
         class MockSomething(Something, Mock): pass
         self.assertTrue(issubclass(MockSomething, Any))
         ms = MockSomething()
         self.assertIsInstance(ms, MockSomething)
         self.assertIsInstance(ms, Something)
-        with self.assertRaises(TypeError):
-            # TODO(address in code review): this seems undesirable, should we abandon instancecheck?
-            self.assertIsInstance(ms, Mock)
+        self.assertIsInstance(ms, Mock)
 
     def test_cannot_instantiate(self):
         with self.assertRaises(TypeError):
