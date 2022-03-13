@@ -1,1 +1,1 @@
-Allow subclassing of :class:`typing.Any`
+Allow subclassing of :class:`typing.Any`. Patch by Shantanu Jain.
