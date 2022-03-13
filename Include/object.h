@@ -108,7 +108,7 @@ struct _object {
 #define _PyObject_CAST_CONST(op) ((const PyObject*)(op))
 
 typedef struct {
-    PyObject ob_base;
+    PyObject_HEAD
     Py_ssize_t ob_size; /* Number of items in variable part */
 } PyVarObject;
 
