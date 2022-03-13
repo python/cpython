@@ -865,6 +865,10 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
         return 0;
     }
 slowpath:
+    if (Py_SIZE(self) != 0) {
+        if (PyByteArray_Resize((PyObject *)self, 0) < 0)
+            return -1;
+    }
     /* Get the iterator */
     it = PyObject_GetIter(arg);
     if (it == NULL) {
