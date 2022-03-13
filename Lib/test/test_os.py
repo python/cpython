@@ -24,7 +24,6 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
-import threading
 import time
 import types
 import unittest
@@ -34,7 +33,6 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
-from test.support import threading_helper
 from test.support import warnings_helper
 from platform import win32_is_iot
 
@@ -3231,12 +3229,10 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.key = threading_helper.threading_setup()
         create_file(os_helper.TESTFN, cls.DATA)
 
     @classmethod
     def tearDownClass(cls):
-        threading_helper.threading_cleanup(*cls.key)
         os_helper.unlink(os_helper.TESTFN)
 
     @staticmethod
