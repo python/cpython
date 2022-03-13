@@ -2884,7 +2884,6 @@ class Win32NtTests(unittest.TestCase):
         # TODO: Figure out why can't `fname` be simply `os_helper.TESTFN`?
         fname = os.path.join(os.environ['TEMP'], os_helper.TESTFN + '_46785')
         self.addCleanup(os_helper.unlink, fname)
-        # TODO: Think about putting this in an actual file?
         command = '''if 1:
             import os
             import sys

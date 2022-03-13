@@ -1896,7 +1896,7 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                 case ERROR_NOT_READY:
                 case ERROR_BAD_NET_NAME:
                     break;
-                // restore the error from CreateFileW()
+                /* Restore the error from CreateFileW(). */
                 default:
                     SetLastError(error);
                 }
