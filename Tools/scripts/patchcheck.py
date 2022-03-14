@@ -130,6 +130,8 @@ def changed_files(base_branch=None):
         with subprocess.Popen(cmd.split(),
                               stdout=subprocess.PIPE,
                               cwd=SRCDIR) as st:
+            if st.wait() != 0:
+                sys.exit(f'error running {cmd}')
             for line in st.stdout:
                 line = line.decode().rstrip()
                 status_text, filename = line.split(maxsplit=1)
