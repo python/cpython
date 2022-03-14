@@ -6706,7 +6706,6 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
        then call the trace function if we're tracing source lines.
     */
     initialize_trace_info(&tstate->trace_info, frame);
-    // XXX: Is this broken?
     int prev = _PyCode_CODE(frame->f_code)[instr_prev];
     int lastline;
     if (_PyOpcode_Deopt[_Py_OPCODE(prev)] == RESUME && _Py_OPARG(prev) == 0) {
@@ -6724,6 +6723,8 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         /* Trace backward edges (except in 'yield from') or if line number has changed */
         int trace = line != lastline ||
             (frame->f_lasti < instr_prev &&
+            // SEND has no quickened forms, so no need to use _PyOpcode_Deopt
+            // here:
             _Py_OPCODE(_PyCode_CODE(frame->f_code)[frame->f_lasti]) != SEND);
         if (trace) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);

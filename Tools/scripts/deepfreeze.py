@@ -304,8 +304,9 @@ class Printer:
             self.write(f".co_endlinetable = {co_endlinetable},")
             self.write(f".co_columntable = {co_columntable},")
             self.write(f"._co_code = {make_string_literal(code.co_code)},")
-        self.deallocs.append(f"_PyStaticCode_Dealloc((PyCodeObject *)&{name});")
-        self.interns.append(f"_PyStaticCode_InternStrings((PyCodeObject *)&{name})")
+        cast = f"(PyCodeObject *)&{name}"
+        self.deallocs.append(f"_PyStaticCode_Dealloc({cast});")
+        self.interns.append(f"_PyStaticCode_InternStrings({cast})")
         return f"& {name}.ob_base.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
