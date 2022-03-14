@@ -2389,7 +2389,6 @@ bytearrayiter_next(bytesiterobject *it)
 {
     PyByteArrayObject *seq;
 
-
     assert(it != NULL);
     seq = it->it_seq;
     if (seq == NULL)
