@@ -3502,6 +3502,7 @@ AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
 dnl
 dnl Detect Tcl/Tk. Use pkg-config if available.
 dnl
+found_tcltk=no
 for _QUERY in \
   "tcl >= 8.4.2 tk >= 8.4.2" \
   "tcl8.6 tk8.6" \
@@ -3511,7 +3512,10 @@ for _QUERY in \
   "tcl8.4 >= 8.4.2 tk8.4 >= 8.4.2" \
   "tcl84 >= 8.4.2 tk84 >= 8.4.2" \
 ; do
-  PKG_CHECK_MODULES([TCLTK], [$_QUERY], [break], [found_tcltk=no])
+  PKG_CHECK_EXISTS([PCLTK], [$_QUERY], [
+    PKG_CHECK_MODULES([TCLTK], [$_QUERY], [found_tcltk=yes], [found_tcltk=no])
+  ])
+  AS_VAR_IF([found_tcltk], [yes], [break])
 done
 
 AS_VAR_IF([found_tcltk], [no], [

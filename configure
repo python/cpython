@@ -12284,6 +12284,7 @@ $as_echo "#define PY_SQLITE_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
 
 fi
 
+found_tcltk=no
 for _QUERY in \
   "tcl >= 8.4.2 tk >= 8.4.2" \
   "tcl8.6 tk8.6" \
@@ -12293,6 +12294,15 @@ for _QUERY in \
   "tcl8.4 >= 8.4.2 tk8.4 >= 8.4.2" \
   "tcl84 >= 8.4.2 tk84 >= 8.4.2" \
 ; do
+  if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"PCLTK\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "PCLTK") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  $_QUERY
+else
+
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TCLTK" >&5
@@ -12362,7 +12372,12 @@ else
 	TCLTK_LIBS=$pkg_cv_TCLTK_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-	break
+	found_tcltk=yes
+fi
+
+fi
+  if test "x$found_tcltk" = xyes; then :
+  break
 fi
 done
 
