@@ -1565,10 +1565,17 @@ trace_function_exit(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject 
 }
 
 static int
-skip_backwards_over_extended_args(PyCodeObject *code, int offset)
+skip_backwards_over_extended_args(PyCodeObject *code, int offset, int oparg)
 {
-    // XXX: I think this is broken?
-    while (offset > 0 && _Py_OPCODE(_PyCode_CODE(code)[offset]) == EXTENDED_ARG) {
+    // You typically cannot scan backwards like this over quickened code, since
+    // inline cache entries might *appear* to be valid instructions. However,
+    // our check for oparg makes this particular case safe: the instruction at
+    // the current offset can *only* be an EXTENDED_ARG iff oparg is still
+    // nonzero. Also, EXTENDED_ARG has no quickened forms, so no need to use
+    // _PyOpcode_Deopt here:
+    while (oparg && _Py_OPCODE(_PyCode_CODE(code)[offset]) == EXTENDED_ARG) {
+        assert(0 < offset);
+        oparg >>= 8;
         offset--;
     }
     return offset;
@@ -5409,6 +5416,7 @@ handle_eval_breaker:
 
         TARGET(EXTENDED_ARG) {
             int oldoparg = oparg;
+            assert(oldoparg);
             NEXTOPARG();
             oparg |= oldoparg << 8;
             PRE_DISPATCH_GOTO();
@@ -5424,7 +5432,8 @@ handle_eval_breaker:
 #else
         case DO_TRACING: {
 #endif
-            int instr_prev = skip_backwards_over_extended_args(frame->f_code, frame->f_lasti);
+            int instr_prev = skip_backwards_over_extended_args(
+                frame->f_code, frame->f_lasti, oparg);
             frame->f_lasti = INSTR_OFFSET();
             TRACING_NEXTOPARG();
             if (opcode == RESUME) {
