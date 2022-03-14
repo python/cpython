@@ -58,6 +58,8 @@ Doc/.env/
 Include/pydtrace_probes.h
 Lib/distutils/command/*.pdb
 Lib/lib2to3/*.pickle
+Lib/site-packages/*
+!Lib/site-packages/README.txt
 Lib/test/data/*
 !Lib/test/data/README
 /_bootstrap_python
