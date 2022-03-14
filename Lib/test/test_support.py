@@ -683,7 +683,7 @@ class TestSupport(unittest.TestCase):
                                  'Warning -- a\nWarning -- b\n')
 
     def test_has_strftime_extensions(self):
-        if support.is_emscripten or support.is_wasi:
+        if support.is_emscripten or support.is_wasi or sys.platform == "win32":
             self.assertFalse(support.has_strftime_extensions)
         else:
             self.assertTrue(support.has_strftime_extensions)

@@ -521,7 +521,10 @@ def requires_subprocess():
     return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
 
 # Does strftime() support glibc extension like '%4Y'?
-has_strftime_extensions = time.strftime("%4Y") != "%4Y"
+try:
+    has_strftime_extensions = time.strftime("%4Y") != "%4Y"
+except ValueError:
+    has_strftime_extensions = False
 
 # Define the URL of a dedicated HTTP server for the network tests.
 # The URL must use clear-text HTTP: no redirection to encrypted HTTPS.
