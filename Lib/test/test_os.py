@@ -2192,6 +2192,7 @@ class TestInvalidFD(unittest.TestCase):
     def test_writev(self):
         self.check(os.writev, [b'abc'])
 
+    @support.requires_subprocess()
     def test_inheritable(self):
         self.check(os.get_inheritable)
         self.check(os.set_inheritable, True)
@@ -2203,6 +2204,7 @@ class TestInvalidFD(unittest.TestCase):
         self.check(os.set_blocking, True)
 
 
+@unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
 class LinkTests(unittest.TestCase):
     def setUp(self):
         self.file1 = os_helper.TESTFN
@@ -3865,6 +3867,8 @@ class CPUCountTests(unittest.TestCase):
             self.skipTest("Could not determine the number of CPUs")
 
 
+# FD inheritance check is only useful for systems with process support.
+@support.requires_subprocess()
 class FDInheritanceTests(unittest.TestCase):
     def test_get_set_inheritable(self):
         fd = os.open(__file__, os.O_RDONLY)

@@ -4755,6 +4755,9 @@ Miscellaneous System Information
 
    .. availability:: Unix.
 
+   .. versionchanged:: 3.11
+      Add ``'SC_MINSIGSTKSZ'`` name.
+
 The following data values are used to support path manipulation operations.  These
 are defined for all platforms.
 
