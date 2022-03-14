@@ -3308,7 +3308,7 @@ class SendfileTestServer(asyncore.dispatcher, threading.Thread):
 
 
 @unittest.skipUnless(hasattr(os, 'sendfile'), "test needs os.sendfile()")
-class TestSendfile(unittest.TestCase):
+class TestSendfile(unittest.IsolatedAsyncioTestCase):
 
     DATA = b"12345abcde" * 16 * 1024  # 160 KiB
     SUPPORT_HEADERS_TRAILERS = not sys.platform.startswith("linux") and \
@@ -3329,7 +3329,7 @@ class TestSendfile(unittest.TestCase):
         threading_helper.threading_cleanup(*cls.key)
         os_helper.unlink(os_helper.TESTFN)
 
-    def setUp(self):
+    async def asyncSetUp(self):
         self.server = SendfileTestServer((socket_helper.HOST, 0))
         self.server.start()
         self.client = socket.socket()
@@ -3341,7 +3341,7 @@ class TestSendfile(unittest.TestCase):
         self.file = open(os_helper.TESTFN, 'rb')
         self.fileno = self.file.fileno()
 
-    def tearDown(self):
+    async def asyncTearDown(self):
         self.file.close()
         self.client.close()
         if self.server.running:
@@ -3365,7 +3365,7 @@ class TestSendfile(unittest.TestCase):
                 else:
                     raise
 
-    def test_send_whole_file(self):
+    async def test_send_whole_file(self):
         # normal send
         total_sent = 0
         offset = 0
@@ -3387,7 +3387,7 @@ class TestSendfile(unittest.TestCase):
         self.assertEqual(len(data), len(self.DATA))
         self.assertEqual(data, self.DATA)
 
-    def test_send_at_certain_offset(self):
+    async def test_send_at_certain_offset(self):
         # start sending a file at a certain offset
         total_sent = 0
         offset = len(self.DATA) // 2
@@ -3410,7 +3410,7 @@ class TestSendfile(unittest.TestCase):
         self.assertEqual(len(data), len(expected))
         self.assertEqual(data, expected)
 
-    def test_offset_overflow(self):
+    async def test_offset_overflow(self):
         # specify an offset > file size
         offset = len(self.DATA) + 4096
         try:
@@ -3427,12 +3427,12 @@ class TestSendfile(unittest.TestCase):
         data = self.server.handler_instance.get_data()
         self.assertEqual(data, b'')
 
-    def test_invalid_offset(self):
+    async def test_invalid_offset(self):
         with self.assertRaises(OSError) as cm:
             os.sendfile(self.sockno, self.fileno, -1, 4096)
         self.assertEqual(cm.exception.errno, errno.EINVAL)
 
-    def test_keywords(self):
+    async def test_keywords(self):
         # Keyword arguments should be supported
         os.sendfile(out_fd=self.sockno, in_fd=self.fileno,
                     offset=0, count=4096)
@@ -3444,7 +3444,7 @@ class TestSendfile(unittest.TestCase):
     # --- headers / trailers tests
 
     @requires_headers_trailers
-    def test_headers(self):
+    async def test_headers(self):
         total_sent = 0
         expected_data = b"x" * 512 + b"y" * 256 + self.DATA[:-1]
         sent = os.sendfile(self.sockno, self.fileno, 0, 4096,
@@ -3469,7 +3469,7 @@ class TestSendfile(unittest.TestCase):
         self.assertEqual(hash(data), hash(expected_data))
 
     @requires_headers_trailers
-    def test_trailers(self):
+    async def test_trailers(self):
         TESTFN2 = os_helper.TESTFN + "2"
         file_data = b"abcdef"
 
@@ -3486,7 +3486,7 @@ class TestSendfile(unittest.TestCase):
 
     @requires_headers_trailers
     @requires_32b
-    def test_headers_overflow_32bits(self):
+    async def test_headers_overflow_32bits(self):
         self.server.handler_instance.accumulate = False
         with self.assertRaises(OSError) as cm:
             os.sendfile(self.sockno, self.fileno, 0, 0,
@@ -3495,7 +3495,7 @@ class TestSendfile(unittest.TestCase):
 
     @requires_headers_trailers
     @requires_32b
-    def test_trailers_overflow_32bits(self):
+    async def test_trailers_overflow_32bits(self):
         self.server.handler_instance.accumulate = False
         with self.assertRaises(OSError) as cm:
             os.sendfile(self.sockno, self.fileno, 0, 0,
@@ -3505,7 +3505,7 @@ class TestSendfile(unittest.TestCase):
     @requires_headers_trailers
     @unittest.skipUnless(hasattr(os, 'SF_NODISKIO'),
                          'test needs os.SF_NODISKIO')
-    def test_flags(self):
+    async def test_flags(self):
         try:
             os.sendfile(self.sockno, self.fileno, 0, 4096,
                         flags=os.SF_NODISKIO)
