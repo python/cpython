@@ -6716,6 +6716,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
        then call the trace function if we're tracing source lines.
     */
     initialize_trace_info(&tstate->trace_info, frame);
+    // XXX!
     int prev = _PyCode_CODE(frame->f_code)[instr_prev];
     int lastline;
     if (_PyOpcode_Deopt[_Py_OPCODE(prev)] == RESUME && _Py_OPARG(prev) == 0) {
