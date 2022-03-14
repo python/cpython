@@ -226,6 +226,15 @@ New Modules
 Improved Modules
 ================
 
+asyncio
+-------
+
+* Add raw datagram socket functions to the event loop:
+  :meth:`~asyncio.AbstractEventLoop.sock_sendto`,
+  :meth:`~asyncio.AbstractEventLoop.sock_recvfrom` and
+  :meth:`~asyncio.AbstractEventLoop.sock_recvfrom_into`.
+  (Contributed by Alex Grönholm in :issue:`46805`.)
+
 fractions
 ---------
 
@@ -765,6 +774,12 @@ New Features
   in which a method was defined, in cases where this information is not
   available directly (via :c:type:`PyCMethod`).
   (Contributed by Petr Viktorin in :issue:`46613`.)
+
+* Add new functions to pack and unpack C double (serialize and deserialize):
+  :c:func:`PyFloat_Pack2`, :c:func:`PyFloat_Pack4`, :c:func:`PyFloat_Pack8`,
+  :c:func:`PyFloat_Unpack2`, :c:func:`PyFloat_Unpack4` and
+  :c:func:`PyFloat_Unpack8`.
+  (Contributed by Victor Stinner in :issue:`46906`.)
 
 
 Porting to Python 3.11

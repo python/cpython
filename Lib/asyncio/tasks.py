@@ -67,7 +67,10 @@ def _set_task_name(task, name):
         try:
             set_name = task.set_name
         except AttributeError:
-            pass
+            warnings.warn("Task.set_name() was added in Python 3.8, "
+                      "the method support will be mandatory for third-party "
+                      "task implementations since 3.13.",
+                      DeprecationWarning, stacklevel=3)
         else:
             set_name(name)
 
@@ -90,7 +93,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     # status is still pending
     _log_destroy_pending = True
 
-    def __init__(self, coro, *, loop=None, name=None):
+    def __init__(self, coro, *, loop=None, name=None, context=None):
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -109,7 +112,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         self._must_cancel = False
         self._fut_waiter = None
         self._coro = coro
-        self._context = contextvars.copy_context()
+        if context is None:
+            self._context = contextvars.copy_context()
+        else:
+            self._context = context
 
         self._loop.call_soon(self.__step, context=self._context)
         _register_task(self)
@@ -357,13 +363,18 @@ else:
     Task = _CTask = _asyncio.Task
 
 
-def create_task(coro, *, name=None):
+def create_task(coro, *, name=None, context=None):
     """Schedule the execution of a coroutine object in a spawn task.
 
     Return a Task object.
     """
     loop = events.get_running_loop()
-    task = loop.create_task(coro)
+    if context is None:
+        # Use legacy API if context is not needed
+        task = loop.create_task(coro)
+    else:
+        task = loop.create_task(coro, context=context)
+
     _set_task_name(task, name)
     return task
 
