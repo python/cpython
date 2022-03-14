@@ -134,7 +134,7 @@ static int
 instr_size(struct instr *instruction)
 {
     int opcode = instruction->i_opcode;
-    int oparg = instruction->i_oparg;
+    int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
     return extended_args + 1 + caches;

@@ -5416,8 +5416,8 @@ handle_eval_breaker:
         }
 
         TARGET(EXTENDED_ARG) {
+            assert(oparg);
             int oldoparg = oparg;
-            assert(oldoparg);
             NEXTOPARG();
             oparg |= oldoparg << 8;
             PRE_DISPATCH_GOTO();
