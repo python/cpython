@@ -10,6 +10,7 @@
 **Source code:** :source:`Lib/asynchat.py`
 
 .. deprecated:: 3.6
+   :mod:`asynchat` will be removed in Python 3.12 (:pep:`594`).
    Please use :mod:`asyncio` instead.
 
 --------------
