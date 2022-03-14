@@ -682,6 +682,12 @@ class TestSupport(unittest.TestCase):
         self.check_print_warning("a\nb",
                                  'Warning -- a\nWarning -- b\n')
 
+    def test_has_strftime_extension(self):
+        if support.is_emscripten or support.is_wasi:
+            self.assertFalse(support.has_strftime_extension)
+        else:
+            self.assertTrue(support.has_strftime_extension)
+
     # XXX -follows a list of untested API
     # make_legacy_pyc
     # is_resource_enabled
