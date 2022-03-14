@@ -1,0 +1,1 @@
+Fix docstrings of :attr:`~property.getter`, :attr:`~property.setter`, and :attr:`~property.deleter` to clarify that they create a new copy of the property.
