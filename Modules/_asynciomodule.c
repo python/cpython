@@ -2030,13 +2030,13 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         return -1;
     }
 
-    if (context != NULL) {
-        self->task_context = Py_NewRef(context);
-    } else {
+    if (context == NULL) {
         Py_XSETREF(self->task_context, PyContext_CopyCurrent());
         if (self->task_context == NULL) {
             return -1;
         }
+    } else {
+        self->task_context = Py_NewRef(context);
     }
 
     Py_CLEAR(self->task_fut_waiter);
