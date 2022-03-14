@@ -46,24 +46,25 @@ class Runner:
         if self._loop is None:
             return
         try:
-            _cancel_all_tasks(self._loop)
-            self._loop.run_until_complete(self._loop.shutdown_asyncgens())
-            self._loop.run_until_complete(self._loop.shutdown_default_executor())
+            loop = self._loop
+            _cancel_all_tasks(loop)
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.run_until_complete(loop.shutdown_default_executor())
         finally:
-            self._loop.close()
+            loop.close()
             self._loop = None
 
-    def run(self, coro):
+    def run(self, coro, *, context=None):
         """Run a coroutine inside the embedded event loop."""
         if not coroutines.iscoroutine(coro):
             raise ValueError("a coroutine was expected, got {!r}".format(coro))
 
-        return self._loop.run_until_complete(coro)
+        task = self._loop.create_task(coro, context=context)
+        return self._loop.run_until_complete(task)
 
     def get_loop(self):
         """Returnb embedded event loop."""
         return self._loop
-
 
 
 def run(main, *, debug=None):
