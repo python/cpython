@@ -1526,7 +1526,8 @@ multiple fragments.
    .. note::
 
       The usage of :meth:`object.__str__() <object.__str__>` follows
-      :ref:`special-lookup`.
+      :ref:`special-lookup`, meaning the actual method called if neither
+      *encoding* nor *errors* is given is ``type(object).__str__(object)``.
 
    .. index::
       single: buffer protocol; str (built-in class)
