@@ -2042,8 +2042,8 @@ handle_eval_breaker:
             DEOPT_IF(var != left, BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             GETLOCAL(next_oparg) = NULL;
-            assert(Py_REFCNT(var) >= 2);
-            Py_DECREF(left); // XXX: We don't need the dealloc branch here
+            assert(Py_REFCNT(left) >= 2);
+            Py_SET_REFCNT(left, Py_REFCNT(left) - 1); // don't need to dealloc
             STACK_SHRINK(1);
             PyUnicode_Append(&TOP(), right);
             Py_DECREF(right);
