@@ -1,0 +1,50 @@
+name: Verify bundled pip and setuptools
+
+on:
+  push:
+    paths:
+      - 'Lib/ensurepip/_bundled/**'
+  pull_request:
+    paths:
+      - 'Lib/ensurepip/_bundled/**'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Compare checksums of bundled pip and setuptools to ones published on PyPI
+        run: |
+          package_names=("pip" "setuptools")
+          exit_status=0
+
+          for package_name in "${package_names[@]}"; do
+            package_path=$(find Lib/ensurepip/_bundled/ -name "${package_name}*")
+            echo $package_path
+
+            package_info=$(curl -fs "https://pypi.org/pypi/${package_name}/json")
+            package_file_name=$(basename $package_path)
+            package_version=$(
+              grep -Pom 1 "_${package_name^^}_VERSION = \"\K[^\"]*" Lib/ensurepip/__init__.py
+            )
+            expected_digest=$(echo $package_info | jq --raw-output "
+              .releases.\"${package_version}\"
+              | .[]
+              | select(.filename == \"${package_file_name}\")
+              | .digests.sha256
+            ")
+            echo "Expected digest: ${expected_digest}"
+
+            actual_digest=$(sha256sum $package_path | awk '{print $1}')
+            echo "Actual digest: ${actual_digest}"
+
+            if [ "$actual_digest" = "$expected_digest" ]; then
+              echo "Digests are equal."
+            else
+              echo "Digests are NOT equal."
+              exit_status=1
+            fi
+            echo
+          done
+
+          exit $exit_status
