@@ -1,4 +1,4 @@
-// types.Union -- used to represent e.g. Union[int, str], int | str
+// types.UnionType -- used to represent e.g. Union[int, str], int | str
 #include "Python.h"
 #include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
 #include "pycore_unionobject.h"
@@ -115,31 +115,6 @@ union_subclasscheck(PyObject *self, PyObject *instance)
     Py_RETURN_FALSE;
 }
 
-static int
-is_typing_module(PyObject *obj)
-{
-    _Py_IDENTIFIER(__module__);
-    PyObject *module;
-    if (_PyObject_LookupAttrId(obj, &PyId___module__, &module) < 0) {
-        return -1;
-    }
-    int is_typing = (module != NULL &&
-                     PyUnicode_Check(module) &&
-                     _PyUnicode_EqualToASCIIString(module, "typing"));
-    Py_XDECREF(module);
-    return is_typing;
-}
-
-static int
-is_typing_name(PyObject *obj, const char *name)
-{
-    PyTypeObject *type = Py_TYPE(obj);
-    if (strcmp(type->tp_name, name) != 0) {
-        return 0;
-    }
-    return is_typing_module((PyObject *)type);
-}
-
 static PyObject *
 union_richcompare(PyObject *a, PyObject *b, int op)
 {
@@ -252,64 +227,18 @@ dedup_and_flatten_args(PyObject* args)
 }
 
 static int
-is_typevar(PyObject *obj)
-{
-    return is_typing_name(obj, "TypeVar");
-}
-
-static int
-is_special_form(PyObject *obj)
-{
-    return is_typing_name(obj, "_SpecialForm");
-}
-
-static int
-is_new_type(PyObject *obj)
-{
-    PyTypeObject *type = Py_TYPE(obj);
-    if (type != &PyFunction_Type) {
-        return 0;
-    }
-    return is_typing_module(obj);
-}
-
-// Emulates short-circuiting behavior of the ``||`` operator
-// while also checking negative values.
-#define CHECK_RES(res) { \
-    int result = res; \
-    if (result) { \
-        return result; \
-    } \
-}
-
-// Returns 1 on true, 0 on false, and -1 on error.
-static int
 is_unionable(PyObject *obj)
 {
-    if (obj == Py_None ||
+    return (obj == Py_None ||
         PyType_Check(obj) ||
         _PyGenericAlias_Check(obj) ||
-        _PyUnion_Check(obj))
-    {
-        return 1;
-    }
-    CHECK_RES(is_typevar(obj));
-    CHECK_RES(is_new_type(obj));
-    CHECK_RES(is_special_form(obj));
-    return 0;
+        _PyUnion_Check(obj));
 }
 
 PyObject *
 _Py_union_type_or(PyObject* self, PyObject* other)
 {
-    int r = is_unionable(self);
-    if (r > 0) {
-        r = is_unionable(other);
-    }
-    if (r < 0) {
-        return NULL;
-    }
-    if (!r) {
+    if (!is_unionable(self) || !is_unionable(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
@@ -326,10 +255,6 @@ _Py_union_type_or(PyObject* self, PyObject* other)
 static int
 union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
 {
-    _Py_IDENTIFIER(__module__);
-    _Py_IDENTIFIER(__qualname__);
-    _Py_IDENTIFIER(__origin__);
-    _Py_IDENTIFIER(__args__);
     PyObject *qualname = NULL;
     PyObject *module = NULL;
     PyObject *tmp;
@@ -340,13 +265,13 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         return _PyUnicodeWriter_WriteASCIIString(writer, "None", 4);
     }
 
-    if (_PyObject_LookupAttrId(p, &PyId___origin__, &tmp) < 0) {
+    if (_PyObject_LookupAttr(p, &_Py_ID(__origin__), &tmp) < 0) {
         goto exit;
     }
 
     if (tmp) {
         Py_DECREF(tmp);
-        if (_PyObject_LookupAttrId(p, &PyId___args__, &tmp) < 0) {
+        if (_PyObject_LookupAttr(p, &_Py_ID(__args__), &tmp) < 0) {
             goto exit;
         }
         if (tmp) {
@@ -356,13 +281,13 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         }
     }
 
-    if (_PyObject_LookupAttrId(p, &PyId___qualname__, &qualname) < 0) {
+    if (_PyObject_LookupAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
         goto exit;
     }
     if (qualname == NULL) {
         goto use_repr;
     }
-    if (_PyObject_LookupAttrId(p, &PyId___module__, &module) < 0) {
+    if (_PyObject_LookupAttr(p, &_Py_ID(__module__), &module) < 0) {
         goto exit;
     }
     if (module == NULL || module == Py_None) {
@@ -446,23 +371,22 @@ union_getitem(PyObject *self, PyObject *item)
         return NULL;
     }
 
-    // Check arguments are unionable.
+    PyObject *res;
     Py_ssize_t nargs = PyTuple_GET_SIZE(newargs);
-    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
-        PyObject *arg = PyTuple_GET_ITEM(newargs, iarg);
-        int is_arg_unionable = is_unionable(arg);
-        if (is_arg_unionable <= 0) {
-            Py_DECREF(newargs);
-            if (is_arg_unionable == 0) {
-                PyErr_Format(PyExc_TypeError,
-                             "Each union argument must be a type, got %.100R", arg);
+    if (nargs == 0) {
+        res = make_union(newargs);
+    }
+    else {
+        res = PyTuple_GET_ITEM(newargs, 0);
+        Py_INCREF(res);
+        for (Py_ssize_t iarg = 1; iarg < nargs; iarg++) {
+            PyObject *arg = PyTuple_GET_ITEM(newargs, iarg);
+            Py_SETREF(res, PyNumber_Or(res, arg));
+            if (res == NULL) {
+                break;
             }
-            return NULL;
         }
     }
-
-    PyObject *res = make_union(newargs);
-
     Py_DECREF(newargs);
     return res;
 }
@@ -486,7 +410,7 @@ union_parameters(PyObject *self, void *Py_UNUSED(unused))
 }
 
 static PyGetSetDef union_properties[] = {
-    {"__parameters__", union_parameters, (setter)NULL, "Type variables in the types.Union.", NULL},
+    {"__parameters__", union_parameters, (setter)NULL, "Type variables in the types.UnionType.", NULL},
     {0}
 };
 
@@ -494,9 +418,31 @@ static PyNumberMethods union_as_number = {
         .nb_or = _Py_union_type_or, // Add __or__ function
 };
 
+static const char* const cls_attrs[] = {
+        "__module__",  // Required for compatibility with typing module
+        NULL,
+};
+
+static PyObject *
+union_getattro(PyObject *self, PyObject *name)
+{
+    unionobject *alias = (unionobject *)self;
+    if (PyUnicode_Check(name)) {
+        for (const char * const *p = cls_attrs; ; p++) {
+            if (*p == NULL) {
+                break;
+            }
+            if (_PyUnicode_EqualToASCIIString(name, *p)) {
+                return PyObject_GetAttr((PyObject *) Py_TYPE(alias), name);
+            }
+        }
+    }
+    return PyObject_GenericGetAttr(self, name);
+}
+
 PyTypeObject _PyUnion_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "types.Union",
+    .tp_name = "types.UnionType",
     .tp_doc = "Represent a PEP 604 union type\n"
               "\n"
               "E.g. for int | str",
@@ -507,7 +453,7 @@ PyTypeObject _PyUnion_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = union_traverse,
     .tp_hash = union_hash,
-    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_getattro = union_getattro,
     .tp_members = union_members,
     .tp_methods = union_methods,
     .tp_richcompare = union_richcompare,

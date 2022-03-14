@@ -160,7 +160,10 @@ PyCMethod_GetClass(PyObject *op)
 static void
 meth_dealloc(PyCFunctionObject *m)
 {
-    _PyObject_GC_UNTRACK(m);
+    // The Py_TRASHCAN mechanism requires that we be able to
+    // call PyObject_GC_UnTrack twice on an object.
+    PyObject_GC_UnTrack(m);
+    Py_TRASHCAN_BEGIN(m, meth_dealloc);
     if (m->m_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*) m);
     }
@@ -170,17 +173,16 @@ meth_dealloc(PyCFunctionObject *m)
     Py_XDECREF(m->m_self);
     Py_XDECREF(m->m_module);
     PyObject_GC_Del(m);
+    Py_TRASHCAN_END;
 }
 
 static PyObject *
 meth_reduce(PyCFunctionObject *m, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(getattr);
-
     if (m->m_self == NULL || PyModule_Check(m->m_self))
         return PyUnicode_FromString(m->m_ml->ml_name);
 
-    return Py_BuildValue("N(Os)", _PyEval_GetBuiltinId(&PyId_getattr),
+    return Py_BuildValue("N(Os)", _PyEval_GetBuiltin(&_Py_ID(getattr)),
                          m->m_self, m->m_ml->ml_name);
 }
 
@@ -219,14 +221,13 @@ meth_get__qualname__(PyCFunctionObject *m, void *closure)
        Otherwise return type(m.__self__).__qualname__ + '.' + m.__name__
        (e.g. [].append.__qualname__ == 'list.append') */
     PyObject *type, *type_qualname, *res;
-    _Py_IDENTIFIER(__qualname__);
 
     if (m->m_self == NULL || PyModule_Check(m->m_self))
         return PyUnicode_FromString(m->m_ml->ml_name);
 
     type = PyType_Check(m->m_self) ? m->m_self : (PyObject*)Py_TYPE(m->m_self);
 
-    type_qualname = _PyObject_GetAttrId(type, &PyId___qualname__);
+    type_qualname = PyObject_GetAttr(type, &_Py_ID(__qualname__));
     if (type_qualname == NULL)
         return NULL;
 

@@ -145,7 +145,7 @@ class MetadataVisitor(asdl.VisitorBase):
         #                   names where all the constructors
         #                   belonging to that type lack of any
         #                   fields.
-        #    - identifiers: All identifiers used in the AST decclarations
+        #    - identifiers: All identifiers used in the AST declarations
         #    - singletons:  List of all constructors that originates from
         #                   simple sums.
         #    - types:       List of all top level type names

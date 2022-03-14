@@ -4,6 +4,7 @@ Converted to C by Dmitry Vasiliev (dima at hlabs.spb.ru).
 */
 
 #define PY_SSIZE_T_CLEAN
+#define NEEDS_PY_IDENTIFIER
 #include "Python.h"
 
 /*[clinic input]
@@ -240,7 +241,7 @@ _bisect_insort_left_impl(PyObject *module, PyObject *a, PyObject *x,
 {
     PyObject *result, *key_x;
     Py_ssize_t index;
-    
+
     if (key == Py_None) {
         index = internal_bisect_left(a, x, lo, hi, key);
     } else {

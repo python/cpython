@@ -81,8 +81,9 @@ Object Protocol
    return ``0`` on success.  This is the equivalent of the Python statement
    ``o.attr_name = v``.
 
-   If *v* is ``NULL``, the attribute is deleted, however this feature is
-   deprecated in favour of using :c:func:`PyObject_DelAttr`.
+   If *v* is ``NULL``, the attribute is deleted. This behaviour is deprecated
+   in favour of using :c:func:`PyObject_DelAttr`, but there are currently no
+   plans to remove it.
 
 
 .. c:function:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
@@ -358,7 +359,7 @@ Object Protocol
    iterated.
 
 
-.. c:function:: PyObject* PyObject_GetAiter(PyObject *o)
+.. c:function:: PyObject* PyObject_GetAIter(PyObject *o)
 
    This is the equivalent to the Python expression ``aiter(o)``. Takes an
    :class:`AsyncIterable` object and returns an :class:`AsyncIterator` for it.

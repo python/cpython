@@ -31,7 +31,10 @@ from datetime import timezone
 from datetime import date, datetime
 import time as _time
 
-import _testcapi
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
 
 # Needed by test_datetime
 import _strptime
@@ -344,7 +347,7 @@ class TestTimeZone(unittest.TestCase):
         with self.assertRaises(TypeError): timezone(ZERO) < timezone(ZERO)
         self.assertIn(timezone(ZERO), {timezone(ZERO)})
         self.assertTrue(timezone(ZERO) != None)
-        self.assertFalse(timezone(ZERO) ==  None)
+        self.assertFalse(timezone(ZERO) == None)
 
         tz = timezone(ZERO)
         self.assertTrue(tz == ALWAYS_EQ)
@@ -1861,8 +1864,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
     def test_fromisoformat_fails_typeerror(self):
         # Test that fromisoformat fails when passed the wrong type
-        import io
-
         bad_types = [b'2009-03-01', None, io.StringIO('2009-03-01')]
         for bad_type in bad_types:
             with self.assertRaises(TypeError):
@@ -3985,8 +3986,6 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
 
     def test_fromisoformat_fails_typeerror(self):
         # Test the fromisoformat fails when passed the wrong type
-        import io
-
         bad_types = [b'12:30:45', None, io.StringIO('12:30:45')]
 
         for bad_type in bad_types:
@@ -4064,7 +4063,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         self.assertEqual(t1, t1)
         self.assertEqual(t2, t2)
 
-        # Equal afer adjustment.
+        # Equal after adjustment.
         t1 = self.theclass(1, 12, 31, 23, 59, tzinfo=FixedOffset(1, ""))
         t2 = self.theclass(2, 1, 1, 3, 13, tzinfo=FixedOffset(3*60+13+2, ""))
         self.assertEqual(t1, t2)
@@ -4903,7 +4902,7 @@ class TestTimezoneConversions(unittest.TestCase):
         # OTOH, these fail!  Don't enable them.  The difficulty is that
         # the edge case tests assume that every hour is representable in
         # the "utc" class.  This is always true for a fixed-offset tzinfo
-        # class (lke utc_real and utc_fake), but not for Eastern or Central.
+        # class (like utc_real and utc_fake), but not for Eastern or Central.
         # For these adjacent DST-aware time zones, the range of time offsets
         # tested ends up creating hours in the one that aren't representable
         # in the other.  For the same reason, we would see failures in the
@@ -5918,6 +5917,7 @@ class IranTest(ZoneInfoTest):
     zonename = 'Asia/Tehran'
 
 
+@unittest.skipIf(_testcapi is None, 'need _testcapi module')
 class CapiTest(unittest.TestCase):
     def setUp(self):
         # Since the C API is not present in the _Pure tests, skip all tests

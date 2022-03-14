@@ -7,7 +7,7 @@ import sys
 import threading
 import unittest
 from unittest import mock
-
+from types import GenericAlias
 import asyncio
 from asyncio import futures
 from test.test_asyncio import utils as test_utils
@@ -54,30 +54,30 @@ class DuckFuture:
                 or self.__exception is not None)
 
     def result(self):
-        assert not self.cancelled()
+        self.assertFalse(self.cancelled())
         if self.__exception is not None:
             raise self.__exception
         return self.__result
 
     def exception(self):
-        assert not self.cancelled()
+        self.assertFalse(self.cancelled())
         return self.__exception
 
     def set_result(self, result):
-        assert not self.done()
-        assert result is not None
+        self.assertFalse(self.done())
+        self.assertIsNotNone(result)
         self.__result = result
 
     def set_exception(self, exception):
-        assert not self.done()
-        assert exception is not None
+        self.assertFalse(self.done())
+        self.assertIsNotNone(exception)
         self.__exception = exception
 
     def __iter__(self):
         if not self.done():
             self._asyncio_future_blocking = True
             yield self
-        assert self.done()
+        self.assertTrue(self.done())
         return self.result()
 
 
@@ -91,12 +91,12 @@ class DuckTests(test_utils.TestCase):
     def test_wrap_future(self):
         f = DuckFuture()
         g = asyncio.wrap_future(f)
-        assert g is f
+        self.assertIs(g, f)
 
     def test_ensure_future(self):
         f = DuckFuture()
         g = asyncio.ensure_future(f)
-        assert g is f
+        self.assertIs(g, f)
 
 
 class BaseFutureTests:
@@ -108,6 +108,11 @@ class BaseFutureTests:
         super().setUp()
         self.loop = self.new_test_loop()
         self.addCleanup(self.loop.close)
+
+    def test_generic_alias(self):
+        future = self.cls[str]
+        self.assertEqual(future.__args__, (str,))
+        self.assertIsInstance(future, GenericAlias)
 
     def test_isfuture(self):
         class MyFuture:
@@ -571,13 +576,10 @@ class BaseFutureTests:
         test_utils.run_briefly(self.loop)
         support.gc_collect()
 
-        if sys.version_info >= (3, 4):
-            regex = f'^{self.cls.__name__} exception was never retrieved\n'
-            exc_info = (type(exc), exc, exc.__traceback__)
-            m_log.error.assert_called_once_with(mock.ANY, exc_info=exc_info)
-        else:
-            regex = r'^Future/Task exception was never retrieved\n'
-            m_log.error.assert_called_once_with(mock.ANY, exc_info=False)
+        regex = f'^{self.cls.__name__} exception was never retrieved\n'
+        exc_info = (type(exc), exc, exc.__traceback__)
+        m_log.error.assert_called_once_with(mock.ANY, exc_info=exc_info)
+
         message = m_log.error.call_args[0][0]
         self.assertRegex(message, re.compile(regex, re.DOTALL))
 
@@ -918,6 +920,8 @@ class PyFutureInheritanceTests(BaseFutureInheritanceTests,
         return futures._PyFuture
 
 
+@unittest.skipUnless(hasattr(futures, '_CFuture'),
+                     'requires the C _asyncio module')
 class CFutureInheritanceTests(BaseFutureInheritanceTests,
                               test_utils.TestCase):
     def _get_future_cls(self):

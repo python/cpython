@@ -175,7 +175,7 @@ class MimeTypes:
         but non-standard types.
         """
         type = type.lower()
-        extensions = self.types_map_inv[True].get(type, [])
+        extensions = list(self.types_map_inv[True].get(type, []))
         if not strict:
             for ext in self.types_map_inv[False].get(type, []):
                 if ext not in extensions:
@@ -436,6 +436,8 @@ def _default_mime_types():
         '.doc'    : 'application/msword',
         '.dot'    : 'application/msword',
         '.wiz'    : 'application/msword',
+        '.nq'     : 'application/n-quads',
+        '.nt'     : 'application/n-triples',
         '.bin'    : 'application/octet-stream',
         '.a'      : 'application/octet-stream',
         '.dll'    : 'application/octet-stream',
@@ -449,6 +451,7 @@ def _default_mime_types():
         '.ps'     : 'application/postscript',
         '.ai'     : 'application/postscript',
         '.eps'    : 'application/postscript',
+        '.trig'   : 'application/trig',
         '.m3u'    : 'application/vnd.apple.mpegurl',
         '.m3u8'   : 'application/vnd.apple.mpegurl',
         '.xls'    : 'application/vnd.ms-excel',
@@ -546,14 +549,17 @@ def _default_mime_types():
         '.csv'    : 'text/csv',
         '.html'   : 'text/html',
         '.htm'    : 'text/html',
+        '.n3'     : 'text/n3',
         '.txt'    : 'text/plain',
         '.bat'    : 'text/plain',
         '.c'      : 'text/plain',
         '.h'      : 'text/plain',
         '.ksh'    : 'text/plain',
         '.pl'     : 'text/plain',
+        '.srt'    : 'text/plain',
         '.rtx'    : 'text/richtext',
         '.tsv'    : 'text/tab-separated-values',
+        '.vtt'    : 'text/vtt',
         '.py'     : 'text/x-python',
         '.etx'    : 'text/x-setext',
         '.sgm'    : 'text/x-sgml',

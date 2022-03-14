@@ -3,7 +3,7 @@ import sys
 import tkinter
 from tkinter import ttk
 from test import support
-from test.support import requires, run_unittest
+from test.support import requires
 from tkinter.test.support import AbstractTkTest
 
 requires('gui')
@@ -175,7 +175,5 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                         self.assertEqual(style.map(newname, key), value)
 
 
-tests_gui = (StyleTest, )
-
 if __name__ == "__main__":
-    run_unittest(*tests_gui)
+    unittest.main()

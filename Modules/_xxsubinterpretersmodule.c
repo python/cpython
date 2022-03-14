@@ -1,10 +1,15 @@
 
 /* interpreters module */
 /* low-level access to interpreter primitives */
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 #include "frameobject.h"
-#include "interpreteridobject.h"
+#include "pycore_frame.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_interpreteridobject.h"
 
 
 static char *
@@ -1834,13 +1839,12 @@ _is_running(PyInterpreterState *interp)
     }
 
     assert(!PyErr_Occurred());
-    PyFrameObject *frame = PyThreadState_GetFrame(tstate);
+    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
     if (frame == NULL) {
         return 0;
     }
 
     int executing = _PyFrame_IsExecuting(frame);
-    Py_DECREF(frame);
 
     return executing;
 }
@@ -2017,7 +2021,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Create and initialize the new interpreter.
-    PyThreadState *save_tstate = PyThreadState_Get();
+    PyThreadState *save_tstate = _PyThreadState_GET();
     // XXX Possible GILState issues?
     PyThreadState *tstate = _Py_NewInterpreter(isolated);
     PyThreadState_Swap(save_tstate);

@@ -361,6 +361,7 @@ class ModuleSpec:
         self.origin = origin
         self.loader_state = loader_state
         self.submodule_search_locations = [] if is_package else None
+        self._uninitialized_submodules = []
 
         # file-location attributes
         self._set_fileattr = False
@@ -420,7 +421,10 @@ class ModuleSpec:
 
 def spec_from_loader(name, loader, *, origin=None, is_package=None):
     """Return a module spec based on various loader methods."""
-    if hasattr(loader, 'get_filename'):
+    if origin is None:
+        origin = getattr(loader, '_ORIGIN', None)
+
+    if not origin and hasattr(loader, 'get_filename'):
         if _bootstrap_external is None:
             raise NotImplementedError
         spec_from_file_location = _bootstrap_external.spec_from_file_location
@@ -466,12 +470,9 @@ def _spec_from_module(module, loader=None, origin=None):
     except AttributeError:
         location = None
     if origin is None:
-        if location is None:
-            try:
-                origin = loader._ORIGIN
-            except AttributeError:
-                origin = None
-        else:
+        if loader is not None:
+            origin = getattr(loader, '_ORIGIN', None)
+        if not origin and location is not None:
             origin = location
     try:
         cached = module.__cached__
@@ -483,7 +484,7 @@ def _spec_from_module(module, loader=None, origin=None):
         submodule_search_locations = None
 
     spec = ModuleSpec(name, loader, origin=origin)
-    spec._set_fileattr = False if location is None else True
+    spec._set_fileattr = False if location is None else (origin == location)
     spec.cached = cached
     spec.submodule_search_locations = submodule_search_locations
     return spec
@@ -506,9 +507,9 @@ def _init_module_attrs(spec, module, *, override=False):
             if spec.submodule_search_locations is not None:
                 if _bootstrap_external is None:
                     raise NotImplementedError
-                _NamespaceLoader = _bootstrap_external._NamespaceLoader
+                NamespaceLoader = _bootstrap_external.NamespaceLoader
 
-                loader = _NamespaceLoader.__new__(_NamespaceLoader)
+                loader = NamespaceLoader.__new__(NamespaceLoader)
                 loader._path = spec.submodule_search_locations
                 spec.loader = loader
                 # While the docs say that module.__file__ is not set for
@@ -540,6 +541,7 @@ def _init_module_attrs(spec, module, *, override=False):
     # __path__
     if override or getattr(module, '__path__', None) is None:
         if spec.submodule_search_locations is not None:
+            # XXX We should extend __path__ if it's already a list.
             try:
                 module.__path__ = spec.submodule_search_locations
             except AttributeError:
@@ -824,11 +826,128 @@ class FrozenImporter:
         return '<module {!r} ({})>'.format(m.__name__, FrozenImporter._ORIGIN)
 
     @classmethod
-    def find_spec(cls, fullname, path=None, target=None):
-        if _imp.is_frozen(fullname):
-            return spec_from_loader(fullname, cls, origin=cls._ORIGIN)
+    def _fix_up_module(cls, module):
+        spec = module.__spec__
+        state = spec.loader_state
+        if state is None:
+            # The module is missing FrozenImporter-specific values.
+
+            # Fix up the spec attrs.
+            origname = vars(module).pop('__origname__', None)
+            assert origname, 'see PyImport_ImportFrozenModuleObject()'
+            ispkg = hasattr(module, '__path__')
+            assert _imp.is_frozen_package(module.__name__) == ispkg, ispkg
+            filename, pkgdir = cls._resolve_filename(origname, spec.name, ispkg)
+            spec.loader_state = type(sys.implementation)(
+                filename=filename,
+                origname=origname,
+            )
+            __path__ = spec.submodule_search_locations
+            if ispkg:
+                assert __path__ == [], __path__
+                if pkgdir:
+                    spec.submodule_search_locations.insert(0, pkgdir)
+            else:
+                assert __path__ is None, __path__
+
+            # Fix up the module attrs (the bare minimum).
+            assert not hasattr(module, '__file__'), module.__file__
+            if filename:
+                try:
+                    module.__file__ = filename
+                except AttributeError:
+                    pass
+            if ispkg:
+                if module.__path__ != __path__:
+                    assert module.__path__ == [], module.__path__
+                    module.__path__.extend(__path__)
         else:
+            # These checks ensure that _fix_up_module() is only called
+            # in the right places.
+            __path__ = spec.submodule_search_locations
+            ispkg = __path__ is not None
+            # Check the loader state.
+            assert sorted(vars(state)) == ['filename', 'origname'], state
+            if state.origname:
+                # The only frozen modules with "origname" set are stdlib modules.
+                (__file__, pkgdir,
+                 ) = cls._resolve_filename(state.origname, spec.name, ispkg)
+                assert state.filename == __file__, (state.filename, __file__)
+                if pkgdir:
+                    assert __path__ == [pkgdir], (__path__, pkgdir)
+                else:
+                    assert __path__ == ([] if ispkg else None), __path__
+            else:
+                __file__ = None
+                assert state.filename is None, state.filename
+                assert __path__ == ([] if ispkg else None), __path__
+            # Check the file attrs.
+            if __file__:
+                assert hasattr(module, '__file__')
+                assert module.__file__ == __file__, (module.__file__, __file__)
+            else:
+                assert not hasattr(module, '__file__'), module.__file__
+            if ispkg:
+                assert hasattr(module, '__path__')
+                assert module.__path__ == __path__, (module.__path__, __path__)
+            else:
+                assert not hasattr(module, '__path__'), module.__path__
+        assert not spec.has_location
+
+    @classmethod
+    def _resolve_filename(cls, fullname, alias=None, ispkg=False):
+        if not fullname or not getattr(sys, '_stdlib_dir', None):
+            return None, None
+        try:
+            sep = cls._SEP
+        except AttributeError:
+            sep = cls._SEP = '\\' if sys.platform == 'win32' else '/'
+
+        if fullname != alias:
+            if fullname.startswith('<'):
+                fullname = fullname[1:]
+                if not ispkg:
+                    fullname = f'{fullname}.__init__'
+            else:
+                ispkg = False
+        relfile = fullname.replace('.', sep)
+        if ispkg:
+            pkgdir = f'{sys._stdlib_dir}{sep}{relfile}'
+            filename = f'{pkgdir}{sep}__init__.py'
+        else:
+            pkgdir = None
+            filename = f'{sys._stdlib_dir}{sep}{relfile}.py'
+        return filename, pkgdir
+
+    @classmethod
+    def find_spec(cls, fullname, path=None, target=None):
+        info = _call_with_frames_removed(_imp.find_frozen, fullname)
+        if info is None:
             return None
+        # We get the marshaled data in exec_module() (the loader
+        # part of the importer), instead of here (the finder part).
+        # The loader is the usual place to get the data that will
+        # be loaded into the module.  (For example, see _LoaderBasics
+        # in _bootstra_external.py.)  Most importantly, this importer
+        # is simpler if we wait to get the data.
+        # However, getting as much data in the finder as possible
+        # to later load the module is okay, and sometimes important.
+        # (That's why ModuleSpec.loader_state exists.)  This is
+        # especially true if it avoids throwing away expensive data
+        # the loader would otherwise duplicate later and can be done
+        # efficiently.  In this case it isn't worth it.
+        _, ispkg, origname = info
+        spec = spec_from_loader(fullname, cls,
+                                origin=cls._ORIGIN,
+                                is_package=ispkg)
+        filename, pkgdir = cls._resolve_filename(origname, fullname, ispkg)
+        spec.loader_state = type(sys.implementation)(
+            filename=filename,
+            origname=origname,
+        )
+        if pkgdir:
+            spec.submodule_search_locations.insert(0, pkgdir)
+        return spec
 
     @classmethod
     def find_module(cls, fullname, path=None):
@@ -844,14 +963,21 @@ class FrozenImporter:
 
     @staticmethod
     def create_module(spec):
-        """Use default semantics for module creation."""
+        """Set __file__, if able."""
+        module = _new_module(spec.name)
+        try:
+            filename = spec.loader_state.filename
+        except AttributeError:
+            pass
+        else:
+            if filename:
+                module.__file__ = filename
+        return module
 
     @staticmethod
     def exec_module(module):
-        name = module.__spec__.name
-        if not _imp.is_frozen(name):
-            raise ImportError('{!r} is not a frozen module'.format(name),
-                              name=name)
+        spec = module.__spec__
+        name = spec.name
         code = _call_with_frames_removed(_imp.get_frozen_object, name)
         exec(code, module.__dict__)
 
@@ -863,7 +989,16 @@ class FrozenImporter:
 
         """
         # Warning about deprecation implemented in _load_module_shim().
-        return _load_module_shim(cls, fullname)
+        module = _load_module_shim(cls, fullname)
+        info = _imp.find_frozen(fullname)
+        assert info is not None
+        _, ispkg, origname = info
+        module.__origname__ = origname
+        vars(module).pop('__file__', None)
+        if ispkg:
+            module.__path__ = []
+        cls._fix_up_module(module)
+        return module
 
     @classmethod
     @_requires_frozen
@@ -987,6 +1122,7 @@ _ERR_MSG = _ERR_MSG_PREFIX + '{!r}'
 def _find_and_load_unlocked(name, import_):
     path = None
     parent = name.rpartition('.')[0]
+    parent_spec = None
     if parent:
         if parent not in sys.modules:
             _call_with_frames_removed(import_, parent)
@@ -999,15 +1135,24 @@ def _find_and_load_unlocked(name, import_):
         except AttributeError:
             msg = (_ERR_MSG + '; {!r} is not a package').format(name, parent)
             raise ModuleNotFoundError(msg, name=name) from None
+        parent_spec = parent_module.__spec__
+        child = name.rpartition('.')[2]
     spec = _find_spec(name, path)
     if spec is None:
         raise ModuleNotFoundError(_ERR_MSG.format(name), name=name)
     else:
-        module = _load_unlocked(spec)
+        if parent_spec:
+            # Temporarily add child we are currently importing to parent's
+            # _uninitialized_submodules for circular import tracking.
+            parent_spec._uninitialized_submodules.append(child)
+        try:
+            module = _load_unlocked(spec)
+        finally:
+            if parent_spec:
+                parent_spec._uninitialized_submodules.pop()
     if parent:
         # Set the module as an attribute on its parent.
         parent_module = sys.modules[parent]
-        child = name.rpartition('.')[2]
         try:
             setattr(parent_module, child, module)
         except AttributeError:
@@ -1021,17 +1166,28 @@ _NEEDS_LOADING = object()
 
 def _find_and_load(name, import_):
     """Find and load the module."""
-    with _ModuleLockManager(name):
-        module = sys.modules.get(name, _NEEDS_LOADING)
-        if module is _NEEDS_LOADING:
-            return _find_and_load_unlocked(name, import_)
+
+    # Optimization: we avoid unneeded module locking if the module
+    # already exists in sys.modules and is fully initialized.
+    module = sys.modules.get(name, _NEEDS_LOADING)
+    if (module is _NEEDS_LOADING or
+        getattr(getattr(module, "__spec__", None), "_initializing", False)):
+        with _ModuleLockManager(name):
+            module = sys.modules.get(name, _NEEDS_LOADING)
+            if module is _NEEDS_LOADING:
+                return _find_and_load_unlocked(name, import_)
+
+        # Optimization: only call _bootstrap._lock_unlock_module() if
+        # module.__spec__._initializing is True.
+        # NOTE: because of this, initializing must be set *before*
+        # putting the new module in sys.modules.
+        _lock_unlock_module(name)
 
     if module is None:
         message = ('import of {} halted; '
                    'None in sys.modules'.format(name))
         raise ModuleNotFoundError(message, name=name)
 
-    _lock_unlock_module(name)
     return module
 
 
@@ -1182,6 +1338,8 @@ def _setup(sys_module, _imp_module):
                 continue
             spec = _spec_from_module(module, loader)
             _init_module_attrs(spec, module)
+            if loader is FrozenImporter:
+                loader._fix_up_module(module)
 
     # Directly load built-in modules needed during bootstrap.
     self_module = sys.modules[__name__]

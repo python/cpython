@@ -9,11 +9,11 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "longintrepr.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_code.h"          // _PyCode_New()
+#include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "code.h"
-#include "marshal.h"
-#include "pycore_hashtable.h"
-#include "pycore_code.h"        // _PyCode_New()
+#include "marshal.h"              // Py_MARSHAL_VERSION
 
 /*[clinic input]
 module marshal
@@ -270,8 +270,8 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
 static void
 w_float_bin(double v, WFILE *p)
 {
-    unsigned char buf[8];
-    if (_PyFloat_Pack8(v, buf, 1) < 0) {
+    char buf[8];
+    if (PyFloat_Pack8(v, buf, 1) < 0) {
         p->error = WFERR_UNMARSHALLABLE;
         return;
     }
@@ -503,9 +503,44 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             W_TYPE(TYPE_SET, p);
         n = PySet_GET_SIZE(v);
         W_SIZE(n, p);
+        // bpo-37596: To support reproducible builds, sets and frozensets need
+        // to have their elements serialized in a consistent order (even when
+        // they have been scrambled by hash randomization). To ensure this, we
+        // use an order equivalent to sorted(v, key=marshal.dumps):
+        PyObject *pairs = PyList_New(n);
+        if (pairs == NULL) {
+            p->error = WFERR_NOMEMORY;
+            return;
+        }
+        Py_ssize_t i = 0;
         while (_PySet_NextEntry(v, &pos, &value, &hash)) {
+            PyObject *dump = PyMarshal_WriteObjectToString(value, p->version);
+            if (dump == NULL) {
+                p->error = WFERR_UNMARSHALLABLE;
+                Py_DECREF(pairs);
+                return;
+            }
+            PyObject *pair = PyTuple_Pack(2, dump, value);
+            Py_DECREF(dump);
+            if (pair == NULL) {
+                p->error = WFERR_NOMEMORY;
+                Py_DECREF(pairs);
+                return;
+            }
+            PyList_SET_ITEM(pairs, i++, pair);
+        }
+        assert(i == n);
+        if (PyList_Sort(pairs)) {
+            p->error = WFERR_NOMEMORY;
+            Py_DECREF(pairs);
+            return;
+        }
+        for (Py_ssize_t i = 0; i < n; i++) {
+            PyObject *pair = PyList_GET_ITEM(pairs, i);
+            value = PyTuple_GET_ITEM(pair, 1);
             w_object(value, p);
         }
+        Py_DECREF(pairs);
     }
     else if (PyCode_Check(v)) {
         PyCodeObject *co = (PyCodeObject *)v;
@@ -667,7 +702,6 @@ r_string(Py_ssize_t n, RFILE *p)
         read = fread(p->buf, 1, n, p->fp);
     }
     else {
-        _Py_IDENTIFIER(readinto);
         PyObject *res, *mview;
         Py_buffer buf;
 
@@ -677,7 +711,7 @@ r_string(Py_ssize_t n, RFILE *p)
         if (mview == NULL)
             return NULL;
 
-        res = _PyObject_CallMethodId(p->readable, &PyId_readinto, "N", mview);
+        res = _PyObject_CallMethod(p->readable, &_Py_ID(readinto), "N", mview);
         if (res != NULL) {
             read = PyNumber_AsSsize_t(res, PyExc_ValueError);
             Py_DECREF(res);
@@ -848,15 +882,15 @@ r_PyLong(RFILE *p)
 static double
 r_float_bin(RFILE *p)
 {
-    const unsigned char *buf = (const unsigned char *) r_string(8, p);
+    const char *buf = r_string(8, p);
     if (buf == NULL)
         return -1;
-    return _PyFloat_Unpack8(buf, 1);
+    return PyFloat_Unpack8(buf, 1);
 }
 
 /* Issue #33720: Disable inlining for reducing the C stack consumption
    on PGO builds. */
-_Py_NO_INLINE static double
+Py_NO_INLINE static double
 r_float_str(RFILE *p)
 {
     int n;
@@ -1257,7 +1291,7 @@ r_object(RFILE *p)
 
         if (n == 0 && type == TYPE_FROZENSET) {
             /* call frozenset() to get the empty frozenset singleton */
-            v = _PyObject_CallNoArg((PyObject*)&PyFrozenSet_Type);
+            v = _PyObject_CallNoArgs((PyObject*)&PyFrozenSet_Type);
             if (v == NULL)
                 break;
             R_REF(v);
@@ -1677,12 +1711,11 @@ marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
     /* XXX Quick hack -- need to do this differently */
     PyObject *s;
     PyObject *res;
-    _Py_IDENTIFIER(write);
 
     s = PyMarshal_WriteObjectToString(value, version);
     if (s == NULL)
         return NULL;
-    res = _PyObject_CallMethodIdOneArg(file, &PyId_write, s);
+    res = _PyObject_CallMethodOneArg(file, &_Py_ID(write), s);
     Py_DECREF(s);
     return res;
 }
@@ -1709,7 +1742,6 @@ marshal_load(PyObject *module, PyObject *file)
 /*[clinic end generated code: output=f8e5c33233566344 input=c85c2b594cd8124a]*/
 {
     PyObject *data, *result;
-    _Py_IDENTIFIER(read);
     RFILE rf;
 
     /*
@@ -1719,7 +1751,7 @@ marshal_load(PyObject *module, PyObject *file)
      * This can be removed if we guarantee good error handling
      * for r_string()
      */
-    data = _PyObject_CallMethodId(file, &PyId_read, "i", 0);
+    data = _PyObject_CallMethod(file, &_Py_ID(read), "i", 0);
     if (data == NULL)
         return NULL;
     if (!PyBytes_Check(data)) {
