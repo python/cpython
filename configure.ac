@@ -3512,7 +3512,7 @@ for _QUERY in \
   "tcl8.4 >= 8.4.2 tk8.4 >= 8.4.2" \
   "tcl84 >= 8.4.2 tk84 >= 8.4.2" \
 ; do
-  PKG_CHECK_EXISTS([PCLTK], [$_QUERY], [
+  PKG_CHECK_EXISTS([$_QUERY], [
     PKG_CHECK_MODULES([TCLTK], [$_QUERY], [found_tcltk=yes], [found_tcltk=no])
   ])
   AS_VAR_IF([found_tcltk], [yes], [break])

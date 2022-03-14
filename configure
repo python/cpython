@@ -12295,13 +12295,11 @@ for _QUERY in \
   "tcl84 >= 8.4.2 tk84 >= 8.4.2" \
 ; do
   if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"PCLTK\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "PCLTK") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$_QUERY\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "$_QUERY") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  $_QUERY
-else
 
 
 pkg_failed=no
