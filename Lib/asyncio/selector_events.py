@@ -749,8 +749,6 @@ class _SelectorTransport(transports._FlowControlMixin,
 
     max_size = 256 * 1024  # Buffer size passed to recv().
 
-    _buffer_factory = bytearray  # Constructs initial value for self._buffer.
-
     # Attribute used in the destructor: it must be set even if the constructor
     # is not called (see _SelectorSslTransport which may start by raising an
     # exception)
@@ -775,7 +773,7 @@ class _SelectorTransport(transports._FlowControlMixin,
         self.set_protocol(protocol)
 
         self._server = server
-        self._buffer = self._buffer_factory()
+        self._buffer = collections.deque()
         self._conn_lost = 0  # Set when call to connection_lost scheduled.
         self._closing = False  # Set when close() called.
         if self._server is not None:
@@ -879,7 +877,7 @@ class _SelectorTransport(transports._FlowControlMixin,
                 self._server = None
 
     def get_write_buffer_size(self):
-        return len(self._buffer)
+        return sum(map(len, self._buffer))
 
     def _add_reader(self, fd, callback, *args):
         if self._closing:
@@ -1039,6 +1037,7 @@ class _SelectorSocketTransport(_SelectorTransport):
             raise RuntimeError('unable to write; sendfile is in progress')
         if not data:
             return
+        data = memoryview(data)
 
         if self._conn_lost:
             if self._conn_lost >= constants.LOG_THRESHOLD_FOR_CONNLOST_WRITES:
@@ -1065,16 +1064,19 @@ class _SelectorSocketTransport(_SelectorTransport):
             self._loop._add_writer(self._sock_fd, self._write_ready)
 
         # Add it to the buffer.
-        self._buffer.extend(data)
+        self._buffer.append(data)
         self._maybe_pause_protocol()
 
     def _write_ready(self):
         assert self._buffer, 'Data should not be empty'
-
         if self._conn_lost:
             return
         try:
-            n = self._sock.send(self._buffer)
+            buffer = self._buffer.popleft()
+            n = self._sock.send(buffer)
+            if n != len(buffer):
+                # Not all data was written
+                self._buffer.appendleft(buffer[n:])
         except (BlockingIOError, InterruptedError):
             pass
         except (SystemExit, KeyboardInterrupt):
@@ -1086,8 +1088,6 @@ class _SelectorSocketTransport(_SelectorTransport):
             if self._empty_waiter is not None:
                 self._empty_waiter.set_exception(exc)
         else:
-            if n:
-                del self._buffer[:n]
             self._maybe_resume_protocol()  # May append to buffer.
             if not self._buffer:
                 self._loop._remove_writer(self._sock_fd)

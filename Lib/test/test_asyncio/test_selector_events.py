@@ -1,5 +1,6 @@
 """Tests for selector_events.py"""
 
+import collections
 import sys
 import selectors
 import socket
@@ -37,7 +38,10 @@ class TestBaseSelectorEventLoop(BaseSelectorEventLoop):
 
 
 def list_to_buffer(l=()):
-    return bytearray().join(l)
+    buffer = collections.deque()
+    buffer.extend((memoryview(i) for i in l))
+    return buffer
+
 
 
 def close_transport(transport):
@@ -664,14 +668,14 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
     def test_write_no_data(self):
         transport = self.socket_transport()
-        transport._buffer.extend(b'data')
+        transport._buffer.append(memoryview(b'data'))
         transport.write(b'')
         self.assertFalse(self.sock.send.called)
         self.assertEqual(list_to_buffer([b'data']), transport._buffer)
 
     def test_write_buffer(self):
         transport = self.socket_transport()
-        transport._buffer.extend(b'data1')
+        transport._buffer.append(b'data1')
         transport.write(b'data2')
         self.assertFalse(self.sock.send.called)
         self.assertEqual(list_to_buffer([b'data1', b'data2']),
@@ -775,12 +779,12 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertFalse(self.loop.writers)
 
     def test_write_ready_closing(self):
-        data = b'data'
+        data = memoryview(b'data')
         self.sock.send.return_value = len(data)
 
         transport = self.socket_transport()
         transport._closing = True
-        transport._buffer.extend(data)
+        transport._buffer.append(data)
         self.loop._add_writer(7, transport._write_ready)
         transport._write_ready()
         self.assertTrue(self.sock.send.called)
@@ -795,11 +799,11 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertRaises(AssertionError, transport._write_ready)
 
     def test_write_ready_partial(self):
-        data = b'data'
+        data = memoryview(b'data')
         self.sock.send.return_value = 2
 
         transport = self.socket_transport()
-        transport._buffer.extend(data)
+        transport._buffer.append(data)
         self.loop._add_writer(7, transport._write_ready)
         transport._write_ready()
         self.loop.assert_writer(7, transport._write_ready)
@@ -810,7 +814,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.sock.send.return_value = 0
 
         transport = self.socket_transport()
-        transport._buffer.extend(data)
+        transport._buffer.append(data)
         self.loop._add_writer(7, transport._write_ready)
         transport._write_ready()
         self.loop.assert_writer(7, transport._write_ready)
@@ -820,12 +824,13 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.sock.send.side_effect = BlockingIOError
 
         transport = self.socket_transport()
-        transport._buffer = list_to_buffer([b'data1', b'data2'])
+        buffer = list_to_buffer([b'data1', b'data2'])
+        transport._buffer = buffer
         self.loop._add_writer(7, transport._write_ready)
         transport._write_ready()
 
         self.loop.assert_writer(7, transport._write_ready)
-        self.assertEqual(list_to_buffer([b'data1data2']), transport._buffer)
+        self.assertEqual(buffer, transport._buffer)
 
     def test_write_ready_exception(self):
         err = self.sock.send.side_effect = OSError()
