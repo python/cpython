@@ -208,28 +208,6 @@ def macosx_sdk_root():
     return MACOS_SDK_ROOT
 
 
-def macosx_sdk_specified():
-    """Returns true if an SDK was explicitly configured.
-
-    True if an SDK was selected at configure time, either by specifying
-    --enable-universalsdk=(something other than no or /) or by adding a
-    -isysroot option to CFLAGS.  In some cases, like when making
-    decisions about macOS Tk framework paths, we need to be able to
-    know whether the user explicitly asked to build with an SDK versus
-    the implicit use of an SDK when header files are no longer
-    installed on a running system by the Command Line Tools.
-    """
-    global MACOS_SDK_SPECIFIED
-
-    # If already called, return cached result.
-    if MACOS_SDK_SPECIFIED:
-        return MACOS_SDK_SPECIFIED
-
-    # Find the sdk root and set MACOS_SDK_SPECIFIED
-    macosx_sdk_root()
-    return MACOS_SDK_SPECIFIED
-
-
 def is_macosx_sdk_path(path):
     """
     Returns True if 'path' can be located in a macOS SDK
@@ -285,59 +263,6 @@ def find_file(filename, std_dirs, paths):
 
     # Not found anywhere
     return None
-
-
-def find_library_file(compiler, libname, std_dirs, paths):
-    result = compiler.find_library_file(std_dirs + paths, libname)
-    if result is None:
-        return None
-
-    if MACOS:
-        sysroot = macosx_sdk_root()
-
-    # Check whether the found file is in one of the standard directories
-    dirname = os.path.dirname(result)
-    for p in std_dirs:
-        # Ensure path doesn't end with path separator
-        p = p.rstrip(os.sep)
-
-        if MACOS and is_macosx_sdk_path(p):
-            # Note that, as of Xcode 7, Apple SDKs may contain textual stub
-            # libraries with .tbd extensions rather than the normal .dylib
-            # shared libraries installed in /.  The Apple compiler tool
-            # chain handles this transparently but it can cause problems
-            # for programs that are being built with an SDK and searching
-            # for specific libraries.  Distutils find_library_file() now
-            # knows to also search for and return .tbd files.  But callers
-            # of find_library_file need to keep in mind that the base filename
-            # of the returned SDK library file might have a different extension
-            # from that of the library file installed on the running system,
-            # for example:
-            #   /Applications/Xcode.app/Contents/Developer/Platforms/
-            #       MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/
-            #       usr/lib/libedit.tbd
-            # vs
-            #   /usr/lib/libedit.dylib
-            if os.path.join(sysroot, p[1:]) == dirname:
-                return [ ]
-
-        if p == dirname:
-            return [ ]
-
-    # Otherwise, it must have been in one of the additional directories,
-    # so we have to figure out which one.
-    for p in paths:
-        # Ensure path doesn't end with path separator
-        p = p.rstrip(os.sep)
-
-        if MACOS and is_macosx_sdk_path(p):
-            if os.path.join(sysroot, p[1:]) == dirname:
-                return [ p ]
-
-        if p == dirname:
-            return [p]
-    else:
-        assert False, "Internal error: Path not found in std_dirs or paths"
 
 
 def validate_tzpath():
