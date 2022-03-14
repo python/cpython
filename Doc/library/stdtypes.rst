@@ -1523,6 +1523,11 @@ multiple fragments.
    method, then :func:`str` falls back to returning
    :meth:`repr(object) <repr>`.
 
+   .. note::
+
+      The usage of :meth:`object.__str__() <object.__str__>` follows
+      :ref:`special-lookup`.
+
    .. index::
       single: buffer protocol; str (built-in class)
       single: bytes; str (built-in class)
