@@ -2898,12 +2898,6 @@ class Win32NtTests(unittest.TestCase):
                 except OSError:
                     pass
         '''
-        ignored_errors = (
-            2,  # ERROR_FILE_NOT_FOUND
-            3,  # ERROR_PATH_NOT_FOUND
-            21, # ERROR_NOT_READY
-            67, # ERROR_BAD_NET_NAME
-        )
         deadline = time.time() + 5
         p = subprocess.Popen([sys.executable, '-c', command, filename])
 
@@ -2911,9 +2905,12 @@ class Win32NtTests(unittest.TestCase):
             while time.time() < deadline:
                 try:
                     os.stat(filename)
-                except OSError as e:
-                    if e.winerror not in ignored_errors:
-                        raise
+                # Note that `ERROR_NOT_READY`, which should also not be
+                # ignored, results in a `PermissionError`. That is not caught
+                # here, as only the behavior for `ERROR_FILE_NOT_FOUND` is
+                # checked in this test.
+                except FileNotFoundError:
+                    pass
         finally:
             p.terminate()
 
