@@ -1,6 +1,7 @@
 name: Verify bundled pip and setuptools
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'Lib/ensurepip/_bundled/**'
