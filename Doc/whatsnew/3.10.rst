@@ -1019,7 +1019,7 @@ You can specify keyword-only on a per-field basis:
 
 .. code-block:: python
 
-    from dataclasses import dataclass
+    from dataclasses import dataclass, field
 
     @dataclass
     class Birthday:

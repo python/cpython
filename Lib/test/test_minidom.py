@@ -6,10 +6,12 @@ import io
 from test import support
 import unittest
 
+import pyexpat
 import xml.dom.minidom
 
 from xml.dom.minidom import parse, Node, Document, parseString
 from xml.dom.minidom import getDOMImplementation
+from xml.parsers.expat import ExpatError
 
 
 tstfile = support.findfile("test.xml", subdir="xmltestdata")
@@ -1147,7 +1149,13 @@ class MinidomTest(unittest.TestCase):
 
         # Verify that character decoding errors raise exceptions instead
         # of crashing
-        self.assertRaises(UnicodeDecodeError, parseString,
+        if pyexpat.version_info >= (2, 4, 5):
+            self.assertRaises(ExpatError, parseString,
+                    b'<fran\xe7ais></fran\xe7ais>')
+            self.assertRaises(ExpatError, parseString,
+                    b'<franais>Comment \xe7a va ? Tr\xe8s bien ?</franais>')
+        else:
+            self.assertRaises(UnicodeDecodeError, parseString,
                 b'<fran\xe7ais>Comment \xe7a va ? Tr\xe8s bien ?</fran\xe7ais>')
 
         doc.unlink()
@@ -1609,7 +1617,12 @@ class MinidomTest(unittest.TestCase):
         self.confirm(doc2.namespaceURI == xml.dom.EMPTY_NAMESPACE)
 
     def testExceptionOnSpacesInXMLNSValue(self):
-        with self.assertRaisesRegex(ValueError, 'Unsupported syntax'):
+        if pyexpat.version_info >= (2, 4, 5):
+            context = self.assertRaisesRegex(ExpatError, 'syntax error')
+        else:
+            context = self.assertRaisesRegex(ValueError, 'Unsupported syntax')
+
+        with context:
             parseString('<element xmlns:abc="http:abc.com/de f g/hi/j k"><abc:foo /></element>')
 
     def testDocRemoveChild(self):

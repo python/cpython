@@ -443,7 +443,7 @@ static PyObject *
 buffered_simple_flush(buffered *self, PyObject *args)
 {
     CHECK_INITIALIZED(self)
-    return PyObject_CallMethodNoArgs(self->raw, _PyIO_str_flush);
+    return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(flush));
 }
 
 static int
@@ -452,7 +452,7 @@ buffered_closed(buffered *self)
     int closed;
     PyObject *res;
     CHECK_INITIALIZED_INT(self)
-    res = PyObject_GetAttr(self->raw, _PyIO_str_closed);
+    res = PyObject_GetAttr(self->raw, &_Py_ID(closed));
     if (res == NULL)
         return -1;
     closed = PyObject_IsTrue(res);
@@ -464,7 +464,7 @@ static PyObject *
 buffered_closed_get(buffered *self, void *context)
 {
     CHECK_INITIALIZED(self)
-    return PyObject_GetAttr(self->raw, _PyIO_str_closed);
+    return PyObject_GetAttr(self->raw, &_Py_ID(closed));
 }
 
 static PyObject *
@@ -495,7 +495,7 @@ buffered_close(buffered *self, PyObject *args)
     }
     /* flush() will most probably re-take the lock, so drop it first */
     LEAVE_BUFFERED(self)
-    res = PyObject_CallMethodNoArgs((PyObject *)self, _PyIO_str_flush);
+    res = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(flush));
     if (!ENTER_BUFFERED(self))
         return NULL;
     if (res == NULL)
@@ -503,7 +503,7 @@ buffered_close(buffered *self, PyObject *args)
     else
         Py_DECREF(res);
 
-    res = PyObject_CallMethodNoArgs(self->raw, _PyIO_str_close);
+    res = PyObject_CallMethodNoArgs(self->raw, &_Py_ID(close));
 
     if (self->buffer) {
         PyMem_Free(self->buffer);
@@ -530,7 +530,7 @@ buffered_detach(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *raw, *res;
     CHECK_INITIALIZED(self)
-    res = PyObject_CallMethodNoArgs((PyObject *)self, _PyIO_str_flush);
+    res = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(flush));
     if (res == NULL)
         return NULL;
     Py_DECREF(res);
@@ -547,21 +547,21 @@ static PyObject *
 buffered_seekable(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     CHECK_INITIALIZED(self)
-    return PyObject_CallMethodNoArgs(self->raw, _PyIO_str_seekable);
+    return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(seekable));
 }
 
 static PyObject *
 buffered_readable(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     CHECK_INITIALIZED(self)
-    return PyObject_CallMethodNoArgs(self->raw, _PyIO_str_readable);
+    return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(readable));
 }
 
 static PyObject *
 buffered_writable(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     CHECK_INITIALIZED(self)
-    return PyObject_CallMethodNoArgs(self->raw, _PyIO_str_writable);
+    return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(writable));
 }
 
 static PyObject *
@@ -584,14 +584,14 @@ static PyObject *
 buffered_fileno(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     CHECK_INITIALIZED(self)
-    return PyObject_CallMethodNoArgs(self->raw, _PyIO_str_fileno);
+    return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(fileno));
 }
 
 static PyObject *
 buffered_isatty(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     CHECK_INITIALIZED(self)
-    return PyObject_CallMethodNoArgs(self->raw, _PyIO_str_isatty);
+    return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(isatty));
 }
 
 /* Forward decls */
@@ -655,7 +655,7 @@ _buffered_raw_tell(buffered *self)
 {
     Py_off_t n;
     PyObject *res;
-    res = PyObject_CallMethodNoArgs(self->raw, _PyIO_str_tell);
+    res = PyObject_CallMethodNoArgs(self->raw, &_Py_ID(tell));
     if (res == NULL)
         return -1;
     n = PyNumber_AsOff_t(res, PyExc_ValueError);
@@ -685,7 +685,7 @@ _buffered_raw_seek(buffered *self, Py_off_t target, int whence)
         Py_DECREF(posobj);
         return -1;
     }
-    res = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_seek,
+    res = PyObject_CallMethodObjArgs(self->raw, &_Py_ID(seek),
                                      posobj, whenceobj, NULL);
     Py_DECREF(posobj);
     Py_DECREF(whenceobj);
@@ -1152,7 +1152,7 @@ found:
         Py_CLEAR(res);
         goto end;
     }
-    Py_XSETREF(res, _PyBytes_Join(_PyIO_empty_bytes, chunks));
+    Py_XSETREF(res, _PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks));
 
 end:
     LEAVE_BUFFERED(self)
@@ -1311,7 +1311,7 @@ _io__Buffered_truncate_impl(buffered *self, PyObject *pos)
     }
     Py_CLEAR(res);
 
-    res = PyObject_CallMethodOneArg(self->raw, _PyIO_str_truncate, pos);
+    res = PyObject_CallMethodOneArg(self->raw, &_Py_ID(truncate), pos);
     if (res == NULL)
         goto end;
     /* Reset cached position */
@@ -1339,7 +1339,7 @@ buffered_iternext(buffered *self)
     }
     else {
         line = PyObject_CallMethodNoArgs((PyObject *)self,
-                                             _PyIO_str_readline);
+                                             &_Py_ID(readline));
         if (line && !PyBytes_Check(line)) {
             PyErr_Format(PyExc_OSError,
                          "readline() should have returned a bytes object, "
@@ -1457,7 +1457,7 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
        raised (see issue #10956).
     */
     do {
-        res = PyObject_CallMethodOneArg(self->raw, _PyIO_str_readinto, memobj);
+        res = PyObject_CallMethodOneArg(self->raw, &_Py_ID(readinto), memobj);
     } while (res == NULL && _PyIO_trap_eintr());
     Py_DECREF(memobj);
     if (res == NULL)
@@ -1530,7 +1530,7 @@ _bufferedreader_read_all(buffered *self)
     }
     _bufferedreader_reset_buf(self);
 
-    if (_PyObject_LookupAttr(self->raw, _PyIO_str_readall, &readall) < 0) {
+    if (_PyObject_LookupAttr(self->raw, &_Py_ID(readall), &readall) < 0) {
         goto cleanup;
     }
     if (readall) {
@@ -1565,7 +1565,7 @@ _bufferedreader_read_all(buffered *self)
         }
 
         /* Read until EOF or until read() would block. */
-        data = PyObject_CallMethodNoArgs(self->raw, _PyIO_str_read);
+        data = PyObject_CallMethodNoArgs(self->raw, &_Py_ID(read));
         if (data == NULL)
             goto cleanup;
         if (data != Py_None && !PyBytes_Check(data)) {
@@ -1578,7 +1578,7 @@ _bufferedreader_read_all(buffered *self)
                 goto cleanup;
             }
             else {
-                tmp = _PyBytes_Join(_PyIO_empty_bytes, chunks);
+                tmp = _PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks);
                 res = tmp;
                 goto cleanup;
             }
@@ -1814,7 +1814,7 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
     */
     do {
         errno = 0;
-        res = PyObject_CallMethodOneArg(self->raw, _PyIO_str_write, memobj);
+        res = PyObject_CallMethodOneArg(self->raw, &_Py_ID(write), memobj);
         errnum = errno;
     } while (res == NULL && _PyIO_trap_eintr());
     Py_DECREF(memobj);
@@ -2251,7 +2251,7 @@ bufferedrwpair_closed_get(rwpair *self, void *context)
                 "the BufferedRWPair object is being garbage-collected");
         return NULL;
     }
-    return PyObject_GetAttr((PyObject *) self->writer, _PyIO_str_closed);
+    return PyObject_GetAttr((PyObject *) self->writer, &_Py_ID(closed));
 }
 
 

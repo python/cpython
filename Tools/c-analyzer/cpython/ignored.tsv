@@ -1517,3 +1517,4 @@ Python/pylifecycle.c	-	_TARGET_LOCALES	-
 Python/specialize.c	-	adaptive_opcodes	-
 Python/specialize.c	-	cache_requirements	-
 Python/specialize.c	-	compare_masks	-
+Python/sysmodule.c	-	whatstrings	-
