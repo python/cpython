@@ -1,0 +1,1 @@
+Removed the ``__len__()`` call when initializing a list and moved initializing to ``list_extend``. Patch by Jeremiah Pascual.
