@@ -2388,7 +2388,7 @@ static PyObject *
 bytearrayiter_next(bytesiterobject *it)
 {
     PyByteArrayObject *seq;
-    PyObject *item;
+
 
     assert(it != NULL);
     seq = it->it_seq;
