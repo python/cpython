@@ -51,7 +51,8 @@ and work with streams:
 .. coroutinefunction:: open_connection(host=None, port=None, *, \
                           loop=None, limit=None, ssl=None, family=0, \
                           proto=0, flags=0, sock=None, local_addr=None, \
-                          server_hostname=None, ssl_handshake_timeout=None)
+                          server_hostname=None, ssl_handshake_timeout=None, \
+                          happy_eyeballs_delay=None, interleave=None)
 
    Establish a network connection and return a pair of
    ``(reader, writer)`` objects.
@@ -72,6 +73,10 @@ and work with streams:
    .. versionadded:: 3.7
 
       The *ssl_handshake_timeout* parameter.
+
+   .. versionadded:: 3.8
+
+      Added *happy_eyeballs_delay* and *interleave* parameters.
 
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
                           port=None, *, loop=None, limit=None, \
