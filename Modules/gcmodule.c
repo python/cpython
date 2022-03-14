@@ -26,6 +26,7 @@
 #include "Python.h"
 #include "pycore_context.h"
 #include "pycore_initconfig.h"
+#include "pycore_instruments.h"
 #include "pycore_interp.h"      // PyInterpreterState.gc
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
@@ -1405,7 +1406,7 @@ gc_collect_with_callback(PyThreadState *tstate, int generation)
     assert(!_PyErr_Occurred(tstate));
     Py_ssize_t result, collected, uncollectable;
     invoke_gc_callback(tstate, "start", generation, 0, 0);
-    result = gc_collect_main(tstate, generation, &collected, &uncollectable, 0);
+    RECORD_TIME(result = gc_collect_main(tstate, generation, &collected, &uncollectable, 0), gc);
     invoke_gc_callback(tstate, "stop", generation, collected, uncollectable);
     assert(!_PyErr_Occurred(tstate));
     return result;
@@ -2115,7 +2116,7 @@ _PyGC_CollectNoFail(PyThreadState *tstate)
 
     Py_ssize_t n;
     gcstate->collecting = 1;
-    n = gc_collect_main(tstate, NUM_GENERATIONS - 1, NULL, NULL, 1);
+    RECORD_TIME(n = gc_collect_main(tstate, NUM_GENERATIONS - 1, NULL, NULL, 1), gc);
     gcstate->collecting = 0;
     return n;
 }

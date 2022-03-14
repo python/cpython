@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_pymem.h"         // _PyTraceMalloc_Config
 #include "pycore_code.h"         // stats
+#include "pycore_instruments.h"  // timers
 
 #include <stdbool.h>
 #include <stdlib.h>               // malloc()
@@ -697,7 +698,9 @@ PyObject_Malloc(size_t size)
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
     OBJECT_STAT_INC(allocations);
-    return _PyObject.malloc(_PyObject.ctx, size);
+    void *res;
+    RECORD_TIME(res = _PyObject.malloc(_PyObject.ctx, size), malloc);
+    return res;
 }
 
 void *
@@ -707,7 +710,9 @@ PyObject_Calloc(size_t nelem, size_t elsize)
     if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
         return NULL;
     OBJECT_STAT_INC(allocations);
-    return _PyObject.calloc(_PyObject.ctx, nelem, elsize);
+    void *res;
+    RECORD_TIME(res = _PyObject.calloc(_PyObject.ctx, nelem, elsize), malloc);
+    return res;
 }
 
 void *
@@ -716,14 +721,16 @@ PyObject_Realloc(void *ptr, size_t new_size)
     /* see PyMem_RawMalloc() */
     if (new_size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
-    return _PyObject.realloc(_PyObject.ctx, ptr, new_size);
+    void *res;
+    RECORD_TIME(res = _PyObject.realloc(_PyObject.ctx, ptr, new_size), malloc);
+    return res;
 }
 
 void
 PyObject_Free(void *ptr)
 {
     OBJECT_STAT_INC(frees);
-    _PyObject.free(_PyObject.ctx, ptr);
+    RECORD_TIME(_PyObject.free(_PyObject.ctx, ptr), free);
 }
 
 

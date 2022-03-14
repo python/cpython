@@ -7,6 +7,7 @@
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_instruments.h"   // Timers
 
 /* Includes for exit_sigint() */
 #include <stdio.h>                // perror()
@@ -710,7 +711,11 @@ Py_Main(int argc, wchar_t **argv)
         .use_bytes_argv = 0,
         .bytes_argv = NULL,
         .wchar_argv = argv};
-    return pymain_main(&args);
+    TIMER_START();
+    int err;
+    RECORD_TIME(err = pymain_main(&args), main);
+    TIMER_STOP_AND_PRINT();
+    return err;
 }
 
 
@@ -722,7 +727,11 @@ Py_BytesMain(int argc, char **argv)
         .use_bytes_argv = 1,
         .bytes_argv = argv,
         .wchar_argv = NULL};
-    return pymain_main(&args);
+    TIMER_START();
+    int err;
+    RECORD_TIME(err = pymain_main(&args), main);
+    TIMER_STOP_AND_PRINT();
+    return err;
 }
 
 #ifdef __cplusplus

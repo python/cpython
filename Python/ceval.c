@@ -16,6 +16,7 @@
 #include "pycore_code.h"
 #include "pycore_function.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_instruments.h"   // Timers
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
@@ -1607,6 +1608,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #if USE_COMPUTED_GOTOS
 /* Import the static jump table */
 #include "opcode_targets.h"
+#include <pycore_instruments.h>
 #endif
 
 #ifdef Py_STATS
@@ -4657,10 +4659,12 @@ handle_eval_breaker:
                     positional_args, call_shape.kwnames);
             }
             else {
-                res = PyObject_Vectorcall(
+                RECORD_TIME(
+                    res = PyObject_Vectorcall(
                     function, stack_pointer-total_args,
                     positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                    call_shape.kwnames);
+                    call_shape.kwnames), native
+                );
             }
             call_shape.kwnames = NULL;
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -4822,7 +4826,8 @@ handle_eval_breaker:
             STAT_INC(PRECALL, hit);
             SKIP_CALL();
             PyObject *arg = TOP();
-            PyObject *res = PyObject_Str(arg);
+            PyObject *res;
+            RECORD_TIME(res = PyObject_Str(arg), native);
             Py_DECREF(arg);
             Py_DECREF(&PyUnicode_Type);
             STACK_SHRINK(2);
@@ -4843,7 +4848,8 @@ handle_eval_breaker:
             STAT_INC(PRECALL, hit);
             SKIP_CALL();
             PyObject *arg = TOP();
-            PyObject *res = PySequence_Tuple(arg);
+            PyObject *res;
+            RECORD_TIME(res = PySequence_Tuple(arg), native);
             Py_DECREF(arg);
             Py_DECREF(&PyTuple_Type);
             STACK_SHRINK(2);
@@ -4866,8 +4872,11 @@ handle_eval_breaker:
             STAT_INC(PRECALL, hit);
             SKIP_CALL();
             STACK_SHRINK(total_args);
-            PyObject *res = tp->tp_vectorcall((PyObject *)tp, stack_pointer,
-                                              total_args-kwnames_len, call_shape.kwnames);
+            PyObject *res;
+            RECORD_TIME(
+                res = tp->tp_vectorcall((PyObject *)tp, stack_pointer,
+                                        total_args-kwnames_len, call_shape.kwnames),
+                native);
             call_shape.kwnames = NULL;
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -4902,7 +4911,8 @@ handle_eval_breaker:
                 goto error;
             }
             PyObject *arg = TOP();
-            PyObject *res = cfunc(PyCFunction_GET_SELF(callable), arg);
+            PyObject *res;
+            RECORD_TIME(res = cfunc(PyCFunction_GET_SELF(callable), arg), native);
             _Py_LeaveRecursiveCall(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
@@ -4932,10 +4942,14 @@ handle_eval_breaker:
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             STACK_SHRINK(total_args);
             /* res = func(self, args, nargs) */
-            PyObject *res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
-                PyCFunction_GET_SELF(callable),
-                stack_pointer,
-                total_args);
+            PyObject *res;
+            RECORD_TIME(
+                res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
+                    PyCFunction_GET_SELF(callable),
+                    stack_pointer,
+                    total_args
+                ), native
+            );
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             /* Free the arguments. */
@@ -4973,11 +4987,14 @@ handle_eval_breaker:
             _PyCFunctionFastWithKeywords cfunc =
                 (_PyCFunctionFastWithKeywords)(void(*)(void))
                 PyCFunction_GET_FUNCTION(callable);
-            PyObject *res = cfunc(
-                PyCFunction_GET_SELF(callable),
-                stack_pointer,
-                total_args - KWNAMES_LEN(),
-                call_shape.kwnames
+            PyObject *res;
+            RECORD_TIME(
+                res = cfunc(
+                    PyCFunction_GET_SELF(callable),
+                    stack_pointer,
+                    total_args - KWNAMES_LEN(),
+                    call_shape.kwnames
+                ), native
             );
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             call_shape.kwnames = NULL;
@@ -5103,7 +5120,8 @@ handle_eval_breaker:
             }
             PyObject *arg = TOP();
             PyObject *self = SECOND();
-            PyObject *res = cfunc(self, arg);
+            PyObject *res;
+            RECORD_TIME(res = cfunc(self, arg), native);
             _Py_LeaveRecursiveCall(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
@@ -5137,7 +5155,8 @@ handle_eval_breaker:
                 goto error;
             }
             PyObject *self = TOP();
-            PyObject *res = cfunc(self, NULL);
+            PyObject *res;
+            RECORD_TIME(res = cfunc(self, NULL), native);
             _Py_LeaveRecursiveCall(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
@@ -5166,7 +5185,8 @@ handle_eval_breaker:
             int nargs = total_args-1;
             STACK_SHRINK(nargs);
             PyObject *self = TOP();
-            PyObject *res = cfunc(self, stack_pointer, nargs);
+            PyObject *res;
+            RECORD_TIME(res = cfunc(self, stack_pointer, nargs), native);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < nargs; i++) {
@@ -7211,12 +7231,12 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;
         }
-        res = PyImport_ImportModuleLevelObject(
+        RECORD_TIME(res = PyImport_ImportModuleLevelObject(
                         name,
                         frame->f_globals,
                         locals == NULL ? Py_None :locals,
                         fromlist,
-                        ilevel);
+                        ilevel), import_);
         return res;
     }
 

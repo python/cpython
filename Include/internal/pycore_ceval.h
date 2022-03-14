@@ -18,6 +18,7 @@ struct _ceval_runtime_state;
 
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_instruments.h"
 
 
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
@@ -50,7 +51,9 @@ static inline PyObject*
 _PyEval_EvalFrame(PyThreadState *tstate, struct _PyInterpreterFrame *frame, int throwflag)
 {
     if (tstate->interp->eval_frame == NULL) {
-        return _PyEval_EvalFrameDefault(tstate, frame, throwflag);
+        PyObject *res;
+        RECORD_TIME(res = _PyEval_EvalFrameDefault(tstate, frame, throwflag), eval);
+        return res;
     }
     return tstate->interp->eval_frame(tstate, frame, throwflag);
 }

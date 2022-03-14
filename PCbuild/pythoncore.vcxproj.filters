@@ -1085,6 +1085,9 @@
     <ClCompile Include="..\Python\initconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\instruments.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\marshal.c">
       <Filter>Python</Filter>
     </ClCompile>

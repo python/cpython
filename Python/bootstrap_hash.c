@@ -543,6 +543,12 @@ _PyOS_URandomNonblock(void *buffer, Py_ssize_t size)
     return pyurandom(buffer, size, 0, 1);
 }
 
+int
+_PyOS_URandomNonblockNoRaise(void *buffer, Py_ssize_t size)
+{
+    return pyurandom(buffer, size, 0, 0);
+}
+
 
 PyStatus
 _Py_HashRandomization_Init(const PyConfig *config)

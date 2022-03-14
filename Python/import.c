@@ -4,6 +4,7 @@
 
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_instruments.h"   // timers
 #include "pycore_interp.h"        // _PyInterpreterState_ClearModules()
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
@@ -1924,8 +1925,8 @@ PyImport_ImportModuleLevel(const char *name, PyObject *globals, PyObject *locals
     nameobj = PyUnicode_FromString(name);
     if (nameobj == NULL)
         return NULL;
-    mod = PyImport_ImportModuleLevelObject(nameobj, globals, locals,
-                                           fromlist, level);
+    RECORD_TIME(mod = PyImport_ImportModuleLevelObject(nameobj, globals, locals,
+                                           fromlist, level), import_);
     Py_DECREF(nameobj);
     return mod;
 }

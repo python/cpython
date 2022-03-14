@@ -400,6 +400,7 @@ PYTHON_OBJS=	\
 		Python/import.o \
 		Python/importdl.o \
 		Python/initconfig.o \
+		Python/instruments.o \
 		Python/marshal.o \
 		Python/modsupport.o \
 		Python/mysnprintf.o \

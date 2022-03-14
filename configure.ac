@@ -1477,6 +1477,20 @@ AS_VAR_IF([enable_pystats], [yes], [
   AC_DEFINE([Py_STATS], [1], [Define if you want to enable internal statistics gathering.])
 ])
 
+# Check for --enable-pytimers
+AC_MSG_CHECKING([for --enable-pytimers])
+AC_ARG_ENABLE([pytimers],
+  [AS_HELP_STRING(
+    [--enable-pytimers],
+    [enable internal timers (default is no)])],,
+  [enable_pytimers=no]
+)
+AC_MSG_RESULT([$enable_pytimers])
+
+AS_VAR_IF([enable_pytimers], [yes], [
+  AC_DEFINE([Py_TIMERS], [1], [Define if you want to enable internal timers.])
+])
+
 # Check for --with-assertions.
 # This allows enabling assertions without Py_DEBUG.
 assertions='false'

@@ -1016,6 +1016,7 @@ enable_profiling
 with_pydebug
 with_trace_refs
 enable_pystats
+enable_pytimers
 with_assertions
 enable_optimizations
 with_lto
@@ -1723,6 +1724,7 @@ Optional Features:
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
   --enable-pystats        enable internal statistics gathering (default is no)
+  --enable-pytimers       enable internal timers (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-loadable-sqlite-extensions
@@ -7056,6 +7058,29 @@ if test "x$enable_pystats" = xyes; then :
 
 
 $as_echo "#define Py_STATS 1" >>confdefs.h
+
+
+fi
+
+
+# Check for --enable-pytimers
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-pytimers" >&5
+$as_echo_n "checking for --enable-pytimers... " >&6; }
+# Check whether --enable-pytimers was given.
+if test "${enable_pytimers+set}" = set; then :
+  enableval=$enable_pytimers;
+else
+  enable_pytimers=no
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_pytimers" >&5
+$as_echo "$enable_pytimers" >&6; }
+
+if test "x$enable_pytimers" = xyes; then :
+
+
+$as_echo "#define Py_TIMERS 1" >>confdefs.h
 
 
 fi

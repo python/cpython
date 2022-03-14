@@ -56,6 +56,7 @@ PyAPI_FUNC(int) _Py_IsFinalizing(void);
 /* Random */
 PyAPI_FUNC(int) _PyOS_URandom(void *buffer, Py_ssize_t size);
 PyAPI_FUNC(int) _PyOS_URandomNonblock(void *buffer, Py_ssize_t size);
+extern int _PyOS_URandomNonblockNoRaise(void *buffer, Py_ssize_t size);
 
 /* Legacy locale support */
 PyAPI_FUNC(int) _Py_CoerceLegacyLocale(int warn);

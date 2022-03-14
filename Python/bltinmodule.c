@@ -5,6 +5,7 @@
 #include "pycore_ast.h"           // _PyAST_Validate()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_compile.h"       // _PyAST_Compile()
+#include "pycore_instruments.h"   // timers
 #include "pycore_object.h"        // _Py_AddToAllObjects()
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -254,8 +255,10 @@ builtin___import__(PyObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "U|OOOi:__import__",
                     kwlist, &name, &globals, &locals, &fromlist, &level))
         return NULL;
-    return PyImport_ImportModuleLevelObject(name, globals, locals,
-                                            fromlist, level);
+    PyObject *res;
+    RECORD_TIME(res = PyImport_ImportModuleLevelObject(
+        name, globals, locals, fromlist, level), import_);
+    return res;
 }
 
 PyDoc_STRVAR(import_doc,

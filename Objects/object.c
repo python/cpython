@@ -2356,7 +2356,7 @@ _Py_Dealloc(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
-    (*dealloc)(op);
+    RECORD_TIME((*dealloc)(op), dealloc);
 }
 
 

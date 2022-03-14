@@ -1517,6 +1517,9 @@
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
 
+/* Define if you want to enable internal timers. */
+#undef Py_TIMERS
+
 /* Define if you want to enable tracing references for debugging purpose */
 #undef Py_TRACE_REFS
 
