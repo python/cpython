@@ -1676,7 +1676,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 # Year 42 returns '42', not padded
                 self.assertEqual(d.strftime("%Y"), '%d' % y)
                 # '0042' is obtained anyway
-                if support.has_strftime_extension:
+                if support.has_strftime_extensions:
                     self.assertEqual(d.strftime("%4Y"), '%04d' % y)
 
     def test_replace(self):
