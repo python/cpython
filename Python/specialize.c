@@ -15,31 +15,6 @@
  * ./adaptive.md
  */
 
-
-/* We layout the quickened data as a bi-directional array:
- * Instructions upwards, cache entries downwards.
- * first_instr is aligned to a SpecializedCacheEntry.
- * The nth instruction is located at first_instr[n]
- * The nth cache is located at ((SpecializedCacheEntry *)first_instr)[-1-n]
- * The first (index 0) cache entry is reserved for the count, to enable finding
- * the first instruction from the base pointer.
- * The cache_count argument must include space for the count.
- * We use the SpecializedCacheOrInstruction union to refer to the data
- * to avoid type punning.
-
- Layout of quickened data, each line 8 bytes for M cache entries and N instructions:
-
- <cache_count>                              <---- co->co_quickened
- <cache M-1>
- <cache M-2>
- ...
- <cache 0>
- <instr 0> <instr 1> <instr 2> <instr 3>    <--- co->co_first_instr
- <instr 4> <instr 5> <instr 6> <instr 7>
- ...
- <instr N-1>
-*/
-
 /* Map from opcode to adaptive opcode.
   Values of zero are ignored. */
 static uint8_t adaptive_opcodes[256] = {
