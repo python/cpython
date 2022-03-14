@@ -357,7 +357,7 @@ _PyGen_yf(PyGenObject *gen)
             assert(_Py_OPCODE(_PyCode_CODE(gen->gi_code)[0]) != SEND);
             return NULL;
         }
-
+        // XXX: Bad use of f_lasti?
         if (_Py_OPCODE(_PyCode_CODE(gen->gi_code)[frame->f_lasti - 1]) != SEND || frame->stacktop < 0)
         {
             return NULL;
@@ -485,6 +485,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             /* Termination repetition of SEND loop */
             assert(frame->f_lasti >= 0);
             /* Backup to SEND */
+            // XXX: Bad use of f_lasti?
             frame->f_lasti--;
             _Py_CODEUNIT instruction = _PyCode_CODE(gen->gi_code)[frame->f_lasti];
             assert(_Py_OPCODE(instruction) == SEND);

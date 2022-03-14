@@ -892,6 +892,7 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
             Py_INCREF(o);
             frame->localsplus[offset + i] = o;
         }
+        // COPY_FREE_VARS doesn't have inline CACHEs, either:
         frame->f_lasti = 0;
     }
     for (int i = 0; i < co->co_nlocalsplus; i++) {
