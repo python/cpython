@@ -332,7 +332,7 @@ _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *coro;
     PyObject *loop = Py_None;
     PyObject *name = Py_None;
-    PyObject *context = NULL;
+    PyObject *context = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
     if (!fastargs) {
@@ -924,4 +924,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=69ee4650645d4fd3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=540ed3caf5a4d57d input=a9049054013a1b77]*/
