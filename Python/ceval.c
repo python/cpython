@@ -4702,12 +4702,12 @@ handle_eval_breaker:
                 );
                 call_shape.kwnames = NULL;
                 STACK_SHRINK(2-is_meth);
+                PUSH(self_or_null);
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
                     goto error;
                 }
-                PUSH(self_or_null);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 frame->f_lasti += INLINE_CACHE_ENTRIES_CALL;
                 new_frame->previous = frame;
