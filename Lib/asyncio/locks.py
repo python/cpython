@@ -385,7 +385,6 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
                 # reset _wakeup_scheduled *after* waiting for a future
                 self._wakeup_scheduled = False
             except exceptions.CancelledError:
-                # The future was cancelled, wake up the next waiter if any
                 self._wake_up_next()
                 raise
         self._value -= 1
