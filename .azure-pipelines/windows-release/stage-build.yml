@@ -168,6 +168,7 @@ jobs:
 
   - task: MSBuild@1
     displayName: 'Copy Tcl/Tk lib for publish'
+    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
     inputs:
       solution: PCbuild\tcltk.props
       platform: ARM64
@@ -187,6 +188,7 @@ jobs:
 
   - task: PublishPipelineArtifact@0
     displayName: 'Publish artifact: tcltk_lib_arm64'
+    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
     inputs:
       targetPath: '$(Build.ArtifactStagingDirectory)\tcl_arm64'
       artifactName: tcltk_lib_arm64
