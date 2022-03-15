@@ -637,6 +637,11 @@ form.
       programs that use only a few regular expressions at a time needn't worry
       about compiling regular expressions.
 
+.. class:: RegexFlag
+
+   An :class:`enum.IntFlag` class containing the regex options listed below.
+
+   .. versionadded:: 3.11 - added to ``__all__``
 
 .. data:: A
           ASCII
@@ -710,6 +715,17 @@ form.
    string and immediately before the newline (if any) at the end of the string.
    Corresponds to the inline flag ``(?m)``.
 
+.. data:: NOFLAG
+
+   Indicates no flag being applied, the value is ``0``.  This flag may be used
+   as a default value for a function keyword argument or as a base value that
+   will be conditionally ORed with other flags.  Example of use as a default
+   value::
+
+      def myfunc(text, flag=re.NOFLAG):
+          return re.match(text, flag)
+
+   .. versionadded:: 3.11
 
 .. data:: S
           DOTALL

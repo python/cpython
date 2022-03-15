@@ -6,6 +6,8 @@
 #else
 #  define D(x)
 #endif
+
+# define MAXSTACK 6000
 static const int n_keyword_lists = 9;
 static KeywordToken *reserved_keywords[] = {
     (KeywordToken[]) {{NULL, -1}},
@@ -968,16 +970,19 @@ static asdl_seq *_loop1_222_rule(Parser *p);
 static mod_ty
 file_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     mod_ty _res = NULL;
     int _mark = p->mark;
     { // statements? $
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> file[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "statements? $"));
@@ -993,7 +998,7 @@ file_rule(Parser *p)
             _res = _PyPegen_make_module ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1004,7 +1009,7 @@ file_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -1012,16 +1017,19 @@ file_rule(Parser *p)
 static mod_ty
 interactive_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     mod_ty _res = NULL;
     int _mark = p->mark;
     { // statement_newline
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> interactive[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "statement_newline"));
@@ -1034,7 +1042,7 @@ interactive_rule(Parser *p)
             _res = _PyAST_Interactive ( a , p -> arena );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1045,7 +1053,7 @@ interactive_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -1053,16 +1061,19 @@ interactive_rule(Parser *p)
 static mod_ty
 eval_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     mod_ty _res = NULL;
     int _mark = p->mark;
     { // expressions NEWLINE* $
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> eval[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expressions NEWLINE* $"));
@@ -1081,7 +1092,7 @@ eval_rule(Parser *p)
             _res = _PyAST_Expression ( a , p -> arena );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1092,7 +1103,7 @@ eval_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -1100,16 +1111,19 @@ eval_rule(Parser *p)
 static mod_ty
 func_type_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     mod_ty _res = NULL;
     int _mark = p->mark;
     { // '(' type_expressions? ')' '->' expression NEWLINE* $
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> func_type[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' type_expressions? ')' '->' expression NEWLINE* $"));
@@ -1140,7 +1154,7 @@ func_type_rule(Parser *p)
             _res = _PyAST_FunctionType ( a , b , p -> arena );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1151,7 +1165,7 @@ func_type_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -1159,16 +1173,19 @@ func_type_rule(Parser *p)
 static expr_ty
 fstring_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // star_expressions
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> fstring[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expressions"));
@@ -1187,7 +1204,7 @@ fstring_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -1195,16 +1212,19 @@ fstring_rule(Parser *p)
 static asdl_stmt_seq*
 statements_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_stmt_seq* _res = NULL;
     int _mark = p->mark;
     { // statement+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> statements[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "statement+"));
@@ -1217,7 +1237,7 @@ statements_rule(Parser *p)
             _res = ( asdl_stmt_seq* ) _PyPegen_seq_flatten ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1228,7 +1248,7 @@ statements_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -1236,16 +1256,19 @@ statements_rule(Parser *p)
 static asdl_stmt_seq*
 statement_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_stmt_seq* _res = NULL;
     int _mark = p->mark;
     { // compound_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> statement[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "compound_stmt"));
@@ -1258,7 +1281,7 @@ statement_rule(Parser *p)
             _res = ( asdl_stmt_seq* ) _PyPegen_singleton_seq ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1269,7 +1292,7 @@ statement_rule(Parser *p)
     }
     { // simple_stmts
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> statement[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "simple_stmts"));
@@ -1282,7 +1305,7 @@ statement_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1293,7 +1316,7 @@ statement_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -1301,16 +1324,19 @@ statement_rule(Parser *p)
 static asdl_stmt_seq*
 statement_newline_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_stmt_seq* _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -1319,7 +1345,7 @@ statement_newline_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // compound_stmt NEWLINE
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> statement_newline[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "compound_stmt NEWLINE"));
@@ -1335,7 +1361,7 @@ statement_newline_rule(Parser *p)
             _res = ( asdl_stmt_seq* ) _PyPegen_singleton_seq ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1346,7 +1372,7 @@ statement_newline_rule(Parser *p)
     }
     { // simple_stmts
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> statement_newline[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "simple_stmts"));
@@ -1365,7 +1391,7 @@ statement_newline_rule(Parser *p)
     }
     { // NEWLINE
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> statement_newline[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NEWLINE"));
@@ -1377,7 +1403,7 @@ statement_newline_rule(Parser *p)
             D(fprintf(stderr, "%*c+ statement_newline[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NEWLINE"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -1387,7 +1413,7 @@ statement_newline_rule(Parser *p)
             _res = ( asdl_stmt_seq* ) _PyPegen_singleton_seq ( p , CHECK ( stmt_ty , _PyAST_Pass ( EXTRA ) ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1398,7 +1424,7 @@ statement_newline_rule(Parser *p)
     }
     { // $
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> statement_newline[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "$"));
@@ -1411,7 +1437,7 @@ statement_newline_rule(Parser *p)
             _res = _PyPegen_interactive_exit ( p );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1422,7 +1448,7 @@ statement_newline_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -1430,16 +1456,19 @@ statement_newline_rule(Parser *p)
 static asdl_stmt_seq*
 simple_stmts_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_stmt_seq* _res = NULL;
     int _mark = p->mark;
     { // simple_stmt !';' NEWLINE
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> simple_stmts[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "simple_stmt !';' NEWLINE"));
@@ -1457,7 +1486,7 @@ simple_stmts_rule(Parser *p)
             _res = ( asdl_stmt_seq* ) _PyPegen_singleton_seq ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1468,7 +1497,7 @@ simple_stmts_rule(Parser *p)
     }
     { // ';'.simple_stmt+ ';'? NEWLINE
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> simple_stmts[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "';'.simple_stmt+ ';'? NEWLINE"));
@@ -1488,7 +1517,7 @@ simple_stmts_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1499,7 +1528,7 @@ simple_stmts_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -1520,20 +1549,23 @@ simple_stmts_rule(Parser *p)
 static stmt_ty
 simple_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     if (_PyPegen_is_memoized(p, simple_stmt_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -1542,7 +1574,7 @@ simple_stmt_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // assignment
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "assignment"));
@@ -1561,7 +1593,7 @@ simple_stmt_rule(Parser *p)
     }
     { // star_expressions
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expressions"));
@@ -1573,7 +1605,7 @@ simple_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_expressions"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -1583,7 +1615,7 @@ simple_stmt_rule(Parser *p)
             _res = _PyAST_Expr ( e , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1594,7 +1626,7 @@ simple_stmt_rule(Parser *p)
     }
     { // &'return' return_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'return' return_stmt"));
@@ -1615,7 +1647,7 @@ simple_stmt_rule(Parser *p)
     }
     { // &('import' | 'from') import_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&('import' | 'from') import_stmt"));
@@ -1636,7 +1668,7 @@ simple_stmt_rule(Parser *p)
     }
     { // &'raise' raise_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'raise' raise_stmt"));
@@ -1657,7 +1689,7 @@ simple_stmt_rule(Parser *p)
     }
     { // 'pass'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'pass'"));
@@ -1669,7 +1701,7 @@ simple_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'pass'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -1679,7 +1711,7 @@ simple_stmt_rule(Parser *p)
             _res = _PyAST_Pass ( EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1690,7 +1722,7 @@ simple_stmt_rule(Parser *p)
     }
     { // &'del' del_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'del' del_stmt"));
@@ -1711,7 +1743,7 @@ simple_stmt_rule(Parser *p)
     }
     { // &'yield' yield_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'yield' yield_stmt"));
@@ -1732,7 +1764,7 @@ simple_stmt_rule(Parser *p)
     }
     { // &'assert' assert_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'assert' assert_stmt"));
@@ -1753,7 +1785,7 @@ simple_stmt_rule(Parser *p)
     }
     { // 'break'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'break'"));
@@ -1765,7 +1797,7 @@ simple_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'break'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -1775,7 +1807,7 @@ simple_stmt_rule(Parser *p)
             _res = _PyAST_Break ( EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1786,7 +1818,7 @@ simple_stmt_rule(Parser *p)
     }
     { // 'continue'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'continue'"));
@@ -1798,7 +1830,7 @@ simple_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'continue'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -1808,7 +1840,7 @@ simple_stmt_rule(Parser *p)
             _res = _PyAST_Continue ( EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -1819,7 +1851,7 @@ simple_stmt_rule(Parser *p)
     }
     { // &'global' global_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'global' global_stmt"));
@@ -1840,7 +1872,7 @@ simple_stmt_rule(Parser *p)
     }
     { // &'nonlocal' nonlocal_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'nonlocal' nonlocal_stmt"));
@@ -1862,7 +1894,7 @@ simple_stmt_rule(Parser *p)
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, simple_stmt_type, _res);
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -1878,16 +1910,19 @@ simple_stmt_rule(Parser *p)
 static stmt_ty
 compound_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     { // &('def' | '@' | ASYNC) function_def
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&('def' | '@' | ASYNC) function_def"));
@@ -1908,7 +1943,7 @@ compound_stmt_rule(Parser *p)
     }
     { // &'if' if_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'if' if_stmt"));
@@ -1929,7 +1964,7 @@ compound_stmt_rule(Parser *p)
     }
     { // &('class' | '@') class_def
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&('class' | '@') class_def"));
@@ -1950,7 +1985,7 @@ compound_stmt_rule(Parser *p)
     }
     { // &('with' | ASYNC) with_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&('with' | ASYNC) with_stmt"));
@@ -1971,7 +2006,7 @@ compound_stmt_rule(Parser *p)
     }
     { // &('for' | ASYNC) for_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&('for' | ASYNC) for_stmt"));
@@ -1992,7 +2027,7 @@ compound_stmt_rule(Parser *p)
     }
     { // &'try' try_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'try' try_stmt"));
@@ -2013,7 +2048,7 @@ compound_stmt_rule(Parser *p)
     }
     { // &'while' while_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'while' while_stmt"));
@@ -2034,7 +2069,7 @@ compound_stmt_rule(Parser *p)
     }
     { // match_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "match_stmt"));
@@ -2053,7 +2088,7 @@ compound_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -2066,16 +2101,19 @@ compound_stmt_rule(Parser *p)
 static stmt_ty
 assignment_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -2084,7 +2122,7 @@ assignment_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME ':' expression ['=' annotated_rhs]
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME ':' expression ['=' annotated_rhs]"));
@@ -2105,7 +2143,7 @@ assignment_rule(Parser *p)
             D(fprintf(stderr, "%*c+ assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME ':' expression ['=' annotated_rhs]"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -2115,7 +2153,7 @@ assignment_rule(Parser *p)
             _res = CHECK_VERSION ( stmt_ty , 6 , "Variable annotation syntax is" , _PyAST_AnnAssign ( CHECK ( expr_ty , _PyPegen_set_expr_context ( p , a , Store ) ) , b , c , 1 , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2126,7 +2164,7 @@ assignment_rule(Parser *p)
     }
     { // ('(' single_target ')' | single_subscript_attribute_target) ':' expression ['=' annotated_rhs]
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('(' single_target ')' | single_subscript_attribute_target) ':' expression ['=' annotated_rhs]"));
@@ -2147,7 +2185,7 @@ assignment_rule(Parser *p)
             D(fprintf(stderr, "%*c+ assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "('(' single_target ')' | single_subscript_attribute_target) ':' expression ['=' annotated_rhs]"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -2157,7 +2195,7 @@ assignment_rule(Parser *p)
             _res = CHECK_VERSION ( stmt_ty , 6 , "Variable annotations syntax is" , _PyAST_AnnAssign ( a , b , c , 0 , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2168,7 +2206,7 @@ assignment_rule(Parser *p)
     }
     { // ((star_targets '='))+ (yield_expr | star_expressions) !'=' TYPE_COMMENT?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "((star_targets '='))+ (yield_expr | star_expressions) !'=' TYPE_COMMENT?"));
@@ -2188,7 +2226,7 @@ assignment_rule(Parser *p)
             D(fprintf(stderr, "%*c+ assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "((star_targets '='))+ (yield_expr | star_expressions) !'=' TYPE_COMMENT?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -2198,7 +2236,7 @@ assignment_rule(Parser *p)
             _res = _PyAST_Assign ( a , b , NEW_TYPE_COMMENT ( p , tc ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2209,7 +2247,7 @@ assignment_rule(Parser *p)
     }
     { // single_target augassign ~ (yield_expr | star_expressions)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "single_target augassign ~ (yield_expr | star_expressions)"));
@@ -2230,7 +2268,7 @@ assignment_rule(Parser *p)
             D(fprintf(stderr, "%*c+ assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "single_target augassign ~ (yield_expr | star_expressions)"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -2240,7 +2278,7 @@ assignment_rule(Parser *p)
             _res = _PyAST_AugAssign ( a , b -> kind , c , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2249,13 +2287,13 @@ assignment_rule(Parser *p)
         D(fprintf(stderr, "%*c%s assignment[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "single_target augassign ~ (yield_expr | star_expressions)"));
         if (_cut_var) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
     }
     if (p->call_invalid_rules) { // invalid_assignment
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_assignment"));
@@ -2274,7 +2312,7 @@ assignment_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -2282,16 +2320,19 @@ assignment_rule(Parser *p)
 static expr_ty
 annotated_rhs_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // yield_expr
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> annotated_rhs[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "yield_expr"));
@@ -2310,7 +2351,7 @@ annotated_rhs_rule(Parser *p)
     }
     { // star_expressions
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> annotated_rhs[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expressions"));
@@ -2329,7 +2370,7 @@ annotated_rhs_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -2350,16 +2391,19 @@ annotated_rhs_rule(Parser *p)
 static AugOperator*
 augassign_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     AugOperator* _res = NULL;
     int _mark = p->mark;
     { // '+='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> augassign[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'+='"));
@@ -2372,7 +2416,7 @@ augassign_rule(Parser *p)
             _res = _PyPegen_augoperator ( p , Add );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2383,7 +2427,7 @@ augassign_rule(Parser *p)
     }
     { // '-='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> augassign[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'-='"));
@@ -2396,7 +2440,7 @@ augassign_rule(Parser *p)
             _res = _PyPegen_augoperator ( p , Sub );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2407,7 +2451,7 @@ augassign_rule(Parser *p)
     }
     { // '*='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> augassign[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*='"));
@@ -2420,7 +2464,7 @@ augassign_rule(Parser *p)
             _res = _PyPegen_augoperator ( p , Mult );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2431,7 +2475,7 @@ augassign_rule(Parser *p)
     }
     { // '@='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> augassign[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'@='"));
@@ -2444,7 +2488,7 @@ augassign_rule(Parser *p)
             _res = CHECK_VERSION ( AugOperator* , 5 , "The '@' operator is" , _PyPegen_augoperator ( p , MatMult ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2455,7 +2499,7 @@ augassign_rule(Parser *p)
     }
     { // '/='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> augassign[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'/='"));
@@ -2468,7 +2512,7 @@ augassign_rule(Parser *p)
             _res = _PyPegen_augoperator ( p , Div );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2479,7 +2523,7 @@ augassign_rule(Parser *p)
     }
     { // '%='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> augassign[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'%='"));
@@ -2492,7 +2536,7 @@ augassign_rule(Parser *p)
             _res = _PyPegen_augoperator ( p , Mod );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2503,7 +2547,7 @@ augassign_rule(Parser *p)
     }
     { // '&='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> augassign[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'&='"));
@@ -2516,7 +2560,7 @@ augassign_rule(Parser *p)
             _res = _PyPegen_augoperator ( p , BitAnd );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2527,7 +2571,7 @@ augassign_rule(Parser *p)
     }
     { // '|='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> augassign[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'|='"));
@@ -2540,7 +2584,7 @@ augassign_rule(Parser *p)
             _res = _PyPegen_augoperator ( p , BitOr );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2551,7 +2595,7 @@ augassign_rule(Parser *p)
     }
     { // '^='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> augassign[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'^='"));
@@ -2564,7 +2608,7 @@ augassign_rule(Parser *p)
             _res = _PyPegen_augoperator ( p , BitXor );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2575,7 +2619,7 @@ augassign_rule(Parser *p)
     }
     { // '<<='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> augassign[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'<<='"));
@@ -2588,7 +2632,7 @@ augassign_rule(Parser *p)
             _res = _PyPegen_augoperator ( p , LShift );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2599,7 +2643,7 @@ augassign_rule(Parser *p)
     }
     { // '>>='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> augassign[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'>>='"));
@@ -2612,7 +2656,7 @@ augassign_rule(Parser *p)
             _res = _PyPegen_augoperator ( p , RShift );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2623,7 +2667,7 @@ augassign_rule(Parser *p)
     }
     { // '**='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> augassign[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'**='"));
@@ -2636,7 +2680,7 @@ augassign_rule(Parser *p)
             _res = _PyPegen_augoperator ( p , Pow );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2647,7 +2691,7 @@ augassign_rule(Parser *p)
     }
     { // '//='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> augassign[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'//='"));
@@ -2660,7 +2704,7 @@ augassign_rule(Parser *p)
             _res = _PyPegen_augoperator ( p , FloorDiv );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2671,7 +2715,7 @@ augassign_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -2679,16 +2723,19 @@ augassign_rule(Parser *p)
 static stmt_ty
 return_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -2697,7 +2744,7 @@ return_stmt_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'return' star_expressions?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> return_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'return' star_expressions?"));
@@ -2712,7 +2759,7 @@ return_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ return_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'return' star_expressions?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -2722,7 +2769,7 @@ return_stmt_rule(Parser *p)
             _res = _PyAST_Return ( a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2733,7 +2780,7 @@ return_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -2741,16 +2788,19 @@ return_stmt_rule(Parser *p)
 static stmt_ty
 raise_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -2759,7 +2809,7 @@ raise_stmt_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'raise' expression ['from' expression]
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> raise_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'raise' expression ['from' expression]"));
@@ -2777,7 +2827,7 @@ raise_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ raise_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'raise' expression ['from' expression]"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -2787,7 +2837,7 @@ raise_stmt_rule(Parser *p)
             _res = _PyAST_Raise ( a , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2798,7 +2848,7 @@ raise_stmt_rule(Parser *p)
     }
     { // 'raise'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> raise_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'raise'"));
@@ -2810,7 +2860,7 @@ raise_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ raise_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'raise'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -2820,7 +2870,7 @@ raise_stmt_rule(Parser *p)
             _res = _PyAST_Raise ( NULL , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2831,7 +2881,7 @@ raise_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -2839,16 +2889,19 @@ raise_stmt_rule(Parser *p)
 static stmt_ty
 global_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -2857,7 +2910,7 @@ global_stmt_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'global' ','.NAME+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> global_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'global' ','.NAME+"));
@@ -2872,7 +2925,7 @@ global_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ global_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'global' ','.NAME+"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -2882,7 +2935,7 @@ global_stmt_rule(Parser *p)
             _res = _PyAST_Global ( CHECK ( asdl_identifier_seq* , _PyPegen_map_names_to_ids ( p , a ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2893,7 +2946,7 @@ global_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -2901,16 +2954,19 @@ global_stmt_rule(Parser *p)
 static stmt_ty
 nonlocal_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -2919,7 +2975,7 @@ nonlocal_stmt_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'nonlocal' ','.NAME+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> nonlocal_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'nonlocal' ','.NAME+"));
@@ -2934,7 +2990,7 @@ nonlocal_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ nonlocal_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'nonlocal' ','.NAME+"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -2944,7 +3000,7 @@ nonlocal_stmt_rule(Parser *p)
             _res = _PyAST_Nonlocal ( CHECK ( asdl_identifier_seq* , _PyPegen_map_names_to_ids ( p , a ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -2955,7 +3011,7 @@ nonlocal_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -2963,16 +3019,19 @@ nonlocal_stmt_rule(Parser *p)
 static stmt_ty
 del_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -2981,7 +3040,7 @@ del_stmt_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'del' del_targets &(';' | NEWLINE)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> del_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'del' del_targets &(';' | NEWLINE)"));
@@ -2998,7 +3057,7 @@ del_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ del_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'del' del_targets &(';' | NEWLINE)"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -3008,7 +3067,7 @@ del_stmt_rule(Parser *p)
             _res = _PyAST_Delete ( a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -3019,7 +3078,7 @@ del_stmt_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_del_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> del_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_del_stmt"));
@@ -3038,7 +3097,7 @@ del_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -3046,16 +3105,19 @@ del_stmt_rule(Parser *p)
 static stmt_ty
 yield_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -3064,7 +3126,7 @@ yield_stmt_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // yield_expr
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> yield_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "yield_expr"));
@@ -3076,7 +3138,7 @@ yield_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ yield_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "yield_expr"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -3086,7 +3148,7 @@ yield_stmt_rule(Parser *p)
             _res = _PyAST_Expr ( y , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -3097,7 +3159,7 @@ yield_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -3105,16 +3167,19 @@ yield_stmt_rule(Parser *p)
 static stmt_ty
 assert_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -3123,7 +3188,7 @@ assert_stmt_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'assert' expression [',' expression]
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> assert_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'assert' expression [',' expression]"));
@@ -3141,7 +3206,7 @@ assert_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ assert_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'assert' expression [',' expression]"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -3151,7 +3216,7 @@ assert_stmt_rule(Parser *p)
             _res = _PyAST_Assert ( a , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -3162,7 +3227,7 @@ assert_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -3170,16 +3235,19 @@ assert_stmt_rule(Parser *p)
 static stmt_ty
 import_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     { // import_name
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> import_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "import_name"));
@@ -3198,7 +3266,7 @@ import_stmt_rule(Parser *p)
     }
     { // import_from
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> import_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "import_from"));
@@ -3217,7 +3285,7 @@ import_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -3225,16 +3293,19 @@ import_stmt_rule(Parser *p)
 static stmt_ty
 import_name_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -3243,7 +3314,7 @@ import_name_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'import' dotted_as_names
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> import_name[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'import' dotted_as_names"));
@@ -3258,7 +3329,7 @@ import_name_rule(Parser *p)
             D(fprintf(stderr, "%*c+ import_name[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'import' dotted_as_names"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -3268,7 +3339,7 @@ import_name_rule(Parser *p)
             _res = _PyAST_Import ( a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -3279,7 +3350,7 @@ import_name_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -3289,16 +3360,19 @@ import_name_rule(Parser *p)
 static stmt_ty
 import_from_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -3307,7 +3381,7 @@ import_from_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'from' (('.' | '...'))* dotted_name 'import' import_from_targets
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> import_from[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'from' (('.' | '...'))* dotted_name 'import' import_from_targets"));
@@ -3331,7 +3405,7 @@ import_from_rule(Parser *p)
             D(fprintf(stderr, "%*c+ import_from[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'from' (('.' | '...'))* dotted_name 'import' import_from_targets"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -3341,7 +3415,7 @@ import_from_rule(Parser *p)
             _res = _PyAST_ImportFrom ( b -> v . Name . id , c , _PyPegen_seq_count_dots ( a ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -3352,7 +3426,7 @@ import_from_rule(Parser *p)
     }
     { // 'from' (('.' | '...'))+ 'import' import_from_targets
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> import_from[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'from' (('.' | '...'))+ 'import' import_from_targets"));
@@ -3373,7 +3447,7 @@ import_from_rule(Parser *p)
             D(fprintf(stderr, "%*c+ import_from[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'from' (('.' | '...'))+ 'import' import_from_targets"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -3383,7 +3457,7 @@ import_from_rule(Parser *p)
             _res = _PyAST_ImportFrom ( NULL , b , _PyPegen_seq_count_dots ( a ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -3394,7 +3468,7 @@ import_from_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -3406,16 +3480,19 @@ import_from_rule(Parser *p)
 static asdl_alias_seq*
 import_from_targets_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_alias_seq* _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -3424,7 +3501,7 @@ import_from_targets_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '(' import_from_as_names ','? ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> import_from_targets[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' import_from_as_names ','? ')'"));
@@ -3447,7 +3524,7 @@ import_from_targets_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -3458,7 +3535,7 @@ import_from_targets_rule(Parser *p)
     }
     { // import_from_as_names !','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> import_from_targets[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "import_from_as_names !','"));
@@ -3479,7 +3556,7 @@ import_from_targets_rule(Parser *p)
     }
     { // '*'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> import_from_targets[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*'"));
@@ -3491,7 +3568,7 @@ import_from_targets_rule(Parser *p)
             D(fprintf(stderr, "%*c+ import_from_targets[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -3501,7 +3578,7 @@ import_from_targets_rule(Parser *p)
             _res = ( asdl_alias_seq* ) _PyPegen_singleton_seq ( p , CHECK ( alias_ty , _PyPegen_alias_for_star ( p , EXTRA ) ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -3512,7 +3589,7 @@ import_from_targets_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_import_from_targets
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> import_from_targets[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_import_from_targets"));
@@ -3531,7 +3608,7 @@ import_from_targets_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -3539,16 +3616,19 @@ import_from_targets_rule(Parser *p)
 static asdl_alias_seq*
 import_from_as_names_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_alias_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.import_from_as_name+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> import_from_as_names[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.import_from_as_name+"));
@@ -3561,7 +3641,7 @@ import_from_as_names_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -3572,7 +3652,7 @@ import_from_as_names_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -3580,16 +3660,19 @@ import_from_as_names_rule(Parser *p)
 static alias_ty
 import_from_as_name_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     alias_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -3598,7 +3681,7 @@ import_from_as_name_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME ['as' NAME]
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> import_from_as_name[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME ['as' NAME]"));
@@ -3613,7 +3696,7 @@ import_from_as_name_rule(Parser *p)
             D(fprintf(stderr, "%*c+ import_from_as_name[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME ['as' NAME]"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -3623,7 +3706,7 @@ import_from_as_name_rule(Parser *p)
             _res = _PyAST_alias ( a -> v . Name . id , ( b ) ? ( ( expr_ty ) b ) -> v . Name . id : NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -3634,7 +3717,7 @@ import_from_as_name_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -3642,16 +3725,19 @@ import_from_as_name_rule(Parser *p)
 static asdl_alias_seq*
 dotted_as_names_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_alias_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.dotted_as_name+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> dotted_as_names[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.dotted_as_name+"));
@@ -3664,7 +3750,7 @@ dotted_as_names_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -3675,7 +3761,7 @@ dotted_as_names_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -3683,16 +3769,19 @@ dotted_as_names_rule(Parser *p)
 static alias_ty
 dotted_as_name_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     alias_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -3701,7 +3790,7 @@ dotted_as_name_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // dotted_name ['as' NAME]
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> dotted_as_name[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "dotted_name ['as' NAME]"));
@@ -3716,7 +3805,7 @@ dotted_as_name_rule(Parser *p)
             D(fprintf(stderr, "%*c+ dotted_as_name[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "dotted_name ['as' NAME]"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -3726,7 +3815,7 @@ dotted_as_name_rule(Parser *p)
             _res = _PyAST_alias ( a -> v . Name . id , ( b ) ? ( ( expr_ty ) b ) -> v . Name . id : NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -3737,7 +3826,7 @@ dotted_as_name_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -3747,10 +3836,13 @@ static expr_ty dotted_name_raw(Parser *);
 static expr_ty
 dotted_name_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, dotted_name_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
@@ -3758,37 +3850,40 @@ dotted_name_rule(Parser *p)
     while (1) {
         int tmpvar_0 = _PyPegen_update_memo(p, _mark, dotted_name_type, _res);
         if (tmpvar_0) {
-            D(p->level--);
+            p->level--;
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = dotted_name_raw(p);
-        p->in_raw_rule--;
-        if (p->error_indicator)
+        if (p->error_indicator) {
+            p->level--;
             return NULL;
+        }
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
         _res = _raw;
     }
     p->mark = _resmark;
-    D(p->level--);
+    p->level--;
     return _res;
 }
 static expr_ty
 dotted_name_raw(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // dotted_name '.' NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> dotted_name[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "dotted_name '.' NAME"));
@@ -3807,7 +3902,7 @@ dotted_name_raw(Parser *p)
             _res = _PyPegen_join_names_with_dot ( p , a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -3818,7 +3913,7 @@ dotted_name_raw(Parser *p)
     }
     { // NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> dotted_name[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME"));
@@ -3837,7 +3932,7 @@ dotted_name_raw(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -3845,20 +3940,23 @@ dotted_name_raw(Parser *p)
 static asdl_stmt_seq*
 block_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_stmt_seq* _res = NULL;
     if (_PyPegen_is_memoized(p, block_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
     { // NEWLINE INDENT statements DEDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NEWLINE INDENT statements DEDENT"));
@@ -3880,7 +3978,7 @@ block_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -3891,7 +3989,7 @@ block_rule(Parser *p)
     }
     { // simple_stmts
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "simple_stmts"));
@@ -3910,7 +4008,7 @@ block_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_block"));
@@ -3930,7 +4028,7 @@ block_rule(Parser *p)
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, block_type, _res);
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -3938,16 +4036,19 @@ block_rule(Parser *p)
 static asdl_expr_seq*
 decorators_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_expr_seq* _res = NULL;
     int _mark = p->mark;
     { // (('@' named_expression NEWLINE))+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> decorators[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(('@' named_expression NEWLINE))+"));
@@ -3960,7 +4061,7 @@ decorators_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -3971,7 +4072,7 @@ decorators_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -3979,16 +4080,19 @@ decorators_rule(Parser *p)
 static stmt_ty
 class_def_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     { // decorators class_def_raw
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> class_def[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "decorators class_def_raw"));
@@ -4004,7 +4108,7 @@ class_def_rule(Parser *p)
             _res = _PyPegen_class_def_decorators ( p , a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4015,7 +4119,7 @@ class_def_rule(Parser *p)
     }
     { // class_def_raw
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> class_def[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "class_def_raw"));
@@ -4034,7 +4138,7 @@ class_def_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -4042,16 +4146,19 @@ class_def_rule(Parser *p)
 static stmt_ty
 class_def_raw_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -4060,7 +4167,7 @@ class_def_raw_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     if (p->call_invalid_rules) { // invalid_class_def_raw
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> class_def_raw[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_class_def_raw"));
@@ -4079,7 +4186,7 @@ class_def_raw_rule(Parser *p)
     }
     { // 'class' NAME ['(' arguments? ')'] &&':' block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> class_def_raw[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'class' NAME ['(' arguments? ')'] &&':' block"));
@@ -4103,7 +4210,7 @@ class_def_raw_rule(Parser *p)
             D(fprintf(stderr, "%*c+ class_def_raw[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'class' NAME ['(' arguments? ')'] &&':' block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -4113,7 +4220,7 @@ class_def_raw_rule(Parser *p)
             _res = _PyAST_ClassDef ( a -> v . Name . id , ( b ) ? ( ( expr_ty ) b ) -> v . Call . args : NULL , ( b ) ? ( ( expr_ty ) b ) -> v . Call . keywords : NULL , c , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4124,7 +4231,7 @@ class_def_raw_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -4132,16 +4239,19 @@ class_def_raw_rule(Parser *p)
 static stmt_ty
 function_def_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     { // decorators function_def_raw
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> function_def[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "decorators function_def_raw"));
@@ -4157,7 +4267,7 @@ function_def_rule(Parser *p)
             _res = _PyPegen_function_def_decorators ( p , d , f );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4168,7 +4278,7 @@ function_def_rule(Parser *p)
     }
     { // function_def_raw
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> function_def[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "function_def_raw"));
@@ -4187,7 +4297,7 @@ function_def_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -4198,16 +4308,19 @@ function_def_rule(Parser *p)
 static stmt_ty
 function_def_raw_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -4216,7 +4329,7 @@ function_def_raw_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     if (p->call_invalid_rules) { // invalid_def_raw
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> function_def_raw[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_def_raw"));
@@ -4235,7 +4348,7 @@ function_def_raw_rule(Parser *p)
     }
     { // 'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> function_def_raw[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block"));
@@ -4271,7 +4384,7 @@ function_def_raw_rule(Parser *p)
             D(fprintf(stderr, "%*c+ function_def_raw[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -4281,7 +4394,7 @@ function_def_raw_rule(Parser *p)
             _res = _PyAST_FunctionDef ( n -> v . Name . id , ( params ) ? params : CHECK ( arguments_ty , _PyPegen_empty_arguments ( p ) ) , b , NULL , a , NEW_TYPE_COMMENT ( p , tc ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4292,7 +4405,7 @@ function_def_raw_rule(Parser *p)
     }
     { // ASYNC 'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> function_def_raw[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC 'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block"));
@@ -4331,7 +4444,7 @@ function_def_raw_rule(Parser *p)
             D(fprintf(stderr, "%*c+ function_def_raw[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "ASYNC 'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -4341,7 +4454,7 @@ function_def_raw_rule(Parser *p)
             _res = CHECK_VERSION ( stmt_ty , 5 , "Async functions are" , _PyAST_AsyncFunctionDef ( n -> v . Name . id , ( params ) ? params : CHECK ( arguments_ty , _PyPegen_empty_arguments ( p ) ) , b , NULL , a , NEW_TYPE_COMMENT ( p , tc ) , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4352,7 +4465,7 @@ function_def_raw_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -4360,16 +4473,19 @@ function_def_raw_rule(Parser *p)
 static arguments_ty
 params_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     arguments_ty _res = NULL;
     int _mark = p->mark;
     if (p->call_invalid_rules) { // invalid_parameters
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> params[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_parameters"));
@@ -4388,7 +4504,7 @@ params_rule(Parser *p)
     }
     { // parameters
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> params[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "parameters"));
@@ -4407,7 +4523,7 @@ params_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -4420,16 +4536,19 @@ params_rule(Parser *p)
 static arguments_ty
 parameters_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     arguments_ty _res = NULL;
     int _mark = p->mark;
     { // slash_no_default param_no_default* param_with_default* star_etc?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "slash_no_default param_no_default* param_with_default* star_etc?"));
@@ -4451,7 +4570,7 @@ parameters_rule(Parser *p)
             _res = _PyPegen_make_arguments ( p , a , NULL , b , c , d );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4462,7 +4581,7 @@ parameters_rule(Parser *p)
     }
     { // slash_with_default param_with_default* star_etc?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "slash_with_default param_with_default* star_etc?"));
@@ -4481,7 +4600,7 @@ parameters_rule(Parser *p)
             _res = _PyPegen_make_arguments ( p , NULL , a , NULL , b , c );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4492,7 +4611,7 @@ parameters_rule(Parser *p)
     }
     { // param_no_default+ param_with_default* star_etc?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default+ param_with_default* star_etc?"));
@@ -4511,7 +4630,7 @@ parameters_rule(Parser *p)
             _res = _PyPegen_make_arguments ( p , NULL , NULL , a , b , c );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4522,7 +4641,7 @@ parameters_rule(Parser *p)
     }
     { // param_with_default+ star_etc?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_with_default+ star_etc?"));
@@ -4538,7 +4657,7 @@ parameters_rule(Parser *p)
             _res = _PyPegen_make_arguments ( p , NULL , NULL , NULL , a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4549,7 +4668,7 @@ parameters_rule(Parser *p)
     }
     { // star_etc
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_etc"));
@@ -4562,7 +4681,7 @@ parameters_rule(Parser *p)
             _res = _PyPegen_make_arguments ( p , NULL , NULL , NULL , NULL , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4573,7 +4692,7 @@ parameters_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -4581,16 +4700,19 @@ parameters_rule(Parser *p)
 static asdl_arg_seq*
 slash_no_default_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_arg_seq* _res = NULL;
     int _mark = p->mark;
     { // param_no_default+ '/' ','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> slash_no_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default+ '/' ','"));
@@ -4609,7 +4731,7 @@ slash_no_default_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4620,7 +4742,7 @@ slash_no_default_rule(Parser *p)
     }
     { // param_no_default+ '/' &')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> slash_no_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default+ '/' &')'"));
@@ -4638,7 +4760,7 @@ slash_no_default_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4649,7 +4771,7 @@ slash_no_default_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -4659,16 +4781,19 @@ slash_no_default_rule(Parser *p)
 static SlashWithDefault*
 slash_with_default_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     SlashWithDefault* _res = NULL;
     int _mark = p->mark;
     { // param_no_default* param_with_default+ '/' ','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> slash_with_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default* param_with_default+ '/' ','"));
@@ -4690,7 +4815,7 @@ slash_with_default_rule(Parser *p)
             _res = _PyPegen_slash_with_default ( p , ( asdl_arg_seq* ) a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4701,7 +4826,7 @@ slash_with_default_rule(Parser *p)
     }
     { // param_no_default* param_with_default+ '/' &')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> slash_with_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default* param_with_default+ '/' &')'"));
@@ -4722,7 +4847,7 @@ slash_with_default_rule(Parser *p)
             _res = _PyPegen_slash_with_default ( p , ( asdl_arg_seq* ) a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4733,7 +4858,7 @@ slash_with_default_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -4745,16 +4870,19 @@ slash_with_default_rule(Parser *p)
 static StarEtc*
 star_etc_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     StarEtc* _res = NULL;
     int _mark = p->mark;
     { // '*' param_no_default param_maybe_default* kwds?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_etc[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' param_no_default param_maybe_default* kwds?"));
@@ -4776,7 +4904,7 @@ star_etc_rule(Parser *p)
             _res = _PyPegen_star_etc ( p , a , b , c );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4787,7 +4915,7 @@ star_etc_rule(Parser *p)
     }
     { // '*' ',' param_maybe_default+ kwds?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_etc[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' ',' param_maybe_default+ kwds?"));
@@ -4809,7 +4937,7 @@ star_etc_rule(Parser *p)
             _res = _PyPegen_star_etc ( p , NULL , b , c );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4820,7 +4948,7 @@ star_etc_rule(Parser *p)
     }
     { // kwds
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_etc[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "kwds"));
@@ -4833,7 +4961,7 @@ star_etc_rule(Parser *p)
             _res = _PyPegen_star_etc ( p , NULL , NULL , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4844,7 +4972,7 @@ star_etc_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_star_etc
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_etc[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_star_etc"));
@@ -4863,7 +4991,7 @@ star_etc_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -4871,16 +4999,19 @@ star_etc_rule(Parser *p)
 static arg_ty
 kwds_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     arg_ty _res = NULL;
     int _mark = p->mark;
     { // '**' param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> kwds[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'**' param_no_default"));
@@ -4896,7 +5027,7 @@ kwds_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4907,7 +5038,7 @@ kwds_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -4915,16 +5046,19 @@ kwds_rule(Parser *p)
 static arg_ty
 param_no_default_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     arg_ty _res = NULL;
     int _mark = p->mark;
     { // param ',' TYPE_COMMENT?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> param_no_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param ',' TYPE_COMMENT?"));
@@ -4943,7 +5077,7 @@ param_no_default_rule(Parser *p)
             _res = _PyPegen_add_type_comment_to_arg ( p , a , tc );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4954,7 +5088,7 @@ param_no_default_rule(Parser *p)
     }
     { // param TYPE_COMMENT? &')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> param_no_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param TYPE_COMMENT? &')'"));
@@ -4972,7 +5106,7 @@ param_no_default_rule(Parser *p)
             _res = _PyPegen_add_type_comment_to_arg ( p , a , tc );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -4983,7 +5117,7 @@ param_no_default_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -4991,16 +5125,19 @@ param_no_default_rule(Parser *p)
 static NameDefaultPair*
 param_with_default_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
     { // param default ',' TYPE_COMMENT?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> param_with_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param default ',' TYPE_COMMENT?"));
@@ -5022,7 +5159,7 @@ param_with_default_rule(Parser *p)
             _res = _PyPegen_name_default_pair ( p , a , c , tc );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -5033,7 +5170,7 @@ param_with_default_rule(Parser *p)
     }
     { // param default TYPE_COMMENT? &')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> param_with_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param default TYPE_COMMENT? &')'"));
@@ -5054,7 +5191,7 @@ param_with_default_rule(Parser *p)
             _res = _PyPegen_name_default_pair ( p , a , c , tc );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -5065,7 +5202,7 @@ param_with_default_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -5075,16 +5212,19 @@ param_with_default_rule(Parser *p)
 static NameDefaultPair*
 param_maybe_default_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
     { // param default? ',' TYPE_COMMENT?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> param_maybe_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param default? ',' TYPE_COMMENT?"));
@@ -5106,7 +5246,7 @@ param_maybe_default_rule(Parser *p)
             _res = _PyPegen_name_default_pair ( p , a , c , tc );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -5117,7 +5257,7 @@ param_maybe_default_rule(Parser *p)
     }
     { // param default? TYPE_COMMENT? &')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> param_maybe_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param default? TYPE_COMMENT? &')'"));
@@ -5138,7 +5278,7 @@ param_maybe_default_rule(Parser *p)
             _res = _PyPegen_name_default_pair ( p , a , c , tc );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -5149,7 +5289,7 @@ param_maybe_default_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -5157,16 +5297,19 @@ param_maybe_default_rule(Parser *p)
 static arg_ty
 param_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     arg_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -5175,7 +5318,7 @@ param_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME annotation?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> param[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME annotation?"));
@@ -5190,7 +5333,7 @@ param_rule(Parser *p)
             D(fprintf(stderr, "%*c+ param[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME annotation?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -5200,7 +5343,7 @@ param_rule(Parser *p)
             _res = _PyAST_arg ( a -> v . Name . id , b , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -5211,7 +5354,7 @@ param_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -5219,16 +5362,19 @@ param_rule(Parser *p)
 static expr_ty
 annotation_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // ':' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> annotation[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "':' expression"));
@@ -5244,7 +5390,7 @@ annotation_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -5255,7 +5401,7 @@ annotation_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -5263,16 +5409,19 @@ annotation_rule(Parser *p)
 static expr_ty
 default_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // '=' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'=' expression"));
@@ -5288,7 +5437,7 @@ default_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -5299,7 +5448,7 @@ default_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -5310,16 +5459,19 @@ default_rule(Parser *p)
 static stmt_ty
 if_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -5328,7 +5480,7 @@ if_stmt_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     if (p->call_invalid_rules) { // invalid_if_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> if_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_if_stmt"));
@@ -5347,7 +5499,7 @@ if_stmt_rule(Parser *p)
     }
     { // 'if' named_expression ':' block elif_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> if_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'if' named_expression ':' block elif_stmt"));
@@ -5371,7 +5523,7 @@ if_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ if_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'if' named_expression ':' block elif_stmt"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -5381,7 +5533,7 @@ if_stmt_rule(Parser *p)
             _res = _PyAST_If ( a , b , CHECK ( asdl_stmt_seq* , _PyPegen_singleton_seq ( p , c ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -5392,7 +5544,7 @@ if_stmt_rule(Parser *p)
     }
     { // 'if' named_expression ':' block else_block?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> if_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'if' named_expression ':' block else_block?"));
@@ -5416,7 +5568,7 @@ if_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ if_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'if' named_expression ':' block else_block?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -5426,7 +5578,7 @@ if_stmt_rule(Parser *p)
             _res = _PyAST_If ( a , b , c , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -5437,7 +5589,7 @@ if_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -5448,16 +5600,19 @@ if_stmt_rule(Parser *p)
 static stmt_ty
 elif_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -5466,7 +5621,7 @@ elif_stmt_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     if (p->call_invalid_rules) { // invalid_elif_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> elif_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_elif_stmt"));
@@ -5485,7 +5640,7 @@ elif_stmt_rule(Parser *p)
     }
     { // 'elif' named_expression ':' block elif_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> elif_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'elif' named_expression ':' block elif_stmt"));
@@ -5509,7 +5664,7 @@ elif_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ elif_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'elif' named_expression ':' block elif_stmt"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -5519,7 +5674,7 @@ elif_stmt_rule(Parser *p)
             _res = _PyAST_If ( a , b , CHECK ( asdl_stmt_seq* , _PyPegen_singleton_seq ( p , c ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -5530,7 +5685,7 @@ elif_stmt_rule(Parser *p)
     }
     { // 'elif' named_expression ':' block else_block?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> elif_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'elif' named_expression ':' block else_block?"));
@@ -5554,7 +5709,7 @@ elif_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ elif_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'elif' named_expression ':' block else_block?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -5564,7 +5719,7 @@ elif_stmt_rule(Parser *p)
             _res = _PyAST_If ( a , b , c , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -5575,7 +5730,7 @@ elif_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -5583,16 +5738,19 @@ elif_stmt_rule(Parser *p)
 static asdl_stmt_seq*
 else_block_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_stmt_seq* _res = NULL;
     int _mark = p->mark;
     if (p->call_invalid_rules) { // invalid_else_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> else_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_else_stmt"));
@@ -5611,7 +5769,7 @@ else_block_rule(Parser *p)
     }
     { // 'else' &&':' block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> else_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'else' &&':' block"));
@@ -5630,7 +5788,7 @@ else_block_rule(Parser *p)
             _res = b;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -5641,7 +5799,7 @@ else_block_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -5649,16 +5807,19 @@ else_block_rule(Parser *p)
 static stmt_ty
 while_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -5667,7 +5828,7 @@ while_stmt_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     if (p->call_invalid_rules) { // invalid_while_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> while_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_while_stmt"));
@@ -5686,7 +5847,7 @@ while_stmt_rule(Parser *p)
     }
     { // 'while' named_expression ':' block else_block?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> while_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'while' named_expression ':' block else_block?"));
@@ -5710,7 +5871,7 @@ while_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ while_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'while' named_expression ':' block else_block?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -5720,7 +5881,7 @@ while_stmt_rule(Parser *p)
             _res = _PyAST_While ( a , b , c , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -5731,7 +5892,7 @@ while_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -5743,16 +5904,19 @@ while_stmt_rule(Parser *p)
 static stmt_ty
 for_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -5761,7 +5925,7 @@ for_stmt_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     if (p->call_invalid_rules) { // invalid_for_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> for_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_for_stmt"));
@@ -5780,7 +5944,7 @@ for_stmt_rule(Parser *p)
     }
     { // 'for' star_targets 'in' ~ star_expressions &&':' TYPE_COMMENT? block else_block?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> for_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'for' star_targets 'in' ~ star_expressions &&':' TYPE_COMMENT? block else_block?"));
@@ -5816,7 +5980,7 @@ for_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ for_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'for' star_targets 'in' ~ star_expressions &&':' TYPE_COMMENT? block else_block?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -5826,7 +5990,7 @@ for_stmt_rule(Parser *p)
             _res = _PyAST_For ( t , ex , b , el , NEW_TYPE_COMMENT ( p , tc ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -5835,13 +5999,13 @@ for_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s for_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'for' star_targets 'in' ~ star_expressions &&':' TYPE_COMMENT? block else_block?"));
         if (_cut_var) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
     }
     { // ASYNC 'for' star_targets 'in' ~ star_expressions &&':' TYPE_COMMENT? block else_block?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> for_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC 'for' star_targets 'in' ~ star_expressions &&':' TYPE_COMMENT? block else_block?"));
@@ -5880,7 +6044,7 @@ for_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ for_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "ASYNC 'for' star_targets 'in' ~ star_expressions &&':' TYPE_COMMENT? block else_block?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -5890,7 +6054,7 @@ for_stmt_rule(Parser *p)
             _res = CHECK_VERSION ( stmt_ty , 5 , "Async for loops are" , _PyAST_AsyncFor ( t , ex , b , el , NEW_TYPE_COMMENT ( p , tc ) , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -5899,13 +6063,13 @@ for_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s for_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "ASYNC 'for' star_targets 'in' ~ star_expressions &&':' TYPE_COMMENT? block else_block?"));
         if (_cut_var) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
     }
     if (p->call_invalid_rules) { // invalid_for_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> for_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_for_target"));
@@ -5924,7 +6088,7 @@ for_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -5938,16 +6102,19 @@ for_stmt_rule(Parser *p)
 static stmt_ty
 with_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -5956,7 +6123,7 @@ with_stmt_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     if (p->call_invalid_rules) { // invalid_with_stmt_indent
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> with_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_with_stmt_indent"));
@@ -5975,7 +6142,7 @@ with_stmt_rule(Parser *p)
     }
     { // 'with' '(' ','.with_item+ ','? ')' ':' block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> with_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'with' '(' ','.with_item+ ','? ')' ':' block"));
@@ -6006,7 +6173,7 @@ with_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ with_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'with' '(' ','.with_item+ ','? ')' ':' block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -6016,7 +6183,7 @@ with_stmt_rule(Parser *p)
             _res = _PyAST_With ( a , b , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -6027,7 +6194,7 @@ with_stmt_rule(Parser *p)
     }
     { // 'with' ','.with_item+ ':' TYPE_COMMENT? block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> with_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'with' ','.with_item+ ':' TYPE_COMMENT? block"));
@@ -6051,7 +6218,7 @@ with_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ with_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'with' ','.with_item+ ':' TYPE_COMMENT? block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -6061,7 +6228,7 @@ with_stmt_rule(Parser *p)
             _res = _PyAST_With ( a , b , NEW_TYPE_COMMENT ( p , tc ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -6072,7 +6239,7 @@ with_stmt_rule(Parser *p)
     }
     { // ASYNC 'with' '(' ','.with_item+ ','? ')' ':' block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> with_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC 'with' '(' ','.with_item+ ','? ')' ':' block"));
@@ -6106,7 +6273,7 @@ with_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ with_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "ASYNC 'with' '(' ','.with_item+ ','? ')' ':' block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -6116,7 +6283,7 @@ with_stmt_rule(Parser *p)
             _res = CHECK_VERSION ( stmt_ty , 5 , "Async with statements are" , _PyAST_AsyncWith ( a , b , NULL , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -6127,7 +6294,7 @@ with_stmt_rule(Parser *p)
     }
     { // ASYNC 'with' ','.with_item+ ':' TYPE_COMMENT? block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> with_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC 'with' ','.with_item+ ':' TYPE_COMMENT? block"));
@@ -6154,7 +6321,7 @@ with_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ with_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "ASYNC 'with' ','.with_item+ ':' TYPE_COMMENT? block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -6164,7 +6331,7 @@ with_stmt_rule(Parser *p)
             _res = CHECK_VERSION ( stmt_ty , 5 , "Async with statements are" , _PyAST_AsyncWith ( a , b , NEW_TYPE_COMMENT ( p , tc ) , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -6175,7 +6342,7 @@ with_stmt_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_with_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> with_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_with_stmt"));
@@ -6194,7 +6361,7 @@ with_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -6205,16 +6372,19 @@ with_stmt_rule(Parser *p)
 static withitem_ty
 with_item_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     withitem_ty _res = NULL;
     int _mark = p->mark;
     { // expression 'as' star_target &(',' | ')' | ':')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> with_item[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression 'as' star_target &(',' | ')' | ':')"));
@@ -6235,7 +6405,7 @@ with_item_rule(Parser *p)
             _res = _PyAST_withitem ( e , t , p -> arena );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -6246,7 +6416,7 @@ with_item_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_with_item
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> with_item[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_with_item"));
@@ -6265,7 +6435,7 @@ with_item_rule(Parser *p)
     }
     { // expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> with_item[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression"));
@@ -6278,7 +6448,7 @@ with_item_rule(Parser *p)
             _res = _PyAST_withitem ( e , NULL , p -> arena );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -6289,7 +6459,7 @@ with_item_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -6301,16 +6471,19 @@ with_item_rule(Parser *p)
 static stmt_ty
 try_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -6319,7 +6492,7 @@ try_stmt_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     if (p->call_invalid_rules) { // invalid_try_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> try_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_try_stmt"));
@@ -6338,7 +6511,7 @@ try_stmt_rule(Parser *p)
     }
     { // 'try' &&':' block finally_block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> try_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'try' &&':' block finally_block"));
@@ -6359,7 +6532,7 @@ try_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ try_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'try' &&':' block finally_block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -6369,7 +6542,7 @@ try_stmt_rule(Parser *p)
             _res = _PyAST_Try ( b , NULL , NULL , f , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -6380,7 +6553,7 @@ try_stmt_rule(Parser *p)
     }
     { // 'try' &&':' block except_block+ else_block? finally_block?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> try_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'try' &&':' block except_block+ else_block? finally_block?"));
@@ -6407,7 +6580,7 @@ try_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ try_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'try' &&':' block except_block+ else_block? finally_block?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -6417,7 +6590,7 @@ try_stmt_rule(Parser *p)
             _res = _PyAST_Try ( b , ex , el , f , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -6428,7 +6601,7 @@ try_stmt_rule(Parser *p)
     }
     { // 'try' &&':' block except_star_block+ else_block? finally_block?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> try_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'try' &&':' block except_star_block+ else_block? finally_block?"));
@@ -6455,7 +6628,7 @@ try_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ try_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'try' &&':' block except_star_block+ else_block? finally_block?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -6465,7 +6638,7 @@ try_stmt_rule(Parser *p)
             _res = _PyAST_TryStar ( b , ex , el , f , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -6476,7 +6649,7 @@ try_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -6488,16 +6661,19 @@ try_stmt_rule(Parser *p)
 static excepthandler_ty
 except_block_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     excepthandler_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -6506,7 +6682,7 @@ except_block_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     if (p->call_invalid_rules) { // invalid_except_stmt_indent
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> except_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_except_stmt_indent"));
@@ -6525,7 +6701,7 @@ except_block_rule(Parser *p)
     }
     { // 'except' expression ['as' NAME] ':' block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> except_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' expression ['as' NAME] ':' block"));
@@ -6549,7 +6725,7 @@ except_block_rule(Parser *p)
             D(fprintf(stderr, "%*c+ except_block[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' expression ['as' NAME] ':' block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -6559,7 +6735,7 @@ except_block_rule(Parser *p)
             _res = _PyAST_ExceptHandler ( e , ( t ) ? ( ( expr_ty ) t ) -> v . Name . id : NULL , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -6570,7 +6746,7 @@ except_block_rule(Parser *p)
     }
     { // 'except' ':' block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> except_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' ':' block"));
@@ -6588,7 +6764,7 @@ except_block_rule(Parser *p)
             D(fprintf(stderr, "%*c+ except_block[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' ':' block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -6598,7 +6774,7 @@ except_block_rule(Parser *p)
             _res = _PyAST_ExceptHandler ( NULL , NULL , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -6609,7 +6785,7 @@ except_block_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_except_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> except_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_except_stmt"));
@@ -6628,7 +6804,7 @@ except_block_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -6639,16 +6815,19 @@ except_block_rule(Parser *p)
 static excepthandler_ty
 except_star_block_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     excepthandler_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -6657,7 +6836,7 @@ except_star_block_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     if (p->call_invalid_rules) { // invalid_except_star_stmt_indent
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> except_star_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_except_star_stmt_indent"));
@@ -6676,7 +6855,7 @@ except_star_block_rule(Parser *p)
     }
     { // 'except' '*' expression ['as' NAME] ':' block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> except_star_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' '*' expression ['as' NAME] ':' block"));
@@ -6703,7 +6882,7 @@ except_star_block_rule(Parser *p)
             D(fprintf(stderr, "%*c+ except_star_block[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' '*' expression ['as' NAME] ':' block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -6713,7 +6892,7 @@ except_star_block_rule(Parser *p)
             _res = _PyAST_ExceptHandler ( e , ( t ) ? ( ( expr_ty ) t ) -> v . Name . id : NULL , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -6724,7 +6903,7 @@ except_star_block_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_except_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> except_star_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_except_stmt"));
@@ -6743,7 +6922,7 @@ except_star_block_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -6751,16 +6930,19 @@ except_star_block_rule(Parser *p)
 static asdl_stmt_seq*
 finally_block_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_stmt_seq* _res = NULL;
     int _mark = p->mark;
     if (p->call_invalid_rules) { // invalid_finally_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> finally_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_finally_stmt"));
@@ -6779,7 +6961,7 @@ finally_block_rule(Parser *p)
     }
     { // 'finally' &&':' block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> finally_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'finally' &&':' block"));
@@ -6798,7 +6980,7 @@ finally_block_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -6809,7 +6991,7 @@ finally_block_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -6819,16 +7001,19 @@ finally_block_rule(Parser *p)
 static stmt_ty
 match_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -6837,7 +7022,7 @@ match_stmt_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // "match" subject_expr ':' NEWLINE INDENT case_block+ DEDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> match_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"match\" subject_expr ':' NEWLINE INDENT case_block+ DEDENT"));
@@ -6867,7 +7052,7 @@ match_stmt_rule(Parser *p)
             D(fprintf(stderr, "%*c+ match_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"match\" subject_expr ':' NEWLINE INDENT case_block+ DEDENT"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -6877,7 +7062,7 @@ match_stmt_rule(Parser *p)
             _res = CHECK_VERSION ( stmt_ty , 10 , "Pattern matching is" , _PyAST_Match ( subject , cases , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -6888,7 +7073,7 @@ match_stmt_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_match_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> match_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_match_stmt"));
@@ -6907,7 +7092,7 @@ match_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -6915,16 +7100,19 @@ match_stmt_rule(Parser *p)
 static expr_ty
 subject_expr_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -6933,7 +7121,7 @@ subject_expr_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // star_named_expression ',' star_named_expressions?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> subject_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_named_expression ',' star_named_expressions?"));
@@ -6951,7 +7139,7 @@ subject_expr_rule(Parser *p)
             D(fprintf(stderr, "%*c+ subject_expr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_named_expression ',' star_named_expressions?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -6961,7 +7149,7 @@ subject_expr_rule(Parser *p)
             _res = _PyAST_Tuple ( CHECK ( asdl_expr_seq* , _PyPegen_seq_insert_in_front ( p , value , values ) ) , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -6972,7 +7160,7 @@ subject_expr_rule(Parser *p)
     }
     { // named_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> subject_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "named_expression"));
@@ -6991,7 +7179,7 @@ subject_expr_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -6999,16 +7187,19 @@ subject_expr_rule(Parser *p)
 static match_case_ty
 case_block_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     match_case_ty _res = NULL;
     int _mark = p->mark;
     if (p->call_invalid_rules) { // invalid_case_block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> case_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_case_block"));
@@ -7027,7 +7218,7 @@ case_block_rule(Parser *p)
     }
     { // "case" patterns guard? ':' block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> case_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"case\" patterns guard? ':' block"));
@@ -7052,7 +7243,7 @@ case_block_rule(Parser *p)
             _res = _PyAST_match_case ( pattern , guard , body , p -> arena );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -7063,7 +7254,7 @@ case_block_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -7071,16 +7262,19 @@ case_block_rule(Parser *p)
 static expr_ty
 guard_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // 'if' named_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> guard[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'if' named_expression"));
@@ -7096,7 +7290,7 @@ guard_rule(Parser *p)
             _res = guard;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -7107,7 +7301,7 @@ guard_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -7115,16 +7309,19 @@ guard_rule(Parser *p)
 static pattern_ty
 patterns_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -7133,7 +7330,7 @@ patterns_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // open_sequence_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> patterns[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "open_sequence_pattern"));
@@ -7145,7 +7342,7 @@ patterns_rule(Parser *p)
             D(fprintf(stderr, "%*c+ patterns[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "open_sequence_pattern"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -7155,7 +7352,7 @@ patterns_rule(Parser *p)
             _res = _PyAST_MatchSequence ( patterns , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -7166,7 +7363,7 @@ patterns_rule(Parser *p)
     }
     { // pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> patterns[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "pattern"));
@@ -7185,7 +7382,7 @@ patterns_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -7193,16 +7390,19 @@ patterns_rule(Parser *p)
 static pattern_ty
 pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
     { // as_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "as_pattern"));
@@ -7221,7 +7421,7 @@ pattern_rule(Parser *p)
     }
     { // or_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "or_pattern"));
@@ -7240,7 +7440,7 @@ pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -7248,16 +7448,19 @@ pattern_rule(Parser *p)
 static pattern_ty
 as_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -7266,7 +7469,7 @@ as_pattern_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // or_pattern 'as' pattern_capture_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> as_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "or_pattern 'as' pattern_capture_target"));
@@ -7284,7 +7487,7 @@ as_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ as_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "or_pattern 'as' pattern_capture_target"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -7294,7 +7497,7 @@ as_pattern_rule(Parser *p)
             _res = _PyAST_MatchAs ( pattern , target -> v . Name . id , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -7305,7 +7508,7 @@ as_pattern_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_as_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> as_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_as_pattern"));
@@ -7324,7 +7527,7 @@ as_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -7332,16 +7535,19 @@ as_pattern_rule(Parser *p)
 static pattern_ty
 or_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -7350,7 +7556,7 @@ or_pattern_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '|'.closed_pattern+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> or_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'|'.closed_pattern+"));
@@ -7362,7 +7568,7 @@ or_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ or_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'|'.closed_pattern+"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -7372,7 +7578,7 @@ or_pattern_rule(Parser *p)
             _res = asdl_seq_LEN ( patterns ) == 1 ? asdl_seq_GET ( patterns , 0 ) : _PyAST_MatchOr ( patterns , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -7383,7 +7589,7 @@ or_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -7399,16 +7605,19 @@ or_pattern_rule(Parser *p)
 static pattern_ty
 closed_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
     { // literal_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> closed_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "literal_pattern"));
@@ -7427,7 +7636,7 @@ closed_pattern_rule(Parser *p)
     }
     { // capture_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> closed_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "capture_pattern"));
@@ -7446,7 +7655,7 @@ closed_pattern_rule(Parser *p)
     }
     { // wildcard_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> closed_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "wildcard_pattern"));
@@ -7465,7 +7674,7 @@ closed_pattern_rule(Parser *p)
     }
     { // value_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> closed_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "value_pattern"));
@@ -7484,7 +7693,7 @@ closed_pattern_rule(Parser *p)
     }
     { // group_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> closed_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "group_pattern"));
@@ -7503,7 +7712,7 @@ closed_pattern_rule(Parser *p)
     }
     { // sequence_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> closed_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "sequence_pattern"));
@@ -7522,7 +7731,7 @@ closed_pattern_rule(Parser *p)
     }
     { // mapping_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> closed_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "mapping_pattern"));
@@ -7541,7 +7750,7 @@ closed_pattern_rule(Parser *p)
     }
     { // class_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> closed_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "class_pattern"));
@@ -7560,7 +7769,7 @@ closed_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -7574,16 +7783,19 @@ closed_pattern_rule(Parser *p)
 static pattern_ty
 literal_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -7592,7 +7804,7 @@ literal_pattern_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // signed_number !('+' | '-')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> literal_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "signed_number !('+' | '-')"));
@@ -7606,7 +7818,7 @@ literal_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ literal_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "signed_number !('+' | '-')"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -7616,7 +7828,7 @@ literal_pattern_rule(Parser *p)
             _res = _PyAST_MatchValue ( value , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -7627,7 +7839,7 @@ literal_pattern_rule(Parser *p)
     }
     { // complex_number
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> literal_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "complex_number"));
@@ -7639,7 +7851,7 @@ literal_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ literal_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "complex_number"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -7649,7 +7861,7 @@ literal_pattern_rule(Parser *p)
             _res = _PyAST_MatchValue ( value , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -7660,7 +7872,7 @@ literal_pattern_rule(Parser *p)
     }
     { // strings
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> literal_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "strings"));
@@ -7672,7 +7884,7 @@ literal_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ literal_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "strings"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -7682,7 +7894,7 @@ literal_pattern_rule(Parser *p)
             _res = _PyAST_MatchValue ( value , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -7693,7 +7905,7 @@ literal_pattern_rule(Parser *p)
     }
     { // 'None'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> literal_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'None'"));
@@ -7705,7 +7917,7 @@ literal_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ literal_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'None'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -7715,7 +7927,7 @@ literal_pattern_rule(Parser *p)
             _res = _PyAST_MatchSingleton ( Py_None , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -7726,7 +7938,7 @@ literal_pattern_rule(Parser *p)
     }
     { // 'True'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> literal_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'True'"));
@@ -7738,7 +7950,7 @@ literal_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ literal_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'True'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -7748,7 +7960,7 @@ literal_pattern_rule(Parser *p)
             _res = _PyAST_MatchSingleton ( Py_True , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -7759,7 +7971,7 @@ literal_pattern_rule(Parser *p)
     }
     { // 'False'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> literal_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'False'"));
@@ -7771,7 +7983,7 @@ literal_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ literal_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'False'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -7781,7 +7993,7 @@ literal_pattern_rule(Parser *p)
             _res = _PyAST_MatchSingleton ( Py_False , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -7792,7 +8004,7 @@ literal_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -7806,16 +8018,19 @@ literal_pattern_rule(Parser *p)
 static expr_ty
 literal_expr_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -7824,7 +8039,7 @@ literal_expr_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // signed_number !('+' | '-')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> literal_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "signed_number !('+' | '-')"));
@@ -7845,7 +8060,7 @@ literal_expr_rule(Parser *p)
     }
     { // complex_number
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> literal_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "complex_number"));
@@ -7864,7 +8079,7 @@ literal_expr_rule(Parser *p)
     }
     { // strings
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> literal_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "strings"));
@@ -7883,7 +8098,7 @@ literal_expr_rule(Parser *p)
     }
     { // 'None'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> literal_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'None'"));
@@ -7895,7 +8110,7 @@ literal_expr_rule(Parser *p)
             D(fprintf(stderr, "%*c+ literal_expr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'None'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -7905,7 +8120,7 @@ literal_expr_rule(Parser *p)
             _res = _PyAST_Constant ( Py_None , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -7916,7 +8131,7 @@ literal_expr_rule(Parser *p)
     }
     { // 'True'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> literal_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'True'"));
@@ -7928,7 +8143,7 @@ literal_expr_rule(Parser *p)
             D(fprintf(stderr, "%*c+ literal_expr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'True'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -7938,7 +8153,7 @@ literal_expr_rule(Parser *p)
             _res = _PyAST_Constant ( Py_True , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -7949,7 +8164,7 @@ literal_expr_rule(Parser *p)
     }
     { // 'False'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> literal_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'False'"));
@@ -7961,7 +8176,7 @@ literal_expr_rule(Parser *p)
             D(fprintf(stderr, "%*c+ literal_expr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'False'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -7971,7 +8186,7 @@ literal_expr_rule(Parser *p)
             _res = _PyAST_Constant ( Py_False , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -7982,7 +8197,7 @@ literal_expr_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -7992,16 +8207,19 @@ literal_expr_rule(Parser *p)
 static expr_ty
 complex_number_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -8010,7 +8228,7 @@ complex_number_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // signed_real_number '+' imaginary_number
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> complex_number[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "signed_real_number '+' imaginary_number"));
@@ -8028,7 +8246,7 @@ complex_number_rule(Parser *p)
             D(fprintf(stderr, "%*c+ complex_number[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "signed_real_number '+' imaginary_number"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -8038,7 +8256,7 @@ complex_number_rule(Parser *p)
             _res = _PyAST_BinOp ( real , Add , imag , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8049,7 +8267,7 @@ complex_number_rule(Parser *p)
     }
     { // signed_real_number '-' imaginary_number
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> complex_number[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "signed_real_number '-' imaginary_number"));
@@ -8067,7 +8285,7 @@ complex_number_rule(Parser *p)
             D(fprintf(stderr, "%*c+ complex_number[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "signed_real_number '-' imaginary_number"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -8077,7 +8295,7 @@ complex_number_rule(Parser *p)
             _res = _PyAST_BinOp ( real , Sub , imag , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8088,7 +8306,7 @@ complex_number_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -8096,16 +8314,19 @@ complex_number_rule(Parser *p)
 static expr_ty
 signed_number_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -8114,7 +8335,7 @@ signed_number_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NUMBER
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> signed_number[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NUMBER"));
@@ -8133,7 +8354,7 @@ signed_number_rule(Parser *p)
     }
     { // '-' NUMBER
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> signed_number[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'-' NUMBER"));
@@ -8148,7 +8369,7 @@ signed_number_rule(Parser *p)
             D(fprintf(stderr, "%*c+ signed_number[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'-' NUMBER"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -8158,7 +8379,7 @@ signed_number_rule(Parser *p)
             _res = _PyAST_UnaryOp ( USub , number , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8169,7 +8390,7 @@ signed_number_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -8177,16 +8398,19 @@ signed_number_rule(Parser *p)
 static expr_ty
 signed_real_number_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -8195,7 +8419,7 @@ signed_real_number_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // real_number
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> signed_real_number[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "real_number"));
@@ -8214,7 +8438,7 @@ signed_real_number_rule(Parser *p)
     }
     { // '-' real_number
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> signed_real_number[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'-' real_number"));
@@ -8229,7 +8453,7 @@ signed_real_number_rule(Parser *p)
             D(fprintf(stderr, "%*c+ signed_real_number[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'-' real_number"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -8239,7 +8463,7 @@ signed_real_number_rule(Parser *p)
             _res = _PyAST_UnaryOp ( USub , real , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8250,7 +8474,7 @@ signed_real_number_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -8258,16 +8482,19 @@ signed_real_number_rule(Parser *p)
 static expr_ty
 real_number_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // NUMBER
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> real_number[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NUMBER"));
@@ -8280,7 +8507,7 @@ real_number_rule(Parser *p)
             _res = _PyPegen_ensure_real ( p , real );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8291,7 +8518,7 @@ real_number_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -8299,16 +8526,19 @@ real_number_rule(Parser *p)
 static expr_ty
 imaginary_number_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // NUMBER
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> imaginary_number[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NUMBER"));
@@ -8321,7 +8551,7 @@ imaginary_number_rule(Parser *p)
             _res = _PyPegen_ensure_imaginary ( p , imag );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8332,7 +8562,7 @@ imaginary_number_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -8340,16 +8570,19 @@ imaginary_number_rule(Parser *p)
 static pattern_ty
 capture_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -8358,7 +8591,7 @@ capture_pattern_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // pattern_capture_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> capture_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "pattern_capture_target"));
@@ -8370,7 +8603,7 @@ capture_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ capture_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "pattern_capture_target"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -8380,7 +8613,7 @@ capture_pattern_rule(Parser *p)
             _res = _PyAST_MatchAs ( NULL , target -> v . Name . id , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8391,7 +8624,7 @@ capture_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -8399,16 +8632,19 @@ capture_pattern_rule(Parser *p)
 static expr_ty
 pattern_capture_target_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // !"_" NAME !('.' | '(' | '=')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> pattern_capture_target[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "!\"_\" NAME !('.' | '(' | '=')"));
@@ -8425,7 +8661,7 @@ pattern_capture_target_rule(Parser *p)
             _res = _PyPegen_set_expr_context ( p , name , Store );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8436,7 +8672,7 @@ pattern_capture_target_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -8444,16 +8680,19 @@ pattern_capture_target_rule(Parser *p)
 static pattern_ty
 wildcard_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -8462,7 +8701,7 @@ wildcard_pattern_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // "_"
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> wildcard_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"_\""));
@@ -8474,7 +8713,7 @@ wildcard_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ wildcard_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"_\""));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -8484,7 +8723,7 @@ wildcard_pattern_rule(Parser *p)
             _res = _PyAST_MatchAs ( NULL , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8495,7 +8734,7 @@ wildcard_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -8503,16 +8742,19 @@ wildcard_pattern_rule(Parser *p)
 static pattern_ty
 value_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -8521,7 +8763,7 @@ value_pattern_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // attr !('.' | '(' | '=')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> value_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "attr !('.' | '(' | '=')"));
@@ -8535,7 +8777,7 @@ value_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ value_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "attr !('.' | '(' | '=')"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -8545,7 +8787,7 @@ value_pattern_rule(Parser *p)
             _res = _PyAST_MatchValue ( attr , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8556,7 +8798,7 @@ value_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -8566,10 +8808,13 @@ static expr_ty attr_raw(Parser *);
 static expr_ty
 attr_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, attr_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
@@ -8577,37 +8822,40 @@ attr_rule(Parser *p)
     while (1) {
         int tmpvar_1 = _PyPegen_update_memo(p, _mark, attr_type, _res);
         if (tmpvar_1) {
-            D(p->level--);
+            p->level--;
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = attr_raw(p);
-        p->in_raw_rule--;
-        if (p->error_indicator)
+        if (p->error_indicator) {
+            p->level--;
             return NULL;
+        }
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
         _res = _raw;
     }
     p->mark = _resmark;
-    D(p->level--);
+    p->level--;
     return _res;
 }
 static expr_ty
 attr_raw(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -8616,7 +8864,7 @@ attr_raw(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // name_or_attr '.' NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> attr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "name_or_attr '.' NAME"));
@@ -8634,7 +8882,7 @@ attr_raw(Parser *p)
             D(fprintf(stderr, "%*c+ attr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "name_or_attr '.' NAME"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -8644,7 +8892,7 @@ attr_raw(Parser *p)
             _res = _PyAST_Attribute ( value , attr -> v . Name . id , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8655,7 +8903,7 @@ attr_raw(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -8664,16 +8912,19 @@ attr_raw(Parser *p)
 static expr_ty
 name_or_attr_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // attr
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> name_or_attr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "attr"));
@@ -8692,7 +8943,7 @@ name_or_attr_rule(Parser *p)
     }
     { // NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> name_or_attr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME"));
@@ -8711,7 +8962,7 @@ name_or_attr_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -8719,16 +8970,19 @@ name_or_attr_rule(Parser *p)
 static pattern_ty
 group_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
     { // '(' pattern ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> group_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' pattern ')'"));
@@ -8747,7 +9001,7 @@ group_pattern_rule(Parser *p)
             _res = pattern;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8758,7 +9012,7 @@ group_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -8766,16 +9020,19 @@ group_pattern_rule(Parser *p)
 static pattern_ty
 sequence_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -8784,7 +9041,7 @@ sequence_pattern_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '[' maybe_sequence_pattern? ']'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> sequence_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'[' maybe_sequence_pattern? ']'"));
@@ -8802,7 +9059,7 @@ sequence_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ sequence_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'[' maybe_sequence_pattern? ']'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -8812,7 +9069,7 @@ sequence_pattern_rule(Parser *p)
             _res = _PyAST_MatchSequence ( patterns , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8823,7 +9080,7 @@ sequence_pattern_rule(Parser *p)
     }
     { // '(' open_sequence_pattern? ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> sequence_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' open_sequence_pattern? ')'"));
@@ -8841,7 +9098,7 @@ sequence_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ sequence_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' open_sequence_pattern? ')'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -8851,7 +9108,7 @@ sequence_pattern_rule(Parser *p)
             _res = _PyAST_MatchSequence ( patterns , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8862,7 +9119,7 @@ sequence_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -8870,16 +9127,19 @@ sequence_pattern_rule(Parser *p)
 static asdl_seq*
 open_sequence_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // maybe_star_pattern ',' maybe_sequence_pattern?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> open_sequence_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "maybe_star_pattern ',' maybe_sequence_pattern?"));
@@ -8898,7 +9158,7 @@ open_sequence_pattern_rule(Parser *p)
             _res = _PyPegen_seq_insert_in_front ( p , pattern , patterns );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8909,7 +9169,7 @@ open_sequence_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -8917,16 +9177,19 @@ open_sequence_pattern_rule(Parser *p)
 static asdl_seq*
 maybe_sequence_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.maybe_star_pattern+ ','?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> maybe_sequence_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.maybe_star_pattern+ ','?"));
@@ -8943,7 +9206,7 @@ maybe_sequence_pattern_rule(Parser *p)
             _res = patterns;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -8954,7 +9217,7 @@ maybe_sequence_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -8962,16 +9225,19 @@ maybe_sequence_pattern_rule(Parser *p)
 static pattern_ty
 maybe_star_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
     { // star_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> maybe_star_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_pattern"));
@@ -8990,7 +9256,7 @@ maybe_star_pattern_rule(Parser *p)
     }
     { // pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> maybe_star_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "pattern"));
@@ -9009,7 +9275,7 @@ maybe_star_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -9017,16 +9283,19 @@ maybe_star_pattern_rule(Parser *p)
 static pattern_ty
 star_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -9035,7 +9304,7 @@ star_pattern_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '*' pattern_capture_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' pattern_capture_target"));
@@ -9050,7 +9319,7 @@ star_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ star_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' pattern_capture_target"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -9060,7 +9329,7 @@ star_pattern_rule(Parser *p)
             _res = _PyAST_MatchStar ( target -> v . Name . id , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9071,7 +9340,7 @@ star_pattern_rule(Parser *p)
     }
     { // '*' wildcard_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' wildcard_pattern"));
@@ -9086,7 +9355,7 @@ star_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ star_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' wildcard_pattern"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -9096,7 +9365,7 @@ star_pattern_rule(Parser *p)
             _res = _PyAST_MatchStar ( NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9107,7 +9376,7 @@ star_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -9119,16 +9388,19 @@ star_pattern_rule(Parser *p)
 static pattern_ty
 mapping_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -9137,7 +9409,7 @@ mapping_pattern_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '{' '}'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> mapping_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' '}'"));
@@ -9152,7 +9424,7 @@ mapping_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ mapping_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' '}'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -9162,7 +9434,7 @@ mapping_pattern_rule(Parser *p)
             _res = _PyAST_MatchMapping ( NULL , NULL , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9173,7 +9445,7 @@ mapping_pattern_rule(Parser *p)
     }
     { // '{' double_star_pattern ','? '}'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> mapping_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' double_star_pattern ','? '}'"));
@@ -9195,7 +9467,7 @@ mapping_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ mapping_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' double_star_pattern ','? '}'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -9205,7 +9477,7 @@ mapping_pattern_rule(Parser *p)
             _res = _PyAST_MatchMapping ( NULL , NULL , rest -> v . Name . id , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9216,7 +9488,7 @@ mapping_pattern_rule(Parser *p)
     }
     { // '{' items_pattern ',' double_star_pattern ','? '}'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> mapping_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' items_pattern ',' double_star_pattern ','? '}'"));
@@ -9244,7 +9516,7 @@ mapping_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ mapping_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' items_pattern ',' double_star_pattern ','? '}'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -9254,7 +9526,7 @@ mapping_pattern_rule(Parser *p)
             _res = _PyAST_MatchMapping ( CHECK ( asdl_expr_seq* , _PyPegen_get_pattern_keys ( p , items ) ) , CHECK ( asdl_pattern_seq* , _PyPegen_get_patterns ( p , items ) ) , rest -> v . Name . id , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9265,7 +9537,7 @@ mapping_pattern_rule(Parser *p)
     }
     { // '{' items_pattern ','? '}'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> mapping_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' items_pattern ','? '}'"));
@@ -9287,7 +9559,7 @@ mapping_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ mapping_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' items_pattern ','? '}'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -9297,7 +9569,7 @@ mapping_pattern_rule(Parser *p)
             _res = _PyAST_MatchMapping ( CHECK ( asdl_expr_seq* , _PyPegen_get_pattern_keys ( p , items ) ) , CHECK ( asdl_pattern_seq* , _PyPegen_get_patterns ( p , items ) ) , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9308,7 +9580,7 @@ mapping_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -9316,16 +9588,19 @@ mapping_pattern_rule(Parser *p)
 static asdl_seq*
 items_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.key_value_pattern+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> items_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.key_value_pattern+"));
@@ -9344,7 +9619,7 @@ items_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -9352,16 +9627,19 @@ items_pattern_rule(Parser *p)
 static KeyPatternPair*
 key_value_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     KeyPatternPair* _res = NULL;
     int _mark = p->mark;
     { // (literal_expr | attr) ':' pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> key_value_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(literal_expr | attr) ':' pattern"));
@@ -9380,7 +9658,7 @@ key_value_pattern_rule(Parser *p)
             _res = _PyPegen_key_pattern_pair ( p , key , pattern );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9391,7 +9669,7 @@ key_value_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -9399,16 +9677,19 @@ key_value_pattern_rule(Parser *p)
 static expr_ty
 double_star_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // '**' pattern_capture_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> double_star_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'**' pattern_capture_target"));
@@ -9424,7 +9705,7 @@ double_star_pattern_rule(Parser *p)
             _res = target;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9435,7 +9716,7 @@ double_star_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -9448,16 +9729,19 @@ double_star_pattern_rule(Parser *p)
 static pattern_ty
 class_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -9466,7 +9750,7 @@ class_pattern_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // name_or_attr '(' ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> class_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' ')'"));
@@ -9484,7 +9768,7 @@ class_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ class_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' ')'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -9494,7 +9778,7 @@ class_pattern_rule(Parser *p)
             _res = _PyAST_MatchClass ( cls , NULL , NULL , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9505,7 +9789,7 @@ class_pattern_rule(Parser *p)
     }
     { // name_or_attr '(' positional_patterns ','? ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> class_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' positional_patterns ','? ')'"));
@@ -9530,7 +9814,7 @@ class_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ class_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' positional_patterns ','? ')'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -9540,7 +9824,7 @@ class_pattern_rule(Parser *p)
             _res = _PyAST_MatchClass ( cls , patterns , NULL , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9551,7 +9835,7 @@ class_pattern_rule(Parser *p)
     }
     { // name_or_attr '(' keyword_patterns ','? ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> class_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' keyword_patterns ','? ')'"));
@@ -9576,7 +9860,7 @@ class_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ class_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' keyword_patterns ','? ')'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -9586,7 +9870,7 @@ class_pattern_rule(Parser *p)
             _res = _PyAST_MatchClass ( cls , NULL , CHECK ( asdl_identifier_seq* , _PyPegen_map_names_to_ids ( p , CHECK ( asdl_expr_seq* , _PyPegen_get_pattern_keys ( p , keywords ) ) ) ) , CHECK ( asdl_pattern_seq* , _PyPegen_get_patterns ( p , keywords ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9597,7 +9881,7 @@ class_pattern_rule(Parser *p)
     }
     { // name_or_attr '(' positional_patterns ',' keyword_patterns ','? ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> class_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' positional_patterns ',' keyword_patterns ','? ')'"));
@@ -9628,7 +9912,7 @@ class_pattern_rule(Parser *p)
             D(fprintf(stderr, "%*c+ class_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' positional_patterns ',' keyword_patterns ','? ')'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -9638,7 +9922,7 @@ class_pattern_rule(Parser *p)
             _res = _PyAST_MatchClass ( cls , patterns , CHECK ( asdl_identifier_seq* , _PyPegen_map_names_to_ids ( p , CHECK ( asdl_expr_seq* , _PyPegen_get_pattern_keys ( p , keywords ) ) ) ) , CHECK ( asdl_pattern_seq* , _PyPegen_get_patterns ( p , keywords ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9649,7 +9933,7 @@ class_pattern_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_class_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> class_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_class_pattern"));
@@ -9668,7 +9952,7 @@ class_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -9676,16 +9960,19 @@ class_pattern_rule(Parser *p)
 static asdl_pattern_seq*
 positional_patterns_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_pattern_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.pattern+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> positional_patterns[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.pattern+"));
@@ -9698,7 +9985,7 @@ positional_patterns_rule(Parser *p)
             _res = args;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9709,7 +9996,7 @@ positional_patterns_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -9717,16 +10004,19 @@ positional_patterns_rule(Parser *p)
 static asdl_seq*
 keyword_patterns_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.keyword_pattern+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> keyword_patterns[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.keyword_pattern+"));
@@ -9745,7 +10035,7 @@ keyword_patterns_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -9753,16 +10043,19 @@ keyword_patterns_rule(Parser *p)
 static KeyPatternPair*
 keyword_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     KeyPatternPair* _res = NULL;
     int _mark = p->mark;
     { // NAME '=' pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> keyword_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME '=' pattern"));
@@ -9781,7 +10074,7 @@ keyword_pattern_rule(Parser *p)
             _res = _PyPegen_key_pattern_pair ( p , arg , value );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9792,7 +10085,7 @@ keyword_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -9800,16 +10093,19 @@ keyword_pattern_rule(Parser *p)
 static expr_ty
 expressions_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -9818,7 +10114,7 @@ expressions_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // expression ((',' expression))+ ','?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression ((',' expression))+ ','?"));
@@ -9837,7 +10133,7 @@ expressions_rule(Parser *p)
             D(fprintf(stderr, "%*c+ expressions[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression ((',' expression))+ ','?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -9847,7 +10143,7 @@ expressions_rule(Parser *p)
             _res = _PyAST_Tuple ( CHECK ( asdl_expr_seq* , _PyPegen_seq_insert_in_front ( p , a , b ) ) , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9858,7 +10154,7 @@ expressions_rule(Parser *p)
     }
     { // expression ','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression ','"));
@@ -9873,7 +10169,7 @@ expressions_rule(Parser *p)
             D(fprintf(stderr, "%*c+ expressions[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression ','"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -9883,7 +10179,7 @@ expressions_rule(Parser *p)
             _res = _PyAST_Tuple ( CHECK ( asdl_expr_seq* , _PyPegen_singleton_seq ( p , a ) ) , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -9894,7 +10190,7 @@ expressions_rule(Parser *p)
     }
     { // expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression"));
@@ -9913,7 +10209,7 @@ expressions_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -9926,20 +10222,23 @@ expressions_rule(Parser *p)
 static expr_ty
 expression_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, expression_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -9948,7 +10247,7 @@ expression_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     if (p->call_invalid_rules) { // invalid_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_expression"));
@@ -9967,7 +10266,7 @@ expression_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_legacy_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_legacy_expression"));
@@ -9986,7 +10285,7 @@ expression_rule(Parser *p)
     }
     { // disjunction 'if' disjunction 'else' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "disjunction 'if' disjunction 'else' expression"));
@@ -10010,7 +10309,7 @@ expression_rule(Parser *p)
             D(fprintf(stderr, "%*c+ expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "disjunction 'if' disjunction 'else' expression"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -10020,7 +10319,7 @@ expression_rule(Parser *p)
             _res = _PyAST_IfExp ( b , a , c , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -10031,7 +10330,7 @@ expression_rule(Parser *p)
     }
     { // disjunction
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "disjunction"));
@@ -10050,7 +10349,7 @@ expression_rule(Parser *p)
     }
     { // lambdef
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambdef"));
@@ -10070,7 +10369,7 @@ expression_rule(Parser *p)
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, expression_type, _res);
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -10078,16 +10377,19 @@ expression_rule(Parser *p)
 static expr_ty
 yield_expr_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -10096,7 +10398,7 @@ yield_expr_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'yield' 'from' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> yield_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'yield' 'from' expression"));
@@ -10114,7 +10416,7 @@ yield_expr_rule(Parser *p)
             D(fprintf(stderr, "%*c+ yield_expr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'yield' 'from' expression"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -10124,7 +10426,7 @@ yield_expr_rule(Parser *p)
             _res = _PyAST_YieldFrom ( a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -10135,7 +10437,7 @@ yield_expr_rule(Parser *p)
     }
     { // 'yield' star_expressions?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> yield_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'yield' star_expressions?"));
@@ -10150,7 +10452,7 @@ yield_expr_rule(Parser *p)
             D(fprintf(stderr, "%*c+ yield_expr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'yield' star_expressions?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -10160,7 +10462,7 @@ yield_expr_rule(Parser *p)
             _res = _PyAST_Yield ( a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -10171,7 +10473,7 @@ yield_expr_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -10182,16 +10484,19 @@ yield_expr_rule(Parser *p)
 static expr_ty
 star_expressions_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -10200,7 +10505,7 @@ star_expressions_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // star_expression ((',' star_expression))+ ','?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expression ((',' star_expression))+ ','?"));
@@ -10219,7 +10524,7 @@ star_expressions_rule(Parser *p)
             D(fprintf(stderr, "%*c+ star_expressions[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_expression ((',' star_expression))+ ','?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -10229,7 +10534,7 @@ star_expressions_rule(Parser *p)
             _res = _PyAST_Tuple ( CHECK ( asdl_expr_seq* , _PyPegen_seq_insert_in_front ( p , a , b ) ) , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -10240,7 +10545,7 @@ star_expressions_rule(Parser *p)
     }
     { // star_expression ','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expression ','"));
@@ -10255,7 +10560,7 @@ star_expressions_rule(Parser *p)
             D(fprintf(stderr, "%*c+ star_expressions[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_expression ','"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -10265,7 +10570,7 @@ star_expressions_rule(Parser *p)
             _res = _PyAST_Tuple ( CHECK ( asdl_expr_seq* , _PyPegen_singleton_seq ( p , a ) ) , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -10276,7 +10581,7 @@ star_expressions_rule(Parser *p)
     }
     { // star_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expression"));
@@ -10295,7 +10600,7 @@ star_expressions_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -10303,20 +10608,23 @@ star_expressions_rule(Parser *p)
 static expr_ty
 star_expression_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, star_expression_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -10325,7 +10633,7 @@ star_expression_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '*' bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' bitwise_or"));
@@ -10340,7 +10648,7 @@ star_expression_rule(Parser *p)
             D(fprintf(stderr, "%*c+ star_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' bitwise_or"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -10350,7 +10658,7 @@ star_expression_rule(Parser *p)
             _res = _PyAST_Starred ( a , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -10361,7 +10669,7 @@ star_expression_rule(Parser *p)
     }
     { // expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression"));
@@ -10381,7 +10689,7 @@ star_expression_rule(Parser *p)
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, star_expression_type, _res);
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -10389,16 +10697,19 @@ star_expression_rule(Parser *p)
 static asdl_expr_seq*
 star_named_expressions_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_expr_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.star_named_expression+ ','?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_named_expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.star_named_expression+ ','?"));
@@ -10415,7 +10726,7 @@ star_named_expressions_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -10426,7 +10737,7 @@ star_named_expressions_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -10434,16 +10745,19 @@ star_named_expressions_rule(Parser *p)
 static expr_ty
 star_named_expression_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -10452,7 +10766,7 @@ star_named_expression_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '*' bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_named_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' bitwise_or"));
@@ -10467,7 +10781,7 @@ star_named_expression_rule(Parser *p)
             D(fprintf(stderr, "%*c+ star_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' bitwise_or"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -10477,7 +10791,7 @@ star_named_expression_rule(Parser *p)
             _res = _PyAST_Starred ( a , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -10488,7 +10802,7 @@ star_named_expression_rule(Parser *p)
     }
     { // named_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_named_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "named_expression"));
@@ -10507,7 +10821,7 @@ star_named_expression_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -10515,16 +10829,19 @@ star_named_expression_rule(Parser *p)
 static expr_ty
 assignment_expression_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -10533,7 +10850,7 @@ assignment_expression_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME ':=' ~ expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> assignment_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME ':=' ~ expression"));
@@ -10554,7 +10871,7 @@ assignment_expression_rule(Parser *p)
             D(fprintf(stderr, "%*c+ assignment_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME ':=' ~ expression"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -10564,7 +10881,7 @@ assignment_expression_rule(Parser *p)
             _res = _PyAST_NamedExpr ( CHECK ( expr_ty , _PyPegen_set_expr_context ( p , a , Store ) ) , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -10573,13 +10890,13 @@ assignment_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s assignment_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME ':=' ~ expression"));
         if (_cut_var) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -10587,16 +10904,19 @@ assignment_expression_rule(Parser *p)
 static expr_ty
 named_expression_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // assignment_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> named_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "assignment_expression"));
@@ -10615,7 +10935,7 @@ named_expression_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_named_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> named_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_named_expression"));
@@ -10634,7 +10954,7 @@ named_expression_rule(Parser *p)
     }
     { // expression !':='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> named_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression !':='"));
@@ -10655,7 +10975,7 @@ named_expression_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -10663,20 +10983,23 @@ named_expression_rule(Parser *p)
 static expr_ty
 disjunction_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, disjunction_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -10685,7 +11008,7 @@ disjunction_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // conjunction (('or' conjunction))+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> disjunction[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "conjunction (('or' conjunction))+"));
@@ -10700,7 +11023,7 @@ disjunction_rule(Parser *p)
             D(fprintf(stderr, "%*c+ disjunction[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "conjunction (('or' conjunction))+"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -10710,7 +11033,7 @@ disjunction_rule(Parser *p)
             _res = _PyAST_BoolOp ( Or , CHECK ( asdl_expr_seq* , _PyPegen_seq_insert_in_front ( p , a , b ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -10721,7 +11044,7 @@ disjunction_rule(Parser *p)
     }
     { // conjunction
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> disjunction[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "conjunction"));
@@ -10741,7 +11064,7 @@ disjunction_rule(Parser *p)
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, disjunction_type, _res);
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -10749,20 +11072,23 @@ disjunction_rule(Parser *p)
 static expr_ty
 conjunction_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, conjunction_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -10771,7 +11097,7 @@ conjunction_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // inversion (('and' inversion))+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> conjunction[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "inversion (('and' inversion))+"));
@@ -10786,7 +11112,7 @@ conjunction_rule(Parser *p)
             D(fprintf(stderr, "%*c+ conjunction[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "inversion (('and' inversion))+"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -10796,7 +11122,7 @@ conjunction_rule(Parser *p)
             _res = _PyAST_BoolOp ( And , CHECK ( asdl_expr_seq* , _PyPegen_seq_insert_in_front ( p , a , b ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -10807,7 +11133,7 @@ conjunction_rule(Parser *p)
     }
     { // inversion
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> conjunction[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "inversion"));
@@ -10827,7 +11153,7 @@ conjunction_rule(Parser *p)
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, conjunction_type, _res);
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -10835,20 +11161,23 @@ conjunction_rule(Parser *p)
 static expr_ty
 inversion_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, inversion_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -10857,7 +11186,7 @@ inversion_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'not' inversion
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> inversion[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'not' inversion"));
@@ -10872,7 +11201,7 @@ inversion_rule(Parser *p)
             D(fprintf(stderr, "%*c+ inversion[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'not' inversion"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -10882,7 +11211,7 @@ inversion_rule(Parser *p)
             _res = _PyAST_UnaryOp ( Not , a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -10893,7 +11222,7 @@ inversion_rule(Parser *p)
     }
     { // comparison
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> inversion[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "comparison"));
@@ -10913,7 +11242,7 @@ inversion_rule(Parser *p)
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, inversion_type, _res);
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -10921,16 +11250,19 @@ inversion_rule(Parser *p)
 static expr_ty
 comparison_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -10939,7 +11271,7 @@ comparison_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // bitwise_or compare_op_bitwise_or_pair+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> comparison[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "bitwise_or compare_op_bitwise_or_pair+"));
@@ -10954,7 +11286,7 @@ comparison_rule(Parser *p)
             D(fprintf(stderr, "%*c+ comparison[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "bitwise_or compare_op_bitwise_or_pair+"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -10964,7 +11296,7 @@ comparison_rule(Parser *p)
             _res = _PyAST_Compare ( a , CHECK ( asdl_int_seq* , _PyPegen_get_cmpops ( p , b ) ) , CHECK ( asdl_expr_seq* , _PyPegen_get_exprs ( p , b ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -10975,7 +11307,7 @@ comparison_rule(Parser *p)
     }
     { // bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> comparison[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "bitwise_or"));
@@ -10994,7 +11326,7 @@ comparison_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -11012,16 +11344,19 @@ comparison_rule(Parser *p)
 static CmpopExprPair*
 compare_op_bitwise_or_pair_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // eq_bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compare_op_bitwise_or_pair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "eq_bitwise_or"));
@@ -11040,7 +11375,7 @@ compare_op_bitwise_or_pair_rule(Parser *p)
     }
     { // noteq_bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compare_op_bitwise_or_pair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "noteq_bitwise_or"));
@@ -11059,7 +11394,7 @@ compare_op_bitwise_or_pair_rule(Parser *p)
     }
     { // lte_bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compare_op_bitwise_or_pair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lte_bitwise_or"));
@@ -11078,7 +11413,7 @@ compare_op_bitwise_or_pair_rule(Parser *p)
     }
     { // lt_bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compare_op_bitwise_or_pair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lt_bitwise_or"));
@@ -11097,7 +11432,7 @@ compare_op_bitwise_or_pair_rule(Parser *p)
     }
     { // gte_bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compare_op_bitwise_or_pair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "gte_bitwise_or"));
@@ -11116,7 +11451,7 @@ compare_op_bitwise_or_pair_rule(Parser *p)
     }
     { // gt_bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compare_op_bitwise_or_pair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "gt_bitwise_or"));
@@ -11135,7 +11470,7 @@ compare_op_bitwise_or_pair_rule(Parser *p)
     }
     { // notin_bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compare_op_bitwise_or_pair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "notin_bitwise_or"));
@@ -11154,7 +11489,7 @@ compare_op_bitwise_or_pair_rule(Parser *p)
     }
     { // in_bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compare_op_bitwise_or_pair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "in_bitwise_or"));
@@ -11173,7 +11508,7 @@ compare_op_bitwise_or_pair_rule(Parser *p)
     }
     { // isnot_bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compare_op_bitwise_or_pair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "isnot_bitwise_or"));
@@ -11192,7 +11527,7 @@ compare_op_bitwise_or_pair_rule(Parser *p)
     }
     { // is_bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> compare_op_bitwise_or_pair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "is_bitwise_or"));
@@ -11211,7 +11546,7 @@ compare_op_bitwise_or_pair_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -11219,16 +11554,19 @@ compare_op_bitwise_or_pair_rule(Parser *p)
 static CmpopExprPair*
 eq_bitwise_or_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // '==' bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> eq_bitwise_or[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'==' bitwise_or"));
@@ -11244,7 +11582,7 @@ eq_bitwise_or_rule(Parser *p)
             _res = _PyPegen_cmpop_expr_pair ( p , Eq , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -11255,7 +11593,7 @@ eq_bitwise_or_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -11263,16 +11601,19 @@ eq_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 noteq_bitwise_or_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // ('!=') bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> noteq_bitwise_or[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('!=') bitwise_or"));
@@ -11288,7 +11629,7 @@ noteq_bitwise_or_rule(Parser *p)
             _res = _PyPegen_cmpop_expr_pair ( p , NotEq , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -11299,7 +11640,7 @@ noteq_bitwise_or_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -11307,16 +11648,19 @@ noteq_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 lte_bitwise_or_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // '<=' bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lte_bitwise_or[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'<=' bitwise_or"));
@@ -11332,7 +11676,7 @@ lte_bitwise_or_rule(Parser *p)
             _res = _PyPegen_cmpop_expr_pair ( p , LtE , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -11343,7 +11687,7 @@ lte_bitwise_or_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -11351,16 +11695,19 @@ lte_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 lt_bitwise_or_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // '<' bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lt_bitwise_or[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'<' bitwise_or"));
@@ -11376,7 +11723,7 @@ lt_bitwise_or_rule(Parser *p)
             _res = _PyPegen_cmpop_expr_pair ( p , Lt , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -11387,7 +11734,7 @@ lt_bitwise_or_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -11395,16 +11742,19 @@ lt_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 gte_bitwise_or_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // '>=' bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> gte_bitwise_or[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'>=' bitwise_or"));
@@ -11420,7 +11770,7 @@ gte_bitwise_or_rule(Parser *p)
             _res = _PyPegen_cmpop_expr_pair ( p , GtE , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -11431,7 +11781,7 @@ gte_bitwise_or_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -11439,16 +11789,19 @@ gte_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 gt_bitwise_or_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // '>' bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> gt_bitwise_or[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'>' bitwise_or"));
@@ -11464,7 +11817,7 @@ gt_bitwise_or_rule(Parser *p)
             _res = _PyPegen_cmpop_expr_pair ( p , Gt , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -11475,7 +11828,7 @@ gt_bitwise_or_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -11483,16 +11836,19 @@ gt_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 notin_bitwise_or_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // 'not' 'in' bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> notin_bitwise_or[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'not' 'in' bitwise_or"));
@@ -11511,7 +11867,7 @@ notin_bitwise_or_rule(Parser *p)
             _res = _PyPegen_cmpop_expr_pair ( p , NotIn , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -11522,7 +11878,7 @@ notin_bitwise_or_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -11530,16 +11886,19 @@ notin_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 in_bitwise_or_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // 'in' bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> in_bitwise_or[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'in' bitwise_or"));
@@ -11555,7 +11914,7 @@ in_bitwise_or_rule(Parser *p)
             _res = _PyPegen_cmpop_expr_pair ( p , In , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -11566,7 +11925,7 @@ in_bitwise_or_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -11574,16 +11933,19 @@ in_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 isnot_bitwise_or_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // 'is' 'not' bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> isnot_bitwise_or[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'is' 'not' bitwise_or"));
@@ -11602,7 +11964,7 @@ isnot_bitwise_or_rule(Parser *p)
             _res = _PyPegen_cmpop_expr_pair ( p , IsNot , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -11613,7 +11975,7 @@ isnot_bitwise_or_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -11621,16 +11983,19 @@ isnot_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 is_bitwise_or_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // 'is' bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> is_bitwise_or[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'is' bitwise_or"));
@@ -11646,7 +12011,7 @@ is_bitwise_or_rule(Parser *p)
             _res = _PyPegen_cmpop_expr_pair ( p , Is , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -11657,7 +12022,7 @@ is_bitwise_or_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -11667,10 +12032,13 @@ static expr_ty bitwise_or_raw(Parser *);
 static expr_ty
 bitwise_or_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, bitwise_or_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
@@ -11678,37 +12046,40 @@ bitwise_or_rule(Parser *p)
     while (1) {
         int tmpvar_2 = _PyPegen_update_memo(p, _mark, bitwise_or_type, _res);
         if (tmpvar_2) {
-            D(p->level--);
+            p->level--;
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = bitwise_or_raw(p);
-        p->in_raw_rule--;
-        if (p->error_indicator)
+        if (p->error_indicator) {
+            p->level--;
             return NULL;
+        }
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
         _res = _raw;
     }
     p->mark = _resmark;
-    D(p->level--);
+    p->level--;
     return _res;
 }
 static expr_ty
 bitwise_or_raw(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -11717,7 +12088,7 @@ bitwise_or_raw(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // bitwise_or '|' bitwise_xor
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> bitwise_or[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "bitwise_or '|' bitwise_xor"));
@@ -11735,7 +12106,7 @@ bitwise_or_raw(Parser *p)
             D(fprintf(stderr, "%*c+ bitwise_or[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "bitwise_or '|' bitwise_xor"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -11745,7 +12116,7 @@ bitwise_or_raw(Parser *p)
             _res = _PyAST_BinOp ( a , BitOr , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -11756,7 +12127,7 @@ bitwise_or_raw(Parser *p)
     }
     { // bitwise_xor
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> bitwise_or[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "bitwise_xor"));
@@ -11775,7 +12146,7 @@ bitwise_or_raw(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -11785,10 +12156,13 @@ static expr_ty bitwise_xor_raw(Parser *);
 static expr_ty
 bitwise_xor_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, bitwise_xor_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
@@ -11796,37 +12170,40 @@ bitwise_xor_rule(Parser *p)
     while (1) {
         int tmpvar_3 = _PyPegen_update_memo(p, _mark, bitwise_xor_type, _res);
         if (tmpvar_3) {
-            D(p->level--);
+            p->level--;
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = bitwise_xor_raw(p);
-        p->in_raw_rule--;
-        if (p->error_indicator)
+        if (p->error_indicator) {
+            p->level--;
             return NULL;
+        }
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
         _res = _raw;
     }
     p->mark = _resmark;
-    D(p->level--);
+    p->level--;
     return _res;
 }
 static expr_ty
 bitwise_xor_raw(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -11835,7 +12212,7 @@ bitwise_xor_raw(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // bitwise_xor '^' bitwise_and
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> bitwise_xor[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "bitwise_xor '^' bitwise_and"));
@@ -11853,7 +12230,7 @@ bitwise_xor_raw(Parser *p)
             D(fprintf(stderr, "%*c+ bitwise_xor[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "bitwise_xor '^' bitwise_and"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -11863,7 +12240,7 @@ bitwise_xor_raw(Parser *p)
             _res = _PyAST_BinOp ( a , BitXor , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -11874,7 +12251,7 @@ bitwise_xor_raw(Parser *p)
     }
     { // bitwise_and
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> bitwise_xor[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "bitwise_and"));
@@ -11893,7 +12270,7 @@ bitwise_xor_raw(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -11903,10 +12280,13 @@ static expr_ty bitwise_and_raw(Parser *);
 static expr_ty
 bitwise_and_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, bitwise_and_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
@@ -11914,37 +12294,40 @@ bitwise_and_rule(Parser *p)
     while (1) {
         int tmpvar_4 = _PyPegen_update_memo(p, _mark, bitwise_and_type, _res);
         if (tmpvar_4) {
-            D(p->level--);
+            p->level--;
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = bitwise_and_raw(p);
-        p->in_raw_rule--;
-        if (p->error_indicator)
+        if (p->error_indicator) {
+            p->level--;
             return NULL;
+        }
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
         _res = _raw;
     }
     p->mark = _resmark;
-    D(p->level--);
+    p->level--;
     return _res;
 }
 static expr_ty
 bitwise_and_raw(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -11953,7 +12336,7 @@ bitwise_and_raw(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // bitwise_and '&' shift_expr
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> bitwise_and[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "bitwise_and '&' shift_expr"));
@@ -11971,7 +12354,7 @@ bitwise_and_raw(Parser *p)
             D(fprintf(stderr, "%*c+ bitwise_and[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "bitwise_and '&' shift_expr"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -11981,7 +12364,7 @@ bitwise_and_raw(Parser *p)
             _res = _PyAST_BinOp ( a , BitAnd , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -11992,7 +12375,7 @@ bitwise_and_raw(Parser *p)
     }
     { // shift_expr
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> bitwise_and[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "shift_expr"));
@@ -12011,7 +12394,7 @@ bitwise_and_raw(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -12021,10 +12404,13 @@ static expr_ty shift_expr_raw(Parser *);
 static expr_ty
 shift_expr_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, shift_expr_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
@@ -12032,37 +12418,40 @@ shift_expr_rule(Parser *p)
     while (1) {
         int tmpvar_5 = _PyPegen_update_memo(p, _mark, shift_expr_type, _res);
         if (tmpvar_5) {
-            D(p->level--);
+            p->level--;
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = shift_expr_raw(p);
-        p->in_raw_rule--;
-        if (p->error_indicator)
+        if (p->error_indicator) {
+            p->level--;
             return NULL;
+        }
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
         _res = _raw;
     }
     p->mark = _resmark;
-    D(p->level--);
+    p->level--;
     return _res;
 }
 static expr_ty
 shift_expr_raw(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -12071,7 +12460,7 @@ shift_expr_raw(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // shift_expr '<<' sum
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> shift_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "shift_expr '<<' sum"));
@@ -12089,7 +12478,7 @@ shift_expr_raw(Parser *p)
             D(fprintf(stderr, "%*c+ shift_expr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "shift_expr '<<' sum"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -12099,7 +12488,7 @@ shift_expr_raw(Parser *p)
             _res = _PyAST_BinOp ( a , LShift , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -12110,7 +12499,7 @@ shift_expr_raw(Parser *p)
     }
     { // shift_expr '>>' sum
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> shift_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "shift_expr '>>' sum"));
@@ -12128,7 +12517,7 @@ shift_expr_raw(Parser *p)
             D(fprintf(stderr, "%*c+ shift_expr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "shift_expr '>>' sum"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -12138,7 +12527,7 @@ shift_expr_raw(Parser *p)
             _res = _PyAST_BinOp ( a , RShift , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -12149,7 +12538,7 @@ shift_expr_raw(Parser *p)
     }
     { // sum
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> shift_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "sum"));
@@ -12168,7 +12557,7 @@ shift_expr_raw(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -12178,10 +12567,13 @@ static expr_ty sum_raw(Parser *);
 static expr_ty
 sum_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, sum_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
@@ -12189,37 +12581,40 @@ sum_rule(Parser *p)
     while (1) {
         int tmpvar_6 = _PyPegen_update_memo(p, _mark, sum_type, _res);
         if (tmpvar_6) {
-            D(p->level--);
+            p->level--;
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = sum_raw(p);
-        p->in_raw_rule--;
-        if (p->error_indicator)
+        if (p->error_indicator) {
+            p->level--;
             return NULL;
+        }
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
         _res = _raw;
     }
     p->mark = _resmark;
-    D(p->level--);
+    p->level--;
     return _res;
 }
 static expr_ty
 sum_raw(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -12228,7 +12623,7 @@ sum_raw(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // sum '+' term
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> sum[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "sum '+' term"));
@@ -12246,7 +12641,7 @@ sum_raw(Parser *p)
             D(fprintf(stderr, "%*c+ sum[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "sum '+' term"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -12256,7 +12651,7 @@ sum_raw(Parser *p)
             _res = _PyAST_BinOp ( a , Add , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -12267,7 +12662,7 @@ sum_raw(Parser *p)
     }
     { // sum '-' term
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> sum[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "sum '-' term"));
@@ -12285,7 +12680,7 @@ sum_raw(Parser *p)
             D(fprintf(stderr, "%*c+ sum[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "sum '-' term"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -12295,7 +12690,7 @@ sum_raw(Parser *p)
             _res = _PyAST_BinOp ( a , Sub , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -12306,7 +12701,7 @@ sum_raw(Parser *p)
     }
     { // term
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> sum[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "term"));
@@ -12325,7 +12720,7 @@ sum_raw(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -12341,10 +12736,13 @@ static expr_ty term_raw(Parser *);
 static expr_ty
 term_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, term_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
@@ -12352,37 +12750,40 @@ term_rule(Parser *p)
     while (1) {
         int tmpvar_7 = _PyPegen_update_memo(p, _mark, term_type, _res);
         if (tmpvar_7) {
-            D(p->level--);
+            p->level--;
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = term_raw(p);
-        p->in_raw_rule--;
-        if (p->error_indicator)
+        if (p->error_indicator) {
+            p->level--;
             return NULL;
+        }
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
         _res = _raw;
     }
     p->mark = _resmark;
-    D(p->level--);
+    p->level--;
     return _res;
 }
 static expr_ty
 term_raw(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -12391,7 +12792,7 @@ term_raw(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // term '*' factor
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> term[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "term '*' factor"));
@@ -12409,7 +12810,7 @@ term_raw(Parser *p)
             D(fprintf(stderr, "%*c+ term[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "term '*' factor"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -12419,7 +12820,7 @@ term_raw(Parser *p)
             _res = _PyAST_BinOp ( a , Mult , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -12430,7 +12831,7 @@ term_raw(Parser *p)
     }
     { // term '/' factor
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> term[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "term '/' factor"));
@@ -12448,7 +12849,7 @@ term_raw(Parser *p)
             D(fprintf(stderr, "%*c+ term[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "term '/' factor"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -12458,7 +12859,7 @@ term_raw(Parser *p)
             _res = _PyAST_BinOp ( a , Div , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -12469,7 +12870,7 @@ term_raw(Parser *p)
     }
     { // term '//' factor
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> term[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "term '//' factor"));
@@ -12487,7 +12888,7 @@ term_raw(Parser *p)
             D(fprintf(stderr, "%*c+ term[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "term '//' factor"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -12497,7 +12898,7 @@ term_raw(Parser *p)
             _res = _PyAST_BinOp ( a , FloorDiv , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -12508,7 +12909,7 @@ term_raw(Parser *p)
     }
     { // term '%' factor
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> term[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "term '%' factor"));
@@ -12526,7 +12927,7 @@ term_raw(Parser *p)
             D(fprintf(stderr, "%*c+ term[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "term '%' factor"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -12536,7 +12937,7 @@ term_raw(Parser *p)
             _res = _PyAST_BinOp ( a , Mod , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -12547,7 +12948,7 @@ term_raw(Parser *p)
     }
     { // term '@' factor
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> term[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "term '@' factor"));
@@ -12565,7 +12966,7 @@ term_raw(Parser *p)
             D(fprintf(stderr, "%*c+ term[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "term '@' factor"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -12575,7 +12976,7 @@ term_raw(Parser *p)
             _res = CHECK_VERSION ( expr_ty , 5 , "The '@' operator is" , _PyAST_BinOp ( a , MatMult , b , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -12586,7 +12987,7 @@ term_raw(Parser *p)
     }
     { // factor
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> term[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "factor"));
@@ -12605,7 +13006,7 @@ term_raw(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -12613,20 +13014,23 @@ term_raw(Parser *p)
 static expr_ty
 factor_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, factor_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -12635,7 +13039,7 @@ factor_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '+' factor
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> factor[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'+' factor"));
@@ -12650,7 +13054,7 @@ factor_rule(Parser *p)
             D(fprintf(stderr, "%*c+ factor[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'+' factor"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -12660,7 +13064,7 @@ factor_rule(Parser *p)
             _res = _PyAST_UnaryOp ( UAdd , a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -12671,7 +13075,7 @@ factor_rule(Parser *p)
     }
     { // '-' factor
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> factor[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'-' factor"));
@@ -12686,7 +13090,7 @@ factor_rule(Parser *p)
             D(fprintf(stderr, "%*c+ factor[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'-' factor"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -12696,7 +13100,7 @@ factor_rule(Parser *p)
             _res = _PyAST_UnaryOp ( USub , a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -12707,7 +13111,7 @@ factor_rule(Parser *p)
     }
     { // '~' factor
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> factor[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'~' factor"));
@@ -12722,7 +13126,7 @@ factor_rule(Parser *p)
             D(fprintf(stderr, "%*c+ factor[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'~' factor"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -12732,7 +13136,7 @@ factor_rule(Parser *p)
             _res = _PyAST_UnaryOp ( Invert , a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -12743,7 +13147,7 @@ factor_rule(Parser *p)
     }
     { // power
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> factor[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "power"));
@@ -12763,7 +13167,7 @@ factor_rule(Parser *p)
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, factor_type, _res);
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -12771,16 +13175,19 @@ factor_rule(Parser *p)
 static expr_ty
 power_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -12789,7 +13196,7 @@ power_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // await_primary '**' factor
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> power[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "await_primary '**' factor"));
@@ -12807,7 +13214,7 @@ power_rule(Parser *p)
             D(fprintf(stderr, "%*c+ power[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "await_primary '**' factor"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -12817,7 +13224,7 @@ power_rule(Parser *p)
             _res = _PyAST_BinOp ( a , Pow , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -12828,7 +13235,7 @@ power_rule(Parser *p)
     }
     { // await_primary
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> power[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "await_primary"));
@@ -12847,7 +13254,7 @@ power_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -12855,20 +13262,23 @@ power_rule(Parser *p)
 static expr_ty
 await_primary_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, await_primary_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -12877,7 +13287,7 @@ await_primary_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // AWAIT primary
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> await_primary[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "AWAIT primary"));
@@ -12892,7 +13302,7 @@ await_primary_rule(Parser *p)
             D(fprintf(stderr, "%*c+ await_primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "AWAIT primary"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -12902,7 +13312,7 @@ await_primary_rule(Parser *p)
             _res = CHECK_VERSION ( expr_ty , 5 , "Await expressions are" , _PyAST_Await ( a , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -12913,7 +13323,7 @@ await_primary_rule(Parser *p)
     }
     { // primary
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> await_primary[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "primary"));
@@ -12933,7 +13343,7 @@ await_primary_rule(Parser *p)
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, await_primary_type, _res);
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -12948,10 +13358,13 @@ static expr_ty primary_raw(Parser *);
 static expr_ty
 primary_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, primary_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
@@ -12959,37 +13372,40 @@ primary_rule(Parser *p)
     while (1) {
         int tmpvar_8 = _PyPegen_update_memo(p, _mark, primary_type, _res);
         if (tmpvar_8) {
-            D(p->level--);
+            p->level--;
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = primary_raw(p);
-        p->in_raw_rule--;
-        if (p->error_indicator)
+        if (p->error_indicator) {
+            p->level--;
             return NULL;
+        }
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
         _res = _raw;
     }
     p->mark = _resmark;
-    D(p->level--);
+    p->level--;
     return _res;
 }
 static expr_ty
 primary_raw(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -12998,7 +13414,7 @@ primary_raw(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // primary '.' NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> primary[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "primary '.' NAME"));
@@ -13016,7 +13432,7 @@ primary_raw(Parser *p)
             D(fprintf(stderr, "%*c+ primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "primary '.' NAME"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -13026,7 +13442,7 @@ primary_raw(Parser *p)
             _res = _PyAST_Attribute ( a , b -> v . Name . id , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13037,7 +13453,7 @@ primary_raw(Parser *p)
     }
     { // primary genexp
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> primary[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "primary genexp"));
@@ -13052,7 +13468,7 @@ primary_raw(Parser *p)
             D(fprintf(stderr, "%*c+ primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "primary genexp"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -13062,7 +13478,7 @@ primary_raw(Parser *p)
             _res = _PyAST_Call ( a , CHECK ( asdl_expr_seq* , ( asdl_expr_seq* ) _PyPegen_singleton_seq ( p , b ) ) , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13073,7 +13489,7 @@ primary_raw(Parser *p)
     }
     { // primary '(' arguments? ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> primary[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "primary '(' arguments? ')'"));
@@ -13094,7 +13510,7 @@ primary_raw(Parser *p)
             D(fprintf(stderr, "%*c+ primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "primary '(' arguments? ')'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -13104,7 +13520,7 @@ primary_raw(Parser *p)
             _res = _PyAST_Call ( a , ( b ) ? ( ( expr_ty ) b ) -> v . Call . args : NULL , ( b ) ? ( ( expr_ty ) b ) -> v . Call . keywords : NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13115,7 +13531,7 @@ primary_raw(Parser *p)
     }
     { // primary '[' slices ']'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> primary[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "primary '[' slices ']'"));
@@ -13136,7 +13552,7 @@ primary_raw(Parser *p)
             D(fprintf(stderr, "%*c+ primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "primary '[' slices ']'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -13146,7 +13562,7 @@ primary_raw(Parser *p)
             _res = _PyAST_Subscript ( a , b , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13157,7 +13573,7 @@ primary_raw(Parser *p)
     }
     { // atom
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> primary[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "atom"));
@@ -13176,7 +13592,7 @@ primary_raw(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -13184,16 +13600,19 @@ primary_raw(Parser *p)
 static expr_ty
 slices_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -13202,7 +13621,7 @@ slices_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // slice !','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> slices[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "slice !','"));
@@ -13217,7 +13636,7 @@ slices_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13228,7 +13647,7 @@ slices_rule(Parser *p)
     }
     { // ','.slice+ ','?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> slices[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.slice+ ','?"));
@@ -13244,7 +13663,7 @@ slices_rule(Parser *p)
             D(fprintf(stderr, "%*c+ slices[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "','.slice+ ','?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -13254,7 +13673,7 @@ slices_rule(Parser *p)
             _res = _PyAST_Tuple ( a , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13265,7 +13684,7 @@ slices_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -13273,16 +13692,19 @@ slices_rule(Parser *p)
 static expr_ty
 slice_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -13291,7 +13713,7 @@ slice_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // expression? ':' expression? [':' expression?]
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> slice[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression? ':' expression? [':' expression?]"));
@@ -13312,7 +13734,7 @@ slice_rule(Parser *p)
             D(fprintf(stderr, "%*c+ slice[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression? ':' expression? [':' expression?]"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -13322,7 +13744,7 @@ slice_rule(Parser *p)
             _res = _PyAST_Slice ( a , b , c , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13333,7 +13755,7 @@ slice_rule(Parser *p)
     }
     { // named_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> slice[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "named_expression"));
@@ -13346,7 +13768,7 @@ slice_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13357,7 +13779,7 @@ slice_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -13375,16 +13797,19 @@ slice_rule(Parser *p)
 static expr_ty
 atom_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -13393,7 +13818,7 @@ atom_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME"));
@@ -13412,7 +13837,7 @@ atom_rule(Parser *p)
     }
     { // 'True'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'True'"));
@@ -13424,7 +13849,7 @@ atom_rule(Parser *p)
             D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'True'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -13434,7 +13859,7 @@ atom_rule(Parser *p)
             _res = _PyAST_Constant ( Py_True , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13445,7 +13870,7 @@ atom_rule(Parser *p)
     }
     { // 'False'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'False'"));
@@ -13457,7 +13882,7 @@ atom_rule(Parser *p)
             D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'False'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -13467,7 +13892,7 @@ atom_rule(Parser *p)
             _res = _PyAST_Constant ( Py_False , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13478,7 +13903,7 @@ atom_rule(Parser *p)
     }
     { // 'None'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'None'"));
@@ -13490,7 +13915,7 @@ atom_rule(Parser *p)
             D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'None'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -13500,7 +13925,7 @@ atom_rule(Parser *p)
             _res = _PyAST_Constant ( Py_None , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13511,7 +13936,7 @@ atom_rule(Parser *p)
     }
     { // &STRING strings
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&STRING strings"));
@@ -13532,7 +13957,7 @@ atom_rule(Parser *p)
     }
     { // NUMBER
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NUMBER"));
@@ -13551,7 +13976,7 @@ atom_rule(Parser *p)
     }
     { // &'(' (tuple | group | genexp)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'(' (tuple | group | genexp)"));
@@ -13572,7 +13997,7 @@ atom_rule(Parser *p)
     }
     { // &'[' (list | listcomp)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'[' (list | listcomp)"));
@@ -13593,7 +14018,7 @@ atom_rule(Parser *p)
     }
     { // &'{' (dict | set | dictcomp | setcomp)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'{' (dict | set | dictcomp | setcomp)"));
@@ -13614,7 +14039,7 @@ atom_rule(Parser *p)
     }
     { // '...'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'...'"));
@@ -13626,7 +14051,7 @@ atom_rule(Parser *p)
             D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'...'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -13636,7 +14061,7 @@ atom_rule(Parser *p)
             _res = _PyAST_Constant ( Py_Ellipsis , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13647,7 +14072,7 @@ atom_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -13655,16 +14080,19 @@ atom_rule(Parser *p)
 static expr_ty
 group_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // '(' (yield_expr | named_expression) ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> group[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' (yield_expr | named_expression) ')'"));
@@ -13683,7 +14111,7 @@ group_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13694,7 +14122,7 @@ group_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_group
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> group[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_group"));
@@ -13713,7 +14141,7 @@ group_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -13721,16 +14149,19 @@ group_rule(Parser *p)
 static expr_ty
 lambdef_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -13739,7 +14170,7 @@ lambdef_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'lambda' lambda_params? ':' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambdef[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'lambda' lambda_params? ':' expression"));
@@ -13760,7 +14191,7 @@ lambdef_rule(Parser *p)
             D(fprintf(stderr, "%*c+ lambdef[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'lambda' lambda_params? ':' expression"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -13770,7 +14201,7 @@ lambdef_rule(Parser *p)
             _res = _PyAST_Lambda ( ( a ) ? a : CHECK ( arguments_ty , _PyPegen_empty_arguments ( p ) ) , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13781,7 +14212,7 @@ lambdef_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -13789,16 +14220,19 @@ lambdef_rule(Parser *p)
 static arguments_ty
 lambda_params_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     arguments_ty _res = NULL;
     int _mark = p->mark;
     if (p->call_invalid_rules) { // invalid_lambda_parameters
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_params[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_lambda_parameters"));
@@ -13817,7 +14251,7 @@ lambda_params_rule(Parser *p)
     }
     { // lambda_parameters
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_params[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_parameters"));
@@ -13836,7 +14270,7 @@ lambda_params_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -13849,16 +14283,19 @@ lambda_params_rule(Parser *p)
 static arguments_ty
 lambda_parameters_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     arguments_ty _res = NULL;
     int _mark = p->mark;
     { // lambda_slash_no_default lambda_param_no_default* lambda_param_with_default* lambda_star_etc?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_slash_no_default lambda_param_no_default* lambda_param_with_default* lambda_star_etc?"));
@@ -13880,7 +14317,7 @@ lambda_parameters_rule(Parser *p)
             _res = _PyPegen_make_arguments ( p , a , NULL , b , c , d );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13891,7 +14328,7 @@ lambda_parameters_rule(Parser *p)
     }
     { // lambda_slash_with_default lambda_param_with_default* lambda_star_etc?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_slash_with_default lambda_param_with_default* lambda_star_etc?"));
@@ -13910,7 +14347,7 @@ lambda_parameters_rule(Parser *p)
             _res = _PyPegen_make_arguments ( p , NULL , a , NULL , b , c );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13921,7 +14358,7 @@ lambda_parameters_rule(Parser *p)
     }
     { // lambda_param_no_default+ lambda_param_with_default* lambda_star_etc?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default+ lambda_param_with_default* lambda_star_etc?"));
@@ -13940,7 +14377,7 @@ lambda_parameters_rule(Parser *p)
             _res = _PyPegen_make_arguments ( p , NULL , NULL , a , b , c );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13951,7 +14388,7 @@ lambda_parameters_rule(Parser *p)
     }
     { // lambda_param_with_default+ lambda_star_etc?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_with_default+ lambda_star_etc?"));
@@ -13967,7 +14404,7 @@ lambda_parameters_rule(Parser *p)
             _res = _PyPegen_make_arguments ( p , NULL , NULL , NULL , a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -13978,7 +14415,7 @@ lambda_parameters_rule(Parser *p)
     }
     { // lambda_star_etc
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_star_etc"));
@@ -13991,7 +14428,7 @@ lambda_parameters_rule(Parser *p)
             _res = _PyPegen_make_arguments ( p , NULL , NULL , NULL , NULL , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14002,7 +14439,7 @@ lambda_parameters_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -14012,16 +14449,19 @@ lambda_parameters_rule(Parser *p)
 static asdl_arg_seq*
 lambda_slash_no_default_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_arg_seq* _res = NULL;
     int _mark = p->mark;
     { // lambda_param_no_default+ '/' ','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_slash_no_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default+ '/' ','"));
@@ -14040,7 +14480,7 @@ lambda_slash_no_default_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14051,7 +14491,7 @@ lambda_slash_no_default_rule(Parser *p)
     }
     { // lambda_param_no_default+ '/' &':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_slash_no_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default+ '/' &':'"));
@@ -14069,7 +14509,7 @@ lambda_slash_no_default_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14080,7 +14520,7 @@ lambda_slash_no_default_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -14090,16 +14530,19 @@ lambda_slash_no_default_rule(Parser *p)
 static SlashWithDefault*
 lambda_slash_with_default_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     SlashWithDefault* _res = NULL;
     int _mark = p->mark;
     { // lambda_param_no_default* lambda_param_with_default+ '/' ','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_slash_with_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default* lambda_param_with_default+ '/' ','"));
@@ -14121,7 +14564,7 @@ lambda_slash_with_default_rule(Parser *p)
             _res = _PyPegen_slash_with_default ( p , ( asdl_arg_seq* ) a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14132,7 +14575,7 @@ lambda_slash_with_default_rule(Parser *p)
     }
     { // lambda_param_no_default* lambda_param_with_default+ '/' &':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_slash_with_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default* lambda_param_with_default+ '/' &':'"));
@@ -14153,7 +14596,7 @@ lambda_slash_with_default_rule(Parser *p)
             _res = _PyPegen_slash_with_default ( p , ( asdl_arg_seq* ) a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14164,7 +14607,7 @@ lambda_slash_with_default_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -14176,16 +14619,19 @@ lambda_slash_with_default_rule(Parser *p)
 static StarEtc*
 lambda_star_etc_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     StarEtc* _res = NULL;
     int _mark = p->mark;
     { // '*' lambda_param_no_default lambda_param_maybe_default* lambda_kwds?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_star_etc[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' lambda_param_no_default lambda_param_maybe_default* lambda_kwds?"));
@@ -14207,7 +14653,7 @@ lambda_star_etc_rule(Parser *p)
             _res = _PyPegen_star_etc ( p , a , b , c );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14218,7 +14664,7 @@ lambda_star_etc_rule(Parser *p)
     }
     { // '*' ',' lambda_param_maybe_default+ lambda_kwds?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_star_etc[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' ',' lambda_param_maybe_default+ lambda_kwds?"));
@@ -14240,7 +14686,7 @@ lambda_star_etc_rule(Parser *p)
             _res = _PyPegen_star_etc ( p , NULL , b , c );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14251,7 +14697,7 @@ lambda_star_etc_rule(Parser *p)
     }
     { // lambda_kwds
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_star_etc[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_kwds"));
@@ -14264,7 +14710,7 @@ lambda_star_etc_rule(Parser *p)
             _res = _PyPegen_star_etc ( p , NULL , NULL , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14275,7 +14721,7 @@ lambda_star_etc_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_lambda_star_etc
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_star_etc[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_lambda_star_etc"));
@@ -14294,7 +14740,7 @@ lambda_star_etc_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -14302,16 +14748,19 @@ lambda_star_etc_rule(Parser *p)
 static arg_ty
 lambda_kwds_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     arg_ty _res = NULL;
     int _mark = p->mark;
     { // '**' lambda_param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_kwds[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'**' lambda_param_no_default"));
@@ -14327,7 +14776,7 @@ lambda_kwds_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14338,7 +14787,7 @@ lambda_kwds_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -14346,16 +14795,19 @@ lambda_kwds_rule(Parser *p)
 static arg_ty
 lambda_param_no_default_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     arg_ty _res = NULL;
     int _mark = p->mark;
     { // lambda_param ','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_param_no_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param ','"));
@@ -14371,7 +14823,7 @@ lambda_param_no_default_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14382,7 +14834,7 @@ lambda_param_no_default_rule(Parser *p)
     }
     { // lambda_param &':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_param_no_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param &':'"));
@@ -14397,7 +14849,7 @@ lambda_param_no_default_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14408,7 +14860,7 @@ lambda_param_no_default_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -14416,16 +14868,19 @@ lambda_param_no_default_rule(Parser *p)
 static NameDefaultPair*
 lambda_param_with_default_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
     { // lambda_param default ','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_param_with_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param default ','"));
@@ -14444,7 +14899,7 @@ lambda_param_with_default_rule(Parser *p)
             _res = _PyPegen_name_default_pair ( p , a , c , NULL );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14455,7 +14910,7 @@ lambda_param_with_default_rule(Parser *p)
     }
     { // lambda_param default &':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_param_with_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param default &':'"));
@@ -14473,7 +14928,7 @@ lambda_param_with_default_rule(Parser *p)
             _res = _PyPegen_name_default_pair ( p , a , c , NULL );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14484,7 +14939,7 @@ lambda_param_with_default_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -14492,16 +14947,19 @@ lambda_param_with_default_rule(Parser *p)
 static NameDefaultPair*
 lambda_param_maybe_default_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
     { // lambda_param default? ','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_param_maybe_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param default? ','"));
@@ -14520,7 +14978,7 @@ lambda_param_maybe_default_rule(Parser *p)
             _res = _PyPegen_name_default_pair ( p , a , c , NULL );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14531,7 +14989,7 @@ lambda_param_maybe_default_rule(Parser *p)
     }
     { // lambda_param default? &':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_param_maybe_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param default? &':'"));
@@ -14549,7 +15007,7 @@ lambda_param_maybe_default_rule(Parser *p)
             _res = _PyPegen_name_default_pair ( p , a , c , NULL );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14560,7 +15018,7 @@ lambda_param_maybe_default_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -14568,16 +15026,19 @@ lambda_param_maybe_default_rule(Parser *p)
 static arg_ty
 lambda_param_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     arg_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -14586,7 +15047,7 @@ lambda_param_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> lambda_param[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME"));
@@ -14598,7 +15059,7 @@ lambda_param_rule(Parser *p)
             D(fprintf(stderr, "%*c+ lambda_param[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -14608,7 +15069,7 @@ lambda_param_rule(Parser *p)
             _res = _PyAST_arg ( a -> v . Name . id , NULL , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14619,7 +15080,7 @@ lambda_param_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -14627,20 +15088,23 @@ lambda_param_rule(Parser *p)
 static expr_ty
 strings_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, strings_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
     { // STRING+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> strings[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "STRING+"));
@@ -14653,7 +15117,7 @@ strings_rule(Parser *p)
             _res = _PyPegen_concatenate_strings ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14665,7 +15129,7 @@ strings_rule(Parser *p)
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, strings_type, _res);
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -14673,16 +15137,19 @@ strings_rule(Parser *p)
 static expr_ty
 list_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -14691,7 +15158,7 @@ list_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '[' star_named_expressions? ']'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> list[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'[' star_named_expressions? ']'"));
@@ -14709,7 +15176,7 @@ list_rule(Parser *p)
             D(fprintf(stderr, "%*c+ list[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'[' star_named_expressions? ']'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -14719,7 +15186,7 @@ list_rule(Parser *p)
             _res = _PyAST_List ( a , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14730,7 +15197,7 @@ list_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -14738,16 +15205,19 @@ list_rule(Parser *p)
 static expr_ty
 tuple_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -14756,7 +15226,7 @@ tuple_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '(' [star_named_expression ',' star_named_expressions?] ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> tuple[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' [star_named_expression ',' star_named_expressions?] ')'"));
@@ -14774,7 +15244,7 @@ tuple_rule(Parser *p)
             D(fprintf(stderr, "%*c+ tuple[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' [star_named_expression ',' star_named_expressions?] ')'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -14784,7 +15254,7 @@ tuple_rule(Parser *p)
             _res = _PyAST_Tuple ( a , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14795,7 +15265,7 @@ tuple_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -14803,16 +15273,19 @@ tuple_rule(Parser *p)
 static expr_ty
 set_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -14821,7 +15294,7 @@ set_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '{' star_named_expressions '}'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> set[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' star_named_expressions '}'"));
@@ -14839,7 +15312,7 @@ set_rule(Parser *p)
             D(fprintf(stderr, "%*c+ set[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' star_named_expressions '}'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -14849,7 +15322,7 @@ set_rule(Parser *p)
             _res = _PyAST_Set ( a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14860,7 +15333,7 @@ set_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -14868,16 +15341,19 @@ set_rule(Parser *p)
 static expr_ty
 dict_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -14886,7 +15362,7 @@ dict_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '{' double_starred_kvpairs? '}'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> dict[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' double_starred_kvpairs? '}'"));
@@ -14904,7 +15380,7 @@ dict_rule(Parser *p)
             D(fprintf(stderr, "%*c+ dict[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' double_starred_kvpairs? '}'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -14914,7 +15390,7 @@ dict_rule(Parser *p)
             _res = _PyAST_Dict ( CHECK ( asdl_expr_seq* , _PyPegen_get_keys ( p , a ) ) , CHECK ( asdl_expr_seq* , _PyPegen_get_values ( p , a ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14925,7 +15401,7 @@ dict_rule(Parser *p)
     }
     { // '{' invalid_double_starred_kvpairs '}'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> dict[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' invalid_double_starred_kvpairs '}'"));
@@ -14950,7 +15426,7 @@ dict_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -14958,16 +15434,19 @@ dict_rule(Parser *p)
 static asdl_seq*
 double_starred_kvpairs_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.double_starred_kvpair+ ','?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> double_starred_kvpairs[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.double_starred_kvpair+ ','?"));
@@ -14984,7 +15463,7 @@ double_starred_kvpairs_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -14995,7 +15474,7 @@ double_starred_kvpairs_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -15003,16 +15482,19 @@ double_starred_kvpairs_rule(Parser *p)
 static KeyValuePair*
 double_starred_kvpair_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     KeyValuePair* _res = NULL;
     int _mark = p->mark;
     { // '**' bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> double_starred_kvpair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'**' bitwise_or"));
@@ -15028,7 +15510,7 @@ double_starred_kvpair_rule(Parser *p)
             _res = _PyPegen_key_value_pair ( p , NULL , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -15039,7 +15521,7 @@ double_starred_kvpair_rule(Parser *p)
     }
     { // kvpair
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> double_starred_kvpair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "kvpair"));
@@ -15058,7 +15540,7 @@ double_starred_kvpair_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -15066,16 +15548,19 @@ double_starred_kvpair_rule(Parser *p)
 static KeyValuePair*
 kvpair_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     KeyValuePair* _res = NULL;
     int _mark = p->mark;
     { // expression ':' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> kvpair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression ':' expression"));
@@ -15094,7 +15579,7 @@ kvpair_rule(Parser *p)
             _res = _PyPegen_key_value_pair ( p , a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -15105,7 +15590,7 @@ kvpair_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -15113,16 +15598,19 @@ kvpair_rule(Parser *p)
 static asdl_comprehension_seq*
 for_if_clauses_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_comprehension_seq* _res = NULL;
     int _mark = p->mark;
     { // for_if_clause+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> for_if_clauses[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "for_if_clause+"));
@@ -15135,7 +15623,7 @@ for_if_clauses_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -15146,7 +15634,7 @@ for_if_clauses_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -15157,16 +15645,19 @@ for_if_clauses_rule(Parser *p)
 static comprehension_ty
 for_if_clause_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     comprehension_ty _res = NULL;
     int _mark = p->mark;
     { // ASYNC 'for' star_targets 'in' ~ disjunction (('if' disjunction))*
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> for_if_clause[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC 'for' star_targets 'in' ~ disjunction (('if' disjunction))*"));
@@ -15197,7 +15688,7 @@ for_if_clause_rule(Parser *p)
             _res = CHECK_VERSION ( comprehension_ty , 6 , "Async comprehensions are" , _PyAST_comprehension ( a , b , c , 1 , p -> arena ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -15206,13 +15697,13 @@ for_if_clause_rule(Parser *p)
         D(fprintf(stderr, "%*c%s for_if_clause[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "ASYNC 'for' star_targets 'in' ~ disjunction (('if' disjunction))*"));
         if (_cut_var) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
     }
     { // 'for' star_targets 'in' ~ disjunction (('if' disjunction))*
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> for_if_clause[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'for' star_targets 'in' ~ disjunction (('if' disjunction))*"));
@@ -15240,7 +15731,7 @@ for_if_clause_rule(Parser *p)
             _res = _PyAST_comprehension ( a , b , c , 0 , p -> arena );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -15249,13 +15740,13 @@ for_if_clause_rule(Parser *p)
         D(fprintf(stderr, "%*c%s for_if_clause[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'for' star_targets 'in' ~ disjunction (('if' disjunction))*"));
         if (_cut_var) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
     }
     if (p->call_invalid_rules) { // invalid_for_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> for_if_clause[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_for_target"));
@@ -15274,7 +15765,7 @@ for_if_clause_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -15282,16 +15773,19 @@ for_if_clause_rule(Parser *p)
 static expr_ty
 listcomp_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -15300,7 +15794,7 @@ listcomp_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '[' named_expression for_if_clauses ']'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> listcomp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'[' named_expression for_if_clauses ']'"));
@@ -15321,7 +15815,7 @@ listcomp_rule(Parser *p)
             D(fprintf(stderr, "%*c+ listcomp[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'[' named_expression for_if_clauses ']'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -15331,7 +15825,7 @@ listcomp_rule(Parser *p)
             _res = _PyAST_ListComp ( a , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -15342,7 +15836,7 @@ listcomp_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_comprehension
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> listcomp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_comprehension"));
@@ -15361,7 +15855,7 @@ listcomp_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -15369,16 +15863,19 @@ listcomp_rule(Parser *p)
 static expr_ty
 setcomp_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -15387,7 +15884,7 @@ setcomp_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '{' named_expression for_if_clauses '}'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> setcomp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' named_expression for_if_clauses '}'"));
@@ -15408,7 +15905,7 @@ setcomp_rule(Parser *p)
             D(fprintf(stderr, "%*c+ setcomp[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' named_expression for_if_clauses '}'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -15418,7 +15915,7 @@ setcomp_rule(Parser *p)
             _res = _PyAST_SetComp ( a , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -15429,7 +15926,7 @@ setcomp_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_comprehension
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> setcomp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_comprehension"));
@@ -15448,7 +15945,7 @@ setcomp_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -15458,16 +15955,19 @@ setcomp_rule(Parser *p)
 static expr_ty
 genexp_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -15476,7 +15976,7 @@ genexp_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '(' (assignment_expression | expression !':=') for_if_clauses ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> genexp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' (assignment_expression | expression !':=') for_if_clauses ')'"));
@@ -15497,7 +15997,7 @@ genexp_rule(Parser *p)
             D(fprintf(stderr, "%*c+ genexp[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' (assignment_expression | expression !':=') for_if_clauses ')'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -15507,7 +16007,7 @@ genexp_rule(Parser *p)
             _res = _PyAST_GeneratorExp ( a , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -15518,7 +16018,7 @@ genexp_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_comprehension
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> genexp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_comprehension"));
@@ -15537,7 +16037,7 @@ genexp_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -15545,16 +16045,19 @@ genexp_rule(Parser *p)
 static expr_ty
 dictcomp_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -15563,7 +16066,7 @@ dictcomp_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '{' kvpair for_if_clauses '}'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> dictcomp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' kvpair for_if_clauses '}'"));
@@ -15584,7 +16087,7 @@ dictcomp_rule(Parser *p)
             D(fprintf(stderr, "%*c+ dictcomp[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' kvpair for_if_clauses '}'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -15594,7 +16097,7 @@ dictcomp_rule(Parser *p)
             _res = _PyAST_DictComp ( a -> key , a -> value , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -15605,7 +16108,7 @@ dictcomp_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_dict_comprehension
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> dictcomp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_dict_comprehension"));
@@ -15624,7 +16127,7 @@ dictcomp_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -15632,20 +16135,23 @@ dictcomp_rule(Parser *p)
 static expr_ty
 arguments_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, arguments_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
     { // args ','? &')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "args ','? &')'"));
@@ -15664,7 +16170,7 @@ arguments_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -15675,7 +16181,7 @@ arguments_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_arguments
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_arguments"));
@@ -15695,7 +16201,7 @@ arguments_rule(Parser *p)
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, arguments_type, _res);
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -15705,16 +16211,19 @@ arguments_rule(Parser *p)
 static expr_ty
 args_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -15723,7 +16232,7 @@ args_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // ','.(starred_expression | (assignment_expression | expression !':=') !'=')+ [',' kwargs]
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> args[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.(starred_expression | (assignment_expression | expression !':=') !'=')+ [',' kwargs]"));
@@ -15738,7 +16247,7 @@ args_rule(Parser *p)
             D(fprintf(stderr, "%*c+ args[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "','.(starred_expression | (assignment_expression | expression !':=') !'=')+ [',' kwargs]"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -15748,7 +16257,7 @@ args_rule(Parser *p)
             _res = _PyPegen_collect_call_seqs ( p , a , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -15759,7 +16268,7 @@ args_rule(Parser *p)
     }
     { // kwargs
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> args[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "kwargs"));
@@ -15771,7 +16280,7 @@ args_rule(Parser *p)
             D(fprintf(stderr, "%*c+ args[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "kwargs"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -15781,7 +16290,7 @@ args_rule(Parser *p)
             _res = _PyAST_Call ( _PyPegen_dummy_name ( p ) , CHECK_NULL_ALLOWED ( asdl_expr_seq* , _PyPegen_seq_extract_starred_exprs ( p , a ) ) , CHECK_NULL_ALLOWED ( asdl_keyword_seq* , _PyPegen_seq_delete_starred_exprs ( p , a ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -15792,7 +16301,7 @@ args_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -15803,16 +16312,19 @@ args_rule(Parser *p)
 static asdl_seq*
 kwargs_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.kwarg_or_starred+ ',' ','.kwarg_or_double_starred+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> kwargs[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.kwarg_or_starred+ ',' ','.kwarg_or_double_starred+"));
@@ -15831,7 +16343,7 @@ kwargs_rule(Parser *p)
             _res = _PyPegen_join_sequences ( p , a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -15842,7 +16354,7 @@ kwargs_rule(Parser *p)
     }
     { // ','.kwarg_or_starred+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> kwargs[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.kwarg_or_starred+"));
@@ -15861,7 +16373,7 @@ kwargs_rule(Parser *p)
     }
     { // ','.kwarg_or_double_starred+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> kwargs[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.kwarg_or_double_starred+"));
@@ -15880,7 +16392,7 @@ kwargs_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -15888,16 +16400,19 @@ kwargs_rule(Parser *p)
 static expr_ty
 starred_expression_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -15906,7 +16421,7 @@ starred_expression_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '*' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> starred_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' expression"));
@@ -15921,7 +16436,7 @@ starred_expression_rule(Parser *p)
             D(fprintf(stderr, "%*c+ starred_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' expression"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -15931,7 +16446,7 @@ starred_expression_rule(Parser *p)
             _res = _PyAST_Starred ( a , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -15942,7 +16457,7 @@ starred_expression_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -15950,16 +16465,19 @@ starred_expression_rule(Parser *p)
 static KeywordOrStarred*
 kwarg_or_starred_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     KeywordOrStarred* _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -15968,7 +16486,7 @@ kwarg_or_starred_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     if (p->call_invalid_rules) { // invalid_kwarg
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> kwarg_or_starred[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_kwarg"));
@@ -15987,7 +16505,7 @@ kwarg_or_starred_rule(Parser *p)
     }
     { // NAME '=' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> kwarg_or_starred[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME '=' expression"));
@@ -16005,7 +16523,7 @@ kwarg_or_starred_rule(Parser *p)
             D(fprintf(stderr, "%*c+ kwarg_or_starred[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME '=' expression"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -16015,7 +16533,7 @@ kwarg_or_starred_rule(Parser *p)
             _res = _PyPegen_keyword_or_starred ( p , CHECK ( keyword_ty , _PyAST_keyword ( a -> v . Name . id , b , EXTRA ) ) , 1 );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16026,7 +16544,7 @@ kwarg_or_starred_rule(Parser *p)
     }
     { // starred_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> kwarg_or_starred[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "starred_expression"));
@@ -16039,7 +16557,7 @@ kwarg_or_starred_rule(Parser *p)
             _res = _PyPegen_keyword_or_starred ( p , a , 0 );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16050,7 +16568,7 @@ kwarg_or_starred_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -16058,16 +16576,19 @@ kwarg_or_starred_rule(Parser *p)
 static KeywordOrStarred*
 kwarg_or_double_starred_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     KeywordOrStarred* _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -16076,7 +16597,7 @@ kwarg_or_double_starred_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     if (p->call_invalid_rules) { // invalid_kwarg
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> kwarg_or_double_starred[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_kwarg"));
@@ -16095,7 +16616,7 @@ kwarg_or_double_starred_rule(Parser *p)
     }
     { // NAME '=' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> kwarg_or_double_starred[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME '=' expression"));
@@ -16113,7 +16634,7 @@ kwarg_or_double_starred_rule(Parser *p)
             D(fprintf(stderr, "%*c+ kwarg_or_double_starred[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME '=' expression"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -16123,7 +16644,7 @@ kwarg_or_double_starred_rule(Parser *p)
             _res = _PyPegen_keyword_or_starred ( p , CHECK ( keyword_ty , _PyAST_keyword ( a -> v . Name . id , b , EXTRA ) ) , 1 );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16134,7 +16655,7 @@ kwarg_or_double_starred_rule(Parser *p)
     }
     { // '**' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> kwarg_or_double_starred[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'**' expression"));
@@ -16149,7 +16670,7 @@ kwarg_or_double_starred_rule(Parser *p)
             D(fprintf(stderr, "%*c+ kwarg_or_double_starred[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' expression"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -16159,7 +16680,7 @@ kwarg_or_double_starred_rule(Parser *p)
             _res = _PyPegen_keyword_or_starred ( p , CHECK ( keyword_ty , _PyAST_keyword ( NULL , a , EXTRA ) ) , 1 );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16170,7 +16691,7 @@ kwarg_or_double_starred_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -16178,16 +16699,19 @@ kwarg_or_double_starred_rule(Parser *p)
 static expr_ty
 star_targets_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -16196,7 +16720,7 @@ star_targets_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // star_target !','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_targets[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_target !','"));
@@ -16211,7 +16735,7 @@ star_targets_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16222,7 +16746,7 @@ star_targets_rule(Parser *p)
     }
     { // star_target ((',' star_target))* ','?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_targets[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_target ((',' star_target))* ','?"));
@@ -16241,7 +16765,7 @@ star_targets_rule(Parser *p)
             D(fprintf(stderr, "%*c+ star_targets[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_target ((',' star_target))* ','?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -16251,7 +16775,7 @@ star_targets_rule(Parser *p)
             _res = _PyAST_Tuple ( CHECK ( asdl_expr_seq* , _PyPegen_seq_insert_in_front ( p , a , b ) ) , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16262,7 +16786,7 @@ star_targets_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -16270,16 +16794,19 @@ star_targets_rule(Parser *p)
 static asdl_expr_seq*
 star_targets_list_seq_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_expr_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.star_target+ ','?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_targets_list_seq[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.star_target+ ','?"));
@@ -16296,7 +16823,7 @@ star_targets_list_seq_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16307,7 +16834,7 @@ star_targets_list_seq_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -16315,16 +16842,19 @@ star_targets_list_seq_rule(Parser *p)
 static asdl_expr_seq*
 star_targets_tuple_seq_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_expr_seq* _res = NULL;
     int _mark = p->mark;
     { // star_target ((',' star_target))+ ','?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_targets_tuple_seq[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_target ((',' star_target))+ ','?"));
@@ -16344,7 +16874,7 @@ star_targets_tuple_seq_rule(Parser *p)
             _res = ( asdl_expr_seq* ) _PyPegen_seq_insert_in_front ( p , a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16355,7 +16885,7 @@ star_targets_tuple_seq_rule(Parser *p)
     }
     { // star_target ','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_targets_tuple_seq[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_target ','"));
@@ -16371,7 +16901,7 @@ star_targets_tuple_seq_rule(Parser *p)
             _res = ( asdl_expr_seq* ) _PyPegen_singleton_seq ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16382,7 +16912,7 @@ star_targets_tuple_seq_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -16390,20 +16920,23 @@ star_targets_tuple_seq_rule(Parser *p)
 static expr_ty
 star_target_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, star_target_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -16412,7 +16945,7 @@ star_target_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '*' (!'*' star_target)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_target[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' (!'*' star_target)"));
@@ -16427,7 +16960,7 @@ star_target_rule(Parser *p)
             D(fprintf(stderr, "%*c+ star_target[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' (!'*' star_target)"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -16437,7 +16970,7 @@ star_target_rule(Parser *p)
             _res = _PyAST_Starred ( CHECK ( expr_ty , _PyPegen_set_expr_context ( p , a , Store ) ) , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16448,7 +16981,7 @@ star_target_rule(Parser *p)
     }
     { // target_with_star_atom
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_target[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "target_with_star_atom"));
@@ -16468,7 +17001,7 @@ star_target_rule(Parser *p)
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, star_target_type, _res);
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -16479,20 +17012,23 @@ star_target_rule(Parser *p)
 static expr_ty
 target_with_star_atom_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, target_with_star_atom_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -16501,7 +17037,7 @@ target_with_star_atom_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // t_primary '.' NAME !t_lookahead
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> target_with_star_atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "t_primary '.' NAME !t_lookahead"));
@@ -16521,7 +17057,7 @@ target_with_star_atom_rule(Parser *p)
             D(fprintf(stderr, "%*c+ target_with_star_atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '.' NAME !t_lookahead"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -16531,7 +17067,7 @@ target_with_star_atom_rule(Parser *p)
             _res = _PyAST_Attribute ( a , b -> v . Name . id , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16542,7 +17078,7 @@ target_with_star_atom_rule(Parser *p)
     }
     { // t_primary '[' slices ']' !t_lookahead
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> target_with_star_atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "t_primary '[' slices ']' !t_lookahead"));
@@ -16565,7 +17101,7 @@ target_with_star_atom_rule(Parser *p)
             D(fprintf(stderr, "%*c+ target_with_star_atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '[' slices ']' !t_lookahead"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -16575,7 +17111,7 @@ target_with_star_atom_rule(Parser *p)
             _res = _PyAST_Subscript ( a , b , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16586,7 +17122,7 @@ target_with_star_atom_rule(Parser *p)
     }
     { // star_atom
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> target_with_star_atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_atom"));
@@ -16606,7 +17142,7 @@ target_with_star_atom_rule(Parser *p)
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, target_with_star_atom_type, _res);
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -16618,16 +17154,19 @@ target_with_star_atom_rule(Parser *p)
 static expr_ty
 star_atom_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -16636,7 +17175,7 @@ star_atom_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME"));
@@ -16649,7 +17188,7 @@ star_atom_rule(Parser *p)
             _res = _PyPegen_set_expr_context ( p , a , Store );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16660,7 +17199,7 @@ star_atom_rule(Parser *p)
     }
     { // '(' target_with_star_atom ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' target_with_star_atom ')'"));
@@ -16679,7 +17218,7 @@ star_atom_rule(Parser *p)
             _res = _PyPegen_set_expr_context ( p , a , Store );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16690,7 +17229,7 @@ star_atom_rule(Parser *p)
     }
     { // '(' star_targets_tuple_seq? ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' star_targets_tuple_seq? ')'"));
@@ -16708,7 +17247,7 @@ star_atom_rule(Parser *p)
             D(fprintf(stderr, "%*c+ star_atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' star_targets_tuple_seq? ')'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -16718,7 +17257,7 @@ star_atom_rule(Parser *p)
             _res = _PyAST_Tuple ( a , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16729,7 +17268,7 @@ star_atom_rule(Parser *p)
     }
     { // '[' star_targets_list_seq? ']'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> star_atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'[' star_targets_list_seq? ']'"));
@@ -16747,7 +17286,7 @@ star_atom_rule(Parser *p)
             D(fprintf(stderr, "%*c+ star_atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'[' star_targets_list_seq? ']'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -16757,7 +17296,7 @@ star_atom_rule(Parser *p)
             _res = _PyAST_List ( a , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16768,7 +17307,7 @@ star_atom_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -16776,16 +17315,19 @@ star_atom_rule(Parser *p)
 static expr_ty
 single_target_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // single_subscript_attribute_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> single_target[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "single_subscript_attribute_target"));
@@ -16804,7 +17346,7 @@ single_target_rule(Parser *p)
     }
     { // NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> single_target[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME"));
@@ -16817,7 +17359,7 @@ single_target_rule(Parser *p)
             _res = _PyPegen_set_expr_context ( p , a , Store );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16828,7 +17370,7 @@ single_target_rule(Parser *p)
     }
     { // '(' single_target ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> single_target[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' single_target ')'"));
@@ -16847,7 +17389,7 @@ single_target_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16858,7 +17400,7 @@ single_target_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -16868,16 +17410,19 @@ single_target_rule(Parser *p)
 static expr_ty
 single_subscript_attribute_target_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -16886,7 +17431,7 @@ single_subscript_attribute_target_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // t_primary '.' NAME !t_lookahead
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> single_subscript_attribute_target[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "t_primary '.' NAME !t_lookahead"));
@@ -16906,7 +17451,7 @@ single_subscript_attribute_target_rule(Parser *p)
             D(fprintf(stderr, "%*c+ single_subscript_attribute_target[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '.' NAME !t_lookahead"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -16916,7 +17461,7 @@ single_subscript_attribute_target_rule(Parser *p)
             _res = _PyAST_Attribute ( a , b -> v . Name . id , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16927,7 +17472,7 @@ single_subscript_attribute_target_rule(Parser *p)
     }
     { // t_primary '[' slices ']' !t_lookahead
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> single_subscript_attribute_target[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "t_primary '[' slices ']' !t_lookahead"));
@@ -16950,7 +17495,7 @@ single_subscript_attribute_target_rule(Parser *p)
             D(fprintf(stderr, "%*c+ single_subscript_attribute_target[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '[' slices ']' !t_lookahead"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -16960,7 +17505,7 @@ single_subscript_attribute_target_rule(Parser *p)
             _res = _PyAST_Subscript ( a , b , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -16971,7 +17516,7 @@ single_subscript_attribute_target_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -16986,10 +17531,13 @@ static expr_ty t_primary_raw(Parser *);
 static expr_ty
 t_primary_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, t_primary_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
@@ -16997,37 +17545,40 @@ t_primary_rule(Parser *p)
     while (1) {
         int tmpvar_9 = _PyPegen_update_memo(p, _mark, t_primary_type, _res);
         if (tmpvar_9) {
-            D(p->level--);
+            p->level--;
             return _res;
         }
         p->mark = _mark;
-        p->in_raw_rule++;
         void *_raw = t_primary_raw(p);
-        p->in_raw_rule--;
-        if (p->error_indicator)
+        if (p->error_indicator) {
+            p->level--;
             return NULL;
+        }
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
         _res = _raw;
     }
     p->mark = _resmark;
-    D(p->level--);
+    p->level--;
     return _res;
 }
 static expr_ty
 t_primary_raw(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -17036,7 +17587,7 @@ t_primary_raw(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // t_primary '.' NAME &t_lookahead
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> t_primary[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "t_primary '.' NAME &t_lookahead"));
@@ -17056,7 +17607,7 @@ t_primary_raw(Parser *p)
             D(fprintf(stderr, "%*c+ t_primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '.' NAME &t_lookahead"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -17066,7 +17617,7 @@ t_primary_raw(Parser *p)
             _res = _PyAST_Attribute ( a , b -> v . Name . id , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17077,7 +17628,7 @@ t_primary_raw(Parser *p)
     }
     { // t_primary '[' slices ']' &t_lookahead
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> t_primary[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "t_primary '[' slices ']' &t_lookahead"));
@@ -17100,7 +17651,7 @@ t_primary_raw(Parser *p)
             D(fprintf(stderr, "%*c+ t_primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '[' slices ']' &t_lookahead"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -17110,7 +17661,7 @@ t_primary_raw(Parser *p)
             _res = _PyAST_Subscript ( a , b , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17121,7 +17672,7 @@ t_primary_raw(Parser *p)
     }
     { // t_primary genexp &t_lookahead
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> t_primary[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "t_primary genexp &t_lookahead"));
@@ -17138,7 +17689,7 @@ t_primary_raw(Parser *p)
             D(fprintf(stderr, "%*c+ t_primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary genexp &t_lookahead"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -17148,7 +17699,7 @@ t_primary_raw(Parser *p)
             _res = _PyAST_Call ( a , CHECK ( asdl_expr_seq* , ( asdl_expr_seq* ) _PyPegen_singleton_seq ( p , b ) ) , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17159,7 +17710,7 @@ t_primary_raw(Parser *p)
     }
     { // t_primary '(' arguments? ')' &t_lookahead
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> t_primary[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "t_primary '(' arguments? ')' &t_lookahead"));
@@ -17182,7 +17733,7 @@ t_primary_raw(Parser *p)
             D(fprintf(stderr, "%*c+ t_primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '(' arguments? ')' &t_lookahead"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -17192,7 +17743,7 @@ t_primary_raw(Parser *p)
             _res = _PyAST_Call ( a , ( b ) ? ( ( expr_ty ) b ) -> v . Call . args : NULL , ( b ) ? ( ( expr_ty ) b ) -> v . Call . keywords : NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17203,7 +17754,7 @@ t_primary_raw(Parser *p)
     }
     { // atom &t_lookahead
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> t_primary[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "atom &t_lookahead"));
@@ -17218,7 +17769,7 @@ t_primary_raw(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17229,7 +17780,7 @@ t_primary_raw(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -17237,16 +17788,19 @@ t_primary_raw(Parser *p)
 static void *
 t_lookahead_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '('
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> t_lookahead[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'('"));
@@ -17265,7 +17819,7 @@ t_lookahead_rule(Parser *p)
     }
     { // '['
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> t_lookahead[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'['"));
@@ -17284,7 +17838,7 @@ t_lookahead_rule(Parser *p)
     }
     { // '.'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> t_lookahead[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'.'"));
@@ -17303,7 +17857,7 @@ t_lookahead_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -17311,16 +17865,19 @@ t_lookahead_rule(Parser *p)
 static asdl_expr_seq*
 del_targets_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_expr_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.del_target+ ','?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> del_targets[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.del_target+ ','?"));
@@ -17337,7 +17894,7 @@ del_targets_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17348,7 +17905,7 @@ del_targets_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -17359,20 +17916,23 @@ del_targets_rule(Parser *p)
 static expr_ty
 del_target_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, del_target_type, &_res)) {
-        D(p->level--);
+        p->level--;
         return _res;
     }
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -17381,7 +17941,7 @@ del_target_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // t_primary '.' NAME !t_lookahead
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> del_target[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "t_primary '.' NAME !t_lookahead"));
@@ -17401,7 +17961,7 @@ del_target_rule(Parser *p)
             D(fprintf(stderr, "%*c+ del_target[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '.' NAME !t_lookahead"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -17411,7 +17971,7 @@ del_target_rule(Parser *p)
             _res = _PyAST_Attribute ( a , b -> v . Name . id , Del , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17422,7 +17982,7 @@ del_target_rule(Parser *p)
     }
     { // t_primary '[' slices ']' !t_lookahead
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> del_target[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "t_primary '[' slices ']' !t_lookahead"));
@@ -17445,7 +18005,7 @@ del_target_rule(Parser *p)
             D(fprintf(stderr, "%*c+ del_target[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '[' slices ']' !t_lookahead"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -17455,7 +18015,7 @@ del_target_rule(Parser *p)
             _res = _PyAST_Subscript ( a , b , Del , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17466,7 +18026,7 @@ del_target_rule(Parser *p)
     }
     { // del_t_atom
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> del_target[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "del_t_atom"));
@@ -17486,7 +18046,7 @@ del_target_rule(Parser *p)
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, del_target_type, _res);
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -17494,16 +18054,19 @@ del_target_rule(Parser *p)
 static expr_ty
 del_t_atom_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -17512,7 +18075,7 @@ del_t_atom_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> del_t_atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME"));
@@ -17525,7 +18088,7 @@ del_t_atom_rule(Parser *p)
             _res = _PyPegen_set_expr_context ( p , a , Del );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17536,7 +18099,7 @@ del_t_atom_rule(Parser *p)
     }
     { // '(' del_target ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> del_t_atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' del_target ')'"));
@@ -17555,7 +18118,7 @@ del_t_atom_rule(Parser *p)
             _res = _PyPegen_set_expr_context ( p , a , Del );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17566,7 +18129,7 @@ del_t_atom_rule(Parser *p)
     }
     { // '(' del_targets? ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> del_t_atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' del_targets? ')'"));
@@ -17584,7 +18147,7 @@ del_t_atom_rule(Parser *p)
             D(fprintf(stderr, "%*c+ del_t_atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' del_targets? ')'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -17594,7 +18157,7 @@ del_t_atom_rule(Parser *p)
             _res = _PyAST_Tuple ( a , Del , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17605,7 +18168,7 @@ del_t_atom_rule(Parser *p)
     }
     { // '[' del_targets? ']'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> del_t_atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'[' del_targets? ']'"));
@@ -17623,7 +18186,7 @@ del_t_atom_rule(Parser *p)
             D(fprintf(stderr, "%*c+ del_t_atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'[' del_targets? ']'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -17633,7 +18196,7 @@ del_t_atom_rule(Parser *p)
             _res = _PyAST_List ( a , Del , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17644,7 +18207,7 @@ del_t_atom_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -17659,16 +18222,19 @@ del_t_atom_rule(Parser *p)
 static asdl_expr_seq*
 type_expressions_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_expr_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.expression+ ',' '*' expression ',' '**' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> type_expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.expression+ ',' '*' expression ',' '**' expression"));
@@ -17699,7 +18265,7 @@ type_expressions_rule(Parser *p)
             _res = ( asdl_expr_seq* ) _PyPegen_seq_append_to_end ( p , CHECK ( asdl_seq* , _PyPegen_seq_append_to_end ( p , a , b ) ) , c );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17710,7 +18276,7 @@ type_expressions_rule(Parser *p)
     }
     { // ','.expression+ ',' '*' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> type_expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.expression+ ',' '*' expression"));
@@ -17732,7 +18298,7 @@ type_expressions_rule(Parser *p)
             _res = ( asdl_expr_seq* ) _PyPegen_seq_append_to_end ( p , a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17743,7 +18309,7 @@ type_expressions_rule(Parser *p)
     }
     { // ','.expression+ ',' '**' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> type_expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.expression+ ',' '**' expression"));
@@ -17765,7 +18331,7 @@ type_expressions_rule(Parser *p)
             _res = ( asdl_expr_seq* ) _PyPegen_seq_append_to_end ( p , a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17776,7 +18342,7 @@ type_expressions_rule(Parser *p)
     }
     { // '*' expression ',' '**' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> type_expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' expression ',' '**' expression"));
@@ -17801,7 +18367,7 @@ type_expressions_rule(Parser *p)
             _res = ( asdl_expr_seq* ) _PyPegen_seq_append_to_end ( p , CHECK ( asdl_seq* , _PyPegen_singleton_seq ( p , a ) ) , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17812,7 +18378,7 @@ type_expressions_rule(Parser *p)
     }
     { // '*' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> type_expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' expression"));
@@ -17828,7 +18394,7 @@ type_expressions_rule(Parser *p)
             _res = ( asdl_expr_seq* ) _PyPegen_singleton_seq ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17839,7 +18405,7 @@ type_expressions_rule(Parser *p)
     }
     { // '**' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> type_expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'**' expression"));
@@ -17855,7 +18421,7 @@ type_expressions_rule(Parser *p)
             _res = ( asdl_expr_seq* ) _PyPegen_singleton_seq ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17866,7 +18432,7 @@ type_expressions_rule(Parser *p)
     }
     { // ','.expression+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> type_expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.expression+"));
@@ -17879,7 +18445,7 @@ type_expressions_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17890,7 +18456,7 @@ type_expressions_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -17901,16 +18467,19 @@ type_expressions_rule(Parser *p)
 static Token*
 func_type_comment_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Token* _res = NULL;
     int _mark = p->mark;
     { // NEWLINE TYPE_COMMENT &(NEWLINE INDENT)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> func_type_comment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NEWLINE TYPE_COMMENT &(NEWLINE INDENT)"));
@@ -17928,7 +18497,7 @@ func_type_comment_rule(Parser *p)
             _res = t;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -17939,7 +18508,7 @@ func_type_comment_rule(Parser *p)
     }
     if (p->call_invalid_rules) { // invalid_double_type_comments
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> func_type_comment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_double_type_comments"));
@@ -17958,7 +18527,7 @@ func_type_comment_rule(Parser *p)
     }
     { // TYPE_COMMENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> func_type_comment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "TYPE_COMMENT"));
@@ -17977,7 +18546,7 @@ func_type_comment_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -17991,16 +18560,19 @@ func_type_comment_rule(Parser *p)
 static void *
 invalid_arguments_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // args ',' '*'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "args ',' '*'"));
@@ -18019,7 +18591,7 @@ invalid_arguments_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "iterable argument unpacking follows keyword argument unpacking" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18030,7 +18602,7 @@ invalid_arguments_rule(Parser *p)
     }
     { // expression for_if_clauses ',' [args | expression for_if_clauses]
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression for_if_clauses ',' [args | expression for_if_clauses]"));
@@ -18053,7 +18625,7 @@ invalid_arguments_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , PyPegen_last_item ( b , comprehension_ty ) -> target , "Generator expression must be parenthesized" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18064,7 +18636,7 @@ invalid_arguments_rule(Parser *p)
     }
     { // NAME '=' expression for_if_clauses
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME '=' expression for_if_clauses"));
@@ -18086,7 +18658,7 @@ invalid_arguments_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax. Maybe you meant '==' or ':=' instead of '='?" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18097,7 +18669,7 @@ invalid_arguments_rule(Parser *p)
     }
     { // args for_if_clauses
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "args for_if_clauses"));
@@ -18113,7 +18685,7 @@ invalid_arguments_rule(Parser *p)
             _res = _PyPegen_nonparen_genexp_in_call ( p , a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18124,7 +18696,7 @@ invalid_arguments_rule(Parser *p)
     }
     { // args ',' expression for_if_clauses
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "args ',' expression for_if_clauses"));
@@ -18146,7 +18718,7 @@ invalid_arguments_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , asdl_seq_GET ( b , b -> size - 1 ) -> target , "Generator expression must be parenthesized" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18157,7 +18729,7 @@ invalid_arguments_rule(Parser *p)
     }
     { // args ',' args
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "args ',' args"));
@@ -18176,7 +18748,7 @@ invalid_arguments_rule(Parser *p)
             _res = _PyPegen_arguments_parsing_error ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18187,7 +18759,7 @@ invalid_arguments_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -18198,16 +18770,19 @@ invalid_arguments_rule(Parser *p)
 static void *
 invalid_kwarg_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ('True' | 'False' | 'None') '='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_kwarg[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('True' | 'False' | 'None') '='"));
@@ -18223,7 +18798,7 @@ invalid_kwarg_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "cannot assign to %s" , PyBytes_AS_STRING ( a -> bytes ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18234,7 +18809,7 @@ invalid_kwarg_rule(Parser *p)
     }
     { // NAME '=' expression for_if_clauses
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_kwarg[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME '=' expression for_if_clauses"));
@@ -18256,7 +18831,7 @@ invalid_kwarg_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax. Maybe you meant '==' or ':=' instead of '='?" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18267,7 +18842,7 @@ invalid_kwarg_rule(Parser *p)
     }
     { // !(NAME '=') expression '='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_kwarg[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "!(NAME '=') expression '='"));
@@ -18285,7 +18860,7 @@ invalid_kwarg_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "expression cannot contain assignment, perhaps you meant \"==\"?" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18296,7 +18871,7 @@ invalid_kwarg_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -18307,16 +18882,23 @@ invalid_kwarg_rule(Parser *p)
 static expr_ty
 expression_without_invalid_rule(Parser *p)
 {
-    D(p->level++);
+    int _prev_call_invalid = p->call_invalid_rules;
+    p->call_invalid_rules = 0;
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->call_invalid_rules = _prev_call_invalid;
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
-        D(p->level--);
+        p->call_invalid_rules = _prev_call_invalid;
+        p->level--;
         return NULL;
     }
     int _start_lineno = p->tokens[_mark]->lineno;
@@ -18325,7 +18907,8 @@ expression_without_invalid_rule(Parser *p)
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // disjunction 'if' disjunction 'else' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->call_invalid_rules = _prev_call_invalid;
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> expression_without_invalid[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "disjunction 'if' disjunction 'else' expression"));
@@ -18349,7 +18932,8 @@ expression_without_invalid_rule(Parser *p)
             D(fprintf(stderr, "%*c+ expression_without_invalid[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "disjunction 'if' disjunction 'else' expression"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
-                D(p->level--);
+                p->call_invalid_rules = _prev_call_invalid;
+                p->level--;
                 return NULL;
             }
             int _end_lineno = _token->end_lineno;
@@ -18359,7 +18943,8 @@ expression_without_invalid_rule(Parser *p)
             _res = _PyAST_IfExp ( b , a , c , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->call_invalid_rules = _prev_call_invalid;
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18370,7 +18955,8 @@ expression_without_invalid_rule(Parser *p)
     }
     { // disjunction
         if (p->error_indicator) {
-            D(p->level--);
+            p->call_invalid_rules = _prev_call_invalid;
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> expression_without_invalid[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "disjunction"));
@@ -18389,7 +18975,8 @@ expression_without_invalid_rule(Parser *p)
     }
     { // lambdef
         if (p->error_indicator) {
-            D(p->level--);
+            p->call_invalid_rules = _prev_call_invalid;
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> expression_without_invalid[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambdef"));
@@ -18408,7 +18995,8 @@ expression_without_invalid_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->call_invalid_rules = _prev_call_invalid;
+    p->level--;
     return _res;
 }
 
@@ -18416,16 +19004,19 @@ expression_without_invalid_rule(Parser *p)
 static void *
 invalid_legacy_expression_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // NAME !'(' star_expressions
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_legacy_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME !'(' star_expressions"));
@@ -18443,7 +19034,7 @@ invalid_legacy_expression_rule(Parser *p)
             _res = _PyPegen_check_legacy_stmt ( p , a ) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "Missing parentheses in call to '%U'. Did you mean %U(...)?" , a -> v . Name . id , a -> v . Name . id ) : NULL;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18454,7 +19045,7 @@ invalid_legacy_expression_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -18464,16 +19055,19 @@ invalid_legacy_expression_rule(Parser *p)
 static void *
 invalid_expression_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // !(NAME STRING | SOFT_KEYWORD) disjunction expression_without_invalid
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "!(NAME STRING | SOFT_KEYWORD) disjunction expression_without_invalid"));
@@ -18491,7 +19085,7 @@ invalid_expression_rule(Parser *p)
             _res = _PyPegen_check_legacy_stmt ( p , a ) ? NULL : p -> tokens [p -> mark - 1] -> level == 0 ? NULL : RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax. Perhaps you forgot a comma?" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18502,7 +19096,7 @@ invalid_expression_rule(Parser *p)
     }
     { // disjunction 'if' disjunction !('else' | ':')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "disjunction 'if' disjunction !('else' | ':')"));
@@ -18523,7 +19117,7 @@ invalid_expression_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "expected 'else' after 'if' expression" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18534,7 +19128,7 @@ invalid_expression_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -18545,16 +19139,23 @@ invalid_expression_rule(Parser *p)
 static void *
 invalid_named_expression_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
+    if (_PyPegen_is_memoized(p, invalid_named_expression_type, &_res)) {
+        p->level--;
+        return _res;
+    }
     int _mark = p->mark;
     { // expression ':=' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_named_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression ':=' expression"));
@@ -18573,7 +19174,7 @@ invalid_named_expression_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use assignment expressions with %s" , _PyPegen_get_expr_name ( a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18584,7 +19185,7 @@ invalid_named_expression_rule(Parser *p)
     }
     { // NAME '=' bitwise_or !('=' | ':=')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_named_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME '=' bitwise_or !('=' | ':=')"));
@@ -18602,10 +19203,10 @@ invalid_named_expression_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME '=' bitwise_or !('=' | ':=')"));
-            _res = p -> in_raw_rule ? NULL : RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax. Maybe you meant '==' or ':=' instead of '='?" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax. Maybe you meant '==' or ':=' instead of '='?" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18616,7 +19217,7 @@ invalid_named_expression_rule(Parser *p)
     }
     { // !(list | tuple | genexp | 'True' | 'None' | 'False') bitwise_or '=' bitwise_or !('=' | ':=')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_named_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "!(list | tuple | genexp | 'True' | 'None' | 'False') bitwise_or '=' bitwise_or !('=' | ':=')"));
@@ -18636,10 +19237,10 @@ invalid_named_expression_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "!(list | tuple | genexp | 'True' | 'None' | 'False') bitwise_or '=' bitwise_or !('=' | ':=')"));
-            _res = p -> in_raw_rule ? NULL : RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot assign to %s here. Maybe you meant '==' instead of '='?" , _PyPegen_get_expr_name ( a ) );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot assign to %s here. Maybe you meant '==' instead of '='?" , _PyPegen_get_expr_name ( a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18650,7 +19251,8 @@ invalid_named_expression_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    _PyPegen_insert_memo(p, _mark, invalid_named_expression_type, _res);
+    p->level--;
     return _res;
 }
 
@@ -18664,16 +19266,19 @@ invalid_named_expression_rule(Parser *p)
 static void *
 invalid_assignment_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // invalid_ann_assign_target ':' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_ann_assign_target ':' expression"));
@@ -18692,7 +19297,7 @@ invalid_assignment_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "only single target (not %s) can be annotated" , _PyPegen_get_expr_name ( a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18703,7 +19308,7 @@ invalid_assignment_rule(Parser *p)
     }
     { // star_named_expression ',' star_named_expressions* ':' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_named_expression ',' star_named_expressions* ':' expression"));
@@ -18728,7 +19333,7 @@ invalid_assignment_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "only single target (not tuple) can be annotated" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18739,7 +19344,7 @@ invalid_assignment_rule(Parser *p)
     }
     { // expression ':' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression ':' expression"));
@@ -18758,7 +19363,7 @@ invalid_assignment_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "illegal target for annotation" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18769,7 +19374,7 @@ invalid_assignment_rule(Parser *p)
     }
     { // ((star_targets '='))* star_expressions '='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "((star_targets '='))* star_expressions '='"));
@@ -18788,7 +19393,7 @@ invalid_assignment_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_INVALID_TARGET ( STAR_TARGETS , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18799,7 +19404,7 @@ invalid_assignment_rule(Parser *p)
     }
     { // ((star_targets '='))* yield_expr '='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "((star_targets '='))* yield_expr '='"));
@@ -18818,7 +19423,7 @@ invalid_assignment_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "assignment to yield expression not possible" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18829,7 +19434,7 @@ invalid_assignment_rule(Parser *p)
     }
     { // star_expressions augassign (yield_expr | star_expressions)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expressions augassign (yield_expr | star_expressions)"));
@@ -18848,7 +19453,7 @@ invalid_assignment_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "'%s' is an illegal expression for augmented assignment" , _PyPegen_get_expr_name ( a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18859,7 +19464,7 @@ invalid_assignment_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -18867,16 +19472,19 @@ invalid_assignment_rule(Parser *p)
 static expr_ty
 invalid_ann_assign_target_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // list
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_ann_assign_target[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "list"));
@@ -18895,7 +19503,7 @@ invalid_ann_assign_target_rule(Parser *p)
     }
     { // tuple
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_ann_assign_target[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "tuple"));
@@ -18914,7 +19522,7 @@ invalid_ann_assign_target_rule(Parser *p)
     }
     { // '(' invalid_ann_assign_target ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_ann_assign_target[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' invalid_ann_assign_target ')'"));
@@ -18933,7 +19541,7 @@ invalid_ann_assign_target_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18944,7 +19552,7 @@ invalid_ann_assign_target_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -18952,16 +19560,19 @@ invalid_ann_assign_target_rule(Parser *p)
 static void *
 invalid_del_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'del' star_expressions
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_del_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'del' star_expressions"));
@@ -18977,7 +19588,7 @@ invalid_del_stmt_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_INVALID_TARGET ( DEL_TARGETS , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -18988,7 +19599,7 @@ invalid_del_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -18996,16 +19607,19 @@ invalid_del_stmt_rule(Parser *p)
 static void *
 invalid_block_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NEWLINE !INDENT"));
@@ -19020,7 +19634,7 @@ invalid_block_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19031,7 +19645,7 @@ invalid_block_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -19042,16 +19656,19 @@ invalid_block_rule(Parser *p)
 static void *
 invalid_comprehension_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ('[' | '(' | '{') starred_expression for_if_clauses
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_comprehension[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('[' | '(' | '{') starred_expression for_if_clauses"));
@@ -19070,7 +19687,7 @@ invalid_comprehension_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "iterable unpacking cannot be used in comprehension" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19081,7 +19698,7 @@ invalid_comprehension_rule(Parser *p)
     }
     { // ('[' | '{') star_named_expression ',' star_named_expressions for_if_clauses
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_comprehension[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('[' | '{') star_named_expression ',' star_named_expressions for_if_clauses"));
@@ -19106,7 +19723,7 @@ invalid_comprehension_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , PyPegen_last_item ( b , expr_ty ) , "did you forget parentheses around the comprehension target?" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19117,7 +19734,7 @@ invalid_comprehension_rule(Parser *p)
     }
     { // ('[' | '{') star_named_expression ',' for_if_clauses
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_comprehension[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('[' | '{') star_named_expression ',' for_if_clauses"));
@@ -19139,7 +19756,7 @@ invalid_comprehension_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "did you forget parentheses around the comprehension target?" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19150,7 +19767,7 @@ invalid_comprehension_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -19158,16 +19775,19 @@ invalid_comprehension_rule(Parser *p)
 static void *
 invalid_dict_comprehension_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '{' '**' bitwise_or for_if_clauses '}'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_dict_comprehension[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' '**' bitwise_or for_if_clauses '}'"));
@@ -19192,7 +19812,7 @@ invalid_dict_comprehension_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "dict unpacking cannot be used in dict comprehension" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19203,7 +19823,7 @@ invalid_dict_comprehension_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -19213,16 +19833,19 @@ invalid_dict_comprehension_rule(Parser *p)
 static void *
 invalid_parameters_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // param_no_default* invalid_parameters_helper param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default* invalid_parameters_helper param_no_default"));
@@ -19241,7 +19864,7 @@ invalid_parameters_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "non-default argument follows default argument" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19252,7 +19875,7 @@ invalid_parameters_rule(Parser *p)
     }
     { // param_no_default* '(' param_no_default+ ','? ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default* '(' param_no_default+ ','? ')'"));
@@ -19278,7 +19901,7 @@ invalid_parameters_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "Function parameters cannot be parenthesized" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19289,7 +19912,7 @@ invalid_parameters_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -19297,16 +19920,19 @@ invalid_parameters_rule(Parser *p)
 static void *
 invalid_parameters_helper_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // slash_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_parameters_helper[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "slash_with_default"));
@@ -19319,7 +19945,7 @@ invalid_parameters_helper_rule(Parser *p)
             _res = _PyPegen_singleton_seq ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19330,7 +19956,7 @@ invalid_parameters_helper_rule(Parser *p)
     }
     { // param_with_default+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_parameters_helper[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_with_default+"));
@@ -19349,7 +19975,7 @@ invalid_parameters_helper_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -19359,16 +19985,19 @@ invalid_parameters_helper_rule(Parser *p)
 static void *
 invalid_lambda_parameters_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // lambda_param_no_default* invalid_lambda_parameters_helper lambda_param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_lambda_parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default* invalid_lambda_parameters_helper lambda_param_no_default"));
@@ -19387,7 +20016,7 @@ invalid_lambda_parameters_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "non-default argument follows default argument" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19398,7 +20027,7 @@ invalid_lambda_parameters_rule(Parser *p)
     }
     { // lambda_param_no_default* '(' ','.lambda_param+ ','? ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_lambda_parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default* '(' ','.lambda_param+ ','? ')'"));
@@ -19424,7 +20053,7 @@ invalid_lambda_parameters_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "Lambda expression parameters cannot be parenthesized" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19435,7 +20064,7 @@ invalid_lambda_parameters_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -19445,16 +20074,19 @@ invalid_lambda_parameters_rule(Parser *p)
 static void *
 invalid_lambda_parameters_helper_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // lambda_slash_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_lambda_parameters_helper[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_slash_with_default"));
@@ -19467,7 +20099,7 @@ invalid_lambda_parameters_helper_rule(Parser *p)
             _res = _PyPegen_singleton_seq ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19478,7 +20110,7 @@ invalid_lambda_parameters_helper_rule(Parser *p)
     }
     { // lambda_param_with_default+
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_lambda_parameters_helper[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_with_default+"));
@@ -19497,7 +20129,7 @@ invalid_lambda_parameters_helper_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -19505,16 +20137,19 @@ invalid_lambda_parameters_helper_rule(Parser *p)
 static void *
 invalid_star_etc_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '*' (')' | ',' (')' | '**'))
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_star_etc[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' (')' | ',' (')' | '**'))"));
@@ -19530,7 +20165,7 @@ invalid_star_etc_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "named arguments must follow bare *" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19541,7 +20176,7 @@ invalid_star_etc_rule(Parser *p)
     }
     { // '*' ',' TYPE_COMMENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_star_etc[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' ',' TYPE_COMMENT"));
@@ -19560,7 +20195,7 @@ invalid_star_etc_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR ( "bare * has associated type comment" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19571,7 +20206,7 @@ invalid_star_etc_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -19579,16 +20214,19 @@ invalid_star_etc_rule(Parser *p)
 static void *
 invalid_lambda_star_etc_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '*' (':' | ',' (':' | '**'))
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_lambda_star_etc[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' (':' | ',' (':' | '**'))"));
@@ -19604,7 +20242,7 @@ invalid_lambda_star_etc_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR ( "named arguments must follow bare *" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19615,7 +20253,7 @@ invalid_lambda_star_etc_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -19623,16 +20261,19 @@ invalid_lambda_star_etc_rule(Parser *p)
 static void *
 invalid_double_type_comments_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_double_type_comments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT"));
@@ -19657,7 +20298,7 @@ invalid_double_type_comments_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR ( "Cannot have two type comments on def" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19668,7 +20309,7 @@ invalid_double_type_comments_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -19676,16 +20317,19 @@ invalid_double_type_comments_rule(Parser *p)
 static void *
 invalid_with_item_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // expression 'as' expression &(',' | ')' | ':')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_with_item[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression 'as' expression &(',' | ')' | ':')"));
@@ -19706,7 +20350,7 @@ invalid_with_item_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_INVALID_TARGET ( STAR_TARGETS , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19717,7 +20361,7 @@ invalid_with_item_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -19725,16 +20369,19 @@ invalid_with_item_rule(Parser *p)
 static void *
 invalid_for_target_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ASYNC? 'for' star_expressions
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_for_target[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC? 'for' star_expressions"));
@@ -19754,7 +20401,7 @@ invalid_for_target_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_INVALID_TARGET ( FOR_TARGETS , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19765,7 +20412,7 @@ invalid_for_target_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -19773,16 +20420,19 @@ invalid_for_target_rule(Parser *p)
 static void *
 invalid_group_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '(' starred_expression ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_group[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' starred_expression ')'"));
@@ -19801,7 +20451,7 @@ invalid_group_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use starred expression here" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19812,7 +20462,7 @@ invalid_group_rule(Parser *p)
     }
     { // '(' '**' expression ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_group[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' '**' expression ')'"));
@@ -19834,7 +20484,7 @@ invalid_group_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use double starred expression here" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19845,7 +20495,7 @@ invalid_group_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -19853,16 +20503,19 @@ invalid_group_rule(Parser *p)
 static void *
 invalid_import_from_targets_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // import_from_as_names ',' NEWLINE
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_import_from_targets[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "import_from_as_names ',' NEWLINE"));
@@ -19881,7 +20534,7 @@ invalid_import_from_targets_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR ( "trailing comma not allowed without surrounding parentheses" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -19892,7 +20545,7 @@ invalid_import_from_targets_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -19902,16 +20555,19 @@ invalid_import_from_targets_rule(Parser *p)
 static void *
 invalid_with_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ASYNC? 'with' ','.(expression ['as' star_target])+ &&':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_with_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC? 'with' ','.(expression ['as' star_target])+ &&':'"));
@@ -19940,7 +20596,7 @@ invalid_with_stmt_rule(Parser *p)
     }
     { // ASYNC? 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' &&':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_with_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC? 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' &&':'"));
@@ -19979,7 +20635,7 @@ invalid_with_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -19989,16 +20645,19 @@ invalid_with_stmt_rule(Parser *p)
 static void *
 invalid_with_stmt_indent_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ASYNC? 'with' ','.(expression ['as' star_target])+ ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_with_stmt_indent[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC? 'with' ','.(expression ['as' star_target])+ ':' NEWLINE !INDENT"));
@@ -20026,7 +20685,7 @@ invalid_with_stmt_indent_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'with' statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20037,7 +20696,7 @@ invalid_with_stmt_indent_rule(Parser *p)
     }
     { // ASYNC? 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_with_stmt_indent[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC? 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' ':' NEWLINE !INDENT"));
@@ -20075,7 +20734,7 @@ invalid_with_stmt_indent_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'with' statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20086,7 +20745,7 @@ invalid_with_stmt_indent_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -20097,16 +20756,19 @@ invalid_with_stmt_indent_rule(Parser *p)
 static void *
 invalid_try_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'try' ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_try_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'try' ':' NEWLINE !INDENT"));
@@ -20127,7 +20789,7 @@ invalid_try_stmt_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'try' statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20138,7 +20800,7 @@ invalid_try_stmt_rule(Parser *p)
     }
     { // 'try' ':' block !('except' | 'finally')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_try_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'try' ':' block !('except' | 'finally')"));
@@ -20159,7 +20821,7 @@ invalid_try_stmt_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR ( "expected 'except' or 'finally' block" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20170,7 +20832,7 @@ invalid_try_stmt_rule(Parser *p)
     }
     { // 'try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block*
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_try_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block*"));
@@ -20195,7 +20857,7 @@ invalid_try_stmt_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR ( "cannot have both 'except' and 'except*' on the same 'try'" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20206,7 +20868,7 @@ invalid_try_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -20218,16 +20880,19 @@ invalid_try_stmt_rule(Parser *p)
 static void *
 invalid_except_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'except' '*'? expression ',' expressions ['as' NAME] ':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_except_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' '*'? expression ',' expressions ['as' NAME] ':'"));
@@ -20260,7 +20925,7 @@ invalid_except_stmt_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "multiple exception types must be parenthesized" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20271,7 +20936,7 @@ invalid_except_stmt_rule(Parser *p)
     }
     { // 'except' '*'? expression ['as' NAME] NEWLINE
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_except_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' '*'? expression ['as' NAME] NEWLINE"));
@@ -20298,7 +20963,7 @@ invalid_except_stmt_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR ( "expected ':'" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20309,7 +20974,7 @@ invalid_except_stmt_rule(Parser *p)
     }
     { // 'except' NEWLINE
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_except_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' NEWLINE"));
@@ -20325,7 +20990,7 @@ invalid_except_stmt_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR ( "expected ':'" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20336,7 +21001,7 @@ invalid_except_stmt_rule(Parser *p)
     }
     { // 'except' '*' (NEWLINE | ':')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_except_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' '*' (NEWLINE | ':')"));
@@ -20355,7 +21020,7 @@ invalid_except_stmt_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR ( "expected one or more exception types" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20366,7 +21031,7 @@ invalid_except_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -20374,16 +21039,19 @@ invalid_except_stmt_rule(Parser *p)
 static void *
 invalid_finally_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'finally' ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_finally_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'finally' ':' NEWLINE !INDENT"));
@@ -20404,7 +21072,7 @@ invalid_finally_stmt_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'finally' statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20415,7 +21083,7 @@ invalid_finally_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -20425,16 +21093,19 @@ invalid_finally_stmt_rule(Parser *p)
 static void *
 invalid_except_stmt_indent_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'except' expression ['as' NAME] ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_except_stmt_indent[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' expression ['as' NAME] ':' NEWLINE !INDENT"));
@@ -20462,7 +21133,7 @@ invalid_except_stmt_indent_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'except' statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20473,7 +21144,7 @@ invalid_except_stmt_indent_rule(Parser *p)
     }
     { // 'except' ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_except_stmt_indent[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' ':' NEWLINE !INDENT"));
@@ -20494,7 +21165,7 @@ invalid_except_stmt_indent_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR ( "expected an indented block after except statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20505,7 +21176,7 @@ invalid_except_stmt_indent_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -20514,16 +21185,19 @@ invalid_except_stmt_indent_rule(Parser *p)
 static void *
 invalid_except_star_stmt_indent_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'except' '*' expression ['as' NAME] ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_except_star_stmt_indent[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' '*' expression ['as' NAME] ':' NEWLINE !INDENT"));
@@ -20554,7 +21228,7 @@ invalid_except_star_stmt_indent_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'except*' statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20565,7 +21239,7 @@ invalid_except_star_stmt_indent_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -20575,16 +21249,19 @@ invalid_except_star_stmt_indent_rule(Parser *p)
 static void *
 invalid_match_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // "match" subject_expr !':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_match_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"match\" subject_expr !':'"));
@@ -20602,7 +21279,7 @@ invalid_match_stmt_rule(Parser *p)
             _res = CHECK_VERSION ( void* , 10 , "Pattern matching is" , RAISE_SYNTAX_ERROR ( "expected ':'" ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20613,7 +21290,7 @@ invalid_match_stmt_rule(Parser *p)
     }
     { // "match" subject_expr ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_match_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"match\" subject_expr ':' NEWLINE !INDENT"));
@@ -20637,7 +21314,7 @@ invalid_match_stmt_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'match' statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20648,7 +21325,7 @@ invalid_match_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -20658,16 +21335,19 @@ invalid_match_stmt_rule(Parser *p)
 static void *
 invalid_case_block_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // "case" patterns guard? !':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_case_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"case\" patterns guard? !':'"));
@@ -20689,7 +21369,7 @@ invalid_case_block_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR ( "expected ':'" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20700,7 +21380,7 @@ invalid_case_block_rule(Parser *p)
     }
     { // "case" patterns guard? ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_case_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"case\" patterns guard? ':' NEWLINE !INDENT"));
@@ -20728,7 +21408,7 @@ invalid_case_block_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'case' statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20739,7 +21419,7 @@ invalid_case_block_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -20747,16 +21427,19 @@ invalid_case_block_rule(Parser *p)
 static void *
 invalid_as_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // or_pattern 'as' "_"
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_as_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "or_pattern 'as' \"_\""));
@@ -20775,7 +21458,7 @@ invalid_as_pattern_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use '_' as a target" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20786,7 +21469,7 @@ invalid_as_pattern_rule(Parser *p)
     }
     { // or_pattern 'as' !NAME expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_as_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "or_pattern 'as' !NAME expression"));
@@ -20807,7 +21490,7 @@ invalid_as_pattern_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "invalid pattern target" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20818,7 +21501,7 @@ invalid_as_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -20826,16 +21509,19 @@ invalid_as_pattern_rule(Parser *p)
 static void *
 invalid_class_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // name_or_attr '(' invalid_class_argument_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_class_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' invalid_class_argument_pattern"));
@@ -20854,7 +21540,7 @@ invalid_class_pattern_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( PyPegen_first_item ( a , pattern_ty ) , PyPegen_last_item ( a , pattern_ty ) , "positional patterns follow keyword patterns" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20865,7 +21551,7 @@ invalid_class_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -20874,16 +21560,19 @@ invalid_class_pattern_rule(Parser *p)
 static asdl_pattern_seq*
 invalid_class_argument_pattern_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_pattern_seq* _res = NULL;
     int _mark = p->mark;
     { // [positional_patterns ','] keyword_patterns ',' positional_patterns
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_class_argument_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "[positional_patterns ','] keyword_patterns ',' positional_patterns"));
@@ -20906,7 +21595,7 @@ invalid_class_argument_pattern_rule(Parser *p)
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20917,7 +21606,7 @@ invalid_class_argument_pattern_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -20927,16 +21616,19 @@ invalid_class_argument_pattern_rule(Parser *p)
 static void *
 invalid_if_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'if' named_expression NEWLINE
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_if_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'if' named_expression NEWLINE"));
@@ -20955,7 +21647,7 @@ invalid_if_stmt_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR ( "expected ':'" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -20966,7 +21658,7 @@ invalid_if_stmt_rule(Parser *p)
     }
     { // 'if' named_expression ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_if_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'if' named_expression ':' NEWLINE !INDENT"));
@@ -20990,7 +21682,7 @@ invalid_if_stmt_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'if' statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -21001,7 +21693,7 @@ invalid_if_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -21011,16 +21703,19 @@ invalid_if_stmt_rule(Parser *p)
 static void *
 invalid_elif_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'elif' named_expression NEWLINE
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_elif_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'elif' named_expression NEWLINE"));
@@ -21039,7 +21734,7 @@ invalid_elif_stmt_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR ( "expected ':'" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -21050,7 +21745,7 @@ invalid_elif_stmt_rule(Parser *p)
     }
     { // 'elif' named_expression ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_elif_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'elif' named_expression ':' NEWLINE !INDENT"));
@@ -21074,7 +21769,7 @@ invalid_elif_stmt_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'elif' statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -21085,7 +21780,7 @@ invalid_elif_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -21093,16 +21788,19 @@ invalid_elif_stmt_rule(Parser *p)
 static void *
 invalid_else_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'else' ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_else_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'else' ':' NEWLINE !INDENT"));
@@ -21123,7 +21821,7 @@ invalid_else_stmt_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'else' statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -21134,7 +21832,7 @@ invalid_else_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -21144,16 +21842,19 @@ invalid_else_stmt_rule(Parser *p)
 static void *
 invalid_while_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'while' named_expression NEWLINE
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_while_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'while' named_expression NEWLINE"));
@@ -21172,7 +21873,7 @@ invalid_while_stmt_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR ( "expected ':'" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -21183,7 +21884,7 @@ invalid_while_stmt_rule(Parser *p)
     }
     { // 'while' named_expression ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_while_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'while' named_expression ':' NEWLINE !INDENT"));
@@ -21207,7 +21908,7 @@ invalid_while_stmt_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'while' statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -21218,7 +21919,7 @@ invalid_while_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -21226,16 +21927,19 @@ invalid_while_stmt_rule(Parser *p)
 static void *
 invalid_for_stmt_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ASYNC? 'for' star_targets 'in' star_expressions ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_for_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC? 'for' star_targets 'in' star_expressions ':' NEWLINE !INDENT"));
@@ -21269,7 +21973,7 @@ invalid_for_stmt_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'for' statement on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -21280,7 +21984,7 @@ invalid_for_stmt_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -21289,16 +21993,19 @@ invalid_for_stmt_rule(Parser *p)
 static void *
 invalid_def_raw_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ASYNC? 'def' NAME '(' params? ')' ['->' expression] ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_def_raw[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC? 'def' NAME '(' params? ')' ['->' expression] ':' NEWLINE !INDENT"));
@@ -21340,7 +22047,7 @@ invalid_def_raw_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after function definition on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -21351,7 +22058,7 @@ invalid_def_raw_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -21359,16 +22066,19 @@ invalid_def_raw_rule(Parser *p)
 static void *
 invalid_class_def_raw_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'class' NAME ['(' arguments? ')'] ':' NEWLINE !INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_class_def_raw[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'class' NAME ['(' arguments? ')'] ':' NEWLINE !INDENT"));
@@ -21396,7 +22106,7 @@ invalid_class_def_raw_rule(Parser *p)
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after class definition on line %d" , a -> lineno );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -21407,7 +22117,7 @@ invalid_class_def_raw_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -21418,16 +22128,19 @@ invalid_class_def_raw_rule(Parser *p)
 static void *
 invalid_double_starred_kvpairs_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ','.double_starred_kvpair+ ',' invalid_kvpair
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_double_starred_kvpairs[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.double_starred_kvpair+ ',' invalid_kvpair"));
@@ -21452,7 +22165,7 @@ invalid_double_starred_kvpairs_rule(Parser *p)
     }
     { // expression ':' '*' bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_double_starred_kvpairs[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression ':' '*' bitwise_or"));
@@ -21474,7 +22187,7 @@ invalid_double_starred_kvpairs_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "cannot use a starred expression in a dictionary value" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -21485,7 +22198,7 @@ invalid_double_starred_kvpairs_rule(Parser *p)
     }
     { // expression ':' &('}' | ',')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_double_starred_kvpairs[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression ':' &('}' | ',')"));
@@ -21503,7 +22216,7 @@ invalid_double_starred_kvpairs_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "expression expected after dictionary key and ':'" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -21514,7 +22227,7 @@ invalid_double_starred_kvpairs_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -21522,16 +22235,19 @@ invalid_double_starred_kvpairs_rule(Parser *p)
 static void *
 invalid_kvpair_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // expression !(':')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_kvpair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression !(':')"));
@@ -21546,7 +22262,7 @@ invalid_kvpair_rule(Parser *p)
             _res = RAISE_ERROR_KNOWN_LOCATION ( p , PyExc_SyntaxError , a -> lineno , a -> end_col_offset - 1 , a -> end_lineno , - 1 , "':' expected after dictionary key" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -21557,7 +22273,7 @@ invalid_kvpair_rule(Parser *p)
     }
     { // expression ':' '*' bitwise_or
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_kvpair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression ':' '*' bitwise_or"));
@@ -21579,7 +22295,7 @@ invalid_kvpair_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "cannot use a starred expression in a dictionary value" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -21590,7 +22306,7 @@ invalid_kvpair_rule(Parser *p)
     }
     { // expression ':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_kvpair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression ':'"));
@@ -21606,7 +22322,7 @@ invalid_kvpair_rule(Parser *p)
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "expression expected after dictionary key and ':'" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -21617,7 +22333,7 @@ invalid_kvpair_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -21625,9 +22341,12 @@ invalid_kvpair_rule(Parser *p)
 static asdl_seq *
 _loop0_1_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -21637,14 +22356,14 @@ _loop0_1_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // NEWLINE
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_1[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NEWLINE"));
@@ -21660,7 +22379,7 @@ _loop0_1_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -21677,13 +22396,13 @@ _loop0_1_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_1_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -21691,9 +22410,12 @@ _loop0_1_rule(Parser *p)
 static asdl_seq *
 _loop0_2_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -21703,14 +22425,14 @@ _loop0_2_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // NEWLINE
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_2[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NEWLINE"));
@@ -21726,7 +22448,7 @@ _loop0_2_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -21743,13 +22465,13 @@ _loop0_2_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_2_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -21757,9 +22479,12 @@ _loop0_2_rule(Parser *p)
 static asdl_seq *
 _loop1_3_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -21769,14 +22494,14 @@ _loop1_3_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // statement
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_3[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "statement"));
@@ -21792,7 +22517,7 @@ _loop1_3_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -21806,7 +22531,7 @@ _loop1_3_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -21814,13 +22539,13 @@ _loop1_3_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_3_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -21828,9 +22553,12 @@ _loop1_3_rule(Parser *p)
 static asdl_seq *
 _loop0_5_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -21840,14 +22568,14 @@ _loop0_5_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ';' simple_stmt
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_5[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "';' simple_stmt"));
@@ -21863,7 +22591,7 @@ _loop0_5_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -21872,7 +22600,7 @@ _loop0_5_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -21889,13 +22617,13 @@ _loop0_5_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_5_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -21903,16 +22631,19 @@ _loop0_5_rule(Parser *p)
 static asdl_seq *
 _gather_4_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // simple_stmt _loop0_5
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_4[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "simple_stmt _loop0_5"));
@@ -21934,7 +22665,7 @@ _gather_4_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -21942,16 +22673,19 @@ _gather_4_rule(Parser *p)
 static void *
 _tmp_6_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'import'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_6[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'import'"));
@@ -21970,7 +22704,7 @@ _tmp_6_rule(Parser *p)
     }
     { // 'from'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_6[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'from'"));
@@ -21989,7 +22723,7 @@ _tmp_6_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -21997,16 +22731,19 @@ _tmp_6_rule(Parser *p)
 static void *
 _tmp_7_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'def'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_7[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'def'"));
@@ -22025,7 +22762,7 @@ _tmp_7_rule(Parser *p)
     }
     { // '@'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_7[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'@'"));
@@ -22044,7 +22781,7 @@ _tmp_7_rule(Parser *p)
     }
     { // ASYNC
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_7[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC"));
@@ -22063,7 +22800,7 @@ _tmp_7_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -22071,16 +22808,19 @@ _tmp_7_rule(Parser *p)
 static void *
 _tmp_8_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'class'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_8[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'class'"));
@@ -22099,7 +22839,7 @@ _tmp_8_rule(Parser *p)
     }
     { // '@'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_8[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'@'"));
@@ -22118,7 +22858,7 @@ _tmp_8_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -22126,16 +22866,19 @@ _tmp_8_rule(Parser *p)
 static void *
 _tmp_9_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'with'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_9[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'with'"));
@@ -22154,7 +22897,7 @@ _tmp_9_rule(Parser *p)
     }
     { // ASYNC
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_9[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC"));
@@ -22173,7 +22916,7 @@ _tmp_9_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -22181,16 +22924,19 @@ _tmp_9_rule(Parser *p)
 static void *
 _tmp_10_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'for'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_10[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'for'"));
@@ -22209,7 +22955,7 @@ _tmp_10_rule(Parser *p)
     }
     { // ASYNC
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_10[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC"));
@@ -22228,7 +22974,7 @@ _tmp_10_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -22236,16 +22982,19 @@ _tmp_10_rule(Parser *p)
 static void *
 _tmp_11_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '=' annotated_rhs
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_11[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'=' annotated_rhs"));
@@ -22261,7 +23010,7 @@ _tmp_11_rule(Parser *p)
             _res = d;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -22272,7 +23021,7 @@ _tmp_11_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -22280,16 +23029,19 @@ _tmp_11_rule(Parser *p)
 static void *
 _tmp_12_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '(' single_target ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_12[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' single_target ')'"));
@@ -22308,7 +23060,7 @@ _tmp_12_rule(Parser *p)
             _res = b;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -22319,7 +23071,7 @@ _tmp_12_rule(Parser *p)
     }
     { // single_subscript_attribute_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_12[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "single_subscript_attribute_target"));
@@ -22338,7 +23090,7 @@ _tmp_12_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -22346,16 +23098,19 @@ _tmp_12_rule(Parser *p)
 static void *
 _tmp_13_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '=' annotated_rhs
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_13[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'=' annotated_rhs"));
@@ -22371,7 +23126,7 @@ _tmp_13_rule(Parser *p)
             _res = d;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -22382,7 +23137,7 @@ _tmp_13_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -22390,9 +23145,12 @@ _tmp_13_rule(Parser *p)
 static asdl_seq *
 _loop1_14_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -22402,14 +23160,14 @@ _loop1_14_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // (star_targets '=')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_14[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(star_targets '=')"));
@@ -22425,7 +23183,7 @@ _loop1_14_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -22439,7 +23197,7 @@ _loop1_14_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -22447,13 +23205,13 @@ _loop1_14_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_14_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -22461,16 +23219,19 @@ _loop1_14_rule(Parser *p)
 static void *
 _tmp_15_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // yield_expr
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_15[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "yield_expr"));
@@ -22489,7 +23250,7 @@ _tmp_15_rule(Parser *p)
     }
     { // star_expressions
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_15[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expressions"));
@@ -22508,7 +23269,7 @@ _tmp_15_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -22516,16 +23277,19 @@ _tmp_15_rule(Parser *p)
 static void *
 _tmp_16_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // yield_expr
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_16[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "yield_expr"));
@@ -22544,7 +23308,7 @@ _tmp_16_rule(Parser *p)
     }
     { // star_expressions
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_16[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expressions"));
@@ -22563,7 +23327,7 @@ _tmp_16_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -22571,16 +23335,19 @@ _tmp_16_rule(Parser *p)
 static void *
 _tmp_17_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'from' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_17[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'from' expression"));
@@ -22596,7 +23363,7 @@ _tmp_17_rule(Parser *p)
             _res = z;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -22607,7 +23374,7 @@ _tmp_17_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -22615,9 +23382,12 @@ _tmp_17_rule(Parser *p)
 static asdl_seq *
 _loop0_19_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -22627,14 +23397,14 @@ _loop0_19_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_19[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' NAME"));
@@ -22650,7 +23420,7 @@ _loop0_19_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -22659,7 +23429,7 @@ _loop0_19_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -22676,13 +23446,13 @@ _loop0_19_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_19_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -22690,16 +23460,19 @@ _loop0_19_rule(Parser *p)
 static asdl_seq *
 _gather_18_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // NAME _loop0_19
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_18[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME _loop0_19"));
@@ -22721,7 +23494,7 @@ _gather_18_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -22729,9 +23502,12 @@ _gather_18_rule(Parser *p)
 static asdl_seq *
 _loop0_21_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -22741,14 +23517,14 @@ _loop0_21_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_21[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' NAME"));
@@ -22764,7 +23540,7 @@ _loop0_21_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -22773,7 +23549,7 @@ _loop0_21_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -22790,13 +23566,13 @@ _loop0_21_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_21_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -22804,16 +23580,19 @@ _loop0_21_rule(Parser *p)
 static asdl_seq *
 _gather_20_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // NAME _loop0_21
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_20[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME _loop0_21"));
@@ -22835,7 +23614,7 @@ _gather_20_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -22843,16 +23622,19 @@ _gather_20_rule(Parser *p)
 static void *
 _tmp_22_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ';'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_22[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "';'"));
@@ -22871,7 +23653,7 @@ _tmp_22_rule(Parser *p)
     }
     { // NEWLINE
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_22[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NEWLINE"));
@@ -22890,7 +23672,7 @@ _tmp_22_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -22898,16 +23680,19 @@ _tmp_22_rule(Parser *p)
 static void *
 _tmp_23_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ',' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_23[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' expression"));
@@ -22923,7 +23708,7 @@ _tmp_23_rule(Parser *p)
             _res = z;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -22934,7 +23719,7 @@ _tmp_23_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -22942,9 +23727,12 @@ _tmp_23_rule(Parser *p)
 static asdl_seq *
 _loop0_24_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -22954,14 +23742,14 @@ _loop0_24_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ('.' | '...')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_24[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('.' | '...')"));
@@ -22977,7 +23765,7 @@ _loop0_24_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -22994,13 +23782,13 @@ _loop0_24_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_24_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -23008,9 +23796,12 @@ _loop0_24_rule(Parser *p)
 static asdl_seq *
 _loop1_25_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -23020,14 +23811,14 @@ _loop1_25_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ('.' | '...')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_25[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('.' | '...')"));
@@ -23043,7 +23834,7 @@ _loop1_25_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -23057,7 +23848,7 @@ _loop1_25_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -23065,13 +23856,13 @@ _loop1_25_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_25_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -23079,9 +23870,12 @@ _loop1_25_rule(Parser *p)
 static asdl_seq *
 _loop0_27_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -23091,14 +23885,14 @@ _loop0_27_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' import_from_as_name
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_27[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' import_from_as_name"));
@@ -23114,7 +23908,7 @@ _loop0_27_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -23123,7 +23917,7 @@ _loop0_27_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -23140,13 +23934,13 @@ _loop0_27_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_27_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -23154,16 +23948,19 @@ _loop0_27_rule(Parser *p)
 static asdl_seq *
 _gather_26_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // import_from_as_name _loop0_27
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_26[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "import_from_as_name _loop0_27"));
@@ -23185,7 +23982,7 @@ _gather_26_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -23193,16 +23990,19 @@ _gather_26_rule(Parser *p)
 static void *
 _tmp_28_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'as' NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_28[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'as' NAME"));
@@ -23218,7 +24018,7 @@ _tmp_28_rule(Parser *p)
             _res = z;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -23229,7 +24029,7 @@ _tmp_28_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -23237,9 +24037,12 @@ _tmp_28_rule(Parser *p)
 static asdl_seq *
 _loop0_30_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -23249,14 +24052,14 @@ _loop0_30_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' dotted_as_name
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_30[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' dotted_as_name"));
@@ -23272,7 +24075,7 @@ _loop0_30_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -23281,7 +24084,7 @@ _loop0_30_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -23298,13 +24101,13 @@ _loop0_30_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_30_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -23312,16 +24115,19 @@ _loop0_30_rule(Parser *p)
 static asdl_seq *
 _gather_29_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // dotted_as_name _loop0_30
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_29[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "dotted_as_name _loop0_30"));
@@ -23343,7 +24149,7 @@ _gather_29_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -23351,16 +24157,19 @@ _gather_29_rule(Parser *p)
 static void *
 _tmp_31_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'as' NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_31[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'as' NAME"));
@@ -23376,7 +24185,7 @@ _tmp_31_rule(Parser *p)
             _res = z;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -23387,7 +24196,7 @@ _tmp_31_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -23395,9 +24204,12 @@ _tmp_31_rule(Parser *p)
 static asdl_seq *
 _loop1_32_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -23407,14 +24219,14 @@ _loop1_32_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ('@' named_expression NEWLINE)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_32[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('@' named_expression NEWLINE)"));
@@ -23430,7 +24242,7 @@ _loop1_32_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -23444,7 +24256,7 @@ _loop1_32_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -23452,13 +24264,13 @@ _loop1_32_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_32_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -23466,16 +24278,19 @@ _loop1_32_rule(Parser *p)
 static void *
 _tmp_33_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '(' arguments? ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_33[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' arguments? ')'"));
@@ -23494,7 +24309,7 @@ _tmp_33_rule(Parser *p)
             _res = z;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -23505,7 +24320,7 @@ _tmp_33_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -23513,16 +24328,19 @@ _tmp_33_rule(Parser *p)
 static void *
 _tmp_34_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '->' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_34[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'->' expression"));
@@ -23538,7 +24356,7 @@ _tmp_34_rule(Parser *p)
             _res = z;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -23549,7 +24367,7 @@ _tmp_34_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -23557,16 +24375,19 @@ _tmp_34_rule(Parser *p)
 static void *
 _tmp_35_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '->' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_35[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'->' expression"));
@@ -23582,7 +24403,7 @@ _tmp_35_rule(Parser *p)
             _res = z;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -23593,7 +24414,7 @@ _tmp_35_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -23601,9 +24422,12 @@ _tmp_35_rule(Parser *p)
 static asdl_seq *
 _loop0_36_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -23613,14 +24437,14 @@ _loop0_36_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_36[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default"));
@@ -23636,7 +24460,7 @@ _loop0_36_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -23653,13 +24477,13 @@ _loop0_36_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_36_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -23667,9 +24491,12 @@ _loop0_36_rule(Parser *p)
 static asdl_seq *
 _loop0_37_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -23679,14 +24506,14 @@ _loop0_37_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_37[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_with_default"));
@@ -23702,7 +24529,7 @@ _loop0_37_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -23719,13 +24546,13 @@ _loop0_37_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_37_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -23733,9 +24560,12 @@ _loop0_37_rule(Parser *p)
 static asdl_seq *
 _loop0_38_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -23745,14 +24575,14 @@ _loop0_38_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_38[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_with_default"));
@@ -23768,7 +24598,7 @@ _loop0_38_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -23785,13 +24615,13 @@ _loop0_38_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_38_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -23799,9 +24629,12 @@ _loop0_38_rule(Parser *p)
 static asdl_seq *
 _loop1_39_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -23811,14 +24644,14 @@ _loop1_39_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_39[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default"));
@@ -23834,7 +24667,7 @@ _loop1_39_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -23848,7 +24681,7 @@ _loop1_39_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -23856,13 +24689,13 @@ _loop1_39_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_39_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -23870,9 +24703,12 @@ _loop1_39_rule(Parser *p)
 static asdl_seq *
 _loop0_40_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -23882,14 +24718,14 @@ _loop0_40_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_40[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_with_default"));
@@ -23905,7 +24741,7 @@ _loop0_40_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -23922,13 +24758,13 @@ _loop0_40_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_40_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -23936,9 +24772,12 @@ _loop0_40_rule(Parser *p)
 static asdl_seq *
 _loop1_41_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -23948,14 +24787,14 @@ _loop1_41_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_41[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_with_default"));
@@ -23971,7 +24810,7 @@ _loop1_41_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -23985,7 +24824,7 @@ _loop1_41_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -23993,13 +24832,13 @@ _loop1_41_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_41_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -24007,9 +24846,12 @@ _loop1_41_rule(Parser *p)
 static asdl_seq *
 _loop1_42_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -24019,14 +24861,14 @@ _loop1_42_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_42[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default"));
@@ -24042,7 +24884,7 @@ _loop1_42_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -24056,7 +24898,7 @@ _loop1_42_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -24064,13 +24906,13 @@ _loop1_42_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_42_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -24078,9 +24920,12 @@ _loop1_42_rule(Parser *p)
 static asdl_seq *
 _loop1_43_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -24090,14 +24935,14 @@ _loop1_43_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_43[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default"));
@@ -24113,7 +24958,7 @@ _loop1_43_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -24127,7 +24972,7 @@ _loop1_43_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -24135,13 +24980,13 @@ _loop1_43_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_43_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -24149,9 +24994,12 @@ _loop1_43_rule(Parser *p)
 static asdl_seq *
 _loop0_44_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -24161,14 +25009,14 @@ _loop0_44_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_44[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default"));
@@ -24184,7 +25032,7 @@ _loop0_44_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -24201,13 +25049,13 @@ _loop0_44_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_44_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -24215,9 +25063,12 @@ _loop0_44_rule(Parser *p)
 static asdl_seq *
 _loop1_45_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -24227,14 +25078,14 @@ _loop1_45_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_45[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_with_default"));
@@ -24250,7 +25101,7 @@ _loop1_45_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -24264,7 +25115,7 @@ _loop1_45_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -24272,13 +25123,13 @@ _loop1_45_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_45_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -24286,9 +25137,12 @@ _loop1_45_rule(Parser *p)
 static asdl_seq *
 _loop0_46_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -24298,14 +25152,14 @@ _loop0_46_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_46[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default"));
@@ -24321,7 +25175,7 @@ _loop0_46_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -24338,13 +25192,13 @@ _loop0_46_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_46_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -24352,9 +25206,12 @@ _loop0_46_rule(Parser *p)
 static asdl_seq *
 _loop1_47_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -24364,14 +25221,14 @@ _loop1_47_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_47[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_with_default"));
@@ -24387,7 +25244,7 @@ _loop1_47_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -24401,7 +25258,7 @@ _loop1_47_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -24409,13 +25266,13 @@ _loop1_47_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_47_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -24423,9 +25280,12 @@ _loop1_47_rule(Parser *p)
 static asdl_seq *
 _loop0_48_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -24435,14 +25295,14 @@ _loop0_48_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_maybe_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_48[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_maybe_default"));
@@ -24458,7 +25318,7 @@ _loop0_48_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -24475,13 +25335,13 @@ _loop0_48_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_48_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -24489,9 +25349,12 @@ _loop0_48_rule(Parser *p)
 static asdl_seq *
 _loop1_49_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -24501,14 +25364,14 @@ _loop1_49_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_maybe_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_49[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_maybe_default"));
@@ -24524,7 +25387,7 @@ _loop1_49_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -24538,7 +25401,7 @@ _loop1_49_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -24546,13 +25409,13 @@ _loop1_49_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_49_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -24560,9 +25423,12 @@ _loop1_49_rule(Parser *p)
 static asdl_seq *
 _loop0_51_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -24572,14 +25438,14 @@ _loop0_51_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' with_item
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_51[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' with_item"));
@@ -24595,7 +25461,7 @@ _loop0_51_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -24604,7 +25470,7 @@ _loop0_51_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -24621,13 +25487,13 @@ _loop0_51_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_51_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -24635,16 +25501,19 @@ _loop0_51_rule(Parser *p)
 static asdl_seq *
 _gather_50_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // with_item _loop0_51
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_50[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "with_item _loop0_51"));
@@ -24666,7 +25535,7 @@ _gather_50_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -24674,9 +25543,12 @@ _gather_50_rule(Parser *p)
 static asdl_seq *
 _loop0_53_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -24686,14 +25558,14 @@ _loop0_53_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' with_item
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_53[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' with_item"));
@@ -24709,7 +25581,7 @@ _loop0_53_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -24718,7 +25590,7 @@ _loop0_53_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -24735,13 +25607,13 @@ _loop0_53_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_53_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -24749,16 +25621,19 @@ _loop0_53_rule(Parser *p)
 static asdl_seq *
 _gather_52_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // with_item _loop0_53
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_52[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "with_item _loop0_53"));
@@ -24780,7 +25655,7 @@ _gather_52_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -24788,9 +25663,12 @@ _gather_52_rule(Parser *p)
 static asdl_seq *
 _loop0_55_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -24800,14 +25678,14 @@ _loop0_55_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' with_item
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_55[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' with_item"));
@@ -24823,7 +25701,7 @@ _loop0_55_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -24832,7 +25710,7 @@ _loop0_55_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -24849,13 +25727,13 @@ _loop0_55_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_55_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -24863,16 +25741,19 @@ _loop0_55_rule(Parser *p)
 static asdl_seq *
 _gather_54_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // with_item _loop0_55
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_54[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "with_item _loop0_55"));
@@ -24894,7 +25775,7 @@ _gather_54_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -24902,9 +25783,12 @@ _gather_54_rule(Parser *p)
 static asdl_seq *
 _loop0_57_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -24914,14 +25798,14 @@ _loop0_57_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' with_item
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_57[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' with_item"));
@@ -24937,7 +25821,7 @@ _loop0_57_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -24946,7 +25830,7 @@ _loop0_57_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -24963,13 +25847,13 @@ _loop0_57_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_57_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -24977,16 +25861,19 @@ _loop0_57_rule(Parser *p)
 static asdl_seq *
 _gather_56_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // with_item _loop0_57
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_56[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "with_item _loop0_57"));
@@ -25008,7 +25895,7 @@ _gather_56_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -25016,16 +25903,19 @@ _gather_56_rule(Parser *p)
 static void *
 _tmp_58_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_58[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','"));
@@ -25044,7 +25934,7 @@ _tmp_58_rule(Parser *p)
     }
     { // ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_58[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "')'"));
@@ -25063,7 +25953,7 @@ _tmp_58_rule(Parser *p)
     }
     { // ':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_58[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "':'"));
@@ -25082,7 +25972,7 @@ _tmp_58_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -25090,9 +25980,12 @@ _tmp_58_rule(Parser *p)
 static asdl_seq *
 _loop1_59_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -25102,14 +25995,14 @@ _loop1_59_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // except_block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_59[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_block"));
@@ -25125,7 +26018,7 @@ _loop1_59_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -25139,7 +26032,7 @@ _loop1_59_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -25147,13 +26040,13 @@ _loop1_59_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_59_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -25161,9 +26054,12 @@ _loop1_59_rule(Parser *p)
 static asdl_seq *
 _loop1_60_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -25173,14 +26069,14 @@ _loop1_60_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // except_star_block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_60[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_star_block"));
@@ -25196,7 +26092,7 @@ _loop1_60_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -25210,7 +26106,7 @@ _loop1_60_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -25218,13 +26114,13 @@ _loop1_60_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_60_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -25232,16 +26128,19 @@ _loop1_60_rule(Parser *p)
 static void *
 _tmp_61_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'as' NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_61[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'as' NAME"));
@@ -25257,7 +26156,7 @@ _tmp_61_rule(Parser *p)
             _res = z;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -25268,7 +26167,7 @@ _tmp_61_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -25276,16 +26175,19 @@ _tmp_61_rule(Parser *p)
 static void *
 _tmp_62_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'as' NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_62[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'as' NAME"));
@@ -25301,7 +26203,7 @@ _tmp_62_rule(Parser *p)
             _res = z;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -25312,7 +26214,7 @@ _tmp_62_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -25320,9 +26222,12 @@ _tmp_62_rule(Parser *p)
 static asdl_seq *
 _loop1_63_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -25332,14 +26237,14 @@ _loop1_63_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // case_block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_63[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "case_block"));
@@ -25355,7 +26260,7 @@ _loop1_63_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -25369,7 +26274,7 @@ _loop1_63_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -25377,13 +26282,13 @@ _loop1_63_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_63_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -25391,9 +26296,12 @@ _loop1_63_rule(Parser *p)
 static asdl_seq *
 _loop0_65_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -25403,14 +26311,14 @@ _loop0_65_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // '|' closed_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_65[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'|' closed_pattern"));
@@ -25426,7 +26334,7 @@ _loop0_65_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -25435,7 +26343,7 @@ _loop0_65_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -25452,13 +26360,13 @@ _loop0_65_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_65_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -25466,16 +26374,19 @@ _loop0_65_rule(Parser *p)
 static asdl_seq *
 _gather_64_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // closed_pattern _loop0_65
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_64[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "closed_pattern _loop0_65"));
@@ -25497,7 +26408,7 @@ _gather_64_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -25505,16 +26416,19 @@ _gather_64_rule(Parser *p)
 static void *
 _tmp_66_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '+'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_66[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'+'"));
@@ -25533,7 +26447,7 @@ _tmp_66_rule(Parser *p)
     }
     { // '-'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_66[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'-'"));
@@ -25552,7 +26466,7 @@ _tmp_66_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -25560,16 +26474,19 @@ _tmp_66_rule(Parser *p)
 static void *
 _tmp_67_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '+'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_67[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'+'"));
@@ -25588,7 +26505,7 @@ _tmp_67_rule(Parser *p)
     }
     { // '-'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_67[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'-'"));
@@ -25607,7 +26524,7 @@ _tmp_67_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -25615,16 +26532,19 @@ _tmp_67_rule(Parser *p)
 static void *
 _tmp_68_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '.'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_68[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'.'"));
@@ -25643,7 +26563,7 @@ _tmp_68_rule(Parser *p)
     }
     { // '('
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_68[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'('"));
@@ -25662,7 +26582,7 @@ _tmp_68_rule(Parser *p)
     }
     { // '='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_68[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'='"));
@@ -25681,7 +26601,7 @@ _tmp_68_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -25689,16 +26609,19 @@ _tmp_68_rule(Parser *p)
 static void *
 _tmp_69_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '.'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_69[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'.'"));
@@ -25717,7 +26640,7 @@ _tmp_69_rule(Parser *p)
     }
     { // '('
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_69[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'('"));
@@ -25736,7 +26659,7 @@ _tmp_69_rule(Parser *p)
     }
     { // '='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_69[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'='"));
@@ -25755,7 +26678,7 @@ _tmp_69_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -25763,9 +26686,12 @@ _tmp_69_rule(Parser *p)
 static asdl_seq *
 _loop0_71_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -25775,14 +26701,14 @@ _loop0_71_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' maybe_star_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_71[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' maybe_star_pattern"));
@@ -25798,7 +26724,7 @@ _loop0_71_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -25807,7 +26733,7 @@ _loop0_71_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -25824,13 +26750,13 @@ _loop0_71_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_71_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -25838,16 +26764,19 @@ _loop0_71_rule(Parser *p)
 static asdl_seq *
 _gather_70_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // maybe_star_pattern _loop0_71
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_70[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "maybe_star_pattern _loop0_71"));
@@ -25869,7 +26798,7 @@ _gather_70_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -25877,9 +26806,12 @@ _gather_70_rule(Parser *p)
 static asdl_seq *
 _loop0_73_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -25889,14 +26821,14 @@ _loop0_73_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' key_value_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_73[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' key_value_pattern"));
@@ -25912,7 +26844,7 @@ _loop0_73_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -25921,7 +26853,7 @@ _loop0_73_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -25938,13 +26870,13 @@ _loop0_73_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_73_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -25952,16 +26884,19 @@ _loop0_73_rule(Parser *p)
 static asdl_seq *
 _gather_72_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // key_value_pattern _loop0_73
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_72[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "key_value_pattern _loop0_73"));
@@ -25983,7 +26918,7 @@ _gather_72_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -25991,16 +26926,19 @@ _gather_72_rule(Parser *p)
 static void *
 _tmp_74_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // literal_expr
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_74[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "literal_expr"));
@@ -26019,7 +26957,7 @@ _tmp_74_rule(Parser *p)
     }
     { // attr
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_74[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "attr"));
@@ -26038,7 +26976,7 @@ _tmp_74_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -26046,9 +26984,12 @@ _tmp_74_rule(Parser *p)
 static asdl_seq *
 _loop0_76_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -26058,14 +26999,14 @@ _loop0_76_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_76[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' pattern"));
@@ -26081,7 +27022,7 @@ _loop0_76_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -26090,7 +27031,7 @@ _loop0_76_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -26107,13 +27048,13 @@ _loop0_76_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_76_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -26121,16 +27062,19 @@ _loop0_76_rule(Parser *p)
 static asdl_seq *
 _gather_75_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // pattern _loop0_76
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_75[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "pattern _loop0_76"));
@@ -26152,7 +27096,7 @@ _gather_75_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -26160,9 +27104,12 @@ _gather_75_rule(Parser *p)
 static asdl_seq *
 _loop0_78_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -26172,14 +27119,14 @@ _loop0_78_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' keyword_pattern
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_78[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' keyword_pattern"));
@@ -26195,7 +27142,7 @@ _loop0_78_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -26204,7 +27151,7 @@ _loop0_78_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -26221,13 +27168,13 @@ _loop0_78_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_78_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -26235,16 +27182,19 @@ _loop0_78_rule(Parser *p)
 static asdl_seq *
 _gather_77_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // keyword_pattern _loop0_78
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_77[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "keyword_pattern _loop0_78"));
@@ -26266,7 +27216,7 @@ _gather_77_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -26274,9 +27224,12 @@ _gather_77_rule(Parser *p)
 static asdl_seq *
 _loop1_79_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -26286,14 +27239,14 @@ _loop1_79_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // (',' expression)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_79[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(',' expression)"));
@@ -26309,7 +27262,7 @@ _loop1_79_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -26323,7 +27276,7 @@ _loop1_79_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -26331,13 +27284,13 @@ _loop1_79_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_79_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -26345,9 +27298,12 @@ _loop1_79_rule(Parser *p)
 static asdl_seq *
 _loop1_80_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -26357,14 +27313,14 @@ _loop1_80_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // (',' star_expression)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_80[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(',' star_expression)"));
@@ -26380,7 +27336,7 @@ _loop1_80_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -26394,7 +27350,7 @@ _loop1_80_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -26402,13 +27358,13 @@ _loop1_80_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_80_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -26416,9 +27372,12 @@ _loop1_80_rule(Parser *p)
 static asdl_seq *
 _loop0_82_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -26428,14 +27387,14 @@ _loop0_82_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' star_named_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_82[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' star_named_expression"));
@@ -26451,7 +27410,7 @@ _loop0_82_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -26460,7 +27419,7 @@ _loop0_82_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -26477,13 +27436,13 @@ _loop0_82_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_82_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -26491,16 +27450,19 @@ _loop0_82_rule(Parser *p)
 static asdl_seq *
 _gather_81_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // star_named_expression _loop0_82
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_81[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_named_expression _loop0_82"));
@@ -26522,7 +27484,7 @@ _gather_81_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -26530,9 +27492,12 @@ _gather_81_rule(Parser *p)
 static asdl_seq *
 _loop1_83_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -26542,14 +27507,14 @@ _loop1_83_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ('or' conjunction)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_83[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('or' conjunction)"));
@@ -26565,7 +27530,7 @@ _loop1_83_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -26579,7 +27544,7 @@ _loop1_83_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -26587,13 +27552,13 @@ _loop1_83_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_83_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -26601,9 +27566,12 @@ _loop1_83_rule(Parser *p)
 static asdl_seq *
 _loop1_84_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -26613,14 +27581,14 @@ _loop1_84_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ('and' inversion)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_84[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('and' inversion)"));
@@ -26636,7 +27604,7 @@ _loop1_84_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -26650,7 +27618,7 @@ _loop1_84_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -26658,13 +27626,13 @@ _loop1_84_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_84_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -26672,9 +27640,12 @@ _loop1_84_rule(Parser *p)
 static asdl_seq *
 _loop1_85_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -26684,14 +27655,14 @@ _loop1_85_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // compare_op_bitwise_or_pair
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_85[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "compare_op_bitwise_or_pair"));
@@ -26707,7 +27678,7 @@ _loop1_85_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -26721,7 +27692,7 @@ _loop1_85_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -26729,13 +27700,13 @@ _loop1_85_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_85_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -26743,16 +27714,19 @@ _loop1_85_rule(Parser *p)
 static void *
 _tmp_86_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '!='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_86[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'!='"));
@@ -26765,7 +27739,7 @@ _tmp_86_rule(Parser *p)
             _res = _PyPegen_check_barry_as_flufl ( p , tok ) ? NULL : tok;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -26776,7 +27750,7 @@ _tmp_86_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -26784,9 +27758,12 @@ _tmp_86_rule(Parser *p)
 static asdl_seq *
 _loop0_88_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -26796,14 +27773,14 @@ _loop0_88_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' slice
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_88[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' slice"));
@@ -26819,7 +27796,7 @@ _loop0_88_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -26828,7 +27805,7 @@ _loop0_88_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -26845,13 +27822,13 @@ _loop0_88_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_88_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -26859,16 +27836,19 @@ _loop0_88_rule(Parser *p)
 static asdl_seq *
 _gather_87_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // slice _loop0_88
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_87[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "slice _loop0_88"));
@@ -26890,7 +27870,7 @@ _gather_87_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -26898,16 +27878,19 @@ _gather_87_rule(Parser *p)
 static void *
 _tmp_89_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ':' expression?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_89[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "':' expression?"));
@@ -26923,7 +27906,7 @@ _tmp_89_rule(Parser *p)
             _res = d;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -26934,7 +27917,7 @@ _tmp_89_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -26942,16 +27925,19 @@ _tmp_89_rule(Parser *p)
 static void *
 _tmp_90_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // tuple
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_90[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "tuple"));
@@ -26970,7 +27956,7 @@ _tmp_90_rule(Parser *p)
     }
     { // group
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_90[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "group"));
@@ -26989,7 +27975,7 @@ _tmp_90_rule(Parser *p)
     }
     { // genexp
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_90[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "genexp"));
@@ -27008,7 +27994,7 @@ _tmp_90_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -27016,16 +28002,19 @@ _tmp_90_rule(Parser *p)
 static void *
 _tmp_91_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // list
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_91[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "list"));
@@ -27044,7 +28033,7 @@ _tmp_91_rule(Parser *p)
     }
     { // listcomp
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_91[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "listcomp"));
@@ -27063,7 +28052,7 @@ _tmp_91_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -27071,16 +28060,19 @@ _tmp_91_rule(Parser *p)
 static void *
 _tmp_92_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // dict
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_92[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "dict"));
@@ -27099,7 +28091,7 @@ _tmp_92_rule(Parser *p)
     }
     { // set
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_92[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "set"));
@@ -27118,7 +28110,7 @@ _tmp_92_rule(Parser *p)
     }
     { // dictcomp
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_92[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "dictcomp"));
@@ -27137,7 +28129,7 @@ _tmp_92_rule(Parser *p)
     }
     { // setcomp
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_92[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "setcomp"));
@@ -27156,7 +28148,7 @@ _tmp_92_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -27164,16 +28156,19 @@ _tmp_92_rule(Parser *p)
 static void *
 _tmp_93_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // yield_expr
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_93[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "yield_expr"));
@@ -27192,7 +28187,7 @@ _tmp_93_rule(Parser *p)
     }
     { // named_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_93[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "named_expression"));
@@ -27211,7 +28206,7 @@ _tmp_93_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -27219,9 +28214,12 @@ _tmp_93_rule(Parser *p)
 static asdl_seq *
 _loop0_94_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -27231,14 +28229,14 @@ _loop0_94_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_94[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default"));
@@ -27254,7 +28252,7 @@ _loop0_94_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -27271,13 +28269,13 @@ _loop0_94_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_94_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -27285,9 +28283,12 @@ _loop0_94_rule(Parser *p)
 static asdl_seq *
 _loop0_95_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -27297,14 +28298,14 @@ _loop0_95_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_95[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_with_default"));
@@ -27320,7 +28321,7 @@ _loop0_95_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -27337,13 +28338,13 @@ _loop0_95_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_95_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -27351,9 +28352,12 @@ _loop0_95_rule(Parser *p)
 static asdl_seq *
 _loop0_96_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -27363,14 +28367,14 @@ _loop0_96_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_96[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_with_default"));
@@ -27386,7 +28390,7 @@ _loop0_96_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -27403,13 +28407,13 @@ _loop0_96_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_96_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -27417,9 +28421,12 @@ _loop0_96_rule(Parser *p)
 static asdl_seq *
 _loop1_97_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -27429,14 +28436,14 @@ _loop1_97_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_97[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default"));
@@ -27452,7 +28459,7 @@ _loop1_97_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -27466,7 +28473,7 @@ _loop1_97_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -27474,13 +28481,13 @@ _loop1_97_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_97_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -27488,9 +28495,12 @@ _loop1_97_rule(Parser *p)
 static asdl_seq *
 _loop0_98_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -27500,14 +28510,14 @@ _loop0_98_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_98[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_with_default"));
@@ -27523,7 +28533,7 @@ _loop0_98_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -27540,13 +28550,13 @@ _loop0_98_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_98_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -27554,9 +28564,12 @@ _loop0_98_rule(Parser *p)
 static asdl_seq *
 _loop1_99_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -27566,14 +28579,14 @@ _loop1_99_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_99[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_with_default"));
@@ -27589,7 +28602,7 @@ _loop1_99_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -27603,7 +28616,7 @@ _loop1_99_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -27611,13 +28624,13 @@ _loop1_99_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_99_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -27625,9 +28638,12 @@ _loop1_99_rule(Parser *p)
 static asdl_seq *
 _loop1_100_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -27637,14 +28653,14 @@ _loop1_100_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_100[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default"));
@@ -27660,7 +28676,7 @@ _loop1_100_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -27674,7 +28690,7 @@ _loop1_100_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -27682,13 +28698,13 @@ _loop1_100_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_100_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -27696,9 +28712,12 @@ _loop1_100_rule(Parser *p)
 static asdl_seq *
 _loop1_101_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -27708,14 +28727,14 @@ _loop1_101_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_101[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default"));
@@ -27731,7 +28750,7 @@ _loop1_101_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -27745,7 +28764,7 @@ _loop1_101_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -27753,13 +28772,13 @@ _loop1_101_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_101_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -27767,9 +28786,12 @@ _loop1_101_rule(Parser *p)
 static asdl_seq *
 _loop0_102_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -27779,14 +28801,14 @@ _loop0_102_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_102[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default"));
@@ -27802,7 +28824,7 @@ _loop0_102_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -27819,13 +28841,13 @@ _loop0_102_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_102_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -27833,9 +28855,12 @@ _loop0_102_rule(Parser *p)
 static asdl_seq *
 _loop1_103_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -27845,14 +28870,14 @@ _loop1_103_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_103[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_with_default"));
@@ -27868,7 +28893,7 @@ _loop1_103_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -27882,7 +28907,7 @@ _loop1_103_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -27890,13 +28915,13 @@ _loop1_103_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_103_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -27904,9 +28929,12 @@ _loop1_103_rule(Parser *p)
 static asdl_seq *
 _loop0_104_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -27916,14 +28944,14 @@ _loop0_104_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_104[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default"));
@@ -27939,7 +28967,7 @@ _loop0_104_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -27956,13 +28984,13 @@ _loop0_104_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_104_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -27970,9 +28998,12 @@ _loop0_104_rule(Parser *p)
 static asdl_seq *
 _loop1_105_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -27982,14 +29013,14 @@ _loop1_105_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_105[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_with_default"));
@@ -28005,7 +29036,7 @@ _loop1_105_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -28019,7 +29050,7 @@ _loop1_105_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -28027,13 +29058,13 @@ _loop1_105_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_105_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -28041,9 +29072,12 @@ _loop1_105_rule(Parser *p)
 static asdl_seq *
 _loop0_106_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -28053,14 +29087,14 @@ _loop0_106_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_maybe_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_106[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_maybe_default"));
@@ -28076,7 +29110,7 @@ _loop0_106_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -28093,13 +29127,13 @@ _loop0_106_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_106_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -28107,9 +29141,12 @@ _loop0_106_rule(Parser *p)
 static asdl_seq *
 _loop1_107_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -28119,14 +29156,14 @@ _loop1_107_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_maybe_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_107[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_maybe_default"));
@@ -28142,7 +29179,7 @@ _loop1_107_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -28156,7 +29193,7 @@ _loop1_107_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -28164,13 +29201,13 @@ _loop1_107_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_107_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -28178,9 +29215,12 @@ _loop1_107_rule(Parser *p)
 static asdl_seq *
 _loop1_108_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -28190,14 +29230,14 @@ _loop1_108_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // STRING
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_108[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "STRING"));
@@ -28213,7 +29253,7 @@ _loop1_108_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -28227,7 +29267,7 @@ _loop1_108_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -28235,13 +29275,13 @@ _loop1_108_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_108_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -28249,16 +29289,19 @@ _loop1_108_rule(Parser *p)
 static void *
 _tmp_109_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // star_named_expression ',' star_named_expressions?
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_109[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_named_expression ',' star_named_expressions?"));
@@ -28277,7 +29320,7 @@ _tmp_109_rule(Parser *p)
             _res = _PyPegen_seq_insert_in_front ( p , y , z );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -28288,7 +29331,7 @@ _tmp_109_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -28296,9 +29339,12 @@ _tmp_109_rule(Parser *p)
 static asdl_seq *
 _loop0_111_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -28308,14 +29354,14 @@ _loop0_111_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' double_starred_kvpair
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_111[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' double_starred_kvpair"));
@@ -28331,7 +29377,7 @@ _loop0_111_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -28340,7 +29386,7 @@ _loop0_111_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -28357,13 +29403,13 @@ _loop0_111_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_111_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -28371,16 +29417,19 @@ _loop0_111_rule(Parser *p)
 static asdl_seq *
 _gather_110_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // double_starred_kvpair _loop0_111
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_110[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "double_starred_kvpair _loop0_111"));
@@ -28402,7 +29451,7 @@ _gather_110_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -28410,9 +29459,12 @@ _gather_110_rule(Parser *p)
 static asdl_seq *
 _loop1_112_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -28422,14 +29474,14 @@ _loop1_112_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // for_if_clause
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_112[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "for_if_clause"));
@@ -28445,7 +29497,7 @@ _loop1_112_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -28459,7 +29511,7 @@ _loop1_112_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -28467,13 +29519,13 @@ _loop1_112_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_112_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -28481,9 +29533,12 @@ _loop1_112_rule(Parser *p)
 static asdl_seq *
 _loop0_113_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -28493,14 +29548,14 @@ _loop0_113_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ('if' disjunction)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_113[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('if' disjunction)"));
@@ -28516,7 +29571,7 @@ _loop0_113_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -28533,13 +29588,13 @@ _loop0_113_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_113_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -28547,9 +29602,12 @@ _loop0_113_rule(Parser *p)
 static asdl_seq *
 _loop0_114_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -28559,14 +29617,14 @@ _loop0_114_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ('if' disjunction)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_114[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('if' disjunction)"));
@@ -28582,7 +29640,7 @@ _loop0_114_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -28599,13 +29657,13 @@ _loop0_114_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_114_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -28613,16 +29671,19 @@ _loop0_114_rule(Parser *p)
 static void *
 _tmp_115_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // assignment_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_115[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "assignment_expression"));
@@ -28641,7 +29702,7 @@ _tmp_115_rule(Parser *p)
     }
     { // expression !':='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_115[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression !':='"));
@@ -28662,7 +29723,7 @@ _tmp_115_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -28670,9 +29731,12 @@ _tmp_115_rule(Parser *p)
 static asdl_seq *
 _loop0_117_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -28682,14 +29746,14 @@ _loop0_117_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' (starred_expression | (assignment_expression | expression !':=') !'=')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_117[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' (starred_expression | (assignment_expression | expression !':=') !'=')"));
@@ -28705,7 +29769,7 @@ _loop0_117_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -28714,7 +29778,7 @@ _loop0_117_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -28731,13 +29795,13 @@ _loop0_117_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_117_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -28746,16 +29810,19 @@ _loop0_117_rule(Parser *p)
 static asdl_seq *
 _gather_116_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // (starred_expression | (assignment_expression | expression !':=') !'=') _loop0_117
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_116[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(starred_expression | (assignment_expression | expression !':=') !'=') _loop0_117"));
@@ -28777,7 +29844,7 @@ _gather_116_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -28785,16 +29852,19 @@ _gather_116_rule(Parser *p)
 static void *
 _tmp_118_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ',' kwargs
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_118[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' kwargs"));
@@ -28810,7 +29880,7 @@ _tmp_118_rule(Parser *p)
             _res = k;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -28821,7 +29891,7 @@ _tmp_118_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -28829,9 +29899,12 @@ _tmp_118_rule(Parser *p)
 static asdl_seq *
 _loop0_120_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -28841,14 +29914,14 @@ _loop0_120_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' kwarg_or_starred
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_120[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' kwarg_or_starred"));
@@ -28864,7 +29937,7 @@ _loop0_120_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -28873,7 +29946,7 @@ _loop0_120_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -28890,13 +29963,13 @@ _loop0_120_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_120_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -28904,16 +29977,19 @@ _loop0_120_rule(Parser *p)
 static asdl_seq *
 _gather_119_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // kwarg_or_starred _loop0_120
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_119[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "kwarg_or_starred _loop0_120"));
@@ -28935,7 +30011,7 @@ _gather_119_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -28943,9 +30019,12 @@ _gather_119_rule(Parser *p)
 static asdl_seq *
 _loop0_122_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -28955,14 +30034,14 @@ _loop0_122_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' kwarg_or_double_starred
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_122[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' kwarg_or_double_starred"));
@@ -28978,7 +30057,7 @@ _loop0_122_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -28987,7 +30066,7 @@ _loop0_122_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -29004,13 +30083,13 @@ _loop0_122_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_122_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -29018,16 +30097,19 @@ _loop0_122_rule(Parser *p)
 static asdl_seq *
 _gather_121_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // kwarg_or_double_starred _loop0_122
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_121[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "kwarg_or_double_starred _loop0_122"));
@@ -29049,7 +30131,7 @@ _gather_121_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -29057,9 +30139,12 @@ _gather_121_rule(Parser *p)
 static asdl_seq *
 _loop0_124_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -29069,14 +30154,14 @@ _loop0_124_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' kwarg_or_starred
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_124[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' kwarg_or_starred"));
@@ -29092,7 +30177,7 @@ _loop0_124_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -29101,7 +30186,7 @@ _loop0_124_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -29118,13 +30203,13 @@ _loop0_124_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_124_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -29132,16 +30217,19 @@ _loop0_124_rule(Parser *p)
 static asdl_seq *
 _gather_123_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // kwarg_or_starred _loop0_124
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_123[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "kwarg_or_starred _loop0_124"));
@@ -29163,7 +30251,7 @@ _gather_123_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -29171,9 +30259,12 @@ _gather_123_rule(Parser *p)
 static asdl_seq *
 _loop0_126_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -29183,14 +30274,14 @@ _loop0_126_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' kwarg_or_double_starred
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_126[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' kwarg_or_double_starred"));
@@ -29206,7 +30297,7 @@ _loop0_126_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -29215,7 +30306,7 @@ _loop0_126_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -29232,13 +30323,13 @@ _loop0_126_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_126_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -29246,16 +30337,19 @@ _loop0_126_rule(Parser *p)
 static asdl_seq *
 _gather_125_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // kwarg_or_double_starred _loop0_126
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_125[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "kwarg_or_double_starred _loop0_126"));
@@ -29277,7 +30371,7 @@ _gather_125_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -29285,9 +30379,12 @@ _gather_125_rule(Parser *p)
 static asdl_seq *
 _loop0_127_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -29297,14 +30394,14 @@ _loop0_127_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // (',' star_target)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_127[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(',' star_target)"));
@@ -29320,7 +30417,7 @@ _loop0_127_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -29337,13 +30434,13 @@ _loop0_127_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_127_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -29351,9 +30448,12 @@ _loop0_127_rule(Parser *p)
 static asdl_seq *
 _loop0_129_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -29363,14 +30463,14 @@ _loop0_129_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' star_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_129[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' star_target"));
@@ -29386,7 +30486,7 @@ _loop0_129_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -29395,7 +30495,7 @@ _loop0_129_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -29412,13 +30512,13 @@ _loop0_129_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_129_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -29426,16 +30526,19 @@ _loop0_129_rule(Parser *p)
 static asdl_seq *
 _gather_128_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // star_target _loop0_129
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_128[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_target _loop0_129"));
@@ -29457,7 +30560,7 @@ _gather_128_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -29465,9 +30568,12 @@ _gather_128_rule(Parser *p)
 static asdl_seq *
 _loop1_130_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -29477,14 +30583,14 @@ _loop1_130_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // (',' star_target)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_130[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(',' star_target)"));
@@ -29500,7 +30606,7 @@ _loop1_130_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -29514,7 +30620,7 @@ _loop1_130_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -29522,13 +30628,13 @@ _loop1_130_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_130_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -29536,16 +30642,19 @@ _loop1_130_rule(Parser *p)
 static void *
 _tmp_131_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // !'*' star_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_131[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "!'*' star_target"));
@@ -29566,7 +30675,7 @@ _tmp_131_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -29574,9 +30683,12 @@ _tmp_131_rule(Parser *p)
 static asdl_seq *
 _loop0_133_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -29586,14 +30698,14 @@ _loop0_133_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' del_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_133[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' del_target"));
@@ -29609,7 +30721,7 @@ _loop0_133_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -29618,7 +30730,7 @@ _loop0_133_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -29635,13 +30747,13 @@ _loop0_133_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_133_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -29649,16 +30761,19 @@ _loop0_133_rule(Parser *p)
 static asdl_seq *
 _gather_132_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // del_target _loop0_133
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_132[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "del_target _loop0_133"));
@@ -29680,7 +30795,7 @@ _gather_132_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -29688,9 +30803,12 @@ _gather_132_rule(Parser *p)
 static asdl_seq *
 _loop0_135_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -29700,14 +30818,14 @@ _loop0_135_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_135[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' expression"));
@@ -29723,7 +30841,7 @@ _loop0_135_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -29732,7 +30850,7 @@ _loop0_135_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -29749,13 +30867,13 @@ _loop0_135_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_135_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -29763,16 +30881,19 @@ _loop0_135_rule(Parser *p)
 static asdl_seq *
 _gather_134_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // expression _loop0_135
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_134[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression _loop0_135"));
@@ -29794,7 +30915,7 @@ _gather_134_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -29802,9 +30923,12 @@ _gather_134_rule(Parser *p)
 static asdl_seq *
 _loop0_137_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -29814,14 +30938,14 @@ _loop0_137_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_137[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' expression"));
@@ -29837,7 +30961,7 @@ _loop0_137_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -29846,7 +30970,7 @@ _loop0_137_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -29863,13 +30987,13 @@ _loop0_137_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_137_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -29877,16 +31001,19 @@ _loop0_137_rule(Parser *p)
 static asdl_seq *
 _gather_136_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // expression _loop0_137
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_136[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression _loop0_137"));
@@ -29908,7 +31035,7 @@ _gather_136_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -29916,9 +31043,12 @@ _gather_136_rule(Parser *p)
 static asdl_seq *
 _loop0_139_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -29928,14 +31058,14 @@ _loop0_139_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_139[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' expression"));
@@ -29951,7 +31081,7 @@ _loop0_139_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -29960,7 +31090,7 @@ _loop0_139_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -29977,13 +31107,13 @@ _loop0_139_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_139_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -29991,16 +31121,19 @@ _loop0_139_rule(Parser *p)
 static asdl_seq *
 _gather_138_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // expression _loop0_139
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_138[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression _loop0_139"));
@@ -30022,7 +31155,7 @@ _gather_138_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -30030,9 +31163,12 @@ _gather_138_rule(Parser *p)
 static asdl_seq *
 _loop0_141_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -30042,14 +31178,14 @@ _loop0_141_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_141[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' expression"));
@@ -30065,7 +31201,7 @@ _loop0_141_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -30074,7 +31210,7 @@ _loop0_141_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -30091,13 +31227,13 @@ _loop0_141_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_141_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -30105,16 +31241,19 @@ _loop0_141_rule(Parser *p)
 static asdl_seq *
 _gather_140_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // expression _loop0_141
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_140[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression _loop0_141"));
@@ -30136,7 +31275,7 @@ _gather_140_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -30144,16 +31283,19 @@ _gather_140_rule(Parser *p)
 static void *
 _tmp_142_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // NEWLINE INDENT
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_142[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NEWLINE INDENT"));
@@ -30175,7 +31317,7 @@ _tmp_142_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -30183,16 +31325,19 @@ _tmp_142_rule(Parser *p)
 static void *
 _tmp_143_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // args
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_143[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "args"));
@@ -30211,7 +31356,7 @@ _tmp_143_rule(Parser *p)
     }
     { // expression for_if_clauses
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_143[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression for_if_clauses"));
@@ -30233,7 +31378,7 @@ _tmp_143_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -30241,16 +31386,19 @@ _tmp_143_rule(Parser *p)
 static void *
 _tmp_144_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'True'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_144[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'True'"));
@@ -30269,7 +31417,7 @@ _tmp_144_rule(Parser *p)
     }
     { // 'False'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_144[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'False'"));
@@ -30288,7 +31436,7 @@ _tmp_144_rule(Parser *p)
     }
     { // 'None'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_144[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'None'"));
@@ -30307,7 +31455,7 @@ _tmp_144_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -30315,16 +31463,19 @@ _tmp_144_rule(Parser *p)
 static void *
 _tmp_145_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // NAME '='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_145[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME '='"));
@@ -30346,7 +31497,7 @@ _tmp_145_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -30354,16 +31505,19 @@ _tmp_145_rule(Parser *p)
 static void *
 _tmp_146_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // NAME STRING
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_146[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME STRING"));
@@ -30385,7 +31539,7 @@ _tmp_146_rule(Parser *p)
     }
     { // SOFT_KEYWORD
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_146[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "SOFT_KEYWORD"));
@@ -30404,7 +31558,7 @@ _tmp_146_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -30412,16 +31566,19 @@ _tmp_146_rule(Parser *p)
 static void *
 _tmp_147_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'else'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_147[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'else'"));
@@ -30440,7 +31597,7 @@ _tmp_147_rule(Parser *p)
     }
     { // ':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_147[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "':'"));
@@ -30459,7 +31616,7 @@ _tmp_147_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -30467,16 +31624,19 @@ _tmp_147_rule(Parser *p)
 static void *
 _tmp_148_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_148[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'='"));
@@ -30495,7 +31655,7 @@ _tmp_148_rule(Parser *p)
     }
     { // ':='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_148[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "':='"));
@@ -30514,7 +31674,7 @@ _tmp_148_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -30522,16 +31682,19 @@ _tmp_148_rule(Parser *p)
 static void *
 _tmp_149_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // list
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_149[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "list"));
@@ -30550,7 +31713,7 @@ _tmp_149_rule(Parser *p)
     }
     { // tuple
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_149[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "tuple"));
@@ -30569,7 +31732,7 @@ _tmp_149_rule(Parser *p)
     }
     { // genexp
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_149[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "genexp"));
@@ -30588,7 +31751,7 @@ _tmp_149_rule(Parser *p)
     }
     { // 'True'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_149[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'True'"));
@@ -30607,7 +31770,7 @@ _tmp_149_rule(Parser *p)
     }
     { // 'None'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_149[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'None'"));
@@ -30626,7 +31789,7 @@ _tmp_149_rule(Parser *p)
     }
     { // 'False'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_149[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'False'"));
@@ -30645,7 +31808,7 @@ _tmp_149_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -30653,16 +31816,19 @@ _tmp_149_rule(Parser *p)
 static void *
 _tmp_150_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_150[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'='"));
@@ -30681,7 +31847,7 @@ _tmp_150_rule(Parser *p)
     }
     { // ':='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_150[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "':='"));
@@ -30700,7 +31866,7 @@ _tmp_150_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -30708,9 +31874,12 @@ _tmp_150_rule(Parser *p)
 static asdl_seq *
 _loop0_151_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -30720,14 +31889,14 @@ _loop0_151_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // star_named_expressions
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_151[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_named_expressions"));
@@ -30743,7 +31912,7 @@ _loop0_151_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -30760,13 +31929,13 @@ _loop0_151_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_151_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -30774,9 +31943,12 @@ _loop0_151_rule(Parser *p)
 static asdl_seq *
 _loop0_152_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -30786,14 +31958,14 @@ _loop0_152_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // (star_targets '=')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_152[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(star_targets '=')"));
@@ -30809,7 +31981,7 @@ _loop0_152_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -30826,13 +31998,13 @@ _loop0_152_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_152_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -30840,9 +32012,12 @@ _loop0_152_rule(Parser *p)
 static asdl_seq *
 _loop0_153_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -30852,14 +32027,14 @@ _loop0_153_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // (star_targets '=')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_153[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(star_targets '=')"));
@@ -30875,7 +32050,7 @@ _loop0_153_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -30892,13 +32067,13 @@ _loop0_153_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_153_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -30906,16 +32081,19 @@ _loop0_153_rule(Parser *p)
 static void *
 _tmp_154_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // yield_expr
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_154[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "yield_expr"));
@@ -30934,7 +32112,7 @@ _tmp_154_rule(Parser *p)
     }
     { // star_expressions
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_154[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expressions"));
@@ -30953,7 +32131,7 @@ _tmp_154_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -30961,16 +32139,19 @@ _tmp_154_rule(Parser *p)
 static void *
 _tmp_155_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '['
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_155[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'['"));
@@ -30989,7 +32170,7 @@ _tmp_155_rule(Parser *p)
     }
     { // '('
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_155[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'('"));
@@ -31008,7 +32189,7 @@ _tmp_155_rule(Parser *p)
     }
     { // '{'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_155[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{'"));
@@ -31027,7 +32208,7 @@ _tmp_155_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -31035,16 +32216,19 @@ _tmp_155_rule(Parser *p)
 static void *
 _tmp_156_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '['
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_156[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'['"));
@@ -31063,7 +32247,7 @@ _tmp_156_rule(Parser *p)
     }
     { // '{'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_156[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{'"));
@@ -31082,7 +32266,7 @@ _tmp_156_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -31090,16 +32274,19 @@ _tmp_156_rule(Parser *p)
 static void *
 _tmp_157_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '['
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_157[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'['"));
@@ -31118,7 +32305,7 @@ _tmp_157_rule(Parser *p)
     }
     { // '{'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_157[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{'"));
@@ -31137,7 +32324,7 @@ _tmp_157_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -31145,9 +32332,12 @@ _tmp_157_rule(Parser *p)
 static asdl_seq *
 _loop0_158_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -31157,14 +32347,14 @@ _loop0_158_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_158[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default"));
@@ -31180,7 +32370,7 @@ _loop0_158_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -31197,13 +32387,13 @@ _loop0_158_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_158_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -31211,9 +32401,12 @@ _loop0_158_rule(Parser *p)
 static asdl_seq *
 _loop0_159_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -31223,14 +32416,14 @@ _loop0_159_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_159[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default"));
@@ -31246,7 +32439,7 @@ _loop0_159_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -31263,13 +32456,13 @@ _loop0_159_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_159_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -31277,9 +32470,12 @@ _loop0_159_rule(Parser *p)
 static asdl_seq *
 _loop1_160_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -31289,14 +32485,14 @@ _loop1_160_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_160[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default"));
@@ -31312,7 +32508,7 @@ _loop1_160_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -31326,7 +32522,7 @@ _loop1_160_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -31334,13 +32530,13 @@ _loop1_160_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_160_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -31348,9 +32544,12 @@ _loop1_160_rule(Parser *p)
 static asdl_seq *
 _loop1_161_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -31360,14 +32559,14 @@ _loop1_161_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_161[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_with_default"));
@@ -31383,7 +32582,7 @@ _loop1_161_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -31397,7 +32596,7 @@ _loop1_161_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -31405,13 +32604,13 @@ _loop1_161_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_161_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -31419,9 +32618,12 @@ _loop1_161_rule(Parser *p)
 static asdl_seq *
 _loop0_162_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -31431,14 +32633,14 @@ _loop0_162_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_162[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default"));
@@ -31454,7 +32656,7 @@ _loop0_162_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -31471,13 +32673,13 @@ _loop0_162_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_162_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -31485,9 +32687,12 @@ _loop0_162_rule(Parser *p)
 static asdl_seq *
 _loop0_163_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -31497,14 +32702,14 @@ _loop0_163_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_163[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default"));
@@ -31520,7 +32725,7 @@ _loop0_163_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -31537,13 +32742,13 @@ _loop0_163_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_163_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -31551,9 +32756,12 @@ _loop0_163_rule(Parser *p)
 static asdl_seq *
 _loop0_165_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -31563,14 +32771,14 @@ _loop0_165_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' lambda_param
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_165[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' lambda_param"));
@@ -31586,7 +32794,7 @@ _loop0_165_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -31595,7 +32803,7 @@ _loop0_165_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -31612,13 +32820,13 @@ _loop0_165_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_165_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -31626,16 +32834,19 @@ _loop0_165_rule(Parser *p)
 static asdl_seq *
 _gather_164_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // lambda_param _loop0_165
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_164[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param _loop0_165"));
@@ -31657,7 +32868,7 @@ _gather_164_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -31665,9 +32876,12 @@ _gather_164_rule(Parser *p)
 static asdl_seq *
 _loop1_166_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -31677,14 +32891,14 @@ _loop1_166_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_166[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_with_default"));
@@ -31700,7 +32914,7 @@ _loop1_166_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -31714,7 +32928,7 @@ _loop1_166_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -31722,13 +32936,13 @@ _loop1_166_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_166_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -31736,16 +32950,19 @@ _loop1_166_rule(Parser *p)
 static void *
 _tmp_167_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_167[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "')'"));
@@ -31764,7 +32981,7 @@ _tmp_167_rule(Parser *p)
     }
     { // ',' (')' | '**')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_167[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' (')' | '**')"));
@@ -31786,7 +33003,7 @@ _tmp_167_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -31794,16 +33011,19 @@ _tmp_167_rule(Parser *p)
 static void *
 _tmp_168_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_168[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "':'"));
@@ -31822,7 +33042,7 @@ _tmp_168_rule(Parser *p)
     }
     { // ',' (':' | '**')
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_168[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' (':' | '**')"));
@@ -31844,7 +33064,7 @@ _tmp_168_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -31852,16 +33072,19 @@ _tmp_168_rule(Parser *p)
 static void *
 _tmp_169_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_169[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','"));
@@ -31880,7 +33103,7 @@ _tmp_169_rule(Parser *p)
     }
     { // ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_169[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "')'"));
@@ -31899,7 +33122,7 @@ _tmp_169_rule(Parser *p)
     }
     { // ':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_169[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "':'"));
@@ -31918,7 +33141,7 @@ _tmp_169_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -31926,9 +33149,12 @@ _tmp_169_rule(Parser *p)
 static asdl_seq *
 _loop0_171_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -31938,14 +33164,14 @@ _loop0_171_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' (expression ['as' star_target])
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_171[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' (expression ['as' star_target])"));
@@ -31961,7 +33187,7 @@ _loop0_171_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -31970,7 +33196,7 @@ _loop0_171_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -31987,13 +33213,13 @@ _loop0_171_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_171_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -32001,16 +33227,19 @@ _loop0_171_rule(Parser *p)
 static asdl_seq *
 _gather_170_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // (expression ['as' star_target]) _loop0_171
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_170[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(expression ['as' star_target]) _loop0_171"));
@@ -32032,7 +33261,7 @@ _gather_170_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -32040,9 +33269,12 @@ _gather_170_rule(Parser *p)
 static asdl_seq *
 _loop0_173_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -32052,14 +33284,14 @@ _loop0_173_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' (expressions ['as' star_target])
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_173[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' (expressions ['as' star_target])"));
@@ -32075,7 +33307,7 @@ _loop0_173_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -32084,7 +33316,7 @@ _loop0_173_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -32101,13 +33333,13 @@ _loop0_173_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_173_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -32115,16 +33347,19 @@ _loop0_173_rule(Parser *p)
 static asdl_seq *
 _gather_172_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // (expressions ['as' star_target]) _loop0_173
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_172[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(expressions ['as' star_target]) _loop0_173"));
@@ -32146,7 +33381,7 @@ _gather_172_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -32154,9 +33389,12 @@ _gather_172_rule(Parser *p)
 static asdl_seq *
 _loop0_175_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -32166,14 +33404,14 @@ _loop0_175_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' (expression ['as' star_target])
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_175[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' (expression ['as' star_target])"));
@@ -32189,7 +33427,7 @@ _loop0_175_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -32198,7 +33436,7 @@ _loop0_175_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -32215,13 +33453,13 @@ _loop0_175_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_175_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -32229,16 +33467,19 @@ _loop0_175_rule(Parser *p)
 static asdl_seq *
 _gather_174_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // (expression ['as' star_target]) _loop0_175
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_174[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(expression ['as' star_target]) _loop0_175"));
@@ -32260,7 +33501,7 @@ _gather_174_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -32268,9 +33509,12 @@ _gather_174_rule(Parser *p)
 static asdl_seq *
 _loop0_177_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -32280,14 +33524,14 @@ _loop0_177_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' (expressions ['as' star_target])
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_177[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' (expressions ['as' star_target])"));
@@ -32303,7 +33547,7 @@ _loop0_177_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -32312,7 +33556,7 @@ _loop0_177_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -32329,13 +33573,13 @@ _loop0_177_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_177_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -32343,16 +33587,19 @@ _loop0_177_rule(Parser *p)
 static asdl_seq *
 _gather_176_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // (expressions ['as' star_target]) _loop0_177
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_176[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(expressions ['as' star_target]) _loop0_177"));
@@ -32374,7 +33621,7 @@ _gather_176_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -32382,16 +33629,19 @@ _gather_176_rule(Parser *p)
 static void *
 _tmp_178_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'except'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_178[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except'"));
@@ -32410,7 +33660,7 @@ _tmp_178_rule(Parser *p)
     }
     { // 'finally'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_178[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'finally'"));
@@ -32429,7 +33679,7 @@ _tmp_178_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -32437,9 +33687,12 @@ _tmp_178_rule(Parser *p)
 static asdl_seq *
 _loop0_179_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -32449,14 +33702,14 @@ _loop0_179_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_179[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "block"));
@@ -32472,7 +33725,7 @@ _loop0_179_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -32489,13 +33742,13 @@ _loop0_179_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_179_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -32503,16 +33756,19 @@ _loop0_179_rule(Parser *p)
 static void *
 _tmp_180_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // (except_block+ except_star_block)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_180[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(except_block+ except_star_block)"));
@@ -32531,7 +33787,7 @@ _tmp_180_rule(Parser *p)
     }
     { // (except_star_block+ except_block)
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_180[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(except_star_block+ except_block)"));
@@ -32550,7 +33806,7 @@ _tmp_180_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -32558,9 +33814,12 @@ _tmp_180_rule(Parser *p)
 static asdl_seq *
 _loop0_181_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -32570,14 +33829,14 @@ _loop0_181_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_181[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "block"));
@@ -32593,7 +33852,7 @@ _loop0_181_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -32610,13 +33869,13 @@ _loop0_181_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_181_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -32624,16 +33883,19 @@ _loop0_181_rule(Parser *p)
 static void *
 _tmp_182_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'as' NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_182[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'as' NAME"));
@@ -32655,7 +33917,7 @@ _tmp_182_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -32663,16 +33925,19 @@ _tmp_182_rule(Parser *p)
 static void *
 _tmp_183_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'as' NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_183[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'as' NAME"));
@@ -32694,7 +33959,7 @@ _tmp_183_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -32702,16 +33967,19 @@ _tmp_183_rule(Parser *p)
 static void *
 _tmp_184_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // NEWLINE
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_184[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NEWLINE"));
@@ -32730,7 +33998,7 @@ _tmp_184_rule(Parser *p)
     }
     { // ':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_184[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "':'"));
@@ -32749,7 +34017,7 @@ _tmp_184_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -32757,16 +34025,19 @@ _tmp_184_rule(Parser *p)
 static void *
 _tmp_185_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'as' NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_185[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'as' NAME"));
@@ -32788,7 +34059,7 @@ _tmp_185_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -32796,16 +34067,19 @@ _tmp_185_rule(Parser *p)
 static void *
 _tmp_186_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'as' NAME
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_186[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'as' NAME"));
@@ -32827,7 +34101,7 @@ _tmp_186_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -32835,16 +34109,19 @@ _tmp_186_rule(Parser *p)
 static void *
 _tmp_187_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // positional_patterns ','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_187[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "positional_patterns ','"));
@@ -32866,7 +34143,7 @@ _tmp_187_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -32874,16 +34151,19 @@ _tmp_187_rule(Parser *p)
 static void *
 _tmp_188_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '->' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_188[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'->' expression"));
@@ -32905,7 +34185,7 @@ _tmp_188_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -32913,16 +34193,19 @@ _tmp_188_rule(Parser *p)
 static void *
 _tmp_189_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '(' arguments? ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_189[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' arguments? ')'"));
@@ -32948,7 +34231,7 @@ _tmp_189_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -32956,9 +34239,12 @@ _tmp_189_rule(Parser *p)
 static asdl_seq *
 _loop0_191_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -32968,14 +34254,14 @@ _loop0_191_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // ',' double_starred_kvpair
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop0_191[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' double_starred_kvpair"));
@@ -32991,7 +34277,7 @@ _loop0_191_rule(Parser *p)
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 PyMem_Free(_children);
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             if (_n == _children_capacity) {
@@ -33000,7 +34286,7 @@ _loop0_191_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -33017,13 +34303,13 @@ _loop0_191_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_191_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -33031,16 +34317,19 @@ _loop0_191_rule(Parser *p)
 static asdl_seq *
 _gather_190_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // double_starred_kvpair _loop0_191
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_190[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "double_starred_kvpair _loop0_191"));
@@ -33062,7 +34351,7 @@ _gather_190_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33070,16 +34359,19 @@ _gather_190_rule(Parser *p)
 static void *
 _tmp_192_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '}'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_192[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'}'"));
@@ -33098,7 +34390,7 @@ _tmp_192_rule(Parser *p)
     }
     { // ','
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_192[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','"));
@@ -33117,7 +34409,7 @@ _tmp_192_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33125,16 +34417,19 @@ _tmp_192_rule(Parser *p)
 static void *
 _tmp_193_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // star_targets '='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_193[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_targets '='"));
@@ -33150,7 +34445,7 @@ _tmp_193_rule(Parser *p)
             _res = z;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -33161,7 +34456,7 @@ _tmp_193_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33169,16 +34464,19 @@ _tmp_193_rule(Parser *p)
 static void *
 _tmp_194_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '.'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_194[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'.'"));
@@ -33197,7 +34495,7 @@ _tmp_194_rule(Parser *p)
     }
     { // '...'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_194[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'...'"));
@@ -33216,7 +34514,7 @@ _tmp_194_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33224,16 +34522,19 @@ _tmp_194_rule(Parser *p)
 static void *
 _tmp_195_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '.'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_195[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'.'"));
@@ -33252,7 +34553,7 @@ _tmp_195_rule(Parser *p)
     }
     { // '...'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_195[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'...'"));
@@ -33271,7 +34572,7 @@ _tmp_195_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33279,16 +34580,19 @@ _tmp_195_rule(Parser *p)
 static void *
 _tmp_196_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // '@' named_expression NEWLINE
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_196[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'@' named_expression NEWLINE"));
@@ -33307,7 +34611,7 @@ _tmp_196_rule(Parser *p)
             _res = f;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -33318,7 +34622,7 @@ _tmp_196_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33326,16 +34630,19 @@ _tmp_196_rule(Parser *p)
 static void *
 _tmp_197_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ',' expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_197[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' expression"));
@@ -33351,7 +34658,7 @@ _tmp_197_rule(Parser *p)
             _res = c;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -33362,7 +34669,7 @@ _tmp_197_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33370,16 +34677,19 @@ _tmp_197_rule(Parser *p)
 static void *
 _tmp_198_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ',' star_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_198[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' star_expression"));
@@ -33395,7 +34705,7 @@ _tmp_198_rule(Parser *p)
             _res = c;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -33406,7 +34716,7 @@ _tmp_198_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33414,16 +34724,19 @@ _tmp_198_rule(Parser *p)
 static void *
 _tmp_199_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'or' conjunction
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_199[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'or' conjunction"));
@@ -33439,7 +34752,7 @@ _tmp_199_rule(Parser *p)
             _res = c;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -33450,7 +34763,7 @@ _tmp_199_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33458,16 +34771,19 @@ _tmp_199_rule(Parser *p)
 static void *
 _tmp_200_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'and' inversion
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_200[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'and' inversion"));
@@ -33483,7 +34799,7 @@ _tmp_200_rule(Parser *p)
             _res = c;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -33494,7 +34810,7 @@ _tmp_200_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33502,16 +34818,19 @@ _tmp_200_rule(Parser *p)
 static void *
 _tmp_201_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'if' disjunction
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_201[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'if' disjunction"));
@@ -33527,7 +34846,7 @@ _tmp_201_rule(Parser *p)
             _res = z;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -33538,7 +34857,7 @@ _tmp_201_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33546,16 +34865,19 @@ _tmp_201_rule(Parser *p)
 static void *
 _tmp_202_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'if' disjunction
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_202[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'if' disjunction"));
@@ -33571,7 +34893,7 @@ _tmp_202_rule(Parser *p)
             _res = z;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -33582,7 +34904,7 @@ _tmp_202_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33590,16 +34912,19 @@ _tmp_202_rule(Parser *p)
 static void *
 _tmp_203_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // starred_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_203[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "starred_expression"));
@@ -33618,7 +34943,7 @@ _tmp_203_rule(Parser *p)
     }
     { // (assignment_expression | expression !':=') !'='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_203[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(assignment_expression | expression !':=') !'='"));
@@ -33639,7 +34964,7 @@ _tmp_203_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33647,16 +34972,19 @@ _tmp_203_rule(Parser *p)
 static void *
 _tmp_204_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ',' star_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_204[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' star_target"));
@@ -33672,7 +35000,7 @@ _tmp_204_rule(Parser *p)
             _res = c;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -33683,7 +35011,7 @@ _tmp_204_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33691,16 +35019,19 @@ _tmp_204_rule(Parser *p)
 static void *
 _tmp_205_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ',' star_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_205[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' star_target"));
@@ -33716,7 +35047,7 @@ _tmp_205_rule(Parser *p)
             _res = c;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
-                D(p->level--);
+                p->level--;
                 return NULL;
             }
             goto done;
@@ -33727,7 +35058,7 @@ _tmp_205_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33735,16 +35066,19 @@ _tmp_205_rule(Parser *p)
 static void *
 _tmp_206_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // star_targets '='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_206[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_targets '='"));
@@ -33766,7 +35100,7 @@ _tmp_206_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33774,16 +35108,19 @@ _tmp_206_rule(Parser *p)
 static void *
 _tmp_207_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // star_targets '='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_207[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_targets '='"));
@@ -33805,7 +35142,7 @@ _tmp_207_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33813,16 +35150,19 @@ _tmp_207_rule(Parser *p)
 static void *
 _tmp_208_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ')'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_208[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "')'"));
@@ -33841,7 +35181,7 @@ _tmp_208_rule(Parser *p)
     }
     { // '**'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_208[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'**'"));
@@ -33860,7 +35200,7 @@ _tmp_208_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33868,16 +35208,19 @@ _tmp_208_rule(Parser *p)
 static void *
 _tmp_209_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // ':'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_209[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "':'"));
@@ -33896,7 +35239,7 @@ _tmp_209_rule(Parser *p)
     }
     { // '**'
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_209[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'**'"));
@@ -33915,7 +35258,7 @@ _tmp_209_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33923,16 +35266,19 @@ _tmp_209_rule(Parser *p)
 static void *
 _tmp_210_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // expression ['as' star_target]
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_210[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression ['as' star_target]"));
@@ -33955,7 +35301,7 @@ _tmp_210_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -33963,16 +35309,19 @@ _tmp_210_rule(Parser *p)
 static void *
 _tmp_211_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // expressions ['as' star_target]
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_211[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expressions ['as' star_target]"));
@@ -33995,7 +35344,7 @@ _tmp_211_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -34003,16 +35352,19 @@ _tmp_211_rule(Parser *p)
 static void *
 _tmp_212_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // expression ['as' star_target]
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_212[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression ['as' star_target]"));
@@ -34035,7 +35387,7 @@ _tmp_212_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -34043,16 +35395,19 @@ _tmp_212_rule(Parser *p)
 static void *
 _tmp_213_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // expressions ['as' star_target]
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_213[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expressions ['as' star_target]"));
@@ -34075,7 +35430,7 @@ _tmp_213_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -34083,16 +35438,19 @@ _tmp_213_rule(Parser *p)
 static void *
 _tmp_214_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // except_block+ except_star_block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_214[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_block+ except_star_block"));
@@ -34114,7 +35472,7 @@ _tmp_214_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -34122,16 +35480,19 @@ _tmp_214_rule(Parser *p)
 static void *
 _tmp_215_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // except_star_block+ except_block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_215[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_star_block+ except_block"));
@@ -34153,7 +35514,7 @@ _tmp_215_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -34161,16 +35522,19 @@ _tmp_215_rule(Parser *p)
 static void *
 _tmp_216_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // assignment_expression
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_216[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "assignment_expression"));
@@ -34189,7 +35553,7 @@ _tmp_216_rule(Parser *p)
     }
     { // expression !':='
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_216[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression !':='"));
@@ -34210,7 +35574,7 @@ _tmp_216_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -34218,16 +35582,19 @@ _tmp_216_rule(Parser *p)
 static void *
 _tmp_217_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'as' star_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_217[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'as' star_target"));
@@ -34249,7 +35616,7 @@ _tmp_217_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -34257,16 +35624,19 @@ _tmp_217_rule(Parser *p)
 static void *
 _tmp_218_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'as' star_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_218[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'as' star_target"));
@@ -34288,7 +35658,7 @@ _tmp_218_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -34296,16 +35666,19 @@ _tmp_218_rule(Parser *p)
 static void *
 _tmp_219_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'as' star_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_219[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'as' star_target"));
@@ -34327,7 +35700,7 @@ _tmp_219_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -34335,16 +35708,19 @@ _tmp_219_rule(Parser *p)
 static void *
 _tmp_220_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void * _res = NULL;
     int _mark = p->mark;
     { // 'as' star_target
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_220[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'as' star_target"));
@@ -34366,7 +35742,7 @@ _tmp_220_rule(Parser *p)
     }
     _res = NULL;
   done:
-    D(p->level--);
+    p->level--;
     return _res;
 }
 
@@ -34374,9 +35750,12 @@ _tmp_220_rule(Parser *p)
 static asdl_seq *
 _loop1_221_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -34386,14 +35765,14 @@ _loop1_221_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // except_block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_221[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_block"));
@@ -34409,7 +35788,7 @@ _loop1_221_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -34423,7 +35802,7 @@ _loop1_221_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -34431,13 +35810,13 @@ _loop1_221_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_221_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 
@@ -34445,9 +35824,12 @@ _loop1_221_rule(Parser *p)
 static asdl_seq *
 _loop1_222_rule(Parser *p)
 {
-    D(p->level++);
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
     if (p->error_indicator) {
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     void *_res = NULL;
@@ -34457,14 +35839,14 @@ _loop1_222_rule(Parser *p)
     if (!_children) {
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
     { // except_star_block
         if (p->error_indicator) {
-            D(p->level--);
+            p->level--;
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_222[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_star_block"));
@@ -34480,7 +35862,7 @@ _loop1_222_rule(Parser *p)
                 if (!_new_children) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
-                    D(p->level--);
+                    p->level--;
                     return NULL;
                 }
                 _children = _new_children;
@@ -34494,7 +35876,7 @@ _loop1_222_rule(Parser *p)
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
@@ -34502,13 +35884,13 @@ _loop1_222_rule(Parser *p)
         PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
-        D(p->level--);
+        p->level--;
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_222_type, _seq);
-    D(p->level--);
+    p->level--;
     return _seq;
 }
 

@@ -1,0 +1,1 @@
+Improve the error message when you try to subclass an instance of :class:`typing.NewType`.

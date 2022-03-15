@@ -656,7 +656,7 @@ PyConfig
 
    .. c:member:: int dump_refs
 
-      Dump Python refererences?
+      Dump Python references?
 
       If non-zero, dump all objects which are still alive at exit.
 

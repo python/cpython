@@ -282,12 +282,12 @@ Glossary
       The decorator syntax is merely syntactic sugar, the following two
       function definitions are semantically equivalent::
 
-         def f(...):
+         def f(arg):
              ...
          f = staticmethod(f)
 
          @staticmethod
-         def f(...):
+         def f(arg):
              ...
 
       The same concept exists for classes, but is less commonly used there.  See

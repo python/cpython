@@ -246,10 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1l",
-              url="https://www.openssl.org/source/openssl-1.1.1l.tar.gz",
-              checksum='ac0d4387f3ba0ad741b0580dd45f6ff3',
-              patches=['0001-Darwin-platform-allows-to-build-on-releases-before-Y.patch'],
+              name="OpenSSL 1.1.1m",
+              url="https://www.openssl.org/source/openssl-1.1.1m.tar.gz",
+              checksum='8ec70f665c145c3103f6e330f538a9db',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -359,9 +358,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.36.0",
-              url="https://sqlite.org/2021/sqlite-autoconf-3360000.tar.gz",
-              checksum='f5752052fc5b8e1b539af86a3671eac7',
+              name="SQLite 3.37.2",
+              url="https://sqlite.org/2022/sqlite-autoconf-3370200.tar.gz",
+              checksum='683cc5312ee74e71079c14d24b7a6d27',
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
