@@ -1,0 +1,2 @@
+Prevent ``internal configure error`` when running ``configure``
+with recent versions of clang.  Patch by David Bohman.
