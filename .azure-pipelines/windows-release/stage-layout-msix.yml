@@ -1,3 +1,6 @@
+parameters:
+  ARM64TclTk: true
+
 jobs:
 - job: Make_MSIX_Layout
   displayName: Make MSIX layout
@@ -25,7 +28,7 @@ jobs:
         HostArch: amd64
         Python: $(Build.BinariesDirectory)\bin_amd64\python.exe
         PYTHONHOME: $(Build.SourcesDirectory)
-        ${{ if(parameters.ARM64TclTk) }}:
+        ${{ if parameters.ARM64TclTk }}:
           TclLibrary: $(Build.BinariesDirectory)\tcltk_lib\tcl8
 
   steps:
