@@ -719,9 +719,6 @@ then
 fi
 
 
-MULTIARCH=$($CC --print-multiarch 2>/dev/null)
-AC_SUBST(MULTIARCH)
-
 AC_MSG_CHECKING([for the platform triplet based on compiler characteristics])
 cat >> conftest.c <<EOF
 #undef bfin
@@ -876,6 +873,11 @@ else
   AC_MSG_RESULT([none])
 fi
 rm -f conftest.c conftest.out
+
+if test x$PLATFORM_TRIPLET != xdarwin; then
+  MULTIARCH=$($CC --print-multiarch 2>/dev/null)
+fi
+AC_SUBST(MULTIARCH)
 
 if test x$PLATFORM_TRIPLET != x && test x$MULTIARCH != x; then
   if test x$PLATFORM_TRIPLET != x$MULTIARCH; then
