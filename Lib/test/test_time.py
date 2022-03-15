@@ -622,6 +622,9 @@ class _TestStrftimeYear:
     def yearstr(self, y):
         return time.strftime('%Y', (y,) + (0,) * 8)
 
+    @unittest.skipUnless(
+        support.has_strftime_extensions, "requires strftime extension"
+    )
     def test_4dyear(self):
         # Check that we can return the zero padded value.
         if self._format == '%04d':
