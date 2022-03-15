@@ -899,7 +899,10 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._eof = False
         self._paused = False
         self._empty_waiter = None
-
+        if hasattr(socket.socket, 'sendmsg'):
+            self._write_ready = self._write_sendmsg
+        else:
+            self._write_ready = self._write_send
         # Disable the Nagle algorithm -- small writes will be
         # sent without waiting for the TCP ACK.  This generally
         # decreases the latency (in some cases significantly.)
@@ -1067,7 +1070,46 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._buffer.append(data)
         self._maybe_pause_protocol()
 
-    def _write_ready(self):
+    def _write_sendmsg(self):
+        assert self._buffer, 'Data should not be empty'
+        if self._conn_lost:
+            return
+        try:
+            n = self._sock.sendmsg(self._buffer)
+            self._adjust_leftover_buffer(n)
+        except (BlockingIOError, InterruptedError):
+            pass
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
+            self._loop._remove_writer(self._sock_fd)
+            self._buffer.clear()
+            self._fatal_error(exc, 'Fatal write error on socket transport')
+            if self._empty_waiter is not None:
+                self._empty_waiter.set_exception(exc)
+        else:
+            self._maybe_resume_protocol()  # May append to buffer.
+            if not self._buffer:
+                self._loop._remove_writer(self._sock_fd)
+                if self._empty_waiter is not None:
+                    self._empty_waiter.set_result(None)
+                if self._closing:
+                    self._call_connection_lost(None)
+                elif self._eof:
+                    self._sock.shutdown(socket.SHUT_WR)
+
+    def _adjust_leftover_buffer(self, n: int, /) -> None:
+        buffer = self._buffer
+        while n:
+            b = buffer.popleft()
+            b_len = len(b)
+            if b_len <= n:
+                n -= b_len
+            else:
+                buffer.appendleft(b[n:])
+                break
+
+    def _write_send(self):
         assert self._buffer, 'Data should not be empty'
         if self._conn_lost:
             return
@@ -1104,6 +1146,15 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._eof = True
         if not self._buffer:
             self._sock.shutdown(socket.SHUT_WR)
+
+    def writelines(self, list_of_data):
+        hasbuffer = len(self._buffer)
+        self._buffer.extend([memoryview(i) for i in list_of_data])
+        if not hasbuffer:
+            # Optimization: try to send now
+            self._write_ready()
+            return
+        self._maybe_pause_protocol()
 
     def can_write_eof(self):
         return True

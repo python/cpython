@@ -497,9 +497,13 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.sock = mock.Mock(socket.socket)
         self.sock_fd = self.sock.fileno.return_value = 7
 
-    def socket_transport(self, waiter=None):
+    def socket_transport(self, waiter=None, sendmsg=False):
         transport = _SelectorSocketTransport(self.loop, self.sock,
                                              self.protocol, waiter=waiter)
+        if sendmsg:
+            transport._write_ready = transport._write_sendmsg
+        else:
+            transport._write_ready = transport._write_send
         self.addCleanup(close_transport, transport)
         return transport
 
@@ -732,6 +736,40 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
         self.loop.assert_writer(7, transport._write_ready)
         self.assertEqual(list_to_buffer([b'data']), transport._buffer)
+
+    def test_write_sendmsg_no_data(self):
+        self.sock.sendmsg = mock.Mock()
+        self.sock.sendmsg.return_value = 0
+        transport = self.socket_transport(sendmsg=True)
+        transport._buffer.append(memoryview(b'data'))
+        transport.write(b'')
+        self.assertFalse(self.sock.sendmsg.called)
+        self.assertEqual(list_to_buffer([b'data']), transport._buffer)
+
+    def test_write_sendmsg_full(self):
+        data = memoryview(b'data')
+        self.sock.sendmsg = mock.Mock()
+        self.sock.sendmsg.return_value = len(data)
+
+        transport = self.socket_transport(sendmsg=True)
+        transport._buffer.append(data)
+        self.loop._add_writer(7, transport._write_ready)
+        transport._write_ready()
+        self.assertTrue(self.sock.sendmsg.called)
+        self.assertFalse(self.loop.writers)
+
+    def test_write_sendmsg_partial(self):
+        data = memoryview(b'data')
+        self.sock.sendmsg = mock.Mock()
+        # Sent partial data
+        self.sock.sendmsg.return_value = len(data) // 2
+
+        transport = self.socket_transport(sendmsg=True)
+        transport._buffer.append(data)
+        self.loop._add_writer(7, transport._write_ready)
+        transport._write_ready()
+        self.assertTrue(self.sock.sendmsg.called)
+        self.assertTrue(self.loop.writers)
 
     @mock.patch('asyncio.selector_events.logger')
     def test_write_exception(self, m_log):
