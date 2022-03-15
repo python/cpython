@@ -1,4 +1,4 @@
-from test.test_importlib import util
+from test.test_importlib import util, fixtures
 
 importlib = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
@@ -115,6 +115,31 @@ class FinderTests:
         finally:
             if email is not missing:
                 sys.modules['email'] = email
+
+    def test_bytes_on_sys_path(self):
+        # Putting bytes in sys.path[0] caused an import regression from Python
+        # 3.2: https://bugs.python.org/issue47025
+        with fixtures.tempdir() as tmp_path:
+            (tmp_path / "email.py").write_bytes(b"EXAMPLE = 'bytes_on_sys_path'\n")
+            new_path = sys.path[:]
+            new_path.insert(0, os.fsencode(tmp_path))
+            new_path_importer_cache = sys.path_importer_cache.copy()
+            new_path_hooks = [zipimport.zipimporter,
+                              self.machinery.FileFinder.path_hook(
+                                  *self.importlib._bootstrap_external._get_supported_file_loaders())]
+            missing = object()
+            email = sys.modules.pop('email', missing)
+            try:
+                with util.import_state(meta_path=sys.meta_path[:],
+                                       path=new_path,
+                                       path_importer_cache=new_path_importer_cache,
+                                       path_hooks=new_path_hooks):
+                    module = self.importlib.import_module('email')
+                    self.assertIsInstance(module, ModuleType)
+                    self.assertEqual(module.EXAMPLE, "bytes_on_sys_path")
+            finally:
+                if email is not missing:
+                    sys.modules['email'] = email
 
     def test_finder_with_find_module(self):
         class TestFinder:
