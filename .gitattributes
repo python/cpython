@@ -1,5 +1,6 @@
 # Binary data types
 *.aif binary
+*.aes binary
 *.aifc binary
 *.aiff binary
 *.au binary
