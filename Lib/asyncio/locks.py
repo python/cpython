@@ -377,6 +377,8 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
         called release() to make it larger than 0, and then return
         True.
         """
+        # _wakeup_scheduled is set if *another* task is scheduled to wakeup
+        # but its acquire() is not resumed yet
         while self._wakeup_scheduled or self._value <= 0:
             fut = self._get_loop().create_future()
             self._waiters.append(fut)
