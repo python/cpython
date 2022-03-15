@@ -1,0 +1,1 @@
+support bytes on sys.path in FileFinder

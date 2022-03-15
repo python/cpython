@@ -204,6 +204,17 @@ def _write_atomic(path, data, mode=0o666):
         raise
 
 
+def _fscodec():
+    encoding = sys.getfilesystemencoding()
+    errors = sys.getfilesystemencodeerrors()
+
+    def fsdecode(filename):
+        return filename.decode(encoding, errors)
+
+    return fsdecode
+
+
+_fsdecode = _fscodec()
 _code_type = type(_write_atomic.__code__)
 
 
@@ -1549,6 +1560,9 @@ class FileFinder:
         """Initialize with the path to search on and a variable number of
         2-tuples containing the loader and the file suffixes the loader
         recognizes."""
+        if isinstance(path, bytes):
+            path = _fsdecode(path)
+
         loaders = []
         for loader, suffixes in loader_details:
             loaders.extend((suffix, loader) for suffix in suffixes)
