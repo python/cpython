@@ -1148,13 +1148,14 @@ class _SelectorSocketTransport(_SelectorTransport):
             self._sock.shutdown(socket.SHUT_WR)
 
     def writelines(self, list_of_data):
-        hasbuffer = len(self._buffer)
-        self._buffer.extend([memoryview(i) for i in list_of_data])
-        if not hasbuffer:
-            # Optimization: try to send now
-            self._write_ready()
+        if self._eof:
+            raise RuntimeError('Cannot call writelines() after write_eof()')
+        if self._empty_waiter is not None:
+            raise RuntimeError('unable to writelines; sendfile is in progress')
+        if not list_of_data:
             return
-        self._maybe_pause_protocol()
+        self._buffer.extend([memoryview(i) for i in list_of_data])
+        self._loop._add_writer(self._sock_fd, self._write_ready)
 
     def can_write_eof(self):
         return True

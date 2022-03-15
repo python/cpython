@@ -810,7 +810,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.sock.send.return_value = len(data)
 
         transport = self.socket_transport()
-        transport._buffer.extend(data)
+        transport._buffer.append(data)
         self.loop._add_writer(7, transport._write_ready)
         transport._write_ready()
         self.assertTrue(self.sock.send.called)
