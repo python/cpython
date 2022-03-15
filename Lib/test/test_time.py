@@ -561,8 +561,9 @@ class TimeTestCase(unittest.TestCase):
             'perf_counter',
             'process_time',
             'time',
-            'thread_time',
         ]
+        if hasattr(time, 'thread_time'):
+            clocks.append('thread_time')
 
         for name in clocks:
             with self.subTest(name=name):
