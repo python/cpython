@@ -252,7 +252,7 @@ _Py_PrintSpecializationStats(int to_file)
 
 // Insert adaptive instructions and superinstructions. This cannot fail.
 void
-_Py_Quicken(PyCodeObject *code)
+_PyCode_Quicken(PyCodeObject *code)
 {
     _Py_QuickenedCount++;
     int previous_opcode = -1;

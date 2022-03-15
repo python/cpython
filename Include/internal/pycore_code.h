@@ -97,7 +97,7 @@ typedef struct {
 /* We want to compare to zero for efficiency, so we offset values accordingly */
 #define QUICKENING_INITIAL_WARMUP_VALUE (-QUICKENING_WARMUP_DELAY)
 
-void _Py_Quicken(PyCodeObject *code);
+void _PyCode_Quicken(PyCodeObject *code);
 
 static inline void
 _PyCode_Warmup(PyCodeObject *code)
@@ -105,7 +105,7 @@ _PyCode_Warmup(PyCodeObject *code)
     if (code->co_warmup != 0) {
         code->co_warmup++;
         if (code->co_warmup == 0) {
-            _Py_Quicken(code);
+            _PyCode_Quicken(code);
         }
     }
 }
