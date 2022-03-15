@@ -382,6 +382,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
             self._waiters.append(fut)
             try:
                 await fut
+                # reset _wakeup_scheduled *after* waiting for a future
                 self._wakeup_scheduled = False
             except exceptions.CancelledError:
                 self._wakeup_scheduled = False

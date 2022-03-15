@@ -917,7 +917,7 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         sem.release()
         self.assertFalse(sem.locked())
 
-    def test_acquire_fifo_order(self):
+    async def test_acquire_fifo_order(self):
         sem = asyncio.Semaphore(1)
         result = []
 
@@ -932,12 +932,11 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
             await asyncio.sleep(0.01)
             sem.release()
 
-        t1 = self.loop.create_task(coro('c1'))
-        t2 = self.loop.create_task(coro('c2'))
-        t3 = self.loop.create_task(coro('c3'))
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(coro('c1'))
+            tg.create_task(coro('c2'))
+            tg.create_task(coro('c3'))
 
-        race_tasks = [t1, t2, t3]
-        self.loop.run_until_complete(asyncio.gather(*race_tasks))
         self.assertEqual(
             ['c1_1', 'c2_1', 'c3_1', 'c1_2', 'c2_2', 'c3_2'],
             result
