@@ -333,34 +333,6 @@ SRE(count)(SRE_STATE* state, const SRE_CODE* pattern, Py_ssize_t maxcount)
     return ptr - (SRE_CHAR*) state->ptr;
 }
 
-#if 0 /* not used in this release */
-LOCAL(int)
-SRE(info)(SRE_STATE* state, const SRE_CODE* pattern)
-{
-    /* check if an SRE_OP_INFO block matches at the current position.
-       returns the number of SRE_CODE objects to skip if successful, 0
-       if no match */
-
-    const SRE_CHAR* end = (const SRE_CHAR*) state->end;
-    const SRE_CHAR* ptr = (const SRE_CHAR*) state->ptr;
-    Py_ssize_t i;
-
-    /* check minimal length */
-    if (pattern[3] && end - ptr < pattern[3])
-        return 0;
-
-    /* check known prefix */
-    if (pattern[2] & SRE_INFO_PREFIX && pattern[5] > 1) {
-        /* <length> <skip> <prefix data> <overlap data> */
-        for (i = 0; i < pattern[5]; i++)
-            if ((SRE_CODE) ptr[i] != pattern[7 + i])
-                return 0;
-        return pattern[0] + 2 * pattern[6];
-    }
-    return pattern[0];
-}
-#endif
-
 /* The macros below should be used to protect recursive SRE(match)()
  * calls that *failed* and do *not* return immediately (IOW, those
  * that will backtrack). Explaining:

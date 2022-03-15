@@ -9,6 +9,7 @@ from . import events
 from . import exceptions
 from . import tasks
 
+
 class TaskGroup:
 
     def __init__(self):
@@ -25,19 +26,20 @@ class TaskGroup:
         self._on_completed_fut = None
 
     def __repr__(self):
-        msg = f'<TaskGroup'
+        info = ['']
         if self._tasks:
-            msg += f' tasks:{len(self._tasks)}'
+            info.append(f'tasks={len(self._tasks)}')
         if self._unfinished_tasks:
-            msg += f' unfinished:{self._unfinished_tasks}'
+            info.append(f'unfinished={self._unfinished_tasks}')
         if self._errors:
-            msg += f' errors:{len(self._errors)}'
+            info.append(f'errors={len(self._errors)}')
         if self._aborting:
-            msg += ' cancelling'
+            info.append('cancelling')
         elif self._entered:
-            msg += ' entered'
-        msg += '>'
-        return msg
+            info.append('entered')
+
+        info_str = ' '.join(info)
+        return f'<TaskGroup{info_str}>'
 
     async def __aenter__(self):
         if self._entered:
@@ -64,31 +66,28 @@ class TaskGroup:
                 self._base_error is None):
             self._base_error = exc
 
-        if et is exceptions.CancelledError:
-            if self._parent_cancel_requested:
-                # Only if we did request task to cancel ourselves
-                # we mark it as no longer cancelled.
-                self._parent_task.uncancel()
-            else:
-                propagate_cancellation_error = et
-
-        if et is not None and not self._aborting:
-            # Our parent task is being cancelled:
-            #
-            #    async with TaskGroup() as g:
-            #        g.create_task(...)
-            #        await ...  # <- CancelledError
-            #
+        if et is not None:
             if et is exceptions.CancelledError:
-                propagate_cancellation_error = et
+                if self._parent_cancel_requested and not self._parent_task.uncancel():
+                    # Do nothing, i.e. swallow the error.
+                    pass
+                else:
+                    propagate_cancellation_error = exc
 
-            # or there's an exception in "async with":
-            #
-            #    async with TaskGroup() as g:
-            #        g.create_task(...)
-            #        1 / 0
-            #
-            self._abort()
+            if not self._aborting:
+                # Our parent task is being cancelled:
+                #
+                #    async with TaskGroup() as g:
+                #        g.create_task(...)
+                #        await ...  # <- CancelledError
+                #
+                # or there's an exception in "async with":
+                #
+                #    async with TaskGroup() as g:
+                #        g.create_task(...)
+                #        1 / 0
+                #
+                self._abort()
 
         # We use while-loop here because "self._on_completed_fut"
         # can be cancelled multiple times if our parent task
@@ -116,7 +115,6 @@ class TaskGroup:
             self._on_completed_fut = None
 
         assert self._unfinished_tasks == 0
-        self._on_completed_fut = None  # no longer needed
 
         if self._base_error is not None:
             raise self._base_error
@@ -140,12 +138,15 @@ class TaskGroup:
             me = BaseExceptionGroup('unhandled errors in a TaskGroup', errors)
             raise me from None
 
-    def create_task(self, coro, *, name=None):
+    def create_task(self, coro, *, name=None, context=None):
         if not self._entered:
             raise RuntimeError(f"TaskGroup {self!r} has not been entered")
         if self._exiting and self._unfinished_tasks == 0:
             raise RuntimeError(f"TaskGroup {self!r} is finished")
-        task = self._loop.create_task(coro)
+        if context is None:
+            task = self._loop.create_task(coro)
+        else:
+            task = self._loop.create_task(coro, context=context)
         tasks._set_task_name(task, name)
         task.add_done_callback(self._on_task_done)
         self._unfinished_tasks += 1
@@ -197,8 +198,7 @@ class TaskGroup:
             })
             return
 
-        self._abort()
-        if not self._parent_task.cancelling():
+        if not self._aborting and not self._parent_cancel_requested:
             # If parent task *is not* being cancelled, it means that we want
             # to manually cancel it to abort whatever is being run right now
             # in the TaskGroup.  But we want to mark parent task as
@@ -217,5 +217,6 @@ class TaskGroup:
             #            pass
             #        await something_else     # this line has to be called
             #                                 # after TaskGroup is finished.
+            self._abort()
             self._parent_cancel_requested = True
             self._parent_task.cancel()

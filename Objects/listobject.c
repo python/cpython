@@ -15,7 +15,7 @@ class list "PyListObject *" "&PyList_Type"
 
 #include "clinic/listobject.c.h"
 
-static PyObject *indexerr = NULL;
+_Py_DECLARE_STR(list_err, "list index out of range");
 
 #if PyList_MAXFREELIST > 0
 static struct _Py_list_state *
@@ -125,10 +125,6 @@ _PyList_Fini(PyInterpreterState *interp)
     struct _Py_list_state *state = &interp->list;
     state->numfree = -1;
 #endif
-
-    if (_Py_IsMainInterpreter(interp)) {
-        Py_CLEAR(indexerr);
-    }
 }
 
 /* Print summary info about the state of the optimized allocator */
@@ -238,13 +234,8 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
         return NULL;
     }
     if (!valid_index(i, Py_SIZE(op))) {
-        if (indexerr == NULL) {
-            indexerr = PyUnicode_FromString(
-                "list index out of range");
-            if (indexerr == NULL)
-                return NULL;
-        }
-        PyErr_SetObject(PyExc_IndexError, indexerr);
+        _Py_DECLARE_STR(list_err, "list index out of range");
+        PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
     }
     return ((PyListObject *)op) -> ob_item[i];
@@ -452,13 +443,7 @@ static PyObject *
 list_item(PyListObject *a, Py_ssize_t i)
 {
     if (!valid_index(i, Py_SIZE(a))) {
-        if (indexerr == NULL) {
-            indexerr = PyUnicode_FromString(
-                "list index out of range");
-            if (indexerr == NULL)
-                return NULL;
-        }
-        PyErr_SetObject(PyExc_IndexError, indexerr);
+        PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
     }
     Py_INCREF(a->ob_item[i]);
@@ -880,7 +865,6 @@ list_extend(PyListObject *self, PyObject *iterable)
     PyObject *it;      /* iter(v) */
     Py_ssize_t m;                  /* size of self */
     Py_ssize_t n;                  /* guess for size of iterable */
-    Py_ssize_t mn;                 /* m + n */
     Py_ssize_t i;
     PyObject *(*iternext)(PyObject *);
 
@@ -904,7 +888,13 @@ list_extend(PyListObject *self, PyObject *iterable)
         /* It should not be possible to allocate a list large enough to cause
         an overflow on any relevant platform */
         assert(m < PY_SSIZE_T_MAX - n);
-        if (list_resize(self, m + n) < 0) {
+        if (self->ob_item == NULL) {
+            if (list_preallocate_exact(self, n) < 0) {
+                return NULL;
+            }
+            Py_SET_SIZE(self, n);
+        }
+        else if (list_resize(self, m + n) < 0) {
             Py_DECREF(iterable);
             return NULL;
         }
@@ -943,10 +933,13 @@ list_extend(PyListObject *self, PyObject *iterable)
          * eventually run out of memory during the loop.
          */
     }
+    else if (self->ob_item == NULL) {
+        if (n && list_preallocate_exact(self, n) < 0)
+            goto error;
+    }
     else {
-        mn = m + n;
         /* Make room. */
-        if (list_resize(self, mn) < 0)
+        if (list_resize(self, m + n) < 0)
             goto error;
         /* Make the list sane again. */
         Py_SET_SIZE(self, m);
@@ -2829,19 +2822,6 @@ list___init___impl(PyListObject *self, PyObject *iterable)
         (void)_list_clear(self);
     }
     if (iterable != NULL) {
-        if (_PyObject_HasLen(iterable)) {
-            Py_ssize_t iter_len = PyObject_Size(iterable);
-            if (iter_len == -1) {
-                if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
-                    return -1;
-                }
-                PyErr_Clear();
-            }
-            if (iter_len > 0 && self->ob_item == NULL
-                && list_preallocate_exact(self, iter_len)) {
-                return -1;
-            }
-        }
         PyObject *rv = list_extend(self, iterable);
         if (rv == NULL)
             return -1;

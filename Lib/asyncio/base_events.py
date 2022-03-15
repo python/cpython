@@ -49,7 +49,7 @@ from . import trsock
 from .log import logger
 
 
-__all__ = 'BaseEventLoop',
+__all__ = 'BaseEventLoop','Server',
 
 
 # Minimum number of _scheduled timer handles before cleanup of
@@ -196,6 +196,11 @@ if hasattr(socket, 'TCP_NODELAY'):
 else:
     def _set_nodelay(sock):
         pass
+
+
+def _check_ssl_socket(sock):
+    if ssl is not None and isinstance(sock, ssl.SSLSocket):
+        raise TypeError("Socket cannot be of type SSLSocket")
 
 
 class _SendfileFallbackProtocol(protocols.Protocol):
@@ -421,18 +426,23 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Create a Future object attached to the loop."""
         return futures.Future(loop=self)
 
-    def create_task(self, coro, *, name=None):
+    def create_task(self, coro, *, name=None, context=None):
         """Schedule a coroutine object.
 
         Return a task object.
         """
         self._check_closed()
         if self._task_factory is None:
-            task = tasks.Task(coro, loop=self, name=name)
+            task = tasks.Task(coro, loop=self, name=name, context=context)
             if task._source_traceback:
                 del task._source_traceback[-1]
         else:
-            task = self._task_factory(self, coro)
+            if context is None:
+                # Use legacy API if context is not needed
+                task = self._task_factory(self, coro)
+            else:
+                task = self._task_factory(self, coro, context=context)
+
             tasks._set_task_name(task, name)
 
         return task
@@ -862,6 +872,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                             *, fallback=True):
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
+        _check_ssl_socket(sock)
         self._check_sendfile_params(sock, file, offset, count)
         try:
             return await self._sock_sendfile_native(sock, file,
@@ -1007,6 +1018,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         if ssl_shutdown_timeout is not None and not ssl:
             raise ValueError(
                 'ssl_shutdown_timeout is only meaningful with ssl')
+
+        if sock is not None:
+            _check_ssl_socket(sock)
 
         if happy_eyeballs_delay is not None and interleave is None:
             # If using happy eyeballs, default to interleave addresses by family
@@ -1438,6 +1452,9 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError(
                 'ssl_shutdown_timeout is only meaningful with ssl')
 
+        if sock is not None:
+            _check_ssl_socket(sock)
+
         if host is not None or port is not None:
             if sock is not None:
                 raise ValueError(
@@ -1537,6 +1554,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         if ssl_shutdown_timeout is not None and not ssl:
             raise ValueError(
                 'ssl_shutdown_timeout is only meaningful with ssl')
+
+        if sock is not None:
+            _check_ssl_socket(sock)
 
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, '', server_side=True,

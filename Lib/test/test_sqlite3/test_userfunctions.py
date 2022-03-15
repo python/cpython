@@ -502,11 +502,13 @@ class AggregateTests(unittest.TestCase):
         with self.assertRaises(sqlite.OperationalError):
             self.con.create_function("bla", -100, AggrSum)
 
+    @with_tracebacks(AttributeError, name="AggrNoStep")
     def test_aggr_no_step(self):
         cur = self.con.cursor()
-        with self.assertRaises(AttributeError) as cm:
+        with self.assertRaises(sqlite.OperationalError) as cm:
             cur.execute("select nostep(t) from test")
-        self.assertEqual(str(cm.exception), "'AggrNoStep' object has no attribute 'step'")
+        self.assertEqual(str(cm.exception),
+                         "user-defined aggregate's 'step' method not defined")
 
     def test_aggr_no_finalize(self):
         cur = self.con.cursor()

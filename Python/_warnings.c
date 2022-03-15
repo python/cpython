@@ -768,25 +768,6 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
 static int
 is_internal_frame(PyFrameObject *frame)
 {
-    static PyObject *importlib_string = NULL;
-    static PyObject *bootstrap_string = NULL;
-    int contains;
-
-    if (importlib_string == NULL) {
-        importlib_string = PyUnicode_FromString("importlib");
-        if (importlib_string == NULL) {
-            return 0;
-        }
-
-        bootstrap_string = PyUnicode_FromString("_bootstrap");
-        if (bootstrap_string == NULL) {
-            Py_DECREF(importlib_string);
-            return 0;
-        }
-        Py_INCREF(importlib_string);
-        Py_INCREF(bootstrap_string);
-    }
-
     if (frame == NULL) {
         return 0;
     }
@@ -802,12 +783,12 @@ is_internal_frame(PyFrameObject *frame)
         return 0;
     }
 
-    contains = PyUnicode_Contains(filename, importlib_string);
+    int contains = PyUnicode_Contains(filename, &_Py_ID(importlib));
     if (contains < 0) {
         return 0;
     }
     else if (contains > 0) {
-        contains = PyUnicode_Contains(filename, bootstrap_string);
+        contains = PyUnicode_Contains(filename, &_Py_ID(_bootstrap));
         if (contains < 0) {
             return 0;
         }

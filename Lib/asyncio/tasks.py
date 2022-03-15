@@ -67,7 +67,10 @@ def _set_task_name(task, name):
         try:
             set_name = task.set_name
         except AttributeError:
-            pass
+            warnings.warn("Task.set_name() was added in Python 3.8, "
+                      "the method support will be mandatory for third-party "
+                      "task implementations since 3.13.",
+                      DeprecationWarning, stacklevel=3)
         else:
             set_name(name)
 
@@ -90,7 +93,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     # status is still pending
     _log_destroy_pending = True
 
-    def __init__(self, coro, *, loop=None, name=None):
+    def __init__(self, coro, *, loop=None, name=None, context=None):
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -105,11 +108,14 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         else:
             self._name = str(name)
 
-        self._cancel_requested = False
+        self._num_cancels_requested = 0
         self._must_cancel = False
         self._fut_waiter = None
         self._coro = coro
-        self._context = contextvars.copy_context()
+        if context is None:
+            self._context = contextvars.copy_context()
+        else:
+            self._context = context
 
         self._loop.call_soon(self.__step, context=self._context)
         _register_task(self)
@@ -198,13 +204,18 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         task will be marked as cancelled when the wrapped coroutine
         terminates with a CancelledError exception (even if cancel()
         was not called).
+
+        This also increases the task's count of cancellation requests.
         """
         self._log_traceback = False
         if self.done():
             return False
-        if self._cancel_requested:
-            return False
-        self._cancel_requested = True
+        self._num_cancels_requested += 1
+        # These two lines are controversial.  See discussion starting at
+        # https://github.com/python/cpython/pull/31394#issuecomment-1053545331
+        # Also remember that this is duplicated in _asynciomodule.c.
+        # if self._num_cancels_requested > 1:
+        #     return False
         if self._fut_waiter is not None:
             if self._fut_waiter.cancel(msg=msg):
                 # Leave self._fut_waiter; it may be a Task that
@@ -217,14 +228,24 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         return True
 
     def cancelling(self):
-        return self._cancel_requested
+        """Return the count of the task's cancellation requests.
+
+        This count is incremented when .cancel() is called
+        and may be decremented using .uncancel().
+        """
+        return self._num_cancels_requested
 
     def uncancel(self):
-        if self._cancel_requested:
-            self._cancel_requested = False
-            return True
-        else:
-            return False
+        """Decrement the task's count of cancellation requests.
+
+        This should be used by tasks that catch CancelledError
+        and wish to continue indefinitely until they are cancelled again.
+
+        Returns the remaining number of cancellation requests.
+        """
+        if self._num_cancels_requested > 0:
+            self._num_cancels_requested -= 1
+        return self._num_cancels_requested
 
     def __step(self, exc=None):
         if self.done():
@@ -342,13 +363,18 @@ else:
     Task = _CTask = _asyncio.Task
 
 
-def create_task(coro, *, name=None):
+def create_task(coro, *, name=None, context=None):
     """Schedule the execution of a coroutine object in a spawn task.
 
     Return a Task object.
     """
     loop = events.get_running_loop()
-    task = loop.create_task(coro)
+    if context is None:
+        # Use legacy API if context is not needed
+        task = loop.create_task(coro)
+    else:
+        task = loop.create_task(coro, context=context)
+
     _set_task_name(task, name)
     return task
 
@@ -735,7 +761,7 @@ def gather(*coros_or_futures, return_exceptions=False):
         nonlocal nfinished
         nfinished += 1
 
-        if outer.done():
+        if outer is None or outer.done():
             if not fut.cancelled():
                 # Mark exception retrieved.
                 fut.exception()
@@ -791,6 +817,7 @@ def gather(*coros_or_futures, return_exceptions=False):
     nfuts = 0
     nfinished = 0
     loop = None
+    outer = None  # bpo-46672
     for arg in coros_or_futures:
         if arg not in arg_to_fut:
             fut = _ensure_future(arg, loop=loop)
