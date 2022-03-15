@@ -147,6 +147,36 @@ For example, the following code will print B, C, D in that order::
 Note that if the *except clauses* were reversed (with ``except B`` first), it
 would have printed B, B, B --- the first matching *except clause* is triggered.
 
+When an exception occurs, it may have associated values, also known as the
+exception's *arguments*. The presence and types of the arguments depend on the
+exception type.
+
+The *except clause* may specify a variable after the exception name.  The
+variable is bound to the exception instance which typically has an ``args``
+attribute that stores the arguments. For convenience, builtin exception
+types define :meth:`__str__` to print all the arguments without explicitly
+accessing ``.args``.  ::
+
+   >>> try:
+   ...     raise Exception('spam', 'eggs')
+   ... except Exception as inst:
+   ...     print(type(inst))    # the exception instance
+   ...     print(inst.args)     # arguments stored in .args
+   ...     print(inst)          # __str__ allows args to be printed directly,
+   ...                          # but may be overridden in exception subclasses
+   ...     x, y = inst.args     # unpack args
+   ...     print('x =', x)
+   ...     print('y =', y)
+   ...
+   <class 'Exception'>
+   ('spam', 'eggs')
+   ('spam', 'eggs')
+   x = spam
+   y = eggs
+
+The exception's :meth:`__str__` output is printed as the last part ('detail')
+of the message for unhandled exceptions.
+
 All exceptions inherit from :exc:`BaseException`, and so it can be used to serve
 as a wildcard. Use this with extreme caution, since it is easy to mask a real
 programming error in this way!  It can also be used to print an error message and
@@ -188,40 +218,9 @@ the :keyword:`try` clause because it avoids accidentally catching an exception
 that wasn't raised by the code being protected by the :keyword:`!try` ...
 :keyword:`!except` statement.
 
-When an exception occurs, it may have an associated value, also known as the
-exception's *argument*. The presence and type of the argument depend on the
-exception type.
-
-The *except clause* may specify a variable after the exception name.  The
-variable is bound to an exception instance with the arguments stored in
-``instance.args``.  For convenience, the exception instance defines
-:meth:`__str__` so the arguments can be printed directly without having to
-reference ``.args``.  One may also instantiate an exception first before
-raising it and add any attributes to it as desired. ::
-
-   >>> try:
-   ...     raise Exception('spam', 'eggs')
-   ... except Exception as inst:
-   ...     print(type(inst))    # the exception instance
-   ...     print(inst.args)     # arguments stored in .args
-   ...     print(inst)          # __str__ allows args to be printed directly,
-   ...                          # but may be overridden in exception subclasses
-   ...     x, y = inst.args     # unpack args
-   ...     print('x =', x)
-   ...     print('y =', y)
-   ...
-   <class 'Exception'>
-   ('spam', 'eggs')
-   ('spam', 'eggs')
-   x = spam
-   y = eggs
-
-If an exception has arguments, they are printed as the last part ('detail') of
-the message for unhandled exceptions.
-
-Exception handlers don't just handle exceptions if they occur immediately in the
-*try clause*, but also if they occur inside functions that are called (even
-indirectly) in the *try clause*. For example::
+Exception handlers do not handle only exceptions that occur immediately in the
+*try clause*, but also those that occur inside functions that are called (even
+indirectly) from the *try clause*. For example::
 
    >>> def this_fails():
    ...     x = 1/0
@@ -249,7 +248,7 @@ exception to occur. For example::
 
 The sole argument to :keyword:`raise` indicates the exception to be raised.
 This must be either an exception instance or an exception class (a class that
-derives from :class:`Exception`).  If an exception class is passed, it will
+derives from :class:`BaseException`).  If an exception class is passed, it will
 be implicitly instantiated by calling its constructor with no arguments::
 
    raise ValueError  # shorthand for 'raise ValueError()'
@@ -335,8 +334,7 @@ Most exceptions are defined with names that end in "Error", similar to the
 naming of the standard exceptions.
 
 Many standard modules define their own exceptions to report errors that may
-occur in functions they define.  More information on classes is presented in
-chapter :ref:`tut-classes`.
+occur in functions they define.
 
 
 .. _tut-cleanup:
