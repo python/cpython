@@ -74,7 +74,7 @@ steps:
       artifactName: tcltk_lib_amd64
       targetPath: $(Build.BinariesDirectory)\tcltk_lib_amd64
 
-  - ${{ if parameters.ARM64TclTk }}:
+  - ${{ if eq(parameters.ARM64TclTk, true) }}:
     - task: DownloadPipelineArtifact@1
       displayName: 'Download artifact: tcltk_lib_arm64'
       condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
@@ -142,7 +142,7 @@ steps:
       PythonForBuild: $(Build.BinariesDirectory)\win32\python.exe
       PYTHONHOME: $(Build.SourcesDirectory)
       BuildForRelease: true
-      ${{ if parameters.ARM64TclTk }}:
+      ${{ if eq(parameters.ARM64TclTk, true) }}:
         TclTkLibraryDir: $(Build.BinariesDirectory)\tcltk_lib_arm64
 
   - task: CopyFiles@2

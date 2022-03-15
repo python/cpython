@@ -28,7 +28,7 @@ jobs:
         HostArch: amd64
         Python: $(Build.BinariesDirectory)\bin_amd64\python.exe
         PYTHONHOME: $(Build.SourcesDirectory)
-        ${{ if parameters.ARM64TclTk }}:
+        ${{ if eq(parameters.ARM64TclTk, true) }}:
           TclLibrary: $(Build.BinariesDirectory)\tcltk_lib\tcl8
 
   steps:
