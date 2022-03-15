@@ -9,14 +9,12 @@ __all__ = 'BaseSelectorEventLoop',
 import collections
 import errno
 import functools
+import itertools
+import os
 import selectors
 import socket
 import warnings
 import weakref
-try:
-    import ssl
-except ImportError:  # pragma: no cover
-    ssl = None
 
 from . import base_events
 from . import constants
@@ -28,6 +26,10 @@ from . import transports
 from . import trsock
 from .log import logger
 
+HAVE_SENDMSG = hasattr(socket.socket, 'sendmsg')
+
+if HAVE_SENDMSG:
+    SC_IOV_MAX = os.sysconf('SC_IOV_MAX')
 
 def _test_selector_event(selector, fd, event):
     # Test if the selector is monitoring 'event' events
@@ -899,7 +901,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._eof = False
         self._paused = False
         self._empty_waiter = None
-        if hasattr(socket.socket, 'sendmsg'):
+        if HAVE_SENDMSG:
             self._write_ready = self._write_sendmsg
         else:
             self._write_ready = self._write_send
@@ -1070,12 +1072,15 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._buffer.append(data)
         self._maybe_pause_protocol()
 
+    def _get_sendmsg_buffer(self):
+        return itertools.islice(self._buffer, SC_IOV_MAX)
+
     def _write_sendmsg(self):
         assert self._buffer, 'Data should not be empty'
         if self._conn_lost:
             return
         try:
-            n = self._sock.sendmsg(self._buffer)
+            n = self._sock.sendmsg(self._get_sendmsg_buffer())
             self._adjust_leftover_buffer(n)
         except (BlockingIOError, InterruptedError):
             pass
