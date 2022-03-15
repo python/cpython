@@ -38,6 +38,14 @@ parameters:
   displayName: "Publish ARM64 build"
   type: boolean
   default: true
+# Because there is no ARM64 Tcl/Tk pre-3.11, we need a separate option
+# to keep those builds working when the files are going to be absent.
+# Eventually when we stop releasing anything that old, we can drop this
+# argument (and make it implicitly always 'true')
+- name: ARM64TclTk
+  displayName: "Use Tcl/Tk for ARM64"
+  type: boolean
+  default: true
 - name: DoPGO
   displayName: "Run PGO"
   type: boolean

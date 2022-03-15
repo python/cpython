@@ -25,7 +25,8 @@ jobs:
         HostArch: amd64
         Python: $(Build.BinariesDirectory)\bin_amd64\python.exe
         PYTHONHOME: $(Build.SourcesDirectory)
-        TclLibrary: $(Build.BinariesDirectory)\tcltk_lib\tcl8
+        ${{ if(parameters.ARM64TclTk) }}:
+          TclLibrary: $(Build.BinariesDirectory)\tcltk_lib\tcl8
 
   steps:
   - template: ./checkout.yml
