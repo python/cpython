@@ -1,1 +1,0 @@
-Add :meth:`string.Template.is_valid` and :meth:`string.Template.get_identifiers` methods.

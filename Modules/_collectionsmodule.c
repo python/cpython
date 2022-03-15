@@ -1348,9 +1348,8 @@ static PyObject *
 deque_reduce(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *dict, *it;
-    _Py_IDENTIFIER(__dict__);
 
-    if (_PyObject_LookupAttrId((PyObject *)deque, &PyId___dict__, &dict) < 0) {
+    if (_PyObject_LookupAttr((PyObject *)deque, &_Py_ID(__dict__), &dict) < 0) {
         return NULL;
     }
     if (dict == NULL) {
@@ -2064,7 +2063,6 @@ defdict_reduce(defdictobject *dd, PyObject *Py_UNUSED(ignored))
     PyObject *items;
     PyObject *iter;
     PyObject *result;
-    _Py_IDENTIFIER(items);
 
     if (dd->default_factory == NULL || dd->default_factory == Py_None)
         args = PyTuple_New(0);
@@ -2072,7 +2070,7 @@ defdict_reduce(defdictobject *dd, PyObject *Py_UNUSED(ignored))
         args = PyTuple_Pack(1, dd->default_factory);
     if (args == NULL)
         return NULL;
-    items = _PyObject_CallMethodIdNoArgs((PyObject *)dd, &PyId_items);
+    items = PyObject_CallMethodNoArgs((PyObject *)dd, &_Py_ID(items));
     if (items == NULL) {
         Py_DECREF(args);
         return NULL;
@@ -2310,8 +2308,6 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
                                   PyObject *iterable)
 /*[clinic end generated code: output=7e0c1789636b3d8f input=e79fad04534a0b45]*/
 {
-    _Py_IDENTIFIER(get);
-    _Py_IDENTIFIER(__setitem__);
     PyObject *it, *oldval;
     PyObject *newval = NULL;
     PyObject *key = NULL;
@@ -2329,10 +2325,10 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
     /* Only take the fast path when get() and __setitem__()
      * have not been overridden.
      */
-    mapping_get = _PyType_LookupId(Py_TYPE(mapping), &PyId_get);
-    dict_get = _PyType_LookupId(&PyDict_Type, &PyId_get);
-    mapping_setitem = _PyType_LookupId(Py_TYPE(mapping), &PyId___setitem__);
-    dict_setitem = _PyType_LookupId(&PyDict_Type, &PyId___setitem__);
+    mapping_get = _PyType_Lookup(Py_TYPE(mapping), &_Py_ID(get));
+    dict_get = _PyType_Lookup(&PyDict_Type, &_Py_ID(get));
+    mapping_setitem = _PyType_Lookup(Py_TYPE(mapping), &_Py_ID(__setitem__));
+    dict_setitem = _PyType_Lookup(&PyDict_Type, &_Py_ID(__setitem__));
 
     if (mapping_get != NULL && mapping_get == dict_get &&
         mapping_setitem != NULL && mapping_setitem == dict_setitem &&
@@ -2381,7 +2377,7 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
         }
     }
     else {
-        bound_get = _PyObject_GetAttrId(mapping, &PyId_get);
+        bound_get = PyObject_GetAttr(mapping, &_Py_ID(get));
         if (bound_get == NULL)
             goto done;
 

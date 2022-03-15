@@ -522,6 +522,9 @@
 /* Define to 1 if you have the `getpwnam_r' function. */
 #undef HAVE_GETPWNAM_R
 
+/* Define to 1 if you have the `getpwuid' function. */
+#undef HAVE_GETPWUID
+
 /* Define to 1 if you have the `getpwuid_r' function. */
 #undef HAVE_GETPWUID_R
 
@@ -536,6 +539,9 @@
 
 /* Define to 1 if you have the `getresuid' function. */
 #undef HAVE_GETRESUID
+
+/* Define to 1 if you have the `getrusage' function. */
+#undef HAVE_GETRUSAGE
 
 /* Define to 1 if you have the `getsid' function. */
 #undef HAVE_GETSID
@@ -655,6 +661,9 @@
 /* Define to 1 if you have the `linkat' function. */
 #undef HAVE_LINKAT
 
+/* Define to 1 if you have the <linux/auxvec.h> header file. */
+#undef HAVE_LINUX_AUXVEC_H
+
 /* Define to 1 if you have the <linux/can/bcm.h> header file. */
 #undef HAVE_LINUX_CAN_BCM_H
 
@@ -771,6 +780,9 @@
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
+
+/* Define to 1 if you have the <netcan/can.h> header file. */
+#undef HAVE_NETCAN_CAN_H
 
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
@@ -1724,11 +1736,6 @@
 
 /* Define on FreeBSD to activate all library features */
 #undef __BSD_VISIBLE
-
-/* Define to 1 if type `char' is unsigned and you are not using gcc.  */
-#ifndef __CHAR_UNSIGNED__
-# undef __CHAR_UNSIGNED__
-#endif
 
 /* Define to 'long' if <time.h> doesn't define. */
 #undef clock_t

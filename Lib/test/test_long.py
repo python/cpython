@@ -392,7 +392,8 @@ class LongTest(unittest.TestCase):
                 return 42
             def __trunc__(self):
                 return 1729
-        self.assertEqual(int(LongTrunc()), 1729)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(int(LongTrunc()), 1729)
 
     def check_float_conversion(self, n):
         # Check that int -> float conversion behaviour matches
@@ -1470,6 +1471,13 @@ class LongTest(unittest.TestCase):
         self.assertIs(type(i), myint3)
         self.assertEqual(i, 1)
         self.assertEqual(getattr(i, 'foo', 'none'), 'bar')
+
+    @support.cpython_only
+    def test_from_bytes_small(self):
+        # bpo-46361
+        for i in range(-5, 257):
+            b = i.to_bytes(2, signed=True)
+            self.assertIs(int.from_bytes(b, signed=True), i)
 
     def test_access_to_nonexistent_digit_0(self):
         # http://bugs.python.org/issue14630: A bug in _PyLong_Copy meant that

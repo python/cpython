@@ -318,10 +318,6 @@ typedef struct {
 
 #define Tkapp_Interp(v) (((TkappObject *) (v))->interp)
 
-#define DEBUG_REFCNT(v) (printf("DEBUG: id=%p, refcnt=%i\n", \
-(void *) v, Py_REFCNT(v)))
-
-
 
 /**** Error Handling ****/
 
@@ -3444,11 +3440,5 @@ PyInit__tkinter(void)
         return NULL;
     }
 
-#if 0
-    /* This was not a good idea; through <Destroy> bindings,
-       Tcl_Finalize() may invoke Python code but at that point the
-       interpreter and thread state have already been destroyed! */
-    Py_AtExit(Tcl_Finalize);
-#endif
     return m;
 }

@@ -20,15 +20,6 @@ static PyMemberDef frame_memberlist[] = {
     {NULL}      /* Sentinel */
 };
 
-#if PyFrame_MAXFREELIST > 0
-static struct _Py_frame_state *
-get_frame_state(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->frame;
-}
-#endif
-
 
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
@@ -242,6 +233,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     break;
                 }
                 case JUMP_ABSOLUTE:
+                case JUMP_NO_INTERRUPT:
                     j = get_arg(code, i);
                     assert(j < len);
                     if (stacks[j] == UNINITIALIZED && j < i) {
@@ -385,9 +377,9 @@ marklines(PyCodeObject *code, int len)
         linestarts[i] = -1;
     }
 
-    while (PyLineTable_NextAddressRange(&bounds)) {
-        assert(bounds.ar_start/(int)sizeof(_Py_CODEUNIT) < len);
-        linestarts[bounds.ar_start/sizeof(_Py_CODEUNIT)] = bounds.ar_line;
+    while (_PyLineTable_NextAddressRange(&bounds)) {
+        assert(bounds.ar_start / (int)sizeof(_Py_CODEUNIT) < len);
+        linestarts[bounds.ar_start / sizeof(_Py_CODEUNIT)] = bounds.ar_line;
     }
     return linestarts;
 }
@@ -625,7 +617,7 @@ frame_dealloc(PyFrameObject *f)
 {
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the generator pointer */
-    assert(f->f_frame->generator == NULL);
+    assert(!f->f_frame->is_generator);
 
     if (_PyObject_GC_IS_TRACKED(f)) {
         _PyObject_GC_UNTRACK(f);
@@ -637,8 +629,8 @@ frame_dealloc(PyFrameObject *f)
     /* Kill all local variables including specials, if we own them */
     if (f->f_owns_frame) {
         f->f_owns_frame = 0;
-        assert(f->f_frame == (InterpreterFrame *)f->_f_frame_data);
-        InterpreterFrame *frame = (InterpreterFrame *)f->_f_frame_data;
+        assert(f->f_frame == (_PyInterpreterFrame *)f->_f_frame_data);
+        _PyInterpreterFrame *frame = (_PyInterpreterFrame *)f->_f_frame_data;
         /* Don't clear code object until the end */
         co = frame->f_code;
         frame->f_code = NULL;
@@ -698,8 +690,11 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
                         "cannot clear an executing frame");
         return NULL;
     }
-    if (f->f_frame->generator) {
-        _PyGen_Finalize(f->f_frame->generator);
+    if (f->f_frame->is_generator) {
+        assert(!f->f_owns_frame);
+        size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
+        PyObject *gen = (PyObject *)(((char *)f->f_frame) - offset_in_gen);
+        _PyGen_Finalize(gen);
     }
     (void)frame_tp_clear(f);
     Py_RETURN_NONE;
@@ -712,7 +707,7 @@ static PyObject *
 frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res;
-    res = offsetof(PyFrameObject, _f_frame_data) + offsetof(InterpreterFrame, localsplus);
+    res = offsetof(PyFrameObject, _f_frame_data) + offsetof(_PyInterpreterFrame, localsplus);
     PyCodeObject *code = f->f_frame->f_code;
     res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
@@ -743,7 +738,7 @@ PyTypeObject PyFrame_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "frame",
     offsetof(PyFrameObject, _f_frame_data) +
-    offsetof(InterpreterFrame, localsplus),
+    offsetof(_PyInterpreterFrame, localsplus),
     sizeof(PyObject *),
     (destructor)frame_dealloc,                  /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
@@ -775,11 +770,11 @@ PyTypeObject PyFrame_Type = {
     0,                                          /* tp_dict */
 };
 
-_Py_IDENTIFIER(__builtins__);
-
 static void
-init_frame(InterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
+init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
+    /* _PyFrame_InitializeSpecials consumes reference to func */
+    Py_INCREF(func);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
     for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
@@ -790,6 +785,7 @@ init_frame(InterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 PyFrameObject*
 _PyFrame_New_NoTrack(PyCodeObject *code)
 {
+    CALL_STAT_INC(frame_objects_created);
     int slots = code->co_nlocalsplus + code->co_stacksize;
     PyFrameObject *f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, slots);
     if (f == NULL) {
@@ -831,8 +827,8 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
         Py_DECREF(func);
         return NULL;
     }
-    init_frame((InterpreterFrame *)f->_f_frame_data, func, locals);
-    f->f_frame = (InterpreterFrame *)f->_f_frame_data;
+    init_frame((_PyInterpreterFrame *)f->_f_frame_data, func, locals);
+    f->f_frame = (_PyInterpreterFrame *)f->_f_frame_data;
     f->f_owns_frame = 1;
     Py_DECREF(func);
     _PyObject_GC_TRACK(f);
@@ -840,7 +836,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
 }
 
 static int
-_PyFrame_OpAlreadyRan(InterpreterFrame *frame, int opcode, int oparg)
+_PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
 {
     const _Py_CODEUNIT *code =
         (const _Py_CODEUNIT *)PyBytes_AS_STRING(frame->f_code->co_code);
@@ -853,7 +849,7 @@ _PyFrame_OpAlreadyRan(InterpreterFrame *frame, int opcode, int oparg)
 }
 
 int
-_PyFrame_FastToLocalsWithError(InterpreterFrame *frame) {
+_PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
     /* Merge fast locals into f->f_locals */
     PyObject *locals;
     PyObject **fast;
@@ -964,7 +960,7 @@ PyFrame_FastToLocals(PyFrameObject *f)
 }
 
 void
-_PyFrame_LocalsToFast(InterpreterFrame *frame, int clear)
+_PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
 {
     /* Merge locals into fast locals */
     PyObject *locals;
@@ -1076,7 +1072,7 @@ PyFrame_GetBack(PyFrameObject *frame)
 PyObject*
 _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
 {
-    PyObject *builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
+    PyObject *builtins = PyDict_GetItemWithError(globals, &_Py_ID(__builtins__));
     if (builtins) {
         if (PyModule_Check(builtins)) {
             builtins = _PyModule_GetDict(builtins);

@@ -1,10 +1,13 @@
+parameters:
+  BuildToPublish: ''
+
 jobs:
 - job: Publish_Store
   displayName: Publish Store packages
   condition: and(succeeded(), eq(variables['DoMSIX'], 'true'))
 
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
 
   workspace:
     clean: all
@@ -12,24 +15,24 @@ jobs:
   steps:
   - checkout: none
 
-  - task: DownloadBuildArtifacts@0
-    displayName: 'Download artifact: msixupload'
-    condition: and(succeeded(), not(variables['BuildToPublish']))
-    inputs:
-      artifactName: msixupload
-      downloadPath: $(Build.BinariesDirectory)
+  - ${{ if parameters.BuildToPublish }}:
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download artifact: msixupload'
+      inputs:
+        artifactName: msixupload
+        downloadPath: $(Build.BinariesDirectory)
+        buildType: specific
+        project: cpython
+        pipeline: Windows-Release
+        buildVersionToDownload: specific
+        buildId: ${{ parameters.BuildToPublish }}
 
-  - task: DownloadBuildArtifacts@0
-    displayName: 'Download artifact: msixupload'
-    condition: and(succeeded(), variables['BuildToPublish'])
-    inputs:
-      artifactName: msixupload
-      downloadPath: $(Build.BinariesDirectory)
-      buildType: specific
-      project: cpython
-      pipeline: Windows-Release
-      buildVersionToDownload: specific
-      buildId: $(BuildToPublish)
+  - ${{ else }}:
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download artifact: msixupload'
+      inputs:
+        artifactName: msixupload
+        downloadPath: $(Build.BinariesDirectory)
 
   # TODO: eq(variables['SigningCertificate'], variables['__RealSigningCertificate'])
   # If we are not real-signed, DO NOT PUBLISH
