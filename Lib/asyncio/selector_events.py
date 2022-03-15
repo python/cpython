@@ -15,6 +15,10 @@ import selectors
 import socket
 import warnings
 import weakref
+try:
+    import ssl
+except ImportError:  # pragma: no cover
+    ssl = None
 
 from . import base_events
 from . import constants
