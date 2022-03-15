@@ -1,1 +1,0 @@
-Update Windows builds and macOS installer build to use OpenSSL 1.1.1n.
