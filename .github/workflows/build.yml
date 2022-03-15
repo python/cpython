@@ -143,7 +143,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1l
+      OPENSSL_VER: 1.1.1n
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
