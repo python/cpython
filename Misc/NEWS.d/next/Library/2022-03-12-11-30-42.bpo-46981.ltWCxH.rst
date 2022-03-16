@@ -1,2 +1,2 @@
-``typing.get_args(typing.Tuple[()])`` returns now ``()`` instead of
+``typing.get_args(typing.Tuple[()])`` now returns ``()`` instead of
 ``((),)``.
