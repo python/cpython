@@ -38,6 +38,14 @@ parameters:
   displayName: "Publish ARM64 build"
   type: boolean
   default: true
+# Because there is no ARM64 Tcl/Tk pre-3.11, we need a separate option
+# to keep those builds working when the files are going to be absent.
+# Eventually when we stop releasing anything that old, we can drop this
+# argument (and make it implicitly always 'true')
+- name: ARM64TclTk
+  displayName: "Use Tcl/Tk for ARM64"
+  type: boolean
+  default: true
 - name: DoPGO
   displayName: "Run PGO"
   type: boolean
@@ -98,6 +106,8 @@ stages:
     displayName: Build binaries
     jobs:
     - template: windows-release/stage-build.yml
+      parameters:
+        ARM64TclTk: ${{ parameters.ARM64TclTk }}
 
   - stage: Sign
     displayName: Sign binaries
@@ -110,6 +120,8 @@ stages:
     dependsOn: Sign
     jobs:
     - template: windows-release/stage-layout-full.yml
+      parameters:
+        ARM64TclTk: ${{ parameters.ARM64TclTk }}
     - template: windows-release/stage-layout-embed.yml
     - template: windows-release/stage-layout-nuget.yml
 
@@ -130,6 +142,8 @@ stages:
     condition: and(succeeded(), eq(variables['DoMSIX'], 'true'))
     jobs:
     - template: windows-release/stage-layout-msix.yml
+      parameters:
+        ARM64TclTk: ${{ parameters.ARM64TclTk }}
 
   - stage: Pack_MSIX
     displayName: Package MSIX
@@ -143,6 +157,8 @@ stages:
     condition: and(succeeded(), eq(variables['DoMSI'], 'true'))
     jobs:
     - template: windows-release/stage-msi.yml
+      parameters:
+        ARM64TclTk: ${{ parameters.ARM64TclTk }}
 
   - stage: Test_MSI
     displayName: Test MSI installer
