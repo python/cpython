@@ -1160,6 +1160,14 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
+.. opcode:: POSTCALL
+
+   Suffixes :opcode:`CALL`. Logically this is a no op.
+   It exists to enable effective specialization of calls.
+
+   .. versionadded:: 3.11
+
+
 .. opcode:: PUSH_NULL
 
     Pushes a ``NULL`` to the stack.
