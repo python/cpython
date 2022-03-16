@@ -3447,6 +3447,44 @@ class ConfigDictTest(BaseTest):
             logging.info('some log')
         self.assertEqual(stderr.getvalue(), 'some log my_type\n')
 
+    def test_config_callable_filter_works(self):
+        def filter_(_):
+            return 1
+        self.apply_config({
+            "version": 1, "root": {"level": "DEBUG", "filters": [filter_]}
+        })
+        assert logging.getLogger().filters[0] is filter_
+        logging.getLogger().filters = []
+
+    def test_config_filter_works(self):
+        filter_ = logging.Filter("spam.eggs")
+        self.apply_config({
+            "version": 1, "root": {"level": "DEBUG", "filters": [filter_]}
+        })
+        assert logging.getLogger().filters[0] is filter_
+        logging.getLogger().filters = []
+
+    def test_config_filter_method_works(self):
+        class FakeFilter:
+            def filter(self, _):
+                return 1
+        filter_ = FakeFilter()
+        self.apply_config({
+            "version": 1, "root": {"level": "DEBUG", "filters": [filter_]}
+        })
+        assert logging.getLogger().filters[0] is filter_
+        logging.getLogger().filters = []
+
+    def test_invalid_type_raises(self):
+        class NotAFilter: pass
+        for filter_ in [None, 1, NotAFilter()]:
+            self.assertRaises(
+                ValueError,
+                self.apply_config,
+                {"version": 1, "root": {"level": "DEBUG", "filters": [filter_]}}
+            )
+
+
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
         logged = []

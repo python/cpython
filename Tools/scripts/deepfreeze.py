@@ -15,9 +15,10 @@ import types
 from typing import Dict, FrozenSet, TextIO, Tuple
 
 import umarshal
+from generate_global_objects import get_identifiers_and_strings
 
 verbose = False
-
+identifiers = get_identifiers_and_strings()[0]
 
 def isprintable(b: bytes) -> bool:
     return all(0x20 <= c < 0x7f for c in b)
@@ -109,6 +110,8 @@ class Printer:
         self.cache: Dict[tuple[type, object, str], str] = {}
         self.hits, self.misses = 0, 0
         self.patchups: list[str] = []
+        self.deallocs: list[str] = []
+        self.interns: list[str] = []
         self.write('#include "Python.h"')
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
@@ -150,6 +153,8 @@ class Printer:
     def generate_bytes(self, name: str, b: bytes) -> str:
         if b == b"":
             return "(PyObject *)&_Py_SINGLETON(bytes_empty)"
+        if len(b) == 1:
+            return f"(PyObject *)&_Py_SINGLETON(bytes_characters[{b[0]}])"
         self.write("static")
         with self.indent():
             with self.block("struct"):
@@ -163,6 +168,8 @@ class Printer:
         return f"& {name}.ob_base.ob_base"
 
     def generate_unicode(self, name: str, s: str) -> str:
+        if s in identifiers:
+            return f"&_Py_ID({s})"
         kind, ascii = analyze_character_width(s)
         if kind == PyUnicode_1BYTE_KIND:
             datatype = "uint8_t"
@@ -275,9 +282,13 @@ class Printer:
             self.write(f".co_varnames = {co_varnames},")
             self.write(f".co_cellvars = {co_cellvars},")
             self.write(f".co_freevars = {co_freevars},")
+        self.deallocs.append(f"_PyStaticCode_Dealloc(&{name});")
+        self.interns.append(f"_PyStaticCode_InternStrings(&{name})")
         return f"& {name}.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
+        if len(t) == 0:
+            return f"(PyObject *)& _Py_SINGLETON(tuple_empty)"
         items = [self.generate(f"{name}_{i}", it) for i, it in enumerate(t)]
         self.write("static")
         with self.indent():
@@ -402,7 +413,7 @@ PyObject *
 _Py_get_%%NAME%%_toplevel(void)
 {
     %%NAME%%_do_patchups();
-    return (PyObject *) &%%NAME%%_toplevel;
+    return Py_NewRef((PyObject *) &%%NAME%%_toplevel);
 }
 """
 
@@ -438,6 +449,14 @@ def generate(args: list[str], output: TextIO) -> None:
             else:
                 code = compile(fd.read(), f"<frozen {modname}>", "exec")
             printer.generate_file(modname, code)
+    with printer.block(f"void\n_Py_Deepfreeze_Fini(void)"):
+            for p in printer.deallocs:
+                printer.write(p)
+    with printer.block(f"int\n_Py_Deepfreeze_Init(void)"):
+            for p in printer.interns:
+                with printer.block(f"if ({p} < 0)"):
+                    printer.write("return -1;")
+            printer.write("return 0;")
     if verbose:
         print(f"Cache hits: {printer.hits}, misses: {printer.misses}")
 

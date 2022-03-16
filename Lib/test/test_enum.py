@@ -2496,6 +2496,13 @@ class TestSpecial(unittest.TestCase):
         self.assertEqual(Some.x.value, 1)
         self.assertEqual(Some.y.value, 2)
 
+    def test_custom_flag_bitwise(self):
+        class MyIntFlag(int, Flag):
+            ONE = 1
+            TWO = 2
+            FOUR = 4
+        self.assertTrue(isinstance(MyIntFlag.ONE | MyIntFlag.TWO, MyIntFlag), MyIntFlag.ONE | MyIntFlag.TWO)
+        self.assertTrue(isinstance(MyIntFlag.ONE | 2, MyIntFlag))
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
@@ -3701,7 +3708,7 @@ class TestVerify(unittest.TestCase):
             triple = 3
             value = 4
 
-class TestHelpers(unittest.TestCase):
+class TestInternals(unittest.TestCase):
 
     sunder_names = '_bad_', '_good_', '_what_ho_'
     dunder_names = '__mal__', '__bien__', '__que_que__'

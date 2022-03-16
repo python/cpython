@@ -7933,7 +7933,7 @@ PyInit__socket(void)
 #ifdef  IPPROTO_VRRP
     PyModule_AddIntMacro(m, IPPROTO_VRRP);
 #endif
-#if defined(IPPROTO_SCTP) && !defined(__EMSCRIPTEN__)
+#ifdef  IPPROTO_SCTP
     PyModule_AddIntMacro(m, IPPROTO_SCTP);
 #endif
 #ifdef  IPPROTO_BIP
@@ -8071,6 +8071,9 @@ PyInit__socket(void)
 #endif
 #ifdef  IP_TRANSPARENT
     PyModule_AddIntMacro(m, IP_TRANSPARENT);
+#endif
+#ifdef IP_BIND_ADDRESS_NO_PORT
+    PyModule_AddIntMacro(m, IP_BIND_ADDRESS_NO_PORT);
 #endif
 
     /* IPv6 [gs]etsockopt options, defined in RFC2553 */

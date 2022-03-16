@@ -607,7 +607,6 @@ callmethod(PyThreadState *tstate, PyObject* callable, const char *format, va_lis
     return _PyObject_CallFunctionVa(tstate, callable, format, va, is_size_t);
 }
 
-
 PyObject *
 PyObject_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 {
@@ -659,6 +658,30 @@ PyEval_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 
 
 PyObject *
+_PyObject_CallMethod(PyObject *obj, PyObject *name,
+                     const char *format, ...)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (obj == NULL || name == NULL) {
+        return null_error(tstate);
+    }
+
+    PyObject *callable = PyObject_GetAttr(obj, name);
+    if (callable == NULL) {
+        return NULL;
+    }
+
+    va_list va;
+    va_start(va, format);
+    PyObject *retval = callmethod(tstate, callable, format, va, 1);
+    va_end(va);
+
+    Py_DECREF(callable);
+    return retval;
+}
+
+
+PyObject *
 _PyObject_CallMethodId(PyObject *obj, _Py_Identifier *name,
                        const char *format, ...)
 {
@@ -678,6 +701,17 @@ _PyObject_CallMethodId(PyObject *obj, _Py_Identifier *name,
     va_end(va);
 
     Py_DECREF(callable);
+    return retval;
+}
+
+
+PyObject * _PyObject_CallMethodFormat(PyThreadState *tstate, PyObject *callable,
+                                      const char *format, ...)
+{
+    va_list va;
+    va_start(va, format);
+    PyObject *retval = callmethod(tstate, callable, format, va, 0);
+    va_end(va);
     return retval;
 }
 
@@ -850,8 +884,7 @@ PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
 
 
 PyObject *
-_PyObject_CallMethodIdObjArgs(PyObject *obj,
-                              struct _Py_Identifier *name, ...)
+_PyObject_CallMethodIdObjArgs(PyObject *obj, _Py_Identifier *name, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if (obj == NULL || name == NULL) {
@@ -901,26 +934,11 @@ PyObject *
 _PyStack_AsDict(PyObject *const *values, PyObject *kwnames)
 {
     Py_ssize_t nkwargs;
-    PyObject *kwdict;
-    Py_ssize_t i;
 
     assert(kwnames != NULL);
     nkwargs = PyTuple_GET_SIZE(kwnames);
-    kwdict = _PyDict_NewPresized(nkwargs);
-    if (kwdict == NULL) {
-        return NULL;
-    }
-
-    for (i = 0; i < nkwargs; i++) {
-        PyObject *key = PyTuple_GET_ITEM(kwnames, i);
-        PyObject *value = *values++;
-        /* If key already exists, replace it with the new value */
-        if (PyDict_SetItem(kwdict, key, value)) {
-            Py_DECREF(kwdict);
-            return NULL;
-        }
-    }
-    return kwdict;
+    return _PyDict_FromItems(&PyTuple_GET_ITEM(kwnames, 0), 1,
+                             values, 1, nkwargs);
 }
 
 

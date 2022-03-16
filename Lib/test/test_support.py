@@ -491,6 +491,7 @@ class TestSupport(unittest.TestCase):
         # pending child process
         support.reap_children()
 
+    @support.requires_subprocess()
     def check_options(self, args, func, expected=None):
         code = f'from test.support import {func}; print(repr({func}()))'
         cmd = [sys.executable, *args, '-c', code]
@@ -680,6 +681,12 @@ class TestSupport(unittest.TestCase):
                                  "Warning -- msg\n")
         self.check_print_warning("a\nb",
                                  'Warning -- a\nWarning -- b\n')
+
+    def test_has_strftime_extensions(self):
+        if support.is_emscripten or support.is_wasi or sys.platform == "win32":
+            self.assertFalse(support.has_strftime_extensions)
+        else:
+            self.assertTrue(support.has_strftime_extensions)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc

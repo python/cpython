@@ -49,8 +49,8 @@ if os.name == 'nt':
                   'encoding (%s). Unicode filename tests may not be effective'
                   % (TESTFN_UNENCODABLE, sys.getfilesystemencoding()))
             TESTFN_UNENCODABLE = None
-# Mac OS X denies unencodable filenames (invalid utf-8)
-elif sys.platform != 'darwin':
+# macOS and Emscripten deny unencodable filenames (invalid utf-8)
+elif sys.platform not in {'darwin', 'emscripten'}:
     try:
         # ascii and utf-8 cannot encode the byte 0xff
         b'\xff'.decode(sys.getfilesystemencoding())
@@ -502,7 +502,7 @@ class FakePath:
 def fd_count():
     """Count the number of open file descriptors.
     """
-    if sys.platform.startswith(('linux', 'freebsd')):
+    if sys.platform.startswith(('linux', 'freebsd', 'emscripten')):
         try:
             names = os.listdir("/proc/self/fd")
             # Subtract one because listdir() internally opens a file
