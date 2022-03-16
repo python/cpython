@@ -194,7 +194,7 @@ named :file:`spam.py` in a list of directories given by the variable
 * The installation-dependent default (by convention including a
   ``site-packages`` directory, handled by the :mod:`site` module).
 
-More details are at :ref:`using-on-finding-modules`.
+More details are at :ref:`sys-path-init`.
 
 .. note::
    On file systems which support symlinks, the directory containing the input

@@ -277,5 +277,5 @@ value greater than 2 if there is an error.
 .. seealso::
 
    * :pep:`370` -- Per user site-packages directory
-   * :ref:`using-on-finding-modules` -- The initialization of :data:`sys.path`.
+   * :ref:`sys-path-init` -- The initialization of :data:`sys.path`.
 

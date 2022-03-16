@@ -59,7 +59,6 @@ all consecutive arguments will end up in :data:`sys.argv` -- note that the first
 element, subscript zero (``sys.argv[0]``), is a string reflecting the program's
 source.
 
-.. _using-on-interface-option-c:
 .. cmdoption:: -c <command>
 
    Execute the Python code in *command*.  *command* can be one or more
@@ -73,7 +72,6 @@ source.
 
    .. audit-event:: cpython.run_command command cmdoption-c
 
-.. _using-on-interface-option-m:
 .. cmdoption:: -m <module-name>
 
    Search :data:`sys.path` for the named module and execute its contents as
@@ -254,7 +252,6 @@ Miscellaneous options
    options).  See also :envvar:`PYTHONDEBUG`.
 
 
-.. _using-on-misc-option-uppercase-e:
 .. cmdoption:: -E
 
    Ignore all :envvar:`PYTHON*` environment variables, e.g.
@@ -338,7 +335,6 @@ Miscellaneous options
    .. versionadded:: 3.2.3
 
 
-.. _using-on-misc-option-s:
 .. cmdoption:: -s
 
    Don't add the :data:`user site-packages directory <site.USER_SITE>` to
@@ -349,7 +345,6 @@ Miscellaneous options
       :pep:`370` -- Per user site-packages directory
 
 
-.. _using-on-misc-option-uppercase-s:
 .. cmdoption:: -S
 
    Disable the import of the module :mod:`site` and the site-dependent
@@ -1001,7 +996,7 @@ Debug-mode variables
 
    .. versionadded:: 3.11
 
-.. _using-on-finding-modules:
+.. _sys-path-init:
 
 Finding modules
 ---------------
@@ -1011,8 +1006,8 @@ may be accessed at :data:`sys.path`.
 
 The first entry in the module search path is the directory that contains the
 input script, if there is one. Otherwise, the first entry is the current
-directory, which is the case when executing the interactive shell, a :ref:`-c <using-on-interface-option-c>`
-command, or :ref:`-m <using-on-interface-option-m>` module.
+directory, which is the case when executing the interactive shell, a :option:`-c`
+command, or :option:`-m` module.
 
 The :envvar:`PYTHONPATH` environment variable is often used to add directories
 to the search path. If this environment variable is found then the contents are
@@ -1047,10 +1042,11 @@ Python on Unix will look for :file:`lib/python{majorversion}.{minorversion}/os.p
 (``lib/python3.11/os.py``). On Windows ``prefix`` and ``exec_prefix`` are the same,
 however on other platforms :file:`lib/python{majorversion}.{minorversion}/lib-dynload`
 (``lib/python3.11/lib-dynload``) is searched for and used as an anchor for
-``exec_prefix``.
+``exec_prefix``. On some platforms :file:`lib` may be :file:`lib64` or another value,
+see :data:`sys.platlibdir` and :envvar:`PYTHONPLATLIBDIR`.
 
-Once found, ``prefix`` and ``exec_prefix`` may be accessed at :data:`sys.prefix`
-and :data:`sys.exec_prefix`.
+Once found, ``prefix`` and ``exec_prefix`` are available at :data:`sys.prefix` and
+:data:`sys.exec_prefix` respectively.
 
 Finally, the :mod:`site` module is processed and :file:`site-packages` directories
 are added to the module search path. A common way to customize the search path is
@@ -1060,7 +1056,7 @@ the :mod:`site` module documentation.
 .. note::
 
    Certain command line options may further affect path calculations.
-   See :ref:`-E <using-on-misc-option-uppercase-e>`, :ref:`-I <using-on-misc-option-uppercase-i>`, :ref:`-s <using-on-misc-option-s>` and :ref:`-S <using-on-misc-option-uppercase-s>` for further details.
+   See :option:`-E`, :option:`-I`, :option:`-s` and :option:`-S` for further details.
 
 Virtual environments
 ~~~~~~~~~~~~~~~~~~~~
@@ -1078,11 +1074,13 @@ directory one level above the executable, the following variations apply:
 _pth files
 ~~~~~~~~~~
 
-To completely override :data:`sys.path`, create a ``._pth`` file with the same
-name as the shared library (``python311._pth``) or the executable (``python._pth``)
-and specify one line for each path to add to :data:`sys.path`. The file based on
-the shared library name overrides the one based on the executable, which allows
-paths to be restricted for any program loading the runtime if desired.
+To completely override :data:`sys.path` create a ``._pth`` file with the same
+name as the shared library or executable (``python._pth`` or ``python311._pth``).
+The shared library path is always known on Windows, however it may not be
+available on other platforms. In the ``._pth`` file specify one line for each path
+to add to :data:`sys.path`. The file based on the shared library name overrides
+the one based on the executable, which allows paths to be restricted for any
+program loading the runtime if desired.
 
 When the file exists, all registry and environment variables are ignored,
 isolated mode is enabled, and :mod:`site` is not imported unless one line in the
@@ -1097,10 +1095,10 @@ by the :mod:`site` module when ``import site`` has been specified.
 Embedded Python
 ~~~~~~~~~~~~~~~
 
-If Python is embedded within another application :c:func:`Py_SetPath` can be used to
-bypass the initialization of the module search path. Alternatively Python can be
-initialized with :c:func:`Py_InitializeFromConfig` and the :c:type:`PyConfig` structure,
-the path specific details are described at :ref:`init-path-config`.
+If Python is embedded within another application :c:func:`Py_InitializeFromConfig` and
+the :c:type:`PyConfig` structure can be used to initialize Python. The path specific
+details are described at :ref:`init-path-config`. Alternatively the older :c:func:`Py_SetPath`
+can be used to bypass the initialization of the module search path.
 
 .. seealso::
 

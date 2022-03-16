@@ -951,7 +951,7 @@ target Python.
 Finding modules
 ===============
 
-These notes supplement the description at :ref:`using-on-finding-modules` with
+These notes supplement the description at :ref:`sys-path-init` with
 detailed Windows notes.
 
 When no ``._pth`` file is found, this is how :data:`sys.path` is populated on
