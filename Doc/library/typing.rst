@@ -1114,16 +1114,13 @@ These are not used in annotations. They are building blocks for creating generic
     semantics in several important ways. Using a *bound* type variable means
     that the ``TypeVar`` will be solved using the most specific type possible::
 
-       x = print_capitalized('a string')
-       reveal_type(x)  # revealed type is str
+       print_capitalized('a string')  # Ok, output has type 'str'
 
        class StringSubclass(str):
            pass
 
-       y = print_capitalized(StringSubclass('another string'))
-       reveal_type(y)  # revealed type is StringSubclass
-
-       z = print_capitalized(45)  # error: int is not a subtype of str
+       print_capitalized(StringSubclass('another string'))  # Ok, output has type 'StringSubclass'
+       print_capitalized(45)  # error: int is not a subtype of str
 
     Type variables can be bound to concrete types, abstract types (ABCs or
     protocols), and even unions of types::
@@ -1131,16 +1128,52 @@ These are not used in annotations. They are building blocks for creating generic
        U = TypeVar('U', bound=str|bytes)  # Can be any subtype of the union str|bytes
        V = TypeVar('V', bound=SupportsAbs)  # Can be anything with an __abs__ method
 
+    Bound type variables are particularly useful for annotating
+    :func:`classmethods <classmethod>` that serve as alternative constructors.
+    In the following example (©
+    `Raymond Hettinger <https://www.youtube.com/watch?v=HTLu2DFOdTg>`_), the
+    type variable ``C`` is bound to the ``Circle`` class through the use of a
+    forward reference. Using this type variable to annotate the
+    ``with_circumference`` classmethod, rather than hardcoding the return type
+    as ``Circle``, means that a type checker can correctly infer the return
+    type even if the method is called on a subclass::
+
+       import math
+
+       C = TypeVar('C', bound='Circle')
+
+       class Circle:
+           """An abstract circle"""
+
+           def __init__(self, radius: float) -> None:
+               self.radius = radius
+               self.area = math.pi * (radius ** 2)
+
+           # Use a type variable to show that the return type
+           # will always be an instance of whatever `cls` is
+           @classmethod
+           def with_circumference(cls: type[C], circumference: float) -> C:
+               """Create a circle with the specified circumference"""
+               radius = circumference / (math.pi * 2)
+               return cls(radius)
+
+
+       class Tire(Circle):
+           """A specialised circle (made out of rubber)"""
+
+           MATERIAL = 'rubber'
+
+
+       c = Circle.with_circumference(3)  # Ok, variable 'c' has type 'Circle'
+       t = Tire.with_circumference(4)  # Ok, variable 't' has type 'Tire' (not 'Circle')
+
     Using a *constrained* type variable, however, means that the ``TypeVar``
     can only ever be solved as being exactly one of the constraints given::
 
-       a = concatenate('one', 'two')
-       reveal_type(a)  # revealed type is str
-
-       b = concatenate(StringSubclass('one'), StringSubclass('two'))
-       reveal_type(b)  # revealed type is str, despite StringSubclass being passed in
-
-       c = concatenate('one', b'two')  # error: type variable 'A' can be either str or bytes in a function call, but not both
+       a = concatenate('one', 'two')  # Ok, variable 'a' has type 'str'
+       b = concatenate(StringSubclass('one'), StringSubclass('two'))  # Inferred type of variable 'b' is 'str',
+                                                                      # despite 'StringSubclass' being passed in
+       c = concatenate('one', b'two')  # error: type variable 'A' can be either 'str' or 'bytes' in a function call, but not both
 
     At runtime, ``isinstance(x, T)`` will raise :exc:`TypeError`.  In general,
     :func:`isinstance` and :func:`issubclass` should not be used with types.
