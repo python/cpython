@@ -800,7 +800,7 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
         self.checkEnumParam(widget, 'activestyle',
                             'dotbox', 'none', 'underline')
 
-    test_justify = requires_tcl(8, 6, 5)(StandardOptionsTests.test_configure_justify)
+    test_configure_justify = requires_tcl(8, 6, 5)(StandardOptionsTests.test_configure_justify)
 
     def test_configure_listvariable(self):
         widget = self.create()
@@ -939,7 +939,7 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_from(self):
         widget = self.create()
-        conv = False if get_tk_patchlevel() >= (8, 6, 10) else float_round
+        conv = float if get_tk_patchlevel() >= (8, 6, 10) else float_round
         self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=conv)
 
     def test_configure_label(self):
