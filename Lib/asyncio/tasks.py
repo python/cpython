@@ -444,12 +444,11 @@ async def wait_for(fut, timeout):
     This function is a coroutine.
     """
 
-    if not futures.isfuture(fut):
-        # wrap a coroutine
-        fut = create_task(fut)
+    async def inner():
+        async with timeouts.timeout(timeout):
+            return await fut
 
-    async with timeouts.timeout(timeout):
-        return await fut
+    return await create_task(inner())
 
 
 async def _wait(fs, timeout, return_when, loop):
