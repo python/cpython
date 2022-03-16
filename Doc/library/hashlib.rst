@@ -253,8 +253,8 @@ a file or file-like object.
       >>> with open(hashlib.__file__, "rb") as f:
       ...     digest = hashlib.file_digest(f, "sha256")
       ...
-      >>> digest.hexdigest()
-      ...  # doctest: +ELLIPSIS
+      >>> digest.hexdigest()  # doctest: +ELLIPSIS
+      '...'
 
       >>> buf = io.BytesIO(b"somedata")
       >>> mac1 = hmac.HMAC(b"key", digestmod=hashlib.sha512)
