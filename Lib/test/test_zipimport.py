@@ -755,7 +755,8 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             z.writestr(zinfo, test_src)
 
         zipimport.zipimporter(filename)
-        zipimport.zipimporter(os.fsencode(filename))
+        with self.assertRaises(TypeError):
+            zipimport.zipimporter(os.fsencode(filename))
         with self.assertRaises(TypeError):
             zipimport.zipimporter(bytearray(os.fsencode(filename)))
         with self.assertRaises(TypeError):
