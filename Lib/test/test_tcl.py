@@ -143,9 +143,10 @@ class TclTest(unittest.TestCase):
         self.assertRaises(TclError,tcl.unsetvar,'a')
 
     def get_integers(self):
-        integers = (0, 1, -1, 2**31-1, -2**31, 2**31, -2**31-1, 2**63-1, -2**63)
-        integers += (2**63, -2**63-1, 2**1000, -2**1000)
-        return integers
+        return (0, 1, -1,
+                2**31-1, -2**31, 2**31, -2**31-1,
+                2**63-1, -2**63, 2**63, -2**63-1,
+                2**1000, -2**1000)
 
     def test_getint(self):
         tcl = self.interp.tk
