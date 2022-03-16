@@ -1110,9 +1110,18 @@ These are not used in annotations. They are building blocks for creating generic
     Note that type variables can be *bound*, *constrained*, or neither, but
     cannot be both bound *and* constrained.
 
-    Bound type variables and constrained type variables have different
-    semantics in several important ways. Using a *bound* type variable means
-    that the ``TypeVar`` will be solved using the most specific type possible::
+    Constrained type variables and bound type variables have different
+    semantics in several important ways. Using a *constrained* type variable
+    means that the ``TypeVar`` can only ever be solved as being exactly one of
+    the constraints given::
+
+       a = concatenate('one', 'two')  # Ok, variable 'a' has type 'str'
+       b = concatenate(StringSubclass('one'), StringSubclass('two'))  # Inferred type of variable 'b' is 'str',
+                                                                      # despite 'StringSubclass' being passed in
+       c = concatenate('one', b'two')  # error: type variable 'A' can be either 'str' or 'bytes' in a function call, but not both
+
+    Using a *bound* type variable, however, means that the ``TypeVar`` will be
+    solved using the most specific type possible::
 
        print_capitalized('a string')  # Ok, output has type 'str'
 
@@ -1165,14 +1174,6 @@ These are not used in annotations. They are building blocks for creating generic
 
        c = Circle.with_circumference(3)  # Ok, variable 'c' has type 'Circle'
        t = Tire.with_circumference(4)  # Ok, variable 't' has type 'Tire' (not 'Circle')
-
-    Using a *constrained* type variable, however, means that the ``TypeVar``
-    can only ever be solved as being exactly one of the constraints given::
-
-       a = concatenate('one', 'two')  # Ok, variable 'a' has type 'str'
-       b = concatenate(StringSubclass('one'), StringSubclass('two'))  # Inferred type of variable 'b' is 'str',
-                                                                      # despite 'StringSubclass' being passed in
-       c = concatenate('one', b'two')  # error: type variable 'A' can be either 'str' or 'bytes' in a function call, but not both
 
     At runtime, ``isinstance(x, T)`` will raise :exc:`TypeError`.  In general,
     :func:`isinstance` and :func:`issubclass` should not be used with types.
