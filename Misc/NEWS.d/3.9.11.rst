@@ -1,7 +1,7 @@
 .. bpo: 46852
 .. date: 2022-02-25-02-01-42
 .. nonce: _3zg8D
-.. release date: 2022-03-15
+.. release date: 2022-03-16
 .. section: Core and Builtins
 
 Rename the private undocumented ``float.__set_format__()`` method to
@@ -598,6 +598,16 @@ run with LC_ALL=C. Previously, the detection failed with a German locale.
 .. section: Build
 
 Update Windows installer to use SQLite 3.37.2.
+
+..
+
+.. bpo: 47032
+.. date: 2022-03-16-00-37-40
+.. nonce: tsS9KE
+.. section: Build
+
+Ensure Windows install builds fail correctly with a non-zero exit code
+when part of the build fails.
 
 ..
 
