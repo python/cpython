@@ -175,13 +175,13 @@ stages:
 
     - stage: PublishNuget
       displayName: Publish to nuget.org
-      dependsOn: Test
+      dependsOn: ['Test_MSI', 'Test']
       jobs:
       - template: windows-release/stage-publish-nugetorg.yml
 
     - stage: PublishStore
       displayName: Publish to Store
-      dependsOn: Pack_MSIX
+      dependsOn: ['Test_MSI', 'Pack_MSIX']
       jobs:
       - template: windows-release/stage-publish-store.yml
 
