@@ -122,7 +122,7 @@ class TestLoader(object):
 
         The method optionally resolves the names relative to a given module.
         """
-        parts = name.lstrip('.').split('.')
+        parts = name.split('.')
         error_case, error_message = None, None
         if module is None:
             parts_copy = parts[:]
