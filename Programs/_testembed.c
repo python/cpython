@@ -108,7 +108,7 @@ static int test_repeated_init_and_subinterpreters(void)
     PyThreadState *mainstate, *substate;
     PyGILState_STATE gilstate;
 
-    for (int i=1; i <= INIT_LOOPS; i++) {
+    for (size_t i =1; i <= INIT_LOOPS; i++) {
         printf("--- Pass %d ---\n", i);
         _testembed_Py_Initialize();
         mainstate = PyThreadState_Get();
@@ -164,7 +164,7 @@ static int test_repeated_init_exec(void)
     }
     const char *code = main_argv[2];
 
-    for (int i=1; i <= INIT_LOOPS; i++) {
+    for (size_t i =1; i <= INIT_LOOPS; i++) {
         fprintf(stderr, "--- Loop #%d ---\n", i);
         fflush(stderr);
 
@@ -1719,7 +1719,7 @@ static int test_run_main_loop(void)
 {
     // bpo-40413: Calling Py_InitializeFromConfig()+Py_RunMain() multiple
     // times must not crash.
-    for (int i=0; i<5; i++) {
+    for (size_t i =0; i<5; i++) {
         int exitcode = test_run_main();
         if (exitcode != 0) {
             return exitcode;
@@ -1753,15 +1753,14 @@ static int test_get_argc_argv(void)
     Py_GetArgcArgv(&get_argc, &get_argv);
     printf("argc: %i\n", get_argc);
     assert(get_argc == Py_ARRAY_LENGTH(argv));
-    for (int i=0; i < get_argc; i++) {
+    for (size_t i =0; i < get_argc; i++) {
         printf("argv[%i]: %ls\n", i, get_argv[i]);
         assert(wcscmp(get_argv[i], argv[i]) == 0);
     }
 
     Py_Finalize();
-
-    printf("\n");
-    printf("test ok\n");
+    
+    printf("\n test ok\n");
     return 0;
 }
 
@@ -1822,7 +1821,7 @@ static int test_unicode_id_init(void)
 
     // Now initialize Python multiple times and use the identifier.
     // The first _PyUnicode_FromId() call initializes the identifier index.
-    for (int i=0; i<3; i++) {
+    for (size_t i =0; i<3; i++) {
         _testembed_Py_Initialize();
 
         PyObject *str1, *str2;
@@ -1871,7 +1870,7 @@ static int test_repeated_init_and_inittab(void)
     // bpo-44441: Py_RunMain() must reset PyImport_Inittab at exit.
     // It must be possible to call PyImport_AppendInittab() or
     // PyImport_ExtendInittab() before each Python initialization.
-    for (int i=1; i <= INIT_LOOPS; i++) {
+    for (size_t i =1; i <= INIT_LOOPS; i++) {
         printf("--- Pass %d ---\n", i);
 
         // Call PyImport_AppendInittab() at each iteration
