@@ -155,7 +155,6 @@ stages:
     - stage: Build_MSI
       displayName: Build MSI installer
       dependsOn: Sign
-      condition: and(succeeded(), eq(variables['DoMSI'], 'true'))
       jobs:
       - template: windows-release/stage-msi.yml
         parameters:
