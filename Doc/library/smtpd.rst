@@ -3,6 +3,7 @@
 
 .. module:: smtpd
    :synopsis: A SMTP server implementation in Python.
+   :deprecated:
 
 .. moduleauthor:: Barry Warsaw <barry@python.org>
 .. sectionauthor:: Moshe Zadka <moshez@moshez.org>

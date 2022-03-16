@@ -4,6 +4,7 @@
 .. module:: asyncore
    :synopsis: A base class for developing asynchronous socket handling
               services.
+   :deprecated:
 
 .. moduleauthor:: Sam Rushing <rushing@nightmare.com>
 .. sectionauthor:: Christopher Petrilli <petrilli@amber.org>
