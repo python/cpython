@@ -1125,7 +1125,7 @@ always available.
    the entries inserted as a result of :envvar:`PYTHONPATH`.
 
    A program is free to modify this list for its own purposes.  Only strings
-   and should be added to :data:`sys.path`; all other data types are
+   should be added to :data:`sys.path`; all other data types are
    ignored during import.
 
 
