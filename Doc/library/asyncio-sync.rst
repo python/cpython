@@ -489,22 +489,6 @@ Barrier
 
       The number of tasks currently blocked in the barrier while draining.
 
-   .. attribute:: broken
-
-      A boolean that is ``True`` if the barrier is in the broken state.
-
-   .. attribute:: draining
-
-      A boolean that is ``True`` if the barrier is in the draining state.
-
-   .. attribute:: filling
-
-      A boolean that is ``True`` if the barrier is in the filling state.
-
-   .. attribute:: resetting
-
-      A boolean that is ``True`` if the barrier is in the resetting state.
-
 
 .. exception:: BrokenBarrierError
 
