@@ -586,7 +586,6 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(f"{.01j:z.1f}", "0.0+0.0j")
         self.assertEqual(f"{-.01j:z.1f}", "0.0+0.0j")
 
-
     def test_specifier_z_error(self):
         error_msg = re.compile("Invalid format specifier '.*z.*'")
         with self.assertRaisesRegex(ValueError, error_msg):

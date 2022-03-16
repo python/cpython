@@ -427,10 +427,12 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     if (prec < 0)
         prec = 6;
 
-    if (flags & F_ALT)
+    if (flags & F_ALT) {
         dtoa_flags |= Py_DTSF_ALT;
-    if (flags & F_NO_NEG_0)
+    }
+    if (flags & F_NO_NEG_0) {
         dtoa_flags |= Py_DTSF_NO_NEG_0;
+    }
     p = PyOS_double_to_string(x, type, prec, dtoa_flags, NULL);
 
     if (p == NULL)

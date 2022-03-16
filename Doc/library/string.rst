@@ -383,7 +383,7 @@ following:
 .. index:: single: z; in string formatting
 
 The ``'z'`` option causes negative zero to be coerced to zero.  This
-option is only valid for float and complex types.
+option is only valid for float presentation types.
 
 .. versionchanged:: 3.11
    Added the ``'z'`` option (see also :pep:`682`).
