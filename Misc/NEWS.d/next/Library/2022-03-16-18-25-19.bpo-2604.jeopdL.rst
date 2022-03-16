@@ -1,0 +1,1 @@
+Fixed DocTestCase not resetting globs in teardown
