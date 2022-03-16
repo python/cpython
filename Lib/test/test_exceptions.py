@@ -561,7 +561,8 @@ class ExceptionTests(unittest.TestCase):
                 e.__notes__ = 42
                 self.assertEqual(e.__notes__, 42)
 
-                e.add_note("will not work")
+                with self.assertRaises(TypeError):
+                    e.add_note("will not work")
                 self.assertEqual(e.__notes__, 42)
 
     def testWithTraceback(self):

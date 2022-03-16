@@ -217,11 +217,14 @@ BaseException_add_note(PyObject *self, PyObject *args, PyObject *kwds)
     if (notes == NULL) {
         return NULL;
     }
-    if (PyList_Check(notes)) {
-        if (PyList_Append(notes, note) < 0) {
-            Py_DECREF(notes);
-            return NULL;
-        }
+    if (!PyList_Check(notes)) {
+        Py_DECREF(notes);
+        PyErr_SetString(PyExc_TypeError, "Cannot add note: __notes__ is not a list");
+        return NULL;
+    }
+    if (PyList_Append(notes, note) < 0) {
+        Py_DECREF(notes);
+        return NULL;
     }
     Py_DECREF(notes);
     Py_RETURN_NONE;
