@@ -359,9 +359,12 @@ _PyGen_yf(PyGenObject *gen)
             assert(code[0] != SEND);
             return NULL;
         }
-
-        if (code[(frame->f_lasti-1)*sizeof(_Py_CODEUNIT)] != SEND || frame->stacktop < 0)
+        int opcode = code[(frame->f_lasti+1)*sizeof(_Py_CODEUNIT)];
+        int oparg = code[(frame->f_lasti+1)*sizeof(_Py_CODEUNIT)+1];
+        if (opcode != RESUME || oparg < 2) {
+            /* Not in a yield from */
             return NULL;
+        }
         yf = _PyFrame_StackPeek(frame);
         Py_INCREF(yf);
     }

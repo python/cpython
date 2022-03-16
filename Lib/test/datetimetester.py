@@ -1676,7 +1676,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 # Year 42 returns '42', not padded
                 self.assertEqual(d.strftime("%Y"), '%d' % y)
                 # '0042' is obtained anyway
-                self.assertEqual(d.strftime("%4Y"), '%04d' % y)
+                if support.has_strftime_extensions:
+                    self.assertEqual(d.strftime("%4Y"), '%04d' % y)
 
     def test_replace(self):
         cls = self.theclass
@@ -5855,6 +5856,9 @@ class ZoneInfoTest(unittest.TestCase):
                 ldt = tz.fromutc(udt.replace(tzinfo=tz))
                 self.assertEqual(ldt.fold, 0)
 
+    @unittest.skipUnless(
+        hasattr(time, "tzset"), "time module has no attribute tzset"
+    )
     def test_system_transitions(self):
         if ('Riyadh8' in self.zonename or
             # From tzdata NEWS file:

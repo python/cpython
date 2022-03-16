@@ -1418,49 +1418,12 @@ static PyGetSetDef WCharArray_getsets[] = {
 };
 
 /*
-  The next three functions copied from Python's typeobject.c.
+  The next function is copied from Python's typeobject.c.
 
-  They are used to attach methods, members, or getsets to a type *after* it
+  It is used to attach getsets to a type *after* it
   has been created: Arrays of characters have additional getsets to treat them
   as strings.
  */
-/*
-static int
-add_methods(PyTypeObject *type, PyMethodDef *meth)
-{
-    PyObject *dict = type->tp_dict;
-    for (; meth->ml_name != NULL; meth++) {
-        PyObject *descr;
-        descr = PyDescr_NewMethod(type, meth);
-        if (descr == NULL)
-            return -1;
-        if (PyDict_SetItemString(dict, meth->ml_name, descr) < 0) {
-            Py_DECREF(descr);
-            return -1;
-        }
-        Py_DECREF(descr);
-    }
-    return 0;
-}
-
-static int
-add_members(PyTypeObject *type, PyMemberDef *memb)
-{
-    PyObject *dict = type->tp_dict;
-    for (; memb->name != NULL; memb++) {
-        PyObject *descr;
-        descr = PyDescr_NewMember(type, memb);
-        if (descr == NULL)
-            return -1;
-        if (PyDict_SetItemString(dict, memb->name, descr) < 0) {
-            Py_DECREF(descr);
-            return -1;
-        }
-        Py_DECREF(descr);
-    }
-    return 0;
-}
-*/
 
 static int
 add_getset(PyTypeObject *type, PyGetSetDef *gsp)

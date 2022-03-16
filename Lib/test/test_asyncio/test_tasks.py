@@ -12,7 +12,6 @@ import sys
 import textwrap
 import traceback
 import unittest
-import weakref
 from unittest import mock
 from types import GenericAlias
 
@@ -85,19 +84,13 @@ class CoroLikeObject:
         return self
 
 
-# The following value can be used as a very small timeout:
-# it passes check "timeout > 0", but has almost
-# no effect on the test performance
-_EPSILON = 0.0001
-
-
 class BaseTaskTests:
 
     Task = None
     Future = None
 
-    def new_task(self, loop, coro, name='TestTask'):
-        return self.__class__.Task(coro, loop=loop, name=name)
+    def new_task(self, loop, coro, name='TestTask', context=None):
+        return self.__class__.Task(coro, loop=loop, name=name, context=context)
 
     def new_future(self, loop):
         return self.__class__.Future(loop=loop)
@@ -107,7 +100,6 @@ class BaseTaskTests:
         self.loop = self.new_test_loop()
         self.loop.set_task_factory(self.new_task)
         self.loop.create_future = lambda: self.new_future(self.loop)
-
 
     def test_generic_alias(self):
         task = self.__class__.Task[str]
@@ -971,251 +963,6 @@ class BaseTaskTests:
         with self.assertRaisesRegex(ValueError, 'can only be set to False'):
             task._log_traceback = True
         self.loop.run_until_complete(task)
-
-    def test_wait_for_timeout_less_then_0_or_0_future_done(self):
-        def gen():
-            when = yield
-            self.assertAlmostEqual(0, when)
-
-        loop = self.new_test_loop(gen)
-
-        fut = self.new_future(loop)
-        fut.set_result('done')
-
-        ret = loop.run_until_complete(asyncio.wait_for(fut, 0))
-
-        self.assertEqual(ret, 'done')
-        self.assertTrue(fut.done())
-        self.assertAlmostEqual(0, loop.time())
-
-    def test_wait_for_timeout_less_then_0_or_0_coroutine_do_not_started(self):
-        def gen():
-            when = yield
-            self.assertAlmostEqual(0, when)
-
-        loop = self.new_test_loop(gen)
-
-        foo_started = False
-
-        async def foo():
-            nonlocal foo_started
-            foo_started = True
-
-        with self.assertRaises(asyncio.TimeoutError):
-            loop.run_until_complete(asyncio.wait_for(foo(), 0))
-
-        self.assertAlmostEqual(0, loop.time())
-        self.assertEqual(foo_started, False)
-
-    def test_wait_for_timeout_less_then_0_or_0(self):
-        def gen():
-            when = yield
-            self.assertAlmostEqual(0.2, when)
-            when = yield 0
-            self.assertAlmostEqual(0, when)
-
-        for timeout in [0, -1]:
-            with self.subTest(timeout=timeout):
-                loop = self.new_test_loop(gen)
-
-                foo_running = None
-
-                async def foo():
-                    nonlocal foo_running
-                    foo_running = True
-                    try:
-                        await asyncio.sleep(0.2)
-                    finally:
-                        foo_running = False
-                    return 'done'
-
-                fut = self.new_task(loop, foo())
-
-                with self.assertRaises(asyncio.TimeoutError):
-                    loop.run_until_complete(asyncio.wait_for(fut, timeout))
-                self.assertTrue(fut.done())
-                # it should have been cancelled due to the timeout
-                self.assertTrue(fut.cancelled())
-                self.assertAlmostEqual(0, loop.time())
-                self.assertEqual(foo_running, False)
-
-    def test_wait_for(self):
-
-        def gen():
-            when = yield
-            self.assertAlmostEqual(0.2, when)
-            when = yield 0
-            self.assertAlmostEqual(0.1, when)
-            when = yield 0.1
-
-        loop = self.new_test_loop(gen)
-
-        foo_running = None
-
-        async def foo():
-            nonlocal foo_running
-            foo_running = True
-            try:
-                await asyncio.sleep(0.2)
-            finally:
-                foo_running = False
-            return 'done'
-
-        fut = self.new_task(loop, foo())
-
-        with self.assertRaises(asyncio.TimeoutError):
-            loop.run_until_complete(asyncio.wait_for(fut, 0.1))
-        self.assertTrue(fut.done())
-        # it should have been cancelled due to the timeout
-        self.assertTrue(fut.cancelled())
-        self.assertAlmostEqual(0.1, loop.time())
-        self.assertEqual(foo_running, False)
-
-    def test_wait_for_blocking(self):
-        loop = self.new_test_loop()
-
-        async def coro():
-            return 'done'
-
-        res = loop.run_until_complete(asyncio.wait_for(coro(), timeout=None))
-        self.assertEqual(res, 'done')
-
-    def test_wait_for_race_condition(self):
-
-        def gen():
-            yield 0.1
-            yield 0.1
-            yield 0.1
-
-        loop = self.new_test_loop(gen)
-
-        fut = self.new_future(loop)
-        task = asyncio.wait_for(fut, timeout=0.2)
-        loop.call_later(0.1, fut.set_result, "ok")
-        res = loop.run_until_complete(task)
-        self.assertEqual(res, "ok")
-
-    def test_wait_for_cancellation_race_condition(self):
-        async def inner():
-            with contextlib.suppress(asyncio.CancelledError):
-                await asyncio.sleep(1)
-            return 1
-
-        async def main():
-            result = await asyncio.wait_for(inner(), timeout=.01)
-            self.assertEqual(result, 1)
-
-        asyncio.run(main())
-
-    def test_wait_for_waits_for_task_cancellation(self):
-        loop = asyncio.new_event_loop()
-        self.addCleanup(loop.close)
-
-        task_done = False
-
-        async def foo():
-            async def inner():
-                nonlocal task_done
-                try:
-                    await asyncio.sleep(0.2)
-                except asyncio.CancelledError:
-                    await asyncio.sleep(_EPSILON)
-                    raise
-                finally:
-                    task_done = True
-
-            inner_task = self.new_task(loop, inner())
-
-            await asyncio.wait_for(inner_task, timeout=_EPSILON)
-
-        with self.assertRaises(asyncio.TimeoutError) as cm:
-            loop.run_until_complete(foo())
-
-        self.assertTrue(task_done)
-        chained = cm.exception.__context__
-        self.assertEqual(type(chained), asyncio.CancelledError)
-
-    def test_wait_for_waits_for_task_cancellation_w_timeout_0(self):
-        loop = asyncio.new_event_loop()
-        self.addCleanup(loop.close)
-
-        task_done = False
-
-        async def foo():
-            async def inner():
-                nonlocal task_done
-                try:
-                    await asyncio.sleep(10)
-                except asyncio.CancelledError:
-                    await asyncio.sleep(_EPSILON)
-                    raise
-                finally:
-                    task_done = True
-
-            inner_task = self.new_task(loop, inner())
-            await asyncio.sleep(_EPSILON)
-            await asyncio.wait_for(inner_task, timeout=0)
-
-        with self.assertRaises(asyncio.TimeoutError) as cm:
-            loop.run_until_complete(foo())
-
-        self.assertTrue(task_done)
-        chained = cm.exception.__context__
-        self.assertEqual(type(chained), asyncio.CancelledError)
-
-    def test_wait_for_reraises_exception_during_cancellation(self):
-        loop = asyncio.new_event_loop()
-        self.addCleanup(loop.close)
-
-        class FooException(Exception):
-            pass
-
-        async def foo():
-            async def inner():
-                try:
-                    await asyncio.sleep(0.2)
-                finally:
-                    raise FooException
-
-            inner_task = self.new_task(loop, inner())
-
-            await asyncio.wait_for(inner_task, timeout=_EPSILON)
-
-        with self.assertRaises(FooException):
-            loop.run_until_complete(foo())
-
-    def test_wait_for_self_cancellation(self):
-        loop = asyncio.new_event_loop()
-        self.addCleanup(loop.close)
-
-        async def foo():
-            async def inner():
-                try:
-                    await asyncio.sleep(0.3)
-                except asyncio.CancelledError:
-                    try:
-                        await asyncio.sleep(0.3)
-                    except asyncio.CancelledError:
-                        await asyncio.sleep(0.3)
-
-                return 42
-
-            inner_task = self.new_task(loop, inner())
-
-            wait = asyncio.wait_for(inner_task, timeout=0.1)
-
-            # Test that wait_for itself is properly cancellable
-            # even when the initial task holds up the initial cancellation.
-            task = self.new_task(loop, wait)
-            await asyncio.sleep(0.2)
-            task.cancel()
-
-            with self.assertRaises(asyncio.CancelledError):
-                await task
-
-            self.assertEqual(await inner_task, 42)
-
-        loop.run_until_complete(foo())
 
     def test_wait(self):
 
@@ -2527,6 +2274,90 @@ class BaseTaskTests:
             loop.close()
 
         self.assertEqual(cvar.get(), -1)
+
+    def test_context_4(self):
+        cvar = contextvars.ContextVar('cvar')
+
+        async def coro(val):
+            await asyncio.sleep(0)
+            cvar.set(val)
+
+        async def main():
+            ret = []
+            ctx = contextvars.copy_context()
+            ret.append(ctx.get(cvar))
+            t1 = self.new_task(loop, coro(1), context=ctx)
+            await t1
+            ret.append(ctx.get(cvar))
+            t2 = self.new_task(loop, coro(2), context=ctx)
+            await t2
+            ret.append(ctx.get(cvar))
+            return ret
+
+        loop = asyncio.new_event_loop()
+        try:
+            task = self.new_task(loop, main())
+            ret = loop.run_until_complete(task)
+        finally:
+            loop.close()
+
+        self.assertEqual([None, 1, 2], ret)
+
+    def test_context_5(self):
+        cvar = contextvars.ContextVar('cvar')
+
+        async def coro(val):
+            await asyncio.sleep(0)
+            cvar.set(val)
+
+        async def main():
+            ret = []
+            ctx = contextvars.copy_context()
+            ret.append(ctx.get(cvar))
+            t1 = asyncio.create_task(coro(1), context=ctx)
+            await t1
+            ret.append(ctx.get(cvar))
+            t2 = asyncio.create_task(coro(2), context=ctx)
+            await t2
+            ret.append(ctx.get(cvar))
+            return ret
+
+        loop = asyncio.new_event_loop()
+        try:
+            task = self.new_task(loop, main())
+            ret = loop.run_until_complete(task)
+        finally:
+            loop.close()
+
+        self.assertEqual([None, 1, 2], ret)
+
+    def test_context_6(self):
+        cvar = contextvars.ContextVar('cvar')
+
+        async def coro(val):
+            await asyncio.sleep(0)
+            cvar.set(val)
+
+        async def main():
+            ret = []
+            ctx = contextvars.copy_context()
+            ret.append(ctx.get(cvar))
+            t1 = loop.create_task(coro(1), context=ctx)
+            await t1
+            ret.append(ctx.get(cvar))
+            t2 = loop.create_task(coro(2), context=ctx)
+            await t2
+            ret.append(ctx.get(cvar))
+            return ret
+
+        loop = asyncio.new_event_loop()
+        try:
+            task = loop.create_task(main())
+            ret = loop.run_until_complete(task)
+        finally:
+            loop.close()
+
+        self.assertEqual([None, 1, 2], ret)
 
     def test_get_coro(self):
         loop = asyncio.new_event_loop()

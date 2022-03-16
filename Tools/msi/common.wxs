@@ -61,6 +61,7 @@
     </Fragment>
 
     <Fragment>
+        <?ifdef PythonExeComponentGuid ?>
         <!-- Locate TARGETDIR automatically assuming we have executables installed -->
         <Property Id="TARGETDIR">
             <ComponentSearch Id="PythonExe_Directory" Guid="$(var.PythonExeComponentGuid)">
@@ -69,6 +70,7 @@
                 </DirectorySearch>
             </ComponentSearch>
         </Property>
+        <?endif ?>
         <Property Id="DetectTargetDir" Value="1" />
     </Fragment>
     
