@@ -78,6 +78,9 @@ class SelectTestCase(unittest.TestCase):
                           rfd, wfd, xfd)
 
     # Issue 16230: Crash on select resized list
+    @unittest.skipIf(
+        support.is_emscripten, "Emscripten cannot select a fd multiple times."
+    )
     def test_select_mutated(self):
         a = []
         class F:
