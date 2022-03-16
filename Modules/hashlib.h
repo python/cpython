@@ -57,3 +57,4 @@
  * to allow the user to optimize based on the platform they're using. */
 #define HASHLIB_GIL_MINSIZE 2048
 
+#define HASHLIB_READ_BUFFER_SIZE 65536

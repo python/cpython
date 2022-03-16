@@ -76,6 +76,88 @@ PyDoc_STRVAR(SHA256Type_update__doc__,
 #define SHA256TYPE_UPDATE_METHODDEF    \
     {"update", (PyCFunction)SHA256Type_update, METH_O, SHA256Type_update__doc__},
 
+PyDoc_STRVAR(_sha256__sha256_from_file_descriptor__doc__,
+"_sha256_from_file_descriptor($module, fd, usedforsecurity=True, /)\n"
+"--\n"
+"\n"
+"Create hash object initialized with the content of the file given as a file descriptor.");
+
+#define _SHA256__SHA256_FROM_FILE_DESCRIPTOR_METHODDEF    \
+    {"_sha256_from_file_descriptor", (PyCFunction)(void(*)(void))_sha256__sha256_from_file_descriptor, METH_FASTCALL, _sha256__sha256_from_file_descriptor__doc__},
+
+static PyObject *
+_sha256__sha256_from_file_descriptor_impl(PyObject *module, int fd,
+                                          int usedforsecurity);
+
+static PyObject *
+_sha256__sha256_from_file_descriptor(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    int usedforsecurity = 1;
+
+    if (!_PyArg_CheckPositional("_sha256_from_file_descriptor", nargs, 1, 2)) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    usedforsecurity = PyObject_IsTrue(args[1]);
+    if (usedforsecurity < 0) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _sha256__sha256_from_file_descriptor_impl(module, fd, usedforsecurity);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_sha256__sha224_from_file_descriptor__doc__,
+"_sha224_from_file_descriptor($module, fd, usedforsecurity=True, /)\n"
+"--\n"
+"\n"
+"Create hash object initialized with the content of the file given as a file descriptor.");
+
+#define _SHA256__SHA224_FROM_FILE_DESCRIPTOR_METHODDEF    \
+    {"_sha224_from_file_descriptor", (PyCFunction)(void(*)(void))_sha256__sha224_from_file_descriptor, METH_FASTCALL, _sha256__sha224_from_file_descriptor__doc__},
+
+static PyObject *
+_sha256__sha224_from_file_descriptor_impl(PyObject *module, int fd,
+                                          int usedforsecurity);
+
+static PyObject *
+_sha256__sha224_from_file_descriptor(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    int usedforsecurity = 1;
+
+    if (!_PyArg_CheckPositional("_sha224_from_file_descriptor", nargs, 1, 2)) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    usedforsecurity = PyObject_IsTrue(args[1]);
+    if (usedforsecurity < 0) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _sha256__sha224_from_file_descriptor_impl(module, fd, usedforsecurity);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_sha256_sha256__doc__,
 "sha256($module, /, string=b\'\', *, usedforsecurity=True)\n"
 "--\n"
@@ -177,4 +259,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b7283f75c9d08f30 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b57afe09426b4e37 input=a9049054013a1b77]*/

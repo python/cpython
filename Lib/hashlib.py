@@ -53,6 +53,8 @@ More condensed:
 
 """
 
+import io
+
 # This tuple and __get_builtin_constructor() must be modified if a new
 # always available algorithm is added.
 __always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512',
@@ -65,7 +67,8 @@ algorithms_guaranteed = set(__always_supported)
 algorithms_available = set(__always_supported)
 
 __all__ = __always_supported + ('new', 'algorithms_guaranteed',
-                                'algorithms_available', 'pbkdf2_hmac')
+                                'algorithms_available', 'pbkdf2_hmac',
+                                'from_file', 'from_raw_file')
 
 
 __builtin_constructor_cache = {}
@@ -95,6 +98,8 @@ def __get_builtin_constructor(name):
             import _sha256
             cache['SHA224'] = cache['sha224'] = _sha256.sha224
             cache['SHA256'] = cache['sha256'] = _sha256.sha256
+            cache['sha224_fd'] = _sha256._sha224_from_file_descriptor
+            cache['sha256_fd'] = _sha256._sha256_from_file_descriptor
         elif name in {'SHA512', 'sha512', 'SHA384', 'sha384'}:
             import _sha512
             cache['SHA384'] = cache['sha384'] = _sha512.sha384
@@ -263,6 +268,34 @@ for __func_name in __always_supported:
         import logging
         logging.exception('code for hash %s was not found.', __func_name)
 
+
+def from_raw_file(name, fobj=None):
+    """from_raw_file(name, fobj=None, **kwargs) - Return a new hashing object using the named algorithm;
+    initialized from a non-buffered file object (RawIOBase instance), which you can get with
+    e.g. `open(path, mode='rb', buffering=0)`. The Python :term:`GIL` is released while initializing the hash
+    with the contents of the file.
+    """
+    if not isinstance(fobj, (io.RawIOBase, io._io._RawIOBase)):
+        raise TypeError(f'from_file() must get a non-buffered file object. {fobj} is not an instance of io.RawIOBase')
+    __get_builtin_constructor(name)
+    func = __builtin_constructor_cache.get(name + '_fd')
+    return func(fobj.fileno())
+
+_READ_BUFFER_SIZE = 65536
+def from_file(name, fobj=None, **kwargs):
+    """from_file(name, fobj=None, **kwargs) - Return a new hashing object using the named algorithm;
+    initialized from a file object. If a non-buffered file object (RawIOBase instance) is passed, which
+    you can get with e.g. `open(path, mode='rb', buffering=0)`, the Python :term:`GIL` is released while
+    initializing the hash with the contents of the file.
+    """
+    if isinstance(fobj, (io.RawIOBase, io._io._RawIOBase)):
+        return from_raw_file(name, fobj, **kwargs)
+    hash_obj = new(name, **kwargs)
+    while True:
+        chunk = fobj.read(_READ_BUFFER_SIZE)
+        if not chunk:
+            return hash_obj
+        hash_obj.update(chunk)
 
 # Cleanup locals()
 del __always_supported, __func_name, __get_hash

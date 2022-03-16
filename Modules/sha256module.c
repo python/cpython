@@ -509,6 +509,76 @@ SHA256Type_update(SHAobject *self, PyObject *obj)
     Py_RETURN_NONE;
 }
 
+/* used by _sha*_from_file_descriptor_impl */
+static PyObject *
+_from_file_descriptor(SHAobject* sha, int fd)
+{
+    SHA_BYTE buf[HASHLIB_READ_BUFFER_SIZE];
+    int count;
+    /* invariant: New objects can't be accessed by other code yet,
+     * thus it's safe to release the GIL without locking the object.
+     */
+    Py_BEGIN_ALLOW_THREADS
+    while (1) {
+        count = read(fd, buf, HASHLIB_READ_BUFFER_SIZE);
+        if (count <= 0) {
+            break;
+        }
+        sha_update(sha, buf, count);
+    }
+    Py_END_ALLOW_THREADS
+    if (count < 0) {
+        Py_DECREF(sha);
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    return (PyObject *)sha;
+}
+
+/*[clinic input]
+_sha256._sha256_from_file_descriptor
+
+    fd: int
+    usedforsecurity: bool = True
+    /
+
+Create hash object initialized with the content of the file given as a file descriptor.
+[clinic start generated code]*/
+
+static PyObject *
+_sha256__sha256_from_file_descriptor_impl(PyObject *module, int fd,
+                                          int usedforsecurity)
+/*[clinic end generated code: output=2cb7fd5ffad8fcd6 input=925c7ddd28d59dc8]*/
+{
+    SHAobject *sha = _sha256_sha256_impl(module, NULL, usedforsecurity);
+    if (sha == NULL) {
+        return NULL;
+    }
+    return _from_file_descriptor(sha, fd);
+}
+
+/*[clinic input]
+_sha256._sha224_from_file_descriptor
+
+    fd: int
+    usedforsecurity: bool = True
+    /
+
+Create hash object initialized with the content of the file given as a file descriptor.
+[clinic start generated code]*/
+
+static PyObject *
+_sha256__sha224_from_file_descriptor_impl(PyObject *module, int fd,
+                                          int usedforsecurity)
+/*[clinic end generated code: output=4efbc5c69598e4db input=259aa08ff2f58c2d]*/
+{
+    SHAobject *sha = _sha256_sha224_impl(module, NULL, usedforsecurity);
+    if (sha == NULL) {
+        return NULL;
+    }
+    return _from_file_descriptor(sha, fd);
+}
+
 static PyMethodDef SHA_methods[] = {
     SHA256TYPE_COPY_METHODDEF
     SHA256TYPE_DIGEST_METHODDEF
@@ -674,6 +744,8 @@ _sha256_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
 static struct PyMethodDef SHA_functions[] = {
     _SHA256_SHA256_METHODDEF
     _SHA256_SHA224_METHODDEF
+    _SHA256__SHA256_FROM_FILE_DESCRIPTOR_METHODDEF
+    _SHA256__SHA224_FROM_FILE_DESCRIPTOR_METHODDEF
     {NULL,      NULL}            /* Sentinel */
 };
 
