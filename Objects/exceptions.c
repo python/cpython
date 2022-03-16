@@ -203,26 +203,15 @@ BaseException_add_note(PyObject *self_, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    assert(PyUnicode_CheckExact(note));
     if (self->notes == NULL) {
-        self->notes = PyTuple_Pack(1, note);
+        self->notes = PyList_New(0);
         if (self->notes == NULL) {
             return NULL;
         }
     }
-    else {
-        assert(PyTuple_CheckExact(self->notes));
-        Py_ssize_t num_notes = PyTuple_Size(self->notes);
-        PyObject *new_notes = PyTuple_New(1 + num_notes);
-        if (new_notes == NULL) {
-            return NULL;
-        }
-        for(Py_ssize_t i = 0; i < num_notes; i++) {
-            PyTuple_SET_ITEM(
-                new_notes, i, Py_NewRef(PyTuple_GET_ITEM(self->notes, i)));
-        }
-        PyTuple_SET_ITEM(new_notes, num_notes, Py_NewRef(note));
-        Py_SETREF(self->notes, new_notes);
+    assert(PyUnicode_CheckExact(note)); 
+    if (PyList_Append(self->notes, note) < 0) {
+        return NULL;
     }
     Py_RETURN_NONE;
 }
@@ -272,8 +261,7 @@ BaseException_get_notes(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
     if (self->notes == NULL) {
         return PyTuple_New(0);
     }
-    assert(PyTuple_CheckExact(self->notes));
-    return Py_NewRef(self->notes);
+    return PySequence_Tuple(self->notes);
 }
 
 static int

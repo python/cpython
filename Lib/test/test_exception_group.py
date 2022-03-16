@@ -502,7 +502,7 @@ class ExceptionGroupSplitTestBase(ExceptionGroupTestBase):
                 self.assertIs(eg.__cause__, part.__cause__)
                 self.assertIs(eg.__context__, part.__context__)
                 self.assertIs(eg.__traceback__, part.__traceback__)
-                self.assertIs(eg.__notes__, part.__notes__)
+                self.assertEqual(eg.__notes__, part.__notes__)
 
         def tbs_for_leaf(leaf, eg):
             for e, tbs in leaf_generator(eg):

@@ -562,8 +562,6 @@ class ExceptionTests(unittest.TestCase):
                 e.add_note("Our Note")
                 self.assertEqual(e.__notes__, ("Our Note",))
 
-                # calling notes twice returns the same tuple object
-                self.assertIs(e.__notes__, e.__notes__)
 
     def testWithTraceback(self):
         try:
