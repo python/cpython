@@ -81,7 +81,7 @@ jobs:
   - powershell: 'gci *embed-arm*.zip | %{ Write-Host "Not publishing: $($_.Name)"; gi $_ } | del'
     displayName: 'Prevent publishing ARM64 packages'
     workingDirectory: '$(Build.BinariesDirectory)\embed'
-    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
+    condition: and(succeeded(), ne(variables['PublishARM64'], 'true'))
 
 
   - template: ./gpg-sign.yml
