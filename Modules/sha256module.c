@@ -22,6 +22,7 @@
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_strhex.h"        // _Py_strhex()
+#include "pycore_fileutils.h"     // *_SUPPRESS_IPH
 #include "structmember.h"         // PyMemberDef
 #include "hashlib.h"
 
@@ -514,21 +515,44 @@ static PyObject *
 _from_file_descriptor(SHAobject* sha, int fd)
 {
     SHA_BYTE buf[HASHLIB_READ_BUFFER_SIZE];
-    int count;
+    int count, err, async_err = 0;
     /* invariant: New objects can't be accessed by other code yet,
      * thus it's safe to release the GIL without locking the object.
      */
+    _Py_BEGIN_SUPPRESS_IPH
     Py_BEGIN_ALLOW_THREADS
     while (1) {
-        count = read(fd, buf, HASHLIB_READ_BUFFER_SIZE);
+        while(!async_err) {
+            errno = 0;
+            count = read(fd, buf, HASHLIB_READ_BUFFER_SIZE);
+            /* save/restore errno because PyErr_CheckSignals()
+            * and PyErr_SetFromErrno() can modify it */
+            err = errno;
+            if (count < 0 && err == EINTR) {
+                PyEval_RestoreThread(_save);
+                async_err = PyErr_CheckSignals();
+                _save = PyEval_SaveThread();
+            } else {
+                break;
+            }
+        }
         if (count <= 0) {
             break;
         }
         sha_update(sha, buf, count);
     }
     Py_END_ALLOW_THREADS
+    _Py_END_SUPPRESS_IPH
+    if (async_err) {
+        /* read() was interrupted by a signal (failed with EINTR)
+         * and the Python signal handler raised an exception */
+        errno = err;
+        assert(errno == EINTR);
+        return PyErr_Occurred();
+    }
     if (count < 0) {
         Py_DECREF(sha);
+        errno = err; // in _Py_Read() this was below the PyErr_SetFromErrno(), but that can't be right, can it?
         return PyErr_SetFromErrno(PyExc_OSError);
     }
 
@@ -550,7 +574,7 @@ _sha256__sha256_from_file_descriptor_impl(PyObject *module, int fd,
                                           int usedforsecurity)
 /*[clinic end generated code: output=2cb7fd5ffad8fcd6 input=925c7ddd28d59dc8]*/
 {
-    SHAobject *sha = _sha256_sha256_impl(module, NULL, usedforsecurity);
+    SHAobject *sha = (SHAobject*)_sha256_sha256_impl(module, NULL, usedforsecurity);
     if (sha == NULL) {
         return NULL;
     }
@@ -572,7 +596,7 @@ _sha256__sha224_from_file_descriptor_impl(PyObject *module, int fd,
                                           int usedforsecurity)
 /*[clinic end generated code: output=4efbc5c69598e4db input=259aa08ff2f58c2d]*/
 {
-    SHAobject *sha = _sha256_sha224_impl(module, NULL, usedforsecurity);
+    SHAobject *sha = (SHAobject*)_sha256_sha224_impl(module, NULL, usedforsecurity);
     if (sha == NULL) {
         return NULL;
     }
