@@ -264,6 +264,30 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(await inner_task, 42)
 
+    async def _test_cancel_wait_for(self, timeout):
+        loop = asyncio.get_running_loop()
+
+        async def blocking_coroutine():
+            fut = loop.create_future()
+            # Block: fut result is never set
+            await fut
+
+        task = asyncio.create_task(blocking_coroutine())
+
+        wait = asyncio.create_task(asyncio.wait_for(task, timeout))
+        loop.call_soon(wait.cancel)
+
+        with self.assertRaises(asyncio.CancelledError):
+            await wait
+
+        # Python issue #23219: cancelling the wait must also cancel the task
+        self.assertTrue(task.cancelled())
+
+    async def test_cancel_blocking_wait_for(self):
+        await self._test_cancel_wait_for(None)
+
+    async def test_cancel_wait_for(self):
+        await self._test_cancel_wait_for(60.0)
 
 
 if __name__ == '__main__':
