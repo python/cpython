@@ -255,11 +255,11 @@ a file or file-like object.
       ...
       >>> digest.hexdigest()
       ...  # doctest: +ELLIPSIS
-      
+
       >>> buf = io.BytesIO(b"somedata")
       >>> mac1 = hmac.HMAC(b"key", digestmod=hashlib.sha512)
       >>> digest = hashlib.file_digest(buf, lambda: mac1)
-      
+
       >>> digest is mac1
       True
       >>> mac2 = hmac.HMAC(b"key", b"somedata", digestmod=hashlib.sha512)
