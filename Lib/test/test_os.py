@@ -3336,7 +3336,6 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
             yield await reader.read()
 
     async def handle_new_client(self, reader, writer):
-        writer.write(b"220 ready\r\n")
         self.server_buffer = b''.join([x async for x in self.chunks(reader)])
         writer.close()
         self.server.close()  # The test server processes a single client only
@@ -3349,9 +3348,6 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
         self.client.setblocking(False)
         l = asyncio.get_running_loop()
         await l.sock_connect(self.client, self.server.sockets[0].getsockname())
-        self.client.settimeout(1)
-        # synchronize by waiting for "220 ready" response
-        self.client.recv(1024)
         self.sockno = self.client.fileno()
         self.file = open(os_helper.TESTFN, 'rb')
         self.fileno = self.file.fileno()
