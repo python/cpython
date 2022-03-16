@@ -217,9 +217,11 @@ BaseException_add_note(PyObject *self, PyObject *args, PyObject *kwds)
     if (notes == NULL) {
         return NULL;
     }
-    if (PyList_Append(notes, note) < 0) {
-        Py_DECREF(notes);
-        return NULL;
+    if (PyList_Check(notes)) {
+        if (PyList_Append(notes, note) < 0) {
+            Py_DECREF(notes);
+            return NULL;
+        }
     }
     Py_DECREF(notes);
     Py_RETURN_NONE;

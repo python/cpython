@@ -136,8 +136,8 @@ The following exceptions are used mostly as base classes for other exceptions.
 
    .. attribute:: __notes__
 
-      A tuple of the notes of this exception, which were added with :meth:`add_note`.
-      Its contents can be cleared with ``del e.__notes__``.
+      A list of the notes of this exception, which were added with :meth:`add_note`.
+      This attribute is created when :meth:`add_note` is called.
 
       .. versionadded:: 3.11
 
