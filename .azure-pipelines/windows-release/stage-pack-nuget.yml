@@ -38,7 +38,7 @@ jobs:
       -OutputDirectory $(Build.ArtifactStagingDirectory)
       -NoPackageAnalysis
       -NonInteractive
-    condition: and(succeeded(), eq(variables['OverrideNugetVersion'], ''))
+    condition: and(succeeded(), not(variables['OverrideNugetVersion']))
     displayName: 'Create nuget package'
 
   - powershell: >
@@ -48,7 +48,7 @@ jobs:
       -NoPackageAnalysis
       -NonInteractive
       -Version "$(OverrideNugetVersion)"
-    condition: and(succeeded(), ne(variables['OverrideNugetVersion'], ''))
+    condition: and(succeeded(), variables['OverrideNugetVersion'])
     displayName: 'Create nuget package'
 
   - powershell: |
