@@ -269,7 +269,6 @@ Miscellaneous options
    raises an exception.  See also :envvar:`PYTHONINSPECT`.
 
 
-.. _using-on-misc-option-uppercase-i:
 .. cmdoption:: -I
 
    Run Python in isolated mode. This also implies -E and -s.
