@@ -439,17 +439,17 @@ class Barrier(mixins._LoopBoundMixin):
         self._state = 0        # 0 filling, 1, draining,
                                         # -1 resetting, -2 broken
         self._count = 0             # count tasks in Barrier
-        self._count_wait = 0        # count waiting tasks
         self._count_block = 0       # count blocking tasks
 
     def __repr__(self):
         res = super().__repr__()
         extra = 'locked' if self._cond.locked() else 'unlocked'
-        extra += f', wait:{self._count_wait}/{self._parties}'
-        extra += f', block:{self._count_block}/{self._parties}'
+        if self._count:
+            extra += f', wait:{self._count}/{self._parties}'
+        if self._count_block:
+            extra += f', block:{self._count_block}/{self._parties}'
         extra += f', state:{self._state}'
         return f'<{res[1:-1]} [{extra}]>'
-
     
     async def __aenter__(self):
         """ wait for the barrier reaches the parties number 
@@ -489,13 +489,18 @@ class Barrier(mixins._LoopBoundMixin):
         or raise an exception if it is broken.
         """
         self._count_block += 1
-        while self.draining or self.resetting: # 
-            # It is draining or resetting, wait until done
-            await self._cond.wait()
+        # It is draining or resetting, wait until done
+        # unless a CancelledError occurs
+        try:
+            await self._cond.wait_for(lambda: not (self._is_draining() or\
+                                                    self._is_resetting()))
+        except exceptions.CancelledError:
+            self._count_block -= 1
+            raise
         self._count_block -= 1
 
         # see if the barrier is in a broken state
-        if self.broken:
+        if self._is_broken():
             raise BrokenBarrierError
 
     # Optionally run the 'action' and release the tasks waiting
@@ -511,7 +516,8 @@ class Barrier(mixins._LoopBoundMixin):
             self._set_draining()
             self._cond.notify_all()
         except:
-            # an exception occurs during the _action coroutine.  
+            # an exception occurs during the _action coroutine,
+            # or the last calling task cancels 
             # Break and reraise
             self._break()
             raise
@@ -520,11 +526,11 @@ class Barrier(mixins._LoopBoundMixin):
         """Wait in the barrier until we are released.  Raise an exception
         if the barrier is reset or broken.
         """
-        self._count_wait += 1
-        await self._cond.wait_for(lambda: not self.filling)
-        self._count_wait -= 1
+        # wait for end of filling 
+        # unless a CancelledError occurs
+        await self._cond.wait_for(lambda: not self._is_filling())
 
-        if self.broken or self.resetting:
+        if self._is_broken() or self._is_resetting():
             raise BrokenBarrierError
 
     def _exit(self):
@@ -532,7 +538,7 @@ class Barrier(mixins._LoopBoundMixin):
         waiting for the barrier to drain.
         """
         if self._count == 0:
-            if self.resetting or self.draining:
+            if self._is_resetting() or self._is_draining():
                 self._set_filling()                
             self._cond.notify_all()
 
@@ -543,8 +549,9 @@ class Barrier(mixins._LoopBoundMixin):
         """
         async with self._cond:
             if self._count > 0:
-                if not self.resetting:# self.filling or self.draining 
-                                      # or self.broken
+                if not self._is_resetting():# self._is_filling() 
+                                            # or self._is_draining() 
+                                            # or self.is_broken()
                     #reset the barrier, waking up tasks
                     self._set_resetting()                
             else:
@@ -565,6 +572,25 @@ class Barrier(mixins._LoopBoundMixin):
         self._set_broken()
         self._cond.notify_all()
 
+    @property
+    def parties(self):
+        """Return the number of tasks required to trip the barrier."""
+        return self._parties
+
+    @property
+    def n_waiting(self):
+        """Return the number of tasks currently waiting at the barrier."""
+        if self._is_filling():
+            return self._count
+        return 0
+
+    @property
+    def n_blocking(self):
+        """Return the number of tasks currently blocking at the barrier."""
+        if self._is_draining():
+            return self._count_block
+        return 0
+
     def _set_broken(self):
         """Set state to broken."""
         self._state = -2
@@ -581,42 +607,19 @@ class Barrier(mixins._LoopBoundMixin):
         """Set state to resetting."""
         self._state = -1
 
-    @property
-    def parties(self):
-        """Return the number of tasks required to trip the barrier."""
-        return self._parties
-
-    @property
-    def n_waiting(self):
-        """Return the number of tasks currently waiting at the barrier."""
-        if self.filling:
-            return self._count
-        return 0
-
-    @property
-    def n_blocking(self):
-        """Return the number of tasks currently blocking at the barrier."""
-        if self.draining:
-            return self._count_block
-        return 0
-
-    @property
-    def broken(self):
+    def _is_broken(self):
         """Return True if the barrier is in a broken state."""
         return self._state == -2
 
-    @property
-    def draining(self):
+    def _is_draining(self):
         """Return True if the barrier is draining."""
         return self._state == 1
 
-    @property
-    def filling(self):
+    def _is_filling(self):
         """Return True if the barrier is filling."""
         return self._state == 0
 
-    @property
-    def resetting(self):
+    def _is_resetting(self):
         """Return True if the barrier is resetting."""
         return self._state == -1
 
