@@ -1007,7 +1007,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(barrier._is_broken())
 
     async def test_filling_one_task(self):
-        barrier = asyncio.Barrier(1)        
+        barrier = asyncio.Barrier(1)
 
         async def f():
             async with barrier as i:
@@ -1122,7 +1122,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
     async def test_blocking_tasks_while_draining(self):
         rewait = 2
         barrier = asyncio.Barrier(self.N)        
-        barrier_nowaiting = asyncio.Barrier(self.N - rewait)        
+        barrier_nowaiting = asyncio.Barrier(self.N - rewait)
         results = []
         rewait_n = rewait
         
@@ -1136,7 +1136,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
             if rewait_n > 0:
                 rewait_n -= 1
                 # wait again only for rewait tasks
-                await barrier.wait() 
+                await barrier.wait()
             else:
                 # task here does not wait so it is blocking (drainig state)
                 results.append(barrier.n_blocking)
@@ -1172,7 +1172,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(barrier.n_waiting, 2)
 
         t1.cancel()
-        await asyncio.sleep(0)        
+        await asyncio.sleep(0)
         self.assertEqual(barrier.n_waiting, 1)
         with self.assertRaises(asyncio.CancelledError):
             await t1
@@ -1231,8 +1231,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
             except asyncio.BrokenBarrierError:
                 results2.append(True)
 
-        #with self.assertRaises(asyncio.CancelledError):
-        res, t = await self.gather_tasks(self.N, coro)
+        await self.gather_tasks(self.N, coro)
 
         self.assertEqual(len(results), 0)
         self.assertEqual(results1, [True])
@@ -1317,10 +1316,10 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
                 # catch here waiting tasks
                 results1.append(True)
             else:
-                # here drained task ouside the barrier 
+                # here drained task ouside the barrier
                 if rest_of_tasks == barrier._count:
                     # 'd' tasks outside the barrier
-                    await barrier.reset() 
+                    await barrier.reset()
  
         await self.gather_tasks(self.N, coro)
 
@@ -1339,7 +1338,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
             try:
                 await barrier.wait()
             except asyncio.BrokenBarrierError:
-                # here catch still waiting tasks 
+                # here catch still waiting tasks
                 results1.append(True)
 
                 # so now waiting again to reach nb_parties
@@ -1347,10 +1346,10 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
             else:
                 if blocking_tasks == barrier.n_blocking:
                     # reset now: raise asyncio.BrokenBarrierError for waiting tasks
-                    await barrier.reset() 
+                    await barrier.reset()
 
                     # so now waiting again to reach nb_parties
-                    await barrier.wait() 
+                    await barrier.wait()
                 else:
                     try:
                         await barrier.wait()
@@ -1416,13 +1415,13 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
 
             i = await barrier.wait()
             count += 1
-            if count == self.N: 
+            if count == self.N:
                 # last task exited from barrier
                 await barrier.reset()
 
-                # wit here to reach the `parties`` 
+                # wit here to reach the `parties``
                 await barrier.wait()
-            else: 
+            else:
                 try:
                     # second waiting
                     await barrier.wait()
@@ -1430,7 +1429,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
                     # N-1 tasks here
                     results1.append(True)
                 except Exception as e:
-                    # never goes here 
+                    # never goes here
                     results2.append(True)
 
             # Now, pass the barrier again
@@ -1468,12 +1467,12 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
             try:
                 await barrier.wait()
             except asyncio.BrokenBarrierError:
-                # here catch tasks waiting to drain 
+                # here catch tasks waiting to drain
                 results1.append(True)
             else:
                 if blocking_tasks == barrier.n_blocking:
                     # abort now: raise asyncio.BrokenBarrierError for all tasks
-                    await barrier.abort() 
+                    await barrier.abort()
                 else:
                     try:
                         await barrier.wait()
@@ -1501,7 +1500,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
                     if i == self.N//2:
                         raise RuntimeError
                 async with barrier:
-                    results1.append(True) 
+                    results1.append(True)
             except asyncio.BrokenBarrierError:
                 results2.append(True)
             except RuntimeError:
