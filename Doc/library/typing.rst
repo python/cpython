@@ -1147,7 +1147,6 @@ These are not used in annotations. They are building blocks for creating generic
 
            def __init__(self, radius: float) -> None:
                self.radius = radius
-               self.area = math.pi * (radius ** 2)
 
            # Use a type variable to show that the return type
            # will always be an instance of whatever `cls` is
