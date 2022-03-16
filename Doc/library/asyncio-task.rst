@@ -244,13 +244,17 @@ Running an asyncio Program
 Creating Tasks
 ==============
 
-.. function:: create_task(coro, *, name=None)
+.. function:: create_task(coro, *, name=None, context=None)
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
    and schedule its execution.  Return the Task object.
 
    If *name* is not ``None``, it is set as the name of the task using
    :meth:`Task.set_name`.
+
+   An optional keyword-only *context* argument allows specifying a
+   custom :class:`contextvars.Context` for the *coro* to run in.
+   The current context copy is created when no *context* is provided.
 
    The task is executed in the loop returned by :func:`get_running_loop`,
    :exc:`RuntimeError` is raised if there is no running loop in
@@ -280,6 +284,9 @@ Creating Tasks
 
    .. versionchanged:: 3.8
       Added the *name* parameter.
+
+   .. versionchanged:: 3.11
+      Added the *context* parameter.
 
 
 Sleeping
