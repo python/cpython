@@ -1565,16 +1565,6 @@ trace_function_exit(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject 
     return 0;
 }
 
-static int
-skip_backwards_over_extended_args(PyCodeObject *code, int offset)
-{
-    _Py_CODEUNIT *instrs = (_Py_CODEUNIT *)PyBytes_AS_STRING(code->co_code);
-    while (offset > 0 && _Py_OPCODE(instrs[offset-1]) == EXTENDED_ARG) {
-        offset--;
-    }
-    return offset;
-}
-
 static _PyInterpreterFrame *
 pop_frame(PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
@@ -5445,7 +5435,7 @@ handle_eval_breaker:
 #endif
     {
         if (tstate->tracing == 0) {
-            int instr_prev = skip_backwards_over_extended_args(frame->f_code, frame->f_lasti);
+            int instr_prev = frame->f_lasti;
             frame->f_lasti = INSTR_OFFSET();
             TRACING_NEXTOPARG();
             if (opcode == RESUME) {
@@ -6737,9 +6727,13 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
        then call the trace function if we're tracing source lines.
     */
     initialize_trace_info(&tstate->trace_info, frame);
-    _Py_CODEUNIT prev = ((_Py_CODEUNIT *)PyBytes_AS_STRING(frame->f_code->co_code))[instr_prev];
+    int entry_point = 0;
+    _Py_CODEUNIT *code = (_Py_CODEUNIT *)PyBytes_AS_STRING(frame->f_code->co_code);
+    while (_Py_OPCODE(code[entry_point]) != RESUME) {
+        entry_point++;
+    }
     int lastline;
-    if (_Py_OPCODE(prev) == RESUME && _Py_OPARG(prev) == 0) {
+    if (instr_prev <= entry_point) {
         lastline = -1;
     }
     else {
