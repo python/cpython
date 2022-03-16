@@ -357,9 +357,10 @@ _PyGen_yf(PyGenObject *gen)
             assert(_Py_OPCODE(_PyCode_CODE(gen->gi_code)[0]) != SEND);
             return NULL;
         }
-        // XXX: Bad use of f_lasti?
-        if (_Py_OPCODE(_PyCode_CODE(gen->gi_code)[frame->f_lasti - 1]) != SEND || frame->stacktop < 0)
+        _Py_CODEUNIT next = _PyCode_CODE(gen->gi_code)[frame->f_lasti + 1];
+        if (_PyOpcode_Deopt[_Py_OPCODE(next)] != RESUME || _Py_OPARG(next) < 2)
         {
+            /* Not in a yield from */
             return NULL;
         }
         yf = _PyFrame_StackPeek(frame);
