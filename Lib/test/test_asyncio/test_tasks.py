@@ -1990,32 +1990,6 @@ class BaseTaskTests:
                           'test_task_source_traceback'))
         self.loop.run_until_complete(task)
 
-    def _test_cancel_wait_for(self, timeout):
-        loop = asyncio.new_event_loop()
-        self.addCleanup(loop.close)
-
-        async def blocking_coroutine():
-            fut = self.new_future(loop)
-            # Block: fut result is never set
-            await fut
-
-        task = loop.create_task(blocking_coroutine())
-
-        wait = loop.create_task(asyncio.wait_for(task, timeout))
-        loop.call_soon(wait.cancel)
-
-        self.assertRaises(asyncio.CancelledError,
-                          loop.run_until_complete, wait)
-
-        # Python issue #23219: cancelling the wait must also cancel the task
-        self.assertTrue(task.cancelled())
-
-    def test_cancel_blocking_wait_for(self):
-        self._test_cancel_wait_for(None)
-
-    def test_cancel_wait_for(self):
-        self._test_cancel_wait_for(60.0)
-
     def test_cancel_gather_1(self):
         """Ensure that a gathering future refuses to be cancelled once all
         children are done"""
