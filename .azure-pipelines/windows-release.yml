@@ -151,37 +151,47 @@ stages:
     jobs:
     - template: windows-release/stage-pack-msix.yml
 
-  - stage: Build_MSI
-    displayName: Build MSI installer
-    dependsOn: Sign
-    condition: and(succeeded(), eq(variables['DoMSI'], 'true'))
-    jobs:
-    - template: windows-release/stage-msi.yml
-      parameters:
-        ARM64TclTk: ${{ parameters.ARM64TclTk }}
+  - ${{ if eq(parameters.DoMSI, 'true') }}:
+    - stage: Build_MSI
+      displayName: Build MSI installer
+      dependsOn: Sign
+      condition: and(succeeded(), eq(variables['DoMSI'], 'true'))
+      jobs:
+      - template: windows-release/stage-msi.yml
+        parameters:
+          ARM64TclTk: ${{ parameters.ARM64TclTk }}
 
-  - stage: Test_MSI
-    displayName: Test MSI installer
-    dependsOn: Build_MSI
-    jobs:
-    - template: windows-release/stage-test-msi.yml
+    - stage: Test_MSI
+      displayName: Test MSI installer
+      dependsOn: Build_MSI
+      jobs:
+      - template: windows-release/stage-test-msi.yml
 
   - ${{ if eq(parameters.DoPublish, 'true') }}:
     - stage: PublishPyDotOrg
       displayName: Publish to python.org
-      dependsOn: ['Test_MSI', 'Test']
+      ${{ if eq(parameters.DoMSI, 'true') }}:
+        dependsOn: ['Test_MSI', 'Test']
+      ${{ else }}:
+        dependsOn: 'Test'
       jobs:
       - template: windows-release/stage-publish-pythonorg.yml
 
     - stage: PublishNuget
       displayName: Publish to nuget.org
-      dependsOn: ['Test_MSI', 'Test']
+      ${{ if eq(parameters.DoMSI, 'true') }}:
+        dependsOn: ['Test_MSI', 'Test']
+      ${{ else }}:
+        dependsOn: 'Test'
       jobs:
       - template: windows-release/stage-publish-nugetorg.yml
 
     - stage: PublishStore
       displayName: Publish to Store
-      dependsOn: ['Test_MSI', 'Pack_MSIX']
+      ${{ if eq(parameters.DoMSI, 'true') }}:
+        dependsOn: ['Test_MSI', 'Pack_MSIX']
+      ${{ else }}:
+        dependsOn: 'Pack_MSIX'
       jobs:
       - template: windows-release/stage-publish-store.yml
 
