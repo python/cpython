@@ -26,75 +26,80 @@ typedef uint16_t _Py_CODEUNIT;
 // Use "unsigned char" instead of "uint8_t" here to avoid illegal aliasing:
 #define _Py_SET_OPCODE(word, opcode) (((unsigned char *)&(word))[0] = (opcode))
 
+// To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are
+// defined in this macro:
+#define _PyCode_DEF(SIZE) {                                                    \
+    PyObject_VAR_HEAD                                                          \
+                                                                               \
+    /* Note only the following fields are used in hash and/or comparisons      \
+     *                                                                         \
+     * - co_name                                                               \
+     * - co_argcount                                                           \
+     * - co_posonlyargcount                                                    \
+     * - co_kwonlyargcount                                                     \
+     * - co_nlocals                                                            \
+     * - co_stacksize                                                          \
+     * - co_flags                                                              \
+     * - co_firstlineno                                                        \
+     * - co_consts                                                             \
+     * - co_names                                                              \
+     * - co_localsplusnames                                                    \
+     * This is done to preserve the name and line number for tracebacks        \
+     * and debuggers; otherwise, constant de-duplication would collapse        \
+     * identical functions/lambdas defined on different lines.                 \
+     */                                                                        \
+                                                                               \
+    /* These fields are set with provided values on new code objects. */       \
+                                                                               \
+    /* The hottest fields (in the eval loop) are grouped here at the top. */   \
+    PyObject *co_consts;           /* list (constants used) */                 \
+    PyObject *co_names;            /* list of strings (names used) */          \
+    PyObject *co_exceptiontable;   /* Byte string encoding exception handling  \
+                                      table */                                 \
+    int co_flags;                  /* CO_..., see below */                     \
+    int co_warmup;                 /* Warmup counter for quickening */         \
+                                                                               \
+    /* The rest are not so impactful on performance. */                        \
+    int co_argcount;              /* #arguments, except *args */               \
+    int co_posonlyargcount;       /* #positional only arguments */             \
+    int co_kwonlyargcount;        /* #keyword only arguments */                \
+    int co_stacksize;             /* #entries needed for evaluation stack */   \
+    int co_firstlineno;           /* first source line number */               \
+                                                                               \
+    /* redundant values (derived from co_localsplusnames and                   \
+       co_localspluskinds) */                                                  \
+    int co_nlocalsplus;           /* number of local + cell + free variables   \
+                                  */                                           \
+    int co_nlocals;               /* number of local variables */              \
+    int co_nplaincellvars;        /* number of non-arg cell variables */       \
+    int co_ncellvars;             /* total number of cell variables */         \
+    int co_nfreevars;             /* number of free variables */               \
+                                                                               \
+    PyObject *co_localsplusnames; /* tuple mapping offsets to names */         \
+    PyObject *co_localspluskinds; /* Bytes mapping to local kinds (one byte    \
+                                     per variable) */                          \
+    PyObject *co_filename;        /* unicode (where it was loaded from) */     \
+    PyObject *co_name;            /* unicode (name, for reference) */          \
+    PyObject *co_qualname;        /* unicode (qualname, for reference) */      \
+    PyObject *co_linetable;       /* bytes (encoding addr<->lineno mapping)    \
+                                     See Objects/lnotab_notes.txt for details. \
+                                  */                                           \
+    PyObject *co_endlinetable;    /* bytes object that holds end lineno for    \
+                                     instructions separated across different   \
+                                     lines */                                  \
+    PyObject *co_columntable;     /* bytes object that holds start/end column  \
+                                     offset each instruction */                \
+                                                                               \
+    PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
+    /* Scratch space for extra data relating to the code object.               \
+       Type is a void* to keep the format private in codeobject.c to force     \
+       people to go through the proper APIs. */                                \
+    void *co_extra;                                                            \
+    char co_code_adaptive[(SIZE)];                                             \
+}
 
 /* Bytecode object */
-struct PyCodeObject {
-    PyObject_VAR_HEAD
-
-    /* Note only the following fields are used in hash and/or comparisons
-     *
-     * - co_name
-     * - co_argcount
-     * - co_posonlyargcount
-     * - co_kwonlyargcount
-     * - co_nlocals
-     * - co_stacksize
-     * - co_flags
-     * - co_firstlineno
-     * - co_consts
-     * - co_names
-     * - co_localsplusnames
-     *
-     * This is done to preserve the name and line number for tracebacks
-     * and debuggers; otherwise, constant de-duplication would collapse
-     * identical functions/lambdas defined on different lines.
-     */
-
-    /* These fields are set with provided values on new code objects. */
-
-    // The hottest fields (in the eval loop) are grouped here at the top.
-    PyObject *co_consts;        /* list (constants used) */
-    PyObject *co_names;         /* list of strings (names used) */
-    PyObject *co_exceptiontable; /* Byte string encoding exception handling table */
-    int co_flags;               /* CO_..., see below */
-    int co_warmup;              /* Warmup counter for quickening */
-
-    // The rest are not so impactful on performance.
-    int co_argcount;            /* #arguments, except *args */
-    int co_posonlyargcount;     /* #positional only arguments */
-    int co_kwonlyargcount;      /* #keyword only arguments */
-    int co_stacksize;           /* #entries needed for evaluation stack */
-    int co_firstlineno;         /* first source line number */
-
-    // redundant values (derived from co_localsplusnames and co_localspluskinds)
-    int co_nlocalsplus;         /* number of local + cell + free variables */
-    int co_nlocals;             /* number of local variables */
-    int co_nplaincellvars;      /* number of non-arg cell variables */
-    int co_ncellvars;           /* total number of cell variables */
-    int co_nfreevars;           /* number of free variables */
-
-    PyObject *co_localsplusnames;  /* tuple mapping offsets to names */
-    PyObject *co_localspluskinds; /* Bytes mapping to local kinds (one byte per variable) */
-    PyObject *co_filename;      /* unicode (where it was loaded from) */
-    PyObject *co_name;          /* unicode (name, for reference) */
-    PyObject *co_qualname;      /* unicode (qualname, for reference) */
-    PyObject *co_linetable;     /* bytes (encoding addr<->lineno mapping) See
-                                   Objects/lnotab_notes.txt for details. */
-    PyObject *co_endlinetable;  /* bytes object that holds end lineno for
-                                   instructions separated across different
-                                   lines */
-    PyObject *co_columntable;   /* bytes object that holds start/end column
-                                   offset each instruction */
-
-    /* The remaining fields are zeroed out on new code objects. */
-
-    PyObject *co_weakreflist;   /* to support weakrefs to code objects */
-    /* Scratch space for extra data relating to the code object.
-       Type is a void* to keep the format private in codeobject.c to force
-       people to go through the proper APIs. */
-    void *co_extra;
-    char co_code_adaptive[1];
-};
+struct PyCodeObject _PyCode_DEF(1);
 
 /* Masks for co_flags above */
 #define CO_OPTIMIZED    0x0001
