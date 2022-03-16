@@ -66,7 +66,9 @@ class ZipAppTest(unittest.TestCase):
         target = io.BytesIO()
         zipapp.create_archive(str(source), target)
         target.seek(0)
-        self.assertEqual(zipfile.ZipFile(target, 'r').namelist(), sorted(["__main__.py", "bin/", "bin/baz", "bin/qux", "zed.py"]))
+        with zipfile.ZipFile(target, 'r') as zf:
+            self.assertEqual(zf.namelist(),
+                ["__main__.py", "bin/", "bin/baz", "bin/qux", "zed.py"])
 
     def test_create_archive_with_filter(self):
         # Test packing a directory and using filter to specify
