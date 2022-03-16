@@ -2,6 +2,7 @@ import asyncio
 import unittest
 import time
 
+
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
 
@@ -28,9 +29,10 @@ class SlowTask:
 
         self.exited = True
 
-class AsyncioWaitForTest(unittest.TestCase):
 
-    async def atest_asyncio_wait_for_cancelled(self):
+class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
+
+    async def test_asyncio_wait_for_cancelled(self):
         t  = SlowTask()
 
         waitfortask = asyncio.create_task(asyncio.wait_for(t.run(), t.TASK_TIMEOUT * 2))
@@ -40,10 +42,7 @@ class AsyncioWaitForTest(unittest.TestCase):
 
         self.assertTrue(t.exited)
 
-    def test_asyncio_wait_for_cancelled(self):
-        asyncio.run(self.atest_asyncio_wait_for_cancelled())
-
-    async def atest_asyncio_wait_for_timeout(self):
+    async def test_asyncio_wait_for_timeout(self):
         t  = SlowTask()
 
         try:
@@ -52,9 +51,6 @@ class AsyncioWaitForTest(unittest.TestCase):
             pass
 
         self.assertTrue(t.exited)
-
-    def test_asyncio_wait_for_timeout(self):
-        asyncio.run(self.atest_asyncio_wait_for_timeout())
 
 
 if __name__ == '__main__':
