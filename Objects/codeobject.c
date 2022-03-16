@@ -1521,9 +1521,9 @@ code_getfreevars(PyCodeObject *code, void *closure)
 }
 
 static PyObject *
-code_getundercode(PyCodeObject *code, void *closure)
+code_getcodeadaptive(PyCodeObject *code, void *closure)
 {
-    return PyMemoryView_FromMemory(code->_co_code, _PyCode_NBYTES(code),
+    return PyMemoryView_FromMemory(code->co_code_adaptive, _PyCode_NBYTES(code),
                                    PyBUF_READ);
 }
 
@@ -1534,13 +1534,13 @@ code_getcode(PyCodeObject *code, void *closure)
 }
 
 static PyGetSetDef code_getsetlist[] = {
-    {"co_lnotab",   (getter)code_getlnotab,    NULL, NULL},
-    {"_co_code",    (getter)code_getundercode, NULL, NULL},
+    {"co_lnotab",         (getter)code_getlnotab,       NULL, NULL},
+    {"_co_code_adaptive", (getter)code_getcodeadaptive, NULL, NULL},
     // The following old names are kept for backward compatibility.
-    {"co_varnames", (getter)code_getvarnames,  NULL, NULL},
-    {"co_cellvars", (getter)code_getcellvars,  NULL, NULL},
-    {"co_freevars", (getter)code_getfreevars,  NULL, NULL},
-    {"co_code",     (getter)code_getcode,      NULL, NULL},
+    {"co_varnames",       (getter)code_getvarnames,     NULL, NULL},
+    {"co_cellvars",       (getter)code_getcellvars,     NULL, NULL},
+    {"co_freevars",       (getter)code_getfreevars,     NULL, NULL},
+    {"co_code",           (getter)code_getcode,         NULL, NULL},
     {0}
 };
 
@@ -1729,7 +1729,7 @@ static struct PyMethodDef code_methods[] = {
 PyTypeObject PyCode_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "code",
-    offsetof(PyCodeObject, _co_code),
+    offsetof(PyCodeObject, co_code_adaptive),
     sizeof(_Py_CODEUNIT),
     (destructor)code_dealloc,           /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */

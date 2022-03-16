@@ -245,6 +245,7 @@ class Printer:
         # Derived values
         nlocals, nplaincellvars, ncellvars, nfreevars = \
             get_localsplus_counts(code, localsplusnames, localspluskinds)
+        co_code_adaptive = make_string_literal(code.co_code)
         self.write("static")
         with self.indent():
             with self.block("struct"):
@@ -274,7 +275,7 @@ class Printer:
                 self.write("PyObject *co_columntable;")
                 self.write("PyObject *co_weakreflist;")
                 self.write("void *co_extra;")
-                self.write(f"char _co_code[{len(code.co_code)}];")
+                self.write(f"char co_code_adaptive[{len(code.co_code)}];")
         with self.block(f"{name} =", ";"):
             self.object_var_head("PyCode_Type", len(code.co_code) // 2)
             # But the ordering here must match that in cpython/code.h
@@ -303,10 +304,10 @@ class Printer:
             self.write(f".co_linetable = {co_linetable},")
             self.write(f".co_endlinetable = {co_endlinetable},")
             self.write(f".co_columntable = {co_columntable},")
-            self.write(f"._co_code = {make_string_literal(code.co_code)},")
-        cast = f"(PyCodeObject *)&{name}"
-        self.deallocs.append(f"_PyStaticCode_Dealloc({cast});")
-        self.interns.append(f"_PyStaticCode_InternStrings({cast})")
+            self.write(f".co_code_adaptive = {co_code_adaptive},")
+        name_as_code = f"(PyCodeObject *)&{name}"
+        self.deallocs.append(f"_PyStaticCode_Dealloc({name_as_code});")
+        self.interns.append(f"_PyStaticCode_InternStrings({name_as_code})")
         return f"& {name}.ob_base.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:

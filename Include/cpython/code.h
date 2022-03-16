@@ -93,7 +93,7 @@ struct PyCodeObject {
        Type is a void* to keep the format private in codeobject.c to force
        people to go through the proper APIs. */
     void *co_extra;
-    char _co_code[1];
+    char co_code_adaptive[1];
 };
 
 /* Masks for co_flags above */
@@ -135,7 +135,7 @@ PyAPI_DATA(PyTypeObject) PyCode_Type;
 
 #define PyCode_Check(op) Py_IS_TYPE(op, &PyCode_Type)
 #define PyCode_GetNumFree(op) ((op)->co_nfreevars)
-#define _PyCode_CODE(CO) ((_Py_CODEUNIT *)(CO)->_co_code)
+#define _PyCode_CODE(CO) ((_Py_CODEUNIT *)(CO)->co_code_adaptive)
 #define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
 
 /* Public interface */
