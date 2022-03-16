@@ -541,27 +541,25 @@ class ExceptionTests(unittest.TestCase):
     def test_notes(self):
         for e in [BaseException(1), Exception(2), ValueError(3)]:
             with self.subTest(e=e):
-                self.assertEqual(e.__notes__, ())
+                self.assertFalse(hasattr(e, '__notes__'))
                 e.add_note("My Note")
-                self.assertEqual(e.__notes__, ("My Note",))
+                self.assertEqual(e.__notes__, ["My Note"])
 
                 with self.assertRaises(TypeError):
                     e.add_note(42)
-                self.assertEqual(e.__notes__, ("My Note",))
+                self.assertEqual(e.__notes__, ["My Note"])
 
                 e.add_note("Your Note")
-                self.assertEqual(e.__notes__, ("My Note", "Your Note"))
-
-                with self.assertRaises(AttributeError):
-                    e.__notes__ = ("NewNote",)
-                self.assertEqual(e.__notes__, ("My Note", "Your Note"))
+                self.assertEqual(e.__notes__, ["My Note", "Your Note"])
 
                 del e.__notes__
-                self.assertEqual(e.__notes__, ())
+                self.assertFalse(hasattr(e, '__notes__'))
 
                 e.add_note("Our Note")
-                self.assertEqual(e.__notes__, ("Our Note",))
+                self.assertEqual(e.__notes__, ["Our Note"])
 
+                e.__notes__ = 42
+                self.assertEqual(e.__notes__, 42)
 
     def testWithTraceback(self):
         try:

@@ -1137,40 +1137,48 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
         return 0;
     }
 
+    if (!PyObject_HasAttr(value, &_Py_ID(__notes__))) {
+        return 0;
+    }
     PyObject *notes = PyObject_GetAttr(value, &_Py_ID(__notes__));
     if (notes == NULL) {
         return -1;
     }
-    if (!PyTuple_Check(notes)) {
+    if (!PySequence_Check(notes)) {
         Py_DECREF(notes);
         return 0;
     }
-    Py_ssize_t num_notes = PyTuple_GET_SIZE(notes);
+    Py_ssize_t num_notes = PySequence_Length(notes);
     PyObject *lines = NULL;
     for (Py_ssize_t ni = 0; ni < num_notes; ni++) {
-        PyObject *note = PyTuple_GET_ITEM(notes, ni);
-        assert(PyUnicode_Check(note));
-        lines = PyUnicode_Splitlines(note, 1);
-        if (lines == NULL) {
-            Py_DECREF(notes);
-            return -1;
-        }
+        PyObject *note = PySequence_GetItem(notes, ni);
+        if (PyUnicode_Check(note)) {
+            lines = PyUnicode_Splitlines(note, 1);
+            Py_DECREF(note);
+            if (lines == NULL) {
+                goto error;
+            }
 
-        Py_ssize_t n = PyList_GET_SIZE(lines);
-        for (Py_ssize_t i = 0; i < n; i++) {
-            PyObject *line = PyList_GET_ITEM(lines, i);
-            assert(PyUnicode_Check(line));
-            if (write_indented_margin(ctx, f) < 0) {
+            Py_ssize_t n = PyList_GET_SIZE(lines);
+            for (Py_ssize_t i = 0; i < n; i++) {
+                PyObject *line = PyList_GET_ITEM(lines, i);
+                assert(PyUnicode_Check(line));
+                if (write_indented_margin(ctx, f) < 0) {
+                    goto error;
+                }
+                if (PyFile_WriteObject(line, f, Py_PRINT_RAW) < 0) {
+                    goto error;
+                }
+            }
+            if (PyFile_WriteString("\n", f) < 0) {
                 goto error;
             }
-            if (PyFile_WriteObject(line, f, Py_PRINT_RAW) < 0) {
-                goto error;
-            }
+            Py_CLEAR(lines);
         }
-        if (PyFile_WriteString("\n", f) < 0) {
-            goto error;
+        else {
+            /* Ignore notes which are not strings */
+            Py_DECREF(note);
         }
-        Py_CLEAR(lines);
     }
 
     Py_DECREF(notes);

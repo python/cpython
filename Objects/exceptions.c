@@ -194,25 +194,34 @@ _PyBaseExceptionObject_cast(PyObject *exc)
 }
 
 static PyObject *
-BaseException_add_note(PyObject *self_, PyObject *args, PyObject *kwds)
+BaseException_add_note(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyBaseExceptionObject *self = _PyBaseExceptionObject_cast(self_);
     PyObject *note = NULL;
 
     if (!PyArg_ParseTuple(args, "U:add_note", &note)) {
         return NULL;
     }
 
-    if (self->notes == NULL) {
-        self->notes = PyList_New(0);
-        if (self->notes == NULL) {
+    if (!PyObject_HasAttr(self, &_Py_ID(__notes__))) {
+        PyObject *new_notes = PyList_New(0);
+        if (new_notes == NULL) {
             return NULL;
         }
+        if (PyObject_SetAttr(self, &_Py_ID(__notes__), new_notes) < 0) {
+            Py_DECREF(new_notes);
+            return NULL;
+        }
+        Py_DECREF(new_notes);
     }
-    assert(PyUnicode_CheckExact(note)); 
-    if (PyList_Append(self->notes, note) < 0) {
+    PyObject *notes = PyObject_GetAttr(self, &_Py_ID(__notes__));
+    if (notes == NULL) {
         return NULL;
     }
+    if (PyList_Append(notes, note) < 0) {
+        Py_DECREF(notes);
+        return NULL;
+    }
+    Py_DECREF(notes);
     Py_RETURN_NONE;
 }
 
@@ -252,31 +261,6 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val, void *Py_UNUS
     if (!seq)
         return -1;
     Py_XSETREF(self->args, seq);
-    return 0;
-}
-
-static PyObject *
-BaseException_get_notes(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
-{
-    if (self->notes == NULL) {
-        return PyTuple_New(0);
-    }
-    return PySequence_Tuple(self->notes);
-}
-
-static int
-BaseException_set_notes(PyBaseExceptionObject *self, PyObject *note,
-                       void *Py_UNUSED(ignored))
-{
-    if (note == NULL) {
-        Py_CLEAR(self->notes);
-    }
-    else {
-        PyErr_SetString(
-            PyExc_AttributeError,
-            "Cannot assign a value to __notes__. Use add_note().");
-        return -1;
-    }
     return 0;
 }
 
@@ -370,7 +354,6 @@ BaseException_set_cause(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
 static PyGetSetDef BaseException_getset[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
-    {"__notes__", (getter)BaseException_get_notes, (setter)BaseException_set_notes},
     {"__traceback__", (getter)BaseException_get_tb, (setter)BaseException_set_tb},
     {"__context__", BaseException_get_context,
      BaseException_set_context, PyDoc_STR("exception context")},
@@ -930,9 +913,17 @@ exceptiongroup_subset(
     PyException_SetContext(eg, PyException_GetContext(orig));
     PyException_SetCause(eg, PyException_GetCause(orig));
 
-    PyObject *notes = _PyBaseExceptionObject_cast(orig)->notes;
-    Py_XINCREF(notes);
-    _PyBaseExceptionObject_cast(eg)->notes = notes;
+    if (PyObject_HasAttr(orig, &_Py_ID(__notes__))) {
+        PyObject *notes = PyObject_GetAttr(orig, &_Py_ID(__notes__));
+        if (notes == NULL) {
+            goto error;
+        }
+        if (PyObject_SetAttr(eg, &_Py_ID(__notes__), notes) < 0) {
+            Py_DECREF(notes);
+            goto error;
+        }
+        Py_DECREF(notes);
+    }
 
     *result = eg;
     return 0;

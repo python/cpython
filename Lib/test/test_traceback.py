@@ -1340,6 +1340,14 @@ class BaseExceptionReportingTests:
         del e.__notes__
         self.assertEqual(self.get_report(e), vanilla)
 
+        # non-sequence __notes__ is ignored
+        e.__notes__ = 42
+        self.assertEqual(self.get_report(e), vanilla)
+
+        # non-string items in the __notes__ sequence are ignored
+        e.__notes__  = [42, 'Final Note']
+        self.assertEqual(self.get_report(e), vanilla + 'Final Note\n')
+
     def test_exception_with_note_with_multiple_notes(self):
         e = ValueError(42)
         vanilla = self.get_report(e)
