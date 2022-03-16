@@ -65,7 +65,7 @@ algorithms_guaranteed = set(__always_supported)
 algorithms_available = set(__always_supported)
 
 __all__ = __always_supported + ('new', 'algorithms_guaranteed',
-                                'algorithms_available', 'pbkdf2_hmac')
+                                'algorithms_available', 'pbkdf2_hmac', 'file_digest')
 
 
 __builtin_constructor_cache = {}
@@ -252,6 +252,54 @@ try:
     from _hashlib import scrypt
 except ImportError:
     pass
+
+
+def file_digest(fileobj, digest, /, *, _bufsize=2**18):
+    """Efficient hashing of file object
+
+    *fileobj* must be a file-like object opened for reading in binary mode.
+    It accepts file objects from open(), io.BytesIO(), and SocketIO objects.
+    The function may bypass Python's I/O and use the file descriptor *fileno*
+    directly.
+
+    *digest* must either be a hash algorithm name as a *str*, a hash
+    constructor, or a callable that returns a hash object.
+    """
+    # On Linux we could use AF_ALG sockets and sendfile() to archive zero-copy
+    # hashing with hardware acceleration.
+    if isinstance(digest, str):
+        digestobj = new(digest)
+    else:
+        digestobj = digest()
+
+    if hasattr(fileobj, "getbuffer"):
+        # io.BytesIO object, use zero-copy buffer
+        digestobj.update(fileobj.getbuffer())
+        return digestobj
+
+    # check for file-like object in binary mode
+    if not all(
+        hasattr(fileobj, name)
+        for name in ("fileno", "mode", "readable", "readinto")
+    ):
+        raise TypeError(
+            f"fileobj must be a file-like object, not {fileobj!r}."
+        )
+    if not fileobj.readable() or not "b" in fileobj.mode:
+        raise ValueError("fileobj must be opened for reading in binary mode.")
+
+    # binary file, socket.SocketIO object
+    # Note: socket I/O uses different syscalls than file I/O.
+    fileobj.fileno()  # so we can rely on working fileno() in the future.
+    buf = bytearray(_bufsize)  # Reusable buffer to reduce allocations.
+    view = memoryview(buf)
+    while True:
+        size = fileobj.readinto(buf)
+        if size == 0:
+            break  # EOF
+        digestobj.update(view[:size])
+
+    return digestobj
 
 
 for __func_name in __always_supported:
