@@ -145,11 +145,11 @@ stages:
         parameters:
           ARM64TclTk: ${{ parameters.ARM64TclTk }}
 
-  - stage: Pack_MSIX
-    displayName: Package MSIX
-    dependsOn: Layout_MSIX
-    jobs:
-    - template: windows-release/stage-pack-msix.yml
+    - stage: Pack_MSIX
+      displayName: Package MSIX
+      dependsOn: Layout_MSIX
+      jobs:
+      - template: windows-release/stage-pack-msix.yml
 
   - ${{ if eq(parameters.DoMSI, 'true') }}:
     - stage: Build_MSI
