@@ -1,5 +1,0 @@
-Fix substitution of :class:`~typing.ParamSpec` in
-:data:`~typing.Concatenate` with different parameter expressions.
-Substitution with a list of types returns now a tuple of types. Substitution
-with ``Concatenate`` returns now a ``Concatenate`` with concatenated lists
-of arguments.

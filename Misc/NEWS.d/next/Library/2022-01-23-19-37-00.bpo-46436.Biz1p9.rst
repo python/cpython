@@ -1,3 +1,0 @@
-Fix command-line option ``-d``/``--directory`` in module :mod:`http.server`
-which is ignored when combined with command-line option ``--cgi``. Patch by
-Géry Ogam.
