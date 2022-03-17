@@ -2394,11 +2394,13 @@ Structured data types
 
    Abstract base class for unions in *big endian* byte order.
 
+   .. versionadded:: 3.11
 
 .. class:: LittleEndianUnion(*args, **kw)
 
    Abstract base class for unions in *little endian* byte order.
 
+   .. versionadded:: 3.11
 
 .. class:: BigEndianStructure(*args, **kw)
 
