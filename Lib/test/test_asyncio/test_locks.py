@@ -1012,7 +1012,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         async def f():
             async with barrier as i:
                 return True
-    
+
         ret = await f()
 
         self.assertTrue(ret)
@@ -1121,14 +1121,14 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_blocking_tasks_while_draining(self):
         rewait = 2
-        barrier = asyncio.Barrier(self.N)        
+        barrier = asyncio.Barrier(self.N)
         barrier_nowaiting = asyncio.Barrier(self.N - rewait)
         results = []
         rewait_n = rewait
-        
+
         async def coro():
             nonlocal rewait_n
-            
+
             # first time waiting
             p = await barrier.wait()
 
@@ -1144,7 +1144,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
                 # wait for end of draining `barrier`
                 await barrier_nowaiting.wait()
 
-                # wait for joining other waiting tasks 
+                # wait for joining other waiting tasks
                 await barrier.wait()
 
         await self.gather_tasks(self.N, coro)
@@ -1306,7 +1306,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         barrier = asyncio.Barrier(self.N)
         results1 = []
         rest_of_tasks = self.N//2 
-        
+
         async def coro():
             try:
                 await barrier.wait()
@@ -1316,7 +1316,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
             else:
                 # here drained task ouside the barrier
                 if rest_of_tasks == barrier._count:
-                    # 'd' tasks outside the barrier
+                    # tasks outside the barrier
                     await barrier.reset()
  
         await self.gather_tasks(self.N, coro)
@@ -1331,7 +1331,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         results1 = []
         results2 = []
         blocking_tasks = self.N//2
-        
+
         async def coro():
             try:
                 await barrier.wait()
@@ -1417,7 +1417,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
                 # last task exited from barrier
                 await barrier.reset()
 
-                # wit here to reach the `parties``
+                # wit here to reach the `parties`
                 await barrier.wait()
             else:
                 try:
@@ -1460,7 +1460,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         results1 = []
         results2 = []
         blocking_tasks = self.N//2
-        
+
         async def coro():
             try:
                 await barrier.wait()
