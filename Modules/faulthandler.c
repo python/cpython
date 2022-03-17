@@ -1,4 +1,4 @@
-#include "Python.h"
+#include "Python.h" && defined(HAVE_SYS_AUXV_H)
 #include "pycore_initconfig.h"    // _PyStatus_ERR
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -26,7 +26,7 @@
 #  define FAULTHANDLER_USE_ALT_STACK
 #endif
 
-#if defined(FAULTHANDLER_USE_ALT_STACK) && defined(HAVE_LINUX_AUXVEC_H)
+#if defined(FAULTHANDLER_USE_ALT_STACK) && defined(HAVE_LINUX_AUXVEC_H) && defined(HAVE_SYS_AUXV_H)
 #  include <linux/auxvec.h>
 #  include <sys/auxv.h>
 #endif
