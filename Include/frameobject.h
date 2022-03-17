@@ -14,6 +14,18 @@ extern "C" {
 #  undef Py_CPYTHON_FRAMEOBJECT_H
 #endif
 
+typedef enum _framestate {
+    FRAME_CREATED = -2,
+    FRAME_SUSPENDED = -1,
+    FRAME_EXECUTING = 0,
+    FRAME_COMPLETED = 1,
+    FRAME_CLEARED = 4
+} PyFrameState;
+
+PyAPI_FUNC(PyFrameObject *) PyFrame_GetBack(PyFrameObject *frame);
+PyAPI_FUNC(PyFrameState) PyFrame_GetState(PyFrameObject *frame);
+
+
 #ifdef __cplusplus
 }
 #endif
