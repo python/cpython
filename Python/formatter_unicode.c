@@ -137,24 +137,6 @@ typedef struct {
     Py_UCS4 type;
 } InternalFormatSpec;
 
-#if 0
-/* Occasionally useful for debugging. Should normally be commented out. */
-static void
-DEBUG_PRINT_FORMAT_SPEC(InternalFormatSpec *format)
-{
-    printf("internal format spec: fill_char %d\n", format->fill_char);
-    printf("internal format spec: align %d\n", format->align);
-    printf("internal format spec: alternate %d\n", format->alternate);
-    printf("internal format spec: sign %d\n", format->sign);
-    printf("internal format spec: width %zd\n", format->width);
-    printf("internal format spec: thousands_separators %d\n",
-           format->thousands_separators);
-    printf("internal format spec: precision %zd\n", format->precision);
-    printf("internal format spec: type %c\n", format->type);
-    printf("\n");
-}
-#endif
-
 
 /*
   ptr points to the start of the format_spec, end points just past its end.

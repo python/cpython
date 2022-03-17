@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import inspect
 import warnings
 
@@ -34,7 +35,7 @@ class IsolatedAsyncioTestCase(TestCase):
     def __init__(self, methodName='runTest'):
         super().__init__(methodName)
         self._asyncioTestLoop = None
-        self._asyncioCallsQueue = None
+        self._asyncioTestContext = contextvars.copy_context()
 
     async def asyncSetUp(self):
         pass
@@ -58,7 +59,7 @@ class IsolatedAsyncioTestCase(TestCase):
         self.addCleanup(*(func, *args), **kwargs)
 
     def _callSetUp(self):
-        self.setUp()
+        self._asyncioTestContext.run(self.setUp)
         self._callAsync(self.asyncSetUp)
 
     def _callTestMethod(self, method):
@@ -68,47 +69,30 @@ class IsolatedAsyncioTestCase(TestCase):
 
     def _callTearDown(self):
         self._callAsync(self.asyncTearDown)
-        self.tearDown()
+        self._asyncioTestContext.run(self.tearDown)
 
     def _callCleanup(self, function, *args, **kwargs):
         self._callMaybeAsync(function, *args, **kwargs)
 
     def _callAsync(self, func, /, *args, **kwargs):
         assert self._asyncioTestLoop is not None, 'asyncio test loop is not initialized'
-        ret = func(*args, **kwargs)
-        assert inspect.isawaitable(ret), f'{func!r} returned non-awaitable'
-        fut = self._asyncioTestLoop.create_future()
-        self._asyncioCallsQueue.put_nowait((fut, ret))
-        return self._asyncioTestLoop.run_until_complete(fut)
+        assert inspect.iscoroutinefunction(func), f'{func!r} is not an async function'
+        task = self._asyncioTestLoop.create_task(
+            func(*args, **kwargs),
+            context=self._asyncioTestContext,
+        )
+        return self._asyncioTestLoop.run_until_complete(task)
 
     def _callMaybeAsync(self, func, /, *args, **kwargs):
         assert self._asyncioTestLoop is not None, 'asyncio test loop is not initialized'
-        ret = func(*args, **kwargs)
-        if inspect.isawaitable(ret):
-            fut = self._asyncioTestLoop.create_future()
-            self._asyncioCallsQueue.put_nowait((fut, ret))
-            return self._asyncioTestLoop.run_until_complete(fut)
+        if inspect.iscoroutinefunction(func):
+            task = self._asyncioTestLoop.create_task(
+                func(*args, **kwargs),
+                context=self._asyncioTestContext,
+            )
+            return self._asyncioTestLoop.run_until_complete(task)
         else:
-            return ret
-
-    async def _asyncioLoopRunner(self, fut):
-        self._asyncioCallsQueue = queue = asyncio.Queue()
-        fut.set_result(None)
-        while True:
-            query = await queue.get()
-            queue.task_done()
-            if query is None:
-                return
-            fut, awaitable = query
-            try:
-                ret = await awaitable
-                if not fut.cancelled():
-                    fut.set_result(ret)
-            except (SystemExit, KeyboardInterrupt):
-                raise
-            except (BaseException, asyncio.CancelledError) as ex:
-                if not fut.cancelled():
-                    fut.set_exception(ex)
+            return self._asyncioTestContext.run(func, *args, **kwargs)
 
     def _setupAsyncioLoop(self):
         assert self._asyncioTestLoop is None, 'asyncio test loop already initialized'
@@ -116,16 +100,11 @@ class IsolatedAsyncioTestCase(TestCase):
         asyncio.set_event_loop(loop)
         loop.set_debug(True)
         self._asyncioTestLoop = loop
-        fut = loop.create_future()
-        self._asyncioCallsTask = loop.create_task(self._asyncioLoopRunner(fut))
-        loop.run_until_complete(fut)
 
     def _tearDownAsyncioLoop(self):
         assert self._asyncioTestLoop is not None, 'asyncio test loop is not initialized'
         loop = self._asyncioTestLoop
         self._asyncioTestLoop = None
-        self._asyncioCallsQueue.put_nowait(None)
-        loop.run_until_complete(self._asyncioCallsQueue.join())
 
         try:
             # cancel all tasks

@@ -516,22 +516,6 @@ instancemethod_repr(PyObject *self)
     return result;
 }
 
-/*
-static long
-instancemethod_hash(PyObject *self)
-{
-    long x, y;
-    x = (long)self;
-    y = PyObject_Hash(PyInstanceMethod_GET_FUNCTION(self));
-    if (y == -1)
-        return -1;
-    x = x ^ y;
-    if (x == -1)
-        x = -2;
-    return x;
-}
-*/
-
 PyDoc_STRVAR(instancemethod_doc,
 "instancemethod(function)\n\
 \n\
@@ -569,7 +553,7 @@ PyTypeObject PyInstanceMethod_Type = {
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
-    0, /*(hashfunc)instancemethod_hash,         tp_hash  */
+    0,                                          /* tp_hash  */
     instancemethod_call,                        /* tp_call */
     0,                                          /* tp_str */
     instancemethod_getattro,                    /* tp_getattro */
