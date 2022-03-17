@@ -28,6 +28,7 @@ MAKE_FUNCTION = opmap['MAKE_FUNCTION']
 MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 
 LOAD_CONST = opmap['LOAD_CONST']
+LOAD_GLOBAL = opmap['LOAD_GLOBAL']
 BINARY_OP = opmap['BINARY_OP']
 
 CACHE = opmap["CACHE"]
@@ -430,7 +431,12 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             if op in hasconst:
                 argval, argrepr = _get_const_info(op, arg, co_consts)
             elif op in hasname:
-                argval, argrepr = _get_name_info(arg, get_name)
+                if op == LOAD_GLOBAL:
+                    argval, argrepr = _get_name_info(arg//2, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = "NULL + " + argrepr
+                else:
+                    argval, argrepr = _get_name_info(arg, get_name)
             elif op in hasjabs:
                 argval = arg*2
                 argrepr = "to " + repr(argval)
