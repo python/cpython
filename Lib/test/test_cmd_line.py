@@ -166,6 +166,17 @@ class CmdLineTest(unittest.TestCase):
         self.assertTrue(data.find(b'1 loop') != -1)
         self.assertTrue(data.find(b'__main__.Timer') != -1)
 
+    def test_relativedir_bug46421(self):
+        # Test `python -m unittest` with a relative directory beginning with ./
+        # Note: We have to switch to the project's top module's directory, as per
+        # the python unittest wiki. We will switch back when we are done.
+        defaultwd = os.getcwd()
+        projectlibpath = os.path.dirname(__file__).removesuffix("test")
+        with os_helper.change_cwd(projectlibpath):
+            # Testing with and without ./
+            assert_python_ok('-m', 'unittest', "test/test_longexp.py")
+            assert_python_ok('-m', 'unittest', "./test/test_longexp.py")
+
     def test_run_code(self):
         # Test expected operation of the '-c' switch
         # Switch needs an argument
