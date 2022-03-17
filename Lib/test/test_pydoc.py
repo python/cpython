@@ -340,9 +340,10 @@ def html2text(html):
 
     Tailored for pydoc tests only.
     """
-    return pydoc.replace(
-        re.sub("<.*?>", "", html),
-        "&nbsp;", " ", "&gt;", ">", "&lt;", "<")
+    html = html.replace("<dd>", "\n")
+    html = re.sub("<.*?>", "", html)
+    html = pydoc.replace(html, "&nbsp;", " ", "&gt;", ">", "&lt;", "<")
+    return html
 
 
 class PydocBaseTest(unittest.TestCase):
@@ -384,9 +385,12 @@ class PydocDocTest(unittest.TestCase):
     def test_html_doc(self):
         result, doc_loc = get_pydoc_html(pydoc_mod)
         text_result = html2text(result)
-        expected_lines = [line.strip() for line in html2text_of_expected if line]
-        for line in expected_lines:
-            self.assertIn(line, text_result)
+        text_lines = [line.strip() for line in text_result.splitlines()]
+        text_lines = [line for line in text_lines if line]
+        del text_lines[1]
+        expected_lines = html2text_of_expected.splitlines()
+        expected_lines = [line.strip() for line in expected_lines if line]
+        self.assertEqual(text_lines, expected_lines)
         mod_file = inspect.getabsfile(pydoc_mod)
         mod_url = urllib.parse.quote(mod_file)
         self.assertIn(mod_url, result)
