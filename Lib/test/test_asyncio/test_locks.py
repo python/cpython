@@ -1305,7 +1305,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
     async def test_reset_barrier_when_tasks_half_draining(self):
         barrier = asyncio.Barrier(self.N)
         results1 = []
-        rest_of_tasks = self.N//2 
+        rest_of_tasks = self.N//2
 
         async def coro():
             try:
@@ -1318,7 +1318,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
                 if rest_of_tasks == barrier._count:
                     # tasks outside the barrier
                     await barrier.reset()
- 
+
         await self.gather_tasks(self.N, coro)
 
         self.assertEqual(results1, [True]*rest_of_tasks)
