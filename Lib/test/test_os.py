@@ -181,6 +181,9 @@ class FileTests(unittest.TestCase):
         os.close(f)
         self.assertTrue(os.access(os_helper.TESTFN, os.W_OK))
 
+    @unittest.skipIf(
+        support.is_emscripten, "Test is unstable under Emscripten."
+    )
     def test_closerange(self):
         first = os.open(os_helper.TESTFN, os.O_CREAT|os.O_RDWR)
         # We must allocate two consecutive file descriptors, otherwise
@@ -1578,6 +1581,7 @@ class MakedirTests(unittest.TestCase):
                             'dir5', 'dir6')
         os.makedirs(path)
 
+    @unittest.skipIf(support.is_emscripten, "Emscripten's umask is a stub.")
     def test_mode(self):
         with os_helper.temp_umask(0o002):
             base = os_helper.TESTFN
@@ -2158,6 +2162,9 @@ class TestInvalidFD(unittest.TestCase):
         self.check(os.fchown, -1, -1)
 
     @unittest.skipUnless(hasattr(os, 'fpathconf'), 'test needs os.fpathconf()')
+    @unittest.skipIf(
+        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+    )
     def test_fpathconf(self):
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")
@@ -4058,6 +4065,7 @@ class PathTConverterTests(unittest.TestCase):
 
 @unittest.skipUnless(hasattr(os, 'get_blocking'),
                      'needs os.get_blocking() and os.set_blocking()')
+@unittest.skipIf(support.is_emscripten, "Cannot unset blocking flag")
 class BlockingTests(unittest.TestCase):
     def test_blocking(self):
         fd = os.open(__file__, os.O_RDONLY)
@@ -4513,7 +4521,7 @@ class TimesTests(unittest.TestCase):
             self.assertEqual(times.elapsed, 0)
 
 
-@requires_os_func('fork')
+@support.requires_fork()
 class ForkTests(unittest.TestCase):
     def test_fork(self):
         # bpo-42540: ensure os.fork() with non-default memory allocator does

@@ -658,10 +658,13 @@ class TestSupport(unittest.TestCase):
             self.assertFalse(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
+    @unittest.skipIf(support.is_emscripten, "Unstable in Emscripten")
     def test_fd_count(self):
         # We cannot test the absolute value of fd_count(): on old Linux
         # kernel or glibc versions, os.urandom() keeps a FD open on
         # /dev/urandom device and Python has 4 FD opens instead of 3.
+        # Test is unstable on Emscripten. The platform starts and stops
+        # background threads that use pipes and epoll fds.
         start = os_helper.fd_count()
         fd = os.open(__file__, os.O_RDONLY)
         try:
