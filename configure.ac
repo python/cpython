@@ -3504,13 +3504,11 @@ dnl Detect Tcl/Tk. Use pkg-config if available.
 dnl
 found_tcltk=no
 for _QUERY in \
-  "tcl >= 8.4.2 tk >= 8.4.2" \
+  "tcl >= 8.5.12 tk >= 8.5.12" \
   "tcl8.6 tk8.6" \
   "tcl86 tk86" \
-  "tcl8.5 tk8.5" \
-  "tcl85 tk85" \
-  "tcl8.4 >= 8.4.2 tk8.4 >= 8.4.2" \
-  "tcl84 >= 8.4.2 tk84 >= 8.4.2" \
+  "tcl8.5 >= 8.5.12 tk8.5 >= 8.5.12" \
+  "tcl85 >= 8.5.12 tk85 >= 8.5.12" \
 ; do
   PKG_CHECK_EXISTS([$_QUERY], [
     PKG_CHECK_MODULES([TCLTK], [$_QUERY], [found_tcltk=yes], [found_tcltk=no])
@@ -3544,19 +3542,19 @@ WITH_SAVE_ENV([
       #include <tcl.h>
       #include <tk.h>
       #if defined(TK_HEX_VERSION)
-      #  if TK_HEX_VERSION < 0x08040200
-      #    error "Tk older than 8.4.2 not supported"
+      #  if TK_HEX_VERSION < 0x0805020c
+      #    error "Tk older than 8.5.12 not supported"
       #  endif
       #endif
       #if (TCL_MAJOR_VERSION < 8) || \
-          ((TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 4)) || \
-          ((TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION == 4) && (TCL_RELEASE_SERIAL < 2))
-      #  error "Tcl older than 8.4.2 not supported"
+          ((TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 5)) || \
+          ((TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION == 5) && (TCL_RELEASE_SERIAL < 12))
+      #  error "Tcl older than 8.5.12 not supported"
       #endif
       #if (TK_MAJOR_VERSION < 8) || \
-          ((TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION < 4)) || \
-          ((TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION == 4) && (TK_RELEASE_SERIAL < 2))
-      #  error "Tk older than 8.4.2 not supported"
+          ((TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION < 5)) || \
+          ((TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION == 5) && (TK_RELEASE_SERIAL < 12))
+      #  error "Tk older than 8.5.12 not supported"
       #endif
     ], [
       void *x1 = Tcl_Init;

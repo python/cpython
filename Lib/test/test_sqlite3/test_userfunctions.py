@@ -196,6 +196,8 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("returnlonglong", 0, func_returnlonglong)
         self.con.create_function("returnnan", 0, lambda: float("nan"))
         self.con.create_function("returntoolargeint", 0, lambda: 1 << 65)
+        self.con.create_function("return_noncont_blob", 0,
+                                 lambda: memoryview(b"blob")[::2])
         self.con.create_function("raiseexception", 0, func_raiseexception)
         self.con.create_function("memoryerror", 0, func_memoryerror)
         self.con.create_function("overflowerror", 0, func_overflowerror)
@@ -340,9 +342,16 @@ class FunctionTests(unittest.TestCase):
                                "select spam(?)", (1 << 65,))
 
     def test_non_contiguous_blob(self):
-        self.assertRaisesRegex(ValueError, "could not convert BLOB to buffer",
+        self.assertRaisesRegex(BufferError,
+                               "underlying buffer is not C-contiguous",
                                self.con.execute, "select spam(?)",
                                (memoryview(b"blob")[::2],))
+
+    @with_tracebacks(BufferError, regex="buffer.*contiguous")
+    def test_return_non_contiguous_blob(self):
+        with self.assertRaises(sqlite.OperationalError):
+            cur = self.con.execute("select return_noncont_blob()")
+            cur.fetchone()
 
     def test_param_surrogates(self):
         self.assertRaisesRegex(UnicodeEncodeError, "surrogates not allowed",
@@ -465,6 +474,12 @@ class FunctionTests(unittest.TestCase):
             self.con.create_function("largeblob", 0, lambda size=size: b"b" * size)
             with self.assertRaises(sqlite.DataError):
                 cur.execute("select largeblob()")
+
+    def test_func_return_illegal_value(self):
+        self.con.create_function("badreturn", 0, lambda: self)
+        msg = "user-defined function raised exception"
+        self.assertRaisesRegex(sqlite.OperationalError, msg,
+                               self.con.execute, "select badreturn()")
 
 
 class AggregateTests(unittest.TestCase):
