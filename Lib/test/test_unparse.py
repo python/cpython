@@ -545,7 +545,7 @@ class CosmeticTestCase(ASTTestCase):
     def test_slices(self):
         self.check_src_roundtrip("a[1]")
         self.check_src_roundtrip("a[1, 2]")
-        self.check_src_roundtrip("a[(1, *a)]")
+        self.check_src_roundtrip("a[1, *a]")
 
     def test_lambda_parameters(self):
         self.check_src_roundtrip("lambda: something")
