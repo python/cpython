@@ -75,6 +75,8 @@ the same library that the Python runtime is using.
    :c:func:`PyRun_SimpleFile`.  *filename* is decoded from the filesystem
    encoding (:func:`sys.getfilesystemencoding`).  If *filename* is ``NULL``, this
    function uses ``"???"`` as the filename.
+   If *closeit* is true, the file is closed before
+   ``PyRun_SimpleFileExFlags()`` returns.
 
 
 .. c:function:: int PyRun_SimpleString(const char *command)
@@ -185,42 +187,6 @@ the same library that the Python runtime is using.
       :c:func:`PyMem_RawRealloc`, instead of being allocated by
       :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`.
 
-
-.. c:function:: struct _node* PyParser_SimpleParseString(const char *str, int start)
-
-   This is a simplified interface to
-   :c:func:`PyParser_SimpleParseStringFlagsFilename` below, leaving  *filename* set
-   to ``NULL`` and *flags* set to ``0``.
-
-
-.. c:function:: struct _node* PyParser_SimpleParseStringFlags( const char *str, int start, int flags)
-
-   This is a simplified interface to
-   :c:func:`PyParser_SimpleParseStringFlagsFilename` below, leaving  *filename* set
-   to ``NULL``.
-
-
-.. c:function:: struct _node* PyParser_SimpleParseStringFlagsFilename( const char *str, const char *filename, int start, int flags)
-
-   Parse Python source code from *str* using the start token *start* according to
-   the *flags* argument.  The result can be used to create a code object which can
-   be evaluated efficiently. This is useful if a code fragment must be evaluated
-   many times. *filename* is decoded from the :term:`filesystem encoding and
-   error handler`.
-
-
-.. c:function:: struct _node* PyParser_SimpleParseFile(FILE *fp, const char *filename, int start)
-
-   This is a simplified interface to :c:func:`PyParser_SimpleParseFileFlags` below,
-   leaving *flags* set to ``0``.
-
-
-.. c:function:: struct _node* PyParser_SimpleParseFileFlags(FILE *fp, const char *filename, int start, int flags)
-
-   Similar to :c:func:`PyParser_SimpleParseStringFlagsFilename`, but the Python
-   source code is read from *fp* instead of an in-memory string.
-
-
 .. c:function:: PyObject* PyRun_String(const char *str, int start, PyObject *globals, PyObject *locals)
 
    This is a simplified interface to :c:func:`PyRun_StringFlags` below, leaving
@@ -322,8 +288,16 @@ the same library that the Python runtime is using.
 
 .. c:type:: PyFrameObject
 
-   The C structure of the objects used to describe frame objects. The
-   fields of this type are subject to change at any time.
+   The C structure of the objects used to describe frame objects.
+
+   The structure is only part of the internal C API: fields should not be
+   access directly. Use getter functions like :c:func:`PyFrame_GetCode` and
+   :c:func:`PyFrame_GetBack`.
+
+   Debuggers and profilers can use the limited C API to access this structure.
+
+   .. versionchanged:: 3.11
+      The structure moved to the internal C API headers.
 
 
 .. c:function:: PyObject* PyEval_EvalFrame(PyFrameObject *f)

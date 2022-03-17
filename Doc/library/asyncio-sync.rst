@@ -63,6 +63,9 @@ Lock
        finally:
            lock.release()
 
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
+
    .. coroutinemethod:: acquire()
 
       Acquire the lock.
@@ -104,6 +107,9 @@ Event
    with the :meth:`~Event.set` method and reset to *false* with the
    :meth:`clear` method.  The :meth:`~Event.wait` method blocks until the
    flag is set to *true*.  The flag is set to *false* initially.
+
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
    .. _asyncio_example_sync_event:
 
@@ -176,6 +182,9 @@ Condition
    The optional *lock* argument must be a :class:`Lock` object or
    ``None``.  In the latter case a new Lock object is created
    automatically.
+
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
    The preferred way to use a Condition is an :keyword:`async with`
    statement::
@@ -273,6 +282,9 @@ Semaphore
    internal counter (``1`` by default). If the given value is
    less than ``0`` a :exc:`ValueError` is raised.
 
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
+
    The preferred way to use a Semaphore is an :keyword:`async with`
    statement::
 
@@ -324,6 +336,9 @@ BoundedSemaphore
    Bounded Semaphore is a version of :class:`Semaphore` that raises
    a :exc:`ValueError` in :meth:`~Semaphore.release` if it
    increases the internal counter above the initial *value*.
+
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
 ---------
 

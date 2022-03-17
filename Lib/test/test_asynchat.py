@@ -4,8 +4,6 @@ from test import support
 from test.support import socket_helper
 from test.support import threading_helper
 
-import asynchat
-import asyncore
 import errno
 import socket
 import sys
@@ -13,6 +11,12 @@ import threading
 import time
 import unittest
 import unittest.mock
+
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asynchat
+    import asyncore
 
 HOST = socket_helper.HOST
 SERVER_QUIT = b'QUIT\n'

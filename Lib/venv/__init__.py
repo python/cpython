@@ -51,6 +51,7 @@ class EnvBuilder:
         self.symlinks = symlinks
         self.upgrade = upgrade
         self.with_pip = with_pip
+        self.orig_prompt = prompt
         if prompt == '.':  # see bpo-38901
             prompt = os.path.basename(os.getcwd())
         self.prompt = prompt
@@ -142,6 +143,20 @@ class EnvBuilder:
         context.bin_name = binname
         context.env_exe = os.path.join(binpath, exename)
         create_if_needed(binpath)
+        # Assign and update the command to use when launching the newly created
+        # environment, in case it isn't simply the executable script (e.g. bpo-45337)
+        context.env_exec_cmd = context.env_exe
+        if sys.platform == 'win32':
+            # bpo-45337: Fix up env_exec_cmd to account for file system redirections.
+            # Some redirects only apply to CreateFile and not CreateProcess
+            real_env_exe = os.path.realpath(context.env_exe)
+            if os.path.normcase(real_env_exe) != os.path.normcase(context.env_exe):
+                logger.warning('Actual environment location may have moved due to '
+                               'redirects, links or junctions.\n'
+                               '  Requested location: "%s"\n'
+                               '  Actual location:    "%s"',
+                               context.env_exe, real_env_exe)
+                context.env_exec_cmd = real_env_exe
         return context
 
     def create_configuration(self, context):
@@ -164,6 +179,29 @@ class EnvBuilder:
             f.write('version = %d.%d.%d\n' % sys.version_info[:3])
             if self.prompt is not None:
                 f.write(f'prompt = {self.prompt!r}\n')
+            f.write('executable = %s\n' % os.path.realpath(sys.executable))
+            args = []
+            nt = os.name == 'nt'
+            if nt and self.symlinks:
+                args.append('--symlinks')
+            if not nt and not self.symlinks:
+                args.append('--copies')
+            if not self.with_pip:
+                args.append('--without-pip')
+            if self.system_site_packages:
+                args.append('--system-site-packages')
+            if self.clear:
+                args.append('--clear')
+            if self.upgrade:
+                args.append('--upgrade')
+            if self.upgrade_deps:
+                args.append('--upgrade-deps')
+            if self.orig_prompt is not None:
+                args.append(f'--prompt="{self.orig_prompt}"')
+
+            args.append(context.env_dir)
+            args = ' '.join(args)
+            f.write(f'command = {sys.executable} -m venv {args}\n')
 
     if os.name != 'nt':
         def symlink_or_copy(self, src, dst, relative_symlinks_ok=False):
@@ -294,8 +332,8 @@ class EnvBuilder:
         # We run ensurepip in isolated mode to avoid side effects from
         # environment vars, the current directory and anything else
         # intended for the global Python environment
-        cmd = [context.env_exe, '-Im', 'ensurepip', '--upgrade',
-                                                    '--default-pip']
+        cmd = [context.env_exec_cmd, '-Im', 'ensurepip', '--upgrade',
+                                                         '--default-pip']
         subprocess.check_output(cmd, stderr=subprocess.STDOUT)
 
     def setup_scripts(self, context):
@@ -395,11 +433,7 @@ class EnvBuilder:
         logger.debug(
             f'Upgrading {CORE_VENV_DEPS} packages in {context.bin_path}'
         )
-        if sys.platform == 'win32':
-            python_exe = os.path.join(context.bin_path, 'python.exe')
-        else:
-            python_exe = os.path.join(context.bin_path, 'python')
-        cmd = [python_exe, '-m', 'pip', 'install', '--upgrade']
+        cmd = [context.env_exec_cmd, '-m', 'pip', 'install', '--upgrade']
         cmd.extend(CORE_VENV_DEPS)
         subprocess.check_call(cmd)
 

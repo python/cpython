@@ -35,8 +35,7 @@ General Options
 
    Define the size in bits of Python :class:`int` digits: 15 or 30 bits.
 
-   By default, the number of bits is selected depending on ``sizeof(void*)``:
-   30 bits if ``void*`` size is 64-bit or larger, 15 bits otherwise.
+   By default, the digit size is 30.
 
    Define the ``PYLONG_BITS_IN_DIGIT`` to ``15`` or ``30``.
 
@@ -53,7 +52,11 @@ General Options
    Set the Python executable suffix to *SUFFIX*.
 
    The default suffix is ``.exe`` on Windows and macOS (``python.exe``
-   executable), and an empty string on other platforms (``python`` executable).
+   executable), ``.wasm`` on Emscripten (``python.wasm`` executable), and
+   an empty string on other platforms (``python`` executable).
+
+   .. versionchanged:: 3.11
+      The default suffix on Emscripten platform is ``.wasm``.
 
 .. cmdoption:: --with-tzpath=<list of absolute paths separated by pathsep>
 
@@ -76,7 +79,7 @@ General Options
 
    .. versionadded:: 3.9
 
-.. cmdoption:: --with-dbmliborder=db1:db2:...
+.. cmdoption:: --with-dbmliborder=<list of backend names>
 
    Override order to check db backends for the :mod:`dbm` module
 
@@ -115,6 +118,28 @@ General Options
    :mod:`ensurepip._bundled` package.
 
    .. versionadded:: 3.10
+
+.. cmdoption:: --with-pkg-config=[check|yes|no]
+
+   Whether configure should use :program:`pkg-config` to detect build
+   dependencies.
+
+   * ``check`` (default): :program:`pkg-config` is optional
+   * ``yes``: :program:`pkg-config` is mandatory
+   * ``no``: configure does not use :program:`pkg-config` even when present
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --enable-pystats
+
+   Turn on internal statistics gathering.
+
+   The statistics will be dumped to a arbitrary (probably unique) file in
+   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows.
+
+   Use ``Tools//summarize_stats.py`` to read the stats.
+
+   .. versionadded:: 3.11
 
 
 Install Options
@@ -171,14 +196,17 @@ recommended for best performance.
 
    .. versionadded:: 3.8
 
-.. cmdoption:: --with-lto
+.. cmdoption:: --with-lto=[full|thin|no|yes]
 
    Enable Link Time Optimization (LTO) in any build (disabled by default).
 
-   The C compiler Clang requires ``llvm-ar`` for LTO, as well as an LTO-aware
-   linker (``ld.gold`` or ``lld``).
+   The C compiler Clang requires ``llvm-ar`` for LTO (``ar`` on macOS), as well
+   as an LTO-aware linker (``ld.gold`` or ``lld``).
 
    .. versionadded:: 3.6
+
+   .. versionadded:: 3.11
+      To use ThinLTO feature, use ``--with-lto=thin`` on Clang.
 
 .. cmdoption:: --with-computed-gotos
 
@@ -227,7 +255,7 @@ Effects of a debug build:
 * Install :ref:`debug hooks on memory allocators <default-memory-allocators>`
   to detect buffer overflow and other memory errors.
 * Define ``Py_DEBUG`` and ``Py_REF_DEBUG`` macros.
-* Add runtime checks: code surroundeded by ``#ifdef Py_DEBUG`` and ``#endif``.
+* Add runtime checks: code surrounded by ``#ifdef Py_DEBUG`` and ``#endif``.
   Enable ``assert(...)`` and ``_PyObject_ASSERT(...)`` assertions: don't set
   the ``NDEBUG`` macro (see also the :option:`--with-assertions` configure
   option). Main runtime checks:
@@ -413,14 +441,18 @@ Libraries options
 Security Options
 ----------------
 
-.. cmdoption:: --with-hash-algorithm=[fnv|siphash24]
+.. cmdoption:: --with-hash-algorithm=[fnv|siphash13|siphash24]
 
    Select hash algorithm for use in ``Python/pyhash.c``:
 
-   * ``siphash24`` (default).
-   * ``fnv``;
+   * ``siphash13`` (default);
+   * ``siphash24``;
+   * ``fnv``.
 
    .. versionadded:: 3.4
+
+   .. versionadded:: 3.11
+      ``siphash13`` is added and it is the new default.
 
 .. cmdoption:: --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
 
@@ -491,6 +523,48 @@ See ``Mac/README.rst``.
    :option:`--enable-framework` is set (default: ``Python``).
 
 
+Cross Compiling Options
+-----------------------
+
+Cross compiling, also known as cross building, can be used to build Python
+for another CPU architecture or platform. Cross compiling requires a Python
+interpreter for the build platform. The version of the build Python must match
+the version of the cross compiled host Python.
+
+.. cmdoption:: --build=BUILD
+
+   configure for building on BUILD, usually guessed by :program:`config.guess`.
+
+.. cmdoption:: --host=HOST
+
+   cross-compile to build programs to run on HOST (target platform)
+
+.. cmdoption:: --with-build-python=path/to/python
+
+   path to build ``python`` binary for cross compiling
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: CONFIG_SITE=file
+
+   An environment variable that points to a file with configure overrides.
+
+   Example *config.site* file::
+
+      # config.site-aarch64
+      ac_cv_buggy_getaddrinfo=no
+      ac_cv_file__dev_ptmx=yes
+      ac_cv_file__dev_ptc=no
+
+
+Cross compiling example::
+
+   CONFIG_SITE=config.site-aarch64 ../configure \
+       --build=x86_64-pc-linux-gnu \
+       --host=aarch64-unknown-linux-gnu \
+       --with-build-python=../x86_64/python
+
+
 Python Build System
 ===================
 
@@ -550,7 +624,7 @@ Built-in modules have no ``__file__`` attribute::
       File "<stdin>", line 1, in <module>
     AttributeError: module 'sys' has no attribute '__file__'
 
-Other C extensins are built as dynamic libraires, like the ``_asyncio`` module.
+Other C extensions are built as dynamic libraries, like the ``_asyncio`` module.
 They are built with the ``Py_BUILD_CORE_MODULE`` macro defined.
 Example on Linux x86-64::
 

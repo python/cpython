@@ -78,7 +78,6 @@ The module defines the following items:
    of the last modification to the file; the fields are described in section
    :ref:`zipinfo-objects`.
 
-
 .. function:: is_zipfile(filename)
 
    Returns ``True`` if *filename* is a valid ZIP file based on its magic number,
@@ -406,6 +405,11 @@ ZipFile Objects
       If ``arcname`` (or ``filename``, if ``arcname`` is  not given) contains a null
       byte, the name of the file in the archive will be truncated at the null byte.
 
+   .. note::
+
+      A leading slash in the filename may lead to the archive being impossible to
+      open in some zip programs on Windows systems.
+
    .. versionchanged:: 3.6
       Calling :meth:`write` on a ZipFile created with mode ``'r'`` or
       a closed ZipFile will raise a :exc:`ValueError`.  Previously,
@@ -566,6 +570,10 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
       Prior to 3.10, ``joinpath`` was undocumented and accepted
       exactly one parameter.
 
+The `zipp <https://pypi.org/project/zipp>`_ project provides backports
+of the latest path object functionality to older Pythons. Use
+``zipp.Path`` in place of ``zipfile.Path`` for early access to
+changes.
 
 .. _pyzipfile-objects:
 
@@ -877,6 +885,8 @@ File System limitations
 Exceeding limitations on different file systems can cause decompression failed.
 Such as allowable characters in the directory entries, length of the file name,
 length of the pathname, size of a single file, and number of files, etc.
+
+.. _zipfile-resources-limitations:
 
 Resources limitations
 ~~~~~~~~~~~~~~~~~~~~~

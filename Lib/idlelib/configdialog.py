@@ -15,9 +15,10 @@ from tkinter import (Toplevel, Listbox, Scale, Canvas,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
-                     HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
+                     HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END, TclError)
 from tkinter.ttk import (Frame, LabelFrame, Button, Checkbutton, Entry, Label,
-                         OptionMenu, Notebook, Radiobutton, Scrollbar, Style)
+                         OptionMenu, Notebook, Radiobutton, Scrollbar, Style,
+                         Spinbox, Combobox)
 from tkinter import colorchooser
 import tkinter.font as tkfont
 from tkinter import messagebox
@@ -101,8 +102,9 @@ class ConfigDialog(Toplevel):
             highpage: HighPage
             fontpage: FontPage
             keyspage: KeysPage
-            genpage: GenPage
-            extpage: self.create_page_extensions
+            winpage: WinPage
+            shedpage: ShedPage
+            extpage: ExtPage
 
         Methods:
             create_action_buttons
@@ -112,15 +114,18 @@ class ConfigDialog(Toplevel):
         self.frame = frame = Frame(self, padding="5px")
         self.frame.grid(sticky="nwes")
         self.note = note = Notebook(frame)
-        self.highpage = HighPage(note)
+        self.extpage = ExtPage(note)
+        self.highpage = HighPage(note, self.extpage)
         self.fontpage = FontPage(note, self.highpage)
-        self.keyspage = KeysPage(note)
-        self.genpage = GenPage(note)
-        self.extpage = self.create_page_extensions()
+        self.keyspage = KeysPage(note, self.extpage)
+        self.winpage = WinPage(note)
+        self.shedpage = ShedPage(note)
+
         note.add(self.fontpage, text='Fonts/Tabs')
         note.add(self.highpage, text='Highlights')
         note.add(self.keyspage, text=' Keys ')
-        note.add(self.genpage, text=' General ')
+        note.add(self.winpage, text=' Windows ')
+        note.add(self.shedpage, text=' Shell/Ed ')
         note.add(self.extpage, text='Extensions')
         note.enable_traversal()
         note.pack(side=TOP, expand=TRUE, fill=BOTH)
@@ -167,26 +172,15 @@ class ConfigDialog(Toplevel):
         return outer
 
     def ok(self):
-        """Apply config changes, then dismiss dialog.
-
-        Methods:
-            apply
-            destroy: inherited
-        """
+        """Apply config changes, then dismiss dialog."""
         self.apply()
         self.destroy()
 
     def apply(self):
-        """Apply config changes and leave dialog open.
-
-        Methods:
-            deactivate_current_config
-            save_all_changed_extensions
-            activate_config_changes
-        """
+        """Apply config changes and leave dialog open."""
         self.deactivate_current_config()
         changes.save_all()
-        self.save_all_changed_extensions()
+        self.extpage.save_all_changed_extensions()
         self.activate_config_changes()
 
     def cancel(self):
@@ -244,190 +238,6 @@ class ConfigDialog(Toplevel):
         for klass in reloadables:
             klass.reload()
 
-    def create_page_extensions(self):
-        """Part of the config dialog used for configuring IDLE extensions.
-
-        This code is generic - it works for any and all IDLE extensions.
-
-        IDLE extensions save their configuration options using idleConf.
-        This code reads the current configuration using idleConf, supplies a
-        GUI interface to change the configuration values, and saves the
-        changes using idleConf.
-
-        Not all changes take effect immediately - some may require restarting IDLE.
-        This depends on each extension's implementation.
-
-        All values are treated as text, and it is up to the user to supply
-        reasonable values. The only exception to this are the 'enable*' options,
-        which are boolean, and can be toggled with a True/False button.
-
-        Methods:
-            load_extensions:
-            extension_selected: Handle selection from list.
-            create_extension_frame: Hold widgets for one extension.
-            set_extension_value: Set in userCfg['extensions'].
-            save_all_changed_extensions: Call extension page Save().
-        """
-        parent = self.parent
-        frame = Frame(self.note)
-        self.ext_defaultCfg = idleConf.defaultCfg['extensions']
-        self.ext_userCfg = idleConf.userCfg['extensions']
-        self.is_int = self.register(is_int)
-        self.load_extensions()
-        # Create widgets - a listbox shows all available extensions, with the
-        # controls for the extension selected in the listbox to the right.
-        self.extension_names = StringVar(self)
-        frame.rowconfigure(0, weight=1)
-        frame.columnconfigure(2, weight=1)
-        self.extension_list = Listbox(frame, listvariable=self.extension_names,
-                                      selectmode='browse')
-        self.extension_list.bind('<<ListboxSelect>>', self.extension_selected)
-        scroll = Scrollbar(frame, command=self.extension_list.yview)
-        self.extension_list.yscrollcommand=scroll.set
-        self.details_frame = LabelFrame(frame, width=250, height=250)
-        self.extension_list.grid(column=0, row=0, sticky='nws')
-        scroll.grid(column=1, row=0, sticky='ns')
-        self.details_frame.grid(column=2, row=0, sticky='nsew', padx=[10, 0])
-        frame.configure(padding=10)
-        self.config_frame = {}
-        self.current_extension = None
-
-        self.outerframe = self                      # TEMPORARY
-        self.tabbed_page_set = self.extension_list  # TEMPORARY
-
-        # Create the frame holding controls for each extension.
-        ext_names = ''
-        for ext_name in sorted(self.extensions):
-            self.create_extension_frame(ext_name)
-            ext_names = ext_names + '{' + ext_name + '} '
-        self.extension_names.set(ext_names)
-        self.extension_list.selection_set(0)
-        self.extension_selected(None)
-
-        return frame
-
-    def load_extensions(self):
-        "Fill self.extensions with data from the default and user configs."
-        self.extensions = {}
-        for ext_name in idleConf.GetExtensions(active_only=False):
-            # Former built-in extensions are already filtered out.
-            self.extensions[ext_name] = []
-
-        for ext_name in self.extensions:
-            opt_list = sorted(self.ext_defaultCfg.GetOptionList(ext_name))
-
-            # Bring 'enable' options to the beginning of the list.
-            enables = [opt_name for opt_name in opt_list
-                       if opt_name.startswith('enable')]
-            for opt_name in enables:
-                opt_list.remove(opt_name)
-            opt_list = enables + opt_list
-
-            for opt_name in opt_list:
-                def_str = self.ext_defaultCfg.Get(
-                        ext_name, opt_name, raw=True)
-                try:
-                    def_obj = {'True':True, 'False':False}[def_str]
-                    opt_type = 'bool'
-                except KeyError:
-                    try:
-                        def_obj = int(def_str)
-                        opt_type = 'int'
-                    except ValueError:
-                        def_obj = def_str
-                        opt_type = None
-                try:
-                    value = self.ext_userCfg.Get(
-                            ext_name, opt_name, type=opt_type, raw=True,
-                            default=def_obj)
-                except ValueError:  # Need this until .Get fixed.
-                    value = def_obj  # Bad values overwritten by entry.
-                var = StringVar(self)
-                var.set(str(value))
-
-                self.extensions[ext_name].append({'name': opt_name,
-                                                  'type': opt_type,
-                                                  'default': def_str,
-                                                  'value': value,
-                                                  'var': var,
-                                                 })
-
-    def extension_selected(self, event):
-        "Handle selection of an extension from the list."
-        newsel = self.extension_list.curselection()
-        if newsel:
-            newsel = self.extension_list.get(newsel)
-        if newsel is None or newsel != self.current_extension:
-            if self.current_extension:
-                self.details_frame.config(text='')
-                self.config_frame[self.current_extension].grid_forget()
-                self.current_extension = None
-        if newsel:
-            self.details_frame.config(text=newsel)
-            self.config_frame[newsel].grid(column=0, row=0, sticky='nsew')
-            self.current_extension = newsel
-
-    def create_extension_frame(self, ext_name):
-        """Create a frame holding the widgets to configure one extension"""
-        f = VerticalScrolledFrame(self.details_frame, height=250, width=250)
-        self.config_frame[ext_name] = f
-        entry_area = f.interior
-        # Create an entry for each configuration option.
-        for row, opt in enumerate(self.extensions[ext_name]):
-            # Create a row with a label and entry/checkbutton.
-            label = Label(entry_area, text=opt['name'])
-            label.grid(row=row, column=0, sticky=NW)
-            var = opt['var']
-            if opt['type'] == 'bool':
-                Checkbutton(entry_area, variable=var,
-                            onvalue='True', offvalue='False', width=8
-                            ).grid(row=row, column=1, sticky=W, padx=7)
-            elif opt['type'] == 'int':
-                Entry(entry_area, textvariable=var, validate='key',
-                      validatecommand=(self.is_int, '%P'), width=10
-                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
-
-            else:  # type == 'str'
-                # Limit size to fit non-expanding space with larger font.
-                Entry(entry_area, textvariable=var, width=15
-                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
-        return
-
-    def set_extension_value(self, section, opt):
-        """Return True if the configuration was added or changed.
-
-        If the value is the same as the default, then remove it
-        from user config file.
-        """
-        name = opt['name']
-        default = opt['default']
-        value = opt['var'].get().strip() or default
-        opt['var'].set(value)
-        # if self.defaultCfg.has_section(section):
-        # Currently, always true; if not, indent to return.
-        if (value == default):
-            return self.ext_userCfg.RemoveOption(section, name)
-        # Set the option.
-        return self.ext_userCfg.SetOption(section, name, value)
-
-    def save_all_changed_extensions(self):
-        """Save configuration changes to the user config file.
-
-        Attributes accessed:
-            extensions
-
-        Methods:
-            set_extension_value
-        """
-        has_changes = False
-        for ext_name in self.extensions:
-            options = self.extensions[ext_name]
-            for opt in options:
-                if self.set_extension_value(ext_name, opt):
-                    has_changes = True
-        if has_changes:
-            self.ext_userCfg.Save()
-
 
 # class TabPage(Frame):  # A template for Page classes.
 #     def __init__(self, master):
@@ -480,12 +290,11 @@ class FontPage(Frame):
     def __init__(self, master, highpage):
         super().__init__(master)
         self.highlight_sample = highpage.highlight_sample
-        self.create_page_font_tab()
+        self.create_page_font()
         self.load_font_cfg()
-        self.load_tab_cfg()
 
-    def create_page_font_tab(self):
-        """Return frame of widgets for Font/Tabs tab.
+    def create_page_font(self):
+        """Return frame of widgets for Font tab.
 
         Fonts: Enable users to provisionally change font face, size, or
         boldness and to see the consequence of proposed choices.  Each
@@ -509,11 +318,6 @@ class FontPage(Frame):
         Set_samples applies a new font constructed from the font vars to
         font_sample and to highlight_sample on the highlight page.
 
-        Tabs: Enable users to change spaces entered for indent tabs.
-        Changing indent_scale value with the mouse sets Var space_num,
-        which invokes the default callback to add an entry to
-        changes.  Load_tab_cfg initializes space_num to default.
-
         Widgets for FontPage(Frame):  (*) widgets bound to self
             frame_font: LabelFrame
                 frame_font_name: Frame
@@ -526,23 +330,16 @@ class FontPage(Frame):
                     (*)bold_toggle: Checkbutton - font_bold
             frame_sample: LabelFrame
                 (*)font_sample: Label
-            frame_indent: LabelFrame
-                    indent_title: Label
-                    (*)indent_scale: Scale - space_num
         """
         self.font_name = tracers.add(StringVar(self), self.var_changed_font)
         self.font_size = tracers.add(StringVar(self), self.var_changed_font)
         self.font_bold = tracers.add(BooleanVar(self), self.var_changed_font)
-        self.space_num = tracers.add(IntVar(self), ('main', 'Indent', 'num-spaces'))
 
         # Define frames and widgets.
-        frame_font = LabelFrame(
-                self, borderwidth=2, relief=GROOVE, text=' Shell/Editor Font ')
-        frame_sample = LabelFrame(
-                self, borderwidth=2, relief=GROOVE,
-                text=' Font Sample (Editable) ')
-        frame_indent = LabelFrame(
-                self, borderwidth=2, relief=GROOVE, text=' Indentation Width ')
+        frame_font = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                text=' Shell/Editor Font ')
+        frame_sample = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                  text=' Font Sample (Editable) ')
         # frame_font.
         frame_font_name = Frame(frame_font)
         frame_font_param = Frame(frame_font)
@@ -566,13 +363,6 @@ class FontPage(Frame):
         self.font_sample = font_sample_frame.text
         self.font_sample.config(wrap=NONE, width=1, height=1)
         self.font_sample.insert(END, font_sample_text)
-        # frame_indent.
-        indent_title = Label(
-                frame_indent, justify=LEFT,
-                text='Python Standard: 4 Spaces!')
-        self.indent_scale = Scale(
-                frame_indent, variable=self.space_num,
-                orient='horizontal', tickinterval=2, from_=2, to=16)
 
         # Grid and pack widgets:
         self.columnconfigure(1, weight=1)
@@ -580,7 +370,6 @@ class FontPage(Frame):
         frame_font.grid(row=0, column=0, padx=5, pady=5)
         frame_sample.grid(row=0, column=1, rowspan=3, padx=5, pady=5,
                           sticky='nsew')
-        frame_indent.grid(row=1, column=0, padx=5, pady=5, sticky='ew')
         # frame_font.
         frame_font_name.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_font_param.pack(side=TOP, padx=5, pady=5, fill=X)
@@ -592,9 +381,6 @@ class FontPage(Frame):
         self.bold_toggle.pack(side=LEFT, anchor=W, padx=20)
         # frame_sample.
         font_sample_frame.pack(expand=TRUE, fill=BOTH)
-        # frame_indent.
-        indent_title.pack(side=TOP, anchor=W, padx=5)
-        self.indent_scale.pack(side=TOP, padx=5, fill=X)
 
     def load_font_cfg(self):
         """Load current configuration settings for the font options.
@@ -668,34 +454,19 @@ class FontPage(Frame):
         self.font_sample['font'] = new_font
         self.highlight_sample['font'] = new_font
 
-    def load_tab_cfg(self):
-        """Load current configuration settings for the tab options.
-
-        Attributes updated:
-            space_num: Set to value from idleConf.
-        """
-        # Set indent sizes.
-        space_num = idleConf.GetOption(
-            'main', 'Indent', 'num-spaces', default=4, type='int')
-        self.space_num.set(space_num)
-
-    def var_changed_space_num(self, *params):
-        "Store change to indentation size."
-        value = self.space_num.get()
-        changes.add_option('main', 'Indent', 'num-spaces', value)
-
 
 class HighPage(Frame):
 
-    def __init__(self, master):
+    def __init__(self, master, extpage):
         super().__init__(master)
+        self.extpage = extpage
         self.cd = master.winfo_toplevel()
         self.style = Style(master)
         self.create_page_highlight()
         self.load_theme_cfg()
 
     def create_page_highlight(self):
-        """Return frame of widgets for Highlighting tab.
+        """Return frame of widgets for Highlights tab.
 
         Enable users to provisionally change foreground and background
         colors applied to textual tags.  Color mappings are stored in
@@ -1339,15 +1110,16 @@ class HighPage(Frame):
         self.builtin_name.set(idleConf.defaultCfg['main'].Get('Theme', 'name'))
         # User can't back out of these changes, they must be applied now.
         changes.save_all()
-        self.cd.save_all_changed_extensions()
+        self.extpage.save_all_changed_extensions()
         self.cd.activate_config_changes()
         self.set_theme_type()
 
 
 class KeysPage(Frame):
 
-    def __init__(self, master):
+    def __init__(self, master, extpage):
         super().__init__(master)
+        self.extpage = extpage
         self.cd = master.winfo_toplevel()
         self.create_page_keys()
         self.load_key_cfg()
@@ -1771,19 +1543,19 @@ class KeysPage(Frame):
                               or idleConf.default_keys())
         # User can't back out of these changes, they must be applied now.
         changes.save_all()
-        self.cd.save_all_changed_extensions()
+        self.extpage.save_all_changed_extensions()
         self.cd.activate_config_changes()
         self.set_keys_type()
 
 
-class GenPage(Frame):
+class WinPage(Frame):
 
     def __init__(self, master):
         super().__init__(master)
 
         self.init_validators()
-        self.create_page_general()
-        self.load_general_cfg()
+        self.create_page_windows()
+        self.load_windows_cfg()
 
     def init_validators(self):
         digits_or_empty_re = re.compile(r'[0-9]*')
@@ -1792,76 +1564,45 @@ class GenPage(Frame):
             return digits_or_empty_re.fullmatch(s) is not None
         self.digits_only = (self.register(is_digits_or_empty), '%P',)
 
-    def create_page_general(self):
-        """Return frame of widgets for General tab.
+    def create_page_windows(self):
+        """Return frame of widgets for Windows tab.
 
-        Enable users to provisionally change general options. Function
-        load_general_cfg initializes tk variables and helplist using
-        idleConf.  Radiobuttons startup_shell_on and startup_editor_on
-        set var startup_edit. Radiobuttons save_ask_on and save_auto_on
-        set var autosave. Entry boxes win_width_int and win_height_int
-        set var win_width and win_height.  Setting var_name invokes the
-        default callback that adds option to changes.
+        Enable users to provisionally change general window options.
+        Function load_windows_cfg initializes tk variable idleConf.
+        Radiobuttons startup_shell_on and startup_editor_on set var
+        startup_edit. Entry boxes win_width_int and win_height_int set var
+        win_width and win_height.  Setting var_name invokes the default
+        callback that adds option to changes.
 
-        Helplist: load_general_cfg loads list user_helplist with
-        name, position pairs and copies names to listbox helplist.
-        Clicking a name invokes help_source selected. Clicking
-        button_helplist_name invokes helplist_item_name, which also
-        changes user_helplist.  These functions all call
-        set_add_delete_state. All but load call update_help_changes to
-        rewrite changes['main']['HelpFiles'].
-
-        Widgets for GenPage(Frame):  (*) widgets bound to self
+        Widgets for WinPage(Frame):  > vars, bound to self
             frame_window: LabelFrame
                 frame_run: Frame
                     startup_title: Label
-                    (*)startup_editor_on: Radiobutton - startup_edit
-                    (*)startup_shell_on: Radiobutton - startup_edit
+                    startup_editor_on: Radiobutton > startup_edit
+                    startup_shell_on: Radiobutton > startup_edit
                 frame_win_size: Frame
                     win_size_title: Label
                     win_width_title: Label
-                    (*)win_width_int: Entry - win_width
+                    win_width_int: Entry > win_width
                     win_height_title: Label
-                    (*)win_height_int: Entry - win_height
-                frame_cursor_blink: Frame
-                    cursor_blink_title: Label
-                    (*)cursor_blink_bool: Checkbutton - cursor_blink
+                    win_height_int: Entry > win_height
+                frame_cursor: Frame
+                    indent_title: Label
+                    indent_chooser: Spinbox (Combobox < 8.5.9) > indent_spaces
+                    blink_on: Checkbutton > cursor_blink
                 frame_autocomplete: Frame
                     auto_wait_title: Label
-                    (*)auto_wait_int: Entry - autocomplete_wait
+                    auto_wait_int: Entry > autocomplete_wait
                 frame_paren1: Frame
                     paren_style_title: Label
-                    (*)paren_style_type: OptionMenu - paren_style
+                    paren_style_type: OptionMenu > paren_style
                 frame_paren2: Frame
                     paren_time_title: Label
-                    (*)paren_flash_time: Entry - flash_delay
-                    (*)bell_on: Checkbutton - paren_bell
-            frame_editor: LabelFrame
-                frame_save: Frame
-                    run_save_title: Label
-                    (*)save_ask_on: Radiobutton - autosave
-                    (*)save_auto_on: Radiobutton - autosave
+                    paren_flash_time: Entry > flash_delay
+                    bell_on: Checkbutton > paren_bell
                 frame_format: Frame
                     format_width_title: Label
-                    (*)format_width_int: Entry - format_width
-                frame_line_numbers_default: Frame
-                    line_numbers_default_title: Label
-                    (*)line_numbers_default_bool: Checkbutton - line_numbers_default
-                frame_context: Frame
-                    context_title: Label
-                    (*)context_int: Entry - context_lines
-            frame_shell: LabelFrame
-                frame_auto_squeeze_min_lines: Frame
-                    auto_squeeze_min_lines_title: Label
-                    (*)auto_squeeze_min_lines_int: Entry - auto_squeeze_min_lines
-            frame_help: LabelFrame
-                frame_helplist: Frame
-                    frame_helplist_buttons: Frame
-                        (*)button_helplist_edit
-                        (*)button_helplist_add
-                        (*)button_helplist_remove
-                    (*)helplist: ListBox
-                    scroll_helplist: Scrollbar
+                    format_width_int: Entry > format_width
         """
         # Integer values need StringVar because int('') raises.
         self.startup_edit = tracers.add(
@@ -1870,6 +1611,8 @@ class GenPage(Frame):
                 StringVar(self), ('main', 'EditorWindow', 'width'))
         self.win_height = tracers.add(
                 StringVar(self), ('main', 'EditorWindow', 'height'))
+        self.indent_spaces = tracers.add(
+                StringVar(self), ('main', 'Indent', 'num-spaces'))
         self.cursor_blink = tracers.add(
                 BooleanVar(self), ('main', 'EditorWindow', 'cursor-blink'))
         self.autocomplete_wait = tracers.add(
@@ -1880,31 +1623,13 @@ class GenPage(Frame):
                 StringVar(self), ('extensions', 'ParenMatch', 'flash-delay'))
         self.paren_bell = tracers.add(
                 BooleanVar(self), ('extensions', 'ParenMatch', 'bell'))
-
-        self.auto_squeeze_min_lines = tracers.add(
-                StringVar(self), ('main', 'PyShell', 'auto-squeeze-min-lines'))
-
-        self.autosave = tracers.add(
-                IntVar(self), ('main', 'General', 'autosave'))
         self.format_width = tracers.add(
                 StringVar(self), ('extensions', 'FormatParagraph', 'max-width'))
-        self.line_numbers_default = tracers.add(
-                BooleanVar(self),
-                ('main', 'EditorWindow', 'line-numbers-default'))
-        self.context_lines = tracers.add(
-                StringVar(self), ('extensions', 'CodeContext', 'maxlines'))
 
         # Create widgets:
-        # Section frames.
         frame_window = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                   text=' Window Preferences')
-        frame_editor = LabelFrame(self, borderwidth=2, relief=GROOVE,
-                                  text=' Editor Preferences')
-        frame_shell = LabelFrame(self, borderwidth=2, relief=GROOVE,
-                                 text=' Shell Preferences')
-        frame_help = LabelFrame(self, borderwidth=2, relief=GROOVE,
-                                text=' Additional Help Sources ')
-        # Frame_window.
+
         frame_run = Frame(frame_window, borderwidth=0)
         startup_title = Label(frame_run, text='At Startup')
         self.startup_editor_on = Radiobutton(
@@ -1928,19 +1653,28 @@ class GenPage(Frame):
                 validatecommand=self.digits_only, validate='key',
         )
 
-        frame_cursor_blink = Frame(frame_window, borderwidth=0)
-        cursor_blink_title = Label(frame_cursor_blink, text='Cursor Blink')
-        self.cursor_blink_bool = Checkbutton(frame_cursor_blink,
-                variable=self.cursor_blink, width=1)
+        frame_cursor = Frame(frame_window, borderwidth=0)
+        indent_title = Label(frame_cursor,
+                             text='Indent spaces (4 is standard)')
+        try:
+            self.indent_chooser = Spinbox(
+                    frame_cursor, textvariable=self.indent_spaces,
+                    from_=1, to=10, width=2,
+                    validatecommand=self.digits_only, validate='key')
+        except TclError:
+            self.indent_chooser = Combobox(
+                    frame_cursor, textvariable=self.indent_spaces,
+                    state="readonly", values=list(range(1,11)), width=3)
+        cursor_blink_title = Label(frame_cursor, text='Cursor Blink')
+        self.cursor_blink_bool = Checkbutton(frame_cursor, text="Cursor blink",
+                                             variable=self.cursor_blink)
 
         frame_autocomplete = Frame(frame_window, borderwidth=0,)
         auto_wait_title = Label(frame_autocomplete,
-                               text='Completions Popup Wait (milliseconds)')
-        self.auto_wait_int = Entry(frame_autocomplete, width=6,
-                                   textvariable=self.autocomplete_wait,
-                                   validatecommand=self.digits_only,
-                                   validate='key',
-                                   )
+                                text='Completions Popup Wait (milliseconds)')
+        self.auto_wait_int = Entry(
+                frame_autocomplete, textvariable=self.autocomplete_wait,
+                width=6, validatecommand=self.digits_only, validate='key')
 
         frame_paren1 = Frame(frame_window, borderwidth=0)
         paren_style_title = Label(frame_paren1, text='Paren Match Style')
@@ -1952,27 +1686,160 @@ class GenPage(Frame):
                 frame_paren2, text='Time Match Displayed (milliseconds)\n'
                                   '(0 is until next input)')
         self.paren_flash_time = Entry(
-                frame_paren2, textvariable=self.flash_delay, width=6)
+                frame_paren2, textvariable=self.flash_delay, width=6,
+                validatecommand=self.digits_only, validate='key')
         self.bell_on = Checkbutton(
                 frame_paren2, text="Bell on Mismatch", variable=self.paren_bell)
+        frame_format = Frame(frame_window, borderwidth=0)
+        format_width_title = Label(frame_format,
+                                   text='Format Paragraph Max Width')
+        self.format_width_int = Entry(
+                frame_format, textvariable=self.format_width, width=4,
+                validatecommand=self.digits_only, validate='key',
+                )
 
+        # Pack widgets:
+        frame_window.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        # frame_run.
+        frame_run.pack(side=TOP, padx=5, pady=0, fill=X)
+        startup_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.startup_shell_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.startup_editor_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        # frame_win_size.
+        frame_win_size.pack(side=TOP, padx=5, pady=0, fill=X)
+        win_size_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.win_height_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        win_height_title.pack(side=RIGHT, anchor=E, pady=5)
+        self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        win_width_title.pack(side=RIGHT, anchor=E, pady=5)
+        # frame_cursor.
+        frame_cursor.pack(side=TOP, padx=5, pady=0, fill=X)
+        indent_title.pack(side=LEFT, anchor=W, padx=5)
+        self.indent_chooser.pack(side=LEFT, anchor=W, padx=10)
+        self.cursor_blink_bool.pack(side=RIGHT, anchor=E, padx=15, pady=5)
+        # frame_autocomplete.
+        frame_autocomplete.pack(side=TOP, padx=5, pady=0, fill=X)
+        auto_wait_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.auto_wait_int.pack(side=TOP, padx=10, pady=5)
+        # frame_paren.
+        frame_paren1.pack(side=TOP, padx=5, pady=0, fill=X)
+        paren_style_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.paren_style_type.pack(side=TOP, padx=10, pady=5)
+        frame_paren2.pack(side=TOP, padx=5, pady=0, fill=X)
+        paren_time_title.pack(side=LEFT, anchor=W, padx=5)
+        self.bell_on.pack(side=RIGHT, anchor=E, padx=15, pady=5)
+        self.paren_flash_time.pack(side=TOP, anchor=W, padx=15, pady=5)
+        # frame_format.
+        frame_format.pack(side=TOP, padx=5, pady=0, fill=X)
+        format_width_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.format_width_int.pack(side=TOP, padx=10, pady=5)
+
+    def load_windows_cfg(self):
+        # Set variables for all windows.
+        self.startup_edit.set(idleConf.GetOption(
+                'main', 'General', 'editor-on-startup', type='bool'))
+        self.win_width.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'width', type='int'))
+        self.win_height.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'height', type='int'))
+        self.indent_spaces.set(idleConf.GetOption(
+                'main', 'Indent', 'num-spaces', type='int'))
+        self.cursor_blink.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'cursor-blink', type='bool'))
+        self.autocomplete_wait.set(idleConf.GetOption(
+                'extensions', 'AutoComplete', 'popupwait', type='int'))
+        self.paren_style.set(idleConf.GetOption(
+                'extensions', 'ParenMatch', 'style'))
+        self.flash_delay.set(idleConf.GetOption(
+                'extensions', 'ParenMatch', 'flash-delay', type='int'))
+        self.paren_bell.set(idleConf.GetOption(
+                'extensions', 'ParenMatch', 'bell'))
+        self.format_width.set(idleConf.GetOption(
+                'extensions', 'FormatParagraph', 'max-width', type='int'))
+
+
+class ShedPage(Frame):
+
+    def __init__(self, master):
+        super().__init__(master)
+
+        self.init_validators()
+        self.create_page_shed()
+        self.load_shelled_cfg()
+
+    def init_validators(self):
+        digits_or_empty_re = re.compile(r'[0-9]*')
+        def is_digits_or_empty(s):
+            "Return 's is blank or contains only digits'"
+            return digits_or_empty_re.fullmatch(s) is not None
+        self.digits_only = (self.register(is_digits_or_empty), '%P',)
+
+    def create_page_shed(self):
+        """Return frame of widgets for Shell/Ed tab.
+
+        Enable users to provisionally change shell and editor options.
+        Function load_shed_cfg initializes tk variables using idleConf.
+        Entry box auto_squeeze_min_lines_int sets
+        auto_squeeze_min_lines_int.  Setting var_name invokes the
+        default callback that adds option to changes.
+
+        Widgets for ShedPage(Frame):  (*) widgets bound to self
+            frame_shell: LabelFrame
+                frame_auto_squeeze_min_lines: Frame
+                    auto_squeeze_min_lines_title: Label
+                    (*)auto_squeeze_min_lines_int: Entry -
+                       auto_squeeze_min_lines
+            frame_editor: LabelFrame
+                frame_save: Frame
+                    run_save_title: Label
+                    (*)save_ask_on: Radiobutton - autosave
+                    (*)save_auto_on: Radiobutton - autosave
+                frame_format: Frame
+                    format_width_title: Label
+                    (*)format_width_int: Entry - format_width
+                frame_line_numbers_default: Frame
+                    line_numbers_default_title: Label
+                    (*)line_numbers_default_bool: Checkbutton - line_numbers_default
+                frame_context: Frame
+                    context_title: Label
+                    (*)context_int: Entry - context_lines
+        """
+        # Integer values need StringVar because int('') raises.
+        self.auto_squeeze_min_lines = tracers.add(
+                StringVar(self), ('main', 'PyShell', 'auto-squeeze-min-lines'))
+
+        self.autosave = tracers.add(
+                IntVar(self), ('main', 'General', 'autosave'))
+        self.line_numbers_default = tracers.add(
+                BooleanVar(self),
+                ('main', 'EditorWindow', 'line-numbers-default'))
+        self.context_lines = tracers.add(
+                StringVar(self), ('extensions', 'CodeContext', 'maxlines'))
+
+        # Create widgets:
+        frame_shell = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                 text=' Shell Preferences')
+        frame_editor = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                  text=' Editor Preferences')
+        # Frame_shell.
+        frame_auto_squeeze_min_lines = Frame(frame_shell, borderwidth=0)
+        auto_squeeze_min_lines_title = Label(frame_auto_squeeze_min_lines,
+                                             text='Auto-Squeeze Min. Lines:')
+        self.auto_squeeze_min_lines_int = Entry(
+                frame_auto_squeeze_min_lines, width=4,
+                textvariable=self.auto_squeeze_min_lines,
+                validatecommand=self.digits_only, validate='key',
+        )
         # Frame_editor.
         frame_save = Frame(frame_editor, borderwidth=0)
         run_save_title = Label(frame_save, text='At Start of Run (F5)  ')
+
         self.save_ask_on = Radiobutton(
                 frame_save, variable=self.autosave, value=0,
                 text="Prompt to Save")
         self.save_auto_on = Radiobutton(
                 frame_save, variable=self.autosave, value=1,
                 text='No Prompt')
-
-        frame_format = Frame(frame_editor, borderwidth=0)
-        format_width_title = Label(frame_format,
-                                   text='Format Paragraph Max Width')
-        self.format_width_int = Entry(
-                frame_format, textvariable=self.format_width, width=4,
-                validatecommand=self.digits_only, validate='key',
-        )
 
         frame_line_numbers_default = Frame(frame_editor, borderwidth=0)
         line_numbers_default_title = Label(
@@ -1989,80 +1856,19 @@ class GenPage(Frame):
                 validatecommand=self.digits_only, validate='key',
         )
 
-        # Frame_shell.
-        frame_auto_squeeze_min_lines = Frame(frame_shell, borderwidth=0)
-        auto_squeeze_min_lines_title = Label(frame_auto_squeeze_min_lines,
-                                             text='Auto-Squeeze Min. Lines:')
-        self.auto_squeeze_min_lines_int = Entry(
-                frame_auto_squeeze_min_lines, width=4,
-                textvariable=self.auto_squeeze_min_lines,
-                validatecommand=self.digits_only, validate='key',
-        )
-
-        # frame_help.
-        frame_helplist = Frame(frame_help)
-        frame_helplist_buttons = Frame(frame_helplist)
-        self.helplist = Listbox(
-                frame_helplist, height=5, takefocus=True,
-                exportselection=FALSE)
-        scroll_helplist = Scrollbar(frame_helplist)
-        scroll_helplist['command'] = self.helplist.yview
-        self.helplist['yscrollcommand'] = scroll_helplist.set
-        self.helplist.bind('<ButtonRelease-1>', self.help_source_selected)
-        self.button_helplist_edit = Button(
-                frame_helplist_buttons, text='Edit', state='disabled',
-                width=8, command=self.helplist_item_edit)
-        self.button_helplist_add = Button(
-                frame_helplist_buttons, text='Add',
-                width=8, command=self.helplist_item_add)
-        self.button_helplist_remove = Button(
-                frame_helplist_buttons, text='Remove', state='disabled',
-                width=8, command=self.helplist_item_remove)
-
         # Pack widgets:
-        # Body.
-        frame_window.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        frame_editor.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        frame_shell.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        # frame_run.
-        frame_run.pack(side=TOP, padx=5, pady=0, fill=X)
-        startup_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.startup_shell_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        self.startup_editor_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        # frame_win_size.
-        frame_win_size.pack(side=TOP, padx=5, pady=0, fill=X)
-        win_size_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.win_height_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
-        win_height_title.pack(side=RIGHT, anchor=E, pady=5)
-        self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
-        win_width_title.pack(side=RIGHT, anchor=E, pady=5)
-        # frame_cursor_blink.
-        frame_cursor_blink.pack(side=TOP, padx=5, pady=0, fill=X)
-        cursor_blink_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.cursor_blink_bool.pack(side=LEFT, padx=5, pady=5)
-        # frame_autocomplete.
-        frame_autocomplete.pack(side=TOP, padx=5, pady=0, fill=X)
-        auto_wait_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.auto_wait_int.pack(side=TOP, padx=10, pady=5)
-        # frame_paren.
-        frame_paren1.pack(side=TOP, padx=5, pady=0, fill=X)
-        paren_style_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.paren_style_type.pack(side=TOP, padx=10, pady=5)
-        frame_paren2.pack(side=TOP, padx=5, pady=0, fill=X)
-        paren_time_title.pack(side=LEFT, anchor=W, padx=5)
-        self.bell_on.pack(side=RIGHT, anchor=E, padx=15, pady=5)
-        self.paren_flash_time.pack(side=TOP, anchor=W, padx=15, pady=5)
-
+        frame_shell.pack(side=TOP, padx=5, pady=5, fill=BOTH)
+        Label(self).pack()  # Spacer -- better solution?
+        frame_editor.pack(side=TOP, padx=5, pady=5, fill=BOTH)
+        # frame_auto_squeeze_min_lines
+        frame_auto_squeeze_min_lines.pack(side=TOP, padx=5, pady=0, fill=X)
+        auto_squeeze_min_lines_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.auto_squeeze_min_lines_int.pack(side=TOP, padx=5, pady=5)
         # frame_save.
         frame_save.pack(side=TOP, padx=5, pady=0, fill=X)
         run_save_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.save_auto_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
         self.save_ask_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        # frame_format.
-        frame_format.pack(side=TOP, padx=5, pady=0, fill=X)
-        format_width_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.format_width_int.pack(side=TOP, padx=10, pady=5)
         # frame_line_numbers_default.
         frame_line_numbers_default.pack(side=TOP, padx=5, pady=0, fill=X)
         line_numbers_default_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
@@ -2072,60 +1878,270 @@ class GenPage(Frame):
         context_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.context_int.pack(side=TOP, padx=5, pady=5)
 
-        # frame_auto_squeeze_min_lines
-        frame_auto_squeeze_min_lines.pack(side=TOP, padx=5, pady=0, fill=X)
-        auto_squeeze_min_lines_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.auto_squeeze_min_lines_int.pack(side=TOP, padx=5, pady=5)
-
-        # frame_help.
-        frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
-        frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        scroll_helplist.pack(side=RIGHT, anchor=W, fill=Y)
-        self.helplist.pack(side=LEFT, anchor=E, expand=TRUE, fill=BOTH)
-        self.button_helplist_edit.pack(side=TOP, anchor=W, pady=5)
-        self.button_helplist_add.pack(side=TOP, anchor=W)
-        self.button_helplist_remove.pack(side=TOP, anchor=W, pady=5)
-
-    def load_general_cfg(self):
-        "Load current configuration settings for the general options."
-        # Set variables for all windows.
-        self.startup_edit.set(idleConf.GetOption(
-                'main', 'General', 'editor-on-startup', type='bool'))
-        self.win_width.set(idleConf.GetOption(
-                'main', 'EditorWindow', 'width', type='int'))
-        self.win_height.set(idleConf.GetOption(
-                'main', 'EditorWindow', 'height', type='int'))
-        self.cursor_blink.set(idleConf.GetOption(
-                'main', 'EditorWindow', 'cursor-blink', type='bool'))
-        self.autocomplete_wait.set(idleConf.GetOption(
-                'extensions', 'AutoComplete', 'popupwait', type='int'))
-        self.paren_style.set(idleConf.GetOption(
-                'extensions', 'ParenMatch', 'style'))
-        self.flash_delay.set(idleConf.GetOption(
-                'extensions', 'ParenMatch', 'flash-delay', type='int'))
-        self.paren_bell.set(idleConf.GetOption(
-                'extensions', 'ParenMatch', 'bell'))
-
+    def load_shelled_cfg(self):
+        # Set variables for shell windows.
+        self.auto_squeeze_min_lines.set(idleConf.GetOption(
+                'main', 'PyShell', 'auto-squeeze-min-lines', type='int'))
         # Set variables for editor windows.
         self.autosave.set(idleConf.GetOption(
                 'main', 'General', 'autosave', default=0, type='bool'))
-        self.format_width.set(idleConf.GetOption(
-                'extensions', 'FormatParagraph', 'max-width', type='int'))
         self.line_numbers_default.set(idleConf.GetOption(
                 'main', 'EditorWindow', 'line-numbers-default', type='bool'))
         self.context_lines.set(idleConf.GetOption(
                 'extensions', 'CodeContext', 'maxlines', type='int'))
 
-        # Set variables for shell windows.
-        self.auto_squeeze_min_lines.set(idleConf.GetOption(
-                'main', 'PyShell', 'auto-squeeze-min-lines', type='int'))
 
-        # Set additional help sources.
-        self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
-        self.helplist.delete(0, 'end')
-        for help_item in self.user_helplist:
-            self.helplist.insert(END, help_item[0])
-        self.set_add_delete_state()
+class ExtPage(Frame):
+    def __init__(self, master):
+        super().__init__(master)
+        self.ext_defaultCfg = idleConf.defaultCfg['extensions']
+        self.ext_userCfg = idleConf.userCfg['extensions']
+        self.is_int = self.register(is_int)
+        self.load_extensions()
+        self.create_page_extensions()  # Requires extension names.
+
+    def create_page_extensions(self):
+        """Configure IDLE feature extensions and help menu extensions.
+
+        List the feature extensions and a configuration box for the
+        selected extension.  Help menu extensions are in a HelpFrame.
+
+        This code reads the current configuration using idleConf,
+        supplies a GUI interface to change the configuration values,
+        and saves the changes using idleConf.
+
+        Some changes may require restarting IDLE.  This depends on each
+        extension's implementation.
+
+        All values are treated as text, and it is up to the user to
+        supply reasonable values. The only exception to this are the
+        'enable*' options, which are boolean, and can be toggled with a
+        True/False button.
+
+        Methods:
+            extension_selected: Handle selection from list.
+            create_extension_frame: Hold widgets for one extension.
+            set_extension_value: Set in userCfg['extensions'].
+            save_all_changed_extensions: Call extension page Save().
+        """
+        self.extension_names = StringVar(self)
+
+        frame_ext = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                               text=' Feature Extensions ')
+        self.frame_help = HelpFrame(self, borderwidth=2, relief=GROOVE,
+                               text=' Help Menu Extensions ')
+
+        frame_ext.rowconfigure(0, weight=1)
+        frame_ext.columnconfigure(2, weight=1)
+        self.extension_list = Listbox(frame_ext, listvariable=self.extension_names,
+                                      selectmode='browse')
+        self.extension_list.bind('<<ListboxSelect>>', self.extension_selected)
+        scroll = Scrollbar(frame_ext, command=self.extension_list.yview)
+        self.extension_list.yscrollcommand=scroll.set
+        self.details_frame = LabelFrame(frame_ext, width=250, height=250)
+        self.extension_list.grid(column=0, row=0, sticky='nws')
+        scroll.grid(column=1, row=0, sticky='ns')
+        self.details_frame.grid(column=2, row=0, sticky='nsew', padx=[10, 0])
+        frame_ext.configure(padding=10)
+        self.config_frame = {}
+        self.current_extension = None
+
+        self.outerframe = self                      # TEMPORARY
+        self.tabbed_page_set = self.extension_list  # TEMPORARY
+
+        # Create the frame holding controls for each extension.
+        ext_names = ''
+        for ext_name in sorted(self.extensions):
+            self.create_extension_frame(ext_name)
+            ext_names = ext_names + '{' + ext_name + '} '
+        self.extension_names.set(ext_names)
+        self.extension_list.selection_set(0)
+        self.extension_selected(None)
+
+
+        frame_ext.grid(row=0, column=0, sticky='nsew')
+        Label(self).grid(row=1, column=0)  # Spacer.  Replace with config?
+        self.frame_help.grid(row=2, column=0, sticky='sew')
+
+    def load_extensions(self):
+        "Fill self.extensions with data from the default and user configs."
+        self.extensions = {}
+        for ext_name in idleConf.GetExtensions(active_only=False):
+            # Former built-in extensions are already filtered out.
+            self.extensions[ext_name] = []
+
+        for ext_name in self.extensions:
+            opt_list = sorted(self.ext_defaultCfg.GetOptionList(ext_name))
+
+            # Bring 'enable' options to the beginning of the list.
+            enables = [opt_name for opt_name in opt_list
+                       if opt_name.startswith('enable')]
+            for opt_name in enables:
+                opt_list.remove(opt_name)
+            opt_list = enables + opt_list
+
+            for opt_name in opt_list:
+                def_str = self.ext_defaultCfg.Get(
+                        ext_name, opt_name, raw=True)
+                try:
+                    def_obj = {'True':True, 'False':False}[def_str]
+                    opt_type = 'bool'
+                except KeyError:
+                    try:
+                        def_obj = int(def_str)
+                        opt_type = 'int'
+                    except ValueError:
+                        def_obj = def_str
+                        opt_type = None
+                try:
+                    value = self.ext_userCfg.Get(
+                            ext_name, opt_name, type=opt_type, raw=True,
+                            default=def_obj)
+                except ValueError:  # Need this until .Get fixed.
+                    value = def_obj  # Bad values overwritten by entry.
+                var = StringVar(self)
+                var.set(str(value))
+
+                self.extensions[ext_name].append({'name': opt_name,
+                                                  'type': opt_type,
+                                                  'default': def_str,
+                                                  'value': value,
+                                                  'var': var,
+                                                 })
+
+    def extension_selected(self, event):
+        "Handle selection of an extension from the list."
+        newsel = self.extension_list.curselection()
+        if newsel:
+            newsel = self.extension_list.get(newsel)
+        if newsel is None or newsel != self.current_extension:
+            if self.current_extension:
+                self.details_frame.config(text='')
+                self.config_frame[self.current_extension].grid_forget()
+                self.current_extension = None
+        if newsel:
+            self.details_frame.config(text=newsel)
+            self.config_frame[newsel].grid(column=0, row=0, sticky='nsew')
+            self.current_extension = newsel
+
+    def create_extension_frame(self, ext_name):
+        """Create a frame holding the widgets to configure one extension"""
+        f = VerticalScrolledFrame(self.details_frame, height=250, width=250)
+        self.config_frame[ext_name] = f
+        entry_area = f.interior
+        # Create an entry for each configuration option.
+        for row, opt in enumerate(self.extensions[ext_name]):
+            # Create a row with a label and entry/checkbutton.
+            label = Label(entry_area, text=opt['name'])
+            label.grid(row=row, column=0, sticky=NW)
+            var = opt['var']
+            if opt['type'] == 'bool':
+                Checkbutton(entry_area, variable=var,
+                            onvalue='True', offvalue='False', width=8
+                            ).grid(row=row, column=1, sticky=W, padx=7)
+            elif opt['type'] == 'int':
+                Entry(entry_area, textvariable=var, validate='key',
+                      validatecommand=(self.is_int, '%P'), width=10
+                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
+
+            else:  # type == 'str'
+                # Limit size to fit non-expanding space with larger font.
+                Entry(entry_area, textvariable=var, width=15
+                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
+        return
+
+    def set_extension_value(self, section, opt):
+        """Return True if the configuration was added or changed.
+
+        If the value is the same as the default, then remove it
+        from user config file.
+        """
+        name = opt['name']
+        default = opt['default']
+        value = opt['var'].get().strip() or default
+        opt['var'].set(value)
+        # if self.defaultCfg.has_section(section):
+        # Currently, always true; if not, indent to return.
+        if (value == default):
+            return self.ext_userCfg.RemoveOption(section, name)
+        # Set the option.
+        return self.ext_userCfg.SetOption(section, name, value)
+
+    def save_all_changed_extensions(self):
+        """Save configuration changes to the user config file.
+
+        Attributes accessed:
+            extensions
+
+        Methods:
+            set_extension_value
+        """
+        has_changes = False
+        for ext_name in self.extensions:
+            options = self.extensions[ext_name]
+            for opt in options:
+                if self.set_extension_value(ext_name, opt):
+                    has_changes = True
+        if has_changes:
+            self.ext_userCfg.Save()
+
+
+class HelpFrame(LabelFrame):
+
+    def __init__(self, master, **cfg):
+        super().__init__(master, **cfg)
+        self.create_frame_help()
+        self.load_helplist()
+
+    def create_frame_help(self):
+        """Create LabelFrame for additional help menu sources.
+
+        load_helplist loads list user_helplist with
+        name, position pairs and copies names to listbox helplist.
+        Clicking a name invokes help_source selected. Clicking
+        button_helplist_name invokes helplist_item_name, which also
+        changes user_helplist.  These functions all call
+        set_add_delete_state. All but load call update_help_changes to
+        rewrite changes['main']['HelpFiles'].
+
+        Widgets for HelpFrame(LabelFrame):  (*) widgets bound to self
+            frame_helplist: Frame
+                (*)helplist: ListBox
+                scroll_helplist: Scrollbar
+            frame_buttons: Frame
+                (*)button_helplist_edit
+                (*)button_helplist_add
+                (*)button_helplist_remove
+        """
+        # self = frame_help in dialog (until ExtPage class).
+        frame_helplist = Frame(self)
+        self.helplist = Listbox(
+                frame_helplist, height=5, takefocus=True,
+                exportselection=FALSE)
+        scroll_helplist = Scrollbar(frame_helplist)
+        scroll_helplist['command'] = self.helplist.yview
+        self.helplist['yscrollcommand'] = scroll_helplist.set
+        self.helplist.bind('<ButtonRelease-1>', self.help_source_selected)
+
+        frame_buttons = Frame(self)
+        self.button_helplist_edit = Button(
+                frame_buttons, text='Edit', state='disabled',
+                width=8, command=self.helplist_item_edit)
+        self.button_helplist_add = Button(
+                frame_buttons, text='Add',
+                width=8, command=self.helplist_item_add)
+        self.button_helplist_remove = Button(
+                frame_buttons, text='Remove', state='disabled',
+                width=8, command=self.helplist_item_remove)
+
+        # Pack frame_help.
+        frame_helplist.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        self.helplist.pack(side=LEFT, anchor=E, expand=TRUE, fill=BOTH)
+        scroll_helplist.pack(side=RIGHT, anchor=W, fill=Y)
+        frame_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
+        self.button_helplist_edit.pack(side=TOP, anchor=W, pady=5)
+        self.button_helplist_add.pack(side=TOP, anchor=W)
+        self.button_helplist_remove.pack(side=TOP, anchor=W, pady=5)
 
     def help_source_selected(self, event):
         "Handle event for selecting additional help."
@@ -2194,6 +2210,14 @@ class GenPage(Frame):
             changes.add_option(
                     'main', 'HelpFiles', str(num),
                     ';'.join(self.user_helplist[num-1][:2]))
+
+    def load_helplist(self):
+        # Set additional help sources.
+        self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
+        self.helplist.delete(0, 'end')
+        for help_item in self.user_helplist:
+            self.helplist.insert(END, help_item[0])
+        self.set_add_delete_state()
 
 
 class VarTrace:

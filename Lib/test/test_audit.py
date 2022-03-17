@@ -16,9 +16,11 @@ AUDIT_TESTS_PY = support.findfile("audit-tests.py")
 
 
 class AuditTest(unittest.TestCase):
+
+    @support.requires_subprocess()
     def do_test(self, *args):
         with subprocess.Popen(
-            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
+            [sys.executable, "-Xutf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -29,10 +31,11 @@ class AuditTest(unittest.TestCase):
             if p.returncode:
                 self.fail("".join(p.stderr))
 
+    @support.requires_subprocess()
     def run_python(self, *args):
         events = []
         with subprocess.Popen(
-            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
+            [sys.executable, "-Xutf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -53,6 +56,11 @@ class AuditTest(unittest.TestCase):
 
     def test_block_add_hook_baseexception(self):
         self.do_test("test_block_add_hook_baseexception")
+
+    def test_marshal(self):
+        import_helper.import_module("marshal")
+
+        self.do_test("test_marshal")
 
     def test_pickle(self):
         import_helper.import_module("pickle")

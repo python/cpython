@@ -21,7 +21,6 @@ import pprint
 import urllib.request
 import threading
 import traceback
-import asyncore
 import weakref
 import platform
 import sysconfig
@@ -30,6 +29,11 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
+
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asyncore
 
 ssl = import_helper.import_module("ssl")
 import _ssl
@@ -62,7 +66,7 @@ def data_file(*name):
 
 # The custom key and certificate files used in test_ssl are generated
 # using Lib/test/make_ssl_certs.py.
-# Other certificates are simply fetched from the Internet servers they
+# Other certificates are simply fetched from the internet servers they
 # are meant to authenticate.
 
 CERTFILE = data_file("keycert.pem")
@@ -358,11 +362,7 @@ class BasicSocketTests(unittest.TestCase):
             with self.subTest(ssl_type=ssl_type):
                 with self.assertRaisesRegex(TypeError, "immutable type"):
                     ssl_type.value = None
-        with self.assertRaisesRegex(
-            TypeError,
-            "cannot create '_ssl.Certificate' instances"
-        ):
-            _ssl.Certificate()
+        support.check_disallow_instantiation(self, _ssl.Certificate)
 
     def test_private_init(self):
         with self.assertRaisesRegex(TypeError, "public constructor"):
@@ -373,7 +373,8 @@ class BasicSocketTests(unittest.TestCase):
         # Make sure that the PROTOCOL_* constants have enum-like string
         # reprs.
         proto = ssl.PROTOCOL_TLS_CLIENT
-        self.assertEqual(str(proto), 'PROTOCOL_TLS_CLIENT')
+        self.assertEqual(repr(proto), '<_SSLMethod.PROTOCOL_TLS_CLIENT: %r>' % proto.value)
+        self.assertEqual(str(proto), str(proto.value))
         ctx = ssl.SSLContext(proto)
         self.assertIs(ctx.protocol, proto)
 
@@ -540,7 +541,11 @@ class BasicSocketTests(unittest.TestCase):
         self.assertLessEqual(status, 15)
 
         libressl_ver = f"LibreSSL {major:d}"
-        openssl_ver = f"OpenSSL {major:d}.{minor:d}.{fix:d}"
+        if major >= 3:
+            # 3.x uses 0xMNN00PP0L
+            openssl_ver = f"OpenSSL {major:d}.{minor:d}.{patch:d}"
+        else:
+            openssl_ver = f"OpenSSL {major:d}.{minor:d}.{fix:d}"
         self.assertTrue(
             s.startswith((openssl_ver, libressl_ver)),
             (s, t, hex(n))
@@ -583,6 +588,55 @@ class BasicSocketTests(unittest.TestCase):
             s.settimeout(timeout)
             with test_wrap_socket(s) as ss:
                 self.assertEqual(timeout, ss.gettimeout())
+
+    def test_openssl111_deprecations(self):
+        options = [
+            ssl.OP_NO_TLSv1,
+            ssl.OP_NO_TLSv1_1,
+            ssl.OP_NO_TLSv1_2,
+            ssl.OP_NO_TLSv1_3
+        ]
+        protocols = [
+            ssl.PROTOCOL_TLSv1,
+            ssl.PROTOCOL_TLSv1_1,
+            ssl.PROTOCOL_TLSv1_2,
+            ssl.PROTOCOL_TLS
+        ]
+        versions = [
+            ssl.TLSVersion.SSLv3,
+            ssl.TLSVersion.TLSv1,
+            ssl.TLSVersion.TLSv1_1,
+        ]
+
+        for option in options:
+            with self.subTest(option=option):
+                ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+                with self.assertWarns(DeprecationWarning) as cm:
+                    ctx.options |= option
+                self.assertEqual(
+                    'ssl.OP_NO_SSL*/ssl.OP_NO_TLS* options are deprecated',
+                    str(cm.warning)
+                )
+
+        for protocol in protocols:
+            with self.subTest(protocol=protocol):
+                with self.assertWarns(DeprecationWarning) as cm:
+                    ssl.SSLContext(protocol)
+                self.assertEqual(
+                    f'ssl.{protocol.name} is deprecated',
+                    str(cm.warning)
+                )
+
+        for version in versions:
+            with self.subTest(version=version):
+                ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+                with self.assertWarns(DeprecationWarning) as cm:
+                    ctx.minimum_version = version
+                version_text = '%s.%s' % (version.__class__.__name__, version.name)
+                self.assertEqual(
+                    f'ssl.{version_text} is deprecated',
+                    str(cm.warning)
+                )
 
     @ignore_deprecation
     def test_errors_sslwrap(self):
@@ -1754,7 +1808,7 @@ class ContextTests(unittest.TestCase):
 
         with ctx.wrap_socket(socket.socket(), server_side=True) as sock:
             self.assertIsInstance(sock, MySSLSocket)
-        obj = ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())
+        obj = ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(), server_side=True)
         self.assertIsInstance(obj, MySSLObject)
 
     def test_num_tickest(self):
@@ -2296,6 +2350,7 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
 
 
+@support.requires_resource('network')
 class NetworkedTests(unittest.TestCase):
 
     def test_timeout_connect_ex(self):
@@ -2399,9 +2454,14 @@ class ThreadedEchoServer(threading.Thread):
                 self.server.conn_errors.append(str(e))
                 if self.server.chatty:
                     handle_error("\n server:  bad connection attempt from " + repr(self.addr) + ":\n")
-                self.running = False
-                self.server.stop()
-                self.close()
+
+                # bpo-44229, bpo-43855, bpo-44237, and bpo-33450:
+                # Ignore spurious EPROTOTYPE returned by write() on macOS.
+                # See also http://erickt.github.io/blog/2014/11/19/adventures-in-debugging-a-potential-osx-kernel-bug/
+                if e.errno != errno.EPROTOTYPE and sys.platform != "darwin":
+                    self.running = False
+                    self.server.stop()
+                    self.close()
                 return False
             else:
                 self.server.shared_ciphers.append(self.sslconn.shared_ciphers())
@@ -2888,24 +2948,29 @@ class ThreadedTests(unittest.TestCase):
                                    server_context=client_context,
                                    chatty=True, connectionchatty=True,
                                    sni_name=hostname)
-            self.assertIn('called a function you should not call',
-                          str(e.exception))
+            self.assertIn(
+                'Cannot create a client socket with a PROTOCOL_TLS_SERVER context',
+                str(e.exception)
+            )
 
         with self.subTest(client=ssl.PROTOCOL_TLS_SERVER, server=ssl.PROTOCOL_TLS_SERVER):
             with self.assertRaises(ssl.SSLError) as e:
                 server_params_test(client_context=server_context,
                                    server_context=server_context,
                                    chatty=True, connectionchatty=True)
-            self.assertIn('called a function you should not call',
-                          str(e.exception))
+            self.assertIn(
+                'Cannot create a client socket with a PROTOCOL_TLS_SERVER context',
+                str(e.exception)
+            )
 
         with self.subTest(client=ssl.PROTOCOL_TLS_CLIENT, server=ssl.PROTOCOL_TLS_CLIENT):
             with self.assertRaises(ssl.SSLError) as e:
                 server_params_test(client_context=server_context,
                                    server_context=client_context,
                                    chatty=True, connectionchatty=True)
-            self.assertIn('called a function you should not call',
-                          str(e.exception))
+            self.assertIn(
+                'Cannot create a client socket with a PROTOCOL_TLS_SERVER context',
+                str(e.exception))
 
     def test_getpeercert(self):
         if support.verbose:
@@ -3066,7 +3131,7 @@ class ThreadedTests(unittest.TestCase):
         client_context.load_verify_locations(SIGNING_CA)
         # TODO: fix TLSv1.3 once SSLContext can restrict signature
         #       algorithms.
-        client_context.options |= ssl.OP_NO_TLSv1_3
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         # only ECDSA certs
         client_context.set_ciphers('ECDHE:ECDSA:!NULL:!aRSA')
         hostname = SIGNED_CERTFILE_ECC_HOSTNAME
@@ -3194,30 +3259,18 @@ class ThreadedTests(unittest.TestCase):
         )
         with server, \
              client_context.wrap_socket(socket.socket(),
-                                        server_hostname=hostname) as s:
-            # TLS 1.3 perform client cert exchange after handshake
+                                        server_hostname=hostname,
+                                        suppress_ragged_eofs=False) as s:
             s.connect((HOST, server.port))
-            try:
+            with self.assertRaisesRegex(
+                ssl.SSLError,
+                'alert unknown ca|EOF occurred'
+            ):
+                # TLS 1.3 perform client cert exchange after handshake
                 s.write(b'data')
                 s.read(1000)
                 s.write(b'should have failed already')
                 s.read(1000)
-            except ssl.SSLError as e:
-                if support.verbose:
-                    sys.stdout.write("\nSSLError is %r\n" % e)
-            except OSError as e:
-                if e.errno != errno.ECONNRESET:
-                    raise
-                if support.verbose:
-                    sys.stdout.write("\nsocket.error is %r\n" % e)
-            else:
-                if sys.platform == "win32":
-                    self.skipTest(
-                        "Ignoring failed test_wrong_cert_tls13 test case. "
-                        "The test is flaky on Windows, see bpo-43921."
-                    )
-                else:
-                    self.fail("Use of invalid cert should have failed!")
 
     def test_rude_shutdown(self):
         """A brutal shutdown of an SSL server should raise an OSError
@@ -3817,7 +3870,7 @@ class ThreadedTests(unittest.TestCase):
     def test_no_shared_ciphers(self):
         client_context, server_context, hostname = testing_context()
         # OpenSSL enables all TLS 1.3 ciphers, enforce TLS 1.2 for test
-        client_context.options |= ssl.OP_NO_TLSv1_3
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         # Force different suites on client and server
         client_context.set_ciphers("AES128")
         server_context.set_ciphers("AES256")
@@ -4032,10 +4085,10 @@ class ThreadedTests(unittest.TestCase):
         # Check we can get a connection with ephemeral Diffie-Hellman
         client_context, server_context, hostname = testing_context()
         # test scenario needs TLS <= 1.2
-        client_context.options |= ssl.OP_NO_TLSv1_3
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         server_context.load_dh_params(DHFILE)
         server_context.set_ciphers("kEDH")
-        server_context.options |= ssl.OP_NO_TLSv1_3
+        server_context.maximum_version = ssl.TLSVersion.TLSv1_2
         stats = server_params_test(client_context, server_context,
                                    chatty=True, connectionchatty=True,
                                    sni_name=hostname)
@@ -4281,7 +4334,7 @@ class ThreadedTests(unittest.TestCase):
     def test_session(self):
         client_context, server_context, hostname = testing_context()
         # TODO: sessions aren't compatible with TLSv1.3 yet
-        client_context.options |= ssl.OP_NO_TLSv1_3
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
 
         # first connection without session
         stats = server_params_test(client_context, server_context,
@@ -4340,8 +4393,8 @@ class ThreadedTests(unittest.TestCase):
         client_context2, _, _ = testing_context()
 
         # TODO: session reuse does not work with TLSv1.3
-        client_context.options |= ssl.OP_NO_TLSv1_3
-        client_context2.options |= ssl.OP_NO_TLSv1_3
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
+        client_context2.maximum_version = ssl.TLSVersion.TLSv1_2
 
         server = ThreadedEchoServer(context=server_context, chatty=False)
         with server:
@@ -4454,7 +4507,8 @@ class TestPostHandshakeAuth(unittest.TestCase):
         server = ThreadedEchoServer(context=server_context, chatty=True)
         with server:
             with client_context.wrap_socket(socket.socket(),
-                                            server_hostname=hostname) as s:
+                                            server_hostname=hostname,
+                                            suppress_ragged_eofs=False) as s:
                 s.connect((HOST, server.port))
                 s.write(b'PHA')
                 # test sometimes fails with EOF error. Test passes as long as
@@ -4464,9 +4518,12 @@ class TestPostHandshakeAuth(unittest.TestCase):
                     '(certificate required|EOF occurred)'
                 ):
                     # receive CertificateRequest
-                    self.assertEqual(s.recv(1024), b'OK\n')
+                    data = s.recv(1024)
+                    self.assertEqual(data, b'OK\n')
+
                     # send empty Certificate + Finish
                     s.write(b'HASCERT')
+
                     # receive alert
                     s.recv(1024)
 
@@ -4761,7 +4818,7 @@ class TestSSLDebug(unittest.TestCase):
 
     def test_msg_callback_tls12(self):
         client_context, server_context, hostname = testing_context()
-        client_context.options |= ssl.OP_NO_TLSv1_3
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
 
         msg = []
 
@@ -4919,16 +4976,17 @@ class TestEnumerations(unittest.TestCase):
                 lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
                 source=ssl._ssl,
                 )
+        # This member is assigned dynamically in `ssl.py`:
+        Checked_SSLMethod.PROTOCOL_SSLv23 = Checked_SSLMethod.PROTOCOL_TLS
         enum._test_simple_enum(Checked_SSLMethod, ssl._SSLMethod)
 
     def test_options(self):
         CheckedOptions = enum._old_convert_(
-                enum.FlagEnum, 'Options', 'ssl',
+                enum.IntFlag, 'Options', 'ssl',
                 lambda name: name.startswith('OP_'),
                 source=ssl._ssl,
                 )
         enum._test_simple_enum(CheckedOptions, ssl.Options)
-
 
     def test_alertdescription(self):
         CheckedAlertDescription = enum._old_convert_(
@@ -4939,16 +4997,16 @@ class TestEnumerations(unittest.TestCase):
         enum._test_simple_enum(CheckedAlertDescription, ssl.AlertDescription)
 
     def test_sslerrornumber(self):
-        Checked_SSLMethod = enum._old_convert_(
-                enum.IntEnum, '_SSLMethod', 'ssl',
-                lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
+        Checked_SSLErrorNumber = enum._old_convert_(
+                enum.IntEnum, 'SSLErrorNumber', 'ssl',
+                lambda name: name.startswith('SSL_ERROR_'),
                 source=ssl._ssl,
                 )
-        enum._test_simple_enum(Checked_SSLMethod, ssl._SSLMethod)
+        enum._test_simple_enum(Checked_SSLErrorNumber, ssl.SSLErrorNumber)
 
     def test_verifyflags(self):
         CheckedVerifyFlags = enum._old_convert_(
-                enum.FlagEnum, 'VerifyFlags', 'ssl',
+                enum.IntFlag, 'VerifyFlags', 'ssl',
                 lambda name: name.startswith('VERIFY_'),
                 source=ssl._ssl,
                 )
@@ -4962,7 +5020,8 @@ class TestEnumerations(unittest.TestCase):
                 )
         enum._test_simple_enum(CheckedVerifyMode, ssl.VerifyMode)
 
-def test_main(verbose=False):
+
+def setUpModule():
     if support.verbose:
         plats = {
             'Mac': platform.mac_ver,
@@ -4993,20 +5052,9 @@ def test_main(verbose=False):
         if not os.path.exists(filename):
             raise support.TestFailed("Can't read certificate file %r" % filename)
 
-    tests = [
-        ContextTests, BasicSocketTests, SSLErrorTests, MemoryBIOTests,
-        SSLObjectTests, SimpleBackgroundTests, ThreadedTests,
-        TestPostHandshakeAuth, TestSSLDebug
-    ]
-
-    if support.is_resource_enabled('network'):
-        tests.append(NetworkedTests)
-
     thread_info = threading_helper.threading_setup()
-    try:
-        support.run_unittest(*tests)
-    finally:
-        threading_helper.threading_cleanup(*thread_info)
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

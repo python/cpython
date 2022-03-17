@@ -37,7 +37,7 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'exception', 'fatal', 'getLevelName', 'getLogger', 'getLoggerClass',
            'info', 'log', 'makeLogRecord', 'setLoggerClass', 'shutdown',
            'warn', 'warning', 'getLogRecordFactory', 'setLogRecordFactory',
-           'lastResort', 'raiseExceptions']
+           'lastResort', 'raiseExceptions', 'getLevelNamesMapping']
 
 import threading
 
@@ -115,6 +115,9 @@ _nameToLevel = {
     'DEBUG': DEBUG,
     'NOTSET': NOTSET,
 }
+
+def getLevelNamesMapping():
+    return _nameToLevel.copy()
 
 def getLevelName(level):
     """
@@ -845,8 +848,9 @@ def _removeHandlerRef(wr):
     if acquire and release and handlers:
         acquire()
         try:
-            if wr in handlers:
-                handlers.remove(wr)
+            handlers.remove(wr)
+        except ValueError:
+            pass
         finally:
             release()
 
@@ -878,6 +882,7 @@ class Handler(Filterer):
         self._name = None
         self.level = _checkLevel(level)
         self.formatter = None
+        self._closed = False
         # Add the handler to the global _handlerList (for cleanup on shutdown)
         _addHandlerRef(self)
         self.createLock()
@@ -996,6 +1001,7 @@ class Handler(Filterer):
         #get the module data lock, as we're updating a shared structure.
         _acquireLock()
         try:    #unlikely to raise an exception, but you never know...
+            self._closed = True
             if self._name and self._name in _handlers:
                 del _handlers[self._name]
         finally:
@@ -1184,6 +1190,8 @@ class FileHandler(StreamHandler):
             finally:
                 # Issue #19523: call unconditionally to
                 # prevent a handler leak when delay is set
+                # Also see Issue #42378: we also rely on
+                # self._closed being set to True there
                 StreamHandler.close(self)
         finally:
             self.release()
@@ -1203,10 +1211,15 @@ class FileHandler(StreamHandler):
 
         If the stream was not opened because 'delay' was specified in the
         constructor, open it before calling the superclass's emit.
+
+        If stream is not open, current mode is 'w' and `_closed=True`, record
+        will not be emitted (see Issue #42378).
         """
         if self.stream is None:
-            self.stream = self._open()
-        StreamHandler.emit(self, record)
+            if self.mode != 'w' or not self._closed:
+                self.stream = self._open()
+        if self.stream:
+            StreamHandler.emit(self, record)
 
     def __repr__(self):
         level = getLevelName(self.level)
@@ -2233,7 +2246,9 @@ def _showwarning(message, category, filename, lineno, file=None, line=None):
         logger = getLogger("py.warnings")
         if not logger.handlers:
             logger.addHandler(NullHandler())
-        logger.warning("%s", s)
+        # bpo-46557: Log str(s) as msg instead of logger.warning("%s", s)
+        # since some log aggregation tools group logs by the msg arg
+        logger.warning(str(s))
 
 def captureWarnings(capture):
     """

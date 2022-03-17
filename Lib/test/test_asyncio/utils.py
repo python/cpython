@@ -281,6 +281,31 @@ def run_test_server(*, host='127.0.0.1', port=0, use_ssl=False):
                                 server_ssl_cls=SSLWSGIServer)
 
 
+def echo_datagrams(sock):
+    while True:
+        data, addr = sock.recvfrom(4096)
+        if data == b'STOP':
+            sock.close()
+            break
+        else:
+            sock.sendto(data, addr)
+
+
+@contextlib.contextmanager
+def run_udp_echo_server(*, host='127.0.0.1', port=0):
+    addr_info = socket.getaddrinfo(host, port, type=socket.SOCK_DGRAM)
+    family, type, proto, _, sockaddr = addr_info[0]
+    sock = socket.socket(family, type, proto)
+    sock.bind((host, port))
+    thread = threading.Thread(target=lambda: echo_datagrams(sock))
+    thread.start()
+    try:
+        yield sock.getsockname()
+    finally:
+        sock.sendto(b'STOP', sock.getsockname())
+        thread.join()
+
+
 def make_test_protocol(base):
     dct = {}
     for name in dir(base):
@@ -409,12 +434,13 @@ class TestLoop(base_events.BaseEventLoop):
             return False
 
     def assert_writer(self, fd, callback, *args):
-        assert fd in self.writers, 'fd {} is not registered'.format(fd)
+        if fd not in self.writers:
+            raise AssertionError(f'fd {fd} is not registered')
         handle = self.writers[fd]
-        assert handle._callback == callback, '{!r} != {!r}'.format(
-            handle._callback, callback)
-        assert handle._args == args, '{!r} != {!r}'.format(
-            handle._args, args)
+        if handle._callback != callback:
+            raise AssertionError(f'{handle._callback!r} != {callback!r}')
+        if handle._args != args:
+            raise AssertionError(f'{handle._args!r} != {args!r}')
 
     def _ensure_fd_no_transport(self, fd):
         if not isinstance(fd, int):
@@ -530,7 +556,8 @@ class TestCase(unittest.TestCase):
                         thread.join()
 
     def set_event_loop(self, loop, *, cleanup=True):
-        assert loop is not None
+        if loop is None:
+            raise AssertionError('loop is None')
         # ensure that the event loop is passed explicitly in asyncio
         events.set_event_loop(None)
         if cleanup:
