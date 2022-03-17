@@ -95,6 +95,11 @@ CLASSES
      |  say_no(self)
      |\x20\x20
      |  ----------------------------------------------------------------------
+     |  Class methods defined here:
+     |\x20\x20
+     |  __class_getitem__(item) from builtins.type
+     |\x20\x20
+     |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
      |\x20\x20
      |  __dict__
@@ -114,6 +119,11 @@ FUNCTIONS
 
 DATA
     __xyz__ = 'X, Y and Z'
+    c_alias = test.pydoc_mod.C[int]
+    list_alias1 = typing.List[int]
+    list_alias2 = list[int]
+    type_union1 = typing.Union[int, str]
+    type_union2 = int | str
 
 VERSION
     1.2.3.4
@@ -134,6 +144,10 @@ expected_text_data_docstrings = tuple('\n     |      ' + s if s else ''
 html2text_of_expected = """
 test.pydoc_mod (version 1.2.3.4)
 This is a test module for test_pydoc
+
+Modules
+    types
+    typing
 
 Classes
     builtins.object
@@ -172,6 +186,8 @@ class C(builtins.object)
         is_it_true(self)
             Return self.get_answer()
         say_no(self)
+    Class methods defined here:
+        __class_getitem__(item) from builtins.type
     Data descriptors defined here:
         __dict__
             dictionary for instance variables (if defined)
@@ -188,6 +204,11 @@ Functions
 
 Data
     __xyz__ = 'X, Y and Z'
+    c_alias = test.pydoc_mod.C[int]
+    list_alias1 = typing.List[int]
+    list_alias2 = list[int]
+    type_union1 = typing.Union[int, str]
+    type_union2 = int | str
 
 Author
     Benjamin Peterson
@@ -340,9 +361,10 @@ def html2text(html):
 
     Tailored for pydoc tests only.
     """
-    return pydoc.replace(
-        re.sub("<.*?>", "", html),
-        "&nbsp;", " ", "&gt;", ">", "&lt;", "<")
+    html = html.replace("<dd>", "\n")
+    html = re.sub("<.*?>", "", html)
+    html = pydoc.replace(html, "&nbsp;", " ", "&gt;", ">", "&lt;", "<")
+    return html
 
 
 class PydocBaseTest(unittest.TestCase):
@@ -384,9 +406,11 @@ class PydocDocTest(unittest.TestCase):
     def test_html_doc(self):
         result, doc_loc = get_pydoc_html(pydoc_mod)
         text_result = html2text(result)
-        expected_lines = [line.strip() for line in html2text_of_expected if line]
-        for line in expected_lines:
-            self.assertIn(line, text_result)
+        text_lines = [line.strip() for line in text_result.splitlines()]
+        text_lines = [line for line in text_lines if line]
+        del text_lines[1]
+        expected_lines = [line.strip() for line in html2text_of_expected.splitlines() if line]
+        self.assertEqual(text_lines, expected_lines)
         mod_file = inspect.getabsfile(pydoc_mod)
         mod_url = urllib.parse.quote(mod_file)
         self.assertIn(mod_url, result)
