@@ -485,7 +485,7 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                 else:
                     # If the symlink is relative, linkto has to be normalized,
                     # otherwise os.path.exists() will incorrectly report that
-                    # the link is dangling when the current directoy is not
+                    # the link is dangling when the current directory is not
                     # the same as src.
                     if not os.path.isabs(linkto):
                         linkto = os.path.normpath(os.path.join(src, linkto))
