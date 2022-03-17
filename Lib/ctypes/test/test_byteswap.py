@@ -171,13 +171,6 @@ class Test(unittest.TestCase):
         self.assertIs(c_char.__ctype_be__, c_char)
 
     def test_struct_fields_unsupported_byte_order(self):
-        if sys.byteorder == "little":
-            base = BigEndianStructure
-        else:
-            base = LittleEndianStructure
-
-        class T(base):
-            pass
 
         fields = [
             ("a", c_ubyte),
@@ -202,7 +195,7 @@ class Test(unittest.TestCase):
         # these fields do not support different byte order:
         for typ in c_wchar, c_void_p, POINTER(c_int):
             with self.assertRaises(TypeError):
-                class T(base):
+                class T(BigEndianStructure if sys.byteorder == "little" else LittleEndianStructure):
                     _fields_ = fields + [("x", typ)]
 
 
@@ -312,13 +305,6 @@ class Test(unittest.TestCase):
         self.assertEqual(bin(s1), bin(s2))
 
     def test_union_fields_unsupported_byte_order(self):
-        if sys.byteorder == "little":
-            base = BigEndianUnion
-        else:
-            base = LittleEndianUnion
-
-        class T(base):
-            pass
 
         fields = [
             ("a", c_ubyte),
@@ -343,7 +329,7 @@ class Test(unittest.TestCase):
         # these fields do not support different byte order:
         for typ in c_wchar, c_void_p, POINTER(c_int):
             with self.assertRaises(TypeError):
-                class T(base):
+                class T(BigEndianUnion if sys.byteorder == "little" else LittleEndianUnion):
                     _fields_ = fields + [("x", typ)]
 
     def test_union_struct(self):
