@@ -674,7 +674,7 @@ class HandlerTest(BaseTest):
     # based on os.fork existing because that is what users and this test use.
     # This helps ensure that when fork exists (the important concept) that the
     # register_at_fork mechanism is also present and used.
-    @unittest.skipIf(not hasattr(os, 'fork'), 'Test requires os.fork().')
+    @support.requires_fork()
     def test_post_fork_child_no_deadlock(self):
         """Ensure child logging locks are not held; bpo-6721 & bpo-36533."""
         class _OurHandler(logging.Handler):
@@ -4493,6 +4493,7 @@ class LogRecordTest(BaseTest):
             return results
 
     def test_multiprocessing(self):
+        support.skip_if_broken_multiprocessing_synchronize()
         multiprocessing_imported = 'multiprocessing' in sys.modules
         try:
             # logMultiprocessing is True by default
