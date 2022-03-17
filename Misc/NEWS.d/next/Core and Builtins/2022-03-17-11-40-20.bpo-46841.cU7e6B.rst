@@ -1,0 +1,3 @@
+When a sub-iterator returns a value during a ``throw()`` call, perform the
+resulting jump during the next :opcode:`SEND` instruction (rather than as
+part of the ``throw()`` implementation).
