@@ -447,7 +447,7 @@ class MockGetPathTests(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_framework_macos(self):
-        """ Test framework layout on macOS 
+        """ Test framework layout on macOS
 
         This layout is primarily detected using a compile-time option
         (WITH_NEXT_FRAMEWORK).
