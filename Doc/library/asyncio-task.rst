@@ -534,7 +534,7 @@ Waiting Primitives
 
 .. coroutinefunction:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
 
-   Run :class:`~asyncio.Future` and :class:`~asyncioTask` instances in the *aws*
+   Run :class:`~asyncio.Future` and :class:`~asyncio.Task` instances in the *aws*
    iterable concurrently and block until the condition specified
    by *return_when*.
 
