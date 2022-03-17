@@ -395,6 +395,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a5 3485 (Add an oparg to GET_AWAITABLE)
 #     Python 3.11a6 3486 (Use inline caching for PRECALL and CALL)
 #     Python 3.11a6 3487 (Remove the adaptive "oparg counter" mechanism)
+#     Python 3.11a6 3488 (LOAD_GLOBAL can push additional NULL)
 
 #     Python 3.12 will start with magic number 3500
 
@@ -409,7 +410,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3487).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3488).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
