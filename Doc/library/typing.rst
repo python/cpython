@@ -2148,6 +2148,31 @@ Functions and decorators
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
 
+.. function:: assert_type(val, typ, /)
+
+   Assert (to the type checker) that *val* has an inferred type of *typ*.
+
+   When the type checker encounters a call to ``assert_type()``, it
+   emits an error if the value is not of the specified type::
+
+       def greet(name: str) -> None:
+           assert_type(name, str)  # OK, inferred type of `name` is `str`
+           assert_type(name, int)  # type checker error
+
+   At runtime this returns the first argument unchanged with no side effects.
+
+   This function is useful for ensuring the type checker's understanding of a
+   script is in line with the developer's intentions::
+
+       def complex_function(arg: object):
+           # Do some complex type-narrowing logic,
+           # after which we hope the inferred type will be `int`
+           ...
+           # Test whether the type checker correctly understands our function
+           assert_type(arg, int)
+
+   .. versionadded:: 3.11
+
 .. function:: assert_never(arg, /)
 
    Assert to the type checker that a line of code is unreachable.
