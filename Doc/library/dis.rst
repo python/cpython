@@ -1272,10 +1272,17 @@ iterations of the loop.
     .. versionadded:: 3.11
 
 
-.. opcode:: SEND
+.. opcode:: SEND (delta)
 
-    Sends ``None`` to the sub-generator of this generator.
-    Used in ``yield from`` and ``await`` statements.
+    Equivalent to ``TOS = TOS1.send(TOS)``. Used in ``yield from`` and ``await``
+    statements.
+    
+    If the call raises :exc:`StopIteration`, pop both values, push its return
+    value, and increment the bytecode counter by *delta*.
+    
+    If TOS1 is ``NULL`` (set when it raises :exc:`StopIteration` during a
+    ``throw()`` through the current frame), pop both values, push TOS (its
+    return value), and increment the bytecode counter by *delta*.
 
     .. versionadded:: 3.11
 
