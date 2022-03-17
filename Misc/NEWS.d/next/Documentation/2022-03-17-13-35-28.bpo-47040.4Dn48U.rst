@@ -1,0 +1,2 @@
+Remove invalid document, the results of :func:`zlib.adler32` /
+:func:`zlib.crc32` / :func:`binascii.crc32` don't need ``& 0xFFFF_FFFF``.

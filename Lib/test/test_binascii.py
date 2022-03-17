@@ -3,6 +3,7 @@
 import unittest
 import binascii
 import array
+import random
 import re
 from test.support import warnings_helper
 
@@ -240,6 +241,15 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(crc, 1571220330)
 
         self.assertRaises(TypeError, binascii.crc32)
+
+    def test_random_crc32(self):
+        dat = random.randbytes(1234)
+        UINT_MAX = 0xFFFF_FFFF
+
+        self.assertTrue(0 <= binascii.crc32(dat) <= UINT_MAX)
+
+        self.assertEqual(binascii.crc32(dat, UINT_MAX+123),
+                         binascii.crc32(dat, (UINT_MAX+123) & UINT_MAX))
 
     def test_hex(self):
         # test hexlification
