@@ -1094,6 +1094,9 @@ _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
 PyFrameState
 PyFrame_GetState(PyFrameObject *frame)
 {
+    if (frame->f_frame->stacktop == 0) {
+        return FRAME_CLEARED;
+    }
     switch(frame->f_frame->owner) {
         case FRAME_OWNED_BY_GENERATOR:
         {
@@ -1102,6 +1105,9 @@ PyFrame_GetState(PyFrameObject *frame)
         }
         case FRAME_OWNED_BY_THREAD:
         {
+            if (frame->f_frame->f_lasti < 0) {
+                return FRAME_CREATED;
+            }
             int opcode = PyBytes_AS_STRING(frame->f_frame->f_code->co_code)
                 [frame->f_frame->f_lasti*sizeof(_Py_CODEUNIT)];
             switch(opcode) {
@@ -1116,8 +1122,6 @@ PyFrame_GetState(PyFrameObject *frame)
         }
         case FRAME_OWNED_BY_FRAME_OBJECT:
             return FRAME_COMPLETED;
-        case FRAME_CLEARED:
-            return FRAME_CLEARED;
     }
     Py_UNREACHABLE();
 }
