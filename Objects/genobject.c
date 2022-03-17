@@ -485,15 +485,8 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             ret = _PyFrame_StackPop((_PyInterpreterFrame *)gen->gi_iframe);
             assert(ret == yf);
             Py_DECREF(ret);
-            /* Termination repetition of SEND loop */
-            assert(frame->f_lasti >= 0);
-            PyObject *bytecode = gen->gi_code->co_code;
-            unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
-            /* Backup to SEND */
-            frame->f_lasti--;
-            assert(code[frame->f_lasti*sizeof(_Py_CODEUNIT)] == SEND);
-            int jump = code[frame->f_lasti*sizeof(_Py_CODEUNIT)+1];
-            frame->f_lasti += jump;
+            // NULL tells SEND to quit sending:
+            _PyFrame_StackPush((_PyInterpreterFrame *)gen->gi_iframe, NULL);
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);
                 Py_DECREF(val);

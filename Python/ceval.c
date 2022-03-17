@@ -2535,6 +2535,13 @@ handle_eval_breaker:
             assert(STACK_LEVEL() >= 2);
             PyObject *v = POP();
             PyObject *receiver = TOP();
+            if (receiver == NULL) {
+                // Receiver completed during a throw() call. v is the return
+                // value:
+                SET_TOP(v);
+                JUMPBY(oparg);
+                DISPATCH();
+            }
             PySendResult gen_status;
             PyObject *retval;
             if (tstate->c_tracefunc == NULL) {
