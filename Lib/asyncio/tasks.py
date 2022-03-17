@@ -133,8 +133,8 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
     __class_getitem__ = classmethod(GenericAlias)
 
-    def _repr_info(self):
-        return base_tasks._task_repr_info(self)
+    def __repr__(self):
+        return base_tasks._task_repr(self)
 
     def get_coro(self):
         return self._coro
