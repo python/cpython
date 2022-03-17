@@ -331,7 +331,7 @@ sysconfig
   creates new virtual environments or when it is running from a virtual
   environment.
   The first two schemes (*posix_venv* and *nt_venv*) are OS-specific
-  for non-Windoes and Windows, the *venv* is essentially an alias to one of
+  for non-Windows and Windows, the *venv* is essentially an alias to one of
   them according to the OS Python runs on.
   This is useful for downstream distributors who modify
   :func:`sysconfig.get_preferred_scheme`.
