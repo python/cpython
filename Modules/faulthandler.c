@@ -1,4 +1,4 @@
-#include "Python.h" && defined(HAVE_SYS_AUXV_H)
+#include "Python.h"
 #include "pycore_initconfig.h"    // _PyStatus_ERR
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
 #include "pycore_pystate.h"       // _PyThreadState_GET()
