@@ -73,7 +73,7 @@ Every new component that is installed using :mod:`distutils` or a
 Distutils-based system will follow the same scheme to copy its file in the right
 places.
 
-Python currently supports eight schemes:
+Python currently supports nine schemes:
 
 - *posix_prefix*: scheme for POSIX platforms like Linux or macOS.  This is
   the default scheme used when Python or a component is installed.
@@ -89,6 +89,8 @@ Python currently supports eight schemes:
 - *nt_user*: scheme for NT platforms, when the *user* option is used.
 - *nt_venv*: scheme for :mod:`Python virtual environments <venv>` on NT
   platforms; by default it is the same as *nt* .
+- *venv*: a scheme with values from ether *posix_venv* or *nt_venv* depending
+  on the platform Python runs on
 - *osx_framework_user*: scheme for macOS, when the *user* option is used.
 
 Each scheme is itself composed of a series of paths and each path has a unique
@@ -142,16 +144,6 @@ identifier.  Python currently uses eight paths:
    .. versionchanged:: 3.11
       When Python runs from a virtual environment and ``key="prefix"``,
       the *posix_venv*/*nt_venv* scheme is returned.
-
-.. function:: get_venv_scheme()
-
-   Return a preferred scheme name for an installation layout used inside
-   :mod:`Python virtual environments <venv>`.
-
-   The return value is either ``"posix_venv"``, or ``"nt_venv"``,
-   depending on the platform.
-
-   .. versionadded:: 3.11
 
 
 .. function:: _get_preferred_schemes()

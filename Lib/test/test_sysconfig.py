@@ -177,11 +177,33 @@ class TestSysConfig(unittest.TestCase):
         self.assertEqual(incpath, sysconfig.get_path('include', scheme='nt_venv'))
         self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='nt_venv'))
 
-    def test_get_venv_scheme(self):
+    def test_venv_scheme(self):
         if sys.platform == 'win32':
-            self.assertEqual(sysconfig.get_venv_scheme(), 'nt_venv')
+            self.assertEqual(
+                sysconfig.get_path('scripts', scheme='venv'),
+                sysconfig.get_path('scripts', scheme='nt_venv')
+            )
+            self.assertEqual(
+                sysconfig.get_path('include', scheme='venv'),
+                sysconfig.get_path('include', scheme='nt_venv')
+            )
+            self.assertEqual(
+                sysconfig.get_path('purelib', scheme='venv'),
+                sysconfig.get_path('purelib', scheme='nt_venv')
+            )
         else:
-            self.assertEqual(sysconfig.get_venv_scheme(), 'posix_venv')
+            self.assertEqual(
+                sysconfig.get_path('scripts', scheme='venv'),
+                sysconfig.get_path('scripts', scheme='posix_venv')
+            )
+            self.assertEqual(
+                sysconfig.get_path('include', scheme='venv'),
+                sysconfig.get_path('include', scheme='posix_venv')
+            )
+            self.assertEqual(
+                sysconfig.get_path('purelib', scheme='venv'),
+                sysconfig.get_path('purelib', scheme='posix_venv')
+            )
 
     def test_get_config_vars(self):
         cvars = get_config_vars()
@@ -311,7 +333,7 @@ class TestSysConfig(unittest.TestCase):
         self.assertTrue(os.path.isfile(config_h), config_h)
 
     def test_get_scheme_names(self):
-        wanted = ['nt', 'posix_home', 'posix_prefix', 'posix_venv', 'nt_venv']
+        wanted = ['nt', 'posix_home', 'posix_prefix', 'posix_venv', 'nt_venv', 'venv']
         if HAS_USER_BASE:
             wanted.extend(['nt_user', 'osx_framework_user', 'posix_user'])
         self.assertEqual(get_scheme_names(), tuple(sorted(wanted)))

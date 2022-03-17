@@ -97,6 +97,12 @@ _INSTALL_SCHEMES = {
         },
     }
 
+# For the OS-native venv scheme, we essentially provide an alias:
+if os.name == 'nt':
+    _INSTALL_SCHEMES['venv'] = _INSTALL_SCHEMES['nt_venv']
+else:
+    _INSTALL_SCHEMES['venv'] = _INSTALL_SCHEMES['posix_venv']
+
 
 # NOTE: site.py has copy of this function.
 # Sync it when modify this function.
@@ -288,15 +294,9 @@ def _get_preferred_schemes():
     }
 
 
-def get_venv_scheme():
-    if os.name == 'nt':
-        return 'nt_venv'
-    return 'posix_venv'
-
-
 def get_preferred_scheme(key):
     if key == 'prefix' and sys.prefix != sys.base_prefix:
-        return get_venv_scheme()
+        return 'venv'
     scheme = _get_preferred_schemes()[key]
     if scheme not in _INSTALL_SCHEMES:
         raise ValueError(
