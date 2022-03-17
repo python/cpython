@@ -255,7 +255,7 @@ except ImportError:
 
 
 def file_digest(fileobj, digest, /, *, _bufsize=2**18):
-    """Efficient hashing of file object
+    """Hash the contents of a file-like object. Returns a digest object.
 
     *fileobj* must be a file-like object opened for reading in binary mode.
     It accepts file objects from open(), io.BytesIO(), and SocketIO objects.
@@ -277,20 +277,18 @@ def file_digest(fileobj, digest, /, *, _bufsize=2**18):
         digestobj.update(fileobj.getbuffer())
         return digestobj
 
-    # check for file-like object in binary mode
-    if not all(
-        hasattr(fileobj, name)
-        for name in ("fileno", "mode", "readable", "readinto")
+    # Only binary files implement readinto().
+    if not (
+        hasattr(fileobj, "readinto")
+        and hasattr(fileobj, "readable")
+        and fileobj.readable()
     ):
-        raise TypeError(
-            f"fileobj must be a file-like object, not {fileobj!r}."
+        raise ValueError(
+            f"'{fileobj!r}' is not a file-like object in binary reading mode."
         )
-    if not fileobj.readable() or not "b" in fileobj.mode:
-        raise ValueError("fileobj must be opened for reading in binary mode.")
 
     # binary file, socket.SocketIO object
     # Note: socket I/O uses different syscalls than file I/O.
-    fileobj.fileno()  # so we can rely on working fileno() in the future.
     buf = bytearray(_bufsize)  # Reusable buffer to reduce allocations.
     view = memoryview(buf)
     while True:

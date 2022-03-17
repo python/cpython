@@ -242,7 +242,9 @@ a file or file-like object.
    It accepts file objects from  builtin :func:`open`, :class:`~io.BytesIO`
    instances, SocketIO objects from :meth:`socket.socket.makefile`, and
    similar. The function may bypass Python's I/O and use the file descriptor
-   from :meth:`~io.IOBase.fileno` directly.
+   from :meth:`~io.IOBase.fileno` directly. *fileobj* must be assumed to be
+   in an unknown state after this function returns or raises. It is up to
+   the caller to close *fileobj*.
 
    *digest* must either be a hash algorithm name as a *str*, a hash
    constructor, or a callable that returns a hash object.

@@ -1161,8 +1161,12 @@ class KDFTests(unittest.TestCase):
         self.assertEqual(d1.name, d2.name)
         self.assertIs(type(d1), type(d2))
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             hashlib.file_digest(None, "sha256")
+
+        with self.assertRaises(ValueError):
+            with open(os_helper.TESTFN, "r") as f:
+                hashlib.file_digest(f, "sha256")
 
         with self.assertRaises(ValueError):
             with open(os_helper.TESTFN, "wb") as f:
