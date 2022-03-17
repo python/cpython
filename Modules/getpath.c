@@ -873,6 +873,11 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
         !decode_to_dict(dict, "os_name", "nt") ||
 #elif defined(__APPLE__)
         !decode_to_dict(dict, "os_name", "darwin") ||
+#ifdef WITH_NEXT_FRAMEWORK
+        !int_to_dict(dict, "WITH_NEXT_FRAMEWORK", 1) ||
+#else
+        !int_to_dict(dict, "WITH_NEXT_FRAMEWORK", 0) ||
+#endif
 #else
         !decode_to_dict(dict, "os_name", "posix") ||
 #endif
@@ -943,3 +948,4 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     return _PyStatus_OK();
 }
+

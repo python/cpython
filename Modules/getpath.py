@@ -33,6 +33,7 @@
 # PREFIX            -- [in] sysconfig.get_config_var(...)
 # EXEC_PREFIX       -- [in] sysconfig.get_config_var(...)
 # PYTHONPATH        -- [in] sysconfig.get_config_var(...)
+# WITH_NEXT_FRAMEWORK   -- [in] sysconfig.get_config_var(...) (on macOS only)
 # VPATH             -- [in] sysconfig.get_config_var(...)
 # PLATLIBDIR        -- [in] sysconfig.get_config_var(...)
 # PYDEBUGEXT        -- [in, opt] '_d' on Windows for debug builds
@@ -301,11 +302,25 @@ if ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__:
     # If set, these variables imply that we should be using them as
     # sys.executable and when searching for venvs. However, we should
     # use the argv0 path for prefix calculation
-    base_executable = executable
-    if not real_executable:
-        real_executable = executable
-    executable = ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__
-    executable_dir = dirname(executable)
+
+    if os_name == 'darwin' and WITH_NEXT_FRAMEWORK:
+        # In a framework build the binary in {sys.exec_prefix}/bin is
+        # a stub executable that execs the real interpreter in an
+        # embedded app bundle. That bundle is an implementation detail
+        # and should not affect base_execuble.
+        base_executable = f"{dirname(library)}/bin/python{VERSION_MAJOR}.{VERSION_MINOR}"
+        if not real_executable:
+            real_executable = base_executable
+            real_executable_dir = dirname(real_executable)
+        executable = ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__
+        executable_dir = dirname(executable)
+
+    else:
+        base_executable = executable
+        if not real_executable:
+            real_executable = executable
+        executable = ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__
+        executable_dir = dirname(executable)
 
 
 # ******************************************************************************
