@@ -1,1 +1,1 @@
-Fix a bug, which causes shutil.copytree() incorrectly not not copy symlink contents if called with symlink=False and ignore_dangling_symlinks=True.
+Fix a bug, which causes shutil.copytree() incorrectly not copy symlink contents if called with symlink=False and ignore_dangling_symlinks=True.
