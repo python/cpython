@@ -566,6 +566,8 @@ Constants
 
    .. versionadded:: 3.11
 
+.. availability:: FreeBSD.
+
 Functions
 ^^^^^^^^^
 
