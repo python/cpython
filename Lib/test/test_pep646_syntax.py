@@ -251,6 +251,46 @@ Starring an expression (rather than a name) in a slice
     >>> del A[*returns_list(), *returns_list()]; A
     delA[(1, 2, 3, 1, 2, 3)]
     
+Using both a starred object and a start:stop in a slice
+(See also tests in test_syntax confirming that starring *inside* a start:stop
+is *not* valid syntax.)
+
+    >>> A[1:2, *b]
+    A[(slice(1, 2, None), StarredB)]
+    >>> A[*b, 1:2]
+    A[(StarredB, slice(1, 2, None))]
+    >>> A[1:2, *b, 1:2]
+    A[(slice(1, 2, None), StarredB, slice(1, 2, None))]
+    >>> A[*b, 1:2, *b]
+    A[(StarredB, slice(1, 2, None), StarredB)]
+    
+    >>> A[1:, *b]
+    A[(slice(1, None, None), StarredB)]
+    >>> A[*b, 1:]
+    A[(StarredB, slice(1, None, None))]
+    >>> A[1:, *b, 1:]
+    A[(slice(1, None, None), StarredB, slice(1, None, None))]
+    >>> A[*b, 1:, *b]
+    A[(StarredB, slice(1, None, None), StarredB)]
+    
+    >>> A[:1, *b]
+    A[(slice(None, 1, None), StarredB)]
+    >>> A[*b, :1]
+    A[(StarredB, slice(None, 1, None))]
+    >>> A[:1, *b, :1]
+    A[(slice(None, 1, None), StarredB, slice(None, 1, None))]
+    >>> A[*b, :1, *b]
+    A[(StarredB, slice(None, 1, None), StarredB)]
+    
+    >>> A[:, *b]
+    A[(slice(None, None, None), StarredB)]
+    >>> A[*b, :]
+    A[(StarredB, slice(None, None, None))]
+    >>> A[:, *b, :]
+    A[(slice(None, None, None), StarredB, slice(None, None, None))]
+    >>> A[*b, :, *b]
+    A[(StarredB, slice(None, None, None), StarredB)]
+    
 *args annotated as starred expression
 
     >>> def f1(*args: *b): pass
