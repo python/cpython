@@ -1,6 +1,6 @@
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
-                          check_disallow_instantiation)
+                          check_disallow_instantiation, is_emscripten)
 import locale
 import re
 import sre_compile
@@ -1892,6 +1892,7 @@ ELSE
         # with ignore case.
         self.assertEqual(re.fullmatch('[a-c]+', 'ABC', re.I).span(), (0, 3))
 
+    @unittest.skipIf(is_emscripten, "musl libc issue on Emscripten, bpo-46390")
     def test_locale_caching(self):
         # Issue #22410
         oldlocale = locale.setlocale(locale.LC_CTYPE)
@@ -1928,6 +1929,7 @@ ELSE
         self.assertIsNone(re.match(b'(?Li)\xc5', b'\xe5'))
         self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
 
+    @unittest.skipIf(is_emscripten, "musl libc issue on Emscripten, bpo-46390")
     def test_locale_compiled(self):
         oldlocale = locale.setlocale(locale.LC_CTYPE)
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)

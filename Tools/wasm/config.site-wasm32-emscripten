@@ -53,6 +53,9 @@ ac_cv_func_symlinkat=no
 ac_cv_func_readlinkat=no
 ac_cv_func_fchmodat=no
 ac_cv_func_dup3=no
+# lchmod/lchown are implemented, but fail with ENOTSUP.
+ac_cv_func_lchmod=no
+ac_cv_func_lchown=no
 
 # Syscalls not implemented in emscripten
 # [Errno 52] Function not implemented
