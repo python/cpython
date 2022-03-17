@@ -172,6 +172,11 @@ class APITests(
             entry_points().get('entries', 'default') == entry_points()['entries']
             entry_points().get('missing', ()) == ()
 
+    def test_entry_points_allows_no_attributes(self):
+        ep = entry_points().select(group='entries', name='main')
+        with self.assertRaises(AttributeError):
+            ep.foo = 4
+
     def test_metadata_for_this_package(self):
         md = metadata('egginfo-pkg')
         assert md['author'] == 'Steven Ma'
@@ -214,6 +219,16 @@ class APITests(
         deps = requires('egginfo-pkg')
         assert len(deps) == 2
         assert any(dep == 'wheel >= 1.0; python_version >= "2.7"' for dep in deps)
+
+    def test_requires_egg_info_empty(self):
+        fixtures.build_files(
+            {
+                'requires.txt': '',
+            },
+            self.site_dir.joinpath('egginfo_pkg.egg-info'),
+        )
+        deps = requires('egginfo-pkg')
+        assert deps == []
 
     def test_requires_dist_info(self):
         deps = requires('distinfo-pkg')

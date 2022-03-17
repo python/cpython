@@ -55,8 +55,8 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
         for cls in primitives_cls:
             with self.assertRaisesRegex(
                 TypeError,
-                rf'As of 3.10, the \*loop\* parameter was removed from '
-                rf'{cls.__name__}\(\) since it is no longer necessary'
+                rf"{cls.__name__}\.__init__\(\) got an unexpected "
+                rf"keyword argument 'loop'"
             ):
                 cls(loop=loop)
 

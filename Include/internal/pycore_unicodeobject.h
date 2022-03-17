@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_fileutils.h"     // _Py_error_handler
+
 
 /* runtime lifecycle */
 
@@ -15,6 +17,7 @@ extern void _PyUnicode_InitState(PyInterpreterState *);
 extern PyStatus _PyUnicode_InitGlobalObjects(PyInterpreterState *);
 extern PyStatus _PyUnicode_InitTypes(PyInterpreterState *);
 extern void _PyUnicode_Fini(PyInterpreterState *);
+extern void _PyUnicode_FiniTypes(PyInterpreterState *);
 
 
 /* other API */
@@ -41,28 +44,13 @@ struct _Py_unicode_ids {
 };
 
 struct _Py_unicode_state {
-    // The empty Unicode object is a singleton to improve performance.
-    PyObject *empty_string;
-    /* Single character Unicode strings in the Latin-1 range are being
-       shared as well. */
-    PyObject *latin1[256];
     struct _Py_unicode_fs_codec fs_codec;
-
-    /* This dictionary holds all interned unicode strings.  Note that references
-       to strings in this dictionary are *not* counted in the string's ob_refcnt.
-       When the interned string reaches a refcnt of 0 the string deallocation
-       function will delete the reference from this dictionary.
-
-       Another way to look at this is that to say that the actual reference
-       count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
-    */
-    PyObject *interned;
 
     // Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId()
     struct _Py_unicode_ids ids;
 };
 
-extern void _PyUnicode_ClearInterned(PyInterpreterState *);
+extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
 
 #ifdef __cplusplus

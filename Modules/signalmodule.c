@@ -8,7 +8,7 @@
 #include "pycore_call.h"          // _PyObject_Call()
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
-#include "pycore_frame.h"         // InterpreterFrame
+#include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pylifecycle.h"   // NSIG
@@ -151,6 +151,7 @@ typedef struct {
 #ifdef PYHAVE_ITIMER_ERROR
     PyObject *itimer_error;
 #endif
+    PyTypeObject *siginfo_type;
 } _signal_module_state;
 
 
@@ -175,6 +176,17 @@ get_signal_state(PyObject *module)
     return (_signal_module_state *)state;
 }
 
+
+static inline int
+compare_handler(PyObject *func, PyObject *dfl_ign_handler)
+{
+    assert(PyLong_CheckExact(dfl_ign_handler));
+    if (!PyLong_CheckExact(func)) {
+        return 0;
+    }
+    // Assume that comparison of two PyLong objects will never fail.
+    return PyObject_RichCompareBool(func, dfl_ign_handler, Py_EQ) == 1;
+}
 
 #ifdef HAVE_GETITIMER
 /* auxiliary functions for setitimer */
@@ -292,7 +304,7 @@ trip_signal(int sig_num)
     _Py_atomic_store(&is_tripped, 1);
 
     /* Signals are always handled by the main interpreter */
-    PyInterpreterState *interp = _PyRuntime.interpreters.main;
+    PyInterpreterState *interp = _PyInterpreterState_Main();
 
     /* Notify ceval.c */
     _PyEval_SignalReceived(interp);
@@ -527,20 +539,17 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
                          "signal number out of range");
         return NULL;
     }
-    if (handler == modstate->ignore_handler) {
+    if (PyCallable_Check(handler)) {
+        func = signal_handler;
+    } else if (compare_handler(handler, modstate->ignore_handler)) {
         func = SIG_IGN;
-    }
-    else if (handler == modstate->default_handler) {
+    } else if (compare_handler(handler, modstate->default_handler)) {
         func = SIG_DFL;
-    }
-    else if (!PyCallable_Check(handler)) {
+    } else {
         _PyErr_SetString(tstate, PyExc_TypeError,
                          "signal handler must be signal.SIG_IGN, "
                          "signal.SIG_DFL, or a callable object");
         return NULL;
-    }
-    else {
-        func = signal_handler;
     }
 
     /* Check for pending signals before changing signal handler */
@@ -1136,12 +1145,11 @@ static PyStructSequence_Desc struct_siginfo_desc = {
     7          /* n_in_sequence */
 };
 
-static PyTypeObject SiginfoType;
 
 static PyObject *
-fill_siginfo(siginfo_t *si)
+fill_siginfo(_signal_module_state *state, siginfo_t *si)
 {
-    PyObject *result = PyStructSequence_New(&SiginfoType);
+    PyObject *result = PyStructSequence_New(state->siginfo_type);
     if (!result)
         return NULL;
 
@@ -1204,7 +1212,8 @@ signal_sigwaitinfo_impl(PyObject *module, sigset_t sigset)
     if (err == -1)
         return (!async_err) ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
 
-    return fill_siginfo(&si);
+    _signal_module_state *state = get_signal_state(module);
+    return fill_siginfo(state, &si);
 }
 
 #endif   /* #ifdef HAVE_SIGWAITINFO */
@@ -1272,7 +1281,8 @@ signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
         }
     } while (1);
 
-    return fill_siginfo(&si);
+    _signal_module_state *state = get_signal_state(module);
+    return fill_siginfo(state, &si);
 }
 
 #endif   /* #ifdef HAVE_SIGTIMEDWAIT */
@@ -1659,8 +1669,15 @@ signal_module_exec(PyObject *m)
         return -1;
     }
 #endif
+
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
-    if (PyModule_AddType(m, &SiginfoType) < 0) {
+    modstate->siginfo_type = PyStructSequence_NewType(&struct_siginfo_desc);
+    if (modstate->siginfo_type == NULL) {
+        return -1;
+    }
+#endif
+#if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
+    if (PyModule_AddType(m, modstate->siginfo_type) < 0) {
         return -1;
     }
 #endif
@@ -1681,16 +1698,18 @@ signal_module_exec(PyObject *m)
 static int
 _signal_module_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    _signal_module_state *modstate = get_signal_state(module);
-    Py_VISIT(modstate->itimer_error);
+    _signal_module_state *state = get_signal_state(module);
+    Py_VISIT(state->itimer_error);
+    Py_VISIT(state->siginfo_type);
     return 0;
 }
 
 static int
 _signal_module_clear(PyObject *module)
 {
-    _signal_module_state *modstate = get_signal_state(module);
-    Py_CLEAR(modstate->itimer_error);
+    _signal_module_state *state = get_signal_state(module);
+    Py_CLEAR(state->itimer_error);
+    Py_CLEAR(state->siginfo_type);
     return 0;
 }
 
@@ -1741,8 +1760,8 @@ _PySignal_Fini(void)
         set_handler(signum, NULL);
         if (func != NULL
             && func != Py_None
-            && func != state->default_handler
-            && func != state->ignore_handler)
+            && !compare_handler(func, state->default_handler)
+            && !compare_handler(func, state->ignore_handler))
         {
             PyOS_setsig(signum, SIG_DFL);
         }
@@ -1798,7 +1817,7 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
      */
     _Py_atomic_store(&is_tripped, 0);
 
-    InterpreterFrame *frame = tstate->cframe->current_frame;
+    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
     signal_state_t *state = &signal_global_state;
     for (int i = 1; i < NSIG; i++) {
         if (!_Py_atomic_load_relaxed(&Handlers[i].tripped)) {
@@ -1813,8 +1832,9 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
          * (see bpo-43406).
          */
         PyObject *func = get_handler(i);
-        if (func == NULL || func == Py_None || func == state->ignore_handler ||
-            func == state->default_handler) {
+        if (func == NULL || func == Py_None ||
+            compare_handler(func, state->ignore_handler) ||
+            compare_handler(func, state->default_handler)) {
             /* No Python signal handler due to aforementioned race condition.
              * We can't call raise() as it would break the assumption
              * that PyErr_SetInterrupt() only *simulates* an incoming
@@ -1882,7 +1902,8 @@ PyErr_SetInterruptEx(int signum)
 
     signal_state_t *state = &signal_global_state;
     PyObject *func = get_handler(signum);
-    if (func != state->ignore_handler && func != state->default_handler) {
+    if (!compare_handler(func, state->ignore_handler)
+            && !compare_handler(func, state->default_handler)) {
         trip_signal(signum);
     }
     return 0;
@@ -1962,14 +1983,6 @@ _PySignal_Init(int install_signal_handlers)
     if (state->sigint_event == NULL) {
         PyErr_SetFromWindowsErr(0);
         return -1;
-    }
-#endif
-
-#if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
-    if (SiginfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&SiginfoType, &struct_siginfo_desc) < 0) {
-            return -1;
-        }
     }
 #endif
 
