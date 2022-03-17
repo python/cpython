@@ -22,7 +22,6 @@ typedef enum _framestate {
     FRAME_CLEARED = 4
 } PyFrameState;
 
-PyAPI_FUNC(PyFrameObject *) PyFrame_GetBack(PyFrameObject *frame);
 PyAPI_FUNC(PyFrameState) PyFrame_GetState(PyFrameObject *frame);
 
 
