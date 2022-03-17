@@ -483,6 +483,12 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                     os.symlink(linkto, dstname)
                     copystat(srcobj, dstname, follow_symlinks=not symlinks)
                 else:
+                    # If the symlink is relative, linkto has to be normalized,
+                    # otherwise os.path.exists() will incorrectly report that
+                    # the link is dangling when the current directoy is not
+                    # the same as src.
+                    if not os.path.isabs(linkto):
+                        linkto = os.path.normpath(os.path.join(src, linkto))
                     # ignore dangling symlink if the flag is on
                     if not os.path.exists(linkto) and ignore_dangling_symlinks:
                         continue
