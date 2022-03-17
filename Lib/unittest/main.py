@@ -3,6 +3,7 @@
 import sys
 import argparse
 import os
+import warnings
 
 from . import loader, runner
 from .signals import installHandler
@@ -101,6 +102,8 @@ class TestProgram(object):
         self.runTests()
 
     def usageExit(self, msg=None):
+        warnings.warn("TestProgram.usageExit() is deprecated and will be"
+                      " removed in Python 3.13", DeprecationWarning)
         if msg:
             print(msg)
         if self._discovery_parser is None:
