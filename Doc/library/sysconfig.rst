@@ -127,7 +127,7 @@ identifier.  Python currently uses eight paths:
 
    .. versionchanged:: 3.11
       When Python runs from a virtual environment,
-      the *posix_venv*/*nt_venv* scheme is returned.
+      the *venv* scheme is returned.
 
 .. function:: get_preferred_scheme(key)
 
@@ -143,7 +143,7 @@ identifier.  Python currently uses eight paths:
 
    .. versionchanged:: 3.11
       When Python runs from a virtual environment and ``key="prefix"``,
-      the *posix_venv*/*nt_venv* scheme is returned.
+      the *venv* scheme is returned.
 
 
 .. function:: _get_preferred_schemes()

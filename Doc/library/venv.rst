@@ -178,7 +178,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
         and then all necessary subdirectories will be recreated.
 
         .. versionchanged:: 3.11
-           The *posix_venv*/*nt_venv*
+           The *venv*
            :ref:`sysconfig installation scheme <installation_paths>`
            is used to construct the paths of the created directories.
 

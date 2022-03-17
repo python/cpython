@@ -328,7 +328,7 @@ sysconfig
 
 * Two new :ref:`installation schemes <installation_paths>`
   (*posix_venv*, *nt_venv* and *venv*) were added and are used when Python
-  creates   new virtual environments or when it is running from a virtual
+  creates new virtual environments or when it is running from a virtual
   environment.
   The first two schemes (*posix_venv* and *nt_venv*) are OS-specific
   for non-Windoes and Windows, the *venv* is essentially an alias to one of
@@ -377,7 +377,7 @@ unicodedata
 venv
 ----
 
-* When new Python virtual environments are created, the *posix_venv*/*nt_venv*
+* When new Python virtual environments are created, the *venv*
   :ref:`sysconfig installation scheme <installation_paths>` is used
   to determine the paths inside the environment.
   When Python runs in a virtual environment, the same installation scheme
