@@ -405,7 +405,7 @@ async def wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     if futures.isfuture(fs) or coroutines.iscoroutine(fs):
         raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
     if not fs:
-        raise ValueError('Set of Futures is empty.')
+        raise ValueError('Set of Tasks/Futures is empty.')
     if return_when not in (FIRST_COMPLETED, FIRST_EXCEPTION, ALL_COMPLETED):
         raise ValueError(f'Invalid return_when value: {return_when}')
 
