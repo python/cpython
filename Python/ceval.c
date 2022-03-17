@@ -2536,8 +2536,7 @@ handle_eval_breaker:
             PyObject *v = POP();
             PyObject *receiver = TOP();
             if (receiver == NULL) {
-                // Receiver completed during a throw() call. v is the return
-                // value:
+                // Receiver returned during a throw(). v is its return value:
                 SET_TOP(v);
                 JUMPBY(oparg);
                 DISPATCH();
