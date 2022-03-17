@@ -25,6 +25,11 @@ for name in opcode.opname[1:]:
             pass
     opname.append(name)
 
+# opcode_name --> opcode
+# Sort alphabetically.
+opmap = {name: i for i, name in enumerate(opname)}
+opmap = dict(sorted(opmap.items()))
+
 TOTAL = "specialization.deferred", "specialization.hit", "specialization.miss", "execution_count"
 
 def print_specialization_stats(name, family_stats, defines):
@@ -313,7 +318,7 @@ def emit_pair_counts(opcode_stats, total):
                 successors[first][second] = count
                 total_predecessors[second] += count
                 total_successors[first] += count
-        for i in range(256):
+        for name, i in opmap.items():
             total1 = total_predecessors[i]
             total2 = total_successors[i]
             if total1 == 0 and total2 == 0:
@@ -325,7 +330,6 @@ def emit_pair_counts(opcode_stats, total):
             if total2:
                 succ_rows = [(opname[succ], count, f"{count/total2:.1%}")
                              for (succ, count) in successors[i].most_common(3)]
-            name = opname[i]
             with Section(name, 3, f"Successors and predecessors for {name}"):
                 emit_table(("Predecessors", "Count:", "Percentage:"),
                     pred_rows
