@@ -2,6 +2,7 @@
 
 
 import asyncio
+import contextvars
 
 from asyncio import taskgroups
 import unittest
@@ -707,6 +708,23 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         async with taskgroups.TaskGroup() as g:
             t = g.create_task(coro(), name="yolo")
             self.assertEqual(t.get_name(), "yolo")
+
+    async def test_taskgroup_task_context(self):
+        cvar = contextvars.ContextVar('cvar')
+
+        async def coro(val):
+            await asyncio.sleep(0)
+            cvar.set(val)
+
+        async with taskgroups.TaskGroup() as g:
+            ctx = contextvars.copy_context()
+            self.assertIsNone(ctx.get(cvar))
+            t1 = g.create_task(coro(1), context=ctx)
+            await t1
+            self.assertEqual(1, ctx.get(cvar))
+            t2 = g.create_task(coro(2), context=ctx)
+            await t2
+            self.assertEqual(2, ctx.get(cvar))
 
 
 if __name__ == "__main__":

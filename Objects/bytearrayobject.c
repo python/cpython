@@ -844,8 +844,33 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
         return -1;
     }
 
-    /* XXX Optimize this if the arguments is a list, tuple */
-
+    if (PyList_CheckExact(arg) || PyTuple_CheckExact(arg)) {
+        Py_ssize_t size = PySequence_Fast_GET_SIZE(arg);
+        if (PyByteArray_Resize((PyObject *)self, size) < 0) {
+            return -1;
+        }
+        PyObject **items = PySequence_Fast_ITEMS(arg);
+        char *s = PyByteArray_AS_STRING(self);
+        for (Py_ssize_t i = 0; i < size; i++) {
+            int value;
+            if (!PyLong_CheckExact(items[i])) {
+                /* Resize to 0 and go through slowpath */
+                if (Py_SIZE(self) != 0) {
+                   if (PyByteArray_Resize((PyObject *)self, 0) < 0) {
+                       return -1;
+                   }
+                }
+                goto slowpath;
+            }
+            int rc = _getbytevalue(items[i], &value);
+            if (!rc) {
+                return -1;
+            }
+            s[i] = value;
+        }
+        return 0;
+    }
+slowpath:
     /* Get the iterator */
     it = PyObject_GetIter(arg);
     if (it == NULL) {

@@ -41,20 +41,11 @@ the type names are known to the debugger
 The module also extends gdb with some python-specific commands.
 '''
 
-# NOTE: some gdbs are linked with Python 3, so this file should be dual-syntax
-# compatible (2.6+ and 3.0+).  See #19308.
-
-from __future__ import print_function
-
 import gdb
 import os
 import locale
 import sys
 
-if sys.version_info[0] >= 3:
-    unichr = chr
-    xrange = range
-    long = int
 
 # Look up the gdb.Type for some standard types:
 # Those need to be refreshed as types (pointer sizes) may change when
@@ -79,9 +70,6 @@ def _type_unsigned_int_ptr():
 def _sizeof_void_p():
     return gdb.lookup_type('void').pointer().sizeof
 
-
-# value computed later, see PyUnicodeObjectPtr.proxy()
-_is_pep393 = None
 
 Py_TPFLAGS_MANAGED_DICT      = (1 << 4)
 Py_TPFLAGS_HEAPTYPE          = (1 << 9)
@@ -119,19 +107,7 @@ def safety_limit(val):
 def safe_range(val):
     # As per range, but don't trust the value too much: cap it to a safety
     # threshold in case the data was corrupted
-    return xrange(safety_limit(int(val)))
-
-if sys.version_info[0] >= 3:
-    def write_unicode(file, text):
-        file.write(text)
-else:
-    def write_unicode(file, text):
-        # Write a byte or unicode string to file. Unicode strings are encoded to
-        # ENCODING encoding with 'backslashreplace' error handler to avoid
-        # UnicodeEncodeError.
-        if isinstance(text, unicode):
-            text = text.encode(ENCODING, 'backslashreplace')
-        file.write(text)
+    return range(safety_limit(int(val)))
 
 try:
     os_fsencode = os.fsencode
@@ -258,7 +234,7 @@ class PyObjectPtr(object):
         return PyTypeObjectPtr(self.field('ob_type'))
 
     def is_null(self):
-        return 0 == long(self._gdbval)
+        return 0 == int(self._gdbval)
 
     def is_optimized_out(self):
         '''
@@ -320,7 +296,7 @@ class PyObjectPtr(object):
                 return '<%s at remote 0x%x>' % (self.tp_name, self.address)
 
         return FakeRepr(self.safe_tp_name(),
-                        long(self._gdbval))
+                        int(self._gdbval))
 
     def write_repr(self, out, visited):
         '''
@@ -420,7 +396,7 @@ class PyObjectPtr(object):
         return gdb.lookup_type(cls._typename).pointer()
 
     def as_address(self):
-        return long(self._gdbval)
+        return int(self._gdbval)
 
 class PyVarObjectPtr(PyObjectPtr):
     _typename = 'PyVarObject'
@@ -529,7 +505,7 @@ class HeapTypeObjectPtr(PyObjectPtr):
         PyDictValuesPtrPtr = gdb.lookup_type("PyDictValues").pointer().pointer()
         valuesptr = self._gdbval.cast(PyDictValuesPtrPtr) - 4
         values = valuesptr.dereference()
-        if long(values) == 0:
+        if int(values) == 0:
             return None
         values = values['values']
         return PyKeysValuesPair(self.get_cached_keys(), values)
@@ -562,7 +538,7 @@ class HeapTypeObjectPtr(PyObjectPtr):
         tp_name = self.safe_tp_name()
 
         # Class:
-        return InstanceProxy(tp_name, attr_dict, long(self._gdbval))
+        return InstanceProxy(tp_name, attr_dict, int(self._gdbval))
 
     def write_repr(self, out, visited):
         # Guard against infinite loops:
@@ -737,7 +713,7 @@ class PyDictObjectPtr(PyObjectPtr):
         '''
         keys = self.field('ma_keys')
         values = self.field('ma_values')
-        has_values = long(values)
+        has_values = int(values)
         if has_values:
             values = values['values']
         if has_values:
@@ -862,7 +838,7 @@ class PyLongObjectPtr(PyObjectPtr):
             #define PyLong_SHIFT        30
             #define PyLong_SHIFT        15
         '''
-        ob_size = long(self.field('ob_size'))
+        ob_size = int(self.field('ob_size'))
         if ob_size == 0:
             return 0
 
@@ -873,7 +849,7 @@ class PyLongObjectPtr(PyObjectPtr):
         else:
             SHIFT = 30
 
-        digits = [long(ob_digit[i]) * 2**(SHIFT*i)
+        digits = [int(ob_digit[i]) * 2**(SHIFT*i)
                   for i in safe_range(abs(ob_size))]
         result = sum(digits)
         if ob_size < 0:
@@ -1124,7 +1100,7 @@ class PyFramePtr:
 
         filename = self.filename()
         try:
-            with open(os_fsencode(filename), 'r') as fp:
+            with open(os_fsencode(filename), 'r', encoding="utf-8") as fp:
                 lines = fp.readlines()
         except IOError:
             return None
@@ -1159,7 +1135,7 @@ class PyFramePtr:
         out.write(')')
 
     def as_address(self):
-        return long(self._gdbval)
+        return int(self._gdbval)
 
     def print_traceback(self):
         if self.is_optimized_out():
@@ -1340,18 +1316,6 @@ def _unichr_is_printable(char):
     import unicodedata
     return unicodedata.category(char) not in ("C", "Z")
 
-if sys.maxunicode >= 0x10000:
-    _unichr = unichr
-else:
-    # Needed for proper surrogate support if sizeof(Py_UNICODE) is 2 in gdb
-    def _unichr(x):
-        if x < 0x10000:
-            return unichr(x)
-        x -= 0x10000
-        ch1 = 0xD800 | (x >> 10)
-        ch2 = 0xDC00 | (x & 0x3FF)
-        return unichr(ch1) + unichr(ch2)
-
 
 class PyUnicodeObjectPtr(PyObjectPtr):
     _typename = 'PyUnicodeObject'
@@ -1361,42 +1325,31 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         return _type_Py_UNICODE.sizeof
 
     def proxyval(self, visited):
-        global _is_pep393
-        if _is_pep393 is None:
-            fields = gdb.lookup_type('PyUnicodeObject').fields()
-            _is_pep393 = 'data' in [f.name for f in fields]
-        if _is_pep393:
-            # Python 3.3 and newer
-            may_have_surrogates = False
-            compact = self.field('_base')
-            ascii = compact['_base']
-            state = ascii['state']
-            is_compact_ascii = (int(state['ascii']) and int(state['compact']))
-            if not int(state['ready']):
-                # string is not ready
-                field_length = long(compact['wstr_length'])
-                may_have_surrogates = True
-                field_str = ascii['wstr']
-            else:
-                field_length = long(ascii['length'])
-                if is_compact_ascii:
-                    field_str = ascii.address + 1
-                elif int(state['compact']):
-                    field_str = compact.address + 1
-                else:
-                    field_str = self.field('data')['any']
-                repr_kind = int(state['kind'])
-                if repr_kind == 1:
-                    field_str = field_str.cast(_type_unsigned_char_ptr())
-                elif repr_kind == 2:
-                    field_str = field_str.cast(_type_unsigned_short_ptr())
-                elif repr_kind == 4:
-                    field_str = field_str.cast(_type_unsigned_int_ptr())
+        may_have_surrogates = False
+        compact = self.field('_base')
+        ascii = compact['_base']
+        state = ascii['state']
+        is_compact_ascii = (int(state['ascii']) and int(state['compact']))
+        if not int(state['ready']):
+            # string is not ready
+            field_length = int(compact['wstr_length'])
+            may_have_surrogates = True
+            field_str = ascii['wstr']
         else:
-            # Python 3.2 and earlier
-            field_length = long(self.field('length'))
-            field_str = self.field('str')
-            may_have_surrogates = self.char_width() == 2
+            field_length = int(ascii['length'])
+            if is_compact_ascii:
+                field_str = ascii.address + 1
+            elif int(state['compact']):
+                field_str = compact.address + 1
+            else:
+                field_str = self.field('data')['any']
+            repr_kind = int(state['kind'])
+            if repr_kind == 1:
+                field_str = field_str.cast(_type_unsigned_char_ptr())
+            elif repr_kind == 2:
+                field_str = field_str.cast(_type_unsigned_short_ptr())
+            elif repr_kind == 4:
+                field_str = field_str.cast(_type_unsigned_int_ptr())
 
         # Gather a list of ints from the Py_UNICODE array; these are either
         # UCS-1, UCS-2 or UCS-4 code points:
@@ -1426,10 +1379,7 @@ class PyUnicodeObjectPtr(PyObjectPtr):
 
         # Convert the int code points to unicode characters, and generate a
         # local unicode instance.
-        # This splits surrogate pairs if sizeof(Py_UNICODE) is 2 here (in gdb).
-        result = u''.join([
-            (_unichr(ucs) if ucs <= 0x10ffff else '\ufffd')
-            for ucs in Py_UNICODEs])
+        result = u''.join(map(chr, Py_UNICODEs))
         return result
 
     def write_repr(self, out, visited):
@@ -1478,19 +1428,8 @@ class PyUnicodeObjectPtr(PyObjectPtr):
             else:
                 ucs = ch
                 ch2 = None
-                if sys.maxunicode < 0x10000:
-                    # If sizeof(Py_UNICODE) is 2 here (in gdb), join
-                    # surrogate pairs before calling _unichr_is_printable.
-                    if (i < len(proxy)
-                    and 0xD800 <= ord(ch) < 0xDC00 \
-                    and 0xDC00 <= ord(proxy[i]) <= 0xDFFF):
-                        ch2 = proxy[i]
-                        ucs = ch + ch2
-                        i += 1
 
-                # Unfortuately, Python 2's unicode type doesn't seem
-                # to expose the "isprintable" method
-                printable = _unichr_is_printable(ucs)
+                printable = ucs.isprintable()
                 if printable:
                     try:
                         ucs.encode(ENCODING)
@@ -1559,7 +1498,7 @@ class wrapperobject(PyObjectPtr):
 
     def safe_self_addresss(self):
         try:
-            address = long(self.field('self'))
+            address = int(self.field('self'))
             return '%#x' % address
         except (NullPyObjectPtr, RuntimeError):
             return '<failed to get self address>'
@@ -1852,7 +1791,7 @@ class Frame(object):
             while True:
                 if interp_frame:
                     line = interp_frame.get_truncated_repr(MAX_OUTPUT_LEN)
-                    write_unicode(sys.stdout, '#%i %s\n' % (self.get_index(), line))
+                    sys.stdout.write('#%i %s\n' % (self.get_index(), line))
                     if not interp_frame.is_optimized_out():
                         line = interp_frame.current_line()
                         if line is not None:
@@ -1952,7 +1891,7 @@ class PyList(gdb.Command):
             start = 1
 
         try:
-            f = open(os_fsencode(filename), 'r')
+            f = open(os_fsencode(filename), 'r', encoding="utf-8")
         except IOError as err:
             sys.stdout.write('Unable to open %s: %s\n'
                              % (filename, err))
