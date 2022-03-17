@@ -1323,7 +1323,7 @@ class BaseExceptionReportingTests:
                 self.assertEqual(exp, err)
 
     def test_exception_with_note(self):
-        e = ValueError(42)
+        e = ValueError(123)
         vanilla = self.get_report(e)
 
         e.add_note('My Note')
@@ -1340,13 +1340,40 @@ class BaseExceptionReportingTests:
         del e.__notes__
         self.assertEqual(self.get_report(e), vanilla)
 
-        # non-sequence __notes__ is ignored
-        e.__notes__ = 42
-        self.assertEqual(self.get_report(e), vanilla)
+    def test_exception_with_invalid_notes(self):
+        e = ValueError(123)
+        vanilla = self.get_report(e)
 
-        # non-string items in the __notes__ sequence are ignored
-        e.__notes__  = [42, 'Final Note']
-        self.assertEqual(self.get_report(e), vanilla + 'Final Note\n')
+        # non-sequence __notes__
+        class BadThing:
+            def __str__(self):
+                return 'bad str'
+
+            def __repr__(self):
+                return 'bad repr'
+
+        # unprintable, non-sequence __notes__
+        class Unprintable:
+            def __repr__(self):
+                raise ValueError('bad value')
+
+        e.__notes__ = BadThing()
+        notes_repr = 'bad repr'
+        self.assertEqual(self.get_report(e), vanilla + notes_repr)
+
+        e.__notes__ = Unprintable()
+        err_msg = '<__notes__ repr() failed>'
+        self.assertEqual(self.get_report(e), vanilla + err_msg)
+
+        # non-string item in the __notes__ sequence
+        e.__notes__  = [BadThing(), 'Final Note']
+        bad_note = 'bad str'
+        self.assertEqual(self.get_report(e), vanilla + bad_note + '\nFinal Note\n')
+
+        # unprintable, non-string item in the __notes__ sequence
+        e.__notes__  = [Unprintable(), 'Final Note']
+        err_msg = '<note str() failed>'
+        self.assertEqual(self.get_report(e), vanilla + err_msg + '\nFinal Note\n')
 
     def test_exception_with_note_with_multiple_notes(self):
         e = ValueError(42)

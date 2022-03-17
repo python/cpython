@@ -163,18 +163,18 @@ def format_exception_only(exc, /, value=_sentinel):
 # -- not official API but folk probably use these two functions.
 
 def _format_final_exc_line(etype, value):
-    valuestr = _some_str(value)
+    valuestr = _safe_string(value, 'exception')
     if value is None or not valuestr:
         line = "%s\n" % etype
     else:
         line = "%s: %s\n" % (etype, valuestr)
     return line
 
-def _some_str(value):
+def _safe_string(value, what, func=str):
     try:
-        return str(value)
+        return func(value)
     except:
-        return '<exception str() failed>'
+        return f'<{what} {func.__name__}() failed>'
 
 # --
 
@@ -688,7 +688,7 @@ class TracebackException:
         self.exc_type = exc_type
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
-        self._str = _some_str(exc_value)
+        self._str = _safe_string(exc_value, 'exception')
         self.__notes__ = getattr(exc_value, '__notes__', None)
 
         if exc_type and issubclass(exc_type, SyntaxError):
@@ -824,8 +824,11 @@ class TracebackException:
             yield from self._format_syntax_error(stype)
         if isinstance(self.__notes__, collections.abc.Sequence):
             for note in self.__notes__:
-                if isinstance(note, str):
-                    yield from [l + '\n' for l in note.split('\n')]
+                if not isinstance(note, str):
+                    note = _safe_string(note, 'note')
+                yield from [l + '\n' for l in note.split('\n')]
+        elif self.__notes__ is not None:
+            yield _safe_string(self.__notes__, '__notes__', func=repr)
 
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""

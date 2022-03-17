@@ -1145,8 +1145,21 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
         return -1;
     }
     if (!PySequence_Check(notes)) {
+        int res = 0;
+        if (write_indented_margin(ctx, f) < 0) {
+            res = -1;
+        }
+        PyObject *s = PyObject_Repr(notes);
+        if (s == NULL) {
+            PyErr_Clear();
+            res = PyFile_WriteString("<__notes__ repr() failed>", f);
+        }
+        else {
+            res = PyFile_WriteObject(s, f, Py_PRINT_RAW);
+            Py_DECREF(s);
+        }
         Py_DECREF(notes);
-        return 0;
+        return res;
     }
     Py_ssize_t num_notes = PySequence_Length(notes);
     PyObject *lines = NULL;
@@ -1176,8 +1189,27 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
             Py_CLEAR(lines);
         }
         else {
-            /* Ignore notes which are not strings */
+            int res = 0;
+            if (write_indented_margin(ctx, f) < 0) {
+                res = -1;
+            }
+            PyObject *s = PyObject_Str(note);
+            if (s == NULL) {
+                PyErr_Clear();
+                res = PyFile_WriteString("<note str() failed>", f);
+            }
+            else {
+                res = PyFile_WriteObject(s, f, Py_PRINT_RAW);
+                Py_DECREF(s);
+            }
             Py_DECREF(note);
+            if (res < 0) {
+                goto error;
+            }
+            if (PyFile_WriteString("\n", f) < 0) {
+                goto error;
+            }
+
         }
     }
 
