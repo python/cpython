@@ -712,6 +712,9 @@ Build Changes
   be removed at some point in the future. (Contributed by Mark Dickinson in
   :issue:`45569`.)
 
+* The :mod:`tkinter` package now requires Tcl/Tk version 8.5.12 or newer.
+  (Contributed by Serhiy Storchaka in :issue:`46996`.)
+
 
 C API Changes
 =============
