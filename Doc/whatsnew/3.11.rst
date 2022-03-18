@@ -555,6 +555,11 @@ Deprecated
   :func:`locale.getlocale` functions instead.
   (Contributed by Victor Stinner in :issue:`46659`.)
 
+* The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
+  deprecated since at least Python 3.6. Their documentation and deprecation
+  warnings have now been updated to note they will removed in Python 3.12
+  (:pep:`594`).
+  (Contributed by Hugo van Kemenade in :issue:`47022`.)
 
 Removed
 =======
