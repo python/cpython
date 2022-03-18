@@ -202,7 +202,7 @@ _Py_GetGlobalVariablesAsDict(void)
 #define FROM_STRING(STR) \
     ((STR != NULL) ? \
         PyUnicode_FromString(STR) \
-        : (Py_INCREF(Py_None), Py_None))
+        : (Py_None))
 #define SET_ITEM_STR(VAR) \
     SET_ITEM(#VAR, FROM_STRING(VAR))
 
@@ -992,7 +992,7 @@ _PyConfig_AsDict(const PyConfig *config)
 #define FROM_WSTRING(STR) \
     ((STR != NULL) ? \
         PyUnicode_FromWideChar(STR, -1) \
-        : (Py_INCREF(Py_None), Py_None))
+        : (Py_None))
 #define SET_ITEM_WSTR(ATTR) \
     SET_ITEM(#ATTR, FROM_WSTRING(config->ATTR))
 #define SET_ITEM_WSTRLIST(LIST) \

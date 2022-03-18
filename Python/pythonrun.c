@@ -514,7 +514,6 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
     if (!v)
         goto finally;
     if (v == Py_None) {
-        Py_DECREF(v);
         _Py_DECLARE_STR(anon_string, "<string>");
         *filename = &_Py_STR(anon_string);
         Py_INCREF(*filename);
@@ -537,7 +536,6 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
         goto finally;
     if (v == Py_None) {
         *offset = -1;
-        Py_DECREF(v);
     } else {
         hold = PyLong_AsSsize_t(v);
         Py_DECREF(v);
@@ -554,7 +552,6 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
         }
         else if (v == Py_None) {
             *end_lineno = *lineno;
-            Py_DECREF(v);
         } else {
             hold = PyLong_AsSsize_t(v);
             Py_DECREF(v);
@@ -570,7 +567,6 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
         }
         else if (v == Py_None) {
             *end_offset = -1;
-            Py_DECREF(v);
         } else {
             hold = PyLong_AsSsize_t(v);
             Py_DECREF(v);
@@ -588,7 +584,6 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
     if (!v)
         goto finally;
     if (v == Py_None) {
-        Py_DECREF(v);
         *text = NULL;
     }
     else {
@@ -788,7 +783,6 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
     _PyErr_NormalizeException(tstate, &exception, &v, &tb);
     if (tb == NULL) {
         tb = Py_None;
-        Py_INCREF(tb);
     }
     PyException_SetTraceback(v, tb);
     if (exception == NULL) {
@@ -835,11 +829,9 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
                tolerate NULLs, so just be safe. */
             if (exception2 == NULL) {
                 exception2 = Py_None;
-                Py_INCREF(exception2);
             }
             if (v2 == NULL) {
                 v2 = Py_None;
-                Py_INCREF(v2);
             }
             fflush(stdout);
             PySys_WriteStderr("Error in sys.excepthook:\n");

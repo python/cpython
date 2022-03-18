@@ -2520,7 +2520,6 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
     _PyErr_NormalizeException(tstate, &exception, &v, &tb);
     if (tb == NULL) {
         tb = Py_None;
-        Py_INCREF(tb);
     }
     PyException_SetTraceback(v, tb);
     if (exception == NULL) {

@@ -2340,7 +2340,6 @@ _PySys_AddXOptionWithError(const wchar_t *s)
     if (!name_end) {
         name = PyUnicode_FromWideChar(s, -1);
         value = Py_True;
-        Py_INCREF(value);
     }
     else {
         name = PyUnicode_FromWideChar(s, name_end - s);

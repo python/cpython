@@ -103,10 +103,11 @@ static PyObject *
 tb_next_get(PyTracebackObject *self, void *Py_UNUSED(_))
 {
     PyObject* ret = (PyObject*)self->tb_next;
-    if (!ret) {
+    if (ret) {
+        Py_INCREF(ret);
+    } else {
         ret = Py_None;
     }
-    Py_INCREF(ret);
     return ret;
 }
 

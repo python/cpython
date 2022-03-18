@@ -1247,7 +1247,6 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
     // None and Ellipsis are singleton, and key is the singleton.
     // No need to merge object and key.
     if (o == Py_None || o == Py_Ellipsis) {
-        Py_INCREF(o);
         return o;
     }
 
@@ -6000,7 +5999,6 @@ compiler_error(struct compiler *c, const char *format, ...)
     }
     PyObject *loc = PyErr_ProgramTextObject(c->c_filename, c->u->u_lineno);
     if (loc == NULL) {
-        Py_INCREF(Py_None);
         loc = Py_None;
     }
     PyObject *args = Py_BuildValue("O(OiiOii)", msg, c->c_filename,

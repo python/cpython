@@ -1904,7 +1904,6 @@ handle_eval_breaker:
                 DISPATCH();
             }
             else if (err > 0) {
-                Py_INCREF(Py_False);
                 SET_TOP(Py_False);
                 DISPATCH();
             }
@@ -6423,8 +6422,8 @@ exception_group_match(PyObject* exc_value, PyObject *match_type,
                       PyObject **match, PyObject **rest)
 {
     if (Py_IsNone(exc_value)) {
-        *match = Py_NewRef(Py_None);
-        *rest = Py_NewRef(Py_None);
+        *match = Py_None;
+        *rest = Py_None;
         return 0;
     }
     assert(PyExceptionInstance_Check(exc_value));
@@ -6448,7 +6447,7 @@ exception_group_match(PyObject* exc_value, PyObject *match_type,
             }
             *match = wrapped;
         }
-        *rest = Py_NewRef(Py_None);
+        *rest = Py_None;
         return 0;
     }
 
@@ -6469,8 +6468,8 @@ exception_group_match(PyObject* exc_value, PyObject *match_type,
         return 0;
     }
     /* no match */
-    *match = Py_NewRef(Py_None);
-    *rest = Py_NewRef(Py_None);
+    *match = Py_None;
+    *rest = Py_None;
     return 0;
 }
 

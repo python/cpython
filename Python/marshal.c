@@ -1006,27 +1006,22 @@ r_object(RFILE *p)
         break;
 
     case TYPE_NONE:
-        Py_INCREF(Py_None);
         retval = Py_None;
         break;
 
     case TYPE_STOPITER:
-        Py_INCREF(PyExc_StopIteration);
         retval = PyExc_StopIteration;
         break;
 
     case TYPE_ELLIPSIS:
-        Py_INCREF(Py_Ellipsis);
         retval = Py_Ellipsis;
         break;
 
     case TYPE_FALSE:
-        Py_INCREF(Py_False);
         retval = Py_False;
         break;
 
     case TYPE_TRUE:
-        Py_INCREF(Py_True);
         retval = Py_True;
         break;
 
