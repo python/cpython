@@ -954,6 +954,9 @@ if __name__ == '__main__':
             print("Writing", gn)
             with open(gn, 'w') as g:
                 g.setparams(f.getparams())
-                while data := f.readframes(1024):
+                while 1:
+                    data = f.readframes(1024)
+                    if not data:
+                        break
                     g.writeframes(data)
             print("Done.")
