@@ -450,13 +450,13 @@ def generate(args: list[str], output: TextIO) -> None:
                 code = compile(fd.read(), f"<frozen {modname}>", "exec")
             printer.generate_file(modname, code)
     with printer.block(f"void\n_Py_Deepfreeze_Fini(void)"):
-            for p in printer.deallocs:
-                printer.write(p)
+        for p in printer.deallocs:
+            printer.write(p)
     with printer.block(f"int\n_Py_Deepfreeze_Init(void)"):
-            for p in printer.interns:
-                with printer.block(f"if ({p} < 0)"):
-                    printer.write("return -1;")
-            printer.write("return 0;")
+        for p in printer.interns:
+            with printer.block(f"if ({p} < 0)"):
+                printer.write("return -1;")
+        printer.write("return 0;")
     if verbose:
         print(f"Cache hits: {printer.hits}, misses: {printer.misses}")
 
