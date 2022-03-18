@@ -7581,6 +7581,12 @@ PyInit__socket(void)
 #ifdef SO_PROTOCOL
     PyModule_AddIntMacro(m, SO_PROTOCOL);
 #endif
+#ifdef LOCAL_CREDS
+    PyModule_AddIntMacro(m, LOCAL_CREDS);
+#endif
+#ifdef LOCAL_CREDS_PERSISTENT
+    PyModule_AddIntMacro(m, LOCAL_CREDS_PERSISTENT);
+#endif
 
     /* Maximum number of connections for "listen" */
 #ifdef  SOMAXCONN
@@ -7598,6 +7604,9 @@ PyInit__socket(void)
 #endif
 #ifdef  SCM_CREDS
     PyModule_AddIntMacro(m, SCM_CREDS);
+#endif
+#ifdef  SCM_CREDS2
+    PyModule_AddIntMacro(m, SCM_CREDS2);
 #endif
 
     /* Flags for send, recv */

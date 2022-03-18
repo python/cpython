@@ -361,6 +361,24 @@ sys
   (equivalent to ``sys.exc_info()[1]``).
   (Contributed by Irit Katriel in :issue:`46328`.)
 
+
+sysconfig
+---------
+
+* Two new :ref:`installation schemes <installation_paths>`
+  (*posix_venv*, *nt_venv* and *venv*) were added and are used when Python
+  creates new virtual environments or when it is running from a virtual
+  environment.
+  The first two schemes (*posix_venv* and *nt_venv*) are OS-specific
+  for non-Windows and Windows, the *venv* is essentially an alias to one of
+  them according to the OS Python runs on.
+  This is useful for downstream distributors who modify
+  :func:`sysconfig.get_preferred_scheme`.
+  Third party code that creates new virtual environments should use the new
+  *venv* installation scheme to determine the paths, as does :mod:`venv`.
+  (Contributed by Miro Hrončok in :issue:`45413`.)
+
+
 threading
 ---------
 
@@ -393,6 +411,20 @@ unicodedata
 -----------
 
 * The Unicode database has been updated to version 14.0.0. (:issue:`45190`).
+
+
+venv
+----
+
+* When new Python virtual environments are created, the *venv*
+  :ref:`sysconfig installation scheme <installation_paths>` is used
+  to determine the paths inside the environment.
+  When Python runs in a virtual environment, the same installation scheme
+  is the default.
+  That means that downstream distributors can change the default sysconfig install
+  scheme without changing behavior of virtual environments.
+  Third party code that also creates new virtual environments should do the same.
+  (Contributed by Miro Hrončok in :issue:`45413`.)
 
 
 fcntl
@@ -711,6 +743,9 @@ Build Changes
   ``PYLONG_BITS_IN_DIGIT`` variable in ``PC/pyconfig.h``, but this option may
   be removed at some point in the future. (Contributed by Mark Dickinson in
   :issue:`45569`.)
+
+* The :mod:`tkinter` package now requires Tcl/Tk version 8.5.12 or newer.
+  (Contributed by Serhiy Storchaka in :issue:`46996`.)
 
 
 C API Changes
