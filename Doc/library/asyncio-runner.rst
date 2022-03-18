@@ -1,57 +1,109 @@
 .. currentmodule:: asyncio
 
 
-======
-Runner
-======
+=======
+Runners
+=======
 
 **Source code:** :source:`Lib/asyncio/runners.py`
 
-------------------------------------
+
+This section outlines high-level asyncio primitives to run asyncio code.
+
+They are built on top of :ref:`event loop <asyncio-event-loop>` with the aim to simplify
+async code usage for common wide-spread scenarion.
+
+.. contents::
+   :depth: 1
+   :local:
 
 
-:func:`asyncio.run` provides a convinient very high-level API for running asyncio code.
 
-It is the preferred approach that satisfies almost all use cases.
+Running an asyncio Program
+==========================
 
-Sometimes several top-level async calls are needed in the same loop and contextvars
-context instead of the single ``main()`` call provided by :func:`asyncio.run`.
+.. function:: run(coro, *, debug=None)
 
-The *Runner* context manager can be used for such things:
+   Execute the :term:`coroutine` *coro* and return the result.
 
-.. code:: python
+   This function runs the passed coroutine, taking care of
+   managing the asyncio event loop, *finalizing asynchronous
+   generators*, and closing the threadpool.
 
-   with asyncio.Runner() as runner:
-       runner.run(func1())
-       runner.run(func2())
+   This function cannot be called when another asyncio event loop is
+   running in the same thread.
 
-On the :class:`~asyncio.Runner` instantiation the new event loop is created.
+   If *debug* is ``True``, the event loop will be run in debug mode. ``False`` disables
+   debug mode explicitly. ``None`` is used to respect the global
+   :ref:`asyncio-debug-mode` settings.
 
-All :meth:`~asyncio.Runner.run` calls share the same :class:`~contextvars.Context` and
-internal :class:`~asyncio.loop`.
+   This function always creates a new event loop and closes it at
+   the end.  It should be used as a main entry point for asyncio
+   programs, and should ideally only be called once.
 
-On the exit of :keyword:`with` block all background tasks are cancelled, the embedded
-loop is closing.
+   Example::
 
+       async def main():
+           await asyncio.sleep(1)
+           print('hello')
+
+       asyncio.run(main())
+
+   .. versionadded:: 3.7
+
+   .. versionchanged:: 3.9
+      Updated to use :meth:`loop.shutdown_default_executor`.
+
+   .. versionchanged:: 3.10
+
+      *debug* is ``None`` by default to respect the global debug mode settings.
+
+
+Runner context manager
+======================
 
 .. class:: Runner(*, debug=None, factory=None)
 
+   A context manager that simplifies *multiple* async function calls in the same
+   context.
 
+   Sometimes several top-level async functions should be called in the same :ref:`event
+   loop <asyncio-event-loop>` and :class:`contextvars.Context`.
 
+   If *debug* is ``True``, the event loop will be run in debug mode. ``False`` disables
+   debug mode explicitly. ``None`` is used to respect the global
+   :ref:`asyncio-debug-mode` settings.
 
+   *factory* could be used for overriding the loop creation.
+   :func:`asyncio.new_event_loop` is used if ``None``.
 
+   Basically, :func:`asyncio.run()` example can be revealed with the runner usage:
 
-enter
-Usually,
+   .. block:: python
 
-.. rubric:: Preface
+        async def main():
+            await asyncio.sleep(1)
+            print('hello')
 
-The event loop is the core of every asyncio application.
-Event loops run asynchronous tasks and callbacks, perform network
-IO operations, and run subprocesses.
+        with asyncio.Runner() as runner:
+            runner.run(main())
 
-Application developers should typically use the high-level asyncio functions,
-such as :func:`asyncio.run`, and should rarely need to reference the loop
-object or call its methods.  This section is intended mostly for authors
-of lower-level code, libraries, and frameworks, who need finer control over
-the event loop behavior.
+   .. versionadded:: 3.11
+
+   .. method:: run(coro, *, context=None)
+
+      Run a :term:`coroutine <coroutine>` *coro* in the embedded loop.
+
+      Return the coroutine's result or raise its exception.
+
+      An optional keyword-only *context* argument allows specifying a
+      custom :class:`contextvars.Context` for the *coro* to run in.
+      The runner's context is used if ``None``.
+
+   .. method:: get_loop()
+
+      Return the event loop associated with the runner instance.
+
+   .. method:: get_context()
+
+      Return the :class:`contextvars.Context` associated with the runner object.
