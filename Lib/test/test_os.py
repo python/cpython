@@ -2889,8 +2889,10 @@ class Win32NtTests(unittest.TestCase):
             import os
             import sys
             import time
+
             filename = sys.argv[1]
             deadline = float(sys.argv[2])
+
             while time.time() < deadline:
                 try:
                     with open(filename, "w") as f:
@@ -2907,12 +2909,49 @@ class Win32NtTests(unittest.TestCase):
             while time.time() < deadline:
                 try:
                     os.stat(filename)
-                # Note that `ERROR_NOT_READY`, which should also not be
-                # ignored, results in a `PermissionError`. That is not caught
-                # here, as only the behavior for `ERROR_FILE_NOT_FOUND` is
-                # checked in this test.
-                except FileNotFoundError:
+                except FileNotFoundError as e:
+                    assert e.winerror == 2  # ERROR_FILE_NOT_FOUND
+            try:
+                proc.wait(1)
+            except subprocess.TimeoutExpired:
+                proc.terminate()
+
+    @support.requires_subprocess()
+    def test_stat_rmdir_race(self):
+        # bpo-46785: same test as `test_stat_unlink_race`, excpet that this
+        # tests the case where the directory of the file is removed, not the
+        # file itself.
+        path = os_helper.TESTFN
+        filename = os.path.join(os_helper.TESTFN, 'f1')
+        self.addCleanup(os_helper.rmtree, path)
+        deadline = time.time() + 5
+        command = textwrap.dedent("""\
+            import shutil
+            import sys
+            import time
+
+            filename = sys.argv[1]
+            path = sys.argv[2]
+            deadline = float(sys.argv[3])
+
+            while time.time() < deadline:
+                try:
+                    with open(filename, "w") as f:
+                        pass
+                except OSError:
                     pass
+                try:
+                    shutil.rmtree(path)
+                except OSError:
+                    pass
+            """)
+
+        with subprocess.Popen([sys.executable, '-c', command, filename, path, str(deadline)]) as proc:
+            while time.time() < deadline:
+                try:
+                    os.stat(filename)
+                except FileNotFoundError as e:
+                    assert e.winerror == 3  # ERROR_PATH_NOT_FOUND
             try:
                 proc.wait(1)
             except subprocess.TimeoutExpired:
