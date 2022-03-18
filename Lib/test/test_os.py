@@ -2903,7 +2903,7 @@ class Win32NtTests(unittest.TestCase):
                     pass
             """)
 
-        with subprocess.Popen([sys.executable, '-c', command, filename, str(deadline)]):
+        with subprocess.Popen([sys.executable, '-c', command, filename, str(deadline)]) as proc:
             while time.time() < deadline:
                 try:
                     os.stat(filename)
@@ -2913,6 +2913,10 @@ class Win32NtTests(unittest.TestCase):
                 # checked in this test.
                 except FileNotFoundError:
                     pass
+            try:
+                proc.wait(1)
+            except subprocess.TimeoutExpired:
+                proc.terminate()
 
 
 @os_helper.skip_unless_symlink
