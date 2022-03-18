@@ -349,11 +349,11 @@ Barrier
 
    A barrier object.  Not thread-safe.
 
-   This class, as a clone of :class:`threading.Barrier`, provides a simple synchronization
-   primitive for use by a fixed number of tasks that need to wait for each other.
-   Each of the tasks tries to pass the barrier by calling the :meth:`~Barrier.wait` method
-   and would block until all of the tasks have made their :meth:`~Barrier.wait` calls.
-   At this point, the tasks are released simultaneously.
+   A barrier is a simple synchronization primitive that allows to block until a
+   certain number of tasks are waiting on it.   
+   Tasks can wait on the :meth:`~Barrier.wait` method and would be blocked until 
+   the specified number of tasks end up waiting on :meth:`~Barrier.wait`.
+   At that point all of the waiting tasks would unblock simultaneously.
 
    The barrier can be reused any number of times.
 
