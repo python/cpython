@@ -13,7 +13,7 @@
 
 # update when constants are added or removed
 
-MAGIC = 20171005
+MAGIC = 20220318
 
 from _sre import MAXREPEAT, MAXGROUPS
 
@@ -97,6 +97,9 @@ OPCODES = _makecodes("""
     REPEAT_ONE
     SUBPATTERN
     MIN_REPEAT_ONE
+    ATOMIC_GROUP
+    POSSESSIVE_REPEAT
+    POSSESSIVE_ONE
 
     GROUPREF_IGNORE
     IN_IGNORE
@@ -143,7 +146,6 @@ CHCODES = _makecodes("""
     CATEGORY_UNI_WORD CATEGORY_UNI_NOT_WORD
     CATEGORY_UNI_LINEBREAK CATEGORY_UNI_NOT_LINEBREAK
 """)
-
 
 # replacement operations for "ignore case" mode
 OP_IGNORE = {
