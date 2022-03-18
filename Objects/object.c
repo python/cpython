@@ -1710,7 +1710,7 @@ PyTypeObject _PyNone_Type = {
 
 PyObject _Py_NoneStruct = {
   _PyObject_EXTRA_INIT
-  _Py_IMMORTAL_REFCNT,
+  _Py_IMMORTAL_STATIC_REFCNT,
   &_PyNone_Type
 };
 
