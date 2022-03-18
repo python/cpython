@@ -1,0 +1,15 @@
+Define *posix_venv* and *nt_venv*
+:ref:`sysconfig installation schemes <installation_paths>`
+to be used for bootstrapping new virtual environments.
+Add *venv* sysconfig installation scheme to get the appropriate one of the above.
+The schemes are identical to the pre-existing
+*posix_prefix* and *nt* install schemes.
+The :mod:`venv` module now uses the *venv* scheme to create new virtual environments
+instead of hardcoding the paths depending only on the platform. Downstream
+Python distributors customizing the *posix_prefix* or *nt* install
+scheme in a way that is not compatible with the install scheme used in
+virtual environments are encouraged not to customize the *venv* schemes.
+When Python itself runs in a virtual environment,
+:func:`sysconfig.get_default_scheme` and
+:func:`sysconfig.get_preferred_scheme` with ``key="prefix"`` returns
+*venv*.
