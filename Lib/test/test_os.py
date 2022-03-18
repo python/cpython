@@ -2903,7 +2903,7 @@ class Win32NtTests(unittest.TestCase):
                     pass
             """)
 
-        with subprocess.Popen([sys.executable, '-c', command, filename, str(deadline)]) as proc:
+        with subprocess.Popen([sys.executable, '-c', command, filename, str(deadline)]):
             while time.time() < deadline:
                 try:
                     os.stat(filename)
