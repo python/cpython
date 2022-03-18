@@ -406,6 +406,51 @@ frame_stack_pop(PyFrameObject *f)
     Py_DECREF(v);
 }
 
+typedef enum _framestate {
+    FRAME_CREATED = -2,
+    FRAME_SUSPENDED = -1,
+    FRAME_EXECUTING = 0,
+    FRAME_COMPLETED = 1,
+    FRAME_CLEARED = 4
+} PyFrameState;
+
+
+static PyFrameState
+_PyFrame_GetState(PyFrameObject *frame)
+{
+    if (frame->f_frame->stacktop == 0) {
+        return FRAME_CLEARED;
+    }
+    switch(frame->f_frame->owner) {
+        case FRAME_OWNED_BY_GENERATOR:
+        {
+            PyGenObject *gen = _PyFrame_GetGenerator(frame->f_frame);
+            return gen->gi_frame_state;
+        }
+        case FRAME_OWNED_BY_THREAD:
+        {
+            if (frame->f_frame->f_lasti < 0) {
+                return FRAME_CREATED;
+            }
+            int opcode = PyBytes_AS_STRING(frame->f_frame->f_code->co_code)
+                [frame->f_frame->f_lasti*sizeof(_Py_CODEUNIT)];
+            switch(opcode) {
+                case COPY_FREE_VARS:
+                case MAKE_CELL:
+                case RETURN_GENERATOR:
+                    /* Frame not fully initialized */
+                    return FRAME_CREATED;
+                default:
+                    return FRAME_EXECUTING;
+            }
+        }
+        case FRAME_OWNED_BY_FRAME_OBJECT:
+            return FRAME_COMPLETED;
+    }
+    Py_UNREACHABLE();
+}
+
+
 /* Setter for f_lineno - you can set f_lineno from within a trace function in
  * order to jump to a given line of code, subject to some restrictions.  Most
  * lines are OK to jump to because they don't make any assumptions about the
@@ -1090,39 +1135,4 @@ _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
     return _PyEval_GetBuiltins(tstate);
 }
 
-
-PyFrameState
-PyFrame_GetState(PyFrameObject *frame)
-{
-    if (frame->f_frame->stacktop == 0) {
-        return FRAME_CLEARED;
-    }
-    switch(frame->f_frame->owner) {
-        case FRAME_OWNED_BY_GENERATOR:
-        {
-            PyGenObject *gen = _PyFrame_GetGenerator(frame->f_frame);
-            return gen->gi_frame_state;
-        }
-        case FRAME_OWNED_BY_THREAD:
-        {
-            if (frame->f_frame->f_lasti < 0) {
-                return FRAME_CREATED;
-            }
-            int opcode = PyBytes_AS_STRING(frame->f_frame->f_code->co_code)
-                [frame->f_frame->f_lasti*sizeof(_Py_CODEUNIT)];
-            switch(opcode) {
-                case COPY_FREE_VARS:
-                case MAKE_CELL:
-                case RETURN_GENERATOR:
-                    /* Frame not fully initialized */
-                    return FRAME_CREATED;
-                default:
-                    return FRAME_EXECUTING;
-            }
-        }
-        case FRAME_OWNED_BY_FRAME_OBJECT:
-            return FRAME_COMPLETED;
-    }
-    Py_UNREACHABLE();
-}
 
