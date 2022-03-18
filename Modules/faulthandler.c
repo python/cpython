@@ -27,8 +27,8 @@
 #endif
 
 #if defined(FAULTHANDLER_USE_ALT_STACK) && defined(HAVE_LINUX_AUXVEC_H) && defined(HAVE_SYS_AUXV_H)
-#  include <linux/auxvec.h>
-#  include <sys/auxv.h>
+#  include <linux/auxvec.h>       // AT_MINSIGSTKSZ
+#  include <sys/auxv.h>           // getauxval()
 #endif
 
 /* Allocate at maximum 100 MiB of the stack to raise the stack overflow */
