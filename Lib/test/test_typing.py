@@ -415,6 +415,12 @@ class TypeVarTupleTests(BaseTestCase):
         if not string.endswith(tail):
             self.fail(f"String {string!r} does not end with {tail!r}")
 
+    def test_name(self):
+        Ts = TypeVarTuple('Ts')
+        self.assertEqual(Ts.__name__, 'Ts')
+        Ts2 = TypeVarTuple('Ts2')
+        self.assertEqual(Ts2.__name__, 'Ts2')
+
     def test_instance_is_equal_to_itself(self):
         Ts = TypeVarTuple('Ts')
         self.assertEqual(Ts, Ts)
@@ -499,15 +505,6 @@ class TypeVarTupleTests(BaseTestCase):
                              Tuple[List[float], A[str], List[int]])
             self.assertEqual(E[float, str, int, bytes],
                              Tuple[List[float], A[str, int], List[bytes]])
-
-    def test_repr_is_correct(self):
-        Ts = TypeVarTuple('Ts')
-        self.assertEqual(repr(Ts), 'Ts')
-        self.assertEqual(repr(Unpack[Ts]), '*Ts')
-        self.assertEqual(repr(tuple[Unpack[Ts]]), 'tuple[*Ts]')
-        self.assertEqual(repr(Tuple[Unpack[Ts]]), 'typing.Tuple[*Ts]')
-        self.assertEqual(repr(Unpack[tuple[Unpack[Ts]]]), '*tuple[*Ts]')
-        self.assertEqual(repr(Unpack[Tuple[Unpack[Ts]]]), '*typing.Tuple[*Ts]')
 
     def test_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
