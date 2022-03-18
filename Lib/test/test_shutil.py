@@ -2154,7 +2154,7 @@ class TestMove(BaseTest, unittest.TestCase):
 
             # Create a file and keep the directory immutable
             os.lchflags(TESTFN_SRC, stat.UF_OPAQUE)
-            os_helper.create_empty_file(os.path.join(TESTFN_SRC, 'child'))
+            support.create_empty_file(os.path.join(TESTFN_SRC, 'child'))
             os.lchflags(TESTFN_SRC, stat.SF_IMMUTABLE)
 
             # Testing on a non-empty immutable directory
@@ -2164,10 +2164,10 @@ class TestMove(BaseTest, unittest.TestCase):
         finally:
             if os.path.exists(TESTFN_SRC):
                 os.lchflags(TESTFN_SRC, stat.UF_OPAQUE)
-                os_helper.rmtree(TESTFN_SRC)
+                support.rmtree(TESTFN_SRC)
             if os.path.exists(TESTFN_DST):
                 os.lchflags(TESTFN_DST, stat.UF_OPAQUE)
-                os_helper.rmtree(TESTFN_DST)
+                support.rmtree(TESTFN_DST)
 
 
 class TestCopyFile(unittest.TestCase):
