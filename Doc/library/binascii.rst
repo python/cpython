@@ -119,10 +119,10 @@ The :mod:`binascii` module defines the following functions:
       crc = binascii.crc32(b" world", crc)
       print('crc32 = {:#010x}'.format(crc))
 
-.. versionchanged:: 3.0
-   The result is always unsigned.
-   To generate the same numeric value when using Python 2 or earlier,
-   use ``crc32(data) & 0xffffffff``.
+   .. versionchanged:: 3.0
+      The result is always unsigned.
+      To generate the same numeric value when using Python 2 or earlier,
+      use ``crc32(data) & 0xffffffff``.
 
 .. function:: b2a_hex(data[, sep[, bytes_per_sep=1]])
               hexlify(data[, sep[, bytes_per_sep=1]])
