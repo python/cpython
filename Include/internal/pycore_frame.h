@@ -28,6 +28,13 @@ extern void _PyFrame_Fini(PyInterpreterState *interp);
 
 /* other API */
 
+typedef enum _framestate {
+    FRAME_CREATED = -2,
+    FRAME_SUSPENDED = -1,
+    FRAME_EXECUTING = 0,
+    FRAME_COMPLETED = 1,
+    FRAME_CLEARED = 4
+} PyFrameState;
 
 enum _frameowner {
     FRAME_OWNED_BY_THREAD = 0,

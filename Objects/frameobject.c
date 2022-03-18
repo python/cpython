@@ -406,15 +406,6 @@ frame_stack_pop(PyFrameObject *f)
     Py_DECREF(v);
 }
 
-typedef enum _framestate {
-    FRAME_CREATED = -2,
-    FRAME_SUSPENDED = -1,
-    FRAME_EXECUTING = 0,
-    FRAME_COMPLETED = 1,
-    FRAME_CLEARED = 4
-} PyFrameState;
-
-
 static PyFrameState
 _PyFrame_GetState(PyFrameObject *frame)
 {
@@ -479,7 +470,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    PyFrameState state = PyFrame_GetState(f);
+    PyFrameState state = _PyFrame_GetState(f);
     /*
      * This code preserves the historical restrictions on
      * setting the line number of a frame.
@@ -1076,7 +1067,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
 void
 PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 {
-    if (f == NULL || PyFrame_GetState(f) == FRAME_CLEARED) {
+    if (f == NULL || _PyFrame_GetState(f) == FRAME_CLEARED) {
         return;
     }
     _PyFrame_LocalsToFast(f->f_frame, clear);
