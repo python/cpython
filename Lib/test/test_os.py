@@ -64,6 +64,8 @@ from test.support import unix_shell
 from test.support.os_helper import FakePath
 
 
+asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+
 root_in_posix = False
 if hasattr(os, 'geteuid'):
     root_in_posix = (os.geteuid() == 0)
