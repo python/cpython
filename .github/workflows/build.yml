@@ -113,12 +113,12 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build CPython
-      run: .\PCbuild\build.bat -e -p Win32
+      run: .\PCbuild\build.bat -e -d -p Win32
       timeout-minutes: 30
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
-      run: .\PCbuild\rt.bat -p Win32 -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+      run: .\PCbuild\rt.bat -p Win32 -d -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
 
   build_win_amd64:
     name: 'Windows (x64)'
@@ -132,12 +132,12 @@ jobs:
     - name: Register MSVC problem matcher
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
-      run: .\PCbuild\build.bat -e -p x64
+      run: .\PCbuild\build.bat -e -d -p x64
       timeout-minutes: 30
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
-      run: .\PCbuild\rt.bat -p x64 -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+      run: .\PCbuild\rt.bat -p x64 -d -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
 
   build_macos:
     name: 'macOS'
