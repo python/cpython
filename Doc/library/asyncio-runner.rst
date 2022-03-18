@@ -9,31 +9,39 @@ Runner
 
 ------------------------------------
 
-*Runner* context manager is used for two purposes:
 
-1. Providing a primitive for event loop initialization and finalization with correct
-   resources cleanup (cancelling background tasks, shutdowning the default thread-pool
-   executor and pending async generators, etc.)
+:func:`asyncio.run` provides a convinient very high-level API for running asyncio code.
 
-2. Processing *context variables* between async function calls.
+It is the preferred approach that satisfies almost all use cases.
 
-:func:`asyncio.run` is used for running asyncio code usually, but sometimes several
-top-level async calls are needed in the same loop and context instead of the
-single ``main()`` call provided by :func:`asyncio.run`.
+Sometimes several top-level async calls are needed in the same loop and contextvars
+context instead of the single ``main()`` call provided by :func:`asyncio.run`.
 
-For example, there is a synchronous unittest library or console framework that should
-work with async code.
-
-A code that The following examples are equal:
+The *Runner* context manager can be used for such things:
 
 .. code:: python
 
-   async def main():
-       ...
+   with asyncio.Runner() as runner:
+       runner.run(func1())
+       runner.run(func2())
 
-   asyncio.run(main())
+On the :class:`~asyncio.Runner` instantiation the new event loop is created.
+
+All :meth:`~asyncio.Runner.run` calls share the same :class:`~contextvars.Context` and
+internal :class:`~asyncio.loop`.
+
+On the exit of :keyword:`with` block all background tasks are cancelled, the embedded
+loop is closing.
 
 
+.. class:: Runner(*, debug=None, factory=None)
+
+
+
+
+
+
+enter
 Usually,
 
 .. rubric:: Preface

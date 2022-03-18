@@ -1,5 +1,6 @@
 __all__ = ('Runner', 'run')
 
+import contextvars
 from . import coroutines
 from . import events
 from . import tasks
@@ -30,10 +31,14 @@ class Runner:
     asyncio.run() call doesn't work.
 
     """
-    def __init__(self, *, debug=None, factory=events.new_event_loop):
-        self._loop = factory()
+    def __init__(self, *, debug=None, factory=None):
+        if factory is None:
+            self._loop = events.new_event_loop()
+        else:
+            self._loop = factory()
         if debug is not None:
             self._loop.set_debug(debug)
+        self._context = contextvars.copy_context()
 
     def __enter__(self):
         return self
@@ -59,12 +64,20 @@ class Runner:
         if not coroutines.iscoroutine(coro):
             raise ValueError("a coroutine was expected, got {!r}".format(coro))
 
+        if self._loop is None:
+            raise RuntimeError("Runner is closed")
+
+        if context is None:
+            context = self._context
         task = self._loop.create_task(coro, context=context)
         return self._loop.run_until_complete(task)
 
     def get_loop(self):
         """Returnb embedded event loop."""
         return self._loop
+
+    def get_context(self):
+        return self._context.copy()
 
 
 def run(main, *, debug=None):
