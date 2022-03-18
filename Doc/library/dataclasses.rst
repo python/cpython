@@ -188,6 +188,13 @@ Module contents
 
     .. versionadded:: 3.10
 
+    .. versionchanged:: 3.11
+       If a field name is already included in the ``__slots__``
+       of a base class, it will not be included in the generated ``__slots__``.
+       Therefore, do not use ``__slots__`` to retrieve the field names of a
+       dataclass. Use :func:`fields` instead.
+
+
    ``field``\s may optionally specify a default value, using normal
    Python syntax::
 

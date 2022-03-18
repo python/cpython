@@ -1,0 +1,2 @@
+:class:`~dataclasses.dataclass` ``slots=True`` now accounts for slots in base classes.
+Patch by Arie Bovenberg.
