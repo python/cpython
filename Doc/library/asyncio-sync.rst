@@ -427,7 +427,7 @@ Barrier
    .. coroutinemethod:: wait()
 
       Pass the barrier.  When all the tasks party to the barrier have called
-      this function, they are all released simultaneously.
+      this function, they are all unblocked simultaneously.
 
       When a task in the barrier is cancelled, two cases are possible:
 
