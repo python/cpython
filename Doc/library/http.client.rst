@@ -46,8 +46,8 @@ The module provides the following classes:
    The optional *blocksize* parameter sets the buffer size in bytes for
    sending a file-like message body.
 
-   Warning: the global default timeout value is to never time out, which is often
-   not the desired value for this function.
+   Warning: the global default timeout value is set with no timeout, which may
+   not be the desired value for this function.
 
    For example, the following calls all create instances that connect to the server
    at the same host and port::
