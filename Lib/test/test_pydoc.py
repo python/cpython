@@ -409,7 +409,8 @@ class PydocDocTest(unittest.TestCase):
         text_lines = [line.strip() for line in text_result.splitlines()]
         text_lines = [line for line in text_lines if line]
         del text_lines[1]
-        expected_lines = [line.strip() for line in html2text_of_expected.splitlines() if line]
+        expected_lines = html2text_of_expected.splitlines()
+        expected_lines = [line.strip() for line in expected_lines if line]
         self.assertEqual(text_lines, expected_lines)
         mod_file = inspect.getabsfile(pydoc_mod)
         mod_url = urllib.parse.quote(mod_file)

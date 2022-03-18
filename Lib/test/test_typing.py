@@ -469,14 +469,12 @@ class TypeVarTupleTests(BaseTestCase):
 
         for A in G, Tuple:
             B = A[Unpack[Ts]]
-            if A != Tuple:
-                self.assertEqual(B[()], A[()])
+            self.assertEqual(B[()], A[()])
             self.assertEqual(B[float], A[float])
             self.assertEqual(B[float, str], A[float, str])
 
             C = List[A[Unpack[Ts]]]
-            if A != Tuple:
-                self.assertEqual(C[()], List[A[()]])
+            self.assertEqual(C[()], List[A[()]])
             self.assertEqual(C[float], List[A[float]])
             self.assertEqual(C[float, str], List[A[float, str]])
 
@@ -4248,7 +4246,7 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(Union[int, Callable[[Tuple[T, ...]], str]]),
                          (int, Callable[[Tuple[T, ...]], str]))
         self.assertEqual(get_args(Tuple[int, ...]), (int, ...))
-        self.assertEqual(get_args(Tuple[()]), ((),))
+        self.assertEqual(get_args(Tuple[()]), ())
         self.assertEqual(get_args(Annotated[T, 'one', 2, ['three']]), (T, 'one', 2, ['three']))
         self.assertEqual(get_args(List), ())
         self.assertEqual(get_args(Tuple), ())

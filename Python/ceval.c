@@ -2947,7 +2947,9 @@ handle_eval_breaker:
 
         TARGET(LOAD_GLOBAL) {
             PREDICTED(LOAD_GLOBAL);
-            PyObject *name = GETITEM(names, oparg);
+            int push_null = oparg & 1;
+            PEEK(0) = NULL;
+            PyObject *name = GETITEM(names, oparg>>1);
             PyObject *v;
             if (PyDict_CheckExact(GLOBALS())
                 && PyDict_CheckExact(BUILTINS()))
@@ -2970,7 +2972,6 @@ handle_eval_breaker:
                 /* Slow-path if globals or builtins is not a dict */
 
                 /* namespace 1: globals */
-                name = GETITEM(names, oparg);
                 v = PyObject_GetItem(GLOBALS(), name);
                 if (v == NULL) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
@@ -2992,6 +2993,7 @@ handle_eval_breaker:
             }
             /* Skip over inline cache */
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
+            STACK_GROW(push_null);
             PUSH(v);
             DISPATCH();
         }
@@ -3000,7 +3002,7 @@ handle_eval_breaker:
             assert(cframe.use_tracing == 0);
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             if (cache->counter == 0) {
-                PyObject *name = GETITEM(names, oparg);
+                PyObject *name = GETITEM(names, oparg>>1);
                 next_instr--;
                 if (_Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name) < 0) {
                     goto error;
@@ -3025,10 +3027,13 @@ handle_eval_breaker:
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
             PyObject *res = entries[cache->index].me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
+            int push_null = oparg & 1;
+            PEEK(0) = NULL;
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
+            STACK_GROW(push_null+1);
             Py_INCREF(res);
-            PUSH(res);
+            SET_TOP(res);
             NOTRACE_DISPATCH();
         }
 
@@ -3047,10 +3052,13 @@ handle_eval_breaker:
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
             PyObject *res = entries[cache->index].me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
+            int push_null = oparg & 1;
+            PEEK(0) = NULL;
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
+            STACK_GROW(push_null+1);
             Py_INCREF(res);
-            PUSH(res);
+            SET_TOP(res);
             NOTRACE_DISPATCH();
         }
 
