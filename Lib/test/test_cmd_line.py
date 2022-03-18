@@ -142,7 +142,7 @@ class CmdLineTest(unittest.TestCase):
         # the python unittest wiki. We will switch back when we are done.
         defaultwd = os.getcwd()
         projectlibpath = os.path.dirname(__file__).removesuffix("test")
-        with os_helper.change_cwd(projectlibpath):
+        with support.change_cwd(projectlibpath):
             # Testing with and without ./
             assert_python_ok('-m', 'unittest', "test/test_longexp.py")
             assert_python_ok('-m', 'unittest', "./test/test_longexp.py")
