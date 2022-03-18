@@ -3334,7 +3334,9 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
         self.server = SendfileTestServer((socket_helper.HOST, 0))
         self.server.start()
         self.client = socket.socket()
-        self.client.connect((self.server.host, self.server.port))
+        self.client.setblocking(False)
+        l = asyncio.get_running_loop()
+        await l.sock_connect(self.client, (self.server.host, self.server.port))
         self.client.settimeout(1)
         # synchronize by waiting for "220 ready" response
         self.client.recv(1024)
