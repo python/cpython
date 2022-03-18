@@ -93,6 +93,15 @@ class EnvBuilder:
             elif os.path.isdir(fn):
                 shutil.rmtree(fn)
 
+    def _venv_path(self, env_dir, name):
+        vars = {
+            'base': env_dir,
+            'platbase': env_dir,
+            'installed_base': env_dir,
+            'installed_platbase': env_dir,
+        }
+        return sysconfig.get_path(name, scheme='venv', vars=vars)
+
     def ensure_directories(self, env_dir):
         """
         Create the directories for the environment.
@@ -120,18 +129,12 @@ class EnvBuilder:
         context.executable = executable
         context.python_dir = dirname
         context.python_exe = exename
-        if sys.platform == 'win32':
-            binname = 'Scripts'
-            incpath = 'Include'
-            libpath = os.path.join(env_dir, 'Lib', 'site-packages')
-        else:
-            binname = 'bin'
-            incpath = 'include'
-            libpath = os.path.join(env_dir, 'lib',
-                                   'python%d.%d' % sys.version_info[:2],
-                                   'site-packages')
-        context.inc_path = path = os.path.join(env_dir, incpath)
-        create_if_needed(path)
+        binpath = self._venv_path(env_dir, 'scripts')
+        incpath = self._venv_path(env_dir, 'include')
+        libpath = self._venv_path(env_dir, 'purelib')
+
+        context.inc_path = incpath
+        create_if_needed(incpath)
         create_if_needed(libpath)
         # Issue 21197: create lib64 as a symlink to lib on 64-bit non-OS X POSIX
         if ((sys.maxsize > 2**32) and (os.name == 'posix') and
@@ -139,8 +142,8 @@ class EnvBuilder:
             link_path = os.path.join(env_dir, 'lib64')
             if not os.path.exists(link_path):   # Issue #21643
                 os.symlink('lib', link_path)
-        context.bin_path = binpath = os.path.join(env_dir, binname)
-        context.bin_name = binname
+        context.bin_path = binpath
+        context.bin_name = os.path.relpath(binpath, env_dir)
         context.env_exe = os.path.join(binpath, exename)
         create_if_needed(binpath)
         # Assign and update the command to use when launching the newly created
