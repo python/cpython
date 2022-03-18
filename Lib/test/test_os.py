@@ -3330,12 +3330,14 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
         threading_helper.threading_cleanup(*cls.key)
         os_helper.unlink(os_helper.TESTFN)
 
+    @staticmethod
+    async def chunks(reader):
+        while not reader.at_eof():
+            yield await reader.read()
+
     async def handle_new_client(self, reader, writer):
         writer.write(b"220 ready\r\n")
-        buffer = []
-        while not reader.at_eof():
-            buffer.append(await reader.read())
-        self.server_buffer = b''.join(buffer)
+        self.server_buffer = b''.join([x async for x in self.chunks(reader)])
         writer.close()
         self.server.close()  # The test server processes a single client only
 
