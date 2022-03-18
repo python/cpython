@@ -1034,17 +1034,6 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     _PyFrame_LocalsToFast(f->f_frame, clear);
 }
 
-void
-_PyFrame_Fini(PyInterpreterState *interp)
-{
-}
-
-/* Print summary info about the state of the optimized allocator */
-void
-_PyFrame_DebugMallocStats(FILE *out)
-{
-}
-
 
 PyCodeObject *
 PyFrame_GetCode(PyFrameObject *frame)

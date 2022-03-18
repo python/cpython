@@ -2119,7 +2119,6 @@ _PyObject_DebugTypeStats(FILE *out)
 {
     _PyDict_DebugMallocStats(out);
     _PyFloat_DebugMallocStats(out);
-    _PyFrame_DebugMallocStats(out);
     _PyList_DebugMallocStats(out);
     _PyTuple_DebugMallocStats(out);
 }

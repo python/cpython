@@ -73,29 +73,6 @@ _PySys_GetAttr(PyThreadState *tstate, PyObject *name)
 }
 
 static PyObject *
-sys_get_object_id(PyThreadState *tstate, _Py_Identifier *key)
-{
-    PyObject *sd = tstate->interp->sysdict;
-    if (sd == NULL) {
-        return NULL;
-    }
-    PyObject *exc_type, *exc_value, *exc_tb;
-    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
-    PyObject *value = _PyDict_GetItemIdWithError(sd, key);
-    /* XXX Suppress a new exception if it was raised and restore
-     * the old one. */
-    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
-    return value;
-}
-
-PyObject *
-_PySys_GetObjectId(_Py_Identifier *key)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    return sys_get_object_id(tstate, key);
-}
-
-static PyObject *
 _PySys_GetObject(PyInterpreterState *interp, const char *name)
 {
     PyObject *sysdict = interp->sysdict;
@@ -137,19 +114,6 @@ sys_set_object(PyInterpreterState *interp, PyObject *key, PyObject *v)
     else {
         return PyDict_SetItem(sd, key, v);
     }
-}
-
-static int
-sys_set_object_id(PyInterpreterState *interp, _Py_Identifier *key, PyObject *v)
-{
-    return sys_set_object(interp, _PyUnicode_FromId(key), v);
-}
-
-int
-_PySys_SetObjectId(_Py_Identifier *key, PyObject *v)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return sys_set_object_id(interp, key, v);
 }
 
 int

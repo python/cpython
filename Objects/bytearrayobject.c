@@ -335,9 +335,19 @@ bytearray_repeat(PyByteArrayObject *self, Py_ssize_t count)
         if (mysize == 1)
             memset(result->ob_bytes, buf[0], size);
         else {
-            Py_ssize_t i;
-            for (i = 0; i < count; i++)
-                memcpy(result->ob_bytes + i*mysize, buf, mysize);
+            Py_ssize_t i, j;
+
+            i = 0;
+            if (i < size) {
+                memcpy(result->ob_bytes, buf, mysize);
+                i = mysize;
+            }
+            // repeatedly double the number of bytes copied
+            while (i < size) {
+                j = Py_MIN(i, size - i);
+                memcpy(result->ob_bytes + i, result->ob_bytes, j);
+                i += j;
+            }
         }
     }
     return (PyObject *)result;
@@ -363,9 +373,15 @@ bytearray_irepeat(PyByteArrayObject *self, Py_ssize_t count)
     if (mysize == 1)
         memset(buf, buf[0], size);
     else {
-        Py_ssize_t i;
-        for (i = 1; i < count; i++)
-            memcpy(buf + i*mysize, buf, mysize);
+        Py_ssize_t i, j;
+
+        i = mysize;
+        // repeatedly double the number of bytes copied
+        while (i < size) {
+            j = Py_MIN(i, size - i);
+            memcpy(buf + i, buf, j);
+            i += j;
+        }
     }
 
     Py_INCREF(self);
@@ -844,8 +860,33 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
         return -1;
     }
 
-    /* XXX Optimize this if the arguments is a list, tuple */
-
+    if (PyList_CheckExact(arg) || PyTuple_CheckExact(arg)) {
+        Py_ssize_t size = PySequence_Fast_GET_SIZE(arg);
+        if (PyByteArray_Resize((PyObject *)self, size) < 0) {
+            return -1;
+        }
+        PyObject **items = PySequence_Fast_ITEMS(arg);
+        char *s = PyByteArray_AS_STRING(self);
+        for (Py_ssize_t i = 0; i < size; i++) {
+            int value;
+            if (!PyLong_CheckExact(items[i])) {
+                /* Resize to 0 and go through slowpath */
+                if (Py_SIZE(self) != 0) {
+                   if (PyByteArray_Resize((PyObject *)self, 0) < 0) {
+                       return -1;
+                   }
+                }
+                goto slowpath;
+            }
+            int rc = _getbytevalue(items[i], &value);
+            if (!rc) {
+                return -1;
+            }
+            s[i] = value;
+        }
+        return 0;
+    }
+slowpath:
     /* Get the iterator */
     it = PyObject_GetIter(arg);
     if (it == NULL) {
