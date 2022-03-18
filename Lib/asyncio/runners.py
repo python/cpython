@@ -73,7 +73,7 @@ class Runner:
         return self._loop.run_until_complete(task)
 
     def get_loop(self):
-        """Returnb embedded event loop."""
+        """Return embedded event loop."""
         return self._loop
 
     def get_context(self):
