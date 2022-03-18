@@ -491,16 +491,18 @@ class Barrier(mixins._LoopBoundMixin):
         # It is draining or resetting, wait until done
         # unless a CancelledError occurs
         try:
-            await self._cond.wait_for(lambda: not (self._draining() or
-                                                    self._resetting()))
+            try:
+                await self._cond.wait_for(lambda: not (self._draining() or
+                                                        self._resetting()))
+            finally:
+                # block always will call, even an exception occurs
+                self._count_block -= 1
         except exceptions.CancelledError:
-            self._count_block -= 1
             raise
-        self._count_block -= 1
 
         # see if the barrier is in a broken state
         if self.broken:
-            raise BrokenBarrierError
+            raise BrokenBarrierError("Barrier aborted")
 
     # Optionally run the 'action' and release the tasks waiting
     # in the barrier.
@@ -511,15 +513,16 @@ class Barrier(mixins._LoopBoundMixin):
         try:
             if self._action:
                 await self._action()
-            # enter draining state
-            self._set_draining()
-            self._cond.notify_all()
-        except:
+        except (Exception, exceptions.CancelledError):
             # an exception occurs during the _action coroutine,
             # or the last calling task cancels
             # Break and reraise
             self._break()
             raise
+
+        # enter draining state
+        self._set_draining()
+        self._cond.notify_all()
 
     async def _wait(self):
         """Wait in the barrier until we are released.  Raise an exception
@@ -530,7 +533,7 @@ class Barrier(mixins._LoopBoundMixin):
         await self._cond.wait_for(lambda: not self._filling())
 
         if self.broken or self._resetting():
-            raise BrokenBarrierError
+            raise BrokenBarrierError("Abort or reset of barrier")
 
     def _exit(self):
         """If we are the last tasks to exit the barrier, signal any tasks
