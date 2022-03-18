@@ -682,7 +682,7 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_NotImplemented (&_Py_NotImplementedStruct)
 
 /* Macro for returning Py_NotImplemented from a function */
-#define Py_RETURN_NOTIMPLEMENTED return Py_NewRef(Py_NotImplemented)
+#define Py_RETURN_NOTIMPLEMENTED return Py_NotImplemented
 
 /* Rich comparison opcodes */
 #define Py_LT 0

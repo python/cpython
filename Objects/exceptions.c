@@ -554,11 +554,12 @@ StopIteration_init(PyStopIterationObject *self, PyObject *args, PyObject *kwds)
     if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
         return -1;
     Py_CLEAR(self->value);
-    if (size > 0)
+    if (size > 0) {
         value = PyTuple_GET_ITEM(args, 0);
-    else
+        Py_INCREF(value);
+    } else {
         value = Py_None;
-    Py_INCREF(value);
+    }
     self->value = value;
     return 0;
 }
@@ -1248,7 +1249,7 @@ exception_group_projection(PyObject *eg, PyObject *keep)
     }
 
     PyObject *result = split_result.match ?
-        split_result.match : Py_NewRef(Py_None);
+        split_result.match : Py_None;
     assert(split_result.rest == NULL);
     return result;
 }
@@ -1293,7 +1294,7 @@ _PyExc_PrepReraiseStar(PyObject *orig, PyObject *excs)
     Py_ssize_t numexcs = PyList_GET_SIZE(excs);
 
     if (numexcs == 0) {
-        return Py_NewRef(Py_None);
+        return Py_None;
     }
 
     if (!_PyBaseExceptionGroup_Check(orig)) {
@@ -1536,11 +1537,12 @@ ImportError_reduce(PyImportErrorObject *self, PyObject *Py_UNUSED(ignored))
     if (state == NULL)
         return NULL;
     args = ((PyBaseExceptionObject *)self)->args;
-    if (state == Py_None)
+    if (state == Py_None) {
         res = PyTuple_Pack(2, Py_TYPE(self), args);
-    else
+    } else {
         res = PyTuple_Pack(3, Py_TYPE(self), args, state);
-    Py_DECREF(state);
+        Py_DECREF(state);
+    }
     return res;
 }
 
@@ -1968,7 +1970,6 @@ OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
              * So, to recreate filename2, we need to pass in
              * winerror as well.
              */
-            Py_INCREF(Py_None);
             PyTuple_SET_ITEM(args, 3, Py_None);
 
             /* filename2 */

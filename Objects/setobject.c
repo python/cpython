@@ -1949,7 +1949,6 @@ set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
     }
     if (dict == NULL) {
         dict = Py_None;
-        Py_INCREF(dict);
     }
     result = PyTuple_Pack(3, Py_TYPE(so), args, dict);
 done:

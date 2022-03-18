@@ -349,7 +349,6 @@ convert_to_double(PyObject **v, double *dbl)
         }
     }
     else {
-        Py_INCREF(Py_NotImplemented);
         *v = Py_NotImplemented;
         return -1;
     }
@@ -882,7 +881,6 @@ float_is_integer_impl(PyObject *self)
                              PyExc_ValueError);
         return NULL;
     }
-    Py_INCREF(o);
     return o;
 }
 
