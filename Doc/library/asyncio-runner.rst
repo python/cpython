@@ -10,8 +10,8 @@ Runners
 
 This section outlines high-level asyncio primitives to run asyncio code.
 
-They are built on top of :ref:`event loop <asyncio-event-loop>` with the aim to simplify
-async code usage for common wide-spread scenarion.
+They are built on top of an :ref:`event loop <asyncio-event-loop>` with the aim
+to simplify async code usage for common wide-spread scenarios.
 
 .. contents::
    :depth: 1
