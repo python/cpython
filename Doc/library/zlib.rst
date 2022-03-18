@@ -41,6 +41,10 @@ The available exception and functions in this module are:
    the algorithm is designed for use as a checksum algorithm, it is not suitable
    for use as a general hash algorithm.
 
+.. versionchanged:: 3.0
+   The result is always unsigned.
+   To generate the same numeric value when using Python 2 or earlier,
+   use ``adler32(data) & 0xffffffff``.
 
 .. function:: compress(data, /, level=-1, wbits=MAX_WBITS)
 
@@ -131,6 +135,10 @@ The available exception and functions in this module are:
    the algorithm is designed for use as a checksum algorithm, it is not suitable
    for use as a general hash algorithm.
 
+.. versionchanged:: 3.0
+   The result is always unsigned.
+   To generate the same numeric value when using Python 2 or earlier,
+   use ``crc32(data) & 0xffffffff``.
 
 .. function:: decompress(data, /, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE)
 
