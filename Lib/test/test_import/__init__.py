@@ -20,7 +20,7 @@ from unittest import mock
 
 from test.support import os_helper
 from test.support import (
-    STDLIB_DIR, is_jython, swap_attr, swap_item, cpython_only)
+    STDLIB_DIR, is_jython, swap_attr, swap_item, cpython_only, is_emscripten)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, DirsOnSysPath, CleanImport)
 from test.support.os_helper import (
@@ -101,8 +101,17 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ImportError) as cm:
             from _testcapi import i_dont_exist
         self.assertEqual(cm.exception.name, '_testcapi')
-        self.assertEqual(cm.exception.path, _testcapi.__file__)
-        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)\)")
+        if hasattr(_testcapi, "__file__"):
+            self.assertEqual(cm.exception.path, _testcapi.__file__)
+            self.assertRegex(
+                str(cm.exception),
+                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)\)"
+            )
+        else:
+            self.assertEqual(
+                str(cm.exception),
+                "cannot import name 'i_dont_exist' from '_testcapi' (unknown location)"
+            )
 
     def test_from_import_missing_attr_has_name(self):
         with self.assertRaises(ImportError) as cm:
@@ -525,6 +534,7 @@ class FilePermissionTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
+    @unittest.skipIf(is_emscripten, "Emscripten's umask is a stub.")
     def test_creation_mode(self):
         mask = 0o022
         with temp_umask(mask), _ready_to_import() as (name, path):
