@@ -361,6 +361,12 @@ sys
   (equivalent to ``sys.exc_info()[1]``).
   (Contributed by Irit Katriel in :issue:`46328`.)
 
+tempfile
+--------
+
+* :mod:`tempfile` functions can now support :ref:`specifying a file
+  descriptor <path_fd>` as the *dir* argument.
+
 threading
 ---------
 
