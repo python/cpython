@@ -3256,8 +3256,8 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
         self.server_buffer = b''
-        cb = lambda reader, writer: self.handle_new_client(reader, writer)
-        self.server = await asyncio.start_server(cb, socket_helper.HOSTv4)
+        self.server = await asyncio.start_server(self.handle_new_client,
+                                                 socket_helper.HOSTv4)
         self.client = socket.socket()
         self.client.setblocking(False)
         l = asyncio.get_running_loop()
