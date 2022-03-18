@@ -3330,13 +3330,23 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
         threading_helper.threading_cleanup(*cls.key)
         os_helper.unlink(os_helper.TESTFN)
 
+    async def handle_new_client(self, reader, writer):
+        writer.write(b"220 ready\r\n")
+        buffer = []
+        while not reader.at_eof():
+            buffer.append(await reader.read())
+        self.server_buffer = b''.join(buffer)
+        writer.close()
+        self.server.close()  # The test server processes a single client only
+
     async def asyncSetUp(self):
-        self.server = SendfileTestServer((socket_helper.HOST, 0))
-        self.server.start()
+        self.server_buffer = b''
+        cb = lambda reader, writer: self.handle_new_client(reader, writer)
+        self.server = await asyncio.start_server(cb, socket_helper.HOSTv4)
         self.client = socket.socket()
         self.client.setblocking(False)
         l = asyncio.get_running_loop()
-        await l.sock_connect(self.client, (self.server.host, self.server.port))
+        await l.sock_connect(self.client, self.server.sockets[0].getsockname())
         self.client.settimeout(1)
         # synchronize by waiting for "220 ready" response
         self.client.recv(1024)
@@ -3347,9 +3357,7 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         self.file.close()
         self.client.close()
-        if self.server.running:
-            self.server.stop()
-        self.server = None
+        await self.server.wait_closed()
 
     # Use the test subject instead of asyncio.loop.sendfile
     @staticmethod
@@ -3392,10 +3400,9 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(total_sent, len(self.DATA))
         self.client.shutdown(socket.SHUT_RDWR)
         self.client.close()
-        self.server.wait()
-        data = self.server.handler_instance.get_data()
-        self.assertEqual(len(data), len(self.DATA))
-        self.assertEqual(data, self.DATA)
+        await self.server.wait_closed()
+        self.assertEqual(len(self.server_buffer), len(self.DATA))
+        self.assertEqual(self.server_buffer, self.DATA)
 
     async def test_send_at_certain_offset(self):
         # start sending a file at a certain offset
@@ -3414,12 +3421,11 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
 
         self.client.shutdown(socket.SHUT_RDWR)
         self.client.close()
-        self.server.wait()
-        data = self.server.handler_instance.get_data()
+        await self.server.wait_closed()
         expected = self.DATA[len(self.DATA) // 2:]
         self.assertEqual(total_sent, len(expected))
-        self.assertEqual(len(data), len(expected))
-        self.assertEqual(data, expected)
+        self.assertEqual(len(self.server_buffer), len(expected))
+        self.assertEqual(self.server_buffer, expected)
 
     async def test_offset_overflow(self):
         # specify an offset > file size
@@ -3435,9 +3441,8 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(sent, 0)
         self.client.shutdown(socket.SHUT_RDWR)
         self.client.close()
-        self.server.wait()
-        data = self.server.handler_instance.get_data()
-        self.assertEqual(data, b'')
+        await self.server.wait_closed()
+        self.assertEqual(self.server_buffer, b'')
 
     async def test_invalid_offset(self):
         with self.assertRaises(OSError) as cm:
@@ -3476,9 +3481,8 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(total_sent, len(expected_data))
         self.client.close()
-        self.server.wait()
-        data = self.server.handler_instance.get_data()
-        self.assertEqual(hash(data), hash(expected_data))
+        await self.server.wait_closed()
+        self.assertEqual(hash(self.server_buffer), hash(expected_data))
 
     @requires_headers_trailers
     async def test_trailers(self):
@@ -3492,9 +3496,8 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
             await self.async_sendfile(self.sockno, f.fileno(), 0, 5,
                                       trailers=[b"123456", b"789"])
             self.client.close()
-            self.server.wait()
-            data = self.server.handler_instance.get_data()
-            self.assertEqual(data, b"abcde123456789")
+            await self.server.wait_closed()
+            self.assertEqual(self.server_buffer, b"abcde123456789")
 
     @requires_headers_trailers
     @requires_32b
