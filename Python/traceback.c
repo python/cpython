@@ -1190,8 +1190,8 @@ dump_frame(int fd, InterpreterFrame *frame)
     PUTS(fd, " in ");
 
     PyObject *name = code->co_qualname ? code->co_qualname : code->co_name;
-    if (name != NULL && PyUnicode_Check(code->co_qualname)) {
-        _Py_DumpASCII(fd, code->co_qualname);
+    if (name != NULL && PyUnicode_Check(name)) {
+        _Py_DumpASCII(fd, name);
     }
     else {
         PUTS(fd, "???");
