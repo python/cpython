@@ -1,2 +1,3 @@
-Remove invalid document, the results of :func:`zlib.adler32` /
-:func:`zlib.crc32` / :func:`binascii.crc32` don't need ``& 0xFFFF_FFFF``.
+Internal cleanup to :func:`zlib.crc32` / :func:`binascii.crc32` to not use
+an intermediate signed value. No functional change. Clarified the old Python
+versions compatiblity note in the docstrings.
