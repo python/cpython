@@ -545,6 +545,29 @@ class WarnTests(BaseTest):
                 self.module.warn('good warning category', MyWarningClass)
             self.assertIsInstance(cm.warning, Warning)
 
+    def test_simplefilter_invalid_category(self):
+        class MyWarningClass(Warning):
+            pass
+
+        class NonWarningSubclass:
+            pass
+
+        msg_regex = 'category must be a Warning subclass, not (.*)'
+
+        with self.assertRaisesRegex(TypeError, msg_regex):
+            self.module.simplefilter('always', '')
+
+        with self.assertRaisesRegex(TypeError, msg_regex):
+            self.module.simplefilter('always', NonWarningSubclass)
+
+        with self.assertRaisesRegex(TypeError, msg_regex):
+            self.module.simplefilter('always', MyWarningClass())
+
+        with original_warnings.catch_warnings(module=self.module, record=True) as w:
+            self.module.simplefilter('always', MyWarningClass)
+            self.assertEqual(len(w), 0)
+
+
 class CWarnTests(WarnTests, unittest.TestCase):
     module = c_warnings
 

@@ -1,0 +1,1 @@
+Validate the category of warnings.simplefilter sooner
