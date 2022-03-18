@@ -483,15 +483,15 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             ret = _PyFrame_StackPop((_PyInterpreterFrame *)gen->gi_iframe);
             assert(ret == yf);
             Py_DECREF(ret);
+            // XXX: Performing this jump ourselves is awkward and problematic.
+            // See https://github.com/python/cpython/pull/31968.
             /* Termination repetition of SEND loop */
             assert(frame->f_lasti >= 0);
+            _Py_CODEUNIT *code = _PyCode_CODE(gen->gi_code);
             /* Backup to SEND */
-            // XXX: Bad use of f_lasti?
             frame->f_lasti--;
-            _Py_CODEUNIT instruction = _PyCode_CODE(gen->gi_code)[frame->f_lasti];
-            assert(_Py_OPCODE(instruction) == SEND);
-            // XXX: This doesn't seem to handle EXTENDED_ARGs:
-            int jump = _Py_OPARG(instruction);
+            assert(_Py_OPCODE(code[frame->f_lasti]) == SEND);
+            int jump = _Py_OPARG(code[frame->f_lasti]);
             frame->f_lasti += jump;
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);
