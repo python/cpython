@@ -337,7 +337,7 @@ class TestCollation(unittest.TestCase):
         self.assertRaises(ValueError, locale.strcoll, 'a', 'a\0')
 
     @unittest.skipIf(sys.platform.startswith('sunos'),
-                     'bpo-xxxxx: broken on Solaris')
+                     'bpo-47058: broken on Solaris')
     def test_strxfrm(self):
         self.assertLess(locale.strxfrm('a'), locale.strxfrm('b'))
         # embedded null character
@@ -372,7 +372,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
     @unittest.skipIf(sys.platform.startswith("netbsd"),
                      "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
     @unittest.skipIf(sys.platform.startswith('sunos'),
-                     'bpo-xxxxx: broken on Solaris')
+                     'bpo-47058: broken on Solaris')
     def test_strxfrm_with_diacritic(self):
         self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
 

@@ -4069,7 +4069,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.createAndSendFDs(1)
 
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
-    @unittest.skipIf(SOLARIS, "skipping, see issue #00000")
+    @unittest.skipIf(SOLARIS, "skipping, see issue #47058")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparate(self):
@@ -4081,7 +4081,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
 
     @testFDPassSeparate.client_skip
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
-    @unittest.skipIf(SOLARIS, "skipping, see issue #00000")
+    @unittest.skipIf(SOLARIS, "skipping, see issue #47058")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparate(self):
         fd0, fd1 = self.newFDs(2)
@@ -4095,7 +4095,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
             len(MSG))
 
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
-    @unittest.skipIf(SOLARIS, "skipping, see issue #00000")
+    @unittest.skipIf(SOLARIS, "skipping, see issue #47058")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparateMinSpace(self):
@@ -4110,7 +4110,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
 
     @testFDPassSeparateMinSpace.client_skip
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
-    @unittest.skipIf(SOLARIS, "skipping, see issue #00000")
+    @unittest.skipIf(SOLARIS, "skipping, see issue #47058")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparateMinSpace(self):
         fd0, fd1 = self.newFDs(2)
