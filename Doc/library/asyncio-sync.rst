@@ -355,7 +355,7 @@ Barrier
    and would block until all of the tasks have made their :meth:`~Barrier.wait` calls.
    At this point, the tasks are released simultaneously.
 
-   The barrier can be reused any number of times for the same number of tasks.
+   The barrier can be reused any number of times.
 
    .. _asyncio_example_barrier:
 
