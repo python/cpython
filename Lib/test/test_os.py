@@ -23,6 +23,7 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+import textwrap
 import threading
 import time
 import types
@@ -2883,11 +2884,14 @@ class Win32NtTests(unittest.TestCase):
         # should not be restored.
         filename =  os_helper.TESTFN
         self.addCleanup(os_helper.unlink, filename)
-        command = '''if 1:
+        deadline = time.time() + 5
+        command = textwrap.dedent("""\
             import os
             import sys
+            import time
             filename = sys.argv[1]
-            while True:
+            deadline = float(sys.argv[2])
+            while time.time() < deadline:
                 try:
                     with open(filename, "w") as f:
                         pass
@@ -2897,11 +2901,9 @@ class Win32NtTests(unittest.TestCase):
                     os.remove(filename)
                 except OSError:
                     pass
-        '''
-        deadline = time.time() + 5
-        p = subprocess.Popen([sys.executable, '-c', command, filename])
+            """)
 
-        try:
+        with subprocess.Popen([sys.executable, '-c', command, filename, str(deadline)]) as proc:
             while time.time() < deadline:
                 try:
                     os.stat(filename)
@@ -2911,8 +2913,6 @@ class Win32NtTests(unittest.TestCase):
                 # checked in this test.
                 except FileNotFoundError:
                     pass
-        finally:
-            p.terminate()
 
 
 @os_helper.skip_unless_symlink
