@@ -2931,27 +2931,33 @@ class TestSlots(unittest.TestCase):
             __slots__ = {'x'}
 
         class Root2(Root):
+            __slots__ = {'k': '...', 'j': ''}
+
+        class Root3(Root2):
+            __slots__ = ['h']
+
+        class Root4(Root3):
             __slots__ = 'aa'
 
         @dataclass(slots=True)
-        class Base(Root2):
+        class Base(Root4):
             y: int
 
         self.assertEqual(Base.__slots__, ('y', ))
 
         @dataclass(slots=True)
-        class Delivered(Base):
+        class Derived(Base):
             aa: float
             x: str
             z: int
 
-        self.assertEqual(Delivered.__slots__, ('z', ))
+        self.assertEqual(Derived.__slots__, ('z', ))
 
         @dataclass
-        class AnotherDelivered(Base):
+        class AnotherDerived(Base):
             z: int
 
-        self.assertTrue('__slots__' not in AnotherDelivered.__dict__)
+        self.assertTrue('__slots__' not in AnotherDerived.__dict__)
 
     def test_cant_inherit_from_iterator_slots(self):
 
