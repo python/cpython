@@ -274,7 +274,11 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
                 v.__warningregistry__ = {}
         self.warnings_manager = warnings.catch_warnings(record=True)
         self.warnings = self.warnings_manager.__enter__()
-        warnings.simplefilter("always", self.expected)
+        if isinstance(self.expected, tuple):
+            for expected in self.expected:
+                warnings.simplefilter("always", expected)
+        else:
+            warnings.simplefilter("always", self.expected)
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
