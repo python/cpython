@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import unittest
 from test import support
 
@@ -9,6 +10,9 @@ class MyException(Exception):
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
+
+
+VAR = contextvars.ContextVar('VAR', default=())
 
 
 class TestAsyncCase(unittest.TestCase):
@@ -24,22 +28,26 @@ class TestAsyncCase(unittest.TestCase):
             def setUp(self):
                 self.assertEqual(events, [])
                 events.append('setUp')
+                VAR.set(VAR.get() + ('setUp',))
 
             async def asyncSetUp(self):
                 self.assertEqual(events, ['setUp'])
                 events.append('asyncSetUp')
+                VAR.set(VAR.get() + ('asyncSetUp',))
                 self.addAsyncCleanup(self.on_cleanup1)
 
             async def test_func(self):
                 self.assertEqual(events, ['setUp',
                                           'asyncSetUp'])
                 events.append('test')
+                VAR.set(VAR.get() + ('test',))
                 self.addAsyncCleanup(self.on_cleanup2)
 
             async def asyncTearDown(self):
                 self.assertEqual(events, ['setUp',
                                           'asyncSetUp',
                                           'test'])
+                VAR.set(VAR.get() + ('asyncTearDown',))
                 events.append('asyncTearDown')
 
             def tearDown(self):
@@ -48,6 +56,7 @@ class TestAsyncCase(unittest.TestCase):
                                           'test',
                                           'asyncTearDown'])
                 events.append('tearDown')
+                VAR.set(VAR.get() + ('tearDown',))
 
             async def on_cleanup1(self):
                 self.assertEqual(events, ['setUp',
@@ -57,6 +66,9 @@ class TestAsyncCase(unittest.TestCase):
                                           'tearDown',
                                           'cleanup2'])
                 events.append('cleanup1')
+                VAR.set(VAR.get() + ('cleanup1',))
+                nonlocal cvar
+                cvar = VAR.get()
 
             async def on_cleanup2(self):
                 self.assertEqual(events, ['setUp',
@@ -65,8 +77,10 @@ class TestAsyncCase(unittest.TestCase):
                                           'asyncTearDown',
                                           'tearDown'])
                 events.append('cleanup2')
+                VAR.set(VAR.get() + ('cleanup2',))
 
         events = []
+        cvar = ()
         test = Test("test_func")
         result = test.run()
         self.assertEqual(result.errors, [])
@@ -74,13 +88,17 @@ class TestAsyncCase(unittest.TestCase):
         expected = ['setUp', 'asyncSetUp', 'test',
                     'asyncTearDown', 'tearDown', 'cleanup2', 'cleanup1']
         self.assertEqual(events, expected)
+        self.assertEqual(cvar, tuple(expected))
 
         events = []
+        cvar = ()
         test = Test("test_func")
         test.debug()
         self.assertEqual(events, expected)
+        self.assertEqual(cvar, tuple(expected))
         test.doCleanups()
         self.assertEqual(events, expected)
+        self.assertEqual(cvar, tuple(expected))
 
     def test_exception_in_setup(self):
         class Test(unittest.IsolatedAsyncioTestCase):

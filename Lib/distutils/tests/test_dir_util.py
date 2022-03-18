@@ -11,7 +11,7 @@ from distutils.dir_util import (mkpath, remove_tree, create_tree, copy_tree,
 
 from distutils import log
 from distutils.tests import support
-from test.support import run_unittest
+from test.support import run_unittest, is_emscripten
 
 
 class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
@@ -55,6 +55,7 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
 
     @unittest.skipIf(sys.platform.startswith('win'),
         "This test is only appropriate for POSIX-like systems.")
+    @unittest.skipIf(is_emscripten, "Emscripten's umask is a stub.")
     def test_mkpath_with_custom_mode(self):
         # Get and set the current umask value for testing mode bits.
         umask = os.umask(0o002)
