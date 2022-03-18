@@ -2,6 +2,7 @@
 # does add tests for a few functions which have been determined to be more
 # portable than they had been thought to be.
 
+import asyncio
 import codecs
 import contextlib
 import decimal
@@ -3348,13 +3349,19 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
             self.server.stop()
         self.server = None
 
-    def sendfile_wrapper(self, *args, **kwargs):
+    # Use the test subject instead of asyncio.loop.sendfile
+    @staticmethod
+    async def async_sendfile(*args, **kwargs):
+        return await asyncio.to_thread(os.sendfile, *args, **kwargs)
+
+    @staticmethod
+    async def sendfile_wrapper(*args, **kwargs):
         """A higher level wrapper representing how an application is
         supposed to use sendfile().
         """
         while True:
             try:
-                return os.sendfile(*args, **kwargs)
+                return await TestSendfile.async_sendfile(*args, **kwargs)
             except OSError as err:
                 if err.errno == errno.ECONNRESET:
                     # disconnected
@@ -3371,7 +3378,8 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
         offset = 0
         nbytes = 4096
         while total_sent < len(self.DATA):
-            sent = self.sendfile_wrapper(self.sockno, self.fileno, offset, nbytes)
+            sent = await self.sendfile_wrapper(self.sockno, self.fileno,
+                                               offset, nbytes)
             if sent == 0:
                 break
             offset += sent
@@ -3394,7 +3402,8 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
         must_send = len(self.DATA) - offset
         nbytes = 4096
         while total_sent < must_send:
-            sent = self.sendfile_wrapper(self.sockno, self.fileno, offset, nbytes)
+            sent = await self.sendfile_wrapper(self.sockno, self.fileno,
+                                               offset, nbytes)
             if sent == 0:
                 break
             offset += sent
@@ -3414,7 +3423,8 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
         # specify an offset > file size
         offset = len(self.DATA) + 4096
         try:
-            sent = os.sendfile(self.sockno, self.fileno, offset, 4096)
+            sent = await self.async_sendfile(self.sockno, self.fileno,
+                                             offset, 4096)
         except OSError as e:
             # Solaris can raise EINVAL if offset >= file length, ignore.
             if e.errno != errno.EINVAL:
@@ -3429,17 +3439,17 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
 
     async def test_invalid_offset(self):
         with self.assertRaises(OSError) as cm:
-            os.sendfile(self.sockno, self.fileno, -1, 4096)
+            await self.async_sendfile(self.sockno, self.fileno, -1, 4096)
         self.assertEqual(cm.exception.errno, errno.EINVAL)
 
     async def test_keywords(self):
         # Keyword arguments should be supported
-        os.sendfile(out_fd=self.sockno, in_fd=self.fileno,
-                    offset=0, count=4096)
+        await self.async_sendfile(out_fd=self.sockno, in_fd=self.fileno,
+                                  offset=0, count=4096)
         if self.SUPPORT_HEADERS_TRAILERS:
-            os.sendfile(out_fd=self.sockno, in_fd=self.fileno,
-                        offset=0, count=4096,
-                        headers=(), trailers=(), flags=0)
+            await self.async_sendfile(out_fd=self.sockno, in_fd=self.fileno,
+                                      offset=0, count=4096,
+                                      headers=(), trailers=(), flags=0)
 
     # --- headers / trailers tests
 
@@ -3447,15 +3457,15 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
     async def test_headers(self):
         total_sent = 0
         expected_data = b"x" * 512 + b"y" * 256 + self.DATA[:-1]
-        sent = os.sendfile(self.sockno, self.fileno, 0, 4096,
-                            headers=[b"x" * 512, b"y" * 256])
+        sent = await self.async_sendfile(self.sockno, self.fileno, 0, 4096,
+                                         headers=[b"x" * 512, b"y" * 256])
         self.assertLessEqual(sent, 512 + 256 + 4096)
         total_sent += sent
         offset = 4096
         while total_sent < len(expected_data):
             nbytes = min(len(expected_data) - total_sent, 4096)
-            sent = self.sendfile_wrapper(self.sockno, self.fileno,
-                                                    offset, nbytes)
+            sent = await self.sendfile_wrapper(self.sockno, self.fileno,
+                                               offset, nbytes)
             if sent == 0:
                 break
             self.assertLessEqual(sent, nbytes)
@@ -3477,8 +3487,8 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
         create_file(TESTFN2, file_data)
 
         with open(TESTFN2, 'rb') as f:
-            os.sendfile(self.sockno, f.fileno(), 0, 5,
-                        trailers=[b"123456", b"789"])
+            await self.async_sendfile(self.sockno, f.fileno(), 0, 5,
+                                      trailers=[b"123456", b"789"])
             self.client.close()
             self.server.wait()
             data = self.server.handler_instance.get_data()
@@ -3489,8 +3499,8 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
     async def test_headers_overflow_32bits(self):
         self.server.handler_instance.accumulate = False
         with self.assertRaises(OSError) as cm:
-            os.sendfile(self.sockno, self.fileno, 0, 0,
-                        headers=[b"x" * 2**16] * 2**15)
+            await self.async_sendfile(self.sockno, self.fileno, 0, 0,
+                                      headers=[b"x" * 2**16] * 2**15)
         self.assertEqual(cm.exception.errno, errno.EINVAL)
 
     @requires_headers_trailers
@@ -3498,8 +3508,8 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
     async def test_trailers_overflow_32bits(self):
         self.server.handler_instance.accumulate = False
         with self.assertRaises(OSError) as cm:
-            os.sendfile(self.sockno, self.fileno, 0, 0,
-                        trailers=[b"x" * 2**16] * 2**15)
+            await self.async_sendfile(self.sockno, self.fileno, 0, 0,
+                                      trailers=[b"x" * 2**16] * 2**15)
         self.assertEqual(cm.exception.errno, errno.EINVAL)
 
     @requires_headers_trailers
@@ -3507,8 +3517,8 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
                          'test needs os.SF_NODISKIO')
     async def test_flags(self):
         try:
-            os.sendfile(self.sockno, self.fileno, 0, 4096,
-                        flags=os.SF_NODISKIO)
+            await async_sendfile(self.sockno, self.fileno, 0, 4096,
+                                 flags=os.SF_NODISKIO)
         except OSError as err:
             if err.errno not in (errno.EBUSY, errno.EAGAIN):
                 raise
