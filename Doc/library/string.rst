@@ -384,7 +384,7 @@ following:
 
 The ``'z'`` option coerces negative zero floating-point values to positive
 zero after rounding to the format precision.  This option is only valid for
-float presentation types.
+floating-point presentation types.
 
 .. versionchanged:: 3.11
    Added the ``'z'`` option (see also :pep:`682`).
