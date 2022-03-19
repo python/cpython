@@ -76,14 +76,6 @@ except ImportError:
     pass
 
 
-# Emscripten's socket support is limited. Logging's socket tests do not work
-# on Emscripten, yet.
-skip_on_emscripten = unittest.skipIf(
-    support.is_emscripten,
-    "Socket tests don't work on Emscripten."
-)
-
-
 class BaseTest(unittest.TestCase):
 
     """Base class for logging tests."""
@@ -1070,7 +1062,7 @@ if hasattr(socket, "AF_UNIX"):
 
 # - end of server_helper section
 
-@skip_on_emscripten
+@support.requires_working_socket()
 class SMTPHandlerTest(BaseTest):
     # bpo-14314, bpo-19665, bpo-34092: don't wait forever
     TIMEOUT = support.LONG_TIMEOUT
@@ -1694,7 +1686,7 @@ class ConfigFileTest(BaseTest):
             os.unlink(fn)
 
 
-@skip_on_emscripten
+@support.requires_working_socket()
 class SocketHandlerTest(BaseTest):
 
     """Test for SocketHandler objects."""
@@ -1809,7 +1801,7 @@ class UnixSocketHandlerTest(SocketHandlerTest):
         SocketHandlerTest.tearDown(self)
         os_helper.unlink(self.address)
 
-@skip_on_emscripten
+@support.requires_working_socket()
 class DatagramHandlerTest(BaseTest):
 
     """Test for DatagramHandler."""
@@ -1891,7 +1883,7 @@ class UnixDatagramHandlerTest(DatagramHandlerTest):
         DatagramHandlerTest.tearDown(self)
         os_helper.unlink(self.address)
 
-@skip_on_emscripten
+@support.requires_working_socket()
 class SysLogHandlerTest(BaseTest):
 
     """Test for SysLogHandler using UDP."""
@@ -2001,7 +1993,7 @@ class IPv6SysLogHandlerTest(SysLogHandlerTest):
         self.server_class.address_family = socket.AF_INET
         super(IPv6SysLogHandlerTest, self).tearDown()
 
-@skip_on_emscripten
+@support.requires_working_socket()
 class HTTPHandlerTest(BaseTest):
     """Test for HTTPHandler."""
 
@@ -3278,7 +3270,7 @@ class ConfigDictTest(BaseTest):
             logging.config.stopListening()
             threading_helper.join_thread(t)
 
-    @skip_on_emscripten
+    @support.requires_working_socket()
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:
             self.setup_via_listener(json.dumps(self.config10))
@@ -3298,7 +3290,7 @@ class ConfigDictTest(BaseTest):
                 ('ERROR', '4'),
             ], stream=output)
 
-    @skip_on_emscripten
+    @support.requires_working_socket()
     def test_listen_config_1_ok(self):
         with support.captured_stdout() as output:
             self.setup_via_listener(textwrap.dedent(ConfigFileTest.config1))
@@ -3313,7 +3305,7 @@ class ConfigDictTest(BaseTest):
             # Original logger output is empty.
             self.assert_log_lines([])
 
-    @skip_on_emscripten
+    @support.requires_working_socket()
     def test_listen_verify(self):
 
         def verify_fail(stuff):
