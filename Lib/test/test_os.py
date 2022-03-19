@@ -64,8 +64,6 @@ from test.support import unix_shell
 from test.support.os_helper import FakePath
 
 
-asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
-
 root_in_posix = False
 if hasattr(os, 'geteuid'):
     root_in_posix = (os.geteuid() == 0)
@@ -95,6 +93,10 @@ def create_file(filename, content=b'content'):
 # bpo-41625: On AIX, splice() only works with a socket, not with a pipe.
 requires_splice_pipe = unittest.skipIf(sys.platform.startswith("aix"),
                                        'on AIX, splice() only accepts sockets')
+
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
 
 
 class MiscTests(unittest.TestCase):
@@ -3260,8 +3262,8 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
                                                  socket_helper.HOSTv4)
         self.client = socket.socket()
         self.client.setblocking(False)
-        l = asyncio.get_running_loop()
-        await l.sock_connect(self.client, self.server.sockets[0].getsockname())
+        server_name = self.server.sockets[0].getsockname()
+        await asyncio.get_running_loop().sock_connect(self.client, server_name)
         self.sockno = self.client.fileno()
         self.file = open(os_helper.TESTFN, 'rb')
         self.fileno = self.file.fileno()
