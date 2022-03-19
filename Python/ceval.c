@@ -3155,7 +3155,7 @@ handle_eval_breaker:
         TARGET(COPY_FREE_VARS) {
             /* Copy closure variables to free variables */
             PyCodeObject *co = frame->f_code;
-            PyObject *closure = frame->f_func->func_closure;
+            PyObject *closure = frame->func->func_closure;
             int offset = co->co_nlocals + co->co_nplaincellvars;
             assert(oparg == co->co_nfreevars);
             for (int i = 0; i < oparg; ++i) {
@@ -5262,7 +5262,7 @@ handle_eval_breaker:
         }
 
         TARGET(RETURN_GENERATOR) {
-            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(frame->f_func);
+            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(frame->func);
             if (gen == NULL) {
                 goto error;
             }
@@ -5285,7 +5285,7 @@ handle_eval_breaker:
             /* Make sure that frame is in a valid state */
             frame->stacktop = 0;
             frame->f_locals = NULL;
-            Py_INCREF(frame->f_func);
+            Py_INCREF(frame->func);
             Py_INCREF(frame->f_code);
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;
