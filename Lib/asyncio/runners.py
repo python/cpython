@@ -9,8 +9,9 @@ from . import tasks
 class Runner:
     """A context manager that controls event loop life cycle.
 
-    The context manager always creates a new event loop, allows to run async funtions
-    inside it, and properly finalizes the loop at the context manager exit.
+    The context manager always creates a new event loop,
+    allows to run async functions inside it,
+    and properly finalizes the loop at the context manager exit.
 
     If debug is True, the event loop will be run in debug mode.
     If factory is passed, it is used for new event loop creation.

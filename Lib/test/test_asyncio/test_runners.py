@@ -250,6 +250,25 @@ class RunnerTests(BaseTest):
         runner.close()
         self.assertTrue(loop.is_closed())
 
+    def test_second_with_block_raises(self):
+        ret = []
+
+        async def f(arg):
+            ret.append(arg)
+
+        runner = asyncio.Runner()
+        with runner:
+            runner.run(f(1))
+
+        with self.assertRaisesRegex(
+                RuntimeError,
+                "Runner is closed"
+        ):
+            with runner:
+                runner.run(f(2))
+
+        self.assertEqual([1], ret)
+
 
 if __name__ == '__main__':
     unittest.main()
