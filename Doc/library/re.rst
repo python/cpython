@@ -155,7 +155,9 @@ The special characters are:
    only ``'<a>'``.
 
 .. index::
-   single: {} (curly brackets); in regular expressions
+   single: *+; in regular expressions
+   single: ++; in regular expressions
+   single: ?+; in regular expressions
 
 ``*+``, ``++``, ``?+``
   Like the ``'*'``, ``'+'``, and ``'?'`` qualifiers, those where ``'+'`` is
@@ -171,6 +173,9 @@ The special characters are:
   match.
 
    .. versionadded:: 3.11
+
+.. index::
+   single: {} (curly brackets); in regular expressions
 
 ``{m}``
    Specifies that exactly *m* copies of the previous RE should be matched; fewer

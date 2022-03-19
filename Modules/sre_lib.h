@@ -953,7 +953,7 @@ entrance:
             }
             RETURN_FAILURE;
 
-        case SRE_OP_POSSESSIVE_ONE:
+        case SRE_OP_POSSESSIVE_REPEAT_ONE:
             /* match repeated sequence (maximizing regexp) without
                backtracking */
 
@@ -962,10 +962,10 @@ entrance:
                collecting backtracking points.  for other cases,
                use the MAX_REPEAT operator */
 
-            /* <POSSESSIVE_ONE> <skip> <1=min> <2=max> item <SUCCESS>
+            /* <POSSESSIVE_REPEAT_ONE> <skip> <1=min> <2=max> item <SUCCESS>
                tail */
 
-            TRACE(("|%p|%p|POSSESSIVE_ONE %d %d\n", ctx->pattern,
+            TRACE(("|%p|%p|POSSESSIVE_REPEAT_ONE %d %d\n", ctx->pattern,
                    ctx->ptr, ctx->pattern[1], ctx->pattern[2]));
 
             if (ctx->ptr + ctx->pattern[1] > end) {

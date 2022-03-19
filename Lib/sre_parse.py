@@ -854,8 +854,7 @@ def _parse(source, state, verbose, nested, first=False):
             if group is not None:
                 state.closegroup(group, p)
             if atomic:
-                # TODO: Assert that group is always None in this
-                #       case
+                assert group is None
                 subpatternappend((ATOMIC_GROUP, p))
             else:
                 subpatternappend((SUBPATTERN, (group, add_flags, del_flags, p)))

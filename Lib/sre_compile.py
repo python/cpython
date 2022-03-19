@@ -141,7 +141,7 @@ def _compile(code, pattern, flags):
                 if op is MAX_REPEAT:
                     emit(REPEAT_ONE)
                 elif op is POSSESSIVE_REPEAT:
-                    emit(POSSESSIVE_ONE)
+                    emit(POSSESSIVE_REPEAT_ONE)
                 else:
                     emit(MIN_REPEAT_ONE)
                 skip = _len(code); emit(0)
@@ -150,24 +150,19 @@ def _compile(code, pattern, flags):
                 _compile(code, av[2], flags)
                 emit(SUCCESS)
                 code[skip] = _len(code) - skip
-            elif op is POSSESSIVE_REPEAT:
-                emit(POSSESSIVE_REPEAT)
-                skip = _len(code); emit(0)
-                emit(av[0])
-                emit(av[1])
-                _compile(code, av[2], flags)
-                code[skip] = _len(code) - skip
-                emit(SUCCESS)
             else:
-                emit(REPEAT)
+                if op is POSSESSIVE_REPEAT:
+                    emit(POSSESSIVE_REPEAT)
+                else:
+                    emit(REPEAT)
                 skip = _len(code); emit(0)
                 emit(av[0])
                 emit(av[1])
                 _compile(code, av[2], flags)
                 code[skip] = _len(code) - skip
-                # TODO: What if op is REPEAT, not MIN_REPEAT;
-                #       Default of MIN_UNTIL may be wrong
-                if op is MAX_REPEAT:
+                if op is POSSESSIVE_REPEAT:
+                    emit(SUCCESS)
+                elif op is MAX_REPEAT:
                     emit(MAX_UNTIL)
                 else:
                     emit(MIN_UNTIL)
@@ -733,7 +728,7 @@ def dis(code):
                         print_(FAILURE)
                 i += 1
             elif op in (REPEAT, REPEAT_ONE, MIN_REPEAT_ONE,
-                        POSSESSIVE_REPEAT, POSSESSIVE_ONE):
+                        POSSESSIVE_REPEAT, POSSESSIVE_REPEAT_ONE):
                 skip, min, max = code[i: i+3]
                 if max == MAXREPEAT:
                     max = 'MAXREPEAT'

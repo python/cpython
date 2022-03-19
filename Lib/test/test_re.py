@@ -1518,7 +1518,7 @@ class ReTests(unittest.TestCase):
 
 
     def test_dollar_matches_twice(self):
-        """Test that $ does not include \\n
+        r"""Test that $ does not include \n
         $ matches the end of string, and just before the terminating \n"""
         pattern = re.compile('$')
         self.assertEqual(pattern.sub('#', 'a\nb\n'), 'a\nb#\n#')
@@ -2096,13 +2096,9 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match('(e?){2,4}+a', 'eeea').groups(),
                          ('',))
         self.assertEqual(re.match('()*+a', 'a').groups(), ('',))
-        self.assertEqual(re.search('x*+', 'axx').span(0), (0, 0))
         self.assertEqual(re.search('x*+', 'axx').span(), (0, 0))
-        self.assertEqual(re.search('x++', 'axx').span(0), (1, 3))
         self.assertEqual(re.search('x++', 'axx').span(), (1, 3))
-        self.assertEqual(re.match('a*+', 'xxx').span(0), (0, 0))
         self.assertEqual(re.match('a*+', 'xxx').span(), (0, 0))
-        self.assertEqual(re.match('x*+', 'xxxa').span(0), (0, 3))
         self.assertEqual(re.match('x*+', 'xxxa').span(), (0, 3))
         self.assertIsNone(re.match('a++', 'xxx'))
         self.assertIsNone(re.match(r"^(\w){1}+$", "abc"))
@@ -2124,7 +2120,7 @@ class ReTests(unittest.TestCase):
 
     def test_atomic_grouping(self):
         """Test Atomic Grouping
-        test non-capturing groups of the form (?>...), which acts does
+        test non-capturing groups of the form (?>...), which does
         not maintain any stack point created within the group once the
         group is finished being evaluated."""
         pattern1 = re.compile(r'a(?>bc|b)c')
@@ -2215,7 +2211,7 @@ POSSESSIVE_REPEAT 0 1
   LITERAL 97
 
  0. INFO 4 0b0 0 1 (to 5)
- 5: POSSESSIVE_ONE 6 0 1 (to 12)
+ 5: POSSESSIVE_REPEAT_ONE 6 0 1 (to 12)
  9.   LITERAL 0x61 ('a')
 11.   SUCCESS
 12: SUCCESS
