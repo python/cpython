@@ -2961,7 +2961,7 @@ class TestSlots(unittest.TestCase):
         class AnotherDerived(Base):
             z: int
 
-        self.assertTrue('__slots__' not in AnotherDerived.__dict__)
+        self.assertNotIn('__slots__', AnotherDerived.__dict__)
 
     def test_cant_inherit_from_iterator_slots(self):
 
