@@ -1093,6 +1093,9 @@ class FormatTest(unittest.TestCase):
             ('z.1E', '0.', '0.0E+1'),
             ('z.1E', '-0.', '0.0E+1'),
 
+            ('z.2e', '-0.001', '-1.00e-3'),  # non-fixed exponent, FIXME
+            ('z.2%', '-0.001', '-0.10%'),  # FIXME
+
             ('z.1f', '-00000.000001', '0.0'),
             ('z.1f', '-00000.', '0.0'),
             ('z.1f', '-.0000000000', '0.0'),
@@ -1111,6 +1114,9 @@ class FormatTest(unittest.TestCase):
             ('+z.0f', '-1.', '-1'),
             ('-z.0f', '-1.', '-1'),
 
+            ('z>6.1f', '-0.', 'zz-0.0'),  # FIXME
+            ('z>z6.1f', '-0.', 'zzz0.0'),  # FIXME
+
             # issue 6850
             ('a=-7.0', '0.12345', 'aaaa0.1'),
 
@@ -1124,6 +1130,12 @@ class FormatTest(unittest.TestCase):
 
         # bytes format argument
         self.assertRaises(TypeError, Decimal(1).__format__, b'-020')
+
+    def test_negative_zero_format_directed_rounding(self):
+        with self.decimal.localcontext() as ctx:
+            ctx.rounding = ROUND_CEILING
+            self.assertEqual(format(self.decimal.Decimal('-0.001'), 'z.2f'),
+                            '0.00')  # FIXME
 
     def test_n_format(self):
         Decimal = self.decimal.Decimal

@@ -570,6 +570,9 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(f"{0.:z.1E}", "0.0E+00")
         self.assertEqual(f"{-0.:z.1E}", "0.0E+00")
 
+        self.assertEqual(f"{-0.001:z.2e}", "-1.00e-03")  # non-fixed exponent
+        self.assertEqual(f"{-0.001:z.2%}", "-0.10%")
+
         self.assertEqual(f"{-00000.000001:z.1f}", "0.0")
         self.assertEqual(f"{-00000.:z.1f}", "0.0")
         self.assertEqual(f"{-.0000000000:z.1f}", "0.0")
@@ -592,6 +595,9 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(f"{-0.j:z.1f}", "0.0+0.0j")
         self.assertEqual(f"{.01j:z.1f}", "0.0+0.0j")
         self.assertEqual(f"{-.01j:z.1f}", "0.0+0.0j")
+
+        self.assertEqual(f"{-0.:z>6.1f}", "zz-0.0")  # fill with 'z' still works
+        self.assertEqual(f"{-0.:z>z6.1f}", "zzz0.0")
 
     def test_specifier_z_error(self):
         error_msg = re.compile("Invalid format specifier '.*z.*'")
