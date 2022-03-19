@@ -1,3 +1,4 @@
-Fix :func:`binascii.crc32` when compiled with USE_ZLIB_CRC32 to work
-properly on inputs larger than 0xffff_ffff in length.  Also have it releases
-the GIL when computing crc32 on large inputs as zlib.crc32 did.
+Fix :func:`binascii.crc32` when compiled with ``-DUSE_ZLIB_CRC32`` to
+work properly on inputs larger than 0xffff_ffff in length.  Also have
+it releases the GIL when computing crc32 on large inputs as
+:func:`zlib.crc32` did.
