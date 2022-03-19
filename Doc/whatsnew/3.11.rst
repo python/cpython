@@ -298,9 +298,8 @@ os
 re
 --
 
-* :term:`Atomic grouping <atomic group>` (``(?>...)``) and :term:`possessive`
-  qualifiers (``*+``, ``++``, ``?+``, ``{m,n}+``) are now supported in regular
-  expressions.
+* Atomic grouping (``(?>...)``) and possessive qualifiers (``*+``, ``++``,
+  ``?+``, ``{m,n}+``) are now supported in regular expressions.
   (Contributed by Jeffrey C. Jacobs and Serhiy Storchaka in :issue:`433030`.)
 
 shutil

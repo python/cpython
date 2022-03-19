@@ -1,3 +1,2 @@
-Add support of :term:`atomic grouping <atomic group>` (``(?>...)``) and
-:term:`possessive` qualifiers (``*+``, ``++``, ``?+``, ``{m,n}+``) in
-:mod:`regular expressions <re>`.
+Add support of atomic grouping (``(?>...)``) and possessive qualifiers
+(``*+``, ``++``, ``?+``, ``{m,n}+``) in :mod:`regular expressions <re>`.
