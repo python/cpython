@@ -1441,7 +1441,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define UPDATE_PREV_INSTR_OPARG(instr, oparg) ((uint8_t*)(instr))[-1] = (oparg)
 
 
-#define GLOBALS() frame->f_globals
+#define GLOBALS() frame->globals
 #define BUILTINS() frame->f_builtins
 #define LOCALS() frame->f_locals
 
@@ -6994,7 +6994,7 @@ PyEval_GetGlobals(void)
     if (current_frame == NULL) {
         return NULL;
     }
-    return current_frame->f_globals;
+    return current_frame->globals;
 }
 
 int
@@ -7221,7 +7221,7 @@ import_name(PyThreadState *tstate, _Py_frame *frame,
         }
         res = PyImport_ImportModuleLevelObject(
                         name,
-                        frame->f_globals,
+                        frame->globals,
                         locals == NULL ? Py_None :locals,
                         fromlist,
                         ilevel);
@@ -7231,7 +7231,7 @@ import_name(PyThreadState *tstate, _Py_frame *frame,
     Py_INCREF(import_func);
 
     stack[0] = name;
-    stack[1] = frame->f_globals;
+    stack[1] = frame->globals;
     stack[2] = locals == NULL ? Py_None : locals;
     stack[3] = fromlist;
     stack[4] = level;

@@ -1003,7 +1003,7 @@ class PyFramePtr:
         return convert(self._gdbval[name])
 
     def _f_globals(self):
-        return self._f_special("f_globals")
+        return self._f_special("globals")
 
     def _f_builtins(self):
         return self._f_special("f_builtins")

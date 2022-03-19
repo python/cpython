@@ -67,7 +67,7 @@ frame_getlasti(PyFrameObject *f, void *closure)
 static PyObject *
 frame_getglobals(PyFrameObject *f, void *closure)
 {
-    PyObject *globals = f->f_frame->f_globals;
+    PyObject *globals = f->f_frame->globals;
     if (globals == NULL) {
         globals = Py_None;
     }
