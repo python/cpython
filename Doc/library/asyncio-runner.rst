@@ -77,7 +77,7 @@ Runner context manager
    *factory* could be used for overriding the loop creation.
    :func:`asyncio.new_event_loop` is used if ``None``.
 
-   Basically, :func:`asyncio.run()` example can be revealed with the runner usage::
+   Basically, :func:`asyncio.run()` example can be rewritten with the runner usage::
 
         async def main():
             await asyncio.sleep(1)
