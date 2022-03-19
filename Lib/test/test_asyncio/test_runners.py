@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import unittest
 
 from unittest import mock
@@ -260,14 +261,33 @@ class RunnerTests(BaseTest):
         with runner:
             runner.run(f(1))
 
-        with self.assertRaisesRegex(
+        with self.assertWarnsRegex(
+            RuntimeWarning,
+            "coroutine .+ was never awaited"  # f(2) is not executed
+        ):
+            with self.assertRaisesRegex(
                 RuntimeError,
                 "Runner is closed"
-        ):
-            with runner:
-                runner.run(f(2))
+            ):
+                with runner:
+                    runner.run(f(2))
 
         self.assertEqual([1], ret)
+
+    def test_run_keeps_context(self):
+        cvar = contextvars.ContextVar("cvar", default=-1)
+
+        async def f(val):
+            old = cvar.get()
+            await asyncio.sleep(0)
+            cvar.set(val)
+            return old
+
+        with asyncio.Runner() as runner:
+            self.assertEqual(-1, runner.run(f(1)))
+            self.assertEqual(1, runner.run(f(2)))
+
+        self.assertEqual({cvar: 2}, dict(runner.get_context().items()))
 
 
 if __name__ == '__main__':
