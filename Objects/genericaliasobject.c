@@ -12,9 +12,10 @@ typedef struct {
     PyObject *origin;
     PyObject *args;
     PyObject *parameters;
-    PyObject* weakreflist;
+    PyObject *weakreflist;
     // Whether we're a starred type, e.g. *tuple[int].
     bool starred;
+    vectorcallfunc vectorcall;
 } gaobject;
 
 typedef struct {
@@ -383,22 +384,45 @@ ga_hash(PyObject *self)
     return h0 ^ h1;
 }
 
+#define SET_ORIG_CLASS(obj, alias)  \
+    if ((obj) != NULL) {              \
+        if (PyObject_SetAttrString((obj), "__orig_class__", (alias)) < 0) {  \
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError) &&            \
+            !PyErr_ExceptionMatches(PyExc_TypeError))                   \
+        {   \
+            Py_DECREF((obj)); \
+            return NULL;    \
+        }   \
+        PyErr_Clear();  \
+    }   \
+}
+
 static PyObject *
 ga_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
     gaobject *alias = (gaobject *)self;
     PyObject *obj = PyObject_Call(alias->origin, args, kwds);
-    if (obj != NULL) {
-        if (PyObject_SetAttrString(obj, "__orig_class__", self) < 0) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError) &&
-                !PyErr_ExceptionMatches(PyExc_TypeError))
-            {
-                Py_DECREF(obj);
-                return NULL;
-            }
-            PyErr_Clear();
-        }
-    }
+    SET_ORIG_CLASS(obj, self);
+    return obj;
+}
+
+static PyObject *ga_vectorcall(PyObject *self, PyObject *const *args,
+                            size_t nargsf, PyObject *kwnames)
+{
+    gaobject *alias = (gaobject *) self;
+    PyObject *obj = PyVectorcall_Function(alias->origin)(alias->origin, args, nargsf, kwnames);
+    SET_ORIG_CLASS(obj, self);
+    return obj;
+}
+
+static PyObject *ga_make_tp_call(PyObject *self, PyObject *const *args,
+                               size_t nargsf, PyObject *kwnames)
+{
+    gaobject *alias = (gaobject *) self;
+    PyThreadState *tstate = _PyThreadState_GET();
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *obj = _PyObject_MakeTpCall(tstate, alias->origin, args, nargs, kwnames);
+    SET_ORIG_CLASS(obj, self);
     return obj;
 }
 
@@ -588,6 +612,13 @@ setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
     alias->args = args;
     alias->parameters = NULL;
     alias->weakreflist = NULL;
+
+    if (PyVectorcall_Function(origin) != NULL) {
+        alias->vectorcall = ga_vectorcall;
+    } else {
+        alias->vectorcall = ga_make_tp_call;
+    }
+
     return 1;
 }
 
@@ -695,7 +726,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_hash = ga_hash,
     .tp_call = ga_call,
     .tp_getattro = ga_getattro,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_VECTORCALL,
     .tp_traverse = ga_traverse,
     .tp_richcompare = ga_richcompare,
     .tp_weaklistoffset = offsetof(gaobject, weakreflist),
@@ -706,6 +737,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_free = PyObject_GC_Del,
     .tp_getset = ga_properties,
     .tp_iter = (getiterfunc)ga_iter,
+    .tp_vectorcall_offset = offsetof(gaobject, vectorcall),
 };
 
 PyObject *
