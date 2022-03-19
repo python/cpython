@@ -1420,7 +1420,7 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 }
 
 /*[clinic input]
-zlib.crc32
+zlib.crc32 -> unsigned int
 
     data: Py_buffer
     value: unsigned_int(bitwise=True) = 0
@@ -1432,7 +1432,7 @@ Compute a CRC-32 checksum of data.
 The returned checksum is an integer.
 [clinic start generated code]*/
 
-static PyObject *
+static unsigned int
 zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 /*[clinic end generated code: output=63499fa20af7ea25 input=26c3ed430fa00b4c]*/
 {
@@ -1455,7 +1455,7 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
     } else {
         value = crc32(value, data->buf, (unsigned int)data->len);
     }
-    return PyLong_FromUnsignedLong(value & 0xffffffffU);
+    return value;
 }
 
 

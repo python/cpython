@@ -754,16 +754,31 @@ binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
 /*[clinic end generated code: output=52cf59056a78593b input=bbe340bc99d25aa8]*/
 
 #ifdef USE_ZLIB_CRC32
-/* This was taken from zlibmodule.c PyZlib_crc32 (but is PY_SSIZE_T_CLEAN) */
+/* This is the same as zlibmodule.c zlib_crc32_impl. It exists in two
+ * modules for historical reasons. For future code simplification,
+ * consider having zlib.crc32 import binascii and call binascii.crc32.
+ */
 {
-    const Byte *buf;
-    Py_ssize_t len;
-    int signed_val;
+    /* Releasing the GIL for very small buffers is inefficient
+       and may lower performance */
+    if (data->len > 1024*5) {
+        unsigned char *buf = data->buf;
+        Py_ssize_t len = data->len;
 
-    buf = (Byte*)data->buf;
-    len = data->len;
-    signed_val = crc32(crc, buf, len);
-    return (unsigned int)signed_val & 0xffffffffU;
+        Py_BEGIN_ALLOW_THREADS
+        /* Avoid truncation of length for very large buffers. crc32() takes
+           length as an unsigned int, which may be narrower than Py_ssize_t. */
+        while ((size_t)len > UINT_MAX) {
+            crc = crc32(crc, buf, UINT_MAX);
+            buf += (size_t) UINT_MAX;
+            len -= (size_t) UINT_MAX;
+        }
+        crc = crc32(crc, buf, (unsigned int)len);
+        Py_END_ALLOW_THREADS
+    } else {
+        crc = crc32(crc, data->buf, (unsigned int)data->len);
+    }
+    return crc;
 }
 #else  /* USE_ZLIB_CRC32 */
 { /* By Jim Ahlstrom; All rights transferred to CNRI */
