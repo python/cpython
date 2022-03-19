@@ -12,7 +12,7 @@ _PyFrame_Traverse(_Py_frame *frame, visitproc visit, void *arg)
     Py_VISIT(frame->frame_obj);
     Py_VISIT(frame->locals);
     Py_VISIT(frame->func);
-    Py_VISIT(frame->f_code);
+    Py_VISIT(frame->code);
    /* locals */
     PyObject **locals = _PyFrame_GetLocalsArray(frame);
     int i = 0;
@@ -30,7 +30,7 @@ _PyFrame_MakeAndSetFrameObject(_Py_frame *frame)
     PyObject *error_type, *error_value, *error_traceback;
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
 
-    PyFrameObject *f = _PyFrame_New_NoTrack(frame->f_code);
+    PyFrameObject *f = _PyFrame_New_NoTrack(frame->code);
     if (f == NULL) {
         Py_XDECREF(error_type);
         Py_XDECREF(error_value);
@@ -48,7 +48,7 @@ _PyFrame_MakeAndSetFrameObject(_Py_frame *frame)
 void
 _PyFrame_Copy(_Py_frame *src, _Py_frame *dest)
 {
-    assert(src->stacktop >= src->f_code->co_nlocalsplus);
+    assert(src->stacktop >= src->code->co_nlocalsplus);
     Py_ssize_t size = ((char*)&src->localsplus[src->stacktop]) - (char *)src;
     memcpy(dest, src, size);
 }
@@ -106,7 +106,7 @@ _PyFrame_Clear(_Py_frame *frame)
     Py_XDECREF(frame->frame_obj);
     Py_XDECREF(frame->locals);
     Py_DECREF(frame->func);
-    Py_DECREF(frame->f_code);
+    Py_DECREF(frame->code);
 }
 
 /* Consumes reference to func */

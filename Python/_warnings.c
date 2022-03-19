@@ -849,7 +849,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
     else {
         globals = f->f_frame->globals;
-        *filename = f->f_frame->f_code->co_filename;
+        *filename = f->f_frame->code->co_filename;
         Py_INCREF(*filename);
         *lineno = PyFrame_GetLineNumber(f);
         Py_DECREF(f);

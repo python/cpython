@@ -37,9 +37,9 @@ end
 
 define pylocals
     set $_i = 0
-    while $_i < f->f_code->co_nlocals
+    while $_i < f->code->co_nlocals
 	if f->f_localsplus + $_i != 0
-	    set $_names = f->f_code->co_varnames
+	    set $_names = f->code->co_varnames
 	    set $_name = PyUnicode_AsUTF8(PyTuple_GetItem($_names, $_i))
 	    printf "%s:\n", $_name
             pyo f->f_localsplus[$_i]
@@ -55,7 +55,7 @@ end
 # command language
 define lineno
     set $__continue = 1
-    set $__co = f->f_code
+    set $__co = f->code
     set $__lasti = f->f_lasti
     set $__sz = ((PyVarObject *)$__co->co_lnotab)->ob_size/2
     set $__p = (unsigned char *)((PyBytesObject *)$__co->co_lnotab)->ob_sval
@@ -84,8 +84,8 @@ document pyframev
 end
 
 define pyframe
-    set $__fn = PyUnicode_AsUTF8(f->f_code->co_filename)
-    set $__n = PyUnicode_AsUTF8(f->f_code->co_name)
+    set $__fn = PyUnicode_AsUTF8(f->code->co_filename)
+    set $__n = PyUnicode_AsUTF8(f->code->co_name)
     printf "%s (", $__fn
     lineno
     printf "): %s\n", $__n

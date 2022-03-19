@@ -964,7 +964,7 @@ static PyObject *
 gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
                       PyObject *name, PyObject *qualname)
 {
-    PyCodeObject *code = f->f_frame->f_code;
+    PyCodeObject *code = f->f_frame->code;
     int size = code->co_nlocalsplus + code->co_stacksize;
     PyGenObject *gen = PyObject_GC_NewVar(PyGenObject, type, size);
     if (gen == NULL) {
@@ -1341,10 +1341,10 @@ compute_cr_origin(int origin_depth, _Py_frame *current_frame)
     }
     frame = current_frame;
     for (int i = 0; i < frame_count; ++i) {
-        PyCodeObject *code = frame->f_code;
+        PyCodeObject *code = frame->code;
         PyObject *frameinfo = Py_BuildValue("OiO",
                                             code->co_filename,
-                                            PyCode_Addr2Line(frame->f_code, frame->f_lasti*sizeof(_Py_CODEUNIT)),
+                                            PyCode_Addr2Line(frame->code, frame->f_lasti*sizeof(_Py_CODEUNIT)),
                                             code->co_name);
         if (!frameinfo) {
             Py_DECREF(cr_origin);

@@ -98,7 +98,7 @@ typedef struct _Py_frame {
     PyObject *globals; /* Borrowed reference */
     PyObject *builtins; /* Borrowed reference */
     PyObject *locals; /* Strong reference, may be NULL */
-    PyCodeObject *f_code; /* Strong reference */
+    PyCodeObject *code; /* Strong reference */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL */
     struct _Py_frame *previous;
     int f_lasti;       /* Last instruction if called */
@@ -122,17 +122,17 @@ static inline int _PyFrameHasCompleted(_Py_frame *f) {
 }
 
 static inline PyObject **_PyFrame_Stackbase(_Py_frame *f) {
-    return f->localsplus + f->f_code->co_nlocalsplus;
+    return f->localsplus + f->code->co_nlocalsplus;
 }
 
 static inline PyObject *_PyFrame_StackPeek(_Py_frame *f) {
-    assert(f->stacktop > f->f_code->co_nlocalsplus);
+    assert(f->stacktop > f->code->co_nlocalsplus);
     assert(f->localsplus[f->stacktop-1] != NULL);
     return f->localsplus[f->stacktop-1];
 }
 
 static inline PyObject *_PyFrame_StackPop(_Py_frame *f) {
-    assert(f->stacktop > f->f_code->co_nlocalsplus);
+    assert(f->stacktop > f->code->co_nlocalsplus);
     f->stacktop--;
     return f->localsplus[f->stacktop];
 }
@@ -153,7 +153,7 @@ _PyFrame_InitializeSpecials(
     PyObject *locals, int nlocalsplus)
 {
     frame->func = func;
-    frame->f_code = (PyCodeObject *)Py_NewRef(func->func_code);
+    frame->code = (PyCodeObject *)Py_NewRef(func->func_code);
     frame->builtins = func->func_builtins;
     frame->globals = func->func_globals;
     frame->locals = Py_XNewRef(locals);

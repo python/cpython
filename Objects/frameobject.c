@@ -39,7 +39,7 @@ PyFrame_GetLineNumber(PyFrameObject *f)
         return f->f_lineno;
     }
     else {
-        return PyCode_Addr2Line(f->f_frame->f_code, f->f_frame->f_lasti*sizeof(_Py_CODEUNIT));
+        return PyCode_Addr2Line(f->f_frame->code, f->f_frame->f_lasti*sizeof(_Py_CODEUNIT));
     }
 }
 
@@ -484,7 +484,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     }
     new_lineno = (int)l_new_lineno;
 
-    if (new_lineno < f->f_frame->f_code->co_firstlineno) {
+    if (new_lineno < f->f_frame->code->co_firstlineno) {
         PyErr_Format(PyExc_ValueError,
                     "line %d comes before the current code block",
                     new_lineno);
@@ -493,8 +493,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
 
     /* PyCode_NewWithPosOnlyArgs limits co_code to be under INT_MAX so this
      * should never overflow. */
-    int len = (int)(PyBytes_GET_SIZE(f->f_frame->f_code->co_code) / sizeof(_Py_CODEUNIT));
-    int *lines = marklines(f->f_frame->f_code, len);
+    int len = (int)(PyBytes_GET_SIZE(f->f_frame->code->co_code) / sizeof(_Py_CODEUNIT));
+    int *lines = marklines(f->f_frame->code, len);
     if (lines == NULL) {
         return -1;
     }
@@ -508,7 +508,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    int64_t *stacks = mark_stacks(f->f_frame->f_code, len);
+    int64_t *stacks = mark_stacks(f->f_frame->code, len);
     if (stacks == NULL) {
         PyMem_Free(lines);
         return -1;
@@ -632,8 +632,8 @@ frame_dealloc(PyFrameObject *f)
         assert(f->f_frame == (_Py_frame *)f->_f_frame_data);
         _Py_frame *frame = (_Py_frame *)f->_f_frame_data;
         /* Don't clear code object until the end */
-        co = frame->f_code;
-        frame->f_code = NULL;
+        co = frame->code;
+        frame->code = NULL;
         Py_CLEAR(frame->func);
         Py_CLEAR(frame->locals);
         PyObject **locals = _PyFrame_GetLocalsArray(frame);
@@ -708,7 +708,7 @@ frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res;
     res = offsetof(PyFrameObject, _f_frame_data) + offsetof(_Py_frame, localsplus);
-    PyCodeObject *code = f->f_frame->f_code;
+    PyCodeObject *code = f->f_frame->code;
     res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
 }
@@ -720,7 +720,7 @@ static PyObject *
 frame_repr(PyFrameObject *f)
 {
     int lineno = PyFrame_GetLineNumber(f);
-    PyCodeObject *code = f->f_frame->f_code;
+    PyCodeObject *code = f->f_frame->code;
     return PyUnicode_FromFormat(
         "<frame at %p, file %R, line %d, code %S>",
         f, code->co_filename, lineno, code->co_name);
@@ -839,7 +839,7 @@ static int
 _PyFrame_OpAlreadyRan(_Py_frame *frame, int opcode, int oparg)
 {
     const _Py_CODEUNIT *code =
-        (const _Py_CODEUNIT *)PyBytes_AS_STRING(frame->f_code->co_code);
+        (const _Py_CODEUNIT *)PyBytes_AS_STRING(frame->code->co_code);
     for (int i = 0; i < frame->f_lasti; i++) {
         if (_Py_OPCODE(code[i]) == opcode && _Py_OPARG(code[i]) == oparg) {
             return 1;
@@ -860,11 +860,11 @@ _PyFrame_FastToLocalsWithError(_Py_frame *frame) {
         if (locals == NULL)
             return -1;
     }
-    co = frame->f_code;
+    co = frame->code;
     fast = _PyFrame_GetLocalsArray(frame);
     if (frame->f_lasti < 0 && _Py_OPCODE(co->co_firstinstr[0]) == COPY_FREE_VARS) {
         /* Free vars have not been initialized -- Do that */
-        PyCodeObject *co = frame->f_code;
+        PyCodeObject *co = frame->code;
         PyObject *closure = frame->func->func_closure;
         int offset = co->co_nlocals + co->co_nplaincellvars;
         for (int i = 0; i < co->co_nfreevars; ++i) {
@@ -971,7 +971,7 @@ _PyFrame_LocalsToFast(_Py_frame *frame, int clear)
     if (locals == NULL)
         return;
     fast = _PyFrame_GetLocalsArray(frame);
-    co = frame->f_code;
+    co = frame->code;
 
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
     for (int i = 0; i < co->co_nlocalsplus; i++) {
@@ -1039,7 +1039,7 @@ PyCodeObject *
 PyFrame_GetCode(PyFrameObject *frame)
 {
     assert(frame != NULL);
-    PyCodeObject *code = frame->f_frame->f_code;
+    PyCodeObject *code = frame->f_frame->code;
     assert(code != NULL);
     Py_INCREF(code);
     return code;

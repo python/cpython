@@ -1009,7 +1009,7 @@ class PyFramePtr:
         return self._f_special("builtins")
 
     def _f_code(self):
-        return self._f_special("f_code", PyCodeObjectPtr.from_pyobject_ptr)
+        return self._f_special("code", PyCodeObjectPtr.from_pyobject_ptr)
 
     def _f_nlocalsplus(self):
         return self._f_special("nlocalsplus", int_from_int)
