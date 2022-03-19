@@ -1111,14 +1111,14 @@ PyEval_EvalFrame(PyFrameObject *f)
 {
     /* Function kept for backward compatibility */
     PyThreadState *tstate = _PyThreadState_GET();
-    return _PyEval_EvalFrame(tstate, f->f_frame, 0);
+    return _PyEval_EvalFrame(tstate, f->f_fdata, 0);
 }
 
 PyObject *
 PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return _PyEval_EvalFrame(tstate, f->f_frame, throwflag);
+    return _PyEval_EvalFrame(tstate, f->f_fdata, throwflag);
 }
 
 

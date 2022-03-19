@@ -240,7 +240,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
         return suggestions;
     }
 
-    dir = PySequence_List(frame->f_frame->globals);
+    dir = PySequence_List(frame->f_fdata->globals);
     if (dir == NULL) {
         return NULL;
     }
@@ -250,7 +250,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
         return suggestions;
     }
 
-    dir = PySequence_List(frame->f_frame->builtins);
+    dir = PySequence_List(frame->f_fdata->builtins);
     if (dir == NULL) {
         return NULL;
     }

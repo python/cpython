@@ -38,7 +38,7 @@ _PyFrame_MakeAndSetFrameObject(_Py_frame *frame)
     }
     else {
         f->f_owns_frame = 0;
-        f->f_frame = frame;
+        f->f_fdata = frame;
         frame->frame_obj = f;
         PyErr_Restore(error_type, error_value, error_traceback);
     }
@@ -62,7 +62,7 @@ take_ownership(PyFrameObject *f, _Py_frame *frame)
     memcpy((_Py_frame *)f->_f_frame_data, frame, size);
     frame = (_Py_frame *)f->_f_frame_data;
     f->f_owns_frame = 1;
-    f->f_frame = frame;
+    f->f_fdata = frame;
     assert(f->f_back == NULL);
     if (frame->previous != NULL) {
         /* Link PyFrameObjects.f_back and remove link through _Py_frame.previous */

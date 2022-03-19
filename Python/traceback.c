@@ -240,7 +240,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
 
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_frame->lasti*sizeof(_Py_CODEUNIT),
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_fdata->lasti*sizeof(_Py_CODEUNIT),
                          PyFrame_GetLineNumber(frame));
 }
 
@@ -791,7 +791,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     }
 
     int code_offset = tb->tb_lasti;
-    PyCodeObject* code = frame->f_frame->code;
+    PyCodeObject* code = frame->f_fdata->code;
 
     int start_line;
     int end_line;

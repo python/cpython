@@ -964,7 +964,7 @@ static PyObject *
 gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
                       PyObject *name, PyObject *qualname)
 {
-    PyCodeObject *code = f->f_frame->code;
+    PyCodeObject *code = f->f_fdata->code;
     int size = code->co_nlocalsplus + code->co_stacksize;
     PyGenObject *gen = PyObject_GC_NewVar(PyGenObject, type, size);
     if (gen == NULL) {
@@ -972,14 +972,14 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
         return NULL;
     }
     /* Copy the frame */
-    assert(f->f_frame->frame_obj == NULL);
+    assert(f->f_fdata->frame_obj == NULL);
     assert(f->f_owns_frame);
     _Py_frame *frame = (_Py_frame *)gen->gi_iframe;
     _PyFrame_Copy((_Py_frame *)f->_f_frame_data, frame);
     gen->gi_frame_valid = 1;
     assert(frame->frame_obj == f);
     f->f_owns_frame = 0;
-    f->f_frame = frame;
+    f->f_fdata = frame;
     frame->is_generator = true;
     assert(PyObject_GC_IsTracked((PyObject *)f));
     gen->gi_code = PyFrame_GetCode(f);

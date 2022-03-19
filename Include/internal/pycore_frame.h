@@ -58,7 +58,7 @@ extern "C" {
 struct _frame {
     PyObject_HEAD
     PyFrameObject *f_back;      /* previous frame, or NULL */
-    struct _Py_frame *f_frame; /* points to the frame data */
+    struct _Py_frame *f_fdata; /* points to the frame data */
     PyObject *f_trace;          /* Trace function */
     int f_lineno;               /* Current line number. Only valid if non-zero */
     char f_trace_lines;         /* Emit per-line trace events? */
