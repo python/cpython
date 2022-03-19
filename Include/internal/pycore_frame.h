@@ -74,7 +74,7 @@ extern PyFrameObject* _PyFrame_New_NoTrack(PyCodeObject *code);
 /* other API */
 
 /* These values are chosen so that the inline functions below all
- * compare f_state to zero.
+ * compare the current frame state to zero.
  */
 enum _framestate {
     FRAME_CREATED = -2,
@@ -103,22 +103,22 @@ typedef struct _Py_frame {
     struct _Py_frame *previous;
     int lasti;       /* Last instruction if called */
     int stacktop;     /* Offset of TOS from localsplus  */
-    PyFrameState f_state;  /* What state the frame is in */
+    PyFrameState state;  /* What state the frame is in */
     bool is_entry;  // Whether this is the "root" frame for the current _PyCFrame.
     bool is_generator;
     PyObject *localsplus[1];
 } _Py_frame;
 
 static inline int _PyFrame_IsRunnable(_Py_frame *f) {
-    return f->f_state < FRAME_EXECUTING;
+    return f->state < FRAME_EXECUTING;
 }
 
 static inline int _PyFrame_IsExecuting(_Py_frame *f) {
-    return f->f_state == FRAME_EXECUTING;
+    return f->state == FRAME_EXECUTING;
 }
 
 static inline int _PyFrameHasCompleted(_Py_frame *f) {
-    return f->f_state > FRAME_EXECUTING;
+    return f->state > FRAME_EXECUTING;
 }
 
 static inline PyObject **_PyFrame_Stackbase(_Py_frame *f) {
@@ -160,7 +160,7 @@ _PyFrame_InitializeSpecials(
     frame->stacktop = nlocalsplus;
     frame->frame_obj = NULL;
     frame->lasti = -1;
-    frame->f_state = FRAME_CREATED;
+    frame->state = FRAME_CREATED;
     frame->is_entry = false;
     frame->is_generator = false;
 }

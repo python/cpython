@@ -442,7 +442,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
      * In addition, jumps are forbidden when not tracing,
      * as this is a debugging feature.
      */
-    switch(f->f_frame->f_state) {
+    switch(f->f_frame->state) {
         case FRAME_CREATED:
             PyErr_Format(PyExc_ValueError,
                      "can't jump from the 'call' trace event of a new frame");
@@ -550,7 +550,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
     /* Unwind block stack. */
-    if (f->f_frame->f_state == FRAME_SUSPENDED) {
+    if (f->f_frame->state == FRAME_SUSPENDED) {
         /* Account for value popped by yield */
         start_stack = pop_value(start_stack);
     }
@@ -668,7 +668,7 @@ frame_tp_clear(PyFrameObject *f)
      * frame may also point to this frame, believe itself to still be
      * active, and try cleaning up this frame again.
      */
-    f->f_frame->f_state = FRAME_CLEARED;
+    f->f_frame->state = FRAME_CLEARED;
 
     Py_CLEAR(f->f_trace);
 
@@ -891,7 +891,7 @@ _PyFrame_FastToLocalsWithError(_Py_frame *frame) {
 
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         PyObject *value = fast[i];
-        if (frame->f_state != FRAME_CLEARED) {
+        if (frame->state != FRAME_CLEARED) {
             if (kind & CO_FAST_FREE) {
                 // The cell was set by COPY_FREE_VARS.
                 assert(value != NULL && PyCell_Check(value));
@@ -1028,7 +1028,7 @@ _PyFrame_LocalsToFast(_Py_frame *frame, int clear)
 void
 PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 {
-    if (f == NULL || f->f_frame->f_state == FRAME_CLEARED) {
+    if (f == NULL || f->f_frame->state == FRAME_CLEARED) {
         return;
     }
     _PyFrame_LocalsToFast(f->f_frame, clear);

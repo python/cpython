@@ -1739,7 +1739,7 @@ handle_eval_breaker:
             PREDICTED(RESUME_QUICK);
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
-            frame->f_state = FRAME_EXECUTING;
+            frame->state = FRAME_EXECUTING;
             if (_Py_atomic_load_relaxed(eval_breaker) && oparg < 2) {
                 goto handle_eval_breaker;
             }
@@ -2382,7 +2382,7 @@ handle_eval_breaker:
         TARGET(RETURN_VALUE) {
             PyObject *retval = POP();
             assert(EMPTY());
-            frame->f_state = FRAME_RETURNED;
+            frame->state = FRAME_RETURNED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
@@ -2594,7 +2594,7 @@ handle_eval_breaker:
         TARGET(YIELD_VALUE) {
             assert(frame->is_entry);
             PyObject *retval = POP();
-            frame->f_state = FRAME_SUSPENDED;
+            frame->state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
@@ -4086,7 +4086,7 @@ handle_eval_breaker:
              * generator or coroutine, so we deliberately do not check it here.
              * (see bpo-30039).
              */
-            frame->f_state = FRAME_EXECUTING;
+            frame->state = FRAME_EXECUTING;
             JUMPTO(oparg);
             DISPATCH();
         }
@@ -5273,7 +5273,7 @@ handle_eval_breaker:
             assert(frame->frame_obj == NULL);
             gen->gi_frame_valid = 1;
             gen_frame->is_generator = true;
-            gen_frame->f_state = FRAME_CREATED;
+            gen_frame->state = FRAME_CREATED;
             _Py_LeaveRecursiveCall(tstate);
             if (!frame->is_entry) {
                 _Py_frame *prev = frame->previous;
@@ -5454,7 +5454,7 @@ handle_eval_breaker:
                 TRACE_FUNCTION_ENTRY();
                 DTRACE_FUNCTION_ENTRY();
             }
-            else if (frame->f_state > FRAME_CREATED) {
+            else if (frame->state > FRAME_CREATED) {
                 /* line-by-line tracing support */
                 if (PyDTrace_LINE_ENABLED()) {
                     maybe_dtrace_line(frame, &tstate->trace_info, instr_prev);
@@ -5575,13 +5575,13 @@ error:
 
         if (tstate->c_tracefunc != NULL) {
             /* Make sure state is set to FRAME_UNWINDING for tracing */
-            frame->f_state = FRAME_UNWINDING;
+            frame->state = FRAME_UNWINDING;
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
                            tstate, frame);
         }
 
 exception_unwind:
-        frame->f_state = FRAME_UNWINDING;
+        frame->state = FRAME_UNWINDING;
         /* We can't use frame->lasti here, as RERAISE may have set it */
         int offset = INSTR_OFFSET()-1;
         int level, handler, lasti;
@@ -5597,7 +5597,7 @@ exception_unwind:
             }
             assert(STACK_LEVEL() == 0);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            frame->f_state = FRAME_RAISED;
+            frame->state = FRAME_RAISED;
             TRACE_FUNCTION_UNWIND();
             DTRACE_FUNCTION_EXIT();
             goto exit_unwind;
@@ -5632,7 +5632,7 @@ exception_unwind:
         PUSH(val);
         JUMPTO(handler);
         /* Resume normal execution */
-        frame->f_state = FRAME_EXECUTING;
+        frame->state = FRAME_EXECUTING;
         DISPATCH();
     }
 
