@@ -971,7 +971,7 @@ class PyFramePtr:
             self.co_name = self.co.pyop_field('co_name')
             self.co_filename = self.co.pyop_field('co_filename')
 
-            self.f_lasti = self._f_lasti()
+            self.lasti = self._f_lasti()
             self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
             pnames = self.co.field('co_localsplusnames')
             self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
@@ -1015,7 +1015,7 @@ class PyFramePtr:
         return self._f_special("nlocalsplus", int_from_int)
 
     def _f_lasti(self):
-        return self._f_special("f_lasti", int_from_int)
+        return self._f_special("lasti", int_from_int)
 
     def is_entry(self):
         return self._f_special("is_entry", bool)
@@ -1079,7 +1079,7 @@ class PyFramePtr:
         if self.is_optimized_out():
             return None
         try:
-            return self.co.addr2line(self.f_lasti*2)
+            return self.co.addr2line(self.lasti*2)
         except Exception:
             # bpo-34989: addr2line() is a complex function, it can fail in many
             # ways. For example, it fails with a TypeError on "FakeRepr" if

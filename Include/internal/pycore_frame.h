@@ -89,7 +89,7 @@ enum _framestate {
 typedef signed char PyFrameState;
 
 /*
-    frame->f_lasti refers to the index of the last instruction,
+    frame->lasti refers to the index of the last instruction,
     unless it's -1 in which case next_instr should be first_instr.
 */
 
@@ -101,7 +101,7 @@ typedef struct _Py_frame {
     PyCodeObject *code; /* Strong reference */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL */
     struct _Py_frame *previous;
-    int f_lasti;       /* Last instruction if called */
+    int lasti;       /* Last instruction if called */
     int stacktop;     /* Offset of TOS from localsplus  */
     PyFrameState f_state;  /* What state the frame is in */
     bool is_entry;  // Whether this is the "root" frame for the current _PyCFrame.
@@ -159,7 +159,7 @@ _PyFrame_InitializeSpecials(
     frame->locals = Py_XNewRef(locals);
     frame->stacktop = nlocalsplus;
     frame->frame_obj = NULL;
-    frame->f_lasti = -1;
+    frame->lasti = -1;
     frame->f_state = FRAME_CREATED;
     frame->is_entry = false;
     frame->is_generator = false;

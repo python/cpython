@@ -39,7 +39,7 @@ PyFrame_GetLineNumber(PyFrameObject *f)
         return f->f_lineno;
     }
     else {
-        return PyCode_Addr2Line(f->f_frame->code, f->f_frame->f_lasti*sizeof(_Py_CODEUNIT));
+        return PyCode_Addr2Line(f->f_frame->code, f->f_frame->lasti*sizeof(_Py_CODEUNIT));
     }
 }
 
@@ -58,10 +58,10 @@ frame_getlineno(PyFrameObject *f, void *closure)
 static PyObject *
 frame_getlasti(PyFrameObject *f, void *closure)
 {
-    if (f->f_frame->f_lasti < 0) {
+    if (f->f_frame->lasti < 0) {
         return PyLong_FromLong(-1);
     }
-    return PyLong_FromLong(f->f_frame->f_lasti*sizeof(_Py_CODEUNIT));
+    return PyLong_FromLong(f->f_frame->lasti*sizeof(_Py_CODEUNIT));
 }
 
 static PyObject *
@@ -516,7 +516,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
 
     int64_t best_stack = OVERFLOWED;
     int best_addr = -1;
-    int64_t start_stack = stacks[f->f_frame->f_lasti];
+    int64_t start_stack = stacks[f->f_frame->lasti];
     int err = -1;
     const char *msg = "cannot find bytecode for specified line";
     for (int i = 0; i < len; i++) {
@@ -560,7 +560,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     }
     /* Finally set the new lasti and return OK. */
     f->f_lineno = 0;
-    f->f_frame->f_lasti = best_addr;
+    f->f_frame->lasti = best_addr;
     return 0;
 }
 
@@ -840,7 +840,7 @@ _PyFrame_OpAlreadyRan(_Py_frame *frame, int opcode, int oparg)
 {
     const _Py_CODEUNIT *code =
         (const _Py_CODEUNIT *)PyBytes_AS_STRING(frame->code->co_code);
-    for (int i = 0; i < frame->f_lasti; i++) {
+    for (int i = 0; i < frame->lasti; i++) {
         if (_Py_OPCODE(code[i]) == opcode && _Py_OPARG(code[i]) == oparg) {
             return 1;
         }
@@ -862,7 +862,7 @@ _PyFrame_FastToLocalsWithError(_Py_frame *frame) {
     }
     co = frame->code;
     fast = _PyFrame_GetLocalsArray(frame);
-    if (frame->f_lasti < 0 && _Py_OPCODE(co->co_firstinstr[0]) == COPY_FREE_VARS) {
+    if (frame->lasti < 0 && _Py_OPCODE(co->co_firstinstr[0]) == COPY_FREE_VARS) {
         /* Free vars have not been initialized -- Do that */
         PyCodeObject *co = frame->code;
         PyObject *closure = frame->func->func_closure;
@@ -872,7 +872,7 @@ _PyFrame_FastToLocalsWithError(_Py_frame *frame) {
             Py_INCREF(o);
             frame->localsplus[offset + i] = o;
         }
-        frame->f_lasti = 0;
+        frame->lasti = 0;
     }
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);

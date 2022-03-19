@@ -352,15 +352,15 @@ _PyGen_yf(PyGenObject *gen)
         PyObject *bytecode = gen->gi_code->co_code;
         unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
 
-        if (frame->f_lasti < 1) {
+        if (frame->lasti < 1) {
             /* Return immediately if the frame didn't start yet. SEND
                always come after LOAD_CONST: a code object should not start
                with SEND */
             assert(code[0] != SEND);
             return NULL;
         }
-        int opcode = code[(frame->f_lasti+1)*sizeof(_Py_CODEUNIT)];
-        int oparg = code[(frame->f_lasti+1)*sizeof(_Py_CODEUNIT)+1];
+        int opcode = code[(frame->lasti+1)*sizeof(_Py_CODEUNIT)];
+        int oparg = code[(frame->lasti+1)*sizeof(_Py_CODEUNIT)+1];
         if (opcode != RESUME || oparg < 2) {
             /* Not in a yield from */
             return NULL;
@@ -486,14 +486,14 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             assert(ret == yf);
             Py_DECREF(ret);
             /* Termination repetition of SEND loop */
-            assert(frame->f_lasti >= 0);
+            assert(frame->lasti >= 0);
             PyObject *bytecode = gen->gi_code->co_code;
             unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
             /* Backup to SEND */
-            frame->f_lasti--;
-            assert(code[frame->f_lasti*sizeof(_Py_CODEUNIT)] == SEND);
-            int jump = code[frame->f_lasti*sizeof(_Py_CODEUNIT)+1];
-            frame->f_lasti += jump;
+            frame->lasti--;
+            assert(code[frame->lasti*sizeof(_Py_CODEUNIT)] == SEND);
+            int jump = code[frame->lasti*sizeof(_Py_CODEUNIT)+1];
+            frame->lasti += jump;
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);
                 Py_DECREF(val);
@@ -1344,7 +1344,7 @@ compute_cr_origin(int origin_depth, _Py_frame *current_frame)
         PyCodeObject *code = frame->code;
         PyObject *frameinfo = Py_BuildValue("OiO",
                                             code->co_filename,
-                                            PyCode_Addr2Line(frame->code, frame->f_lasti*sizeof(_Py_CODEUNIT)),
+                                            PyCode_Addr2Line(frame->code, frame->lasti*sizeof(_Py_CODEUNIT)),
                                             code->co_name);
         if (!frameinfo) {
             Py_DECREF(cr_origin);

@@ -308,7 +308,7 @@ static void
 tracemalloc_get_frame(_Py_frame *pyframe, frame_t *frame)
 {
     frame->filename = &_Py_STR(anon_unknown);
-    int lineno = PyCode_Addr2Line(pyframe->code, pyframe->f_lasti*sizeof(_Py_CODEUNIT));
+    int lineno = PyCode_Addr2Line(pyframe->code, pyframe->lasti*sizeof(_Py_CODEUNIT));
     if (lineno < 0) {
         lineno = 0;
     }

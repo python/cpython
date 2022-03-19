@@ -56,7 +56,7 @@ end
 define lineno
     set $__continue = 1
     set $__co = f->code
-    set $__lasti = f->f_lasti
+    set $__lasti = f->lasti
     set $__sz = ((PyVarObject *)$__co->co_lnotab)->ob_size/2
     set $__p = (unsigned char *)((PyBytesObject *)$__co->co_lnotab)->ob_sval
     set $__li = $__co->co_firstlineno
