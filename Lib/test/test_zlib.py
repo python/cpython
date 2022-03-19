@@ -104,17 +104,6 @@ class ChecksumTestCase(unittest.TestCase):
         self.assertEqual(zlib.crc32(foo), crc)
         self.assertEqual(binascii.crc32(b'spam'), zlib.crc32(b'spam'))
 
-    def test_random_checksum(self):
-        dat = random.randbytes(1234)
-        UINT_MAX = 0xFFFF_FFFF
-
-        self.assertTrue(0 <= zlib.adler32(dat) <= UINT_MAX)
-        self.assertTrue(0 <= zlib.crc32(dat) <= UINT_MAX)
-
-        self.assertEqual(zlib.adler32(dat, UINT_MAX+123),
-                         zlib.adler32(dat, (UINT_MAX+123) & UINT_MAX))
-        self.assertEqual(zlib.crc32(dat, UINT_MAX+123),
-                         zlib.crc32(dat, (UINT_MAX+123) & UINT_MAX))
 
 # Issue #10276 - check that inputs >=4 GiB are handled correctly.
 class ChecksumBigBufferTestCase(unittest.TestCase):
