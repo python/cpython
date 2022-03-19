@@ -688,6 +688,11 @@ Changes in the Python API
   if no locale is specified.
   (Contributed by Victor Stinner in :issue:`46659`.)
 
+* Global inline flags (e.g. ``(?i)``) can now only be used at the start of
+  the regular expressions.  Using them not at the start of expression was
+  deprecated since Python 3.6.
+  (Contributed by Serhiy Storchaka in :issue:`47066`.)
+
 
 Build Changes
 =============
