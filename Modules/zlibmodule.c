@@ -1420,7 +1420,7 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 }
 
 /*[clinic input]
-zlib.crc32 -> unsigned int
+zlib.crc32 -> unsigned_int
 
     data: Py_buffer
     value: unsigned_int(bitwise=True) = 0
@@ -1434,7 +1434,7 @@ The returned checksum is an integer.
 
 static unsigned int
 zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
-/*[clinic end generated code: output=63499fa20af7ea25 input=26c3ed430fa00b4c]*/
+/*[clinic end generated code: output=b217562e4fe6d6a6 input=1229cb2fb5ea948a]*/
 {
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
