@@ -26,7 +26,7 @@ frame_getlocals(PyFrameObject *f, void *closure)
 {
     if (PyFrame_FastToLocalsWithError(f) < 0)
         return NULL;
-    PyObject *locals = f->f_frame->f_locals;
+    PyObject *locals = f->f_frame->locals;
     Py_INCREF(locals);
     return locals;
 }
@@ -635,7 +635,7 @@ frame_dealloc(PyFrameObject *f)
         co = frame->f_code;
         frame->f_code = NULL;
         Py_CLEAR(frame->func);
-        Py_CLEAR(frame->f_locals);
+        Py_CLEAR(frame->locals);
         PyObject **locals = _PyFrame_GetLocalsArray(frame);
         for (int i = 0; i < frame->stacktop; i++) {
             Py_CLEAR(locals[i]);
@@ -850,13 +850,13 @@ _PyFrame_OpAlreadyRan(_Py_frame *frame, int opcode, int oparg)
 
 int
 _PyFrame_FastToLocalsWithError(_Py_frame *frame) {
-    /* Merge fast locals into f->f_locals */
+    /* Merge fast locals into f->locals */
     PyObject *locals;
     PyObject **fast;
     PyCodeObject *co;
-    locals = frame->f_locals;
+    locals = frame->locals;
     if (locals == NULL) {
-        locals = frame->f_locals = PyDict_New();
+        locals = frame->locals = PyDict_New();
         if (locals == NULL)
             return -1;
     }
@@ -967,7 +967,7 @@ _PyFrame_LocalsToFast(_Py_frame *frame, int clear)
     PyObject **fast;
     PyObject *error_type, *error_value, *error_traceback;
     PyCodeObject *co;
-    locals = frame->f_locals;
+    locals = frame->locals;
     if (locals == NULL)
         return;
     fast = _PyFrame_GetLocalsArray(frame);

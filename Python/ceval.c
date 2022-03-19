@@ -1443,7 +1443,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define GLOBALS() frame->globals
 #define BUILTINS() frame->builtins
-#define LOCALS() frame->f_locals
+#define LOCALS() frame->locals
 
 /* Shared opcode macros */
 
@@ -5284,7 +5284,7 @@ handle_eval_breaker:
             }
             /* Make sure that frame is in a valid state */
             frame->stacktop = 0;
-            frame->f_locals = NULL;
+            frame->locals = NULL;
             Py_INCREF(frame->func);
             Py_INCREF(frame->f_code);
             /* Restore previous cframe and return. */
@@ -6981,7 +6981,7 @@ PyEval_GetLocals(void)
         return NULL;
     }
 
-    PyObject *locals = current_frame->f_locals;
+    PyObject *locals = current_frame->locals;
     assert(locals != NULL);
     return locals;
 }
@@ -7212,7 +7212,7 @@ import_name(PyThreadState *tstate, _Py_frame *frame,
         }
         return NULL;
     }
-    PyObject *locals = frame->f_locals;
+    PyObject *locals = frame->locals;
     /* Fast path for not overloaded __import__. */
     if (import_func == tstate->interp->import_func) {
         int ilevel = _PyLong_AsInt(level);
