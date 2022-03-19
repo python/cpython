@@ -3260,9 +3260,9 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
         self.server_buffer = b''
         self.server = await asyncio.start_server(self.handle_new_client,
                                                  socket_helper.HOSTv4)
+        server_name = self.server.sockets[0].getsockname()
         self.client = socket.socket()
         self.client.setblocking(False)
-        server_name = self.server.sockets[0].getsockname()
         await asyncio.get_running_loop().sock_connect(self.client, server_name)
         self.sockno = self.client.fileno()
         self.file = open(os_helper.TESTFN, 'rb')
