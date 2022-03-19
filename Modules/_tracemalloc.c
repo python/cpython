@@ -305,7 +305,7 @@ hashtable_compare_traceback(const void *key1, const void *key2)
 
 
 static void
-tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
+tracemalloc_get_frame(_Py_frame *pyframe, frame_t *frame)
 {
     frame->filename = &_Py_STR(anon_unknown);
     int lineno = PyCode_Addr2Line(pyframe->f_code, pyframe->f_lasti*sizeof(_Py_CODEUNIT));
@@ -399,7 +399,7 @@ traceback_get_frames(traceback_t *traceback)
         return;
     }
 
-    _PyInterpreterFrame *pyframe = tstate->cframe->current_frame;
+    _Py_frame *pyframe = tstate->cframe->current_frame;
     for (; pyframe != NULL;) {
         if (traceback->nframe < _Py_tracemalloc_config.max_nframe) {
             tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);
@@ -410,7 +410,7 @@ traceback_get_frames(traceback_t *traceback)
             traceback->total_nframe++;
         }
 
-        _PyInterpreterFrame *back = pyframe->previous;
+        _Py_frame *back = pyframe->previous;
         pyframe = back;
     }
 }
