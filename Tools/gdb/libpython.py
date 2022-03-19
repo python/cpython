@@ -1006,7 +1006,7 @@ class PyFramePtr:
         return self._f_special("globals")
 
     def _f_builtins(self):
-        return self._f_special("f_builtins")
+        return self._f_special("builtins")
 
     def _f_code(self):
         return self._f_special("f_code", PyCodeObjectPtr.from_pyobject_ptr)

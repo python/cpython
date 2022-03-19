@@ -250,7 +250,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
         return suggestions;
     }
 
-    dir = PySequence_List(frame->f_frame->f_builtins);
+    dir = PySequence_List(frame->f_frame->builtins);
     if (dir == NULL) {
         return NULL;
     }

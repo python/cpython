@@ -1442,7 +1442,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 
 #define GLOBALS() frame->globals
-#define BUILTINS() frame->f_builtins
+#define BUILTINS() frame->builtins
 #define LOCALS() frame->f_locals
 
 /* Shared opcode macros */
@@ -6934,7 +6934,7 @@ _PyEval_GetBuiltins(PyThreadState *tstate)
 {
     _Py_frame *frame = tstate->cframe->current_frame;
     if (frame != NULL) {
-        return frame->f_builtins;
+        return frame->builtins;
     }
     return tstate->interp->builtins;
 }
@@ -7205,7 +7205,7 @@ import_name(PyThreadState *tstate, _Py_frame *frame,
     PyObject *import_func, *res;
     PyObject* stack[5];
 
-    import_func = _PyDict_GetItemWithError(frame->f_builtins, &_Py_ID(__import__));
+    import_func = _PyDict_GetItemWithError(frame->builtins, &_Py_ID(__import__));
     if (import_func == NULL) {
         if (!_PyErr_Occurred(tstate)) {
             _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");

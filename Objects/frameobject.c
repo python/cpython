@@ -78,7 +78,7 @@ frame_getglobals(PyFrameObject *f, void *closure)
 static PyObject *
 frame_getbuiltins(PyFrameObject *f, void *closure)
 {
-    PyObject *builtins = f->f_frame->f_builtins;
+    PyObject *builtins = f->f_frame->builtins;
     if (builtins == NULL) {
         builtins = Py_None;
     }

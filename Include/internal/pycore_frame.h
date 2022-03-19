@@ -96,7 +96,7 @@ typedef signed char PyFrameState;
 typedef struct _Py_frame {
     PyFunctionObject *func; /* Strong reference */
     PyObject *globals; /* Borrowed reference */
-    PyObject *f_builtins; /* Borrowed reference */
+    PyObject *builtins; /* Borrowed reference */
     PyObject *f_locals; /* Strong reference, may be NULL */
     PyCodeObject *f_code; /* Strong reference */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL */
@@ -154,7 +154,7 @@ _PyFrame_InitializeSpecials(
 {
     frame->func = func;
     frame->f_code = (PyCodeObject *)Py_NewRef(func->func_code);
-    frame->f_builtins = func->func_builtins;
+    frame->builtins = func->func_builtins;
     frame->globals = func->func_globals;
     frame->f_locals = Py_XNewRef(locals);
     frame->stacktop = nlocalsplus;
