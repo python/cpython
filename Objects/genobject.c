@@ -975,7 +975,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     assert(f->f_fdata->frame_obj == NULL);
     assert(f->f_owns_frame);
     _Py_frame *frame = (_Py_frame *)gen->gi_iframe;
-    _PyFrame_Copy((_Py_frame *)f->_f_frame_data, frame);
+    _PyFrame_Copy((_Py_frame *)f->_f_owned_fdata, frame);
     gen->gi_frame_valid = 1;
     assert(frame->frame_obj == f);
     f->f_owns_frame = 0;

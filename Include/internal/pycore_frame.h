@@ -65,7 +65,7 @@ struct _frame {
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
     char f_owns_frame;          /* This frame owns the frame */
     /* The frame data, if this frame object owns the frame */
-    PyObject *_f_frame_data[1];
+    PyObject *_f_owned_fdata[1];
 };
 
 extern PyFrameObject* _PyFrame_New_NoTrack(PyCodeObject *code);

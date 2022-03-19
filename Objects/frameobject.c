@@ -629,8 +629,8 @@ frame_dealloc(PyFrameObject *f)
     /* Kill all local variables including specials, if we own them */
     if (f->f_owns_frame) {
         f->f_owns_frame = 0;
-        assert(f->f_fdata == (_Py_frame *)f->_f_frame_data);
-        _Py_frame *frame = (_Py_frame *)f->_f_frame_data;
+        assert(f->f_fdata == (_Py_frame *)f->_f_owned_fdata);
+        _Py_frame *frame = (_Py_frame *)f->_f_owned_fdata;
         /* Don't clear code object until the end */
         co = frame->code;
         frame->code = NULL;
@@ -707,7 +707,7 @@ static PyObject *
 frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res;
-    res = offsetof(PyFrameObject, _f_frame_data) + offsetof(_Py_frame, localsplus);
+    res = offsetof(PyFrameObject, _f_owned_fdata) + offsetof(_Py_frame, localsplus);
     PyCodeObject *code = f->f_fdata->code;
     res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
@@ -737,7 +737,7 @@ static PyMethodDef frame_methods[] = {
 PyTypeObject PyFrame_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "frame",
-    offsetof(PyFrameObject, _f_frame_data) +
+    offsetof(PyFrameObject, _f_owned_fdata) +
     offsetof(_Py_frame, localsplus),
     sizeof(PyObject *),
     (destructor)frame_dealloc,                  /* tp_dealloc */
@@ -827,8 +827,8 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
         Py_DECREF(func);
         return NULL;
     }
-    init_frame((_Py_frame *)f->_f_frame_data, func, locals);
-    f->f_fdata = (_Py_frame *)f->_f_frame_data;
+    init_frame((_Py_frame *)f->_f_owned_fdata, func, locals);
+    f->f_fdata = (_Py_frame *)f->_f_owned_fdata;
     f->f_owns_frame = 1;
     Py_DECREF(func);
     _PyObject_GC_TRACK(f);
