@@ -123,7 +123,6 @@ DATA
     list_alias1 = typing.List[int]
     list_alias2 = list[int]
     type_union1 = typing.Union[int, str]
-    type_union2 = int | str
 
 VERSION
     1.2.3.4
@@ -264,8 +263,7 @@ war</tt></dd></dl>
 <strong>c_alias</strong> = test.pydoc_mod.C[int]<br>
 <strong>list_alias1</strong> = typing.List[int]<br>
 <strong>list_alias2</strong> = list[int]<br>
-<strong>type_union1</strong> = typing.Union[int, str]<br>
-<strong>type_union2</strong> = int | str</td></tr></table><p>
+<strong>type_union1</strong> = typing.Union[int, str]</td></tr></table><p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#7799ee">
 <td colspan=3 valign=bottom>&nbsp;<br>
@@ -1080,7 +1078,7 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(pydoc.describe(typing.List[int]), '_GenericAlias')
         doc = pydoc.render_doc(typing.List[int], renderer=pydoc.plaintext)
         self.assertIn('_GenericAlias in module typing', doc)
-        self.assertIn('List = class list(object)', doc)
+        self.assertIn('\nclass list(object)', doc)
         self.assertIn(list.__doc__.strip().splitlines()[0], doc)
 
         self.assertEqual(pydoc.describe(list[int]), 'GenericAlias')
@@ -1093,25 +1091,19 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(pydoc.describe(typing.Union[int, str]), '_UnionGenericAlias')
         doc = pydoc.render_doc(typing.Union[int, str], renderer=pydoc.plaintext)
         self.assertIn('_UnionGenericAlias in module typing', doc)
-        self.assertIn('Union = typing.Union', doc)
+        self.assertIn('\ntyping.Union', doc)
         if typing.Union.__doc__:
             self.assertIn(typing.Union.__doc__.strip().splitlines()[0], doc)
-
-        self.assertEqual(pydoc.describe(int | str), 'UnionType')
-        doc = pydoc.render_doc(int | str, renderer=pydoc.plaintext)
-        self.assertIn('UnionType in module types object', doc)
-        self.assertIn('\nclass UnionType(builtins.object)', doc)
-        self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
 
     def test_special_form(self):
         self.assertEqual(pydoc.describe(typing.Any), '_SpecialForm')
         doc = pydoc.render_doc(typing.Any, renderer=pydoc.plaintext)
         self.assertIn('_SpecialForm in module typing', doc)
         if typing.Any.__doc__:
-            self.assertIn('Any = typing.Any', doc)
+            self.assertIn('\ntyping.Any', doc)
             self.assertIn(typing.Any.__doc__.strip().splitlines()[0], doc)
         else:
-            self.assertIn('Any = class _SpecialForm(_Final)', doc)
+            self.assertIn('\nclass _SpecialForm(_Final)', doc)
 
     def test_typing_pydoc(self):
         def foo(data: typing.List[typing.Any],
