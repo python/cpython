@@ -9026,13 +9026,13 @@ super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
         /* Call super(), without args -- fill in from __class__
            and first local variable on the stack. */
         PyThreadState *tstate = _PyThreadState_GET();
-        _Py_frame *cframe = tstate->cframe->current_frame;
-        if (cframe == NULL) {
+        _Py_frame *frame = tstate->cframe->current_frame;
+        if (frame == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no current frame");
             return -1;
         }
-        int res = super_init_without_args(cframe, cframe->code, &type, &obj);
+        int res = super_init_without_args(frame, frame->code, &type, &obj);
 
         if (res < 0) {
             return -1;
