@@ -1,0 +1,9 @@
+Renamed `_PyInterpreterFrame` as `_Py_frame` to emphasise its close
+association with `PyFrameObject` (they're conceptually the same thing, but
+split into a Python object struct and a C data struct as a performance
+optimisation).
+
+The `f_` prefix has been removed from all `_Py_frame` fields that previously
+used it, so the presence or absence of the prefix provides a way to infer
+the exact type of a frame pointer when reading an isolated snippet in a code
+diff.
