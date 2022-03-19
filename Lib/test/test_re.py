@@ -1443,7 +1443,8 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match(p, lower_char))
         self.assertEqual(
             str(warns.warnings[0].message),
-            'Flags not at the start of the expression %r' % p
+            'Flags not at the start of the expression %r'
+            ' but at position 1' % p
         )
         self.assertEqual(warns.warnings[0].filename, __file__)
 
@@ -1452,7 +1453,8 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match(p, lower_char))
         self.assertEqual(
             str(warns.warnings[0].message),
-            'Flags not at the start of the expression %r (truncated)' % p[:20]
+            'Flags not at the start of the expression %r (truncated)'
+            ' but at position 1' % p[:20]
         )
         self.assertEqual(warns.warnings[0].filename, __file__)
 
@@ -1464,7 +1466,8 @@ class ReTests(unittest.TestCase):
                 self.assertTrue(re.match(p, b'a'))
             self.assertEqual(
                 str(warns.warnings[0].message),
-                'Flags not at the start of the expression %r' % p
+                'Flags not at the start of the expression %r'
+                ' but at position 1' % p
             )
             self.assertEqual(warns.warnings[0].filename, __file__)
 
