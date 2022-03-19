@@ -3436,8 +3436,8 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
                          'test needs os.SF_NODISKIO')
     async def test_flags(self):
         try:
-            await async_sendfile(self.sockno, self.fileno, 0, 4096,
-                                 flags=os.SF_NODISKIO)
+            await self.async_sendfile(self.sockno, self.fileno, 0, 4096,
+                                      flags=os.SF_NODISKIO)
         except OSError as err:
             if err.errno not in (errno.EBUSY, errno.EAGAIN):
                 raise
