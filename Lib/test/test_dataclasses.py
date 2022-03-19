@@ -2942,6 +2942,8 @@ class TestSlots(unittest.TestCase):
         @dataclass(slots=True)
         class Base(Root4):
             y: int
+            j: str
+            h: str
 
         self.assertEqual(Base.__slots__, ('y', ))
 
@@ -2950,6 +2952,8 @@ class TestSlots(unittest.TestCase):
             aa: float
             x: str
             z: int
+            k: str
+            h: str
 
         self.assertEqual(Derived.__slots__, ('z', ))
 
