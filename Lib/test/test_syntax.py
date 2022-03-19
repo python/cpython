@@ -1630,8 +1630,8 @@ def fib(n):
             self.assertEqual(compile(s1, '<string>', 'exec'), compile(s2, '<string>', 'exec'))
         except SyntaxError:
             self.fail("Indented statement over multiple lines is valid")
-    
-    def test_continuation_bad_indentation(self): 
+
+    def test_continuation_bad_indentation(self):
         # Check that code that breaks indentation across multiple lines raises a syntax error
 
         code = r"""\
@@ -1769,6 +1769,14 @@ while 1:
             with self.subTest(mode=mode):
                 with self.assertRaises(MemoryError):
                     compile(source, "<string>", mode)
+
+    @support.cpython_only
+    def test_deep_invalid_rule(self):
+        # Check that a very deep invalid rule in the PEG
+        # parser doesn't have exponential backtracking.
+        source = "d{{{{{{{{{{{{{{{{{{{{{{{{{```{{{{{{{ef f():y"
+        with self.assertRaises(SyntaxError):
+            compile(source, "<string>", "exec")
 
 
 def load_tests(loader, tests, pattern):

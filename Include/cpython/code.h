@@ -5,7 +5,7 @@
 /* Each instruction in a code object is a fixed-width value,
  * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
  * opcode allows for larger values but the current limit is 3 uses
- * of EXTENDED_ARG (see Python/wordcode_helpers.h), for a maximum
+ * of EXTENDED_ARG (see Python/compile.c), for a maximum
  * 32-bit value.  This aligns with the note in Python/compile.c
  * (compiler_addop_i_line) indicating that the max oparg value is
  * 2**32 - 1, rather than INT_MAX.
@@ -22,6 +22,9 @@ typedef uint16_t _Py_CODEUNIT;
 #  define _Py_OPARG(word) ((word) >> 8)
 #  define _Py_MAKECODEUNIT(opcode, oparg) ((opcode)|((oparg)<<8))
 #endif
+
+// Use "unsigned char" instead of "uint8_t" here to avoid illegal aliasing:
+#define _Py_SET_OPCODE(word, opcode) (((unsigned char *)&(word))[0] = (opcode))
 
 
 /* Bytecode object */
@@ -105,7 +108,7 @@ struct PyCodeObject {
     /* Quickened instructions and cache, or NULL
      This should be treated as opaque by all code except the specializer and
      interpreter. */
-    union _cache_or_instruction *co_quickened;
+    _Py_CODEUNIT *co_quickened;
 
 };
 
@@ -174,13 +177,6 @@ PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 PyAPI_FUNC(int) PyCode_Addr2Location(PyCodeObject *, int, int *, int *, int *, int *);
 
-/* Return the ending source code line number from a bytecode index. */
-PyAPI_FUNC(int) _PyCode_Addr2EndLine(PyCodeObject *, int);
-/* Return the starting source code column offset from a bytecode index. */
-PyAPI_FUNC(int) _PyCode_Addr2Offset(PyCodeObject *, int);
-/* Return the ending source code column offset from a bytecode index. */
-PyAPI_FUNC(int) _PyCode_Addr2EndOffset(PyCodeObject *, int);
-
 /* for internal use only */
 struct _opaque {
     int computed_line;
@@ -217,15 +213,3 @@ PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
                                  void **extra);
 PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
                                  void *extra);
-
-/** API for initializing the line number tables. */
-int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
-int _PyCode_InitEndAddressRange(PyCodeObject* co, PyCodeAddressRange* bounds);
-
-/** Out of process API for initializing the line number table. */
-void PyLineTable_InitAddressRange(const char *linetable, Py_ssize_t length, int firstlineno, PyCodeAddressRange *range);
-
-/** API for traversing the line number table. */
-int PyLineTable_NextAddressRange(PyCodeAddressRange *range);
-int PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
-

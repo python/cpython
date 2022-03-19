@@ -23,17 +23,9 @@ static const char match_args_key[] = "__match_args__";
    They are only allowed for indices < n_visible_fields. */
 const char * const PyStructSequence_UnnamedField = "unnamed field";
 
-_Py_IDENTIFIER(n_sequence_fields);
-_Py_IDENTIFIER(n_fields);
-_Py_IDENTIFIER(n_unnamed_fields);
-
 static Py_ssize_t
-get_type_attr_as_size(PyTypeObject *tp, _Py_Identifier *id)
+get_type_attr_as_size(PyTypeObject *tp, PyObject *name)
 {
-    PyObject *name = _PyUnicode_FromId(id);
-    if (name == NULL) {
-        return -1;
-    }
     PyObject *v = PyDict_GetItemWithError(tp->tp_dict, name);
     if (v == NULL && !PyErr_Occurred()) {
         PyErr_Format(PyExc_TypeError,
@@ -44,11 +36,14 @@ get_type_attr_as_size(PyTypeObject *tp, _Py_Identifier *id)
 }
 
 #define VISIBLE_SIZE(op) Py_SIZE(op)
-#define VISIBLE_SIZE_TP(tp) get_type_attr_as_size(tp, &PyId_n_sequence_fields)
-#define REAL_SIZE_TP(tp) get_type_attr_as_size(tp, &PyId_n_fields)
+#define VISIBLE_SIZE_TP(tp) \
+    get_type_attr_as_size(tp, &_Py_ID(n_sequence_fields))
+#define REAL_SIZE_TP(tp) \
+    get_type_attr_as_size(tp, &_Py_ID(n_fields))
 #define REAL_SIZE(op) REAL_SIZE_TP(Py_TYPE(op))
 
-#define UNNAMED_FIELDS_TP(tp) get_type_attr_as_size(tp, &PyId_n_unnamed_fields)
+#define UNNAMED_FIELDS_TP(tp) \
+    get_type_attr_as_size(tp, &_Py_ID(n_unnamed_fields))
 #define UNNAMED_FIELDS(op) UNNAMED_FIELDS_TP(Py_TYPE(op))
 
 
@@ -621,22 +616,4 @@ PyTypeObject *
 PyStructSequence_NewType(PyStructSequence_Desc *desc)
 {
     return _PyStructSequence_NewType(desc, 0);
-}
-
-
-/* runtime lifecycle */
-
-PyStatus _PyStructSequence_InitState(PyInterpreterState *interp)
-{
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    if (_PyUnicode_FromId(&PyId_n_sequence_fields) == NULL
-        || _PyUnicode_FromId(&PyId_n_fields) == NULL
-        || _PyUnicode_FromId(&PyId_n_unnamed_fields) == NULL)
-    {
-        return _PyStatus_ERR("can't initialize structseq state");
-    }
-    return _PyStatus_OK();
 }

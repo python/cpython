@@ -191,8 +191,9 @@ attributes:
 |           |                   | which this code object    |
 |           |                   | was defined               |
 +-----------+-------------------+---------------------------+
-|           | co_names          | tuple of names of local   |
-|           |                   | variables                 |
+|           | co_names          | tuple of names other      |
+|           |                   | than arguments and        |
+|           |                   | function locals           |
 +-----------+-------------------+---------------------------+
 |           | co_nlocals        | number of local variables |
 +-----------+-------------------+---------------------------+
@@ -427,6 +428,14 @@ attributes:
 .. function:: isbuiltin(object)
 
    Return ``True`` if the object is a built-in function or a bound built-in method.
+
+
+.. function:: ismethodwrapper(object)
+
+   Return ``True`` if the type of object is a :class:`~types.MethodWrapperType`.
+
+   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object().__str__`,
+   :meth:`~object().__eq__` and :meth:`~object().__repr__`
 
 
 .. function:: isroutine(object)

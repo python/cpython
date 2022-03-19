@@ -1,0 +1,1 @@
+Speed up :class:`bytearray` creation from :class:`list` and :class:`tuple` by 40%. Patch by Kumar Aditya.

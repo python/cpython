@@ -1019,7 +1019,7 @@ You can specify keyword-only on a per-field basis:
 
 .. code-block:: python
 
-    from dataclasses import dataclass
+    from dataclasses import dataclass, field
 
     @dataclass
     class Birthday:
@@ -1159,7 +1159,7 @@ Reedy in :issue:`40468`.)  Move the indent space setting from the Font tab to
 the new Windows tab.  (Contributed by Mark Roseman and Terry Jan Reedy in
 :issue:`33962`.)
 
-These changes were backported to a 3.9 maintenance release.
+The changes above were backported to a 3.9 maintenance release.
 
 Add a Shell sidebar.  Move the primary prompt ('>>>') to the sidebar.
 Add secondary prompts ('...') to the sidebar.  Left click and optional
@@ -1180,6 +1180,11 @@ Highlight the new :ref:`soft keywords <soft-keywords>` :keyword:`match`,
 pattern-matching statements. However, this highlighting is not perfect
 and will be incorrect in some rare cases, including some ``_``-s in
 ``case`` patterns.  (Contributed by Tal Einat in :issue:`44010`.)
+
+New in 3.10 maintenance releases.
+
+Apply syntax highlighting to `.pyi` files. (Contributed by Alex
+Waygood and Terry Jan Reedy in :issue:`45447`.)
 
 importlib.metadata
 ------------------

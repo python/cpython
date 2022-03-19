@@ -85,11 +85,8 @@ class Future:
             self._source_traceback = format_helpers.extract_stack(
                 sys._getframe(1))
 
-    _repr_info = base_futures._future_repr_info
-
     def __repr__(self):
-        return '<{} {}>'.format(self.__class__.__name__,
-                                ' '.join(self._repr_info()))
+        return base_futures._future_repr(self)
 
     def __del__(self):
         if not self.__log_traceback:
@@ -132,6 +129,11 @@ class Future:
         This should only be called once when handling a cancellation since
         it erases the saved context exception value.
         """
+        if self._cancelled_exc is not None:
+            exc = self._cancelled_exc
+            self._cancelled_exc = None
+            return exc
+
         if self._cancel_message is None:
             exc = exceptions.CancelledError()
         else:

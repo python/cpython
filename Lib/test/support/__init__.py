@@ -5,6 +5,7 @@ if __name__ != 'test.support':
 
 import contextlib
 import functools
+import getpass
 import os
 import re
 import stat
@@ -378,10 +379,11 @@ def skip_if_buildbot(reason=None):
     """Decorator raising SkipTest if running on a buildbot."""
     if not reason:
         reason = 'not suitable for buildbots'
-    if sys.platform == 'win32':
-        isbuildbot = os.environ.get('USERNAME') == 'Buildbot'
-    else:
-        isbuildbot = os.environ.get('USER') == 'buildbot'
+    try:
+        isbuildbot = getpass.getuser().lower() == 'buildbot'
+    except (KeyError, EnvironmentError) as err:
+        warnings.warn(f'getpass.getuser() failed {err}.', RuntimeWarning)
+        isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
 
 def check_sanitizer(*, address=False, memory=False, ub=False):
@@ -515,9 +517,17 @@ def requires_fork():
 has_subprocess_support = not is_emscripten and not is_wasi
 
 def requires_subprocess():
-    """Used for subprocess, os.spawn calls"""
+    """Used for subprocess, os.spawn calls, fd inheritance"""
     return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
 
+# Does strftime() support glibc extension like '%4Y'?
+has_strftime_extensions = False
+if sys.platform != "win32":
+    # bpo-47037: Windows debug builds crash with "Debug Assertion Failed"
+    try:
+        has_strftime_extensions = time.strftime("%4Y") != "%4Y"
+    except ValueError:
+        pass
 
 # Define the URL of a dedicated HTTP server for the network tests.
 # The URL must use clear-text HTTP: no redirection to encrypted HTTPS.
@@ -767,29 +777,29 @@ def check_sizeof(test, o, size):
 
 @contextlib.contextmanager
 def run_with_locale(catstr, *locales):
+    try:
+        import locale
+        category = getattr(locale, catstr)
+        orig_locale = locale.setlocale(category)
+    except AttributeError:
+        # if the test author gives us an invalid category string
+        raise
+    except:
+        # cannot retrieve original locale, so do nothing
+        locale = orig_locale = None
+    else:
+        for loc in locales:
             try:
-                import locale
-                category = getattr(locale, catstr)
-                orig_locale = locale.setlocale(category)
-            except AttributeError:
-                # if the test author gives us an invalid category string
-                raise
+                locale.setlocale(category, loc)
+                break
             except:
-                # cannot retrieve original locale, so do nothing
-                locale = orig_locale = None
-            else:
-                for loc in locales:
-                    try:
-                        locale.setlocale(category, loc)
-                        break
-                    except:
-                        pass
+                pass
 
-            try:
-                yield
-            finally:
-                if locale and orig_locale:
-                    locale.setlocale(category, orig_locale)
+    try:
+        yield
+    finally:
+        if locale and orig_locale:
+            locale.setlocale(category, orig_locale)
 
 #=======================================================================
 # Decorator for running a function in a specific timezone, correctly
@@ -1276,6 +1286,8 @@ def reap_children():
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
         return
+    elif not has_subprocess_support:
+        return
 
     # Reap all our dead child processes so we don't leave zombies around.
     # These hog resources and might be causing some of the buildbots to die.
@@ -1417,7 +1429,7 @@ def skip_if_buggy_ucrt_strfptime(test):
     global _buggy_ucrt
     if _buggy_ucrt is None:
         if(sys.platform == 'win32' and
-                locale.getdefaultlocale()[1]  == 'cp65001' and
+                locale.getpreferredencoding(False)  == 'cp65001' and
                 time.localtime().tm_zone == ''):
             _buggy_ucrt = True
         else:
@@ -1437,9 +1449,6 @@ class PythonSymlink:
         self._env = None
 
         self._platform_specific()
-
-    def _platform_specific(self):
-        pass
 
     if sys.platform == "win32":
         def _platform_specific(self):
@@ -1468,6 +1477,9 @@ class PythonSymlink:
             self._env["PYTHONHOME"] = os.path.dirname(self.real)
             if sysconfig.is_python_build(True):
                 self._env["PYTHONPATH"] = STDLIB_DIR
+    else:
+        def _platform_specific(self):
+            pass
 
     def __enter__(self):
         os.symlink(self.real, self.link)

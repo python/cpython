@@ -40,7 +40,7 @@
 static struct tok_state *tok_new(void);
 static int tok_nextc(struct tok_state *tok);
 static void tok_backup(struct tok_state *tok, int c);
-
+static int syntaxerror(struct tok_state *tok, const char *format, ...);
 
 /* Spaces in this constant are treated as "zero or more spaces or tabs" when
    tokenizing. */
@@ -282,30 +282,6 @@ check_bom(int get_char(struct tok_state *),
             unget_char(ch1, tok);
             return 1;
         }
-#if 0
-    /* Disable support for UTF-16 BOMs until a decision
-       is made whether this needs to be supported.  */
-    } else if (ch1 == 0xFE) {
-        ch2 = get_char(tok);
-        if (ch2 != 0xFF) {
-            unget_char(ch2, tok);
-            unget_char(ch1, tok);
-            return 1;
-        }
-        if (!set_readline(tok, "utf-16-be"))
-            return 0;
-        tok->decoding_state = STATE_NORMAL;
-    } else if (ch1 == 0xFF) {
-        ch2 = get_char(tok);
-        if (ch2 != 0xFE) {
-            unget_char(ch2, tok);
-            unget_char(ch1, tok);
-            return 1;
-        }
-        if (!set_readline(tok, "utf-16-le"))
-            return 0;
-        tok->decoding_state = STATE_NORMAL;
-#endif
     } else {
         unget_char(ch1, tok);
         return 1;
@@ -443,8 +419,6 @@ static int
 fp_setreadl(struct tok_state *tok, const char* enc)
 {
     PyObject *readline, *io, *stream;
-    _Py_IDENTIFIER(open);
-    _Py_IDENTIFIER(readline);
     int fd;
     long pos;
 
@@ -462,25 +436,28 @@ fp_setreadl(struct tok_state *tok, const char* enc)
     }
 
     io = PyImport_ImportModule("io");
-    if (io == NULL)
+    if (io == NULL) {
         return 0;
-
-    stream = _PyObject_CallMethodId(io, &PyId_open, "isisOOO",
+    }
+    stream = _PyObject_CallMethod(io, &_Py_ID(open), "isisOOO",
                     fd, "r", -1, enc, Py_None, Py_None, Py_False);
     Py_DECREF(io);
-    if (stream == NULL)
+    if (stream == NULL) {
         return 0;
+    }
 
-    readline = _PyObject_GetAttrId(stream, &PyId_readline);
+    readline = PyObject_GetAttr(stream, &_Py_ID(readline));
     Py_DECREF(stream);
-    if (readline == NULL)
+    if (readline == NULL) {
         return 0;
+    }
     Py_XSETREF(tok->decoding_readline, readline);
 
     if (pos > 0) {
         PyObject *bufobj = _PyObject_CallNoArgs(readline);
-        if (bufobj == NULL)
+        if (bufobj == NULL) {
             return 0;
+        }
         Py_DECREF(bufobj);
     }
 
@@ -855,7 +832,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         tok->done = E_INTERACT_STOP;
         return 1;
     }
-    char *newtok = PyOS_Readline(stdin, stdout, tok->prompt);
+    char *newtok = PyOS_Readline(tok->fp ? tok->fp : stdin, stdout, tok->prompt);
     if (newtok != NULL) {
         char *translated = translate_newlines(newtok, 0, tok);
         PyMem_Free(newtok);
@@ -1031,8 +1008,9 @@ tok_nextc(struct tok_state *tok)
         if (tok->cur != tok->inp) {
             return Py_CHARMASK(*tok->cur++); /* Fast path */
         }
-        if (tok->done != E_OK)
-            return EOF;
+        if (tok->done != E_OK) {
+           return EOF;
+        }
         if (tok->fp == NULL) {
             rc = tok_underflow_string(tok);
         }
@@ -1250,6 +1228,9 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind)
     }
     else if (c == 'o') {
         r = lookahead(tok, "r");
+    }
+    else if (c == 'n') {
+        r = lookahead(tok, "ot");
     }
     if (r) {
         tok_backup(tok, c);
@@ -1964,16 +1945,21 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                 tok->line_start = tok->multi_line_start;
                 int start = tok->lineno;
                 tok->lineno = tok->first_lineno;
-
                 if (quote_size == 3) {
-                    return syntaxerror(tok,
-                                       "unterminated triple-quoted string literal"
-                                       " (detected at line %d)", start);
+                    syntaxerror(tok, "unterminated triple-quoted string literal"
+                                     " (detected at line %d)", start);
+                    if (c != '\n') {
+                        tok->done = E_EOFS;
+                    }
+                    return ERRORTOKEN;
                 }
                 else {
-                    return syntaxerror(tok,
-                                       "unterminated string literal (detected at"
-                                       " line %d)", start);
+                    syntaxerror(tok, "unterminated string literal (detected at"
+                                     " line %d)", start);
+                    if (c != '\n') {
+                        tok->done = E_EOLS;
+                    }
+                    return ERRORTOKEN;
                 }
             }
             if (c == quote) {
