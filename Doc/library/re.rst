@@ -161,16 +161,20 @@ The special characters are:
 
 ``*+``, ``++``, ``?+``
   Like the ``'*'``, ``'+'``, and ``'?'`` qualifiers, those where ``'+'`` is
-  appended also match as many times as possible.  However, unlike the true greedy
-  qualifiers, these do not allow back-tracking when the expression following it
-  fails to match.  These are known as :dfn:`Possessive` qualifiers.  For example,
-  ``a*a`` will match ``'aaaa'`` because the ``a*`` will match all 4 ``'a'``s, but,
-  when the final ``'a'`` is encountered, the expression is backtracked so that in the
-  end the ``a*`` ends up matching 3 ``'a'``s total, and the fourth ``'a'`` is matched
-  by the final ``'a'``.  However, when ``a*+a`` is used to match ``'aaaa'``, the
-  ``a*+`` will match all 4 ``'a'``, but when the final ``'a'`` fails to find any more
-  characters to match, the expression cannot be backtracked and will thus fail to
-  match.
+  appended also match as many times as possible.
+  However, unlike the true greedy qualifiers, these do not allow
+  back-tracking when the expression following it fails to match.
+  These are known as :dfn:`possessive` qualifiers.
+  For example, ``a*a`` will match ``'aaaa'`` because the ``a*`` will match
+  all 4 ``'a'``s, but, when the final ``'a'`` is encountered, the
+  expression is backtracked so that in the end the ``a*`` ends up matching
+  3 ``'a'``s total, and the fourth ``'a'`` is matched by the final ``'a'``.
+  However, when ``a*+a`` is used to match ``'aaaa'``, the ``a*+`` will
+  match all 4 ``'a'``, but when the final ``'a'`` fails to find any more
+  characters to match, the expression cannot be backtracked and will thus
+  fail to match.
+  ``x*+``, ``x++`` and ``x?+`` are equivalent to ``(?>x*)``, ``(?>x+)``
+  and ``(?>x?)`` correspondigly.
 
    .. versionadded:: 3.11
 
@@ -199,14 +203,17 @@ The special characters are:
    while ``a{3,5}?`` will only match 3 characters.
 
 ``{m,n}+``
-   Causes the resulting RE to match from *m* to *n* repetitions of the preceding
-   RE, attempting to match as many repetitions as possible *without* establishing any
-   backtracking points.  This is the possessive version of the qualifier above.  For
-   example, on the 6-character string ``'aaaaaa'``, ``a{3,5}+aa`` attempt to match 5
-   ``'a'`` characters, then, requiring 2 more ``'a'``s, will need more characters than
-   available and thus fail, while ``a{3,5}aa`` will match with ``a{3,5}`` capturing
-   5, then 4 ``'a'``s by backtracking and then the final 2 ``'a'``s are matched by the
-   final ``aa`` in the pattern.
+   Causes the resulting RE to match from *m* to *n* repetitions of the
+   preceding RE, attempting to match as many repetitions as possible
+   *without* establishing any backtracking points.
+   This is the possessive version of the qualifier above.
+   For example, on the 6-character string ``'aaaaaa'``, ``a{3,5}+aa``
+   attempt to match 5 ``'a'`` characters, then, requiring 2 more ``'a'``s,
+   will need more characters than available and thus fail, while
+   ``a{3,5}aa`` will match with ``a{3,5}`` capturing 5, then 4 ``'a'``s
+   by backtracking and then the final 2 ``'a'``s are matched by the final
+   ``aa`` in the pattern.
+   ``x{m,n}+`` is equivalent to ``(?>x{m,n})``.
 
    .. versionadded:: 3.11
 
@@ -365,6 +372,21 @@ The special characters are:
    .. versionchanged:: 3.7
       The letters ``'a'``, ``'L'`` and ``'u'`` also can be used in a group.
 
+``(?>...)``
+   Attempts to match ``...`` as if it was a separate regular expression, and
+   if successful, continues to match the rest of the pattern following it.
+   If the subsequent pattern fails to match, the stack can only be unwound
+   to a point *before* the ``(?>...)`` because once exited, the expression,
+   known as an :dfn:`atomic group`, has thrown away all stack points within
+   itself.
+   Thus, ``(?>.*).`` would never match anything because first the ``.*``
+   would match all characters possible, then, having nothing left to match,
+   the final ``.`` would fail to match.
+   Since there are no stack points saved in the Atomic Group, and there is
+   no stack point before it, the entire expression would thus fail to match.
+
+   .. versionadded:: 3.11
+
 .. index:: single: (?P<; in regular expressions
 
 ``(?P<name>...)``
@@ -452,20 +474,6 @@ The special characters are:
    positive lookbehind assertions, the contained pattern must only match strings of
    some fixed length.  Patterns which start with negative lookbehind assertions may
    match at the beginning of the string being searched.
-
-``(?>...)``
-  Attempts to match ``...`` as if it was a separate Regular Expression, and if
-  successful, continues to match the rest of the pattern following it.  If the
-  subsequent pattern fails to match, the stack can only be unwound to a point
-  *before* the ``(?>...)`` because once exited, the expression, known as an
-  :dfn:`Atomic Group`, has thrown away all stack points within itself.  Thus,
-  ``(?>.*).`` would never match anything because first the ``.*`` would match all
-  characters possible, then, having nothing left to match, the final ``.`` would
-  fail to match.  Since there are no stack points saved in the Atomic Group, and
-  there is no stack point before it, the entire expression would thus fail to
-  match.
-
-   .. versionadded:: 3.11
 
 ``(?(id/name)yes-pattern|no-pattern)``
    Will try to match with ``yes-pattern`` if the group with given *id* or

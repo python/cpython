@@ -2081,7 +2081,7 @@ class ReTests(unittest.TestCase):
 
     def test_possessive_qualifiers(self):
         """Test Possessive Qualifiers
-        test qualifiers of the form @+ for some repetition operator @,
+        Test qualifiers of the form @+ for some repetition operator @,
         e.g. x{3,5}+ meaning match from 3 to 5 greadily and proceed
         without creating a stack frame for rolling the stack back and
         trying 1 or more fewer matches."""
@@ -2120,7 +2120,7 @@ class ReTests(unittest.TestCase):
 
     def test_atomic_grouping(self):
         """Test Atomic Grouping
-        test non-capturing groups of the form (?>...), which does
+        Test non-capturing groups of the form (?>...), which does
         not maintain any stack point created within the group once the
         group is finished being evaluated."""
         pattern1 = re.compile(r'a(?>bc|b)c')
