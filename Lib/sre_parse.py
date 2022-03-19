@@ -805,16 +805,9 @@ def _parse(source, state, verbose, nested, first=False):
                     flags = _parse_flags(source, state, char)
                     if flags is None:  # global flags
                         if not first or subpattern:
-                            import warnings
-                            warnings.warn(
-                                'Flags not at the start of the expression %r%s'
-                                ' but at position %d' % (
-                                    source.string[:20],  # truncate long regexes
-                                    ' (truncated)' if len(source.string) > 20 else '',
-                                    start,
-                                ),
-                                DeprecationWarning, stacklevel=nested + 6
-                            )
+                            raise source.error('global flags not at the start '
+                                               'of the expression',
+                                               source.tell() - start)
                         if (state.flags & SRE_FLAG_VERBOSE) and not verbose:
                             raise Verbose
                         continue
