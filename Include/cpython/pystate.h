@@ -48,7 +48,7 @@ typedef struct _PyCFrame {
      */
     int use_tracing;
     /* Pointer to the currently executing frame (it can be NULL) */
-    struct _PyInterpreterFrame *current_frame;
+    struct _Py_frame *current_frame;
     struct _PyCFrame *previous;
 } _PyCFrame;
 
@@ -260,7 +260,7 @@ PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 /* Frame evaluation API */
 
-typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, struct _PyInterpreterFrame *, int);
+typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, struct _Py_frame *, int);
 
 PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
     PyInterpreterState *interp);

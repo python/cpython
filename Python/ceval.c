@@ -59,7 +59,7 @@ static PyObject * do_call_core(
 #ifdef LLTRACE
 static int lltrace;
 static int prtrace(PyThreadState *, PyObject *, const char *);
-static void lltrace_instruction(_PyInterpreterFrame *frame, int opcode, int oparg)
+static void lltrace_instruction(_Py_frame *frame, int opcode, int oparg)
 {
     if (HAS_ARG(opcode)) {
         printf("%d: %d, %d\n",
@@ -72,20 +72,20 @@ static void lltrace_instruction(_PyInterpreterFrame *frame, int opcode, int opar
 }
 #endif
 static int call_trace(Py_tracefunc, PyObject *,
-                      PyThreadState *, _PyInterpreterFrame *,
+                      PyThreadState *, _Py_frame *,
                       int, PyObject *);
 static int call_trace_protected(Py_tracefunc, PyObject *,
-                                PyThreadState *, _PyInterpreterFrame *,
+                                PyThreadState *, _Py_frame *,
                                 int, PyObject *);
 static void call_exc_trace(Py_tracefunc, PyObject *,
-                           PyThreadState *, _PyInterpreterFrame *);
+                           PyThreadState *, _Py_frame *);
 static int maybe_call_line_trace(Py_tracefunc, PyObject *,
-                                 PyThreadState *, _PyInterpreterFrame *, int);
-static void maybe_dtrace_line(_PyInterpreterFrame *, PyTraceInfo *, int);
-static void dtrace_function_entry(_PyInterpreterFrame *);
-static void dtrace_function_return(_PyInterpreterFrame *);
+                                 PyThreadState *, _Py_frame *, int);
+static void maybe_dtrace_line(_Py_frame *, PyTraceInfo *, int);
+static void dtrace_function_entry(_Py_frame *);
+static void dtrace_function_return(_Py_frame *);
 
-static PyObject * import_name(PyThreadState *, _PyInterpreterFrame *,
+static PyObject * import_name(PyThreadState *, _Py_frame *,
                               PyObject *, PyObject *, PyObject *);
 static PyObject * import_from(PyThreadState *, PyObject *, PyObject *);
 static int import_all_from(PyThreadState *, PyObject *, PyObject *);
@@ -97,12 +97,12 @@ static int check_except_star_type_valid(PyThreadState *tstate, PyObject* right);
 static void format_kwargs_error(PyThreadState *, PyObject *func, PyObject *kwargs);
 static void format_awaitable_error(PyThreadState *, PyTypeObject *, int);
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
-static _PyInterpreterFrame *
+static _Py_frame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames);
 static void
-_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
+_PyEvalFrameClearAndPop(PyThreadState *tstate, _Py_frame *frame);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -1509,7 +1509,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 
 static int
-trace_function_entry(PyThreadState *tstate, _PyInterpreterFrame *frame)
+trace_function_entry(PyThreadState *tstate, _Py_frame *frame)
 {
     if (tstate->c_tracefunc != NULL) {
         /* tstate->c_tracefunc, if defined, is a
@@ -1548,7 +1548,7 @@ trace_function_entry(PyThreadState *tstate, _PyInterpreterFrame *frame)
 }
 
 static int
-trace_function_exit(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *retval)
+trace_function_exit(PyThreadState *tstate, _Py_frame *frame, PyObject *retval)
 {
     if (tstate->c_tracefunc) {
         if (call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,
@@ -1565,10 +1565,10 @@ trace_function_exit(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject 
     return 0;
 }
 
-static _PyInterpreterFrame *
-pop_frame(PyThreadState *tstate, _PyInterpreterFrame *frame)
+static _Py_frame *
+pop_frame(PyThreadState *tstate, _Py_frame *frame)
 {
-    _PyInterpreterFrame *prev_frame = frame->previous;
+    _Py_frame *prev_frame = frame->previous;
     _PyEvalFrameClearAndPop(tstate, frame);
     return prev_frame;
 }
@@ -1589,7 +1589,7 @@ is_method(PyObject **stack_pointer, int args) {
     (call_shape.kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(call_shape.kwnames)))
 
 PyObject* _Py_HOT_FUNCTION
-_PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
+_PyEval_EvalFrameDefault(PyThreadState *tstate, _Py_frame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
     CALL_STAT_INC(pyeval_calls);
@@ -2199,7 +2199,7 @@ handle_eval_breaker:
             PyCodeObject *code = (PyCodeObject *)getitem->func_code;
             size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
             assert(code->co_argcount == 2);
-            _PyInterpreterFrame *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
+            _Py_frame *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
             if (new_frame == NULL) {
                 goto error;
             }
@@ -4629,7 +4629,7 @@ handle_eval_breaker:
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
                 STACK_SHRINK(total_args);
-                _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
+                _Py_frame *new_frame = _PyEvalFramePushAndInit(
                     tstate, (PyFunctionObject *)function, locals,
                     stack_pointer, positional_args, call_shape.kwnames
                 );
@@ -4732,7 +4732,7 @@ handle_eval_breaker:
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(code->co_argcount != argcount, CALL);
             STAT_INC(CALL, hit);
-            _PyInterpreterFrame *new_frame = _PyFrame_Push(tstate, func);
+            _Py_frame *new_frame = _PyFrame_Push(tstate, func);
             if (new_frame == NULL) {
                 goto error;
             }
@@ -4766,7 +4766,7 @@ handle_eval_breaker:
             int minargs = cache->min_args;
             DEOPT_IF(argcount < minargs, CALL);
             STAT_INC(CALL, hit);
-            _PyInterpreterFrame *new_frame = _PyFrame_Push(tstate, func);
+            _Py_frame *new_frame = _PyFrame_Push(tstate, func);
             if (new_frame == NULL) {
                 goto error;
             }
@@ -5268,7 +5268,7 @@ handle_eval_breaker:
             }
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+            _Py_frame *gen_frame = (_Py_frame *)gen->gi_iframe;
             _PyFrame_Copy(frame, gen_frame);
             assert(frame->frame_obj == NULL);
             gen->gi_frame_valid = 1;
@@ -5276,7 +5276,7 @@ handle_eval_breaker:
             gen_frame->f_state = FRAME_CREATED;
             _Py_LeaveRecursiveCall(tstate);
             if (!frame->is_entry) {
-                _PyInterpreterFrame *prev = frame->previous;
+                _Py_frame *prev = frame->previous;
                 _PyThreadState_PopFrame(tstate, frame);
                 frame = cframe.current_frame = prev;
                 _PyFrame_StackPush(frame, (PyObject *)gen);
@@ -6179,7 +6179,7 @@ fail_post_args:
 }
 
 /* Consumes references to func and all the args */
-static _PyInterpreterFrame *
+static _Py_frame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames)
@@ -6187,7 +6187,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
     PyCodeObject * code = (PyCodeObject *)func->func_code;
     size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
     CALL_STAT_INC(frames_pushed);
-    _PyInterpreterFrame *frame = _PyThreadState_BumpFramePointer(tstate, size);
+    _Py_frame *frame = _PyThreadState_BumpFramePointer(tstate, size);
     if (frame == NULL) {
         goto fail;
     }
@@ -6217,7 +6217,7 @@ fail:
 }
 
 static void
-_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
+_PyEvalFrameClearAndPop(PyThreadState *tstate, _Py_frame * frame)
 {
     tstate->recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_owns_frame == 0);
@@ -6244,7 +6244,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
             Py_INCREF(args[i+argcount]);
         }
     }
-    _PyInterpreterFrame *frame = _PyEvalFramePushAndInit(
+    _Py_frame *frame = _PyEvalFramePushAndInit(
         tstate, func, locals, args, argcount, kwnames);
     if (frame == NULL) {
         return NULL;
@@ -6613,7 +6613,7 @@ prtrace(PyThreadState *tstate, PyObject *v, const char *str)
 static void
 call_exc_trace(Py_tracefunc func, PyObject *self,
                PyThreadState *tstate,
-               _PyInterpreterFrame *f)
+               _Py_frame *f)
 {
     PyObject *type, *value, *traceback, *orig_traceback, *arg;
     int err;
@@ -6643,7 +6643,7 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
 
 static int
 call_trace_protected(Py_tracefunc func, PyObject *obj,
-                     PyThreadState *tstate, _PyInterpreterFrame *frame,
+                     PyThreadState *tstate, _Py_frame *frame,
                      int what, PyObject *arg)
 {
     PyObject *type, *value, *traceback;
@@ -6664,7 +6664,7 @@ call_trace_protected(Py_tracefunc func, PyObject *obj,
 }
 
 static void
-initialize_trace_info(PyTraceInfo *trace_info, _PyInterpreterFrame *frame)
+initialize_trace_info(PyTraceInfo *trace_info, _Py_frame *frame)
 {
     PyCodeObject *code = frame->f_code;
     if (trace_info->code != code) {
@@ -6687,7 +6687,7 @@ PyThreadState_LeaveTracing(PyThreadState *tstate)
 
 static int
 call_trace(Py_tracefunc func, PyObject *obj,
-           PyThreadState *tstate, _PyInterpreterFrame *frame,
+           PyThreadState *tstate, _Py_frame *frame,
            int what, PyObject *arg)
 {
     int result;
@@ -6726,7 +6726,7 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
 /* See Objects/lnotab_notes.txt for a description of how tracing works. */
 static int
 maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
-                      PyThreadState *tstate, _PyInterpreterFrame *frame, int instr_prev)
+                      PyThreadState *tstate, _Py_frame *frame, int instr_prev)
 {
     int result = 0;
 
@@ -6908,7 +6908,7 @@ _PyEval_GetAsyncGenFinalizer(void)
     return tstate->async_gen_finalizer;
 }
 
-_PyInterpreterFrame *
+_Py_frame *
 _PyEval_GetFrame(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -6932,7 +6932,7 @@ PyEval_GetFrame(void)
 PyObject *
 _PyEval_GetBuiltins(PyThreadState *tstate)
 {
-    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    _Py_frame *frame = tstate->cframe->current_frame;
     if (frame != NULL) {
         return frame->f_builtins;
     }
@@ -6971,7 +6971,7 @@ PyObject *
 PyEval_GetLocals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-     _PyInterpreterFrame *current_frame = tstate->cframe->current_frame;
+     _Py_frame *current_frame = tstate->cframe->current_frame;
     if (current_frame == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
         return NULL;
@@ -6990,7 +6990,7 @@ PyObject *
 PyEval_GetGlobals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyInterpreterFrame *current_frame = tstate->cframe->current_frame;
+    _Py_frame *current_frame = tstate->cframe->current_frame;
     if (current_frame == NULL) {
         return NULL;
     }
@@ -7001,7 +7001,7 @@ int
 PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyInterpreterFrame *current_frame = tstate->cframe->current_frame;
+    _Py_frame *current_frame = tstate->cframe->current_frame;
     int result = cf->cf_flags != 0;
 
     if (current_frame != NULL) {
@@ -7199,7 +7199,7 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
 }
 
 static PyObject *
-import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
+import_name(PyThreadState *tstate, _Py_frame *frame,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
     PyObject *import_func, *res;
@@ -7673,7 +7673,7 @@ _PyEval_RequestCodeExtraIndex(freefunc free)
 }
 
 static void
-dtrace_function_entry(_PyInterpreterFrame *frame)
+dtrace_function_entry(_Py_frame *frame)
 {
     const char *filename;
     const char *funcname;
@@ -7688,7 +7688,7 @@ dtrace_function_entry(_PyInterpreterFrame *frame)
 }
 
 static void
-dtrace_function_return(_PyInterpreterFrame *frame)
+dtrace_function_return(_Py_frame *frame)
 {
     const char *filename;
     const char *funcname;
@@ -7704,7 +7704,7 @@ dtrace_function_return(_PyInterpreterFrame *frame)
 
 /* DTrace equivalent of maybe_call_line_trace. */
 static void
-maybe_dtrace_line(_PyInterpreterFrame *frame,
+maybe_dtrace_line(_Py_frame *frame,
                   PyTraceInfo *trace_info,
                   int instr_prev)
 {
