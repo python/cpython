@@ -240,12 +240,6 @@ class InitVar:
     def __class_getitem__(cls, type):
         return InitVar(type)
 
-    # This is needed to pass the callable() check in typing._type_check,
-    # which is run whenever the InitVar is contained within an Annotated
-    # annotation.
-    def __call__(self, *args, **kwds):
-        raise TypeError(f"Cannot instantiate {self!r}")
-
 # Instances of Field are only ever created from within this module,
 # and only from the field() function, although Field instances are
 # exposed externally as (conceptually) read-only objects.
