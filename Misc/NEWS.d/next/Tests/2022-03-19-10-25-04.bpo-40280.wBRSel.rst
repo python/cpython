@@ -1,0 +1,2 @@
+The test suite is now passing on Emscripten platform. All fork, socket,
+subprocess-based tests are skipped.
