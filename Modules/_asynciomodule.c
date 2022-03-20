@@ -23,6 +23,8 @@ _Py_IDENTIFIER(call_soon);
 _Py_IDENTIFIER(cancel);
 _Py_IDENTIFIER(get_event_loop);
 _Py_IDENTIFIER(throw);
+_Py_IDENTIFIER(done);
+_Py_IDENTIFIER(set_exception);
 
 
 /* State of the _asyncio module */
@@ -92,6 +94,7 @@ typedef struct {
     int task_must_cancel;
     int task_log_destroy_pending;
     int task_num_cancels_requested;
+    int task_interrupt_requested;
 } TaskObj;
 
 typedef struct {
@@ -2018,6 +2021,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
     self->task_num_cancels_requested = 0;
+    self->task_interrupt_requested = 0;
     Py_INCREF(coro);
     Py_XSETREF(self->task_coro, coro);
 
@@ -2258,6 +2262,67 @@ _asyncio_Task_uncancel_impl(TaskObj *self)
 }
 
 /*[clinic input]
+_asyncio.Task.interrupt
+
+Request that this task is keyboard interrapted.
+
+Schedule raising KeyboardInterrupt exception inside a task
+on the next event loop iteration.
+
+The keyboard interruption takes a precedence over awaiting
+for other future/task or the task cancellation.
+
+The interruption request is ignored if the task is done already.
+
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task_interrupt_impl(TaskObj *self)
+/*[clinic end generated code: output=1554c6979c4c1736 input=9dbc2d57de94b1bd]*/
+{
+    if (((FutureObj*)self)->fut_state != STATE_PENDING) {
+        Py_RETURN_NONE;
+    }
+    self->task_interrupt_requested = 1;
+    if (self->task_fut_waiter != NULL) {
+        PyObject *res;
+        PyObject *exc;
+        int is_true;
+
+        res = _PyObject_CallMethodIdNoArgs(self->task_fut_waiter,
+                                           &PyId_done);
+
+        if (res == NULL) {
+            return NULL;
+        }
+        is_true = PyObject_IsTrue(res);
+        Py_DECREF(res);
+
+        if (is_true < 0) {
+            return NULL;
+        }
+
+        if (is_true) {
+            Py_RETURN_TRUE;
+        }
+
+        exc = PyObject_CallNoArgs(PyExc_KeyboardInterrupt);
+        if (exc == NULL) {
+            return NULL;
+        }
+
+        res = _PyObject_CallMethodIdOneArg(self->task_fut_waiter,
+                                           &PyId_set_exception, exc);
+        Py_DECREF(exc);
+        if (res == NULL) {
+            return NULL;
+        }
+        Py_DECREF(res);
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 _asyncio.Task.get_stack
 
     *
@@ -2482,6 +2547,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_CANCEL_METHODDEF
     _ASYNCIO_TASK_CANCELLING_METHODDEF
     _ASYNCIO_TASK_UNCANCEL_METHODDEF
+    _ASYNCIO_TASK_INTERRUPT_METHODDEF
     _ASYNCIO_TASK_GET_STACK_METHODDEF
     _ASYNCIO_TASK_PRINT_STACK_METHODDEF
     _ASYNCIO_TASK__MAKE_CANCELLED_ERROR_METHODDEF

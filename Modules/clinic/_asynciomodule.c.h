@@ -466,6 +466,32 @@ _asyncio_Task_uncancel(TaskObj *self, PyObject *Py_UNUSED(ignored))
     return _asyncio_Task_uncancel_impl(self);
 }
 
+PyDoc_STRVAR(_asyncio_Task_interrupt__doc__,
+"interrupt($self, /)\n"
+"--\n"
+"\n"
+"Request that this task is keyboard interrapted.\n"
+"\n"
+"Schedule raising KeyboardInterrupt exception inside a task\n"
+"on the next event loop iteration.\n"
+"\n"
+"The keyboard interruption takes a precedence over awaiting\n"
+"for other future/task or the task cancellation.\n"
+"\n"
+"The interruption request is ignored if the task is done already.");
+
+#define _ASYNCIO_TASK_INTERRUPT_METHODDEF    \
+    {"interrupt", (PyCFunction)_asyncio_Task_interrupt, METH_NOARGS, _asyncio_Task_interrupt__doc__},
+
+static PyObject *
+_asyncio_Task_interrupt_impl(TaskObj *self);
+
+static PyObject *
+_asyncio_Task_interrupt(TaskObj *self, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_Task_interrupt_impl(self);
+}
+
 PyDoc_STRVAR(_asyncio_Task_get_stack__doc__,
 "get_stack($self, /, *, limit=None)\n"
 "--\n"
@@ -890,4 +916,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=64b3836574e8a18c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=44ae8ccb169bf0e3 input=a9049054013a1b77]*/

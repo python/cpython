@@ -110,6 +110,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
         self._num_cancels_requested = 0
         self._must_cancel = False
+        self._interrupt_requested = False
         self._fut_waiter = None
         self._coro = coro
         if context is None:
@@ -247,6 +248,24 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._num_cancels_requested -= 1
         return self._num_cancels_requested
 
+    def interrupt(self):
+        """Request that this task is keyboard interrapted.
+
+        Schedule raising KeyboardInterrupt exception inside a task
+        on the next event loop iteration.
+
+        The keyboard interruption takes a precedence over awaiting
+        for other future/task or the task cancellation.
+
+        The interruption request is ignored if the task is done already.
+        """
+        if self.done():
+            return
+        self._interrupt_requested = True
+        if self._fut_waiter is not None:
+            if not self._fut_waiter.done():
+                self._fut_waiter.set_exception(KeyboardInterrupt())
+
     def __step(self, exc=None):
         if self.done():
             raise exceptions.InvalidStateError(
@@ -255,6 +274,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             if not isinstance(exc, exceptions.CancelledError):
                 exc = self._make_cancelled_error()
             self._must_cancel = False
+        if self._interrupt_requested:
+            exc = KeyboardInterrupt()
+            self._interrupt_requested = False
         coro = self._coro
         self._fut_waiter = None
 
@@ -319,7 +341,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                 # Bare yield relinquishes control for one event loop iteration.
                 self._loop.call_soon(self.__step, context=self._context)
             elif inspect.isgenerator(result):
-                # Yielding a generator is just wrong.
+                # Yielding a generor is just wrong.
                 new_exc = RuntimeError(
                     f'yield was used instead of yield from for '
                     f'generator in task {self!r} with {result!r}')

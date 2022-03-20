@@ -48,7 +48,6 @@ from . import transports
 from . import trsock
 from .log import logger
 
-
 __all__ = 'BaseEventLoop','Server',
 
 
@@ -397,6 +396,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         # Identifier of the thread running the event loop, or None if the
         # event loop is not running
         self._thread_id = None
+        self._main_task = None
+        self._interrupts_count = 0
         self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
         self.set_debug(coroutines._is_debug_mode())
@@ -632,6 +633,15 @@ class BaseEventLoop(events.AbstractEventLoop):
             # is no need to log the "destroy pending task" message
             future._log_destroy_pending = False
 
+        if sys.platform == "win32":
+            signum = signal.SIGBREAK
+        else:
+            signum = signal.SIGINT
+        if (threading.current_thread() is threading.main_thread()
+            and signal.getsignal(signum) is signal.default_int_handler
+        ):
+            signal.signal(signum, self._interrupt)
+            self._main_task = future
         future.add_done_callback(_run_until_complete_cb)
         try:
             self.run_forever()
@@ -644,6 +654,9 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise
         finally:
             future.remove_done_callback(_run_until_complete_cb)
+            if self._main_task is not None:
+                signal.signal(signum, signal.default_int_handler)
+            self._main_task = None
         if not future.done():
             raise RuntimeError('Event loop stopped before Future completed.')
 
@@ -763,6 +776,42 @@ class BaseEventLoop(events.AbstractEventLoop):
         if handle._source_traceback:
             del handle._source_traceback[-1]
         return handle
+
+    def _interrupt(self, signum, frame):
+        # A custom Ctrl+C handling is disabled if the main task doesn't exist:
+        # either loop.run_forever() without loop.run_until_complete()
+        # or background tasks cancellating by runner after main() is finished.
+        assert self._main_task is not None
+        current_task = tasks.current_task()
+        if not self._interrupts_count:
+            self._interrupts_count += 1
+            if current_task is self._main_task:
+                # interrupt the main task if already processing it
+                raise KeyboardInterrupt()
+            else:
+                try:
+                    interrupt = self._main_task.__class__._interrupt
+                except AttributeError:
+                    # a custom task class doesn't support keyboard interruption
+                    logger.warning(
+                        "Task %r doesn't suport _interrupt() methood",
+                        self,
+                    )
+                    raise KeyboardInterrupt()
+                else:
+                    # schedule the main task keyboard interruption
+                    # on the next event loop step
+                    interrupt()
+        else:
+            # KeyboardInterrupt was sheduled and even maybe executed
+            # but the cleanup doesn't finish in time or even hangs
+            # TODO: log warning
+            logger.debug(
+                "Multiple Keyboard Interrupt requests [%d]",
+                self._interrupts_count,
+            )
+            self._interrupts_count += 1
+            raise KeyboardInterrupt()
 
     def _check_callback(self, callback, method):
         if (coroutines.iscoroutine(callback) or
@@ -1889,6 +1938,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         # callbacks scheduled by callbacks run this time around --
         # they will be run the next time (after another I/O poll).
         # Use an idiom that is thread-safe without using locks.
+        self._interrupt_raised = False
         ntodo = len(self._ready)
         for i in range(ntodo):
             handle = self._ready.popleft()
