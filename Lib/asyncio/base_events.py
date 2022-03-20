@@ -818,7 +818,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 else:
                     # schedule the main task keyboard interruption
                     # on the next event loop step
-                    interrupt()
+                    interrupt(self._main_task)
         else:
             # KeyboardInterrupt was sheduled and even maybe executed
             # but the cleanup doesn't finish in time or even hangs

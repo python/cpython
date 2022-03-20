@@ -262,16 +262,14 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         if self.done():
             return
         self._interrupt_requested = True
-        # Schedule a loop iteration.
-        # The call is required to interrupt selector.select() call if needed
+        # Schedule a loop iteration, the call can interrupt selector.select()
         self._loop.call_soon_threadsafe(base_tasks._callback_noop, None)
         # The task either waits for _fut_waiter
         # or is scheduled by call_soon(self.__step) already
         if self._fut_waiter is not None:
             if not self._fut_waiter.done():
-                # Finish the waiter if not done yet,
-                # its callback calls call_soon(self.__step)
-                self._fut_waiter.set_exception(KeyboardInterrupt())
+                # Cancel the waiter if not done yet,
+                self._fut_waiter.cancel()
 
     def __step(self, exc=None):
         if self.done():
@@ -284,6 +282,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._num_cancels_requested = 0
             if self._fut_waiter is not None:
                 # Suppress logging about possible unhandled exception
+                self._fut_waiter.exception()
                 self._fut_waiter._log_traceback = False
         elif self._must_cancel:
             if not isinstance(exc, exceptions.CancelledError):
@@ -314,6 +313,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             super().cancel()  # I.e., Future.cancel(self).
         except (KeyboardInterrupt, SystemExit) as exc:
             super().set_exception(exc)
+            self._log_traceback = False
             raise
         except BaseException as exc:
             super().set_exception(exc)
@@ -408,7 +408,6 @@ def create_task(coro, *, name=None, context=None):
         task = loop.create_task(coro)
     else:
         task = loop.create_task(coro, context=context)
-
     _set_task_name(task, name)
     return task
 

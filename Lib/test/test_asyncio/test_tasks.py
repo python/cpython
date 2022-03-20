@@ -2342,7 +2342,7 @@ class BaseTaskTests:
         try:
             task = self.new_task(loop, coro())
             loop.run_until_complete(asyncio.sleep(0))
-            loop.call_soon(interrupt_self)
+            loop.call_later(0.1, interrupt_self)
             with self.assertRaises(KeyboardInterrupt):
                 loop.run_until_complete(task)
         finally:
