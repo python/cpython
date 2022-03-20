@@ -770,12 +770,7 @@ binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
 
 #ifdef USE_ZLIB_CRC32
 /* This is the same as zlibmodule.c zlib_crc32_impl. It exists in two
- * modules for historical reasons.
- *
- * For future code simplification, a single crc32 implementation
- * instead of zlib's implementation would be nice. Particularly
- * something supporting hardware crc32 acceleration.
- */
+ * modules for historical reasons. */
 {
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
