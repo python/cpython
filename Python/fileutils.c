@@ -93,6 +93,9 @@ _Py_device_encoding(int fd)
 
     return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
 #else
+    if (_PyRuntime.preconfig.utf8_mode) {
+        return PyUnicode_FromString("utf-8"); //TODO: Use _Py_STR
+    }
     return _Py_GetLocaleEncodingObject();
 #endif
 }
@@ -890,10 +893,6 @@ _Py_GetLocaleEncoding(void)
     // and UTF-8 is always used in mbstowcs() and wcstombs().
     return _PyMem_RawWcsdup(L"UTF-8");
 #else
-    const PyPreConfig *preconfig = &_PyRuntime.preconfig;
-    if (preconfig->utf8_mode) {
-        return _PyMem_RawWcsdup(L"UTF-8");
-    }
 
 #ifdef MS_WINDOWS
     wchar_t encoding[23];
