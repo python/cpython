@@ -47,7 +47,6 @@ extern "C" {
 #define STORE_NAME                       90
 #define DELETE_NAME                      91
 #define UNPACK_SEQUENCE                  92
-#define FOR_ITER                         93
 #define UNPACK_EX                        94
 #define STORE_ATTR                       95
 #define DELETE_ATTR                      96
@@ -169,22 +168,22 @@ extern "C" {
 #define PRECALL_NO_KW_TUPLE_1            79
 #define PRECALL_NO_KW_TYPE_1             80
 #define PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST  81
-#define PRECALL_BOUND_METHOD            140
-#define PRECALL_PYFUNC                  141
-#define RESUME_QUICK                    143
-#define STORE_ATTR_ADAPTIVE             150
-#define STORE_ATTR_INSTANCE_VALUE       153
-#define STORE_ATTR_SLOT                 154
-#define STORE_ATTR_WITH_HINT            158
-#define UNPACK_SEQUENCE_ADAPTIVE        159
-#define UNPACK_SEQUENCE_LIST            161
-#define UNPACK_SEQUENCE_TUPLE           167
-#define UNPACK_SEQUENCE_TWO_TUPLE       168
-#define LOAD_FAST__LOAD_FAST            169
-#define STORE_FAST__LOAD_FAST           170
-#define LOAD_FAST__LOAD_CONST           174
-#define LOAD_CONST__LOAD_FAST           175
-#define STORE_FAST__STORE_FAST          176
+#define PRECALL_BOUND_METHOD             93
+#define PRECALL_PYFUNC                  140
+#define RESUME_QUICK                    141
+#define STORE_ATTR_ADAPTIVE             143
+#define STORE_ATTR_INSTANCE_VALUE       150
+#define STORE_ATTR_SLOT                 153
+#define STORE_ATTR_WITH_HINT            154
+#define UNPACK_SEQUENCE_ADAPTIVE        158
+#define UNPACK_SEQUENCE_LIST            159
+#define UNPACK_SEQUENCE_TUPLE           161
+#define UNPACK_SEQUENCE_TWO_TUPLE       167
+#define LOAD_FAST__LOAD_FAST            168
+#define STORE_FAST__LOAD_FAST           169
+#define LOAD_FAST__LOAD_CONST           170
+#define LOAD_CONST__LOAD_FAST           174
+#define STORE_FAST__STORE_FAST          175
 #define DO_TRACING                      255
 
 extern const uint8_t _PyOpcode_InlineCacheEntries[256];
@@ -193,7 +192,7 @@ extern const uint8_t _PyOpcode_InlineCacheEntries[256];
 static const uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     0U,
-    536870912U,
+    0U,
     134234112U,
     0U,
     0U,
@@ -203,7 +202,7 @@ static const uint32_t _PyOpcode_RelativeJump[8] = {
 static const uint32_t _PyOpcode_Jump[8] = {
     0U,
     0U,
-    536870912U,
+    0U,
     2316288000U,
     67U,
     8192U,

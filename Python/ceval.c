@@ -3953,6 +3953,7 @@ handle_eval_breaker:
         }
 
         TARGET(JUMP_FORWARD) {
+            PREDICTED(JUMP_FORWARD);
             JUMPBY(oparg);
             DISPATCH();
         }
@@ -4191,7 +4192,7 @@ handle_eval_breaker:
             SET_TOP(iter);
             if (iter == NULL)
                 goto error;
-            PREDICT(FOR_ITER);
+            PREDICT(JUMP_FORWARD);
             DISPATCH();
         }
 
@@ -4224,38 +4225,6 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(FOR_ITER) {
-            PREDICTED(FOR_ITER);
-            /* before: [iter]; after: [iter, iter()] *or* [] */
-            PyObject *iter = TOP();
-#ifdef Py_STATS
-            extern int _PySpecialization_ClassifyIterator(PyObject *);
-            _py_stats.opcode_stats[FOR_ITER].specialization.failure++;
-            _py_stats.opcode_stats[FOR_ITER].specialization.failure_kinds[_PySpecialization_ClassifyIterator(iter)]++;
-#endif
-            PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
-            if (next != NULL) {
-                PUSH(next);
-                PREDICT(STORE_FAST);
-                PREDICT(UNPACK_SEQUENCE);
-                DISPATCH();
-            }
-            if (_PyErr_Occurred(tstate)) {
-                if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                    goto error;
-                }
-                else if (tstate->c_tracefunc != NULL) {
-                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
-                }
-                _PyErr_Clear(tstate);
-            }
-            /* iterator ended normally */
-            STACK_SHRINK(1);
-            Py_DECREF(iter);
-            JUMPBY(oparg);
-            DISPATCH();
-        }
-
         TARGET(FOR_END) {
             /* before: [iter]; after: [iter, iter()] *or* [] */
             MAYBE_QUICKEN();
@@ -4265,6 +4234,11 @@ handle_eval_breaker:
         TARGET(FOR_END_QUICK) {
             PREDICTED(FOR_END_QUICK);
             PyObject *iter = TOP();
+#ifdef Py_STATS
+            extern int _PySpecialization_ClassifyIterator(PyObject *);
+            _py_stats.opcode_stats[FOR_END].specialization.failure++;
+            _py_stats.opcode_stats[FOR_END].specialization.failure_kinds[_PySpecialization_ClassifyIterator(iter)]++;
+#endif
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
                 PUSH(next);
