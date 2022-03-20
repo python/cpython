@@ -470,7 +470,7 @@ However, please consider using encoding="utf-8" for new APIs.
 
 static PyObject *
 _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
-/*[clinic end generated code: output=91b2cfea6934cc0c input=bf70231213e2a7b4]*/
+/*[clinic end generated code: output=91b2cfea6934cc0c input=350c198cb6b0d25e]*/
 {
     if (encoding == NULL || encoding == Py_None) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
