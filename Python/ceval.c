@@ -1951,6 +1951,25 @@ handle_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(BINARY_OP_AND_INT) {
+            assert(cframe.use_tracing == 0);
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
+            DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
+            PyObject *res = _PyLong_And((PyLongObject *)left, (PyLongObject *)right);
+            SET_SECOND(res);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (res == NULL) {
+                goto error;
+            }
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            NOTRACE_DISPATCH();
+        }
+
         TARGET(BINARY_OP_MULTIPLY_INT) {
             assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();

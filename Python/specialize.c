@@ -1825,6 +1825,16 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 goto success;
             }
             break;
+        case NB_AND:
+        case NB_INPLACE_AND:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                break;
+            }
+            if (PyLong_CheckExact(lhs)) {
+                _Py_SET_OPCODE(*instr, BINARY_OP_AND_INT);
+                goto success;
+            }
+            break;
         case NB_SUBTRACT:
         case NB_INPLACE_SUBTRACT:
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {

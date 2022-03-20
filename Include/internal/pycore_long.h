@@ -45,6 +45,7 @@ static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
 
 PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
+PyObject *_PyLong_And(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Subtract(PyLongObject *left, PyLongObject *right);
 
 int _PyLong_AssignValue(PyObject **target, Py_ssize_t value);

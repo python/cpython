@@ -236,6 +236,7 @@ _specializations = {
         "BINARY_OP_ADD_FLOAT",
         "BINARY_OP_ADD_INT",
         "BINARY_OP_ADD_UNICODE",
+        "BINARY_OP_AND_INT",
         "BINARY_OP_INPLACE_ADD_UNICODE",
         "BINARY_OP_MULTIPLY_FLOAT",
         "BINARY_OP_MULTIPLY_INT",
