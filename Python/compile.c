@@ -5166,7 +5166,6 @@ compiler_sync_comprehension_generator(struct compiler *c,
     }
     compiler_use_next_block(c, if_cleanup);
     if (start) {
-        SET_LOC(c, gen->iter);
         ADDOP_JUMP(c, FOR_END, body);
         compiler_use_next_block(c, anchor);
     }
