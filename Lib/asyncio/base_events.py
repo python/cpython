@@ -1938,7 +1938,6 @@ class BaseEventLoop(events.AbstractEventLoop):
         # callbacks scheduled by callbacks run this time around --
         # they will be run the next time (after another I/O poll).
         # Use an idiom that is thread-safe without using locks.
-        self._interrupt_raised = False
         ntodo = len(self._ready)
         for i in range(ntodo):
             handle = self._ready.popleft()
@@ -1957,6 +1956,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     self._current_handle = None
             else:
                 handle._run()
+        self._interrupts_count = 0
         handle = None  # Needed to break cycles when an exception occurs.
 
     def _set_coroutine_origin_tracking(self, enabled):
