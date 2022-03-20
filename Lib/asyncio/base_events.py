@@ -26,6 +26,7 @@ import subprocess
 import threading
 import time
 import traceback
+import signal
 import sys
 import warnings
 import weakref
