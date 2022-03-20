@@ -458,7 +458,8 @@ _io.text_encoding
 A helper function to choose the text encoding.
 
 When encoding is not None, just return it.
-Otherwise, return the default text encoding (i.e. "locale").
+Otherwise, return the default text encoding (i.e. "locale", or "utf-8"
+if UTF-8 mode is enabled).
 
 This function emits an EncodingWarning if encoding is None and
 sys.flags.warn_default_encoding is true.
@@ -479,7 +480,13 @@ _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
                 return NULL;
             }
         }
-        return &_Py_ID(locale);
+        const PyPreConfig *preconfig = &_PyRuntime.preconfig;
+        if (preconfig->utf8_mode) {
+            return &_Py_STR(utf_8);
+        }
+        else {
+            return &_Py_ID(locale);
+        }
     }
     Py_INCREF(encoding);
     return encoding;
