@@ -17,10 +17,15 @@ from sre_constants import *
 assert _sre.MAGIC == MAGIC, "SRE module mismatch"
 
 _LITERAL_CODES = {LITERAL, NOT_LITERAL}
-_REPEATING_CODES = {MIN_REPEAT, MAX_REPEAT, POSSESSIVE_REPEAT}
 _SUCCESS_CODES = {SUCCESS, FAILURE}
 _ASSERT_CODES = {ASSERT, ASSERT_NOT}
 _UNIT_CODES = _LITERAL_CODES | {ANY, IN}
+
+_REPEATING_CODES = {
+    MIN_REPEAT: (REPEAT, MIN_UNTIL, MIN_REPEAT_ONE),
+    MAX_REPEAT: (REPEAT, MAX_UNTIL, REPEAT_ONE),
+    POSSESSIVE_REPEAT: (POSSESSIVE_REPEAT, SUCCESS, POSSESSIVE_REPEAT_ONE),
+}
 
 # Sets of lowercase characters which have the same uppercase.
 _equivalences = (
@@ -138,12 +143,7 @@ def _compile(code, pattern, flags):
             if flags & SRE_FLAG_TEMPLATE:
                 raise error("internal: unsupported template operator %r" % (op,))
             if _simple(av[2]):
-                if op is MAX_REPEAT:
-                    emit(REPEAT_ONE)
-                elif op is POSSESSIVE_REPEAT:
-                    emit(POSSESSIVE_REPEAT_ONE)
-                else:
-                    emit(MIN_REPEAT_ONE)
+                emit(REPEATING_CODES[op][2])
                 skip = _len(code); emit(0)
                 emit(av[0])
                 emit(av[1])
@@ -151,21 +151,13 @@ def _compile(code, pattern, flags):
                 emit(SUCCESS)
                 code[skip] = _len(code) - skip
             else:
-                if op is POSSESSIVE_REPEAT:
-                    emit(POSSESSIVE_REPEAT)
-                else:
-                    emit(REPEAT)
+                emit(REPEATING_CODES[op][0])
                 skip = _len(code); emit(0)
                 emit(av[0])
                 emit(av[1])
                 _compile(code, av[2], flags)
                 code[skip] = _len(code) - skip
-                if op is POSSESSIVE_REPEAT:
-                    emit(SUCCESS)
-                elif op is MAX_REPEAT:
-                    emit(MAX_UNTIL)
-                else:
-                    emit(MIN_UNTIL)
+                emit(REPEATING_CODES[op][1])
         elif op is SUBPATTERN:
             group, add_flags, del_flags, p = av
             if group:
