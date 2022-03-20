@@ -2339,10 +2339,10 @@ class BaseTaskTests:
             while True:
                 await asyncio.sleep(0)
 
-        loop.call_later(0.1, interrupt_self)
-
         try:
             task = self.new_task(loop, coro())
+            loop.run_until_complete(asyncio.sleep(0))
+            loop.call_soon(interrupt_self)
             with self.assertRaises(KeyboardInterrupt):
                 loop.run_until_complete(task)
         finally:
@@ -2357,10 +2357,70 @@ class BaseTaskTests:
         async def coro():
             await fut
 
-        loop.call_later(0.1, interrupt_self)
+        try:
+            task = self.new_task(loop, coro())
+            loop.run_until_complete(asyncio.sleep(0))
+            loop.call_soon(interrupt_self)
+
+            with self.assertRaises(KeyboardInterrupt):
+                loop.run_until_complete(task)
+        finally:
+            loop.close()
+
+    def test_interrupt_resumed_future_with_result(self):
+        assert threading.current_thread() is threading.main_thread()
+        loop = asyncio.new_event_loop()
+
+        fut = loop.create_future()
+
+        async def coro():
+            await fut
 
         try:
             task = self.new_task(loop, coro())
+            loop.run_until_complete(asyncio.sleep(0))
+            fut.set_result(None)
+            loop.call_soon(interrupt_self)
+
+            with self.assertRaises(KeyboardInterrupt):
+                loop.run_until_complete(task)
+        finally:
+            loop.close()
+
+    def test_interrupt_resumed_future_with_exception(self):
+        assert threading.current_thread() is threading.main_thread()
+        loop = asyncio.new_event_loop()
+
+        fut = loop.create_future()
+
+        async def coro():
+            await fut
+
+        try:
+            task = self.new_task(loop, coro())
+            loop.run_until_complete(asyncio.sleep(0))
+            fut.set_exception(RuntimeError())
+            loop.call_soon(interrupt_self)
+
+            with self.assertRaises(KeyboardInterrupt):
+                loop.run_until_complete(task)
+        finally:
+            loop.close()
+
+    def test_interrupt_cancelled_task(self):
+        assert threading.current_thread() is threading.main_thread()
+        loop = asyncio.new_event_loop()
+
+        fut = loop.create_future()
+
+        async def coro():
+            await fut
+
+        try:
+            task = self.new_task(loop, coro())
+            loop.run_until_complete(asyncio.sleep(0))
+            task.cancel()
+            loop.call_soon(interrupt_self)
             with self.assertRaises(KeyboardInterrupt):
                 loop.run_until_complete(task)
         finally:

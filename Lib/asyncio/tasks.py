@@ -282,6 +282,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._interrupt_requested = False
             self._must_cancel = False
             self._num_cancels_requested = 0
+            if self._fut_waiter is not None:
+                # Suppress logging about possible unhandled exception
+                self._fut_waiter._log_traceback = False
         elif self._must_cancel:
             if not isinstance(exc, exceptions.CancelledError):
                 exc = self._make_cancelled_error()

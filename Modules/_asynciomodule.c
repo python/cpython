@@ -26,7 +26,7 @@ _Py_IDENTIFIER(throw);
 _Py_IDENTIFIER(done);
 _Py_IDENTIFIER(set_exception);
 _Py_IDENTIFIER(call_soon_threadsafe);
-
+_Py_IDENTIFIER(_log_traceback);
 
 /* State of the _asyncio module */
 static PyObject *asyncio_mod;
@@ -2712,6 +2712,13 @@ task_step_impl(TaskObj *task, PyObject *exc)
         task->task_interrupt_requested = 0;
         task->task_num_cancels_requested = 0;
         task->task_must_cancel = 0;
+        if (task->task_fut_waiter != NULL) {
+            /* Suppress logging about possible unhandled exception */
+            if (_PyObject_SetAttrId(task->task_fut_waiter,
+                                    &PyId__log_traceback, Py_False) < 0) {
+                goto fail;
+            }
+        }
         Py_CLEAR(task->task_cancel_msg);
         Py_CLEAR(task->task_cancelled_exc);
     }
