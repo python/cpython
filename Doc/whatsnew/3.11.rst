@@ -561,6 +561,11 @@ Deprecated
   :func:`locale.getlocale` functions instead.
   (Contributed by Victor Stinner in :issue:`46659`.)
 
+* The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
+  deprecated since at least Python 3.6. Their documentation and deprecation
+  warnings have now been updated to note they will removed in Python 3.12
+  (:pep:`594`).
+  (Contributed by Hugo van Kemenade in :issue:`47022`.)
 
 Removed
 =======
@@ -688,6 +693,11 @@ Changes in the Python API
   :func:`locale.getlocale`, instead of using :func:`locale.getdefaultlocale`,
   if no locale is specified.
   (Contributed by Victor Stinner in :issue:`46659`.)
+
+* Global inline flags (e.g. ``(?i)``) can now only be used at the start of
+  the regular expressions.  Using them not at the start of expression was
+  deprecated since Python 3.6.
+  (Contributed by Serhiy Storchaka in :issue:`47066`.)
 
 
 Build Changes
