@@ -274,6 +274,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             exc = KeyboardInterrupt()
             self._interrupt_requested = False
             self._must_cancel = False
+            self._num_cancels_requested = 0
         elif self._must_cancel:
             if not isinstance(exc, exceptions.CancelledError):
                 exc = self._make_cancelled_error()

@@ -2699,6 +2699,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
         }
         clear_exc = 1;
         task->task_interrupt_requested = 0;
+        task->task_num_cancels_requested = 0;
         task->task_must_cancel = 0;
         Py_CLEAR(task->task_cancel_msg);
         Py_CLEAR(task->task_cancelled_exc);

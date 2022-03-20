@@ -398,8 +398,6 @@ class BaseEventLoop(events.AbstractEventLoop):
         # Identifier of the thread running the event loop, or None if the
         # event loop is not running
         self._thread_id = None
-        self._main_task = None
-        self._interrupts_count = 0
         self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
         self.set_debug(coroutines._is_debug_mode())
@@ -418,6 +416,20 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._asyncgens_shutdown_called = False
         # Set to True when `loop.shutdown_default_executor` is called.
         self._executor_shutdown_called = False
+
+        self._main_task = None
+        self._interrupts_count = 0
+        if sys.platform == "win32":
+            signum = signal.SIGBREAK
+        else:
+            signum = signal.SIGINT
+        if (threading.current_thread() is threading.main_thread()
+            and signal.getsignal(signum) is signal.default_int_handler
+        ):
+            self._interrupt_handler = self._interrupt
+            signal.signal(signum, self._interrupt_handler)
+        else:
+            self._interrupt_handler = None
 
     def __repr__(self):
         return (
@@ -639,10 +651,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             signum = signal.SIGBREAK
         else:
             signum = signal.SIGINT
-        if (threading.current_thread() is threading.main_thread()
-            and signal.getsignal(signum) is signal.default_int_handler
-        ):
-            signal.signal(signum, self._interrupt)
+        interrupt_handler = self._interrupt
+        if threading.current_thread() is threading.main_thread():
             self._main_task = future
         future.add_done_callback(_run_until_complete_cb)
         try:
@@ -656,8 +666,6 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise
         finally:
             future.remove_done_callback(_run_until_complete_cb)
-            if self._main_task is not None:
-                signal.signal(signum, signal.default_int_handler)
             self._main_task = None
         if not future.done():
             raise RuntimeError('Event loop stopped before Future completed.')
@@ -690,6 +698,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._ready.clear()
         self._scheduled.clear()
         self._executor_shutdown_called = True
+        if sys.platform == "win32":
+            signum = signal.SIGBREAK
+        else:
+            signum = signal.SIGINT
+        if signal.getsignal(signum) is self._interrupt_handler:
+            signal.signal(signum, signal.default_int_handler)
         executor = self._default_executor
         if executor is not None:
             self._default_executor = None
@@ -792,11 +806,11 @@ class BaseEventLoop(events.AbstractEventLoop):
                 raise KeyboardInterrupt()
             else:
                 try:
-                    interrupt = self._main_task.__class__._interrupt
+                    interrupt = self._main_task.__class__.interrupt
                 except AttributeError:
                     # a custom task class doesn't support keyboard interruption
                     logger.warning(
-                        "Task %r doesn't suport _interrupt() methood",
+                        "Task %r doesn't suport interrupt() methood",
                         self,
                     )
                     raise KeyboardInterrupt()
