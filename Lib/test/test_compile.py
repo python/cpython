@@ -1002,7 +1002,9 @@ if 1:
             'JUMP_FORWARD',
         )
 
-        for line, instr in enumerate(dis.Bytecode(if_else_break)):
+        for line, instr in enumerate(
+            dis.Bytecode(if_else_break, show_caches=True)
+        ):
             if instr.opname == 'JUMP_FORWARD':
                 self.assertNotEqual(instr.arg, 0)
             elif instr.opname in HANDLED_JUMPS:
@@ -1187,7 +1189,7 @@ class TestExpressionStackSize(unittest.TestCase):
         kwargs = (f'a{i}=x' for i in range(self.N))
         self.check_stack_size("f(" +  ", ".join(kwargs) + ")")
 
-    def test_func_args(self):
+    def test_meth_args(self):
         self.check_stack_size("o.m(" + "x, " * self.N + ")")
 
     def test_meth_kwargs(self):

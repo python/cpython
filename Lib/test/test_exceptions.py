@@ -2272,6 +2272,24 @@ class AttributeErrorTests(unittest.TestCase):
 
         self.assertNotIn("?", err.getvalue())
 
+    def test_attribute_error_inside_nested_getattr(self):
+        class A:
+            bluch = 1
+
+        class B:
+            def __getattribute__(self, attr):
+                a = A()
+                return a.blich
+
+        try:
+            B().something
+        except AttributeError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertIn("Did you mean", err.getvalue())
+        self.assertIn("bluch", err.getvalue())
+
 
 class ImportErrorTests(unittest.TestCase):
 

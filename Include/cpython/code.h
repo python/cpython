@@ -23,6 +23,9 @@ typedef uint16_t _Py_CODEUNIT;
 #  define _Py_MAKECODEUNIT(opcode, oparg) ((opcode)|((oparg)<<8))
 #endif
 
+// Use "unsigned char" instead of "uint8_t" here to avoid illegal aliasing:
+#define _Py_SET_OPCODE(word, opcode) (((unsigned char *)&(word))[0] = (opcode))
+
 
 /* Bytecode object */
 struct PyCodeObject {
@@ -105,7 +108,7 @@ struct PyCodeObject {
     /* Quickened instructions and cache, or NULL
      This should be treated as opaque by all code except the specializer and
      interpreter. */
-    union _cache_or_instruction *co_quickened;
+    _Py_CODEUNIT *co_quickened;
 
 };
 
