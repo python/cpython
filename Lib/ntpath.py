@@ -17,6 +17,7 @@ altsep = '/'
 defpath = '.;C:\\bin'
 devnull = 'nul'
 
+import _winapi
 import os
 import sys
 import stat
@@ -47,9 +48,13 @@ def normcase(s):
     Makes all characters lowercase and all slashes into backslashes."""
     s = os.fspath(s)
     if isinstance(s, bytes):
-        return s.replace(b'/', b'\\').lower()
+        return _winapi.LCMapStringEx(_winapi.LOCALE_NAME_INVARIANT,
+                                     _winapi.LCMAP_LOWERCASE,
+                                     s.replace(b'/', b'\\'))
     else:
-        return s.replace('/', '\\').lower()
+        return _winapi.LCMapStringEx(_winapi.LOCALE_NAME_INVARIANT,
+                                     _winapi.LCMAP_LOWERCASE,
+                                     s.replace('/', '\\'))
 
 
 # Return whether a path is absolute.
