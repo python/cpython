@@ -147,6 +147,7 @@ CHCODES = _makecodes("""
     CATEGORY_UNI_LINEBREAK CATEGORY_UNI_NOT_LINEBREAK
 """)
 
+
 # replacement operations for "ignore case" mode
 OP_IGNORE = {
     LITERAL: LITERAL_IGNORE,
