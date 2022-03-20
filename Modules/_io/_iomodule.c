@@ -482,10 +482,10 @@ _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
         }
         const PyPreConfig *preconfig = &_PyRuntime.preconfig;
         if (preconfig->utf8_mode) {
-            return &_Py_STR(utf_8);
+            encoding = &_Py_STR(utf_8);
         }
         else {
-            return &_Py_ID(locale);
+            encoding = &_Py_ID(locale);
         }
     }
     Py_INCREF(encoding);
