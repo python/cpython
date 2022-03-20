@@ -797,10 +797,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         # A custom Ctrl+C handling is disabled if the main task doesn't exist:
         # either loop.run_forever() without loop.run_until_complete()
         # or background tasks cancellating by runner after main() is finished.
-        assert self._main_task is not None
-        current_task = tasks.current_task()
+        if self._main_task is None:
+            raise KeyboardInterrupt()
         if not self._interrupts_count:
             self._interrupts_count += 1
+            current_task = tasks.current_task()
             if current_task is self._main_task:
                 # interrupt the main task if already processing it
                 raise KeyboardInterrupt()

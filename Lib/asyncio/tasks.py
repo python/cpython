@@ -262,8 +262,15 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         if self.done():
             return
         self._interrupt_requested = True
+        # Schedule a loop iteration.
+        # The call is required to interrupt selector.select() call if needed
+        self._loop.call_soon_threadsafe(base_tasks._callback_noop, None)
+        # The task either waits for _fut_waiter
+        # or is scheduled by call_soon(self.__step) already
         if self._fut_waiter is not None:
             if not self._fut_waiter.done():
+                # Finish the waiter if not done yet,
+                # its callback calls call_soon(self.__step)
                 self._fut_waiter.set_exception(KeyboardInterrupt())
 
     def __step(self, exc=None):

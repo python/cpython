@@ -1,10 +1,12 @@
 """Tests for tasks.py."""
 
+import _thread
 import collections
 import contextlib
 import contextvars
 import functools
 import gc
+import threading
 import io
 import random
 import re
@@ -30,6 +32,10 @@ def tearDownModule():
 
 async def coroutine_function():
     pass
+
+
+def interrupt_self():
+    _thread.interrupt_main()
 
 
 def format_coroutine(qualname, state, src, source_traceback, generator=False):
@@ -2322,6 +2328,41 @@ class BaseTaskTests:
             task = self.new_task(loop, coro)
             loop.run_until_complete(task)
             self.assertIs(task.get_coro(), coro)
+        finally:
+            loop.close()
+
+    def test_interrupt_call_soon(self):
+        assert threading.current_thread() is threading.main_thread()
+        loop = asyncio.new_event_loop()
+
+        async def coro():
+            while True:
+                await asyncio.sleep(0)
+
+        loop.call_later(0.1, interrupt_self)
+
+        try:
+            task = self.new_task(loop, coro())
+            with self.assertRaises(KeyboardInterrupt):
+                loop.run_until_complete(task)
+        finally:
+            loop.close()
+
+    def test_interrupt_waiting_for_future(self):
+        assert threading.current_thread() is threading.main_thread()
+        loop = asyncio.new_event_loop()
+
+        fut = loop.create_future()
+
+        async def coro():
+            await fut
+
+        loop.call_later(0.1, interrupt_self)
+
+        try:
+            task = self.new_task(loop, coro())
+            with self.assertRaises(KeyboardInterrupt):
+                loop.run_until_complete(task)
         finally:
             loop.close()
 

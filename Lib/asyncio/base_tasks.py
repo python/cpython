@@ -6,6 +6,10 @@ from . import base_futures
 from . import coroutines
 
 
+def _callback_noop(arg):
+    pass
+
+
 def _task_repr_info(task):
     info = base_futures._future_repr_info(task)
 

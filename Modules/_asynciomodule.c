@@ -25,6 +25,7 @@ _Py_IDENTIFIER(get_event_loop);
 _Py_IDENTIFIER(throw);
 _Py_IDENTIFIER(done);
 _Py_IDENTIFIER(set_exception);
+_Py_IDENTIFIER(call_soon_threadsafe);
 
 
 /* State of the _asyncio module */
@@ -33,6 +34,7 @@ static PyObject *traceback_extract_stack;
 static PyObject *asyncio_get_event_loop_policy;
 static PyObject *asyncio_future_repr_func;
 static PyObject *asyncio_iscoroutine_func;
+static PyObject *asyncio_callback_noop_func;
 static PyObject *asyncio_task_get_stack_func;
 static PyObject *asyncio_task_print_stack_func;
 static PyObject *asyncio_task_repr_func;
@@ -360,7 +362,8 @@ get_event_loop(int stacklevel)
 
 
 static int
-call_soon(PyObject *loop, PyObject *func, PyObject *arg, PyObject *ctx)
+call_soon(PyObject *loop, PyObject *func, PyObject *arg, PyObject *ctx,
+          int threadsafe)
 {
     PyObject *handle;
     PyObject *stack[3];
@@ -372,8 +375,13 @@ call_soon(PyObject *loop, PyObject *func, PyObject *arg, PyObject *ctx)
     }
     else {
         /* Use FASTCALL to pass a keyword-only argument to call_soon */
+        PyObject *callable;
 
-        PyObject *callable = _PyObject_GetAttrId(loop, &PyId_call_soon);
+        if (threadsafe) {
+            callable = _PyObject_GetAttrId(loop, &PyId_call_soon_threadsafe);
+        } else {
+            callable = _PyObject_GetAttrId(loop, &PyId_call_soon);
+        }
         if (callable == NULL) {
             return -1;
         }
@@ -438,7 +446,7 @@ future_schedule_callbacks(FutureObj *fut)
 
         int ret = call_soon(
             fut->fut_loop, fut->fut_callback0,
-            (PyObject *)fut, fut->fut_context0);
+            (PyObject *)fut, fut->fut_context0, 0);
 
         Py_CLEAR(fut->fut_callback0);
         Py_CLEAR(fut->fut_context0);
@@ -470,7 +478,7 @@ future_schedule_callbacks(FutureObj *fut)
         PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
         PyObject *ctx = PyTuple_GET_ITEM(cb_tup, 1);
 
-        if (call_soon(fut->fut_loop, cb, (PyObject *)fut, ctx)) {
+        if (call_soon(fut->fut_loop, cb, (PyObject *)fut, ctx, 0)) {
             /* If an error occurs in pure-Python implementation,
                all callbacks are cleared. */
             Py_CLEAR(fut->fut_callbacks);
@@ -679,7 +687,7 @@ future_add_done_callback(FutureObj *fut, PyObject *arg, PyObject *ctx)
     if (fut->fut_state != STATE_PENDING) {
         /* The future is done/cancelled, so schedule the callback
            right away. */
-        if (call_soon(fut->fut_loop, arg, (PyObject*) fut, ctx)) {
+        if (call_soon(fut->fut_loop, arg, (PyObject*) fut, ctx, 0)) {
             return NULL;
         }
     }
@@ -2280,12 +2288,15 @@ static PyObject *
 _asyncio_Task_interrupt_impl(TaskObj *self)
 /*[clinic end generated code: output=1554c6979c4c1736 input=9dbc2d57de94b1bd]*/
 {
+    PyObject *res;
     if (self->task_state != STATE_PENDING) {
         Py_RETURN_NONE;
     }
     self->task_interrupt_requested = 1;
+    if (call_soon(self->task_loop, asyncio_callback_noop_func, Py_None, NULL, 1) < 0) {
+        return NULL;
+    }
     if (self->task_fut_waiter != NULL) {
-        PyObject *res;
         PyObject *exc;
         int is_true;
 
@@ -2303,7 +2314,7 @@ _asyncio_Task_interrupt_impl(TaskObj *self)
         }
 
         if (is_true) {
-            Py_RETURN_TRUE;
+            Py_RETURN_NONE;
         }
 
         exc = PyObject_CallNoArgs(PyExc_KeyboardInterrupt);
@@ -2623,7 +2634,7 @@ task_call_step_soon(TaskObj *task, PyObject *arg)
         return -1;
     }
 
-    int ret = call_soon(task->task_loop, cb, NULL, task->task_context);
+    int ret = call_soon(task->task_loop, cb, NULL, task->task_context, 0);
     Py_DECREF(cb);
     return ret;
 }
@@ -3389,6 +3400,7 @@ module_free(void *m)
     Py_CLEAR(asyncio_future_repr_func);
     Py_CLEAR(asyncio_get_event_loop_policy);
     Py_CLEAR(asyncio_iscoroutine_func);
+    Py_CLEAR(asyncio_callback_noop_func);
     Py_CLEAR(asyncio_task_get_stack_func);
     Py_CLEAR(asyncio_task_print_stack_func);
     Py_CLEAR(asyncio_task_repr_func);
@@ -3459,6 +3471,7 @@ module_init(void)
     GET_MOD_ATTR(asyncio_CancelledError, "CancelledError")
 
     WITH_MOD("asyncio.base_tasks")
+    GET_MOD_ATTR(asyncio_callback_noop_func, "_callback_noop")
     GET_MOD_ATTR(asyncio_task_repr_func, "_task_repr")
     GET_MOD_ATTR(asyncio_task_get_stack_func, "_task_get_stack")
     GET_MOD_ATTR(asyncio_task_print_stack_func, "_task_print_stack")
