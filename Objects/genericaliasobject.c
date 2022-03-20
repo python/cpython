@@ -387,12 +387,12 @@ ga_hash(PyObject *self)
 static inline PyObject *
 set_orig_class(PyObject *obj, PyObject *alias)
 {
-    if ((obj) != NULL) {
-        if (PyObject_SetAttrString((obj), "__orig_class__", (alias)) < 0) {
+    if (obj != NULL) {
+        if (PyObject_SetAttrString(obj, "__orig_class__", alias) < 0) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError) &&
                 !PyErr_ExceptionMatches(PyExc_TypeError))
             {
-                Py_DECREF((obj));
+                Py_DECREF(obj);
                 return NULL;
             }
             PyErr_Clear();
