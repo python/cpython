@@ -109,6 +109,36 @@ typedef struct _Py_frame {
     PyObject *localsplus[1];
 } _Py_frame;
 
+#if !defined(_PY_FRAME_API_DISABLE_INTERIM_COMPAT_3_11a6)
+/* Interim compatibility for the internal frame API as shipped in 3.11a6
+ * Some projects (Cython, gevent, greenlet) are known to access the private
+ * frame API in CPython. This API has already changed twice for 3.11 (first
+ * with the structural split, then with the full object structure becoming
+ * opaque and internal struct gaining the `_Py` prefix). The recommended
+ * resolution is expected to change again once a proper public API for the
+ * required frame operations is defined (as discussed in
+ * https://github.com/faster-cpython/ideas/issues/309).
+ *
+ * This interim compatibility workaround enables the bpo-44800 struct and field
+ * name changes for CPython maintainability without forcing yet another interim
+ * code update on the affected projects. Since the workaround affects symbols
+ * without the `Py` or `_Py` prefix, a preprocessor symbol can be declared to
+ * disable the workaround: _PY_FRAME_API_DISABLE_INTERIM_COMPAT_3_11a6
+ */
+// Renamed frame data struct and fields
+typedef _Py_frame _PyInterpreterFrame;
+#define f_func func
+#define f_globals globals
+#define f_builtins builtins
+#define f_locals locals
+#define f_code code
+#define f_lasti lasti
+#define f_state state
+// Renamed frame object fields
+#define f_frame f_fdata
+#define _f_frame_data _f_owned_fdata
+#endif // End internal frame API compatibilty workaround
+
 static inline int _PyFrame_IsRunnable(_Py_frame *f) {
     return f->f_state < FRAME_EXECUTING;
 }
