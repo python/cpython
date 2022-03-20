@@ -45,6 +45,15 @@ CONNECT_PIPE_INIT_DELAY = 0.001
 CONNECT_PIPE_MAX_DELAY = 0.100
 
 
+class _Retry(RuntimeError):
+
+    def __init__(self, ov, obj, callback):
+        super().__init__()
+        self.ov = ov
+        self.obj = obj
+        self.callback = callback
+
+
 class _OverlappedFuture(futures.Future):
     """Subclass of Future which represents an overlapped operation.
 
@@ -493,6 +502,9 @@ class IocpProactor:
         return self._register(ov, conn, finish_recv)
 
     def recvfrom(self, conn, nbytes, flags=0):
+        return self._register(*self._recvfrom(conn, nbytes, flags))
+
+    def _recvfrom(self, conn, nbytes, flags):
         self._register_with_iocp(conn)
         ov = _overlapped.Overlapped(NULL)
         try:
@@ -504,13 +516,15 @@ class IocpProactor:
             try:
                 return ov.getresult()
             except OSError as exc:
-                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                if exc.winerror == 1234: # ERROR_PORT_UNREACHABLE
+                    raise _Retry(*self._recvfrom(conn, nbytes, flags))
+                elif exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
                                     _overlapped.ERROR_OPERATION_ABORTED):
                     raise ConnectionResetError(*exc.args)
                 else:
                     raise
 
-        return self._register(ov, conn, finish_recv)
+        return ov, conn, finish_recv
 
     def recvfrom_into(self, conn, buf, flags=0):
         self._register_with_iocp(conn)
@@ -835,6 +849,14 @@ class IocpProactor:
             elif not f.done():
                 try:
                     value = callback(transferred, key, ov)
+                except _Retry as retry:
+                    self._cache[retry.ov.address] = (
+                        f,
+                        retry.ov,
+                        retry.obj,
+                        retry.callback
+                    )
+                    continue
                 except OSError as e:
                     f.set_exception(e)
                     self._results.append(f)
