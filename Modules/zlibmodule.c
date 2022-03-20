@@ -1433,6 +1433,8 @@ static PyObject *
 zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 /*[clinic end generated code: output=63499fa20af7ea25 input=26c3ed430fa00b4c]*/
 {
+    int signed_val;
+
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
     if (data->len > 1024*5) {
@@ -1447,12 +1449,12 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
             buf += (size_t) UINT_MAX;
             len -= (size_t) UINT_MAX;
         }
-        value = crc32(value, buf, (unsigned int)len);
+        signed_val = crc32(value, buf, (unsigned int)len);
         Py_END_ALLOW_THREADS
     } else {
-        value = crc32(value, data->buf, (unsigned int)data->len);
+        signed_val = crc32(value, data->buf, (unsigned int)data->len);
     }
-    return PyLong_FromUnsignedLong(value & 0xffffffffU);
+    return PyLong_FromUnsignedLong(signed_val & 0xffffffffU);
 }
 
 
