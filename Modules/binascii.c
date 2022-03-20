@@ -806,9 +806,11 @@ binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
     if (len > 1024*5) {
+        unsigned int result;
         Py_BEGIN_ALLOW_THREADS
-        return internal_crc32(bin_data, len, crc);
+        result = internal_crc32(bin_data, len, crc);
         Py_END_ALLOW_THREADS
+        return result;
     } else {
         return internal_crc32(bin_data, len, crc);
     }
