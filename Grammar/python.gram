@@ -1148,7 +1148,7 @@ invalid_dict_comprehension:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "dict unpacking cannot be used in dict comprehension") }
 invalid_parameters:
     | param_no_default* invalid_parameters_helper a=param_no_default {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-default argument follows default argument") }
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-keyword parameter follows keyword parameter") }
     | param_no_default* a='(' param_no_default+ ','? b=')' {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Function parameters cannot be parenthesized") }
 invalid_parameters_helper: # This is only there to avoid type errors
@@ -1156,17 +1156,17 @@ invalid_parameters_helper: # This is only there to avoid type errors
     | param_with_default+
 invalid_lambda_parameters:
     | lambda_param_no_default* invalid_lambda_parameters_helper a=lambda_param_no_default {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-default argument follows default argument") }
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-keyword parameter follows keyword parameter") }
     | lambda_param_no_default* a='(' ','.lambda_param+ ','? b=')' {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Lambda expression parameters cannot be parenthesized") }
 invalid_lambda_parameters_helper:
     | a=lambda_slash_with_default { _PyPegen_singleton_seq(p, a) }
     | lambda_param_with_default+
 invalid_star_etc:
-    | a='*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "named arguments must follow bare *") }
+    | a='*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "named parameters must follow bare *") }
     | '*' ',' TYPE_COMMENT { RAISE_SYNTAX_ERROR("bare * has associated type comment") }
 invalid_lambda_star_etc:
-    | '*' (':' | ',' (':' | '**')) { RAISE_SYNTAX_ERROR("named arguments must follow bare *") }
+    | '*' (':' | ',' (':' | '**')) { RAISE_SYNTAX_ERROR("named parameters must follow bare *") }
 invalid_double_type_comments:
     | TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT {
         RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }
