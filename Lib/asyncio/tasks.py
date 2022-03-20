@@ -270,13 +270,14 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         if self.done():
             raise exceptions.InvalidStateError(
                 f'_step(): already done: {self!r}, {exc!r}')
-        if self._must_cancel:
-            if not isinstance(exc, exceptions.CancelledError):
-                exc = self._make_cancelled_error()
-            self._must_cancel = False
         if self._interrupt_requested:
             exc = KeyboardInterrupt()
             self._interrupt_requested = False
+            self._must_cancel = False
+        elif self._must_cancel:
+            if not isinstance(exc, exceptions.CancelledError):
+                exc = self._make_cancelled_error()
+            self._must_cancel = False
         coro = self._coro
         self._fut_waiter = None
 

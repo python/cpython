@@ -2692,7 +2692,17 @@ task_step_impl(TaskObj *task, PyObject *exc)
         goto fail;
     }
 
-    if (task->task_must_cancel) {
+    if (task->task_interrupt_requested) {
+        exc = PyObject_CallNoArgs(PyExc_KeyboardInterrupt);
+        if (exc == NULL) {
+            goto fail;
+        }
+        clear_exc = 1;
+        task->task_interrupt_requested = 0;
+        task->task_must_cancel = 0;
+
+    }
+    else if (task->task_must_cancel) {
         assert(exc != Py_None);
 
         if (exc) {
