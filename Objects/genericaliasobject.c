@@ -384,17 +384,21 @@ ga_hash(PyObject *self)
     return h0 ^ h1;
 }
 
-#define SET_ORIG_CLASS(obj, alias)  \
-    if ((obj) != NULL) {              \
-        if (PyObject_SetAttrString((obj), "__orig_class__", (alias)) < 0) {  \
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError) &&            \
-            !PyErr_ExceptionMatches(PyExc_TypeError))                   \
-        {   \
-            Py_DECREF((obj)); \
-            return NULL;    \
-        }   \
-        PyErr_Clear();  \
-    }   \
+static inline PyObject *
+set_orig_class(PyObject *obj, PyObject *alias)
+{
+    if ((obj) != NULL) {
+        if (PyObject_SetAttrString((obj), "__orig_class__", (alias)) < 0) {
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError) &&
+                !PyErr_ExceptionMatches(PyExc_TypeError))
+            {
+                Py_DECREF((obj));
+                return NULL;
+            }
+            PyErr_Clear();
+        }
+    }
+    return obj;
 }
 
 static PyObject *
@@ -402,8 +406,7 @@ ga_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
     gaobject *alias = (gaobject *)self;
     PyObject *obj = PyObject_Call(alias->origin, args, kwds);
-    SET_ORIG_CLASS(obj, self);
-    return obj;
+    return set_orig_class(obj, self);
 }
 
 static PyObject *ga_vectorcall(PyObject *self, PyObject *const *args,
@@ -411,8 +414,7 @@ static PyObject *ga_vectorcall(PyObject *self, PyObject *const *args,
 {
     gaobject *alias = (gaobject *) self;
     PyObject *obj = PyVectorcall_Function(alias->origin)(alias->origin, args, nargsf, kwnames);
-    SET_ORIG_CLASS(obj, self);
-    return obj;
+    return set_orig_class(obj, self);
 }
 
 static PyObject *ga_make_tp_call(PyObject *self, PyObject *const *args,
@@ -422,8 +424,7 @@ static PyObject *ga_make_tp_call(PyObject *self, PyObject *const *args,
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     PyObject *obj = _PyObject_MakeTpCall(tstate, alias->origin, args, nargs, kwnames);
-    SET_ORIG_CLASS(obj, self);
-    return obj;
+    return set_orig_class(obj, self);
 }
 
 static const char* const attr_exceptions[] = {
