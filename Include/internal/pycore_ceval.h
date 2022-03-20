@@ -37,6 +37,14 @@ PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(
     PyThreadState *tstate,
     int new_depth);
 
+// Used by sys.get_asyncgen_hooks()
+extern PyObject* _PyEval_GetAsyncGenFirstiter(void);
+extern PyObject* _PyEval_GetAsyncGenFinalizer(void);
+
+// Used by sys.set_asyncgen_hooks()
+extern int _PyEval_SetAsyncGenFirstiter(PyObject *);
+extern int _PyEval_SetAsyncGenFinalizer(PyObject *);
+
 void _PyEval_Fini(void);
 
 
