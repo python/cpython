@@ -14,6 +14,13 @@ from fractions import Fraction as F
 _PyHASH_MODULUS = sys.hash_info.modulus
 _PyHASH_INF = sys.hash_info.inf
 
+
+class DummyIntegral(int):
+    def __truediv__(self, other):
+        raise NotImplemented
+    __rtruediv__ = __truediv__
+
+
 class HashTest(unittest.TestCase):
     def check_equal_hash(self, x, y):
         # check both that x and y are equal and that their hashes are equal
@@ -120,6 +127,12 @@ class HashTest(unittest.TestCase):
         self.assertEqual(hash(F(-1, 3*_PyHASH_MODULUS)), -_PyHASH_INF)
         self.assertEqual(hash(F(7*_PyHASH_MODULUS, 1)), 0)
         self.assertEqual(hash(F(-_PyHASH_MODULUS, 1)), 0)
+
+        # The numbers ABC doesn't enforce that the "true" division produces a float
+        x = F(*map(DummyIntegral, (1, 2)))
+        self.assertRaises(TypeError, int(x.numerator))
+        self.assertRaises(TypeError, int(x.denominator))
+        self.assertEquals(float(x), 0.5)
 
     def test_hash_normalization(self):
         # Test for a bug encountered while changing long_hash.
