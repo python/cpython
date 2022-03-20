@@ -2280,7 +2280,7 @@ static PyObject *
 _asyncio_Task_interrupt_impl(TaskObj *self)
 /*[clinic end generated code: output=1554c6979c4c1736 input=9dbc2d57de94b1bd]*/
 {
-    if (((FutureObj*)self)->fut_state != STATE_PENDING) {
+    if (self->task_state != STATE_PENDING) {
         Py_RETURN_NONE;
     }
     self->task_interrupt_requested = 1;
@@ -2700,9 +2700,11 @@ task_step_impl(TaskObj *task, PyObject *exc)
         clear_exc = 1;
         task->task_interrupt_requested = 0;
         task->task_must_cancel = 0;
-
+        Py_CLEAR(task->task_cancel_msg);
+        Py_CLEAR(task->task_cancelled_exc);
     }
-    else if (task->task_must_cancel) {
+
+    if (task->task_must_cancel) {
         assert(exc != Py_None);
 
         if (exc) {
