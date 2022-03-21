@@ -385,10 +385,10 @@ ga_hash(PyObject *self)
 }
 
 static inline PyObject *
-set_orig_class(PyObject *obj, PyObject *alias)
+set_orig_class(PyObject *obj, PyObject *self)
 {
     if (obj != NULL) {
-        if (PyObject_SetAttrString(obj, "__orig_class__", alias) < 0) {
+        if (PyObject_SetAttr(obj, &_Py_ID(__orig_class__), self) < 0) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError) &&
                 !PyErr_ExceptionMatches(PyExc_TypeError))
             {
@@ -409,16 +409,18 @@ ga_call(PyObject *self, PyObject *args, PyObject *kwds)
     return set_orig_class(obj, self);
 }
 
-static PyObject *ga_vectorcall(PyObject *self, PyObject *const *args,
-                            size_t nargsf, PyObject *kwnames)
+static PyObject *
+ga_vectorcall(PyObject *self, PyObject *const *args,
+              size_t nargsf, PyObject *kwnames)
 {
     gaobject *alias = (gaobject *) self;
     PyObject *obj = PyVectorcall_Function(alias->origin)(alias->origin, args, nargsf, kwnames);
     return set_orig_class(obj, self);
 }
 
-static PyObject *ga_make_tp_call(PyObject *self, PyObject *const *args,
-                               size_t nargsf, PyObject *kwnames)
+static PyObject *
+ga_make_tp_call(PyObject *self, PyObject *const *args,
+                size_t nargsf, PyObject *kwnames)
 {
     gaobject *alias = (gaobject *) self;
     PyThreadState *tstate = _PyThreadState_GET();
@@ -616,7 +618,8 @@ setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
 
     if (PyVectorcall_Function(origin) != NULL) {
         alias->vectorcall = ga_vectorcall;
-    } else {
+    }
+    else {
         alias->vectorcall = ga_make_tp_call;
     }
 
