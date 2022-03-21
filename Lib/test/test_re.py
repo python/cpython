@@ -2066,14 +2066,16 @@ ELSE
                           {'tag': 'foo', 'text': None},
                           {'tag': 'foo', 'text': None}])
 
-    def test_bug_35859(self):
-        # MARK_PUSH() macro didn't protect MARK-0
-        # if it was the only available mark.
+    def test_MARK_PUSH_macro_bug(self):
+        # issue35859, MARK_PUSH() macro didn't protect MARK-0 if it
+        # was the only available mark.
         self.assertEqual(re.match(r'(ab|a)*?b', 'ab').groups(), ('a',))
         self.assertEqual(re.match(r'(ab|a)+?b', 'ab').groups(), ('a',))
         self.assertEqual(re.match(r'(ab|a){0,2}?b', 'ab').groups(), ('a',))
         self.assertEqual(re.match(r'(.b|a)*?b', 'ab').groups(), ('a',))
 
+    def test_MIN_UNTIL_mark_bug(self):
+        # Fixed in issue35859, reported in issue9134.
         # JUMP_MIN_UNTIL_2 should MARK_PUSH() if in a repeat
         s = 'axxzbcz'
         p = r'(?:(?:a|bc)*?(xx)??z)*'
@@ -2083,6 +2085,8 @@ ELSE
         p = r'((x|yz)+?(t)??c)*'
         self.assertEqual(re.match(p, s).groups(), ('xyzxc', 'x', 't'))
 
+    def test_REPEAT_ONE_mark_bug(self):
+        # issue35859
         # JUMP_REPEAT_ONE_1 should MARK_PUSH() if in a repeat
         s = 'aabaab'
         p = r'(?:[^b]*a(?=(b)|(a))ab)*'
@@ -2099,6 +2103,8 @@ ELSE
 
         self.assertEqual(re.match(r'(ab?)*?b', 'ab').groups(), ('a',))
 
+    def test_MIN_REPEAT_ONE_mark_bug(self):
+        # issue35859
         # JUMP_MIN_REPEAT_ONE should MARK_PUSH() if in a repeat
         s = 'abab'
         p = r'(?:.*?(?=(a)|(b))b)*'
@@ -2110,8 +2116,9 @@ ELSE
         p = r'(?:a*?(xx)??z)*'
         self.assertEqual(re.match(p, s).groups(), ('xx',))
 
+    def test_ASSERT_NOT_mark_bug(self):
+        # Fixed in issue35859, reported in issue725149.
         # JUMP_ASSERT_NOT should LASTMARK_SAVE()
-        # reported in issue725149
         self.assertEqual(re.match(r'(?!(..)c)', 'ab').groups(), (None,))
 
         # JUMP_ASSERT_NOT should MARK_PUSH() if in a repeat
