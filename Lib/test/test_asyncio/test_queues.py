@@ -169,12 +169,14 @@ class QueueGetTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_cancelled(self):
         q = asyncio.Queue()
+        started = asyncio.Event()
 
         async def queue_get():
+            started.set()
             return await asyncio.wait_for(q.get(), 0.051)
 
         get_task = asyncio.create_task(queue_get())
-        await asyncio.sleep(0.01)  # let the task start
+        await started.wait()
         q.put_nowait(1)
         self.assertEqual(1, await get_task)
 
