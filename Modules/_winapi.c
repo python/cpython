@@ -1526,12 +1526,46 @@ _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
                            LPCWSTR src)
 /*[clinic end generated code: output=cf4713d80e2b47c9 input=9fe26f95d5ab0001]*/
 {
+    if (flags & LCMAP_SORTHANDLE) {
+        PyErr_SetString(PyExc_ValueError, "LCMAP_SORTHANDLE is not supported");
+        return NULL;
+    }
+    if (flags & LCMAP_HASH) {
+        PyErr_SetString(PyExc_ValueError, "LCMAP_HASH is not supported");
+        return NULL;
+    }
+    if (flags & LCMAP_BYTEREV) {
+        PyErr_SetString(PyExc_ValueError, "LCMAP_BYTEREV is not supported");
+        return NULL;
+    }
+    if (flags & LCMAP_SORTKEY) {
+        PyErr_SetString(PyExc_ValueError, "LCMAP_SORTKEY is not supported");
+        return NULL;
+    }
 
-    int dest_size = LCMapStringEx(locale, flags, src, wcslen(src), NULL, 0, NULL, NULL, 0);
+    int dest_size = LCMapStringEx(locale, flags, src, wcslen(src), NULL, 0,
+                                  NULL, NULL, 0);
+    if (dest_size == 0) {
+        PyErr_SetFromWindowsErr(0);
+        return NULL;
+    }
+
     wchar_t* dest = PyMem_NEW(wchar_t, dest_size);
-    LCMapStringEx(locale, flags, src, wcslen(src), dest, dest_size, NULL, NULL, 0);
+    if (dest == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    int nmapped = LCMapStringEx(locale, flags, src, wcslen(src), dest, dest_size,
+                                NULL, NULL, 0);
+    if (nmapped == 0) {
+        PyErr_SetFromWindowsErr(0);
+        PyMem_DEL(dest);
+        return NULL;
+    }
+
     PyObject *ret = PyUnicode_FromWideChar(dest, dest_size);
     PyMem_DEL(dest);
+
     return ret;
 }
 
@@ -2189,17 +2223,13 @@ static int winapi_exec(PyObject *m)
     WINAPI_CONSTANT("u", LOCALE_NAME_SYSTEM_DEFAULT);
     WINAPI_CONSTANT("u", LOCALE_NAME_USER_DEFAULT);
 
-    WINAPI_CONSTANT(F_DWORD, LCMAP_BYTEREV);
     WINAPI_CONSTANT(F_DWORD, LCMAP_FULLWIDTH);
     WINAPI_CONSTANT(F_DWORD, LCMAP_HALFWIDTH);
     WINAPI_CONSTANT(F_DWORD, LCMAP_HIRAGANA);
     WINAPI_CONSTANT(F_DWORD, LCMAP_KATAKANA);
     WINAPI_CONSTANT(F_DWORD, LCMAP_LINGUISTIC_CASING);
     WINAPI_CONSTANT(F_DWORD, LCMAP_LOWERCASE);
-    WINAPI_CONSTANT(F_DWORD, LCMAP_HASH);
     WINAPI_CONSTANT(F_DWORD, LCMAP_SIMPLIFIED_CHINESE);
-    WINAPI_CONSTANT(F_DWORD, LCMAP_SORTHANDLE);
-    WINAPI_CONSTANT(F_DWORD, LCMAP_SORTKEY);
     WINAPI_CONSTANT(F_DWORD, LCMAP_TITLECASE);
     WINAPI_CONSTANT(F_DWORD, LCMAP_TRADITIONAL_CHINESE);
     WINAPI_CONSTANT(F_DWORD, LCMAP_UPPERCASE);

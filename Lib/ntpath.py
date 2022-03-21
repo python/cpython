@@ -17,12 +17,33 @@ altsep = '/'
 defpath = '.;C:\\bin'
 devnull = 'nul'
 
-import _winapi
 import os
 import sys
 import stat
 import genericpath
 from genericpath import *
+
+
+try:
+    import _winapi
+
+    def _normcase(s):
+        is_bytes = isinstance(s, bytes)
+        if is_bytes:
+            s = os.fsdecode(s)
+        s = _winapi.LCMapStringEx(_winapi.LOCALE_NAME_INVARIANT,
+                                  _winapi.LCMAP_LOWERCASE,
+                                  s.replace('/', '\\'))
+        if is_bytes:
+            s = os.fsencode(s)
+        return s
+except ImportError:
+    def _normcase(s):
+        if isinstance(s, bytes):
+            return s.replace(b'/', b'\\').lower()
+        return s.replace('/', '\\').lower()
+
+
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
@@ -46,15 +67,7 @@ def normcase(s):
     """Normalize case of pathname.
 
     Makes all characters lowercase and all slashes into backslashes."""
-    s = os.fspath(s)
-    if isinstance(s, bytes):
-        return _winapi.LCMapStringEx(_winapi.LOCALE_NAME_INVARIANT,
-                                     _winapi.LCMAP_LOWERCASE,
-                                     s.replace(b'/', b'\\'))
-    else:
-        return _winapi.LCMapStringEx(_winapi.LOCALE_NAME_INVARIANT,
-                                     _winapi.LCMAP_LOWERCASE,
-                                     s.replace('/', '\\'))
+    return _normcase(os.fspath(s))
 
 
 # Return whether a path is absolute.
