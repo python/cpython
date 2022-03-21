@@ -1319,15 +1319,8 @@ exit:
     ctx_pos = ctx->last_ctx_pos;
     jump = ctx->jump;
     DATA_POP_DISCARD(ctx);
-    if (ctx_pos == -1) {
-#ifdef Py_DEBUG
-        if (ctx->toplevel && ret >= 0) {
-            assert(state->repeat == NULL);
-            assert(state->data_stack_base == 0);
-        }
-#endif
+    if (ctx_pos == -1)
         return ret;
-    }
     DATA_LOOKUP_AT(SRE(match_context), ctx, ctx_pos);
 
     switch (jump) {
@@ -1376,8 +1369,7 @@ exit:
             break;
     }
 
-    /* should never get here */
-    Py_UNREACHABLE();
+    return ret; /* should never get here */
 }
 
 /* need to reset capturing groups between two SRE(match) callings in loops */
