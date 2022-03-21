@@ -243,9 +243,10 @@ is found that matches the exception.  An expression-less except clause, if
 present, must be last; it matches any exception.  For an except clause with an
 expression, that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
-compatible with an exception if the object is the class or a base class of the exception
-object, or a tuple containing an item that is the class or a base class of
-the exception object.
+compatible with an exception if the object is the class or a
+:term:`non-virtual base class <abstract base class>` of the exception object,
+or a tuple containing an item that is the class or a non-virtual base class
+of the exception object.
 
 If no except clause matches the exception, the search for an exception handler
 continues in the surrounding code and on the invocation stack.  [#]_
