@@ -408,6 +408,15 @@ class UnpackTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Unpack()
 
+    def test_unpack_concrete_tuple_type(self):
+        self.assertEqual([*Tuple[()]], [])
+        self.assertEqual([*Tuple[int]], [int])
+        self.assertEqual([*Tuple[int, str]], [int, str])
+        self.assertEqual([*Tuple[int, str, float]], [int, str, float])
+
+    def test_unpack_unbounded_tuple_type(self):
+        self.assertEqual(repr([*Tuple[int, ...]]), '[*typing.Tuple[int, ...]]')
+
 
 class TypeVarTupleTests(BaseTestCase):
 

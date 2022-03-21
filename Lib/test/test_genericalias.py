@@ -174,13 +174,13 @@ class BaseTest(unittest.TestCase):
                 tuple[int]
             )
         ]
-        self.assertEqual(repr(x1), 'tuple[*tuple[int]]')
+        self.assertEqual(repr(x1), 'tuple[int]')
         x2 = tuple[
             tuple(  # Ditto TODO
                 tuple[int, str]
             )
         ]
-        self.assertEqual(repr(x2), 'tuple[*tuple[int, str]]')
+        self.assertEqual(repr(x2), 'tuple[int, str]')
         x3 = tuple[
             tuple(  # Ditto TODO
                 tuple[int, ...]
@@ -418,21 +418,17 @@ class BaseTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             Bad(list, int, bad=int)
 
-    def test_iter_creates_starred_tuple(self):
-        t = tuple[int, str]
-        iter_t = iter(t)
-        x = next(iter_t)
-        self.assertEqual(repr(x), '*tuple[int, str]')
+    def test_unpack_concrete_tuple_type(self):
+        self.assertEqual([*tuple[()]], [])
+        self.assertEqual([*tuple[int]], [int])
+        self.assertEqual([*tuple[int, str]], [int, str])
+        self.assertEqual([*tuple[int, str, float]], [int, str, float])
 
-    def test_calling_next_twice_raises_stopiteration(self):
-        t = tuple[int, str]
-        iter_t = iter(t)
-        next(iter_t)
-        with self.assertRaises(StopIteration):
-            next(iter_t)
+    def test_unpack_unbounded_tuple_type(self):
+        self.assertEqual(repr([*tuple[int, ...]]), '[*tuple[int, ...]]')
 
     def test_del_iter(self):
-        t = tuple[int, str]
+        t = tuple[int, ...]
         iter_x = iter(t)
         del iter_x
 

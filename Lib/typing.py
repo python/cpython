@@ -1398,6 +1398,10 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return (self.__origin__,)
 
     def __iter__(self):
+        if (self.__origin__ is tuple and
+            not (len(self.__args__) == 2 and self.__args__[1] is ...)):
+            yield from self.__args__
+            return
         yield Unpack[self]
 
 

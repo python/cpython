@@ -667,7 +667,15 @@ static PyTypeObject Py_GenericAliasIterType = {
 };
 
 static PyObject *
-ga_iter(PyObject *self) {
+ga_iter(PyObject *self)
+{
+    gaobject *alias = (gaobject *)self;
+    if (alias->origin == (PyObject *)&PyTuple_Type &&
+        !(PyTuple_GET_SIZE(alias->args) == 2 &&
+          PyTuple_GET_ITEM(alias->args, 1) == Py_Ellipsis))
+    {
+        return PyObject_GetIter(alias->args);
+    }
     gaiterobject *gi = PyObject_GC_New(gaiterobject, &Py_GenericAliasIterType);
     if (gi == NULL) {
         return NULL;
