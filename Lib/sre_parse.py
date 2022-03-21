@@ -25,7 +25,7 @@ ASCIILETTERS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 WHITESPACE = frozenset(" \t\n\r\v\f")
 
-_REPEATCODES = frozenset({MIN_REPEAT, MAX_REPEAT})
+_REPEATCODES = frozenset({MIN_REPEAT, MAX_REPEAT, POSSESSIVE_REPEAT})
 _UNITCODES = frozenset({ANY, RANGE, IN, LITERAL, NOT_LITERAL, CATEGORY})
 
 ESCAPES = {
@@ -187,6 +187,10 @@ class SubPattern:
                 lo = lo + i
                 hi = hi + j
             elif op is CALL:
+                i, j = av.getwidth()
+                lo = lo + i
+                hi = hi + j
+            elif op is ATOMIC_GROUP:
                 i, j = av.getwidth()
                 lo = lo + i
                 hi = hi + j
@@ -675,8 +679,13 @@ def _parse(source, state, verbose, nested, first=False):
                 if group is None and not add_flags and not del_flags:
                     item = p
             if sourcematch("?"):
+                # Non-Greedy Match
                 subpattern[-1] = (MIN_REPEAT, (min, max, item))
+            elif sourcematch("+"):
+                # Possessive Match (Always Greedy)
+                subpattern[-1] = (POSSESSIVE_REPEAT, (min, max, item))
             else:
+                # Greedy Match
                 subpattern[-1] = (MAX_REPEAT, (min, max, item))
 
         elif this == ".":
@@ -684,7 +693,8 @@ def _parse(source, state, verbose, nested, first=False):
 
         elif this == "(":
             start = source.tell() - 1
-            group = True
+            capture = True
+            atomic = False
             name = None
             add_flags = 0
             del_flags = 0
@@ -726,7 +736,7 @@ def _parse(source, state, verbose, nested, first=False):
                                            len(char) + 2)
                 elif char == ":":
                     # non-capturing group
-                    group = None
+                    capture = False
                 elif char == "#":
                     # comment
                     while True:
@@ -800,6 +810,10 @@ def _parse(source, state, verbose, nested, first=False):
                     subpatternappend((GROUPREF_EXISTS, (condgroup, item_yes, item_no)))
                     continue
 
+                elif char == ">":
+                    # non-capturing, atomic group
+                    capture = False
+                    atomic = True
                 elif char in FLAGS or char == "-":
                     # flags
                     flags = _parse_flags(source, state, char)
@@ -813,17 +827,19 @@ def _parse(source, state, verbose, nested, first=False):
                         continue
 
                     add_flags, del_flags = flags
-                    group = None
+                    capture = False
                 else:
                     raise source.error("unknown extension ?" + char,
                                        len(char) + 1)
 
             # parse group contents
-            if group is not None:
+            if capture:
                 try:
                     group = state.opengroup(name)
                 except error as err:
                     raise source.error(err.msg, len(name) + 1) from None
+            else:
+                group = None
             sub_verbose = ((verbose or (add_flags & SRE_FLAG_VERBOSE)) and
                            not (del_flags & SRE_FLAG_VERBOSE))
             p = _parse_sub(source, state, sub_verbose, nested + 1)
@@ -832,7 +848,11 @@ def _parse(source, state, verbose, nested, first=False):
                                    source.tell() - start)
             if group is not None:
                 state.closegroup(group, p)
-            subpatternappend((SUBPATTERN, (group, add_flags, del_flags, p)))
+            if atomic:
+                assert group is None
+                subpatternappend((ATOMIC_GROUP, p))
+            else:
+                subpatternappend((SUBPATTERN, (group, add_flags, del_flags, p)))
 
         elif this == "^":
             subpatternappend((AT, AT_BEGINNING))
