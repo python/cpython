@@ -16,7 +16,7 @@ Data members:
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _Py_RecursionLimitLowerWaterMark()
+#include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
 #include "pycore_code.h"          // _Py_QuickenedCount
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
