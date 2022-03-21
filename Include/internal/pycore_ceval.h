@@ -34,6 +34,9 @@ PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
 #endif
 
+// Used by sys.call_tracing()
+extern PyObject* _PyEval_CallTracing(PyObject *func, PyObject *args);
+
 // Used by sys.get_asyncgen_hooks()
 extern PyObject* _PyEval_GetAsyncGenFirstiter(void);
 extern PyObject* _PyEval_GetAsyncGenFinalizer(void);
