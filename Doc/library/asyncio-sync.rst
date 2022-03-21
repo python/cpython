@@ -413,7 +413,7 @@ Barrier
 
       * if the task is waiting (filling state) or blocked (draining state),
         this task exits the barrier which stays in the same state.
-        If the state is filling, count of waiting task decreases by 1.
+        If the state of the barrier is "filling", the number of waiting task decreases by 1.
 
       The return value is an integer in the range 0 to *parties-1*, different
       for each task. This can be used to select a task to do some special
