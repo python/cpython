@@ -3220,7 +3220,7 @@ dec_format(PyObject *dec, PyObject *args)
     PyObject *fmtarg;
     PyObject *context;
     mpd_spec_t spec;
-    char *fmt;
+    char const *fmt;
     char *fmt_copy = NULL;
     char *decstring = NULL;
     uint32_t status = 0;
@@ -3252,8 +3252,8 @@ dec_format(PyObject *dec, PyObject *args)
         /* Strip 'z' option, which isn't understood by mpd_parse_fmt_str().
          * First, skip [[fill]align], since 'fill' itself may be 'z'.
          * NOTE: fmt is always null terminated by PyUnicode_AsUTF8AndSize() */
-        char *fmt_offset = size >= 2 && strchr("<>=^", fmt[1]) != NULL ?
-                           fmt + 2 : fmt;
+        char const *fmt_offset = size >= 2 && strchr("<>=^", fmt[1]) != NULL ?
+                                 fmt + 2 : fmt;
         char *z_start = strchr(fmt_offset, 'z');
         if (z_start != NULL) {
             no_neg_0 = 1;
