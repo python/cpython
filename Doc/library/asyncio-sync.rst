@@ -399,7 +399,7 @@ Barrier
 .. class:: Barrier(parties, action=None)
 
    Create a barrier object for *parties* number of tasks.  A coroutine *action*,
-   when provided, is awaited once just before the release phasis (draining state).
+   when provided, is awaited once just before the release occurs (draining state).
 
    .. coroutinemethod:: wait()
 
