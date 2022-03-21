@@ -641,7 +641,7 @@ if 1:
         self.check_constant(f1, frozenset({0}))
         self.assertTrue(f1(0))
 
-    # Merging equal co_linetable and co_code is not a strict requirement
+    # Merging equal co_linetable is not a strict requirement
     # for the Python semantics, it's a more an implementation detail.
     @support.cpython_only
     def test_merge_code_attrs(self):
@@ -650,7 +650,6 @@ if 1:
         f2 = lambda a: a.b.c
 
         self.assertIs(f1.__code__.co_linetable, f2.__code__.co_linetable)
-        self.assertIs(f1.__code__.co_code, f2.__code__.co_code)
 
     # Stripping unused constants is not a strict requirement for the
     # Python semantics, it's a more an implementation detail.
