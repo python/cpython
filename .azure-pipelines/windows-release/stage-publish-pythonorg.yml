@@ -93,7 +93,7 @@ jobs:
     parameters:
       GPGKeyFile: 'python-signing.key'
       Files: 'doc\htmlhelp\*.chm'
-      Condition: and(succeeded(), variables['DoCHM'])
+      Condition: and(succeeded(), eq(variables['DoCHM'], 'true'))
 
   - powershell: >
       $(Build.SourcesDirectory)\Tools\msi\uploadrelease.ps1

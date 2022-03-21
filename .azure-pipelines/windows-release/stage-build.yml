@@ -20,7 +20,7 @@ jobs:
 
   - script: Doc\make.bat htmlhelp
     displayName: 'Build CHM docs'
-    condition: and(succeeded(), variables['DoCHM'])
+    condition: and(succeeded(), eq(variables['DoCHM'], 'true'))
     env:
       BUILDDIR: $(Build.BinariesDirectory)\Doc
 
