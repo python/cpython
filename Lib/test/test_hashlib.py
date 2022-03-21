@@ -392,11 +392,8 @@ class HashLibTestCase(unittest.TestCase):
                 self.assertEqual(
                     hashlib.file_digest(buf, digest).hexdigest(), hexdigest
                 )
-                try:
-                    with open(os_helper.TESTFN, "rb") as f:
-                        digestobj = hashlib.file_digest(f, digest)
-                finally:
-                    os.unlink(os_helper.TESTFN)
+                with open(os_helper.TESTFN, "rb") as f:
+                    digestobj = hashlib.file_digest(f, digest)
                 self.assertEqual(digestobj.hexdigest(), hexdigest)
         finally:
             os.unlink(os_helper.TESTFN)
