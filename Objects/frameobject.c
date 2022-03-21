@@ -20,24 +20,6 @@ static PyMemberDef frame_memberlist[] = {
     {NULL}      /* Sentinel */
 };
 
-// Compile time check of interim Python 3.11a6 API compatibility aliases
-// Can be removed once the aliases are removed
-static_assert(OFF(f_fdata) == OFF(f_frame), "Incorrect alias for f_frame");
-static_assert(OFF(_f_owned_fdata) == OFF(_f_frame_data), "Incorrect alias for _f_frame_data");
-
-#define INTERIM_FRAME_DATA_ALIAS_CHECK(new_field) \
-    static_assert(offsetof(_Py_frame, new_field) == offsetof(_PyInterpreterFrame, f_##new_field), \
-                  "Incorrect alias for f_" #new_field )
-
-INTERIM_FRAME_DATA_ALIAS_CHECK(func);
-INTERIM_FRAME_DATA_ALIAS_CHECK(builtins);
-INTERIM_FRAME_DATA_ALIAS_CHECK(globals);
-INTERIM_FRAME_DATA_ALIAS_CHECK(locals);
-INTERIM_FRAME_DATA_ALIAS_CHECK(code);
-INTERIM_FRAME_DATA_ALIAS_CHECK(lasti);
-INTERIM_FRAME_DATA_ALIAS_CHECK(state);
-// End compatiblity alias check
-
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
 {
