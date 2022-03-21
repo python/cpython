@@ -105,8 +105,9 @@ frame_getback(PyFrameObject *f, void *closure)
     return res;
 }
 
-/* Given the index of the effective opcode,
-   scan back to construct the oparg with EXTENDED_ARG */
+// Given the index of the effective opcode, scan back to construct the oparg
+// with EXTENDED_ARG. This only works correctly with *unquickened* code,
+// obtained via a call to _PyCode_GetCode!
 static unsigned int
 get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
 {
@@ -170,13 +171,17 @@ top_of_stack(int64_t stack)
 static int64_t *
 mark_stacks(PyCodeObject *code_obj, int len)
 {
-    const _Py_CODEUNIT *code =
-        (const _Py_CODEUNIT *)PyBytes_AS_STRING(code_obj->co_code);
+    PyObject *co_code = _PyCode_GetCode(code_obj);
+    if (co_code == NULL) {
+        return NULL;
+    }
+    _Py_CODEUNIT *code = (_Py_CODEUNIT *)PyBytes_AS_STRING(co_code);
     int64_t *stacks = PyMem_New(int64_t, len+1);
     int i, j, opcode;
 
     if (stacks == NULL) {
         PyErr_NoMemory();
+        Py_DECREF(co_code);
         return NULL;
     }
     for (int i = 1; i <= len; i++) {
@@ -304,6 +309,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
             }
         }
     }
+    Py_DECREF(co_code);
     return stacks;
 }
 
@@ -493,7 +499,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
 
     /* PyCode_NewWithPosOnlyArgs limits co_code to be under INT_MAX so this
      * should never overflow. */
-    int len = (int)(PyBytes_GET_SIZE(f->f_frame->f_code->co_code) / sizeof(_Py_CODEUNIT));
+    int len = (int)Py_SIZE(f->f_frame->f_code);
     int *lines = marklines(f->f_frame->f_code, len);
     if (lines == NULL) {
         return -1;
@@ -838,12 +844,23 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
 static int
 _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
 {
-    const _Py_CODEUNIT *code =
-        (const _Py_CODEUNIT *)PyBytes_AS_STRING(frame->f_code->co_code);
+    // This only works when opcode is a non-quickened form:
+    assert(_PyOpcode_Deopt[opcode] == opcode);
+    int check_oparg = 0;
     for (int i = 0; i < frame->f_lasti; i++) {
-        if (_Py_OPCODE(code[i]) == opcode && _Py_OPARG(code[i]) == oparg) {
+        _Py_CODEUNIT instruction = _PyCode_CODE(frame->f_code)[i];
+        int check_opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
+        check_oparg |= _Py_OPARG(instruction);
+        if (check_opcode == opcode && check_oparg == oparg) {
             return 1;
         }
+        if (check_opcode == EXTENDED_ARG) {
+            check_oparg <<= 8;
+        }
+        else {
+            check_oparg = 0;
+        }
+        i += _PyOpcode_Caches[check_opcode];
     }
     return 0;
 }
@@ -862,7 +879,10 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
     }
     co = frame->f_code;
     fast = _PyFrame_GetLocalsArray(frame);
-    if (frame->f_lasti < 0 && _Py_OPCODE(co->co_firstinstr[0]) == COPY_FREE_VARS) {
+    // COPY_FREE_VARS has no quickened forms, so no need to use _PyOpcode_Deopt
+    // here:
+    if (frame->f_lasti < 0 && _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS)
+    {
         /* Free vars have not been initialized -- Do that */
         PyCodeObject *co = frame->f_code;
         PyObject *closure = frame->f_func->func_closure;
@@ -872,6 +892,7 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
             Py_INCREF(o);
             frame->localsplus[offset + i] = o;
         }
+        // COPY_FREE_VARS doesn't have inline CACHEs, either:
         frame->f_lasti = 0;
     }
     for (int i = 0; i < co->co_nlocalsplus; i++) {
