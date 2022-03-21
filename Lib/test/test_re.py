@@ -2072,6 +2072,15 @@ ELSE
         with self.assertRaisesRegex(TypeError, "got 'type'"):
             re.search("x*", type)
 
+    def test_search_anchor_at_beginning(self):
+        s = 'x'*10**7
+        for p in r'\Ax*y', r'^x*y':
+            self.assertIsNone(re.search(p, s))
+            self.assertEqual(re.split(p, s), [s])
+            self.assertEqual(re.findall(p, s), [])
+            self.assertEqual(list(re.finditer(p, s)), [])
+            self.assertEqual(re.sub(p, '', s), s)
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):
