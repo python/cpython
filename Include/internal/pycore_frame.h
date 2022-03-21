@@ -21,10 +21,6 @@ struct _frame {
 
 extern PyFrameObject* _PyFrame_New_NoTrack(PyCodeObject *code);
 
-/* runtime lifecycle */
-
-extern void _PyFrame_Fini(PyInterpreterState *interp);
-
 
 /* other API */
 

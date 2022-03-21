@@ -299,6 +299,9 @@ The special characters are:
    :func:`re.compile` function.  Flags should be used first in the
    expression string.
 
+   .. versionchanged:: 3.11
+      This construction can only be used at the start of the expression.
+
 .. index:: single: (?:; in regular expressions
 
 ``(?:...)``
