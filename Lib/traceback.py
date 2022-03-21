@@ -824,8 +824,7 @@ class TracebackException:
             yield from self._format_syntax_error(stype)
         if isinstance(self.__notes__, collections.abc.Sequence):
             for note in self.__notes__:
-                if not isinstance(note, str):
-                    note = _safe_string(note, 'note')
+                note = _safe_string(note, 'note')
                 yield from [l + '\n' for l in note.split('\n')]
         elif self.__notes__ is not None:
             yield _safe_string(self.__notes__, '__notes__', func=repr)

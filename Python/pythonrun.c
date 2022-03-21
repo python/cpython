@@ -1165,9 +1165,19 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
     PyObject *lines = NULL;
     for (Py_ssize_t ni = 0; ni < num_notes; ni++) {
         PyObject *note = PySequence_GetItem(notes, ni);
-        if (PyUnicode_Check(note)) {
-            lines = PyUnicode_Splitlines(note, 1);
-            Py_DECREF(note);
+        PyObject *note_str = PyObject_Str(note);
+        Py_DECREF(note);
+
+        if (note_str == NULL) {
+            PyErr_Clear();
+            if (PyFile_WriteString("<note str() failed>", f) < 0) {
+                goto error;
+            }
+        }
+        else {
+            lines = PyUnicode_Splitlines(note_str, 1);
+            Py_DECREF(note_str);
+
             if (lines == NULL) {
                 goto error;
             }
@@ -1183,33 +1193,10 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
                     goto error;
                 }
             }
-            if (PyFile_WriteString("\n", f) < 0) {
-                goto error;
-            }
             Py_CLEAR(lines);
         }
-        else {
-            int res = 0;
-            if (write_indented_margin(ctx, f) < 0) {
-                res = -1;
-            }
-            PyObject *s = PyObject_Str(note);
-            if (s == NULL) {
-                PyErr_Clear();
-                res = PyFile_WriteString("<note str() failed>", f);
-            }
-            else {
-                res = PyFile_WriteObject(s, f, Py_PRINT_RAW);
-                Py_DECREF(s);
-            }
-            Py_DECREF(note);
-            if (res < 0) {
-                goto error;
-            }
-            if (PyFile_WriteString("\n", f) < 0) {
-                goto error;
-            }
-
+        if (PyFile_WriteString("\n", f) < 0) {
+            goto error;
         }
     }
 
