@@ -511,22 +511,6 @@ instancemethod_repr(PyObject *self)
     return result;
 }
 
-#if 0
-static long
-instancemethod_hash(PyObject *self)
-{
-    long x, y;
-    x = (long)self;
-    y = PyObject_Hash(PyInstanceMethod_GET_FUNCTION(self));
-    if (y == -1)
-        return -1;
-    x = x ^ y;
-    if (x == -1)
-        x = -2;
-    return x;
-}
-#endif
-
 /*[clinic input]
 @classmethod
 instancemethod.__new__
@@ -554,9 +538,6 @@ PyTypeObject PyInstanceMethod_Type = {
     .tp_basicsize = sizeof(PyInstanceMethodObject),
     .tp_dealloc = instancemethod_dealloc,
     .tp_repr = (reprfunc)instancemethod_repr,
-#if 0
-    .tp_hash = (hashfunc)instancemethod_hash,
-#endif
     .tp_call = instancemethod_call,
     .tp_getattro = instancemethod_getattro,
     .tp_setattro = PyObject_GenericSetAttr,
