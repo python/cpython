@@ -1455,7 +1455,7 @@ class DictTest(unittest.TestCase):
         self.assertTrue(gc.is_tracked(next(it)))
 
     @support.cpython_only
-    def test_dict_items_result_gc(self):
+    def test_dict_items_result_gc_reversed(self):
         # Same as test_dict_items_result_gc above, but reversed.
         it = reversed({None: []}.items())
         gc.collect()

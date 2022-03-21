@@ -9,7 +9,6 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_floatobject.h"   // _PyFloat_Unpack4()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
@@ -2056,15 +2055,14 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
         Py_ssize_t i;
         int le = (mformat_code == IEEE_754_FLOAT_LE) ? 1 : 0;
         Py_ssize_t itemcount = Py_SIZE(items) / 4;
-        const unsigned char *memstr =
-            (unsigned char *)PyBytes_AS_STRING(items);
+        const char *memstr = PyBytes_AS_STRING(items);
 
         converted_items = PyList_New(itemcount);
         if (converted_items == NULL)
             return NULL;
         for (i = 0; i < itemcount; i++) {
             PyObject *pyfloat = PyFloat_FromDouble(
-                _PyFloat_Unpack4(&memstr[i * 4], le));
+                PyFloat_Unpack4(&memstr[i * 4], le));
             if (pyfloat == NULL) {
                 Py_DECREF(converted_items);
                 return NULL;
@@ -2078,15 +2076,14 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
         Py_ssize_t i;
         int le = (mformat_code == IEEE_754_DOUBLE_LE) ? 1 : 0;
         Py_ssize_t itemcount = Py_SIZE(items) / 8;
-        const unsigned char *memstr =
-            (unsigned char *)PyBytes_AS_STRING(items);
+        const char *memstr = PyBytes_AS_STRING(items);
 
         converted_items = PyList_New(itemcount);
         if (converted_items == NULL)
             return NULL;
         for (i = 0; i < itemcount; i++) {
             PyObject *pyfloat = PyFloat_FromDouble(
-                _PyFloat_Unpack8(&memstr[i * 8], le));
+                PyFloat_Unpack8(&memstr[i * 8], le));
             if (pyfloat == NULL) {
                 Py_DECREF(converted_items);
                 return NULL;

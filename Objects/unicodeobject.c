@@ -677,10 +677,12 @@ unicode_result_ready(PyObject *unicode)
         if (kind == PyUnicode_1BYTE_KIND) {
             const Py_UCS1 *data = PyUnicode_1BYTE_DATA(unicode);
             Py_UCS1 ch = data[0];
-            if (unicode != LATIN1(ch)) {
+            PyObject *latin1_char = LATIN1(ch);
+            if (unicode != latin1_char) {
+                Py_INCREF(latin1_char);
                 Py_DECREF(unicode);
             }
-            return get_latin1_char(ch);
+            return latin1_char;
         }
     }
 
@@ -13621,14 +13623,6 @@ unicode_zfill_impl(PyObject *self, Py_ssize_t width)
     return u;
 }
 
-#if 0
-static PyObject *
-unicode__decimal2ascii(PyObject *self)
-{
-    return PyUnicode_TransformDecimalAndSpaceToASCII(self);
-}
-#endif
-
 PyDoc_STRVAR(startswith__doc__,
              "S.startswith(prefix[, start[, end]]) -> bool\n\
 \n\
@@ -14214,11 +14208,6 @@ static PyMethodDef unicode_methods[] = {
     UNICODE___FORMAT___METHODDEF
     UNICODE_MAKETRANS_METHODDEF
     UNICODE_SIZEOF_METHODDEF
-#if 0
-    /* These methods are just used for debugging the implementation. */
-    {"_decimal2ascii", (PyCFunction) unicode__decimal2ascii, METH_NOARGS},
-#endif
-
     {"__getnewargs__",  unicode_getnewargs, METH_NOARGS},
     {NULL, NULL}
 };

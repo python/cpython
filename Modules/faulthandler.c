@@ -20,6 +20,17 @@
 #  include <sys/resource.h>
 #endif
 
+/* Using an alternative stack requires sigaltstack()
+   and sigaction() SA_ONSTACK */
+#if defined(HAVE_SIGALTSTACK) && defined(HAVE_SIGACTION)
+#  define FAULTHANDLER_USE_ALT_STACK
+#endif
+
+#if defined(FAULTHANDLER_USE_ALT_STACK) && defined(HAVE_LINUX_AUXVEC_H) && defined(HAVE_SYS_AUXV_H)
+#  include <linux/auxvec.h>       // AT_MINSIGSTKSZ
+#  include <sys/auxv.h>           // getauxval()
+#endif
+
 /* Allocate at maximum 100 MiB of the stack to raise the stack overflow */
 #define STACK_OVERFLOW_MAX_SIZE (100 * 1024 * 1024)
 
@@ -136,12 +147,6 @@ static fault_handler_t faulthandler_handlers[] = {
 };
 static const size_t faulthandler_nsignals = \
     Py_ARRAY_LENGTH(faulthandler_handlers);
-
-/* Using an alternative stack requires sigaltstack()
-   and sigaction() SA_ONSTACK */
-#if defined(HAVE_SIGALTSTACK) && defined(HAVE_SIGACTION)
-#  define FAULTHANDLER_USE_ALT_STACK
-#endif
 
 #ifdef FAULTHANDLER_USE_ALT_STACK
 static stack_t stack;
@@ -1373,6 +1378,15 @@ _PyFaulthandler_Init(int enable)
        signal handler uses more than SIGSTKSZ bytes of stack memory on some
        platforms. */
     stack.ss_size = SIGSTKSZ * 2;
+#ifdef AT_MINSIGSTKSZ
+    /* bpo-46968: Query Linux for minimal stack size to ensure signal delivery
+       for the hardware running CPython. This OS feature is available in
+       Linux kernel version >= 5.14 */
+    unsigned long at_minstack_size = getauxval(AT_MINSIGSTKSZ);
+    if (at_minstack_size != 0) {
+        stack.ss_size = SIGSTKSZ + at_minstack_size;
+    }
+#endif
 #endif
 
     memset(&thread, 0, sizeof(thread));
