@@ -48,6 +48,9 @@ await on multiple things with timeouts.
     * - :class:`Task`
       - Task object.
 
+    * - :func:`to_thread`
+      - Asynchronously run a function in a separate OS thread.
+
     * - :func:`run_coroutine_threadsafe`
       - Schedule a coroutine from another OS thread.
 
@@ -199,11 +202,6 @@ Exceptions
     :widths: 50 50
     :class: full-width-table
 
-
-    * - :exc:`asyncio.TimeoutError`
-      - Raised on timeout by functions like :func:`wait_for`.
-        Keep in mind that ``asyncio.TimeoutError`` is **unrelated**
-        to the built-in :exc:`TimeoutError` exception.
 
     * - :exc:`asyncio.CancelledError`
       - Raised when a Task is cancelled. See also :meth:`Task.cancel`.

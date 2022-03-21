@@ -91,6 +91,7 @@ typedef struct {
     PyObject_HEAD
     PyObject* pattern;
     SRE_STATE state;
+    int executing;
 } ScannerObject;
 
 #endif

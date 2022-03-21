@@ -1,7 +1,7 @@
 #ifndef Py_UNICODEOBJECT_H
 #define Py_UNICODEOBJECT_H
 
-#include <stdarg.h>
+#include <stdarg.h>               // va_list
 
 /*
 
@@ -261,14 +261,13 @@ PyAPI_FUNC(PyObject *) PyUnicode_FromFormat(
     );
 
 PyAPI_FUNC(void) PyUnicode_InternInPlace(PyObject **);
-PyAPI_FUNC(void) PyUnicode_InternImmortal(PyObject **);
 PyAPI_FUNC(PyObject *) PyUnicode_InternFromString(
     const char *u              /* UTF-8 encoded string */
     );
 
-/* Use only if you know it's a string */
-#define PyUnicode_CHECK_INTERNED(op) \
-    (((PyASCIIObject *)(op))->state.interned)
+// PyUnicode_InternImmortal() is deprecated since Python 3.10
+// and will be removed in Python 3.12. Use PyUnicode_InternInPlace() instead.
+Py_DEPRECATED(3.10) PyAPI_FUNC(void) PyUnicode_InternImmortal(PyObject **);
 
 /* --- wchar_t support for platforms which support it --------------------- */
 
@@ -464,6 +463,23 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF8Stateful(
 PyAPI_FUNC(PyObject*) PyUnicode_AsUTF8String(
     PyObject *unicode           /* Unicode object */
     );
+
+/* Returns a pointer to the default encoding (UTF-8) of the
+   Unicode object unicode and the size of the encoded representation
+   in bytes stored in *size.
+
+   In case of an error, no *size is set.
+
+   This function caches the UTF-8 encoded string in the unicodeobject
+   and subsequent calls will return the same string.  The memory is released
+   when the unicodeobject is deallocated.
+*/
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+PyAPI_FUNC(const char *) PyUnicode_AsUTF8AndSize(
+    PyObject *unicode,
+    Py_ssize_t *size);
+#endif
 
 /* --- UTF-32 Codecs ------------------------------------------------------ */
 
@@ -1023,7 +1039,7 @@ PyAPI_FUNC(int) PyUnicode_IsIdentifier(PyObject *s);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_UNICODEOBJECT_H
-#  include  "cpython/unicodeobject.h"
+#  include "cpython/unicodeobject.h"
 #  undef Py_CPYTHON_UNICODEOBJECT_H
 #endif
 

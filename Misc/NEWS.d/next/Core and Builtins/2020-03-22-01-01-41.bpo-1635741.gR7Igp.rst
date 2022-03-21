@@ -1,2 +1,0 @@
-Port time module to multiphase initialization (:pep:`489`).
-Patch by Paulo Henrique Silva.

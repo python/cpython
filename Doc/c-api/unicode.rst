@@ -19,8 +19,7 @@ points must be below 1114112 (which is the full Unicode range).
 
 :c:type:`Py_UNICODE*` and UTF-8 representations are created on demand and cached
 in the Unicode object.  The :c:type:`Py_UNICODE*` representation is deprecated
-and inefficient; it should be avoided in performance- or memory-sensitive
-situations.
+and inefficient.
 
 Due to the transition between the old APIs and the new APIs, Unicode objects
 can internally be in two states depending on how they were created:
@@ -33,6 +32,11 @@ can internally be in two states depending on how they were created:
   APIs (typically :c:func:`PyUnicode_FromUnicode`) and only bear the
   :c:type:`Py_UNICODE*` representation; you will have to call
   :c:func:`PyUnicode_READY` on them before calling any other API.
+
+.. note::
+   The "legacy" Unicode object will be removed in Python 3.12 with deprecated
+   APIs. All Unicode objects will be "canonical" since then. See :pep:`623`
+   for more information.
 
 
 Unicode Type
@@ -86,13 +90,13 @@ access internal read-only data of Unicode objects:
 .. c:function:: int PyUnicode_Check(PyObject *o)
 
    Return true if the object *o* is a Unicode object or an instance of a Unicode
-   subtype.
+   subtype.  This function always succeeds.
 
 
 .. c:function:: int PyUnicode_CheckExact(PyObject *o)
 
    Return true if the object *o* is a Unicode object, but not an instance of a
-   subtype.
+   subtype.  This function always succeeds.
 
 
 .. c:function:: int PyUnicode_READY(PyObject *o)
@@ -106,6 +110,9 @@ access internal read-only data of Unicode objects:
    particular happens if memory allocation fails.
 
    .. versionadded:: 3.3
+
+   .. deprecated-removed:: 3.10 3.12
+      This API will be removed with :c:func:`PyUnicode_FromUnicode`.
 
 
 .. c:function:: Py_ssize_t PyUnicode_GET_LENGTH(PyObject *o)
@@ -138,8 +145,11 @@ access internal read-only data of Unicode objects:
 
    .. versionadded:: 3.3
 
+   .. deprecated-removed:: 3.10 3.12
+      ``PyUnicode_WCHAR_KIND`` is deprecated.
 
-.. c:function:: int PyUnicode_KIND(PyObject *o)
+
+.. c:function:: unsigned int PyUnicode_KIND(PyObject *o)
 
    Return one of the PyUnicode kind constants (see above) that indicate how many
    bytes per character this Unicode object uses to store its data.  *o* has to
@@ -188,7 +198,7 @@ access internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:function:: PyUnicode_MAX_CHAR_VALUE(PyObject *o)
+.. c:macro:: PyUnicode_MAX_CHAR_VALUE(o)
 
    Return the maximum code point that is suitable for creating another string
    based on *o*, which must be in the "canonical" representation.  This is
@@ -203,7 +213,7 @@ access internal read-only data of Unicode objects:
    code units (this includes surrogate pairs as 2 units).  *o* has to be a
    Unicode object (not checked).
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.12
       Part of the old-style Unicode API, please migrate to using
       :c:func:`PyUnicode_GET_LENGTH`.
 
@@ -213,7 +223,7 @@ access internal read-only data of Unicode objects:
    Return the size of the deprecated :c:type:`Py_UNICODE` representation in
    bytes.  *o* has to be a Unicode object (not checked).
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.12
       Part of the old-style Unicode API, please migrate to using
       :c:func:`PyUnicode_GET_LENGTH`.
 
@@ -235,7 +245,7 @@ access internal read-only data of Unicode objects:
       code to use the new :c:func:`PyUnicode_nBYTE_DATA` macros or use
       :c:func:`PyUnicode_WRITE` or :c:func:`PyUnicode_READ`.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.12
       Part of the old-style Unicode API, please migrate to using the
       :c:func:`PyUnicode_nBYTE_DATA` family of macros.
 
@@ -258,57 +268,57 @@ are available through these macros which are mapped to C functions depending on
 the Python configuration.
 
 
-.. c:function:: int Py_UNICODE_ISSPACE(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISSPACE(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a whitespace character.
 
 
-.. c:function:: int Py_UNICODE_ISLOWER(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISLOWER(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a lowercase character.
 
 
-.. c:function:: int Py_UNICODE_ISUPPER(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISUPPER(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is an uppercase character.
 
 
-.. c:function:: int Py_UNICODE_ISTITLE(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISTITLE(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a titlecase character.
 
 
-.. c:function:: int Py_UNICODE_ISLINEBREAK(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISLINEBREAK(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a linebreak character.
 
 
-.. c:function:: int Py_UNICODE_ISDECIMAL(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISDECIMAL(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a decimal character.
 
 
-.. c:function:: int Py_UNICODE_ISDIGIT(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISDIGIT(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a digit character.
 
 
-.. c:function:: int Py_UNICODE_ISNUMERIC(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISNUMERIC(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a numeric character.
 
 
-.. c:function:: int Py_UNICODE_ISALPHA(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISALPHA(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is an alphabetic character.
 
 
-.. c:function:: int Py_UNICODE_ISALNUM(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISALNUM(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is an alphanumeric character.
 
 
-.. c:function:: int Py_UNICODE_ISPRINTABLE(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_ISPRINTABLE(Py_UCS4 ch)
 
    Return ``1`` or ``0`` depending on whether *ch* is a printable character.
    Nonprintable characters are those characters defined in the Unicode character
@@ -322,7 +332,7 @@ the Python configuration.
 These APIs can be used for fast direct character conversions:
 
 
-.. c:function:: Py_UNICODE Py_UNICODE_TOLOWER(Py_UNICODE ch)
+.. c:function:: Py_UCS4 Py_UNICODE_TOLOWER(Py_UCS4 ch)
 
    Return the character *ch* converted to lower case.
 
@@ -330,7 +340,7 @@ These APIs can be used for fast direct character conversions:
       This function uses simple case mappings.
 
 
-.. c:function:: Py_UNICODE Py_UNICODE_TOUPPER(Py_UNICODE ch)
+.. c:function:: Py_UCS4 Py_UNICODE_TOUPPER(Py_UCS4 ch)
 
    Return the character *ch* converted to upper case.
 
@@ -338,7 +348,7 @@ These APIs can be used for fast direct character conversions:
       This function uses simple case mappings.
 
 
-.. c:function:: Py_UNICODE Py_UNICODE_TOTITLE(Py_UNICODE ch)
+.. c:function:: Py_UCS4 Py_UNICODE_TOTITLE(Py_UCS4 ch)
 
    Return the character *ch* converted to title case.
 
@@ -346,19 +356,19 @@ These APIs can be used for fast direct character conversions:
       This function uses simple case mappings.
 
 
-.. c:function:: int Py_UNICODE_TODECIMAL(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_TODECIMAL(Py_UCS4 ch)
 
    Return the character *ch* converted to a decimal positive integer.  Return
    ``-1`` if this is not possible.  This macro does not raise exceptions.
 
 
-.. c:function:: int Py_UNICODE_TODIGIT(Py_UNICODE ch)
+.. c:function:: int Py_UNICODE_TODIGIT(Py_UCS4 ch)
 
    Return the character *ch* converted to a single digit integer. Return ``-1`` if
    this is not possible.  This macro does not raise exceptions.
 
 
-.. c:function:: double Py_UNICODE_TONUMERIC(Py_UNICODE ch)
+.. c:function:: double Py_UNICODE_TONUMERIC(Py_UCS4 ch)
 
    Return the character *ch* converted to a double. Return ``-1.0`` if this is not
    possible.  This macro does not raise exceptions.
@@ -411,6 +421,12 @@ APIs:
    :c:func:`PyUnicode_KIND`).  The *buffer* must point to an array of *size*
    units of 1, 2 or 4 bytes per character, as given by the kind.
 
+   If necessary, the input *buffer* is copied and transformed into the
+   canonical representation.  For example, if the *buffer* is a UCS4 string
+   (:c:macro:`PyUnicode_4BYTE_KIND`) and it consists only of codepoints in
+   the UCS1 range, it will be transformed into UCS1
+   (:c:macro:`PyUnicode_1BYTE_KIND`).
+
    .. versionadded:: 3.3
 
 
@@ -423,7 +439,7 @@ APIs:
 
    If *u* is ``NULL``, this function behaves like :c:func:`PyUnicode_FromUnicode`
    with the buffer set to ``NULL``.  This usage is deprecated in favor of
-   :c:func:`PyUnicode_New`.
+   :c:func:`PyUnicode_New`, and will be removed in Python 3.12.
 
 
 .. c:function:: PyObject *PyUnicode_FromString(const char *u)
@@ -665,7 +681,7 @@ APIs:
 Deprecated Py_UNICODE APIs
 """"""""""""""""""""""""""
 
-.. deprecated-removed:: 3.3 4.0
+.. deprecated-removed:: 3.3 3.12
 
 These API functions are deprecated with the implementation of :pep:`393`.
 Extension modules can continue using them, as they will not be removed in Python
@@ -687,8 +703,10 @@ Extension modules can continue using them, as they will not be removed in Python
    string content has been filled before using any of the access macros such as
    :c:func:`PyUnicode_KIND`.
 
-   Please migrate to using :c:func:`PyUnicode_FromKindAndData`,
-   :c:func:`PyUnicode_FromWideChar` or :c:func:`PyUnicode_New`.
+   .. deprecated-removed:: 3.3 3.12
+      Part of the old-style Unicode API, please migrate to using
+      :c:func:`PyUnicode_FromKindAndData`, :c:func:`PyUnicode_FromWideChar`, or
+      :c:func:`PyUnicode_New`.
 
 
 .. c:function:: Py_UNICODE* PyUnicode_AsUnicode(PyObject *unicode)
@@ -701,16 +719,10 @@ Extension modules can continue using them, as they will not be removed in Python
    embedded null code points, which would cause the string to be truncated when
    used in most C functions.
 
-   Please migrate to using :c:func:`PyUnicode_AsUCS4`,
-   :c:func:`PyUnicode_AsWideChar`, :c:func:`PyUnicode_ReadChar` or similar new
-   APIs.
-
-
-.. c:function:: PyObject* PyUnicode_TransformDecimalToASCII(Py_UNICODE *s, Py_ssize_t size)
-
-   Create a Unicode object by replacing all decimal digits in
-   :c:type:`Py_UNICODE` buffer of the given *size* by ASCII digits 0--9
-   according to their decimal value.  Return ``NULL`` if an exception occurs.
+   .. deprecated-removed:: 3.3 3.12
+      Part of the old-style Unicode API, please migrate to using
+      :c:func:`PyUnicode_AsUCS4`, :c:func:`PyUnicode_AsWideChar`,
+      :c:func:`PyUnicode_ReadChar` or similar new APIs.
 
 
 .. c:function:: Py_UNICODE* PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
@@ -723,19 +735,10 @@ Extension modules can continue using them, as they will not be removed in Python
 
    .. versionadded:: 3.3
 
-
-.. c:function:: Py_UNICODE* PyUnicode_AsUnicodeCopy(PyObject *unicode)
-
-   Create a copy of a Unicode string ending with a null code point. Return ``NULL``
-   and raise a :exc:`MemoryError` exception on memory allocation failure,
-   otherwise return a new allocated buffer (use :c:func:`PyMem_Free` to free
-   the buffer). Note that the resulting :c:type:`Py_UNICODE*` string may
-   contain embedded null code points, which would cause the string to be
-   truncated when used in most C functions.
-
-   .. versionadded:: 3.2
-
-   Please migrate to using :c:func:`PyUnicode_AsUCS4Copy` or similar new APIs.
+   .. deprecated-removed:: 3.3 3.12
+      Part of the old-style Unicode API, please migrate to using
+      :c:func:`PyUnicode_AsUCS4`, :c:func:`PyUnicode_AsWideChar`,
+      :c:func:`PyUnicode_ReadChar` or similar new APIs.
 
 
 .. c:function:: Py_ssize_t PyUnicode_GetSize(PyObject *unicode)
@@ -743,7 +746,9 @@ Extension modules can continue using them, as they will not be removed in Python
    Return the size of the deprecated :c:type:`Py_UNICODE` representation, in
    code units (this includes surrogate pairs as 2 units).
 
-   Please migrate to using :c:func:`PyUnicode_GetLength`.
+   .. deprecated-removed:: 3.3 3.12
+      Part of the old-style Unicode API, please migrate to using
+      :c:func:`PyUnicode_GET_LENGTH`.
 
 
 .. c:function:: PyObject* PyUnicode_FromObject(PyObject *obj)
@@ -776,7 +781,7 @@ system.
    :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
    Python startup).
 
-   This function ignores the Python UTF-8 mode.
+   This function ignores the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
    .. seealso::
 
@@ -812,7 +817,7 @@ system.
    :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
    Python startup).
 
-   This function ignores the Python UTF-8 mode.
+   This function ignores the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
    .. seealso::
 
@@ -871,8 +876,7 @@ conversion function:
 
 .. c:function:: PyObject* PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 
-   Decode a string using :c:data:`Py_FileSystemDefaultEncoding` and the
-   :c:data:`Py_FileSystemDefaultEncodeErrors` error handler.
+   Decode a string from the :term:`filesystem encoding and error handler`.
 
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
    locale encoding.
@@ -892,8 +896,8 @@ conversion function:
 
 .. c:function:: PyObject* PyUnicode_DecodeFSDefault(const char *s)
 
-   Decode a null-terminated string using :c:data:`Py_FileSystemDefaultEncoding`
-   and the :c:data:`Py_FileSystemDefaultEncodeErrors` error handler.
+   Decode a null-terminated string from the :term:`filesystem encoding and
+   error handler`.
 
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
    locale encoding.
@@ -999,7 +1003,7 @@ Error handling is set by errors which may also be set to ``NULL`` meaning to use
 the default handling defined for the codec.  Default error handling for all
 built-in codecs is "strict" (:exc:`ValueError` is raised).
 
-The codecs all use a similar interface.  Only deviation from the following
+The codecs all use a similar interface.  Only deviations from the following
 generic ones are documented for simplicity.
 
 
@@ -1027,20 +1031,6 @@ These are the generic codec APIs:
    name in the Unicode :meth:`~str.encode` method. The codec to be used is looked up
    using the Python codec registry. Return ``NULL`` if an exception was raised by
    the codec.
-
-
-.. c:function:: PyObject* PyUnicode_Encode(const Py_UNICODE *s, Py_ssize_t size, \
-                              const char *encoding, const char *errors)
-
-   Encode the :c:type:`Py_UNICODE` buffer *s* of the given *size* and return a Python
-   bytes object.  *encoding* and *errors* have the same meaning as the
-   parameters of the same name in the Unicode :meth:`~str.encode` method.  The codec
-   to be used is looked up using the Python codec registry.  Return ``NULL`` if an
-   exception was raised by the codec.
-
-   .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsEncodedString`.
 
 
 UTF-8 Codecs
@@ -1091,6 +1081,9 @@ These are the UTF-8 codec APIs:
    .. versionchanged:: 3.7
       The return type is now ``const char *`` rather of ``char *``.
 
+   .. versionchanged:: 3.10
+      This function is a part of the :ref:`limited API <stable>`.
+
 
 .. c:function:: const char* PyUnicode_AsUTF8(PyObject *unicode)
 
@@ -1100,18 +1093,6 @@ These are the UTF-8 codec APIs:
 
    .. versionchanged:: 3.7
       The return type is now ``const char *`` rather of ``char *``.
-
-
-.. c:function:: PyObject* PyUnicode_EncodeUTF8(const Py_UNICODE *s, Py_ssize_t size, const char *errors)
-
-   Encode the :c:type:`Py_UNICODE` buffer *s* of the given *size* using UTF-8 and
-   return a Python bytes object.  Return ``NULL`` if an exception was raised by
-   the codec.
-
-   .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsUTF8String`, :c:func:`PyUnicode_AsUTF8AndSize` or
-      :c:func:`PyUnicode_AsEncodedString`.
 
 
 UTF-32 Codecs
@@ -1164,29 +1145,6 @@ These are the UTF-32 codec APIs:
    Return ``NULL`` if an exception was raised by the codec.
 
 
-.. c:function:: PyObject* PyUnicode_EncodeUTF32(const Py_UNICODE *s, Py_ssize_t size, \
-                              const char *errors, int byteorder)
-
-   Return a Python bytes object holding the UTF-32 encoded value of the Unicode
-   data in *s*.  Output is written according to the following byte order::
-
-      byteorder == -1: little endian
-      byteorder == 0:  native byte order (writes a BOM mark)
-      byteorder == 1:  big endian
-
-   If byteorder is ``0``, the output string will always start with the Unicode BOM
-   mark (U+FEFF). In the other two modes, no BOM mark is prepended.
-
-   If ``Py_UNICODE_WIDE`` is not defined, surrogate pairs will be output
-   as a single code point.
-
-   Return ``NULL`` if an exception was raised by the codec.
-
-   .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsUTF32String` or :c:func:`PyUnicode_AsEncodedString`.
-
-
 UTF-16 Codecs
 """""""""""""
 
@@ -1213,7 +1171,7 @@ These are the UTF-16 codec APIs:
    ``1``, any byte order mark is copied to the output (where it will result in
    either a ``\ufeff`` or a ``\ufffe`` character).
 
-   After completion, *\*byteorder* is set to the current byte order at the end
+   After completion, ``*byteorder`` is set to the current byte order at the end
    of input data.
 
    If *byteorder* is ``NULL``, the codec starts in native order mode.
@@ -1238,30 +1196,6 @@ These are the UTF-16 codec APIs:
    Return ``NULL`` if an exception was raised by the codec.
 
 
-.. c:function:: PyObject* PyUnicode_EncodeUTF16(const Py_UNICODE *s, Py_ssize_t size, \
-                              const char *errors, int byteorder)
-
-   Return a Python bytes object holding the UTF-16 encoded value of the Unicode
-   data in *s*.  Output is written according to the following byte order::
-
-      byteorder == -1: little endian
-      byteorder == 0:  native byte order (writes a BOM mark)
-      byteorder == 1:  big endian
-
-   If byteorder is ``0``, the output string will always start with the Unicode BOM
-   mark (U+FEFF). In the other two modes, no BOM mark is prepended.
-
-   If ``Py_UNICODE_WIDE`` is defined, a single :c:type:`Py_UNICODE` value may get
-   represented as a surrogate pair. If it is not defined, each :c:type:`Py_UNICODE`
-   values is interpreted as a UCS-2 character.
-
-   Return ``NULL`` if an exception was raised by the codec.
-
-   .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsUTF16String` or :c:func:`PyUnicode_AsEncodedString`.
-
-
 UTF-7 Codecs
 """"""""""""
 
@@ -1281,23 +1215,6 @@ These are the UTF-7 codec APIs:
    *consumed* is not ``NULL``, trailing incomplete UTF-7 base-64 sections will not
    be treated as an error.  Those bytes will not be decoded and the number of
    bytes that have been decoded will be stored in *consumed*.
-
-
-.. c:function:: PyObject* PyUnicode_EncodeUTF7(const Py_UNICODE *s, Py_ssize_t size, \
-                              int base64SetO, int base64WhiteSpace, const char *errors)
-
-   Encode the :c:type:`Py_UNICODE` buffer of the given size using UTF-7 and
-   return a Python bytes object.  Return ``NULL`` if an exception was raised by
-   the codec.
-
-   If *base64SetO* is nonzero, "Set O" (punctuation that has no otherwise
-   special meaning) will be encoded in base-64.  If *base64WhiteSpace* is
-   nonzero, whitespace will be encoded in base-64.  Both are set to zero for the
-   Python "utf-7" codec.
-
-   .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsEncodedString`.
 
 
 Unicode-Escape Codecs
@@ -1320,16 +1237,6 @@ These are the "Unicode Escape" codec APIs:
    raised by the codec.
 
 
-.. c:function:: PyObject* PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s, Py_ssize_t size)
-
-   Encode the :c:type:`Py_UNICODE` buffer of the given *size* using Unicode-Escape and
-   return a bytes object.  Return ``NULL`` if an exception was raised by the codec.
-
-   .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsUnicodeEscapeString`.
-
-
 Raw-Unicode-Escape Codecs
 """""""""""""""""""""""""
 
@@ -1348,18 +1255,6 @@ These are the "Raw Unicode Escape" codec APIs:
    Encode a Unicode object using Raw-Unicode-Escape and return the result as
    a bytes object.  Error handling is "strict".  Return ``NULL`` if an exception
    was raised by the codec.
-
-
-.. c:function:: PyObject* PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s, \
-                              Py_ssize_t size)
-
-   Encode the :c:type:`Py_UNICODE` buffer of the given *size* using Raw-Unicode-Escape
-   and return a bytes object.  Return ``NULL`` if an exception was raised by the codec.
-
-   .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsRawUnicodeEscapeString` or
-      :c:func:`PyUnicode_AsEncodedString`.
 
 
 Latin-1 Codecs
@@ -1382,18 +1277,6 @@ ordinals and only these are accepted by the codecs during encoding.
    raised by the codec.
 
 
-.. c:function:: PyObject* PyUnicode_EncodeLatin1(const Py_UNICODE *s, Py_ssize_t size, const char *errors)
-
-   Encode the :c:type:`Py_UNICODE` buffer of the given *size* using Latin-1 and
-   return a Python bytes object.  Return ``NULL`` if an exception was raised by
-   the codec.
-
-   .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsLatin1String` or
-      :c:func:`PyUnicode_AsEncodedString`.
-
-
 ASCII Codecs
 """"""""""""
 
@@ -1414,24 +1297,12 @@ codes generate errors.
    raised by the codec.
 
 
-.. c:function:: PyObject* PyUnicode_EncodeASCII(const Py_UNICODE *s, Py_ssize_t size, const char *errors)
-
-   Encode the :c:type:`Py_UNICODE` buffer of the given *size* using ASCII and
-   return a Python bytes object.  Return ``NULL`` if an exception was raised by
-   the codec.
-
-   .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsASCIIString` or
-      :c:func:`PyUnicode_AsEncodedString`.
-
-
 Character Map Codecs
 """"""""""""""""""""
 
 This codec is special in that it can be used to implement many different codecs
 (and this is in fact what was done to obtain most of the standard codecs
-included in the :mod:`encodings` package). The codec uses mapping to encode and
+included in the :mod:`encodings` package). The codec uses mappings to encode and
 decode characters.  The mapping objects provided must support the
 :meth:`__getitem__` mapping interface; dictionaries and sequences work well.
 
@@ -1465,45 +1336,23 @@ These are the mapping codec APIs:
    ``None`` are treated as "undefined mapping" and cause an error.
 
 
-.. c:function:: PyObject* PyUnicode_EncodeCharmap(const Py_UNICODE *s, Py_ssize_t size, \
-                              PyObject *mapping, const char *errors)
-
-   Encode the :c:type:`Py_UNICODE` buffer of the given *size* using the given
-   *mapping* object and return the result as a bytes object.  Return ``NULL`` if
-   an exception was raised by the codec.
-
-   .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsCharmapString` or
-      :c:func:`PyUnicode_AsEncodedString`.
-
-
 The following codec API is special in that maps Unicode to Unicode.
 
-.. c:function:: PyObject* PyUnicode_Translate(PyObject *unicode, \
-                              PyObject *mapping, const char *errors)
+.. c:function:: PyObject* PyUnicode_Translate(PyObject *str, PyObject *table, const char *errors)
 
-   Translate a Unicode object using the given *mapping* object and return the
-   resulting Unicode object.  Return ``NULL`` if an exception was raised by the
+   Translate a string by applying a character mapping table to it and return the
+   resulting Unicode object. Return ``NULL`` if an exception was raised by the
    codec.
 
-   The *mapping* object must map Unicode ordinal integers to Unicode strings,
-   integers (which are then interpreted as Unicode ordinals) or ``None``
-   (causing deletion of the character).  Unmapped character ordinals (ones
-   which cause a :exc:`LookupError`) are left untouched and are copied as-is.
+   The mapping table must map Unicode ordinal integers to Unicode ordinal integers
+   or ``None`` (causing deletion of the character).
 
+   Mapping tables need only provide the :meth:`__getitem__` interface; dictionaries
+   and sequences work well.  Unmapped character ordinals (ones which cause a
+   :exc:`LookupError`) are left untouched and are copied as-is.
 
-.. c:function:: PyObject* PyUnicode_TranslateCharmap(const Py_UNICODE *s, Py_ssize_t size, \
-                              PyObject *mapping, const char *errors)
-
-   Translate a :c:type:`Py_UNICODE` buffer of the given *size* by applying a
-   character *mapping* table to it and return the resulting Unicode object.
-   Return ``NULL`` when an exception was raised by the codec.
-
-   .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_Translate`. or :ref:`generic codec based API
-      <codec-registry>`
+   *errors* has the usual meaning for codecs. It may be ``NULL`` which indicates to
+   use the default error handling.
 
 
 MBCS codecs for Windows
@@ -1545,18 +1394,6 @@ the user settings on the machine running the codec.
    .. versionadded:: 3.3
 
 
-.. c:function:: PyObject* PyUnicode_EncodeMBCS(const Py_UNICODE *s, Py_ssize_t size, const char *errors)
-
-   Encode the :c:type:`Py_UNICODE` buffer of the given *size* using MBCS and return
-   a Python bytes object.  Return ``NULL`` if an exception was raised by the
-   codec.
-
-   .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsMBCSString`, :c:func:`PyUnicode_EncodeCodePage` or
-      :c:func:`PyUnicode_AsEncodedString`.
-
-
 Methods & Slots
 """""""""""""""
 
@@ -1589,25 +1426,8 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 .. c:function:: PyObject* PyUnicode_Splitlines(PyObject *s, int keepend)
 
    Split a Unicode string at line breaks, returning a list of Unicode strings.
-   CRLF is considered to be one line break.  If *keepend* is ``0``, the Line break
+   CRLF is considered to be one line break.  If *keepend* is ``0``, the line break
    characters are not included in the resulting strings.
-
-
-.. c:function:: PyObject* PyUnicode_Translate(PyObject *str, PyObject *table, \
-                              const char *errors)
-
-   Translate a string by applying a character mapping table to it and return the
-   resulting Unicode object.
-
-   The mapping table must map Unicode ordinal integers to Unicode ordinal integers
-   or ``None`` (causing deletion of the character).
-
-   Mapping tables need only provide the :meth:`__getitem__` interface; dictionaries
-   and sequences work well.  Unmapped character ordinals (ones which cause a
-   :exc:`LookupError`) are left untouched and are copied as-is.
-
-   *errors* has the usual meaning for codecs. It may be ``NULL`` which indicates to
-   use the default error handling.
 
 
 .. c:function:: PyObject* PyUnicode_Join(PyObject *separator, PyObject *seq)

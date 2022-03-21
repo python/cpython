@@ -1,5 +1,9 @@
 # Tests for extended unpacking, starred expressions.
 
+import doctest
+import unittest
+
+
 doctests = """
 
 Unpack tuple
@@ -158,14 +162,20 @@ List comprehension element unpacking
     ...
     SyntaxError: iterable unpacking cannot be used in comprehension
 
-Generator expression in function arguments
-
-    >>> list(*x for x in (range(5) for i in range(3)))
+    >>> {**{} for a in [1]}
     Traceback (most recent call last):
     ...
-        list(*x for x in (range(5) for i in range(3)))
-                  ^
-    SyntaxError: invalid syntax
+    SyntaxError: dict unpacking cannot be used in dict comprehension
+
+# Pegen is better here.
+# Generator expression in function arguments
+
+#     >>> list(*x for x in (range(5) for i in range(3)))
+#     Traceback (most recent call last):
+#     ...
+#         list(*x for x in (range(5) for i in range(3)))
+#                   ^
+#     SyntaxError: invalid syntax
 
     >>> dict(**x for x in [{1:2}])
     Traceback (most recent call last):
@@ -340,6 +350,31 @@ Now some general starred expressions (all fail).
       ...
     SyntaxError: can't use starred expression here
 
+    >>> (*x),y = 1, 2 # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: cannot use starred expression here
+
+    >>> (((*x))),y = 1, 2 # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: cannot use starred expression here
+
+    >>> z,(*x),y = 1, 2, 4 # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: cannot use starred expression here
+
+    >>> z,(*x) = 1, 2 # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: cannot use starred expression here
+
+    >>> ((*x),y) = 1, 2 # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: cannot use starred expression here
+
 Some size constraints (all fail.)
 
     >>> s = ", ".join("a%d" % i for i in range(1<<8)) + ", *rest = range(1<<8 + 1)"
@@ -361,10 +396,10 @@ Some size constraints (all fail.)
 
 __test__ = {'doctests' : doctests}
 
-def test_main(verbose=False):
-    from test import support
-    from test import test_unpack_ex
-    support.run_doctest(test_unpack_ex, verbose)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
+
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

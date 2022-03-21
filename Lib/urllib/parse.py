@@ -27,10 +27,11 @@ parsing quirks from older RFCs are retained. The testcases in
 test_urlparse.py provides a good indicator of parsing behavior.
 """
 
+from collections import namedtuple
+import functools
 import re
 import sys
 import types
-import collections
 import warnings
 
 __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
@@ -78,15 +79,13 @@ scheme_chars = ('abcdefghijklmnopqrstuvwxyz'
                 '0123456789'
                 '+-.')
 
-# XXX: Consider replacing with functools.lru_cache
-MAX_CACHE_SIZE = 20
-_parse_cache = {}
+# Unsafe bytes to be removed per WHATWG spec
+_UNSAFE_URL_BYTES_TO_REMOVE = ['\t', '\r', '\n']
 
 def clear_cache():
-    """Clear the parse cache and the quoters cache."""
-    _parse_cache.clear()
-    _safe_quoters.clear()
-
+    """Clear internal performance caches. Undocumented; some tests want it."""
+    urlsplit.cache_clear()
+    _byte_quoter_factory.cache_clear()
 
 # Helpers for bytes handling
 # For 3.2, we deliberately require applications that
@@ -239,8 +238,6 @@ class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
             port = None
         return hostname, port
 
-
-from collections import namedtuple
 
 _DefragResultBase = namedtuple('DefragResult', 'url fragment')
 _SplitResultBase = namedtuple(
@@ -431,6 +428,9 @@ def _checknetloc(netloc):
             raise ValueError("netloc '" + netloc + "' contains invalid " +
                              "characters under NFKC normalization")
 
+# typed=True avoids BytesWarnings being emitted during cache key
+# comparison since this API supports both bytes and str input.
+@functools.lru_cache(typed=True)
 def urlsplit(url, scheme='', allow_fragments=True):
     """Parse a URL into 5 components:
     <scheme>://<netloc>/<path>?<query>#<fragment>
@@ -453,13 +453,12 @@ def urlsplit(url, scheme='', allow_fragments=True):
     """
 
     url, scheme, _coerce_result = _coerce_args(url, scheme)
+
+    for b in _UNSAFE_URL_BYTES_TO_REMOVE:
+        url = url.replace(b, "")
+        scheme = scheme.replace(b, "")
+
     allow_fragments = bool(allow_fragments)
-    key = url, scheme, allow_fragments, type(url), type(scheme)
-    cached = _parse_cache.get(key, None)
-    if cached:
-        return _coerce_result(cached)
-    if len(_parse_cache) >= MAX_CACHE_SIZE: # avoid runaway growth
-        clear_cache()
     netloc = query = fragment = ''
     i = url.find(':')
     if i > 0:
@@ -480,7 +479,6 @@ def urlsplit(url, scheme='', allow_fragments=True):
         url, query = url.split('?', 1)
     _checknetloc(netloc)
     v = SplitResult(scheme, netloc, url, query, fragment)
-    _parse_cache[key] = v
     return _coerce_result(v)
 
 def urlunparse(components):
@@ -662,7 +660,7 @@ def unquote(string, encoding='utf-8', errors='replace'):
 
 
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
-             encoding='utf-8', errors='replace', max_num_fields=None):
+             encoding='utf-8', errors='replace', max_num_fields=None, separator='&'):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -686,12 +684,15 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
         max_num_fields: int. If set, then throws a ValueError if there
             are more than n fields read by parse_qsl().
 
+        separator: str. The symbol to use for separating the query arguments.
+            Defaults to &.
+
         Returns a dictionary.
     """
     parsed_result = {}
     pairs = parse_qsl(qs, keep_blank_values, strict_parsing,
                       encoding=encoding, errors=errors,
-                      max_num_fields=max_num_fields)
+                      max_num_fields=max_num_fields, separator=separator)
     for name, value in pairs:
         if name in parsed_result:
             parsed_result[name].append(value)
@@ -701,7 +702,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
 
 
 def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
-              encoding='utf-8', errors='replace', max_num_fields=None):
+              encoding='utf-8', errors='replace', max_num_fields=None, separator='&'):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -724,21 +725,28 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         max_num_fields: int. If set, then throws a ValueError
             if there are more than n fields read by parse_qsl().
 
+        separator: str. The symbol to use for separating the query arguments.
+            Defaults to &.
+
         Returns a list, as G-d intended.
     """
     qs, _coerce_result = _coerce_args(qs)
+    separator, _ = _coerce_args(separator)
+
+    if not separator or (not isinstance(separator, (str, bytes))):
+        raise ValueError("Separator must be of type string or bytes.")
 
     # If max_num_fields is defined then check that the number of fields
     # is less than max_num_fields. This prevents a memory exhaustion DOS
     # attack via post bodies with many fields.
     if max_num_fields is not None:
-        num_fields = 1 + qs.count('&') + qs.count(';')
+        num_fields = 1 + qs.count(separator) if qs else 0
         if max_num_fields < num_fields:
             raise ValueError('Max number of fields exceeded')
 
-    pairs = [s2 for s1 in qs.split('&') for s2 in s1.split(';')]
     r = []
-    for name_value in pairs:
+    query_args = qs.split(separator) if qs else []
+    for name_value in query_args:
         if not name_value and not strict_parsing:
             continue
         nv = name_value.split('=', 1)
@@ -774,23 +782,30 @@ _ALWAYS_SAFE = frozenset(b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                          b'0123456789'
                          b'_.-~')
 _ALWAYS_SAFE_BYTES = bytes(_ALWAYS_SAFE)
-_safe_quoters = {}
 
-class Quoter(collections.defaultdict):
-    """A mapping from bytes (in range(0,256)) to strings.
+def __getattr__(name):
+    if name == 'Quoter':
+        warnings.warn('Deprecated in 3.11. '
+                      'urllib.parse.Quoter will be removed in Python 3.14. '
+                      'It was not intended to be a public API.',
+                      DeprecationWarning, stacklevel=2)
+        return _Quoter
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+
+class _Quoter(dict):
+    """A mapping from bytes numbers (in range(0,256)) to strings.
 
     String values are percent-encoded byte values, unless the key < 128, and
-    in the "safe" set (either the specified safe set, or default set).
+    in either of the specified safe set, or the always safe set.
     """
-    # Keeps a cache internally, using defaultdict, for efficiency (lookups
+    # Keeps a cache internally, via __missing__, for efficiency (lookups
     # of cached keys don't call Python code at all).
     def __init__(self, safe):
         """safe: bytes object."""
         self.safe = _ALWAYS_SAFE.union(safe)
 
     def __repr__(self):
-        # Without this, will just display as a defaultdict
-        return "<%s %r>" % (self.__class__.__name__, dict(self))
+        return f"<Quoter {dict(self)!r}>"
 
     def __missing__(self, b):
         # Handle a cache miss. Store quoted string in cache and return.
@@ -869,6 +884,11 @@ def quote_plus(string, safe='', encoding=None, errors=None):
     string = quote(string, safe + space, encoding, errors)
     return string.replace(' ', '+')
 
+# Expectation: A typical program is unlikely to create more than 5 of these.
+@functools.lru_cache
+def _byte_quoter_factory(safe):
+    return _Quoter(safe).__getitem__
+
 def quote_from_bytes(bs, safe='/'):
     """Like quote(), but accepts a bytes object rather than a str, and does
     not perform string-to-bytes encoding.  It always returns an ASCII string.
@@ -882,13 +902,11 @@ def quote_from_bytes(bs, safe='/'):
         # Normalize 'safe' by converting to bytes and removing non-ASCII chars
         safe = safe.encode('ascii', 'ignore')
     else:
+        # List comprehensions are faster than generator expressions.
         safe = bytes([c for c in safe if c < 128])
     if not bs.rstrip(_ALWAYS_SAFE_BYTES + safe):
         return bs.decode()
-    try:
-        quoter = _safe_quoters[safe]
-    except KeyError:
-        _safe_quoters[safe] = quoter = Quoter(safe).__getitem__
+    quoter = _byte_quoter_factory(safe)
     return ''.join([quoter(char) for char in bs])
 
 def urlencode(query, doseq=False, safe='', encoding=None, errors=None,

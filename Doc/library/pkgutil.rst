@@ -68,7 +68,7 @@ support.
 
 .. class:: ImpLoader(fullname, file, filename, etc)
 
-   :term:`Loader` that wraps Python's "classic" import algorithm.
+   :term:`Loader <loader>` that wraps Python's "classic" import algorithm.
 
    .. deprecated:: 3.3
       This emulation is no longer needed, as the standard import mechanism

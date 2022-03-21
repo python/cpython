@@ -1,0 +1,5 @@
+:mod:`faulthandler`: On Linux 5.14 and newer, dynamically determine size of
+signal handler stack size CPython allocates using ``getauxval(AT_MINSIGSTKSZ)``.
+This changes allows for Python extension's request to Linux kernel to use
+AMX_TILE instruction set on Sapphire Rapids Xeon processor to succeed,
+unblocking use of the ISA in frameworks.

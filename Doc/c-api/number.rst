@@ -256,6 +256,10 @@ Number Protocol
    Returns the *o* converted to a Python int on success or ``NULL`` with a
    :exc:`TypeError` exception raised on failure.
 
+   .. versionchanged:: 3.10
+      The result always has exact type :class:`int`.  Previously, the result
+      could have been an instance of a subclass of ``int``.
+
 
 .. c:function:: PyObject* PyNumber_ToBase(PyObject *n, int base)
 

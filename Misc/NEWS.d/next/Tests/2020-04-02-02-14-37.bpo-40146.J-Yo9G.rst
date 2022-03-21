@@ -1,1 +1,0 @@
-Update OpenSSL to 1.1.1f in Azure Pipelines.

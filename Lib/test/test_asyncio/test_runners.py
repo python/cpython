@@ -2,7 +2,11 @@ import asyncio
 import unittest
 
 from unittest import mock
-from . import utils as test_utils
+from test.test_asyncio import utils as test_utils
+
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
 
 
 class TestPolicy(asyncio.AbstractEventLoopPolicy):
@@ -87,6 +91,9 @@ class RunTests(BaseTest):
 
         asyncio.run(main(False))
         asyncio.run(main(True), debug=True)
+        with mock.patch('asyncio.coroutines._is_debug_mode', lambda: True):
+            asyncio.run(main(True))
+            asyncio.run(main(False), debug=False)
 
     def test_asyncio_run_from_running_loop(self):
         async def main():
@@ -177,3 +184,7 @@ class RunTests(BaseTest):
 
         self.assertIsNone(spinner.ag_frame)
         self.assertFalse(spinner.ag_running)
+
+
+if __name__ == '__main__':
+    unittest.main()

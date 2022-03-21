@@ -1,2 +1,0 @@
-Deprecate passing None as an argument for :func:`shlex.split()`'s ``s``
-parameter.  Patch by Zackery Spytz.

@@ -1,2 +1,0 @@
-Fix a bug in the :mod:`symtable` module that was causing incorrectly report
-global variables as local. Patch by Pablo Galindo.

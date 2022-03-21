@@ -35,12 +35,7 @@ fcntl_fcntl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("fcntl", nargs, 2, 3)) {
         goto exit;
     }
-    if (!conv_descriptor(args[0], &fd)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     code = _PyLong_AsInt(args[1]);
@@ -110,12 +105,7 @@ fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("ioctl", nargs, 2, 4)) {
         goto exit;
     }
-    if (!conv_descriptor(args[0], &fd)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     code = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
@@ -165,12 +155,7 @@ fcntl_flock(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("flock", nargs, 2, 2)) {
         goto exit;
     }
-    if (!conv_descriptor(args[0], &fd)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     code = _PyLong_AsInt(args[1]);
@@ -230,12 +215,7 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("lockf", nargs, 2, 5)) {
         goto exit;
     }
-    if (!conv_descriptor(args[0], &fd)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     code = _PyLong_AsInt(args[1]);
@@ -253,11 +233,6 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 5) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[4])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     whence = _PyLong_AsInt(args[4]);
     if (whence == -1 && PyErr_Occurred()) {
         goto exit;
@@ -268,4 +243,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e912d25e28362c52 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8ea34bd0f7cf25ec input=a9049054013a1b77]*/

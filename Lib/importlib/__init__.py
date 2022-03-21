@@ -34,7 +34,7 @@ try:
     import _frozen_importlib_external as _bootstrap_external
 except ImportError:
     from . import _bootstrap_external
-    _bootstrap_external._setup(_bootstrap)
+    _bootstrap_external._set_bootstrap_module(_bootstrap)
     _bootstrap._bootstrap_external = _bootstrap_external
 else:
     _bootstrap_external.__name__ = 'importlib._bootstrap_external'
@@ -54,7 +54,6 @@ _unpack_uint32 = _bootstrap_external._unpack_uint32
 # Fully bootstrapped at this point, import whatever you like, circular
 # dependencies and startup overhead minimisation permitting :)
 
-import types
 import warnings
 
 
@@ -79,8 +78,8 @@ def find_loader(name, path=None):
     This function is deprecated in favor of importlib.util.find_spec().
 
     """
-    warnings.warn('Deprecated since Python 3.4. '
-                  'Use importlib.util.find_spec() instead.',
+    warnings.warn('Deprecated since Python 3.4 and slated for removal in '
+                  'Python 3.12; use importlib.util.find_spec() instead',
                   DeprecationWarning, stacklevel=2)
     try:
         loader = sys.modules[name].__loader__
@@ -136,12 +135,13 @@ def reload(module):
     The module must have been successfully imported before.
 
     """
-    if not module or not isinstance(module, types.ModuleType):
-        raise TypeError("reload() argument must be a module")
     try:
         name = module.__spec__.name
     except AttributeError:
-        name = module.__name__
+        try:
+            name = module.__name__
+        except AttributeError:
+            raise TypeError("reload() argument must be a module")
 
     if sys.modules.get(name) is not module:
         msg = "module {} not in sys.modules"

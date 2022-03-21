@@ -10,10 +10,13 @@ import unittest
 import weakref
 from collections.abc import MutableMapping
 from test import mapping_tests, support
+from test.support import import_helper
 
 
-py_coll = support.import_fresh_module('collections', blocked=['_collections'])
-c_coll = support.import_fresh_module('collections', fresh=['_collections'])
+py_coll = import_helper.import_fresh_module('collections',
+                                            blocked=['_collections'])
+c_coll = import_helper.import_fresh_module('collections',
+                                           fresh=['_collections'])
 
 
 @contextlib.contextmanager
@@ -697,6 +700,17 @@ class OrderedDictTests:
         with self.assertRaises(ValueError):
             a |= "BAD"
 
+    @support.cpython_only
+    def test_ordered_dict_items_result_gc(self):
+        # bpo-42536: OrderedDict.items's tuple-reuse speed trick breaks the GC's
+        # assumptions about what can be untracked. Make sure we re-track result
+        # tuples whenever we reuse them.
+        it = iter(self.OrderedDict({None: []}).items())
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which is initialized to (None, None). Make sure it's re-tracked
+        # when it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
 
 class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 
@@ -737,20 +751,21 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         size = support.calcobjsize
         check = self.check_sizeof
 
-        basicsize = size('nQ2P' + '3PnPn2P') + calcsize('2nP2n')
+        basicsize = size('nQ2P' + '3PnPn2P')
+        keysize = calcsize('n2BI2n')
 
         entrysize = calcsize('n2P')
         p = calcsize('P')
         nodesize = calcsize('Pn2P')
 
         od = OrderedDict()
-        check(od, basicsize + 8 + 5*entrysize)  # 8byte indices + 8*2//3 * entry table
+        check(od, basicsize)  # 8byte indices + 8*2//3 * entry table
         od.x = 1
-        check(od, basicsize + 8 + 5*entrysize)
+        check(od, basicsize)
         od.update([(i, i) for i in range(3)])
-        check(od, basicsize + 8*p + 8 + 5*entrysize + 3*nodesize)
+        check(od, basicsize + keysize + 8*p + 8 + 5*entrysize + 3*nodesize)
         od.update([(i, i) for i in range(3, 10)])
-        check(od, basicsize + 16*p + 16 + 10*entrysize + 10*nodesize)
+        check(od, basicsize + keysize + 16*p + 16 + 10*entrysize + 10*nodesize)
 
         check(od.keys(), size('P'))
         check(od.items(), size('P'))
@@ -879,6 +894,89 @@ class CPythonSubclassMappingTests(mapping_tests.BasicTestMappingProtocol):
     def test_popitem(self):
         d = self._empty_mapping()
         self.assertRaises(KeyError, d.popitem)
+
+
+class SimpleLRUCache:
+
+    def __init__(self, size):
+        super().__init__()
+        self.size = size
+        self.counts = dict.fromkeys(('get', 'set', 'del'), 0)
+
+    def __getitem__(self, item):
+        self.counts['get'] += 1
+        value = super().__getitem__(item)
+        self.move_to_end(item)
+        return value
+
+    def __setitem__(self, key, value):
+        self.counts['set'] += 1
+        while key not in self and len(self) >= self.size:
+            self.popitem(last=False)
+        super().__setitem__(key, value)
+        self.move_to_end(key)
+
+    def __delitem__(self, key):
+        self.counts['del'] += 1
+        super().__delitem__(key)
+
+
+class SimpleLRUCacheTests:
+
+    def test_add_after_full(self):
+        c = self.type2test(2)
+        c['t1'] = 1
+        c['t2'] = 2
+        c['t3'] = 3
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+        self.assertEqual(list(c), ['t2', 't3'])
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+
+    def test_popitem(self):
+        c = self.type2test(3)
+        for i in range(1, 4):
+            c[i] = i
+        self.assertEqual(c.popitem(last=False), (1, 1))
+        self.assertEqual(c.popitem(last=True), (3, 3))
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+
+    def test_pop(self):
+        c = self.type2test(3)
+        for i in range(1, 4):
+            c[i] = i
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+        self.assertEqual(c.pop(2), 2)
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+        self.assertEqual(c.pop(4, 0), 0)
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+        self.assertRaises(KeyError, c.pop, 4)
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+
+    def test_change_order_on_get(self):
+        c = self.type2test(3)
+        for i in range(1, 4):
+            c[i] = i
+        self.assertEqual(list(c), list(range(1, 4)))
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+        self.assertEqual(c[2], 2)
+        self.assertEqual(c.counts, {'get': 1, 'set': 3, 'del': 0})
+        self.assertEqual(list(c), [1, 3, 2])
+
+
+class PySimpleLRUCacheTests(SimpleLRUCacheTests, unittest.TestCase):
+
+    class type2test(SimpleLRUCache, py_coll.OrderedDict):
+        pass
+
+
+@unittest.skipUnless(c_coll, 'requires the C version of the collections module')
+class CSimpleLRUCacheTests(SimpleLRUCacheTests, unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        class type2test(SimpleLRUCache, c_coll.OrderedDict):
+            pass
+        cls.type2test = type2test
 
 
 if __name__ == "__main__":
