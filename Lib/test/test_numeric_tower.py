@@ -16,9 +16,23 @@ _PyHASH_INF = sys.hash_info.inf
 
 
 class DummyIntegral(int):
+    """Dummy Integral class to test conversion of the Rational to float."""
+
+    def __mul__(self, other):
+        return DummyIntegral(super().__mul__(other))
+    __rmul__ = __mul__
+
     def __truediv__(self, other):
-        raise NotImplemented
+        return NotImplemented
     __rtruediv__ = __truediv__
+
+    @property
+    def numerator(self):
+        return DummyIntegral(self)
+
+    @property
+    def denominator(self):
+        return DummyIntegral(1)
 
 
 class HashTest(unittest.TestCase):
@@ -128,10 +142,11 @@ class HashTest(unittest.TestCase):
         self.assertEqual(hash(F(7*_PyHASH_MODULUS, 1)), 0)
         self.assertEqual(hash(F(-_PyHASH_MODULUS, 1)), 0)
 
-        # The numbers ABC doesn't enforce that the "true" division produces a float
-        x = F(*map(DummyIntegral, (1, 2)))
-        self.assertRaises(TypeError, int(x.numerator))
-        self.assertRaises(TypeError, int(x.denominator))
+        # The numbers ABC doesn't enforce that the "true" division
+        # of integers produces a float.  This tests that the
+        # Rational.__float__() method has required type conversions.
+        x = F(DummyIntegral(1), DummyIntegral(2), _normalize=False)
+        self.assertRaises(TypeError, lambda: x.numerator/x.denominator)
         self.assertEquals(float(x), 0.5)
 
     def test_hash_normalization(self):
