@@ -16085,10 +16085,12 @@ _PyUnicode_Fini(PyInterpreterState *interp)
         if (ascii->wstr != NULL) {
             PyObject_FREE(ascii->wstr);
             ascii->wstr = NULL;
+            compact->wstr_length = 0;
         }
         if (compact->utf8 != NULL) {
             PyObject_Free(compact->utf8);
             compact->utf8 = NULL;
+            compact->utf8_length = 0;
         }
     }
 }
@@ -16098,23 +16100,27 @@ void
 _PyStaticUnicode_Dealloc(PyObject *op)
 {
     PyASCIIObject *ascii = (PyASCIIObject*)op;
-    void* data;
-    return;
+
     assert(ascii->state.compact);
 
     if (ascii->state.ascii) {
-        data = (void*)(ascii + 1);
+        if (ascii->wstr) {
+            PyObject_Free(ascii->wstr);
+            ascii->wstr = NULL;
+        }
     } else {
-        PyCompactUnicodeObject* compact = (PyCompactUnicodeObject*)op;
-        data = (void*)(compact + 1);
-        if (compact->utf8 && compact->utf8 != data) {
+        PyCompactUnicodeObject *compact = (PyCompactUnicodeObject*)op;
+        void *data = (void*)(compact + 1);
+        if (ascii->wstr && ascii->wstr != data) {
+            PyObject_Free(ascii->wstr);
+            ascii->wstr = NULL;
+            compact->wstr_length = 0;
+        }
+        if (compact->utf8) {
             PyObject_Free(compact->utf8);
             compact->utf8 = NULL;
+            compact->utf8_length = 0;
         }
-    }
-    if (ascii->wstr && ascii->wstr != data) {
-        PyObject_Free(ascii->wstr);
-        ascii->wstr = NULL;
     }
 }
 
