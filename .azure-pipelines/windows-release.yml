@@ -50,6 +50,10 @@ parameters:
   displayName: "Run PGO"
   type: boolean
   default: true
+- name: DoCHM
+  displayName: "Produce compiled help document"
+  type: boolean
+  default: false
 - name: DoLayout
   displayName: "Produce full layout artifact"
   type: boolean
@@ -86,6 +90,7 @@ variables:
   ${{ if ne(parameters.SigningCertificate, 'Unsigned') }}:
     SigningCertificate: ${{ parameters.SigningCertificate }}
   SigningDescription: ${{ parameters.SigningDescription }}
+  DoCHM: ${{ parameters.DoCHM }}
   DoLayout: ${{ parameters.DoLayout }}
   DoMSIX: ${{ parameters.DoMSIX }}
   DoNuget: ${{ parameters.DoNuget }}
