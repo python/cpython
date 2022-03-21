@@ -3249,7 +3249,12 @@ dec_format(PyObject *dec, PyObject *args)
             }
             fmt_copy[0] = '_';
         }
-        char *z_start = strchr(fmt, 'z');
+        /* Strip 'z' option, which isn't understood by mpd_parse_fmt_str().
+         * First, skip [[fill]align], since 'fill' itself may be 'z'.
+         * NOTE: fmt is always null terminated by PyUnicode_AsUTF8AndSize() */
+        char *fmt_offset = size >= 2 && strchr("<>=^", fmt[1]) != NULL ?
+                           fmt + 2 : fmt;
+        char *z_start = strchr(fmt_offset, 'z');
         if (z_start != NULL) {
             no_neg_0 = 1;
             size_t z_index = z_start - fmt;
@@ -3259,6 +3264,8 @@ dec_format(PyObject *dec, PyObject *args)
                     return NULL;
                 }
             }
+            /* Shift characters (including null terminator) left,
+               overwriting the 'z' option. */
             memmove(fmt_copy + z_index, fmt_copy + z_index + 1, size - z_index);
             size -= 1;
         }
