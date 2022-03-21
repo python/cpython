@@ -1,0 +1,1 @@
+Correct the implementation of :attr:`Integral.denominator`.

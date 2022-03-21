@@ -388,6 +388,6 @@ class Integral(Rational):
     @property
     def denominator(self):
         """Integers have a denominator of 1."""
-        return 1
+        return type(self)(1)
 
 Integral.register(int)
