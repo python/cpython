@@ -37,7 +37,7 @@ struct _Py_list_state {
 
 #define _PyList_ITEMS(op) (_PyList_CAST(op)->ob_item)
 
-PyAPI_FUNC(int)
+extern int
 _PyList_AppendTakeRefListResize(PyListObject *self, PyObject *newitem);
 
 static inline int
