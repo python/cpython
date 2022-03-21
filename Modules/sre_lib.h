@@ -500,6 +500,8 @@ do { \
     DO_JUMPX(jumpvalue, jumplabel, nextpattern, 0)
 
 typedef struct {
+    Py_ssize_t last_ctx_pos;
+    Py_ssize_t jump;
     const SRE_CHAR* ptr;
     const SRE_CODE* pattern;
     Py_ssize_t count;
@@ -509,9 +511,7 @@ typedef struct {
         SRE_CODE chr;
         SRE_REPEAT* rep;
     } u;
-    Py_ssize_t last_ctx_pos;
-    int8_t jump;
-    int8_t toplevel;
+    int toplevel;
 } SRE(match_context);
 
 /* check if string matches the given pattern.  returns <0 for
@@ -522,8 +522,8 @@ SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
     const SRE_CHAR* end = (const SRE_CHAR *)state->end;
     Py_ssize_t alloc_pos, ctx_pos = -1;
     Py_ssize_t i, ret = 0;
+    Py_ssize_t jump;
     unsigned int sigcount=0;
-    int8_t jump;
 
     SRE(match_context)* ctx;
     SRE(match_context)* nextctx;
