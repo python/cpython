@@ -415,7 +415,7 @@ Barrier
         this task exits the barrier which stays in the same state.
         If the state of the barrier is "filling", the number of waiting task decreases by 1.
 
-      The return value is an integer in the range 0 to *parties-1*, different
+      The return value is an integer in the range of 0 to ``parties-1``, different
       for each task. This can be used to select a task to do some special
       housekeeping, e.g.::
 
