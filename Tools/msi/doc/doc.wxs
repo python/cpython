@@ -12,9 +12,9 @@
             <ComponentGroupRef Id="doc_html" Primary="yes" />
             <ComponentRef Id="OptionalFeature" />
 
-            <Component Id="doc_reg">
+            <Component Id="doc_reg" Directory="Doc" Guid="*">
                 <RegistryKey Root="HKMU" Key="[REGISTRYKEY]">                                                 
-                    <RegistryValue Key="Help\Main Python Documentation" Type="string" Value="[#Doc_html_index.html]" />
+                    <RegistryValue Key="Help\Main Python Documentation" Type="string" Value="[#Doc_html_index.html]" KeyPath="yes" />
                 </RegistryKey>                                                                                
             </Component>
         </Feature>
