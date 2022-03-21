@@ -16070,6 +16070,52 @@ _PyUnicode_Fini(PyInterpreterState *interp)
     _PyUnicode_FiniEncodings(&state->fs_codec);
 
     unicode_clear_identifiers(state);
+
+    // Clear the single character singletons
+    for (int i = 0; i < 128; i++) {
+        PyASCIIObject *ascii = (PyASCIIObject *)& _Py_SINGLETON(strings).ascii[i];
+        if (ascii->wstr != NULL) {
+            PyObject_FREE(ascii->wstr);
+            ascii->wstr = NULL;
+        }
+    }
+    for (int i = 0; i < 128; i++) {
+        PyASCIIObject *ascii = (PyASCIIObject *)&_Py_SINGLETON(strings).latin1[i];
+        PyCompactUnicodeObject *compact = (PyCompactUnicodeObject *)ascii;
+        if (ascii->wstr != NULL) {
+            PyObject_FREE(ascii->wstr);
+            ascii->wstr = NULL;
+        }
+        if (compact->utf8 != NULL) {
+            PyObject_Free(compact->utf8);
+            compact->utf8 = NULL;
+        }
+    }
+}
+
+
+void
+_PyStaticUnicode_Dealloc(PyObject *op)
+{
+    PyASCIIObject *ascii = (PyASCIIObject*)op;
+    void* data;
+    return;
+    assert(ascii->state.compact);
+
+    if (ascii->state.ascii) {
+        data = (void*)(ascii + 1);
+    } else {
+        PyCompactUnicodeObject* compact = (PyCompactUnicodeObject*)op;
+        data = (void*)(compact + 1);
+        if (compact->utf8 && compact->utf8 != data) {
+            PyObject_Free(compact->utf8);
+            compact->utf8 = NULL;
+        }
+    }
+    if (ascii->wstr && ascii->wstr != data) {
+        PyObject_Free(ascii->wstr);
+        ascii->wstr = NULL;
+    }
 }
 
 

@@ -185,6 +185,7 @@ class Printer:
                 else:
                     self.write("PyCompactUnicodeObject _compact;")
                 self.write(f"{datatype} _data[{len(s)+1}];")
+        self.deallocs.append(f"_PyStaticUnicode_Dealloc((PyObject *)&{name});")
         with self.block(f"{name} =", ";"):
             if ascii:
                 with self.block("._ascii =", ","):
