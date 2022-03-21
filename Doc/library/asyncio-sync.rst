@@ -408,7 +408,7 @@ Barrier
 
       When a task in the barrier is cancelled, two cases are possible:
 
-      * the task is the last waiting task, an :class:`BrokenBarrierError`
+      * if the task is the last waiting task, a :class:`BrokenBarrierError`
         exception is raised. The barrier is put into a broken state;
 
       * if the task is waiting (filling state) or blocked (draining state),
