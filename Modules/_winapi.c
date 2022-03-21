@@ -1526,28 +1526,15 @@ _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
                            LPCWSTR src)
 /*[clinic end generated code: output=cf4713d80e2b47c9 input=9fe26f95d5ab0001]*/
 {
-    if (flags & LCMAP_SORTHANDLE) {
-        PyErr_SetString(PyExc_ValueError, "LCMAP_SORTHANDLE is not supported");
-        return NULL;
-    }
-    if (flags & LCMAP_HASH) {
-        PyErr_SetString(PyExc_ValueError, "LCMAP_HASH is not supported");
-        return NULL;
-    }
-    if (flags & LCMAP_BYTEREV) {
-        PyErr_SetString(PyExc_ValueError, "LCMAP_BYTEREV is not supported");
-        return NULL;
-    }
-    if (flags & LCMAP_SORTKEY) {
-        PyErr_SetString(PyExc_ValueError, "LCMAP_SORTKEY is not supported");
-        return NULL;
+    if (flags & (LCMAP_SORTHANDLE | LCMAP_HASH | LCMAP_BYTEREV |
+                 LCMAP_SORTKEY)) {
+        return PyErr_Format(PyExc_ValueError, "unsupported flags");
     }
 
     int dest_size = LCMapStringEx(locale, flags, src, wcslen(src), NULL, 0,
                                   NULL, NULL, 0);
     if (dest_size == 0) {
-        PyErr_SetFromWindowsErr(0);
-        return NULL;
+        return PyErr_SetFromWindowsErr(0);
     }
 
     wchar_t* dest = PyMem_NEW(wchar_t, dest_size);
@@ -1558,9 +1545,9 @@ _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
     int nmapped = LCMapStringEx(locale, flags, src, wcslen(src), dest, dest_size,
                                 NULL, NULL, 0);
     if (nmapped == 0) {
-        PyErr_SetFromWindowsErr(0);
+        DWORD error = GetLastError();
         PyMem_DEL(dest);
-        return NULL;
+        return PyErr_SetFromWindowsErr(error);
     }
 
     PyObject *ret = PyUnicode_FromWideChar(dest, dest_size);

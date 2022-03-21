@@ -1,3 +1,1 @@
-Using Windows function `LCMapStringEx` in `ntpath.normcase` instead of `str.lower` to deal with non ASCII characters.
-
-The `LCMapStringEx` is added in `_winapi` module also.
+Using Windows function `LCMapStringEx` in `ntpath.normcase` instead of `str.lower` to deal with non ASCII characters. The `LCMapStringEx` is added in `_winapi` module also.
