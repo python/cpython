@@ -349,19 +349,17 @@ _PyGen_yf(PyGenObject *gen)
 
     if (gen->gi_frame_valid) {
         _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
-        PyObject *bytecode = gen->gi_code->co_code;
-        unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
 
         if (frame->f_lasti < 1) {
             /* Return immediately if the frame didn't start yet. SEND
                always come after LOAD_CONST: a code object should not start
                with SEND */
-            assert(code[0] != SEND);
+            assert(_Py_OPCODE(_PyCode_CODE(gen->gi_code)[0]) != SEND);
             return NULL;
         }
-        int opcode = code[(frame->f_lasti+1)*sizeof(_Py_CODEUNIT)];
-        int oparg = code[(frame->f_lasti+1)*sizeof(_Py_CODEUNIT)+1];
-        if (opcode != RESUME || oparg < 2) {
+        _Py_CODEUNIT next = _PyCode_CODE(gen->gi_code)[frame->f_lasti + 1];
+        if (_PyOpcode_Deopt[_Py_OPCODE(next)] != RESUME || _Py_OPARG(next) < 2)
+        {
             /* Not in a yield from */
             return NULL;
         }
@@ -485,14 +483,15 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             ret = _PyFrame_StackPop((_PyInterpreterFrame *)gen->gi_iframe);
             assert(ret == yf);
             Py_DECREF(ret);
+            // XXX: Performing this jump ourselves is awkward and problematic.
+            // See https://github.com/python/cpython/pull/31968.
             /* Termination repetition of SEND loop */
             assert(frame->f_lasti >= 0);
-            PyObject *bytecode = gen->gi_code->co_code;
-            unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
+            _Py_CODEUNIT *code = _PyCode_CODE(gen->gi_code);
             /* Backup to SEND */
             frame->f_lasti--;
-            assert(code[frame->f_lasti*sizeof(_Py_CODEUNIT)] == SEND);
-            int jump = code[frame->f_lasti*sizeof(_Py_CODEUNIT)+1];
+            assert(_Py_OPCODE(code[frame->f_lasti]) == SEND);
+            int jump = _Py_OPARG(code[frame->f_lasti]);
             frame->f_lasti += jump;
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);
