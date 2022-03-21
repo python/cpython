@@ -8,7 +8,7 @@
 # regression test, the filterwarnings() call has been added to
 # regrtest.py.
 
-from test.test_support import run_unittest, check_syntax_error
+from test.test_support import check_syntax_error
 import unittest
 import sys
 # testing import *
@@ -967,8 +967,5 @@ hello world
         self.assertEqual((6 < 4 if 0 else 2), 2)
 
 
-def test_main():
-    run_unittest(TokenTests, GrammarTests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

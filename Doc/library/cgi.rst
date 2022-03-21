@@ -21,6 +21,11 @@ Support module for Common Gateway Interface (CGI) scripts.
 This module defines a number of utilities for use by CGI scripts written in
 Python.
 
+The global variable ``maxlen`` can be set to an integer indicating the maximum
+size of a POST request. POST requests larger than this size will result in a
+:exc:`ValueError` being raised during parsing. The default value of this
+variable is ``0``, meaning the request size is unlimited.
+
 
 Introduction
 ------------
@@ -89,7 +94,7 @@ To get at submitted form data, use the :class:`FieldStorage` class. If the form
 contains non-ASCII characters, use the *encoding* keyword parameter set to the
 value of the encoding defined for the document. It is usually contained in the
 META tag in the HEAD section of the HTML document or by the
-:mailheader:`Content-Type` header).  This reads the form contents from the
+:mailheader:`Content-Type` header.  This reads the form contents from the
 standard input or the environment (depending on the value of various
 environment variables set according to the CGI standard).  Since it may consume
 standard input, it should be instantiated only once.

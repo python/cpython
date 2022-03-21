@@ -2,26 +2,15 @@
 
 import unittest
 import tkinter
-from tkinter.test.support import (AbstractTkTest, tcl_version, requires_tcl,
-                                  get_tk_patchlevel, pixels_conv, tcl_obj_eq)
+from tkinter.test.support import (AbstractTkTest, tcl_version,
+                                  pixels_conv, tcl_obj_eq)
 import test.support
-
-
-noconv = False
-if get_tk_patchlevel() < (8, 5, 11):
-    noconv = str
-
-pixels_round = round
-if get_tk_patchlevel()[:3] == (8, 5, 11):
-    # Issue #19085: Workaround a bug in Tk
-    # http://core.tcl.tk/tk/info/3497848
-    pixels_round = int
 
 
 _sentinel = object()
 
 class AbstractWidgetTest(AbstractTkTest):
-    _conv_pixels = staticmethod(pixels_round)
+    _conv_pixels = round
     _conv_pad_pixels = None
     _stringify = False
 
@@ -65,8 +54,7 @@ class AbstractWidgetTest(AbstractTkTest):
         self.assertEqual(len(t), 5)
         self.assertEqual2(t[4], expected, eq=eq)
 
-    def checkInvalidParam(self, widget, name, value, errmsg=None, *,
-                          keep_orig=True):
+    def checkInvalidParam(self, widget, name, value, errmsg=None):
         orig = widget[name]
         if errmsg is not None:
             errmsg = errmsg.format(value)
@@ -74,18 +62,12 @@ class AbstractWidgetTest(AbstractTkTest):
             widget[name] = value
         if errmsg is not None:
             self.assertEqual(str(cm.exception), errmsg)
-        if keep_orig:
-            self.assertEqual(widget[name], orig)
-        else:
-            widget[name] = orig
+        self.assertEqual(widget[name], orig)
         with self.assertRaises(tkinter.TclError) as cm:
             widget.configure({name: value})
         if errmsg is not None:
             self.assertEqual(str(cm.exception), errmsg)
-        if keep_orig:
-            self.assertEqual(widget[name], orig)
-        else:
-            widget[name] = orig
+        self.assertEqual(widget[name], orig)
 
     def checkParams(self, widget, name, *values, **kwargs):
         for value in values:
@@ -128,8 +110,7 @@ class AbstractWidgetTest(AbstractTkTest):
 
     def checkCursorParam(self, widget, name, **kwargs):
         self.checkParams(widget, name, 'arrow', 'watch', 'cross', '',**kwargs)
-        if tcl_version >= (8, 5):
-            self.checkParam(widget, name, 'none')
+        self.checkParam(widget, name, 'none')
         self.checkInvalidParam(widget, name, 'spam',
                 errmsg='bad cursor spec "spam"')
 
@@ -154,7 +135,7 @@ class AbstractWidgetTest(AbstractTkTest):
         self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
     def checkPixelsParam(self, widget, name, *values,
-                         conv=None, keep_orig=True, **kwargs):
+                         conv=None, **kwargs):
         if conv is None:
             conv = self._conv_pixels
         for value in values:
@@ -167,9 +148,9 @@ class AbstractWidgetTest(AbstractTkTest):
             self.checkParam(widget, name, value, expected=expected,
                             conv=conv1, **kwargs)
         self.checkInvalidParam(widget, name, '6x',
-                errmsg='bad screen distance "6x"', keep_orig=keep_orig)
+                errmsg='bad screen distance "6x"')
         self.checkInvalidParam(widget, name, 'spam',
-                errmsg='bad screen distance "spam"', keep_orig=keep_orig)
+                errmsg='bad screen distance "spam"')
 
     def checkReliefParam(self, widget, name):
         self.checkParams(widget, name,
@@ -475,12 +456,10 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkImageParam(widget, 'selectimage')
 
-    @requires_tcl(8, 5)
     def test_configure_tristateimage(self):
         widget = self.create()
         self.checkImageParam(widget, 'tristateimage')
 
-    @requires_tcl(8, 5)
     def test_configure_tristatevalue(self):
         widget = self.create()
         self.checkParam(widget, 'tristatevalue', 'unknowable')

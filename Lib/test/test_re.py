@@ -1,6 +1,6 @@
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
-                          check_disallow_instantiation)
+                          check_disallow_instantiation, is_emscripten)
 import locale
 import re
 import sre_compile
@@ -1439,63 +1439,22 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match('(?x) (?i) ' + upper_char, lower_char))
         self.assertTrue(re.match(' (?x) (?i) ' + upper_char, lower_char, re.X))
 
-        p = upper_char + '(?i)'
-        with self.assertWarns(DeprecationWarning) as warns:
-            self.assertTrue(re.match(p, lower_char))
-        self.assertEqual(
-            str(warns.warnings[0].message),
-            'Flags not at the start of the expression %r' % p
-        )
-        self.assertEqual(warns.warnings[0].filename, __file__)
-
-        p = upper_char + '(?i)%s' % ('.?' * 100)
-        with self.assertWarns(DeprecationWarning) as warns:
-            self.assertTrue(re.match(p, lower_char))
-        self.assertEqual(
-            str(warns.warnings[0].message),
-            'Flags not at the start of the expression %r (truncated)' % p[:20]
-        )
-        self.assertEqual(warns.warnings[0].filename, __file__)
+        msg = "global flags not at the start of the expression"
+        self.checkPatternError(upper_char + '(?i)', msg, 1)
 
         # bpo-30605: Compiling a bytes instance regex was throwing a BytesWarning
         with warnings.catch_warnings():
             warnings.simplefilter('error', BytesWarning)
-            p = b'A(?i)'
-            with self.assertWarns(DeprecationWarning) as warns:
-                self.assertTrue(re.match(p, b'a'))
-            self.assertEqual(
-                str(warns.warnings[0].message),
-                'Flags not at the start of the expression %r' % p
-            )
-            self.assertEqual(warns.warnings[0].filename, __file__)
+            self.checkPatternError(b'A(?i)', msg, 1)
 
-        with self.assertWarns(DeprecationWarning):
-            self.assertTrue(re.match('(?s).(?i)' + upper_char, '\n' + lower_char))
-        with self.assertWarns(DeprecationWarning):
-            self.assertTrue(re.match('(?i) ' + upper_char + ' (?x)', lower_char))
-        with self.assertWarns(DeprecationWarning):
-            self.assertTrue(re.match(' (?x) (?i) ' + upper_char, lower_char))
-        with self.assertWarns(DeprecationWarning):
-            self.assertTrue(re.match('^(?i)' + upper_char, lower_char))
-        with self.assertWarns(DeprecationWarning):
-            self.assertTrue(re.match('$|(?i)' + upper_char, lower_char))
-        with self.assertWarns(DeprecationWarning) as warns:
-            self.assertTrue(re.match('(?:(?i)' + upper_char + ')', lower_char))
-        self.assertRegex(str(warns.warnings[0].message),
-                         'Flags not at the start')
-        self.assertEqual(warns.warnings[0].filename, __file__)
-        with self.assertWarns(DeprecationWarning) as warns:
-            self.assertTrue(re.fullmatch('(^)?(?(1)(?i)' + upper_char + ')',
-                                         lower_char))
-        self.assertRegex(str(warns.warnings[0].message),
-                         'Flags not at the start')
-        self.assertEqual(warns.warnings[0].filename, __file__)
-        with self.assertWarns(DeprecationWarning) as warns:
-            self.assertTrue(re.fullmatch('($)?(?(1)|(?i)' + upper_char + ')',
-                                         lower_char))
-        self.assertRegex(str(warns.warnings[0].message),
-                         'Flags not at the start')
-        self.assertEqual(warns.warnings[0].filename, __file__)
+        self.checkPatternError('(?s).(?i)' + upper_char, msg, 5)
+        self.checkPatternError('(?i) ' + upper_char + ' (?x)', msg, 7)
+        self.checkPatternError(' (?x) (?i) ' + upper_char, msg, 1)
+        self.checkPatternError('^(?i)' + upper_char, msg, 1)
+        self.checkPatternError('$|(?i)' + upper_char, msg, 2)
+        self.checkPatternError('(?:(?i)' + upper_char + ')', msg, 3)
+        self.checkPatternError('(^)?(?(1)(?i)' + upper_char + ')', msg, 9)
+        self.checkPatternError('($)?(?(1)|(?i)' + upper_char + ')', msg, 10)
 
 
     def test_dollar_matches_twice(self):
@@ -1892,6 +1851,7 @@ ELSE
         # with ignore case.
         self.assertEqual(re.fullmatch('[a-c]+', 'ABC', re.I).span(), (0, 3))
 
+    @unittest.skipIf(is_emscripten, "musl libc issue on Emscripten, bpo-46390")
     def test_locale_caching(self):
         # Issue #22410
         oldlocale = locale.setlocale(locale.LC_CTYPE)
@@ -1928,6 +1888,7 @@ ELSE
         self.assertIsNone(re.match(b'(?Li)\xc5', b'\xe5'))
         self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
 
+    @unittest.skipIf(is_emscripten, "musl libc issue on Emscripten, bpo-46390")
     def test_locale_compiled(self):
         oldlocale = locale.setlocale(locale.LC_CTYPE)
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)

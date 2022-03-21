@@ -197,10 +197,14 @@ created.  Socket addresses are represented as follows:
   - *addr* - Optional bytes-like object specifying the hardware physical
     address, whose interpretation depends on the device.
 
+   .. availability:: Linux >= 2.2.
+
 - :const:`AF_QIPCRTR` is a Linux-only socket based interface for communicating
   with services running on co-processors in Qualcomm platforms. The address
   family is represented as a ``(node, port)`` tuple where the *node* and *port*
   are non-negative integers.
+
+   .. availability:: Linux >= 4.7.
 
   .. versionadded:: 3.8
 
@@ -392,9 +396,12 @@ Constants
    Many constants of these forms, documented in the Linux documentation, are
    also defined in the socket module.
 
-   .. availability:: Linux >= 2.6.25.
+   .. availability:: Linux >= 2.6.25, NetBSD >= 8.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.11
+      NetBSD support was added.
 
 .. data:: CAN_BCM
           CAN_BCM_*
@@ -516,7 +523,7 @@ Constants
 
 .. data:: AF_LINK
 
-  .. availability:: BSD, OSX.
+  .. availability:: BSD, macOS.
 
   .. versionadded:: 3.4
 
@@ -549,6 +556,21 @@ Constants
 
    .. availability:: Linux >= 4.7.
 
+.. data:: SCM_CREDS2
+          LOCAL_CREDS
+          LOCAL_CREDS_PERSISTENT
+
+   LOCAL_CREDS and LOCAL_CREDS_PERSISTENT can be used
+   with SOCK_DGRAM, SOCK_STREAM sockets, equivalent to
+   Linux/DragonFlyBSD SO_PASSCRED, while LOCAL_CREDS
+   sends the credentials at first read, LOCAL_CREDS_PERSISTENT
+   sends for each read, SCM_CREDS2 must be then used for
+   the latter for the message type.
+
+   .. versionadded:: 3.11
+
+   .. availability:: FreeBSD.
+
 Functions
 ^^^^^^^^^
 
@@ -558,7 +580,7 @@ Creating sockets
 The following functions all create :ref:`socket objects <socket-objects>`.
 
 
-.. function:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
+.. class:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
 
    Create a new socket using the given address family, socket type and protocol
    number.  The address family should be :const:`AF_INET` (the default),
@@ -827,8 +849,8 @@ The :mod:`socket` module also offers various network-related services:
 .. function:: gethostbyname_ex(hostname)
 
    Translate a host name to IPv4 address format, extended interface. Return a
-   triple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the primary
-   host name responding to the given *ip_address*, *aliaslist* is a (possibly
+   triple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the host's
+   primary host name, *aliaslist* is a (possibly
    empty) list of alternative host names for the same address, and *ipaddrlist* is
    a list of IPv4 addresses for the same interface on the same host (often but not
    always a single address). :func:`gethostbyname_ex` does not support IPv6 name

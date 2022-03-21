@@ -246,9 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1k",
-              url="https://www.openssl.org/source/openssl-1.1.1k.tar.gz",
-              checksum='c4e7d95f782b08116afa27b30393dd27',
+              name="OpenSSL 1.1.1n",
+              url="https://www.openssl.org/source/openssl-1.1.1n.tar.gz",
+              checksum='2aad5635f9bb338bc2c6b7d19cbc9676',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -264,10 +264,10 @@ def library_recipes():
             tk_patches = ['tk868_on_10_8_10_9.patch']
 
         else:
-            tcl_tk_ver='8.6.11'
-            tcl_checksum='8a4c004f48984a03a7747e9ba06e4da4'
+            tcl_tk_ver='8.6.12'
+            tcl_checksum='87ea890821d2221f2ab5157bc5eb885f'
 
-            tk_checksum='c7ee71a2d05bba78dfffd76528dc17c6'
+            tk_checksum='1d6dcf6120356e3d211e056dff5e462a'
             tk_patches = [ ]
 
 
@@ -358,9 +358,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.35.5",
-              url="https://sqlite.org/2021/sqlite-autoconf-3350500.tar.gz",
-              checksum='d1d1aba394c8e0443077dc9f1a681bb8',
+              name="SQLite 3.38.1",
+              url="https://sqlite.org/2022/sqlite-autoconf-3380100.tar.gz",
+              checksum="5af57892dc0993af596bef56931db23f",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -453,7 +453,7 @@ def pkg_recipes():
             source="/pydocs",
             readme="""\
                 This package installs the python documentation at a location
-                that is useable for pydoc and IDLE.
+                that is usable for pydoc and IDLE.
                 """,
             postflight="scripts/postflight.documentation",
             required=False,
@@ -728,6 +728,10 @@ def extractArchive(builddir, archiveName):
             if ((retval.startswith('tcl') or retval.startswith('tk'))
                     and retval.endswith('-src')):
                 retval = retval[:-4]
+                # Strip rcxx suffix from Tcl/Tk release candidates
+                retval_rc = retval.find('rc')
+                if retval_rc > 0:
+                    retval = retval[:retval_rc]
             if os.path.exists(retval):
                 shutil.rmtree(retval)
             fp = os.popen("tar zxf %s 2>&1"%(shellQuote(archiveName),), 'r')
@@ -1601,7 +1605,7 @@ def buildDMG():
     # instead of 11.  We should not run into that situation here.)
     # Also we should use "macos" instead of "macosx" going forward.
     #
-    # To maintain compability for legacy variants, the file name for
+    # To maintain compatibility for legacy variants, the file name for
     # builds on macOS 10.15 and earlier remains:
     #   python-3.x.y-macosx10.z.{dmg->pkg}
     #   e.g. python-3.9.4-macosx10.9.{dmg->pkg}

@@ -299,6 +299,9 @@ The special characters are:
    :func:`re.compile` function.  Flags should be used first in the
    expression string.
 
+   .. versionchanged:: 3.11
+      This construction can only be used at the start of the expression.
+
 .. index:: single: (?:; in regular expressions
 
 ``(?:...)``
@@ -637,6 +640,11 @@ form.
       programs that use only a few regular expressions at a time needn't worry
       about compiling regular expressions.
 
+.. class:: RegexFlag
+
+   An :class:`enum.IntFlag` class containing the regex options listed below.
+
+   .. versionadded:: 3.11 - added to ``__all__``
 
 .. data:: A
           ASCII
@@ -710,6 +718,17 @@ form.
    string and immediately before the newline (if any) at the end of the string.
    Corresponds to the inline flag ``(?m)``.
 
+.. data:: NOFLAG
+
+   Indicates no flag being applied, the value is ``0``.  This flag may be used
+   as a default value for a function keyword argument or as a base value that
+   will be conditionally ORed with other flags.  Example of use as a default
+   value::
+
+      def myfunc(text, flag=re.NOFLAG):
+          return re.match(text, flag)
+
+   .. versionadded:: 3.11
 
 .. data:: S
           DOTALL
@@ -1572,7 +1591,7 @@ find all of the adverbs in some text, they might use :func:`findall` in
 the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
-   >>> re.findall(r"\w+ly", text)
+   >>> re.findall(r"\w+ly\b", text)
    ['carefully', 'quickly']
 
 
@@ -1586,7 +1605,7 @@ a writer wanted to find all of the adverbs *and their positions* in
 some text, they would use :func:`finditer` in the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
-   >>> for m in re.finditer(r"\w+ly", text):
+   >>> for m in re.finditer(r"\w+ly\b", text):
    ...     print('%02d-%02d: %s' % (m.start(), m.end(), m.group(0)))
    07-16: carefully
    40-47: quickly

@@ -72,8 +72,9 @@ test runner
    a GUI tool for test discovery and execution.  This is intended largely for ease of use
    for those new to unit testing.  For production environments it is
    recommended that tests be driven by a continuous integration system such as
-   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_
-   or `Travis-CI <https://travis-ci.com>`_, or `AppVeyor <https://www.appveyor.com/>`_.
+   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_,
+   `GitHub Actions <https://github.com/features/actions>`_, or
+   `AppVeyor <https://www.appveyor.com/>`_.
 
 
 .. _unittest-minimal-example:
@@ -227,7 +228,7 @@ Command-line options
 
    Only run test methods and classes that match the pattern or substring.
    This option may be used multiple times, in which case all test cases that
-   match of the given patterns are included.
+   match any of the given patterns are included.
 
    Patterns that contain a wildcard character (``*``) are matched against the
    test name using :meth:`fnmatch.fnmatchcase`; otherwise simple case-sensitive
@@ -265,8 +266,7 @@ Test Discovery
 
 Unittest supports simple test discovery. In order to be compatible with test
 discovery, all of the test files must be :ref:`modules <tut-modules>` or
-:ref:`packages <tut-packages>` (including :term:`namespace packages
-<namespace package>`) importable from the top-level directory of
+:ref:`packages <tut-packages>` importable from the top-level directory of
 the project (this means that their filenames must be valid :ref:`identifiers
 <identifiers>`).
 
@@ -338,6 +338,24 @@ the `load_tests protocol`_.
    for the start directory. Note that you need to specify the top level
    directory too (e.g.
    ``python -m unittest discover -s root/namespace -t root``).
+
+.. versionchanged:: 3.11
+   Python 3.11 dropped the :term:`namespace packages <namespace package>`
+   support. It has been broken since Python 3.7. Start directory and
+   subdirectories containing tests must be regular package that have
+   ``__init__.py`` file.
+
+   Directories containing start directory still can be a namespace package.
+   In this case, you need to specify start directory as dotted package name,
+   and target directory explicitly. For example::
+
+      # proj/  <-- current directory
+      #   namespace/
+      #     mypkg/
+      #       __init__.py
+      #       test_mypkg.py
+
+      python -m unittest discover -s namespace.mypkg -t .
 
 
 .. _organizing-tests:
@@ -1892,6 +1910,10 @@ Loading and running tests
          Found packages are now checked for ``load_tests`` regardless of
          whether their path matches *pattern*, because it is impossible for
          a package name to match the default pattern.
+
+      .. versionchanged:: 3.11
+         *start_dir* can not be a :term:`namespace packages <namespace package>`.
+         It has been broken since Python 3.7 and Python 3.11 officially remove it.
 
 
    The following attributes of a :class:`TestLoader` can be configured either by
