@@ -411,7 +411,7 @@ Barrier
       * the task is the last waiting task, an :class:`BrokenBarrierError`
         exception occurs, barrier is put into a broken state;
 
-      * the task is waiting (filling state) or blocked (draining state),
+      * if the task is waiting (filling state) or blocked (draining state),
         this task exits the barrier which stays in the same state.
         If the state is filling, count of waiting task decreases by 1.
 
