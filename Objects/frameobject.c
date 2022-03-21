@@ -429,9 +429,9 @@ _PyFrame_GetState(PyFrameObject *frame)
             if (frame->f_frame->f_lasti < 0) {
                 return FRAME_CREATED;
             }
-            int opcode = PyBytes_AS_STRING(frame->f_frame->f_code->co_code)
-                [frame->f_frame->f_lasti*sizeof(_Py_CODEUNIT)];
-            switch(opcode) {
+            char *code = frame->f_frame->f_code->co_code_adaptive;
+            int opcode = code[frame->f_frame->f_lasti*sizeof(_Py_CODEUNIT)];
+            switch(_PyOpcode_Deopt[opcode]) {
                 case COPY_FREE_VARS:
                 case MAKE_CELL:
                 case RETURN_GENERATOR:
