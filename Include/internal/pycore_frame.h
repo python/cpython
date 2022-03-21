@@ -69,7 +69,7 @@ extern "C" {
  *   * "PyFrame_*" functions and other public C API functions that relate to
  *     frames accept full frame objects
  *   * "_PyFrame_*" functions and other private C API functions that relate to
- *     frames accept either full frame objecst or frame data structs. Check
+ *     frames accept either full frame objects or frame data structs. Check
  *     the specific function signatures for details.
  *
  * Function return types:
