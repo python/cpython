@@ -20,10 +20,35 @@ extern "C" {
  * over the previous approach of using full Python objects for both
  * introspection and code execution.
  *
+ * Struct names:
+ *
+ *   * PyFrameObject: the full Python frame object
+ *   * _Py_frame: the lightweight frame data struct
+ *     * _PyInterpreterFrame is an interim alias for this (see comment below)
+ *   * _PyCFrame: a struct that lives on the C stack and allows Python level
+ *     recursive evaluation to be decoupled from recursive C level invocation
+ *     of the bytecode eval loop
+ *       * See pystate.h for more details on this struct
+ *
  * Field naming conventions:
  *
  *   * full frame object fields have an "f_*" prefix
- *   * frame data struct fields have no prefix
+ *   * new frame data struct fields have no prefix
+ *   * Several frame data struct fields have the "f_*" prefix as a result of
+ *     trying to keep diffs as small as was feasible when splitting the original
+ *     frame struct definition in two. The following are all frame data struct
+ *     fields, NOT full frame object fields:
+ *     * f_func
+ *     * f_globals
+ *     * f_builtins
+ *     * f_locals
+ *     * f_code
+ *     * f_lasti
+ *     * f_state
+ *   * Renaming those fields was considered but ultimately deemed too disruptive
+ *     to key third party projects that were trying to keep up with the Python
+ *     3.11 code evaluation changes during the alpha release cycle
+ *     (see bpo-44800 for details)
  *
  * Naming conventions for local variables, function parameters and fields in other structs:
  *
@@ -33,12 +58,11 @@ extern "C" {
  *     * full frame objects: "frame_obj" (and variants like "frameobj" or "fobj")
  *     * frame data structs: "fdata"
  *   * the "iframe" name is still used in the generator & coroutine structs. It
- *     comes from a period where frame data structs were called "interpreter frames"
+ *     comes from the period where frame data structs were called "interpreter frames"
  *     (which implied a larger distinction between full frame objects and their
  *     associated lightweight frame data structs than is actually the case).
- *   * "current frame" should NOT be abbreviated as "cframe", as the latter typically
- *     refers to the C stack frame data that is used to separate Python level recursion
- *     from C level recursive calls to the eval loop function
+ *   * "current frame" should NOT be abbreviated as "cframe", as the latter now
+ *     typically refers to _PyCFrame structs
  *
  * Function/macro parameter types:
  *
@@ -109,7 +133,6 @@ typedef struct _Py_frame {
     PyObject *localsplus[1];
 } _Py_frame;
 
-#if !defined(_PY_FRAME_API_DISABLE_INTERIM_COMPAT_3_11a6)
 /* Interim compatibility for the internal frame API as shipped in 3.11a6
  * Some projects (Cython, gevent, greenlet) are known to access the private
  * frame API in CPython. This API has already changed twice for 3.11 (first
@@ -119,25 +142,11 @@ typedef struct _Py_frame {
  * required frame operations is defined (as discussed in
  * https://github.com/faster-cpython/ideas/issues/309).
  *
- * This interim compatibility workaround enables the bpo-44800 struct and field
- * name changes for CPython maintainability without forcing yet another interim
- * code update on the affected projects. Since the workaround affects symbols
- * without the `Py` or `_Py` prefix, a preprocessor symbol can be declared to
- * disable the workaround: _PY_FRAME_API_DISABLE_INTERIM_COMPAT_3_11a6
+ * This interim compatibility workaround enables the bpo-44800 struct name
+ * change for CPython maintainability without forcing yet another interim
+ * code update on the affected projects.
  */
-// Renamed frame data struct and fields
 typedef _Py_frame _PyInterpreterFrame;
-#define f_func func
-#define f_globals globals
-#define f_builtins builtins
-#define f_locals locals
-#define f_code code
-#define f_lasti lasti
-#define f_state state
-// Renamed frame object fields
-#define f_frame f_fdata
-#define _f_frame_data _f_owned_fdata
-#endif // End internal frame API compatibilty workaround
 
 static inline int _PyFrame_IsRunnable(_Py_frame *f) {
     return f->f_state < FRAME_EXECUTING;
