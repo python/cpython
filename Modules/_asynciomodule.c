@@ -659,14 +659,12 @@ future_get_result(FutureObj *fut, PyObject **result)
 
     fut->fut_log_tb = 0;
     if (fut->fut_exception != NULL) {
-        if (fut->fut_exception_tb != NULL) {
-            if (PyException_SetTraceback(fut->fut_exception, fut->fut_exception_tb) < 0)
-            {
-                return -1;
-            }
+        PyObject *tb = fut->fut_exception_tb;
+        if (tb == NULL) {
+            tb = Py_None;
         }
-        else {
-            PyException_SetTraceback(fut->fut_exception, Py_None);
+        if (PyException_SetTraceback(fut->fut_exception, tb) < 0) {
+            return -1;
         }
         Py_INCREF(fut->fut_exception);
         *result = fut->fut_exception;
