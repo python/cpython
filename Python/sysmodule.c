@@ -1186,12 +1186,9 @@ static PyObject *
 sys_set_coroutine_origin_tracking_depth_impl(PyObject *module, int depth)
 /*[clinic end generated code: output=0a2123c1cc6759c5 input=a1d0a05f89d2c426]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (depth < 0) {
-        _PyErr_SetString(tstate, PyExc_ValueError, "depth must be >= 0");
+    if (_PyEval_SetCoroutineOriginTrackingDepth(depth) < 0) {
         return NULL;
     }
-    _PyEval_SetCoroutineOriginTrackingDepth(tstate, depth);
     Py_RETURN_NONE;
 }
 
