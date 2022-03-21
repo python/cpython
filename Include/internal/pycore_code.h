@@ -92,30 +92,22 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_STORE_SUBSCR CACHE_ENTRIES(_PyStoreSubscrCache)
 
-/* Maximum size of code to quicken, in code units. */
-#define MAX_SIZE_TO_QUICKEN 10000
-
 #define QUICKENING_WARMUP_DELAY 8
 
 /* We want to compare to zero for efficiency, so we offset values accordingly */
 #define QUICKENING_INITIAL_WARMUP_VALUE (-QUICKENING_WARMUP_DELAY)
-#define QUICKENING_WARMUP_COLDEST 1
 
-int _Py_Quicken(PyCodeObject *code);
+void _PyCode_Quicken(PyCodeObject *code);
 
-/* Returns 1 if quickening occurs.
- * -1 if an error occurs
- * 0 otherwise */
-static inline int
-_Py_IncrementCountAndMaybeQuicken(PyCodeObject *code)
+static inline void
+_PyCode_Warmup(PyCodeObject *code)
 {
     if (code->co_warmup != 0) {
         code->co_warmup++;
         if (code->co_warmup == 0) {
-            return _Py_Quicken(code) ? -1 : 1;
+            _PyCode_Quicken(code);
         }
     }
-    return 0;
 }
 
 extern Py_ssize_t _Py_QuickenedCount;
@@ -225,6 +217,7 @@ PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
 extern PyObject* _PyCode_GetVarnames(PyCodeObject *);
 extern PyObject* _PyCode_GetCellvars(PyCodeObject *);
 extern PyObject* _PyCode_GetFreevars(PyCodeObject *);
+extern PyObject* _PyCode_GetCode(PyCodeObject *);
 
 /* Return the ending source code line number from a bytecode index. */
 extern int _PyCode_Addr2EndLine(PyCodeObject *, int);
