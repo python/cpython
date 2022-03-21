@@ -43,7 +43,7 @@ parameters:
 # Eventually when we stop releasing anything that old, we can drop this
 # argument (and make it implicitly always 'true')
 - name: ARM64TclTk
-  displayName: "Use Tcl/Tk for ARM64"
+  displayName: "Use Tcl/Tk for ARM64 (pre-3.11)"
   type: boolean
   default: true
 - name: DoPGO
@@ -51,7 +51,7 @@ parameters:
   type: boolean
   default: true
 - name: DoCHM
-  displayName: "Produce compiled help document"
+  displayName: "Produce compiled help document (pre-3.11)"
   type: boolean
   default: false
 - name: DoLayout
