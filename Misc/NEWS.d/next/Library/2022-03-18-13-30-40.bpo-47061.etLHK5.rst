@@ -1,7 +1,5 @@
 Deprecate the various modules listed by :pep:`594`:
 
-- aifc - asynchat: https://bugs.python.org/issue47022 - asyncore:
-https://bugs.python.org/issue47022 - audioop - cgi - cgitb - chunk - crypt -
-imghdr - msilib - nntplib - nis - ossaudiodev - pipes - smtpd:
-https://bugs.python.org/issue47022 - sndhdr - spwd - sunau - telnetlib - uu
-- xdrlib
+aifc, asynchat, asyncore, audioop, cgi, cgitb, chunk, crypt,
+imghdr, msilib, nntplib, nis, ossaudiodev, pipes, smtpd,
+sndhdr, spwd, sunau, telnetlib, uu, xdrlib
