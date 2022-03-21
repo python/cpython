@@ -1665,8 +1665,9 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
                 self.fail(f"unexpected output: {out!a}")
             refs = int(match.group(1))
             blocks = int(match.group(2))
-            self.assertEqual(refs, 0, f"{xopt}, stmt='{stmt}' -> {out}")
-            self.assertEqual(blocks, 0, f"{xopt}, stmt='{stmt}' -> {out}")
+            with self.subTest(frozen_modules=flag, stmt=stmt):
+                self.assertEqual(refs, 0, out)
+                self.assertEqual(blocks, 0, out)
 
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
