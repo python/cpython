@@ -43,7 +43,7 @@ parameters:
 # Eventually when we stop releasing anything that old, we can drop this
 # argument (and make it implicitly always 'true')
 - name: ARM64TclTk
-  displayName: "Use Tcl/Tk for ARM64 (pre-3.11)"
+  displayName: "Use Tcl/Tk for ARM64 (3.11 and later)"
   type: boolean
   default: true
 - name: DoPGO
