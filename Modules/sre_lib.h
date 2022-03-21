@@ -995,7 +995,10 @@ entrance:
 
             /* Let the tail be evaluated separately and consider this
                match successful. */
-            if (*ctx->pattern == SRE_OP_SUCCESS) {
+            if (*ctx->pattern == SRE_OP_SUCCESS &&
+                ctx->ptr == state->end &&
+                !(ctx->toplevel && state->must_advance && ctx->ptr == state->start))
+            {
                 /* tail is empty.  we're finished */
                 state->ptr = ctx->ptr;
                 RETURN_SUCCESS;

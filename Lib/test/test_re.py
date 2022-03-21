@@ -2077,6 +2077,36 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match("^x{}+$", "xxx"))
         self.assertTrue(re.match("^x{}+$", "x{}"))
 
+    def test_fullmatch_possessive_qualifiers(self):
+        self.assertTrue(re.fullmatch(r'a++', 'a'))
+        self.assertTrue(re.fullmatch(r'a*+', 'a'))
+        self.assertTrue(re.fullmatch(r'a?+', 'a'))
+        self.assertTrue(re.fullmatch(r'a{1,3}+', 'a'))
+        self.assertIsNone(re.fullmatch(r'a++', 'ab'))
+        self.assertIsNone(re.fullmatch(r'a*+', 'ab'))
+        self.assertIsNone(re.fullmatch(r'a?+', 'ab'))
+        self.assertIsNone(re.fullmatch(r'a{1,3}+', 'ab'))
+
+        self.assertTrue(re.fullmatch(r'(?:ab)++', 'ab'))
+        self.assertTrue(re.fullmatch(r'(?:ab)*+', 'ab'))
+        self.assertTrue(re.fullmatch(r'(?:ab)?+', 'ab'))
+        self.assertTrue(re.fullmatch(r'(?:ab){1,3}+', 'ab'))
+        self.assertIsNone(re.fullmatch(r'(?:ab)++', 'abc'))
+        self.assertIsNone(re.fullmatch(r'(?:ab)*+', 'abc'))
+        self.assertIsNone(re.fullmatch(r'(?:ab)?+', 'abc'))
+        self.assertIsNone(re.fullmatch(r'(?:ab){1,3}+', 'abc'))
+
+    def test_findall_possessive_qualifiers(self):
+        self.assertEqual(re.findall(r'a++', 'aab'), ['aa'])
+        self.assertEqual(re.findall(r'a*+', 'aab'), ['aa', '', ''])
+        self.assertEqual(re.findall(r'a?+', 'aab'), ['a', 'a', '', ''])
+        self.assertEqual(re.findall(r'a{1,3}+', 'aab'), ['aa'])
+
+        self.assertEqual(re.findall(r'(?:ab)++', 'ababc'), ['abab'])
+        self.assertEqual(re.findall(r'(?:ab)*+', 'ababc'), ['abab', '', ''])
+        self.assertEqual(re.findall(r'(?:ab)?+', 'ababc'), ['ab', 'ab', '', ''])
+        self.assertEqual(re.findall(r'(?:ab){1,3}+', 'ababc'), ['abab'])
+
     def test_atomic_grouping(self):
         """Test Atomic Grouping
         Test non-capturing groups of the form (?>...), which does
@@ -2090,6 +2120,36 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(r'(?>x++)', 'xxx'))
         self.assertIsNone(re.match(r'(?>x)++x', 'xxx'))
         self.assertIsNone(re.match(r'(?>x++)x', 'xxx'))
+
+    def test_fullmatch_atomic_grouping(self):
+        self.assertTrue(re.fullmatch(r'(?>a+)', 'a'))
+        self.assertTrue(re.fullmatch(r'(?>a*)', 'a'))
+        self.assertTrue(re.fullmatch(r'(?>a?)', 'a'))
+        self.assertTrue(re.fullmatch(r'(?>a{1,3})', 'a'))
+        self.assertIsNone(re.fullmatch(r'(?>a+)', 'ab'))
+        self.assertIsNone(re.fullmatch(r'(?>a*)', 'ab'))
+        self.assertIsNone(re.fullmatch(r'(?>a?)', 'ab'))
+        self.assertIsNone(re.fullmatch(r'(?>a{1,3})', 'ab'))
+
+        self.assertTrue(re.fullmatch(r'(?>(?:ab)+)', 'ab'))
+        self.assertTrue(re.fullmatch(r'(?>(?:ab)*)', 'ab'))
+        self.assertTrue(re.fullmatch(r'(?>(?:ab)?)', 'ab'))
+        self.assertTrue(re.fullmatch(r'(?>(?:ab){1,3})', 'ab'))
+        self.assertIsNone(re.fullmatch(r'(?>(?:ab)+)', 'abc'))
+        self.assertIsNone(re.fullmatch(r'(?>(?:ab)*)', 'abc'))
+        self.assertIsNone(re.fullmatch(r'(?>(?:ab)?)', 'abc'))
+        self.assertIsNone(re.fullmatch(r'(?>(?:ab){1,3})', 'abc'))
+
+    def test_findall_atomic_grouping(self):
+        self.assertEqual(re.findall(r'(?>a+)', 'aab'), ['aa'])
+        self.assertEqual(re.findall(r'(?>a*)', 'aab'), ['aa', '', ''])
+        self.assertEqual(re.findall(r'(?>a?)', 'aab'), ['a', 'a', '', ''])
+        self.assertEqual(re.findall(r'(?>a{1,3})', 'aab'), ['aa'])
+
+        self.assertEqual(re.findall(r'(?>(?:ab)+)', 'ababc'), ['abab'])
+        self.assertEqual(re.findall(r'(?>(?:ab)*)', 'ababc'), ['abab', '', ''])
+        self.assertEqual(re.findall(r'(?>(?:ab)?)', 'ababc'), ['ab', 'ab', '', ''])
+        self.assertEqual(re.findall(r'(?>(?:ab){1,3})', 'ababc'), ['abab'])
 
 
 def get_debug_out(pat):
