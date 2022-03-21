@@ -391,8 +391,8 @@ Barrier
       barrier passed
       <asyncio.locks.Barrier object at 0x103e58bf0 [unlocked, state:0]>
 
-   As shown in this example, the :meth:`~Barrier.wait` method: can also be call with
-   :keyword:`async with` statement.
+   The example also demonstrates using `async with` as 
+   an alternative to awaiting on ``barrier.wait()``.
 
    The barrier can be reused any number of times for the same number of tasks.
 
