@@ -2072,6 +2072,79 @@ _PyTokenizer_Get(struct tok_state *tok,
     return result;
 }
 
+#if defined(__wasi__) || defined(__EMSCRIPTEN__)
+/* fdopen() with borrowed fd
+
+   WASI does not provide dup() and Emscripten's dup() emulation with open()
+   is slow. Implement fdopen() with fd borrowing on top of fdopencookie().
+ */
+typedef union {
+    void *cookie;
+    int fd;
+} borrowed;
+
+static ssize_t
+borrow_read(void *cookie, char *buf, size_t size)
+{
+    borrowed b;
+    b.cookie = cookie;
+    return read(b.fd, (void *)buf, size);
+}
+
+static ssize_t
+borrow_write(void *cookie, const char *buf, size_t size)
+{
+    errno = ENOTSUP;
+    return -1;
+}
+
+static int
+borrow_seek(void *cookie, off_t *off, int whence)
+{
+    borrowed b;
+    b.cookie = cookie;
+    off_t pos;
+    pos = lseek(b.fd, *off, whence);
+    if (pos == (off_t)-1) {
+        return -1;
+    } else {
+        *off = pos;
+        return 0;
+    }
+}
+
+static int
+borrow_close(void *cookie)
+{
+    // does not close(fd)
+    return 0;
+}
+
+static FILE *
+fdopen_borrow(int fd, const char *mode) {
+    // only reading is supported
+    if (strcmp(mode, "r") != 0) {
+        return NULL;
+    }
+    cookie_io_functions_t cookie_io = {
+        borrow_read, borrow_write, borrow_seek, borrow_close
+    };
+    // cookie is just the fd
+    borrowed b;
+    b.fd = fd;
+    return fopencookie(b.cookie, "r", cookie_io);
+}
+#else
+static FILE *
+fdopen_borrow(int fd, const char *mode) {
+    fd = _Py_dup(fd);
+    if (fd < 0) {
+        return NULL;
+    }
+    return fdopen(fd, mode);
+}
+#endif
+
 /* Get the encoding of a Python file. Check for the coding cookie and check if
    the file starts with a BOM.
 
@@ -2091,12 +2164,7 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
     const char *p_end = NULL;
     char *encoding = NULL;
 
-    fd = _Py_dup(fd);
-    if (fd < 0) {
-        return NULL;
-    }
-
-    fp = fdopen(fd, "r");
+    fp = fdopen_borrow(fd, "r");
     if (fp == NULL) {
         return NULL;
     }
