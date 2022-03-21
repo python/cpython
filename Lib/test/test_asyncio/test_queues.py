@@ -150,10 +150,10 @@ class QueueGetTests(unittest.IsolatedAsyncioTestCase):
             finished = True
             return res
 
-        loop.call_later(0.01, q.put_nowait, 1)
         queue_get_task = asyncio.create_task(queue_get())
         await started.wait()
         self.assertFalse(finished)
+        loop.call_later(0.01, q.put_nowait, 1)
         res = await queue_get_task
         self.assertTrue(finished)
         self.assertEqual(1, res)
@@ -166,17 +166,6 @@ class QueueGetTests(unittest.IsolatedAsyncioTestCase):
     def test_nonblocking_get_exception(self):
         q = asyncio.Queue()
         self.assertRaises(asyncio.QueueEmpty, q.get_nowait)
-
-    async def test_get_cancelled(self):
-        q = asyncio.Queue()
-
-        async def queue_get():
-            return await asyncio.wait_for(q.get(), 0.051)
-
-        get_task = asyncio.create_task(queue_get())
-        await asyncio.sleep(0.01)  # let the task start
-        q.put_nowait(1)
-        self.assertEqual(1, await get_task)
 
     async def test_get_cancelled_race(self):
         q = asyncio.Queue()
