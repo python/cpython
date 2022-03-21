@@ -8,7 +8,6 @@ PyAPI_FUNC(void) PyEval_SetProfile(Py_tracefunc, PyObject *);
 PyAPI_DATA(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
 PyAPI_FUNC(void) PyEval_SetTrace(Py_tracefunc, PyObject *);
 PyAPI_FUNC(int) _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
-PyAPI_FUNC(int) _PyEval_GetCoroutineOriginTrackingDepth(void);
 
 /* Helper to look up a builtin object */
 PyAPI_FUNC(PyObject *) _PyEval_GetBuiltin(PyObject *);
