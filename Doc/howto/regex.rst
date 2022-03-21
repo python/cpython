@@ -230,12 +230,12 @@ while ``+`` requires at least *one* occurrence.  To use a similar example,
 ``ca+t`` will match ``'cat'`` (1 ``'a'``), ``'caaat'`` (3 ``'a'``\ s), but won't
 match ``'ct'``.
 
-There are two more repeating quantifiers.  The question mark character, ``?``,
+There are two more repeating operators or quantifiers.  The question mark character, ``?``,
 matches either once or zero times; you can think of it as marking something as
 being optional.  For example, ``home-?brew`` matches either ``'homebrew'`` or
 ``'home-brew'``.
 
-The most complicated repeated quantifier is ``{m,n}``, where *m* and *n* are
+The most complicated quantifier is ``{m,n}``, where *m* and *n* are
 decimal integers.  This quantifier means there must be at least *m* repetitions,
 and at most *n*.  For example, ``a/{1,3}b`` will match ``'a/b'``, ``'a//b'``, and
 ``'a///b'``.  It won't match ``'ab'``, which has no slashes, or ``'a////b'``, which
@@ -803,7 +803,7 @@ which matches the header's value.
 Groups are marked by the ``'('``, ``')'`` metacharacters. ``'('`` and ``')'``
 have much the same meaning as they do in mathematical expressions; they group
 together the expressions contained inside them, and you can repeat the contents
-of a group with a repeating quantifier, such as ``*``, ``+``, ``?``, or
+of a group with a quantifier, such as ``*``, ``+``, ``?``, or
 ``{m,n}``.  For example, ``(ab)*`` will match zero or more repetitions of
 ``ab``. ::
 

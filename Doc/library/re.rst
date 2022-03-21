@@ -87,7 +87,7 @@ Some characters, like ``'|'`` or ``'('``, are special. Special
 characters either stand for classes of ordinary characters, or affect
 how the regular expressions around them are interpreted.
 
-Repetition quantifiers (``*``, ``+``, ``?``, ``{m,n}``, etc) cannot be
+Repetition operators or quantifiers (``*``, ``+``, ``?``, ``{m,n}``, etc) cannot be
 directly nested. This avoids ambiguity with the non-greedy modifier suffix
 ``?``, and with other modifiers in other implementations. To apply a second
 repetition to an inner repetition, parentheses may be used. For example,
