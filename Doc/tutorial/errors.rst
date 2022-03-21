@@ -121,7 +121,7 @@ may name multiple exceptions as a parenthesized tuple, for example::
    ...     pass
 
 A class in an :keyword:`except` clause is compatible with an exception if it is
-the same class or a non-virtual base class thereof (but not the other way around --- an
+the same class or a base class thereof (but not the other way around --- an
 *except clause* listing a derived class is not compatible with a base class).
 For example, the following code will print B, C, D in that order::
 
