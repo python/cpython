@@ -382,22 +382,24 @@ class HashLibTestCase(unittest.TestCase):
         digests = [name]
         digests.extend(self.constructors_to_test[name])
 
-        for digest in digests:
-            with self.subTest(digest=digest):
+        with open(os_helper.TESTFN, "wb") as f:
+            f.write(data)
+
+        try:
+            for digest in digests:
                 buf = io.BytesIO(data)
                 buf.seek(0)
                 self.assertEqual(
                     hashlib.file_digest(buf, digest).hexdigest(), hexdigest
                 )
-                with open(os_helper.TESTFN, "wb") as f:
-                    f.write(data)
                 try:
                     with open(os_helper.TESTFN, "rb") as f:
                         digestobj = hashlib.file_digest(f, digest)
                 finally:
                     os.unlink(os_helper.TESTFN)
                 self.assertEqual(digestobj.hexdigest(), hexdigest)
-
+        finally:
+            os.unlink(os_helper.TESTFN)
 
     def check_no_unicode(self, algorithm_name):
         # Unicode objects are not allowed as input.
