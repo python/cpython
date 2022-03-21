@@ -418,17 +418,6 @@ ga_vectorcall(PyObject *self, PyObject *const *args,
     return set_orig_class(obj, self);
 }
 
-static PyObject *
-ga_make_tp_call(PyObject *self, PyObject *const *args,
-                size_t nargsf, PyObject *kwnames)
-{
-    gaobject *alias = (gaobject *) self;
-    PyThreadState *tstate = _PyThreadState_GET();
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    PyObject *obj = _PyObject_MakeTpCall(tstate, alias->origin, args, nargs, kwnames);
-    return set_orig_class(obj, self);
-}
-
 static const char* const attr_exceptions[] = {
     "__origin__",
     "__args__",
@@ -620,7 +609,7 @@ setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
         alias->vectorcall = ga_vectorcall;
     }
     else {
-        alias->vectorcall = ga_make_tp_call;
+        alias->vectorcall = NULL;
     }
 
     return 1;
