@@ -3055,18 +3055,18 @@ class StringModuleTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             delattr(o, name)
         setattr(o, name, 1)
-        self.assertEquals(o.name, 1)
+        self.assertEqual(o.name, 1)
         o.name = 2
-        self.assertEquals(list(o.__dict__), [name])
+        self.assertEqual(list(o.__dict__), [name])
 
         with self.assertRaises(AttributeError):
             delattr(o, name2)
         with self.assertRaises(AttributeError):
             del o.name2
         setattr(o, name2, 3)
-        self.assertEquals(o.name2, 3)
+        self.assertEqual(o.name2, 3)
         o.name2 = 4
-        self.assertEquals(list(o.__dict__), [name, name2])
+        self.assertEqual(list(o.__dict__), [name, name2])
 
 
 if __name__ == "__main__":

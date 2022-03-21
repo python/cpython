@@ -30,30 +30,31 @@ if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable &
 
 if defined BUILDX86 (
     call "%PCBUILD%build.bat" -p Win32 -d -e %REBUILD% %BUILDTEST%
-    if errorlevel 1 goto :eof
+    if errorlevel 1 exit /B %ERRORLEVEL%
     call "%PCBUILD%build.bat" -p Win32 -e %REBUILD% %BUILDTEST%
-    if errorlevel 1 goto :eof
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 if defined BUILDX64 (
     call "%PCBUILD%build.bat" -p x64 -d -e %REBUILD% %BUILDTEST%
-    if errorlevel 1 goto :eof
+    if errorlevel 1 exit /B %ERRORLEVEL%
     call "%PCBUILD%build.bat" -p x64 -e %REBUILD% %BUILDTEST%
-    if errorlevel 1 goto :eof
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 if defined BUILDARM64 (
     call "%PCBUILD%build.bat" -p ARM64 -d -e %REBUILD% %BUILDTEST%
-    if errorlevel 1 goto :eof
+    if errorlevel 1 exit /B %ERRORLEVEL%
     call "%PCBUILD%build.bat" -p ARM64 -e %REBUILD% %BUILDTEST%
-    if errorlevel 1 goto :eof
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 
 if defined BUILDDOC (
     call "%PCBUILD%..\Doc\make.bat" htmlhelp
-    if errorlevel 1 goto :eof
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 
 rem Build the launcher MSI separately
 %MSBUILD% "%D%launcher\launcher.wixproj" /p:Platform=x86
+if errorlevel 1 exit /B %ERRORLEVEL%
 
 set BUILD_CMD="%D%bundle\snapshot.wixproj"
 if defined BUILDTEST (
@@ -68,15 +69,15 @@ if defined REBUILD (
 
 if defined BUILDX86 (
     %MSBUILD% /p:Platform=x86 %BUILD_CMD%
-    if errorlevel 1 goto :eof
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 if defined BUILDX64 (
     %MSBUILD% /p:Platform=x64 %BUILD_CMD%
-    if errorlevel 1 goto :eof
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 if defined BUILDARM64 (
     %MSBUILD% /p:Platform=ARM64 %BUILD_CMD%
-    if errorlevel 1 goto :eof
+    if errorlevel 1 exit /B %ERRORLEVEL%
 )
 
 exit /B 0

@@ -1321,11 +1321,14 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define JUMPTO(x)       (next_instr = first_instr + (x))
 #define JUMPBY(x)       (next_instr += (x))
 
+// Skip from a PRECALL over a CALL to the next instruction:
+#define SKIP_CALL() \
+    JUMPBY(INLINE_CACHE_ENTRIES_PRECALL + 1 + INLINE_CACHE_ENTRIES_CALL)
+
 /* Get opcode and oparg from original instructions, not quickened form. */
 #define TRACING_NEXTOPARG() do { \
-        _Py_CODEUNIT word = ((_Py_CODEUNIT *)PyBytes_AS_STRING(frame->f_code->co_code))[INSTR_OFFSET()]; \
-        opcode = _Py_OPCODE(word); \
-        oparg = _Py_OPARG(word); \
+        NEXTOPARG(); \
+        opcode = _PyOpcode_Deopt[opcode]; \
     } while (0)
 
 /* OpCode prediction macros
@@ -1430,9 +1433,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
                                      Py_XDECREF(tmp); } while (0)
 
 #define JUMP_TO_INSTRUCTION(op) goto PREDICT_ID(op)
-
-#define GET_CACHE() \
-    _GetSpecializedCacheEntryForInstruction(first_instr, INSTR_OFFSET(), oparg)
 
 
 #define DEOPT_IF(cond, instname) if (cond) { goto instname ## _miss; }
@@ -1564,16 +1564,6 @@ trace_function_exit(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject 
     return 0;
 }
 
-static int
-skip_backwards_over_extended_args(PyCodeObject *code, int offset)
-{
-    _Py_CODEUNIT *instrs = (_Py_CODEUNIT *)PyBytes_AS_STRING(code->co_code);
-    while (offset > 0 && _Py_OPCODE(instrs[offset-1]) == EXTENDED_ARG) {
-        offset--;
-    }
-    return offset;
-}
-
 static _PyInterpreterFrame *
 pop_frame(PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
@@ -1659,9 +1649,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         PyCodeObject *co = frame->f_code; \
         names = co->co_names; \
         consts = co->co_consts; \
-        first_instr = co->co_firstinstr; \
+        first_instr = _PyCode_CODE(co); \
     } \
     assert(frame->f_lasti >= -1); \
+    /* Jump back to the last instruction executed... */ \
     next_instr = first_instr + frame->f_lasti + 1; \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
     /* Set stackdepth to -1. \
@@ -1731,16 +1722,7 @@ handle_eval_breaker:
         }
 
         TARGET(RESUME) {
-            int err = _Py_IncrementCountAndMaybeQuicken(frame->f_code);
-            if (err) {
-                if (err < 0) {
-                    goto error;
-                }
-                /* Update first_instr and next_instr to point to newly quickened code */
-                int nexti = INSTR_OFFSET();
-                first_instr = frame->f_code->co_firstinstr;
-                next_instr = first_instr + nexti;
-            }
+            _PyCode_Warmup(frame->f_code);
             JUMP_TO_INSTRUCTION(RESUME_QUICK);
         }
 
@@ -2266,13 +2248,16 @@ handle_eval_breaker:
             Py_DECREF(v);
             Py_DECREF(container);
             Py_DECREF(sub);
-            if (err != 0)
+            if (err != 0) {
                 goto error;
+            }
+            JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
             DISPATCH();
         }
 
         TARGET(STORE_SUBSCR_ADAPTIVE) {
-            if (oparg == 0) {
+            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
+            if (cache->counter == 0) {
                 PyObject *sub = TOP();
                 PyObject *container = SECOND();
                 next_instr--;
@@ -2283,8 +2268,7 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(STORE_SUBSCR, deferred);
-                // oparg is the adaptive cache counter
-                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
+                cache->counter--;
                 JUMP_TO_INSTRUCTION(STORE_SUBSCR);
             }
         }
@@ -2311,6 +2295,7 @@ handle_eval_breaker:
             Py_DECREF(old_value);
             Py_DECREF(sub);
             Py_DECREF(list);
+            JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
             NOTRACE_DISPATCH();
         }
 
@@ -2327,6 +2312,7 @@ handle_eval_breaker:
             if (err != 0) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
             DISPATCH();
         }
 
@@ -2952,7 +2938,9 @@ handle_eval_breaker:
 
         TARGET(LOAD_GLOBAL) {
             PREDICTED(LOAD_GLOBAL);
-            PyObject *name = GETITEM(names, oparg);
+            int push_null = oparg & 1;
+            PEEK(0) = NULL;
+            PyObject *name = GETITEM(names, oparg>>1);
             PyObject *v;
             if (PyDict_CheckExact(GLOBALS())
                 && PyDict_CheckExact(BUILTINS()))
@@ -2975,7 +2963,6 @@ handle_eval_breaker:
                 /* Slow-path if globals or builtins is not a dict */
 
                 /* namespace 1: globals */
-                name = GETITEM(names, oparg);
                 v = PyObject_GetItem(GLOBALS(), name);
                 if (v == NULL) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
@@ -2997,15 +2984,16 @@ handle_eval_breaker:
             }
             /* Skip over inline cache */
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
+            STACK_GROW(push_null);
             PUSH(v);
             DISPATCH();
         }
 
         TARGET(LOAD_GLOBAL_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
-            uint16_t counter = *next_instr;
-            if (counter == 0) {
-                PyObject *name = GETITEM(names, oparg);
+            _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
+            if (cache->counter == 0) {
+                PyObject *name = GETITEM(names, oparg>>1);
                 next_instr--;
                 if (_Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name) < 0) {
                     goto error;
@@ -3014,7 +3002,7 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(LOAD_GLOBAL, deferred);
-                *next_instr = counter-1;
+                cache->counter--;
                 JUMP_TO_INSTRUCTION(LOAD_GLOBAL);
             }
         }
@@ -3030,10 +3018,13 @@ handle_eval_breaker:
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
             PyObject *res = entries[cache->index].me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
+            int push_null = oparg & 1;
+            PEEK(0) = NULL;
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
+            STACK_GROW(push_null+1);
             Py_INCREF(res);
-            PUSH(res);
+            SET_TOP(res);
             NOTRACE_DISPATCH();
         }
 
@@ -3052,10 +3043,13 @@ handle_eval_breaker:
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
             PyObject *res = entries[cache->index].me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
+            int push_null = oparg & 1;
+            PEEK(0) = NULL;
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
+            STACK_GROW(push_null+1);
             Py_INCREF(res);
-            PUSH(res);
+            SET_TOP(res);
             NOTRACE_DISPATCH();
         }
 
@@ -4064,16 +4058,7 @@ handle_eval_breaker:
 
         TARGET(JUMP_ABSOLUTE) {
             PREDICTED(JUMP_ABSOLUTE);
-            int err = _Py_IncrementCountAndMaybeQuicken(frame->f_code);
-            if (err) {
-                if (err < 0) {
-                    goto error;
-                }
-                /* Update first_instr and next_instr to point to newly quickened code */
-                int nexti = INSTR_OFFSET();
-                first_instr = frame->f_code->co_firstinstr;
-                next_instr = first_instr + nexti;
-            }
+            _PyCode_Warmup(frame->f_code);
             JUMP_TO_INSTRUCTION(JUMP_ABSOLUTE_QUICK);
         }
 
@@ -4563,20 +4548,12 @@ handle_eval_breaker:
                We'll be passing `oparg + 1` to call_function, to
                make it accept the `self` as a first argument.
             */
-            int is_method = (PEEK(oparg + 2) != NULL);
-            int nargs = oparg + is_method;
+            int is_meth = is_method(stack_pointer, oparg);
+            int nargs = oparg + is_meth;
             /* Move ownership of reference from stack to call_shape
              * and make sure that NULL is cleared from stack */
             PyObject *function = PEEK(nargs + 1);
-#ifdef Py_STATS
-            extern int _PySpecialization_ClassifyCallable(PyObject *);
-            SpecializationStats *stats =
-                &_py_stats.opcode_stats[PRECALL].specialization;
-            stats->failure++;
-            int kind = _PySpecialization_ClassifyCallable(function);
-            stats->failure_kinds[kind]++;
-#endif
-            if (!is_method && Py_TYPE(function) == &PyMethod_Type) {
+            if (!is_meth && Py_TYPE(function) == &PyMethod_Type) {
                 PyObject *meth = ((PyMethodObject *)function)->im_func;
                 PyObject *self = ((PyMethodObject *)function)->im_self;
                 Py_INCREF(meth);
@@ -4585,35 +4562,32 @@ handle_eval_breaker:
                 PEEK(oparg+2) = meth;
                 Py_DECREF(function);
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_PRECALL);
             DISPATCH();
         }
 
         TARGET(PRECALL_BOUND_METHOD) {
-            SpecializedCacheEntry *cache = GET_CACHE();
-            int original_oparg = cache->adaptive.original_oparg;
-            int is_method = (PEEK(original_oparg + 2) != NULL);
-            DEOPT_IF(is_method, PRECALL);
-            PyObject *function = PEEK(original_oparg + 1);
+            DEOPT_IF(is_method(stack_pointer, oparg), PRECALL);
+            PyObject *function = PEEK(oparg + 1);
             DEOPT_IF(Py_TYPE(function) != &PyMethod_Type, PRECALL);
             STAT_INC(PRECALL, hit);
             PyObject *meth = ((PyMethodObject *)function)->im_func;
             PyObject *self = ((PyMethodObject *)function)->im_self;
             Py_INCREF(meth);
             Py_INCREF(self);
-            PEEK(original_oparg+1) = self;
-            PEEK(original_oparg+2) = meth;
+            PEEK(oparg + 1) = self;
+            PEEK(oparg + 2) = meth;
             Py_DECREF(function);
+            JUMPBY(INLINE_CACHE_ENTRIES_PRECALL);
             DISPATCH();
         }
 
         TARGET(PRECALL_PYFUNC) {
-            SpecializedCacheEntry *cache = GET_CACHE();
-            int original_oparg = cache->adaptive.original_oparg;
-            int is_method = (PEEK(original_oparg + 2) != NULL);
-            int nargs = original_oparg + is_method;
+            int nargs = oparg + is_method(stack_pointer, oparg);
             PyObject *function = PEEK(nargs + 1);
             DEOPT_IF(Py_TYPE(function) != &PyFunction_Type, PRECALL);
             STAT_INC(PRECALL, hit);
+            JUMPBY(INLINE_CACHE_ENTRIES_PRECALL);
             DISPATCH();
         }
 
@@ -4649,6 +4623,7 @@ handle_eval_breaker:
                     goto error;
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                frame->f_lasti += INLINE_CACHE_ENTRIES_CALL;
                 new_frame->previous = frame;
                 cframe.current_frame = frame = new_frame;
                 CALL_STAT_INC(inlined_py_calls);
@@ -4680,21 +4655,20 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
         TARGET(PRECALL_ADAPTIVE) {
-            SpecializedCacheEntry *cache = GET_CACHE();
-            int original_oparg = cache->adaptive.original_oparg;
-            if (cache->adaptive.counter == 0) {
+            _PyPrecallCache *cache = (_PyPrecallCache *)next_instr;
+            if (cache->counter == 0) {
                 next_instr--;
-                int is_meth = is_method(stack_pointer, original_oparg);
-                int nargs = original_oparg + is_meth;
+                int is_meth = is_method(stack_pointer, oparg);
+                int nargs = oparg + is_meth;
                 PyObject *callable = PEEK(nargs + 1);
-                int err = _Py_Specialize_Precall(
-                    callable, next_instr, nargs,
-                    call_shape.kwnames, cache, BUILTINS());
+                int err = _Py_Specialize_Precall(callable, next_instr, nargs,
+                                                 call_shape.kwnames, oparg);
                 if (err < 0) {
                     goto error;
                 }
@@ -4702,23 +4676,20 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(PRECALL, deferred);
-                cache->adaptive.counter--;
-                oparg = original_oparg;
+                cache->counter--;
                 JUMP_TO_INSTRUCTION(PRECALL);
             }
         }
 
         TARGET(CALL_ADAPTIVE) {
-            SpecializedCacheEntry *cache = GET_CACHE();
-            int original_oparg = cache->adaptive.original_oparg;
-            if (cache->adaptive.counter == 0) {
+            _PyCallCache *cache = (_PyCallCache *)next_instr;
+            if (cache->counter == 0) {
                 next_instr--;
-                int is_meth = is_method(stack_pointer, original_oparg);
-                int nargs = original_oparg + is_meth;
+                int is_meth = is_method(stack_pointer, oparg);
+                int nargs = oparg + is_meth;
                 PyObject *callable = PEEK(nargs + 1);
-                int err = _Py_Specialize_Call(
-                    callable, next_instr, nargs,
-                    call_shape.kwnames, cache);
+                int err = _Py_Specialize_Call(callable, next_instr, nargs,
+                                              call_shape.kwnames);
                 if (err < 0) {
                     goto error;
                 }
@@ -4726,23 +4697,20 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(CALL, deferred);
-                cache->adaptive.counter--;
-                oparg = original_oparg;
+                cache->counter--;
                 goto call_function;
             }
         }
 
         TARGET(CALL_PY_EXACT_ARGS) {
             assert(call_shape.kwnames == NULL);
-            SpecializedCacheEntry *caches = GET_CACHE();
-            int original_oparg = caches->adaptive.original_oparg;
-            int is_meth = is_method(stack_pointer, original_oparg);
-            int argcount = original_oparg + is_meth;
+            _PyCallCache *cache = (_PyCallCache *)next_instr;
+            int is_meth = is_method(stack_pointer, oparg);
+            int argcount = oparg + is_meth;
             PyObject *callable = PEEK(argcount + 1);
             DEOPT_IF(!PyFunction_Check(callable), CALL);
-            _PyCallCache *cache1 = &caches[-1].call;
             PyFunctionObject *func = (PyFunctionObject *)callable;
-            DEOPT_IF(func->func_version != cache1->func_version, CALL);
+            DEOPT_IF(func->func_version != read_u32(cache->func_version), CALL);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(code->co_argcount != argcount, CALL);
             STAT_INC(CALL, hit);
@@ -4760,6 +4728,7 @@ handle_eval_breaker:
             }
             STACK_SHRINK(2-is_meth);
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            frame->f_lasti += INLINE_CACHE_ENTRIES_CALL;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             goto start_frame;
@@ -4767,18 +4736,16 @@ handle_eval_breaker:
 
         TARGET(CALL_PY_WITH_DEFAULTS) {
             assert(call_shape.kwnames == NULL);
-            SpecializedCacheEntry *caches = GET_CACHE();
-            int original_oparg = caches->adaptive.original_oparg;
-            int is_meth = is_method(stack_pointer, original_oparg);
-            int argcount = original_oparg + is_meth;
+            _PyCallCache *cache = (_PyCallCache *)next_instr;
+            int is_meth = is_method(stack_pointer, oparg);
+            int argcount = oparg + is_meth;
             PyObject *callable = PEEK(argcount + 1);
             DEOPT_IF(!PyFunction_Check(callable), CALL);
-            _PyCallCache *cache1 = &caches[-1].call;
             PyFunctionObject *func = (PyFunctionObject *)callable;
-            DEOPT_IF(func->func_version != cache1->func_version, CALL);
+            DEOPT_IF(func->func_version != read_u32(cache->func_version), CALL);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(argcount > code->co_argcount, CALL);
-            int minargs = cache1->min_args;
+            int minargs = cache->min_args;
             DEOPT_IF(argcount < minargs, CALL);
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_Push(tstate, func);
@@ -4790,9 +4757,9 @@ handle_eval_breaker:
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
             }
-            int def_offset = cache1->defaults_len - code->co_argcount;
             for (int i = argcount; i < code->co_argcount; i++) {
-                PyObject *def = PyTuple_GET_ITEM(func->func_defaults, i + def_offset);
+                PyObject *def = PyTuple_GET_ITEM(func->func_defaults,
+                                                 i - minargs);
                 Py_INCREF(def);
                 new_frame->localsplus[i] = def;
             }
@@ -4801,6 +4768,7 @@ handle_eval_breaker:
             }
             STACK_SHRINK(2-is_meth);
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            frame->f_lasti += INLINE_CACHE_ENTRIES_CALL;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             goto start_frame;
@@ -4809,13 +4777,13 @@ handle_eval_breaker:
         TARGET(PRECALL_NO_KW_TYPE_1) {
             assert(call_shape.kwnames == NULL);
             assert(cframe.use_tracing == 0);
-            assert(GET_CACHE()->adaptive.original_oparg == 1);
+            assert(oparg == 1);
             DEOPT_IF(is_method(stack_pointer, 1), PRECALL);
             PyObject *obj = TOP();
             PyObject *callable = SECOND();
             DEOPT_IF(callable != (PyObject *)&PyType_Type, PRECALL);
-            next_instr++; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyObject *res = Py_NewRef(Py_TYPE(obj));
             Py_DECREF(callable);
             Py_DECREF(obj);
@@ -4827,12 +4795,12 @@ handle_eval_breaker:
         TARGET(PRECALL_NO_KW_STR_1) {
             assert(call_shape.kwnames == NULL);
             assert(cframe.use_tracing == 0);
-            assert(GET_CACHE()->adaptive.original_oparg == 1);
+            assert(oparg == 1);
             DEOPT_IF(is_method(stack_pointer, 1), PRECALL);
             PyObject *callable = PEEK(2);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, PRECALL);
-            next_instr++; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyObject *arg = TOP();
             PyObject *res = PyObject_Str(arg);
             Py_DECREF(arg);
@@ -4848,12 +4816,12 @@ handle_eval_breaker:
 
         TARGET(PRECALL_NO_KW_TUPLE_1) {
             assert(call_shape.kwnames == NULL);
-            assert(GET_CACHE()->adaptive.original_oparg == 1);
+            assert(oparg == 1);
             DEOPT_IF(is_method(stack_pointer, 1), PRECALL);
             PyObject *callable = PEEK(2);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, PRECALL);
-            next_instr++; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyObject *arg = TOP();
             PyObject *res = PySequence_Tuple(arg);
             Py_DECREF(arg);
@@ -4868,16 +4836,15 @@ handle_eval_breaker:
         }
 
         TARGET(PRECALL_BUILTIN_CLASS) {
-            int original_oparg = GET_CACHE()->adaptive.original_oparg;
-            int is_meth = is_method(stack_pointer, original_oparg);
-            int total_args = original_oparg + is_meth;
+            int is_meth = is_method(stack_pointer, oparg);
+            int total_args = oparg + is_meth;
             int kwnames_len = KWNAMES_LEN();
             PyObject *callable = PEEK(total_args + 1);
             DEOPT_IF(!PyType_Check(callable), PRECALL);
             PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_vectorcall == NULL, PRECALL);
-            next_instr++; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             STACK_SHRINK(total_args);
             PyObject *res = tp->tp_vectorcall((PyObject *)tp, stack_pointer,
                                               total_args-kwnames_len, call_shape.kwnames);
@@ -4900,16 +4867,14 @@ handle_eval_breaker:
             assert(cframe.use_tracing == 0);
             /* Builtin METH_O functions */
             assert(call_shape.kwnames == NULL);
-            SpecializedCacheEntry *caches = GET_CACHE();
-            int original_oparg = caches->adaptive.original_oparg;
-            int is_meth = is_method(stack_pointer, original_oparg);
-            int total_args = original_oparg + is_meth;
+            int is_meth = is_method(stack_pointer, oparg);
+            int total_args = oparg + is_meth;
             DEOPT_IF(total_args != 1, PRECALL);
             PyObject *callable = PEEK(total_args + 1);
             DEOPT_IF(!PyCFunction_CheckExact(callable), PRECALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_O, PRECALL);
-            next_instr++; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
@@ -4936,16 +4901,14 @@ handle_eval_breaker:
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL functions, without keywords */
             assert(call_shape.kwnames == NULL);
-            SpecializedCacheEntry *caches = GET_CACHE();
-            int original_oparg = caches->adaptive.original_oparg;
-            int is_meth = is_method(stack_pointer, original_oparg);
-            int total_args = original_oparg + is_meth;
+            int is_meth = is_method(stack_pointer, oparg);
+            int total_args = oparg + is_meth;
             PyObject *callable = PEEK(total_args + 1);
             DEOPT_IF(!PyCFunction_CheckExact(callable), PRECALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL,
                 PRECALL);
-            next_instr++; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             STACK_SHRINK(total_args);
             /* res = func(self, args, nargs) */
@@ -4977,16 +4940,14 @@ handle_eval_breaker:
         TARGET(PRECALL_BUILTIN_FAST_WITH_KEYWORDS) {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
-            SpecializedCacheEntry *caches = GET_CACHE();
-            int original_oparg = caches->adaptive.original_oparg;
-            int is_meth = is_method(stack_pointer, original_oparg);
-            int total_args = original_oparg + is_meth;
+            int is_meth = is_method(stack_pointer, oparg);
+            int total_args = oparg + is_meth;
             PyObject *callable = PEEK(total_args + 1);
             DEOPT_IF(!PyCFunction_CheckExact(callable), PRECALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) !=
                 (METH_FASTCALL | METH_KEYWORDS), PRECALL);
-            next_instr++; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             STACK_SHRINK(total_args);
             /* res = func(self, args, nargs, kwnames) */
             _PyCFunctionFastWithKeywords cfunc =
@@ -5019,16 +4980,14 @@ handle_eval_breaker:
             assert(cframe.use_tracing == 0);
             assert(call_shape.kwnames == NULL);
             /* len(o) */
-            SpecializedCacheEntry *caches = GET_CACHE();
-            int original_oparg = caches->adaptive.original_oparg;
-            int is_meth = is_method(stack_pointer, original_oparg);
-            int total_args = original_oparg + is_meth;
+            int is_meth = is_method(stack_pointer, oparg);
+            int total_args = oparg + is_meth;
             DEOPT_IF(total_args != 1, PRECALL);
-            _PyObjectCache *cache1 = &caches[-1].obj;
             PyObject *callable = PEEK(total_args + 1);
-            DEOPT_IF(callable != cache1->obj, PRECALL);
-            next_instr++; // Skip following call
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            DEOPT_IF(callable != interp->callable_cache.len, PRECALL);
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyObject *arg = TOP();
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
@@ -5051,17 +5010,14 @@ handle_eval_breaker:
             assert(cframe.use_tracing == 0);
             assert(call_shape.kwnames == NULL);
             /* isinstance(o, o2) */
-            SpecializedCacheEntry *caches = GET_CACHE();
-            int original_oparg = caches->adaptive.original_oparg;
-            int is_meth = is_method(stack_pointer, original_oparg);
-            int total_args = original_oparg + is_meth;
+            int is_meth = is_method(stack_pointer, oparg);
+            int total_args = oparg + is_meth;
             PyObject *callable = PEEK(total_args + 1);
             DEOPT_IF(total_args != 2, PRECALL);
-            _PyObjectCache *cache1 = &caches[-1].obj;
-
-            DEOPT_IF(callable != cache1->obj, PRECALL);
-            next_instr++; // Skip following call
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            DEOPT_IF(callable != interp->callable_cache.isinstance, PRECALL);
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyObject *cls = POP();
             PyObject *inst = TOP();
             int retval = PyObject_IsInstance(inst, cls);
@@ -5086,16 +5042,14 @@ handle_eval_breaker:
         TARGET(PRECALL_NO_KW_LIST_APPEND) {
             assert(cframe.use_tracing == 0);
             assert(call_shape.kwnames == NULL);
-            assert(GET_CACHE()->adaptive.original_oparg == 1);
-            SpecializedCacheEntry *caches = GET_CACHE();
-            _PyObjectCache *cache1 = &caches[-1].obj;
-            assert(cache1->obj != NULL);
+            assert(oparg == 1);
             PyObject *callable = PEEK(3);
-            DEOPT_IF(callable != cache1->obj, PRECALL);
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            DEOPT_IF(callable != interp->callable_cache.list_append, PRECALL);
             PyObject *list = SECOND();
             DEOPT_IF(!PyList_Check(list), PRECALL);
             STAT_INC(PRECALL, hit);
-            next_instr++; // Skip following call
+            SKIP_CALL();
             PyObject *arg = TOP();
             int err = PyList_Append(list, arg);
             if (err) {
@@ -5112,16 +5066,15 @@ handle_eval_breaker:
 
         TARGET(PRECALL_NO_KW_METHOD_DESCRIPTOR_O) {
             assert(call_shape.kwnames == NULL);
-            int original_oparg = GET_CACHE()->adaptive.original_oparg;
-            int is_meth = is_method(stack_pointer, original_oparg);
-            int total_args = original_oparg + is_meth;
+            int is_meth = is_method(stack_pointer, oparg);
+            int total_args = oparg + is_meth;
             PyObject *callable = PEEK(total_args + 1);
             DEOPT_IF(total_args != 2, PRECALL);
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), PRECALL);
             PyMethodDef *meth = ((PyMethodDescrObject *)callable)->d_method;
             DEOPT_IF(meth->ml_flags != METH_O, PRECALL);
-            next_instr++; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyCFunction cfunc = meth->ml_meth;
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
@@ -5135,7 +5088,7 @@ handle_eval_breaker:
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
             Py_DECREF(arg);
-            STACK_SHRINK(original_oparg+1);
+            STACK_SHRINK(oparg + 1);
             SET_TOP(res);
             Py_DECREF(callable);
             if (res == NULL) {
@@ -5147,17 +5100,16 @@ handle_eval_breaker:
 
         TARGET(PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS) {
             assert(call_shape.kwnames == NULL);
-            int original_oparg = GET_CACHE()->adaptive.original_oparg;
-            assert(original_oparg == 0 || original_oparg == 1);
-            int is_meth = is_method(stack_pointer, original_oparg);
-            int total_args = original_oparg + is_meth;
+            assert(oparg == 0 || oparg == 1);
+            int is_meth = is_method(stack_pointer, oparg);
+            int total_args = oparg + is_meth;
             DEOPT_IF(total_args != 1, PRECALL);
             PyObject *callable = SECOND();
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), PRECALL);
             PyMethodDef *meth = ((PyMethodDescrObject *)callable)->d_method;
             DEOPT_IF(meth->ml_flags != METH_NOARGS, PRECALL);
-            next_instr++; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             PyCFunction cfunc = meth->ml_meth;
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
@@ -5169,7 +5121,7 @@ handle_eval_breaker:
             _Py_LeaveRecursiveCall(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
-            STACK_SHRINK(original_oparg+1);
+            STACK_SHRINK(oparg + 1);
             SET_TOP(res);
             Py_DECREF(callable);
             if (res == NULL) {
@@ -5181,16 +5133,15 @@ handle_eval_breaker:
 
         TARGET(PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST) {
             assert(call_shape.kwnames == NULL);
-            int original_oparg = GET_CACHE()->adaptive.original_oparg;
-            int is_meth = is_method(stack_pointer, original_oparg);
-            int total_args = original_oparg + is_meth;
+            int is_meth = is_method(stack_pointer, oparg);
+            int total_args = oparg + is_meth;
             PyObject *callable = PEEK(total_args + 1);
             /* Builtin METH_FASTCALL methods, without keywords */
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), PRECALL);
             PyMethodDef *meth = ((PyMethodDescrObject *)callable)->d_method;
             DEOPT_IF(meth->ml_flags != METH_FASTCALL, PRECALL);
-            next_instr++; // Skip following call
             STAT_INC(PRECALL, hit);
+            SKIP_CALL();
             _PyCFunctionFast cfunc = (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args-1;
             STACK_SHRINK(nargs);
@@ -5456,6 +5407,7 @@ handle_eval_breaker:
         }
 
         TARGET(EXTENDED_ARG) {
+            assert(oparg);
             int oldoparg = oparg;
             NEXTOPARG();
             oparg |= oldoparg << 8;
@@ -5468,11 +5420,13 @@ handle_eval_breaker:
         }
 
 #if USE_COMPUTED_GOTOS
-        TARGET_DO_TRACING: {
+        TARGET_DO_TRACING:
 #else
-        case DO_TRACING: {
+        case DO_TRACING:
 #endif
-            int instr_prev = skip_backwards_over_extended_args(frame->f_code, frame->f_lasti);
+    {
+        if (tstate->tracing == 0) {
+            int instr_prev = frame->f_lasti;
             frame->f_lasti = INSTR_OFFSET();
             TRACING_NEXTOPARG();
             if (opcode == RESUME) {
@@ -5511,11 +5465,11 @@ handle_eval_breaker:
                     frame->stacktop = -1;
                 }
             }
-            TRACING_NEXTOPARG();
-            PRE_DISPATCH_GOTO();
-            DISPATCH_GOTO();
         }
-
+        TRACING_NEXTOPARG();
+        PRE_DISPATCH_GOTO();
+        DISPATCH_GOTO();
+    }
 
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
@@ -5537,22 +5491,6 @@ handle_eval_breaker:
 
 /* Specialization misses */
 
-#define MISS_WITH_CACHE(opname) \
-opname ## _miss: \
-    { \
-        STAT_INC(opcode, miss); \
-        STAT_INC(opname, miss); \
-        _PyAdaptiveEntry *cache = &GET_CACHE()->adaptive; \
-        cache->counter--; \
-        if (cache->counter == 0) { \
-            next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, _Py_OPARG(next_instr[-1])); \
-            STAT_INC(opname, deopt); \
-            cache_backoff(cache); \
-        } \
-        oparg = cache->original_oparg; \
-        JUMP_TO_INSTRUCTION(opname); \
-    }
-
 #define MISS_WITH_INLINE_CACHE(opname) \
 opname ## _miss: \
     { \
@@ -5562,24 +5500,9 @@ opname ## _miss: \
         _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr; \
         *counter -= 1; \
         if (*counter == 0) { \
-            next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, _Py_OPARG(next_instr[-1])); \
+            _Py_SET_OPCODE(next_instr[-1], opname ## _ADAPTIVE); \
             STAT_INC(opname, deopt); \
             *counter = ADAPTIVE_CACHE_BACKOFF; \
-        } \
-        JUMP_TO_INSTRUCTION(opname); \
-    }
-
-#define MISS_WITH_OPARG_COUNTER(opname) \
-opname ## _miss: \
-    { \
-        STAT_INC(opname, miss); \
-        uint8_t oparg = _Py_OPARG(next_instr[-1])-1; \
-        UPDATE_PREV_INSTR_OPARG(next_instr, oparg); \
-        assert(_Py_OPARG(next_instr[-1]) == oparg); \
-        if (oparg == 0) /* too many cache misses */ { \
-            oparg = ADAPTIVE_CACHE_BACKOFF; \
-            next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, oparg); \
-            STAT_INC(opname, deopt); \
         } \
         JUMP_TO_INSTRUCTION(opname); \
     }
@@ -5588,13 +5511,13 @@ MISS_WITH_INLINE_CACHE(LOAD_ATTR)
 MISS_WITH_INLINE_CACHE(STORE_ATTR)
 MISS_WITH_INLINE_CACHE(LOAD_GLOBAL)
 MISS_WITH_INLINE_CACHE(LOAD_METHOD)
-MISS_WITH_CACHE(PRECALL)
-MISS_WITH_CACHE(CALL)
+MISS_WITH_INLINE_CACHE(PRECALL)
+MISS_WITH_INLINE_CACHE(CALL)
 MISS_WITH_INLINE_CACHE(BINARY_OP)
 MISS_WITH_INLINE_CACHE(COMPARE_OP)
 MISS_WITH_INLINE_CACHE(BINARY_SUBSCR)
 MISS_WITH_INLINE_CACHE(UNPACK_SEQUENCE)
-MISS_WITH_OPARG_COUNTER(STORE_SUBSCR)
+MISS_WITH_INLINE_CACHE(STORE_SUBSCR)
 
 binary_subscr_dict_error:
         {
@@ -6733,41 +6656,54 @@ initialize_trace_info(PyTraceInfo *trace_info, _PyInterpreterFrame *frame)
     }
 }
 
+void
+PyThreadState_EnterTracing(PyThreadState *tstate)
+{
+    tstate->tracing++;
+}
+
+void
+PyThreadState_LeaveTracing(PyThreadState *tstate)
+{
+    tstate->tracing--;
+}
+
 static int
 call_trace(Py_tracefunc func, PyObject *obj,
            PyThreadState *tstate, _PyInterpreterFrame *frame,
            int what, PyObject *arg)
 {
     int result;
-    if (tstate->tracing)
+    if (tstate->tracing) {
         return 0;
-    tstate->tracing++;
-    _PyThreadState_PauseTracing(tstate);
+    }
     PyFrameObject *f = _PyFrame_GetFrameObject(frame);
     if (f == NULL) {
         return -1;
     }
+    PyThreadState_EnterTracing(tstate);
     assert (frame->f_lasti >= 0);
     initialize_trace_info(&tstate->trace_info, frame);
     f->f_lineno = _PyCode_CheckLineNumber(frame->f_lasti*sizeof(_Py_CODEUNIT), &tstate->trace_info.bounds);
     result = func(obj, f, what, arg);
     f->f_lineno = 0;
-    _PyThreadState_ResumeTracing(tstate);
-    tstate->tracing--;
+    PyThreadState_LeaveTracing(tstate);
     return result;
 }
 
-PyObject *
+PyObject*
 _PyEval_CallTracing(PyObject *func, PyObject *args)
 {
+    // Save and disable tracing
     PyThreadState *tstate = _PyThreadState_GET();
     int save_tracing = tstate->tracing;
     int save_use_tracing = tstate->cframe->use_tracing;
-    PyObject *result;
-
     tstate->tracing = 0;
-    _PyThreadState_ResumeTracing(tstate);
-    result = PyObject_Call(func, args, NULL);
+
+    // Call the tracing function
+    PyObject *result = PyObject_Call(func, args, NULL);
+
+    // Restore tracing
     tstate->tracing = save_tracing;
     tstate->cframe->use_tracing = save_use_tracing;
     return result;
@@ -6785,9 +6721,13 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
        then call the trace function if we're tracing source lines.
     */
     initialize_trace_info(&tstate->trace_info, frame);
-    _Py_CODEUNIT prev = ((_Py_CODEUNIT *)PyBytes_AS_STRING(frame->f_code->co_code))[instr_prev];
+    int entry_point = 0;
+    _Py_CODEUNIT *code = _PyCode_CODE(frame->f_code);
+    while (_PyOpcode_Deopt[_Py_OPCODE(code[entry_point])] != RESUME) {
+        entry_point++;
+    }
     int lastline;
-    if (_Py_OPCODE(prev) == RESUME && _Py_OPARG(prev) == 0) {
+    if (instr_prev <= entry_point) {
         lastline = -1;
     }
     else {
@@ -6802,7 +6742,9 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         /* Trace backward edges (except in 'yield from') or if line number has changed */
         int trace = line != lastline ||
             (frame->f_lasti < instr_prev &&
-            _Py_OPCODE(frame->f_code->co_firstinstr[frame->f_lasti]) != SEND);
+            // SEND has no quickened forms, so no need to use _PyOpcode_Deopt
+            // here:
+            _Py_OPCODE(_PyCode_CODE(frame->f_code)[frame->f_lasti]) != SEND);
         if (trace) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
@@ -6833,7 +6775,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_profilefunc = NULL;
     tstate->c_profileobj = NULL;
     /* Must make sure that tracing is not ignored if 'profileobj' is freed */
-    _PyThreadState_ResumeTracing(tstate);
+    _PyThreadState_UpdateTracingState(tstate);
     Py_XDECREF(profileobj);
 
     Py_XINCREF(arg);
@@ -6841,7 +6783,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_profilefunc = func;
 
     /* Flag that tracing or profiling is turned on */
-    _PyThreadState_ResumeTracing(tstate);
+    _PyThreadState_UpdateTracingState(tstate);
     return 0;
 }
 
@@ -6874,7 +6816,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_tracefunc = NULL;
     tstate->c_traceobj = NULL;
     /* Must make sure that profiling is not ignored if 'traceobj' is freed */
-    _PyThreadState_ResumeTracing(tstate);
+    _PyThreadState_UpdateTracingState(tstate);
     Py_XDECREF(traceobj);
 
     Py_XINCREF(arg);
@@ -6882,7 +6824,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_tracefunc = func;
 
     /* Flag that tracing or profiling is turned on */
-    _PyThreadState_ResumeTracing(tstate);
+    _PyThreadState_UpdateTracingState(tstate);
 
     return 0;
 }
@@ -6898,12 +6840,18 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 }
 
 
-void
-_PyEval_SetCoroutineOriginTrackingDepth(PyThreadState *tstate, int new_depth)
+int
+_PyEval_SetCoroutineOriginTrackingDepth(int depth)
 {
-    assert(new_depth >= 0);
-    tstate->coroutine_origin_tracking_depth = new_depth;
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (depth < 0) {
+        _PyErr_SetString(tstate, PyExc_ValueError, "depth must be >= 0");
+        return -1;
+    }
+    tstate->coroutine_origin_tracking_depth = depth;
+    return 0;
 }
+
 
 int
 _PyEval_GetCoroutineOriginTrackingDepth(void)
@@ -7057,12 +7005,6 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
             result = 1;
             cf->cf_flags |= compilerflags;
         }
-#if 0 /* future keyword */
-        if (codeflags & CO_GENERATOR_ALLOWED) {
-            result = 1;
-            cf->cf_flags |= CO_GENERATOR_ALLOWED;
-        }
-#endif
     }
     return result;
 }
@@ -7607,9 +7549,12 @@ format_exc_check_arg(PyThreadState *tstate, PyObject *exc,
         PyErr_Fetch(&type, &value, &traceback);
         PyErr_NormalizeException(&type, &value, &traceback);
         if (PyErr_GivenExceptionMatches(value, PyExc_NameError)) {
-            // We do not care if this fails because we are going to restore the
-            // NameError anyway.
-            (void)PyObject_SetAttr(value, &_Py_ID(name), obj);
+            PyNameErrorObject* exc = (PyNameErrorObject*) value;
+            if (exc->name == NULL) {
+                // We do not care if this fails because we are going to restore the
+                // NameError anyway.
+                (void)PyObject_SetAttr(value, &_Py_ID(name), obj);
+            }
         }
         PyErr_Restore(type, value, traceback);
     }

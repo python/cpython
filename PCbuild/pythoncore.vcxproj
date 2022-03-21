@@ -366,7 +366,9 @@
     <ClCompile Include="..\Modules\arraymodule.c" />
     <ClCompile Include="..\Modules\atexitmodule.c" />
     <ClCompile Include="..\Modules\audioop.c" />
-    <ClCompile Include="..\Modules\binascii.c" />
+    <ClCompile Include="..\Modules\binascii.c">
+      <PreprocessorDefinitions>USE_ZLIB_CRC32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="..\Modules\cmathmodule.c" />
     <ClCompile Include="..\Modules\_datetimemodule.c" />
     <ClCompile Include="..\Modules\errnomodule.c" />

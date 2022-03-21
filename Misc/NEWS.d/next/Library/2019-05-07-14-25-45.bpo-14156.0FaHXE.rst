@@ -1,4 +1,0 @@
-argparse.FileType now supports an argument of '-' in binary mode, returning
-the .buffer attribute of sys.stdin/sys.stdout as appropriate. Modes
-including 'x' and 'a' are treated equivalently to 'w' when argument is '-'.
-Patch contributed by Josh Rosenberg

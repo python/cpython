@@ -32,6 +32,10 @@ In the function ``greeting``, the argument ``name`` is expected to be of type
 :class:`str` and the return type :class:`str`. Subtypes are accepted as
 arguments.
 
+New features are frequently added to the ``typing`` module.
+The `typing_extensions <https://pypi.org/project/typing-extensions/>`_ package
+provides backports of these new features to older versions of Python.
+
 .. _relevant-peps:
 
 Relevant PEPs
@@ -245,7 +249,7 @@ subscription to denote expected types for container elements.
    def notify_by_email(employees: Sequence[Employee],
                        overrides: Mapping[str, str]) -> None: ...
 
-Generics can be parameterized by using a new factory available in typing
+Generics can be parameterized by using a factory available in typing
 called :class:`TypeVar`.
 
 ::
@@ -302,16 +306,16 @@ that ``LoggedVar[t]`` is valid as a type::
        for var in vars:
            var.set(0)
 
-A generic type can have any number of type variables, and type variables may
-be constrained::
+A generic type can have any number of type variables. All varieties of
+:class:`TypeVar` are permissible as parameters for a generic type::
 
-   from typing import TypeVar, Generic
-   ...
+   from typing import TypeVar, Generic, Sequence
 
-   T = TypeVar('T')
+   T = TypeVar('T', contravariant=True)
+   B = TypeVar('B', bound=Sequence[bytes], covariant=True)
    S = TypeVar('S', int, str)
 
-   class StrangePair(Generic[T, S]):
+   class WeirdTrio(Generic[T, B, S]):
        ...
 
 Each type variable argument to :class:`Generic` must be distinct.
@@ -1161,7 +1165,8 @@ These are not used in annotations. They are building blocks for creating generic
     Usage::
 
       T = TypeVar('T')  # Can be anything
-      A = TypeVar('A', str, bytes)  # Must be str or bytes
+      S = TypeVar('S', bound=str)  # Can be any subtype of str
+      A = TypeVar('A', str, bytes)  # Must be exactly str or bytes
 
     Type variables exist primarily for the benefit of static type
     checkers.  They serve as the parameters for generic types as well
@@ -1172,25 +1177,58 @@ These are not used in annotations. They are building blocks for creating generic
            """Return a list containing n references to x."""
            return [x]*n
 
-       def longest(x: A, y: A) -> A:
-           """Return the longest of two strings."""
-           return x if len(x) >= len(y) else y
 
-    The latter example's signature is essentially the overloading
-    of ``(str, str) -> str`` and ``(bytes, bytes) -> bytes``.  Also note
-    that if the arguments are instances of some subclass of :class:`str`,
-    the return type is still plain :class:`str`.
+       def print_capitalized(x: S) -> S:
+           """Print x capitalized, and return x."""
+           print(x.capitalize())
+           return x
+
+
+       def concatenate(x: A, y: A) -> A:
+           """Add two strings or bytes objects together."""
+           return x + y
+
+    Note that type variables can be *bound*, *constrained*, or neither, but
+    cannot be both bound *and* constrained.
+
+    Bound type variables and constrained type variables have different
+    semantics in several important ways. Using a *bound* type variable means
+    that the ``TypeVar`` will be solved using the most specific type possible::
+
+       x = print_capitalized('a string')
+       reveal_type(x)  # revealed type is str
+
+       class StringSubclass(str):
+           pass
+
+       y = print_capitalized(StringSubclass('another string'))
+       reveal_type(y)  # revealed type is StringSubclass
+
+       z = print_capitalized(45)  # error: int is not a subtype of str
+
+    Type variables can be bound to concrete types, abstract types (ABCs or
+    protocols), and even unions of types::
+
+       U = TypeVar('U', bound=str|bytes)  # Can be any subtype of the union str|bytes
+       V = TypeVar('V', bound=SupportsAbs)  # Can be anything with an __abs__ method
+
+    Using a *constrained* type variable, however, means that the ``TypeVar``
+    can only ever be solved as being exactly one of the constraints given::
+
+       a = concatenate('one', 'two')
+       reveal_type(a)  # revealed type is str
+
+       b = concatenate(StringSubclass('one'), StringSubclass('two'))
+       reveal_type(b)  # revealed type is str, despite StringSubclass being passed in
+
+       c = concatenate('one', b'two')  # error: type variable 'A' can be either str or bytes in a function call, but not both
 
     At runtime, ``isinstance(x, T)`` will raise :exc:`TypeError`.  In general,
     :func:`isinstance` and :func:`issubclass` should not be used with types.
 
     Type variables may be marked covariant or contravariant by passing
     ``covariant=True`` or ``contravariant=True``.  See :pep:`484` for more
-    details.  By default type variables are invariant.  Alternatively,
-    a type variable may specify an upper bound using ``bound=<type>``.
-    This means that an actual type substituted (explicitly or implicitly)
-    for the type variable must be a subclass of the boundary type,
-    see :pep:`484`.
+    details.  By default, type variables are invariant.
 
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
 
@@ -1292,7 +1330,7 @@ These are not used in annotations. They are building blocks for creating generic
 
 .. data:: AnyStr
 
-   ``AnyStr`` is a type variable defined as
+   ``AnyStr`` is a :class:`constrained type variable <TypeVar>` defined as
    ``AnyStr = TypeVar('AnyStr', str, bytes)``.
 
    It is meant to be used for functions that may accept any kind of string
@@ -1465,9 +1503,6 @@ These are not used in annotations. They are building blocks for declaring types.
 
       assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
-   The type info for introspection can be accessed via ``Point2D.__annotations__``,
-   ``Point2D.__total__``, ``Point2D.__required_keys__``, and
-   ``Point2D.__optional_keys__``.
    To allow using this feature with older versions of Python that do not
    support :pep:`526`, ``TypedDict`` supports two additional equivalent
    syntactic forms:
@@ -1484,6 +1519,18 @@ These are not used in annotations. They are building blocks for declaring types.
       The keyword-argument syntax is deprecated in 3.11 and will be removed
       in 3.13. It may also be unsupported by static type checkers.
 
+   The functional syntax should also be used when any of the keys are not valid
+   :ref:`identifiers`, for example because they are keywords or contain hyphens.
+   Example::
+
+      # raises SyntaxError
+      class Point2D(TypedDict):
+          in: int  # 'in' is a keyword
+          x-y: int  # name with hyphens
+
+      # OK, functional syntax
+      Point2D = TypedDict('Point2D', {'in': int, 'x-y': int})
+
    By default, all keys must be present in a ``TypedDict``. It is possible to
    override this by specifying totality.
    Usage::
@@ -1499,6 +1546,82 @@ These are not used in annotations. They are building blocks for declaring types.
    omitted. A type checker is only expected to support a literal ``False`` or
    ``True`` as the value of the ``total`` argument. ``True`` is the default,
    and makes all items defined in the class body required.
+
+   It is possible for a ``TypedDict`` type to inherit from one or more other ``TypedDict`` types
+   using the class-based syntax.
+   Usage::
+
+      class Point3D(Point2D):
+          z: int
+
+   ``Point3D`` has three items: ``x``, ``y`` and ``z``. It is equivalent to this
+   definition::
+
+      class Point3D(TypedDict):
+          x: int
+          y: int
+          z: int
+
+   A ``TypedDict`` cannot inherit from a non-TypedDict class,
+   notably including :class:`Generic`. For example::
+
+      class X(TypedDict):
+          x: int
+
+      class Y(TypedDict):
+          y: int
+
+      class Z(object): pass  # A non-TypedDict class
+
+      class XY(X, Y): pass  # OK
+
+      class XZ(X, Z): pass  # raises TypeError
+
+      T = TypeVar('T')
+      class XT(X, Generic[T]): pass  # raises TypeError
+
+   A ``TypedDict`` can be introspected via annotations dicts
+   (see :ref:`annotations-howto` for more information on annotations best practices),
+   :attr:`__total__`, :attr:`__required_keys__`, and :attr:`__optional_keys__`.
+
+   .. attribute:: __total__
+
+      ``Point2D.__total__`` gives the value of the ``total`` argument.
+      Example::
+
+         >>> from typing import TypedDict
+         >>> class Point2D(TypedDict): pass
+         >>> Point2D.__total__
+         True
+         >>> class Point2D(TypedDict, total=False): pass
+         >>> Point2D.__total__
+         False
+         >>> class Point3D(Point2D): pass
+         >>> Point3D.__total__
+         True
+
+   .. attribute:: __required_keys__
+   .. attribute:: __optional_keys__
+
+      ``Point2D.__required_keys__`` and ``Point2D.__optional_keys__`` return
+      :class:`frozenset` objects containing required and non-required keys, respectively.
+      Currently the only way to declare both required and non-required keys in the
+      same ``TypedDict`` is mixed inheritance, declaring a ``TypedDict`` with one value
+      for the ``total`` argument and then inheriting it from another ``TypedDict`` with
+      a different value for ``total``.
+      Usage::
+
+         >>> class Point2D(TypedDict, total=False):
+         ...     x: int
+         ...     y: int
+         ...
+         >>> class Point3D(Point2D):
+         ...     z: int
+         ...
+         >>> Point3D.__required_keys__ == frozenset({'z'})
+         True
+         >>> Point3D.__optional_keys__ == frozenset({'x', 'y'})
+         True
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
@@ -2024,6 +2147,31 @@ Functions and decorators
    signals that the return value has the designated type, but at
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
+
+.. function:: assert_type(val, typ, /)
+
+   Assert (to the type checker) that *val* has an inferred type of *typ*.
+
+   When the type checker encounters a call to ``assert_type()``, it
+   emits an error if the value is not of the specified type::
+
+       def greet(name: str) -> None:
+           assert_type(name, str)  # OK, inferred type of `name` is `str`
+           assert_type(name, int)  # type checker error
+
+   At runtime this returns the first argument unchanged with no side effects.
+
+   This function is useful for ensuring the type checker's understanding of a
+   script is in line with the developer's intentions::
+
+       def complex_function(arg: object):
+           # Do some complex type-narrowing logic,
+           # after which we hope the inferred type will be `int`
+           ...
+           # Test whether the type checker correctly understands our function
+           assert_type(arg, int)
+
+   .. versionadded:: 3.11
 
 .. function:: assert_never(arg, /)
 
