@@ -367,7 +367,7 @@ Barrier
             print("calling action 'done'")
 
          # barrier with 3 parties
-         b = asyncio.Barrier(3, done)
+         b = asyncio.Barrier(3, done())
 
          # create 2 new waiting tasks
          asyncio.create_task(b.wait())
@@ -391,10 +391,8 @@ Barrier
       barrier passed
       <asyncio.locks.Barrier object at 0x103e58bf0 [unlocked, state:0]>
 
-   The example also demonstrates using `async with` as 
+   The example also demonstrates using `async with` as
    an alternative to awaiting on ``barrier.wait()``.
-
-   The barrier can be reused any number of times for the same number of tasks.
 
 .. class:: Barrier(parties, action=None)
 
