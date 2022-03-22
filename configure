@@ -7758,7 +7758,13 @@ case $ac_sys_system/$ac_sys_emscripten_target in #(
 
 $as_echo "#define _WASI_EMULATED_SIGNAL 1" >>confdefs.h
 
-    LIBS="$LIBS -lwasi-emulated-signal"
+
+$as_echo "#define _WASI_EMULATED_GETPID 1" >>confdefs.h
+
+
+$as_echo "#define _WASI_EMULATED_PROCESS_CLOCKS 1" >>confdefs.h
+
+    LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
 
  ;; #(
@@ -20549,6 +20555,8 @@ else
       case $ac_sys_system in #(
   Emscripten) :
     with_ensurepip=no ;; #(
+  WASI) :
+    with_ensurepip=no ;; #(
   *) :
     with_ensurepip=upgrade
        ;;
@@ -21445,6 +21453,28 @@ case $ac_sys_system/$ac_sys_emscripten_target in #(
 
 
     py_cv_module__ctypes=n/a
+    py_cv_module__curses=n/a
+    py_cv_module__curses_panel=n/a
+    py_cv_module__dbm=n/a
+    py_cv_module__gdbm=n/a
+    py_cv_module__scproxy=n/a
+    py_cv_module__tkinter=n/a
+    py_cv_module__xxsubinterpreters=n/a
+    py_cv_module_grp=n/a
+    py_cv_module_nis=n/a
+    py_cv_module_ossaudiodev=n/a
+    py_cv_module_pwd=n/a
+    py_cv_module_spwd=n/a
+    py_cv_module_syslog=n/a
+    py_cv_module_=n/a
+
+   ;; #(
+  WASI/*) :
+
+
+
+    py_cv_module__ctypes=n/a
+    py_cv_module__ctypes_test=n/a
     py_cv_module__curses=n/a
     py_cv_module__curses_panel=n/a
     py_cv_module__dbm=n/a
