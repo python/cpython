@@ -10,5 +10,8 @@ backwards compatibility. They have been superseded by other modules.
 
 .. toctree::
 
-   optparse.rst
+   asynchat.rst
+   asyncore.rst
+   smtpd.rst
    imp.rst
+   optparse.rst
