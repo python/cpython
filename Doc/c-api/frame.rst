@@ -18,7 +18,7 @@ Frame Objects
    .. versionchanged:: 3.11
       The structure moved to the internal C API headers.
 
-Public members:
+Public members of the Python API:
 
 * ``f_back`` (read only): Next outer frame object (this frame's caller).
   See also: :c:func:`PyFrame_GetBack`.
