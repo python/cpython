@@ -8,6 +8,7 @@ import unittest
 
 from test.test_contextlib import TestBaseExitStack
 
+support.requires_working_socket(module=True)
 
 def _async_test(func):
     """Decorator to turn an async function into a test case."""

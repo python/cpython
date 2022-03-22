@@ -42,6 +42,7 @@ __all__ = [
     "requires_IEEE_754", "requires_zlib",
     "has_fork_support", "requires_fork",
     "has_subprocess_support", "requires_subprocess",
+    "has_socket_support", "requires_working_socket",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
@@ -519,6 +520,21 @@ has_subprocess_support = not is_emscripten and not is_wasi
 def requires_subprocess():
     """Used for subprocess, os.spawn calls, fd inheritance"""
     return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
+
+# Emscripten's socket emulation has limitation. WASI doesn't have sockets yet.
+has_socket_support = not is_emscripten and not is_wasi
+
+def requires_working_socket(*, module=False):
+    """Skip tests or modules that require working sockets
+
+    Can be used as a function/class decorator or to skip an entire module.
+    """
+    msg = "requires socket support"
+    if module:
+        if not has_socket_support:
+            raise unittest.SkipTest(msg)
+    else:
+        return unittest.skipUnless(has_socket_support, msg)
 
 # Does strftime() support glibc extension like '%4Y'?
 has_strftime_extensions = False

@@ -2352,7 +2352,7 @@ clean-retain-profile: pycremoval
 	-rm -f pybuilddir.txt
 	-rm -f Lib/lib2to3/*Grammar*.pickle
 	-rm -f _bootstrap_python
-	-rm -f python.html python*.js python.data
+	-rm -f python.html python*.js python.data python*.symbols python*.map
 	-rm -rf $(WASM_STDLIB)
 	-rm -f Programs/_testembed Programs/_freeze_module
 	-rm -f Python/deepfreeze/*.[co]
