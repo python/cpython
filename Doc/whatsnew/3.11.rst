@@ -432,6 +432,12 @@ venv
   Third party code that also creates new virtual environments should do the same.
   (Contributed by Miro Hrončok in :issue:`45413`.)
 
+zipfile
+-------
+
+* Added support for specifying member name encoding for reading
+  metadata in the zipfile's directory and file headers.
+  (Contributed by Stephen J. Turnbull and Serhiy Storchaka in :issue:`28080`.)
 
 fcntl
 -----
