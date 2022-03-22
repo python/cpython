@@ -2690,14 +2690,6 @@ _PyArg_UnpackKeywordsWithVarargFast(PyObject *const *args, Py_ssize_t nargs,
         return NULL;
     }
 
-    /* pass varargs by pointer */
-    buf[vararg] = (PyObject *)&args[vararg];
-
-    /* copy required positional args */
-    for (i = 0; i < vararg; i++) {
-        buf[i] = args[i];
-    }
-
     /* copy keyword args using kwtuple to drive process */
     for (i = Py_MAX((int)nargs, posonly) -
              Py_SAFE_DOWNCAST(varargssize, Py_ssize_t, int); i < maxargs; i++) {
@@ -2706,7 +2698,7 @@ _PyArg_UnpackKeywordsWithVarargFast(PyObject *const *args, Py_ssize_t nargs,
             if (kwargs != NULL) {
                 current_arg = PyDict_GetItemWithError(kwargs, keyword);
                 if (!current_arg && PyErr_Occurred()) {
-                    goto exit;
+                    return NULL;
                 }
             }
             else {
@@ -2730,7 +2722,7 @@ _PyArg_UnpackKeywordsWithVarargFast(PyObject *const *args, Py_ssize_t nargs,
                          (parser->fname == NULL) ? "function" : parser->fname,
                          (parser->fname == NULL) ? "" : "()",
                          keyword, i+1);
-            goto exit;
+            return NULL;
         }
     }
 
@@ -2761,16 +2753,12 @@ _PyArg_UnpackKeywordsWithVarargFast(PyObject *const *args, Py_ssize_t nargs,
                                  (parser->fname == NULL) ? "this function" : parser->fname,
                                  (parser->fname == NULL) ? "" : "()");
                 }
-                goto exit;
+                return NULL;
             }
         }
     }
 
     return buf;
-
-    exit:
-    Py_XDECREF(buf[vararg]);
-    return NULL;
 }
 
 static const char *

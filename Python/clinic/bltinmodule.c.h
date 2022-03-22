@@ -705,40 +705,41 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     static _PyArg_Parser _parser = {NULL, _keywords, "print", 0};
     PyObject *argsbuf[5];
     Py_ssize_t varargssize = Py_MAX(nargs - 0, 0);
+    PyObject *const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *const *__clinic_args = NULL;
+    PyObject *const *__clinic_args;
     PyObject *sep = Py_None;
     PyObject *end = Py_None;
     PyObject *file = Py_None;
     int flush = 0;
 
-    args = _PyArg_UnpackKeywordsWithVarargFast(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, varargssize, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywordsWithVarargFast(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, varargssize, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    __clinic_args = (PyObject *const *)args[0];
+    __clinic_args = args + 0;
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[1]) {
-        sep = args[1];
+    if (fastargs[1]) {
+        sep = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (args[2]) {
-        end = args[2];
+    if (fastargs[2]) {
+        end = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (args[3]) {
-        file = args[3];
+    if (fastargs[3]) {
+        file = fastargs[3];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    flush = PyObject_IsTrue(args[4]);
+    flush = PyObject_IsTrue(fastargs[4]);
     if (flush < 0) {
         goto exit;
     }
@@ -952,4 +953,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9582080bde5ff291 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=81ac43e8840c5a22 input=a9049054013a1b77]*/
