@@ -1843,10 +1843,7 @@ _is_running(PyInterpreterState *interp)
     if (frame == NULL) {
         return 0;
     }
-
-    int executing = _PyFrame_IsExecuting(frame);
-
-    return executing;
+    return 1;
 }
 
 static int
