@@ -496,8 +496,6 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
 static PyObject *
 tuplerepeat(PyTupleObject *a, Py_ssize_t n)
 {
-    Py_ssize_t size;
-
     const Py_ssize_t input_size = Py_SIZE(a);
     if (input_size == 0 || n == 1) {
         if (PyTuple_CheckExact(a)) {
@@ -514,19 +512,16 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
 
     if (n > PY_SSIZE_T_MAX / input_size)
         return PyErr_NoMemory();
-    size = input_size * n;
+    Py_ssize_t size = input_size * n;
     PyTupleObject *np = tuple_alloc(size);
     if (np == NULL)
         return NULL;
 
     PyObject **dest = np->ob_item;
-    PyObject **dest_end = dest + size;
     if (input_size == 1) {
         PyObject *elem = a->ob_item[0];
         Py_INCREF_n(elem, n);
-#ifdef Py_REF_DEBUG
-        _Py_RefTotal += n;
-#endif
+        PyObject **dest_end = dest + size;
         while (dest < dest_end) {
             *dest++ = elem;
         }
@@ -536,14 +531,11 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
         PyObject **src_end = src + input_size;
         while (src < src_end) {
             Py_INCREF_n(*src, n);
-#ifdef Py_REF_DEBUG
-            _Py_RefTotal += n;
-#endif
             *dest++ = *src++;
         }
 
         Py_ssize_t copied =  input_size;
-        const Py_ssize_t len_dest = n * copied;
+        const Py_ssize_t len_dest = n * input_size;
         dest = np->ob_item;
         while (copied < len_dest) {
             Py_ssize_t elements_to_copy = Py_MIN(copied, len_dest - copied);

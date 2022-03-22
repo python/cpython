@@ -542,8 +542,6 @@ list_concat(PyListObject *a, PyObject *bb)
 static PyObject *
 list_repeat(PyListObject *a, Py_ssize_t n)
 {
-    Py_ssize_t size;
-
     if (n < 0)
         n = 0;
     const Py_ssize_t input_size = Py_SIZE(a);
@@ -553,20 +551,18 @@ list_repeat(PyListObject *a, Py_ssize_t n)
 
     if (input_size > PY_SSIZE_T_MAX / n)
         return PyErr_NoMemory();
-    size = input_size * n;
+    Py_ssize_t size = input_size * n;
 
     PyListObject *np = (PyListObject *) list_new_prealloc(size);
+
     if (np == NULL)
         return NULL;
 
     PyObject **dest = np->ob_item;
-    PyObject **dest_end = dest + size;
     if (input_size == 1) {
         PyObject *elem = a->ob_item[0];
         Py_INCREF_n(elem, n);
-#ifdef Py_REF_DEBUG
-        _Py_RefTotal += n;
-#endif
+        PyObject **dest_end = dest + size;
         while (dest < dest_end) {
             *dest++ = elem;
         }
@@ -576,14 +572,11 @@ list_repeat(PyListObject *a, Py_ssize_t n)
         PyObject **src_end = src + input_size;
         while (src < src_end) {
             Py_INCREF_n(*src, n);
-#ifdef Py_REF_DEBUG
-            _Py_RefTotal += n;
-#endif
             *dest++ = *src++;
         }
 
         Py_ssize_t copied =  input_size;
-        const Py_ssize_t len_dest = n * copied;
+        const Py_ssize_t len_dest = n * input_size;
         dest = np->ob_item;
         while (copied < len_dest) {
             Py_ssize_t elements_to_copy = Py_MIN(copied, len_dest - copied);
@@ -744,7 +737,6 @@ PyList_SetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
 static PyObject *
 list_inplace_repeat(PyListObject *self, Py_ssize_t n)
 {
-    PyObject **items;
     Py_ssize_t size;
 
 
@@ -767,7 +759,7 @@ list_inplace_repeat(PyListObject *self, Py_ssize_t n)
     if (list_resize(self, size*n) < 0)
         return NULL;
 
-    items = self->ob_item;
+    PyObject **items = self->ob_item;
     for (Py_ssize_t j = 0; j < size; j++) {
         Py_INCREF_n(items[j], n-1);
     }
