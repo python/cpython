@@ -1898,7 +1898,9 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   ],
   [WASI/*], [
     AC_DEFINE([_WASI_EMULATED_SIGNAL], [1], [Define to 1 if you want to emulate signals on WASI])
-    LIBS="$LIBS -lwasi-emulated-signal"
+    AC_DEFINE([_WASI_EMULATED_GETPID], [1], [Define to 1 if you want to emulate getpid() on WASI])
+    AC_DEFINE([_WASI_EMULATED_PROCESS_CLOCKS], [1], [Define to 1 if you want to emulate process clocks on WASI])
+    LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
   ]
 )
@@ -6078,6 +6080,7 @@ AC_ARG_WITH(ensurepip,
     [
       AS_CASE([$ac_sys_system],
         [Emscripten], [with_ensurepip=no],
+        [WASI], [with_ensurepip=no],
         [with_ensurepip=upgrade]
       )
     ])
@@ -6453,6 +6456,25 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   [Emscripten/node], [
     PY_STDLIB_MOD_SET_NA(
       [_ctypes],
+      [_curses],
+      [_curses_panel],
+      [_dbm],
+      [_gdbm],
+      [_scproxy],
+      [_tkinter],
+      [_xxsubinterpreters],
+      [grp],
+      [nis],
+      [ossaudiodev],
+      [pwd],
+      [spwd],
+      [syslog],
+    )
+  ],
+  [WASI/*], [
+    PY_STDLIB_MOD_SET_NA(
+      [_ctypes],
+      [_ctypes_test],
       [_curses],
       [_curses_panel],
       [_dbm],
