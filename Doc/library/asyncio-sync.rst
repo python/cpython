@@ -383,9 +383,10 @@ Barrier
          await asyncio.sleep(0)
          print(b)
 
-   Result of this example is:
+      asyncio.run(example_barrier())
 
-      >>> asyncio.run(example_barrier())
+   Result of this example is::
+
       <asyncio.locks.Barrier object at 0x103e58bf0 [unlocked, wait:2/3, state:0]>
       calling action 'done'
       barrier passed
