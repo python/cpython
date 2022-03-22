@@ -169,6 +169,7 @@ class Printer:
 
 @contextlib.contextmanager
 def open_for_changes(filename, orig):
+    """Like open() but only write to the file if it changed."""
     outfile = io.StringIO()
     yield outfile
     text = outfile.getvalue()
