@@ -2073,11 +2073,8 @@ _PyTokenizer_Get(struct tok_state *tok,
 }
 
 #if defined(__wasi__) || defined(__EMSCRIPTEN__)
-/* fdopen() with borrowed fd
-
-   WASI does not provide dup() and Emscripten's dup() emulation with open()
-   is slow. Implement fdopen() with fd borrowing on top of fdopencookie().
- */
+// fdopen() with borrowed fd. WASI does not provide dup() and Emscripten's
+// dup() emulation with open() is slow.
 typedef union {
     void *cookie;
     int fd;
@@ -2091,22 +2088,20 @@ borrow_read(void *cookie, char *buf, size_t size)
 }
 
 static FILE *
-fdopen_borrow(int fd, const char *mode) {
+fdopen_borrow(int fd) {
     // supports only reading. seek fails. close and write are no-ops.
-    assert(strcmp(mode, "r") == 0);
     cookie_io_functions_t io_cb = {borrow_read, NULL, NULL, NULL};
     borrowed b = {.fd = fd};
     return fopencookie(b.cookie, "r", io_cb);
 }
 #else
 static FILE *
-fdopen_borrow(int fd, const char *mode) {
-    assert(strcmp(mode, "r") == 0);
+fdopen_borrow(int fd) {
     fd = _Py_dup(fd);
     if (fd < 0) {
         return NULL;
     }
-    return fdopen(fd, mode);
+    return fdopen(fd, "r");
 }
 #endif
 
@@ -2129,7 +2124,7 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
     const char *p_end = NULL;
     char *encoding = NULL;
 
-    fp = fdopen_borrow(fd, "r");
+    fp = fdopen_borrow(fd);
     if (fp == NULL) {
         return NULL;
     }
