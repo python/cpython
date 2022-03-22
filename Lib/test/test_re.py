@@ -2080,10 +2080,14 @@ ELSE
         s = 'axxzbcz'
         p = r'(?:(?:a|bc)*?(xx)??z)*'
         self.assertEqual(re.match(p, s).groups(), ('xx',))
+
         # test-case provided by issue9134
         s = 'xtcxyzxc'
         p = r'((x|yz)+?(t)??c)*'
-        self.assertEqual(re.match(p, s).groups(), ('xyzxc', 'x', 't'))
+        m = re.match(p, s)
+        self.assertEqual(m.span(), (0, 8))
+        self.assertEqual(m.span(2), (6, 7))
+        self.assertEqual(m.groups(), ('xyzxc', 'x', 't'))
 
     def test_REPEAT_ONE_mark_bug(self):
         # issue35859
@@ -2092,6 +2096,7 @@ ELSE
         p = r'(?:[^b]*a(?=(b)|(a))ab)*'
         m = re.match(p, s)
         self.assertEqual(m.span(), (0, 6))
+        self.assertEqual(m.span(2), (4, 5))
         self.assertEqual(m.groups(), (None, 'a'))
 
         # JUMP_REPEAT_ONE_2 should MARK_PUSH() if in a repeat
@@ -2099,6 +2104,7 @@ ELSE
         p = r'(?:[^b]*(?=(b)|(a))ab)*'
         m = re.match(p, s)
         self.assertEqual(m.span(), (0, 4))
+        self.assertEqual(m.span(2), (2, 3))
         self.assertEqual(m.groups(), (None, 'a'))
 
         self.assertEqual(re.match(r'(ab?)*?b', 'ab').groups(), ('a',))
@@ -2110,6 +2116,7 @@ ELSE
         p = r'(?:.*?(?=(a)|(b))b)*'
         m = re.match(p, s)
         self.assertEqual(m.span(), (0, 4))
+        self.assertEqual(m.span(2), (3, 4))
         self.assertEqual(m.groups(), (None, 'b'))
 
         s = 'axxzaz'
@@ -2124,6 +2131,8 @@ ELSE
         # JUMP_ASSERT_NOT should MARK_PUSH() if in a repeat
         m = re.match(r'((?!(ab)c)(.))*', 'abab')
         self.assertEqual(m.span(), (0, 4))
+        self.assertEqual(m.span(1), (3, 4))
+        self.assertEqual(m.span(3), (3, 4))
         self.assertEqual(m.groups(), ('b', None, 'b'))
 
     def test_bug_40736(self):
