@@ -5,6 +5,7 @@ import locale
 import re
 import sre_compile
 import string
+import time
 import unittest
 import warnings
 from re import Scanner
@@ -2040,12 +2041,17 @@ class ReTests(unittest.TestCase):
 
     def test_search_anchor_at_beginning(self):
         s = 'x'*10**7
-        for p in r'\Ax*y', r'^x*y':
+        start = time.perf_counter()
+        for p in r'\Ay', r'^y':
             self.assertIsNone(re.search(p, s))
             self.assertEqual(re.split(p, s), [s])
             self.assertEqual(re.findall(p, s), [])
             self.assertEqual(list(re.finditer(p, s)), [])
             self.assertEqual(re.sub(p, '', s), s)
+        t = time.perf_counter() - start
+        # Without optimization it takes 1 second on my computer.
+        # With optimization -- 0.0003 seconds.
+        self.assertLess(t, 0.1)
 
     def test_possessive_qualifiers(self):
         """Test Possessive Qualifiers
