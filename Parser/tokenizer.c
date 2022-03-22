@@ -2086,57 +2086,22 @@ typedef union {
 static ssize_t
 borrow_read(void *cookie, char *buf, size_t size)
 {
-    borrowed b;
-    b.cookie = cookie;
+    borrowed b = {.cookie = cookie};
     return read(b.fd, (void *)buf, size);
-}
-
-static ssize_t
-borrow_write(void *cookie, const char *buf, size_t size)
-{
-    errno = ENOTSUP;
-    return -1;
-}
-
-static int
-borrow_seek(void *cookie, off_t *off, int whence)
-{
-    borrowed b;
-    b.cookie = cookie;
-    off_t pos;
-    pos = lseek(b.fd, *off, whence);
-    if (pos == (off_t)-1) {
-        return -1;
-    } else {
-        *off = pos;
-        return 0;
-    }
-}
-
-static int
-borrow_close(void *cookie)
-{
-    // does not close(fd)
-    return 0;
 }
 
 static FILE *
 fdopen_borrow(int fd, const char *mode) {
-    // only reading is supported
-    if (strcmp(mode, "r") != 0) {
-        return NULL;
-    }
-    cookie_io_functions_t cookie_io = {
-        borrow_read, borrow_write, borrow_seek, borrow_close
-    };
-    // cookie is just the fd
-    borrowed b;
-    b.fd = fd;
-    return fopencookie(b.cookie, "r", cookie_io);
+    // supports only reading. seek fails. close and write are no-ops.
+    assert(strcmp(mode, "r") == 0);
+    cookie_io_functions_t io_cb = {borrow_read, NULL, NULL, NULL};
+    borrowed b = {.fd = fd};
+    return fopencookie(b.cookie, "r", io_cb);
 }
 #else
 static FILE *
 fdopen_borrow(int fd, const char *mode) {
+    assert(strcmp(mode, "r") == 0);
     fd = _Py_dup(fd);
     if (fd < 0) {
         return NULL;
