@@ -3,12 +3,14 @@ parameters:
   GPGPassphrase: $(GPGPassphrase)
   Files: '*'
   WorkingDirectory: $(Build.BinariesDirectory)
+  Condition: succeeded()
 
 steps:
 - task: DownloadSecureFile@1
   name: gpgkey
   inputs:
     secureFile: ${{ parameters.GPGKeyFile }}
+  condition: ${{ parameters.Condition }}
   displayName: 'Download GPG key'
 
 - powershell: |
@@ -18,6 +20,7 @@ steps:
         gpg/gpg2.exe -ba --batch --passphrase ${{ parameters.GPGPassphrase }} $_
         "Made signature for $_"
     }
+  condition: ${{ parameters.Condition }}
   displayName: 'Generate GPG signatures'
   workingDirectory: ${{ parameters.WorkingDirectory }}
 
