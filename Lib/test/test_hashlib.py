@@ -379,7 +379,14 @@ class HashLibTestCase(unittest.TestCase):
 
     def check_file_digest(self, name, data, hexdigest):
         hexdigest = hexdigest.lower()
-        digests = [name]
+        digests = []
+        try:
+            hashlib.new(name)
+        except ValueError:
+            # algorithm is blocked by security policy.
+            pass
+        else:
+            digests.append(name)
         digests.extend(self.constructors_to_test[name])
 
         with open(os_helper.TESTFN, "wb") as f:
