@@ -24,27 +24,6 @@ import genericpath
 from genericpath import *
 
 
-try:
-    import _winapi
-
-    def _normcase(s):
-        is_bytes = isinstance(s, bytes)
-        if is_bytes:
-            s = os.fsdecode(s)
-        s = _winapi.LCMapStringEx(_winapi.LOCALE_NAME_INVARIANT,
-                                  _winapi.LCMAP_LOWERCASE,
-                                  s.replace('/', '\\'))
-        if is_bytes:
-            s = os.fsencode(s)
-        return s
-except ImportError:
-    def _normcase(s):
-        if isinstance(s, bytes):
-            return s.replace(b'/', b'\\').lower()
-        return s.replace('/', '\\').lower()
-
-
-
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime", "islink","exists","lexists","isdir","isfile",
@@ -63,11 +42,42 @@ def _get_bothseps(path):
 # Other normalizations (such as optimizing '../' away) are not done
 # (this is done by normpath).
 
-def normcase(s):
-    """Normalize case of pathname.
+try:
+    from _winapi import (
+        LCMapStringEx as _LCMapStringEx,
+        LOCALE_NAME_INVARIANT as _LOCALE_NAME_INVARIANT,
+        LCMAP_LOWERCASE as _LCMAP_LOWERCASE)
 
-    Makes all characters lowercase and all slashes into backslashes."""
-    return _normcase(os.fspath(s))
+    def normcase(s):
+        """Normalize case of pathname.
+
+        Makes all characters lowercase and all slashes into backslashes.
+        """
+        if isinstance(s, bytes):
+            if s == b'':
+                return s
+            s = os.fsdecode(s).replace('/', '\\')
+            return os.fsencode(_LCMapStringEx(_LOCALE_NAME_INVARIANT,
+                                              _LCMAP_LOWERCASE, s))
+        else:
+            if  isinstance(s, str) and s == '':
+                return s
+            s = os.fspath(s)
+            return _LCMapStringEx(_LOCALE_NAME_INVARIANT,
+                                  _LCMAP_LOWERCASE,
+                                  s.replace('/', '\\'))
+        # else:
+        #     msg = f"expected str, bytes or os.PathLike object, not {type(s)}"
+        #     raise TypeError(msg)
+except ImportError:
+    def normcase(s):
+        """Normalize case of pathname.
+
+        Makes all characters lowercase and all slashes into backslashes.
+        """
+        if isinstance(s, bytes):
+            return os.fsencode(os.fsdecode(s).replace('/', '\\').lower())
+        return s.replace('/', '\\').lower()
 
 
 # Return whether a path is absolute.
