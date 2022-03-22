@@ -1,5 +1,5 @@
-`PyFrame_FastToLocalsWithError` and `PyFrame_LocalsToFast` are no longer
-called during profile nor tracing. C code that accesses the `f_locals` directly
-(which is not recommended) must now call
-`PyFrame_FastToLocalsWithError` to update locals and `PyFrame_LocalsToFast`
-after `PyFrameObject.f_locals` are updated.
+``PyFrame_FastToLocalsWithError`` and ``PyFrame_LocalsToFast`` are no longer
+called during profile nor tracing. C code that accesses the ``f_locals`` attribute
+ directly (which is not recommended) must now call
+``PyFrame_FastToLocalsWithError`` to update locals and ``PyFrame_LocalsToFast``
+after ``f_locals`` are updated.
