@@ -177,10 +177,22 @@ accessing ``.args``.  ::
 The exception's :meth:`__str__` output is printed as the last part ('detail')
 of the message for unhandled exceptions.
 
-All exceptions inherit from :exc:`BaseException`, and so it can be used to serve
-as a wildcard. Use this with extreme caution, since it is easy to mask a real
-programming error in this way!  It can also be used to print an error message and
-then re-raise the exception (allowing a caller to handle the exception as well)::
+:exc:`BaseException` is a common base class of all exceptions, including a few
+which are not typically handled, because they are used to indicate that the
+program should terminate. They include :exc:`SystemExit` which is raise by
+``sys.exit()`` and :exc:``KeyboardInterrupt`` which is raised when a user
+attempts wishes to interrupt the program.
+
+:exc:`Exception` is a subclass of :exc:`BaseException`, which is a common
+superclass of all exceptions, apart from those few special ones that we
+should not typically handle. As such, :exc:`Exception` can be used as a
+wildcard that catches (almost) everything. However, it is good practice
+to be as specific as possible with the types of exceptions that we intend
+to handle, and to allow any unexpected exceptions to propagate on.
+
+The most common pattern for handling :exc:`Exception` is to print or log
+the exception and then re-raise it (allowing a caller to handle the
+exception as well)::
 
    import sys
 
@@ -189,15 +201,12 @@ then re-raise the exception (allowing a caller to handle the exception as well):
        s = f.readline()
        i = int(s.strip())
    except OSError as err:
-       print("OS error: {0}".format(err))
+       print(f"OS error: {err}")
    except ValueError:
        print("Could not convert data to an integer.")
-   except BaseException as err:
+   except Exception as err:
        print(f"Unexpected {err=}, {type(err)=}")
        raise
-
-Alternatively the last except clause may omit the exception name(s), however the exception
-value must then be retrieved with ``sys.exception()``.
 
 The :keyword:`try` ... :keyword:`except` statement has an optional *else
 clause*, which, when present, must follow all *except clauses*.  It is useful
