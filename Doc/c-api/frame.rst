@@ -7,18 +7,14 @@ Frame Objects
 
    The C structure of the objects used to describe frame objects.
 
-   The structure is only part of the internal C API: fields should not be
-   access directly. Use getter functions like :c:func:`PyFrame_GetCode` and
-   :c:func:`PyFrame_GetBack`.
-
-   Debuggers and profilers can use the internal C API to access this structure
-   without calling functions, but the internal C API doesn't provide any
-   backward compatibility warranty.
+   The structure is not part of the C API.
 
    .. versionchanged:: 3.11
       The structure moved to the internal C API headers.
 
-Public members of the Python API:
+Public members of the Python API can be get and set with the
+:c:func:`PyObject_GetAttrString` and :c:func:`PyObject_SetAttrString`
+functions:
 
 * ``f_back`` (read only): Next outer frame object (this frame's caller).
   See also: :c:func:`PyFrame_GetBack`.
@@ -34,10 +30,8 @@ Public members of the Python API:
 * ``f_trace_opcodes``: Emit ``PyTrace_OPCODE`` trace events?
 * ``f_trace``: Tracing function for this frame, or ``None``
 
-The :c:func:`PyObject_GetAttrString` and :c:func:`PyObject_SetAttrString`
-functions can be used to get and set these members. For example,
-``PyObject_GetAttrString((PyObject*)frame, "f_builtins")`` gets the frame
-builtins namespace.
+For example, ``PyObject_GetAttrString((PyObject*)frame, "f_builtins")`` gets
+the frame builtins namespace.
 
 The :c:func:`PyEval_GetFrame` and :c:func:`PyThreadState_GetFrame` functions
 can be used to get a frame object.
