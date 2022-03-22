@@ -473,10 +473,10 @@ findArgumentLength(const wchar_t *buffer, int bufferLength)
     }
 
     i = 0;
-    while(i < bufferLength) {
+    while (i < bufferLength) {
         end = wcschr(&buffer[i + 1], L'"');
         if (!end) {
-            return bufferLength
+            return bufferLength;
         }
 
         i = (int)(end - buffer);
@@ -495,8 +495,8 @@ findArgumentLength(const wchar_t *buffer, int bufferLength)
         }
 
         // Non-escaped quote with space after it - end of the argument!
-        if (j + 1 < bufferLength && isspace(buffer[j + 1])) {
-            return i;
+        if (i + 1 >= bufferLength || isspace(buffer[i + 1])) {
+            return i + 1;
         }
     }
 
@@ -507,7 +507,7 @@ findArgumentLength(const wchar_t *buffer, int bufferLength)
 const wchar_t *
 findArgumentEnd(const wchar_t *buffer, int bufferLength)
 {
-    return &buffer[findArgumentLength(buffer, bufferLength)]
+    return &buffer[findArgumentLength(buffer, bufferLength)];
 }
 
 
@@ -523,7 +523,7 @@ parseCommandLine(SearchInfo *search)
         return RC_NO_COMMANDLINE;
     }
 
-    const wchar_t *tail = findArgumentEnd(search->originalCmdLine);
+    const wchar_t *tail = findArgumentEnd(search->originalCmdLine, -1);
     const wchar_t *end = tail;
     search->restOfCmdLine = tail;
     while (--tail != search->originalCmdLine) {
@@ -708,7 +708,9 @@ _readIni(const wchar_t *section, const wchar_t *settingName, wchar_t *buffer, in
         if (n) {
             debug(L"# Found %s in %s\n", settingName, iniPath);
             return true;
-        } else if (GetLastError() != ERROR_FILE_NOT_FOUND) {
+        } else if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+            debug(L"# Did not find file %s\n", iniPath);
+        } else {
             winerror(0, L"Failed to read from %s\n", iniPath);
         }
     }
@@ -720,7 +722,9 @@ _readIni(const wchar_t *section, const wchar_t *settingName, wchar_t *buffer, in
         if (n) {
             debug(L"# Found %s in %s\n", settingName, iniPath);
             return n;
-        } else if (GetLastError() != ERROR_FILE_NOT_FOUND) {
+        } else if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+            debug(L"# Did not find file %s\n", iniPath);
+        } else {
             winerror(0, L"Failed to read from %s\n", iniPath);
         }
     }
