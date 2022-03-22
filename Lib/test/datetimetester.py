@@ -2010,6 +2010,8 @@ class TestDateTime(TestDate):
         self.assertEqual(t.isoformat(timespec='microseconds'), "0001-02-03T04:05:01.000123")
         self.assertEqual(t.isoformat(timespec='auto'), "0001-02-03T04:05:01.000123")
         self.assertEqual(t.isoformat(sep=' ', timespec='minutes'), "0001-02-03 04:05")
+        self.assertEqual(t.isoformat(use_utc_designator=False), "0001-02-03T04:05:01.000123")
+        self.assertEqual(t.isoformat(use_utc_designator=True), "0001-02-03T04:05:01.000123")
         self.assertRaises(ValueError, t.isoformat, timespec='foo')
         # bpo-34482: Check that surrogates are handled properly.
         self.assertRaises(ValueError, t.isoformat, timespec='\ud800')
@@ -2018,6 +2020,8 @@ class TestDateTime(TestDate):
 
         t = self.theclass(1, 2, 3, 4, 5, 1, 999500, tzinfo=timezone.utc)
         self.assertEqual(t.isoformat(timespec='milliseconds'), "0001-02-03T04:05:01.999+00:00")
+        self.assertEqual(t.isoformat(use_utc_designator=False), "0001-02-03T04:05:01.999500+00:00")
+        self.assertEqual(t.isoformat(use_utc_designator=True), "0001-02-03T04:05:01.999500Z")
 
         t = self.theclass(1, 2, 3, 4, 5, 1, 999500)
         self.assertEqual(t.isoformat(timespec='milliseconds'), "0001-02-03T04:05:01.999")
@@ -2037,6 +2041,8 @@ class TestDateTime(TestDate):
         tz = FixedOffset(timedelta(seconds=16), 'XXX')
         t = self.theclass(2, 3, 2, tzinfo=tz)
         self.assertEqual(t.isoformat(), "0002-03-02T00:00:00+00:00:16")
+        self.assertEqual(t.isoformat(use_utc_designator=False), "0002-03-02T00:00:00+00:00:16")
+        self.assertEqual(t.isoformat(use_utc_designator=True), "0002-03-02T00:00:00+00:00:16")
 
     def test_isoformat_timezone(self):
         tzoffsets = [
@@ -3275,6 +3281,74 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             exp = exp_base + exp_tz
             with self.subTest(tzi=tzi):
                 assert t.isoformat() == exp
+
+    def test_isoformat_utc_designator(self):
+        t = self.theclass(hour=12, minute=34, second=56, microsecond=123456)
+        self.assertEqual(t.isoformat(), "12:34:56.123456")
+        self.assertEqual(t.isoformat(use_utc_designator=False), "12:34:56.123456")
+        self.assertEqual(t.isoformat(use_utc_designator=True), "12:34:56.123456")
+
+        t = self.theclass(hour=12, minute=34, second=56, microsecond=123456,
+                          tzinfo=timezone.utc)
+        self.assertEqual(t.isoformat(), "12:34:56.123456+00:00")
+        self.assertEqual(t.isoformat(use_utc_designator=False), "12:34:56.123456+00:00")
+        self.assertEqual(t.isoformat(use_utc_designator=True), "12:34:56.123456Z")
+
+        t = self.theclass(hour=12, minute=34, second=56, microsecond=123456,
+                          tzinfo=timezone(timedelta(0)))
+        self.assertEqual(t.isoformat(), "12:34:56.123456+00:00")
+        self.assertEqual(t.isoformat(use_utc_designator=False), "12:34:56.123456+00:00")
+        self.assertEqual(t.isoformat(use_utc_designator=True), "12:34:56.123456Z")
+
+        t = self.theclass(hour=12, minute=34, second=56, microsecond=123456,
+                          tzinfo=timezone(timedelta(0), "UTC"))
+        self.assertEqual(t.isoformat(), "12:34:56.123456+00:00")
+        self.assertEqual(t.isoformat(use_utc_designator=False), "12:34:56.123456+00:00")
+        self.assertEqual(t.isoformat(use_utc_designator=True), "12:34:56.123456Z")
+
+        t = self.theclass(hour=12, minute=34, second=56, microsecond=123456,
+                          tzinfo=timezone(timedelta(0), "GMT"))
+        self.assertEqual(t.isoformat(), "12:34:56.123456+00:00")
+        self.assertEqual(t.isoformat(use_utc_designator=False), "12:34:56.123456+00:00")
+        self.assertEqual(t.isoformat(use_utc_designator=True), "12:34:56.123456+00:00")
+
+        t = self.theclass(hour=12, minute=34, second=56, microsecond=123456,
+                          tzinfo=timezone(timedelta(hours=5), "UTC"))
+        self.assertEqual(t.isoformat(), "12:34:56.123456+05:00")
+        self.assertEqual(t.isoformat(use_utc_designator=False), "12:34:56.123456+05:00")
+        self.assertEqual(t.isoformat(use_utc_designator=True), "12:34:56.123456Z")
+
+        class UnnamedTimezone(tzinfo):
+            def utcoffset(self, dt):
+                return timedelta(0)
+
+            def dst(self, dt):
+                return timedelta(0)
+
+            def tzname(self, dt):
+                return None
+
+        t = self.theclass(hour=12, minute=34, second=56, microsecond=123456,
+                          tzinfo=UnnamedTimezone())
+        self.assertEqual(t.isoformat(), "12:34:56.123456+00:00")
+        self.assertEqual(t.isoformat(use_utc_designator=False), "12:34:56.123456+00:00")
+        self.assertEqual(t.isoformat(use_utc_designator=True), "12:34:56.123456+00:00")
+
+        class NonStringNamedTimezone(tzinfo):
+            def utcoffset(self, dt):
+                return timedelta(0)
+
+            def dst(self, dt):
+                return timedelta(0)
+
+            def tzname(self, dt):
+                return 42
+
+        t = self.theclass(hour=12, minute=34, second=56, microsecond=123456,
+                          tzinfo=UnnamedTimezone())
+        self.assertEqual(t.isoformat(), "12:34:56.123456+00:00")
+        self.assertEqual(t.isoformat(use_utc_designator=False), "12:34:56.123456+00:00")
+        self.assertEqual(t.isoformat(use_utc_designator=True), "12:34:56.123456+00:00")
 
     def test_1653736(self):
         # verify it doesn't accept extra keyword arguments

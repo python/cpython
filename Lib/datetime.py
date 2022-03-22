@@ -1414,11 +1414,13 @@ class time:
             s = s[:-1] + ", fold=1)"
         return s
 
-    def isoformat(self, timespec='auto'):
+    def isoformat(self, timespec='auto', use_utc_designator=False):
         """Return the time formatted according to ISO.
 
         The full format is 'HH:MM:SS.mmmmmm+zz:zz'. By default, the fractional
-        part is omitted if self.microsecond == 0.
+        part is omitted if self.microsecond == 0. The UTC offset will be
+        replaced with a single "Z" if use_utc_designator is True and
+        self.tzname() is exactly "UTC"
 
         The optional argument timespec specifies the number of additional
         terms of the time to include. Valid options are 'auto', 'hours',
@@ -1426,9 +1428,12 @@ class time:
         """
         s = _format_time(self._hour, self._minute, self._second,
                           self._microsecond, timespec)
-        tz = self._tzstr()
-        if tz:
-            s += tz
+        if use_utc_designator and "UTC" == self.tzname():
+            s += "Z"
+        else:
+            tz = self._tzstr()
+            if tz:
+                s += tz
         return s
 
     __str__ = isoformat
@@ -1894,14 +1899,16 @@ class datetime(date):
             self._hour, self._minute, self._second,
             self._year)
 
-    def isoformat(self, sep='T', timespec='auto'):
+    def isoformat(self, sep='T', timespec='auto', use_utc_designator=False):
         """Return the time formatted according to ISO.
 
         The full format looks like 'YYYY-MM-DD HH:MM:SS.mmmmmm'.
         By default, the fractional part is omitted if self.microsecond == 0.
 
-        If self.tzinfo is not None, the UTC offset is also attached, giving
-        giving a full format of 'YYYY-MM-DD HH:MM:SS.mmmmmm+HH:MM'.
+        If self.tzinfo is not None, the UTC offset is also attached. If the
+        optional argument use_utc_designator is True and the timezone name is
+        "UTC", a Z is appended: 'YYYY-MM-DD HH:MM:SS.mmmmmmZ'.
+        Otherwise the format is 'YYYY-MM-DD HH:MM:SS.mmmmmm+HH:MM'.
 
         Optional argument sep specifies the separator between date and
         time, default 'T'.
@@ -1915,9 +1922,12 @@ class datetime(date):
                           self._microsecond, timespec))
 
         off = self.utcoffset()
-        tz = _format_offset(off)
-        if tz:
-            s += tz
+        if use_utc_designator and "UTC" == self.tzname():
+            s += "Z"
+        else:
+            tz = _format_offset(off)
+            if tz:
+                s += tz
 
         return s
 
