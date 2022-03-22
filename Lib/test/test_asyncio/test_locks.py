@@ -1246,6 +1246,28 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(barrier.n_waiting, 0)
         self.assertFalse(barrier.broken)
 
+    async def test_draining_check_action_more(self):
+        async def action_task():
+            results1.append(True)
+        barrier = asyncio.Barrier(self.N, action=action_task)
+        results = []
+        results1 = []
+        async def coro():
+            ret = await barrier.wait()
+            results.append(True)
+
+        n = 3
+        for _ in range(n):
+            await self.gather_tasks(self.N, coro)
+
+        self.assertEqual(len(results1), n)
+        self.assertTrue(all(results1))
+        self.assertEqual(len(results), self.N*n)
+        self.assertTrue(all(results))
+
+        self.assertEqual(barrier.n_waiting, 0)
+        self.assertFalse(barrier.broken)
+
     async def test_draining_check_action_with_partial(self):
         import functools
         async def action_task(n, *args):
