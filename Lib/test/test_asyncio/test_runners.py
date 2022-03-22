@@ -211,7 +211,18 @@ class RunnerTests(BaseTest):
             self.assertEqual('done', runner.run(f()))
             loop = runner.get_loop()
 
-        self.assertIsNone(runner.get_loop())
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "Runner is closed"
+        ):
+            runner.get_loop()
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "Runner is closed"
+        ):
+            runner.get_context()
+
         self.assertTrue(loop.is_closed())
 
     def test_run_non_coro(self):
@@ -235,8 +246,18 @@ class RunnerTests(BaseTest):
         runner = asyncio.Runner()
         loop = runner.get_loop()
         runner.close()
+        with self.assertRaisesRegex(
+                RuntimeError,
+                "Runner is closed"
+        ):
+            runner.get_loop()
 
-        self.assertIsNone(runner.get_loop())
+        with self.assertRaisesRegex(
+                RuntimeError,
+                "Runner is closed"
+        ):
+            runner.get_context()
+
         self.assertTrue(loop.is_closed())
 
     def test_double_close(self):
@@ -244,7 +265,6 @@ class RunnerTests(BaseTest):
         loop = runner.get_loop()
 
         runner.close()
-        self.assertIsNone(runner.get_loop())
         self.assertTrue(loop.is_closed())
 
         # the second call is no-op
@@ -261,16 +281,12 @@ class RunnerTests(BaseTest):
         with runner:
             runner.run(f(1))
 
-        with self.assertWarnsRegex(
-            RuntimeWarning,
-            "coroutine .+ was never awaited"  # f(2) is not executed
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "Runner is closed"
         ):
-            with self.assertRaisesRegex(
-                RuntimeError,
-                "Runner is closed"
-            ):
-                with runner:
-                    runner.run(f(2))
+            with runner:
+                runner.run(f(2))
 
         self.assertEqual([1], ret)
 
@@ -287,7 +303,7 @@ class RunnerTests(BaseTest):
             self.assertEqual(-1, runner.run(f(1)))
             self.assertEqual(1, runner.run(f(2)))
 
-        self.assertEqual({cvar: 2}, dict(runner.get_context().items()))
+            self.assertEqual({cvar: 2}, dict(runner.get_context().items()))
 
 
 if __name__ == '__main__':

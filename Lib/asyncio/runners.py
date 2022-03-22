@@ -54,7 +54,7 @@ class Runner:
 
     def close(self):
         """Shutdown and close event loop."""
-        if self._state is not _state.INITIALIZED:
+        if self._state is not _State.INITIALIZED:
             return
         try:
             loop = self._loop
@@ -64,7 +64,7 @@ class Runner:
         finally:
             loop.close()
             self._loop = None
-            self._context = None
+            self._state = _State.CLOSED
 
     def run(self, coro, *, context=None):
         """Run a coroutine inside the embedded event loop."""
@@ -80,18 +80,12 @@ class Runner:
 
     def get_loop(self):
         """Return embedded event loop."""
-        self._check()
+        self._lazy_init()
         return self._loop
 
     def get_context(self):
-        self._check()
+        self._lazy_init()
         return self._context.copy()
-
-    def _check(self):
-        if self._state is _State.CREATED:
-            raise RuntimeError("Runner is not initialized")
-        if self._state is _State.CLOSED:
-            raise RuntimeError("Runner is closed")
 
     def _lazy_init(self):
         if self._state is _State.CLOSED:
@@ -105,6 +99,7 @@ class Runner:
         if self._debug is not None:
             self._loop.set_debug(self._debug)
         self._context = contextvars.copy_context()
+        self._state = _State.INITIALIZED
 
 
 
