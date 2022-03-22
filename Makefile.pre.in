@@ -1181,9 +1181,9 @@ regen-importlib: regen-frozen
 .PHONY: regen-global-objects
 regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
-	# Run one more time after deepfreezing, to catch any globals added
-	# there.  This is necessary because the deep-frozen code isn't
-	# commited to the repo.
+	@# Run one more time after deepfreezing, to catch any globals added
+	@# there.  This is necessary because the deep-frozen code isn't
+	@# commited to the repo.
 	$(MAKE) regen-deepfreeze
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
 
