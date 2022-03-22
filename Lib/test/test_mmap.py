@@ -1,4 +1,6 @@
-from test.support import (requires, _2G, _4G, gc_collect, cpython_only)
+from test.support import (
+    requires, _2G, _4G, gc_collect, cpython_only, is_emscripten
+)
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 import unittest
@@ -20,6 +22,12 @@ tagname_prefix = f'python_{os.getpid()}_test_mmap'
 def random_tagname(length=10):
     suffix = ''.join(random.choices(string.ascii_uppercase, k=length))
     return f'{tagname_prefix}_{suffix}'
+
+# Python's mmap module dup()s the file descriptor. Emscripten's FS layer
+# does not materialize file changes through a dupped fd to a new mmap.
+if is_emscripten:
+    raise unittest.SkipTest("incompatible with Emscripten's mmap emulation.")
+
 
 class MmapTests(unittest.TestCase):
 

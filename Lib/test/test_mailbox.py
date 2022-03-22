@@ -1061,7 +1061,7 @@ class _TestMboxMMDF(_TestSingleFile):
             self.assertEqual(contents, f.read())
         self._box = self._factory(self._path)
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "Test needs fork().")
+    @support.requires_fork()
     @unittest.skipUnless(hasattr(socket, 'socketpair'), "Test needs socketpair().")
     def test_lock_conflict(self):
         # Fork off a child process that will lock the mailbox temporarily,
