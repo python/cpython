@@ -665,6 +665,26 @@ class NestedExceptionGroupSplitTest(ExceptionGroupSplitTestBase):
         self.assertMatchesTemplate(
             rest, ExceptionGroup, [ValueError(1)])
 
+    def test_split_copies_notes(self):
+        # make sure each exception group after a split has its own __notes__ list
+        eg = ExceptionGroup("eg", [ValueError(1), TypeError(2)])
+        eg.add_note("note1")
+        eg.add_note("note2")
+        orig_notes = list(eg.__notes__)
+        match, rest = eg.split(TypeError)
+        self.assertEqual(eg.__notes__, orig_notes)
+        self.assertEqual(match.__notes__, orig_notes)
+        self.assertEqual(rest.__notes__, orig_notes)
+        self.assertIsNot(eg.__notes__, match.__notes__)
+        self.assertIsNot(eg.__notes__, rest.__notes__)
+        self.assertIsNot(match.__notes__, rest.__notes__)
+        eg.add_note("eg")
+        match.add_note("match")
+        rest.add_note("rest")
+        self.assertEqual(eg.__notes__, orig_notes + ["eg"])
+        self.assertEqual(match.__notes__, orig_notes + ["match"])
+        self.assertEqual(rest.__notes__, orig_notes + ["rest"])
+
 
 class NestedExceptionGroupSubclassSplitTest(ExceptionGroupSplitTestBase):
 

@@ -923,6 +923,16 @@ exceptiongroup_subset(
         if (notes == NULL) {
             goto error;
         }
+        if (PySequence_Check(notes)) {
+            /* make a copy so the parts have independent notes.
+             * If __notes__ is not a sequence, we don't know how to copy it */
+            PyObject *notes_copy = PySequence_List(notes);
+            Py_DECREF(notes);
+            if (notes_copy == NULL) {
+                goto error;
+            }
+            notes = notes_copy;
+        }
         if (PyObject_SetAttr(eg, &_Py_ID(__notes__), notes) < 0) {
             Py_DECREF(notes);
             goto error;
