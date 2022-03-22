@@ -5,6 +5,7 @@ __all__ = ('Lock', 'Event', 'Condition', 'Semaphore',
 
 import collections
 
+from . import coroutines
 from . import exceptions
 from . import mixins
 
@@ -417,7 +418,7 @@ class BoundedSemaphore(Semaphore):
 class Barrier(mixins._LoopBoundMixin):
     """Asyncio equivalent to threading.Barrier
 
-    Implements a Barrier.
+    Implements a Barrier primitive.
     Useful for synchronizing a fixed number of tasks at known synchronization
     points.  Tasks block on 'wait()' and are simultaneously awoken once they
     have all made their call.
@@ -431,6 +432,8 @@ class Barrier(mixins._LoopBoundMixin):
         """
         if parties < 1:
             raise ValueError('parties must be > 0')
+        if action and not coroutines.iscoroutinefunction(action):
+            raise TypeError(f"a coroutinefunction was expected for 'action', got {action!r}")
 
         self._cond = Condition() # notify all tasks when state changes
 

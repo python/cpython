@@ -991,6 +991,42 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertRaises(ValueError, lambda: asyncio.Barrier(0))
         self.assertRaises(ValueError, lambda: asyncio.Barrier(-4))
 
+    async def test_barrier_action(self):
+        def bar():
+            pass
+        async def coro_noargs():
+            await asyncio.sleep(0)
+        async def coro(n):
+            await asyncio.sleep(n)
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "a coroutinefunction was expected for 'action', got <function"
+            ):
+            asyncio.Barrier(1, action=bar)
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "a coroutinefunction was expected for 'action', got <built-in"
+            ):
+            asyncio.Barrier(1, action=print)
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "a coroutinefunction was expected for 'action', got <coroutine"
+            ):
+            asyncio.Barrier(1, action=coro(1))
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "a coroutinefunction was expected for 'action', got <Task"
+            ):
+            asyncio.Barrier(1, action=asyncio.create_task(coro(1)))
+
+        import functools
+        self.assertIsInstance(asyncio.Barrier(2, functools.partial(coro, 1)), asyncio.Barrier)
+        self.assertIsInstance(asyncio.Barrier(2, coro_noargs), asyncio.Barrier)
+
     async def test_context_manager(self):
         self.N = 3
         barrier = asyncio.Barrier(self.N)
@@ -1193,6 +1229,28 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         async def action_task():
             results1.append(True)
         barrier = asyncio.Barrier(self.N, action=action_task)
+        results = []
+        results1 = []
+
+        async def coro():
+            ret = await barrier.wait()
+            results.append(True)
+
+        await self.gather_tasks(self.N, coro)
+
+        self.assertEqual(len(results1), 1)
+        self.assertTrue(results1[0])
+        self.assertEqual(len(results), self.N)
+        self.assertTrue(all(results))
+
+        self.assertEqual(barrier.n_waiting, 0)
+        self.assertFalse(barrier.broken)
+
+    async def test_draining_check_action_with_partial(self):
+        import functools
+        async def action_task(n, *args):
+            results1.append(True)
+        barrier = asyncio.Barrier(self.N, action=functools.partial(action_task, 10, 1, 2, 3))
         results = []
         results1 = []
 
