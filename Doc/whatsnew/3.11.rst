@@ -298,7 +298,7 @@ os
 re
 --
 
-* Atomic grouping (``(?>...)``) and possessive qualifiers (``*+``, ``++``,
+* Atomic grouping (``(?>...)``) and possessive quantifiers (``*+``, ``++``,
   ``?+``, ``{m,n}+``) are now supported in regular expressions.
   (Contributed by Jeffrey C. Jacobs and Serhiy Storchaka in :issue:`433030`.)
 
