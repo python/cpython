@@ -2053,9 +2053,9 @@ class ReTests(unittest.TestCase):
         # With optimization -- 0.0003 seconds.
         self.assertLess(t, 0.1)
 
-    def test_possessive_qualifiers(self):
-        """Test Possessive Qualifiers
-        Test qualifiers of the form @+ for some repetition operator @,
+    def test_possessive_quantifiers(self):
+        """Test Possessive Quantifiers
+        Test quantifiers of the form @+ for some repetition operator @,
         e.g. x{3,5}+ meaning match from 3 to 5 greadily and proceed
         without creating a stack frame for rolling the stack back and
         trying 1 or more fewer matches."""
@@ -2092,7 +2092,7 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match("^x{}+$", "xxx"))
         self.assertTrue(re.match("^x{}+$", "x{}"))
 
-    def test_fullmatch_possessive_qualifiers(self):
+    def test_fullmatch_possessive_quantifiers(self):
         self.assertTrue(re.fullmatch(r'a++', 'a'))
         self.assertTrue(re.fullmatch(r'a*+', 'a'))
         self.assertTrue(re.fullmatch(r'a?+', 'a'))
@@ -2111,7 +2111,7 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.fullmatch(r'(?:ab)?+', 'abc'))
         self.assertIsNone(re.fullmatch(r'(?:ab){1,3}+', 'abc'))
 
-    def test_findall_possessive_qualifiers(self):
+    def test_findall_possessive_quantifiers(self):
         self.assertEqual(re.findall(r'a++', 'aab'), ['aa'])
         self.assertEqual(re.findall(r'a*+', 'aab'), ['aa', '', ''])
         self.assertEqual(re.findall(r'a?+', 'aab'), ['a', 'a', '', ''])

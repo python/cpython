@@ -67,7 +67,7 @@ Select Customize to review current options.</String>
   <String Id="CustomBackButton">&amp;Back</String>
   <String Id="CustomBrowseButton">B&amp;rowse</String>
   <String Id="Include_docLabel">&amp;Documentation</String>
-  <String Id="Include_docHelpLabel">Installs the Python documentation file.</String>
+  <String Id="Include_docHelpLabel">Installs the Python documentation files.</String>
   <String Id="Include_pipLabel">&amp;pip</String>
   <String Id="Include_pipHelpLabel">Installs pip, which can download and install other Python packages.</String>
   <String Id="Include_tcltkLabel">tcl/tk and &amp;IDLE</String>

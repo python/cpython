@@ -87,7 +87,13 @@ jobs:
   - template: ./gpg-sign.yml
     parameters:
       GPGKeyFile: 'python-signing.key'
-      Files: 'doc\htmlhelp\*.chm, msi\*\*, embed\*.zip'
+      Files: 'msi\*\*, embed\*.zip'
+
+  - template: ./gpg-sign.yml
+    parameters:
+      GPGKeyFile: 'python-signing.key'
+      Files: 'doc\htmlhelp\*.chm'
+      Condition: and(succeeded(), eq(variables['DoCHM'], 'true'))
 
   - powershell: >
       $(Build.SourcesDirectory)\Tools\msi\uploadrelease.ps1
