@@ -7,6 +7,8 @@ import textwrap
 import unittest
 from test import support
 
+support.requires_working_socket(module=True)
+
 @unittest.skipIf((sys.platform[:3]=='win'),
                  "can't easily test on this system")
 class SelectTestCase(unittest.TestCase):
