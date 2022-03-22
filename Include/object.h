@@ -491,6 +491,24 @@ static inline void Py_INCREF(PyObject *op)
 }
 #define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
 
+/// Increment reference counter by specified number of items
+static inline void Py_INCREF_n(PyObject* op, Py_ssize_t n)
+{
+#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
+    // Stable ABI for Python 3.10 built in debug mode.
+    for(int = 0; i<n; i++)
+        _Py_IncRef(op);
+#else
+    // Non-limited C API and limited C API for Python 3.9 and older access
+    // directly PyObject.ob_refcnt.
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal+=n;
+#endif
+    op->ob_refcnt+=n;
+#endif
+}
+#define Py_INCREF_n(op, n) Py_INCREF_n(_PyObject_CAST(op), n)
+
 static inline void Py_DECREF(
 #if defined(Py_REF_DEBUG) && !(defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000)
     const char *filename, int lineno,
