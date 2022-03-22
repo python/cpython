@@ -1,0 +1,1 @@
+handle frame.f_lineno is None in inspect.getframeinfo
