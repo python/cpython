@@ -948,10 +948,11 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
             await asyncio.sleep(0.01)
             sem.release()
 
-        async with asyncio.TaskGroup() as tg:
-            tg.create_task(coro('c1'))
-            tg.create_task(coro('c2'))
-            tg.create_task(coro('c3'))
+        t1 = asyncio.create_task(coro('c1'))
+        t2 = asyncio.create_task(coro('c2'))
+        t3 = asyncio.create_task(coro('c3'))
+
+        await asyncio.gather(t1, t2, t3)
 
         self.assertEqual(
             ['c1_1', 'c2_1', 'c3_1', 'c1_2', 'c2_2', 'c3_2'],
