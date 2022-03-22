@@ -491,7 +491,7 @@ static inline void Py_INCREF_n(PyObject* op, Py_ssize_t n)
 {
 #if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
     // Stable ABI for Python 3.10 built in debug mode.
-    for(int = 0; i<n; i++)
+    for(int i = 0; i<n; i++)
         _Py_IncRef(op);
 #else
     // Non-limited C API and limited C API for Python 3.9 and older access
