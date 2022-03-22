@@ -544,18 +544,22 @@ static PyObject *
 list_repeat(PyListObject *a, Py_ssize_t n)
 {
     Py_ssize_t size;
-    PyListObject *np;
+
     if (n < 0)
         n = 0;
     const Py_ssize_t input_size = Py_SIZE(a);
-    if (n > 0 && input_size > PY_SSIZE_T_MAX / n)
+    if (input_size == 0 || n==0)
+        return PyList_New(0);
+    assert(n>0);
+
+    if (input_size > PY_SSIZE_T_MAX / n)
         return PyErr_NoMemory();
     size = input_size * n;
-    if (size == 0)
-        return PyList_New(0);
-    np = (PyListObject *) list_new_prealloc(size);
+
+    PyListObject *np = (PyListObject *) list_new_prealloc(size);
     if (np == NULL)
         return NULL;
+
     PyObject **dest = np->ob_item;
     PyObject **dest_end = dest + size;
     if (input_size == 1) {
@@ -578,9 +582,9 @@ list_repeat(PyListObject *a, Py_ssize_t n)
 #endif
             *dest++ = *src++;
         }
-        // Now src chases after dest in the same buffer
+
         Py_ssize_t copied =  input_size;
-        Py_ssize_t len_dest = n * copied;
+        const Py_ssize_t len_dest = n * copied;
         dest = np->ob_item;
         while (copied < len_dest) {
             Py_ssize_t elements_to_copy = Py_MIN(copied, len_dest - copied);
@@ -588,6 +592,7 @@ list_repeat(PyListObject *a, Py_ssize_t n)
             copied += elements_to_copy;
         }
     }
+
     Py_SET_SIZE(np, size);
     return (PyObject *) np;
 }
