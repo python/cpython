@@ -66,6 +66,16 @@ class Runner:
             self._loop = None
             self._state = _State.CLOSED
 
+    def get_context(self):
+        """Return the default associated context."""
+        self._lazy_init()
+        return self._context.copy()
+
+    def get_loop(self):
+        """Return embedded event loop."""
+        self._lazy_init()
+        return self._loop
+
     def run(self, coro, *, context=None):
         """Run a coroutine inside the embedded event loop."""
         if not coroutines.iscoroutine(coro):
@@ -77,15 +87,6 @@ class Runner:
             context = self._context
         task = self._loop.create_task(coro, context=context)
         return self._loop.run_until_complete(task)
-
-    def get_loop(self):
-        """Return embedded event loop."""
-        self._lazy_init()
-        return self._loop
-
-    def get_context(self):
-        self._lazy_init()
-        return self._context.copy()
 
     def _lazy_init(self):
         if self._state is _State.CLOSED:

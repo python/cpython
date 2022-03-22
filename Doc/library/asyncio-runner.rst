@@ -96,7 +96,9 @@ Runner context manager
 
       An optional keyword-only *context* argument allows specifying a
       custom :class:`contextvars.Context` for the *coro* to run in.
-      The runner's context is used if ``None``.
+      The runner's default context is used if ``None``.
+
+   .. method:: close()
 
    .. method:: get_loop()
 
@@ -104,4 +106,12 @@ Runner context manager
 
    .. method:: get_context()
 
-      Return the :class:`contextvars.Context` associated with the runner object.
+      Return the default :class:`contextvars.Context` associated with the runner object.
+
+   .. note::
+
+      :class:`Runner` uses the lazy initialization strategy, its constructor doesn't
+      initialize underlying low-level structures.
+
+      Embedded *loop* and *context* are created at :keyword:`with` body entering or the
+      first call of :meth:`run`, :meth:`get_loop`, or :meth:`get_context`.
