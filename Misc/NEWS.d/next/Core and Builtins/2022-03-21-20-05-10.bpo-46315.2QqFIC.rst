@@ -1,2 +1,0 @@
-``_PyTokenizer_FindEncodingFilename`` now uses ``fdopencookie`` to avoid
-``dup`` on Emscripten and WASI.
