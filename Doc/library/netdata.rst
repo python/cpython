@@ -20,4 +20,3 @@ on the internet.
    binhex.rst
    binascii.rst
    quopri.rst
-   uu.rst
