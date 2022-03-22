@@ -134,9 +134,9 @@ static int
 instr_size(struct instr *instruction)
 {
     int opcode = instruction->i_opcode;
-    int oparg = instruction->i_oparg;
+    int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
-    int caches = _PyOpcode_InlineCacheEntries[opcode];
+    int caches = _PyOpcode_Caches[opcode];
     return extended_args + 1 + caches;
 }
 
@@ -144,8 +144,8 @@ static void
 write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
 {
     int opcode = instruction->i_opcode;
-    int oparg = instruction->i_oparg;
-    int caches = _PyOpcode_InlineCacheEntries[opcode];
+    int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
+    int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
         case 4:
             *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 24) & 0xFF);

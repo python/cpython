@@ -1728,6 +1728,12 @@
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
 
+/* Define to 1 if you want to emulate getpid() on WASI */
+#undef _WASI_EMULATED_GETPID
+
+/* Define to 1 if you want to emulate process clocks on WASI */
+#undef _WASI_EMULATED_PROCESS_CLOCKS
+
 /* Define to 1 if you want to emulate signals on WASI */
 #undef _WASI_EMULATED_SIGNAL
 

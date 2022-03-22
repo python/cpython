@@ -295,6 +295,12 @@ os
   instead of ``CryptGenRandom()`` which is deprecated.
   (Contributed by Dong-hee Na in :issue:`44611`.)
 
+re
+--
+
+* Atomic grouping (``(?>...)``) and possessive quantifiers (``*+``, ``++``,
+  ``?+``, ``{m,n}+``) are now supported in regular expressions.
+  (Contributed by Jeffrey C. Jacobs and Serhiy Storchaka in :issue:`433030`.)
 
 shutil
 ------
@@ -426,6 +432,12 @@ venv
   Third party code that also creates new virtual environments should do the same.
   (Contributed by Miro Hrončok in :issue:`45413`.)
 
+zipfile
+-------
+
+* Added support for specifying member name encoding for reading
+  metadata in the zipfile's directory and file headers.
+  (Contributed by Stephen J. Turnbull and Serhiy Storchaka in :issue:`28080`.)
 
 fcntl
 -----

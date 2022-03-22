@@ -5,7 +5,6 @@ jobs:
 - job: Build_Docs
   displayName: Docs build
   pool:
-    #name: 'Windows Release'
     vmImage: windows-2022
 
   workspace:
@@ -21,13 +20,9 @@ jobs:
 
   - script: Doc\make.bat htmlhelp
     displayName: 'Build CHM docs'
+    condition: and(succeeded(), eq(variables['DoCHM'], 'true'))
     env:
       BUILDDIR: $(Build.BinariesDirectory)\Doc
-
-  #- powershell: |
-  #    mkdir -Force "$(Build.BinariesDirectory)\Doc\htmlhelp"
-  #    iwr "https://www.python.org/ftp/python/3.8.0/python380.chm" -OutFile "$(Build.BinariesDirectory)\Doc\htmlhelp\python390a0.chm"
-  #  displayName: 'Cheat at building CHM docs'
 
   - task: CopyFiles@2
     displayName: 'Assemble artifact: Doc'
@@ -43,6 +38,7 @@ jobs:
     inputs:
       targetPath: $(Build.ArtifactStagingDirectory)\Doc
       artifactName: doc
+
 
 - job: Build_Python
   displayName: Python build

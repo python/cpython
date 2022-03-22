@@ -75,6 +75,7 @@ try:
 except ImportError:
     pass
 
+
 class BaseTest(unittest.TestCase):
 
     """Base class for logging tests."""
@@ -626,6 +627,9 @@ class HandlerTest(BaseTest):
             os.unlink(fn)
 
     @unittest.skipIf(os.name == 'nt', 'WatchedFileHandler not appropriate for Windows.')
+    @unittest.skipIf(
+        support.is_emscripten, "Emscripten cannot fstat unlinked files."
+    )
     def test_race(self):
         # Issue #14632 refers.
         def remove_loop(fname, tries):
@@ -1058,6 +1062,7 @@ if hasattr(socket, "AF_UNIX"):
 
 # - end of server_helper section
 
+@support.requires_working_socket()
 class SMTPHandlerTest(BaseTest):
     # bpo-14314, bpo-19665, bpo-34092: don't wait forever
     TIMEOUT = support.LONG_TIMEOUT
@@ -1681,6 +1686,7 @@ class ConfigFileTest(BaseTest):
             os.unlink(fn)
 
 
+@support.requires_working_socket()
 class SocketHandlerTest(BaseTest):
 
     """Test for SocketHandler objects."""
@@ -1795,6 +1801,7 @@ class UnixSocketHandlerTest(SocketHandlerTest):
         SocketHandlerTest.tearDown(self)
         os_helper.unlink(self.address)
 
+@support.requires_working_socket()
 class DatagramHandlerTest(BaseTest):
 
     """Test for DatagramHandler."""
@@ -1876,6 +1883,7 @@ class UnixDatagramHandlerTest(DatagramHandlerTest):
         DatagramHandlerTest.tearDown(self)
         os_helper.unlink(self.address)
 
+@support.requires_working_socket()
 class SysLogHandlerTest(BaseTest):
 
     """Test for SysLogHandler using UDP."""
@@ -1985,6 +1993,7 @@ class IPv6SysLogHandlerTest(SysLogHandlerTest):
         self.server_class.address_family = socket.AF_INET
         super(IPv6SysLogHandlerTest, self).tearDown()
 
+@support.requires_working_socket()
 class HTTPHandlerTest(BaseTest):
     """Test for HTTPHandler."""
 
@@ -3261,6 +3270,7 @@ class ConfigDictTest(BaseTest):
             logging.config.stopListening()
             threading_helper.join_thread(t)
 
+    @support.requires_working_socket()
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:
             self.setup_via_listener(json.dumps(self.config10))
@@ -3280,6 +3290,7 @@ class ConfigDictTest(BaseTest):
                 ('ERROR', '4'),
             ], stream=output)
 
+    @support.requires_working_socket()
     def test_listen_config_1_ok(self):
         with support.captured_stdout() as output:
             self.setup_via_listener(textwrap.dedent(ConfigFileTest.config1))
@@ -3294,6 +3305,7 @@ class ConfigDictTest(BaseTest):
             # Original logger output is empty.
             self.assert_log_lines([])
 
+    @support.requires_working_socket()
     def test_listen_verify(self):
 
         def verify_fail(stuff):

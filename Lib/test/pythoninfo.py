@@ -6,6 +6,7 @@ import errno
 import re
 import sys
 import traceback
+import unittest
 import warnings
 
 
@@ -615,7 +616,7 @@ def collect_resource(info_add):
 def collect_test_socket(info_add):
     try:
         from test import test_socket
-    except ImportError:
+    except (ImportError, unittest.SkipTest):
         return
 
     # all check attributes like HAVE_SOCKET_CAN
