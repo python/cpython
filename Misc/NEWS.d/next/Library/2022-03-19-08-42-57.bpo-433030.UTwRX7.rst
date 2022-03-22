@@ -1,2 +1,2 @@
-Add support of atomic grouping (``(?>...)``) and possessive qualifiers
+Add support of atomic grouping (``(?>...)``) and possessive quantifiers
 (``*+``, ``++``, ``?+``, ``{m,n}+``) in :mod:`regular expressions <re>`.
