@@ -361,10 +361,7 @@ class _Stream:
 
         try:
             if comptype == "gz":
-                try:
-                    import zlib
-                except ImportError:
-                    raise CompressionError("zlib module is not available") from None
+                import zlib
                 self.zlib = zlib
                 self.crc = zlib.crc32(b"")
                 if mode == "r":
@@ -2359,13 +2356,10 @@ class TarFile(object):
             except SubsequentHeaderError as e:
                 raise ReadError(str(e)) from None
             except Exception as e:
-                try:
-                    import zlib
-                    if isinstance(e, zlib.error):
-                        raise ReadError(f'zlib error: {e}') from None
-                    else:
-                        raise e
-                except ImportError:
+                import zlib
+                if isinstance(e, zlib.error):
+                    raise ReadError(f'zlib error: {e}') from None
+                else:
                     raise e
             break
 

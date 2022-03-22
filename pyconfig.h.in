@@ -1441,7 +1441,8 @@
 /* Define to 1 if you have the `writev' function. */
 #undef HAVE_WRITEV
 
-/* Define if the zlib library has inflateCopy */
+/* Define if the zlib library has inflateCopy; zlib 1.2.0 (2003) added
+   inflateCopy. */
 #undef HAVE_ZLIB_COPY
 
 /* Define to 1 if you have the <zlib.h> header file. */

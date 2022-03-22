@@ -2700,13 +2700,10 @@ transform_aliases = {
     "rot_13": ["rot13"],
 }
 
-try:
-    import zlib
-except ImportError:
-    zlib = None
-else:
-    bytes_transform_encodings.append("zlib_codec")
-    transform_aliases["zlib_codec"] = ["zip", "zlib"]
+import zlib
+bytes_transform_encodings.append("zlib_codec")
+transform_aliases["zlib_codec"] = ["zip", "zlib"]
+
 try:
     import bz2
 except ImportError:
@@ -2807,7 +2804,6 @@ class TransformCodecTest(unittest.TestCase):
                     bad_input.decode("rot_13")
                 self.assertIsNone(failure.exception.__cause__)
 
-    @unittest.skipUnless(zlib, "Requires zlib support")
     def test_custom_zlib_error_is_wrapped(self):
         # Check zlib codec gives a good error for malformed input
         msg = "^decoding with 'zlib_codec' codec failed"

@@ -1350,11 +1350,8 @@ class PyBuildExt(build_ext):
         self.addext(Extension('_scproxy', ['_scproxy.c']))
 
     def detect_compress_exts(self):
-        # Andrew Kuchling's zlib module.
-        self.addext(Extension('zlib', ['zlibmodule.c']))
-
-        # Helper module for various ascii-encoders.  Uses zlib for an optimized
-        # crc32 if we have it.  Otherwise binascii uses its own.
+        # The zlib module is built by our Makefile
+        # Helper module for various ascii-encoders.  Uses zlib for crc32.
         self.addext(Extension('binascii', ['binascii.c']))
 
         # Gustavo Niemeyer's bz2 module.

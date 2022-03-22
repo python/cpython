@@ -14863,7 +14863,6 @@ fi
 $as_echo "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes; then :
 
-        have_zlib=yes
         ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
         ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
@@ -14910,7 +14909,7 @@ fi
 
 else
 
-        have_zlib=no
+        as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
 
 fi
 
@@ -14923,7 +14922,9 @@ LIBS=$save_LIBS
 
 
 else
-  have_zlib=no
+
+    as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
+
 fi
 
 done
@@ -14985,7 +14986,6 @@ fi
 $as_echo "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes; then :
 
-        have_zlib=yes
         ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
         ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
@@ -15032,7 +15032,7 @@ fi
 
 else
 
-        have_zlib=no
+        as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
 
 fi
 
@@ -15045,7 +15045,9 @@ LIBS=$save_LIBS
 
 
 else
-  have_zlib=no
+
+    as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
+
 fi
 
 done
@@ -15057,16 +15059,8 @@ else
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-  have_zlib=yes
     $as_echo "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
-
-fi
-
-if test "x$have_zlib" = xyes; then :
-
-  BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
-  BINASCII_LIBS="$ZLIB_LIBS"
 
 fi
 
@@ -23054,27 +23048,8 @@ $as_echo "$py_cv_module__uuid" >&6; }
 
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module zlib" >&5
-$as_echo_n "checking for stdlib extension module zlib... " >&6; }
         if test "$py_cv_module_zlib" != "n/a"; then :
-
-    if true; then :
-  if test "$have_zlib" = yes; then :
   py_cv_module_zlib=yes
-else
-  py_cv_module_zlib=missing
-fi
-else
-  py_cv_module_zlib=disabled
-fi
-
-fi
-  as_fn_append MODULE_BLOCK "MODULE_ZLIB=$py_cv_module_zlib$as_nl"
-  if test "x$py_cv_module_zlib" = xyes; then :
-
-    as_fn_append MODULE_BLOCK "MODULE_ZLIB_CFLAGS=$ZLIB_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_ZLIB_LDFLAGS=$ZLIB_LIBS$as_nl"
-
 fi
    if test "$py_cv_module_zlib" = yes; then
   MODULE_ZLIB_TRUE=
@@ -23084,8 +23059,13 @@ else
   MODULE_ZLIB_FALSE=
 fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_zlib" >&5
-$as_echo "$py_cv_module_zlib" >&6; }
+  as_fn_append MODULE_BLOCK "MODULE_ZLIB=$py_cv_module_zlib$as_nl"
+  if test "x$py_cv_module_zlib" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_ZLIB_CFLAGS=$ZLIB_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_ZLIB_LDFLAGS=$ZLIB_LIBS$as_nl"
+
+fi
 
 
         if test "$py_cv_module_binascii" != "n/a"; then :
@@ -23102,8 +23082,8 @@ fi
   as_fn_append MODULE_BLOCK "MODULE_BINASCII=$py_cv_module_binascii$as_nl"
   if test "x$py_cv_module_binascii" = xyes; then :
 
-    as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$BINASCII_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_BINASCII_LDFLAGS=$BINASCII_LIBS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$ZLIB_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII_LDFLAGS=$ZLIB_LIBS$as_nl"
 
 fi
 

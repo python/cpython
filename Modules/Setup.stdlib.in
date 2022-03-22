@@ -59,12 +59,11 @@
 # with ./configure --with-system-libmpdec
 @MODULE__DECIMAL_TRUE@_decimal _decimal/_decimal.c
 
-# compression libs and binascii (optional CRC32 from zlib)
+# compression libs and binascii (CRC32 from zlib)
 # bindings need -lbz2, -lz, or -llzma, respectively
 @MODULE_BINASCII_TRUE@binascii binascii.c
 @MODULE__BZ2_TRUE@_bz2 _bz2module.c
 @MODULE__LZMA_TRUE@_lzma _lzmamodule.c
-@MODULE_ZLIB_TRUE@zlib zlibmodule.c
 
 # dbm/gdbm
 # dbm needs either libndbm, libgdbm_compat, or libdb 5.x

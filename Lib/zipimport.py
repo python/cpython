@@ -554,9 +554,7 @@ cp437_table = (
 
 _importing_zlib = False
 
-# Return the zlib.decompress function object, or NULL if zlib couldn't
-# be imported. The function is cached when found, so subsequent calls
-# don't import zlib again.
+# Return the zlib.decompress function object or raise an import error.
 def _get_decompress_func():
     global _importing_zlib
     if _importing_zlib:
@@ -568,9 +566,6 @@ def _get_decompress_func():
     _importing_zlib = True
     try:
         from zlib import decompress
-    except Exception:
-        _bootstrap._verbose_message('zipimport: zlib UNAVAILABLE')
-        raise ZipImportError("can't decompress data; zlib not available")
     finally:
         _importing_zlib = False
 

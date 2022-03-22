@@ -8,7 +8,6 @@ import textwrap
 import contextlib
 
 from test.support.os_helper import FS_NONASCII
-from test.support import requires_zlib
 from typing import Dict, Union
 
 try:
@@ -281,7 +280,6 @@ class NullFinder:
         pass
 
 
-@requires_zlib()
 class ZipFixtures:
     root = 'test.test_importlib.data'
 

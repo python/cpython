@@ -70,10 +70,8 @@ try:
 except ImportError:
     win32evtlog = win32evtlogutil = pywintypes = None
 
-try:
-    import zlib
-except ImportError:
-    pass
+import zlib
+
 
 class BaseTest(unittest.TestCase):
 
@@ -5311,7 +5309,6 @@ class RotatingFileHandlerTest(BaseFileTest):
         self.assertFalse(os.path.exists(rh.namer(self.fn + ".1")))
         rh.close()
 
-    @support.requires_zlib()
     def test_rotator(self):
         def namer(name):
             return name + ".gz"

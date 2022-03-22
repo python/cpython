@@ -10,13 +10,7 @@ import stat
 import fnmatch
 import collections
 import errno
-
-try:
-    import zlib
-    del zlib
-    _ZLIB_SUPPORTED = True
-except ImportError:
-    _ZLIB_SUPPORTED = False
+import zlib
 
 try:
     import bz2
@@ -911,7 +905,7 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
     """
     if compress is None:
         tar_compression = ''
-    elif _ZLIB_SUPPORTED and compress == 'gzip':
+    elif compress == 'gzip':
         tar_compression = 'gz'
     elif _BZ2_SUPPORTED and compress == 'bzip2':
         tar_compression = 'bz2'
@@ -1006,10 +1000,9 @@ _ARCHIVE_FORMATS = {
     'tar':   (_make_tarball, [('compress', None)], "uncompressed tar file"),
 }
 
-if _ZLIB_SUPPORTED:
-    _ARCHIVE_FORMATS['gztar'] = (_make_tarball, [('compress', 'gzip')],
-                                "gzip'ed tar-file")
-    _ARCHIVE_FORMATS['zip'] = (_make_zipfile, [], "ZIP file")
+_ARCHIVE_FORMATS['gztar'] = (_make_tarball, [('compress', 'gzip')],
+                            "gzip'ed tar-file")
+_ARCHIVE_FORMATS['zip'] = (_make_zipfile, [], "ZIP file")
 
 if _BZ2_SUPPORTED:
     _ARCHIVE_FORMATS['bztar'] = (_make_tarball, [('compress', 'bzip2')],
@@ -1217,11 +1210,8 @@ def _unpack_tarfile(filename, extract_dir):
 _UNPACK_FORMATS = {
     'tar':   (['.tar'], _unpack_tarfile, [], "uncompressed tar file"),
     'zip':   (['.zip'], _unpack_zipfile, [], "ZIP file"),
+    'gztar': (['.tar.gz', '.tgz'], _unpack_tarfile, [], "gzip'ed tar-file"),
 }
-
-if _ZLIB_SUPPORTED:
-    _UNPACK_FORMATS['gztar'] = (['.tar.gz', '.tgz'], _unpack_tarfile, [],
-                                "gzip'ed tar-file")
 
 if _BZ2_SUPPORTED:
     _UNPACK_FORMATS['bztar'] = (['.tar.bz2', '.tbz2'], _unpack_tarfile, [],

@@ -4333,31 +4333,33 @@ if test "$ac_cv_have_lchflags" = yes ; then
 fi
 
 dnl Check for compression libraries
-AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
+AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy; zlib 1.2.0 (2003) added inflateCopy.])
+dnl 2022-03: Until we know if third party zlib modules people use (for hardware
+dnl accelerators, parallelism, etc.) all support copy, lets not assume.
 
 PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
-  have_zlib=yes
   dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
 ], [
   AC_CHECK_HEADERS([zlib.h], [
     WITH_SAVE_ENV([
       AC_CHECK_LIB([z], [gzread], [
-        have_zlib=yes
         ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
         ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
         AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
       ], [
-        have_zlib=no
+        AC_MSG_ERROR([m4_normalize([
+          zlib.h and libz are required. Install your OS's zlib-devel or
+          zlib1g-dev equivalent library or get it from https://zlib.net/.
+        ])])
       ])
     ])
-  ], [have_zlib=no])
-])
-
-dnl binascii can use zlib for optimized crc32.
-AS_VAR_IF([have_zlib], [yes], [
-  BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
-  BINASCII_LIBS="$ZLIB_LIBS"
+  ], [
+    AC_MSG_ERROR([m4_normalize([
+      zlib.h and libz are required. Install your OS's zlib-devel or
+      zlib1g-dev equivalent library or get it from https://zlib.net/.
+    ])])
+  ])
 ])
 
 PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
@@ -6619,10 +6621,9 @@ PY_STDLIB_MOD([_uuid],
   [$LIBUUID_CFLAGS], [$LIBUUID_LIBS])
 
 dnl compression libs
-PY_STDLIB_MOD([zlib], [], [test "$have_zlib" = yes],
-  [$ZLIB_CFLAGS], [$ZLIB_LIBS])
-dnl binascii can use zlib for optimized crc32.
-PY_STDLIB_MOD_SIMPLE([binascii], [$BINASCII_CFLAGS], [$BINASCII_LIBS])
+PY_STDLIB_MOD_SIMPLE([zlib], [$ZLIB_CFLAGS], [$ZLIB_LIBS])
+dnl binascii uses zlib for optimized crc32.
+PY_STDLIB_MOD_SIMPLE([binascii], [$ZLIB_CFLAGS], [$ZLIB_LIBS])
 PY_STDLIB_MOD([_bz2], [], [test "$have_bzip2" = yes],
   [$BZIP2_CFLAGS], [$BZIP2_LIBS])
 PY_STDLIB_MOD([_lzma], [], [test "$have_liblzma" = yes],

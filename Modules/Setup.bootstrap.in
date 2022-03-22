@@ -22,6 +22,8 @@ _sre _sre.c
 _thread _threadmodule.c
 time timemodule.c
 _weakref _weakref.c
+# used by shutil
+zlib zlibmodule.c
 
 # commonly used core modules
 _abc _abc.c

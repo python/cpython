@@ -1,7 +1,6 @@
 """
 Collect various information about Python to help debugging test failures.
 """
-from __future__ import print_function
 import errno
 import re
 import sys
@@ -558,11 +557,7 @@ def collect_sqlite(info_add):
 
 
 def collect_zlib(info_add):
-    try:
-        import zlib
-    except ImportError:
-        return
-
+    import zlib
     attributes = ('ZLIB_VERSION', 'ZLIB_RUNTIME_VERSION')
     copy_attributes(info_add, zlib, 'zlib.%s', attributes)
 
