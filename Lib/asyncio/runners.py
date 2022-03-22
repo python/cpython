@@ -1,9 +1,16 @@
 __all__ = ('Runner', 'run')
 
 import contextvars
+import enum
 from . import coroutines
 from . import events
 from . import tasks
+
+
+class _State(enum.Enum):
+    CREATED = "created"
+    INITIALIZED = "initialized"
+    CLOSED = "closed"
 
 
 class Runner:
@@ -32,15 +39,14 @@ class Runner:
 
     """
     def __init__(self, *, debug=None, factory=None):
-        if factory is None:
-            self._loop = events.new_event_loop()
-        else:
-            self._loop = factory()
-        if debug is not None:
-            self._loop.set_debug(debug)
-        self._context = contextvars.copy_context()
+        self._state = _State.CREATED
+        self._debug = debug
+        self._factory = factory
+        self._loop = None
+        self._context = None
 
     def __enter__(self):
+        self._lazy_init()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -48,7 +54,7 @@ class Runner:
 
     def close(self):
         """Shutdown and close event loop."""
-        if self._loop is None:
+        if self._state is not _state.INITIALIZED:
             return
         try:
             loop = self._loop
@@ -58,14 +64,14 @@ class Runner:
         finally:
             loop.close()
             self._loop = None
+            self._context = None
 
     def run(self, coro, *, context=None):
         """Run a coroutine inside the embedded event loop."""
         if not coroutines.iscoroutine(coro):
             raise ValueError("a coroutine was expected, got {!r}".format(coro))
 
-        if self._loop is None:
-            raise RuntimeError("Runner is closed")
+        self._lazy_init()
 
         if context is None:
             context = self._context
@@ -74,10 +80,32 @@ class Runner:
 
     def get_loop(self):
         """Return embedded event loop."""
+        self._check()
         return self._loop
 
     def get_context(self):
+        self._check()
         return self._context.copy()
+
+    def _check(self):
+        if self._state is _State.CREATED:
+            raise RuntimeError("Runner is not initialized")
+        if self._state is _State.CLOSED:
+            raise RuntimeError("Runner is closed")
+
+    def _lazy_init(self):
+        if self._state is _State.CLOSED:
+            raise RuntimeError("Runner is closed")
+        if self._state is _State.INITIALIZED:
+            return
+        if self._factory is None:
+            self._loop = events.new_event_loop()
+        else:
+            self._loop = self._factory()
+        if self._debug is not None:
+            self._loop.set_debug(self._debug)
+        self._context = contextvars.copy_context()
+
 
 
 def run(main, *, debug=None):
