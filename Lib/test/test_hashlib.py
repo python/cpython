@@ -819,7 +819,7 @@ class HashLibTestCase(unittest.TestCase):
             test_vectors = json.load(f)
 
         blake3_key = test_vectors['key'].encode('ascii')
-        blake3_derive_key_context = test_vectors['context_string'].encode('ascii')
+        blake3_derive_key_context = test_vectors['context_string']
 
         def test(case):
             nonlocal data

@@ -1911,25 +1911,26 @@ class PyBuildExt(build_ext):
         # There's the portable C version, which compiles and runs
         # everywhere with no hassle.  It's reasonably performant, too.
         # But what you really want are the implementations using local
-        # CPU SIMD extensions--these versions can be enormously faster.
+        # CPU SIMD extensions--these versions are enormously faster.
         #
         # BLAKE3 currently supports five SIMD extension instruction sets.
         # The first four are Intel extensions, available both in 32-bit
-        # and 64-bit modes.  From oldest to newest--which also ranks them
-        # from slowest to fastest--these are: "SSE2", "SSE4.1", "AVX2",
-        # and "AVX512".  Finally, newer ARM processors may support the
-        # "NEON" SIMD extension instruction set, also available in both
+        # and 64-bit modes.  From oldest to newest--which is also their
+        # ranking from slowest to fastest--these are: "SSE2", "SSE4.1",
+        # "AVX2", and "AVX512".  Finally, newer ARM processors may support
+        # the "NEON" SIMD extension instruction set, also available in both
         # 32-bit and 64-bit modes.
         #
         # blake3_dispatch.c has runtime code that determines which
         # processor extensions are available and chooses the best one.
-        # We don't have to worry about that--that's all taken care of.
-        # The problem we face is compiling those SIMD extensions, here
-        # inside setup.py.  distutils (or whatever we're using under
-        # the hood these days) doesn't understand assembly-language
-        # files, or compiling specific C files with extra compiler flags.
-        # (If it does support these things, please! Submit a PR and show
-        # me how it's done!)
+        # We don't have to worry about that part--that's all taken care
+        # of and working fine.  The problem we face is compiling those
+        # SIMD extensions, here inside setup.py.  distutils (or whatever
+        # we're using under the hood these days) doesn't understand
+        # assembly-language files.  Nor does it support compiling
+        # specific C files with extra compiler flags.  (If it does
+        # support these things, please! Submit a PR and show me how
+        # it's done!)
         #
         # So I've done what's hopefully the simplest thing that will work.
         # This code extracts the compiler command-line we're using, then
@@ -1943,13 +1944,7 @@ class PyBuildExt(build_ext):
         #
         # * First it tries the assembly-language versions.  The BLAKE3
         #   C README.rst says that these are preferable to the
-        #   C-with-intrinsics versions.  If that compiles, then we remove
-        #   the .o file, and add the *assembly language* file to the
-        #   "extra_objects" list.   distutils simply adds the contents
-        #   of that array to the link command-line.  The compiler sees
-        #   the .S file, and assembles it and links it in directly.
-        #   (This means we don't cache the .o files.  But it hardly
-        #   matters--assemblers are blindingly fast these days.)
+        #   C-with-intrinsics versions.
         #
         #   There are three different assembly-language versions
         #   for each of the supported Intel SIMD instruction sets:
@@ -1958,7 +1953,8 @@ class PyBuildExt(build_ext):
         #       Linux and OS X.
         #     * One for the GNU toolchain on Windows, which should work
         #       with either GCC or Clang.
-        #     * And one for MSVS on Windows.
+        #     * And one for MSVS on Windows.  (We don't bother with
+        #       that one here.)
         #
         # * If the assembly-language versions fail, then we try the
         #   C-with-intrinsics version.  These use compiler extensions
@@ -1967,23 +1963,32 @@ class PyBuildExt(build_ext):
         #
         #     * Most of the time, these require special command-line
         #       flags to compile, specifying the target "architecture".
-        #       If one of the command-lines with extra flags works,
-        #       we preserve the .o file the command-line generated, and
-        #       add it to the "extra_objects" list.
         #
         #     * If none of the command-lines with extra flags succeeded
         #       in compiling the C-with-intrinsics version, we try
         #       compiling it without any special command-line flags,
-        #       as apparently that's proper on some platforms.  If that
-        #       works, it simply adds the C file to the "files" list.
+        #       as apparently that's proper on some platforms.
         #
-        # * If none of the above files works, we give up.
+        # * If none of the above files works, we give up.  We touch a
+        #   "failed" file so we remember what we figured out for next time.
+        #   (The "failed" file ends with ".o" so "make clean" will remove it.)
+        #
+        # The above process will produce exactly one ".o" file: either
+        # a successful compilation, or a "failed" file indicating we couldn't
+        # compile anything using that extension.  If it succeeds in compiling
+        # something, we adds that .o file to the extra_objects list.  We also
+        # leave the .o file so we can reuse it the next time we build.
         #
         # This code also adds BLAKE3_NO_* and BLAKE3_USE_* preprocessor
         # macros as appropriate.
         #
-        # My code doesn't try to be smart about only compiling extensions
-        # that run on the local platform, for several reasons:
+        # Note that this build code *is* smart about timestamps, like make is,
+        # so if you touch the .c or .S file, it will rebuild the .o file.
+        #
+        # Note also, the build code doesn't try to be smart about only
+        # compiling extensions appropriate for the target platform.  For example,
+        # it will always try to build NEON extension support, even when we're
+        # building for an Intel platform.  There are several reasons why:
         #
         # * I'm taking a "simplext thing that could possibly work" approach.
         # * You can't simply say "what platform am I compiling on?", because
@@ -2002,9 +2007,18 @@ class PyBuildExt(build_ext):
         # see "./python setup.py -h".  It says it always builds in the
         # "build/" directory.  So hopefully this is all fine!
         #
-        # p.s. this code is only used for POSIX-ish platforms, like Linux,
+        # p.s. this code is only used for POSIX-ish platforms: Linux,
         # OS X, FreeBSD, etc.  Windows has a completely different build
         # process, including for extension modules.
+
+        def exists_mtime(path):
+            try:
+                s = os.stat(path)
+                if not s:
+                    return 0
+                return s.st_mtime
+            except FileNotFoundError:
+                return 0
 
         impl_dir_elements = ["Modules", "_blake3", "impl"]
         impl_dir = os.path.sep.join(impl_dir_elements)
@@ -2023,8 +2037,6 @@ class PyBuildExt(build_ext):
 
         cc = shlex.split(sysconfig.get_config_var('CC'))
         cflags = shlex.split(sysconfig.get_config_var('CFLAGS'))
-
-        blake3_files_to_delete = []
 
         for extension, *build_info in (
             ('sse2',
@@ -2063,23 +2075,44 @@ class PyBuildExt(build_ext):
                 ),
             ):
             upper = extension.upper()
-            for filename, flags in build_info:
-                path = os.path.join(impl_dir, filename)
-                dot_o = os.path.join(build_dir, filename.rpartition('.')[0] + ".o")
-                cmdline = [*cc, "-c", "-O3", *cflags, *flags, "-o", dot_o, path]
-                run_command_silently(*cmdline)
-                if os.path.exists(dot_o):
-                    if flags:
-                        blake3_extra_objects.append(dot_o)
-                        blake3_files_to_delete.append(os.path.abspath(dot_o))
+            def filename_to_path(filename): return os.path.join(impl_dir, filename)
+            def filename_to_dot_o(filename): return os.path.join(build_dir, filename.rpartition(".")[0] + ".o")
+            failed_dot_o = filename_to_dot_o(f"blake3_{extension}_failed.s")
+            if os.path.exists(failed_dot_o):
+                dot_o = None
+            else:
+                for filename, platform_flags in build_info:
+                    path = filename_to_path(filename)
+                    dot_o = filename_to_dot_o(filename)
+                    path_mtime = exists_mtime(path)
+                    dot_o_mtime = exists_mtime(dot_o)
+                    assert path_mtime > 0, f"input file {path} doesn't exist?!  got mtime {path_mtime}"
+                    if dot_o_mtime:
+                        if dot_o_mtime <= path_mtime:
+                            # dot_o exists but is too old
+                            # don't bother trying other build_info, they won't exist
+                            os.unlink(dot_o)
+                            dot_o = None
+                        break
+                else:
+                    dot_o = None
+                if not dot_o:
+                    for filename, platform_flags in build_info:
+                        path = filename_to_path(filename)
+                        dot_o = filename_to_dot_o(filename)
+                        cmdline = [*cc, "-c", *cflags, *platform_flags, "-o", dot_o, path]
+                        # print(cmdline)
+                        run_command_silently(*cmdline)
+                        if os.path.exists(dot_o):
+                            break
                     else:
-                        os.unlink(dot_o)
-                        if filename.endswith(".S"):
-                            blake3_extra_objects.append(path)
-                        else:
-                            blake3_files.append(path)
-                    blake3_define_macros.append((f"BLAKE3_USE_{upper}", 1))
-                    break
+                        # touch failed.o
+                        dot_o = None
+                        with open(failed_dot_o, "wt") as f:
+                            pass
+            if dot_o:
+                blake3_extra_objects.append(dot_o)
+                blake3_define_macros.append((f"BLAKE3_USE_{upper}", 1))
             else:
                 blake3_define_macros.append((f"BLAKE3_NO_{upper}", None))
                 blake3_define_macros.append((f"BLAKE3_USE_{upper}", 0))
@@ -2090,12 +2123,6 @@ class PyBuildExt(build_ext):
             define_macros=blake3_define_macros,
             depends=blake3_deps,
         ))
-
-        if blake3_files_to_delete:
-            def unlink_blake3_files():
-                for path in blake3_files_to_delete:
-                    os.unlink(path)
-            atexit.register(unlink_blake3_files)
 
     def detect_nis(self):
         self.addext(Extension('nis', ['nismodule.c']))

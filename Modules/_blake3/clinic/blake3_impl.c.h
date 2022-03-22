@@ -3,15 +3,15 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(py_blake3_new__doc__,
-"blake3(data=b\'\', /, *, key=b\'\', derive_key_context=b\'\', max_threads=1,\n"
-"       usedforsecurity=True)\n"
+"blake3(data=b\'\', /, *, key=b\'\', derive_key_context=None,\n"
+"       max_threads=-1, usedforsecurity=True)\n"
 "--\n"
 "\n"
 "Return a new BLAKE3 hash object.");
 
 static PyObject *
 py_blake3_new_impl(PyTypeObject *type, PyObject *data, Py_buffer *key,
-                   Py_buffer *derive_key_context, size_t max_threads,
+                   PyObject *derive_key_context, Py_ssize_t max_threads,
                    int usedforsecurity);
 
 static PyObject *
@@ -26,8 +26,8 @@ py_blake3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     PyObject *data = NULL;
     Py_buffer key = {NULL, NULL};
-    Py_buffer derive_key_context = {NULL, NULL};
-    size_t max_threads = 1;
+    PyObject *derive_key_context = NULL;
+    Py_ssize_t max_threads = -1;
     int usedforsecurity = 1;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
@@ -56,20 +56,30 @@ skip_optional_posonly:
         }
     }
     if (fastargs[2]) {
-        if (PyObject_GetBuffer(fastargs[2], &derive_key_context, PyBUF_SIMPLE) != 0) {
+        if (!PyUnicode_Check(fastargs[2])) {
+            _PyArg_BadArgument("blake3", "argument 'derive_key_context'", "str", fastargs[2]);
             goto exit;
         }
-        if (!PyBuffer_IsContiguous(&derive_key_context, 'C')) {
-            _PyArg_BadArgument("blake3", "argument 'derive_key_context'", "contiguous buffer", fastargs[2]);
+        if (PyUnicode_READY(fastargs[2]) == -1) {
             goto exit;
         }
+        derive_key_context = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
     if (fastargs[3]) {
-        if (!_PyLong_Size_t_Converter(fastargs[3], &max_threads)) {
-            goto exit;
+        {
+            Py_ssize_t ival = -1;
+            PyObject *iobj = _PyNumber_Index(fastargs[3]);
+            if (iobj != NULL) {
+                ival = PyLong_AsSsize_t(iobj);
+                Py_DECREF(iobj);
+            }
+            if (ival == -1 && PyErr_Occurred()) {
+                goto exit;
+            }
+            max_threads = ival;
         }
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -80,19 +90,33 @@ skip_optional_posonly:
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = py_blake3_new_impl(type, data, &key, &derive_key_context, max_threads, usedforsecurity);
+    return_value = py_blake3_new_impl(type, data, &key, derive_key_context, max_threads, usedforsecurity);
 
 exit:
     /* Cleanup for key */
     if (key.obj) {
        PyBuffer_Release(&key);
     }
-    /* Cleanup for derive_key_context */
-    if (derive_key_context.obj) {
-       PyBuffer_Release(&derive_key_context);
-    }
 
     return return_value;
+}
+
+PyDoc_STRVAR(_blake3_blake3_reset__doc__,
+"reset($self, /)\n"
+"--\n"
+"\n"
+"Reset this hash object to its initial state.");
+
+#define _BLAKE3_BLAKE3_RESET_METHODDEF    \
+    {"reset", (PyCFunction)_blake3_blake3_reset, METH_NOARGS, _blake3_blake3_reset__doc__},
+
+static PyObject *
+_blake3_blake3_reset_impl(BLAKE3Object *self);
+
+static PyObject *
+_blake3_blake3_reset(BLAKE3Object *self, PyObject *Py_UNUSED(ignored))
+{
+    return _blake3_blake3_reset_impl(self);
 }
 
 PyDoc_STRVAR(_blake3_blake3_copy__doc__,
@@ -240,4 +264,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2ed7157d74d01614 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d8fd6ecf96180c65 input=a9049054013a1b77]*/

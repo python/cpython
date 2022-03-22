@@ -58,8 +58,8 @@ _blake3.blake3.__new__ as py_blake3_new
     /
     *
     key: Py_buffer(c_default="NULL", py_default="b''") = None
-    derive_key_context: Py_buffer(c_default="NULL", py_default="b''") = None
-    max_threads: size_t = 1
+    derive_key_context: unicode(c_default="NULL") = None
+    max_threads: Py_ssize_t = -1
     usedforsecurity: bool = True
 
 Return a new BLAKE3 hash object.
@@ -67,12 +67,22 @@ Return a new BLAKE3 hash object.
 
 static PyObject *
 py_blake3_new_impl(PyTypeObject *type, PyObject *data, Py_buffer *key,
-                   Py_buffer *derive_key_context, size_t max_threads,
+                   PyObject *derive_key_context, Py_ssize_t max_threads,
                    int usedforsecurity)
-/*[clinic end generated code: output=6e24ea74302a9e97 input=3d50acf8631d64ae]*/
+/*[clinic end generated code: output=5520c7ccfcc0ea6c input=484a9211624e61a2]*/
 {
-    if ((key->obj != NULL) && (derive_key_context->obj != NULL)) {
-        PyErr_SetString(PyExc_ValueError, "cannot specify both key and derive_key_context");
+    if ((derive_key_context != NULL) && !PyUnicode_GetLength(derive_key_context)) {
+        PyErr_SetString(PyExc_ValueError, "empty derive_key_context string is invalid");
+        return NULL;
+    }
+
+    if ((key->obj != NULL) && (derive_key_context != NULL)) {
+        PyErr_SetString(PyExc_ValueError, "key and derive_key_context can't be used together");
+        return NULL;
+    }
+
+    if ((max_threads < 1) && (max_threads != -1)) {
+        PyErr_SetString(PyExc_ValueError, "invalid value for max_threads");
         return NULL;
     }
 
@@ -83,10 +93,8 @@ py_blake3_new_impl(PyTypeObject *type, PyObject *data, Py_buffer *key,
 
     /* Initialize with key */
     if ((key->obj != NULL) && key->len) {
-        if (key->len > BLAKE3_KEY_LEN) {
-            PyErr_Format(PyExc_ValueError,
-                "maximum key length is %d bytes",
-                BLAKE3_KEY_LEN);
+        if (key->len != BLAKE3_KEY_LEN) {
+            PyErr_SetString(PyExc_ValueError, "key must be exactly 32 bytes");
             goto error;
         }
 
@@ -94,8 +102,13 @@ py_blake3_new_impl(PyTypeObject *type, PyObject *data, Py_buffer *key,
         memset(key_array, 0, sizeof(key_array));
         memcpy(key_array, key->buf, key->len);
         blake3_hasher_init_keyed(&self->self, key_array);
-    } else if ((derive_key_context->obj != NULL) && derive_key_context->len) {
-        blake3_hasher_init_derive_key_raw(&self->self, derive_key_context->buf, derive_key_context->len);
+    } else if (derive_key_context != NULL) {
+        Py_ssize_t length;
+        const char *utf8_key_context = PyUnicode_AsUTF8AndSize(derive_key_context, &length);
+        if (!utf8_key_context) {
+            goto error;
+        }
+        blake3_hasher_init_derive_key_raw(&self->self, utf8_key_context, length);
     } else {
         blake3_hasher_init(&self->self);
     }
@@ -121,6 +134,22 @@ py_blake3_new_impl(PyTypeObject *type, PyObject *data, Py_buffer *key,
         Py_DECREF(self);
     }
     return NULL;
+}
+
+/*[clinic input]
+_blake3.blake3.reset
+
+Reset this hash object to its initial state.
+[clinic start generated code]*/
+
+static PyObject *
+_blake3_blake3_reset_impl(BLAKE3Object *self)
+/*[clinic end generated code: output=d03fd37d58b87017 input=ba958463850a68df]*/
+{
+    ENTER_HASHLIB(self);
+    blake3_hasher_reset(&self->self);
+    LEAVE_HASHLIB(self);
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -256,10 +285,11 @@ _blake3_blake3_hexdigest_impl(BLAKE3Object *self, size_t length, size_t seek)
 
 
 static PyMethodDef py_blake3_methods[] = {
-    _BLAKE3_BLAKE3_COPY_METHODDEF
-    _BLAKE3_BLAKE3_DIGEST_METHODDEF
-    _BLAKE3_BLAKE3_HEXDIGEST_METHODDEF
     _BLAKE3_BLAKE3_UPDATE_METHODDEF
+    _BLAKE3_BLAKE3_HEXDIGEST_METHODDEF
+    _BLAKE3_BLAKE3_DIGEST_METHODDEF
+    _BLAKE3_BLAKE3_COPY_METHODDEF
+    _BLAKE3_BLAKE3_RESET_METHODDEF
     {NULL, NULL}
 };
 
@@ -327,7 +357,7 @@ py_blake3_dealloc(PyObject *o)
 {
     BLAKE3Object *self = (BLAKE3Object *)o;
 
-    /* Try not to leave state in memory. */
+    /* Don't leave state in memory. */
     secure_zero_memory(&self->self, sizeof(self->self));
     if (self->lock) {
         PyThread_free_lock(self->lock);

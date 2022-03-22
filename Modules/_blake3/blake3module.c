@@ -108,6 +108,7 @@ blake3_exec(PyObject *m)
     ADD_INT("block_length", BLAKE3_BLOCK_LEN);
     ADD_INT("chunk_length", BLAKE3_CHUNK_LEN);
     ADD_INT("max_depth", BLAKE3_MAX_DEPTH);
+    ADD_INT("AUTO", -1);
 
     ADD_CONSTANT("supports_multithreading", Py_False);
 
