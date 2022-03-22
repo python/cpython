@@ -525,6 +525,10 @@ def requires_subprocess():
 has_socket_support = not is_emscripten and not is_wasi
 
 def requires_working_socket(*, module=False):
+    """Skip tests or modules that require working sockets
+
+    Can be used as a function/class decorator or to skip an entire module.
+    """
     msg = "requires socket support"
     if module:
         if not has_socket_support:
