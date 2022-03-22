@@ -16,7 +16,7 @@ import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr, requires_zlib,
                           skip_if_broken_multiprocessing_synchronize, verbose,
-                          requires_subprocess)
+                          requires_subprocess, is_emscripten)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
@@ -33,6 +33,9 @@ requireVenvCreate = unittest.skipUnless(
     sys.prefix == sys.base_prefix
     or sys._base_executable != sys.executable,
     'cannot run venv.create from within a venv on this platform')
+
+if is_emscripten:
+    raise unittest.SkipTest("venv is not available on Emscripten.")
 
 @requires_subprocess()
 def check_output(cmd, encoding=None):

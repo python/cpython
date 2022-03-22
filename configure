@@ -7396,6 +7396,13 @@ $as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
           ;;
       esac
       ;;
+    *emcc*)
+      if test "$Py_LTO_POLICY" != "default"; then
+        as_fn_error $? "emcc supports only default lto." "$LINENO" 5
+      fi
+      LTOFLAGS="-flto"
+      LTOCFLAGS="-flto"
+      ;;
     *gcc*)
       if test $Py_LTO_POLICY = thin
       then
@@ -7717,17 +7724,34 @@ then
 fi
 
 # WASM flags
+# TODO: Add -s MAIN_MODULE=2 for dlopen() support.
+# The option disables code elimination, which increases code size of main
+# binary. All objects must be built with -fPIC.
 case $ac_sys_system/$ac_sys_emscripten_target in #(
   Emscripten/browser) :
 
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 --preload-file \$(WASM_ASSETS_DIR)"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1"
+    LINKFORSHARED="--preload-file \$(WASM_ASSETS_DIR)"
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
+        if test "$Py_DEBUG" = 'true'; then
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
+    else
+      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
+    fi
    ;; #(
   Emscripten/node) :
 
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS -s PROXY_TO_PTHREAD"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s USE_PTHREADS=1"
+    LINKFORSHARED="-s PROXY_TO_PTHREAD=1 -s EXIT_RUNTIME=1"
     CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
+    if test "$Py_DEBUG" = 'true'; then
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
+    else
+      LINKFORSHARED="$LINKFORSHARED -O2 -gseparate-dwarf"
+    fi
    ;; #(
   WASI/*) :
 
@@ -10403,6 +10427,10 @@ then
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
+	Emscripten*)
+		LDSHARED='$(CC) -shared -s SIDE_MODULE=1'
+		LDCXXSHARED='$(CXX) -shared -s SIDE_MODULE=1'
+    ;;
 	FreeBSD*)
 		if [ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]
 		then
@@ -15063,6 +15091,10 @@ $as_echo "yes" >&6; }
 
 fi
 
+if test "$have_zlib" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$ZLIB_LIBS" = "-lz"; then
+  ZLIB_LIBS="-s USE_ZLIB=1"
+fi
+
 if test "x$have_zlib" = xyes; then :
 
   BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
@@ -15291,6 +15323,11 @@ else
 $as_echo "yes" >&6; }
 	have_bzip2=yes
 fi
+
+if test "$have_bzip2" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$BZIP2_LIBS" = "-lbz2"; then
+  BZIP2_LIBS="-s USE_BZIP2=1"
+fi
+
 
 
 pkg_failed=no

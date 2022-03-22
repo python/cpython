@@ -939,13 +939,13 @@ class TypeVarTuple(_Final, _Immutable, _root=True):
     """
 
     def __init__(self, name):
-        self._name = name
+        self.__name__ = name
 
     def __iter__(self):
         yield Unpack[self]
 
     def __repr__(self):
-        return self._name
+        return self.__name__
 
     def __typing_subst__(self, arg):
         raise AssertionError
