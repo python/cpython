@@ -10,7 +10,7 @@
  *  Trevor Perrin (trevp@trevp.net)
  *  Gregory P. Smith (greg@krypto.org)
  *
- * Copyright (C) 2012-2016  Christian Heimes (christian@python.org)
+ * Copyright (C) 2012-2022  Christian Heimes (christian@python.org)
  * Licensed to PSF under a Contributor Agreement.
  *
  */
@@ -23,7 +23,7 @@
 #include "pycore_strhex.h"        // _Py_strhex()
 #include "../hashlib.h"
 
-#include "tiny_sha3/sha3.c"
+#include "sha3.c"
 
 #define SHA3_MAX_DIGESTSIZE 64 /* 64 Bytes (512 Bits) for 224 to 512 */
 #define SHA3_LANESIZE 0
@@ -34,16 +34,8 @@
 #define SHA3_squeeze(state, out, len) shake_xof(state), shake_out(state, out, len)
 #define SHA3_copystate(dest, src) memcpy(&(dest), &(src), sizeof(SHA3_state))
 
-#define Keccak_HashInitialize_SHA3_224(state) sha3_init(state, 28)
-#define Keccak_HashInitialize_SHA3_256(state) sha3_init(state, 32)
-#define Keccak_HashInitialize_SHA3_384(state) sha3_init(state, 48)
-#define Keccak_HashInitialize_SHA3_512(state) sha3_init(state, 64)
-#define Keccak_HashInitialize_SHAKE128(state) shake128_init(state)
-#define Keccak_HashInitialize_SHAKE256(state) shake256_init(state)
-
 // no optimization
 #define KeccakOpt 0
-#define KeccakP1600_implementation "tiny_sha3"
 
 typedef enum { SUCCESS = 1, FAIL = 0, BAD_HASHLEN = 2 } HashReturn;
 
@@ -123,17 +115,17 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
     assert(state != NULL);
 
     if (type == state->sha3_224_type) {
-        res = Keccak_HashInitialize_SHA3_224(&self->hash_state);
+        res = sha3_init(&self->hash_state, 28);
     } else if (type == state->sha3_256_type) {
-        res = Keccak_HashInitialize_SHA3_256(&self->hash_state);
+        res = sha3_init(&self->hash_state, 32);
     } else if (type == state->sha3_384_type) {
-        res = Keccak_HashInitialize_SHA3_384(&self->hash_state);
+        res = sha3_init(&self->hash_state, 48);
     } else if (type == state->sha3_512_type) {
-        res = Keccak_HashInitialize_SHA3_512(&self->hash_state);
+        res = sha3_init(&self->hash_state, 64);
     } else if (type == state->shake_128_type) {
-        res = Keccak_HashInitialize_SHAKE128(&self->hash_state);
+        res = sha3_init(&self->hash_state, 16);
     } else if (type == state->shake_256_type) {
-        res = Keccak_HashInitialize_SHAKE256(&self->hash_state);
+        res = sha3_init(&self->hash_state, 32);
     } else {
         PyErr_BadInternalCall();
         goto error;
@@ -392,15 +384,7 @@ SHA3_get_rate_bits(SHA3object *self, void *closure)
 static PyObject *
 SHA3_get_suffix(SHA3object *self, void *closure)
 {
-    PyTypeObject *type = Py_TYPE(self);
-    SHA3State *state = PyType_GetModuleState(type);
-    unsigned char suffix[2];
-    if ((type == state->shake_128_type) || (type == state->shake_256_type)) {
-        suffix[0] = 0x1f;
-    } else {
-        suffix[0] = 0x06;
-    }
-    suffix[1] = 0;
+    unsigned char suffix[2] = {0x06, 0};
     return PyBytes_FromStringAndSize((const char *)suffix, 1);
 }
 
@@ -542,6 +526,13 @@ SHAKE_get_digest_size(SHA3object *self, void *closure)
     return PyLong_FromLong(0);
 }
 
+static PyObject *
+SHAKE_get_suffix(SHA3object *self, void *closure)
+{
+    unsigned char suffix[2] = {0x1f, 0};
+    return PyBytes_FromStringAndSize((const char *)suffix, 1);
+}
+
 
 static PyGetSetDef SHAKE_getseters[] = {
     {"block_size", (getter)SHA3_get_block_size, NULL, NULL, NULL},
@@ -549,7 +540,7 @@ static PyGetSetDef SHAKE_getseters[] = {
     {"digest_size", (getter)SHAKE_get_digest_size, NULL, NULL, NULL},
     {"_capacity_bits", (getter)SHA3_get_capacity_bits, NULL, NULL, NULL},
     {"_rate_bits", (getter)SHA3_get_rate_bits, NULL, NULL, NULL},
-    {"_suffix", (getter)SHA3_get_suffix, NULL, NULL, NULL},
+    {"_suffix", (getter)SHAKE_get_suffix, NULL, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
@@ -640,7 +631,7 @@ _sha3_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddStringConstant(m, "implementation",
-                                   KeccakP1600_implementation) < 0) {
+                                   "tiny_sha3") < 0) {
         return -1;
     }
 
