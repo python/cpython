@@ -2085,7 +2085,7 @@ def cast(typ, val):
 
 
 def assert_type(val, typ, /):
-    """Assert (to the type checker) that the value is of the given type.
+    """Ask a static type checker to confirm that the value is of the given type.
 
     When the type checker encounters a call to assert_type(), it
     emits an error if the value is not of the specified type::
