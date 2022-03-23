@@ -944,21 +944,28 @@ For example:
 Diagnostics
 -----------
 
-If an environment variable :envvar:`PYLAUNCH_DEBUG` is set (to any value), the
+If an environment variable :envvar:`PYLAUNCHER_DEBUG` is set (to any value), the
 launcher will print diagnostic information to stderr (i.e. to the console).
 While this information manages to be simultaneously verbose *and* terse, it
 should allow you to see what versions of Python were located, why a
 particular version was chosen and the exact command-line used to execute the
 target Python. It is primarily intended for testing and debugging.
 
+Dry Run
+-------
+
+If an environment variable :envvar:`PYLAUNCHER_DRYRUN` is set (to any value),
+the launcher will output the command it would have run, but will not actually
+launch Python. This may be useful for tools that want to use the launcher to
+detect and then launch Python directly.
+
 Install on demand
 -----------------
 
-If an environment variable :envvar:`PYLAUNCH_ALLOW_INSTALL` is set (to any
+If an environment variable :envvar:`PYLAUNCHER_ALLOW_INSTALL` is set (to any
 value), and the requested Python version is not installed but is available on
 the Microsoft Store, the launcher will attempt to install it. This may require
 user interaction to complete, and you may need to run the command again.
-
 
 Return codes
 ------------
