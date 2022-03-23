@@ -1,3 +1,2 @@
-``PyFrame_FastToLocalsWithError`` and ``PyFrame_LocalsToFast`` are no longer
-called during profile nor tracing. C code that accesses the ``f_locals`` attribute
- directly must do so by calling ``PyFrame_GetLocals``.
+:c:func:`PyFrame_FastToLocalsWithError` and :c:func:`PyFrame_LocalsToFast` are no longer
+called during profiling nor tracing. C code can access the ``f_locals`` attribute of :c:type:`PyFrameObject` by calling :c:func:`PyFrame_GetLocals`.
