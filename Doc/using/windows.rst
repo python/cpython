@@ -946,32 +946,13 @@ target Python.
 
 
 
-.. _finding_modules:
+.. _windows_finding_modules:
 
 Finding modules
 ===============
 
-Python usually stores its library (and thereby your site-packages folder) in the
-installation directory.  So, if you had installed Python to
-:file:`C:\\Python\\`, the default library would reside in
-:file:`C:\\Python\\Lib\\` and third-party modules should be stored in
-:file:`C:\\Python\\Lib\\site-packages\\`.
-
-To completely override :data:`sys.path`, create a ``._pth`` file with the same
-name as the DLL (``python37._pth``) or the executable (``python._pth``) and
-specify one line for each path to add to :data:`sys.path`. The file based on the
-DLL name overrides the one based on the executable, which allows paths to be
-restricted for any program loading the runtime if desired.
-
-When the file exists, all registry and environment variables are ignored,
-isolated mode is enabled, and :mod:`site` is not imported unless one line in the
-file specifies ``import site``. Blank paths and lines starting with ``#`` are
-ignored. Each path may be absolute or relative to the location of the file.
-Import statements other than to ``site`` are not permitted, and arbitrary code
-cannot be specified.
-
-Note that ``.pth`` files (without leading underscore) will be processed normally
-by the :mod:`site` module when ``import site`` has been specified.
+These notes supplement the description at :ref:`sys-path-init` with
+detailed Windows notes.
 
 When no ``._pth`` file is found, this is how :data:`sys.path` is populated on
 Windows:
