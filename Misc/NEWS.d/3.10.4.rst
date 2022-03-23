@@ -1,0 +1,114 @@
+.. bpo: 46968
+.. date: 2022-03-17-14-22-23
+.. nonce: 4gz4NA
+.. release date: 2022-03-23
+.. section: Core and Builtins
+
+Check for the existence of the "sys/auxv.h" header in :mod:`faulthandler` to
+avoid compilation problems in systems where this header doesn't exist. Patch
+by Pablo Galindo
+
+..
+
+.. bpo: 23691
+.. date: 2022-03-20-22-13-24
+.. nonce: Nc2TrW
+.. section: Library
+
+Protect the :func:`re.finditer` iterator from re-entering.
+
+..
+
+.. bpo: 42369
+.. date: 2022-03-19-19-56-04
+.. nonce: Ok828t
+.. section: Library
+
+Fix thread safety of :meth:`zipfile._SharedFile.tell` to avoid a
+"zipfile.BadZipFile: Bad CRC-32 for file" exception when reading a
+:class:`ZipFile` from multiple threads.
+
+..
+
+.. bpo: 38256
+.. date: 2022-03-19-15-54-41
+.. nonce: FoMbjE
+.. section: Library
+
+Fix :func:`binascii.crc32` when it is compiled to use zlib'c crc32 to work
+properly on inputs 4+GiB in length instead of returning the wrong result.
+The workaround prior to this was to always feed the function data in
+increments smaller than 4GiB or to just call the zlib module function.
+
+..
+
+.. bpo: 39394
+.. date: 2022-03-19-13-38-29
+.. nonce: 7j6WL6
+.. section: Library
+
+A warning about inline flags not at the start of the regular expression now
+contains the position of the flag.
+
+..
+
+.. bpo: 47061
+.. date: 2022-03-18-13-30-40
+.. nonce: etLHK5
+.. section: Library
+
+Deprecate the various modules listed by :pep:`594`:
+
+aifc, asynchat, asyncore, audioop, cgi, cgitb, chunk, crypt, imghdr, msilib,
+nntplib, nis, ossaudiodev, pipes, smtpd, sndhdr, spwd, sunau, telnetlib, uu,
+xdrlib
+
+..
+
+.. bpo: 2604
+.. date: 2022-03-16-18-25-19
+.. nonce: jeopdL
+.. section: Library
+
+Fix bug where doctests using globals would fail when run multiple times.
+
+..
+
+.. bpo: 45997
+.. date: 2022-03-15-18-32-12
+.. nonce: 4n2aVU
+.. section: Library
+
+Fix :class:`asyncio.Semaphore` re-aquiring FIFO order.
+
+..
+
+.. bpo: 47022
+.. date: 2022-03-15-09-29-52
+.. nonce: uaEDcI
+.. section: Library
+
+The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
+deprecated since at least Python 3.6. Their documentation and deprecation
+warnings and have now been updated to note they will removed in Python 3.12
+(:pep:`594`).
+
+..
+
+.. bpo: 46421
+.. date: 2022-01-18-01-29-38
+.. nonce: 9LdmNr
+.. section: Library
+
+Fix a unittest issue where if the command was invoked as ``python -m
+unittest`` and the filename(s) began with a dot (.), a ``ValueError`` is
+returned.
+
+..
+
+.. bpo: 40296
+.. date: 2021-12-25-14-13-14
+.. nonce: p0YVGB
+.. section: Library
+
+Fix supporting generic aliases in :mod:`pydoc`.
