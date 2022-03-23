@@ -94,7 +94,7 @@ jobs:
       git clone https://github.com/python/cpython-bin-deps --branch gpg --single-branch --depth 1 --progress -v "gpg"
       gpg/gpg2.exe --import "$(gpgkey.secureFilePath)"
       $files = gci -File "msi\*\*", "embed\*.zip"
-      if ($(DoCHM)) {
+      if ("$(DoCHM)" -ieq "true") {
           $files = $files + (gci -File "doc\htmlhelp\*.chm")
       }
       $files.FullName | %{
