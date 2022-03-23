@@ -14,6 +14,7 @@ import subprocess
 import sysconfig
 import argparse
 import textwrap
+import tomllib
 import difflib
 import shutil
 import sys
@@ -46,17 +47,15 @@ MACOS = (sys.platform == "darwin")
 UNIXY = MACOS or (sys.platform == "linux")  # XXX should this be "not Windows"?
 
 
-# The stable ABI manifest (Misc/stable_abi.txt) exists only to fill the
+# The stable ABI manifest (Misc/stable_abi.toml) exists only to fill the
 # following dataclasses.
 # Feel free to change its syntax (and the `parse_manifest` function)
 # to better serve that purpose (while keeping it human-readable).
 
-@dataclasses.dataclass
 class Manifest:
     """Collection of `ABIItem`s forming the stable ABI/limited API."""
-
-    kind = 'manifest'
-    contents: dict = dataclasses.field(default_factory=dict)
+    def __init__(self):
+        self.contents = dict()
 
     def add(self, item):
         if item.name in self.contents:
@@ -113,97 +112,60 @@ class Manifest:
                 elif value:
                     yield f"    {field.name} = {value!r}"
 
+
+itemclasses = {}
+def itemclass(kind):
+    """Register the decorated class in `itemclasses`"""
+    def decorator(cls):
+        itemclasses[kind] = cls
+        return cls
+    return decorator
+
+@itemclass('function')
+@itemclass('macro')
+@itemclass('data')
+@itemclass('const')
+@itemclass('typedef')
 @dataclasses.dataclass
 class ABIItem:
     """Information on one item (function, macro, struct, etc.)"""
 
-    kind: str
     name: str
+    kind: str
     added: str = None
-    contents: list = dataclasses.field(default_factory=list)
     abi_only: bool = False
     ifdef: str = None
-    struct_abi_kind: str = None
-    members: list = None
-    doc: str = None
-    windows: bool = False
 
-    KINDS = frozenset({
-        'struct', 'function', 'macro', 'data', 'const', 'typedef', 'ifdef',
-    })
+@itemclass('ifdef')
+@dataclasses.dataclass(kw_only=True)
+class IfDef(ABIItem):
+    name: str
+    doc: str
+    windows: bool = False
+    abi_only: bool = True
+
+@itemclass('struct')
+@dataclasses.dataclass(kw_only=True)
+class Struct(ABIItem):
+    struct_abi_kind: str
+    members: list = None
 
 
 def parse_manifest(file):
     """Parse the given file (iterable of lines) to a Manifest"""
 
-    LINE_RE = re.compile('(?P<indent>[ ]*)(?P<kind>[^ ]+)[ ]*(?P<content>.*)')
     manifest = Manifest()
 
-    # parents of currently processed line, each with its indentation level
-    levels = [(manifest, -1)]
+    data = tomllib.load(file)
 
-    def raise_error(msg):
-        raise SyntaxError(f'line {lineno}: {msg}')
-
-    for lineno, line in enumerate(file, start=1):
-        line, sep, comment = line.partition('#')
-        line = line.rstrip()
-        if not line:
-            continue
-        match = LINE_RE.fullmatch(line)
-        if not match:
-            raise_error(f'invalid syntax: {line}')
-        level = len(match['indent'])
-        kind = match['kind']
-        content = match['content']
-        while level <= levels[-1][1]:
-            levels.pop()
-        parent = levels[-1][0]
-        entry = None
-        if parent.kind == 'manifest':
-            if kind not in kind in ABIItem.KINDS:
-                raise_error(f'{kind} cannot go in {parent.kind}')
-            entry = ABIItem(kind, content)
-            parent.add(entry)
-        elif kind in {'added', 'ifdef'}:
-            if parent.kind not in ABIItem.KINDS:
-                raise_error(f'{kind} cannot go in {parent.kind}')
-            setattr(parent, kind, content)
-        elif kind in {'abi_only'}:
-            if parent.kind not in {'function', 'data'}:
-                raise_error(f'{kind} cannot go in {parent.kind}')
-            parent.abi_only = True
-        elif kind in {'members', 'full-abi', 'opaque'}:
-            if parent.kind not in {'struct'}:
-                raise_error(f'{kind} cannot go in {parent.kind}')
-            if prev := getattr(parent, 'struct_abi_kind', None):
-                raise_error(
-                    f'{parent.name} already has {prev}, cannot add {kind}')
-            parent.struct_abi_kind = kind
-            if kind == 'members':
-                parent.members = content.split()
-        elif kind in {'doc'}:
-            if parent.kind not in {'ifdef'}:
-                raise_error(f'{kind} cannot go in {parent.kind}')
-            parent.doc = content
-        elif kind in {'windows'}:
-            if parent.kind not in {'ifdef'}:
-                raise_error(f'{kind} cannot go in {parent.kind}')
-            if not content:
-                parent.windows = True
-            elif content == 'maybe':
-                parent.windows = content
-            else:
-                raise_error(f'Unexpected: {content}')
-        else:
-            raise_error(f"unknown kind {kind!r}")
-            # When adding more, update the comment in stable_abi.txt.
-        levels.append((entry, level))
-
-    ifdef_names = {i.name for i in manifest.select({'ifdef'})}
-    for item in manifest.contents.values():
-        if item.ifdef and item.ifdef not in ifdef_names:
-            raise ValueError(f'{item.name} uses undeclared ifdef {item.ifdef}')
+    for kind, itemclass in itemclasses.items():
+        for name, item_data in data[kind].items():
+            try:
+                item = itemclass(name=name, kind=kind, **item_data)
+                manifest.add(item)
+            except BaseException as exc:
+                exc.add_note(f'in {kind} {name}')
+                raise
 
     return manifest
 
@@ -287,17 +249,20 @@ def gen_doc_annotations(manifest, args, outfile):
             ifdef_note = manifest.contents[item.ifdef].doc
         else:
             ifdef_note = None
-        writer.writerow({
+        row = {
             'role': REST_ROLES[item.kind],
             'name': item.name,
             'added': item.added,
-            'ifdef_note': ifdef_note,
-            'struct_abi_kind': item.struct_abi_kind})
-        for member_name in item.members or ():
-            writer.writerow({
-                'role': 'member',
-                'name': f'{item.name}.{member_name}',
-                'added': item.added})
+            'ifdef_note': ifdef_note}
+        rows = [row]
+        if item.kind == 'struct':
+            row['struct_abi_kind'] = item.struct_abi_kind
+            for member_name in item.members or ():
+                rows.append({
+                    'role': 'member',
+                    'name': f'{item.name}.{member_name}',
+                    'added': item.added})
+        writer.writerows(rows)
 
 @generator("ctypes_test", 'Lib/test/test_stable_abi_ctypes.py')
 def gen_ctypes_test(manifest, args, outfile):
@@ -698,7 +663,7 @@ def main():
         run_all_generators = True
         args.unixy_check = True
 
-    with args.file.open() as file:
+    with args.file.open('rb') as file:
         manifest = parse_manifest(file)
 
     check_private_names(manifest)
