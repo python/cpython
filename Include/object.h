@@ -334,12 +334,12 @@ given type object has a specified feature.
  * classes, such as classes that extend tuple.
  */
 #define Py_TPFLAGS_MANAGED_DICT (1 << 4)
+#endif
 
 /* Set if instances of the type object are treated as sequences for pattern matching */
 #define Py_TPFLAGS_SEQUENCE (1 << 5)
 /* Set if instances of the type object are treated as mappings for pattern matching */
 #define Py_TPFLAGS_MAPPING (1 << 6)
-#endif
 
 /* Disallow creating instances of the type: set tp_new to NULL and don't create
  * the "__new__" key in the type dictionary. */
