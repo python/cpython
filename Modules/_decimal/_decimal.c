@@ -3360,9 +3360,7 @@ dec_format(PyObject *dec, PyObject *args)
     if (no_neg_0 && mpd_isnegative(mpd) && !mpd_isspecial(mpd)) {
         /* Round into a temporary (carefully mirroring the rounding
            of mpd_qformat_spec()), and check if the result is negative zero.
-           If so, clear the sign and format this pre-rounded value.
-           (The format will then do no additional rounding, which is
-           significant for directed rounding cases like ROUND_CEILING.) */
+           If so, clear the sign and format the resulting positive zero. */
         mpd_ssize_t prec;
         mpd_qcopy(&tmp, mpd, &status);
         switch (spec.type) {
