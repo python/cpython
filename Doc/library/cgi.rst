@@ -3,6 +3,7 @@
 
 .. module:: cgi
    :synopsis: Helpers for running Python scripts via the Common Gateway Interface.
+   :deprecated:
 
 **Source code:** :source:`Lib/cgi.py`
 
@@ -13,6 +14,9 @@
    pair: MIME; headers
    single: URL
    single: Common Gateway Interface
+
+.. deprecated:: 3.11
+   The :mod:`cgi` module is deprecated (see :pep:`594` for details).
 
 --------------
 
