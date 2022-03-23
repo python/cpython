@@ -53,22 +53,17 @@ try:
 
         Makes all characters lowercase and all slashes into backslashes.
         """
+        s = os.fspath(s)
+        if not s:
+            return s
         if isinstance(s, bytes):
-            if s == b'':
-                return s
             s = os.fsdecode(s).replace('/', '\\')
             return os.fsencode(_LCMapStringEx(_LOCALE_NAME_INVARIANT,
                                               _LCMAP_LOWERCASE, s))
         else:
-            if  isinstance(s, str) and s == '':
-                return s
-            s = os.fspath(s)
             return _LCMapStringEx(_LOCALE_NAME_INVARIANT,
                                   _LCMAP_LOWERCASE,
                                   s.replace('/', '\\'))
-        # else:
-        #     msg = f"expected str, bytes or os.PathLike object, not {type(s)}"
-        #     raise TypeError(msg)
 except ImportError:
     def normcase(s):
         """Normalize case of pathname.

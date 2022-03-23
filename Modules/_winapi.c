@@ -1531,7 +1531,7 @@ _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
         return PyErr_Format(PyExc_ValueError, "unsupported flags");
     }
 
-    int dest_size = LCMapStringEx(locale, flags, src, wcslen(src), NULL, 0,
+    int dest_size = LCMapStringEx(locale, flags, src, -1, NULL, 0,
                                   NULL, NULL, 0);
     if (dest_size == 0) {
         return PyErr_SetFromWindowsErr(0);
@@ -1542,7 +1542,7 @@ _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
         return PyErr_NoMemory();
     }
 
-    int nmapped = LCMapStringEx(locale, flags, src, wcslen(src), dest, dest_size,
+    int nmapped = LCMapStringEx(locale, flags, src, -1, dest, dest_size,
                                 NULL, NULL, 0);
     if (nmapped == 0) {
         DWORD error = GetLastError();
@@ -1550,7 +1550,7 @@ _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
         return PyErr_SetFromWindowsErr(error);
     }
 
-    PyObject *ret = PyUnicode_FromWideChar(dest, dest_size);
+    PyObject *ret = PyUnicode_FromWideChar(dest, dest_size - 1);
     PyMem_DEL(dest);
 
     return ret;
