@@ -99,9 +99,9 @@ The module defines the following user-callable items:
       Added *errors* parameter.
 
 
-.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
+.. class:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
 
-   This function operates exactly as :func:`TemporaryFile` does, except that
+   This class operates exactly as :func:`TemporaryFile` does, except that
    data is spooled in memory until the file size exceeds *max_size*, or
    until the file's :func:`fileno` method is called, at which point the
    contents are written to disk and operation proceeds as with
@@ -124,9 +124,9 @@ The module defines the following user-callable items:
       Added *errors* parameter.
 
 
-.. function:: TemporaryDirectory(suffix=None, prefix=None, dir=None, ignore_cleanup_errors=False)
+.. class:: TemporaryDirectory(suffix=None, prefix=None, dir=None, ignore_cleanup_errors=False)
 
-   This function securely creates a temporary directory using the same rules as :func:`mkdtemp`.
+   This class securely creates a temporary directory using the same rules as :func:`mkdtemp`.
    The resulting object can be used as a context manager (see
    :ref:`tempfile-examples`).  On completion of the context or destruction
    of the temporary directory object, the newly created temporary directory
