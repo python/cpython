@@ -865,7 +865,7 @@ class CLanguage(Language):
                 argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
 
             if vararg != NO_VARARG:
-                declarations = "Py_ssize_t varargssize = Py_MAX(nargs - %d, 0);" % (max_pos)
+                declarations = "Py_ssize_t varargssize = Py_MAX(%s - %d, 0);" % (nargs, max_pos)
             else:
                 declarations = ""
 

@@ -3532,3 +3532,105 @@ test_vararg_with_only_defaults_impl(PyObject *module, Py_ssize_t varargssize,
                                     PyObject *const *args, int b,
                                     PyObject *c)
 /*[clinic end generated code: output=99d5e997bbcdf47a input=fa56a709a035666e]*/
+
+
+/*[clinic input]
+module TestModule
+class TestModule.TestClass1 "TestClassObject *" "&TestModule_Type"
+class TestModule.TestClass2 "TestClassObject *" "&TestModule_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=cd38925654911fd4]*/
+
+
+/*[clinic input]
+TestModule.TestClass1.__init__
+
+    *args: object
+
+[clinic start generated code]*/
+
+static int
+TestModule_TestClass1___init___impl(TestClassObject *self,
+                                    Py_ssize_t varargssize,
+                                    PyObject *const *args);
+
+static int
+TestModule_TestClass1___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    Py_ssize_t varargssize = Py_MAX(PyTuple_GET_SIZE(args) - 0, 0);
+    PyObject *const *__clinic_args;
+
+    if ((Py_IS_TYPE(self, &TestModule_Type) ||
+         Py_TYPE(self)->tp_new == TestModule_Type.tp_new) &&
+        !_PyArg_NoKeywords("TestClass1", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("TestClass1", PyTuple_GET_SIZE(args), 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = _PyTuple_CAST(args)->ob_item;
+    return_value = TestModule_TestClass1___init___impl((TestClassObject *)self, varargssize, __clinic_args);
+
+exit:
+    return return_value;
+}
+
+static int
+TestModule_TestClass1___init___impl(TestClassObject *self,
+                                    Py_ssize_t varargssize,
+                                    PyObject *const *args)
+/*[clinic end generated code: output=6cc55e8fae8d8bf2 input=3e093b8ea0b74b0c]*/
+
+
+/*[clinic input]
+TestModule.TestClass1.__init__
+
+    pos: object
+    *args: object
+    kw: object = None
+
+[clinic start generated code]*/
+
+static int
+TestModule_TestClass1___init___impl(TestClassObject *self, PyObject *pos,
+                                    Py_ssize_t varargssize,
+                                    PyObject *const *args, PyObject *kw);
+
+static int
+TestModule_TestClass1___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    static const char * const _keywords[] = {"pos", "kw", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "TestClass1", 0};
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t varargssize = Py_MAX(nargs - 1, 0);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    PyObject *pos;
+    PyObject *const *__clinic_args;
+    PyObject *kw = Py_None;
+
+    fastargs = _PyArg_UnpackKeywordsWithVarargKwonly(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    pos = args[0];
+    __clinic_args = args + 1;
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    kw = fastargs[0];
+skip_optional_kwonly:
+    return_value = TestModule_TestClass1___init___impl((TestClassObject *)self, pos, varargssize, __clinic_args, kw);
+
+exit:
+    return return_value;
+}
+
+static int
+TestModule_TestClass1___init___impl(TestClassObject *self, PyObject *pos,
+                                    Py_ssize_t varargssize,
+                                    PyObject *const *args, PyObject *kw)
+/*[clinic end generated code: output=fd92077792f4c3ef input=da8e0daa18983316]*/
