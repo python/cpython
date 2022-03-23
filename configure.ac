@@ -6391,13 +6391,12 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
 done
 IFS=$as_save_IFS
 
-dnl libb2 for blake2
-dnl _blake2 module falls back to vendored copy
+dnl libb2 for blake2. _blake2 module falls back to vendored copy.
 AS_VAR_IF([with_builtin_blake2], [yes], [
   PKG_CHECK_MODULES([LIBB2], [libb2], [
-    have_libb2=yes
-    AC_DEFINE([HAVE_LIBB2], [1], [Define to 1 if you want to build _blake2 with libb2])
-  ], [have_libb2=no])
+    AC_DEFINE([HAVE_LIBB2], [1],
+              [Define to 1 if you want to build _blake2 module with libb2])
+  ])
 ])
 
 # --with-experimental-isolated-subinterpreters

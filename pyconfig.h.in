@@ -622,7 +622,7 @@
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
-/* Define to 1 if you want to build _blake2 with libb2 */
+/* Define to 1 if you want to build _blake2 module with libb2 */
 #undef HAVE_LIBB2
 
 /* Define to 1 if you have the `db' library (-ldb). */
