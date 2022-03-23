@@ -4,7 +4,7 @@ parameters:
 jobs:
 - job: Publish_Python
   displayName: Publish python.org packages
-  condition: and(succeeded(), and(eq(variables['DoMSI'], 'true'), eq(variables['DoEmbed'], 'true')))
+  condition: and(succeeded(), eq(variables['DoMSI'], 'true'), eq(variables['DoEmbed'], 'true'), ne(variables['SkipPythonOrgPublish'], 'true'))
 
   pool:
     #vmImage: windows-2022
@@ -81,13 +81,19 @@ jobs:
   - powershell: 'gci *embed-arm*.zip | %{ Write-Host "Not publishing: $($_.Name)"; gi $_ } | del'
     displayName: 'Prevent publishing ARM64 packages'
     workingDirectory: '$(Build.BinariesDirectory)\embed'
-    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
+    condition: and(succeeded(), ne(variables['PublishARM64'], 'true'))
 
 
   - template: ./gpg-sign.yml
     parameters:
       GPGKeyFile: 'python-signing.key'
-      Files: 'doc\htmlhelp\*.chm, msi\*\*, embed\*.zip'
+      Files: 'msi\*\*, embed\*.zip'
+
+  - template: ./gpg-sign.yml
+    parameters:
+      GPGKeyFile: 'python-signing.key'
+      Files: 'doc\htmlhelp\*.chm'
+      Condition: and(succeeded(), eq(variables['DoCHM'], 'true'))
 
   - powershell: >
       $(Build.SourcesDirectory)\Tools\msi\uploadrelease.ps1

@@ -85,11 +85,8 @@ class Future:
             self._source_traceback = format_helpers.extract_stack(
                 sys._getframe(1))
 
-    _repr_info = base_futures._future_repr_info
-
     def __repr__(self):
-        return '<{} {}>'.format(self.__class__.__name__,
-                                ' '.join(self._repr_info()))
+        return base_futures._future_repr(self)
 
     def __del__(self):
         if not self.__log_traceback:

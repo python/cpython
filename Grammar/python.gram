@@ -306,14 +306,16 @@ slash_with_default[SlashWithDefault*]:
     | a=param_no_default* b=param_with_default+ '/' &')' { _PyPegen_slash_with_default(p, (asdl_arg_seq *)a, b) }
 
 star_etc[StarEtc*]:
+    | invalid_star_etc
     | '*' a=param_no_default b=param_maybe_default* c=[kwds] {
         _PyPegen_star_etc(p, a, b, c) }
     | '*' ',' b=param_maybe_default+ c=[kwds] {
         _PyPegen_star_etc(p, NULL, b, c) }
     | a=kwds { _PyPegen_star_etc(p, NULL, NULL, a) }
-    | invalid_star_etc
 
-kwds[arg_ty]: '**' a=param_no_default { a }
+kwds[arg_ty]:
+    | invalid_kwds
+    | '**' a=param_no_default { a }
 
 # One parameter.  This *includes* a following comma and type comment.
 #
@@ -339,7 +341,7 @@ param_maybe_default[NameDefaultPair*]:
     | a=param c=default? tc=TYPE_COMMENT? &')' { _PyPegen_name_default_pair(p, a, c, tc) }
 param[arg_ty]: a=NAME b=annotation? { _PyAST_arg(a->v.Name.id, b, NULL, EXTRA) }
 annotation[expr_ty]: ':' a=expression { a }
-default[expr_ty]: '=' a=expression { a }
+default[expr_ty]: '=' a=expression { a } | invalid_default
 
 # If statement
 # ------------
@@ -836,14 +838,16 @@ lambda_slash_with_default[SlashWithDefault*]:
     | a=lambda_param_no_default* b=lambda_param_with_default+ '/' &':' { _PyPegen_slash_with_default(p, (asdl_arg_seq *)a, b) }
 
 lambda_star_etc[StarEtc*]:
+    | invalid_lambda_star_etc
     | '*' a=lambda_param_no_default b=lambda_param_maybe_default* c=[lambda_kwds] {
         _PyPegen_star_etc(p, a, b, c) }
     | '*' ',' b=lambda_param_maybe_default+ c=[lambda_kwds] {
         _PyPegen_star_etc(p, NULL, b, c) }
     | a=lambda_kwds { _PyPegen_star_etc(p, NULL, NULL, a) }
-    | invalid_lambda_star_etc
 
-lambda_kwds[arg_ty]: '**' a=lambda_param_no_default { a }
+lambda_kwds[arg_ty]:
+    | invalid_lambda_kwds
+    | '**' a=lambda_param_no_default { a }
 
 lambda_param_no_default[arg_ty]:
     | a=lambda_param ',' { a }
@@ -1151,6 +1155,26 @@ invalid_parameters:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-default argument follows default argument") }
     | param_no_default* a='(' param_no_default+ ','? b=')' {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Function parameters cannot be parenthesized") }
+    | a="/" ',' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "at least one argument must precede /") }
+    | (slash_no_default | slash_with_default) param_maybe_default* a='/' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ may appear only once") }
+    | (slash_no_default | slash_with_default)? param_maybe_default* '*' (',' | param_no_default) param_maybe_default* a='/' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ must be ahead of *") }
+    | param_maybe_default+ '/' a='*' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expected comma between / and *") }
+invalid_default:
+    | a='=' &(')'|',') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expected default value expression") }
+invalid_star_etc:
+    | a='*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "named arguments must follow bare *") }
+    | '*' ',' TYPE_COMMENT { RAISE_SYNTAX_ERROR("bare * has associated type comment") }
+    | '*' param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-positional argument cannot have default value") }
+    | '*' (param_no_default | ',') param_maybe_default* a='*' (param_no_default | ',') {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "* argument may appear only once") }
+invalid_kwds:
+    | '**' param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-keyword argument cannot have default value") }
+    | '**' param ',' a=param { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "arguments cannot follow var-keyword argument") }
+    | '**' param ',' a[Token*]=('*'|'**'|'/') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "arguments cannot follow var-keyword argument") }
 invalid_parameters_helper: # This is only there to avoid type errors
     | a=slash_with_default { _PyPegen_singleton_seq(p, a) }
     | param_with_default+
@@ -1159,14 +1183,26 @@ invalid_lambda_parameters:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-default argument follows default argument") }
     | lambda_param_no_default* a='(' ','.lambda_param+ ','? b=')' {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Lambda expression parameters cannot be parenthesized") }
+    | a="/" ',' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "at least one argument must precede /") }
+    | (lambda_slash_no_default | lambda_slash_with_default) lambda_param_maybe_default* a='/' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ may appear only once") }
+    | (lambda_slash_no_default | lambda_slash_with_default)? lambda_param_maybe_default* '*' (',' | lambda_param_no_default) lambda_param_maybe_default* a='/' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ must be ahead of *") }
+    | lambda_param_maybe_default+ '/' a='*' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expected comma between / and *") }
 invalid_lambda_parameters_helper:
     | a=lambda_slash_with_default { _PyPegen_singleton_seq(p, a) }
     | lambda_param_with_default+
-invalid_star_etc:
-    | a='*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "named arguments must follow bare *") }
-    | '*' ',' TYPE_COMMENT { RAISE_SYNTAX_ERROR("bare * has associated type comment") }
 invalid_lambda_star_etc:
     | '*' (':' | ',' (':' | '**')) { RAISE_SYNTAX_ERROR("named arguments must follow bare *") }
+    | '*' lambda_param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-positional argument cannot have default value") }
+    | '*' (lambda_param_no_default | ',') lambda_param_maybe_default* a='*' (lambda_param_no_default | ',') {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "* argument may appear only once") }
+invalid_lambda_kwds:
+    | '**' lambda_param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-keyword argument cannot have default value") }
+    | '**' lambda_param ',' a=lambda_param { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "arguments cannot follow var-keyword argument") }
+    | '**' lambda_param ',' a[Token*]=('*'|'**'|'/') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "arguments cannot follow var-keyword argument") }
 invalid_double_type_comments:
     | TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT {
         RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }

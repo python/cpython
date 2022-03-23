@@ -21,8 +21,10 @@ from tempfile import TemporaryFile
 from random import randint, random, randbytes
 
 from test.support import script_helper
-from test.support import (findfile, requires_zlib, requires_bz2,
-                          requires_lzma, captured_stdout, requires_subprocess)
+from test.support import (
+    findfile, requires_zlib, requires_bz2, requires_lzma,
+    captured_stdout, captured_stderr, requires_subprocess
+)
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count
 )
@@ -3208,6 +3210,140 @@ class TestPath(unittest.TestCase):
         for alpharep in self.zipfile_alpharep():
             file = cls(alpharep).joinpath('some dir').parent
             assert isinstance(file, cls)
+
+
+class EncodedMetadataTests(unittest.TestCase):
+    file_names = ['\u4e00', '\u4e8c', '\u4e09']  # Han 'one', 'two', 'three'
+    file_content = [
+        "This is pure ASCII.\n".encode('ascii'),
+        # This is modern Japanese. (UTF-8)
+        "\u3053\u308c\u306f\u73fe\u4ee3\u7684\u65e5\u672c\u8a9e\u3067\u3059\u3002\n".encode('utf-8'),
+        # This is obsolete Japanese. (Shift JIS)
+        "\u3053\u308c\u306f\u53e4\u3044\u65e5\u672c\u8a9e\u3067\u3059\u3002\n".encode('shift_jis'),
+    ]
+
+    def setUp(self):
+        self.addCleanup(unlink, TESTFN)
+        # Create .zip of 3 members with Han names encoded in Shift JIS.
+        # Each name is 1 Han character encoding to 2 bytes in Shift JIS.
+        # The ASCII names are arbitrary as long as they are length 2 and
+        # not otherwise contained in the zip file.
+        # Data elements are encoded bytes (ascii, utf-8, shift_jis).
+        placeholders = ["n1", "n2"] + self.file_names[2:]
+        with zipfile.ZipFile(TESTFN, mode="w") as tf:
+            for temp, content in zip(placeholders, self.file_content):
+                tf.writestr(temp, content, zipfile.ZIP_STORED)
+        # Hack in the Shift JIS names with flag bit 11 (UTF-8) unset.
+        with open(TESTFN, "rb") as tf:
+            data = tf.read()
+        for name, temp in zip(self.file_names, placeholders[:2]):
+            data = data.replace(temp.encode('ascii'),
+                                name.encode('shift_jis'))
+        with open(TESTFN, "wb") as tf:
+            tf.write(data)
+
+    def _test_read(self, zipfp, expected_names, expected_content):
+        # Check the namelist
+        names = zipfp.namelist()
+        self.assertEqual(sorted(names), sorted(expected_names))
+
+        # Check infolist
+        infos = zipfp.infolist()
+        names = [zi.filename for zi in infos]
+        self.assertEqual(sorted(names), sorted(expected_names))
+
+        # check getinfo
+        for name, content in zip(expected_names, expected_content):
+            info = zipfp.getinfo(name)
+            self.assertEqual(info.filename, name)
+            self.assertEqual(info.file_size, len(content))
+            self.assertEqual(zipfp.read(name), content)
+
+    def test_read_with_metadata_encoding(self):
+        # Read the ZIP archive with correct metadata_encoding
+        with zipfile.ZipFile(TESTFN, "r", metadata_encoding='shift_jis') as zipfp:
+            self._test_read(zipfp, self.file_names, self.file_content)
+
+    def test_read_without_metadata_encoding(self):
+        # Read the ZIP archive without metadata_encoding
+        expected_names = [name.encode('shift_jis').decode('cp437')
+                          for name in self.file_names[:2]] + self.file_names[2:]
+        with zipfile.ZipFile(TESTFN, "r") as zipfp:
+            self._test_read(zipfp, expected_names, self.file_content)
+
+    def test_read_with_incorrect_metadata_encoding(self):
+        # Read the ZIP archive with incorrect metadata_encoding
+        expected_names = [name.encode('shift_jis').decode('koi8-u')
+                          for name in self.file_names[:2]] + self.file_names[2:]
+        with zipfile.ZipFile(TESTFN, "r", metadata_encoding='koi8-u') as zipfp:
+            self._test_read(zipfp, expected_names, self.file_content)
+
+    def test_read_with_unsuitable_metadata_encoding(self):
+        # Read the ZIP archive with metadata_encoding unsuitable for
+        # decoding metadata
+        with self.assertRaises(UnicodeDecodeError):
+            zipfile.ZipFile(TESTFN, "r", metadata_encoding='ascii')
+        with self.assertRaises(UnicodeDecodeError):
+            zipfile.ZipFile(TESTFN, "r", metadata_encoding='utf-8')
+
+    def test_read_after_append(self):
+        newname = '\u56db'  # Han 'four'
+        expected_names = [name.encode('shift_jis').decode('cp437')
+                          for name in self.file_names[:2]] + self.file_names[2:]
+        expected_names.append(newname)
+        expected_content = (*self.file_content, b"newcontent")
+
+        with zipfile.ZipFile(TESTFN, "a") as zipfp:
+            zipfp.writestr(newname, "newcontent")
+            self.assertEqual(sorted(zipfp.namelist()), sorted(expected_names))
+
+        with zipfile.ZipFile(TESTFN, "r") as zipfp:
+            self._test_read(zipfp, expected_names, expected_content)
+
+        with zipfile.ZipFile(TESTFN, "r", metadata_encoding='shift_jis') as zipfp:
+            self.assertEqual(sorted(zipfp.namelist()), sorted(expected_names))
+            for i, (name, content) in enumerate(zip(expected_names, expected_content)):
+                info = zipfp.getinfo(name)
+                self.assertEqual(info.filename, name)
+                self.assertEqual(info.file_size, len(content))
+                if i < 2:
+                    with self.assertRaises(zipfile.BadZipFile):
+                        zipfp.read(name)
+                else:
+                    self.assertEqual(zipfp.read(name), content)
+
+    def test_write_with_metadata_encoding(self):
+        ZF = zipfile.ZipFile
+        for mode in ("w", "x", "a"):
+            with self.assertRaisesRegex(ValueError,
+                                        "^metadata_encoding is only"):
+                ZF("nonesuch.zip", mode, metadata_encoding="shift_jis")
+
+    def test_cli_with_metadata_encoding(self):
+        errmsg = "Non-conforming encodings not supported with -c."
+        args = ["--metadata-encoding=shift_jis", "-c", "nonesuch", "nonesuch"]
+        with captured_stdout() as stdout:
+            with captured_stderr() as stderr:
+                self.assertRaises(SystemExit, zipfile.main, args)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertIn(errmsg, stderr.getvalue())
+
+        with captured_stdout() as stdout:
+            zipfile.main(["--metadata-encoding=shift_jis", "-t", TESTFN])
+        listing = stdout.getvalue()
+
+        with captured_stdout() as stdout:
+            zipfile.main(["--metadata-encoding=shift_jis", "-l", TESTFN])
+        listing = stdout.getvalue()
+        for name in self.file_names:
+            self.assertIn(name, listing)
+
+        os.mkdir(TESTFN2)
+        self.addCleanup(rmtree, TESTFN2)
+        zipfile.main(["--metadata-encoding=shift_jis", "-e", TESTFN, TESTFN2])
+        listing = os.listdir(TESTFN2)
+        for name in self.file_names:
+            self.assertIn(name, listing)
 
 
 if __name__ == "__main__":
