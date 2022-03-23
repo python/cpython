@@ -23,8 +23,8 @@ extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 #define _PyLong_SMALL_INTS _Py_SINGLETON(small_ints)
 
 // _PyLong_GetZero() and _PyLong_GetOne() must always be available
-#if _PY_NSMALLPOSINTS < 2
-#  error "_PY_NSMALLPOSINTS must be greater than 1"
+#if _PY_NSMALLPOSINTS < 257
+#  error "_PY_NSMALLPOSINTS must be greater than or equal to 257"
 #endif
 
 // Return a borrowed reference to the zero singleton.
