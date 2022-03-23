@@ -370,3 +370,8 @@ whatsnew/changelog,,::,default::DeprecationWarning
 library/importlib.metadata,,:main,"EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')"
 library/importlib.metadata,,`,loading the metadata for packages for the indicated ``context``.
 library/re,,`,"`"
+library/typing,,`,# Type of ``val`` is narrowed to ``str``
+library/typing,,`,"# Else, type of ``val`` is narrowed to ``float``."
+library/typing,,`,# Type of ``val`` is narrowed to ``List[str]``.
+library/typing,,`,# Type of ``val`` remains as ``List[object]``.
+library/typing,,`,    # will always be an instance of whatever `cls` is
