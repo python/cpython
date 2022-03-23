@@ -98,7 +98,15 @@ Runner context manager
       custom :class:`contextvars.Context` for the *coro* to run in.
       The runner's default context is used if ``None``.
 
+      This function cannot be called when another asyncio event loop is
+      running in the same thread.
+
    .. method:: close()
+
+      Close the runner.
+
+      Finalize asynchronous generators, shutdown default executor, close the event loop
+      and release embedded :class:`contextvars.Context`.
 
    .. method:: get_loop()
 
@@ -109,5 +117,5 @@ Runner context manager
       :class:`Runner` uses the lazy initialization strategy, its constructor doesn't
       initialize underlying low-level structures.
 
-      Embedded *loop* and *context* are created at :keyword:`with` body entering or the
-      first call of :meth:`run` or :meth:`get_loop`.
+      Embedded *loop* and *context* are created at the :keyword:`with` body entering
+      or the first call of :meth:`run` or :meth:`get_loop`.
