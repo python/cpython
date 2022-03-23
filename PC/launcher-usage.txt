@@ -28,4 +28,4 @@ be selected.
 See https://docs.python.org/using/windows.html#python-launcher-for-windows for
 additional configuration.
 
-The following help text is from %s:
+The following help text is from Python:

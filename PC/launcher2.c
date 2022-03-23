@@ -1047,9 +1047,13 @@ _compareTag(const wchar_t *x, const wchar_t *y)
         return r;
     }
     // If we're equal up to the first dash, we want to sort one with
-    // no dash *after* one with a dash. Otherwise, a regular compare
+    // no dash *after* one with a dash. Otherwise, a reversed compare.
+    // This works out because environments are sorted in descending tag
+    // order, so that higher versions (probably) come first.
+    // For PythonCore, our "X.Y" structure ensures that higher versions
+    // come first. Everyone else will just have to deal with it.
     if (xDash && yDash) {
-        return _compare(xDash, -1, yDash, -1);
+        return _compare(yDash, -1, xDash, -1);
     } else if (xDash) {
         return -1;
     } else if (yDash) {
@@ -1361,6 +1365,7 @@ struct RegistrySearchInfo {
     const wchar_t *fallbackArch;
 };
 
+
 struct RegistrySearchInfo REGISTRY_SEARCH[] = {
     {
         L"Software\\Python",
@@ -1608,6 +1613,16 @@ _companyMatches(const SearchInfo *search, const EnvironmentInfo *env)
 
 
 bool
+_tagMatches(const SearchInfo *search, const EnvironmentInfo *env)
+{
+    if (!search->tag || !search->tagLength) {
+        return true;
+    }
+    return _startsWith(env->tag, -1, search->tag, search->tagLength);
+}
+
+
+bool
 _is32Bit(const EnvironmentInfo *env)
 {
     if (env->architecture) {
@@ -1631,7 +1646,11 @@ _selectEnvironment(const SearchInfo *search, EnvironmentInfo *env, EnvironmentIn
         }
 
         if (!search->oldStyleTag) {
-            if (_companyMatches(search, env) && 0 == _compare(env->tag, -1, search->tag, search->tagLength)) {
+            if (_companyMatches(search, env) && _tagMatches(search, env)) {
+                // Because of how our sort tree is set up, we will walk up the
+                // "prev" side and implicitly select the "best" best. By
+                // returning straight after a match, we skip the entire "next"
+                // branch and won't ever select a "worse" best.
                 *best = env;
                 return 0;
             }
@@ -2089,6 +2108,8 @@ or open the Microsoft Store to the requested version.\n", stderr);
     if (exitCode) {
         goto abort;
     }
+
+    debug(L"env.company: %s\nenv.tag: %s\n", env->company, env->tag);
 
     exitCode = calculateCommandLine(&search, env, launchCommand, sizeof(launchCommand) / sizeof(launchCommand[0]));
     if (exitCode) {

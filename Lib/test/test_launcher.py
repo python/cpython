@@ -25,24 +25,32 @@ TEST_DATA = {
     "PythonTestSuite": {
         "DisplayName": "Python Test Suite",
         "SupportUrl": "https://www.python.org/",
-        "{0.major}.{0.minor}".format(sys.version_info): {
+        "3.100": {
             "DisplayName": "X.Y version",
             "InstallPath": {
                 None: sys.prefix,
+                "ExecutablePath": "X.Y.exe",
             }
         },
-        "{0.major}.{0.minor}-32".format(sys.version_info): {
+        "3.100-32": {
             "DisplayName": "X.Y-32 version",
             "InstallPath": {
                 None: sys.prefix,
+                "ExecutablePath": "X.Y-32.exe",
             }
         },
-        "{0.major}.{0.minor}-arm64".format(sys.version_info): {
+        "3.100-arm64": {
             "DisplayName": "X.Y-arm64 version",
             "InstallPath": {
                 None: sys.prefix,
-                "ExecutablePath": sys.executable,
+                "ExecutablePath": "X.Y-arm64.exe",
                 "ExecutableArguments": "-X fake_arg_for_test",
+            }
+        },
+        "ignored": {
+            "DisplayName": "Ignored because no ExecutablePath",
+            "InstallPath": {
+                None: sys.prefix,
             }
         },
     }
@@ -75,6 +83,7 @@ def enum_keys(root):
                 break
             raise
 
+
 def delete_registry_data(root, keys):
     ACCESS = winreg.KEY_WRITE | winreg.KEY_ENUMERATE_SUB_KEYS
     for key in list(keys):
@@ -83,12 +92,29 @@ def delete_registry_data(root, keys):
         winreg.DeleteKey(root, key)
 
 
+def is_installed(tag):
+    key = rf"Software\Python\PythonCore\{tag}\InstallPath"
+    for root, flag in [
+        (winreg.HKEY_CURRENT_USER, 0),
+        (winreg.HKEY_LOCAL_MACHINE, winreg.KEY_WOW64_64KEY),
+        (winreg.HKEY_LOCAL_MACHINE, winreg.KEY_WOW64_32KEY),
+    ]:
+        try:
+            winreg.CloseKey(winreg.OpenKey(root, key, access=winreg.KEY_READ | flag))
+            return True
+        except OSError:
+            pass
+    return False
+
+
 class TestLauncher(unittest.TestCase):
+    py_exe = None
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.py_exe = None
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         py_exe = None
         if sysconfig.is_python_build(True):
             py_exe = Path(sys.executable).parent / PY_EXE
@@ -102,18 +128,23 @@ class TestLauncher(unittest.TestCase):
             raise unittest.SkipTest(
                 "cannot locate '{}' for test".format(PY_EXE)
             )
-        self.py_exe = py_exe
+        cls.py_exe = py_exe
 
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, rf"Software\Python") as key:
             create_registry_data(key, TEST_DATA)
 
+        if support.verbose:
+            p = subprocess.check_output("reg query HKCU\\Software\\Python /s")
+            print(p.decode('mbcs'))
 
-    def tearDown(self):
+
+    @classmethod
+    def tearDownClass(cls):
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, rf"Software\Python", access=winreg.KEY_WRITE | winreg.KEY_ENUMERATE_SUB_KEYS) as key:
             delete_registry_data(key, TEST_DATA)
 
 
-    def run_py(self, args, env=None):
+    def run_py(self, args, env=None, allow_fail=False):
         env = {**os.environ, **(env or {}), "PYLAUNCHER_DEBUG": "1", "PYLAUNCHER_DRYRUN": "1"}
         with subprocess.Popen(
             [self.py_exe, *args],
@@ -126,14 +157,17 @@ class TestLauncher(unittest.TestCase):
             p.wait(10)
             out = p.stdout.read().decode("ascii", "replace")
             err = p.stderr.read().decode("ascii", "replace")
-        if p.returncode and support.verbose:
+        if p.returncode and support.verbose and not allow_fail:
             print("++ COMMAND ++")
             print([self.py_exe, *args])
             print("++ STDOUT ++")
             print(out)
             print("++ STDERR ++")
             print(err)
-        self.assertEqual(0, p.returncode)
+        if allow_fail and p.returncode:
+            raise subprocess.CalledProcessError(p.returncode, [self.py_exe, *args], out, err)
+        else:
+            self.assertEqual(0, p.returncode)
         data = {
             s.partition(":")[0]: s.partition(":")[2].lstrip()
             for s in err.splitlines()
@@ -188,5 +222,72 @@ class TestLauncher(unittest.TestCase):
                 except KeyError:
                     expect[arg] = str(Path(install[None]) / Path(sys.executable).name)
 
+            expect.pop(f"-V:{company}/ignored", None)
+
         actual = {k: v for k, v in found.items() if k in expect}
-        self.assertDictEqual(expect, actual)
+        try:
+            self.assertDictEqual(expect, actual)
+        except:
+            if support.verbose:
+                print("*** STDOUT ***")
+                print(data["stdout"])
+            raise
+
+    def test_filter_to_company(self):
+        company = "PythonTestSuite"
+        data = self.run_py([f"-V:{company}/"])
+        self.assertEqual("X.Y.exe", data["LaunchCommand"])
+        self.assertEqual(company, data["env.company"])
+        self.assertEqual("3.100", data["env.tag"])
+
+    def test_filter_to_tag(self):
+        company = "PythonTestSuite"
+        data = self.run_py([f"-V:3.100"])
+        self.assertEqual("X.Y.exe", data["LaunchCommand"])
+        self.assertEqual(company, data["env.company"])
+        self.assertEqual("3.100", data["env.tag"])
+
+        data = self.run_py([f"-V:3.100-3"])
+        self.assertEqual("X.Y-32.exe", data["LaunchCommand"])
+        self.assertEqual(company, data["env.company"])
+        self.assertEqual("3.100-32", data["env.tag"])
+
+        data = self.run_py([f"-V:3.100-a"])
+        self.assertEqual("X.Y-arm64.exe -X fake_arg_for_test", data["LaunchCommand"])
+        self.assertEqual(company, data["env.company"])
+        self.assertEqual("3.100-arm64", data["env.tag"])
+
+    def test_filter_to_company_and_tag(self):
+        company = "PythonTestSuite"
+        data = self.run_py([f"-V:{company}/3.1"])
+        self.assertEqual("X.Y.exe", data["LaunchCommand"])
+        self.assertEqual(company, data["env.company"])
+        self.assertEqual("3.100", data["env.tag"])
+
+    def test_search_major_3(self):
+        try:
+            data = self.run_py(["-3"], allow_fail=True)
+        except subprocess.CalledProcessError:
+            raise unittest.SkipTest("requires at least one Python 3.x install")
+        self.assertEqual("PythonCore", data["env.company"])
+        self.assertTrue(data["env.tag"].startswith("3."), data["env.tag"])
+
+    def test_search_major_3_32(self):
+        try:
+            data = self.run_py(["-3-32"], allow_fail=True)
+        except subprocess.CalledProcessError:
+            if not any(is_installed(f"3.{i}-32") for i in range(5, 11)):
+                raise unittest.SkipTest("requires at least one 32-bit Python 3.x install")
+            raise
+        self.assertEqual("PythonCore", data["env.company"])
+        self.assertTrue(data["env.tag"].startswith("3."), data["env.tag"])
+        self.assertTrue(data["env.tag"].endswith("-32"), data["env.tag"])
+
+    def test_search_major_2(self):
+        try:
+            data = self.run_py(["-2"], allow_fail=True)
+        except subprocess.CalledProcessError:
+            if not is_installed("2.7"):
+                raise unittest.SkipTest("requires at least one Python 2.x install")
+        self.assertEqual("PythonCore", data["env.company"])
+        self.assertTrue(data["env.tag"].startswith("2."), data["env.tag"])
