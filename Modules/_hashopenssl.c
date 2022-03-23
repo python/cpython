@@ -1831,7 +1831,6 @@ PyType_Spec HMACtype_spec = {
 typedef struct _internal_name_mapper_state {
     PyObject *set;
     int error;
-    PyObject *undefined;
 } _InternalNameMapperState;
 
 
@@ -1848,6 +1847,7 @@ _openssl_hash_name_mapper(const EVP_MD *md, const char *from,
     PyObject *py_name;
 
     assert(state != NULL);
+    // ignore all undefined providers
     if ((md == NULL) || (EVP_MD_nid(md) == NID_undef)) {
         return;
     }
