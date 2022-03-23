@@ -384,3 +384,4 @@ library/typing,,`,# Type of ``val`` is narrowed to ``str``
 library/typing,,`,"# Else, type of ``val`` is narrowed to ``float``."
 library/typing,,`,# Type of ``val`` is narrowed to ``List[str]``.
 library/typing,,`,# Type of ``val`` remains as ``List[object]``.
+library/typing,,`,    # will always be an instance of whatever `cls` is

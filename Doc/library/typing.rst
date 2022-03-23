@@ -247,7 +247,7 @@ subscription to denote expected types for container elements.
    def notify_by_email(employees: Sequence[Employee],
                        overrides: Mapping[str, str]) -> None: ...
 
-Generics can be parameterized by using a new factory available in typing
+Generics can be parameterized by using a factory available in typing
 called :class:`TypeVar`.
 
 ::
@@ -304,16 +304,16 @@ that ``LoggedVar[t]`` is valid as a type::
        for var in vars:
            var.set(0)
 
-A generic type can have any number of type variables, and type variables may
-be constrained::
+A generic type can have any number of type variables. All varieties of
+:class:`TypeVar` are permissible as parameters for a generic type::
 
-   from typing import TypeVar, Generic
-   ...
+   from typing import TypeVar, Generic, Sequence
 
-   T = TypeVar('T')
+   T = TypeVar('T', contravariant=True)
+   B = TypeVar('B', bound=Sequence[bytes], covariant=True)
    S = TypeVar('S', int, str)
 
-   class StrangePair(Generic[T, S]):
+   class WeirdTrio(Generic[T, B, S]):
        ...
 
 Each type variable argument to :class:`Generic` must be distinct.
@@ -1084,7 +1084,8 @@ These are not used in annotations. They are building blocks for creating generic
     Usage::
 
       T = TypeVar('T')  # Can be anything
-      A = TypeVar('A', str, bytes)  # Must be str or bytes
+      S = TypeVar('S', bound=str)  # Can be any subtype of str
+      A = TypeVar('A', str, bytes)  # Must be exactly str or bytes
 
     Type variables exist primarily for the benefit of static type
     checkers.  They serve as the parameters for generic types as well
@@ -1095,25 +1096,91 @@ These are not used in annotations. They are building blocks for creating generic
            """Return a list containing n references to x."""
            return [x]*n
 
-       def longest(x: A, y: A) -> A:
-           """Return the longest of two strings."""
-           return x if len(x) >= len(y) else y
 
-    The latter example's signature is essentially the overloading
-    of ``(str, str) -> str`` and ``(bytes, bytes) -> bytes``.  Also note
-    that if the arguments are instances of some subclass of :class:`str`,
-    the return type is still plain :class:`str`.
+       def print_capitalized(x: S) -> S:
+           """Print x capitalized, and return x."""
+           print(x.capitalize())
+           return x
+
+
+       def concatenate(x: A, y: A) -> A:
+           """Add two strings or bytes objects together."""
+           return x + y
+
+    Note that type variables can be *bound*, *constrained*, or neither, but
+    cannot be both bound *and* constrained.
+
+    Constrained type variables and bound type variables have different
+    semantics in several important ways. Using a *constrained* type variable
+    means that the ``TypeVar`` can only ever be solved as being exactly one of
+    the constraints given::
+
+       a = concatenate('one', 'two')  # Ok, variable 'a' has type 'str'
+       b = concatenate(StringSubclass('one'), StringSubclass('two'))  # Inferred type of variable 'b' is 'str',
+                                                                      # despite 'StringSubclass' being passed in
+       c = concatenate('one', b'two')  # error: type variable 'A' can be either 'str' or 'bytes' in a function call, but not both
+
+    Using a *bound* type variable, however, means that the ``TypeVar`` will be
+    solved using the most specific type possible::
+
+       print_capitalized('a string')  # Ok, output has type 'str'
+
+       class StringSubclass(str):
+           pass
+
+       print_capitalized(StringSubclass('another string'))  # Ok, output has type 'StringSubclass'
+       print_capitalized(45)  # error: int is not a subtype of str
+
+    Type variables can be bound to concrete types, abstract types (ABCs or
+    protocols), and even unions of types::
+
+       U = TypeVar('U', bound=str|bytes)  # Can be any subtype of the union str|bytes
+       V = TypeVar('V', bound=SupportsAbs)  # Can be anything with an __abs__ method
+
+    Bound type variables are particularly useful for annotating
+    :func:`classmethods <classmethod>` that serve as alternative constructors.
+    In the following example (©
+    `Raymond Hettinger <https://www.youtube.com/watch?v=HTLu2DFOdTg>`_), the
+    type variable ``C`` is bound to the ``Circle`` class through the use of a
+    forward reference. Using this type variable to annotate the
+    ``with_circumference`` classmethod, rather than hardcoding the return type
+    as ``Circle``, means that a type checker can correctly infer the return
+    type even if the method is called on a subclass::
+
+       import math
+
+       C = TypeVar('C', bound='Circle')
+
+       class Circle:
+           """An abstract circle"""
+
+           def __init__(self, radius: float) -> None:
+               self.radius = radius
+
+           # Use a type variable to show that the return type
+           # will always be an instance of whatever `cls` is
+           @classmethod
+           def with_circumference(cls: type[C], circumference: float) -> C:
+               """Create a circle with the specified circumference"""
+               radius = circumference / (math.pi * 2)
+               return cls(radius)
+
+
+       class Tire(Circle):
+           """A specialised circle (made out of rubber)"""
+
+           MATERIAL = 'rubber'
+
+
+       c = Circle.with_circumference(3)  # Ok, variable 'c' has type 'Circle'
+       t = Tire.with_circumference(4)  # Ok, variable 't' has type 'Tire' (not 'Circle')
 
     At runtime, ``isinstance(x, T)`` will raise :exc:`TypeError`.  In general,
     :func:`isinstance` and :func:`issubclass` should not be used with types.
 
     Type variables may be marked covariant or contravariant by passing
     ``covariant=True`` or ``contravariant=True``.  See :pep:`484` for more
-    details.  By default type variables are invariant.  Alternatively,
-    a type variable may specify an upper bound using ``bound=<type>``.
-    This means that an actual type substituted (explicitly or implicitly)
-    for the type variable must be a subclass of the boundary type,
-    see :pep:`484`.
+    details.  By default, type variables are invariant.
 
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
 
@@ -1215,7 +1282,7 @@ These are not used in annotations. They are building blocks for creating generic
 
 .. data:: AnyStr
 
-   ``AnyStr`` is a type variable defined as
+   ``AnyStr`` is a :class:`constrained type variable <TypeVar>` defined as
    ``AnyStr = TypeVar('AnyStr', str, bytes)``.
 
    It is meant to be used for functions that may accept any kind of string
