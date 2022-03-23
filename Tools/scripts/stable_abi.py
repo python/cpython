@@ -99,9 +99,19 @@ class Manifest:
 
     def dump(self):
         """Yield lines to recreate the manifest file (sans comments/newlines)"""
-        # Recursive in preparation for struct member & function argument nodes
         for item in self.contents.values():
-            yield from item.dump(indent=0)
+            fields = dataclasses.fields(item)
+            yield f"[{item.kind}.{item.name}]"
+            for field in fields:
+                if field.name in {'name', 'value', 'kind'}:
+                    continue
+                value = getattr(item, field.name)
+                if value == field.default:
+                    pass
+                elif value is True:
+                    yield f"    {field.name} = true"
+                elif value:
+                    yield f"    {field.name} = {value!r}"
 
 @dataclasses.dataclass
 class ABIItem:
@@ -122,14 +132,6 @@ class ABIItem:
         'struct', 'function', 'macro', 'data', 'const', 'typedef', 'ifdef',
     })
 
-    def dump(self, indent=0):
-        yield f"{'    ' * indent}{self.kind} {self.name}"
-        if self.added:
-            yield f"{'    ' * (indent+1)}added {self.added}"
-        if self.ifdef:
-            yield f"{'    ' * (indent+1)}ifdef {self.ifdef}"
-        if self.abi_only:
-            yield f"{'    ' * (indent+1)}abi_only"
 
 def parse_manifest(file):
     """Parse the given file (iterable of lines) to a Manifest"""
