@@ -180,7 +180,7 @@ of the message for unhandled exceptions.
 :exc:`BaseException` is the common base class of all exceptions, including a few
 which are not typically handled, because they are used to indicate that the
 program should terminate. They include :exc:`SystemExit` which is raised by
-``sys.exit()`` and :exc:`KeyboardInterrupt` which is raised when a user
+:meth:`sys.exit` and :exc:`KeyboardInterrupt` which is raised when a user
 wishes to interrupt the program.
 
 :exc:`Exception` is a subclass of :exc:`BaseException`, which is a common
