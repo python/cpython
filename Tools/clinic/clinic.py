@@ -655,6 +655,8 @@ class CLanguage(Language):
                 if not p.is_optional():
                     min_kw_only = i - max_pos
             elif p.is_vararg():
+                if not isinstance(p.converter, object_converter):
+                    fail("Only object type varargs are accepted")
                 if vararg != NO_VARARG:
                     fail("Too many var args")
                 pseudo_args += 1
