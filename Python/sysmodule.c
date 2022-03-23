@@ -933,6 +933,11 @@ call_trampoline(PyThreadState *tstate, PyObject* callback,
     /* call the Python-level function */
     PyObject *result = _PyObject_FastCallTstate(tstate, callback, stack, 3);
 
+    PyFrame_LocalsToFast(frame, 1);
+
+    if (result == NULL) {
+        PyTraceBack_Here(frame);
+    }
 
     return result;
 }
