@@ -890,7 +890,7 @@ checkDefaults(SearchInfo *search)
     if (!search->tag || !search->tagLength) {
         n = GetEnvironmentVariableW(L"VIRTUAL_ENV", buffer, MAXLEN);
         if (n && join(buffer, MAXLEN, L"Scripts") && join(buffer, MAXLEN, search->executable)) {
-            if (INVALID_FILE_ATTRIBUTES == GetFileAttributesW(buffer)) {
+            if (INVALID_FILE_ATTRIBUTES != GetFileAttributesW(buffer)) {
                 n = (int)wcsnlen_s(buffer, MAXLEN) + 1;
                 wchar_t *path = allocSearchInfoBuffer(search, n);
                 if (!path) {
