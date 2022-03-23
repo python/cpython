@@ -4,74 +4,6 @@
 #ifdef HAVE_LIBB2
 #include <blake2.h>
 
-// copied from blake2-impl.h
-static inline void
-store32( void *dst, uint32_t w )
-{
-#if defined(NATIVE_LITTLE_ENDIAN)
-  memcpy( dst, &w, sizeof( w ) );
-#else
-  uint8_t *p = ( uint8_t * )dst;
-  *p++ = ( uint8_t )w; w >>= 8;
-  *p++ = ( uint8_t )w; w >>= 8;
-  *p++ = ( uint8_t )w; w >>= 8;
-  *p++ = ( uint8_t )w;
-#endif
-}
-
-static inline void
-store48( void *dst, uint64_t w )
-{
-  uint8_t *p = ( uint8_t * )dst;
-  *p++ = ( uint8_t )w; w >>= 8;
-  *p++ = ( uint8_t )w; w >>= 8;
-  *p++ = ( uint8_t )w; w >>= 8;
-  *p++ = ( uint8_t )w; w >>= 8;
-  *p++ = ( uint8_t )w; w >>= 8;
-  *p++ = ( uint8_t )w;
-}
-
-static inline void
-store64( void *dst, uint64_t w )
-{
-#if defined(NATIVE_LITTLE_ENDIAN)
-  memcpy( dst, &w, sizeof( w ) );
-#else
-  uint8_t *p = ( uint8_t * )dst;
-  *p++ = ( uint8_t )w; w >>= 8;
-  *p++ = ( uint8_t )w; w >>= 8;
-  *p++ = ( uint8_t )w; w >>= 8;
-  *p++ = ( uint8_t )w; w >>= 8;
-  *p++ = ( uint8_t )w; w >>= 8;
-  *p++ = ( uint8_t )w; w >>= 8;
-  *p++ = ( uint8_t )w; w >>= 8;
-  *p++ = ( uint8_t )w;
-#endif
-}
-
-static inline void
-secure_zero_memory(void *v, size_t n)
-{
-#if defined(_WIN32) || defined(WIN32)
-  SecureZeroMemory(v, n);
-#elif defined(__hpux)
-  static void *(*const volatile memset_v)(void *, int, size_t) = &memset;
-  memset_v(v, 0, n);
-#else
-// prioritize first the general C11 call
-#if defined(HAVE_MEMSET_S)
-  memset_s(v, n, 0, n);
-#elif defined(HAVE_EXPLICIT_BZERO)
-  explicit_bzero(v, n);
-#elif defined(HAVE_EXPLICIT_MEMSET)
-  explicit_memset(v, 0, n);
-#else
-  memset(v, 0, n);
-  __asm__ __volatile__("" :: "r"(v) : "memory");
-#endif
-#endif
-}
-
 #else
 // use vendored copy of blake2
 
@@ -102,8 +34,10 @@ secure_zero_memory(void *v, size_t n)
 #define blake2sp_update    PyBlake2_blake2sp_update
 
 #include "impl/blake2.h"
-#include "impl/blake2-impl.h" /* for secure_zero_memory() and store48() */
 
 #endif // HAVE_LIBB2
+
+// for secure_zero_memory(), store32(), store48(), and store64()
+#include "impl/blake2-impl.h" 
 
 #endif // Py_BLAKE2MODULE_H
