@@ -66,11 +66,6 @@ class Runner:
             self._loop = None
             self._state = _State.CLOSED
 
-    def get_context(self):
-        """Return the default associated context."""
-        self._lazy_init()
-        return self._context.copy()
-
     def get_loop(self):
         """Return embedded event loop."""
         self._lazy_init()

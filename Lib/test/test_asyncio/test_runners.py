@@ -217,12 +217,6 @@ class RunnerTests(BaseTest):
         ):
             runner.get_loop()
 
-        with self.assertRaisesRegex(
-            RuntimeError,
-            "Runner is closed"
-        ):
-            runner.get_context()
-
         self.assertTrue(loop.is_closed())
 
     def test_run_non_coro(self):
@@ -251,12 +245,6 @@ class RunnerTests(BaseTest):
                 "Runner is closed"
         ):
             runner.get_loop()
-
-        with self.assertRaisesRegex(
-                RuntimeError,
-                "Runner is closed"
-        ):
-            runner.get_context()
 
         self.assertTrue(loop.is_closed())
 
@@ -299,11 +287,14 @@ class RunnerTests(BaseTest):
             cvar.set(val)
             return old
 
+        async def get_context():
+            return contextvars.copy_context()
+
         with asyncio.Runner() as runner:
             self.assertEqual(-1, runner.run(f(1)))
             self.assertEqual(1, runner.run(f(2)))
 
-            self.assertEqual({cvar: 2}, dict(runner.get_context().items()))
+            self.assertEqual({cvar: 2}, dict(runner.run(get_context())))
 
 
 if __name__ == '__main__':
