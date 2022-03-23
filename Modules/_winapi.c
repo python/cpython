@@ -192,7 +192,6 @@ create_converter('LPSECURITY_ATTRIBUTES', '" F_POINTER "')
 create_converter('LPCVOID', '" F_POINTER "')
 
 create_converter('BOOL', 'i') # F_BOOL used previously (always 'i')
-create_converter('DWORD', 'k') # F_DWORD is always "k" (which is much shorter)
 create_converter('LPCTSTR', 's')
 create_converter('UINT', 'I') # F_UINT used previously (always 'I')
 
@@ -209,6 +208,9 @@ class HANDLE_return_converter(CReturnConverter):
             'if (_return_value == NULL) {\n    Py_RETURN_NONE;\n}\n')
         data.return_conversion.append(
             'return_value = HANDLE_TO_PYNUM(_return_value);\n')
+
+class DWORD_converter(unsigned_long_converter):
+    type = 'DWORD'
 
 class DWORD_return_converter(CReturnConverter):
     type = 'DWORD'
@@ -228,7 +230,7 @@ class LPVOID_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = HANDLE_TO_PYNUM(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=011ee0c3a2244bfe]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=84937c7280ba273d]*/
 
 #include "clinic/_winapi.c.h"
 
