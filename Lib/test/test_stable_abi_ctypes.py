@@ -4,6 +4,7 @@
 """Test that all symbols of the Stable ABI are accessible using ctypes
 """
 
+import sys
 import unittest
 from test.support.import_helper import import_module
 from _testcapi import get_feature_macros
@@ -20,6 +21,10 @@ class TestStableABIAvailability(unittest.TestCase):
 
     def test_feature_macros(self):
         self.assertEqual(set(feature_macros), EXPECTED_IFDEFS)
+
+    @unittest.skipIf(sys.platform != "win32", "Windows specific test")
+    def test_windows_feature_macros(self):
+        self.assertEqual(set(feature_macros), WINDOWS_IFDEFS)
 
 SYMBOL_NAMES = (
 
@@ -896,3 +901,4 @@ if feature_macros['Py_REF_DEBUG']:
     )
 
 EXPECTED_IFDEFS = set(['HAVE_FORK', 'MS_WINDOWS', 'PY_HAVE_THREAD_NATIVE_ID', 'Py_REF_DEBUG', 'USE_STACKCHECK'])
+WINDOWS_IFDEFS = {'MS_WINDOWS': True, 'HAVE_FORK': False, 'USE_STACKCHECK': True, 'PY_HAVE_THREAD_NATIVE_ID': True, 'Py_REF_DEBUG': False}

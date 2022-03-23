@@ -298,6 +298,7 @@ def gen_ctypes_test(manifest, args, outfile):
         """Test that all symbols of the Stable ABI are accessible using ctypes
         """
 
+        import sys
         import unittest
         from test.support.import_helper import import_module
         from _testcapi import get_feature_macros
@@ -314,6 +315,10 @@ def gen_ctypes_test(manifest, args, outfile):
 
             def test_feature_macros(self):
                 self.assertEqual(set(feature_macros), EXPECTED_IFDEFS)
+
+            @unittest.skipIf(sys.platform != "win32", "Windows specific test")
+            def test_windows_feature_macros(self):
+                self.assertEqual(set(feature_macros), WINDOWS_IFDEFS)
 
         SYMBOL_NAMES = (
     '''))
@@ -342,6 +347,7 @@ def gen_ctypes_test(manifest, args, outfile):
         write("    )")
     write("")
     write(f"EXPECTED_IFDEFS = set({sorted(ifdef_items)})")
+    write(f"WINDOWS_IFDEFS = { {k: k in WINDOWS_IFDEFS for k in ifdef_items} }")
 
 
 def generate_or_check(manifest, args, path, func):
