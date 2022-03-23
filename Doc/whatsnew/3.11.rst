@@ -968,10 +968,8 @@ Porting to Python 3.11
   * ``f_stackdepth``: removed.
   * ``f_state``: no public API (renamed to ``f_frame.f_state``).
   * ``f_trace``: no public API.
-  * ``f_trace_lines``: use ``PyObject_GetAttrString((PyObject*)frame, "f_trace_lines")``
-    (it also be modified).
-  * ``f_trace_opcodes``: use ``PyObject_GetAttrString((PyObject*)frame, "f_trace_opcodes")``
-    (it also be modified).
+  * ``f_trace_lines``: use ``PyObject_GetAttrString((PyObject*)frame, "f_trace_lines")``.
+  * ``f_trace_opcodes``: use ``PyObject_GetAttrString((PyObject*)frame, "f_trace_opcodes")``.
   * ``f_localsplus``: no public API (renamed to ``f_frame.localsplus``).
   * ``f_valuestack``: removed.
 
