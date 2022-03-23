@@ -191,11 +191,9 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
-        r.cancel("test")
+        r.cancel()
         with self.assertRaises(asyncio.CancelledError) as cm:
             await r
-
-        self.assertEqual(cm.exception.args, ('test',))
 
         self.assertEqual(NUM, 5)
 
@@ -253,11 +251,9 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
-        r.cancel("test")
+        r.cancel()
         with self.assertRaises(asyncio.CancelledError) as cm:
             await r
-
-        self.assertEqual(cm.exception.args, ('test',))
 
     async def test_taskgroup_09(self):
 

@@ -1096,6 +1096,16 @@ static PyObject *
 _asyncio_Future_cancel_impl(FutureObj *self, PyObject *msg)
 /*[clinic end generated code: output=3edebbc668e5aba3 input=925eb545251f2c5a]*/
 {
+    if (msg != Py_None) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "Passing 'msg' argument to Future.cancel() "
+                         "is deprecated since Python 3.11, and "
+                         "scheduled for removal in Python 3.14.",
+                         2))
+        {
+            return NULL;
+        }
+    }
     ENSURE_FUTURE_ALIVE(self)
     return future_cancel(self, msg);
 }
@@ -2176,6 +2186,16 @@ static PyObject *
 _asyncio_Task_cancel_impl(TaskObj *self, PyObject *msg)
 /*[clinic end generated code: output=c66b60d41c74f9f1 input=7bb51bf25974c783]*/
 {
+    if (msg != Py_None) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "Passing 'msg' argument to Task.cancel() "
+                         "is deprecated since Python 3.11, and "
+                         "scheduled for removal in Python 3.14.",
+                         2))
+        {
+            return NULL;
+        }
+    }
     self->task_log_tb = 0;
 
     if (self->task_state != STATE_PENDING) {
