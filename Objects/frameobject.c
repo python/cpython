@@ -912,9 +912,6 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
     PyObject **fast;
     PyCodeObject *co;
     locals = frame->f_locals;
-    if ((frame->f_code->co_flags & CO_NEWLOCALS) == 0) {
-        return 0;
-    }
     if (locals == NULL) {
         locals = frame->f_locals = PyDict_New();
         if (locals == NULL)
@@ -1036,9 +1033,6 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
     PyObject *error_type, *error_value, *error_traceback;
     PyCodeObject *co;
     locals = frame->f_locals;
-    if ((frame->f_code->co_flags & CO_NEWLOCALS) == 0) {
-        return;
-    }
     if (locals == NULL) {
         return;
     }
