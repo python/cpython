@@ -1,0 +1,2 @@
+Implement :data:`typing.LiteralString`, part of :pep:`675`. Patch by Jelle
+Zijlstra.
