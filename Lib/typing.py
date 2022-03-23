@@ -517,7 +517,7 @@ def LiteralString(self, parameters):
 
     Example::
 
-        from typing_extensions import LiteralString
+        from typing import LiteralString
 
         def query(sql: LiteralString) -> ...:
             ...
