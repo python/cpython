@@ -45,21 +45,6 @@ EXCLUDED_HEADERS = {
 MACOS = (sys.platform == "darwin")
 UNIXY = MACOS or (sys.platform == "linux")  # XXX should this be "not Windows"?
 
-IFDEF_DOC_NOTES = {
-    'MS_WINDOWS': 'on Windows',
-    'HAVE_FORK': 'on platforms with fork()',
-    'USE_STACKCHECK': 'on platforms with USE_STACKCHECK',
-    'PY_HAVE_THREAD_NATIVE_ID': 'on platforms with native thread IDs',
-}
-
-# To generate the DLL definition, we need to know which feature macros are
-# defined on Windows. On all platforms.
-# Best way to do that is to hardcode the list (and later test in on Windows).
-WINDOWS_IFDEFS = frozenset({
-    'MS_WINDOWS',
-    'PY_HAVE_THREAD_NATIVE_ID',
-    'USE_STACKCHECK',
-})
 
 # The stable ABI manifest (Misc/stable_abi.txt) exists only to fill the
 # following dataclasses.
@@ -130,9 +115,11 @@ class ABIItem:
     ifdef: str = None
     struct_abi_kind: str = None
     members: list = None
+    doc: str = None
+    windows: bool = False
 
     KINDS = frozenset({
-        'struct', 'function', 'macro', 'data', 'const', 'typedef',
+        'struct', 'function', 'macro', 'data', 'const', 'typedef', 'ifdef',
     })
 
     def dump(self, indent=0):
@@ -171,8 +158,8 @@ def parse_manifest(file):
             levels.pop()
         parent = levels[-1][0]
         entry = None
-        if kind in ABIItem.KINDS:
-            if parent.kind not in {'manifest'}:
+        if parent.kind == 'manifest':
+            if kind not in kind in ABIItem.KINDS:
                 raise_error(f'{kind} cannot go in {parent.kind}')
             entry = ABIItem(kind, content)
             parent.add(entry)
@@ -193,10 +180,24 @@ def parse_manifest(file):
             parent.struct_abi_kind = kind
             if kind == 'members':
                 parent.members = content.split()
+        elif kind in {'doc'}:
+            if parent.kind not in {'ifdef'}:
+                raise_error(f'{kind} cannot go in {parent.kind}')
+            parent.doc = content
+        elif kind in {'windows'}:
+            if parent.kind not in {'ifdef'}:
+                raise_error(f'{kind} cannot go in {parent.kind}')
+            parent.windows = True
         else:
             raise_error(f"unknown kind {kind!r}")
             # When adding more, update the comment in stable_abi.txt.
         levels.append((entry, level))
+
+    ifdef_names = {i.name for i in manifest.select({'ifdef'})}
+    for item in manifest.contents.values():
+        if item.ifdef and item.ifdef not in ifdef_names:
+            raise ValueError(f'{item.name} uses undeclared ifdef {item.ifdef}')
+
     return manifest
 
 # The tool can run individual "actions".
@@ -240,9 +241,12 @@ def gen_python3dll(manifest, args, outfile):
     def sort_key(item):
         return item.name.lower()
 
+    windows_ifdefs = {
+        item.name for item in manifest.select({'ifdef'}) if item.windows
+    }
     for item in sorted(
             manifest.select(
-                {'function'}, include_abi_only=True, ifdef=WINDOWS_IFDEFS),
+                {'function'}, include_abi_only=True, ifdef=windows_ifdefs),
             key=sort_key):
         write(f'EXPORT_FUNC({item.name})')
 
@@ -250,7 +254,7 @@ def gen_python3dll(manifest, args, outfile):
 
     for item in sorted(
             manifest.select(
-                {'data'}, include_abi_only=True, ifdef=WINDOWS_IFDEFS),
+                {'data'}, include_abi_only=True, ifdef=windows_ifdefs),
             key=sort_key):
         write(f'EXPORT_DATA({item.name})')
 
@@ -273,7 +277,7 @@ def gen_doc_annotations(manifest, args, outfile):
     writer.writeheader()
     for item in manifest.select(REST_ROLES.keys(), include_abi_only=False):
         if item.ifdef:
-            ifdef_note = IFDEF_DOC_NOTES[item.ifdef]
+            ifdef_note = manifest.contents[item.ifdef].doc
         else:
             ifdef_note = None
         writer.writerow({
@@ -347,7 +351,11 @@ def gen_ctypes_test(manifest, args, outfile):
         write("    )")
     write("")
     write(f"EXPECTED_IFDEFS = set({sorted(ifdef_items)})")
-    write(f"WINDOWS_IFDEFS = { {k: k in WINDOWS_IFDEFS for k in ifdef_items} }")
+
+    windows_ifdef_values = {
+        name: manifest.contents[name].windows for name in ifdef_items
+    }
+    write(f"WINDOWS_IFDEFS = {windows_ifdef_values}")
 
 
 def generate_or_check(manifest, args, path, func):
