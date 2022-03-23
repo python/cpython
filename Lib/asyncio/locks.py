@@ -5,7 +5,6 @@ __all__ = ('Lock', 'Event', 'Condition', 'Semaphore',
 
 import collections
 
-from . import coroutines
 from . import exceptions
 from . import mixins
 
@@ -420,7 +419,7 @@ class Barrier(mixins._LoopBoundMixin):
 
     Implements a Barrier primitive.
     Useful for synchronizing a fixed number of tasks at known synchronization
-    points.  Tasks block on 'wait()' and are simultaneously awoken once they
+    points. Tasks block on 'wait()' and are simultaneously awoken once they
     have all made their call.
     """
 
@@ -461,7 +460,7 @@ class Barrier(mixins._LoopBoundMixin):
         When the specified number of tasks have started waiting, they are all
         simultaneously awoken.
         Returns an unique and individual index number from 0 to 'parties-1'.
-        # """
+        """
         async with self._cond:
             await self._block() # Block while the barrier drains or resets.
             try:
@@ -501,7 +500,7 @@ class Barrier(mixins._LoopBoundMixin):
 
     # Release the tasks waiting in the barrier.
     async def _release(self):
-        """Enter draining state. Next waiting tasks will be blocked 
+        """Enter draining state. Next waiting tasks will be blocked
         until the end of draining.
         """
         # enter draining state
