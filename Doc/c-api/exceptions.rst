@@ -487,7 +487,7 @@ Querying the error indicator
 
       This function is not normally used by code that wants to handle exceptions.
       Rather, it can be used when code needs to save and restore the exception
-      state temporarily.  Use :c:func:`PyErr_GetActiveException` to read the exception
+      state temporarily.  Use :c:func:`PyErr_GetActiveException` to get the exception
       state.
 
    .. versionadded:: 3.11
