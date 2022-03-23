@@ -1,0 +1,2 @@
+The Keccak Code Package for :mod:`hashlib`'s SHA3 and SHAKE algorithms has
+been replaced with tiny_sha3.
