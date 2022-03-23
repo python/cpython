@@ -3248,6 +3248,7 @@ dec_format(PyObject *dec, PyObject *args)
     int replace_fillchar = 0;
     int no_neg_0 = 0;
     Py_ssize_t size;
+    mpd_t *mpd = MPD(dec);
 
 
     CURRENT_CONTEXT(context);
@@ -3354,13 +3355,16 @@ dec_format(PyObject *dec, PyObject *args)
         }
     }
 
-    if (no_neg_0 && mpd_isnegative(MPD(dec)) && !mpd_isspecial(MPD(dec))) {
-        /* round into a temporary and clear sign if result is zero */
+    if (no_neg_0 && mpd_isnegative(mpd) && !mpd_isspecial(mpd)) {
+        /* Round into a temporary (carefully mirroring the rounding
+           of mpd_qformat_spec()), and check if the result is negative zero.
+           If so, clear the sign and format this pre-rounded value.
+           (The format will then do no additional rounding, which is
+           significant for directed rounding cases like ROUND_CEILING.) */
         mpd_uint_t dt[MPD_MINALLOC_MAX];
         mpd_t tmp = {MPD_STATIC|MPD_STATIC_DATA,0,0,0,MPD_MINALLOC_MAX,dt};
         mpd_ssize_t prec;
-        mpd_qcopy(&tmp, MPD(dec), &status);
-        /* mirror rounding of mpd_qformat_spec() */
+        mpd_qcopy(&tmp, mpd, &status);
         switch (spec.type) {
           case 'f':
               mpd_qrescale(&tmp, &tmp, -spec.prec, CTX(context), &status);
@@ -3386,12 +3390,12 @@ dec_format(PyObject *dec, PyObject *args)
             goto finish;
         }
         if (mpd_iszero(&tmp)) {
-            /* TODO: format rounded tmp itself (addresses directed rounding) */
-            mpd_set_positive(MPD(dec));
+            mpd_set_positive(&tmp);
+            mpd = &tmp;
         }
     }
 
-    decstring = mpd_qformat_spec(MPD(dec), &spec, CTX(context), &status);
+    decstring = mpd_qformat_spec(mpd, &spec, CTX(context), &status);
     if (decstring == NULL) {
         if (status & MPD_Malloc_error) {
             PyErr_NoMemory();

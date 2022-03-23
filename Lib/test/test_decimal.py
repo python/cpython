@@ -1137,7 +1137,7 @@ class FormatTest(unittest.TestCase):
         with self.decimal.localcontext() as ctx:
             ctx.rounding = ROUND_CEILING
             self.assertEqual(format(self.decimal.Decimal('-0.001'), 'z.2f'),
-                            '0.00')  # FIXME
+                            '0.00')
 
     def test_n_format(self):
         Decimal = self.decimal.Decimal
