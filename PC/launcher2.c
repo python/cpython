@@ -879,7 +879,7 @@ checkShebang(SearchInfo *search)
 int
 checkDefaults(SearchInfo *search)
 {
-    if (!search->allowDefaults) {
+    if (!search->allowDefaults || search->list || search->listPaths) {
         return 0;
     }
 
@@ -2093,34 +2093,36 @@ process(int argc, wchar_t ** argv)
 
     // Select best environment
     env = NULL;
-    exitCode = selectEnvironment(&search, envs, &env);
-    // If none found, and if permitted, install it
-    if (exitCode == RC_NO_PYTHON && isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL")) {
-        exitCode = installEnvironment(&search);
-        if (!exitCode) {
-            // Successful install, so we need to re-scan and select again
-            exitCode = performSearch(&search, &envs);
-            if (exitCode) {
-                goto abort;
+    if (search.executablePath == NULL) {
+        exitCode = selectEnvironment(&search, envs, &env);
+        // If none found, and if permitted, install it
+        if (exitCode == RC_NO_PYTHON && isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL")) {
+            exitCode = installEnvironment(&search);
+            if (!exitCode) {
+                // Successful install, so we need to re-scan and select again
+                exitCode = performSearch(&search, &envs);
+                if (exitCode) {
+                    goto abort;
+                }
+                env = NULL;
+                exitCode = selectEnvironment(&search, envs, &env);
             }
-            env = NULL;
-            exitCode = selectEnvironment(&search, envs, &env);
         }
-    }
-    if (exitCode == RC_NO_PYTHON) {
-        fputws(L"No suitable Python runtime found\n", stderr);
-        fputws(L"Pass --list (-0) to see all detected environments on your machine\n", stderr);
-        if (!isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL") && search.oldStyleTag) {
-            fputws(L"or set environment variable PYLAUNCHER_ALLOW_INSTALL to use winget\n\
-or open the Microsoft Store to the requested version.\n", stderr);
+        if (exitCode == RC_NO_PYTHON) {
+            fputws(L"No suitable Python runtime found\n", stderr);
+            fputws(L"Pass --list (-0) to see all detected environments on your machine\n", stderr);
+            if (!isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL") && search.oldStyleTag) {
+                fputws(L"or set environment variable PYLAUNCHER_ALLOW_INSTALL to use winget\n"
+                       L"or open the Microsoft Store to the requested version.\n", stderr);
+            }
+            goto abort;
         }
-        goto abort;
-    }
-    if (exitCode) {
-        goto abort;
-    }
+        if (exitCode) {
+            goto abort;
+        }
 
-    debug(L"env.company: %s\nenv.tag: %s\n", env->company, env->tag);
+        debug(L"env.company: %s\nenv.tag: %s\n", env->company, env->tag);
+    }
 
     exitCode = calculateCommandLine(&search, env, launchCommand, sizeof(launchCommand) / sizeof(launchCommand[0]));
     if (exitCode) {
