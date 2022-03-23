@@ -177,11 +177,11 @@ accessing ``.args``.  ::
 The exception's :meth:`__str__` output is printed as the last part ('detail')
 of the message for unhandled exceptions.
 
-:exc:`BaseException` is a common base class of all exceptions, including a few
+:exc:`BaseException` is the common base class of all exceptions, including a few
 which are not typically handled, because they are used to indicate that the
-program should terminate. They include :exc:`SystemExit` which is raise by
+program should terminate. They include :exc:`SystemExit` which is raised by
 ``sys.exit()`` and :exc:`KeyboardInterrupt` which is raised when a user
-attempts wishes to interrupt the program.
+wishes to interrupt the program.
 
 :exc:`Exception` is a subclass of :exc:`BaseException`, which is a common
 superclass of all exceptions, apart from those few special ones that we
@@ -201,7 +201,7 @@ exception as well)::
        s = f.readline()
        i = int(s.strip())
    except OSError as err:
-       print(f"OS error: {err}")
+       print("OS error:", err)
    except ValueError:
        print("Could not convert data to an integer.")
    except Exception as err:
@@ -229,7 +229,7 @@ that wasn't raised by the code being protected by the :keyword:`!try` ...
 
 Exception handlers do not handle only exceptions that occur immediately in the
 *try clause*, but also those that occur inside functions that are called (even
-indirectly) from the *try clause*. For example::
+indirectly) in the *try clause*. For example::
 
    >>> def this_fails():
    ...     x = 1/0
