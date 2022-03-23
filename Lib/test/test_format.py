@@ -570,7 +570,9 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(f"{0.:z.1E}", "0.0E+00")
         self.assertEqual(f"{-0.:z.1E}", "0.0E+00")
 
-        self.assertEqual(f"{-0.001:z.2e}", "-1.00e-03")  # non-fixed exponent
+        self.assertEqual(f"{-0.001:z.2e}", "-1.00e-03")  # tests for mishandled
+                                                         # rounding
+        self.assertEqual(f"{-0.001:z.2g}", "-0.001")
         self.assertEqual(f"{-0.001:z.2%}", "-0.10%")
 
         self.assertEqual(f"{-00000.000001:z.1f}", "0.0")
@@ -607,7 +609,7 @@ class FormatTest(unittest.TestCase):
 
         error_msg = re.escape("Negative zero coercion (z) not allowed")
         with self.assertRaisesRegex(ValueError, error_msg):
-            f"{0:zd}"  # can't apply to int
+            f"{0:zd}"  # can't apply to int presentation type
         with self.assertRaisesRegex(ValueError, error_msg):
             f"{'x':zs}"  # can't apply to string
 
