@@ -464,7 +464,7 @@ Querying the error indicator
 
    Retrieve the active exception instance, as would be returned by :func:`sys.exception`.
    This refers to an exception that was *already caught*, not to an exception that was
-   freshly raised. Returns a new reference to the exception or to ``Py_None``.
+   freshly raised. Returns a new reference to the exception or ``NULL``.
    Does not modify the exception state.
 
    .. note::

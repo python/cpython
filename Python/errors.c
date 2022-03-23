@@ -504,7 +504,10 @@ _PyErr_GetActiveException(PyThreadState *tstate)
 {
     _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
     PyObject *exc = exc_info->exc_value;
-    return Py_XNewRef(exc);
+    if (exc == NULL || exc == Py_None) {
+        return NULL;
+    }
+    return Py_NewRef(exc);
 }
 
 PyObject*
