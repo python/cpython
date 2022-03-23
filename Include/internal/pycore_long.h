@@ -23,6 +23,7 @@ extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 #define _PyLong_SMALL_INTS _Py_SINGLETON(small_ints)
 
 // _PyLong_GetZero() and _PyLong_GetOne() must always be available
+// _PyLong_FromUnsignedChar must always be available
 #if _PY_NSMALLPOSINTS < 257
 #  error "_PY_NSMALLPOSINTS must be greater than or equal to 257"
 #endif
