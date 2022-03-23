@@ -957,7 +957,9 @@ Dry Run
 If an environment variable :envvar:`PYLAUNCHER_DRYRUN` is set (to any value),
 the launcher will output the command it would have run, but will not actually
 launch Python. This may be useful for tools that want to use the launcher to
-detect and then launch Python directly.
+detect and then launch Python directly. Note that the command written to 
+standard output is always encoded using UTF-8, and may not render correctly in
+the console.
 
 Install on demand
 -----------------
@@ -975,7 +977,7 @@ there is no way to distinguish these from the exit code of Python itself.
 
 The names of codes are as used in the sources, and are only for reference. There
 is no way to access or resolve them apart from reading this page. Entries are
-listed in alphabetical order of names
+listed in alphabetical order of names.
 
 +-------------------+-------+-----------------------------------------------+
 | Name              | Value | Description                                   |

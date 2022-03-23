@@ -10,6 +10,8 @@
 
 #include <windows.h>
 #include <pathcch.h>
+#include <fcntl.h>
+#include <io.h>
 #include <shlobj.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -340,6 +342,11 @@ typedef struct {
     // is null terminated.
     const wchar_t *executable;
     int executableLength;
+    // pointer and length into a string with additional interpreter
+    // arguments to include before restOfCmdLine. Length can be -1 if
+    // the string is null terminated.
+    const wchar_t *executableArgs;
+    int executableArgsLength;
     // pointer and length into cmdline or a static string with the
     // company name for PEP 514 lookup. Length can be -1 if the string
     // is null terminated.
@@ -437,6 +444,7 @@ dumpSearchInfo(SearchInfo *search)
     DEBUG(executablePath);
     DEBUG_2(scriptFile, scriptFileLength);
     DEBUG_2(executable, executableLength);
+    DEBUG_2(executableArgs, executableArgsLength);
     DEBUG_2(company, companyLength);
     DEBUG_2(tag, tagLength);
     DEBUG_BOOL(oldStyleTag);
@@ -832,7 +840,7 @@ checkShebang(SearchInfo *search)
     while (--bytesRead > 0 && *++b != '\r' && *b != '\n') { }
     wchar_t *shebang;
     int shebangLength;
-    int exitCode = _decodeShebang(search, start, (int)(b - start), onlyUtf8, &shebang, &shebangLength);
+    int exitCode = _decodeShebang(search, start, (int)(b - start + 1), onlyUtf8, &shebang, &shebangLength);
     if (exitCode) {
         return exitCode;
     }
@@ -856,13 +864,17 @@ checkShebang(SearchInfo *search)
             }
             if (!commandLength) {
             } else if (_findCommand(search, command, commandLength)) {
+                search->executableArgs = &command[commandLength];
+                search->executableArgsLength = shebangLength - commandLength;
                 debug(L"# Treating shebang command '%.*s' as %s\n",
                     commandLength, command, search->executablePath);
             } else if (_shebangStartsWith(command, commandLength, L"python", NULL)) {
                 search->tag = &command[6];
                 search->tagLength = commandLength - 6;
                 search->oldStyleTag = true;
-                debug(L"# Treating shebang command '%.*s' as 'py -V:%.*s'\n",
+                search->executableArgs = &command[commandLength];
+                search->executableArgsLength = shebangLength - commandLength;
+                debug(L"# Treating shebang command '%.*s' as 'py -%.*s'\n",
                     commandLength, command, search->tagLength, search->tag);
             } else {
                 debug(L"# Found shebang command but could not execute it: %.*s\n",
@@ -938,8 +950,17 @@ checkDefaults(SearchInfo *search)
             return RC_NO_MEMORY;
         }
         wcscpy_s(tag, n + 1, buffer);
-        search->tag = tag;
-        search->tagLength = n;
+        wchar_t *slash = wcschr(tag, L'/');
+        if (!slash) {
+            search->tag = tag;
+            search->tagLength = n;
+        } else {
+            search->company = tag;
+            search->companyLength = (int)(slash - tag);
+            search->tag = slash + 1;
+            search->tagLength = n - (search->companyLength + 1);
+            search->oldStyleTag = false;
+        }
     }
 
     return 0;
@@ -962,6 +983,7 @@ typedef struct EnvironmentInfo {
     const wchar_t *executablePath;
     const wchar_t *executableArgs;
     const wchar_t *architecture;
+    const wchar_t *displayName;
 } EnvironmentInfo;
 
 
@@ -1018,6 +1040,7 @@ freeEnvironmentInfo(EnvironmentInfo *env)
         free((void *)env->installDir);
         free((void *)env->executablePath);
         free((void *)env->executableArgs);
+        free((void *)env->displayName);
         freeEnvironmentInfo(env->prev);
         env->prev = NULL;
         freeEnvironmentInfo(env->next);
@@ -1210,6 +1233,11 @@ _registryReadEnvironment(const SearchInfo *search, HKEY root, EnvironmentInfo *e
         return exitCode;
     }
 
+    exitCode = _registryReadString(&env->displayName, root, NULL, L"DisplayName");
+    if (exitCode) {
+        return exitCode;
+    }
+
     // Only PythonCore entries will infer executablePath from installDir and architecture from the binary
     if (0 == _compare(env->company, -1, L"PythonCore", -1)) {
         if (!env->executablePath) {
@@ -1326,13 +1354,12 @@ appxSearch(const SearchInfo *search, EnvironmentInfo **result, const wchar_t *pa
 
     // Assume packages are native architecture, which means we need to append
     // the '-arm64' on ARM64 host.
+    wcscpy_s(realTag, 32, tag);
     if (isARM64Host()) {
-        if (!wcscpy_s(realTag, 32, tag) && !wcscat_s(realTag, 32, L"-arm64")) {
-            tag = realTag;
-        }
+        wcscat_s(realTag, 32, L"-arm64");
     }
 
-    EnvironmentInfo *env = newEnvironmentInfo(L"PythonCore", tag);
+    EnvironmentInfo *env = newEnvironmentInfo(L"PythonCore", realTag);
     if (!env) {
         return RC_NO_MEMORY;
     }
@@ -1344,6 +1371,11 @@ appxSearch(const SearchInfo *search, EnvironmentInfo **result, const wchar_t *pa
     }
 
     copyWstr(&env->executablePath, buffer);
+
+    if (swprintf_s(buffer, MAXLEN, L"Python %s (Store)", tag)) {
+        copyWstr(&env->displayName, buffer);
+    }
+
     int exitCode = addEnvironmentInfo(result, env);
     if (exitCode == RC_DUPLICATE_ITEM) {
         exitCode = 0;
@@ -1351,7 +1383,8 @@ appxSearch(const SearchInfo *search, EnvironmentInfo **result, const wchar_t *pa
         freeEnvironmentInfo(env);
     }
 
-    return 0;
+
+    return exitCode;
 }
 
 
@@ -1728,6 +1761,8 @@ _printEnvironment(const EnvironmentInfo *env, FILE *out, bool showPath, const wc
         } else {
             fwprintf(out, L" %s\n", argument);
         }
+    } else if (env->displayName) {
+        fwprintf(out, L" %-*s %s\n", TAGWIDTH, argument, env->displayName);
     } else {
         fwprintf(out, L" %s\n", argument);
     }
@@ -1890,6 +1925,18 @@ calculateCommandLine(const SearchInfo *search, const EnvironmentInfo *launch, wc
         }
     }
 
+    if (!exitCode && search->executableArgs) {
+        if (search->executableArgsLength < 0) {
+            exitCode = wcscat_s(buffer, bufferLength, search->executableArgs);
+        } else if (search->executableArgsLength > 0) {
+            int end = (int)wcsnlen_s(buffer, MAXLEN);
+            if (end < bufferLength - (search->executableArgsLength + 1)) {
+                exitCode = wcsncpy_s(&buffer[end], bufferLength - end,
+                    search->executableArgs, search->executableArgsLength);
+            }
+        }
+    }
+
     if (!exitCode && search->restOfCmdLine) {
         exitCode = wcscat_s(buffer, bufferLength, search->restOfCmdLine);
     }
@@ -2020,13 +2067,15 @@ performSearch(SearchInfo *search, EnvironmentInfo **envs)
         return exitCode;
     }
 
-    // Check for a shebang line in our script file (or exit quickly if no script
-    // file was specified)
+    // Check for a shebang line in our script file
+    // (or return quickly if no script file was specified)
     exitCode = checkShebang(search);
     if (exitCode) {
         return exitCode;
     }
 
+    // Resolve old-style tags (possibly from a shebang) against py.ini entries
+    // and environment variables.
     exitCode = checkDefaults(search);
     if (exitCode) {
         return exitCode;
@@ -2133,6 +2182,7 @@ process(int argc, wchar_t ** argv)
     if (isEnvVarSet(L"PYLAUNCHER_DRYRUN")) {
         debug(L"LaunchCommand: %s\n", launchCommand);
         debug(L"# Exiting due to PYLAUNCHER_DRYRUN variable\n");
+        _setmode(_fileno(stdout), _O_U8TEXT);
         fwprintf(stdout, L"%s\n", launchCommand);
         goto abort;
     }

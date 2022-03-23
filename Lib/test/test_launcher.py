@@ -1,9 +1,12 @@
+import contextlib
 import itertools
 import os
 import re
 import subprocess
 import sys
 import sysconfig
+import tempfile
+import textwrap
 import unittest
 from pathlib import Path
 from test import support
@@ -56,6 +59,13 @@ TEST_DATA = {
     }
 }
 
+TEST_PY_COMMANDS = textwrap.dedent("""
+    [defaults]
+    py_python=PythonTestSuite/3.100
+    py_python2=PythonTestSuite/3.100-32
+    py_python3=PythonTestSuite/3.100-arm64
+""")
+
 
 def create_registry_data(root, data):
     def _create_registry_data(root, key, value):
@@ -107,14 +117,31 @@ def is_installed(tag):
     return False
 
 
-class TestLauncher(unittest.TestCase):
+class PreservePyIni:
+    def __init__(self, path, content):
+        self.path = Path(path)
+        self.content = content
+        self._preserved = None
+
+    def __enter__(self):
+        try:
+            self._preserved = self.path.read_bytes()
+        except FileNotFoundError:
+            self._preserved = None
+        self.path.write_text(self.content, encoding="utf-16")
+
+    def __exit__(self, *exc_info):
+        if self._preserved is None:
+            self.path.unlink()
+        else:
+            self.path.write_bytes(self._preserved)
+
+
+class RunPyMixin:
     py_exe = None
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     @classmethod
-    def setUpClass(cls):
+    def find_py(cls):
         py_exe = None
         if sysconfig.is_python_build(True):
             py_exe = Path(sys.executable).parent / PY_EXE
@@ -128,23 +155,12 @@ class TestLauncher(unittest.TestCase):
             raise unittest.SkipTest(
                 "cannot locate '{}' for test".format(PY_EXE)
             )
-        cls.py_exe = py_exe
-
-        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, rf"Software\Python") as key:
-            create_registry_data(key, TEST_DATA)
-
-        if support.verbose:
-            p = subprocess.check_output("reg query HKCU\\Software\\Python /s")
-            print(p.decode('mbcs'))
-
-
-    @classmethod
-    def tearDownClass(cls):
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, rf"Software\Python", access=winreg.KEY_WRITE | winreg.KEY_ENUMERATE_SUB_KEYS) as key:
-            delete_registry_data(key, TEST_DATA)
-
+        return py_exe
 
     def run_py(self, args, env=None, allow_fail=False):
+        if not self.py_exe:
+            self.py_exe = self.find_py()
+
         env = {**os.environ, **(env or {}), "PYLAUNCHER_DEBUG": "1", "PYLAUNCHER_DRYRUN": "1"}
         with subprocess.Popen(
             [self.py_exe, *args],
@@ -155,7 +171,7 @@ class TestLauncher(unittest.TestCase):
         ) as p:
             p.stdin.close()
             p.wait(10)
-            out = p.stdout.read().decode("ascii", "replace")
+            out = p.stdout.read().decode("utf-8", "replace")
             err = p.stderr.read().decode("ascii", "replace")
         if p.returncode and support.verbose and not allow_fail:
             print("++ COMMAND ++")
@@ -176,6 +192,37 @@ class TestLauncher(unittest.TestCase):
         data["stdout"] = out
         data["stderr"] = err
         return data
+
+    def py_ini(self, content):
+        if not self.py_exe:
+            self.py_exe = self.find_py()
+        return PreservePyIni(self.py_exe.with_name("py.ini"), content)
+
+    @contextlib.contextmanager
+    def script(self, content, encoding="utf-8"):
+        file = Path(tempfile.mktemp(dir=os.getcwd()) + ".py")
+        file.write_text(content, encoding=encoding)
+        try:
+            yield file
+        finally:
+            file.unlink()
+
+
+class TestLauncher(unittest.TestCase, RunPyMixin):
+    @classmethod
+    def setUpClass(cls):
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, rf"Software\Python") as key:
+            create_registry_data(key, TEST_DATA)
+
+        if support.verbose:
+            p = subprocess.check_output("reg query HKCU\\Software\\Python /s")
+            print(p.decode('mbcs'))
+
+
+    @classmethod
+    def tearDownClass(cls):
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, rf"Software\Python", access=winreg.KEY_WRITE | winreg.KEY_ENUMERATE_SUB_KEYS) as key:
+            delete_registry_data(key, TEST_DATA)
 
 
     def test_version(self):
@@ -291,3 +338,48 @@ class TestLauncher(unittest.TestCase):
                 raise unittest.SkipTest("requires at least one Python 2.x install")
         self.assertEqual("PythonCore", data["env.company"])
         self.assertTrue(data["env.tag"].startswith("2."), data["env.tag"])
+
+    def test_py_default(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            data = self.run_py(["-arg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual("X.Y.exe -arg", data["stdout"].strip())
+
+    def test_py2_default(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            data = self.run_py(["-2", "-arg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100-32", data["SearchInfo.tag"])
+        self.assertEqual("X.Y-32.exe -arg", data["stdout"].strip())
+
+    def test_py3_default(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            data = self.run_py(["-3", "-arg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100-arm64", data["SearchInfo.tag"])
+        self.assertEqual("X.Y-arm64.exe -X fake_arg_for_test -arg", data["stdout"].strip())
+
+    def test_py_shebang(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script("#! /usr/bin/env python -prearg") as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
+
+    def test_py2_shebang(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script("#! /usr/bin/env python2 -prearg") as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100-32", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y-32.exe -prearg {script} -postarg", data["stdout"].strip())
+
+    def test_py3_shebang(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script("#! /usr/bin/env python3 -prearg") as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100-arm64", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y-arm64.exe -X fake_arg_for_test -prearg {script} -postarg", data["stdout"].strip())
