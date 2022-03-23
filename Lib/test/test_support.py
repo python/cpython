@@ -198,7 +198,7 @@ class TestSupport(unittest.TestCase):
                                         f'temporary directory {path!r}: '),
                         warn)
 
-    @unittest.skipUnless(hasattr(os, "fork"), "test requires os.fork")
+    @support.requires_fork()
     def test_temp_dir__forked_child(self):
         """Test that a forked child process does not remove the directory."""
         # See bpo-30028 for details.
@@ -447,6 +447,7 @@ class TestSupport(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG'),
                          'need os.waitpid() and os.WNOHANG')
+    @support.requires_fork()
     def test_reap_children(self):
         # Make sure that there is no other pending child process
         support.reap_children()
@@ -490,6 +491,7 @@ class TestSupport(unittest.TestCase):
         # pending child process
         support.reap_children()
 
+    @support.requires_subprocess()
     def check_options(self, args, func, expected=None):
         code = f'from test.support import {func}; print(repr({func}()))'
         cmd = [sys.executable, *args, '-c', code]
@@ -656,10 +658,13 @@ class TestSupport(unittest.TestCase):
             self.assertFalse(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
+    @unittest.skipIf(support.is_emscripten, "Unstable in Emscripten")
     def test_fd_count(self):
         # We cannot test the absolute value of fd_count(): on old Linux
         # kernel or glibc versions, os.urandom() keeps a FD open on
         # /dev/urandom device and Python has 4 FD opens instead of 3.
+        # Test is unstable on Emscripten. The platform starts and stops
+        # background threads that use pipes and epoll fds.
         start = os_helper.fd_count()
         fd = os.open(__file__, os.O_RDONLY)
         try:
@@ -679,6 +684,12 @@ class TestSupport(unittest.TestCase):
                                  "Warning -- msg\n")
         self.check_print_warning("a\nb",
                                  'Warning -- a\nWarning -- b\n')
+
+    def test_has_strftime_extensions(self):
+        if support.is_emscripten or support.is_wasi or sys.platform == "win32":
+            self.assertFalse(support.has_strftime_extensions)
+        else:
+            self.assertTrue(support.has_strftime_extensions)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc

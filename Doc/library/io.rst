@@ -306,8 +306,7 @@ I/O Base Classes
 
 .. class:: IOBase
 
-   The abstract base class for all I/O classes, acting on streams of bytes.
-   There is no public constructor.
+   The abstract base class for all I/O classes.
 
    This class provides empty abstract implementations for many methods
    that derived classes can override selectively; the default
@@ -461,8 +460,7 @@ I/O Base Classes
 
 .. class:: RawIOBase
 
-   Base class for raw binary streams.  It inherits :class:`IOBase`.  There is no
-   public constructor.
+   Base class for raw binary streams.  It inherits :class:`IOBase`.
 
    Raw binary streams typically provide low-level access to an underlying OS
    device or API, and do not try to encapsulate it in high-level primitives
@@ -515,7 +513,7 @@ I/O Base Classes
 .. class:: BufferedIOBase
 
    Base class for binary streams that support some kind of buffering.
-   It inherits :class:`IOBase`. There is no public constructor.
+   It inherits :class:`IOBase`.
 
    The main difference with :class:`RawIOBase` is that methods :meth:`read`,
    :meth:`readinto` and :meth:`write` will try (respectively) to read as much
@@ -852,8 +850,7 @@ Text I/O
 .. class:: TextIOBase
 
    Base class for text streams.  This class provides a character and line based
-   interface to stream I/O.  It inherits :class:`IOBase`.  There is no public
-   constructor.
+   interface to stream I/O.  It inherits :class:`IOBase`.
 
    :class:`TextIOBase` provides or overrides these data attributes and
    methods in addition to those from :class:`IOBase`:

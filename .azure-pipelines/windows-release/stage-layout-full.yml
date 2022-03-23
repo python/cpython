@@ -1,10 +1,13 @@
+parameters:
+  ARM64TclTk: true
+
 jobs:
 - job: Make_Layouts
   displayName: Make layouts
   condition: and(succeeded(), eq(variables['DoLayout'], 'true'))
 
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
 
   workspace:
     clean: all
@@ -26,6 +29,8 @@ jobs:
         HostArch: amd64
         Python: $(Build.BinariesDirectory)\bin_amd64\python.exe
         PYTHONHOME: $(Build.SourcesDirectory)
+        ${{ if eq(parameters.ARM64TclTk, true) }}:
+          TclLibrary: $(Build.BinariesDirectory)\tcltk_lib\tcl8
 
   steps:
   - template: ./checkout.yml

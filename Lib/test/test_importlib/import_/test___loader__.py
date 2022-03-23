@@ -4,7 +4,7 @@ import types
 import unittest
 import warnings
 
-from .. import util
+from test.test_importlib import util
 
 
 class SpecLoaderMock:

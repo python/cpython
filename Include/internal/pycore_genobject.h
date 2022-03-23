@@ -8,6 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+extern PyObject *_PyGen_yf(PyGenObject *);
+extern PyObject *_PyCoro_GetAwaitableIter(PyObject *o);
+extern PyObject *_PyAsyncGenValueWrapperNew(PyObject *);
 
 /* runtime lifecycle */
 

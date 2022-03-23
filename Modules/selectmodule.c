@@ -4,11 +4,16 @@
    have any value except INVALID_SOCKET.
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #if defined(HAVE_POLL_H) && !defined(_GNU_SOURCE)
-#define _GNU_SOURCE
+#  define _GNU_SOURCE
 #endif
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "structmember.h"         // PyMemberDef
 
 #ifdef HAVE_SYS_DEVPOLL_H
@@ -325,7 +330,12 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     do {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
-        n = select(max, &ifdset, &ofdset, &efdset, tvp);
+        n = select(
+            max,
+            imax ? &ifdset : NULL,
+            omax ? &ofdset : NULL,
+            emax ? &efdset : NULL,
+            tvp);
         Py_END_ALLOW_THREADS
 
         if (errno != EINTR)
@@ -565,6 +575,8 @@ select_poll_unregister_impl(pollObject *self, int fd)
 select.poll.poll
 
     timeout as timeout_obj: object = None
+      The maximum time to wait in milliseconds, or else None (or a negative
+      value) to wait indefinitely.
     /
 
 Polls the set of registered file descriptors.
@@ -575,7 +587,7 @@ report, as a list of (fd, event) 2-tuples.
 
 static PyObject *
 select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=876e837d193ed7e4 input=7a446ed45189e894]*/
+/*[clinic end generated code: output=876e837d193ed7e4 input=c2f6953ec45e5622]*/
 {
     PyObject *result_list = NULL;
     int poll_result, i, j;
@@ -889,6 +901,8 @@ select_devpoll_unregister_impl(devpollObject *self, int fd)
 /*[clinic input]
 select.devpoll.poll
     timeout as timeout_obj: object = None
+      The maximum time to wait in milliseconds, or else None (or a negative
+      value) to wait indefinitely.
     /
 
 Polls the set of registered file descriptors.
@@ -899,7 +913,7 @@ report, as a list of (fd, event) 2-tuples.
 
 static PyObject *
 select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=2654e5457cca0b3c input=fd0db698d84f0333]*/
+/*[clinic end generated code: output=2654e5457cca0b3c input=3c3f0a355ec2bedb]*/
 {
     struct dvpoll dvp;
     PyObject *result_list = NULL;

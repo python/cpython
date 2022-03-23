@@ -392,7 +392,8 @@ class LongTest(unittest.TestCase):
                 return 42
             def __trunc__(self):
                 return 1729
-        self.assertEqual(int(LongTrunc()), 1729)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(int(LongTrunc()), 1729)
 
     def check_float_conversion(self, n):
         # Check that int -> float conversion behaviour matches
@@ -1471,6 +1472,13 @@ class LongTest(unittest.TestCase):
         self.assertEqual(i, 1)
         self.assertEqual(getattr(i, 'foo', 'none'), 'bar')
 
+    @support.cpython_only
+    def test_from_bytes_small(self):
+        # bpo-46361
+        for i in range(-5, 257):
+            b = i.to_bytes(2, signed=True)
+            self.assertIs(int.from_bytes(b, signed=True), i)
+
     def test_access_to_nonexistent_digit_0(self):
         # http://bugs.python.org/issue14630: A bug in _PyLong_Copy meant that
         # ob_digit[0] was being incorrectly accessed for instances of a
@@ -1502,6 +1510,17 @@ class LongTest(unittest.TestCase):
             self.assertEqual(type(numerator), int)
             self.assertEqual(type(denominator), int)
 
+    def test_square(self):
+        # Multiplication makes a special case of multiplying an int with
+        # itself, using a special, faster algorithm. This test is mostly
+        # to ensure that no asserts in the implementation trigger, in
+        # cases with a maximal amount of carries.
+        for bitlen in range(1, 400):
+            n = (1 << bitlen) - 1 # solid string of 1 bits
+            with self.subTest(bitlen=bitlen, n=n):
+                # (2**i - 1)**2 = 2**(2*i) - 2*2**i + 1
+                self.assertEqual(n**2,
+                    (1 << (2 * bitlen)) - (1 << (bitlen + 1)) + 1)
 
 if __name__ == "__main__":
     unittest.main()
