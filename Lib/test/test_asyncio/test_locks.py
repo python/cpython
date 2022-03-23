@@ -1,4 +1,4 @@
-"""Tests for lock.py"""
+"""Tests for locks.py"""
 
 import unittest
 from unittest import mock
