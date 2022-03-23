@@ -924,20 +924,25 @@ exceptiongroup_subset(
             goto error;
         }
         if (PySequence_Check(notes)) {
-            /* make a copy so the parts have independent notes.
-             * If __notes__ is not a sequence, we don't know how to copy it */
+            /* Make a copy so the parts have independent notes lists. */
             PyObject *notes_copy = PySequence_List(notes);
             Py_DECREF(notes);
             if (notes_copy == NULL) {
                 goto error;
             }
-            notes = notes_copy;
+            int res = PyObject_SetAttr(eg, &_Py_ID(__notes__), notes_copy);
+            Py_DECREF(notes_copy);
+            if (res < 0) {
+                goto error;
+            }
         }
-        if (PyObject_SetAttr(eg, &_Py_ID(__notes__), notes) < 0) {
+        else {
+            /* __notes__ is supposed to be a list, and split() is not a
+             * good place to report earlier user errors, so we just ignore
+             * notes of non-sequence type.
+             */
             Py_DECREF(notes);
-            goto error;
         }
-        Py_DECREF(notes);
     }
 
     *result = eg;
