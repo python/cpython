@@ -2208,6 +2208,9 @@ class CoroutineTest(unittest.TestCase):
             gen.cr_frame.clear()
 
 
+@unittest.skipIf(
+    support.is_emscripten, "asyncio does not work under Emscripten yet."
+)
 class CoroAsyncIOCompatTest(unittest.TestCase):
 
     def test_asyncio_1(self):

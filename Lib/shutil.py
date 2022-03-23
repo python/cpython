@@ -648,6 +648,7 @@ def _rmtree_safe_fd(topfd, path, onerror):
         if is_dir:
             try:
                 dirfd = os.open(entry.name, os.O_RDONLY, dir_fd=topfd)
+                dirfd_closed = False
             except OSError:
                 onerror(os.open, fullname, sys.exc_info())
             else:
@@ -655,6 +656,8 @@ def _rmtree_safe_fd(topfd, path, onerror):
                     if os.path.samestat(orig_st, os.fstat(dirfd)):
                         _rmtree_safe_fd(dirfd, fullname, onerror)
                         try:
+                            os.close(dirfd)
+                            dirfd_closed = True
                             os.rmdir(entry.name, dir_fd=topfd)
                         except OSError:
                             onerror(os.rmdir, fullname, sys.exc_info())
@@ -668,7 +671,8 @@ def _rmtree_safe_fd(topfd, path, onerror):
                         except OSError:
                             onerror(os.path.islink, fullname, sys.exc_info())
                 finally:
-                    os.close(dirfd)
+                    if not dirfd_closed:
+                        os.close(dirfd)
         else:
             try:
                 os.unlink(entry.name, dir_fd=topfd)
@@ -680,8 +684,13 @@ _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
                      os.scandir in os.supports_fd and
                      os.stat in os.supports_follow_symlinks)
 
-def rmtree(path, ignore_errors=False, onerror=None):
+def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None):
     """Recursively delete a directory tree.
+
+    If dir_fd is not None, it should be a file descriptor open to a directory;
+    path will then be relative to that directory.
+    dir_fd may not be implemented on your platform.
+    If it is unavailable, using it will raise a NotImplementedError.
 
     If ignore_errors is set, errors are ignored; otherwise, if onerror
     is set, it is called to handle the error with arguments (func,
@@ -691,7 +700,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
     is false and onerror is None, an exception is raised.
 
     """
-    sys.audit("shutil.rmtree", path)
+    sys.audit("shutil.rmtree", path, dir_fd)
     if ignore_errors:
         def onerror(*args):
             pass
@@ -705,12 +714,13 @@ def rmtree(path, ignore_errors=False, onerror=None):
         # Note: To guard against symlink races, we use the standard
         # lstat()/open()/fstat() trick.
         try:
-            orig_st = os.lstat(path)
+            orig_st = os.lstat(path, dir_fd=dir_fd)
         except Exception:
             onerror(os.lstat, path, sys.exc_info())
             return
         try:
-            fd = os.open(path, os.O_RDONLY)
+            fd = os.open(path, os.O_RDONLY, dir_fd=dir_fd)
+            fd_closed = False
         except Exception:
             onerror(os.open, path, sys.exc_info())
             return
@@ -718,7 +728,9 @@ def rmtree(path, ignore_errors=False, onerror=None):
             if os.path.samestat(orig_st, os.fstat(fd)):
                 _rmtree_safe_fd(fd, path, onerror)
                 try:
-                    os.rmdir(path)
+                    os.close(fd)
+                    fd_closed = True
+                    os.rmdir(path, dir_fd=dir_fd)
                 except OSError:
                     onerror(os.rmdir, path, sys.exc_info())
             else:
@@ -728,8 +740,11 @@ def rmtree(path, ignore_errors=False, onerror=None):
                 except OSError:
                     onerror(os.path.islink, path, sys.exc_info())
         finally:
-            os.close(fd)
+            if not fd_closed:
+                os.close(fd)
     else:
+        if dir_fd is not None:
+            raise NotImplementedError("dir_fd unavailable on this platform")
         try:
             if _rmtree_islink(path):
                 # symlinks to directories are forbidden, see bug #1669

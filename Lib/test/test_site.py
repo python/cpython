@@ -456,16 +456,6 @@ class ImportSideEffectTests(unittest.TestCase):
         # 'help' should be set in builtins
         self.assertTrue(hasattr(builtins, "help"))
 
-    def test_aliasing_mbcs(self):
-        if sys.platform == "win32":
-            import locale
-            if locale.getdefaultlocale()[1].startswith('cp'):
-                for value in encodings.aliases.aliases.values():
-                    if value == "mbcs":
-                        break
-                else:
-                    self.fail("did not alias mbcs")
-
     def test_sitecustomize_executed(self):
         # If sitecustomize is available, it should have been imported.
         if "sitecustomize" not in sys.modules:

@@ -862,7 +862,7 @@ _PyThreadState_SetCurrent(PyThreadState *tstate)
 }
 
 PyObject*
-PyState_FindModule(struct PyModuleDef* module)
+PyState_FindModule(PyModuleDef* module)
 {
     Py_ssize_t index = module->m_base.m_index;
     PyInterpreterState *state = _PyInterpreterState_GET();
@@ -881,7 +881,7 @@ PyState_FindModule(struct PyModuleDef* module)
 }
 
 int
-_PyState_AddModule(PyThreadState *tstate, PyObject* module, struct PyModuleDef* def)
+_PyState_AddModule(PyThreadState *tstate, PyObject* module, PyModuleDef* def)
 {
     if (!def) {
         assert(_PyErr_Occurred(tstate));
@@ -914,7 +914,7 @@ _PyState_AddModule(PyThreadState *tstate, PyObject* module, struct PyModuleDef* 
 }
 
 int
-PyState_AddModule(PyObject* module, struct PyModuleDef* def)
+PyState_AddModule(PyObject* module, PyModuleDef* def)
 {
     if (!def) {
         Py_FatalError("module definition is NULL");
@@ -935,7 +935,7 @@ PyState_AddModule(PyObject* module, struct PyModuleDef* def)
 }
 
 int
-PyState_RemoveModule(struct PyModuleDef* def)
+PyState_RemoveModule(PyModuleDef* def)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyInterpreterState *interp = tstate->interp;
@@ -1333,23 +1333,6 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
     return 0;
 }
 
-
-void
-PyThreadState_EnterTracing(PyThreadState *tstate)
-{
-    tstate->tracing++;
-    _PyThreadState_PauseTracing(tstate);
-}
-
-void
-PyThreadState_LeaveTracing(PyThreadState *tstate)
-{
-    tstate->tracing--;
-    _PyThreadState_ResumeTracing(tstate);
-}
-
-
-
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
 
@@ -1410,7 +1393,7 @@ _PyThread_CurrentFrames(void)
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->threads.head; t != NULL; t = t->next) {
-            InterpreterFrame *frame = t->cframe->current_frame;
+            _PyInterpreterFrame *frame = t->cframe->current_frame;
             if (frame == NULL) {
                 continue;
             }
@@ -2197,7 +2180,7 @@ push_chunk(PyThreadState *tstate, int size)
     return res;
 }
 
-InterpreterFrame *
+_PyInterpreterFrame *
 _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size)
 {
     assert(size < INT_MAX/sizeof(PyObject *));
@@ -2209,11 +2192,11 @@ _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size)
     else {
         tstate->datastack_top = top;
     }
-    return (InterpreterFrame *)base;
+    return (_PyInterpreterFrame *)base;
 }
 
 void
-_PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame * frame)
+_PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
     assert(tstate->datastack_chunk);
     PyObject **base = (PyObject **)frame;

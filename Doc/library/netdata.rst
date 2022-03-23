@@ -19,4 +19,3 @@ on the internet.
    base64.rst
    binascii.rst
    quopri.rst
-   uu.rst

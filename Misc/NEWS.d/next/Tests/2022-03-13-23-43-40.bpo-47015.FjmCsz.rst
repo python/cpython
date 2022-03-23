@@ -1,0 +1,2 @@
+A test case for :func:`os.sendfile` is converted from deprecated
+:mod:`asyncore` (see :pep:`594`) to :mod:`asyncio`. Patch by Oleg Iarygin.
