@@ -1693,6 +1693,13 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
         state->start = state->ptr = ptr;
         status = SRE(match)(state, pattern, 1);
         state->must_advance = 0;
+        if (status == 0 && pattern[0] == SRE_OP_AT &&
+            (pattern[1] == SRE_AT_BEGINNING ||
+             pattern[1] == SRE_AT_BEGINNING_STRING))
+        {
+            state->start = state->ptr = ptr = end;
+            return 0;
+        }
         while (status == 0 && ptr < end) {
             ptr++;
             RESET_CAPTURE_GROUP();
