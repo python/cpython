@@ -3249,6 +3249,8 @@ dec_format(PyObject *dec, PyObject *args)
     int no_neg_0 = 0;
     Py_ssize_t size;
     mpd_t *mpd = MPD(dec);
+    mpd_uint_t dt[MPD_MINALLOC_MAX];
+    mpd_t tmp = {MPD_STATIC|MPD_STATIC_DATA,0,0,0,MPD_MINALLOC_MAX,dt};
 
 
     CURRENT_CONTEXT(context);
@@ -3361,8 +3363,6 @@ dec_format(PyObject *dec, PyObject *args)
            If so, clear the sign and format this pre-rounded value.
            (The format will then do no additional rounding, which is
            significant for directed rounding cases like ROUND_CEILING.) */
-        mpd_uint_t dt[MPD_MINALLOC_MAX];
-        mpd_t tmp = {MPD_STATIC|MPD_STATIC_DATA,0,0,0,MPD_MINALLOC_MAX,dt};
         mpd_ssize_t prec;
         mpd_qcopy(&tmp, mpd, &status);
         switch (spec.type) {
