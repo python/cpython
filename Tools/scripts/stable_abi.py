@@ -300,21 +300,28 @@ def gen_ctypes_test(manifest, args, outfile):
 
         import unittest
         from test.support.import_helper import import_module
+        from _testcapi import get_feature_macros
 
+        feature_macros = get_feature_macros()
         ctypes_test = import_module('ctypes')
 
         class TestStableABIAvailability(unittest.TestCase):
             def test_available_symbols(self):
+
                 for symbol_name in SYMBOL_NAMES:
                     with self.subTest(symbol_name):
                         ctypes_test.pythonapi[symbol_name]
+
+            def test_feature_macros(self):
+                self.assertEqual(set(feature_macros), EXPECTED_IFDEFS)
 
         SYMBOL_NAMES = (
     '''))
     items = manifest.select(
         {'function', 'data'},
         include_abi_only=True,
-        ifdef=set())
+    )
+    ifdef_items = {}
     for item in items:
         if item.name in (
                 # Some symbols aren't exported on all platforms.
@@ -322,8 +329,19 @@ def gen_ctypes_test(manifest, args, outfile):
                 'PyModule_Create2', 'PyModule_FromDefAndSpec2',
             ):
             continue
-        write(f'    "{item.name}",')
+        if item.ifdef:
+            ifdef_items.setdefault(item.ifdef, []).append(item.name)
+        else:
+            write(f'    "{item.name}",')
     write(")")
+    for ifdef, names in ifdef_items.items():
+        write(f"if feature_macros[{ifdef!r}]:")
+        write(f"    SYMBOL_NAMES += (")
+        for name in names:
+            write(f"        {name!r},")
+        write("    )")
+    write("")
+    write(f"EXPECTED_IFDEFS = set({sorted(ifdef_items)})")
 
 
 def generate_or_check(manifest, args, path, func):
