@@ -362,10 +362,6 @@ Barrier
    Example::
 
       async def example_barrier():
-         # action when barrier will unblock
-         async def done():
-            print("calling action 'done'")
-
          # barrier with 3 parties
          b = asyncio.Barrier(3, done)
 
@@ -388,7 +384,6 @@ Barrier
    Result of this example is::
 
       <asyncio.locks.Barrier object at 0x103e58bf0 [unlocked, wait:2/3, state:0]>
-      calling action 'done'
       barrier passed
       <asyncio.locks.Barrier object at 0x103e58bf0 [unlocked, state:0]>
 
@@ -397,27 +392,17 @@ Barrier
 
 .. class:: Barrier(parties, action=None)
 
-   Create a barrier object for *parties* number of tasks.  A coroutinefunction *action*,
-   when provided, is awaited once just before the release occurs (draining state).
-   Here this coroutinefunction is callable that returns an awaitable.
-   If the coroutinefunction refers to a coroutine with parameters, you should
-   use ``functools.partial`` function.
-
+   Create a barrier object for *parties* number of tasks.
 
    .. coroutinemethod:: wait()
 
       Pass the barrier. When all the tasks party to the barrier have called
       this function, they are all unblocked simultaneously.
 
-      When a task in the barrier is cancelled, two cases are possible:
-
-      * if the task is the last waiting task, a :class:`BrokenBarrierError`
-        exception is raised. The barrier is put into a broken state;
-
-      * if the task is waiting (filling state) or blocked (draining state),
-        this task exits the barrier which stays in the same state.
-        If the state of the barrier is "filling", the number of waiting task
-        decreases by 1.
+      When a waiting or blocked task in the barrier is cancelled,
+      this task exits the barrier which stays in the same state.
+      If the state of the barrier is "filling", the number of waiting task
+      decreases by 1.
 
       The return value is an integer in the range of 0 to ``parties-1``, different
       for each task. This can be used to select a task to do some special
@@ -428,11 +413,6 @@ Barrier
             if position == 0:
                # Only one task print this
                print('End of *draining phasis*')
-
-      If an *action* was provided as a coroutinefunction to the constructor, the last
-      calling task of :meth:`wait` method will have to *await this coroutine*
-      prior to being released. Should this call raise an error, including cancellation of task,
-      the barrier is put into the broken state.
 
       This method may raise a :class:`BrokenBarrierError` exception if the
       barrier is broken or reset while a task is waiting.

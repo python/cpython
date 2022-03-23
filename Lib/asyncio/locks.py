@@ -424,24 +424,18 @@ class Barrier(mixins._LoopBoundMixin):
     have all made their call.
     """
 
-    def __init__(self, parties, action=None):
+    def __init__(self, parties):
         """Create a barrier, initialised to 'parties' tasks.
-        'action' is a coroutine which, when supplied, will be called by
-        the last task calling the wait() method,
-        just prior to releasing them all.
         """
         if parties < 1:
             raise ValueError('parties must be > 0')
-        if action and not coroutines.iscoroutinefunction(action):
-            raise TypeError(f"a coroutinefunction was expected for 'action', got {action!r}")
 
         self._cond = Condition() # notify all tasks when state changes
 
-        self._action = action
         self._parties = parties
         self._state = 0       # 0 filling, 1, draining, -1 resetting, -2 broken
         self._count = 0       # count tasks in Barrier
-        self._count_block = 0 # count blocking tasks
+        self._count_block = 0 # count blocked tasks when draining
 
     def __repr__(self):
         res = super().__repr__()
@@ -465,9 +459,7 @@ class Barrier(mixins._LoopBoundMixin):
     async def wait(self):
         """Wait for the barrier.
         When the specified number of tasks have started waiting, they are all
-        simultaneously awoken. If an 'action' was provided for the barrier, the
-        last task calling this method will have executed that callback prior to
-        returning.
+        simultaneously awoken.
         Returns an unique and individual index number from 0 to 'parties-1'.
         # """
         async with self._cond:
@@ -507,28 +499,17 @@ class Barrier(mixins._LoopBoundMixin):
         if self.broken:
             raise BrokenBarrierError("Barrier aborted")
 
-    # Optionally run the 'action' and release the tasks waiting
-    # in the barrier.
+    # Release the tasks waiting in the barrier.
     async def _release(self):
-        """Optionally run the 'action' and release the tasks waiting
-        in the barrier.
+        """Enter draining state. Next waiting tasks will be blocked 
+        until the end of draining.
         """
-        try:
-            if self._action:
-                await self._action()
-        except (Exception, exceptions.CancelledError):
-            # an exception occurs during the _action coroutine,
-            # or the last calling task cancels
-            # Break and reraise
-            self._break()
-            raise
-
         # enter draining state
         self._set_draining()
         self._cond.notify_all()
 
     async def _wait(self):
-        """Wait in the barrier until we are released.  Raise an exception
+        """Wait in the barrier until we are released. Raise an exception
         if the barrier is reset or broken.
         """
         # wait for end of filling
@@ -570,7 +551,7 @@ class Barrier(mixins._LoopBoundMixin):
             self._break()
 
     def _break(self):
-        # An internal error was detected.  The barrier is set to
+        # An internal error was detected. The barrier is set to
         # a broken state all parties awakened.
         self._set_broken()
         self._cond.notify_all()
