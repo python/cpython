@@ -16,9 +16,10 @@ class reversed "reversedobject *" "&PyReversed_Type"
 typedef struct {
     PyObject_HEAD
     Py_ssize_t en_index;           /* current index of enumeration */
-    PyObject* en_sit;          /* secondary iterator of enumeration */
+    PyObject* en_sit;              /* secondary iterator of enumeration */
     PyObject* en_result;           /* result tuple  */
     PyObject* en_longindex;        /* index for sequences >= PY_SSIZE_T_MAX */
+    PyObject* one;                 /* borrowed reference */
 } enumobject;
 
 
@@ -78,7 +79,20 @@ enum_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start)
         Py_DECREF(en);
         return NULL;
     }
+    en->one = _PyLong_GetOne();    /* borrowed reference */
     return (PyObject *)en;
+}
+
+static int check_keyword(PyObject *kwnames, int index,
+                         const char *name)
+{
+    PyObject *kw = PyTuple_GET_ITEM(kwnames, index);
+    if (!_PyUnicode_EqualToASCIIString(kw, name)) {
+        PyErr_Format(PyExc_TypeError,
+            "'%S' is an invalid keyword argument for enumerate()", kw);
+        return 0;
+    }
+    return 1;
 }
 
 // TODO: Use AC when bpo-43447 is supported
@@ -86,33 +100,47 @@ static PyObject *
 enumerate_vectorcall(PyObject *type, PyObject *const *args,
                      size_t nargsf, PyObject *kwnames)
 {
-    assert(PyType_Check(type));
-    PyTypeObject *tp = (PyTypeObject *)type;
+    PyTypeObject *tp = _PyType_CAST(type);
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     Py_ssize_t nkwargs = 0;
-    if (nargs == 0) {
-        PyErr_SetString(PyExc_TypeError,
-            "enumerate() missing required argument 'iterable'");
-        return NULL;
-    }
     if (kwnames != NULL) {
         nkwargs = PyTuple_GET_SIZE(kwnames);
     }
 
+    // Manually implement enumerate(iterable, start=...)
     if (nargs + nkwargs == 2) {
         if (nkwargs == 1) {
-            PyObject *kw = PyTuple_GET_ITEM(kwnames, 0);
-            if (!_PyUnicode_EqualToASCIIString(kw, "start")) {
-                PyErr_Format(PyExc_TypeError,
-                    "'%S' is an invalid keyword argument for enumerate()", kw);
+            if (!check_keyword(kwnames, 0, "start")) {
                 return NULL;
             }
+        } else if (nkwargs == 2) {
+            PyObject *kw0 = PyTuple_GET_ITEM(kwnames, 0);
+            if (_PyUnicode_EqualToASCIIString(kw0, "start")) {
+                if (!check_keyword(kwnames, 1, "iterable")) {
+                    return NULL;
+                }
+                return enum_new_impl(tp, args[1], args[0]);
+            }
+            if (!check_keyword(kwnames, 0, "iterable") ||
+                !check_keyword(kwnames, 1, "start")) {
+                return NULL;
+            }
+
         }
         return enum_new_impl(tp, args[0], args[1]);
     }
 
-    if (nargs == 1 && nkwargs == 0) {
+    if (nargs + nkwargs == 1) {
+        if (nkwargs == 1 && !check_keyword(kwnames, 0, "iterable")) {
+            return NULL;
+        }
         return enum_new_impl(tp, args[0], NULL);
+    }
+
+    if (nargs == 0) {
+        PyErr_SetString(PyExc_TypeError,
+            "enumerate() missing required argument 'iterable'");
+        return NULL;
     }
 
     PyErr_Format(PyExc_TypeError,
@@ -157,7 +185,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
     }
     next_index = en->en_longindex;
     assert(next_index != NULL);
-    stepped_up = PyNumber_Add(next_index, _PyLong_GetOne());
+    stepped_up = PyNumber_Add(next_index, en->one);
     if (stepped_up == NULL) {
         Py_DECREF(next_item);
         return NULL;
@@ -328,9 +356,8 @@ reversed_new_impl(PyTypeObject *type, PyObject *seq)
     Py_ssize_t n;
     PyObject *reversed_meth;
     reversedobject *ro;
-    _Py_IDENTIFIER(__reversed__);
 
-    reversed_meth = _PyObject_LookupSpecial(seq, &PyId___reversed__);
+    reversed_meth = _PyObject_LookupSpecial(seq, &_Py_ID(__reversed__));
     if (reversed_meth == Py_None) {
         Py_DECREF(reversed_meth);
         PyErr_Format(PyExc_TypeError,
@@ -371,8 +398,6 @@ static PyObject *
 reversed_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    assert(PyType_Check(type));
-
     if (!_PyArg_NoKwnames("reversed", kwnames)) {
         return NULL;
     }
@@ -382,7 +407,7 @@ reversed_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    return reversed_new_impl((PyTypeObject *)type, args[0]);
+    return reversed_new_impl(_PyType_CAST(type), args[0]);
 }
 
 static void

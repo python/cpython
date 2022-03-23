@@ -1,0 +1,1 @@
+Fix inconsistency with uppercase file extensions in :meth:`MimeTypes.guess_type`. Patch by Kumar Aditya.

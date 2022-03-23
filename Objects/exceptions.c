@@ -15,10 +15,10 @@
 
 
 /* Compatibility aliases */
-PyObject *PyExc_EnvironmentError = NULL;
-PyObject *PyExc_IOError = NULL;
+PyObject *PyExc_EnvironmentError = NULL;  // borrowed ref
+PyObject *PyExc_IOError = NULL;  // borrowed ref
 #ifdef MS_WINDOWS
-PyObject *PyExc_WindowsError = NULL;
+PyObject *PyExc_WindowsError = NULL;  // borrowed ref
 #endif
 
 
@@ -685,7 +685,10 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *message = NULL;
     PyObject *exceptions = NULL;
 
-    if (!PyArg_ParseTuple(args, "UO", &message, &exceptions)) {
+    if (!PyArg_ParseTuple(args,
+                          "UO:BaseExceptionGroup.__new__",
+                          &message,
+                          &exceptions)) {
         return NULL;
     }
 
@@ -833,7 +836,12 @@ BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
 {
     assert(self->msg);
     assert(PyUnicode_Check(self->msg));
-    return Py_NewRef(self->msg);
+
+    assert(PyTuple_CheckExact(self->excs));
+    Py_ssize_t num_excs = PyTuple_Size(self->excs);
+    return PyUnicode_FromFormat(
+        "%S (%zd sub-exception%s)",
+        self->msg, num_excs, num_excs > 1 ? "s" : "");
 }
 
 static PyObject *
@@ -1207,8 +1215,8 @@ collect_exception_group_leaves(PyObject *exc, PyObject *leaves)
  * of eg which contains all leaf exceptions that are contained
  * in any exception group in keep.
  */
-PyObject *
-_PyExc_ExceptionGroupProjection(PyObject *eg, PyObject *keep)
+static PyObject *
+exception_group_projection(PyObject *eg, PyObject *keep)
 {
     assert(_PyBaseExceptionGroup_Check(eg));
     assert(PyList_CheckExact(keep));
@@ -1242,6 +1250,122 @@ _PyExc_ExceptionGroupProjection(PyObject *eg, PyObject *keep)
     PyObject *result = split_result.match ?
         split_result.match : Py_NewRef(Py_None);
     assert(split_result.rest == NULL);
+    return result;
+}
+
+static bool
+is_same_exception_metadata(PyObject *exc1, PyObject *exc2)
+{
+    assert(PyExceptionInstance_Check(exc1));
+    assert(PyExceptionInstance_Check(exc2));
+
+    PyBaseExceptionObject *e1 = (PyBaseExceptionObject *)exc1;
+    PyBaseExceptionObject *e2 = (PyBaseExceptionObject *)exc2;
+
+    return (e1->note == e2->note &&
+            e1->traceback == e2->traceback &&
+            e1->cause == e2->cause &&
+            e1->context == e2->context);
+}
+
+/*
+   This function is used by the interpreter to calculate
+   the exception group to be raised at the end of a
+   try-except* construct.
+
+   orig: the original except that was caught.
+   excs: a list of exceptions that were raised/reraised
+         in the except* clauses.
+
+   Calculates an exception group to raise. It contains
+   all exceptions in excs, where those that were reraised
+   have same nesting structure as in orig, and those that
+   were raised (if any) are added as siblings in a new EG.
+
+   Returns NULL and sets an exception on failure.
+*/
+PyObject *
+_PyExc_PrepReraiseStar(PyObject *orig, PyObject *excs)
+{
+    assert(PyExceptionInstance_Check(orig));
+    assert(PyList_Check(excs));
+
+    Py_ssize_t numexcs = PyList_GET_SIZE(excs);
+
+    if (numexcs == 0) {
+        return Py_NewRef(Py_None);
+    }
+
+    if (!_PyBaseExceptionGroup_Check(orig)) {
+        /* a naked exception was caught and wrapped. Only one except* clause
+         * could have executed,so there is at most one exception to raise.
+         */
+
+        assert(numexcs == 1 || (numexcs == 2 && PyList_GET_ITEM(excs, 1) == Py_None));
+
+        PyObject *e = PyList_GET_ITEM(excs, 0);
+        assert(e != NULL);
+        return Py_NewRef(e);
+    }
+
+    PyObject *raised_list = PyList_New(0);
+    if (raised_list == NULL) {
+        return NULL;
+    }
+    PyObject* reraised_list = PyList_New(0);
+    if (reraised_list == NULL) {
+        Py_DECREF(raised_list);
+        return NULL;
+    }
+
+    /* Now we are holding refs to raised_list and reraised_list */
+
+    PyObject *result = NULL;
+
+    /* Split excs into raised and reraised by comparing metadata with orig */
+    for (Py_ssize_t i = 0; i < numexcs; i++) {
+        PyObject *e = PyList_GET_ITEM(excs, i);
+        assert(e != NULL);
+        if (Py_IsNone(e)) {
+            continue;
+        }
+        bool is_reraise = is_same_exception_metadata(e, orig);
+        PyObject *append_list = is_reraise ? reraised_list : raised_list;
+        if (PyList_Append(append_list, e) < 0) {
+            goto done;
+        }
+    }
+
+    PyObject *reraised_eg = exception_group_projection(orig, reraised_list);
+    if (reraised_eg == NULL) {
+        goto done;
+    }
+
+    if (!Py_IsNone(reraised_eg)) {
+        assert(is_same_exception_metadata(reraised_eg, orig));
+    }
+    Py_ssize_t num_raised = PyList_GET_SIZE(raised_list);
+    if (num_raised == 0) {
+        result = reraised_eg;
+    }
+    else if (num_raised > 0) {
+        int res = 0;
+        if (!Py_IsNone(reraised_eg)) {
+            res = PyList_Append(raised_list, reraised_eg);
+        }
+        Py_DECREF(reraised_eg);
+        if (res < 0) {
+            goto done;
+        }
+        result = _PyExc_CreateExceptionGroup("", raised_list);
+        if (result == NULL) {
+            goto done;
+        }
+    }
+
+done:
+    Py_XDECREF(raised_list);
+    Py_XDECREF(reraised_list);
     return result;
 }
 
@@ -1380,16 +1504,14 @@ ImportError_getstate(PyImportErrorObject *self)
 {
     PyObject *dict = ((PyBaseExceptionObject *)self)->dict;
     if (self->name || self->path) {
-        _Py_IDENTIFIER(name);
-        _Py_IDENTIFIER(path);
         dict = dict ? PyDict_Copy(dict) : PyDict_New();
         if (dict == NULL)
             return NULL;
-        if (self->name && _PyDict_SetItemId(dict, &PyId_name, self->name) < 0) {
+        if (self->name && PyDict_SetItem(dict, &_Py_ID(name), self->name) < 0) {
             Py_DECREF(dict);
             return NULL;
         }
-        if (self->path && _PyDict_SetItemId(dict, &PyId_path, self->path) < 0) {
+        if (self->path && PyDict_SetItem(dict, &_Py_ID(path), self->path) < 0) {
             Py_DECREF(dict);
             return NULL;
         }
@@ -1659,8 +1781,7 @@ OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             PyObject *newtype;
             newtype = PyDict_GetItemWithError(state->errnomap, myerrno);
             if (newtype) {
-                assert(PyType_Check(newtype));
-                type = (PyTypeObject *) newtype;
+                type = _PyType_CAST(newtype);
             }
             else if (PyErr_Occurred())
                 goto error;
@@ -3306,99 +3427,145 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #endif
 #endif /* MS_WINDOWS */
 
-PyStatus
+struct static_exception {
+    PyTypeObject *exc;
+    const char *name;
+};
+
+static struct static_exception static_exceptions[] = {
+#define ITEM(NAME) {&_PyExc_##NAME, #NAME}
+    // Level 1
+    ITEM(BaseException),
+
+    // Level 2: BaseException subclasses
+    ITEM(BaseExceptionGroup),
+    ITEM(Exception),
+    ITEM(GeneratorExit),
+    ITEM(KeyboardInterrupt),
+    ITEM(SystemExit),
+
+    // Level 3: Exception(BaseException) subclasses
+    ITEM(ArithmeticError),
+    ITEM(AssertionError),
+    ITEM(AttributeError),
+    ITEM(BufferError),
+    ITEM(EOFError),
+    //ITEM(ExceptionGroup),
+    ITEM(ImportError),
+    ITEM(LookupError),
+    ITEM(MemoryError),
+    ITEM(NameError),
+    ITEM(OSError),
+    ITEM(ReferenceError),
+    ITEM(RuntimeError),
+    ITEM(StopAsyncIteration),
+    ITEM(StopIteration),
+    ITEM(SyntaxError),
+    ITEM(SystemError),
+    ITEM(TypeError),
+    ITEM(ValueError),
+    ITEM(Warning),
+
+    // Level 4: ArithmeticError(Exception) subclasses
+    ITEM(FloatingPointError),
+    ITEM(OverflowError),
+    ITEM(ZeroDivisionError),
+
+    // Level 4: Warning(Exception) subclasses
+    ITEM(BytesWarning),
+    ITEM(DeprecationWarning),
+    ITEM(EncodingWarning),
+    ITEM(FutureWarning),
+    ITEM(ImportWarning),
+    ITEM(PendingDeprecationWarning),
+    ITEM(ResourceWarning),
+    ITEM(RuntimeWarning),
+    ITEM(SyntaxWarning),
+    ITEM(UnicodeWarning),
+    ITEM(UserWarning),
+
+    // Level 4: OSError(Exception) subclasses
+    ITEM(BlockingIOError),
+    ITEM(ChildProcessError),
+    ITEM(ConnectionError),
+    ITEM(FileExistsError),
+    ITEM(FileNotFoundError),
+    ITEM(InterruptedError),
+    ITEM(IsADirectoryError),
+    ITEM(NotADirectoryError),
+    ITEM(PermissionError),
+    ITEM(ProcessLookupError),
+    ITEM(TimeoutError),
+
+    // Level 4: Other subclasses
+    ITEM(IndentationError), // base: SyntaxError(Exception)
+    ITEM(IndexError),  // base: LookupError(Exception)
+    ITEM(KeyError),  // base: LookupError(Exception)
+    ITEM(ModuleNotFoundError), // base: ImportError(Exception)
+    ITEM(NotImplementedError),  // base: RuntimeError(Exception)
+    ITEM(RecursionError),  // base: RuntimeError(Exception)
+    ITEM(UnboundLocalError), // base: NameError(Exception)
+    ITEM(UnicodeError),  // base: ValueError(Exception)
+
+    // Level 5: ConnectionError(OSError) subclasses
+    ITEM(BrokenPipeError),
+    ITEM(ConnectionAbortedError),
+    ITEM(ConnectionRefusedError),
+    ITEM(ConnectionResetError),
+
+    // Level 5: IndentationError(SyntaxError) subclasses
+    ITEM(TabError),  // base: IndentationError
+
+    // Level 5: UnicodeError(ValueError) subclasses
+    ITEM(UnicodeDecodeError),
+    ITEM(UnicodeEncodeError),
+    ITEM(UnicodeTranslateError),
+#undef ITEM
+};
+
+
+int
 _PyExc_InitTypes(PyInterpreterState *interp)
 {
-#define PRE_INIT(TYPE) \
-    if (!(_PyExc_ ## TYPE.tp_flags & Py_TPFLAGS_READY)) { \
-        if (PyType_Ready(&_PyExc_ ## TYPE) < 0) { \
-            return _PyStatus_ERR("exceptions bootstrapping error."); \
-        } \
-        Py_INCREF(PyExc_ ## TYPE); \
+    if (!_Py_IsMainInterpreter(interp)) {
+        return 0;
     }
 
-    PRE_INIT(BaseException);
-    PRE_INIT(BaseExceptionGroup);
-    PRE_INIT(Exception);
-    PRE_INIT(TypeError);
-    PRE_INIT(StopAsyncIteration);
-    PRE_INIT(StopIteration);
-    PRE_INIT(GeneratorExit);
-    PRE_INIT(SystemExit);
-    PRE_INIT(KeyboardInterrupt);
-    PRE_INIT(ImportError);
-    PRE_INIT(ModuleNotFoundError);
-    PRE_INIT(OSError);
-    PRE_INIT(EOFError);
-    PRE_INIT(RuntimeError);
-    PRE_INIT(RecursionError);
-    PRE_INIT(NotImplementedError);
-    PRE_INIT(NameError);
-    PRE_INIT(UnboundLocalError);
-    PRE_INIT(AttributeError);
-    PRE_INIT(SyntaxError);
-    PRE_INIT(IndentationError);
-    PRE_INIT(TabError);
-    PRE_INIT(LookupError);
-    PRE_INIT(IndexError);
-    PRE_INIT(KeyError);
-    PRE_INIT(ValueError);
-    PRE_INIT(UnicodeError);
-    PRE_INIT(UnicodeEncodeError);
-    PRE_INIT(UnicodeDecodeError);
-    PRE_INIT(UnicodeTranslateError);
-    PRE_INIT(AssertionError);
-    PRE_INIT(ArithmeticError);
-    PRE_INIT(FloatingPointError);
-    PRE_INIT(OverflowError);
-    PRE_INIT(ZeroDivisionError);
-    PRE_INIT(SystemError);
-    PRE_INIT(ReferenceError);
-    PRE_INIT(MemoryError);
-    PRE_INIT(BufferError);
-    PRE_INIT(Warning);
-    PRE_INIT(UserWarning);
-    PRE_INIT(EncodingWarning);
-    PRE_INIT(DeprecationWarning);
-    PRE_INIT(PendingDeprecationWarning);
-    PRE_INIT(SyntaxWarning);
-    PRE_INIT(RuntimeWarning);
-    PRE_INIT(FutureWarning);
-    PRE_INIT(ImportWarning);
-    PRE_INIT(UnicodeWarning);
-    PRE_INIT(BytesWarning);
-    PRE_INIT(ResourceWarning);
+    for (size_t i=0; i < Py_ARRAY_LENGTH(static_exceptions); i++) {
+        PyTypeObject *exc = static_exceptions[i].exc;
 
-    /* OSError subclasses */
-    PRE_INIT(ConnectionError);
-
-    PRE_INIT(BlockingIOError);
-    PRE_INIT(BrokenPipeError);
-    PRE_INIT(ChildProcessError);
-    PRE_INIT(ConnectionAbortedError);
-    PRE_INIT(ConnectionRefusedError);
-    PRE_INIT(ConnectionResetError);
-    PRE_INIT(FileExistsError);
-    PRE_INIT(FileNotFoundError);
-    PRE_INIT(IsADirectoryError);
-    PRE_INIT(NotADirectoryError);
-    PRE_INIT(InterruptedError);
-    PRE_INIT(PermissionError);
-    PRE_INIT(ProcessLookupError);
-    PRE_INIT(TimeoutError);
-
-    return _PyStatus_OK();
-
-#undef PRE_INIT
+        if (PyType_Ready(exc) < 0) {
+            return -1;
+        }
+    }
+    return 0;
 }
+
+
+static void
+_PyExc_FiniTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    for (Py_ssize_t i=Py_ARRAY_LENGTH(static_exceptions) - 1; i >= 0; i--) {
+        PyTypeObject *exc = static_exceptions[i].exc;
+        _PyStaticType_Dealloc(exc);
+    }
+}
+
 
 PyStatus
 _PyExc_InitGlobalObjects(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
     if (preallocate_memerrors() < 0) {
         return _PyStatus_NO_MEMORY();
     }
-
     return _PyStatus_OK();
 }
 
@@ -3454,116 +3621,47 @@ _PyExc_InitState(PyInterpreterState *interp)
 
 
 /* Add exception types to the builtins module */
-PyStatus
+int
 _PyBuiltins_AddExceptions(PyObject *bltinmod)
 {
-#define POST_INIT(TYPE) \
-    if (PyDict_SetItemString(bdict, # TYPE, PyExc_ ## TYPE)) { \
-        return _PyStatus_ERR("Module dictionary insertion problem."); \
+    PyObject *mod_dict = PyModule_GetDict(bltinmod);
+    if (mod_dict == NULL) {
+        return -1;
     }
 
-#define INIT_ALIAS(NAME, TYPE) \
-    do { \
-        Py_INCREF(PyExc_ ## TYPE); \
-        Py_XDECREF(PyExc_ ## NAME); \
-        PyExc_ ## NAME = PyExc_ ## TYPE; \
-        if (PyDict_SetItemString(bdict, # NAME, PyExc_ ## NAME)) { \
-            return _PyStatus_ERR("Module dictionary insertion problem."); \
-        } \
-    } while (0)
+    for (size_t i=0; i < Py_ARRAY_LENGTH(static_exceptions); i++) {
+        struct static_exception item = static_exceptions[i];
 
-    PyObject *bdict;
-
-    bdict = PyModule_GetDict(bltinmod);
-    if (bdict == NULL) {
-        return _PyStatus_ERR("exceptions bootstrapping error.");
+        if (PyDict_SetItemString(mod_dict, item.name, (PyObject*)item.exc)) {
+            return -1;
+        }
     }
 
     PyObject *PyExc_ExceptionGroup = create_exception_group_class();
     if (!PyExc_ExceptionGroup) {
-        return _PyStatus_ERR("exceptions bootstrapping error.");
+        return -1;
+    }
+    if (PyDict_SetItemString(mod_dict, "ExceptionGroup", PyExc_ExceptionGroup)) {
+        return -1;
     }
 
-    POST_INIT(BaseException);
-    POST_INIT(Exception);
-    POST_INIT(BaseExceptionGroup);
-    POST_INIT(ExceptionGroup);
-    POST_INIT(TypeError);
-    POST_INIT(StopAsyncIteration);
-    POST_INIT(StopIteration);
-    POST_INIT(GeneratorExit);
-    POST_INIT(SystemExit);
-    POST_INIT(KeyboardInterrupt);
-    POST_INIT(ImportError);
-    POST_INIT(ModuleNotFoundError);
-    POST_INIT(OSError);
+#define INIT_ALIAS(NAME, TYPE) \
+    do { \
+        PyExc_ ## NAME = PyExc_ ## TYPE; \
+        if (PyDict_SetItemString(mod_dict, # NAME, PyExc_ ## TYPE)) { \
+            return -1; \
+        } \
+    } while (0)
+
     INIT_ALIAS(EnvironmentError, OSError);
     INIT_ALIAS(IOError, OSError);
 #ifdef MS_WINDOWS
     INIT_ALIAS(WindowsError, OSError);
 #endif
-    POST_INIT(EOFError);
-    POST_INIT(RuntimeError);
-    POST_INIT(RecursionError);
-    POST_INIT(NotImplementedError);
-    POST_INIT(NameError);
-    POST_INIT(UnboundLocalError);
-    POST_INIT(AttributeError);
-    POST_INIT(SyntaxError);
-    POST_INIT(IndentationError);
-    POST_INIT(TabError);
-    POST_INIT(LookupError);
-    POST_INIT(IndexError);
-    POST_INIT(KeyError);
-    POST_INIT(ValueError);
-    POST_INIT(UnicodeError);
-    POST_INIT(UnicodeEncodeError);
-    POST_INIT(UnicodeDecodeError);
-    POST_INIT(UnicodeTranslateError);
-    POST_INIT(AssertionError);
-    POST_INIT(ArithmeticError);
-    POST_INIT(FloatingPointError);
-    POST_INIT(OverflowError);
-    POST_INIT(ZeroDivisionError);
-    POST_INIT(SystemError);
-    POST_INIT(ReferenceError);
-    POST_INIT(MemoryError);
-    POST_INIT(BufferError);
-    POST_INIT(Warning);
-    POST_INIT(UserWarning);
-    POST_INIT(EncodingWarning);
-    POST_INIT(DeprecationWarning);
-    POST_INIT(PendingDeprecationWarning);
-    POST_INIT(SyntaxWarning);
-    POST_INIT(RuntimeWarning);
-    POST_INIT(FutureWarning);
-    POST_INIT(ImportWarning);
-    POST_INIT(UnicodeWarning);
-    POST_INIT(BytesWarning);
-    POST_INIT(ResourceWarning);
 
-    /* OSError subclasses */
-    POST_INIT(ConnectionError);
-
-    POST_INIT(BlockingIOError);
-    POST_INIT(BrokenPipeError);
-    POST_INIT(ChildProcessError);
-    POST_INIT(ConnectionAbortedError);
-    POST_INIT(ConnectionRefusedError);
-    POST_INIT(ConnectionResetError);
-    POST_INIT(FileExistsError);
-    POST_INIT(FileNotFoundError);
-    POST_INIT(IsADirectoryError);
-    POST_INIT(NotADirectoryError);
-    POST_INIT(InterruptedError);
-    POST_INIT(PermissionError);
-    POST_INIT(ProcessLookupError);
-    POST_INIT(TimeoutError);
-
-    return _PyStatus_OK();
-
-#undef POST_INIT
 #undef INIT_ALIAS
+
+    return 0;
 }
 
 void
@@ -3579,6 +3677,8 @@ _PyExc_Fini(PyInterpreterState *interp)
     struct _Py_exc_state *state = &interp->exc_state;
     free_preallocated_memerrors(state);
     Py_CLEAR(state->errnomap);
+
+    _PyExc_FiniTypes(interp);
 }
 
 /* Helper to do the equivalent of "raise X from Y" in C, but always using
@@ -3630,7 +3730,7 @@ _PyErr_TrySetFromCause(const char *format, ...)
     base_exc_size = _PyExc_BaseException.tp_basicsize;
     same_basic_size = (
         caught_type_size == base_exc_size ||
-        (PyType_SUPPORTS_WEAKREFS(caught_type) &&
+        (_PyType_SUPPORTS_WEAKREFS(caught_type) &&
             (caught_type_size == base_exc_size + (Py_ssize_t)sizeof(PyObject *))
         )
     );

@@ -427,6 +427,7 @@ _exitcode_to_name = {}
 for name, signum in list(signal.__dict__.items()):
     if name[:3]=='SIG' and '_' not in name:
         _exitcode_to_name[-signum] = f'-{name}'
+del name, signum
 
 # For debug and leak testing
 _dangling = WeakSet()

@@ -1,2 +1,0 @@
-Now ``fakename`` in ``test_pathlib.PosixPathTest.test_expanduser`` is checked
-to be non-existent.

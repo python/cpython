@@ -1,0 +1,3 @@
+Apply bugfixes from importlib_metadata 4.11.3, including bugfix for
+EntryPoint.extras, which was returning match objects and not the extras
+strings.

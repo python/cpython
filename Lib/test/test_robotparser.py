@@ -308,6 +308,9 @@ class RobotHandler(BaseHTTPRequestHandler):
         pass
 
 
+@unittest.skipIf(
+    support.is_emscripten, "Socket server not available on Emscripten."
+)
 class PasswordProtectedSiteTestCase(unittest.TestCase):
 
     def setUp(self):

@@ -98,7 +98,11 @@ def _parse_value_tb(exc, value, tb):
         raise ValueError("Both or neither of value and tb must be given")
     if value is tb is _sentinel:
         if exc is not None:
-            return exc, exc.__traceback__
+            if isinstance(exc, BaseException):
+                return exc, exc.__traceback__
+
+            raise TypeError(f'Exception expected for value, '
+                            f'{type(exc).__name__} found')
         else:
             return None, None
     return value, tb

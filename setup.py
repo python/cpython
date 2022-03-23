@@ -84,9 +84,14 @@ CYGWIN = (HOST_PLATFORM == 'cygwin')
 MACOS = (HOST_PLATFORM == 'darwin')
 AIX = (HOST_PLATFORM.startswith('aix'))
 VXWORKS = ('vxworks' in HOST_PLATFORM)
+EMSCRIPTEN = HOST_PLATFORM == 'emscripten-wasm32'
 CC = os.environ.get("CC")
 if not CC:
     CC = sysconfig.get_config_var("CC")
+
+if EMSCRIPTEN:
+    # emcc is a Python script from a different Python interpreter.
+    os.environ.pop("PYTHONPATH", None)
 
 
 SUMMARY = """
@@ -848,7 +853,9 @@ class PyBuildExt(build_ext):
         tmpfile = os.path.join(self.build_temp, 'ccpaths')
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        ret = run_command('%s -E -v - </dev/null 2>%s 1>/dev/null' % (CC, tmpfile))
+        # bpo-38472: With a German locale, GCC returns "gcc-Version 9.1.0
+        # (GCC)", whereas it returns "gcc version 9.1.0" with the C locale.
+        ret = run_command('LC_ALL=C %s -E -v - </dev/null 2>%s 1>/dev/null' % (CC, tmpfile))
         is_gcc = False
         is_clang = False
         in_incdirs = False
@@ -1245,7 +1252,7 @@ class PyBuildExt(build_ext):
             self.missing.append('_curses_panel')
 
     def detect_crypt(self):
-         self.addext(Extension('_crypt', ['_cryptmodule.c']))
+        self.addext(Extension('_crypt', ['_cryptmodule.c']))
 
     def detect_dbm_gdbm(self):
         # Modules that provide persistent dictionary-like semantics.  You will

@@ -1117,9 +1117,15 @@ class TestSuppress(unittest.TestCase):
 
 
 class TestChdir(unittest.TestCase):
+    def make_relative_path(self, *parts):
+        return os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            *parts,
+        )
+
     def test_simple(self):
         old_cwd = os.getcwd()
-        target = os.path.join(os.path.dirname(__file__), 'data')
+        target = self.make_relative_path('data')
         self.assertNotEqual(old_cwd, target)
 
         with chdir(target):
@@ -1128,8 +1134,8 @@ class TestChdir(unittest.TestCase):
 
     def test_reentrant(self):
         old_cwd = os.getcwd()
-        target1 = os.path.join(os.path.dirname(__file__), 'data')
-        target2 = os.path.join(os.path.dirname(__file__), 'ziptestdata')
+        target1 = self.make_relative_path('data')
+        target2 = self.make_relative_path('ziptestdata')
         self.assertNotIn(old_cwd, (target1, target2))
         chdir1, chdir2 = chdir(target1), chdir(target2)
 
@@ -1145,7 +1151,7 @@ class TestChdir(unittest.TestCase):
 
     def test_exception(self):
         old_cwd = os.getcwd()
-        target = os.path.join(os.path.dirname(__file__), 'data')
+        target = self.make_relative_path('data')
         self.assertNotEqual(old_cwd, target)
 
         try:
