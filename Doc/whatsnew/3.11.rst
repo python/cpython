@@ -964,7 +964,7 @@ Porting to Python 3.11
     Code using ``f_lasti`` with ``PyCode_Addr2Line()`` must use
     :c:func:`PyFrame_GetLineNumber` instead.
   * ``f_lineno``: use :c:func:`PyFrame_GetLineNumber`
-  * ``f_locals``: use ``PyFrame_GetLocals(frame)``.
+  * ``f_locals``: use :c:func:`PyFrame_GetLocals(frame)`.
   * ``f_stackdepth``: removed.
   * ``f_state``: no public API (renamed to ``f_frame.f_state``).
   * ``f_trace``: no public API.
