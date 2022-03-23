@@ -58,6 +58,7 @@ IFDEF_DOC_NOTES = {
 WINDOWS_IFDEFS = frozenset({
     'MS_WINDOWS',
     'PY_HAVE_THREAD_NATIVE_ID',
+    'USE_STACKCHECK',
 })
 
 # The stable ABI manifest (Misc/stable_abi.txt) exists only to fill the
