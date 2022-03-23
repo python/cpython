@@ -185,11 +185,11 @@ ABC                            Inherits from          Abstract Methods        Mi
 .. [1] These ABCs override :meth:`object.__subclasshook__` to support
    testing an interface by verifying the required methods are present
    and have not been set to :const:`None`.  This only works for simple
-   interfaces.  More complex interfaces require registration or direct
-   subclassing.
+   interfaces.  More complex interfaces require registration or
+   inheritance.
 
 .. [2] Checking ``isinstance(obj, Iterable)`` detects classes that are
-   registered as :class:`Iterable` or that have an :meth:`__iter__`
+   registered as or inherit from :class:`Iterable`, or that have an :meth:`__iter__`
    method, but it does not detect classes that iterate with the
    :meth:`__getitem__` method.  The only reliable way to determine
    whether an object is :term:`iterable` is to call ``iter(obj)``.
