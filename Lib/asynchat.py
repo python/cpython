@@ -50,7 +50,7 @@ from collections import deque
 
 from warnings import warn
 warn(
-    'The asynchat module is deprecated. '
+    'The asynchat module is deprecated and will be removed in Python 3.12. '
     'The recommended replacement is asyncio',
     DeprecationWarning,
     stacklevel=2)

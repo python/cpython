@@ -1501,7 +1501,7 @@ Basic customization
 
    Called by built-in function :func:`hash` and for operations on members of
    hashed collections including :class:`set`, :class:`frozenset`, and
-   :class:`dict`.  :meth:`__hash__` should return an integer. The only required
+   :class:`dict`.  The ``__hash__()`` method should return an integer. The only required
    property is that objects which compare equal have the same hash value; it is
    advised to mix together the hash values of the components of the object that
    also play a part in comparison of objects by packing them into a tuple and

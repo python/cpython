@@ -1807,6 +1807,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
 
         case SRE_OP_REPEAT_ONE:
         case SRE_OP_MIN_REPEAT_ONE:
+        case SRE_OP_POSSESSIVE_REPEAT_ONE:
             {
                 SRE_CODE min, max;
                 GET_SKIP;
@@ -1826,8 +1827,9 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
             break;
 
         case SRE_OP_REPEAT:
+        case SRE_OP_POSSESSIVE_REPEAT:
             {
-                SRE_CODE min, max;
+                SRE_CODE op1 = op, min, max;
                 GET_SKIP;
                 GET_ARG; min = arg;
                 GET_ARG; max = arg;
@@ -1839,7 +1841,25 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     FAIL;
                 code += skip-3;
                 GET_OP;
-                if (op != SRE_OP_MAX_UNTIL && op != SRE_OP_MIN_UNTIL)
+                if (op1 == SRE_OP_POSSESSIVE_REPEAT) {
+                    if (op != SRE_OP_SUCCESS)
+                        FAIL;
+                }
+                else {
+                    if (op != SRE_OP_MAX_UNTIL && op != SRE_OP_MIN_UNTIL)
+                        FAIL;
+                }
+            }
+            break;
+
+        case SRE_OP_ATOMIC_GROUP:
+            {
+                GET_SKIP;
+                if (!_validate_inner(code, code+skip-2, groups))
+                    FAIL;
+                code += skip-2;
+                GET_OP;
+                if (op != SRE_OP_SUCCESS)
                     FAIL;
             }
             break;
@@ -2511,6 +2531,25 @@ scanner_dealloc(ScannerObject* self)
     Py_DECREF(tp);
 }
 
+static int
+scanner_begin(ScannerObject* self)
+{
+    if (self->executing) {
+        PyErr_SetString(PyExc_ValueError,
+                        "regular expression scanner already executing");
+        return 0;
+    }
+    self->executing = 1;
+    return 1;
+}
+
+static void
+scanner_end(ScannerObject* self)
+{
+    assert(self->executing);
+    self->executing = 0;
+}
+
 /*[clinic input]
 _sre.SRE_Scanner.match
 
@@ -2528,16 +2567,23 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls)
     PyObject* match;
     Py_ssize_t status;
 
-    if (state->start == NULL)
+    if (!scanner_begin(self)) {
+        return NULL;
+    }
+    if (state->start == NULL) {
+        scanner_end(self);
         Py_RETURN_NONE;
+    }
 
     state_reset(state);
 
     state->ptr = state->start;
 
     status = sre_match(state, PatternObject_GetCode(self->pattern));
-    if (PyErr_Occurred())
+    if (PyErr_Occurred()) {
+        scanner_end(self);
         return NULL;
+    }
 
     match = pattern_new_match(module_state, (PatternObject*) self->pattern,
                               state, status);
@@ -2549,6 +2595,7 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls)
         state->start = state->ptr;
     }
 
+    scanner_end(self);
     return match;
 }
 
@@ -2570,16 +2617,23 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls)
     PyObject* match;
     Py_ssize_t status;
 
-    if (state->start == NULL)
+    if (!scanner_begin(self)) {
+        return NULL;
+    }
+    if (state->start == NULL) {
+        scanner_end(self);
         Py_RETURN_NONE;
+    }
 
     state_reset(state);
 
     state->ptr = state->start;
 
     status = sre_search(state, PatternObject_GetCode(self->pattern));
-    if (PyErr_Occurred())
+    if (PyErr_Occurred()) {
+        scanner_end(self);
         return NULL;
+    }
 
     match = pattern_new_match(module_state, (PatternObject*) self->pattern,
                               state, status);
@@ -2591,6 +2645,7 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls)
         state->start = state->ptr;
     }
 
+    scanner_end(self);
     return match;
 }
 
@@ -2608,6 +2663,7 @@ pattern_scanner(_sremodulestate *module_state,
     if (!scanner)
         return NULL;
     scanner->pattern = NULL;
+    scanner->executing = 0;
 
     /* create search state object */
     if (!state_init(&scanner->state, self, string, pos, endpos)) {

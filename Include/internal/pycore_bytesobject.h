@@ -16,7 +16,7 @@ extern PyStatus _PyBytes_InitTypes(PyInterpreterState *);
 
 /* Substring Search.
 
-   Returns the index of the first occurence of
+   Returns the index of the first occurrence of
    a substring ("needle") in a larger text ("haystack").
    If the needle is not found, return -1.
    If the needle is found, add offset to the index.

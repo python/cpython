@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
+#include <stddef.h>
 
 struct _frame {
     PyObject_HEAD
@@ -14,34 +15,28 @@ struct _frame {
     int f_lineno;               /* Current line number. Only valid if non-zero */
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
-    char f_owns_frame;          /* This frame owns the frame */
     /* The frame data, if this frame object owns the frame */
     PyObject *_f_frame_data[1];
 };
 
 extern PyFrameObject* _PyFrame_New_NoTrack(PyCodeObject *code);
 
-/* runtime lifecycle */
-
-extern void _PyFrame_Fini(PyInterpreterState *interp);
-
 
 /* other API */
 
-/* These values are chosen so that the inline functions below all
- * compare f_state to zero.
- */
-enum _framestate {
+typedef enum _framestate {
     FRAME_CREATED = -2,
     FRAME_SUSPENDED = -1,
     FRAME_EXECUTING = 0,
-    FRAME_RETURNED = 1,
-    FRAME_UNWINDING = 2,
-    FRAME_RAISED = 3,
+    FRAME_COMPLETED = 1,
     FRAME_CLEARED = 4
-};
+} PyFrameState;
 
-typedef signed char PyFrameState;
+enum _frameowner {
+    FRAME_OWNED_BY_THREAD = 0,
+    FRAME_OWNED_BY_GENERATOR = 1,
+    FRAME_OWNED_BY_FRAME_OBJECT = 2
+};
 
 /*
     frame->f_lasti refers to the index of the last instruction,
@@ -58,23 +53,10 @@ typedef struct _PyInterpreterFrame {
     struct _PyInterpreterFrame *previous;
     int f_lasti;       /* Last instruction if called */
     int stacktop;     /* Offset of TOS from localsplus  */
-    PyFrameState f_state;  /* What state the frame is in */
     bool is_entry;  // Whether this is the "root" frame for the current _PyCFrame.
-    bool is_generator;
+    char owner;
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
-
-static inline int _PyFrame_IsRunnable(_PyInterpreterFrame *f) {
-    return f->f_state < FRAME_EXECUTING;
-}
-
-static inline int _PyFrame_IsExecuting(_PyInterpreterFrame *f) {
-    return f->f_state == FRAME_EXECUTING;
-}
-
-static inline int _PyFrameHasCompleted(_PyInterpreterFrame *f) {
-    return f->f_state > FRAME_EXECUTING;
-}
 
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
     return f->localsplus + f->f_code->co_nlocalsplus;
@@ -115,9 +97,8 @@ _PyFrame_InitializeSpecials(
     frame->stacktop = nlocalsplus;
     frame->frame_obj = NULL;
     frame->f_lasti = -1;
-    frame->f_state = FRAME_CREATED;
     frame->is_entry = false;
-    frame->is_generator = false;
+    frame->owner = FRAME_OWNED_BY_THREAD;
 }
 
 /* Gets the pointer to the locals array
@@ -203,6 +184,15 @@ void _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
 /* Consume reference to func */
 _PyInterpreterFrame *
 _PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func);
+
+
+static inline
+PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
+{
+    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
+    size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
+    return (PyGenObject *)(((char *)frame) - offset_in_gen);
+}
 
 #ifdef __cplusplus
 }
