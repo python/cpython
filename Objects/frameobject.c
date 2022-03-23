@@ -1130,6 +1130,27 @@ PyFrame_GetLocals(PyFrameObject *frame)
 }
 
 PyObject*
+PyFrame_GetGlobals(PyFrameObject *frame)
+{
+    return frame_getglobals(frame, NULL);
+}
+
+PyObject*
+PyFrame_GetBuiltins(PyFrameObject *frame)
+{
+    return frame_getbuiltins(frame, NULL);
+}
+
+PyObject *
+PyFrame_GetGenerator(PyFrameObject *frame)
+{
+    if (frame->f_frame->owner != FRAME_OWNED_BY_GENERATOR) {
+        return NULL;
+    }
+    return (PyObject *)_PyFrame_GetGenerator(frame->f_frame);
+}
+
+PyObject*
 _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
 {
     PyObject *builtins = PyDict_GetItemWithError(globals, &_Py_ID(__builtins__));
