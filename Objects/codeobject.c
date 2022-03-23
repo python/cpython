@@ -1165,8 +1165,8 @@ _PyCode_GetCode(PyCodeObject *co)
     _Py_CODEUNIT *instructions = (_Py_CODEUNIT *)PyBytes_AS_STRING(code);
     for (int i = 0; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT instruction = _PyCode_CODE(co)[i];
-        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
-        int caches = _PyOpcode_Caches[opcode];
+        int opcode = _Py_OPCODE(instruction);
+        int caches = _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
         instructions[i] = _Py_MAKECODEUNIT(opcode, _Py_OPARG(instruction));
         while (caches--) {
             instructions[++i] = _Py_MAKECODEUNIT(CACHE, 0);

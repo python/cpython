@@ -6,7 +6,7 @@ operate on bytecodes (e.g. peephole optimizers).
 
 __all__ = ["cmp_op", "hasconst", "hasname", "hasjrel", "hasjabs",
            "haslocal", "hascompare", "hasfree", "opname", "opmap",
-           "HAVE_ARGUMENT", "EXTENDED_ARG", "hasnargs"]
+           "HAVE_ARGUMENT", "EXTENDED_ARG", "hasnargs", "deoptmap"]
 
 # It's a chicken-and-egg I'm afraid:
 # We're imported before _opcode's made.
@@ -34,13 +34,16 @@ hasnargs = [] # unused
 
 opmap = {}
 opname = ['<%r>' % (op,) for op in range(256)]
+deoptmap = {}
 
 _inline_cache_entries = [0] * 256
+_empty_slot = [i for i in range(256)]
 
 def def_op(name, op, entries=0):
     opname[op] = name
     opmap[name] = op
     _inline_cache_entries[op] = entries
+    _empty_slot[op] = False
 
 def name_op(name, op, entries=0):
     def_op(name, op, entries)
@@ -53,6 +56,13 @@ def jrel_op(name, op, entries=0):
 def jabs_op(name, op, entries=0):
     def_op(name, op, entries)
     hasjabs.append(op)
+
+def spec_op(origin_name, spec_name, counter):
+    op = _empty_slot[counter]
+    # fill opname
+    opname[op] = spec_name
+    opmap[spec_name] = op
+    deoptmap[op] = opmap[origin_name]
 
 # Instruction opcodes for compiled code
 # Blank lines correspond to available opcodes
@@ -198,8 +208,6 @@ def_op('KW_NAMES', 172)
 hasconst.append(172)
 
 
-del def_op, name_op, jrel_op, jabs_op
-
 _nb_ops = [
     ("NB_ADD", "+"),
     ("NB_AND", "&"),
@@ -335,6 +343,14 @@ _specializations = {
 _specialized_instructions = [
     opcode for family in _specializations.values() for opcode in family
 ]
+
+_empty_slot = [i for i in filter(lambda e: e is not False, _empty_slot)]
+_specialized_counter = 0
+for basic, family in _specializations.items():
+    for specialized in family:
+        spec_op(basic, specialized, _specialized_counter)
+        _specialized_counter += 1
+
 _specialization_stats = [
     "success",
     "failure",
@@ -343,3 +359,6 @@ _specialization_stats = [
     "miss",
     "deopt",
 ]
+
+del def_op, name_op, jrel_op, jabs_op, spec_op
+
