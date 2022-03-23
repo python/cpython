@@ -248,8 +248,8 @@ fractions
 hashlib
 -------
 
-* :func:`hashlib.blake2b` and :func:`hashlib.blake2s` now prefer `libb2
-  <https://www.blake2.net/>`_ over Python's vendored copy.
+* :func:`hashlib.blake2b` and :func:`hashlib.blake2s` now prefer `libb2`_
+  over Python's vendored copy.
   (Contributed by Christian Heimes in :issue:`47095`.)
 
 IDLE and idlelib
@@ -1067,7 +1067,7 @@ Porting to Python 3.11
   on old Python functions.
 
 * Distributors are encouraged to build Python with optimized Blake2 library
-  `libb2 <https://www.blake2.net>`_.
+  `libb2`_.
 
 
 Deprecated
@@ -1148,3 +1148,6 @@ Removed
 * Remove the ``HAVE_PY_SET_53BIT_PRECISION`` macro (moved to the internal C
   API).
   (Contributed by Victor Stinner in :issue:`45412`.)
+
+
+.. _libb2: https://www.blake2.net/
