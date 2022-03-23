@@ -3183,6 +3183,27 @@ dotsep_as_utf8(const char *s)
     return utf8;
 }
 
+/* copy of libmpdec _mpd_round() */
+static void _mpd_round(mpd_t *result, const mpd_t *a, mpd_ssize_t prec,
+                       const mpd_context_t *ctx, uint32_t *status)
+{
+    mpd_ssize_t exp = a->exp + a->digits - prec;
+
+    if (prec <= 0) {
+        mpd_seterror(result, MPD_Invalid_operation, status);
+        return;
+    }
+    if (mpd_isspecial(a) || mpd_iszero(a)) {
+        mpd_qcopy(result, a, status);
+        return;
+    }
+
+    mpd_qrescale_fmt(result, a, exp, ctx, status);
+    if (result->digits > prec) {
+        mpd_qrescale_fmt(result, result, exp+1, ctx, status);
+    }
+}
+
 static int
 dict_get_item_string(PyObject *dict, const char *key, PyObject **valueobj, const char **valuestr)
 {
@@ -3337,12 +3358,35 @@ dec_format(PyObject *dec, PyObject *args)
         /* round into a temporary and clear sign if result is zero */
         mpd_uint_t dt[MPD_MINALLOC_MAX];
         mpd_t tmp = {MPD_STATIC|MPD_STATIC_DATA,0,0,0,MPD_MINALLOC_MAX,dt};
-        mpd_qrescale(&tmp, MPD(dec), -spec.prec, CTX(context), &status);
+        mpd_ssize_t prec;
+        mpd_qcopy(&tmp, MPD(dec), &status);
+        /* mirror rounding of mpd_qformat_spec() */
+        switch (spec.type) {
+          case 'f':
+              mpd_qrescale(&tmp, &tmp, -spec.prec, CTX(context), &status);
+              break;
+          case '%':
+              tmp.exp += 2;
+              mpd_qrescale(&tmp, &tmp, -spec.prec, CTX(context), &status);
+              break;
+          case 'g':
+              prec = (spec.prec == 0) ? 1 : spec.prec;
+              if (tmp.digits > prec) {
+                  _mpd_round(&tmp, &tmp, prec, CTX(context), &status);
+              }
+              break;
+          case 'e':
+              if (!mpd_iszero(&tmp)) {
+                  _mpd_round(&tmp, &tmp, spec.prec+1, CTX(context), &status);
+              }
+              break;
+        }
         if (status & MPD_Errors) {
             PyErr_SetString(PyExc_ValueError, "unexpected error when rounding");
             goto finish;
         }
         if (mpd_iszero(&tmp)) {
+            /* TODO: format rounded tmp itself (addresses directed rounding) */
             mpd_set_positive(MPD(dec));
         }
     }
