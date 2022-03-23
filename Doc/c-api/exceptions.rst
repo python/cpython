@@ -498,7 +498,8 @@ Querying the error indicator
    :func:`sys.exc_info`.  This refers to an exception that was *already caught*,
    not to an exception that was freshly raised.  Returns new references for the
    three objects, any of which may be ``NULL``.  Does not modify the exception
-   info state.
+   info state.  This function is kept for backwards compatibility. Prefer using
+   :c:func:`PyErr_GetActiveException`.
 
    .. note::
 
@@ -516,6 +517,8 @@ Querying the error indicator
    to an exception that was *already caught*, not to an exception that was
    freshly raised.  This function steals the references of the arguments.
    To clear the exception state, pass ``NULL`` for all three arguments.
+   This function is kept for backwards compatibility. Prefer using
+   :c:func:`PyErr_SetActiveException`.
 
    .. note::
 
