@@ -3378,14 +3378,14 @@ test_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"a", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "test_vararg", 0};
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[0];
     Py_ssize_t varargssize = Py_MAX(nargs - 1, 0);
     PyObject *const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *const *__clinic_args;
 
-    fastargs = _PyArg_UnpackKeywordsWithVarargFast(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, varargssize, argsbuf);
+    fastargs = _PyArg_UnpackKeywordsWithVarargKwonly(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -3400,7 +3400,7 @@ exit:
 static PyObject *
 test_vararg_impl(PyObject *module, PyObject *a, Py_ssize_t varargssize,
                  PyObject *const *args)
-/*[clinic end generated code: output=67d632b0b77d2c2b input=81d33815ad1bae6e]*/
+/*[clinic end generated code: output=c200ba15688e2a36 input=81d33815ad1bae6e]*/
 
 /*[clinic input]
 test_vararg_with_default
@@ -3431,7 +3431,7 @@ test_vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"a", "b", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "test_vararg_with_default", 0};
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[1];
     Py_ssize_t varargssize = Py_MAX(nargs - 1, 0);
     PyObject *const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
@@ -3439,7 +3439,7 @@ test_vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *const *__clinic_args;
     int b = 0;
 
-    fastargs = _PyArg_UnpackKeywordsWithVarargFast(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, varargssize, argsbuf);
+    fastargs = _PyArg_UnpackKeywordsWithVarargKwonly(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -3448,7 +3448,7 @@ test_vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    b = PyObject_IsTrue(fastargs[2]);
+    b = PyObject_IsTrue(fastargs[0]);
     if (b < 0) {
         goto exit;
     }
@@ -3463,7 +3463,7 @@ static PyObject *
 test_vararg_with_default_impl(PyObject *module, PyObject *a,
                               Py_ssize_t varargssize, PyObject *const *args,
                               int b)
-/*[clinic end generated code: output=51af6550b692f8d9 input=6e110b54acd9b22d]*/
+/*[clinic end generated code: output=880cc2e95cfff4dd input=6e110b54acd9b22d]*/
 
 /*[clinic input]
 test_vararg_with_only_defaults
@@ -3494,7 +3494,7 @@ test_vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"b", "c", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "test_vararg_with_only_defaults", 0};
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[2];
     Py_ssize_t varargssize = Py_MAX(nargs - 0, 0);
     PyObject *const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
@@ -3502,7 +3502,7 @@ test_vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize
     int b = 0;
     PyObject *c = " ";
 
-    fastargs = _PyArg_UnpackKeywordsWithVarargFast(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, varargssize, argsbuf);
+    fastargs = _PyArg_UnpackKeywordsWithVarargKwonly(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -3510,8 +3510,8 @@ test_vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (fastargs[1]) {
-        b = PyObject_IsTrue(fastargs[1]);
+    if (fastargs[0]) {
+        b = PyObject_IsTrue(fastargs[0]);
         if (b < 0) {
             goto exit;
         }
@@ -3519,7 +3519,7 @@ test_vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize
             goto skip_optional_kwonly;
         }
     }
-    c = fastargs[2];
+    c = fastargs[1];
 skip_optional_kwonly:
     return_value = test_vararg_with_only_defaults_impl(module, varargssize, __clinic_args, b, c);
 
@@ -3531,4 +3531,4 @@ static PyObject *
 test_vararg_with_only_defaults_impl(PyObject *module, Py_ssize_t varargssize,
                                     PyObject *const *args, int b,
                                     PyObject *c)
-/*[clinic end generated code: output=b2a08b5cd2854742 input=fa56a709a035666e]*/
+/*[clinic end generated code: output=99d5e997bbcdf47a input=fa56a709a035666e]*/

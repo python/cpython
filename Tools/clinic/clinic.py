@@ -938,13 +938,15 @@ class CLanguage(Language):
                     max_pos,
                     min_kw_only
                 )
+                argsbuf_size = len(converters)
             else:
-                args_declaration = "_PyArg_UnpackKeywordsWithVarargFast", "%s, %s, %s, %s, varargssize" % (
+                args_declaration = "_PyArg_UnpackKeywordsWithVarargKwonly", "%s, %s, %s, %s" % (
                     min_pos,
                     max_pos,
                     min_kw_only,
                     vararg
                 )
+                argsbuf_size = len(converters) - vararg - 1
             if not new_or_init:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = parser_prototype_fastcall_keywords
@@ -952,7 +954,7 @@ class CLanguage(Language):
                     static const char * const _keywords[] = {{{keywords} NULL}};
                     static _PyArg_Parser _parser = {{NULL, _keywords, "{name}", 0}};
                     PyObject *argsbuf[%s];
-                    """ % len(converters))
+                    """ % argsbuf_size)
                 if vararg != NO_VARARG:
                     declarations += "\nPy_ssize_t varargssize = Py_MAX(nargs - %d, 0);" % (max_pos)
                     parsed_argname = "fastargs"
@@ -980,7 +982,7 @@ class CLanguage(Language):
                     PyObject *argsbuf[%s];
                     PyObject * const *fastargs;
                     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-                    """ % len(converters))
+                    """ % argsbuf_size)
                 if vararg != NO_VARARG:
                     declarations += "\nPy_ssize_t varargssize = Py_MAX(nargs - %d, 0);" % (max_pos)
                 if has_optional_kw:
@@ -998,14 +1000,14 @@ class CLanguage(Language):
 
             add_label = None
             for i, p in enumerate(parameters):
-                displayname = p.get_displayname(i+1)
+                displayname = p.get_displayname(i + 1)
                 if vararg != NO_VARARG:
                     # positional args
                     if i < int(vararg):
                         parsearg = p.converter.parse_arg('args[%d]' % i, displayname)
                     # keyword args
                     elif i > int(vararg):
-                        parsearg = p.converter.parse_arg('fastargs[%d]' % i, displayname)
+                        parsearg = p.converter.parse_arg('fastargs[%d]' % (i - vararg - 1), displayname)
                     # vararg
                     else:
                         parsearg = p.converter.parse_arg('args + %d' % vararg, p.converter.parser_name)
@@ -1054,7 +1056,7 @@ class CLanguage(Language):
                         add_label = label
                         parser_code.append(normalize_snippet("""
                             if (%s) {{
-                            """ % (argname_fmt % i), indent=4))
+                            """ % (argname_fmt % (i if vararg == NO_VARARG else i - vararg - 1)), indent=4))
                         parser_code.append(normalize_snippet(parsearg, indent=8))
                         parser_code.append(normalize_snippet("""
                                 if (!--noptargs) {{

@@ -2627,15 +2627,15 @@ exit:
 }
 
 PyObject * const *
-_PyArg_UnpackKeywordsWithVarargFast(PyObject *const *args, Py_ssize_t nargs,
+_PyArg_UnpackKeywordsWithVarargKwonly(PyObject *const *args, Py_ssize_t nargs,
                                 PyObject *kwargs, PyObject *kwnames,
                                 struct _PyArg_Parser *parser,
                                 int minpos, int maxpos, int minkw,
-                                int vararg, Py_ssize_t varargssize,
-                                PyObject **buf)
+                                int vararg, PyObject **buf)
 {
     PyObject *kwtuple;
     PyObject *keyword;
+    Py_ssize_t varargssize = Py_MAX(nargs - maxpos, 0);
     int i, posonly, minposonly, maxargs;
     int reqlimit = minkw ? maxpos + minkw : minpos;
     Py_ssize_t nkwargs;
@@ -2667,6 +2667,7 @@ _PyArg_UnpackKeywordsWithVarargFast(PyObject *const *args, Py_ssize_t nargs,
     posonly = parser->pos;
     minposonly = Py_MIN(posonly, minpos);
     maxargs = posonly + (int)PyTuple_GET_SIZE(kwtuple);
+
     if (kwargs != NULL) {
         nkwargs = PyDict_GET_SIZE(kwargs);
     }
@@ -2709,7 +2710,7 @@ _PyArg_UnpackKeywordsWithVarargFast(PyObject *const *args, Py_ssize_t nargs,
             current_arg = NULL;
         }
 
-        buf[i + vararg + 1] = current_arg;
+        buf[i - vararg] = current_arg;
 
         if (current_arg) {
             --nkwargs;

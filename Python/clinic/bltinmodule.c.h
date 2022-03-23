@@ -703,7 +703,7 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sep", "end", "file", "flush", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "print", 0};
-    PyObject *argsbuf[5];
+    PyObject *argsbuf[4];
     Py_ssize_t varargssize = Py_MAX(nargs - 0, 0);
     PyObject *const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
@@ -713,7 +713,7 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *file = Py_None;
     int flush = 0;
 
-    fastargs = _PyArg_UnpackKeywordsWithVarargFast(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, varargssize, argsbuf);
+    fastargs = _PyArg_UnpackKeywordsWithVarargKwonly(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -721,25 +721,25 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
+    if (fastargs[0]) {
+        sep = fastargs[0];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
     if (fastargs[1]) {
-        sep = fastargs[1];
+        end = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
     if (fastargs[2]) {
-        end = fastargs[2];
+        file = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[3]) {
-        file = fastargs[3];
-        if (!--noptargs) {
-            goto skip_optional_kwonly;
-        }
-    }
-    flush = PyObject_IsTrue(fastargs[4]);
+    flush = PyObject_IsTrue(fastargs[3]);
     if (flush < 0) {
         goto exit;
     }
@@ -953,4 +953,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=81ac43e8840c5a22 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8e18b575dd06dbb8 input=a9049054013a1b77]*/
