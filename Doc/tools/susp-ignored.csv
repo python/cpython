@@ -370,3 +370,4 @@ whatsnew/changelog,,::,default::DeprecationWarning
 library/importlib.metadata,,:main,"EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')"
 library/importlib.metadata,,`,loading the metadata for packages for the indicated ``context``.
 library/re,,`,"`"
+library/typing,,`,    # will always be an instance of whatever `cls` is
