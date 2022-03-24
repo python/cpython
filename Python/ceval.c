@@ -3921,6 +3921,11 @@ handle_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(JUMP_BACKWARD) {
+            JUMPBY(-oparg);
+            DISPATCH();
+        }
+
         TARGET(POP_JUMP_IF_FALSE) {
             PREDICTED(POP_JUMP_IF_FALSE);
             PyObject *cond = POP();

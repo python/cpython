@@ -895,6 +895,13 @@ iterations of the loop.
    Increments bytecode counter by *delta*.
 
 
+.. opcode:: JUMP_BACKWARD (delta)
+
+   Decrements bytecode counter by *delta*.
+
+   .. versionadded:: 3.11
+
+
 .. opcode:: POP_JUMP_IF_TRUE (target)
 
    If TOS is true, sets the bytecode counter to *target*.  TOS is popped.

@@ -128,7 +128,7 @@ def_op('COMPARE_OP', 107, 2)       # Comparison operator
 hascompare.append(107)
 name_op('IMPORT_NAME', 108)     # Index in name list
 name_op('IMPORT_FROM', 109)     # Index in name list
-jrel_op('JUMP_FORWARD', 110)    # Number of bytes to skip
+jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
 jabs_op('JUMP_IF_FALSE_OR_POP', 111) # Target byte offset from beginning of code
 jabs_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
 jabs_op('JUMP_ABSOLUTE', 113)        # ""
@@ -166,6 +166,7 @@ def_op('STORE_DEREF', 138)
 hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
+jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 

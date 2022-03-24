@@ -94,6 +94,7 @@ extern "C" {
 #define LOAD_DEREF                             137
 #define STORE_DEREF                            138
 #define DELETE_DEREF                           139
+#define JUMP_BACKWARD                          140
 #define CALL_FUNCTION_EX                       142
 #define EXTENDED_ARG                           144
 #define LIST_APPEND                            145
@@ -168,21 +169,21 @@ extern "C" {
 #define PRECALL_NO_KW_STR_1                     79
 #define PRECALL_NO_KW_TUPLE_1                   80
 #define PRECALL_NO_KW_TYPE_1                    81
-#define PRECALL_PYFUNC                         140
-#define RESUME_QUICK                           141
-#define STORE_ATTR_ADAPTIVE                    143
-#define STORE_ATTR_INSTANCE_VALUE              150
-#define STORE_ATTR_SLOT                        153
-#define STORE_ATTR_WITH_HINT                   154
-#define STORE_FAST__LOAD_FAST                  158
-#define STORE_FAST__STORE_FAST                 159
-#define STORE_SUBSCR_ADAPTIVE                  161
-#define STORE_SUBSCR_DICT                      167
-#define STORE_SUBSCR_LIST_INT                  168
-#define UNPACK_SEQUENCE_ADAPTIVE               169
-#define UNPACK_SEQUENCE_LIST                   170
-#define UNPACK_SEQUENCE_TUPLE                  173
-#define UNPACK_SEQUENCE_TWO_TUPLE              174
+#define PRECALL_PYFUNC                         141
+#define RESUME_QUICK                           143
+#define STORE_ATTR_ADAPTIVE                    150
+#define STORE_ATTR_INSTANCE_VALUE              153
+#define STORE_ATTR_SLOT                        154
+#define STORE_ATTR_WITH_HINT                   158
+#define STORE_FAST__LOAD_FAST                  159
+#define STORE_FAST__STORE_FAST                 161
+#define STORE_SUBSCR_ADAPTIVE                  167
+#define STORE_SUBSCR_DICT                      168
+#define STORE_SUBSCR_LIST_INT                  169
+#define UNPACK_SEQUENCE_ADAPTIVE               170
+#define UNPACK_SEQUENCE_LIST                   173
+#define UNPACK_SEQUENCE_TUPLE                  174
+#define UNPACK_SEQUENCE_TWO_TUPLE              175
 #define DO_TRACING                             255
 
 extern const uint8_t _PyOpcode_Caches[256];
@@ -195,7 +196,7 @@ static const uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     536870912U,
     134234112U,
-    0U,
+    4096U,
     0U,
     0U,
     0U,
@@ -205,7 +206,7 @@ static const uint32_t _PyOpcode_Jump[8] = {
     0U,
     536870912U,
     2316288000U,
-    67U,
+    4163U,
     0U,
     0U,
     0U,
@@ -290,6 +291,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [IS_OP] = IS_OP,
     [JUMP_ABSOLUTE] = JUMP_ABSOLUTE,
     [JUMP_ABSOLUTE_QUICK] = JUMP_ABSOLUTE,
+    [JUMP_BACKWARD] = JUMP_BACKWARD,
     [JUMP_FORWARD] = JUMP_FORWARD,
     [JUMP_IF_FALSE_OR_POP] = JUMP_IF_FALSE_OR_POP,
     [JUMP_IF_NOT_EG_MATCH] = JUMP_IF_NOT_EG_MATCH,

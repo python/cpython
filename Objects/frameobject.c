@@ -264,6 +264,12 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
                     stacks[j] = next_stack;
                     break;
+                case JUMP_BACKWARD:
+                    j = i + 1 - get_arg(code, i);
+                    assert(j >= 0);
+                    assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
+                    stacks[j] = next_stack;
+                    break;
                 case GET_ITER:
                 case GET_AITER:
                     next_stack = push_value(pop_value(next_stack), Iterator);
