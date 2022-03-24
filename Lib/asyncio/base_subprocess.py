@@ -214,22 +214,14 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             # asyncio uses a child watcher: copy the status into the Popen
             # object. On Python 3.6, it is required to avoid a ResourceWarning.
             self._proc.returncode = returncode
-
-        def __process_exited():
-            self._protocol.process_exited()
-            # Since process exited, clear all pipes
-            for proto in self._pipes.values():
-                if proto is None:
-                    continue
-                proto.pipe.close()
-            # Call _wait waiters
-            for waiter in self._exit_waiters:
-                if not waiter.cancelled():
-                    waiter.set_result(self._returncode)
-            self._exit_waiters = None
-
-        self._call(__process_exited)
+        self._call(self._protocol.process_exited)
         self._try_finish()
+
+        # wake up futures waiting for wait()
+        for waiter in self._exit_waiters:
+            if not waiter.cancelled():
+                waiter.set_result(returncode)
+        self._exit_waiters = None
 
     async def _wait(self):
         """Wait until the process exit and return the process return code.
@@ -258,7 +250,6 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             self._loop = None
             self._proc = None
             self._protocol = None
-
 
 
 class WriteSubprocessPipeProto(protocols.BaseProtocol):
