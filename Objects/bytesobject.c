@@ -3133,7 +3133,7 @@ striter_next(striterobject *it)
     assert(PyBytes_Check(seq));
 
     if (it->it_index < PyBytes_GET_SIZE(seq)) {
-        return PyLong_FromLong(
+        return _PyLong_FromUnsignedChar(
             (unsigned char)seq->ob_sval[it->it_index++]);
     }
 
