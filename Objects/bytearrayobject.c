@@ -1838,7 +1838,7 @@ bytearray_pop_impl(PyByteArrayObject *self, Py_ssize_t index)
     buf = PyByteArray_AS_STRING(self);
     value = buf[index];
     memmove(buf + index, buf + index + 1, n - index);
-    if (PyByteArray_Resize((PyObject*)self, n - 1) < 0)
+    if (PyByteArray_Resize((PyObject *)self, n - 1) < 0)
         return NULL;
 
     return PyLong_FromLong((unsigned char)value);
@@ -1855,7 +1855,7 @@ Remove the first occurrence of a value in the bytearray.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_remove_impl(PyByteArrayObject* self, int value)
+bytearray_remove_impl(PyByteArrayObject *self, int value)
 /*[clinic end generated code: output=d659e37866709c13 input=121831240cd51ddf]*/
 {
     Py_ssize_t where, n = Py_SIZE(self);
