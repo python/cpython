@@ -1,8 +1,110 @@
-__all__ = 'run',
+__all__ = ('Runner', 'run')
 
+import contextvars
+import enum
 from . import coroutines
 from . import events
 from . import tasks
+
+
+class _State(enum.Enum):
+    CREATED = "created"
+    INITIALIZED = "initialized"
+    CLOSED = "closed"
+
+
+class Runner:
+    """A context manager that controls event loop life cycle.
+
+    The context manager always creates a new event loop,
+    allows to run async functions inside it,
+    and properly finalizes the loop at the context manager exit.
+
+    If debug is True, the event loop will be run in debug mode.
+    If factory is passed, it is used for new event loop creation.
+
+    asyncio.run(main(), debug=True)
+
+    is a shortcut for
+
+    with asyncio.Runner(debug=True) as runner:
+        runner.run(main())
+
+    The run() method can be called multiple times within the runner's context.
+
+    This can be useful for interactive console (e.g. IPython),
+    unittest runners, console tools, -- everywhere when async code
+    is called from existing sync framework and where the preferred single
+    asyncio.run() call doesn't work.
+
+    """
+
+    # Note: the class is final, it is not intended for inheritance.
+
+    def __init__(self, *, debug=None, factory=None):
+        self._state = _State.CREATED
+        self._debug = debug
+        self._factory = factory
+        self._loop = None
+        self._context = None
+
+    def __enter__(self):
+        self._lazy_init()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def close(self):
+        """Shutdown and close event loop."""
+        if self._state is not _State.INITIALIZED:
+            return
+        try:
+            loop = self._loop
+            _cancel_all_tasks(loop)
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.run_until_complete(loop.shutdown_default_executor())
+        finally:
+            loop.close()
+            self._loop = None
+            self._state = _State.CLOSED
+
+    def get_loop(self):
+        """Return embedded event loop."""
+        self._lazy_init()
+        return self._loop
+
+    def run(self, coro, *, context=None):
+        """Run a coroutine inside the embedded event loop."""
+        if not coroutines.iscoroutine(coro):
+            raise ValueError("a coroutine was expected, got {!r}".format(coro))
+
+        if events._get_running_loop() is not None:
+            # fail fast with short traceback
+            raise RuntimeError(
+                "Runner.run() cannot be called from a running event loop")
+
+        self._lazy_init()
+
+        if context is None:
+            context = self._context
+        task = self._loop.create_task(coro, context=context)
+        return self._loop.run_until_complete(task)
+
+    def _lazy_init(self):
+        if self._state is _State.CLOSED:
+            raise RuntimeError("Runner is closed")
+        if self._state is _State.INITIALIZED:
+            return
+        if self._factory is None:
+            self._loop = events.new_event_loop()
+        else:
+            self._loop = self._factory()
+        if self._debug is not None:
+            self._loop.set_debug(self._debug)
+        self._context = contextvars.copy_context()
+        self._state = _State.INITIALIZED
+
 
 
 def run(main, *, debug=None):
@@ -30,26 +132,12 @@ def run(main, *, debug=None):
         asyncio.run(main())
     """
     if events._get_running_loop() is not None:
+        # fail fast with short traceback
         raise RuntimeError(
             "asyncio.run() cannot be called from a running event loop")
 
-    if not coroutines.iscoroutine(main):
-        raise ValueError("a coroutine was expected, got {!r}".format(main))
-
-    loop = events.new_event_loop()
-    try:
-        events.set_event_loop(loop)
-        if debug is not None:
-            loop.set_debug(debug)
-        return loop.run_until_complete(main)
-    finally:
-        try:
-            _cancel_all_tasks(loop)
-            loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.run_until_complete(loop.shutdown_default_executor())
-        finally:
-            events.set_event_loop(None)
-            loop.close()
+    with Runner(debug=debug) as runner:
+        return runner.run(main)
 
 
 def _cancel_all_tasks(loop):
