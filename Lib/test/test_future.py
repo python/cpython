@@ -422,7 +422,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
     def test_get_type_hints_on_func_with_variadic_arg(self):
         # `typing.get_type_hints` might break on a function with a variadic
         # annotation (e.g. `f(*args: *Ts)`) if `from __future__ import
-        # annotations`, because it could try to evaluate `*Ts` as en expression,
+        # annotations`, because it could try to evaluate `*Ts` as an expression,
         # which on its own isn't value syntax.
         namespace = self._exec_future(dedent("""\
         class StarredC: pass
