@@ -46,8 +46,8 @@ def find_lib(name):
 
 
 def d(location=None, name=None, shortname=None, version=None, suffix=None):
-        return {'location': location, 'name': name, 'shortname': shortname,
-                'version': version, 'suffix': suffix}
+    return {'location': location, 'name': name, 'shortname': shortname,
+            'version': version, 'suffix': suffix}
 
 
 class MachOTest(unittest.TestCase):
