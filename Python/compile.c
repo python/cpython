@@ -3014,7 +3014,7 @@ compiler_for(struct compiler *c, stmt_ty s)
     VISIT(c, expr, s->v.For.iter);
     ADDOP(c, GET_ITER);
     compiler_use_next_block(c, start);
-    ADDOP_JUMP(c, JUMP_FORWARD, back_jump);
+    ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, back_jump);
     compiler_use_next_block(c, body);
     VISIT(c, expr, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
@@ -5117,7 +5117,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
     if (start) {
         depth++;
         compiler_use_next_block(c, start);
-        ADDOP_JUMP(c, JUMP_FORWARD, if_cleanup);
+        ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, if_cleanup);
         compiler_use_next_block(c, body);
     }
     VISIT(c, expr, gen->target);

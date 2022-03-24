@@ -6762,11 +6762,14 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     }
     if (line != -1 && f->f_trace_lines) {
         /* Trace backward edges (except in 'yield from') or if line number has changed */
+        // SEND has no quickened forms, so no need to use _PyOpcode_Deopt here.
+        int opcode1 = _Py_OPCODE(_PyCode_CODE(frame->f_code)[frame->f_lasti]);
+        int opcode2 = _Py_OPCODE(_PyCode_CODE(frame->f_code)[instr_prev]);
+
         int trace = line != lastline ||
-            (frame->f_lasti < instr_prev &&
-            // SEND has no quickened forms, so no need to use _PyOpcode_Deopt
-            // here:
-            _Py_OPCODE(_PyCode_CODE(frame->f_code)[frame->f_lasti]) != SEND);
+            (frame->f_lasti < instr_prev && opcode1 != SEND &&
+                opcode2 != FOR_END && opcode2 != FOR_END_QUICK);
+
         if (trace) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
