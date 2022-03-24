@@ -1,5 +1,7 @@
 import asyncio
 import contextvars
+import gc
+import re
 import unittest
 
 from unittest import mock
@@ -295,6 +297,26 @@ class RunnerTests(BaseTest):
             self.assertEqual(1, runner.run(f(2)))
 
             self.assertEqual({cvar: 2}, dict(runner.run(get_context())))
+
+    def test_recursine_run(self):
+        async def g():
+            pass
+
+        async def f():
+            runner.run(g())
+
+        with asyncio.Runner() as runner:
+            with self.assertWarnsRegex(
+                RuntimeWarning,
+                "coroutine .+ was never awaited",
+            ):
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    re.escape(
+                        "Runner.run() cannot be called from a running event loop"
+                    ),
+                ):
+                    runner.run(f())
 
 
 if __name__ == '__main__':

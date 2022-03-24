@@ -76,6 +76,11 @@ class Runner:
         if not coroutines.iscoroutine(coro):
             raise ValueError("a coroutine was expected, got {!r}".format(coro))
 
+        if events._get_running_loop() is not None:
+            # fail fast with short traceback
+            raise RuntimeError(
+                "Runner.run() cannot be called from a running event loop")
+
         self._lazy_init()
 
         if context is None:
