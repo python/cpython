@@ -3379,7 +3379,7 @@ test_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     static const char * const _keywords[] = {"a", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "test_vararg", 0};
     PyObject *argsbuf[2];
-    Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *__clinic_args = NULL;
 
@@ -3398,7 +3398,7 @@ exit:
 
 static PyObject *
 test_vararg_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=f721025731c3bfe8 input=81d33815ad1bae6e]*/
+/*[clinic end generated code: output=f0b24e19c9dc129b input=81d33815ad1bae6e]*/
 
 /*[clinic input]
 test_vararg_with_default
@@ -3429,7 +3429,7 @@ test_vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nar
     static const char * const _keywords[] = {"a", "b", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "test_vararg_with_default", 0};
     PyObject *argsbuf[3];
-    Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *__clinic_args = NULL;
     int b = 0;
@@ -3458,7 +3458,7 @@ exit:
 static PyObject *
 test_vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
                               int b)
-/*[clinic end generated code: output=63b34d3241c52fda input=6e110b54acd9b22d]*/
+/*[clinic end generated code: output=0065e7b11eeb4826 input=6e110b54acd9b22d]*/
 
 /*[clinic input]
 test_vararg_with_only_defaults
