@@ -97,10 +97,11 @@ class Runner:
             context = self._context
         task = self._loop.create_task(coro, context=context)
 
-        if sys.platform == "win32":
-            signum = signal.SIGBREAK
-        else:
-            signum = signal.SIGINT
+        # if sys.platform == "win32":
+        #     signum = signal.SIGBREAK
+        # else:
+        #     signum = signal.SIGINT
+        signum = signal.SIGINT
         if (threading.current_thread() is threading.main_thread()
             and signal.getsignal(signum) is signal.default_int_handler
         ):
