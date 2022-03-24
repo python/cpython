@@ -256,8 +256,9 @@ exception to occur. For example::
 
 The sole argument to :keyword:`raise` indicates the exception to be raised.
 This must be either an exception instance or an exception class (a class that
-derives from :class:`BaseException`).  If an exception class is passed, it will
-be implicitly instantiated by calling its constructor with no arguments::
+derives from :class:`BaseException`, such as :exc:`Exception` or one of its
+subclasses).  If an exception class is passed, it will be implicitly
+instantiated by calling its constructor with no arguments::
 
    raise ValueError  # shorthand for 'raise ValueError()'
 
