@@ -1433,8 +1433,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define DEOPT_IF(cond, instname) if (cond) { goto instname ## _miss; }
 
-#define UPDATE_PREV_INSTR_OPARG(instr, oparg) ((uint8_t*)(instr))[-1] = (oparg)
-
 
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
