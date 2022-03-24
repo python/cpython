@@ -650,7 +650,7 @@ class CLanguage(Language):
         vararg = NO_VARARG
         pos_only = min_pos = max_pos = min_kw_only = pseudo_args = 0
         for i, p in enumerate(parameters, 1):
-            if p.is_keyword_only() or vararg != NO_VARARG:
+            if p.is_keyword_only():
                 assert not p.is_positional_only()
                 if not p.is_optional():
                     min_kw_only = i - max_pos
