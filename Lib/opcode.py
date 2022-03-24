@@ -34,16 +34,13 @@ hasnargs = [] # unused
 
 opmap = {}
 opname = ['<%r>' % (op,) for op in range(256)]
-deoptmap = {}
 
 _inline_cache_entries = [0] * 256
-_empty_slot = [i for i in range(256)]
 
 def def_op(name, op, entries=0):
     opname[op] = name
     opmap[name] = op
     _inline_cache_entries[op] = entries
-    _empty_slot[op] = False
 
 def name_op(name, op, entries=0):
     def_op(name, op, entries)
@@ -344,12 +341,15 @@ _specialized_instructions = [
     opcode for family in _specializations.values() for opcode in family
 ]
 
-_empty_slot = [i for i in filter(lambda e: e is not False, _empty_slot)]
-_specialized_counter = 0
-for basic, family in _specializations.items():
-    for specialized in family:
-        spec_op(basic, specialized, _specialized_counter)
-        _specialized_counter += 1
+_empty_slot = [slot for slot, name in enumerate(opname) if name.startswith("<")]
+for spec_op, specialized in zip(_empty_slot, _specialized_instructions):
+    # fill opname and opmap
+    opname[spec_op] = specialized
+    opmap[specialized] = spec_op
+
+deoptmap = {
+    specialized: base for base, family in _specializations.items() for specialized in family
+}
 
 _specialization_stats = [
     "success",

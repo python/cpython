@@ -33,6 +33,10 @@ BINARY_OP = opmap['BINARY_OP']
 
 CACHE = opmap["CACHE"]
 
+def deoptop(op):
+    name = opname[op]
+    return opmap[deoptmap[name]] if name in deoptmap else opmap[name]
+
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and
        then as a statement if the first approach fails.
@@ -428,40 +432,43 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             #  available, and argrepr to the string representation of argval.
             #    _disassemble_bytes needs the string repr of the
             #    raw name index for LOAD_GLOBAL, LOAD_CONST, etc.
+            deop = deoptop(op)
             argval = arg
-            if op in hasconst:
-                argval, argrepr = _get_const_info(op, arg, co_consts)
-            elif op in hasname:
-                if op == LOAD_GLOBAL:
+            if deop in hasconst:
+                argval, argrepr = _get_const_info(deop, arg, co_consts)
+            elif deop in hasname:
+                if deop == LOAD_GLOBAL:
                     argval, argrepr = _get_name_info(arg//2, get_name)
                     if (arg & 1) and argrepr:
                         argrepr = "NULL + " + argrepr
                 else:
                     argval, argrepr = _get_name_info(arg, get_name)
-            elif op in hasjabs:
+            elif deop in hasjabs:
                 argval = arg*2
                 argrepr = "to " + repr(argval)
-            elif op in hasjrel:
+            elif deop in hasjrel:
                 argval = offset + 2 + arg*2
                 argrepr = "to " + repr(argval)
-            elif op in haslocal or op in hasfree:
+            elif deop in haslocal or deop in hasfree:
                 argval, argrepr = _get_name_info(arg, varname_from_oparg)
-            elif op in hascompare:
+            elif deop in hascompare:
                 argval = cmp_op[arg]
                 argrepr = argval
-            elif op == FORMAT_VALUE:
+            elif deop == FORMAT_VALUE:
                 argval, argrepr = FORMAT_VALUE_CONVERTERS[arg & 0x3]
                 argval = (argval, bool(arg & 0x4))
                 if argval[1]:
                     if argrepr:
                         argrepr += ', '
                     argrepr += 'with format'
-            elif op == MAKE_FUNCTION:
+            elif deop == MAKE_FUNCTION:
                 argrepr = ', '.join(s for i, s in enumerate(MAKE_FUNCTION_FLAGS)
                                     if arg & (1<<i))
-            elif op == BINARY_OP:
+            elif deop == BINARY_OP:
                 _, argrepr = _nb_ops[arg]
-        name = opname[deoptmap[op]] if not quickened and op in deoptmap else opname[op]
+        name = opname[op]
+        if not quickened and name in deoptmap:
+            name = deoptmap[name]
         yield Instruction(name, op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)
@@ -546,8 +553,7 @@ def _unpack_opargs(code):
     extended_arg = 0
     for i in range(0, len(code), 2):
         op = code[i]
-        oop = op if op not in deoptmap else deoptmap[op]
-        if oop >= HAVE_ARGUMENT:
+        if deoptop(op) >= HAVE_ARGUMENT:
             arg = code[i+1] | extended_arg
             extended_arg = (arg << 8) if op == EXTENDED_ARG else 0
             # The oparg is stored as a signed integer

@@ -61,13 +61,13 @@ def main(opcode_py, outfile='Include/opcode.h'):
     with open(outfile, 'w') as fobj:
         fobj.write(header)
         for name in opname:
-            if name in opmap and opmap[name] not in deoptmap:
+            if name in opmap and name not in deoptmap:
                 fobj.write(DEFINE.format(name, opmap[name]))
             if name == 'POP_EXCEPT': # Special entry for HAVE_ARGUMENT
                 fobj.write(DEFINE.format("HAVE_ARGUMENT", opcode["HAVE_ARGUMENT"]))
 
-        for spec_op in deoptmap:
-            fobj.write(DEFINE.format(opname[spec_op], spec_op))
+        for spec_name in deoptmap:
+            fobj.write(DEFINE.format(spec_name, opmap[spec_name]))
         fobj.write(DEFINE.format('DO_TRACING', 255))
         fobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
         fobj.write("\nextern const uint8_t _PyOpcode_Deopt[256];\n")
@@ -82,7 +82,7 @@ def main(opcode_py, outfile='Include/opcode.h'):
         fobj.write("};\n")
         fobj.write("\nconst uint8_t _PyOpcode_Deopt[256] = {\n")
         for opt, deopt in sorted(deoptmap.items()):
-            fobj.write(f"    [{opname[opt]}] = {opname[deopt]},\n")
+            fobj.write(f"    [{opt}] = {deopt},\n")
         fobj.write("};\n")
         fobj.write("#endif /* OPCODE_TABLES */\n")
 
