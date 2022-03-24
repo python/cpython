@@ -54,13 +54,6 @@ def jabs_op(name, op, entries=0):
     def_op(name, op, entries)
     hasjabs.append(op)
 
-def spec_op(origin_name, spec_name, counter):
-    op = _empty_slot[counter]
-    # fill opname
-    opname[op] = spec_name
-    opmap[spec_name] = op
-    deoptmap[op] = opmap[origin_name]
-
 # Instruction opcodes for compiled code
 # Blank lines correspond to available opcodes
 
@@ -204,6 +197,8 @@ def_op('CALL', 171, 4)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
 
+
+del def_op, name_op, jrel_op, jabs_op
 
 _nb_ops = [
     ("NB_ADD", "+"),
@@ -359,6 +354,3 @@ _specialization_stats = [
     "miss",
     "deopt",
 ]
-
-del def_op, name_op, jrel_op, jabs_op, spec_op
-

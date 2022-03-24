@@ -35,7 +35,7 @@ CACHE = opmap["CACHE"]
 
 def deoptop(op):
     name = opname[op]
-    return opmap[deoptmap[name]] if name in deoptmap else opmap[name]
+    return opmap[deoptmap[name]] if name in deoptmap else op
 
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and
@@ -427,12 +427,12 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         argval = None
         argrepr = ''
         positions = Positions(*next(co_positions, ()))
+        deop = deoptop(op)
         if arg is not None:
             #  Set argval to the dereferenced value of the argument when
             #  available, and argrepr to the string representation of argval.
             #    _disassemble_bytes needs the string repr of the
             #    raw name index for LOAD_GLOBAL, LOAD_CONST, etc.
-            deop = deoptop(op)
             argval = arg
             if deop in hasconst:
                 argval, argrepr = _get_const_info(deop, arg, co_consts)
@@ -466,9 +466,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                                     if arg & (1<<i))
             elif deop == BINARY_OP:
                 _, argrepr = _nb_ops[arg]
-        name = opname[op]
-        if not quickened and name in deoptmap:
-            name = deoptmap[name]
+        name = opname[op if quickened else deop]
         yield Instruction(name, op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)
