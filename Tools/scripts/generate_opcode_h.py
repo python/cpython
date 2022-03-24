@@ -80,8 +80,11 @@ def main(opcode_py, outfile='Include/opcode.h'):
             if entries:
                 fobj.write(f"    [{opname[i]}] = {entries},\n")
         fobj.write("};\n")
+        deoptcodes = {}
+        for basic in opmap:
+            deoptcodes[basic] = deoptmap[basic] if basic in deoptmap else basic
         fobj.write("\nconst uint8_t _PyOpcode_Deopt[256] = {\n")
-        for opt, deopt in sorted(deoptmap.items()):
+        for opt, deopt in sorted(deoptcodes.items()):
             fobj.write(f"    [{opt}] = {deopt},\n")
         fobj.write("};\n")
         fobj.write("#endif /* OPCODE_TABLES */\n")
