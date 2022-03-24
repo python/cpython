@@ -2,8 +2,14 @@ __all__ = ('Runner', 'run')
 
 import contextvars
 import enum
+import functools
+import threading
+import platform
+import signal
+import sys
 from . import coroutines
 from . import events
+from . import exceptions
 from . import tasks
 
 
@@ -47,6 +53,7 @@ class Runner:
         self._factory = factory
         self._loop = None
         self._context = None
+        self._interrunt_count = 0
 
     def __enter__(self):
         self._lazy_init()
@@ -89,7 +96,32 @@ class Runner:
         if context is None:
             context = self._context
         task = self._loop.create_task(coro, context=context)
-        return self._loop.run_until_complete(task)
+
+        if sys.platform == "win32":
+            signum = signal.SIGBREAK
+        else:
+            signum = signal.SIGINT
+        if (threading.current_thread() is threading.main_thread()
+            and signal.getsignal(signum) is signal.default_int_handler
+        ):
+            sigint_handler = functools.partial(self._on_sigint, main_task=task)
+            signal.signal(signum, sigint_handler)
+        else:
+            sigint_handler = None
+
+        self._interrunt_count = 0
+        try:
+            return self._loop.run_until_complete(task)
+        except exceptions.CancelledError:
+            if self._interrunt_count > 0 and task.uncancel() == 0:
+                raise KeyboardInterrupt()
+            else:
+                raise  # CancelledError
+        finally:
+            if (sigint_handler is not None
+                and signal.getsignal(signum) is sigint_handler
+            ):
+                signal.signal(signum, signal.default_int_handler)
 
     def _lazy_init(self):
         if self._state is _State.CLOSED:
@@ -105,6 +137,12 @@ class Runner:
         self._context = contextvars.copy_context()
         self._state = _State.INITIALIZED
 
+    def _on_sigint(self, signum, frame, main_task):
+        self._interrunt_count += 1
+        if self._interrunt_count == 1:
+            main_task.cancel()
+            return
+        raise KeyboardInterrupt()
 
 
 def run(main, *, debug=None):
