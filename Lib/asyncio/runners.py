@@ -38,6 +38,9 @@ class Runner:
     asyncio.run() call doesn't work.
 
     """
+
+    # Note: the class is final, it is not intended for inheritance.
+
     def __init__(self, *, debug=None, factory=None):
         self._state = _State.CREATED
         self._debug = debug
