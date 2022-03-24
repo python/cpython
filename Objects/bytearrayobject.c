@@ -1938,12 +1938,6 @@ Strip leading bytes contained in the argument.
 If the argument is omitted or None, strip leading ASCII whitespace.
 [clinic start generated code]*/
 
-static inline PyObject *
-bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes)
-/*[clinic end generated code: output=d005c9d0ab909e66 input=80843f975dd7c480]*/
-{
-    return bytearray_strip_impl(self, bytes, LEFTSTRIP);
-}
 
 /*[clinic input]
 bytearray.rstrip
@@ -1956,12 +1950,6 @@ Strip trailing bytes contained in the argument.
 If the argument is omitted or None, strip trailing ASCII whitespace.
 [clinic start generated code]*/
 
-static inline PyObject *
-bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes)
-/*[clinic end generated code: output=030e2fbd2f7276bd input=e728b994954cfd91]*/
-{
-    return bytearray_strip_impl(self, bytes, RIGHTSTRIP);
-}
 
 /*[clinic input]
 bytearray.decode

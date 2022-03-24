@@ -762,8 +762,6 @@ PyDoc_STRVAR(bytearray_lstrip__doc__,
 #define BYTEARRAY_LSTRIP_METHODDEF    \
     {"lstrip", (PyCFunction)(void(*)(void))bytearray_lstrip, METH_FASTCALL, bytearray_lstrip__doc__},
 
-static PyObject *
-bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes);
 
 static PyObject *
 bytearray_lstrip(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
@@ -779,7 +777,7 @@ bytearray_lstrip(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t narg
     }
     bytes = args[0];
 skip_optional:
-    return_value = bytearray_lstrip_impl(self, bytes);
+    return_value = bytearray_strip_impl(self, bytes, LEFTSTRIP);
 
 exit:
     return return_value;
@@ -797,9 +795,6 @@ PyDoc_STRVAR(bytearray_rstrip__doc__,
     {"rstrip", (PyCFunction)(void(*)(void))bytearray_rstrip, METH_FASTCALL, bytearray_rstrip__doc__},
 
 static PyObject *
-bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes);
-
-static PyObject *
 bytearray_rstrip(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
@@ -813,7 +808,7 @@ bytearray_rstrip(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t narg
     }
     bytes = args[0];
 skip_optional:
-    return_value = bytearray_rstrip_impl(self, bytes);
+    return_value = bytearray_strip_impl(self, bytes, RIGHTSTRIP);
 
 exit:
     return return_value;
