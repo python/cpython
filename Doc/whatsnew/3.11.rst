@@ -193,9 +193,9 @@ Other CPython Implementation Changes
   support :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
   (Contributed by Mark Dickinson and Dong-hee Na in :issue:`24234`.)
 
-* ``siphash13`` is added as a new internal hashing algorithms. It's has similar security
+* ``siphash13`` is added as a new internal hashing algorithms. It has similar security
   properties as ``siphash24`` but it is slightly faster for long inputs. ``str``, ``bytes``,
-  and some other types now use it as default algorithm for ``hash()``. :pep:`552`
+  and some other types now use it as the default algorithm for ``hash()``. :pep:`552`
   hash-based pyc files now use ``siphash13``, too.
   (Contributed by Inada Naoki in :issue:`29410`.)
 
@@ -210,9 +210,9 @@ Other CPython Implementation Changes
   have been removed as their values can be derived from ``exc_value``.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
-* A new command line option for the Windows installer ``AppendPath`` has beend added.
+* A new command line option for the Windows installer ``AppendPath`` has been added.
   It behaves similiar to ``PrependPath`` but appends the install and scripts directories
-  instead of prepending it.
+  instead of prepending them.
   (Contributed by Bastian Neuburger in :issue:`44934`.)
 
 
