@@ -546,13 +546,8 @@ class Barrier(mixins._LoopBoundMixin):
         attempting to 'wait()' will have BrokenBarrierError raised.
         """
         async with self._cond:
-            self._break()
-
-    def _break(self):
-        # An internal error was detected. The barrier is set to
-        # a broken state all parties awakened.
-        self._state = _BarrierState.BROKEN
-        self._cond.notify_all()
+            self._state = _BarrierState.BROKEN
+            self._cond.notify_all()
 
     @property
     def parties(self):
