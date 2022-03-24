@@ -6,6 +6,7 @@
 #include "pycore_bytes_methods.h"
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
+#include "pycore_long.h"          // _PyLong_FromUnsignedChar()
 #include "bytesobject.h"
 
 /*[clinic input]
@@ -2428,7 +2429,6 @@ static PyObject *
 bytearrayiter_next(bytesiterobject *it)
 {
     PyByteArrayObject *seq;
-    PyObject *item;
 
     assert(it != NULL);
     seq = it->it_seq;
@@ -2437,11 +2437,8 @@ bytearrayiter_next(bytesiterobject *it)
     assert(PyByteArray_Check(seq));
 
     if (it->it_index < PyByteArray_GET_SIZE(seq)) {
-        item = PyLong_FromLong(
-            (unsigned char)PyByteArray_AS_STRING(seq)[it->it_index]);
-        if (item != NULL)
-            ++it->it_index;
-        return item;
+        return _PyLong_FromUnsignedChar(
+            (unsigned char)PyByteArray_AS_STRING(seq)[it->it_index++]);
     }
 
     it->it_seq = NULL;

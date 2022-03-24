@@ -4,7 +4,7 @@ import unittest
 import binascii
 import array
 import re
-from test.support import warnings_helper
+from test.support import bigmemtest, _1G, _4G, warnings_helper
 
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"
@@ -440,6 +440,14 @@ class BytearrayBinASCIITest(BinASCIITest):
 
 class MemoryviewBinASCIITest(BinASCIITest):
     type2test = memoryview
+
+class ChecksumBigBufferTestCase(unittest.TestCase):
+    """bpo-38256 - check that inputs >=4 GiB are handled correctly."""
+
+    @bigmemtest(size=_4G + 4, memuse=1, dry_run=False)
+    def test_big_buffer(self, size):
+        data = b"nyan" * (_1G + 1)
+        self.assertEqual(binascii.crc32(data), 1044521549)
 
 
 if __name__ == "__main__":

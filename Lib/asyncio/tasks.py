@@ -207,6 +207,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
         This also increases the task's count of cancellation requests.
         """
+        if msg is not None:
+            warnings.warn("Passing 'msg' argument to Task.cancel() "
+                          "is deprecated since Python 3.11, and "
+                          "scheduled for removal in Python 3.14.",
+                          DeprecationWarning, stacklevel=2)
         self._log_traceback = False
         if self.done():
             return False

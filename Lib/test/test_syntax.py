@@ -351,6 +351,210 @@ SyntaxError: invalid syntax
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
+>>> def foo(/,a,b=,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: at least one argument must precede /
+
+>>> def foo(a,/,/,b,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> def foo(a,/,a1,/,b,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> def foo(a=1,/,/,*b,/,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> def foo(a,/,a1=1,/,b,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> def foo(a,*b,c,/,d,e):
+...    pass
+Traceback (most recent call last):
+SyntaxError: / must be ahead of *
+
+>>> def foo(a=1,*b,c=3,/,d,e):
+...    pass
+Traceback (most recent call last):
+SyntaxError: / must be ahead of *
+
+>>> def foo(a,*b=3,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: var-positional argument cannot have default value
+
+>>> def foo(a,*b: int=,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: var-positional argument cannot have default value
+
+>>> def foo(a,**b=3):
+...    pass
+Traceback (most recent call last):
+SyntaxError: var-keyword argument cannot have default value
+
+>>> def foo(a,**b: int=3):
+...    pass
+Traceback (most recent call last):
+SyntaxError: var-keyword argument cannot have default value
+
+>>> def foo(a,*a, b, **c, d):
+...    pass
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> def foo(a,*a, b, **c, d=4):
+...    pass
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> def foo(a,*a, b, **c, *d):
+...    pass
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> def foo(a,*a, b, **c, **d):
+...    pass
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> def foo(a=1,/,**b,/,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> def foo(*b,*d):
+...    pass
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> def foo(a,*b,c,*d,*e,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> def foo(a,b,/,c,*b,c,*d,*e,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> def foo(a,b,/,c,*b,c,*d,**e):
+...    pass
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> def foo(a=1,/*,b,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: expected comma between / and *
+
+>>> def foo(a=1,d=,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: expected default value expression
+
+>>> def foo(a,d=,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: expected default value expression
+
+>>> def foo(a,d: int=,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: expected default value expression
+
+>>> lambda /,a,b,c: None
+Traceback (most recent call last):
+SyntaxError: at least one argument must precede /
+
+>>> lambda a,/,/,b,c: None
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> lambda a,/,a1,/,b,c: None
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> lambda a=1,/,/,*b,/,c: None
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> lambda a,/,a1=1,/,b,c: None
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> lambda a,*b,c,/,d,e: None
+Traceback (most recent call last):
+SyntaxError: / must be ahead of *
+
+>>> lambda a=1,*b,c=3,/,d,e: None
+Traceback (most recent call last):
+SyntaxError: / must be ahead of *
+
+>>> lambda a=1,/*,b,c: None
+Traceback (most recent call last):
+SyntaxError: expected comma between / and *
+
+>>> lambda a,*b=3,c: None
+Traceback (most recent call last):
+SyntaxError: var-positional argument cannot have default value
+
+>>> lambda a,**b=3: None
+Traceback (most recent call last):
+SyntaxError: var-keyword argument cannot have default value
+
+>>> lambda a, *a, b, **c, d: None
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> lambda a,*a, b, **c, d=4: None
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> lambda a,*a, b, **c, *d: None
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> lambda a,*a, b, **c, **d: None
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> lambda a=1,/,**b,/,c: None
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> lambda *b,*d: None
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> lambda a,*b,c,*d,*e,c: None
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> lambda a,b,/,c,*b,c,*d,*e,c: None
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> lambda a,b,/,c,*b,c,*d,**e: None
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> lambda a=1,d=,c: None
+Traceback (most recent call last):
+SyntaxError: expected default value expression
+
+>>> lambda a,d=,c: None
+Traceback (most recent call last):
+SyntaxError: expected default value expression
+
 >>> import ast; ast.parse('''
 ... def f(
 ...     *, # type: int
