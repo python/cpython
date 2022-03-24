@@ -70,6 +70,8 @@ annotations. These include:
      *Introducing* :class:`ParamSpec` and :data:`Concatenate`
 * :pep:`613`: Explicit Type Aliases
      *Introducing* :data:`TypeAlias`
+* :pep:`646`: Variadic Generics
+     *Introducing* :data:`TypeVarTuple`
 * :pep:`647`: User-Defined Type Guards
      *Introducing* :data:`TypeGuard`
 * :pep:`673`: Self type
@@ -1229,6 +1231,83 @@ These are not used in annotations. They are building blocks for creating generic
     Type variables may be marked covariant or contravariant by passing
     ``covariant=True`` or ``contravariant=True``.  See :pep:`484` for more
     details.  By default, type variables are invariant.
+
+.. class:: TypeVarTuple
+
+    :class:`Type variable <TypeVar>` tuple.
+
+    Usage::
+
+        Ts = TypeVarTuple('Ts')
+        Shape = TypeVarTuple('Shape')
+
+    Vanilla type variables enable parameterization with a *fixed* number of
+    types. Type variable tuples, on the other hand, allow parameterization with
+    an *arbitrary* number of types by acting like an *arbitrary* number of type
+    variables wrapped in a tuple. For example::
+
+        class Array(Generic[*Shape]):
+            pass
+
+        from typing import NewType
+        Height = NewType('Height', int)
+        Width = NewType('Width', int)
+
+        1d_array: Array[Height] = Array()  # This is fine
+
+    With one type argument, ``Array`` behaves as if ``Shape = (T,)``, where
+    ``T`` is a type variable. That means ``Array`` behaves as if we'd written
+    ``Generic[T]``. Note the use of the unpacking operator ``*`` to bring ``T``
+    out of the tuple and directly into the square brackets.
+
+    ::
+
+        2d_array: Array[Height, Width] = Array()  # This is also fine!
+
+    With two arguments, it's as if ``Shape = (T1, T2)``, where ``T1`` and ``T2``
+    are type variables; as if ``Array`` was defined with ``Generic[T1, T2]``.
+
+    Type variable tuples can be used any place a vanilla type variable can.
+    However, note that they must always be used in combination with the
+    unpacking operator ``*``. This helps distinguish type variable tuples from
+    normal type variables::
+
+        def returns_tuple() -> Ts:  # Not valid
+          return ('spam', 42)
+
+        def returns_tuple() -> tuple[*Ts]:  # This is fine :)
+          return ('spam', 42)
+
+    Type variable tuples can be happily combined with vanilla type variables::
+
+        DType = TypeVar('DType')
+
+        class Array(Generic[DType, *Shape]):  # This is fine
+            pass
+
+        1d_float_array: Array[float, Height] = Array()     # Totally fine
+        2d_int_array: Array[int, Height, Width] = Array()  # Yup, fine too
+
+    However, note that at most one type variable tuple may appear in a single
+    list of type arguments or type parameters::
+
+        class Array(Generic[*Shape, *Shape]):  # Not valid
+            pass
+
+    Finally, an unpacked type variable tuple can be used as the type annotation
+    of ``*args``::
+
+        def args_to_tuple(*args: *Ts) -> tuple[*Ts]:
+            return tuple(args)
+
+    In contrast to non-unpacked annotations of ``*args`` - e.g. ``*args: int``,
+    which would specify that *all* arguments are ``int`` - ``*args: *Ts``
+    enables reference to the types of the *individual* arguments in ``*args``.
+    In this case, it binds those types to ``Ts``.
+
+    For more details on type variable tuples, see :pep:`646`.
+
+    .. versionadded:: 3.11
 
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
 
