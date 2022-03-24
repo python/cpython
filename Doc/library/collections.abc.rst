@@ -122,7 +122,7 @@ ABC                            Inherits from          Abstract Methods        Mi
 ============================== ====================== ======================= ====================================================
 :class:`Container` [1]_                               ``__contains__``
 :class:`Hashable` [1]_                                ``__hash__``
-:class:`Iterable` [1]_ [2]_                           ``__iter__``
+:class:`Iterable` [1]_                                ``__iter__``
 :class:`Iterator` [1]_         :class:`Iterable`      ``__next__``            ``__iter__``
 :class:`Reversible` [1]_       :class:`Iterable`      ``__reversed__``
 :class:`Generator`  [1]_       :class:`Iterator`      ``send``, ``throw``     ``close``, ``__iter__``, ``__next__``
@@ -188,12 +188,6 @@ ABC                            Inherits from          Abstract Methods        Mi
    interfaces.  More complex interfaces require registration or
    inheritance.
 
-.. [2] Checking ``isinstance(obj, Iterable)`` detects classes that are
-   registered as or inherit from :class:`Iterable`, or that have an :meth:`__iter__`
-   method, but it does not detect classes that iterate with the
-   :meth:`__getitem__` method.  The only reliable way to determine
-   whether an object is :term:`iterable` is to call ``iter(obj)``.
-
 
 Collections Abstract Base Classes -- Detailed Descriptions
 ----------------------------------------------------------
@@ -220,7 +214,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
    ABC for classes that provide the :meth:`__iter__` method.
 
    Checking ``isinstance(obj, Iterable)`` detects classes that are registered
-   as :class:`Iterable` or that have an :meth:`__iter__` method, but it does
+   as or inherit from :class:`Iterable`, or that have an :meth:`__iter__` method, but it does
    not detect classes that iterate with the :meth:`__getitem__` method.
    The only reliable way to determine whether an object is :term:`iterable`
    is to call ``iter(obj)``.
