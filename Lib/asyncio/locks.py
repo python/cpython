@@ -1,7 +1,7 @@
 """Synchronization primitives."""
 
 __all__ = ('Lock', 'Event', 'Condition', 'Semaphore',
-           'BoundedSemaphore', 'Barrier', 'BrokenBarrierError')
+           'BoundedSemaphore', 'Barrier')
 
 import collections
 import enum
@@ -495,7 +495,7 @@ class Barrier(mixins._LoopBoundMixin):
 
         # see if the barrier is in a broken state
         if self._state is _BarrierState.BROKEN:
-            raise BrokenBarrierError("Barrier aborted")
+            raise exceptions.BrokenBarrierError("Barrier aborted")
 
     async def _release(self):
         # Release the tasks waiting in the barrier.
@@ -514,7 +514,7 @@ class Barrier(mixins._LoopBoundMixin):
         await self._cond.wait_for(lambda: self._state is not _BarrierState.FILLING)
 
         if self._state in (_BarrierState.BROKEN, _BarrierState.RESETTING):
-            raise BrokenBarrierError("Abort or reset of barrier")
+            raise exceptions.BrokenBarrierError("Abort or reset of barrier")
 
     def _exit(self):
         # If we are the last tasks to exit the barrier, signal any tasks
@@ -565,8 +565,3 @@ class Barrier(mixins._LoopBoundMixin):
     def broken(self):
         """Return True if the barrier is in a broken state."""
         return self._state is _BarrierState.BROKEN
-
-
-# exception raised by the Barrier class
-class BrokenBarrierError(RuntimeError):
-    pass
