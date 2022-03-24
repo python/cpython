@@ -957,7 +957,7 @@ Dry Run
 If an environment variable :envvar:`PYLAUNCHER_DRYRUN` is set (to any value),
 the launcher will output the command it would have run, but will not actually
 launch Python. This may be useful for tools that want to use the launcher to
-detect and then launch Python directly. Note that the command written to 
+detect and then launch Python directly. Note that the command written to
 standard output is always encoded using UTF-8, and may not render correctly in
 the console.
 

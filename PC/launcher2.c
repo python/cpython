@@ -124,13 +124,33 @@ error(wchar_t * format, ... )
 }
 
 
+typedef BOOL (*PIsWow64Process2)(HANDLE, USHORT*, USHORT*);
+
+
 USHORT
 _getNativeMachine()
 {
     static USHORT _nativeMachine = IMAGE_FILE_MACHINE_UNKNOWN;
     if (_nativeMachine == IMAGE_FILE_MACHINE_UNKNOWN) {
         USHORT processMachine;
-        if (!IsWow64Process2(NULL, &processMachine, &_nativeMachine)) {
+        HMODULE kernel32 = GetModuleHandleW(L"kernel32.dll");
+        PIsWow64Process2 IsWow64Process2 = kernel32 ?
+            (PIsWow64Process2)GetProcAddress(kernel32, "IsWow64Process2") :
+            NULL;
+        if (!IsWow64Process2) {
+            BOOL wow64Process;
+            if (!IsWow64Process(NULL, &wow64Process)) {
+                winerror(0, L"Checking process type");
+            } else if (wow64Process) {
+                // We should always be a 32-bit executable, so if running
+                // under emulation, it must be a 64-bit host.
+                _nativeMachine = IMAGE_FILE_MACHINE_AMD64;
+            } else {
+                // Not running under emulation, and an old enough OS to not
+                // have IsWow64Process2, so assume it's x86.
+                _nativeMachine = IMAGE_FILE_MACHINE_I386;
+            }
+        } else if (!IsWow64Process2(NULL, &processMachine, &_nativeMachine)) {
             winerror(0, L"Checking process type");
         }
     }
