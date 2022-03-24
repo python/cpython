@@ -272,3 +272,36 @@ than one MIME-type database; it provides an interface similar to the one of the
       types, else to the list of non-standard types.
 
       .. versionadded:: 3.2
+
+
+.. mimetypes-cli:
+
+Command-Line Usage
+------------------
+
+The :mod:`mimetypes` module can be executed as a script from the command line.
+It is as simple as:
+
+.. code-block:: sh
+
+   python -m mimetypes [-e] [-l] type [type ...]
+
+The following options are accepted:
+
+.. program:: filecmp
+
+.. cmdoption:: -h, --help
+
+   Show the help message and exit.
+
+.. cmdoption:: -e, --extension
+
+   Guess extension instead of type.
+
+.. cmdoption:: -l, --lenient
+
+   Additionally search of some common, but non-standard types.
+
+The script scans the internal database and converts either file extensions to
+MIME types or vice versa depending on whether ``--extension`` option is
+specified.
