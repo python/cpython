@@ -2571,7 +2571,7 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
             current_arg = NULL;
         }
 
-        buf[i + vararg + 1] = current_arg;
+        buf[i + 1] = current_arg;
 
         if (current_arg) {
             --nkwargs;
