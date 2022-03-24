@@ -450,7 +450,7 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         return new
 
     def get(self, key, default=None):
-        return self.data.get(ref(key),default)
+        return self.data.get(ref(key), default)
 
     def __contains__(self, key):
         try:
