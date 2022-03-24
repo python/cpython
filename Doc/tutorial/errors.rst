@@ -177,18 +177,17 @@ accessing ``.args``.  ::
 The exception's :meth:`__str__` output is printed as the last part ('detail')
 of the message for unhandled exceptions.
 
-:exc:`BaseException` is the common base class of all exceptions, including a few
-which are not typically handled, because they are used to indicate that the
+:exc:`BaseException` is the common base class of all exceptions, including
+:exc:`Exception` which is a subclass of all exceptions apart a few which
+are not typically handled, because they are used to indicate that the
 program should terminate. They include :exc:`SystemExit` which is raised by
 :meth:`sys.exit` and :exc:`KeyboardInterrupt` which is raised when a user
 wishes to interrupt the program.
 
-:exc:`Exception` is a subclass of :exc:`BaseException`, which is a common
-superclass of all exceptions, apart from those few special ones that we
-should not typically handle. As such, :exc:`Exception` can be used as a
-wildcard that catches (almost) everything. However, it is good practice
-to be as specific as possible with the types of exceptions that we intend
-to handle, and to allow any unexpected exceptions to propagate on.
+:exc:`Exception` can be used as a wildcard that catches (almost) everything.
+However, it is good practice to be as specific as possible with the types
+of exceptions that we intend to handle, and to allow any unexpected
+exceptions to propagate on.
 
 The most common pattern for handling :exc:`Exception` is to print or log
 the exception and then re-raise it (allowing a caller to handle the
