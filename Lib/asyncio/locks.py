@@ -4,6 +4,7 @@ __all__ = ('Lock', 'Event', 'Condition', 'Semaphore',
            'BoundedSemaphore', 'Barrier', 'BrokenBarrierError')
 
 import collections
+import enum
 
 from . import exceptions
 from . import mixins
@@ -414,6 +415,14 @@ class BoundedSemaphore(Semaphore):
         super().release()
 
 
+
+class _BarrierState(enum.Enum):
+    FILLING = 'filling'
+    DRAINING = 'draining'
+    RESETTING = 'resetting'
+    BROKEN = 'broken'
+
+
 class Barrier(mixins._LoopBoundMixin):
     """Asyncio equivalent to threading.Barrier
 
@@ -424,32 +433,26 @@ class Barrier(mixins._LoopBoundMixin):
     """
 
     def __init__(self, parties):
-        """Create a barrier, initialised to 'parties' tasks.
-        """
+        """Create a barrier, initialised to 'parties' tasks."""
         if parties < 1:
             raise ValueError('parties must be > 0')
 
         self._cond = Condition() # notify all tasks when state changes
 
         self._parties = parties
-        self._state = 0       # 0 filling, 1, draining, -1 resetting, -2 broken
+        self._state = _BarrierState.FILLING
         self._count = 0       # count tasks in Barrier
-        self._count_block = 0 # count blocked tasks when draining
 
     def __repr__(self):
         res = super().__repr__()
-        extra = 'locked' if self._cond.locked() else 'unlocked'
-        if self._count:
-            extra += f', wait:{self._count}/{self._parties}'
-        if self._count_block:
-            extra += f', block:{self._count_block}/{self._parties}'
-        extra += f', state:{self._state}'
+        extra = f'{self._state.value}'
+        if not self.broken:
+            extra += f', waiters:{self.n_waiting}/{self.parties}'
         return f'<{res[1:-1]} [{extra}]>'
 
     async def __aenter__(self):
-        """ wait for the barrier reaches the parties number
-        when start draining release and return index of waited task
-        """
+        # wait for the barrier reaches the parties number
+        # when start draining release and return index of waited task
         return await self.wait()
 
     async def __aexit__(self, *args):
@@ -457,6 +460,7 @@ class Barrier(mixins._LoopBoundMixin):
 
     async def wait(self):
         """Wait for the barrier.
+
         When the specified number of tasks have started waiting, they are all
         simultaneously awoken.
         Returns an unique and individual index number from 0 to 'parties-1'.
@@ -478,71 +482,66 @@ class Barrier(mixins._LoopBoundMixin):
                 self._exit()
 
     async def _block(self):
-        """Block until the barrier is ready for us,
-        or raise an exception if it is broken.
-        """
-        self._count_block += 1
+        # Block until the barrier is ready for us,
+        # or raise an exception if it is broken.
+        #
         # It is draining or resetting, wait until done
         # unless a CancelledError occurs
-        try:
-            try:
-                await self._cond.wait_for(lambda: not (self._draining() or
-                                                        self._resetting()))
-            finally:
-                # block always will call, even an exception occurs
-                self._count_block -= 1
-        except exceptions.CancelledError:
-            raise
+        await self._cond.wait_for(
+            lambda: self._state not in (
+                _BarrierState.DRAINING, _BarrierState.RESETTING
+            )
+        )
 
         # see if the barrier is in a broken state
-        if self.broken:
+        if self._state is _BarrierState.BROKEN:
             raise BrokenBarrierError("Barrier aborted")
 
-    # Release the tasks waiting in the barrier.
     async def _release(self):
-        """Enter draining state. Next waiting tasks will be blocked
-        until the end of draining.
-        """
-        # enter draining state
-        self._set_draining()
+        # Release the tasks waiting in the barrier.
+
+        # Enter draining state.
+        # Next waiting tasks will be blocked until the end of draining.
+        self._state = _BarrierState.DRAINING
         self._cond.notify_all()
 
     async def _wait(self):
-        """Wait in the barrier until we are released. Raise an exception
-        if the barrier is reset or broken.
-        """
+        # Wait in the barrier until we are released. Raise an exception
+        # if the barrier is reset or broken.
+
         # wait for end of filling
         # unless a CancelledError occurs
-        await self._cond.wait_for(lambda: not self._filling())
+        await self._cond.wait_for(lambda: self._state is not _BarrierState.FILLING)
 
-        if self.broken or self._resetting():
+        if self._state in (_BarrierState.BROKEN, _BarrierState.RESETTING):
             raise BrokenBarrierError("Abort or reset of barrier")
 
     def _exit(self):
-        """If we are the last tasks to exit the barrier, signal any tasks
-        waiting for the barrier to drain.
-        """
+        # If we are the last tasks to exit the barrier, signal any tasks
+        # waiting for the barrier to drain.
         if self._count == 0:
-            if self._resetting() or self._draining():
-                self._set_filling()
+            if self._state in (_BarrierState.RESETTING, _BarrierState.DRAINING):
+                self._state = _BarrierState.FILLING
             self._cond.notify_all()
 
     async def reset(self):
         """Reset the barrier to the initial state.
+
         Any tasks currently waiting will get the BrokenBarrier exception
         raised.
         """
         async with self._cond:
             if self._count > 0:
-                if not self._resetting():
+                if self._state is not _BarrierState.RESETTING:
                     #reset the barrier, waking up tasks
-                    self._set_resetting()
+                    self._state = _BarrierState.RESETTING
             else:
-                self._set_filling()
+                self._state = _BarrierState.FILLING
             self._cond.notify_all()
 
     async def abort(self):
         """Place the barrier into a 'broken' state.
+
         Useful in case of error.  Any currently waiting tasks and tasks
         attempting to 'wait()' will have BrokenBarrierError raised.
         """
@@ -552,7 +551,7 @@ class Barrier(mixins._LoopBoundMixin):
     def _break(self):
         # An internal error was detected. The barrier is set to
         # a broken state all parties awakened.
-        self._set_broken()
+        self._state = _BarrierState.BROKEN
         self._cond.notify_all()
 
     @property
@@ -563,42 +562,14 @@ class Barrier(mixins._LoopBoundMixin):
     @property
     def n_waiting(self):
         """Return the number of tasks currently waiting at the barrier."""
-        if self._filling():
+        if self._state is _BarrierState.FILLING:
             return self._count
         return 0
 
     @property
     def broken(self):
         """Return True if the barrier is in a broken state."""
-        return self._state == -2
-
-    def _draining(self):
-        """Return True if the barrier is draining."""
-        return self._state == 1
-
-    def _filling(self):
-        """Return True if the barrier is filling."""
-        return self._state == 0
-
-    def _resetting(self):
-        """Return True if the barrier is resetting."""
-        return self._state == -1
-
-    def _set_broken(self):
-        """Set state to broken."""
-        self._state = -2
-
-    def _set_draining(self):
-        """Set state to draining."""
-        self._state = 1
-
-    def _set_filling(self):
-        """Set state to filling."""
-        self._state = 0
-
-    def _set_resetting(self):
-        """Set state to resetting."""
-        self._state = -1
+        return self._state is _BarrierState.BROKEN
 
 
 # exception raised by the Barrier class
