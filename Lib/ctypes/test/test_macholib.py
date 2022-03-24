@@ -44,6 +44,12 @@ def find_lib(name):
             pass
     raise ValueError("%s not found" % (name,))
 
+
+def d(location=None, name=None, shortname=None, version=None, suffix=None):
+        return {'location': location, 'name': name, 'shortname': shortname,
+                'version': version, 'suffix': suffix}
+
+
 class MachOTest(unittest.TestCase):
     @unittest.skipUnless(sys.platform == "darwin", 'OSX-specific test')
     def test_find(self):
@@ -69,10 +75,6 @@ class MachOTest(unittest.TestCase):
                               ('/System/Library/Frameworks/IOKit.framework/Versions/A/IOKit',
                               '/System/Library/Frameworks/IOKit.framework/IOKit'))
 
-    def d(location=None, name=None, shortname=None, version=None, suffix=None):
-        return {'location': location, 'name': name, 'shortname': shortname,
-                'version': version, 'suffix': suffix}
-
     @unittest.skipUnless(sys.platform == "darwin", 'OSX-specific test')
     def test_info(self):
         self.assertIsNone(dylib_info('completely/invalid'))
@@ -90,7 +92,7 @@ class MachOTest(unittest.TestCase):
     @unittest.skipUnless(sys.platform == "darwin", 'OSX-specific test')
     def test_framework_info(self):
         self.assertIsNone(framework_info('completely/invalid'))
-        self.assertIsNone(ramework_info('completely/invalid/_debug'))
+        self.assertIsNone(framework_info('completely/invalid/_debug'))
         self.assertIsNone(framework_info('P/F.framework'))
         self.assertIsNone(framework_info('P/F.framework/_debug'))
         self.assertEqual(framework_info('P/F.framework/F'),
