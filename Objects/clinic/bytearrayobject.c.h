@@ -726,8 +726,10 @@ PyDoc_STRVAR(bytearray_strip__doc__,
 #define BYTEARRAY_STRIP_METHODDEF    \
     {"strip", (PyCFunction)(void(*)(void))bytearray_strip, METH_FASTCALL, bytearray_strip__doc__},
 
+enum  StripType { LEFTSTRIP, RIGHTSTRIP, BOTHSTRIP };
+
 static PyObject *
-bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes);
+bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes, enum StripType striptype );
 
 static PyObject *
 bytearray_strip(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
@@ -743,7 +745,7 @@ bytearray_strip(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs
     }
     bytes = args[0];
 skip_optional:
-    return_value = bytearray_strip_impl(self, bytes);
+    return_value = bytearray_strip_impl(self, bytes, BOTHSTRIP);
 
 exit:
     return return_value;
