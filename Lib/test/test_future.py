@@ -175,7 +175,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         scope = {}
         exec(
             "from __future__ import annotations\n"
-            + code, {}, scope
+            + code, scope
         )
         return scope
 
@@ -418,6 +418,25 @@ class AnnotationsFutureTestCase(unittest.TestCase):
             def foo():
                 def bar(arg: (yield)): pass
             """))
+
+    def test_get_type_hints_on_func_with_variadic_arg(self):
+        # `typing.get_type_hints` might break on a function with a variadic
+        # annotation (e.g. `f(*args: *Ts)`) if `from __future__ import
+        # annotations`, because it could try to evaluate `*Ts` as en expression,
+        # which on its own isn't value syntax.
+        namespace = self._exec_future(dedent("""\
+        class StarredC: pass
+        class C:
+          def __iter__(self):
+            yield StarredC()
+        c = C()
+        def f(*args: *c): pass
+        import typing
+        hints = typing.get_type_hints(f)
+        """))
+
+        hints = namespace.pop('hints')
+        self.assertIsInstance(hints['args'], namespace['StarredC'])
 
 
 if __name__ == "__main__":

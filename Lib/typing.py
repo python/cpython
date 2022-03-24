@@ -734,10 +734,20 @@ class ForwardRef(_Final, _root=True):
     def __init__(self, arg, is_argument=True, module=None, *, is_class=False):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
+
+        # If we do `def f(*args: *Ts)`, then we'll have `arg = '*Ts'`.
+        # Unfortunately, this isn't a valid expression on its own, so we
+        # do the unpacking manually.
+        if arg[0] == '*':
+            arg_to_compile = f'next(iter({arg[1:]}))'
+        else:
+            arg_to_compile = arg
+        print(f"arg_to_compile: '{arg_to_compile}'")
         try:
-            code = compile(arg, '<string>', 'eval')
+            code = compile(arg_to_compile, '<string>', 'eval')
         except SyntaxError:
             raise SyntaxError(f"Forward reference must be an expression -- got {arg!r}")
+
         self.__forward_arg__ = arg
         self.__forward_code__ = code
         self.__forward_evaluated__ = False
