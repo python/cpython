@@ -39,7 +39,8 @@ PyFrame_GetLineNumber(PyFrameObject *f)
         return f->f_lineno;
     }
     else {
-        return PyCode_Addr2Line(f->f_frame->f_code, _PyInterpreterFrame_LASTI(f->f_frame)*sizeof(_Py_CODEUNIT));
+        int addr = _PyInterpreterFrame_LASTI(f->f_frame) * sizeof(_Py_CODEUNIT);
+        return PyCode_Addr2Line(f->f_frame->f_code, addr);
     }
 }
 
@@ -58,10 +59,11 @@ frame_getlineno(PyFrameObject *f, void *closure)
 static PyObject *
 frame_getlasti(PyFrameObject *f, void *closure)
 {
-    if (_PyInterpreterFrame_LASTI(f->f_frame) < 0) {
+    int lasti = _PyInterpreterFrame_LASTI(f->f_frame);
+    if (lasti < 0) {
         return PyLong_FromLong(-1);
     }
-    return PyLong_FromLong(_PyInterpreterFrame_LASTI(f->f_frame)*sizeof(_Py_CODEUNIT));
+    return PyLong_FromLong(lasti * sizeof(_Py_CODEUNIT));
 }
 
 static PyObject *
@@ -429,7 +431,8 @@ _PyFrame_GetState(PyFrameObject *frame)
             if (_PyInterpreterFrame_LASTI(frame->f_frame) < 0) {
                 return FRAME_CREATED;
             }
-            switch(_PyOpcode_Deopt[_Py_OPCODE(frame->f_frame->next_instr[-1])]) {
+            switch (_PyOpcode_Deopt[_Py_OPCODE(frame->f_frame->next_instr[-1])])
+            {
                 case COPY_FREE_VARS:
                 case MAKE_CELL:
                 case RETURN_GENERATOR:
@@ -884,10 +887,11 @@ _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
     // This only works when opcode is a non-quickened form:
     assert(_PyOpcode_Deopt[opcode] == opcode);
     int check_oparg = 0;
-    for (int i = 0; i < _PyInterpreterFrame_LASTI(frame); i++) {
-        _Py_CODEUNIT instruction = _PyCode_CODE(frame->f_code)[i];
-        int check_opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
-        check_oparg |= _Py_OPARG(instruction);
+    for (_Py_CODEUNIT *instruction = _PyCode_CODE(frame->f_code); 
+         instruction < frame->next_instr; instruction++)
+    {
+        int check_opcode = _PyOpcode_Deopt[_Py_OPCODE(*instruction)];
+        check_oparg |= _Py_OPARG(*instruction);
         if (check_opcode == opcode && check_oparg == oparg) {
             return 1;
         }
@@ -897,7 +901,7 @@ _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
         else {
             check_oparg = 0;
         }
-        i += _PyOpcode_Caches[check_opcode];
+        instruction += _PyOpcode_Caches[check_opcode];
     }
     return 0;
 }
@@ -918,8 +922,8 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
     fast = _PyFrame_GetLocalsArray(frame);
     // COPY_FREE_VARS has no quickened forms, so no need to use _PyOpcode_Deopt
     // here:
-    if (_PyInterpreterFrame_LASTI(frame) < 0 && _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS)
-    {
+    int lasti = _PyInterpreterFrame_LASTI(frame);
+    if (lasti < 0 && _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS) {
         /* Free vars have not been initialized -- Do that */
         PyCodeObject *co = frame->f_code;
         PyObject *closure = frame->f_func->func_closure;

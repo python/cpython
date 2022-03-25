@@ -359,7 +359,7 @@ _PyGen_yf(PyGenObject *gen)
             assert(_Py_OPCODE(_PyCode_CODE(gen->gi_code)[0]) != SEND);
             return NULL;
         }
-        _Py_CODEUNIT next = _PyCode_CODE(gen->gi_code)[_PyInterpreterFrame_LASTI(frame) + 1];
+        _Py_CODEUNIT next = *frame->next_instr;
         if (_PyOpcode_Deopt[_Py_OPCODE(next)] != RESUME || _Py_OPARG(next) < 2)
         {
             /* Not in a yield from */
@@ -489,10 +489,9 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             /* Termination repetition of SEND loop */
             assert(_PyInterpreterFrame_LASTI(frame) >= 0);
             /* Backup to SEND */
-            frame->next_instr--;
-            assert(_Py_OPCODE(frame->next_instr[-1]) == SEND);
-            int jump = _Py_OPARG(frame->next_instr[-1]);
-            frame->next_instr += jump;
+            assert(_Py_OPCODE(frame->next_instr[-2]) == SEND);
+            int jump = _Py_OPARG(frame->next_instr[-2]);
+            frame->next_instr += jump - 1;
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);
                 Py_DECREF(val);
@@ -1337,9 +1336,9 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
     frame = current_frame;
     for (int i = 0; i < frame_count; ++i) {
         PyCodeObject *code = frame->f_code;
-        PyObject *frameinfo = Py_BuildValue("OiO",
-                                            code->co_filename,
-                                            PyCode_Addr2Line(frame->f_code, _PyInterpreterFrame_LASTI(frame)*sizeof(_Py_CODEUNIT)),
+        int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
+        int line = PyCode_Addr2Line(frame->f_code, addr);
+        PyObject *frameinfo = Py_BuildValue("OiO", code->co_filename, line,
                                             code->co_name);
         if (!frameinfo) {
             Py_DECREF(cr_origin);
