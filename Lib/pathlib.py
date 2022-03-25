@@ -809,10 +809,11 @@ class Path(PurePath):
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
-        elif cls._flavour is not os.path:
+        self = cls._from_parts(args)
+        if self._flavour is not os.path:
             raise NotImplementedError("cannot instantiate %r on your system"
                                       % (cls.__name__,))
-        return cls._from_parts(args)
+        return self
 
     def _make_child_relpath(self, part):
         # This is an optimization used for dir walking.  `part` must be
