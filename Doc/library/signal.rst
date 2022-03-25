@@ -691,14 +691,32 @@ the main thread and may be raised after any :term:`bytecode` instruction. Most
 notably, a :exc:`KeyboardInterrupt` may appear at any point during execution.
 Most Python code, including the standard library, cannot be made robust against
 this, and so a :exc:`KeyboardInterrupt` (or any other exception resulting from
-a signal handler) may put the program in an unexpected state.
+a signal handler) may on rare occasions put the program in an unexpected state.
 
-For many programs, especially those that merely want to exit on Ctrl+C, this is
-not a problem, but applications that are complex or require high reliability
-should avoid raising exceptions from signal handlers. They should also avoid
-catching :exc:`KeyboardInterrupt` as a means of gracefully shutting down.
-Instead, they should install their own :const:`SIGINT` handler. Below is an
-example of an HTTP server that avoids :exc:`KeyboardInterrupt`::
+To illustrate this issue, consider the following code::
+
+    class SpamContext:
+        def __init__(self):
+            self.lock = threading.Lock()
+
+        def __enter__(self):
+            # If KeyboardInterrupt occurs here, everything is fine
+            self.lock.acquire()
+            # If KeyboardInterrupt occcurs here, __exit__ will not be called
+            ...
+            # KeyboardInterrupt could occur just before the function returns
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            ...
+            self.lock.release()
+
+For many programs, especially those that merely want to exit on
+:exc:`KeyboardInterrupt`, this is not a problem, but applications that are
+complex or require high reliability should avoid raising exceptions from signal
+handlers. They should also avoid catching :exc:`KeyboardInterrupt` as a means
+of gracefully shutting down.  Instead, they should install their own
+:const:`SIGINT` handler. Below is an example of an HTTP server that avoids
+:exc:`KeyboardInterrupt`::
 
     import signal
     import socket
