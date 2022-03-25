@@ -1,1 +1,1 @@
-`_SelectorDatagramTransport` inherits asyncio.DatagramTransport.
+Internal implementation of selector-based datagram transport inherits :class:`asyncio.DatagramTransport`.
