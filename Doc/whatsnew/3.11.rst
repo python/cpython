@@ -843,6 +843,9 @@ New Features
   :c:func:`PyFloat_Unpack8`.
   (Contributed by Victor Stinner in :issue:`46906`.)
 
+* Add new functions to get frame object attributes:
+  :c:func:`PyFrame_GetBuiltins`, :c:func:`PyFrame_GetGenerator`,
+  :c:func:`PyFrame_GetGlobals`.
 
 Porting to Python 3.11
 ----------------------
