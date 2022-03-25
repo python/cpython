@@ -33,10 +33,6 @@ BINARY_OP = opmap['BINARY_OP']
 
 CACHE = opmap["CACHE"]
 
-def deoptop(op):
-    name = opname[op]
-    return opmap[deoptmap[name]] if name in deoptmap else op
-
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and
        then as a statement if the first approach fails.
@@ -164,6 +160,13 @@ def _get_code_object(x):
         return x
     raise TypeError("don't know how to disassemble %s objects" %
                     type(x).__name__)
+
+def _deoptop(op):
+    name = opname[op]
+    return opmap[deoptmap[name]] if name in deoptmap else op
+
+def _get_code_array(co, adaptive):
+    return co._co_code_adaptive.tobytes() if adaptive else co.co_code
 
 def code_info(x):
     """Formatted details of methods, functions, or code."""
@@ -322,8 +325,7 @@ def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
         line_offset = first_line - co.co_firstlineno
     else:
         line_offset = 0
-    code_bytes = co._co_code_adaptive.tobytes() if adaptive else co.co_code
-    return _get_instructions_bytes(code_bytes,
+    return _get_instructions_bytes(_get_code_array(co, adaptive),
                                    co._varname_from_oparg,
                                    co.co_names, co.co_consts,
                                    linestarts, line_offset,
@@ -432,7 +434,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         argval = None
         argrepr = ''
         positions = Positions(*next(co_positions, ()))
-        deop = deoptop(op)
+        deop = _deoptop(op)
         cache_counter = _inline_cache_entries[deop]
         if arg is not None:
             #  Set argval to the dereferenced value of the argument when
@@ -480,7 +482,7 @@ def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False):
     """Disassemble a code object."""
     linestarts = dict(findlinestarts(co))
     exception_entries = parse_exception_table(co)
-    _disassemble_bytes(co._co_code_adaptive.tobytes() if adaptive else co.co_code,
+    _disassemble_bytes(_get_code_array(co, adaptive),
                        lasti, co._varname_from_oparg,
                        co.co_names, co.co_consts, linestarts, file=file,
                        exception_entries=exception_entries,
@@ -555,7 +557,7 @@ def _unpack_opargs(code):
     extended_arg = 0
     for i in range(0, len(code), 2):
         op = code[i]
-        if deoptop(op) >= HAVE_ARGUMENT:
+        if _deoptop(op) >= HAVE_ARGUMENT:
             arg = code[i+1] | extended_arg
             extended_arg = (arg << 8) if op == EXTENDED_ARG else 0
             # The oparg is stored as a signed integer
@@ -663,7 +665,7 @@ class Bytecode:
 
     def __iter__(self):
         co = self.codeobj
-        return _get_instructions_bytes(co._co_code_adaptive.tobytes() if self.adaptive else co.co_code,
+        return _get_instructions_bytes(_get_code_array(co, self.adaptive),
                                        co._varname_from_oparg,
                                        co.co_names, co.co_consts,
                                        self._linestarts,
@@ -697,7 +699,7 @@ class Bytecode:
         else:
             offset = -1
         with io.StringIO() as output:
-            _disassemble_bytes(co._co_code_adaptive.tobytes() if self.adaptive else co.co_code,
+            _disassemble_bytes(_get_code_array(co, self.adaptive),
                                varname_from_oparg=co._varname_from_oparg,
                                names=co.co_names, co_consts=co.co_consts,
                                linestarts=self._linestarts,
