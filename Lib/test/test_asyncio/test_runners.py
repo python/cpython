@@ -201,7 +201,7 @@ class RunnerTests(BaseTest):
 
     def test_custom_factory(self):
         loop = mock.Mock()
-        with asyncio.Runner(factory=lambda: loop) as runner:
+        with asyncio.Runner(loop_factory=lambda: loop) as runner:
             self.assertIs(runner.get_loop(), loop)
 
     def test_run(self):
