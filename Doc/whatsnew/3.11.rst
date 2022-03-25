@@ -425,11 +425,29 @@ runtime. Other optimizations not under this project are listed in `Optimizations
 Faster Startup
 --------------
 
-Static objects
-~~~~~~~~~~~~~~
+Frozen imports / Static code objects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Freezing imports
-~~~~~~~~~~~~~~~~
+Python caches bytecode in the :ref:`__pycache__<tut-pycache>` directory to
+speed up module loading.
+
+Previously in 3.10, Python module execution looked like this:
+
+.. code-block:: text
+
+   Read __pycache__ -> Unmarshal -> Heap allocated code object -> Evaluate
+
+In Python 3.11, the core modules essential for Python startup are "frozen".
+This means that their code objects (and bytecode) are statically allocated
+by the interpreter. This reduces the steps in module execution process to this:
+
+.. code-block:: text
+
+   Statically allocated code object -> Evaluate
+
+Interpreter startup is now 10-15% faster in Python 3.11.
+
+(Contributed by Eric Snow, Guido van Rossum and Kumar Aditya in numerous issues.)
 
 
 Faster Runtime
