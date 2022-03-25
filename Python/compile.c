@@ -2833,7 +2833,7 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
             return 0;
         if (!compiler_jump_if(c, e->v.IfExp.body, next, cond))
             return 0;
-        ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
+        ADDOP_JUMP_NOLINE(c, JUMP, end);
         compiler_use_next_block(c, next2);
         if (!compiler_jump_if(c, e->v.IfExp.orelse, next, cond))
             return 0;
@@ -2864,11 +2864,11 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
             basicblock *end = compiler_new_block(c);
             if (end == NULL)
                 return 0;
-            ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
+            ADDOP_JUMP_NOLINE(c, JUMP, end);
             compiler_use_next_block(c, cleanup);
             ADDOP(c, POP_TOP);
             if (!cond) {
-                ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, next);
+                ADDOP_JUMP_NOLINE(c, JUMP, next);
             }
             compiler_use_next_block(c, end);
             return 1;
@@ -2902,7 +2902,7 @@ compiler_ifexp(struct compiler *c, expr_ty e)
     if (!compiler_jump_if(c, e->v.IfExp.test, next, 0))
         return 0;
     VISIT(c, expr, e->v.IfExp.body);
-    ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
+    ADDOP_JUMP_NOLINE(c, JUMP, end);
     compiler_use_next_block(c, next);
     VISIT(c, expr, e->v.IfExp.orelse);
     compiler_use_next_block(c, end);
@@ -2989,7 +2989,7 @@ compiler_if(struct compiler *c, stmt_ty s)
     }
     VISIT_SEQ(c, stmt, s->v.If.body);
     if (asdl_seq_LEN(s->v.If.orelse)) {
-        ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
+        ADDOP_JUMP_NOLINE(c, JUMP, end);
         compiler_use_next_block(c, next);
         VISIT_SEQ(c, stmt, s->v.If.orelse);
     }
@@ -3255,7 +3255,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     ADDOP_NOLINE(c, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
-    ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, exit);
+    ADDOP_JUMP_NOLINE(c, JUMP, exit);
     /* `finally` block */
     compiler_use_next_block(c, end);
 
@@ -3309,7 +3309,7 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
     ADDOP_NOLINE(c, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
     VISIT_SEQ(c, stmt, s->v.TryStar.finalbody);
-    ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, exit);
+    ADDOP_JUMP_NOLINE(c, JUMP, exit);
     /* `finally` block */
     compiler_use_next_block(c, end);
 
@@ -3339,13 +3339,13 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
    []                           SETUP_FINALLY   L1
    []                           <code for S>
    []                           POP_BLOCK
-   []                           JUMP_FORWARD    L0
+   []                           JUMP            L0
 
    [exc]                L1:     <evaluate E1>           )
    [exc, E1]                    JUMP_IF_NOT_EXC_MATCH L2        ) only if E1
    [exc]                        <assign to V1>  (or POP if no V1)
    []                           <code for S1>
-                                JUMP_FORWARD    L0
+                                JUMP            L0
 
    [exc]                L2:     <evaluate E2>
    .............................etc.......................
@@ -3378,7 +3378,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     if (s->v.Try.orelse && asdl_seq_LEN(s->v.Try.orelse)) {
         VISIT_SEQ(c, stmt, s->v.Try.orelse);
     }
-    ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
+    ADDOP_JUMP_NOLINE(c, JUMP, end);
     n = asdl_seq_LEN(s->v.Try.handlers);
     compiler_use_next_block(c, except);
 
@@ -3441,7 +3441,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             ADDOP_LOAD_CONST(c, Py_None);
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
-            ADDOP_JUMP(c, JUMP_FORWARD, end);
+            ADDOP_JUMP(c, JUMP, end);
 
             /* except: */
             compiler_use_next_block(c, cleanup_end);
@@ -3471,7 +3471,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             UNSET_LOC(c);
             ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_EXCEPT);
-            ADDOP_JUMP(c, JUMP_FORWARD, end);
+            ADDOP_JUMP(c, JUMP, end);
         }
         compiler_use_next_block(c, except);
     }
@@ -3495,7 +3495,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    []                                         SETUP_FINALLY         L1
    []                                         <code for S>
    []                                         POP_BLOCK
-   []                                         JUMP_FORWARD          L0
+   []                                         JUMP                  L0
 
    [exc]                            L1:       COPY 1      )  save copy of the original exception
    [orig, exc]                                BUILD_LIST   )  list for raised/reraised excs ("result")
@@ -3508,7 +3508,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
    [orig, res, rest]                          SETUP_FINALLY         R1
    [orig, res, rest]                          <code for S1>
-   [orig, res, rest]                          JUMP_FORWARD          L2
+   [orig, res, rest]                          JUMP                  L2
 
    [orig, res, rest, i, v]          R1:       LIST_APPEND   3 ) exc raised in except* body - add to res
    [orig, res, rest, i]                       POP
@@ -3522,7 +3522,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    [exc]                                      COPY 1
    [exc, exc]                                 POP_JUMP_IF_NOT_NONE  RER
    [exc]                                      POP_TOP
-   []                                         JUMP_FORWARD          L0
+   []                                         JUMP                  L0
 
    [exc]                            RER:      SWAP 2
    [exc, prev_exc_info]                       POP_EXCEPT
@@ -3566,7 +3566,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     VISIT_SEQ(c, stmt, s->v.TryStar.body);
     compiler_pop_fblock(c, TRY_EXCEPT, body);
     ADDOP_NOLINE(c, POP_BLOCK);
-    ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, orelse);
+    ADDOP_JUMP_NOLINE(c, JUMP, orelse);
     Py_ssize_t n = asdl_seq_LEN(s->v.TryStar.handlers);
     compiler_use_next_block(c, except);
 
@@ -3651,7 +3651,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
         }
-        ADDOP_JUMP(c, JUMP_FORWARD, except);
+        ADDOP_JUMP(c, JUMP, except);
 
         /* except: */
         compiler_use_next_block(c, cleanup_end);
@@ -3675,7 +3675,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         if (i == n - 1) {
             /* Add exc to the list (if not None it's the unhandled part of the EG) */
             ADDOP_I(c, LIST_APPEND, 1);
-            ADDOP_JUMP(c, JUMP_FORWARD, reraise_star);
+            ADDOP_JUMP(c, JUMP, reraise_star);
         }
     }
     /* Mark as artificial */
@@ -3695,7 +3695,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_BLOCK);
     ADDOP(c, POP_EXCEPT);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
+    ADDOP_JUMP(c, JUMP, end);
     compiler_use_next_block(c, reraise);
     ADDOP(c, POP_BLOCK);
     ADDOP_I(c, SWAP, 2);
@@ -4536,7 +4536,7 @@ compiler_compare(struct compiler *c, expr_ty e)
         basicblock *end = compiler_new_block(c);
         if (end == NULL)
             return 0;
-        ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
+        ADDOP_JUMP_NOLINE(c, JUMP, end);
         compiler_use_next_block(c, cleanup);
         ADDOP_I(c, SWAP, 2);
         ADDOP(c, POP_TOP);
@@ -5565,7 +5565,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
         <code for BLOCK>
         LOAD_CONST (None, None, None)
         CALL_FUNCTION_EX 0
-        JUMP_FORWARD  EXIT
+        JUMP  EXIT
     E:  WITH_EXCEPT_START (calls EXPR.__exit__)
         POP_JUMP_IF_TRUE T:
         RERAISE
@@ -5632,7 +5632,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     if (!compiler_call_exit_with_nones(c))
         return 0;
     ADDOP(c, POP_TOP);
-    ADDOP_JUMP(c, JUMP_FORWARD, exit);
+    ADDOP_JUMP(c, JUMP, exit);
 
     /* For exceptional outcome: */
     compiler_use_next_block(c, final);
@@ -6681,7 +6681,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
             }
         }
         assert(control);
-        if (!compiler_addop_j(c, JUMP_FORWARD, end) ||
+        if (!compiler_addop_j(c, JUMP, end) ||
             !emit_and_reset_fail_pop(c, pc))
         {
             goto error;
@@ -6693,7 +6693,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     // Need to NULL this for the PyObject_Free call in the error block.
     old_pc.fail_pop = NULL;
     // No match. Pop the remaining copy of the subject and fail:
-    if (!compiler_addop(c, POP_TOP) || !jump_to_fail_pop(c, pc, JUMP_FORWARD)) {
+    if (!compiler_addop(c, POP_TOP) || !jump_to_fail_pop(c, pc, JUMP)) {
         goto error;
     }
     compiler_use_next_block(c, end);
@@ -6900,7 +6900,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             ADDOP(c, POP_TOP);
         }
         VISIT_SEQ(c, stmt, m->body);
-        ADDOP_JUMP(c, JUMP_FORWARD, end);
+        ADDOP_JUMP(c, JUMP, end);
         // If the pattern fails to match, we want the line number of the
         // cleanup to be associated with the failed pattern, not the last line
         // of the body
@@ -7039,10 +7039,10 @@ stackdepth(struct compiler *c)
                 stackdepth_push(&sp, instr->i_target, target_depth);
             }
             depth = new_depth;
-            if (instr->i_opcode == JUMP ||
-                instr->i_opcode == JUMP_NO_INTERRUPT ||
-                instr->i_opcode == JUMP_FORWARD ||
-                instr->i_opcode == JUMP_BACKWARD ||
+            assert(instr->i_opcode != JUMP_FORWARD);
+            assert(instr->i_opcode != JUMP_BACKWARD);
+            if (instr->i_opcode == JUMP_NO_INTERRUPT ||
+                instr->i_opcode == JUMP ||
                 instr->i_opcode == RETURN_VALUE ||
                 instr->i_opcode == RAISE_VARARGS ||
                 instr->i_opcode == RERAISE)
@@ -7554,6 +7554,8 @@ normalize_jumps(struct assembler *a)
             continue;
         }
         struct instr *last = &b->b_instr[b->b_iused-1];
+        assert(last->i_opcode != JUMP_FORWARD);
+        assert(last->i_opcode != JUMP_BACKWARD);
         if (last->i_opcode == JUMP) {
             if (last->i_target->b_visited == 0) {
                 last->i_opcode = JUMP_FORWARD;
@@ -7561,14 +7563,6 @@ normalize_jumps(struct assembler *a)
             else {
                 last->i_opcode = JUMP_BACKWARD;
             }
-        }
-        if (last->i_opcode == JUMP_FORWARD) {
-            if (last->i_target->b_visited == 1) {
-                last->i_opcode = JUMP_BACKWARD;
-            }
-        }
-        if (last->i_opcode == JUMP_BACKWARD) {
-            assert(last->i_target->b_visited == 1);
         }
     }
 }
@@ -8629,10 +8623,14 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 inst->i_target = inst->i_target->b_next;
             }
             target = &inst->i_target->b_instr[0];
+            assert(target->i_opcode != JUMP_FORWARD);
+            assert(target->i_opcode != JUMP_BACKWARD);
         }
         else {
             target = &nop;
         }
+        assert(inst->i_opcode != JUMP_FORWARD);
+        assert(inst->i_opcode != JUMP_BACKWARD);
         switch (inst->i_opcode) {
             /* Remove LOAD_CONST const; conditional jump */
             case LOAD_CONST:
@@ -8747,8 +8745,6 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         i -= jump_thread(inst, target, POP_JUMP_IF_FALSE);
                         break;
                     case JUMP:
-                    case JUMP_FORWARD:
-                    case JUMP_BACKWARD:
                     case JUMP_IF_FALSE_OR_POP:
                         i -= jump_thread(inst, target, JUMP_IF_FALSE_OR_POP);
                         break;
@@ -8771,8 +8767,6 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         i -= jump_thread(inst, target, POP_JUMP_IF_TRUE);
                         break;
                     case JUMP:
-                    case JUMP_FORWARD:
-                    case JUMP_BACKWARD:
                     case JUMP_IF_TRUE_OR_POP:
                         i -= jump_thread(inst, target, JUMP_IF_TRUE_OR_POP);
                         break;
@@ -8793,40 +8787,37 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
             case POP_JUMP_IF_NONE:
                 switch (target->i_opcode) {
                     case JUMP:
-                    case JUMP_FORWARD:
-                    case JUMP_BACKWARD:
                         i -= jump_thread(inst, target, inst->i_opcode);
                 }
                 break;
             case POP_JUMP_IF_FALSE:
                 switch (target->i_opcode) {
                     case JUMP:
-                    case JUMP_FORWARD:
-                    case JUMP_BACKWARD:
                         i -= jump_thread(inst, target, POP_JUMP_IF_FALSE);
                 }
                 break;
             case POP_JUMP_IF_TRUE:
                 switch (target->i_opcode) {
                     case JUMP:
-                    case JUMP_FORWARD:
-                    case JUMP_BACKWARD:
                         i -= jump_thread(inst, target, POP_JUMP_IF_TRUE);
                 }
                 break;
             case JUMP:
-            case JUMP_FORWARD:
-            case JUMP_BACKWARD:
                 switch (target->i_opcode) {
                     case JUMP:
-                    case JUMP_FORWARD:
-                    case JUMP_BACKWARD:
                         i -= jump_thread(inst, target, JUMP);
                 }
                 break;
             case FOR_ITER:
-                if (target->i_opcode == JUMP_FORWARD || target->i_opcode == JUMP_BACKWARD) {
+                if (target->i_opcode == JUMP) {
+                    /* This will not work now because the jump (at target) could
+                     * be forward or backward and FOR_ITER only jumps forward. We
+                     * can re-enable this if ever we implement a backward version
+                     * of FOR_ITER.
+                     */
+                    /*
                     i -= jump_thread(inst, target, FOR_ITER);
+                    */
                 }
                 break;
             case SWAP:
@@ -8940,6 +8931,8 @@ normalize_basic_block(basicblock *bb) {
     /* Mark blocks as exit and/or nofallthrough.
      Raise SystemError if CFG is malformed. */
     for (int i = 0; i < bb->b_iused; i++) {
+        assert(bb->b_instr[i].i_opcode != JUMP_FORWARD);
+        assert(bb->b_instr[i].i_opcode != JUMP_BACKWARD);
         switch(bb->b_instr[i].i_opcode) {
             case RETURN_VALUE:
             case RAISE_VARARGS:
@@ -8948,8 +8941,6 @@ normalize_basic_block(basicblock *bb) {
                 bb->b_nofallthrough = 1;
                 break;
             case JUMP:
-            case JUMP_FORWARD:
-            case JUMP_BACKWARD:
             case JUMP_NO_INTERRUPT:
                 bb->b_nofallthrough = 1;
                 /* fall through */
@@ -9134,10 +9125,10 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         if (b->b_iused > 0) {
             struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
+            assert(b_last_instr->i_opcode != JUMP_FORWARD);
+            assert(b_last_instr->i_opcode != JUMP_BACKWARD);
             if (b_last_instr->i_opcode == JUMP ||
-                b_last_instr->i_opcode == JUMP_NO_INTERRUPT ||
-                b_last_instr->i_opcode == JUMP_FORWARD ||
-                b_last_instr->i_opcode == JUMP_BACKWARD) {
+                b_last_instr->i_opcode == JUMP_NO_INTERRUPT) {
                 if (b_last_instr->i_target == b->b_next) {
                     assert(b->b_next->b_iused);
                     b->b_nofallthrough = 0;
