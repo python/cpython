@@ -969,7 +969,7 @@ Porting to Python 3.11
     Code using ``f_lasti`` with ``PyCode_Addr2Line()`` must use
     :c:func:`PyFrame_GetLineNumber` instead.
   * ``f_lineno``: use :c:func:`PyFrame_GetLineNumber`
-  * ``f_locals``: use ``PyObject_GetAttrString((PyObject*)frame, "f_locals")``.
+  * ``f_locals``: use :c:func:`PyFrame_GetLocals`.
   * ``f_stackdepth``: removed.
   * ``f_state``: no public API (renamed to ``f_frame.f_state``).
   * ``f_trace``: no public API.
@@ -982,6 +982,12 @@ Porting to Python 3.11
   ``f_back`` member must not be accessed directly, since its value is now also
   computed lazily. The :c:func:`PyFrame_GetBack` function must be called
   instead.
+
+  Debuggers that accessed the ``f_locals`` directly *must* call
+  `:c:func:`PyFrame_GetLocals` instead. They no longer need to call
+  `:c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
+  in fact they should not call those functions. The necessary updating of the
+  frame is now managed by the virtual machine.
 
   Code defining ``PyFrame_GetCode()`` on Python 3.8 and older::
 
