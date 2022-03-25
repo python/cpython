@@ -133,9 +133,13 @@ class Runner:
         self._state = _State.INITIALIZED
 
     def _on_sigint(self, signum, frame, main_task):
+        if self._loop is None or self._loop.is_closing():
+            return
         self._interrunt_count += 1
-        if self._interrunt_count == 1:
+        if self._interrunt_count == 1 and not main_task.done():
             main_task.cancel()
+            # wakeup a loop if it is blocked by selector.select() with long timeour
+            self._loop.call_soon_threadsafe(lambda: None)
             return
         raise KeyboardInterrupt()
 
