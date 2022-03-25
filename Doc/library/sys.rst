@@ -1157,10 +1157,9 @@ always available.
    To not prepend this potentially unsafe path, use the :option:`-P` command
    line option or the :envvar:`PYTHONSAFEPATH` environment variable?
 
-   A program is free to modify this list for its own purposes.  Only strings
-   should be added to :data:`sys.path`; all other data types are
-   ignored during import.
-
+   A program is free to modify this list for its own purposes.  Only strings,
+   bytes, and :term:`path-like objects <path-like object>` should be added to
+   :data:`sys.path`; all other data types are ignored during import.
 
    .. seealso::
       * Module :mod:`site` This describes how to use .pth files to

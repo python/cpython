@@ -1,4 +1,5 @@
 import os
+import pathlib
 import sys
 import shutil
 import string
@@ -24,13 +25,12 @@ class TestImport(unittest.TestCase):
                 del sys.modules[module_name]
 
     def setUp(self):
-        self.test_dir = tempfile.mkdtemp()
+        self.test_dir = pathlib.Path(tempfile.mkdtemp())
         sys.path.append(self.test_dir)
-        self.package_dir = os.path.join(self.test_dir,
-                                        self.package_name)
-        os.mkdir(self.package_dir)
-        create_empty_file(os.path.join(self.package_dir, '__init__.py'))
-        self.module_path = os.path.join(self.package_dir, 'foo.py')
+        self.package_dir = self.test_dir / self.package_name
+        self.package_dir.mkdir()
+        create_empty_file(self.package_dir / '__init__.py')
+        self.module_path = self.package_dir / 'foo.py'
 
     def tearDown(self):
         shutil.rmtree(self.test_dir)
