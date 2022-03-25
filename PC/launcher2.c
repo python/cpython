@@ -35,6 +35,7 @@
 #define RC_INTERNAL_ERROR   109
 #define RC_DUPLICATE_ITEM   110
 #define RC_INSTALLING       111
+#define RC_NO_PYTHON_AT_ALL 112
 
 static FILE * log_fp = NULL;
 
@@ -1750,7 +1751,7 @@ selectEnvironment(const SearchInfo *search, EnvironmentInfo *root, EnvironmentIn
     }
     if (!root) {
         *best = NULL;
-        return 0;
+        return RC_NO_PYTHON_AT_ALL;
     }
     if (!root->next && !root->prev) {
         *best = root;
@@ -1837,6 +1838,7 @@ listEnvironments(EnvironmentInfo *env, FILE * out, bool showPath)
     bool isDefault = true;
 
     if (!env) {
+        fwprintf_s(stdout, L"No installed Pythons found!\n");
         return 0;
     }
 
@@ -1875,7 +1877,13 @@ listEnvironments(EnvironmentInfo *env, FILE * out, bool showPath)
     }
     */
 
-    return _listAllEnvironments(env, out, showPath, &isDefault);
+    int mode = _setmode(_fileno(out), _O_U8TEXT);
+    int exitCode = _listAllEnvironments(env, out, showPath, &isDefault);
+    fflush(out);
+    if (mode >= 0) {
+        _setmode(_fileno(out), mode);
+    }
+    return exitCode;
 }
 
 
@@ -2208,11 +2216,19 @@ process(int argc, wchar_t ** argv)
             }
             goto abort;
         }
+        if (exitCode == RC_NO_PYTHON_AT_ALL) {
+            fputws(L"No installed Python found!\n", stderr);
+            goto abort;
+        }
         if (exitCode) {
             goto abort;
         }
 
-        debug(L"env.company: %s\nenv.tag: %s\n", env->company, env->tag);
+        if (env) {
+            debug(L"env.company: %s\nenv.tag: %s\n", env->company, env->tag);
+        } else {
+            debug(L"env.company: (null)\nenv.tag: (null)\n");
+        }
     }
 
     exitCode = calculateCommandLine(&search, env, launchCommand, sizeof(launchCommand) / sizeof(launchCommand[0]));
