@@ -374,6 +374,7 @@ Barrier
 
          # Now, current task waits
          async with b as pos:
+            print(b)
             print("barrier passed")
 
          await asyncio.sleep(0)
@@ -383,9 +384,10 @@ Barrier
 
    Result of this example is::
 
-      <asyncio.locks.Barrier object at 0x103e58bf0 [unlocked, wait:2/3, state:0]>
+      <asyncio.locks.Barrier object at 0x105d70100 [filling, waiters:2/3]>
+      <asyncio.locks.Barrier object at 0x10146c6a0 [draining, waiters:0/3]>
       barrier passed
-      <asyncio.locks.Barrier object at 0x103e58bf0 [unlocked, state:0]>
+      <asyncio.locks.Barrier object at 0x105d70100 [filling, waiters:0/3]>
 
    The example also demonstrates using ``async with`` as an alternative to awaiting
    on ``barrier.wait()``.
