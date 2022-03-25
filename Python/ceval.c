@@ -2002,10 +2002,10 @@ handle_eval_breaker:
             PyObject *right = TOP();
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
-            DEOPT_IF(Py_REFCNT(left) != 2, BINARY_OP);
             _Py_CODEUNIT true_next = next_instr[INLINE_CACHE_ENTRIES_BINARY_OP];
             int next_oparg = _Py_OPARG(true_next);
-            assert(_Py_OPCODE(true_next) == STORE_FAST);
+            assert(_Py_OPCODE(true_next) == STORE_FAST ||
+                   _Py_OPCODE(true_next) == STORE_FAST__LOAD_FAST);
             /* In the common case, there are 2 references to the value
             * stored in 'variable' when the v = v + ... is performed: one
             * on the value stack (in 'v') and one still stored in the
@@ -2016,7 +2016,8 @@ handle_eval_breaker:
             DEOPT_IF(var != left, BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             GETLOCAL(next_oparg) = NULL;
-            Py_DECREF(left);
+            assert(Py_REFCNT(left) >= 2);
+            Py_DECREF(left); // XXX never need to dealloc
             STACK_SHRINK(1);
             PyUnicode_Append(&TOP(), right);
             Py_DECREF(right);
@@ -5378,7 +5379,7 @@ handle_eval_breaker:
                 PyObject *lhs = SECOND();
                 PyObject *rhs = TOP();
                 next_instr--;
-                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg);
+                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
                 DISPATCH();
             }
             else {
