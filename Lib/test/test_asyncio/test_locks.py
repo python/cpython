@@ -1004,6 +1004,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertRaises(ValueError, lambda: asyncio.Barrier(-4))
 
         self.assertIsInstance(asyncio.Barrier(self.N), asyncio.Barrier)
+
     async def test_context_manager(self):
         self.N = 3
         barrier = asyncio.Barrier(self.N)
