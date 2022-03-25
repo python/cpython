@@ -838,6 +838,143 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertNotEqual(C[Unpack[Ts1]], C[Unpack[Ts2]])
 
 
+class TypeVarTuplePicklingTests(BaseTestCase):
+    # These are slightly awkward tests to run, because TypeVarTuples (and things
+    # made generic using TypeVarTuples) are only picklable if defined in the
+    # global scope. We therefore need to push various things defined in these
+    # tests into the global scope with `global` statements at the start of each
+    # test.
+
+    def test_typevartuple_can_be_pickled_without_error(self):
+        global Ts  # See explanation at start of class.
+        Ts = TypeVarTuple('Ts')
+        pickle.dumps(Ts)
+
+    def test_pickling_then_unpickling_results_in_equality(self):
+        global Ts1  # See explanation at start of class.
+        Ts1 = TypeVarTuple('Ts1')
+        Ts2 = pickle.loads(pickle.dumps(Ts1))
+        self.assertEqual(Ts1, Ts2)
+
+    def test_typevartuple_is_immutable_by_pickle(self):
+        global Ts1  # See explanation at start of class.
+        Ts1 = TypeVarTuple('Ts1')
+        Ts2 = pickle.loads(pickle.dumps(Ts1))
+        self.assertIs(Ts1, Ts2)
+
+    def test_unpacked_typevartuple_can_be_pickled_without_error(self):
+        global Ts  # See explanation at start of class.
+        Ts = TypeVarTuple('Ts')
+        pickle.dumps(Unpack[Ts])
+
+    def test_pickling_then_unpickling_typevartuple_results_in_equality(self):
+        global Ts  # See explanation at start of class.
+        Ts = TypeVarTuple('Ts')
+        unpacked1 = Unpack[Ts]
+        unpacked2 = pickle.loads(pickle.dumps(unpacked1))
+        self.assertEqual(unpacked1, unpacked2)
+
+    def test_variadic_class_can_be_pickled_without_error(self):
+        global T, Ts, A, B  # See explanation at start of class.
+        T = TypeVar('T')
+        Ts = TypeVarTuple('Ts')
+
+        class A(Generic[Unpack[Ts]]): pass
+        pickle.dumps(A)
+
+        class B(Generic[T, Unpack[Ts]]): pass
+        pickle.dumps(B)
+
+    def test_pickling_then_unpickling_variadic_class_results_in_equality(self):
+        global T, Ts, A1, B1  # See explanation at start of class.
+        T = TypeVar('T')
+        Ts = TypeVarTuple('Ts')
+
+        class A1(Generic[Unpack[Ts]]): pass
+        A2 = pickle.loads(pickle.dumps(A1))
+        self.assertEqual(A1, A2)
+
+        class B1(Generic[T, Unpack[Ts]]): pass
+        B2 = pickle.loads(pickle.dumps(B1))
+        self.assertEqual(B1, B2)
+
+    def test_tuple_with_typevartuple_can_be_pickled_without_error(self):
+        global T, Ts  # See explanation at start of class.
+        T = TypeVarTuple('T')
+        Ts = TypeVarTuple('Ts')
+
+        a = Tuple[Unpack[Ts]]
+        pickle.dumps(a)
+
+        b = Tuple[T, Unpack[Ts]]
+        pickle.dumps(b)
+
+        c = Tuple[int, Unpack[Ts]]
+        pickle.dumps(c)
+
+    def test_pickling_then_unpickling_tuple_with_typevartuple_equality(self):
+        global T, Ts  # See explanation at start of class.
+        T = TypeVar('T')
+        Ts = TypeVarTuple('Ts')
+
+        a1 = Tuple[Unpack[Ts]]
+        a2 = pickle.loads(pickle.dumps(a1))
+        self.assertEqual(a1, a2)
+
+        a1 = Tuple[T, Unpack[Ts]]
+        a2 = pickle.loads(pickle.dumps(a1))
+        self.assertEqual(a1, a2)
+
+        a1 = Tuple[int, Unpack[Ts]]
+        a2 = pickle.loads(pickle.dumps(a1))
+        self.assertEqual(a1, a2)
+
+    def test_variadic_func_can_be_pickled_without_error(self):
+        global T, Ts, a, b, c, d, e  # See explanation at start of class.
+        T = TypeVar('T')
+        Ts = TypeVarTuple('Ts')
+
+        def a(*args: Unpack[Ts]): pass
+        pickle.dumps(a)
+
+        def b(*args: Unpack[Tuple[int]]): pass
+        pickle.dumps(b)
+
+        def c(*args: Unpack[Tuple[int, ...]]): pass
+        pickle.dumps(c)
+
+        def d(*args: Unpack[Tuple[int, Unpack[Ts]]]): pass
+        pickle.dumps(d)
+
+        def e(*args: Unpack[Tuple[T, Unpack[Ts]]]): pass
+        pickle.dumps(e)
+
+    def test_pickling_then_unpickling_variadic_func_results_in_equality(self):
+        global T, Ts, a1, b1, c1, d1, e1  # See explanation at start of class.
+        T = TypeVar('T')
+        Ts = TypeVarTuple('Ts')
+
+        def a1(*args: Unpack[Ts]): pass
+        a2 = pickle.loads(pickle.dumps(a1))
+        self.assertEqual(a1, a2)
+
+        def b1(*args: Unpack[Tuple[int]]): pass
+        b2 = pickle.loads(pickle.dumps(b1))
+        self.assertEqual(b1, b2)
+
+        def c1(*args: Unpack[Tuple[int, ...]]): pass
+        c2 = pickle.loads(pickle.dumps(c1))
+        self.assertEqual(c1, c2)
+
+        def d1(*args: Unpack[Tuple[int, Unpack[Ts]]]): pass
+        d2 = pickle.loads(pickle.dumps(d1))
+        self.assertEqual(d1, d2)
+
+        def e1(*args: Unpack[Tuple[T, Unpack[Ts]]]): pass
+        e2 = pickle.loads(pickle.dumps(e1))
+        self.assertEqual(e1, e2)
+
+
 class UnionTests(BaseTestCase):
 
     def test_basics(self):

@@ -811,6 +811,13 @@ def _is_typevar_like(x: Any) -> bool:
     return isinstance(x, (TypeVar, ParamSpec)) or _is_unpacked_typevartuple(x)
 
 
+class _PickleUsingNameMixin:
+    """Mixin enabling pickling based on self.__name__."""
+
+    def __reduce__(self):
+        return self.__name__
+
+
 class _BoundVarianceMixin:
     """Mixin giving __init__ bound and variance arguments.
 
@@ -847,11 +854,9 @@ class _BoundVarianceMixin:
             prefix = '~'
         return prefix + self.__name__
 
-    def __reduce__(self):
-        return self.__name__
 
-
-class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _root=True):
+class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
+              _root=True):
     """Type variable.
 
     Usage::
@@ -915,7 +920,7 @@ class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _root=True):
         return arg
 
 
-class TypeVarTuple(_Final, _Immutable, _root=True):
+class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
     """Type variable tuple.
 
     Usage:
@@ -936,10 +941,17 @@ class TypeVarTuple(_Final, _Immutable, _root=True):
       C[()]        # Even this is fine
 
     For more details, see PEP 646.
+
+    Note that only type variables tuples defined in global scope can be pickled.
     """
 
     def __init__(self, name):
         self.__name__ = name
+
+        # Used for pickling.
+        def_mod = _caller()
+        if def_mod != 'typing':
+            self.__module__ = def_mod
 
     def __iter__(self):
         yield Unpack[self]
@@ -999,7 +1011,8 @@ class ParamSpecKwargs(_Final, _Immutable, _root=True):
         return self.__origin__ == other.__origin__
 
 
-class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _root=True):
+class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
+                _root=True):
     """Parameter specification variable.
 
     Usage::
