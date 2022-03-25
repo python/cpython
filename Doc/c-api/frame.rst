@@ -41,9 +41,9 @@ See also :ref:`Reflection <reflection>`.
    .. versionadded:: 3.9
 
 
-.. c:function:: PyCodeObject* PyFrame_GetLocals(PyFrameObject *frame)
+.. c:function:: PyObject* PyFrame_GetLocals(PyFrameObject *frame)
 
-   Get the *frame*'s ``f_locals`` attribute.
+   Get the *frame*'s ``f_locals`` attribute (:class:`dict`).
 
    Return a :term:`strong reference`.
 
