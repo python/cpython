@@ -174,7 +174,7 @@ ABC                            Inherits from          Abstract Methods        Mi
                                                       ``throw``
 :class:`AsyncIterable` [1]_                           ``__aiter__``
 :class:`AsyncIterator` [1]_    :class:`AsyncIterable` ``__anext__``           ``__aiter__``
-:class:`AsyncGenerator` [1]_   :class:`AsyncIterator` ``asend``,              Inherited mixin :class:`Iterator` method,
+:class:`AsyncGenerator` [1]_   :class:`AsyncIterator` ``asend``,              Inherited mixin :class:`AsyncIterator` method,
                                                       ``athrow``              ``__anext__``, ``aclose``
 ============================== ====================== ======================= ====================================================
 
