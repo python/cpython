@@ -1563,10 +1563,16 @@ _installEnvironment(const wchar_t *command, const wchar_t *arguments)
     debug(L"# Installing with %s %s\n", command, arguments);
     if (isEnvVarSet(L"PYLAUNCHER_DRYRUN")) {
         debug(L"# Exiting due to PYLAUNCHER_DRYRUN\n");
+        fflush(stdout);
+        int mode = _setmode(_fileno(stdout), _O_U8TEXT);
         if (arguments) {
             fwprintf_s(stdout, L"\"%s\" %s\n", command, arguments);
         } else {
             fwprintf_s(stdout, L"\"%s\"\n", command);
+        }
+        fflush(stdout);
+        if (mode >= 0) {
+            _setmode(_fileno(stdout), mode);
         }
         return RC_INSTALLING;
     }
@@ -1587,10 +1593,11 @@ _installEnvironment(const wchar_t *command, const wchar_t *arguments)
     return RC_INSTALLING;
 }
 
-#define WINGET_COMMAND L"Microsoft\\WindowsApps\\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\\winget.exe"
-#define WINGET_ARGUMENTS L"install -q %s --exact --accept-package-agreements --source msstore"
 
-#define MSSTORE_COMMAND L"ms-windows-store://pdp/?productid=%s"
+const wchar_t *WINGET_COMMAND = L"Microsoft\\WindowsApps\\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\\winget.exe";
+const wchar_t *WINGET_ARGUMENTS = L"install -q %s --exact --accept-package-agreements --source msstore";
+
+const wchar_t *MSSTORE_COMMAND = L"ms-windows-store://pdp/?productid=%s";
 
 int
 installEnvironment(const SearchInfo *search)
@@ -2006,6 +2013,20 @@ launchEnvironment(const SearchInfo *search, const EnvironmentInfo *launch, wchar
     STARTUPINFOW si;
     PROCESS_INFORMATION pi;
 
+    // If this is a dryrun, do not actually launch
+    if (isEnvVarSet(L"PYLAUNCHER_DRYRUN")) {
+        debug(L"LaunchCommand: %s\n", launchCommand);
+        debug(L"# Exiting due to PYLAUNCHER_DRYRUN variable\n");
+        fflush(stdout);
+        int mode = _setmode(_fileno(stdout), _O_U8TEXT);
+        fwprintf(stdout, L"%s\n", launchCommand);
+        fflush(stdout);
+        if (mode >= 0) {
+            _setmode(_fileno(stdout), mode);
+        }
+        return 0;
+    }
+
 #if defined(_WINDOWS)
     /*
     When explorer launches a Windows (GUI) application, it displays
@@ -2165,7 +2186,8 @@ process(int argc, wchar_t ** argv)
     if (search.executablePath == NULL) {
         exitCode = selectEnvironment(&search, envs, &env);
         // If none found, and if permitted, install it
-        if (exitCode == RC_NO_PYTHON && isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL")) {
+        if (exitCode == RC_NO_PYTHON && isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL") ||
+            isEnvVarSet(L"PYLAUNCHER_ALWAYS_INSTALL")) {
             exitCode = installEnvironment(&search);
             if (!exitCode) {
                 // Successful install, so we need to re-scan and select again
@@ -2195,15 +2217,6 @@ process(int argc, wchar_t ** argv)
 
     exitCode = calculateCommandLine(&search, env, launchCommand, sizeof(launchCommand) / sizeof(launchCommand[0]));
     if (exitCode) {
-        goto abort;
-    }
-
-    // For testing purposes, do not actually launch
-    if (isEnvVarSet(L"PYLAUNCHER_DRYRUN")) {
-        debug(L"LaunchCommand: %s\n", launchCommand);
-        debug(L"# Exiting due to PYLAUNCHER_DRYRUN variable\n");
-        _setmode(_fileno(stdout), _O_U8TEXT);
-        fwprintf(stdout, L"%s\n", launchCommand);
         goto abort;
     }
 

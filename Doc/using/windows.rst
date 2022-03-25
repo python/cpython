@@ -969,6 +969,10 @@ value), and the requested Python version is not installed but is available on
 the Microsoft Store, the launcher will attempt to install it. This may require
 user interaction to complete, and you may need to run the command again.
 
+An additional :envvar:`PYLAUNCHER_ALWAYS_INSTALL` variable causes the launcher
+to always try to install Python, even if it is detected. This is mainly intended
+for testing (and should be used with :envvar:`PYLAUNCHER_DRYRUN`).
+
 Return codes
 ------------
 

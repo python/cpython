@@ -157,7 +157,7 @@ class RunPyMixin:
             )
         return py_exe
 
-    def run_py(self, args, env=None, allow_fail=False):
+    def run_py(self, args, env=None, allow_fail=False, expect_returncode=0):
         if not self.py_exe:
             self.py_exe = self.find_py()
 
@@ -173,17 +173,17 @@ class RunPyMixin:
             p.wait(10)
             out = p.stdout.read().decode("utf-8", "replace")
             err = p.stderr.read().decode("ascii", "replace")
-        if p.returncode and support.verbose and not allow_fail:
+        if p.returncode != expect_returncode and support.verbose and not allow_fail:
             print("++ COMMAND ++")
             print([self.py_exe, *args])
             print("++ STDOUT ++")
             print(out)
             print("++ STDERR ++")
             print(err)
-        if allow_fail and p.returncode:
+        if allow_fail and p.returncode != expect_returncode:
             raise subprocess.CalledProcessError(p.returncode, [self.py_exe, *args], out, err)
         else:
-            self.assertEqual(0, p.returncode)
+            self.assertEqual(expect_returncode, p.returncode)
         data = {
             s.partition(":")[0]: s.partition(":")[2].lstrip()
             for s in err.splitlines()
@@ -247,6 +247,31 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 self.assertEqual(v2, data["SearchInfo.listPaths"])
 
     def test_list(self):
+        data = self.run_py(["--list"])
+        found = {}
+        expect = {}
+        for line in data["stdout"].splitlines():
+            m = re.match(r"\s*(.+?)\s+(.+)$", line)
+            if m:
+                found[m.group(1)] = m.group(2)
+        for company in TEST_DATA:
+            company_data = TEST_DATA[company]
+            tags = [t for t in company_data if isinstance(company_data[t], dict)]
+            for tag in tags:
+                arg = f"-V:{company}/{tag}"
+                expect[arg] = company_data[tag]["DisplayName"]
+            expect.pop(f"-V:{company}/ignored", None)
+
+        actual = {k: v for k, v in found.items() if k in expect}
+        try:
+            self.assertDictEqual(expect, actual)
+        except:
+            if support.verbose:
+                print("*** STDOUT ***")
+                print(data["stdout"])
+            raise
+
+    def test_list_paths(self):
         data = self.run_py(["--list-paths"])
         found = {}
         expect = {}
@@ -383,3 +408,9 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100-arm64", data["SearchInfo.tag"])
         self.assertEqual(f"X.Y-arm64.exe -X fake_arg_for_test -prearg {script} -postarg", data["stdout"].strip())
+
+    def test_install(self):
+        data = self.run_py(["-V:3.10"], env={"PYLAUNCHER_ALWAYS_INSTALL": "1"}, expect_returncode=111)
+        cmd = data["stdout"].strip()
+        self.assertIn("winget.exe", cmd)
+        self.assertIn("9PJPW5LDXLZ5", cmd)
