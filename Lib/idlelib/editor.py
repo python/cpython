@@ -29,6 +29,7 @@ from idlelib import search
 from idlelib.tree import wheel_event
 from idlelib.util import py_extensions
 from idlelib import window
+from idlelib.textview import AutoHideScrollbar
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -136,7 +137,19 @@ class EditorWindow:
                 }
         self.text = text = MultiCallCreator(Text)(text_frame, **text_options)
         self.top.focused_widget = self.text
-
+        # Create a scrollbar that is automatically hidden when not needed
+        # with idlelib.textview.AutoHideScrollbar
+        if text['wrap'] == 'none':
+            self.horizontalbar = horizontalbar = AutoHideScrollbar(
+                text_frame,
+                name='horizontalbar',
+                orient='horizontal',
+                command=text.xview)
+            horizontalbar.grid(row=2, column=1, sticky=NSEW)
+            text['xscrollcommand'] = horizontalbar.set
+        else:
+            self.horizontalbar = None
+        
         self.createmenubar()
         self.apply_bindings()
 
