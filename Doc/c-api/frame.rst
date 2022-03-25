@@ -41,6 +41,17 @@ See also :ref:`Reflection <reflection>`.
    .. versionadded:: 3.9
 
 
+.. c:function:: PyObject* PyFrame_GetLocals(PyFrameObject *frame)
+
+   Get the *frame*'s ``f_locals`` attribute (:class:`dict`).
+
+   Return a :term:`strong reference`.
+
+   *frame* must not be ``NULL``.
+
+   .. versionadded:: 3.11
+
+
 .. c:function:: int PyFrame_GetLineNumber(PyFrameObject *frame)
 
    Return the line number that *frame* is currently executing.
