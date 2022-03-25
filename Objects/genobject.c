@@ -489,10 +489,10 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             /* Termination repetition of SEND loop */
             assert(_PyInterpreterFrame_LASTI(frame) >= 0);
             /* Backup to SEND */
-            frame->last_instr--;
-            assert(_Py_OPCODE(*frame->last_instr) == SEND);
-            int jump = _Py_OPARG(*frame->last_instr);
-            frame->last_instr += jump;
+            frame->next_instr--;
+            assert(_Py_OPCODE(frame->next_instr[-1]) == SEND);
+            int jump = _Py_OPARG(frame->next_instr[-1]);
+            frame->next_instr += jump;
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);
                 Py_DECREF(val);

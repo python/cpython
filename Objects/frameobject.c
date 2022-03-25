@@ -429,7 +429,7 @@ _PyFrame_GetState(PyFrameObject *frame)
             if (_PyInterpreterFrame_LASTI(frame->f_frame) < 0) {
                 return FRAME_CREATED;
             }
-            switch(_PyOpcode_Deopt[_Py_OPCODE(*frame->f_frame->last_instr)]) {
+            switch(_PyOpcode_Deopt[_Py_OPCODE(frame->f_frame->next_instr[-1])]) {
                 case COPY_FREE_VARS:
                 case MAKE_CELL:
                 case RETURN_GENERATOR:
@@ -603,7 +603,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     }
     /* Finally set the new lasti and return OK. */
     f->f_lineno = 0;
-    f->f_frame->last_instr = _PyCode_CODE(f->f_frame->f_code) + best_addr;
+    f->f_frame->next_instr = _PyCode_CODE(f->f_frame->f_code) + best_addr + 1;
     return 0;
 }
 
@@ -930,7 +930,7 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
             frame->localsplus[offset + i] = o;
         }
         // COPY_FREE_VARS doesn't have inline CACHEs, either:
-        frame->last_instr = _PyCode_CODE(frame->f_code);
+        frame->next_instr = _PyCode_CODE(frame->f_code) + 1;
     }
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);

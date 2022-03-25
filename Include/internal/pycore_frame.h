@@ -46,7 +46,7 @@ typedef struct _PyInterpreterFrame {
     PyCodeObject *f_code; /* Strong reference */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL */
     struct _PyInterpreterFrame *previous;
-    _Py_CODEUNIT *last_instr;
+    _Py_CODEUNIT *next_instr;
     int stacktop;     /* Offset of TOS from localsplus  */
     bool is_entry;  // Whether this is the "root" frame for the current _PyCFrame.
     char owner;
@@ -54,7 +54,7 @@ typedef struct _PyInterpreterFrame {
 } _PyInterpreterFrame;
 
 #define _PyInterpreterFrame_LASTI(IF) \
-    ((int)((IF)->last_instr - _PyCode_CODE((IF)->f_code)))
+    ((int)((IF)->next_instr - _PyCode_CODE((IF)->f_code)) - 1)
 
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
     return f->localsplus + f->f_code->co_nlocalsplus;
@@ -94,7 +94,7 @@ _PyFrame_InitializeSpecials(
     frame->f_locals = Py_XNewRef(locals);
     frame->stacktop = nlocalsplus;
     frame->frame_obj = NULL;
-    frame->last_instr = _PyCode_CODE(frame->f_code) - 1;
+    frame->next_instr = _PyCode_CODE(frame->f_code);
     frame->is_entry = false;
     frame->owner = FRAME_OWNED_BY_THREAD;
 }

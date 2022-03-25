@@ -1247,13 +1247,13 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #ifdef Py_STATS
 #define INSTRUCTION_START(op) \
     do { \
-        frame->last_instr = next_instr++; \
+        frame->next_instr = ++next_instr; \
         OPCODE_EXE_INC(op); \
         _py_stats.opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
-#define INSTRUCTION_START(op) (frame->last_instr = next_instr++)
+#define INSTRUCTION_START(op) (frame->next_instr = ++next_instr)
 #endif
 
 #if USE_COMPUTED_GOTOS
@@ -1644,7 +1644,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     } \
     assert(_PyInterpreterFrame_LASTI(frame) >= -1); \
     /* Jump back to the last instruction executed... */ \
-    next_instr = frame->last_instr + 1; \
+    next_instr = frame->next_instr; \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
     /* Set stackdepth to -1. \
         Update when returning or calling trace function. \
@@ -2195,7 +2195,7 @@ handle_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            frame->last_instr += INLINE_CACHE_ENTRIES_BINARY_SUBSCR;
+            frame->next_instr += INLINE_CACHE_ENTRIES_BINARY_SUBSCR;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             CALL_STAT_INC(inlined_py_calls);
@@ -2599,7 +2599,7 @@ handle_eval_breaker:
             if (oparg) {
                 PyObject *lasti = PEEK(oparg + 1);
                 if (PyLong_Check(lasti)) {
-                    frame->last_instr = first_instr + PyLong_AsLong(lasti);
+                    frame->next_instr = first_instr + PyLong_AsLong(lasti) + 1;
                     assert(!_PyErr_Occurred(tstate));
                 }
                 else {
@@ -4611,7 +4611,7 @@ handle_eval_breaker:
                     goto error;
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                frame->last_instr += INLINE_CACHE_ENTRIES_CALL;
+                frame->next_instr += INLINE_CACHE_ENTRIES_CALL;
                 new_frame->previous = frame;
                 cframe.current_frame = frame = new_frame;
                 CALL_STAT_INC(inlined_py_calls);
@@ -4716,7 +4716,7 @@ handle_eval_breaker:
             }
             STACK_SHRINK(2-is_meth);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            frame->last_instr += INLINE_CACHE_ENTRIES_CALL;
+            frame->next_instr += INLINE_CACHE_ENTRIES_CALL;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             goto start_frame;
@@ -4756,7 +4756,7 @@ handle_eval_breaker:
             }
             STACK_SHRINK(2-is_meth);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            frame->last_instr += INLINE_CACHE_ENTRIES_CALL;
+            frame->next_instr += INLINE_CACHE_ENTRIES_CALL;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             goto start_frame;
@@ -5414,7 +5414,7 @@ handle_eval_breaker:
     {
         if (tstate->tracing == 0) {
             int instr_prev = _PyInterpreterFrame_LASTI(frame);
-            frame->last_instr = next_instr;
+            frame->next_instr = next_instr + 1;
             TRACING_NEXTOPARG();
             switch(opcode) {
                 case COPY_FREE_VARS:
@@ -6740,7 +6740,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
             (_PyInterpreterFrame_LASTI(frame) < instr_prev &&
             // SEND has no quickened forms, so no need to use _PyOpcode_Deopt
             // here:
-            _Py_OPCODE(*frame->last_instr) != SEND);
+            _Py_OPCODE(frame->next_instr[-1]) != SEND);
         if (trace) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
