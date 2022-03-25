@@ -237,7 +237,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[i+1] = next_stack;
                     break;
                 }
-                case JUMP_ABSOLUTE:
                 case JUMP_NO_INTERRUPT:
                     j = get_arg(code, i);
                     assert(j < len);

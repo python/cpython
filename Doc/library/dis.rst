@@ -981,11 +981,6 @@ iterations of the loop.
    .. versionadded:: 3.1
 
 
-.. opcode:: JUMP_ABSOLUTE (target)
-
-   Set bytecode counter to *target*.
-
-
 .. opcode:: JUMP_NO_INTERRUPT (target)
 
    Set bytecode counter to *target*. Do not check for interrupts.

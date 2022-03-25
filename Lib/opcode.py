@@ -131,7 +131,6 @@ name_op('IMPORT_FROM', 109)     # Index in name list
 jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
 jabs_op('JUMP_IF_FALSE_OR_POP', 111) # Target byte offset from beginning of code
 jabs_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
-jabs_op('JUMP_ABSOLUTE', 113)        # ""
 jabs_op('POP_JUMP_IF_FALSE', 114)    # ""
 jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
 name_op('LOAD_GLOBAL', 116, 5)     # Index in name list
@@ -259,9 +258,6 @@ _specializations = {
         "COMPARE_OP_FLOAT_JUMP",
         "COMPARE_OP_INT_JUMP",
         "COMPARE_OP_STR_JUMP",
-    ],
-    "JUMP_ABSOLUTE": [
-        "JUMP_ABSOLUTE_QUICK",
     ],
     "LOAD_ATTR": [
         "LOAD_ATTR_ADAPTIVE",

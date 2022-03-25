@@ -76,6 +76,7 @@
 #define SETUP_CLEANUP 254
 #define SETUP_WITH 253
 #define POP_BLOCK 252
+#define JUMP 251
 
 #define IS_TOP_LEVEL_AWAIT(c) ( \
         (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
@@ -127,7 +128,9 @@ is_relative_jump(struct instr *i)
 static inline int
 is_jump(struct instr *i)
 {
-    return i->i_opcode >= SETUP_WITH || is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
+    return i->i_opcode >= SETUP_WITH ||
+           i->i_opcode == JUMP ||
+           is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
 }
 
 static int
@@ -986,7 +989,7 @@ stack_effect(int opcode, int oparg, int jump)
         /* Jumps */
         case JUMP_FORWARD:
         case JUMP_BACKWARD:
-        case JUMP_ABSOLUTE:
+        case JUMP:
         case JUMP_NO_INTERRUPT:
             return 0;
 
@@ -3018,7 +3021,7 @@ compiler_for(struct compiler *c, stmt_ty s)
     VISIT_SEQ(c, stmt, s->v.For.body);
     /* Mark jump as artificial */
     UNSET_LOC(c);
-    ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
+    ADDOP_JUMP(c, JUMP, start);
     compiler_use_next_block(c, cleanup);
 
     compiler_pop_fblock(c, FOR_LOOP, start);
@@ -3063,7 +3066,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     /* Success block for __anext__ */
     VISIT(c, expr, s->v.AsyncFor.target);
     VISIT_SEQ(c, stmt, s->v.AsyncFor.body);
-    ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
+    ADDOP_JUMP(c, JUMP, start);
 
     compiler_pop_fblock(c, FOR_LOOP, start);
 
@@ -3175,7 +3178,7 @@ compiler_break(struct compiler *c)
     if (!compiler_unwind_fblock(c, loop, 0)) {
         return 0;
     }
-    ADDOP_JUMP(c, JUMP_ABSOLUTE, loop->fb_exit);
+    ADDOP_JUMP(c, JUMP, loop->fb_exit);
     return 1;
 }
 
@@ -3191,7 +3194,7 @@ compiler_continue(struct compiler *c)
     if (loop == NULL) {
         return compiler_error(c, "'continue' not properly in loop");
     }
-    ADDOP_JUMP(c, JUMP_ABSOLUTE, loop->fb_block);
+    ADDOP_JUMP(c, JUMP, loop->fb_block);
     return 1;
 }
 
@@ -3666,7 +3669,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         ADDOP_I(c, LIST_APPEND, 3); // exc
         ADDOP(c, POP_TOP); // lasti
 
-        ADDOP_JUMP(c, JUMP_ABSOLUTE, except);
+        ADDOP_JUMP(c, JUMP, except);
         compiler_use_next_block(c, except);
 
         if (i == n - 1) {
@@ -5163,7 +5166,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
     }
     compiler_use_next_block(c, if_cleanup);
     if (start) {
-        ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
+        ADDOP_JUMP(c, JUMP, start);
         compiler_use_next_block(c, anchor);
     }
 
@@ -5257,7 +5260,7 @@ compiler_async_comprehension_generator(struct compiler *c,
         }
     }
     compiler_use_next_block(c, if_cleanup);
-    ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
+    ADDOP_JUMP(c, JUMP, start);
 
     compiler_pop_fblock(c, ASYNC_COMPREHENSION_GENERATOR, start);
 
@@ -5533,7 +5536,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     ADDOP(c, POP_TOP);
 
-    ADDOP_JUMP(c, JUMP_ABSOLUTE, exit);
+    ADDOP_JUMP(c, JUMP, exit);
 
     /* For exceptional outcome: */
     compiler_use_next_block(c, final);
@@ -7036,7 +7039,7 @@ stackdepth(struct compiler *c)
                 stackdepth_push(&sp, instr->i_target, target_depth);
             }
             depth = new_depth;
-            if (instr->i_opcode == JUMP_ABSOLUTE ||
+            if (instr->i_opcode == JUMP ||
                 instr->i_opcode == JUMP_NO_INTERRUPT ||
                 instr->i_opcode == JUMP_FORWARD ||
                 instr->i_opcode == JUMP_BACKWARD ||
@@ -7551,7 +7554,7 @@ normalize_jumps(struct assembler *a)
             continue;
         }
         struct instr *last = &b->b_instr[b->b_iused-1];
-        if (last->i_opcode == JUMP_ABSOLUTE) {
+        if (last->i_opcode == JUMP) {
             if (last->i_target->b_visited == 0) {
                 last->i_opcode = JUMP_FORWARD;
             }
@@ -8652,7 +8655,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         inst->i_opcode = NOP;
                         jump_if_true = nextop == POP_JUMP_IF_TRUE;
                         if (is_true == jump_if_true) {
-                            bb->b_instr[i+1].i_opcode = JUMP_ABSOLUTE;
+                            bb->b_instr[i+1].i_opcode = JUMP;
                             bb->b_nofallthrough = 1;
                         }
                         else {
@@ -8672,7 +8675,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         }
                         jump_if_true = nextop == JUMP_IF_TRUE_OR_POP;
                         if (is_true == jump_if_true) {
-                            bb->b_instr[i+1].i_opcode = JUMP_ABSOLUTE;
+                            bb->b_instr[i+1].i_opcode = JUMP;
                             bb->b_nofallthrough = 1;
                         }
                         else {
@@ -8743,7 +8746,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     case POP_JUMP_IF_FALSE:
                         i -= jump_thread(inst, target, POP_JUMP_IF_FALSE);
                         break;
-                    case JUMP_ABSOLUTE:
+                    case JUMP:
                     case JUMP_FORWARD:
                     case JUMP_BACKWARD:
                     case JUMP_IF_FALSE_OR_POP:
@@ -8767,7 +8770,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     case POP_JUMP_IF_TRUE:
                         i -= jump_thread(inst, target, POP_JUMP_IF_TRUE);
                         break;
-                    case JUMP_ABSOLUTE:
+                    case JUMP:
                     case JUMP_FORWARD:
                     case JUMP_BACKWARD:
                     case JUMP_IF_TRUE_OR_POP:
@@ -8789,7 +8792,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
             case POP_JUMP_IF_NOT_NONE:
             case POP_JUMP_IF_NONE:
                 switch (target->i_opcode) {
-                    case JUMP_ABSOLUTE:
+                    case JUMP:
                     case JUMP_FORWARD:
                     case JUMP_BACKWARD:
                         i -= jump_thread(inst, target, inst->i_opcode);
@@ -8797,7 +8800,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 break;
             case POP_JUMP_IF_FALSE:
                 switch (target->i_opcode) {
-                    case JUMP_ABSOLUTE:
+                    case JUMP:
                     case JUMP_FORWARD:
                     case JUMP_BACKWARD:
                         i -= jump_thread(inst, target, POP_JUMP_IF_FALSE);
@@ -8805,20 +8808,20 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 break;
             case POP_JUMP_IF_TRUE:
                 switch (target->i_opcode) {
-                    case JUMP_ABSOLUTE:
+                    case JUMP:
                     case JUMP_FORWARD:
                     case JUMP_BACKWARD:
                         i -= jump_thread(inst, target, POP_JUMP_IF_TRUE);
                 }
                 break;
-            case JUMP_ABSOLUTE:
+            case JUMP:
             case JUMP_FORWARD:
             case JUMP_BACKWARD:
                 switch (target->i_opcode) {
-                    case JUMP_ABSOLUTE:
+                    case JUMP:
                     case JUMP_FORWARD:
                     case JUMP_BACKWARD:
-                        i -= jump_thread(inst, target, JUMP_ABSOLUTE);
+                        i -= jump_thread(inst, target, JUMP);
                 }
                 break;
             case FOR_ITER:
@@ -8864,7 +8867,7 @@ extend_block(basicblock *bb) {
         return 0;
     }
     struct instr *last = &bb->b_instr[bb->b_iused-1];
-    if (last->i_opcode != JUMP_ABSOLUTE &&
+    if (last->i_opcode != JUMP &&
         last->i_opcode != JUMP_FORWARD &&
         last->i_opcode != JUMP_BACKWARD) {
         return 0;
@@ -8944,7 +8947,7 @@ normalize_basic_block(basicblock *bb) {
                 bb->b_exit = 1;
                 bb->b_nofallthrough = 1;
                 break;
-            case JUMP_ABSOLUTE:
+            case JUMP:
             case JUMP_FORWARD:
             case JUMP_BACKWARD:
             case JUMP_NO_INTERRUPT:
@@ -9131,7 +9134,7 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         if (b->b_iused > 0) {
             struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
-            if (b_last_instr->i_opcode == JUMP_ABSOLUTE ||
+            if (b_last_instr->i_opcode == JUMP ||
                 b_last_instr->i_opcode == JUMP_NO_INTERRUPT ||
                 b_last_instr->i_opcode == JUMP_FORWARD ||
                 b_last_instr->i_opcode == JUMP_BACKWARD) {

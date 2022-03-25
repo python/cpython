@@ -270,9 +270,6 @@ _PyCode_Quicken(PyCodeObject *code)
         else {
             assert(!_PyOpcode_Caches[opcode]);
             switch (opcode) {
-                case JUMP_ABSOLUTE:
-                    _Py_SET_OPCODE(instructions[i], JUMP_ABSOLUTE_QUICK);
-                    break;
                 case RESUME:
                     _Py_SET_OPCODE(instructions[i], RESUME_QUICK);
                     break;
