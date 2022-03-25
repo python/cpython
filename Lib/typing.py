@@ -742,7 +742,6 @@ class ForwardRef(_Final, _root=True):
             arg_to_compile = f'next(iter({arg[1:]}))'
         else:
             arg_to_compile = arg
-        print(f"arg_to_compile: '{arg_to_compile}'")
         try:
             code = compile(arg_to_compile, '<string>', 'eval')
         except SyntaxError:
