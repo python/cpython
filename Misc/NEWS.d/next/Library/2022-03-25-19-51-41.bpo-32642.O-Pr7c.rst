@@ -1,0 +1,1 @@
+:data:`sys.path` can now accept a :term:`path-like objects <path-like object>`. Patch by ncohen.
