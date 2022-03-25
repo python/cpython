@@ -4,7 +4,6 @@ import contextvars
 import enum
 import functools
 import threading
-import platform
 import signal
 import sys
 from . import coroutines
@@ -97,16 +96,11 @@ class Runner:
             context = self._context
         task = self._loop.create_task(coro, context=context)
 
-        # if sys.platform == "win32":
-        #     signum = signal.SIGBREAK
-        # else:
-        #     signum = signal.SIGINT
-        signum = signal.SIGINT
         if (threading.current_thread() is threading.main_thread()
-            and signal.getsignal(signum) is signal.default_int_handler
+            and signal.getsignal(signal.SIGINT) is signal.default_int_handler
         ):
             sigint_handler = functools.partial(self._on_sigint, main_task=task)
-            signal.signal(signum, sigint_handler)
+            signal.signal(signal.SIGINT, sigint_handler)
         else:
             sigint_handler = None
 
@@ -120,9 +114,9 @@ class Runner:
                 raise  # CancelledError
         finally:
             if (sigint_handler is not None
-                and signal.getsignal(signum) is sigint_handler
+                and signal.getsignal(signal.SIGINT) is sigint_handler
             ):
-                signal.signal(signum, signal.default_int_handler)
+                signal.signal(signal.SIGINT, signal.default_int_handler)
 
     def _lazy_init(self):
         if self._state is _State.CLOSED:
