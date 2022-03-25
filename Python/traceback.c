@@ -240,7 +240,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
 
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_frame->f_lasti*sizeof(_Py_CODEUNIT),
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, _PyInterpreterFrame_LASTI(frame->f_frame)*sizeof(_Py_CODEUNIT),
                          PyFrame_GetLineNumber(frame));
 }
 
@@ -1181,7 +1181,7 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
         PUTS(fd, "???");
     }
 
-    int lineno = PyCode_Addr2Line(code, frame->f_lasti*sizeof(_Py_CODEUNIT));
+    int lineno = PyCode_Addr2Line(code, _PyInterpreterFrame_LASTI(frame)*sizeof(_Py_CODEUNIT));
     PUTS(fd, ", line ");
     if (lineno >= 0) {
         _Py_DumpDecimal(fd, (size_t)lineno);

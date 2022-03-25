@@ -38,11 +38,6 @@ enum _frameowner {
     FRAME_OWNED_BY_FRAME_OBJECT = 2
 };
 
-/*
-    frame->f_lasti refers to the index of the last instruction,
-    unless it's -1 in which case next_instr should be first_instr.
-*/
-
 typedef struct _PyInterpreterFrame {
     PyFunctionObject *f_func; /* Strong reference */
     PyObject *f_globals; /* Borrowed reference */
@@ -51,12 +46,15 @@ typedef struct _PyInterpreterFrame {
     PyCodeObject *f_code; /* Strong reference */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL */
     struct _PyInterpreterFrame *previous;
-    int f_lasti;       /* Last instruction if called */
+    _Py_CODEUNIT *last_instr;
     int stacktop;     /* Offset of TOS from localsplus  */
     bool is_entry;  // Whether this is the "root" frame for the current _PyCFrame.
     char owner;
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
+
+#define _PyInterpreterFrame_LASTI(IF) \
+    ((int)((IF)->last_instr - _PyCode_CODE((IF)->f_code)))
 
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
     return f->localsplus + f->f_code->co_nlocalsplus;
@@ -96,7 +94,7 @@ _PyFrame_InitializeSpecials(
     frame->f_locals = Py_XNewRef(locals);
     frame->stacktop = nlocalsplus;
     frame->frame_obj = NULL;
-    frame->f_lasti = -1;
+    frame->last_instr = _PyCode_CODE(frame->f_code) - 1;
     frame->is_entry = false;
     frame->owner = FRAME_OWNED_BY_THREAD;
 }

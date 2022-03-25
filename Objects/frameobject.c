@@ -39,7 +39,7 @@ PyFrame_GetLineNumber(PyFrameObject *f)
         return f->f_lineno;
     }
     else {
-        return PyCode_Addr2Line(f->f_frame->f_code, f->f_frame->f_lasti*sizeof(_Py_CODEUNIT));
+        return PyCode_Addr2Line(f->f_frame->f_code, _PyInterpreterFrame_LASTI(f->f_frame)*sizeof(_Py_CODEUNIT));
     }
 }
 
@@ -58,10 +58,10 @@ frame_getlineno(PyFrameObject *f, void *closure)
 static PyObject *
 frame_getlasti(PyFrameObject *f, void *closure)
 {
-    if (f->f_frame->f_lasti < 0) {
+    if (_PyInterpreterFrame_LASTI(f->f_frame) < 0) {
         return PyLong_FromLong(-1);
     }
-    return PyLong_FromLong(f->f_frame->f_lasti*sizeof(_Py_CODEUNIT));
+    return PyLong_FromLong(_PyInterpreterFrame_LASTI(f->f_frame)*sizeof(_Py_CODEUNIT));
 }
 
 static PyObject *
@@ -426,12 +426,10 @@ _PyFrame_GetState(PyFrameObject *frame)
         }
         case FRAME_OWNED_BY_THREAD:
         {
-            if (frame->f_frame->f_lasti < 0) {
+            if (_PyInterpreterFrame_LASTI(frame->f_frame) < 0) {
                 return FRAME_CREATED;
             }
-            uint8_t *code = (uint8_t *)frame->f_frame->f_code->co_code_adaptive;
-            int opcode = code[frame->f_frame->f_lasti*sizeof(_Py_CODEUNIT)];
-            switch(_PyOpcode_Deopt[opcode]) {
+            switch(_PyOpcode_Deopt[_Py_OPCODE(*frame->f_frame->last_instr)]) {
                 case COPY_FREE_VARS:
                 case MAKE_CELL:
                 case RETURN_GENERATOR:
@@ -562,7 +560,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
 
     int64_t best_stack = OVERFLOWED;
     int best_addr = -1;
-    int64_t start_stack = stacks[f->f_frame->f_lasti];
+    int64_t start_stack = stacks[_PyInterpreterFrame_LASTI(f->f_frame)];
     int err = -1;
     const char *msg = "cannot find bytecode for specified line";
     for (int i = 0; i < len; i++) {
@@ -605,7 +603,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     }
     /* Finally set the new lasti and return OK. */
     f->f_lineno = 0;
-    f->f_frame->f_lasti = best_addr;
+    f->f_frame->last_instr = _PyCode_CODE(f->f_frame->f_code) + best_addr;
     return 0;
 }
 
@@ -886,7 +884,7 @@ _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
     // This only works when opcode is a non-quickened form:
     assert(_PyOpcode_Deopt[opcode] == opcode);
     int check_oparg = 0;
-    for (int i = 0; i < frame->f_lasti; i++) {
+    for (int i = 0; i < _PyInterpreterFrame_LASTI(frame); i++) {
         _Py_CODEUNIT instruction = _PyCode_CODE(frame->f_code)[i];
         int check_opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
         check_oparg |= _Py_OPARG(instruction);
@@ -920,7 +918,7 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
     fast = _PyFrame_GetLocalsArray(frame);
     // COPY_FREE_VARS has no quickened forms, so no need to use _PyOpcode_Deopt
     // here:
-    if (frame->f_lasti < 0 && _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS)
+    if (_PyInterpreterFrame_LASTI(frame) < 0 && _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS)
     {
         /* Free vars have not been initialized -- Do that */
         PyCodeObject *co = frame->f_code;
@@ -932,7 +930,7 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
             frame->localsplus[offset + i] = o;
         }
         // COPY_FREE_VARS doesn't have inline CACHEs, either:
-        frame->f_lasti = 0;
+        frame->last_instr = _PyCode_CODE(frame->f_code);
     }
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
