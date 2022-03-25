@@ -445,7 +445,9 @@ by the interpreter. This reduces the steps in module execution process to this:
 
    Statically allocated code object -> Evaluate
 
-Interpreter startup is now 10-15% faster in Python 3.11.
+Interpreter startup is now 10-15% faster in Python 3.11. This positively
+impacts short-running programs using Python. Such as ``python -m venv ...``, or
+``python -m pip ...```.
 
 (Contributed by Eric Snow, Guido van Rossum and Kumar Aditya in numerous issues.)
 
