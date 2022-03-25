@@ -716,7 +716,7 @@ exit:
 }
 
 PyDoc_STRVAR(bytearray_strip__doc__,
-"strip($self, bytes=None, /)\n"
+"strip($self, bytes=None, striptype=2, /)\n"
 "--\n"
 "\n"
 "Strip leading and trailing bytes contained in the argument.\n"
@@ -726,26 +726,32 @@ PyDoc_STRVAR(bytearray_strip__doc__,
 #define BYTEARRAY_STRIP_METHODDEF    \
     {"strip", (PyCFunction)(void(*)(void))bytearray_strip, METH_FASTCALL, bytearray_strip__doc__},
 
-enum  StripType { LEFTSTRIP, RIGHTSTRIP, BOTHSTRIP };
-
 static PyObject *
-bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes, enum StripType striptype );
+bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes, int striptype);
 
 static PyObject *
 bytearray_strip(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
+    int striptype = 2;
 
-    if (!_PyArg_CheckPositional("strip", nargs, 0, 1)) {
+    if (!_PyArg_CheckPositional("strip", nargs, 0, 2)) {
         goto exit;
     }
     if (nargs < 1) {
         goto skip_optional;
     }
     bytes = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    striptype = _PyLong_AsInt(args[1]);
+    if (striptype == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
 skip_optional:
-    return_value = bytearray_strip_impl(self, bytes, BOTHSTRIP);
+    return_value = bytearray_strip_impl(self, bytes, striptype);
 
 exit:
     return return_value;
@@ -762,6 +768,8 @@ PyDoc_STRVAR(bytearray_lstrip__doc__,
 #define BYTEARRAY_LSTRIP_METHODDEF    \
     {"lstrip", (PyCFunction)(void(*)(void))bytearray_lstrip, METH_FASTCALL, bytearray_lstrip__doc__},
 
+static PyObject *
+bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes);
 
 static PyObject *
 bytearray_lstrip(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
@@ -777,7 +785,7 @@ bytearray_lstrip(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t narg
     }
     bytes = args[0];
 skip_optional:
-    return_value = bytearray_strip_impl(self, bytes, LEFTSTRIP);
+    return_value = bytearray_lstrip_impl(self, bytes);
 
 exit:
     return return_value;
@@ -795,6 +803,9 @@ PyDoc_STRVAR(bytearray_rstrip__doc__,
     {"rstrip", (PyCFunction)(void(*)(void))bytearray_rstrip, METH_FASTCALL, bytearray_rstrip__doc__},
 
 static PyObject *
+bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes);
+
+static PyObject *
 bytearray_rstrip(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
@@ -808,7 +819,7 @@ bytearray_rstrip(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t narg
     }
     bytes = args[0];
 skip_optional:
-    return_value = bytearray_strip_impl(self, bytes, RIGHTSTRIP);
+    return_value = bytearray_rstrip_impl(self, bytes);
 
 exit:
     return return_value;
@@ -1117,4 +1128,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=a82659f581e55629 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b1866b0be02055e0 input=a9049054013a1b77]*/

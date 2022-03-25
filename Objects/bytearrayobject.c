@@ -1876,11 +1876,15 @@ bytearray_remove_impl(PyByteArrayObject *self, int value)
     Py_RETURN_NONE;
 }
 
+#define LEFTSTRIP 0
+#define RIGHTSTRIP 1
+#define BOTHSTRIP 2
 
 /*[clinic input]
 bytearray.strip
 
     bytes: object = None
+    striptype: int = 2
     /
 
 Strip leading and trailing bytes contained in the argument.
@@ -1888,9 +1892,9 @@ Strip leading and trailing bytes contained in the argument.
 If the argument is omitted or None, strip leading and trailing ASCII whitespace.
 [clinic start generated code]*/
 
-static PyObject*
-bytearray_strip_impl(PyByteArrayObject* self, PyObject* bytes, enum StripType striptype)
-/*[clinic end generated code: output=760412661a34ad5a input=ef7bb59b09c21d62]*/
+static PyObject *
+bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes, int striptype)
+/*[clinic end generated code: output=73625dcc8efbcd32 input=d61349e4106f35d5]*/
 {
     Py_ssize_t mysize, byteslen;
     const char* myptr;
@@ -1938,6 +1942,12 @@ Strip leading bytes contained in the argument.
 If the argument is omitted or None, strip leading ASCII whitespace.
 [clinic start generated code]*/
 
+static PyObject *
+bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes)
+/*[clinic end generated code: output=d005c9d0ab909e66 input=80843f975dd7c480]*/
+{
+    return bytearray_strip_impl(self, bytes, LEFTSTRIP);
+}
 
 /*[clinic input]
 bytearray.rstrip
@@ -1950,6 +1960,12 @@ Strip trailing bytes contained in the argument.
 If the argument is omitted or None, strip trailing ASCII whitespace.
 [clinic start generated code]*/
 
+static PyObject *
+bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes)
+/*[clinic end generated code: output=030e2fbd2f7276bd input=e728b994954cfd91]*/
+{
+    return bytearray_strip_impl(self, bytes, RIGHTSTRIP);
+}
 
 /*[clinic input]
 bytearray.decode
