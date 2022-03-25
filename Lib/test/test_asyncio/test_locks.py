@@ -951,7 +951,6 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         barrier = asyncio.Barrier(self.N)
 
         self.assertTrue(RGX_REPR.match(repr(barrier)))
-
         self.assertIn("filling", repr(barrier))
 
         waiters = []
