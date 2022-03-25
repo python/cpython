@@ -195,7 +195,7 @@ Other CPython Implementation Changes
 
 * ``siphash13`` is added as a new internal hashing algorithms. It has similar security
   properties as ``siphash24`` but it is slightly faster for long inputs. ``str``, ``bytes``,
-  and some other types now use it as the default algorithm for :func:`hash`. :pep:`552`
+  and some other types now use it as default algorithm for :func:`hash`. :pep:`552`
   hash-based pyc files now use ``siphash13``, too.
   (Contributed by Inada Naoki in :issue:`29410`.)
 
