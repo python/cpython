@@ -12,6 +12,7 @@ import os
 import re
 import time
 import types
+from string import ascii_letters
 from typing import Dict, FrozenSet, TextIO, Tuple
 
 import umarshal
@@ -116,6 +117,7 @@ class Printer:
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
         self.write('#include "internal/pycore_long.h"')
+        self.write('#define AS_PYOBJECT(x) ((PyObject *)(&(x)))')
         self.write("")
 
     @contextlib.contextmanager
@@ -152,9 +154,9 @@ class Printer:
 
     def generate_bytes(self, name: str, b: bytes) -> str:
         if b == b"":
-            return "(PyObject *)&_Py_SINGLETON(bytes_empty)"
+            return "AS_PYOBJECT(_Py_SINGLETON(bytes_empty))"
         if len(b) == 1:
-            return f"(PyObject *)&_Py_SINGLETON(bytes_characters[{b[0]}])"
+            return f"AS_PYOBJECT(_Py_SINGLETON(bytes_characters[{b[0]}]))"
         self.write("static")
         with self.indent():
             with self.block("struct"):
@@ -165,11 +167,13 @@ class Printer:
             self.object_var_head("PyBytes_Type", len(b))
             self.write(".ob_shash = -1,")
             self.write(f".ob_sval = {make_string_literal(b)},")
-        return f"& {name}.ob_base.ob_base"
+        return f"AS_PYOBJECT({name})"
 
     def generate_unicode(self, name: str, s: str) -> str:
         if s in identifiers:
             return f"&_Py_ID({s})"
+        if all(i in ascii_letters or i == "_" for i in s):
+            name = f"const_str_{s}"
         kind, ascii = analyze_character_width(s)
         if kind == PyUnicode_1BYTE_KIND:
             datatype = "uint8_t"
@@ -185,7 +189,7 @@ class Printer:
                 else:
                     self.write("PyCompactUnicodeObject _compact;")
                 self.write(f"{datatype} _data[{len(s)+1}];")
-        self.deallocs.append(f"_PyStaticUnicode_Dealloc((PyObject *)&{name});")
+        self.deallocs.append(f"_PyStaticUnicode_Dealloc(AS_PYOBJECT({name}));")
         with self.block(f"{name} =", ";"):
             if ascii:
                 with self.block("._ascii =", ","):
@@ -198,7 +202,7 @@ class Printer:
                         self.write(".ascii = 1,")
                         self.write(".ready = 1,")
                 self.write(f"._data = {make_string_literal(s.encode('ascii'))},")
-                return f"& {name}._ascii.ob_base"
+                return f"AS_PYOBJECT({name})"
             else:
                 with self.block("._compact =", ","):
                     with self.block("._base =", ","):
@@ -224,7 +228,7 @@ class Printer:
                     self.patchups.append(f"    {name}._compact._base.wstr = (wchar_t *) {name}._data;")
                     self.patchups.append(f"    {name}._compact.wstr_length = {len(s)};")
                     self.patchups.append("}")
-                return f"& {name}._compact._base.ob_base"
+                return f"AS_PYOBJECT({name})"
 
 
     def generate_code(self, name: str, code: types.CodeType) -> str:
@@ -282,11 +286,11 @@ class Printer:
         name_as_code = f"(PyCodeObject *)&{name}"
         self.deallocs.append(f"_PyStaticCode_Dealloc({name_as_code});")
         self.interns.append(f"_PyStaticCode_InternStrings({name_as_code})")
-        return f"& {name}.ob_base.ob_base"
+        return f"AS_PYOBJECT({name})"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
         if len(t) == 0:
-            return f"(PyObject *)& _Py_SINGLETON(tuple_empty)"
+            return f"AS_PYOBJECT(_Py_SINGLETON(tuple_empty))"
         items = [self.generate(f"{name}_{i}", it) for i, it in enumerate(t)]
         self.write("static")
         with self.indent():
@@ -303,7 +307,7 @@ class Printer:
                     with self.block(f".ob_item =", ","):
                         for item in items:
                             self.write(item + ",")
-        return f"& {name}._object.ob_base.ob_base"
+        return f"AS_PYOBJECT({name}._object)"
 
     def _generate_int_for_bits(self, name: str, i: int, digit: int) -> None:
         sign = -1 if i < 0 else 0 if i == 0 else +1
@@ -325,7 +329,7 @@ class Printer:
 
     def generate_int(self, name: str, i: int) -> str:
         if -5 <= i <= 256:
-            return f"(PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + {i}]"
+            return f"AS_PYOBJECT(_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + {i}])"
         if abs(i) < 2**15:
             self._generate_int_for_bits(name, i, 2**15)
         else:
@@ -338,19 +342,19 @@ class Printer:
             self.write('#error "PYLONG_BITS_IN_DIGIT should be 15 or 30"')
             self.write("#endif")
             # If neither clause applies, it won't compile
-        return f"& {name}.ob_base.ob_base"
+        return f"AS_PYOBJECT({name})"
 
     def generate_float(self, name: str, x: float) -> str:
         with self.block(f"static PyFloatObject {name} =", ";"):
             self.object_head("PyFloat_Type")
             self.write(f".ob_fval = {x},")
-        return f"&{name}.ob_base"
+        return f"AS_PYOBJECT({name})"
 
     def generate_complex(self, name: str, z: complex) -> str:
         with self.block(f"static PyComplexObject {name} =", ";"):
             self.object_head("PyComplex_Type")
             self.write(f".cval = {{ {z.real}, {z.imag} }},")
-        return f"&{name}.ob_base"
+        return f"AS_PYOBJECT({name})"
 
     def generate_frozenset(self, name: str, fs: FrozenSet[object]) -> str:
         ret = self.generate_tuple(name, tuple(sorted(fs)))
@@ -374,7 +378,7 @@ class Printer:
             # print(f"Cache hit {key!r:.40}: {self.cache[key]!r:.40}")
             return self.cache[key]
         self.misses += 1
-        if isinstance(obj, (types.CodeType, umarshal.Code)) :
+        if isinstance(obj, (types.CodeType, umarshal.Code)):
             val = self.generate_code(name, obj)
         elif isinstance(obj, tuple):
             val = self.generate_tuple(name, obj)
@@ -411,7 +415,7 @@ PyObject *
 _Py_get_%%NAME%%_toplevel(void)
 {
     %%NAME%%_do_patchups();
-    return Py_NewRef((PyObject *) &%%NAME%%_toplevel);
+    return Py_NewRef(AS_PYOBJECT(%%NAME%%_toplevel));
 }
 """
 
