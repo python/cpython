@@ -1147,7 +1147,8 @@ PyFrame_GetGenerator(PyFrameObject *frame)
     if (frame->f_frame->owner != FRAME_OWNED_BY_GENERATOR) {
         return NULL;
     }
-    return (PyObject *)_PyFrame_GetGenerator(frame->f_frame);
+    PyGenObject *gen = _PyFrame_GetGenerator(frame->f_frame);
+    return Py_NewRef(gen);
 }
 
 PyObject*
