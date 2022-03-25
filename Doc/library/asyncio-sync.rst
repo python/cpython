@@ -376,7 +376,7 @@ Barrier
          print(b)
 
          # The third .wait() call passes the barrier
-         awaut b.wait()
+         await b.wait()
          print(b)
          print("barrier passed")
 
