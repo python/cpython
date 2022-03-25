@@ -62,7 +62,7 @@ Running an asyncio Program
 Runner context manager
 ======================
 
-.. class:: Runner(*, debug=None, factory=None)
+.. class:: Runner(*, debug=None, loop_factory=None)
 
    A context manager that simplifies *multiple* async function calls in the same
    context.
@@ -74,7 +74,7 @@ Runner context manager
    debug mode explicitly. ``None`` is used to respect the global
    :ref:`asyncio-debug-mode` settings.
 
-   *factory* could be used for overriding the loop creation.
+   *loop_factory* could be used for overriding the loop creation.
    :func:`asyncio.new_event_loop` is used if ``None``.
 
    Basically, :func:`asyncio.run()` example can be rewritten with the runner usage::
