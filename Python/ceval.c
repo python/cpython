@@ -3923,6 +3923,7 @@ handle_eval_breaker:
 
         TARGET(JUMP_BACKWARD) {
             JUMPBY(-oparg);
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
