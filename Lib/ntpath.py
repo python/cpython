@@ -57,9 +57,11 @@ try:
         if not s:
             return s
         if isinstance(s, bytes):
-            s = os.fsdecode(s).replace('/', '\\')
-            return os.fsencode(_LCMapStringEx(_LOCALE_NAME_INVARIANT,
-                                              _LCMAP_LOWERCASE, s))
+            encoding = sys.getfilesystemencoding()
+            s = s.decode(encoding, 'surrogateescape').replace('/', '\\')
+            s = _LCMapStringEx(_LOCALE_NAME_INVARIANT,
+                               _LCMAP_LOWERCASE, s)
+            return s.encode(encoding, 'surrogateescape')
         else:
             return _LCMapStringEx(_LOCALE_NAME_INVARIANT,
                                   _LCMAP_LOWERCASE,
