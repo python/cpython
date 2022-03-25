@@ -978,6 +978,12 @@ Porting to Python 3.11
   computed lazily. The :c:func:`PyFrame_GetBack` function must be called
   instead.
 
+  Debuggers that accessed the ``f_locals`` directly *must* call
+  `:c:func:`PyFrame_GetLocals` instead. They no longer need to call
+  `:c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
+  in fact they should not call those functions. The necessary updating of the
+  frame is now managed by the virtual machine.
+
   Code defining ``PyFrame_GetCode()`` on Python 3.8 and older::
 
       #if PY_VERSION_HEX < 0x030900B1
