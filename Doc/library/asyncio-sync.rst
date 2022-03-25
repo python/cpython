@@ -345,15 +345,18 @@ BoundedSemaphore
 Barrier
 =======
 
-   .. versionadded:: 3.11
+.. class:: Barrier(parties, action=None)
 
    A barrier object.  Not thread-safe.
 
-   A barrier is a simple synchronization primitive that allows to block until a
-   certain number of tasks are waiting on it.
+   A barrier is a simple synchronization primitive that allows to block until
+   *parties* number of tasks are waiting on it.
    Tasks can wait on the :meth:`~Barrier.wait` method and would be blocked until
    the specified number of tasks end up waiting on :meth:`~Barrier.wait`.
    At that point all of the waiting tasks would unblock simultaneously.
+
+   :keyword:`async with` can be used as an alternative to awaiting on
+   :meth:`~Barrier.wait`.
 
    The barrier can be reused any number of times.
 
@@ -363,7 +366,7 @@ Barrier
 
       async def example_barrier():
          # barrier with 3 parties
-         b = asyncio.Barrier(3, done)
+         b = asyncio.Barrier(3)
 
          # create 2 new waiting tasks
          asyncio.create_task(b.wait())
@@ -372,10 +375,10 @@ Barrier
          await asyncio.sleep(0)
          print(b)
 
-         # Now, current task waits
-         async with b as pos:
-            print(b)
-            print("barrier passed")
+         # The third .wait() call passes the barrier
+         awaut b.wait()
+         print(b)
+         print("barrier passed")
 
          await asyncio.sleep(0)
          print(b)
@@ -384,17 +387,12 @@ Barrier
 
    Result of this example is::
 
-      <asyncio.locks.Barrier object at 0x105d70100 [filling, waiters:2/3]>
-      <asyncio.locks.Barrier object at 0x10146c6a0 [draining, waiters:0/3]>
+      <asyncio.locks.Barrier object at 0x... [filling, waiters:2/3]>
+      <asyncio.locks.Barrier object at 0x... [draining, waiters:0/3]>
       barrier passed
-      <asyncio.locks.Barrier object at 0x105d70100 [filling, waiters:0/3]>
+      <asyncio.locks.Barrier object at 0x... [filling, waiters:0/3]>
 
-   The example also demonstrates using ``async with`` as an alternative to awaiting
-   on ``barrier.wait()``.
-
-.. class:: Barrier(parties, action=None)
-
-   Create a barrier object for *parties* number of tasks.
+   .. versionadded:: 3.11
 
    .. coroutinemethod:: wait()
 
