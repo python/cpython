@@ -739,7 +739,7 @@ class ForwardRef(_Final, _root=True):
         # Unfortunately, this isn't a valid expression on its own, so we
         # do the unpacking manually.
         if arg[0] == '*':
-            arg_to_compile = f'next(iter({arg[1:]}))'
+            arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0]
         else:
             arg_to_compile = arg
         try:
