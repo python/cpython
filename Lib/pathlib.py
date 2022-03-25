@@ -258,14 +258,6 @@ class PurePath(object):
         return (self.__class__, tuple(self._parts))
 
     @classmethod
-    def _casefold(cls, s):
-        return cls._flavour.normcase(s)
-
-    @classmethod
-    def _casefold_parts(cls, parts):
-        return [cls._flavour.normcase(p) for p in parts]
-
-    @classmethod
     def _compile_pattern(cls, pattern):
         flags = 0 if cls._flavour is posixpath else re.IGNORECASE
         return re.compile(fnmatch.translate(pattern), flags).fullmatch
@@ -433,7 +425,7 @@ class PurePath(object):
             if not drv2 and drv:
                 return drv, root2, [drv + root2] + parts2[1:]
         elif drv2:
-            if drv2 == drv or self._casefold(drv2) == self._casefold(drv):
+            if drv2 == drv or self._flavour.normcase(drv2) == self._flavour.normcase(drv):
                 # Same drive => second path is relative to the first
                 return drv, root, parts + parts2[1:]
         else:
@@ -501,7 +493,7 @@ class PurePath(object):
         try:
             return self._cached_cparts
         except AttributeError:
-            self._cached_cparts = self._casefold_parts(self._parts)
+            self._cached_cparts = [self._flavour.normcase(p) for p in self._parts]
             return self._cached_cparts
 
     def __eq__(self, other):
@@ -653,7 +645,8 @@ class PurePath(object):
         else:
             to_abs_parts = to_parts
         n = len(to_abs_parts)
-        cf = self._casefold_parts
+        def cf(parts):
+            return [self._flavour.normcase(p) for p in parts]
         if (root or drv) if n == 0 else cf(abs_parts[:n]) != cf(to_abs_parts):
             formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
             raise ValueError("{!r} is not in the subpath of {!r}"
@@ -746,7 +739,7 @@ class PurePath(object):
         """
         Return True if this path matches the given pattern.
         """
-        cf = self._casefold
+        cf = self._flavour.normcase
         path_pattern = cf(path_pattern)
         drv, root, pat_parts = self._parse_parts((path_pattern,))
         if not pat_parts:
