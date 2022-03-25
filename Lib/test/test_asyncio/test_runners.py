@@ -1,4 +1,7 @@
 import asyncio
+import contextvars
+import gc
+import re
 import unittest
 
 from unittest import mock
@@ -184,6 +187,136 @@ class RunTests(BaseTest):
 
         self.assertIsNone(spinner.ag_frame)
         self.assertFalse(spinner.ag_running)
+
+
+class RunnerTests(BaseTest):
+
+    def test_non_debug(self):
+        with asyncio.Runner(debug=False) as runner:
+            self.assertFalse(runner.get_loop().get_debug())
+
+    def test_debug(self):
+        with asyncio.Runner(debug=True) as runner:
+            self.assertTrue(runner.get_loop().get_debug())
+
+    def test_custom_factory(self):
+        loop = mock.Mock()
+        with asyncio.Runner(factory=lambda: loop) as runner:
+            self.assertIs(runner.get_loop(), loop)
+
+    def test_run(self):
+        async def f():
+            await asyncio.sleep(0)
+            return 'done'
+
+        with asyncio.Runner() as runner:
+            self.assertEqual('done', runner.run(f()))
+            loop = runner.get_loop()
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "Runner is closed"
+        ):
+            runner.get_loop()
+
+        self.assertTrue(loop.is_closed())
+
+    def test_run_non_coro(self):
+        with asyncio.Runner() as runner:
+            with self.assertRaisesRegex(
+                ValueError,
+                "a coroutine was expected"
+            ):
+                runner.run(123)
+
+    def test_run_future(self):
+        with asyncio.Runner() as runner:
+            with self.assertRaisesRegex(
+                ValueError,
+                "a coroutine was expected"
+            ):
+                fut = runner.get_loop().create_future()
+                runner.run(fut)
+
+    def test_explicit_close(self):
+        runner = asyncio.Runner()
+        loop = runner.get_loop()
+        runner.close()
+        with self.assertRaisesRegex(
+                RuntimeError,
+                "Runner is closed"
+        ):
+            runner.get_loop()
+
+        self.assertTrue(loop.is_closed())
+
+    def test_double_close(self):
+        runner = asyncio.Runner()
+        loop = runner.get_loop()
+
+        runner.close()
+        self.assertTrue(loop.is_closed())
+
+        # the second call is no-op
+        runner.close()
+        self.assertTrue(loop.is_closed())
+
+    def test_second_with_block_raises(self):
+        ret = []
+
+        async def f(arg):
+            ret.append(arg)
+
+        runner = asyncio.Runner()
+        with runner:
+            runner.run(f(1))
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "Runner is closed"
+        ):
+            with runner:
+                runner.run(f(2))
+
+        self.assertEqual([1], ret)
+
+    def test_run_keeps_context(self):
+        cvar = contextvars.ContextVar("cvar", default=-1)
+
+        async def f(val):
+            old = cvar.get()
+            await asyncio.sleep(0)
+            cvar.set(val)
+            return old
+
+        async def get_context():
+            return contextvars.copy_context()
+
+        with asyncio.Runner() as runner:
+            self.assertEqual(-1, runner.run(f(1)))
+            self.assertEqual(1, runner.run(f(2)))
+
+            self.assertEqual({cvar: 2}, dict(runner.run(get_context())))
+
+    def test_recursine_run(self):
+        async def g():
+            pass
+
+        async def f():
+            runner.run(g())
+
+        with asyncio.Runner() as runner:
+            with self.assertWarnsRegex(
+                RuntimeWarning,
+                "coroutine .+ was never awaited",
+            ):
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    re.escape(
+                        "Runner.run() cannot be called from a running event loop"
+                    ),
+                ):
+                    runner.run(f())
 
 
 if __name__ == '__main__':
