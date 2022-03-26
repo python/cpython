@@ -1066,8 +1066,8 @@ Porting to Python 3.11
   <https://github.com/python/pythoncapi_compat>`__ to get these functions
   on old Python functions.
 
-* Distributors are encouraged to build Python with optimized Blake2 library
-  `libb2`_.
+* Distributors are encouraged to build Python with the optimized Blake2
+  library `libb2`_.
 
 
 Deprecated
