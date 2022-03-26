@@ -3527,9 +3527,9 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
         memset(dest, src[0], len_dest);
     }
     else {
-        if (src!=dest)
+        if (src != dest) {
             memcpy(dest, src, len_src);
-
+        }
         Py_ssize_t copied = len_src;
         while (copied < len_dest) {
             Py_ssize_t bytes_to_copy = Py_MIN(copied, len_dest - copied);

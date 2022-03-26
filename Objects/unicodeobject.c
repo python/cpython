@@ -12785,7 +12785,8 @@ unicode_repeat(PyObject *str, Py_ssize_t len)
     else {
         Py_ssize_t char_size = PyUnicode_KIND(str);
         char *to = (char *) PyUnicode_DATA(u);
-        _PyBytes_Repeat(to, nchars * char_size, PyUnicode_DATA(str), PyUnicode_GET_LENGTH(str) * char_size);
+        _PyBytes_Repeat(to, nchars * char_size, PyUnicode_DATA(str),
+            PyUnicode_GET_LENGTH(str) * char_size);
     }
 
     assert(_PyUnicode_CheckConsistency(u, 1));
