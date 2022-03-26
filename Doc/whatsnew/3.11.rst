@@ -573,6 +573,14 @@ Deprecated
   (:pep:`594`).
   (Contributed by Hugo van Kemenade in :issue:`47022`.)
 
+* :pep:`594` led to the deprecations of the following modules which are
+  slated for removal in Python 3.13:
+
+  * :mod:`aifc`
+
+  (Contributed by Brett Cannon in :issue:`47061`.)
+
+
 Removed
 =======
 
