@@ -252,6 +252,13 @@ hashlib
   over Python's vendored copy.
   (Contributed by Christian Heimes in :issue:`47095`.)
 
+* The internal ``_sha3`` module with SHA3 and SHAKE algorithms now uses
+  *tiny_sha3* instead of the *Keccak Code Package* to reduce code and binary
+  size. The :mod:`hashlib` module prefers optimized SHA3 and SHAKE
+  implementations from OpenSSL. The change affects only installations without
+  OpenSSL support.
+  (Contributed by Christian Heimes in :issue:`47098`.)
+
 IDLE and idlelib
 ----------------
 
