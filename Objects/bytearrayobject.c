@@ -1880,21 +1880,8 @@ bytearray_remove_impl(PyByteArrayObject *self, int value)
 #define RIGHTSTRIP 1
 #define BOTHSTRIP 2
 
-/*[clinic input]
-bytearray.strip
-
-    bytes: object = None
-    striptype: int = 2
-    /
-
-Strip leading and trailing bytes contained in the argument.
-
-If the argument is omitted or None, strip leading and trailing ASCII whitespace.
-[clinic start generated code]*/
-
-static PyObject *
-bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes, int striptype)
-/*[clinic end generated code: output=73625dcc8efbcd32 input=d61349e4106f35d5]*/
+static PyObject*
+bytearray_strip_impl_helper(PyByteArrayObject* self, PyObject* bytes, int striptype)
 {
     Py_ssize_t mysize, byteslen;
     const char* myptr;
@@ -1932,6 +1919,24 @@ bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes, int striptype)
 }
 
 /*[clinic input]
+bytearray.strip
+
+    bytes: object = None
+    /
+
+Strip leading and trailing bytes contained in the argument.
+
+If the argument is omitted or None, strip leading and trailing ASCII whitespace.
+[clinic start generated code]*/
+
+static PyObject *
+bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes)
+/*[clinic end generated code: output=760412661a34ad5a input=ef7bb59b09c21d62]*/
+{
+    return bytearray_strip_impl_helper(self, bytes, BOTHSTRIP);
+}
+
+/*[clinic input]
 bytearray.lstrip
 
     bytes: object = None
@@ -1946,7 +1951,7 @@ static PyObject *
 bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=d005c9d0ab909e66 input=80843f975dd7c480]*/
 {
-    return bytearray_strip_impl(self, bytes, LEFTSTRIP);
+    return bytearray_strip_impl_helper(self, bytes, LEFTSTRIP);
 }
 
 /*[clinic input]
@@ -1964,7 +1969,7 @@ static PyObject *
 bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=030e2fbd2f7276bd input=e728b994954cfd91]*/
 {
-    return bytearray_strip_impl(self, bytes, RIGHTSTRIP);
+    return bytearray_strip_impl_helper(self, bytes, RIGHTSTRIP);
 }
 
 /*[clinic input]
