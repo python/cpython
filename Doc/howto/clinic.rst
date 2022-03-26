@@ -1055,6 +1055,7 @@ Currently Argument Clinic supports only a few return converters:
 
 .. code-block:: none
 
+    NoneType
     bool
     int
     unsigned int

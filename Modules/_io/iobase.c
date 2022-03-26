@@ -739,7 +739,7 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
 }
 
 /*[clinic input]
-_io._IOBase.writelines
+_io._IOBase.writelines -> NoneType
     lines: object
     /
 
@@ -749,25 +749,25 @@ Line separators are not added, so it is usual for each of the
 lines provided to have a line separator at the end.
 [clinic start generated code]*/
 
-static PyObject *
-_io__IOBase_writelines(PyObject *self, PyObject *lines)
-/*[clinic end generated code: output=976eb0a9b60a6628 input=cac3fc8864183359]*/
+static void
+_io__IOBase_writelines_impl(PyObject *self, PyObject *lines)
+/*[clinic end generated code: output=f3feca36db72dbd1 input=286ba711cb7291ad]*/
 {
     PyObject *iter, *res;
 
     if (iobase_check_closed(self))
-        return NULL;
+        return;
 
     iter = PyObject_GetIter(lines);
     if (iter == NULL)
-        return NULL;
+        return;
 
     while (1) {
         PyObject *line = PyIter_Next(iter);
         if (line == NULL) {
             if (PyErr_Occurred()) {
                 Py_DECREF(iter);
-                return NULL;
+                return;
             }
             else
                 break; /* Stop Iteration */
@@ -780,12 +780,11 @@ _io__IOBase_writelines(PyObject *self, PyObject *lines)
         Py_DECREF(line);
         if (res == NULL) {
             Py_DECREF(iter);
-            return NULL;
+            return;
         }
         Py_DECREF(res);
     }
     Py_DECREF(iter);
-    Py_RETURN_NONE;
 }
 
 #include "clinic/iobase.c.h"

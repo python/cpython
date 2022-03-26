@@ -759,7 +759,7 @@ class CLanguage(Language):
             # just imagine--your code is here in the middle
             fields.append(normalize_snippet("""
                     {modifications}
-                    {return_value} = {c_basename}_impl({impl_arguments});
+                    {return_assignment}{c_basename}_impl({impl_arguments});
                     {return_conversion}
 
                 {exit_label}
@@ -1384,7 +1384,10 @@ class CLanguage(Language):
         template_dict['impl_arguments'] = ", ".join(data.impl_arguments)
         template_dict['return_conversion'] = format_escape("".join(data.return_conversion).rstrip())
         template_dict['cleanup'] = format_escape("".join(data.cleanup))
-        template_dict['return_value'] = data.return_value
+        if data.return_value:
+            template_dict['return_assignment'] = f'{data.return_value} = '
+        else:
+            template_dict['return_assignment'] = ''
 
         # used by unpack tuple code generator
         ignore_self = -1 if isinstance(converters[0], self_converter) else 0
@@ -3785,17 +3788,16 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
         pass
 
     def declare(self, data, name="_return_value"):
-        line = []
-        add = line.append
-        add(self.type)
-        if not self.type.endswith('*'):
-            add(' ')
-        add(name + ';')
-        data.declarations.append(''.join(line))
-        data.return_value = name
+        if self.type != 'void':
+            line = f"{self.type}{'' if self.type[-1] == '*' else ' '}{name};"
+            data.declarations.append(line)
+            data.return_value = name
+        else:
+            data.return_value = None
 
     def err_occurred_if(self, expr, data):
-        data.return_conversion.append('if (({}) && PyErr_Occurred()) {{\n    goto exit;\n}}\n'.format(expr))
+        dcond = f'({expr}) && ' if expr else ''
+        data.return_conversion.append(f'if ({dcond}PyErr_Occurred()) {{\n    goto exit;\n}}\n')
 
     def err_occurred_if_null_pointer(self, variable, data):
         data.return_conversion.append('if ({} == NULL) {{\n    goto exit;\n}}\n'.format(variable))
@@ -3810,12 +3812,12 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
 add_c_return_converter(CReturnConverter, 'object')
 
 class NoneType_return_converter(CReturnConverter):
+    type = 'void'
+
     def render(self, function, data):
         self.declare(data)
+        self.err_occurred_if(None, data)
         data.return_conversion.append('''
-if (_return_value != Py_None) {
-    goto exit;
-}
 return_value = Py_None;
 Py_INCREF(Py_None);
 '''.strip())

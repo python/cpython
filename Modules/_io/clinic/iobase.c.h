@@ -251,6 +251,25 @@ PyDoc_STRVAR(_io__IOBase_writelines__doc__,
 #define _IO__IOBASE_WRITELINES_METHODDEF    \
     {"writelines", (PyCFunction)_io__IOBase_writelines, METH_O, _io__IOBase_writelines__doc__},
 
+static void
+_io__IOBase_writelines_impl(PyObject *self, PyObject *lines);
+
+static PyObject *
+_io__IOBase_writelines(PyObject *self, PyObject *lines)
+{
+    PyObject *return_value = NULL;
+
+    _io__IOBase_writelines_impl(self, lines);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = Py_None;
+    Py_INCREF(Py_None);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_io__RawIOBase_read__doc__,
 "read($self, size=-1, /)\n"
 "--\n"
@@ -310,4 +329,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=83c1361a7a51ca84 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=93ac28e60a088847 input=a9049054013a1b77]*/

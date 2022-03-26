@@ -1,0 +1,5 @@
+Argument Clinic got enhanced :data:`NoneType` return converter. With it, a
+generated impl header gets :c:type:`void` return type and the corresponding
+generated wrapper returns :const:`NULL` on :c:func:`PyErr_Occurred` or
+:c:macro:`Py_None` otherwise. Previously, the return type was
+:c:type:`PyObject *`. Patch by Oleg Iarygin.
