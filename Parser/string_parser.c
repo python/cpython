@@ -357,9 +357,15 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
             break;
         }
     }
+    
     if (s == expr_end) {
-        RAISE_SYNTAX_ERROR("f-string: empty expression not allowed");
-        return NULL;
+        if (*expr_end == '!' || *expr_end == ':' || *expr_end == '=') {
+            RAISE_SYNTAX_ERROR("f-string: optional specifier '%c' must follow a non-empty expression", *expr_end);
+            return NULL;
+        } else {
+            RAISE_SYNTAX_ERROR("f-string: empty expression not allowed");
+            return NULL;
+        }
     }
 
     len = expr_end - expr_start;
