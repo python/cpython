@@ -777,6 +777,8 @@ MODULE__IO_TRUE
 MODULES_SETUP_STDLIB
 MODULE_BUILDTYPE
 TEST_MODULES
+LIBB2_LIBS
+LIBB2_CFLAGS
 OPENSSL_RPATH
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
@@ -1084,7 +1086,9 @@ BZIP2_LIBS
 LIBLZMA_CFLAGS
 LIBLZMA_LIBS
 LIBCRYPT_CFLAGS
-LIBCRYPT_LIBS'
+LIBCRYPT_LIBS
+LIBB2_CFLAGS
+LIBB2_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1891,6 +1895,9 @@ Some influential environment variables:
               C compiler flags for LIBCRYPT, overriding pkg-config
   LIBCRYPT_LIBS
               linker flags for LIBCRYPT, overriding pkg-config
+  LIBB2_CFLAGS
+              C compiler flags for LIBB2, overriding pkg-config
+  LIBB2_LIBS  linker flags for LIBB2, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -21340,6 +21347,87 @@ esac
 done
 IFS=$as_save_IFS
 
+if test "x$with_builtin_blake2" = xyes; then :
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBB2" >&5
+$as_echo_n "checking for LIBB2... " >&6; }
+
+if test -n "$LIBB2_CFLAGS"; then
+    pkg_cv_LIBB2_CFLAGS="$LIBB2_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libb2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libb2") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBB2_CFLAGS=`$PKG_CONFIG --cflags "libb2" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBB2_LIBS"; then
+    pkg_cv_LIBB2_LIBS="$LIBB2_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libb2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libb2") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBB2_LIBS=`$PKG_CONFIG --libs "libb2" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBB2_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libb2" 2>&1`
+        else
+	        LIBB2_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libb2" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBB2_PKG_ERRORS" >&5
+
+	have_libb2=no
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	have_libb2=no
+else
+	LIBB2_CFLAGS=$pkg_cv_LIBB2_CFLAGS
+	LIBB2_LIBS=$pkg_cv_LIBB2_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+    have_libb2=yes
+
+$as_echo "#define HAVE_LIBB2 1" >>confdefs.h
+
+
+fi
+
+fi
+
 # --with-experimental-isolated-subinterpreters
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-experimental-isolated-subinterpreters" >&5
@@ -22915,8 +23003,8 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__BLAKE2=$py_cv_module__blake2$as_nl"
   if test "x$py_cv_module__blake2" = xyes; then :
 
-
-
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$LIBB2_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_LDFLAGS=$LIBB2_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__blake2" = yes; then
