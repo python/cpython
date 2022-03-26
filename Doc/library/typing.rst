@@ -1236,47 +1236,49 @@ These are not used in annotations. They are building blocks for creating generic
 
     :class:`Type variable <TypeVar>` tuple.
 
-    Usage::
-
-        Ts = TypeVarTuple('Ts')
-        Shape = TypeVarTuple('Shape')
-
-    Vanilla type variables enable parameterization with a *fixed* number of
-    types. Type variable tuples, on the other hand, allow parameterization with
-    an *arbitrary* number of types by acting like an *arbitrary* number of type
+    A vanilla type variable enables parameterization with a single type. A type
+    variable tuple, in contrast, allows parameterization with an
+    *arbitrary* number of types by acting like an *arbitrary* number of type
     variables wrapped in a tuple. For example::
 
+        Shape = TypeVarTuple('Shape')
+
+        class Array(Generic[*Shape]): ...
+
+        array_1d: Array[int] = Array()       # 1 type parameter: fine
+        array_2d: Array[int, int] = Array()  # 2 type parameters: also fine
+        array_0d: Array[()] = Array()        # 0 type parameters: also fine
+
+    Note the use of the unpacking operator ``*`` in ``Generic[*Shape]``.
+    Conceptually, you can think of ``Shape`` as a tuple of type variables
+    ``(T1, T2, ...)``. ``Generic[*Shape]`` would then become
+    ``Generic[*(T1, T2, ...)]``. The ``*`` brings the type variables out of the
+    tuple and into the square brackets directly.
+
+    (In older versions of Python, where ``*`` was less flexible, you might see
+    this written as ``Unpack[Shape]`` instead. This means the same thing as
+    ``*Shape`` - ``Unpack`` and ``*`` can be used interchangeably.)
+
+    Type variable tuples must *always* be used in combination with the unpacking
+    operator. This helps distinguish type variable types from normal type
+    variables::
+
+        class Array(Generic[Shape]): ...  # Not valid
+
+    In cases where you really do just want a tuple of types, make this explicit
+    by wrapping the type variable tuple in ``tuple[]``::
+
+        shape: Shape          # Not valid
+        shape: tuple[Shape]   # Also not valid
+        shape: tuple[*Shape]  # The correct way to do it
+
+    Type variable tuples can be used in the same contexts as vanilla type
+    variables. For example, in class definitions, arguments, and return types::
+
         class Array(Generic[*Shape]):
-            pass
-
-        from typing import NewType
-        Height = NewType('Height', int)
-        Width = NewType('Width', int)
-
-        1d_array: Array[Height] = Array()  # This is fine
-
-    With one type argument, ``Array`` behaves as if ``Shape = (T,)``, where
-    ``T`` is a type variable. That means ``Array`` behaves as if we'd written
-    ``Generic[T]``. Note the use of the unpacking operator ``*`` to bring ``T``
-    out of the tuple and directly into the square brackets.
-
-    ::
-
-        2d_array: Array[Height, Width] = Array()  # This is also fine!
-
-    With two arguments, it's as if ``Shape = (T1, T2)``, where ``T1`` and ``T2``
-    are type variables; as if ``Array`` was defined with ``Generic[T1, T2]``.
-
-    Type variable tuples can be used any place a vanilla type variable can.
-    However, note that they must always be used in combination with the
-    unpacking operator ``*``. This helps distinguish type variable tuples from
-    normal type variables::
-
-        def returns_tuple() -> Ts:  # Not valid
-          return ('spam', 42)
-
-        def returns_tuple() -> tuple[*Ts]:  # This is fine :)
-          return ('spam', 42)
+            def __getitem__(self, key: tuple[*Shape]) -> float: ...
+            def __abs__(self) -> Array[*Shape]: ...
+            def get_shape(self) -> tuple[*Shape]: ...
 
     Type variable tuples can be happily combined with vanilla type variables::
 
@@ -1285,8 +1287,8 @@ These are not used in annotations. They are building blocks for creating generic
         class Array(Generic[DType, *Shape]):  # This is fine
             pass
 
-        1d_float_array: Array[float, Height] = Array()     # Totally fine
-        2d_int_array: Array[int, Height, Width] = Array()  # Yup, fine too
+        float_array_1d: Array[float, Height] = Array()     # Totally fine
+        int_array_2d: Array[int, Height, Width] = Array()  # Yup, fine too
 
     However, note that at most one type variable tuple may appear in a single
     list of type arguments or type parameters::
