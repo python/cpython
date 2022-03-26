@@ -3,6 +3,10 @@ import asyncio
 import unittest
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class FutureTests(unittest.IsolatedAsyncioTestCase):
     async def test_recursive_repr_for_pending_tasks(self):
         # The call crashes if the guard for recursive call

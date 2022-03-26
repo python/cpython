@@ -244,6 +244,7 @@ class CompileallTestsBase:
         self.assertFalse(pool_mock.called)
         self.assertTrue(compile_file_mock.called)
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     @mock.patch('concurrent.futures.ProcessPoolExecutor', new=None)
     @mock.patch('compileall.compile_file')
     def test_compile_missing_multiprocessing(self, compile_file_mock):
@@ -296,6 +297,7 @@ class CompileallTestsBase:
         """Recursive compile_dir ddir= contains package paths; bpo39769."""
         return self._test_ddir_only(ddir="<a prefix>", parallel=False)
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     def test_ddir_multiple_workers(self):
         """Recursive compile_dir ddir= contains package paths; bpo39769."""
         return self._test_ddir_only(ddir="<a prefix>", parallel=True)
@@ -304,6 +306,7 @@ class CompileallTestsBase:
         """Recursive compile_dir ddir='' contains package paths; bpo39769."""
         return self._test_ddir_only(ddir="", parallel=False)
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     def test_ddir_empty_multiple_workers(self):
         """Recursive compile_dir ddir='' contains package paths; bpo39769."""
         return self._test_ddir_only(ddir="", parallel=True)
@@ -924,6 +927,7 @@ class CommandLineTestsNoSourceEpoch(CommandLineTestsBase,
 
 
 
+@unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
 class HardlinkDedupTestsBase:
     # Test hardlink_dupes parameter of compileall.compile_dir()
 

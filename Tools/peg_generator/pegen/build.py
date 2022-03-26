@@ -1,6 +1,7 @@
 import itertools
 import pathlib
 import shutil
+import sys
 import sysconfig
 import tempfile
 import tokenize
@@ -32,6 +33,7 @@ def compile_c_extension(
     build_dir: Optional[str] = None,
     verbose: bool = False,
     keep_asserts: bool = True,
+    disable_optimization: bool = True,  # Significant test_peg_generator speedup.
 ) -> str:
     """Compile the generated source for a parser generator into an extension module.
 
@@ -61,6 +63,14 @@ def compile_c_extension(
     extra_link_args = get_extra_flags("LDFLAGS", "PY_LDFLAGS_NODIST")
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")
+    if disable_optimization:
+        if sys.platform == 'win32':
+            extra_compile_args.append("/Od")
+            extra_link_args.append("/LTCG:OFF")
+        else:
+            extra_compile_args.append("-O0")
+            if sysconfig.get_config_var("GNULD") == "yes":
+                extra_link_args.append("-fno-lto")
     extension = [
         Extension(
             extension_name,

@@ -33,6 +33,7 @@ from test import support
 from test.support import os_helper
 from test.support import threading_helper
 
+support.requires_working_socket(module=True)
 
 class NoLogRequestHandler:
     def log_message(self, *args):

@@ -1,8 +1,6 @@
 # config.site override for cross compiling to wasm32-wasi platform
 #
 # Written by Christian Heimes <christian@python.org>
-# Partly based on pyodide's pyconfig.undefs.h file.
-
 
 # cannot be detected in cross builds
 ac_cv_buggy_getaddrinfo=no
@@ -14,4 +12,8 @@ ac_cv_file__dev_ptc=no
 # dummy readelf, WASI build does not need readelf.
 ac_cv_prog_ac_ct_READELF=true
 
+# get/setrlimit are not supported
+ac_cv_header_sys_resource_h=no
+
+# undefined symbols / unsupported features
 ac_cv_func_eventfd=no
