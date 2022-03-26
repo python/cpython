@@ -633,11 +633,11 @@ x = (
 
                              # The Python parser ignores also the following
                              # whitespace characters in additional to a space.
-                             "f'''{\t\f\r\n}'''",                            
+                             "f'''{\t\f\r\n}'''",
                              ])
-                             
+
         # Different error messeges are raised when a specfier ('!', ':' or '=') is used after an empty expression
-        self.assertAllRaise(SyntaxError, "f-string: optional specifier '!' must follow a non-empty expression", 
+        self.assertAllRaise(SyntaxError, "f-string: optional specifier '!' must follow a non-empty expression",
                             ["f'{!r}'",
                              "f'{ !r}'",
                              "f'{!}'",
@@ -647,7 +647,7 @@ x = (
                              #  missing closing brace.
                              "f'{!'",
                              "f'{!s:'",
-                             
+
                              # Catch empty expression before the
                              #  invalid conversion.
                              "f'{!x}'",
@@ -658,7 +658,7 @@ x = (
                              "f'{ !xr:a}'",
                              ])
 
-        self.assertAllRaise(SyntaxError, "f-string: optional specifier ':' must follow a non-empty expression", 
+        self.assertAllRaise(SyntaxError, "f-string: optional specifier ':' must follow a non-empty expression",
                             ["f'{:}'",
                              "f'{ :!}'",
                              "f'{:2}'",
@@ -666,7 +666,7 @@ x = (
                              "f'{:'",
                              ])
 
-        self.assertAllRaise(SyntaxError, "f-string: optional specifier '=' must follow a non-empty expression", 
+        self.assertAllRaise(SyntaxError, "f-string: optional specifier '=' must follow a non-empty expression",
                             ["f'{=}'",
                              "f'{ =}'",
                              "f'{ =:}'",
