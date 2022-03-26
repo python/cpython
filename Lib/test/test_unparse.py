@@ -130,7 +130,23 @@ docstring_prefixes = (
 
 class ASTTestCase(unittest.TestCase):
     def assertASTEqual(self, ast1, ast2):
-        self.assertEqual(ast.dump(ast1), ast.dump(ast2))
+        missing = object()
+        def compare(a, b):
+            if type(a) is not type(b):
+                self.fail("type(a) != type(b)")
+            if isinstance(a, ast.AST):
+                for field in a._fields:
+                    value1 = getattr(a, field, missing)
+                    value2 = getattr(b, field, missing)
+                    compare(value1, value2)
+            elif isinstance(a, list):
+                if len(a) != len(b):
+                    self.fail("len(a) != len(b)")
+                for node1, node2 in zip(a, b):
+                    compare(node1, node2)
+            elif a != b:
+                self.fail(f"{a!r} != {b!r}")
+        compare(ast1, ast2)
 
     def check_ast_roundtrip(self, code1, **kwargs):
         with self.subTest(code1=code1, ast_parse_kwargs=kwargs):
