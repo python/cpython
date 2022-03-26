@@ -414,8 +414,8 @@ Optimizations
 Faster CPython
 ==============
 
-Python 3.11 is on average `1.20x faster <https://speed.python.org/comparison/?exe=12%2BL%2B3.10%2C12%2BL%2Bmaster&ben=741%2C801%2C742%2C743%2C744%2C745%2C746%2C747%2C748%2C749%2C799%2C800%2C750%2C751%2C752%2C753%2C754%2C755%2C756%2C757%2C758%2C759%2C760%2C761%2C762%2C763%2C764%2C765%2C766%2C767%2C768%2C769%2C770%2C771%2C772%2C773%2C774%2C775%2C776%2C777%2C778%2C779%2C780%2C781%2C782%2C783%2C784%2C785%2C786%2C788%2C787%2C789%2C790%2C791%2C792%2C793%2C794%2C797%2C796%2C795%2C798&env=4&hor=true&bas=12%2BL%2B3.10&chart=normal+bars>`_
-than Python 3.10 when measured with the
+CPython 3.11 is on average `1.20x faster <https://github.com/faster-cpython/ideas/blob/main/main-vs-310.rst>`_
+than CPython 3.10 when measured with the
 `pyperformance <https://github.com/python/pyperformance>`_ benchmark suite, on
 Ubuntu Linux.
 
@@ -551,8 +551,8 @@ See :pep:`659` for more information.)
 |               |                    | In most cases, attribute loading will require zero    |                   |                   |
 |               |                    | namespace lookups.                                    |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Load          | ``o.meth()``       | The actual address of the method is cached. Method    | 10-20% [2]_       | Ken Jin           |
-| methods for   |                    | loading now has no namespace lookups -- even for      |                   |                   |
+| Load          | ``o.meth()``       | The actual address of the method is cached. Method    | 10-20% [2]_       | Ken Jin,          |
+| methods for   |                    | loading now has no namespace lookups -- even for      |                   | Mark Shannon      |
 | call          |                    | classes with long inheritance chains.                 |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 | Store         | ``o.attr = z``     | Similar to load attribute optimization.               | ?                 | Mark Shannon      |
@@ -567,6 +567,36 @@ See :pep:`659` for more information.)
 .. [2] Classes with longer inheritance chains will see greater speedups.
        This optimization effectively makes method lookup constant time
        regardless of inheritance.
+
+FAQ
+---
+
+| Q: How should I write my code to utilize these speedups?
+|
+| A: You don't have to change your code. Write Pythonic code that follows common
+  best practices. The Faster CPython project optimizes for common code
+  patterns we observe.
+|
+|
+| Q: Will CPython 3.11 use more memory?
+|
+| A: Yes. However, how much exactly depends on how much code is "hot". We don't
+  expect memory use to exceed 20% more versus 3.10. This may be offset by
+  memory optimizations for frame objects and object dictionaries as mentioned
+  above.
+|
+|
+| Q: I don't see any speedups in my workload. Why?
+|
+| A: Certain code won't have noticeable benefits. If your code spends most of
+  its time on IO(Input/Output) operations, or already does most of its
+  computation in a C extension library like numpy, there won't be significant
+  speedup. This project currently benefits pure-Python workloads the most.
+|
+|
+| Q: Is there a JIT compiler?
+|
+| A: No. We're still exploring other optimizations.
 
 About
 -----
