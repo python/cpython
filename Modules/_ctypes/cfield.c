@@ -10,7 +10,6 @@
 
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_floatobject.h"   // _PyFloat_Pack8()
 
 #include <ffi.h>
 #include "ctypes.h"
@@ -1009,10 +1008,10 @@ d_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
     if (x == -1 && PyErr_Occurred())
         return NULL;
 #ifdef WORDS_BIGENDIAN
-    if (_PyFloat_Pack8(x, (unsigned char *)ptr, 1))
+    if (PyFloat_Pack8(x, ptr, 1))
         return NULL;
 #else
-    if (_PyFloat_Pack8(x, (unsigned char *)ptr, 0))
+    if (PyFloat_Pack8(x, ptr, 0))
         return NULL;
 #endif
     _RET(value);
@@ -1022,9 +1021,9 @@ static PyObject *
 d_get_sw(void *ptr, Py_ssize_t size)
 {
 #ifdef WORDS_BIGENDIAN
-    return PyFloat_FromDouble(_PyFloat_Unpack8(ptr, 1));
+    return PyFloat_FromDouble(PyFloat_Unpack8(ptr, 1));
 #else
-    return PyFloat_FromDouble(_PyFloat_Unpack8(ptr, 0));
+    return PyFloat_FromDouble(PyFloat_Unpack8(ptr, 0));
 #endif
 }
 
@@ -1057,10 +1056,10 @@ f_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
     if (x == -1 && PyErr_Occurred())
         return NULL;
 #ifdef WORDS_BIGENDIAN
-    if (_PyFloat_Pack4(x, (unsigned char *)ptr, 1))
+    if (PyFloat_Pack4(x, ptr, 1))
         return NULL;
 #else
-    if (_PyFloat_Pack4(x, (unsigned char *)ptr, 0))
+    if (PyFloat_Pack4(x, ptr, 0))
         return NULL;
 #endif
     _RET(value);
@@ -1070,9 +1069,9 @@ static PyObject *
 f_get_sw(void *ptr, Py_ssize_t size)
 {
 #ifdef WORDS_BIGENDIAN
-    return PyFloat_FromDouble(_PyFloat_Unpack4(ptr, 1));
+    return PyFloat_FromDouble(PyFloat_Unpack4(ptr, 1));
 #else
-    return PyFloat_FromDouble(_PyFloat_Unpack4(ptr, 0));
+    return PyFloat_FromDouble(PyFloat_Unpack4(ptr, 0));
 #endif
 }
 

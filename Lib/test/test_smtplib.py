@@ -29,6 +29,8 @@ with warnings.catch_warnings():
     import asyncore
     import smtpd
 
+support.requires_working_socket(module=True)
+
 HOST = socket_helper.HOST
 
 if sys.platform == 'darwin':

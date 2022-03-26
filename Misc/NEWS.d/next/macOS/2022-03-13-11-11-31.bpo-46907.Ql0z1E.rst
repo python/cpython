@@ -1,0 +1,1 @@
+Update macOS installer to SQLite 3.38.1.

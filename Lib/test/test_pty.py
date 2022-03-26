@@ -17,7 +17,6 @@ import io # readline
 import unittest
 
 import struct
-import tty
 import fcntl
 import warnings
 

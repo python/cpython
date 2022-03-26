@@ -1,5 +1,6 @@
 import contextlib
 import glob
+import io
 import os.path
 import re
 import sys
@@ -123,6 +124,7 @@ def iter_global_strings():
                     varname, string = m.groups()
                     yield varname, string, filename, lno, line
 
+
 def iter_to_marker(lines, marker):
     for line in lines:
         if line.rstrip() == marker:
@@ -165,6 +167,19 @@ class Printer:
         self.write("}" + suffix)
 
 
+@contextlib.contextmanager
+def open_for_changes(filename, orig):
+    """Like open() but only write to the file if it changed."""
+    outfile = io.StringIO()
+    yield outfile
+    text = outfile.getvalue()
+    if text != orig:
+        with open(filename, 'w', encoding='utf-8') as outfile:
+            outfile.write(text)
+    else:
+        print(f'# not changed: {filename}')
+
+
 #######################################
 # the global objects
 
@@ -177,13 +192,15 @@ def generate_global_strings(identifiers, strings):
 
     # Read the non-generated part of the file.
     with open(filename) as infile:
-        before = ''.join(iter_to_marker(infile, START))[:-1]
-        for _ in iter_to_marker(infile, END):
-            pass
-        after = infile.read()[:-1]
+        orig = infile.read()
+    lines = iter(orig.rstrip().splitlines())
+    before = '\n'.join(iter_to_marker(lines, START))
+    for _ in iter_to_marker(lines, END):
+        pass
+    after = '\n'.join(lines)
 
     # Generate the file.
-    with open(filename, 'w', encoding='utf-8') as outfile:
+    with open_for_changes(filename, orig) as outfile:
         printer = Printer(outfile)
         printer.write(before)
         printer.write(START)
@@ -196,6 +213,12 @@ def generate_global_strings(identifiers, strings):
                 for name in sorted(identifiers):
                     assert name.isidentifier(), name
                     printer.write(f'STRUCT_FOR_ID({name})')
+            with printer.block('struct', ' ascii[128];'):
+                printer.write("PyASCIIObject _ascii;")
+                printer.write("uint8_t _data[2];")
+            with printer.block('struct', ' latin1[128];'):
+                printer.write("PyCompactUnicodeObject _latin1;")
+                printer.write("uint8_t _data[2];")
         printer.write(END)
         printer.write(after)
 
@@ -220,13 +243,15 @@ def generate_runtime_init(identifiers, strings):
 
     # Read the non-generated part of the file.
     with open(filename) as infile:
-        before = ''.join(iter_to_marker(infile, START))[:-1]
-        for _ in iter_to_marker(infile, END):
-            pass
-        after = infile.read()[:-1]
+        orig = infile.read()
+    lines = iter(orig.rstrip().splitlines())
+    before = '\n'.join(iter_to_marker(lines, START))
+    for _ in iter_to_marker(lines, END):
+        pass
+    after = '\n'.join(lines)
 
     # Generate the file.
-    with open(filename, 'w', encoding='utf-8') as outfile:
+    with open_for_changes(filename, orig) as outfile:
         printer = Printer(outfile)
         printer.write(before)
         printer.write(START)
@@ -252,6 +277,12 @@ def generate_runtime_init(identifiers, strings):
                         for name in sorted(identifiers):
                             assert name.isidentifier(), name
                             printer.write(f'INIT_ID({name}),')
+                    with printer.block('.ascii =', ','):
+                        for i in range(128):
+                            printer.write(f'_PyASCIIObject_INIT("\\x{i:02x}"),')
+                    with printer.block('.latin1 =', ','):
+                        for i in range(128, 256):
+                            printer.write(f'_PyUnicode_LATIN1_INIT("\\x{i:02x}"),')
                 printer.write('')
                 with printer.block('.tuple_empty =', ','):
                     printer.write('.ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0)')
@@ -272,6 +303,7 @@ def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
             elif string != strings[name]:
                 raise ValueError(f'string mismatch for {name!r} ({string!r} != {strings[name]!r}')
     return identifiers, strings
+
 
 #######################################
 # the script
