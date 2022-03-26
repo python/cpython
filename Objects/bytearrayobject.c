@@ -340,8 +340,8 @@ bytearray_irepeat(PyByteArrayObject *self, Py_ssize_t count)
     if (count < 0)
         count = 0;
     else if (count == 1) {
-            Py_INCREF(self);
-            return (PyObject*)self;
+        Py_INCREF(self);
+        return (PyObject*)self;
     }
 
     const Py_ssize_t mysize = Py_SIZE(self);

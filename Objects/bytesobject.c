@@ -3521,8 +3521,9 @@ void
 _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
     const char* src, Py_ssize_t len_src)
 {
-    if (len_dest == 0)
+    if (len_dest == 0) {
         return;
+    }
     if (len_src == 1) {
         memset(dest, src[0], len_dest);
     }
