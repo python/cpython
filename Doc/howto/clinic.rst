@@ -1046,10 +1046,12 @@ There's one additional complication when using return converters: how do you
 indicate an error has occurred?  Normally, a function returns a valid (non-``NULL``)
 pointer for success, and ``NULL`` for failure.  But if you use an integer return converter,
 all integers are valid.  How can Argument Clinic detect an error?  Its solution: each return
-converter implicitly looks for a special value that indicates an error.  If you return
+converter except ``NoneType`` implicitly looks for a special value that indicates an error.  If you return
 that value, and an error has been set (``PyErr_Occurred()`` returns a true
 value), then the generated code will propagate the error.  Otherwise it will
-encode the value you return like normal.
+encode the value you return like normal. For ``NoneType``,
+``PyErr_Occurred()`` only is checked because the ``void`` type cannot have a
+special value.
 
 Currently Argument Clinic supports only a few return converters:
 
