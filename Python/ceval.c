@@ -5090,6 +5090,38 @@ handle_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) {
+            int is_meth = is_method(stack_pointer, oparg);
+            int total_args = oparg + is_meth;
+            PyObject *callable = PEEK(total_args + 1);
+            DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), PRECALL);
+            PyMethodDef *meth = ((PyMethodDescrObject *)callable)->d_method;
+            DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS), PRECALL);
+            STAT_INC(PRECALL, hit);
+            SKIP_CALL();
+            int nargs = total_args-1;
+            STACK_SHRINK(nargs);
+            _PyCFunctionFastWithKeywords cfunc = (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            PyObject *self = TOP();
+            PyObject *res = cfunc(self, stack_pointer, nargs - KWNAMES_LEN(), call_shape.kwnames);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            call_shape.kwnames = NULL;
+
+            /* Free the arguments. */
+            for (int i = 0; i < nargs; i++) {
+                Py_DECREF(stack_pointer[i]);
+            }
+            Py_DECREF(self);
+            STACK_SHRINK(2-is_meth);
+            SET_TOP(res);
+            Py_DECREF(callable);
+            if (res == NULL) {
+                goto error;
+            }
+            CHECK_EVAL_BREAKER();
+            DISPATCH();
+        }
+
         TARGET(PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS) {
             assert(call_shape.kwnames == NULL);
             assert(oparg == 0 || oparg == 1);
