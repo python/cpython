@@ -133,8 +133,6 @@ class Runner:
         self._state = _State.INITIALIZED
 
     def _on_sigint(self, signum, frame, main_task):
-        if self._loop is None or self._loop.is_closing():
-            return
         self._interrunt_count += 1
         if self._interrunt_count == 1 and not main_task.done():
             main_task.cancel()
