@@ -72,6 +72,7 @@ except ImportError:
 
         Makes all characters lowercase and all slashes into backslashes.
         """
+        s = os.fspath(s)
         if isinstance(s, bytes):
             return os.fsencode(os.fsdecode(s).replace('/', '\\').lower())
         return s.replace('/', '\\').lower()
