@@ -31,10 +31,10 @@ except AttributeError:
     pass
 
 # psutil
-    try:
-        import psutil
-    except ImportError:
-        psutil = None
+try:
+    import psutil
+except ImportError:
+    psutil = None
 
 
 
@@ -42,7 +42,7 @@ PYTHON_VERSION = tuple(map(int,platform.python_version_tuple()))
 # Add the first two parts of the version number as a tuple for any version of Python
 # where the tests hang (because the same thread monopolises the GIL)
 YIELD_VERSIONS = [
-    # e.g. (2, 7)
+    # e.g. (2, 7),
 ]
 
 CORES = multiprocessing.cpu_count()
@@ -350,7 +350,8 @@ def latency_client(
         # We give the parent a bit of time to notice.
         _sleep(1.0)
         for i in range(nb_pings):
-            _sleep(interval)
+            if interval:
+                _sleep(interval)
             _ping()
         _sendto(sock, LAT_END + "\n", addr)
     finally:
@@ -495,7 +496,8 @@ def bandwidth_client(addr, packet_size, duration, interval, port=BANDWIDTH_PORT)
             _send_chunk(str(i))
             s = _recv(sock, packet_size)
             assert len(s) == packet_size
-            _sleep(interval)
+            if interval:
+                _sleep(interval)
             i += 1
         _send_chunk(BW_END)
     finally:
