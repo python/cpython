@@ -1256,8 +1256,10 @@ These are not used in annotations. They are building blocks for creating generic
     tuple and into the square brackets directly.
 
     (In older versions of Python, where ``*`` was less flexible, you might see
-    this written as ``Unpack[Shape]`` instead. This means the same thing as
-    ``*Shape`` - ``Unpack`` and ``*`` can be used interchangeably.)
+    this written using :data:`Unpack <Unpack>` instead, as
+    ``Unpack[Shape]``. This means the same thing as ``*Shape`` - ``Unpack`` and
+    ``*`` can be used interchangeably in the context of types.)
+
 
     Type variable tuples must *always* be used in combination with the unpacking
     operator. This helps distinguish type variable types from normal type
@@ -1310,6 +1312,22 @@ These are not used in annotations. They are building blocks for creating generic
     For more details on type variable tuples, see :pep:`646`.
 
     .. versionadded:: 3.11
+
+.. data:: Unpack
+
+    A typing operator that conceptually marks an object as having been
+    unpacked. For example, using the unpack operator ``*`` on a
+    :class:`type variable tuple <TypeVarTuple>` internally uses ``Unpack``
+    to mark the type variable tuple as having been unpacked::
+
+        Ts = TypeVarTuple('Ts')
+        array: tuple[*Ts]
+        # Effectively does:
+        array: tuple[Unpack[Ts]]
+
+    In fact, ``Unpack`` can be used interchangeably with ``*`` in the context
+    of types. You might see ``Unpack`` being used explicitly in older versions
+    of Python, where ``*`` couldn't be used in certain places.
 
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
 
