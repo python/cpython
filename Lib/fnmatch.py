@@ -43,7 +43,7 @@ def _compile_pattern(pat):
         res = bytes(res_str, 'ISO-8859-1')
     else:
         res = translate(pat)
-    return re.compile(res).match
+    return re.compile(res).search
 
 def filter(names, pat):
     """Construct a list from those elements of the iterable NAMES that match PAT."""
