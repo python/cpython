@@ -1697,7 +1697,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             }
             addr->sun_path[path.len] = 0;
 
-            *len_ret = path.len + offsetof(struct sockaddr_un, sun_path) + 1; /* including the tailing NUL */
+            /* including the tailing NUL */
+            *len_ret = path.len + offsetof(struct sockaddr_un, sun_path) + 1;
         }
         addr->sun_family = s->sock_family;
         memcpy(addr->sun_path, path.buf, path.len);
