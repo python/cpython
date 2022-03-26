@@ -1,6 +1,6 @@
 import unittest
 from test import support
-from test.support import warnings_helper
+from test.support import import_helper, warnings_helper
 import gc
 import weakref
 import operator
@@ -11,6 +11,8 @@ import warnings
 import collections
 import collections.abc
 import itertools
+
+_testcapi = import_helper.import_module('_testcapi')
 
 class PassThru(Exception):
     pass
@@ -632,10 +634,9 @@ class TestSet(TestJointOps, unittest.TestCase):
         myset >= myobj
         self.assertTrue(myobj.le_called)
 
-    @unittest.skipUnless(hasattr(set, "test_c_api"),
-                         'C API test only available in a debug build')
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_c_api(self):
-        self.assertEqual(set().test_c_api(), True)
+        self.assertEqual(_testcapi.test_set(set()), True)
 
 class SetSubclass(set):
     pass

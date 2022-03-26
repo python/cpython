@@ -1,0 +1,3 @@
+Undocumented method :meth:`set.test_c_api` available in a debug build only
+moved to :meth:`_testcapimodule.test_set` and became available in all builds.
+Patch by Oleg Iarygin.

@@ -5853,6 +5853,134 @@ test_float_unpack(PyObject *self, PyObject *args)
     return PyFloat_FromDouble(d);
 }
 
+#define assertRaises(call_return_value, exception)              \
+    do {                                                        \
+        assert(call_return_value);                              \
+        assert(PyErr_ExceptionMatches(exception));              \
+        PyErr_Clear();                                          \
+    } while(0)
+
+// Test Set Objects C API
+static PyObject *
+test_setobject(PyObject *self, PyObject *ob)
+{
+    /* Verify preconditions */
+    assert(PyAnySet_Check(ob));
+    assert(PyAnySet_CheckExact(ob));
+    assert(!PyFrozenSet_CheckExact(ob));
+
+    /* ob.clear(); ob |= set("abc"); */
+    PyObject *str = PyUnicode_FromString("abc");
+    if (str == NULL)
+        return NULL;
+    PySet_Clear(ob);
+    if (_PySet_Update(ob, str)) {
+        Py_DECREF(str);
+        return NULL;
+    }
+    Py_DECREF(str);
+
+    /* Exercise type/size checks */
+    assert(PySet_Size(ob) == 3);
+    assert(PySet_GET_SIZE(ob) == 3);
+
+    /* Raise TypeError for non-iterable constructor arguments */
+    assertRaises(PySet_New(Py_None) == NULL, PyExc_TypeError);
+    assertRaises(PyFrozenSet_New(Py_None) == NULL, PyExc_TypeError);
+
+    /* Raise TypeError for unhashable key */
+    PyObject *dup = PySet_New(ob);
+    assertRaises(PySet_Discard(ob, dup) == -1, PyExc_TypeError);
+    assertRaises(PySet_Contains(ob, dup) == -1, PyExc_TypeError);
+    assertRaises(PySet_Add(ob, dup) == -1, PyExc_TypeError);
+
+    /* Exercise successful pop, contains, add, and discard */
+    PyObject *elem = PySet_Pop(ob);
+    assert(PySet_Contains(ob, elem) == 0);
+    assert(PySet_GET_SIZE(ob) == 2);
+    assert(PySet_Add(ob, elem) == 0);
+    assert(PySet_Contains(ob, elem) == 1);
+    assert(PySet_GET_SIZE(ob) == 3);
+    assert(PySet_Discard(ob, elem) == 1);
+    assert(PySet_GET_SIZE(ob) == 2);
+    assert(PySet_Discard(ob, elem) == 0);
+    assert(PySet_GET_SIZE(ob) == 2);
+
+    /* Exercise clear */
+    PyObject *dup2 = PySet_New(dup);
+    assert(PySet_Clear(dup2) == 0);
+    assert(PySet_Size(dup2) == 0);
+    Py_DECREF(dup2);
+
+    /* Raise SystemError on clear or update of frozen set */
+    PyObject *f = PyFrozenSet_New(dup);
+    assertRaises(PySet_Clear(f) == -1, PyExc_SystemError);
+    assertRaises(_PySet_Update(f, dup) == -1, PyExc_SystemError);
+    assert(PySet_Add(f, elem) == 0);
+    Py_INCREF(f);
+    assertRaises(PySet_Add(f, elem) == -1, PyExc_SystemError);
+    Py_DECREF(f);
+    Py_DECREF(f);
+
+    /* Exercise direct iteration */
+    Py_ssize_t i = 0;
+    Py_ssize_t count = 0;
+    PyObject *x = NULL;
+    Py_hash_t hash;
+    while (_PySet_NextEntry((PyObject *)dup, &i, &x, &hash)) {
+        const char *s = PyUnicode_AsUTF8(x);
+        assert(s && (s[0] == 'a' || s[0] == 'b' || s[0] == 'c'));
+        count++;
+    }
+    assert(count == 3);
+
+    /* Exercise updates */
+    dup2 = PySet_New(NULL);
+    assert(_PySet_Update(dup2, dup) == 0);
+    assert(PySet_Size(dup2) == 3);
+    assert(_PySet_Update(dup2, dup) == 0);
+    assert(PySet_Size(dup2) == 3);
+    Py_DECREF(dup2);
+
+    /* Raise SystemError when self argument is not a set or frozenset. */
+    PyObject *t = PyTuple_New(0);
+    assertRaises(PySet_Size(t) == -1, PyExc_SystemError);
+    assertRaises(PySet_Contains(t, elem) == -1, PyExc_SystemError);
+    Py_DECREF(t);
+
+    /* Raise SystemError when self argument is not a set. */
+    f = PyFrozenSet_New(dup);
+    assert(PySet_Size(f) == 3);
+    assert(PyFrozenSet_CheckExact(f));
+    assertRaises(PySet_Discard(f, elem) == -1, PyExc_SystemError);
+    assertRaises(PySet_Pop(f) == NULL, PyExc_SystemError);
+    Py_DECREF(f);
+
+    /* Raise KeyError when popping from an empty set */
+    assert(PyNumber_InPlaceSubtract(ob, ob) == ob);
+    Py_DECREF(ob);
+    assert(PySet_GET_SIZE(ob) == 0);
+    assertRaises(PySet_Pop(ob) == NULL, PyExc_KeyError);
+
+    /* Restore the set from the copy using the PyNumber API */
+    assert(PyNumber_InPlaceOr(ob, dup) == ob);
+    Py_DECREF(ob);
+
+    /* Verify constructors accept NULL arguments */
+    f = PySet_New(NULL);
+    assert(f != NULL);
+    assert(PySet_GET_SIZE(f) == 0);
+    Py_DECREF(f);
+    f = PyFrozenSet_New(NULL);
+    assert(f != NULL);
+    assert(PyFrozenSet_CheckExact(f));
+    assert(PySet_GET_SIZE(f) == 0);
+    Py_DECREF(f);
+
+    Py_DECREF(elem);
+    Py_DECREF(dup);
+    Py_RETURN_TRUE;
+}
 
 static PyObject *negative_dictoffset(PyObject *, PyObject *);
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
@@ -6142,6 +6270,7 @@ static PyMethodDef TestMethods[] = {
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"float_pack", test_float_pack, METH_VARARGS, NULL},
     {"float_unpack", test_float_unpack, METH_VARARGS, NULL},
+    {"test_set", test_setobject, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 
