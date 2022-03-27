@@ -53,6 +53,7 @@ kwlist = [
     'raise',
     'return',
     'rozbij',
+    's',
     'smaz',
     'trida',
     'try',
