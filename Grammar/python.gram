@@ -114,21 +114,30 @@ simple_stmt[stmt_ty] (memo):
     | assignment
     | e=star_expressions { _PyAST_Expr(e, EXTRA) }
     | &'return' return_stmt
+    | &'vrat' return_stmt
     | &('import' | 'from') import_stmt
     | &'raise' raise_stmt
     | 'pass' { _PyAST_Pass(EXTRA) }
+    | 'vynech' { _PyAST_Pass(EXTRA) }
     | &'del' del_stmt
+    | &'smaz' del_stmt
     | &'yield' yield_stmt
+    | &'vynes' yield_stmt
     | &'assert' assert_stmt
     | 'break' { _PyAST_Break(EXTRA) }
+    | 'rozbij' { _PyAST_Break(EXTRA) }
     | 'continue' { _PyAST_Continue(EXTRA) }
+    | 'pokracuj' { _PyAST_Continue(EXTRA) }
     | &'global' global_stmt
     | &'nonlocal' nonlocal_stmt
 
 compound_stmt[stmt_ty]:
     | &('def' | '@' | ASYNC) function_def
+    | &('vym' | '@' | ASYNC) function_def # vymezit -> vym
     | &'if' if_stmt
+    | &'kdyz' if_stmt
     | &('class' | '@') class_def
+    | &('trida' | '@') class_def
     | &('with' | ASYNC) with_stmt
     | &('for' | ASYNC) for_stmt
     | &'try' try_stmt
@@ -175,6 +184,7 @@ augassign[AugOperator*]:
 
 return_stmt[stmt_ty]:
     | 'return' a=[star_expressions] { _PyAST_Return(a, EXTRA) }
+    | 'vrat' a=[star_expressions] { _PyAST_Return(a, EXTRA) }
 
 raise_stmt[stmt_ty]:
     | 'raise' a=expression b=['from' z=expression { z }] { _PyAST_Raise(a, b, EXTRA) }
@@ -188,6 +198,7 @@ nonlocal_stmt[stmt_ty]: 'nonlocal' a[asdl_expr_seq*]=','.NAME+ {
 
 del_stmt[stmt_ty]:
     | 'del' a=del_targets &(';' | NEWLINE) { _PyAST_Delete(a, EXTRA) }
+    | 'smaz' a=del_targets &(';' | NEWLINE) { _PyAST_Delete(a, EXTRA) }
     | invalid_del_stmt
 
 yield_stmt[stmt_ty]: y=yield_expr { _PyAST_Expr(y, EXTRA) }
@@ -254,6 +265,11 @@ class_def_raw[stmt_ty]:
                      (b) ? ((expr_ty) b)->v.Call.args : NULL,
                      (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
                      c, NULL, EXTRA) }
+    | 'trida' a=NAME b=['(' z=[arguments] ')' { z }] &&':' c=block {
+        _PyAST_ClassDef(a->v.Name.id,
+                     (b) ? ((expr_ty) b)->v.Call.args : NULL,
+                     (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
+                     c, NULL, EXTRA) }
 
 # Function definitions
 # --------------------
@@ -268,7 +284,20 @@ function_def_raw[stmt_ty]:
         _PyAST_FunctionDef(n->v.Name.id,
                         (params) ? params : CHECK(arguments_ty, _PyPegen_empty_arguments(p)),
                         b, NULL, a, NEW_TYPE_COMMENT(p, tc), EXTRA) }
+    | 'vym' n=NAME &&'(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
+        _PyAST_FunctionDef(n->v.Name.id,
+                        (params) ? params : CHECK(arguments_ty, _PyPegen_empty_arguments(p)),
+                        b, NULL, a, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | ASYNC 'def' n=NAME &&'(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
+        CHECK_VERSION(
+            stmt_ty,
+            5,
+            "Async functions are",
+            _PyAST_AsyncFunctionDef(n->v.Name.id,
+                            (params) ? params : CHECK(arguments_ty, _PyPegen_empty_arguments(p)),
+                            b, NULL, a, NEW_TYPE_COMMENT(p, tc), EXTRA)
+        ) }
+    | ASYNC 'vym' n=NAME &&'(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
         CHECK_VERSION(
             stmt_ty,
             5,
@@ -357,7 +386,10 @@ if_stmt[stmt_ty]:
     | invalid_if_stmt
     | 'if' a=named_expression ':' b=block c=elif_stmt {
         _PyAST_If(a, b, CHECK(asdl_stmt_seq*, _PyPegen_singleton_seq(p, c)), EXTRA) }
+    | 'kdyz' a=named_expression ':' b=block c=elif_stmt {
+        _PyAST_If(a, b, CHECK(asdl_stmt_seq*, _PyPegen_singleton_seq(p, c)), EXTRA) }
     | 'if' a=named_expression ':' b=block c=[else_block] { _PyAST_If(a, b, c, EXTRA) }
+    | 'kdyz' a=named_expression ':' b=block c=[else_block] { _PyAST_If(a, b, c, EXTRA) }
 elif_stmt[stmt_ty]:
     | invalid_elif_stmt
     | 'elif' a=named_expression ':' b=block c=elif_stmt {
@@ -451,7 +483,9 @@ case_block[match_case_ty]:
     | "case" pattern=patterns guard=guard? ':' body=block {
         _PyAST_match_case(pattern, guard, body, p->arena) }
 
-guard[expr_ty]: 'if' guard=named_expression { guard }
+guard[expr_ty]:
+    | 'if' guard=named_expression { guard }
+    | 'kdyz' guard=named_expression { guard }
 
 patterns[pattern_ty]:
     | patterns[asdl_pattern_seq*]=open_sequence_pattern {
@@ -487,8 +521,11 @@ literal_pattern[pattern_ty]:
     | value=complex_number { _PyAST_MatchValue(value, EXTRA) }
     | value=strings { _PyAST_MatchValue(value, EXTRA) }
     | 'None' { _PyAST_MatchSingleton(Py_None, EXTRA) }
+    | 'Nic' { _PyAST_MatchSingleton(Py_None, EXTRA) }
     | 'True' { _PyAST_MatchSingleton(Py_True, EXTRA) }
+    | 'Pravda' { _PyAST_MatchSingleton(Py_True, EXTRA) }
     | 'False' { _PyAST_MatchSingleton(Py_False, EXTRA) }
+    | 'Nepravda' { _PyAST_MatchSingleton(Py_False, EXTRA) }
 
 # Literal expressions are used to restrict permitted mapping pattern keys
 literal_expr[expr_ty]:
@@ -496,8 +533,11 @@ literal_expr[expr_ty]:
     | complex_number
     | strings
     | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
+    | 'Nic' { _PyAST_Constant(Py_None, NULL, EXTRA) }
     | 'True' { _PyAST_Constant(Py_True, NULL, EXTRA) }
+    | 'Pravda' { _PyAST_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
+    | 'Nepravda' { _PyAST_Constant(Py_False, NULL, EXTRA) }
 
 complex_number[expr_ty]:
     | real=signed_real_number '+' imag=imaginary_number {
@@ -636,12 +676,15 @@ expression[expr_ty] (memo):
     | invalid_expression
     | invalid_legacy_expression
     | a=disjunction 'if' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
+    | a=disjunction 'kdyz' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
     | disjunction
     | lambdef
 
 yield_expr[expr_ty]:
     | 'yield' 'from' a=expression { _PyAST_YieldFrom(a, EXTRA) }
+    | 'vynes' 'from' a=expression { _PyAST_YieldFrom(a, EXTRA) }
     | 'yield' a=[star_expressions] { _PyAST_Yield(a, EXTRA) }
+    | 'vynes' a=[star_expressions] { _PyAST_Yield(a, EXTRA) }
 
 star_expressions[expr_ty]:
     | a=star_expression b=(',' c=star_expression { c })+ [','] {
@@ -798,8 +841,11 @@ slice[expr_ty]:
 atom[expr_ty]:
     | NAME
     | 'True' { _PyAST_Constant(Py_True, NULL, EXTRA) }
+    | 'Pravda' { _PyAST_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
+    | 'Nepravda' { _PyAST_Constant(Py_False, NULL, EXTRA) }
     | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
+    | 'Nic' { _PyAST_Constant(Py_None, NULL, EXTRA) }
     | &STRING strings
     | NUMBER
     | &'(' (tuple | group | genexp)
@@ -909,7 +955,11 @@ for_if_clauses[asdl_comprehension_seq*]:
 for_if_clause[comprehension_ty]:
     | ASYNC 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
         CHECK_VERSION(comprehension_ty, 6, "Async comprehensions are", _PyAST_comprehension(a, b, c, 1, p->arena)) }
+    | ASYNC 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('kdyz' z=disjunction { z })* {
+        CHECK_VERSION(comprehension_ty, 6, "Async comprehensions are", _PyAST_comprehension(a, b, c, 1, p->arena)) }
     | 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
+        _PyAST_comprehension(a, b, c, 0, p->arena) }
+    | 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('kdyz' z=disjunction { z })* {
         _PyAST_comprehension(a, b, c, 0, p->arena) }
     | invalid_for_target
 
@@ -1081,7 +1131,7 @@ invalid_arguments:
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, asdl_seq_GET(b, b->size-1)->target, "Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_kwarg:
-    | a[Token*]=('True'|'False'|'None') b='=' {
+    | a[Token*]=('True'|'False'|'Nepravda'|'Pravda'|'None'|'Nic') b='=' {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to %s", PyBytes_AS_STRING(a->bytes)) }
     | a=NAME b='=' expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?")}
@@ -1092,6 +1142,7 @@ invalid_kwarg:
 # IMPORTANT: Note that the "_without_invalid" suffix causes the rule to not call invalid rules under it
 expression_without_invalid[expr_ty]:
     | a=disjunction 'if' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
+    | a=disjunction 'kdyz' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
     | disjunction
     | lambdef
 invalid_legacy_expression:
@@ -1106,6 +1157,7 @@ invalid_expression:
         _PyPegen_check_legacy_stmt(p, a) ? NULL : p->tokens[p->mark-1]->level == 0 ? NULL :
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Perhaps you forgot a comma?") }
    | a=disjunction 'if' b=disjunction !('else'|':') { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected 'else' after 'if' expression") }
+   | a=disjunction 'kdyz' b=disjunction !('else'|':') { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "ocekavano 'else' po 'kdyz' expression") }
 
 invalid_named_expression(memo):
     | a=expression ':=' expression {
@@ -1113,7 +1165,7 @@ invalid_named_expression(memo):
             a, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
     | a=NAME '=' b=bitwise_or !('='|':=') {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?") }
-    | !(list|tuple|genexp|'True'|'None'|'False') a=bitwise_or b='=' bitwise_or !('='|':=') {
+    | !(list|tuple|genexp|'True'|'None'|'Nic'|'False'|'Nepravda'|'Pravda') a=bitwise_or b='=' bitwise_or !('='|':=') {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot assign to %s here. Maybe you meant '==' instead of '='?",
                                           _PyPegen_get_expr_name(a)) }
 
@@ -1143,6 +1195,8 @@ invalid_ann_assign_target[expr_ty]:
     | '(' a=invalid_ann_assign_target ')' { a }
 invalid_del_stmt:
     | 'del' a=star_expressions {
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(DEL_TARGETS, a) }
+    | 'smaz' a=star_expressions {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(DEL_TARGETS, a) }
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
@@ -1281,8 +1335,11 @@ invalid_class_argument_pattern[asdl_pattern_seq*]:
     | [positional_patterns ','] keyword_patterns ',' a=positional_patterns { a }
 invalid_if_stmt:
     | 'if' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | 'kdyz' named_expression NEWLINE { RAISE_SYNTAX_ERROR("Ocekavana ':'") }
     | a='if' a=named_expression ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'if' statement on line %d", a->lineno) }
+    | a='kdyz' a=named_expression ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 'kdyz' statementu na radku %d", a->lineno) }
 invalid_elif_stmt:
     | 'elif' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='elif' named_expression ':' NEWLINE !INDENT {
@@ -1300,8 +1357,12 @@ invalid_for_stmt:
 invalid_def_raw:
     | [ASYNC] a='def' NAME '(' [params] ')' ['->' expression] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after function definition on line %d", a->lineno) }
+    | [ASYNC] a='vym' NAME '(' [params] ')' ['->' expression] ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po vymezeni funkce na radku %d", a->lineno) }
 invalid_class_def_raw:
     | a='class' NAME ['('[arguments] ')'] ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after class definition on line %d", a->lineno) }
+    | a='trida' NAME ['('[arguments] ')'] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after class definition on line %d", a->lineno) }
 
 invalid_double_starred_kvpairs:
