@@ -2255,7 +2255,7 @@ Functions and decorators
    See :pep:`484` for details and comparison with other typing semantics.
 
    .. versionchanged:: 3.11
-      Overloaded functions are now registered using :func:`functools.register_variant`.
+      Overloaded functions can now be retrieved using :func:`functools.get_variants`.
 
 .. decorator:: final
 
