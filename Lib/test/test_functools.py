@@ -1900,20 +1900,34 @@ class MethodHolder:
 
 class TestVariantRegistry(unittest.TestCase):
     def test_get_key_for_callable(self):
-        self.assertEqual(functools._get_key_for_callable(len),
-                         "builtins.len")
-        self.assertEqual(functools._get_key_for_callable(py_cached_func),
-                         f"{__name__}.py_cached_func")
-        self.assertEqual(functools._get_key_for_callable(MethodHolder.clsmethod),
-                         f"{__name__}.MethodHolder.clsmethod")
-        self.assertEqual(functools._get_key_for_callable(MethodHolder.stmethod),
-                         f"{__name__}.MethodHolder.stmethod")
-        self.assertEqual(functools._get_key_for_callable(MethodHolder.method),
-                         f"{__name__}.MethodHolder.method")
+        self.assertEqual(
+            functools._get_key_for_callable(len),
+            "builtins.len",
+        )
+        self.assertEqual(
+            functools._get_key_for_callable(py_cached_func),
+            f"{__name__}.py_cached_func",
+        )
+        self.assertEqual(
+            functools._get_key_for_callable(MethodHolder.clsmethod),
+            f"{__name__}.MethodHolder.clsmethod",
+        )
+        self.assertEqual(
+            functools._get_key_for_callable(MethodHolder.stmethod),
+            f"{__name__}.MethodHolder.stmethod",
+        )
+        self.assertEqual(
+            functools._get_key_for_callable(MethodHolder.method),
+            f"{__name__}.MethodHolder.method",
+        )
 
     def test_get_variants(self):
-        def func1(): pass
-        def func2(): pass
+        def func1():
+            pass
+
+        def func2():
+            pass
+
         obj1 = object()
         obj2 = object()
         self.assertEqual(functools.get_variants(func1), [])
@@ -1928,8 +1942,12 @@ class TestVariantRegistry(unittest.TestCase):
         self.assertEqual(functools.get_variants(func2), [])
 
     def test_clear_variants(self):
-        def func1(): pass
-        def func2(): pass
+        def func1():
+            pass
+
+        def func2():
+            pass
+
         obj1 = object()
 
         functools.register_variant(func1, obj1)
@@ -1957,14 +1975,21 @@ class TestVariantRegistry(unittest.TestCase):
         @functools.singledispatch
         def func(obj):
             return "base"
+
         original_func = func.registry[object]
         self.assertEqual(functools.get_variants(func), [original_func])
+
         @func.register(int)
         def func_int(obj):
             return "int"
-        self.assertEqual(functools.get_variants(func), [original_func, func_int])
 
-        def weird_func(): pass
+        self.assertEqual(
+            functools.get_variants(func), [original_func, func_int]
+        )
+
+        def weird_func():
+            pass
+
         weird_func.registry = 42
         # shouldn't crash if the registry attribute exists but is not
         # a mapping proxy
@@ -1975,12 +2000,15 @@ class TestVariantRegistry(unittest.TestCase):
             @functools.singledispatchmethod
             def t(self, arg):
                 self.arg = "base"
+
             @t.register(int)
             def int_t(self, arg):
                 self.arg = "int"
+
             @t.register(str)
             def str_t(self, arg):
                 self.arg = "str"
+
         expected = [
             A.t.registry[object],
             A.int_t,
@@ -1992,18 +2020,27 @@ class TestVariantRegistry(unittest.TestCase):
 
     def test_both_singledispatch_and_overload(self):
         from typing import overload
-        def complex_func(arg: str) -> int: ...
+
+        def complex_func(arg: str) -> int:
+            ...
+
         str_overload = complex_func
         overload(complex_func)
-        def complex_func(arg: int) -> str: ...
+
+        def complex_func(arg: int) -> str:
+            ...
+
         int_overload = complex_func
         overload(complex_func)
+
         @functools.singledispatch
         def complex_func(arg: object):
             raise NotImplementedError
+
         @complex_func.register
         def str_variant(arg: str) -> int:
             return int(arg)
+
         @complex_func.register
         def int_variant(arg: int) -> str:
             return str(arg)
@@ -2016,7 +2053,7 @@ class TestVariantRegistry(unittest.TestCase):
                 complex_func.registry[object],
                 str_variant,
                 int_variant,
-            ]
+            ],
         )
 
 
