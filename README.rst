@@ -1,3 +1,95 @@
+Krajta v 0.0.1 alpha 1
+======================
+
+Krajta is a extension of the Python programming language. It's main features are czech keywords. It allows for full usage of standard Python keywords and it's modules.
+
+Example of all currently translated keywords:
+::
+    class Example:
+        def __init__(self, name=None):
+            self.name = name
+        
+        def hasName(self):
+            if self.name is None:
+                return False
+            else:
+                return True
+
+    def customRange(start, stop, step):
+        i = start
+        while i < stop:
+            yield i
+            i += step
+
+    with open("out.txt", "w") as f:
+        for i in customRange(0, 10, 1):
+            f.write(i)
+
+    def divide(x, y):
+        """Copied from https://www.geeksforgeeks.org/try-except-else-and-finally-in-python/"""
+        try:
+            # Floor Division : Gives only Fractional
+            # Part as Answer
+            result = x // y
+        except ZeroDivisionError:
+            print("Sorry ! You are dividing by zero ")
+        else:
+            print("Yeah ! Your answer is :", result)
+        finally: 
+            # this block is always executed  
+            # regardless of exception generation. 
+            print('This is always executed')
+
+    del divide
+    assert 1==(1 % 2)
+    assert 0==(2 % 2)
+
+
+::
+    trida Priklad:
+        vym __init__(ja, jmeno=Nic):
+            ja.jmeno = jmeno
+        
+        vym maJmeno(ja):
+            kdyz ja.jmeno is Nic:
+                vrat Nepravda
+            jinak:
+                vrat Pravda
+
+    vym customRange(start, stop, step):
+        i = start
+        zatimco i < stop:
+            vynes i
+            i += step
+
+    pri open("out.txt", "w") as f:
+        pro i uvnitr customRange(0, 10, 1):
+            f.write(i)
+
+    vym divide(x, y):
+        """Copied from https://www.geeksforgeeks.org/try-except-else-and-finally-in-python/"""
+        zkus:
+            # Floor Division : Gives only Fractional
+            # Part as Answer
+            result = x // y
+        mimo ZeroDivisionError:
+            print("Sorry ! You are dividing by zero ")
+        jinak:
+            print("Yeah ! Your answer is :", result)
+        konecne: 
+            # this block is always executed  
+            # regardless of exception generation. 
+            print('This is always executed')
+
+    smaz divide
+    prosaz 1==(1 % 2)
+    prosaz 0==(2 % 2)
+
+
+
+Original Python readme:
+
+
 This is Python version 3.11.0 alpha 6
 =====================================
 
@@ -163,7 +255,7 @@ Converting From Python 2.x to 3.x
 
 Significant backward incompatible changes were made for the release of Python
 3.0, which may cause programs written for Python 2 to fail when run with Python
-3.  For more information about porting your code from Python 2 to Python 3, see
+1.  For more information about porting your code from Python 2 to Python 3, see
 the `Porting HOWTO <https://docs.python.org/3/howto/pyporting.html>`_.
 
 
