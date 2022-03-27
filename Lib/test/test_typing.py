@@ -3820,7 +3820,9 @@ class OverloadTests(BaseTestCase):
 
         blah()
 
-    def test_get_variants(self):
+    def test_variant_registry(self):
+        # Test the interaction with the variants registry in
+        # the functools module.
         def blah():
             pass
 
@@ -3838,7 +3840,7 @@ class OverloadTests(BaseTestCase):
 
         self.assertEqual(functools.get_variants(blah), [overload1, overload2])
 
-    def test_get_variants_repeated(self):
+    def test_variant_registry_repeated(self):
         for _ in range(2):
             def blah():
                 pass
