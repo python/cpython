@@ -12,7 +12,6 @@ import os
 import re
 import time
 import types
-from string import ascii_letters
 from typing import Dict, FrozenSet, TextIO, Tuple
 
 import umarshal
@@ -171,7 +170,7 @@ class Printer:
     def generate_unicode(self, name: str, s: str) -> str:
         if s in identifiers:
             return f"&_Py_ID({s})"
-        if all(i in ascii_letters or i == "_" or i.isdigit() for i in s):
+        if re.match(r'^[A-Za-z0-9_]+$', s):
             name = f"const_str_{s}"
         kind, ascii = analyze_character_width(s)
         if kind == PyUnicode_1BYTE_KIND:
@@ -329,7 +328,7 @@ class Printer:
     def generate_int(self, name: str, i: int) -> str:
         if -5 <= i <= 256:
             return f"(PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + {i}]"
-        if i > 0:
+        if i >= 0:
             name = f"const_int_{i}"
         else:
             name = f"const_int_negative_{abs(i)}"
