@@ -5862,7 +5862,7 @@ test_float_unpack(PyObject *self, PyObject *args)
 
 // Test Set Objects C API
 static PyObject *
-test_setobject(PyObject *self, PyObject *Py_UNUSED(ignored))
+test_set_api(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *ob = PySet_New(NULL);
     assert(ob);
@@ -6274,7 +6274,7 @@ static PyMethodDef TestMethods[] = {
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"float_pack", test_float_pack, METH_VARARGS, NULL},
     {"float_unpack", test_float_unpack, METH_VARARGS, NULL},
-    {"test_set", test_setobject, METH_NOARGS, NULL},
+    {"test_set_api", test_set_api, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 

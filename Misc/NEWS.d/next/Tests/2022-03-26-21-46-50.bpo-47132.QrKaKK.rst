@@ -1,4 +1,4 @@
 Undocumented method :meth:`set.test_c_api` available in a debug build only
-moved to :meth:`_testcapimodule.test_set` and became available in all builds.
-Its parent test changed from ``test.test_set.TestSet.test_c_api``
+moved to :meth:`_testcapimodule.test_set_api` and became available in all
+builds. Its parent test changed from ``test.test_set.TestSet.test_c_api``
 to :meth:`test.test_capi.Test_testcapi`. Patch by Oleg Iarygin.
