@@ -74,12 +74,14 @@ jobs:
           grep "aclocal 1.16.3" aclocal.m4
           grep -q "runstatedir" configure
           grep -q "PKG_PROG_PKG_CONFIG" aclocal.m4
-      - name: Regenerate autoconf files
-        run: docker run --rm -v $(pwd):/src quay.io/tiran/cpython_autoconf:269
-      - name: Build CPython
+      - name: Configure CPython
         run: |
           # Build Python with the libpython dynamic library
           ./configure --with-pydebug --enable-shared
+      - name: Regenerate autoconf files with container image
+        run: make regen-configure
+      - name: Build CPython
+        run: |
           make -j4 regen-all
           make regen-stdlib-module-names
       - name: Check for changes
@@ -111,12 +113,12 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build CPython
-      run: .\PCbuild\build.bat -e -p Win32
+      run: .\PCbuild\build.bat -e -d -p Win32
       timeout-minutes: 30
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
-      run: .\PCbuild\rt.bat -p Win32 -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+      run: .\PCbuild\rt.bat -p Win32 -d -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
 
   build_win_amd64:
     name: 'Windows (x64)'
@@ -130,12 +132,12 @@ jobs:
     - name: Register MSVC problem matcher
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
-      run: .\PCbuild\build.bat -e -p x64
+      run: .\PCbuild\build.bat -e -d -p x64
       timeout-minutes: 30
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
-      run: .\PCbuild\rt.bat -p x64 -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+      run: .\PCbuild\rt.bat -p x64 -d -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
 
   build_macos:
     name: 'macOS'
@@ -165,7 +167,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1m
+      OPENSSL_VER: 1.1.1n
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v2
@@ -224,7 +226,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.1.1m, 3.0.1]
+        openssl_ver: [1.1.1n, 3.0.2]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
@@ -271,7 +273,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1m
+      OPENSSL_VER: 1.1.1n
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:

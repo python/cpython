@@ -53,6 +53,9 @@ ac_cv_func_symlinkat=no
 ac_cv_func_readlinkat=no
 ac_cv_func_fchmodat=no
 ac_cv_func_dup3=no
+# lchmod/lchown are implemented, but fail with ENOTSUP.
+ac_cv_func_lchmod=no
+ac_cv_func_lchown=no
 
 # Syscalls not implemented in emscripten
 # [Errno 52] Function not implemented
@@ -62,6 +65,7 @@ ac_cv_func_pwritev2=no
 ac_cv_func_pwritev=no
 ac_cv_func_pipe2=no
 ac_cv_func_nice=no
+ac_cv_func_setpriority=no
 ac_cv_func_setitimer=no
 # unsupported syscall: __syscall_prlimit64
 ac_cv_func_prlimit=no
@@ -73,8 +77,10 @@ ac_cv_func_posix_fallocate=no
 ac_cv_func_utimensat=no
 ac_cv_header_sys_ioctl_h=no
 
-# sockets are supported, but only in non-blocking mode
-# ac_cv_header_sys_socket_h=no
+# sockets are supported, but only AF_INET / AF_INET6 in non-blocking mode.
+# Disable AF_UNIX and AF_PACKET support, see socketmodule.h.
+ac_cv_header_sys_un_h=no
+ac_cv_header_netpacket_packet_h=no
 
 # aborts with bad ioctl
 ac_cv_func_openpty=no
@@ -86,10 +92,16 @@ ac_cv_func_mkfifoat=no
 ac_cv_func_mknod=no
 ac_cv_func_mknodat=no
 
-# always fails with permission error
+# always fails with permission or not implemented error
+ac_cv_func_getgroups=no
 ac_cv_func_setgroups=no
 ac_cv_func_setresuid=no
 ac_cv_func_setresgid=no
+
+# Emscripten does not support hard links, always fails with errno 34
+# "Too many links". See emscripten_syscall_stubs.c
+ac_cv_func_link=no
+ac_cv_func_linkat=no
 
 # alarm signal is not delivered, may need a callback into the event loop?
 ac_cv_func_alarm=no

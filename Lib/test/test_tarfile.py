@@ -1498,6 +1498,7 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
 
     @unittest.skipUnless(sys.platform != "win32" and hasattr(os, "umask"),
                          "Missing umask implementation")
+    @unittest.skipIf(support.is_emscripten, "Emscripten's umask is a stub.")
     def test_file_mode(self):
         # Test for issue #8464: Create files with correct
         # permissions.

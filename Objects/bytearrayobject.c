@@ -6,6 +6,7 @@
 #include "pycore_bytes_methods.h"
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
+#include "pycore_long.h"          // _PyLong_FromUnsignedChar()
 #include "bytesobject.h"
 
 /*[clinic input]
@@ -335,9 +336,19 @@ bytearray_repeat(PyByteArrayObject *self, Py_ssize_t count)
         if (mysize == 1)
             memset(result->ob_bytes, buf[0], size);
         else {
-            Py_ssize_t i;
-            for (i = 0; i < count; i++)
-                memcpy(result->ob_bytes + i*mysize, buf, mysize);
+            Py_ssize_t i, j;
+
+            i = 0;
+            if (i < size) {
+                memcpy(result->ob_bytes, buf, mysize);
+                i = mysize;
+            }
+            // repeatedly double the number of bytes copied
+            while (i < size) {
+                j = Py_MIN(i, size - i);
+                memcpy(result->ob_bytes + i, result->ob_bytes, j);
+                i += j;
+            }
         }
     }
     return (PyObject *)result;
@@ -363,9 +374,15 @@ bytearray_irepeat(PyByteArrayObject *self, Py_ssize_t count)
     if (mysize == 1)
         memset(buf, buf[0], size);
     else {
-        Py_ssize_t i;
-        for (i = 1; i < count; i++)
-            memcpy(buf + i*mysize, buf, mysize);
+        Py_ssize_t i, j;
+
+        i = mysize;
+        // repeatedly double the number of bytes copied
+        while (i < size) {
+            j = Py_MIN(i, size - i);
+            memcpy(buf + i, buf, j);
+            i += j;
+        }
     }
 
     Py_INCREF(self);
@@ -379,7 +396,7 @@ bytearray_getitem(PyByteArrayObject *self, Py_ssize_t i)
         PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
         return NULL;
     }
-    return PyLong_FromLong((unsigned char)(PyByteArray_AS_STRING(self)[i]));
+    return _PyLong_FromUnsignedChar((unsigned char)(self->ob_start[i]));
 }
 
 static PyObject *
@@ -398,7 +415,7 @@ bytearray_subscript(PyByteArrayObject *self, PyObject *index)
             PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
             return NULL;
         }
-        return PyLong_FromLong((unsigned char)(PyByteArray_AS_STRING(self)[i]));
+        return _PyLong_FromUnsignedChar((unsigned char)(self->ob_start[i]));
     }
     else if (PySlice_Check(index)) {
         Py_ssize_t start, stop, step, slicelength, i;
@@ -844,8 +861,33 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
         return -1;
     }
 
-    /* XXX Optimize this if the arguments is a list, tuple */
-
+    if (PyList_CheckExact(arg) || PyTuple_CheckExact(arg)) {
+        Py_ssize_t size = PySequence_Fast_GET_SIZE(arg);
+        if (PyByteArray_Resize((PyObject *)self, size) < 0) {
+            return -1;
+        }
+        PyObject **items = PySequence_Fast_ITEMS(arg);
+        char *s = PyByteArray_AS_STRING(self);
+        for (Py_ssize_t i = 0; i < size; i++) {
+            int value;
+            if (!PyLong_CheckExact(items[i])) {
+                /* Resize to 0 and go through slowpath */
+                if (Py_SIZE(self) != 0) {
+                   if (PyByteArray_Resize((PyObject *)self, 0) < 0) {
+                       return -1;
+                   }
+                }
+                goto slowpath;
+            }
+            int rc = _getbytevalue(items[i], &value);
+            if (!rc) {
+                return -1;
+            }
+            s[i] = value;
+        }
+        return 0;
+    }
+slowpath:
     /* Get the iterator */
     it = PyObject_GetIter(arg);
     if (it == NULL) {
@@ -1799,7 +1841,7 @@ bytearray_pop_impl(PyByteArrayObject *self, Py_ssize_t index)
     if (PyByteArray_Resize((PyObject *)self, n - 1) < 0)
         return NULL;
 
-    return PyLong_FromLong((unsigned char)value);
+    return _PyLong_FromUnsignedChar((unsigned char)value);
 }
 
 /*[clinic input]
@@ -2387,7 +2429,6 @@ static PyObject *
 bytearrayiter_next(bytesiterobject *it)
 {
     PyByteArrayObject *seq;
-    PyObject *item;
 
     assert(it != NULL);
     seq = it->it_seq;
@@ -2396,11 +2437,8 @@ bytearrayiter_next(bytesiterobject *it)
     assert(PyByteArray_Check(seq));
 
     if (it->it_index < PyByteArray_GET_SIZE(seq)) {
-        item = PyLong_FromLong(
-            (unsigned char)PyByteArray_AS_STRING(seq)[it->it_index]);
-        if (item != NULL)
-            ++it->it_index;
-        return item;
+        return _PyLong_FromUnsignedChar(
+            (unsigned char)PyByteArray_AS_STRING(seq)[it->it_index++]);
     }
 
     it->it_seq = NULL;

@@ -1,0 +1,2 @@
+Modify :opcode:`STORE_SUBSCR` to use an inline cache entry (rather than its
+oparg) as an adaptive counter.

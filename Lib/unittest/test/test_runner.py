@@ -3,6 +3,7 @@ import os
 import sys
 import pickle
 import subprocess
+from test import support
 
 import unittest
 from unittest.case import _Outcome
@@ -1139,6 +1140,7 @@ class Test_TextTestRunner(unittest.TestCase):
         expectedresult = (runner.stream, DESCRIPTIONS, VERBOSITY)
         self.assertEqual(runner._makeResult(), expectedresult)
 
+    @support.requires_subprocess()
     def test_warnings(self):
         """
         Check that warnings argument of TextTestRunner correctly affects the

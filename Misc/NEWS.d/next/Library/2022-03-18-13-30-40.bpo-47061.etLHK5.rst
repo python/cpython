@@ -1,0 +1,5 @@
+Deprecate the various modules listed by :pep:`594`:
+
+aifc, asynchat, asyncore, audioop, cgi, cgitb, chunk, crypt,
+imghdr, msilib, nntplib, nis, ossaudiodev, pipes, smtpd,
+sndhdr, spwd, sunau, telnetlib, uu, xdrlib
