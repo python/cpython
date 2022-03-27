@@ -5075,9 +5075,6 @@ class LoggerTest(BaseTest, AssertErrorMessage):
         self.assertEqual(records[-1].funcName, 'outer')
         self.assertGreater(records[-1].lineno, lineno)
         lineno = records[-1].lineno
-        trigger = self.logger.warn
-        outer()
-        self.assertEqual(records[-1].funcName, 'outer')
         root_logger = logging.getLogger()
         root_logger.addHandler(self.recording)
         trigger = logging.warning

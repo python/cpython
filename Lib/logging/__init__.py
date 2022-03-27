@@ -1568,7 +1568,7 @@ class Logger(Filterer):
         while stacklevel > 0:
             next_f = f.f_back
             if next_f is None:
-                ##TODO: We've got options here
+                ## We've got options here.
                 ## If we want to use the last (deepest) frame:
                 break
                 ## If we want to mimic the warnings module:
