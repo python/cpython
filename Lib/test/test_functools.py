@@ -1953,6 +1953,52 @@ class TestVariantRegistry(unittest.TestCase):
         self.assertEqual(functools.get_variants(func1), [])
         self.assertEqual(functools.get_variants(func2), [])
 
+    def test_singledispatch_interaction(self):
+        @functools.singledispatch
+        def func(obj):
+            return "base"
+        original_func = func.registry[object]
+        self.assertEqual(functools.get_variants(func), [original_func])
+        @func.register(int)
+        def func_int(obj):
+            return "int"
+        self.assertEqual(functools.get_variants(func), [original_func, func_int])
+
+        def weird_func(): pass
+        weird_func.registry = 42
+        # shouldn't crash if the registry attribute exists but is not
+        # a mapping proxy
+        self.assertEqual(functools.get_variants(weird_func), [])
+
+    def test_both_singledispatch_and_overload(self):
+        from typing import overload
+        def complex_func(arg: str) -> int: ...
+        str_overload = complex_func
+        overload(complex_func)
+        def complex_func(arg: int) -> str: ...
+        int_overload = complex_func
+        overload(complex_func)
+        @functools.singledispatch
+        def complex_func(arg: object):
+            raise NotImplementedError
+        @complex_func.register
+        def str_variant(arg: str) -> int:
+            return int(arg)
+        @complex_func.register
+        def int_variant(arg: int) -> str:
+            return str(arg)
+
+        self.assertEqual(
+            functools.get_variants(complex_func),
+            [
+                str_overload,
+                int_overload,
+                complex_func.registry[object],
+                str_variant,
+                int_variant,
+            ]
+        )
+
 
 class TestSingleDispatch(unittest.TestCase):
     def test_simple_overloads(self):
