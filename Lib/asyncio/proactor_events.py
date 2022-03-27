@@ -158,7 +158,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             # end then it may fail with ERROR_NETNAME_DELETED if we
             # just close our end.  First calling shutdown() seems to
             # cure it, but maybe using DisconnectEx() would be better.
-            if hasattr(self._sock, 'shutdown'):
+            if hasattr(self._sock, 'shutdown') and self._sock.fileno() != -1:
                 self._sock.shutdown(socket.SHUT_RDWR)
             self._sock.close()
             self._sock = None
@@ -700,8 +700,20 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     async def sock_recv_into(self, sock, buf):
         return await self._proactor.recv_into(sock, buf)
 
+    async def sock_recvfrom(self, sock, bufsize):
+        return await self._proactor.recvfrom(sock, bufsize)
+
+    async def sock_recvfrom_into(self, sock, buf, nbytes=0):
+        if not nbytes:
+            nbytes = len(buf)
+
+        return await self._proactor.recvfrom_into(sock, buf, nbytes)
+
     async def sock_sendall(self, sock, data):
         return await self._proactor.send(sock, data)
+
+    async def sock_sendto(self, sock, data, address):
+        return await self._proactor.sendto(sock, data, 0, address)
 
     async def sock_connect(self, sock, address):
         return await self._proactor.connect(sock, address)

@@ -1,0 +1,2 @@
+Quicken bytecode in-place by storing it as part of the corresponding
+``PyCodeObject``.

@@ -1,0 +1,2 @@
+Skip tests if platform's ``strftime`` does not support non-portable glibc
+extensions.

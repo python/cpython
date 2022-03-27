@@ -22,6 +22,5 @@ PyAPI_FUNC(void) PyFrame_LocalsToFast(PyFrameObject *, int);
 PyAPI_FUNC(int) PyFrame_FastToLocalsWithError(PyFrameObject *f);
 PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
 
-PyAPI_FUNC(void) _PyFrame_DebugMallocStats(FILE *out);
-
 PyAPI_FUNC(PyFrameObject *) PyFrame_GetBack(PyFrameObject *frame);
+PyAPI_FUNC(PyObject *) PyFrame_GetLocals(PyFrameObject *frame);

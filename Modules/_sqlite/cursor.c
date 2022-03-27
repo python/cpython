@@ -672,13 +672,13 @@ _sqlite3.Cursor.execute as pysqlite_cursor_execute
     parameters: object(c_default = 'NULL') = ()
     /
 
-Executes a SQL statement.
+Executes an SQL statement.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_execute_impl(pysqlite_Cursor *self, PyObject *sql,
                              PyObject *parameters)
-/*[clinic end generated code: output=d81b4655c7c0bbad input=91d7bb36f127f597]*/
+/*[clinic end generated code: output=d81b4655c7c0bbad input=a8e0200a11627f94]*/
 {
     return _pysqlite_query_execute(self, 0, sql, parameters);
 }
@@ -690,13 +690,13 @@ _sqlite3.Cursor.executemany as pysqlite_cursor_executemany
     seq_of_parameters: object
     /
 
-Repeatedly executes a SQL statement.
+Repeatedly executes an SQL statement.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_executemany_impl(pysqlite_Cursor *self, PyObject *sql,
                                  PyObject *seq_of_parameters)
-/*[clinic end generated code: output=2c65a3c4733fb5d8 input=440707b7af87fba8]*/
+/*[clinic end generated code: output=2c65a3c4733fb5d8 input=0d0a52e5eb7ccd35]*/
 {
     return _pysqlite_query_execute(self, 1, sql, seq_of_parameters);
 }
@@ -707,13 +707,13 @@ _sqlite3.Cursor.executescript as pysqlite_cursor_executescript
     sql_script: str
     /
 
-Executes multiple SQL statements at once. Non-standard.
+Executes multiple SQL statements at once.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
                                    const char *sql_script)
-/*[clinic end generated code: output=8fd726dde1c65164 input=1ac0693dc8db02a8]*/
+/*[clinic end generated code: output=8fd726dde1c65164 input=78f093be415a8a2c]*/
 {
     if (!check_cursor(self)) {
         return NULL;
@@ -921,12 +921,12 @@ _sqlite3.Cursor.setinputsizes as pysqlite_cursor_setinputsizes
     sizes: object
     /
 
-Required by DB-API. Does nothing in pysqlite.
+Required by DB-API. Does nothing in sqlite3.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_setinputsizes(pysqlite_Cursor *self, PyObject *sizes)
-/*[clinic end generated code: output=893c817afe9d08ad input=7cffbb168663bc69]*/
+/*[clinic end generated code: output=893c817afe9d08ad input=de7950a3aec79bdf]*/
 {
     Py_RETURN_NONE;
 }
@@ -938,13 +938,13 @@ _sqlite3.Cursor.setoutputsize as pysqlite_cursor_setoutputsize
     column: object = None
     /
 
-Required by DB-API. Does nothing in pysqlite.
+Required by DB-API. Does nothing in sqlite3.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_setoutputsize_impl(pysqlite_Cursor *self, PyObject *size,
                                    PyObject *column)
-/*[clinic end generated code: output=018d7e9129d45efe input=077b017da58b9389]*/
+/*[clinic end generated code: output=018d7e9129d45efe input=607a6bece8bbb273]*/
 {
     Py_RETURN_NONE;
 }

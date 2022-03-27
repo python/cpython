@@ -4,6 +4,7 @@
 .. module:: crypt
    :platform: Unix
    :synopsis: The crypt() function used to check Unix passwords.
+   :deprecated:
 
 .. moduleauthor:: Steven D. Majewski <sdm7g@virginia.edu>
 .. sectionauthor:: Steven D. Majewski <sdm7g@virginia.edu>
@@ -14,6 +15,9 @@
 .. index::
    single: crypt(3)
    pair: cipher; DES
+
+.. deprecated:: 3.11
+   The :mod:`crypt` module is deprecated (see :pep:`594` for details).
 
 --------------
 
