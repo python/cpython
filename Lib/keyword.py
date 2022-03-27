@@ -70,6 +70,7 @@ kwlist = [
     'while',
     'with',
     'yield',
+    'zatimco',
     'zkus'
 ]
 

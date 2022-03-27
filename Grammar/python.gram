@@ -146,6 +146,7 @@ compound_stmt[stmt_ty]:
     | &'try' try_stmt
     | &'zkus' try_stmt
     | &'while' while_stmt
+    | &'zatimco' while_stmt
     | match_stmt
 
 # SIMPLE STATEMENTS
@@ -412,6 +413,7 @@ else_block[asdl_stmt_seq*]:
 while_stmt[stmt_ty]:
     | invalid_while_stmt
     | 'while' a=named_expression ':' b=block c=[else_block] { _PyAST_While(a, b, c, EXTRA) }
+    | 'zatimco' a=named_expression ':' b=block c=[else_block] { _PyAST_While(a, b, c, EXTRA) }
 
 # For statement
 # -------------
@@ -1410,6 +1412,9 @@ invalid_while_stmt:
     | 'while' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='while' named_expression ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'while' statement on line %d", a->lineno) }
+    | 'zatimco' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='zatimco' named_expression ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 'zatimco' statementu na radku %d", a->lineno) }
 invalid_for_stmt:
     | [ASYNC] a='for' star_targets 'in' star_expressions ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'for' statement on line %d", a->lineno) }
