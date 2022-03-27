@@ -1,9 +1,10 @@
 Krajta v 0.0.1 alpha 1
 ======================
 
-Krajta is a extension of the Python programming language. It's main features are czech keywords. It allows for full usage of standard Python keywords and it's modules.
+Krajta is an extension of the Python programming language. Its main features are czech keywords. It allows for full usage of standard Python keywords and its modules.
 
 Example of all currently translated keywords:
+
 Python
 ::
     class Example:
@@ -29,8 +30,7 @@ Python
     def divide(x, y):
         """Copied from https://www.geeksforgeeks.org/try-except-else-and-finally-in-python/"""
         try:
-            # Floor Division : Gives only Fractional
-            # Part as Answer
+            # Floor Division : Gives only whole part of the number as the answer
             result = x // y
         except ZeroDivisionError:
             print("Sorry ! You are dividing by zero ")
@@ -70,8 +70,7 @@ Krajta
     vym divide(x, y):
         """Copied from https://www.geeksforgeeks.org/try-except-else-and-finally-in-python/"""
         zkus:
-            # Floor Division : Gives only Fractional
-            # Part as Answer
+            # Floor Division : Gives only whole part of the number as the answer
             result = x // y
         mimo ZeroDivisionError:
             print("Sorry ! You are dividing by zero ")
