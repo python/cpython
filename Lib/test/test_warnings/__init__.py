@@ -1239,8 +1239,8 @@ class _DeprecatedTest(BaseTest, unittest.TestCase):
         version = (3, 11, 0, "alpha", 0)
         msg = r".*test_warnings.*3\.11"
         with warnings_helper.check_warnings((msg, DeprecationWarning), quiet=False):
-                self.module._deprecated("test_warnings", remove=(3, 11),
-                                              _version=version)
+            self.module._deprecated("test_warnings", remove=(3, 11),
+                                    _version=version)
 
     def test_RuntimeError(self):
         version = (3, 11, 0, "final", 0)
