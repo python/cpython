@@ -590,7 +590,7 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.8
 
    .. versionchanged:: 3.11
-      Implementation functions are now registered using :func:`register_variant`.
+      Implementation functions can now be retrieved using :func:`get_variants`.
 
 
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
