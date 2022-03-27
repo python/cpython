@@ -124,6 +124,7 @@ simple_stmt[stmt_ty] (memo):
     | &'yield' yield_stmt
     | &'vynes' yield_stmt
     | &'assert' assert_stmt
+    | &'prosaz' assert_stmt
     | 'break' { _PyAST_Break(EXTRA) }
     | 'rozbij' { _PyAST_Break(EXTRA) }
     | 'continue' { _PyAST_Continue(EXTRA) }
@@ -139,9 +140,11 @@ compound_stmt[stmt_ty]:
     | &('class' | '@') class_def
     | &('trida' | '@') class_def
     | &('with' | ASYNC) with_stmt
-    | &('s' | ASYNC) with_stmt
+    | &('pri' | ASYNC) with_stmt
     | &('for' | ASYNC) for_stmt
+    | &('pro' | ASYNC) for_stmt
     | &'try' try_stmt
+    | &'zkus' try_stmt
     | &'while' while_stmt
     | match_stmt
 
@@ -204,7 +207,9 @@ del_stmt[stmt_ty]:
 
 yield_stmt[stmt_ty]: y=yield_expr { _PyAST_Expr(y, EXTRA) }
 
-assert_stmt[stmt_ty]: 'assert' a=expression b=[',' z=expression { z }] { _PyAST_Assert(a, b, EXTRA) }
+assert_stmt[stmt_ty]:
+    | 'assert' a=expression b=[',' z=expression { z }] { _PyAST_Assert(a, b, EXTRA) }
+    | 'prosaz' a=expression b=[',' z=expression { z }] { _PyAST_Assert(a, b, EXTRA) }
 
 import_stmt[stmt_ty]: import_name | import_from
 
@@ -399,6 +404,7 @@ elif_stmt[stmt_ty]:
 else_block[asdl_stmt_seq*]:
     | invalid_else_stmt
     | 'else' &&':' b=block { b }
+    | 'jinak' &&':' b=block { b }
 
 # While statement
 # ---------------
@@ -414,7 +420,11 @@ for_stmt[stmt_ty]:
     | invalid_for_stmt
     | 'for' t=star_targets 'in' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         _PyAST_For(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
+    | 'pro' t=star_targets 'uvnitr' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+        _PyAST_For(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | ASYNC 'for' t=star_targets 'in' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+        CHECK_VERSION(stmt_ty, 5, "Async for loops are", _PyAST_AsyncFor(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
+    | ASYNC 'pro' t=star_targets 'uvnitr' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         CHECK_VERSION(stmt_ty, 5, "Async for loops are", _PyAST_AsyncFor(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
     | invalid_for_target
 
@@ -425,19 +435,19 @@ with_stmt[stmt_ty]:
     | invalid_with_stmt_indent
     | 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
         _PyAST_With(a, b, NULL, EXTRA) }
-    | 's' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
+    | 'pri' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
         _PyAST_With(a, b, NULL, EXTRA) }
     | 'with' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
         _PyAST_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
-    | 's' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
+    | 'pri' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
         _PyAST_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | ASYNC 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
        CHECK_VERSION(stmt_ty, 5, "Async with statements are", _PyAST_AsyncWith(a, b, NULL, EXTRA)) }
-    | ASYNC 's' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
+    | ASYNC 'pri' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
        CHECK_VERSION(stmt_ty, 5, "Async with statements are", _PyAST_AsyncWith(a, b, NULL, EXTRA)) }
     | ASYNC 'with' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
        CHECK_VERSION(stmt_ty, 5, "Async with statements are", _PyAST_AsyncWith(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
-    | ASYNC 's' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
+    | ASYNC 'pri' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
        CHECK_VERSION(stmt_ty, 5, "Async with statements are", _PyAST_AsyncWith(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
     | invalid_with_stmt
 
@@ -452,8 +462,11 @@ with_item[withitem_ty]:
 try_stmt[stmt_ty]:
     | invalid_try_stmt
     | 'try' &&':' b=block f=finally_block { _PyAST_Try(b, NULL, NULL, f, EXTRA) }
+    | 'zkus' &&':' b=block f=finally_block { _PyAST_Try(b, NULL, NULL, f, EXTRA) }
     | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_block+ el=[else_block] f=[finally_block] { _PyAST_Try(b, ex, el, f, EXTRA) }
+    | 'zkus' &&':' b=block ex[asdl_excepthandler_seq*]=except_block+ el=[else_block] f=[finally_block] { _PyAST_Try(b, ex, el, f, EXTRA) }
     | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_star_block+ el=[else_block] f=[finally_block] { _PyAST_TryStar(b, ex, el, f, EXTRA) }
+    | 'zkus' &&':' b=block ex[asdl_excepthandler_seq*]=except_star_block+ el=[else_block] f=[finally_block] { _PyAST_TryStar(b, ex, el, f, EXTRA) }
 
 
 # Except statement
@@ -463,16 +476,22 @@ except_block[excepthandler_ty]:
     | invalid_except_stmt_indent
     | 'except' e=expression t=['as' z=NAME { z }] ':' b=block {
         _PyAST_ExceptHandler(e, (t) ? ((expr_ty) t)->v.Name.id : NULL, b, EXTRA) }
+    | 'mimo' e=expression t=['as' z=NAME { z }] ':' b=block {
+        _PyAST_ExceptHandler(e, (t) ? ((expr_ty) t)->v.Name.id : NULL, b, EXTRA) }
     | 'except' ':' b=block { _PyAST_ExceptHandler(NULL, NULL, b, EXTRA) }
+    | 'mimo' ':' b=block { _PyAST_ExceptHandler(NULL, NULL, b, EXTRA) }
     | invalid_except_stmt
 except_star_block[excepthandler_ty]:
     | invalid_except_star_stmt_indent
     | 'except' '*' e=expression t=['as' z=NAME { z }] ':' b=block {
         _PyAST_ExceptHandler(e, (t) ? ((expr_ty) t)->v.Name.id : NULL, b, EXTRA) }
+    | 'mimo' '*' e=expression t=['as' z=NAME { z }] ':' b=block {
+        _PyAST_ExceptHandler(e, (t) ? ((expr_ty) t)->v.Name.id : NULL, b, EXTRA) }
     | invalid_except_stmt
 finally_block[asdl_stmt_seq*]:
     | invalid_finally_stmt
     | 'finally' &&':' a=block { a }
+    | 'konecne' &&':' a=block { a }
 
 # Match statement
 # ---------------
@@ -685,7 +704,7 @@ expression[expr_ty] (memo):
     | invalid_expression
     | invalid_legacy_expression
     | a=disjunction 'if' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
-    | a=disjunction 'kdyz' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
+    | a=disjunction 'kdyz' b=disjunction 'jinak' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
     | disjunction
     | lambdef
 
@@ -768,8 +787,12 @@ lte_bitwise_or[CmpopExprPair*]: '<=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, 
 lt_bitwise_or[CmpopExprPair*]: '<' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Lt, a) }
 gte_bitwise_or[CmpopExprPair*]: '>=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, GtE, a) }
 gt_bitwise_or[CmpopExprPair*]: '>' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Gt, a) }
-notin_bitwise_or[CmpopExprPair*]: 'not' 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, NotIn, a) }
-in_bitwise_or[CmpopExprPair*]: 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, In, a) }
+notin_bitwise_or[CmpopExprPair*]:
+    | 'not' 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, NotIn, a) }
+    | 'not' 'uvnitr' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, NotIn, a) }
+in_bitwise_or[CmpopExprPair*]:
+    | 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, In, a) }
+    | 'uvnitr' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, In, a) }
 isnot_bitwise_or[CmpopExprPair*]: 'is' 'not' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, IsNot, a) }
 is_bitwise_or[CmpopExprPair*]: 'is' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Is, a) }
 
@@ -964,11 +987,11 @@ for_if_clauses[asdl_comprehension_seq*]:
 for_if_clause[comprehension_ty]:
     | ASYNC 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
         CHECK_VERSION(comprehension_ty, 6, "Async comprehensions are", _PyAST_comprehension(a, b, c, 1, p->arena)) }
-    | ASYNC 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('kdyz' z=disjunction { z })* {
+    | ASYNC 'pro' a=star_targets 'uvnitr' ~ b=disjunction c[asdl_expr_seq*]=('kdyz' z=disjunction { z })* {
         CHECK_VERSION(comprehension_ty, 6, "Async comprehensions are", _PyAST_comprehension(a, b, c, 1, p->arena)) }
     | 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
         _PyAST_comprehension(a, b, c, 0, p->arena) }
-    | 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('kdyz' z=disjunction { z })* {
+    | 'pro' a=star_targets 'uvnitr' ~ b=disjunction c[asdl_expr_seq*]=('kdyz' z=disjunction { z })* {
         _PyAST_comprehension(a, b, c, 0, p->arena) }
     | invalid_for_target
 
@@ -1151,7 +1174,7 @@ invalid_kwarg:
 # IMPORTANT: Note that the "_without_invalid" suffix causes the rule to not call invalid rules under it
 expression_without_invalid[expr_ty]:
     | a=disjunction 'if' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
-    | a=disjunction 'kdyz' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
+    | a=disjunction 'kdyz' b=disjunction 'jinak' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
     | disjunction
     | lambdef
 invalid_legacy_expression:
@@ -1166,7 +1189,7 @@ invalid_expression:
         _PyPegen_check_legacy_stmt(p, a) ? NULL : p->tokens[p->mark-1]->level == 0 ? NULL :
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Perhaps you forgot a comma?") }
    | a=disjunction 'if' b=disjunction !('else'|':') { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected 'else' after 'if' expression") }
-   | a=disjunction 'kdyz' b=disjunction !('else'|':') { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "ocekavano 'else' po 'kdyz' expression") }
+   | a=disjunction 'kdyz' b=disjunction !('jinak'|':') { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "ocekavano 'jinak' po 'kdyz' expression") }
 
 invalid_named_expression(memo):
     | a=expression ':=' expression {
@@ -1283,6 +1306,8 @@ invalid_with_item:
 invalid_for_target:
     | ASYNC? 'for' a=star_expressions {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(FOR_TARGETS, a) }
+    | ASYNC? 'pro' a=star_expressions {
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(FOR_TARGETS, a) }
 
 invalid_group:
     | '(' a=starred_expression ')' {
@@ -1295,41 +1320,58 @@ invalid_import_from_targets:
 
 invalid_with_stmt:
     | [ASYNC] 'with' ','.(expression ['as' star_target])+ &&':'
-    | [ASYNC] 's' ','.(expression ['as' star_target])+ &&':'
+    | [ASYNC] 'pri' ','.(expression ['as' star_target])+ &&':'
     | [ASYNC] 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' &&':'
-    | [ASYNC] 's' '(' ','.(expressions ['as' star_target])+ ','? ')' &&':'
+    | [ASYNC] 'pri' '(' ','.(expressions ['as' star_target])+ ','? ')' &&':'
 invalid_with_stmt_indent:
     | [ASYNC] a='with' ','.(expression ['as' star_target])+ ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'with' statement on line %d", a->lineno) }
-    | [ASYNC] a='s' ','.(expression ['as' star_target])+ ':' NEWLINE !INDENT {
-        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 's' statementu na radku %d", a->lineno) }
+    | [ASYNC] a='pri' ','.(expression ['as' star_target])+ ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 'pri' statementu na radku %d", a->lineno) }
     | [ASYNC] a='with' '(' ','.(expressions ['as' star_target])+ ','? ')' ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'with' statement on line %d", a->lineno) }
-    | [ASYNC] a='s' '(' ','.(expressions ['as' star_target])+ ','? ')' ':' NEWLINE !INDENT {
-        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 's' statementu na radku %d", a->lineno) }
+    | [ASYNC] a='pri' '(' ','.(expressions ['as' star_target])+ ','? ')' ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 'pri' statementu na radku %d", a->lineno) }
 
 invalid_try_stmt:
     | a='try' ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'try' statement on line %d", a->lineno) }
+    | a='zkus' ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 'zkus' statementu on line %d", a->lineno) }
     | 'try' ':' block !('except' | 'finally') { RAISE_SYNTAX_ERROR("expected 'except' or 'finally' block") }
+    | 'zkus' ':' block !('mimo' | 'konecne') { RAISE_SYNTAX_ERROR("ocekavan 'mimo' nebo 'konecne' blok") }
     | 'try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block* {
         RAISE_SYNTAX_ERROR("cannot have both 'except' and 'except*' on the same 'try'") }
+    | 'zkus' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block* {
+        RAISE_SYNTAX_ERROR("nelze mit oboji 'mimo' a 'mimo*' ve stejnem 'zkus'") }
 invalid_except_stmt:
     | 'except' '*'? a=expression ',' expressions ['as' NAME ] ':' {
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized") }
+    | 'mimo' '*'? a=expression ',' expressions ['as' NAME ] ':' {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "vice vyjimek musi byt v zavorkach") }
     | a='except' '*'? expression ['as' NAME ] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='mimo' '*'? expression ['as' NAME ] NEWLINE { RAISE_SYNTAX_ERROR("ocekavano ':'") }
     | a='except' NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='mimo' NEWLINE { RAISE_SYNTAX_ERROR("ocekavano ':'") }
     | a='except' '*' (NEWLINE | ':') { RAISE_SYNTAX_ERROR("expected one or more exception types") }
+    | a='mimo' '*' (NEWLINE | ':') { RAISE_SYNTAX_ERROR("ocekavano jedna nebo vice druhu vyjimek") }
 invalid_finally_stmt:
     | a='finally' ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'finally' statement on line %d", a->lineno) }
+    | a='konecne' ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 'konecne' statementu na radku %d", a->lineno) }
 invalid_except_stmt_indent:
     | a='except' expression ['as' NAME ] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'except' statement on line %d", a->lineno) }
+    | a='mimo' expression ['as' NAME ] ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 'mimo' statementu na radku %d", a->lineno) }
     | a='except' ':' NEWLINE !INDENT { RAISE_SYNTAX_ERROR("expected an indented block after except statement on line %d", a->lineno) }
+    | a='mimo' ':' NEWLINE !INDENT { RAISE_SYNTAX_ERROR("ocekavan odsazeny blok po 'mimo' statementu na radku %d", a->lineno) }
 invalid_except_star_stmt_indent:
     | a='except' '*' expression ['as' NAME ] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'except*' statement on line %d", a->lineno) }
+    | a='mimo' '*' expression ['as' NAME ] ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 'mimo*' statementu na radku %d", a->lineno) }
 invalid_match_stmt:
     | "match" subject_expr !':' { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
     | a="match" subject=subject_expr ':' NEWLINE !INDENT {
@@ -1362,6 +1404,8 @@ invalid_elif_stmt:
 invalid_else_stmt:
     | a='else' ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'else' statement on line %d", a->lineno) }
+    | a='jinak' ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 'jinak' statementu na radku %d", a->lineno) }
 invalid_while_stmt:
     | 'while' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='while' named_expression ':' NEWLINE !INDENT {
@@ -1369,6 +1413,8 @@ invalid_while_stmt:
 invalid_for_stmt:
     | [ASYNC] a='for' star_targets 'in' star_expressions ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'for' statement on line %d", a->lineno) }
+    | [ASYNC] a='pro' star_targets 'uvnitr' star_expressions ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("ocekavan odsazeny blok po 'pro' statementu na radku %d", a->lineno) }
 invalid_def_raw:
     | [ASYNC] a='def' NAME '(' [params] ')' ['->' expression] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after function definition on line %d", a->lineno) }
