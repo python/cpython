@@ -1970,6 +1970,26 @@ class TestVariantRegistry(unittest.TestCase):
         # a mapping proxy
         self.assertEqual(functools.get_variants(weird_func), [])
 
+    def test_singledispatchmethod_interaction(self):
+        class A:
+            @functools.singledispatchmethod
+            def t(self, arg):
+                self.arg = "base"
+            @t.register(int)
+            def int_t(self, arg):
+                self.arg = "int"
+            @t.register(str)
+            def str_t(self, arg):
+                self.arg = "str"
+        expected = [
+            A.t.registry[object],
+            A.int_t,
+            A.str_t,
+        ]
+        self.assertEqual(functools.get_variants(A.t), expected)
+        method_object = A.__dict__["t"]  # bypass the descriptor
+        self.assertEqual(functools.get_variants(method_object), expected)
+
     def test_both_singledispatch_and_overload(self):
         from typing import overload
         def complex_func(arg: str) -> int: ...
