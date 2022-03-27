@@ -170,7 +170,7 @@ class Printer:
     def generate_unicode(self, name: str, s: str) -> str:
         if s in identifiers:
             return f"&_Py_ID({s})"
-        if re.match(r'^[A-Za-z0-9_]+$', s):
+        if re.match(r'\A[A-Za-z0-9_]+\Z', s):
             name = f"const_str_{s}"
         kind, ascii = analyze_character_width(s)
         if kind == PyUnicode_1BYTE_KIND:
