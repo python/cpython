@@ -4,6 +4,7 @@ Krajta v 0.0.1 alpha 1
 Krajta is a extension of the Python programming language. It's main features are czech keywords. It allows for full usage of standard Python keywords and it's modules.
 
 Example of all currently translated keywords:
+Python
 ::
     class Example:
         def __init__(self, name=None):
@@ -44,7 +45,7 @@ Example of all currently translated keywords:
     assert 1==(1 % 2)
     assert 0==(2 % 2)
 
-
+Krajta
 ::
     trida Priklad:
         vym __init__(ja, jmeno=Nic):
