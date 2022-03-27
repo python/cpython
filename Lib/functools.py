@@ -16,7 +16,8 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
 
 from abc import get_cache_token
 from collections import namedtuple
-# import types, weakref  # Deferred to single_dispatch()
+import types
+# import weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
 from types import GenericAlias
@@ -670,7 +671,21 @@ def register_variant(func, variant):
 def get_variants(func):
     """Get all function variants for the given function."""
     key = _get_key_for_callable(func)
-    return _variant_registry.get(key, [])
+    variants = list(_variant_registry.get(key, []))
+
+    # We directly retrieve variants from the singledispatch
+    # and singledispatchmethod registries.
+    if isinstance(func, singledispatchmethod):
+        variants += func.dispatcher.registry.values()
+    else:
+        try:
+            registry = func.registry
+        except AttributeError:
+            pass
+        else:
+            if isinstance(registry, types.MappingProxyType):
+                variants += registry.values()
+    return variants
 
 
 def clear_variants(func=None):
@@ -852,7 +867,7 @@ def singledispatch(func):
     # There are many programs that use functools without singledispatch, so we
     # trade-off making singledispatch marginally slower for the benefit of
     # making start-up of such applications slightly faster.
-    import types, weakref
+    import weakref
 
     registry = {}
     dispatch_cache = weakref.WeakKeyDictionary()
@@ -933,11 +948,6 @@ def singledispatch(func):
                         f"Invalid annotation for {argname!r}. "
                         f"{cls!r} is not a class."
                     )
-
-        try:
-            register_variant(outer_func, func)
-        except AttributeError:
-            pass
 
         if _is_union_type(cls):
             from typing import get_args

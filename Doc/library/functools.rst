@@ -536,7 +536,7 @@ The :mod:`functools` module defines the following functions:
       The :func:`register` attribute now supports using type annotations.
 
    .. versionchanged:: 3.11
-      Implementation functions are now registered using :func:`register_variant`.
+      Implementation functions can now be retrieved using :func:`get_variants`.
 
 .. class:: singledispatchmethod(func)
 
