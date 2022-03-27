@@ -42,7 +42,7 @@ class FnmatchTestCase(unittest.TestCase):
         # http://bugs.python.org/issue6665
         check('foo\nbar', 'foo*')
         check('foo\nbar\n', 'foo*')
-        check('\nfoo', 'foo*', False)
+        check('\nfoo\n', 'foo*')
         check('\n', '*')
 
     def test_slow_fnmatch(self):
