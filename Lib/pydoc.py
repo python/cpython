@@ -291,6 +291,7 @@ def visiblename(name, all=None, obj=None):
     # Namedtuples have public fields and methods with a single leading underscore
     if name.startswith('_') and hasattr(obj, '_fields'):
         return True
+    # Ignore __future__ imports.
     if name in _future_feature_names:
         if isinstance(getattr(obj, name, None), __future__._Feature):
             return False
