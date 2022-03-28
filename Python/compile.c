@@ -2339,10 +2339,20 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
     Py_DECREF(mangled);
 
     if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
-        VISIT(c, annexpr, annotation)
+        VISIT(c, annexpr, annotation);
     }
     else {
-        VISIT(c, expr, annotation);
+        if (annotation->kind == Starred_kind) {
+            // *args: *Ts (where Ts is a TypeVarTuple).
+            // Do [annotation_value] = [*Ts].
+            // (Note that in theory we could end up here even for an argument
+            // other than *args, but in practice the grammar doesn't allow it.)
+            VISIT(c, expr, annotation->v.Starred.value);
+            ADDOP_I(c, UNPACK_SEQUENCE, (Py_ssize_t) 1);
+        }
+        else {
+            VISIT(c, expr, annotation);
+        }
     }
     *annotations_len += 2;
     return 1;
