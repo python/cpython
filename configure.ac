@@ -973,6 +973,22 @@ cat > conftest.c <<EOF
         darwin
 #elif defined(__VXWORKS__)
         vxworks
+#elif defined(__wasm32__)
+#  if defined(__EMSCRIPTEN__)
+	wasm32-emscripten
+#  elif defined(__wasi__)
+	wasm32-wasi
+#  else
+#    error unknown wasm32 platform
+#  endif
+#elif defined(__wasm64__)
+#  if defined(__EMSCRIPTEN)
+	wasm64-emscripten
+#  elif defined(__wasi__)
+	wasm64-wasi
+#  else
+#    error unknown wasm64 platform
+#  endif
 #else
 # error unknown platform triplet
 #endif
@@ -6375,6 +6391,15 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
 done
 IFS=$as_save_IFS
 
+dnl libb2 for blake2. _blake2 module falls back to vendored copy.
+AS_VAR_IF([with_builtin_blake2], [yes], [
+  PKG_CHECK_MODULES([LIBB2], [libb2], [
+    have_libb2=yes
+    AC_DEFINE([HAVE_LIBB2], [1],
+              [Define to 1 if you want to build _blake2 module with libb2])
+  ], [have_libb2=no])
+])
+
 # --with-experimental-isolated-subinterpreters
 AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
             [Better isolate subinterpreters, experimental build mode.])
@@ -6652,7 +6677,9 @@ PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
 PY_STDLIB_MOD([_sha256], [test "$with_builtin_sha256" = yes])
 PY_STDLIB_MOD([_sha512], [test "$with_builtin_sha512" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
-PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
+PY_STDLIB_MOD([_blake2],
+  [test "$with_builtin_blake2" = yes], [],
+  [$LIBB2_CFLAGS], [$LIBB2_LIBS])
 
 PY_STDLIB_MOD([_crypt],
   [], [test "$ac_cv_crypt_crypt" = yes],

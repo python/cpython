@@ -372,6 +372,16 @@ struct _Py_global_strings {
 #define _Py_STR(NAME) \
      (_Py_SINGLETON(strings.literals._ ## NAME._ascii.ob_base))
 
+/* _Py_DECLARE_STR() should precede all uses of _Py_STR() in a function.
+
+   This is true even if the same string has already been declared
+   elsewhere, even in the same file.  Mismatched duplicates are detected
+   by Tools/scripts/generate-global-objects.py.
+
+   Pairing _Py_DECLARE_STR() with every use of _Py_STR() makes sure the
+   string keeps working even if the declaration is removed somewhere
+   else.  It also makes it clear what the actual string is at every
+   place it is being used. */
 #define _Py_DECLARE_STR(name, str)
 
 #ifdef __cplusplus

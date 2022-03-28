@@ -1,0 +1,1 @@
+Speed up iteration of :class:`bytes` and :class:`bytearray` by 30%. Patch by Kumar Aditya.
