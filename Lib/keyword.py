@@ -22,6 +22,7 @@ kwlist = [
     'None',
     'Pravda',
     'True',
+    'a',
     'and',
     'as',
     'assert',
@@ -77,6 +78,7 @@ kwlist = [
     'while',
     'with',
     'yield',
+    'zaroven',
     'zatimco',
     'zkus'
 ]
