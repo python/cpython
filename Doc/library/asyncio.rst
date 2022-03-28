@@ -67,6 +67,7 @@ Additionally, there are **low-level** APIs for
    :caption: High-level APIs
    :maxdepth: 1
 
+   asyncio-runner.rst
    asyncio-task.rst
    asyncio-stream.rst
    asyncio-sync.rst
