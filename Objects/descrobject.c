@@ -1463,17 +1463,17 @@ class property(object):
         if inst is None:
             return self
         if self.__get is None:
-            raise AttributeError, "unreadable attribute"
+            raise AttributeError, "property has no getter"
         return self.__get(inst)
 
     def __set__(self, inst, value):
         if self.__set is None:
-            raise AttributeError, "can't set attribute"
+            raise AttributeError, "property has no setter"
         return self.__set(inst, value)
 
     def __delete__(self, inst):
         if self.__del is None:
-            raise AttributeError, "can't delete attribute"
+            raise AttributeError, "property has no deleter"
         return self.__del(inst)
 
 */
@@ -1501,7 +1501,7 @@ static PyMemberDef property_members[] = {
 
 
 PyDoc_STRVAR(getter_doc,
-             "Descriptor to change the getter on a property.");
+             "Descriptor to obtain a copy of the property with a different getter.");
 
 static PyObject *
 property_getter(PyObject *self, PyObject *getter)
@@ -1511,7 +1511,7 @@ property_getter(PyObject *self, PyObject *getter)
 
 
 PyDoc_STRVAR(setter_doc,
-             "Descriptor to change the setter on a property.");
+             "Descriptor to obtain a copy of the property with a different setter.");
 
 static PyObject *
 property_setter(PyObject *self, PyObject *setter)
@@ -1521,7 +1521,7 @@ property_setter(PyObject *self, PyObject *setter)
 
 
 PyDoc_STRVAR(deleter_doc,
-             "Descriptor to change the deleter on a property.");
+             "Descriptor to obtain a copy of the property with a different deleter.");
 
 static PyObject *
 property_deleter(PyObject *self, PyObject *deleter)
@@ -1585,12 +1585,22 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 
     propertyobject *gs = (propertyobject *)self;
     if (gs->prop_get == NULL) {
-        if (gs->prop_name != NULL) {
-            PyErr_Format(PyExc_AttributeError, "unreadable attribute %R", gs->prop_name);
-        } else {
-            PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
+        PyObject *qualname = PyType_GetQualName(Py_TYPE(obj));
+        if (gs->prop_name != NULL && qualname != NULL) {
+            PyErr_Format(PyExc_AttributeError,
+                         "property %R of %R object has no getter",
+                         gs->prop_name,
+                         qualname);
         }
-
+        else if (qualname != NULL) {
+            PyErr_Format(PyExc_AttributeError,
+                         "property of %R object has no getter",
+                         qualname);
+        } else {
+            PyErr_SetString(PyExc_AttributeError,
+                            "property has no getter");
+        }
+        Py_XDECREF(qualname);
         return NULL;
     }
 
@@ -1611,19 +1621,32 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
     }
 
     if (func == NULL) {
-        if (gs->prop_name != NULL) {
+        PyObject *qualname = NULL;
+        if (obj != NULL) {
+            qualname = PyType_GetQualName(Py_TYPE(obj));
+        }
+        if (gs->prop_name != NULL && qualname != NULL) {
             PyErr_Format(PyExc_AttributeError,
                         value == NULL ?
-                        "can't delete attribute %R" :
-                        "can't set attribute %R",
-                        gs->prop_name);
+                        "property %R of %R object has no deleter" :
+                        "property %R of %R object has no setter",
+                        gs->prop_name,
+                        qualname);
+        }
+        else if (qualname != NULL) {
+            PyErr_Format(PyExc_AttributeError,
+                            value == NULL ?
+                            "property of %R object has no deleter" :
+                            "property of %R object has no setter",
+                            qualname);
         }
         else {
             PyErr_SetString(PyExc_AttributeError,
-                            value == NULL ?
-                            "can't delete attribute" :
-                            "can't set attribute");
+                         value == NULL ?
+                         "property has no deleter" :
+                         "property has no setter");
         }
+        Py_XDECREF(qualname);
         return -1;
     }
 

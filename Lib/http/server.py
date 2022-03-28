@@ -109,11 +109,10 @@ from http import HTTPStatus
 
 # Default error message template
 DEFAULT_ERROR_MESSAGE = """\
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
-        "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE HTML>
+<html lang="en">
     <head>
-        <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+        <meta charset="utf-8">
         <title>Error response</title>
     </head>
     <body>
@@ -777,14 +776,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             displaypath = urllib.parse.unquote(path)
         displaypath = html.escape(displaypath, quote=False)
         enc = sys.getfilesystemencoding()
-        title = 'Directory listing for %s' % displaypath
-        r.append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" '
-                 '"http://www.w3.org/TR/html4/strict.dtd">')
-        r.append('<html>\n<head>')
-        r.append('<meta http-equiv="Content-Type" '
-                 'content="text/html; charset=%s">' % enc)
-        r.append('<title>%s</title>\n</head>' % title)
-        r.append('<body>\n<h1>%s</h1>' % title)
+        title = f'Directory listing for {displaypath}'
+        r.append('<!DOCTYPE HTML>')
+        r.append('<html lang="en">')
+        r.append('<head>')
+        r.append(f'<meta charset="{enc}">')
+        r.append(f'<title>{title}</title>\n</head>')
+        r.append(f'<body>\n<h1>{title}</h1>')
         r.append('<hr>\n<ul>')
         for name in list:
             fullname = os.path.join(path, name)

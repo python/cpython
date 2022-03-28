@@ -16,15 +16,16 @@ Data members:
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _Py_RecursionLimitLowerWaterMark()
+#include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
 #include "pycore_code.h"          // _Py_QuickenedCount
-#include "pycore_frame.h"         // InterpreterFrame
+#include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_IS_GC()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_structseq.h"     // _PyStructSequence_InitType()
@@ -72,29 +73,6 @@ _PySys_GetAttr(PyThreadState *tstate, PyObject *name)
 }
 
 static PyObject *
-sys_get_object_id(PyThreadState *tstate, _Py_Identifier *key)
-{
-    PyObject *sd = tstate->interp->sysdict;
-    if (sd == NULL) {
-        return NULL;
-    }
-    PyObject *exc_type, *exc_value, *exc_tb;
-    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
-    PyObject *value = _PyDict_GetItemIdWithError(sd, key);
-    /* XXX Suppress a new exception if it was raised and restore
-     * the old one. */
-    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
-    return value;
-}
-
-PyObject *
-_PySys_GetObjectId(_Py_Identifier *key)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    return sys_get_object_id(tstate, key);
-}
-
-static PyObject *
 _PySys_GetObject(PyInterpreterState *interp, const char *name)
 {
     PyObject *sysdict = interp->sysdict;
@@ -136,19 +114,6 @@ sys_set_object(PyInterpreterState *interp, PyObject *key, PyObject *v)
     else {
         return PyDict_SetItem(sd, key, v);
     }
-}
-
-static int
-sys_set_object_id(PyInterpreterState *interp, _Py_Identifier *key, PyObject *v)
-{
-    return sys_set_object(interp, _PyUnicode_FromId(key), v);
-}
-
-int
-_PySys_SetObjectId(_Py_Identifier *key, PyObject *v)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return sys_set_object_id(interp, key, v);
 }
 
 int
@@ -706,7 +671,6 @@ sys_displayhook(PyObject *module, PyObject *o)
 {
     PyObject *outf;
     PyObject *builtins;
-    static PyObject *newline = NULL;
     PyThreadState *tstate = _PyThreadState_GET();
 
     builtins = PyImport_GetModule(&_Py_ID(builtins));
@@ -747,12 +711,8 @@ sys_displayhook(PyObject *module, PyObject *o)
             return NULL;
         }
     }
-    if (newline == NULL) {
-        newline = PyUnicode_FromString("\n");
-        if (newline == NULL)
-            return NULL;
-    }
-    if (PyFile_WriteObject(newline, outf, Py_PRINT_RAW) != 0)
+    _Py_DECLARE_STR(newline, "\n");
+    if (PyFile_WriteObject(&_Py_STR(newline), outf, Py_PRINT_RAW) != 0)
         return NULL;
     if (PyObject_SetAttr(builtins, &_Py_ID(_), o) != 0)
         return NULL;
@@ -946,44 +906,36 @@ sys_intern_impl(PyObject *module, PyObject *s)
 
 /*
  * Cached interned string objects used for calling the profile and
- * trace functions.  Initialized by trace_init().
+ * trace functions.
  */
-static PyObject *whatstrings[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-
-static int
-trace_init(void)
-{
-    static const char * const whatnames[8] = {
-        "call", "exception", "line", "return",
-        "c_call", "c_exception", "c_return",
-        "opcode"
-    };
-    PyObject *name;
-    int i;
-    for (i = 0; i < 8; ++i) {
-        if (whatstrings[i] == NULL) {
-            name = PyUnicode_InternFromString(whatnames[i]);
-            if (name == NULL)
-                return -1;
-            whatstrings[i] = name;
-        }
-    }
-    return 0;
-}
+static PyObject *whatstrings[8] = {
+   &_Py_ID(call),
+   &_Py_ID(exception),
+   &_Py_ID(line),
+   &_Py_ID(return),
+   &_Py_ID(c_call),
+   &_Py_ID(c_exception),
+   &_Py_ID(c_return),
+   &_Py_ID(opcode),
+};
 
 
 static PyObject *
 call_trampoline(PyThreadState *tstate, PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
-    if (PyFrame_FastToLocalsWithError(frame) < 0) {
-        return NULL;
-    }
 
     PyObject *stack[3];
     stack[0] = (PyObject *)frame;
     stack[1] = whatstrings[what];
     stack[2] = (arg != NULL) ? arg : Py_None;
+
+    /* Discard any previous modifications the frame's fast locals */
+    if (frame->f_fast_as_locals) {
+        if (PyFrame_FastToLocalsWithError(frame) < 0) {
+            return NULL;
+        }
+    }
 
     /* call the Python-level function */
     PyObject *result = _PyObject_FastCallTstate(tstate, callback, stack, 3);
@@ -1050,10 +1002,6 @@ trace_trampoline(PyObject *self, PyFrameObject *frame,
 static PyObject *
 sys_settrace(PyObject *self, PyObject *args)
 {
-    if (trace_init() == -1) {
-        return NULL;
-    }
-
     PyThreadState *tstate = _PyThreadState_GET();
     if (args == Py_None) {
         if (_PyEval_SetTrace(tstate, NULL, NULL) < 0) {
@@ -1099,10 +1047,6 @@ sys_gettrace_impl(PyObject *module)
 static PyObject *
 sys_setprofile(PyObject *self, PyObject *args)
 {
-    if (trace_init() == -1) {
-        return NULL;
-    }
-
     PyThreadState *tstate = _PyThreadState_GET();
     if (args == Py_None) {
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
@@ -1246,12 +1190,9 @@ static PyObject *
 sys_set_coroutine_origin_tracking_depth_impl(PyObject *module, int depth)
 /*[clinic end generated code: output=0a2123c1cc6759c5 input=a1d0a05f89d2c426]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (depth < 0) {
-        _PyErr_SetString(tstate, PyExc_ValueError, "depth must be >= 0");
+    if (_PyEval_SetCoroutineOriginTrackingDepth(depth) < 0) {
         return NULL;
     }
-    _PyEval_SetCoroutineOriginTrackingDepth(tstate, depth);
     Py_RETURN_NONE;
 }
 
@@ -1831,7 +1772,7 @@ sys__getframe_impl(PyObject *module, int depth)
 /*[clinic end generated code: output=d438776c04d59804 input=c1be8a6464b11ee5]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    InterpreterFrame *frame = tstate->cframe->current_frame;
+    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
 
     if (_PySys_Audit(tstate, "sys._getframe", NULL) < 0) {
         return NULL;
@@ -2862,7 +2803,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 #endif
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
     SET_SYS_FROM_STRING("float_repr_style", "short");
 #else
     SET_SYS_FROM_STRING("float_repr_style", "legacy");

@@ -1,5 +1,3 @@
-#define NEEDS_PY_IDENTIFIER
-
 #include "Python.h"
 #include <ctype.h>
 
@@ -52,6 +50,7 @@ enum HandlerTypes {
 typedef struct {
     PyTypeObject *xml_parse_type;
     PyObject *error;
+    PyObject *str_read;
 } pyexpat_state;
 
 static inline pyexpat_state*
@@ -824,11 +823,10 @@ pyexpat_xmlparser_ParseFile_impl(xmlparseobject *self, PyTypeObject *cls,
 {
     int rv = 1;
     PyObject *readmethod = NULL;
-    _Py_IDENTIFIER(read);
 
     pyexpat_state *state = PyType_GetModuleState(cls);
 
-    if (_PyObject_LookupAttrId(file, &PyId_read, &readmethod) < 0) {
+    if (_PyObject_LookupAttr(file, state->str_read, &readmethod) < 0) {
         return NULL;
     }
     if (readmethod == NULL) {
@@ -1898,6 +1896,10 @@ static int
 pyexpat_exec(PyObject *mod)
 {
     pyexpat_state *state = pyexpat_get_state(mod);
+    state->str_read = PyUnicode_InternFromString("read");
+    if (state->str_read == NULL) {
+        return -1;
+    }
     state->xml_parse_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         mod, &_xml_parse_type_spec, NULL);
 
@@ -2034,6 +2036,7 @@ pyexpat_traverse(PyObject *module, visitproc visit, void *arg)
     pyexpat_state *state = pyexpat_get_state(module);
     Py_VISIT(state->xml_parse_type);
     Py_VISIT(state->error);
+    Py_VISIT(state->str_read);
     return 0;
 }
 
@@ -2043,6 +2046,7 @@ pyexpat_clear(PyObject *module)
     pyexpat_state *state = pyexpat_get_state(module);
     Py_CLEAR(state->xml_parse_type);
     Py_CLEAR(state->error);
+    Py_CLEAR(state->str_read);
     return 0;
 }
 

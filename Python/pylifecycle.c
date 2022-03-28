@@ -9,7 +9,6 @@
 #include "pycore_dict.h"          // _PyDict_Fini()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
-#include "pycore_frame.h"         // _PyFrame_Fini()
 #include "pycore_genobject.h"     // _PyAsyncGen_Fini()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -24,7 +23,6 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
-#include "pycore_symtable.h"      // _PySymtable_Fini()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 #include "pycore_tuple.h"         // _PyTuple_InitTypes()
@@ -683,11 +681,6 @@ pycore_init_global_objects(PyInterpreterState *interp)
 
     _PyUnicode_InitState(interp);
 
-    status = _PyTuple_InitGlobalObjects(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     return _PyStatus_OK();
 }
 
@@ -755,7 +748,6 @@ pycore_init_types(PyInterpreterState *interp)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-
     return _PyStatus_OK();
 }
 
@@ -780,6 +772,16 @@ pycore_init_builtins(PyThreadState *tstate)
     }
     Py_INCREF(builtins_dict);
     interp->builtins = builtins_dict;
+
+    PyObject *isinstance = PyDict_GetItem(builtins_dict, &_Py_ID(isinstance));
+    assert(isinstance);
+    interp->callable_cache.isinstance = isinstance;
+    PyObject *len = PyDict_GetItem(builtins_dict, &_Py_ID(len));
+    assert(len);
+    interp->callable_cache.len = len;
+    PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
+    assert(list_append);
+    interp->callable_cache.list_append = list_append;
 
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
@@ -827,6 +829,11 @@ pycore_interp_init(PyThreadState *tstate)
     status = _PyGC_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
+    }
+    // Intern strings in deep-frozen modules first so that others
+    // can use it instead of creating a heap allocated string.
+    if (_Py_Deepfreeze_Init() < 0) {
+        return _PyStatus_ERR("failed to initialize deep-frozen modules");
     }
 
     status = pycore_init_types(interp);
@@ -1659,7 +1666,6 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyUnicode_FiniTypes(interp);
     _PySys_Fini(interp);
     _PyExc_Fini(interp);
-    _PyFrame_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
     _PyFloat_FiniType(interp);
@@ -1690,9 +1696,6 @@ finalize_interp_clear(PyThreadState *tstate)
     int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
 
     _PyExc_ClearExceptionGroupType(tstate->interp);
-    if (is_main_interp) {
-        _PySymtable_Fini();
-    }
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);

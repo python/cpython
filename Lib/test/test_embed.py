@@ -1641,6 +1641,34 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
         """).lstrip()
         self.assertEqual(out, expected)
 
+    @unittest.skipUnless(hasattr(sys, 'gettotalrefcount'),
+                         '-X showrefcount requires a Python debug build')
+    def test_no_memleak(self):
+        # bpo-1635741: Python must release all memory at exit
+        tests = (
+            ('off', 'pass'),
+            ('on', 'pass'),
+            ('off', 'import __hello__'),
+            ('on', 'import __hello__'),
+        )
+        for flag, stmt in tests:
+            xopt = f"frozen_modules={flag}"
+            cmd = [sys.executable, "-I", "-X", "showrefcount", "-X", xopt, "-c", stmt]
+            proc = subprocess.run(cmd,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT,
+                                  text=True)
+            self.assertEqual(proc.returncode, 0)
+            out = proc.stdout.rstrip()
+            match = re.match(r'^\[(-?\d+) refs, (-?\d+) blocks\]', out)
+            if not match:
+                self.fail(f"unexpected output: {out!a}")
+            refs = int(match.group(1))
+            blocks = int(match.group(2))
+            with self.subTest(frozen_modules=flag, stmt=stmt):
+                self.assertEqual(refs, 0, out)
+                self.assertEqual(blocks, 0, out)
+
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
     # Test PyStdPrinter_Type which is used by _PySys_SetPreliminaryStderr():

@@ -263,6 +263,7 @@
     <ClInclude Include="..\Include\osmodule.h" />
     <ClInclude Include="..\Include\patchlevel.h" />
     <ClInclude Include="..\Include\py_curses.h" />
+    <ClInclude Include="..\Include\pybuffer.h" />
     <ClInclude Include="..\Include\pycapsule.h" />
     <ClInclude Include="..\Include\pyerrors.h" />
     <ClInclude Include="..\Include\pyexpat.h" />
@@ -278,6 +279,7 @@
     <ClInclude Include="..\Include\pystrtod.h" />
     <ClInclude Include="..\Include\pythonrun.h" />
     <ClInclude Include="..\Include\pythread.h" />
+    <ClInclude Include="..\Include\pytypedefs.h" />
     <ClInclude Include="..\Include\rangeobject.h" />
     <ClInclude Include="..\Include\setobject.h" />
     <ClInclude Include="..\Include\sliceobject.h" />
@@ -325,7 +327,6 @@
     <ClInclude Include="..\Python\importdl.h" />
     <ClInclude Include="..\Python\stdlib_module_names.h" />
     <ClInclude Include="..\Python\thread_nt.h" />
-    <ClInclude Include="..\Python\wordcode_helpers.h" />
   </ItemGroup>
   <ItemGroup Condition="$(IncludeExternals)">
     <ClInclude Include="$(zlibDir)\crc32.h" />
@@ -365,7 +366,9 @@
     <ClCompile Include="..\Modules\arraymodule.c" />
     <ClCompile Include="..\Modules\atexitmodule.c" />
     <ClCompile Include="..\Modules\audioop.c" />
-    <ClCompile Include="..\Modules\binascii.c" />
+    <ClCompile Include="..\Modules\binascii.c">
+      <PreprocessorDefinitions>USE_ZLIB_CRC32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="..\Modules\cmathmodule.c" />
     <ClCompile Include="..\Modules\_datetimemodule.c" />
     <ClCompile Include="..\Modules\errnomodule.c" />
