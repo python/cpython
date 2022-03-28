@@ -452,6 +452,11 @@ initial_counter_value(void) {
 #define SPEC_FAIL_COMPARE_OP_EXTENDED_ARG 24
 
 /* FOR_ITER */
+#define SPEC_FAIL_FOR_ITER_SQLITE 5
+#define SPEC_FAIL_FOR_ITER_IO 6
+#define SPEC_FAIL_FOR_ITER_CALLABLE 7
+#define SPEC_FAIL_FOR_ITER_FILTER 8
+#define SPEC_FAIL_FOR_ITER_ELEMENTTREE 9
 #define SPEC_FAIL_FOR_ITER_GENERATOR 10
 #define SPEC_FAIL_FOR_ITER_COROUTINE 11
 #define SPEC_FAIL_FOR_ITER_ASYNC_GENERATOR 12
@@ -466,6 +471,11 @@ initial_counter_value(void) {
 #define SPEC_FAIL_FOR_ITER_DICT_ITEMS 21
 #define SPEC_FAIL_FOR_ITER_DICT_VALUES 22
 #define SPEC_FAIL_FOR_ITER_ENUMERATE 23
+#define SPEC_FAIL_FOR_ITER_MAP 24
+#define SPEC_FAIL_FOR_ITER_ZIP 25
+#define SPEC_FAIL_FOR_ITER_SEQ_ITER 26
+#define SPEC_FAIL_FOR_ITER_LIST_REVERSED 27
+#define SPEC_FAIL_FOR_ITER_BYTEARRAY 28
 
 // UNPACK_SEQUENCE
 
@@ -2033,9 +2043,39 @@ int
     if (t == &PyEnum_Type) {
         return SPEC_FAIL_FOR_ITER_ENUMERATE;
     }
-
-    if (strncmp(t->tp_name, "itertools", 8) == 0) {
+    if (t == &PyMap_Type) {
+        return SPEC_FAIL_FOR_ITER_MAP;
+    }
+    if (t == &PyZip_Type) {
+        return SPEC_FAIL_FOR_ITER_ZIP;
+    }
+    if (t == &PySeqIter_Type) {
+        return SPEC_FAIL_FOR_ITER_SEQ_ITER;
+    }
+    if (t == &PyListRevIter_Type) {
+        return SPEC_FAIL_FOR_ITER_LIST_REVERSED;
+    }
+    if (t == &PyByteArrayIter_Type) {
+        return SPEC_FAIL_FOR_ITER_BYTEARRAY;
+    }
+    if (t == &PyFilter_Type) {
+        return SPEC_FAIL_FOR_ITER_FILTER;
+    }
+    const char *name = t->tp_name;
+    if (strncmp(name, "_elementtree", 12) == 0) {
+        return SPEC_FAIL_FOR_ITER_ELEMENTTREE;
+    }
+    if (strncmp(name, "itertools", 9) == 0) {
         return SPEC_FAIL_FOR_ITER_ITERTOOLS;
+    }
+    if (strncmp(name, "_io.", 4) == 0) {
+        return SPEC_FAIL_FOR_ITER_IO;
+    }
+    if (strncmp(name, "callable_iterator", 17) == 0) {
+        return SPEC_FAIL_FOR_ITER_CALLABLE;
+    }
+    if (strncmp(name, "sqlite3.", 8) == 0) {
+        return SPEC_FAIL_FOR_ITER_SQLITE;
     }
     return SPEC_FAIL_OTHER;
 }
