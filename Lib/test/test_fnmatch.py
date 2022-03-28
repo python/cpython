@@ -32,6 +32,11 @@ class FnmatchTestCase(unittest.TestCase):
         check('a', '??', False)
         check('a', 'b', False)
 
+        check('/tmp/file.txt', 'file.txt')
+        check('/tmp/file.txt', '.txt')
+        check('/tmp/file.txt', 'file', False)
+        check('/tmp/file.txt', 'file*')
+
         # these test that '\' is handled correctly in character sets;
         # see SF bug #409651
         check('\\', r'[\]')
