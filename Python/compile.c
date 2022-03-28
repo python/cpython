@@ -72,17 +72,19 @@
 
 /* Pseudo-instructions used in the compiler,
  * but turned into NOPs by the assembler. */
-#define SETUP_FINALLY 255
-#define SETUP_CLEANUP 254
-#define SETUP_WITH 253
-#define POP_BLOCK 252
+#define SETUP_FINALLY 256
+#define SETUP_CLEANUP 257
+#define SETUP_WITH 258
+#define POP_BLOCK 259
+
+#define IS_VIRTUAL_OPCODE(opcode) ((opcode) >= 256)
 
 #define IS_TOP_LEVEL_AWAIT(c) ( \
         (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
         && (c->u->u_ste->ste_type == ModuleBlock))
 
 struct instr {
-    unsigned char i_opcode;
+    int i_opcode;
     int i_oparg;
     /* target block (if jump instruction) */
     struct basicblock_ *i_target;
@@ -125,9 +127,16 @@ is_relative_jump(struct instr *i)
 }
 
 static inline int
+is_block_push(struct instr *instr)
+{
+    int opcode = instr->i_opcode;
+    return opcode == SETUP_FINALLY || opcode == SETUP_WITH || opcode == SETUP_CLEANUP;
+}
+
+static inline int
 is_jump(struct instr *i)
 {
-    return i->i_opcode >= SETUP_WITH || is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
+    return is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
 }
 
 static int
@@ -157,6 +166,7 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
             *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 8) & 0xFF);
             /* fall through */
         case 1:
+            assert(!IS_VIRTUAL_OPCODE(opcode));
             *codestr++ = _Py_MAKECODEUNIT(opcode, oparg & 0xFF);
             break;
         default:
@@ -7034,7 +7044,7 @@ stackdepth(struct compiler *c)
                 maxdepth = new_depth;
             }
             assert(depth >= 0); /* invalid code or bug in stackdepth() */
-            if (is_jump(instr)) {
+            if (is_jump(instr) || is_block_push(instr)) {
                 effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
                 assert(effect != PY_INVALID_STACK_EFFECT);
                 int target_depth = depth + effect;
@@ -7150,13 +7160,6 @@ assemble_emit_table_pair(struct assembler* a, PyObject** table, int* offset,
     *table_entry++ = left;
     *table_entry++ = right;
     return 1;
-}
-
-static int
-is_block_push(struct instr *instr)
-{
-    int opcode = instr->i_opcode;
-    return opcode == SETUP_FINALLY || opcode == SETUP_WITH || opcode == SETUP_CLEANUP;
 }
 
 static basicblock *
@@ -7593,6 +7596,7 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
             bsize = b->b_offset;
             for (i = 0; i < b->b_iused; i++) {
                 struct instr *instr = &b->b_instr[i];
+                assert(!IS_VIRTUAL_OPCODE(instr->i_opcode));
                 int isize = instr_size(instr);
                 /* Relative jumps are computed relative to
                    the instruction pointer after fetching
@@ -8586,6 +8590,7 @@ apply_static_swaps(basicblock *block, int i)
 static bool
 jump_thread(struct instr *inst, struct instr *target, int opcode)
 {
+    assert(!IS_VIRTUAL_OPCODE(opcode));
     assert(is_jump(inst));
     assert(is_jump(target));
     // bpo-45773: If inst->i_target == target->i_target, then nothing actually
@@ -8615,7 +8620,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
         struct instr *inst = &bb->b_instr[i];
         int oparg = inst->i_oparg;
         int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
-        if (is_jump(inst)) {
+        if (is_jump(inst) || is_block_push(inst)) {
             /* Skip over empty basic blocks. */
             while (inst->i_target->b_iused == 0) {
                 inst->i_target = inst->i_target->b_next;
@@ -8975,8 +8980,9 @@ mark_reachable(struct assembler *a) {
         }
         for (int i = 0; i < b->b_iused; i++) {
             basicblock *target;
-            if (is_jump(&b->b_instr[i])) {
-                target = b->b_instr[i].i_target;
+            struct instr *instr = &b->b_instr[i];
+            if (is_jump(instr) || is_block_push(instr)) {
+                target = instr->i_target;
                 if (target->b_predecessors == 0) {
                     *sp++ = target;
                 }
@@ -9183,13 +9189,6 @@ duplicate_exits_without_lineno(struct compiler *c)
      */
     for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
         if (b->b_iused > 0 && is_jump(&b->b_instr[b->b_iused-1])) {
-            switch (b->b_instr[b->b_iused-1].i_opcode) {
-                /* Note: Only actual jumps, not exception handlers */
-                case SETUP_WITH:
-                case SETUP_FINALLY:
-                case SETUP_CLEANUP:
-                    continue;
-            }
             basicblock *target = b->b_instr[b->b_iused-1].i_target;
             if (is_exit_without_lineno(target) && target->b_predecessors > 1) {
                 basicblock *new_target = compiler_copy_block(c, target);
