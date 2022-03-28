@@ -181,20 +181,6 @@ class SubprocessMixin:
         else:
             self.assertEqual(-signal.SIGKILL, returncode)
 
-    def test_kill_issue43884(self):
-        blocking_shell_command = f'{sys.executable} -c "import time; time.sleep(10000)"'
-        proc = self.loop.run_until_complete(
-            asyncio.create_subprocess_shell(blocking_shell_command, stdout=asyncio.subprocess.PIPE)
-        )
-        self.loop.run_until_complete(asyncio.sleep(1))
-        proc.kill()
-        returncode = self.loop.run_until_complete(proc.wait())
-        if sys.platform == 'win32':
-            self.assertIsInstance(returncode, int)
-            # expect 1 but sometimes get 0
-        else:
-            self.assertEqual(-signal.SIGKILL, returncode)
-
     def test_terminate(self):
         args = PROGRAM_BLOCKED
         proc = self.loop.run_until_complete(

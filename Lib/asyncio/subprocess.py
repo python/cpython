@@ -103,9 +103,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         self._maybe_close_transport()
 
     def _maybe_close_transport(self):
-        # Since process already exited
-        # clear all the pipes and close transport
-        if self._process_exited and self._transport:
+        if len(self._pipe_fds) == 0 and self._process_exited:
             self._transport.close()
             self._transport = None
 
