@@ -119,3 +119,30 @@ Runner context manager
 
       Embedded *loop* and *context* are created at the :keyword:`with` body entering
       or the first call of :meth:`run` or :meth:`get_loop`.
+
+
+Handling Keyboard Interruption
+==============================
+
+.. versionadded:: 3.11
+
+When a user hits the interrupt key (normally :kbd:`Ctrl-C`), :exc:`KeyboardInterrupt`
+exception is raised in the main thread by default.
+
+This approach doesn't work with asyncio, the interruption should never break asyncio
+internals itself but stop a user code.
+
+Asyncio handles the keyboard interruption as follows:
+
+1. :meth:`asyncio.Runner.run` installs a custom :const:`signal.SIGINT` handler before
+   async function execution and reverts it back at the exit from the function.
+2. The :class:`~asyncio.Runner` creates the main task for passed async function
+   processing.
+3. When the interruption is requested, the custom signal handler cancels the main task
+   by :meth:`~asyncio.Task.cancel` call.  :exc:`asyncio.CancelledError` is raised
+   inside the the main task.  The exception unwinds, ``try/except`` and ``try/finally``
+   blocks can be used for resource cleanup.  After the main task is finished,
+   :meth:`asyncio.Runner.run` raises :exc:`KeyboardInterrupt`.
+4. A user could write a thight loop, :meth:`~asyncio.Task.cancel` cannot break it.
+   That's why the second and consequent :kbd:`Ctrl-C` hits immediatelly raise
+   :exc:`KeyboardInterrupt` to stop the program abnormally.
