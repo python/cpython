@@ -720,6 +720,7 @@ compiler_set_qualname(struct compiler *c)
     }
 
     if (base != NULL) {
+        _Py_DECLARE_STR(empty, "");
         name = PyUnicode_Concat(base, &_Py_STR(dot));
         Py_DECREF(base);
         if (name == NULL)
@@ -3841,6 +3842,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
         ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);
     }
     else {
+        _Py_DECLARE_STR(empty, "");
         ADDOP_NAME(c, IMPORT_NAME, &_Py_STR(empty), names);
     }
     for (i = 0; i < n; i++) {
@@ -4781,6 +4783,7 @@ compiler_joined_str(struct compiler *c, expr_ty e)
 
     Py_ssize_t value_count = asdl_seq_LEN(e->v.JoinedStr.values);
     if (value_count > STACK_USE_GUIDELINE) {
+        _Py_DECLARE_STR(empty, "");
         ADDOP_LOAD_CONST_NEW(c, &_Py_STR(empty));
         ADDOP_NAME(c, LOAD_METHOD, &_Py_ID(join), names);
         ADDOP_I(c, BUILD_LIST, 0);

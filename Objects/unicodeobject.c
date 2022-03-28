@@ -257,6 +257,7 @@ static int unicode_is_singleton(PyObject *unicode);
 // Return a borrowed reference to the empty string singleton.
 static inline PyObject* unicode_get_empty(void)
 {
+    _Py_DECLARE_STR(empty, "");
     return &_Py_STR(empty);
 }
 
