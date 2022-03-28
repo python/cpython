@@ -788,5 +788,15 @@ class TestMain(unittest.TestCase):
         output = self.get_output('-d', os_helper.TESTFN)
         self.assertEqual(output.rstrip(), b'a\xffb')
 
+    def test_prints_usage_with_help_flag(self):
+        output = self.get_output('-h')
+        self.assertIn(b'usage: ', output)
+        self.assertIn(b'-d, -u: decode', output)
+
+    def test_prints_usage_with_invalid_flag(self):
+        output = script_helper.assert_python_failure('-m', 'base64', '-x').err
+        self.assertIn(b'usage: ', output)
+        self.assertIn(b'-d, -u: decode', output)
+
 if __name__ == '__main__':
     unittest.main()

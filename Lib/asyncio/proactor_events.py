@@ -158,7 +158,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             # end then it may fail with ERROR_NETNAME_DELETED if we
             # just close our end.  First calling shutdown() seems to
             # cure it, but maybe using DisconnectEx() would be better.
-            if hasattr(self._sock, 'shutdown'):
+            if hasattr(self._sock, 'shutdown') and self._sock.fileno() != -1:
                 self._sock.shutdown(socket.SHUT_RDWR)
             self._sock.close()
             self._sock = None
@@ -452,7 +452,8 @@ class _ProactorWritePipeTransport(_ProactorBaseWritePipeTransport):
             self.close()
 
 
-class _ProactorDatagramTransport(_ProactorBasePipeTransport):
+class _ProactorDatagramTransport(_ProactorBasePipeTransport,
+                                 transports.DatagramTransport):
     max_size = 256 * 1024
     def __init__(self, loop, sock, protocol, address=None,
                  waiter=None, extra=None):
@@ -642,11 +643,13 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             self, rawsock, protocol, sslcontext, waiter=None,
             *, server_side=False, server_hostname=None,
             extra=None, server=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None):
         ssl_protocol = sslproto.SSLProtocol(
                 self, protocol, sslcontext, waiter,
                 server_side, server_hostname,
-                ssl_handshake_timeout=ssl_handshake_timeout)
+                ssl_handshake_timeout=ssl_handshake_timeout,
+                ssl_shutdown_timeout=ssl_shutdown_timeout)
         _ProactorSocketTransport(self, rawsock, ssl_protocol,
                                  extra=extra, server=server)
         return ssl_protocol._app_transport
@@ -697,8 +700,20 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     async def sock_recv_into(self, sock, buf):
         return await self._proactor.recv_into(sock, buf)
 
+    async def sock_recvfrom(self, sock, bufsize):
+        return await self._proactor.recvfrom(sock, bufsize)
+
+    async def sock_recvfrom_into(self, sock, buf, nbytes=0):
+        if not nbytes:
+            nbytes = len(buf)
+
+        return await self._proactor.recvfrom_into(sock, buf, nbytes)
+
     async def sock_sendall(self, sock, data):
         return await self._proactor.send(sock, data)
+
+    async def sock_sendto(self, sock, data, address):
+        return await self._proactor.sendto(sock, data, 0, address)
 
     async def sock_connect(self, sock, address):
         return await self._proactor.connect(sock, address)
@@ -812,7 +827,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,
-                       ssl_handshake_timeout=None):
+                       ssl_handshake_timeout=None,
+                       ssl_shutdown_timeout=None):
 
         def loop(f=None):
             try:
@@ -826,7 +842,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                         self._make_ssl_transport(
                             conn, protocol, sslcontext, server_side=True,
                             extra={'peername': addr}, server=server,
-                            ssl_handshake_timeout=ssl_handshake_timeout)
+                            ssl_handshake_timeout=ssl_handshake_timeout,
+                            ssl_shutdown_timeout=ssl_shutdown_timeout)
                     else:
                         self._make_socket_transport(
                             conn, protocol,

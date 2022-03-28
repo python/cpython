@@ -1,2 +1,0 @@
-Correct the ast locations of f-strings with format specs and repeated
-expressions. Patch by Pablo Galindo

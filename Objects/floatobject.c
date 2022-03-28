@@ -5,13 +5,18 @@
 
 #include "Python.h"
 #include "pycore_dtoa.h"          // _Py_dg_dtoa()
+#include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _PyInterpreterState.float_state
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
 
 #include <ctype.h>
 #include <float.h>
+#include <stdlib.h>               // strtol()
 
 /*[clinic input]
 class float "PyObject *" "&PyFloat_Type"
@@ -25,12 +30,14 @@ class float "PyObject *" "&PyFloat_Type"
 #endif
 
 
+#if PyFloat_MAXFREELIST > 0
 static struct _Py_float_state *
 get_float_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return &interp->float_state;
 }
+#endif
 
 
 double
@@ -123,8 +130,10 @@ PyFloat_GetInfo(void)
 PyObject *
 PyFloat_FromDouble(double fval)
 {
+    PyFloatObject *op;
+#if PyFloat_MAXFREELIST > 0
     struct _Py_float_state *state = get_float_state();
-    PyFloatObject *op = state->free_list;
+    op = state->free_list;
     if (op != NULL) {
 #ifdef Py_DEBUG
         // PyFloat_FromDouble() must not be called after _PyFloat_Fini()
@@ -133,7 +142,9 @@ PyFloat_FromDouble(double fval)
         state->free_list = (PyFloatObject *) Py_TYPE(op);
         state->numfree--;
     }
-    else {
+    else
+#endif
+    {
         op = PyObject_Malloc(sizeof(PyFloatObject));
         if (!op) {
             return PyErr_NoMemory();
@@ -230,6 +241,7 @@ PyFloat_FromString(PyObject *v)
 static void
 float_dealloc(PyFloatObject *op)
 {
+#if PyFloat_MAXFREELIST > 0
     if (PyFloat_CheckExact(op)) {
         struct _Py_float_state *state = get_float_state();
 #ifdef Py_DEBUG
@@ -244,7 +256,9 @@ float_dealloc(PyFloatObject *op)
         Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
         state->free_list = op;
     }
-    else {
+    else
+#endif
+    {
         Py_TYPE(op)->tp_free((PyObject *)op);
     }
 }
@@ -809,7 +823,7 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
      */
     errno = 0;
     ix = pow(iv, iw);
-    Py_ADJUST_ERANGE1(ix);
+    _Py_ADJUST_ERANGE1(ix);
     if (negate_result)
         ix = -ix;
 
@@ -918,7 +932,7 @@ float___ceil___impl(PyObject *self)
    ndigits <= 323).  Returns a Python float, or sets a Python error and
    returns NULL on failure (OverflowError and memory errors are possible). */
 
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
 /* version of double_round that uses the correctly-rounded string<->double
    conversions from Python/dtoa.c */
 
@@ -975,7 +989,7 @@ double_round(double x, int ndigits) {
     return result;
 }
 
-#else /* PY_NO_SHORT_FLOAT_REPR */
+#else  // _PY_SHORT_FLOAT_REPR == 0
 
 /* fallback version, to be used when correctly rounded binary<->decimal
    conversions aren't available */
@@ -1025,7 +1039,7 @@ double_round(double x, int ndigits) {
     return PyFloat_FromDouble(z);
 }
 
-#endif /* PY_NO_SHORT_FLOAT_REPR */
+#endif  // _PY_SHORT_FLOAT_REPR == 0
 
 /* round a Python float v to the closest multiple of 10**-ndigits */
 
@@ -1672,7 +1686,7 @@ float_vectorcall(PyObject *type, PyObject * const*args,
     }
 
     PyObject *x = nargs >= 1 ? args[0] : NULL;
-    return float_new_impl((PyTypeObject *)type, x);
+    return float_new_impl(_PyType_CAST(type), x);
 }
 
 
@@ -1694,7 +1708,6 @@ typedef enum {
 } float_format_type;
 
 static float_format_type double_format, float_format;
-static float_format_type detected_double_format, detected_float_format;
 
 /*[clinic input]
 @classmethod
@@ -1746,78 +1759,6 @@ float___getformat___impl(PyTypeObject *type, const char *typestr)
     }
 }
 
-/*[clinic input]
-@classmethod
-float.__set_format__
-
-    typestr: str
-        Must be 'double' or 'float'.
-    fmt: str
-        Must be one of 'unknown', 'IEEE, big-endian' or 'IEEE, little-endian',
-        and in addition can only be one of the latter two if it appears to
-        match the underlying C reality.
-    /
-
-You probably don't want to use this function.
-
-It exists mainly to be used in Python's test suite.
-
-Override the automatic determination of C-level floating point type.
-This affects how floats are converted to and from binary strings.
-[clinic start generated code]*/
-
-static PyObject *
-float___set_format___impl(PyTypeObject *type, const char *typestr,
-                          const char *fmt)
-/*[clinic end generated code: output=504460f5dc85acbd input=5306fa2b81a997e4]*/
-{
-    float_format_type f;
-    float_format_type detected;
-    float_format_type *p;
-
-    if (strcmp(typestr, "double") == 0) {
-        p = &double_format;
-        detected = detected_double_format;
-    }
-    else if (strcmp(typestr, "float") == 0) {
-        p = &float_format;
-        detected = detected_float_format;
-    }
-    else {
-        PyErr_SetString(PyExc_ValueError,
-                        "__setformat__() argument 1 must "
-                        "be 'double' or 'float'");
-        return NULL;
-    }
-
-    if (strcmp(fmt, "unknown") == 0) {
-        f = unknown_format;
-    }
-    else if (strcmp(fmt, "IEEE, little-endian") == 0) {
-        f = ieee_little_endian_format;
-    }
-    else if (strcmp(fmt, "IEEE, big-endian") == 0) {
-        f = ieee_big_endian_format;
-    }
-    else {
-        PyErr_SetString(PyExc_ValueError,
-                        "__setformat__() argument 2 must be "
-                        "'unknown', 'IEEE, little-endian' or "
-                        "'IEEE, big-endian'");
-        return NULL;
-
-    }
-
-    if (f != unknown_format && f != detected) {
-        PyErr_Format(PyExc_ValueError,
-                     "can only set %s format to 'unknown' or the "
-                     "detected platform value", typestr);
-        return NULL;
-    }
-
-    *p = f;
-    Py_RETURN_NONE;
-}
 
 static PyObject *
 float_getreal(PyObject *v, void *closure)
@@ -1871,7 +1812,6 @@ static PyMethodDef float_methods[] = {
     FLOAT_IS_INTEGER_METHODDEF
     FLOAT___GETNEWARGS___METHODDEF
     FLOAT___GETFORMAT___METHODDEF
-    FLOAT___SET_FORMAT___METHODDEF
     FLOAT___FORMAT___METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
@@ -1969,8 +1909,14 @@ PyTypeObject PyFloat_Type = {
 };
 
 void
-_PyFloat_Init(void)
+_PyFloat_InitState(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    float_format_type detected_double_format, detected_float_format;
+
     /* We attempt to determine if this machine is using IEEE
        floating point formats by peering at the bits of some
        carefully chosen values.  If it looks like we are on an
@@ -2018,21 +1964,31 @@ _PyFloat_Init(void)
     float_format = detected_float_format;
 }
 
-int
-_PyFloat_InitTypes(void)
+PyStatus
+_PyFloat_InitTypes(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
+    if (PyType_Ready(&PyFloat_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize float type");
+    }
+
     /* Init float info */
     if (FloatInfoType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0) {
-            return -1;
+            return _PyStatus_ERR("can't init float info type");
         }
     }
-    return 0;
+
+    return _PyStatus_OK();
 }
 
 void
 _PyFloat_ClearFreeList(PyInterpreterState *interp)
 {
+#if PyFloat_MAXFREELIST > 0
     struct _Py_float_state *state = &interp->float_state;
     PyFloatObject *f = state->free_list;
     while (f != NULL) {
@@ -2042,31 +1998,42 @@ _PyFloat_ClearFreeList(PyInterpreterState *interp)
     }
     state->free_list = NULL;
     state->numfree = 0;
+#endif
 }
 
 void
 _PyFloat_Fini(PyInterpreterState *interp)
 {
     _PyFloat_ClearFreeList(interp);
-#ifdef Py_DEBUG
+#if defined(Py_DEBUG) && PyFloat_MAXFREELIST > 0
     struct _Py_float_state *state = &interp->float_state;
     state->numfree = -1;
 #endif
+}
+
+void
+_PyFloat_FiniType(PyInterpreterState *interp)
+{
+    if (_Py_IsMainInterpreter(interp)) {
+        _PyStructSequence_FiniType(&FloatInfoType);
+    }
 }
 
 /* Print summary info about the state of the optimized allocator */
 void
 _PyFloat_DebugMallocStats(FILE *out)
 {
+#if PyFloat_MAXFREELIST > 0
     struct _Py_float_state *state = get_float_state();
     _PyDebugAllocatorStats(out,
                            "free PyFloatObject",
                            state->numfree, sizeof(PyFloatObject));
+#endif
 }
 
 
 /*----------------------------------------------------------------------------
- * _PyFloat_{Pack,Unpack}{2,4,8}.  See floatobject.h.
+ * PyFloat_{Pack,Unpack}{2,4,8}.  See floatobject.h.
  * To match the NPY_HALF_ROUND_TIES_TO_EVEN behavior in:
  * https://github.com/numpy/numpy/blob/master/numpy/core/src/npymath/halffloat.c
  * We use:
@@ -2077,8 +2044,9 @@ _PyFloat_DebugMallocStats(FILE *out)
  */
 
 int
-_PyFloat_Pack2(double x, unsigned char *p, int le)
+PyFloat_Pack2(double x, char *data, int le)
 {
+    unsigned char *p = (unsigned char *)data;
     unsigned char sign;
     int e;
     double f;
@@ -2181,8 +2149,9 @@ _PyFloat_Pack2(double x, unsigned char *p, int le)
 }
 
 int
-_PyFloat_Pack4(double x, unsigned char *p, int le)
+PyFloat_Pack4(double x, char *data, int le)
 {
+    unsigned char *p = (unsigned char *)data;
     if (float_format == unknown_format) {
         unsigned char sign;
         int e;
@@ -2288,8 +2257,9 @@ _PyFloat_Pack4(double x, unsigned char *p, int le)
 }
 
 int
-_PyFloat_Pack8(double x, unsigned char *p, int le)
+PyFloat_Pack8(double x, char *data, int le)
 {
+    unsigned char *p = (unsigned char *)data;
     if (double_format == unknown_format) {
         unsigned char sign;
         int e;
@@ -2350,7 +2320,7 @@ _PyFloat_Pack8(double x, unsigned char *p, int le)
             flo = 0;
             ++fhi;
             if (fhi >> 28) {
-                /* And it also progagated out of the next 28 bits. */
+                /* And it also propagated out of the next 28 bits. */
                 fhi = 0;
                 ++e;
                 if (e >= 2047)
@@ -2417,8 +2387,9 @@ _PyFloat_Pack8(double x, unsigned char *p, int le)
 }
 
 double
-_PyFloat_Unpack2(const unsigned char *p, int le)
+PyFloat_Unpack2(const char *data, int le)
 {
+    unsigned char *p = (unsigned char *)data;
     unsigned char sign;
     int e;
     unsigned int f;
@@ -2440,24 +2411,16 @@ _PyFloat_Unpack2(const unsigned char *p, int le)
     f |= *p;
 
     if (e == 0x1f) {
-#ifdef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 0
         if (f == 0) {
             /* Infinity */
             return sign ? -Py_HUGE_VAL : Py_HUGE_VAL;
         }
         else {
             /* NaN */
-#ifdef Py_NAN
             return sign ? -Py_NAN : Py_NAN;
-#else
-            PyErr_SetString(
-                PyExc_ValueError,
-                "can't unpack IEEE 754 NaN "
-                "on platform that does not support NaNs");
-            return -1;
-#endif  /* #ifdef Py_NAN */
         }
-#else
+#else  // _PY_SHORT_FLOAT_REPR == 1
         if (f == 0) {
             /* Infinity */
             return _Py_dg_infinity(sign);
@@ -2466,7 +2429,7 @@ _PyFloat_Unpack2(const unsigned char *p, int le)
             /* NaN */
             return _Py_dg_stdnan(sign);
         }
-#endif  /* #ifdef PY_NO_SHORT_FLOAT_REPR */
+#endif  // _PY_SHORT_FLOAT_REPR == 1
     }
 
     x = (double)f / 1024.0;
@@ -2487,8 +2450,9 @@ _PyFloat_Unpack2(const unsigned char *p, int le)
 }
 
 double
-_PyFloat_Unpack4(const unsigned char *p, int le)
+PyFloat_Unpack4(const char *data, int le)
 {
+    unsigned char *p = (unsigned char *)data;
     if (float_format == unknown_format) {
         unsigned char sign;
         int e;
@@ -2565,8 +2529,9 @@ _PyFloat_Unpack4(const unsigned char *p, int le)
 }
 
 double
-_PyFloat_Unpack8(const unsigned char *p, int le)
+PyFloat_Unpack8(const char *data, int le)
 {
+    unsigned char *p = (unsigned char *)data;
     if (double_format == unknown_format) {
         unsigned char sign;
         int e;

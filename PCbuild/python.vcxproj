@@ -94,7 +94,8 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <StackReserveSize>2000000</StackReserveSize>
+      <StackReserveSize Condition="$(Configuration) != 'Debug'">2000000</StackReserveSize>
+      <StackReserveSize Condition="$(Configuration) == 'Debug'">4000000</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -117,6 +118,10 @@
     <Import Project="regen.targets" />
   </ImportGroup>
   <Target Name="_TriggerPostRegen" AfterTargets="Build" DependsOnTargets="PostBuildRegen" />
+  <Target Name="GeneratePyBuildDirTxt" AfterTargets="Link">
+    <Message Text="Generating $(OutDir)pybuilddir.txt" />
+    <WriteLinesToFile File="$(OutDir)pybuilddir.txt" Lines="%0D%0A" Overwrite="true" />
+  </Target>
   <Target Name="ValidateUcrtbase" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGInstrument' and $(Platform) != 'ARM' and $(Platform) != 'ARM64'">
     <PropertyGroup>
       <UcrtName>ucrtbase</UcrtName>

@@ -1,0 +1,2 @@
+:c:func:`PyFrame_FastToLocalsWithError` and :c:func:`PyFrame_LocalsToFast` are no longer
+called during profiling nor tracing. C code can access the ``f_locals`` attribute of :c:type:`PyFrameObject` by calling :c:func:`PyFrame_GetLocals`.

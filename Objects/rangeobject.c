@@ -21,8 +21,6 @@ typedef struct {
     PyObject *length;
 } rangeobject;
 
-_Py_IDENTIFIER(iter);
-
 /* Helper function for validating step.  Always returns a new reference or
    NULL on error.
 */
@@ -813,7 +811,7 @@ rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
     if (range == NULL)
         goto err;
     /* return the result */
-    return Py_BuildValue("N(N)O", _PyEval_GetBuiltinId(&PyId_iter),
+    return Py_BuildValue("N(N)O", _PyEval_GetBuiltin(&_Py_ID(iter)),
                          range, Py_None);
 err:
     Py_XDECREF(start);
@@ -967,7 +965,7 @@ longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
     }
 
     /* return the result */
-    return Py_BuildValue("N(N)O", _PyEval_GetBuiltinId(&PyId_iter),
+    return Py_BuildValue("N(N)O", _PyEval_GetBuiltin(&_Py_ID(iter)),
                          range, Py_None);
 }
 

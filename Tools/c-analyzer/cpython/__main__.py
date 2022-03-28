@@ -111,6 +111,7 @@ def cmd_parse(filenames=None, **kwargs):
     c_parser.cmd_parse(
         filenames,
         relroot=REPO_ROOT,
+        file_maxsizes=_parser.MAX_SIZES,
         **kwargs
     )
 
@@ -127,6 +128,7 @@ def cmd_check(filenames=None, **kwargs):
         relroot=REPO_ROOT,
         _analyze=_analyzer.analyze,
         _CHECKS=CHECKS,
+        file_maxsizes=_parser.MAX_SIZES,
         **kwargs
     )
 
@@ -141,6 +143,7 @@ def cmd_analyze(filenames=None, **kwargs):
         relroot=REPO_ROOT,
         _analyze=_analyzer.analyze,
         formats=formats,
+        file_maxsizes=_parser.MAX_SIZES,
         **kwargs
     )
 
@@ -342,7 +345,7 @@ COMMANDS = {
         cmd_parse,
     ),
     'data': (
-        'check/manage local data (e.g. knwon types, ignored vars, caches)',
+        'check/manage local data (e.g. known types, ignored vars, caches)',
         [_cli_data],
         cmd_data,
     ),

@@ -1,4 +1,8 @@
 /* Authors: Gregory P. Smith & Jeffrey Yasskin */
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_fileutils.h"
 #if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)

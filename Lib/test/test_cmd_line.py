@@ -15,6 +15,8 @@ from test.support.script_helper import (
     interpreter_requires_environment
 )
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 # Debug build?
 Py_DEBUG = hasattr(sys, "gettotalrefcount")
@@ -83,8 +85,17 @@ class CmdLineTest(unittest.TestCase):
         opts = get_xoptions()
         self.assertEqual(opts, {})
 
-        opts = get_xoptions('-Xa', '-Xb=c,d=e')
-        self.assertEqual(opts, {'a': True, 'b': 'c,d=e'})
+        opts = get_xoptions('-Xno_debug_ranges', '-Xdev=1234')
+        self.assertEqual(opts, {'no_debug_ranges': True, 'dev': '1234'})
+
+    @unittest.skipIf(interpreter_requires_environment(),
+                     'Cannot run -E tests when PYTHON env vars are required.')
+    def test_unknown_xoptions(self):
+        rc, out, err = assert_python_failure('-X', 'blech')
+        self.assertIn(b'Unknown value for option -X', err)
+        msg = b'Fatal Python error: Unknown value for option -X'
+        self.assertEqual(err.splitlines().count(msg), 1)
+        self.assertEqual(b'', out)
 
     def test_showrefcount(self):
         def run_python(*args):
@@ -107,12 +118,30 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(out.rstrip(), b'{}')
         self.assertEqual(err, b'')
         # "-X showrefcount" shows the refcount, but only in debug builds
-        rc, out, err = run_python('-X', 'showrefcount', '-c', code)
+        rc, out, err = run_python('-I', '-X', 'showrefcount', '-c', code)
         self.assertEqual(out.rstrip(), b"{'showrefcount': True}")
         if Py_DEBUG:
-            self.assertRegex(err, br'^\[\d+ refs, \d+ blocks\]')
+            # bpo-46417: Tolerate negative reference count which can occur
+            # because of bugs in C extensions. This test is only about checking
+            # the showrefcount feature.
+            self.assertRegex(err, br'^\[-?\d+ refs, \d+ blocks\]')
         else:
             self.assertEqual(err, b'')
+
+    def test_xoption_frozen_modules(self):
+        tests = {
+            ('=on', 'FrozenImporter'),
+            ('=off', 'SourceFileLoader'),
+            ('=', 'FrozenImporter'),
+            ('', 'FrozenImporter'),
+        }
+        for raw, expected in tests:
+            cmd = ['-X', f'frozen_modules{raw}',
+                   #'-c', 'import os; print(os.__spec__.loader.__name__, end="")']
+                   '-c', 'import os; print(os.__spec__.loader, end="")']
+            with self.subTest(raw):
+                res = assert_python_ok(*cmd)
+                self.assertRegex(res.out.decode('utf-8'), expected)
 
     def test_run_module(self):
         # Test expected operation of the '-m' switch
@@ -136,6 +165,17 @@ class CmdLineTest(unittest.TestCase):
         data = kill_python(p)
         self.assertTrue(data.find(b'1 loop') != -1)
         self.assertTrue(data.find(b'__main__.Timer') != -1)
+
+    def test_relativedir_bug46421(self):
+        # Test `python -m unittest` with a relative directory beginning with ./
+        # Note: We have to switch to the project's top module's directory, as per
+        # the python unittest wiki. We will switch back when we are done.
+        defaultwd = os.getcwd()
+        projectlibpath = os.path.dirname(__file__).removesuffix("test")
+        with os_helper.change_cwd(projectlibpath):
+            # Testing with and without ./
+            assert_python_ok('-m', 'unittest', "test/test_longexp.py")
+            assert_python_ok('-m', 'unittest', "./test/test_longexp.py")
 
     def test_run_code(self):
         # Test expected operation of the '-c' switch

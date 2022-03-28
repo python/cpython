@@ -233,10 +233,8 @@ class Random(_random.Random):
                 break
 
     def _randbelow_with_getrandbits(self, n):
-        "Return a random int in the range [0,n).  Returns 0 if n==0."
+        "Return a random int in the range [0,n).  Defined for n > 0."
 
-        if not n:
-            return 0
         getrandbits = self.getrandbits
         k = n.bit_length()  # don't use (n-1) here because n can be 1
         r = getrandbits(k)  # 0 <= r < 2**k
@@ -245,7 +243,7 @@ class Random(_random.Random):
         return r
 
     def _randbelow_without_getrandbits(self, n, maxsize=1<<BPF):
-        """Return a random int in the range [0,n).  Returns 0 if n==0.
+        """Return a random int in the range [0,n).  Defined for n > 0.
 
         The implementation does not use getrandbits, but only random.
         """
@@ -256,8 +254,6 @@ class Random(_random.Random):
                 "enough bits to choose from a population range this large.\n"
                 "To remove the range limitation, add a getrandbits() method.")
             return _floor(random() * n)
-        if n == 0:
-            return 0
         rem = maxsize % n
         limit = (maxsize - rem) / maxsize   # int(limit * maxsize) % n == 0
         r = random()
@@ -370,7 +366,8 @@ class Random(_random.Random):
 
     def choice(self, seq):
         """Choose a random element from a non-empty sequence."""
-        # raises IndexError if seq is empty
+        if not seq:
+            raise IndexError('Cannot choose from an empty sequence')
         return seq[self._randbelow(len(seq))]
 
     def shuffle(self, x):
@@ -541,7 +538,7 @@ class Random(_random.Random):
             low, high = high, low
         return low + (high - low) * _sqrt(u * c)
 
-    def normalvariate(self, mu, sigma):
+    def normalvariate(self, mu=0.0, sigma=1.0):
         """Normal distribution.
 
         mu is the mean, and sigma is the standard deviation.
@@ -562,7 +559,7 @@ class Random(_random.Random):
                 break
         return mu + z * sigma
 
-    def gauss(self, mu, sigma):
+    def gauss(self, mu=0.0, sigma=1.0):
         """Gaussian distribution.
 
         mu is the mean, and sigma is the standard deviation.  This is

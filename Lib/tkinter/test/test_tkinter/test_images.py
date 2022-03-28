@@ -376,7 +376,5 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image.transparency_get(4, 6), False)
 
 
-tests_gui = (MiscTest, DefaultRootTest, BitmapImageTest, PhotoImageTest,)
-
 if __name__ == "__main__":
-    support.run_unittest(*tests_gui)
+    unittest.main()

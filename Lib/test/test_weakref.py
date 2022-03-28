@@ -1473,7 +1473,7 @@ class MappingTestCase(TestBase):
         o = Object(123456)
         with testcontext():
             n = len(dict)
-            # Since underlaying dict is ordered, first item is popped
+            # Since underlying dict is ordered, first item is popped
             dict.pop(next(dict.keys()))
             self.assertEqual(len(dict), n - 1)
             dict[o] = o
