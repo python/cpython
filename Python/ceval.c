@@ -5523,6 +5523,7 @@ miss:
     {
         STAT_INC(opcode, miss);
         opcode = _PyOpcode_Deopt[opcode];
+        STAT_INC(opcode, miss);
         /* The counter is always the first cache entry: */
         _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr;
         *counter -= 1;
@@ -5533,6 +5534,7 @@ miss:
             STAT_INC(opcode, deopt);
             *counter = ADAPTIVE_CACHE_BACKOFF;
         }
+        next_instr--;
         DISPATCH_GOTO();
     }
 
