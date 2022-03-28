@@ -1136,7 +1136,10 @@ regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES_IN)
 # Deepfreeze targets
 
 .PHONY: regen-deepfreeze
-regen-deepfreeze: $(DEEPFREEZE_OBJS)
+regen-deepfreeze:
+	@# Possibly generate globals first, to make sure _bootstrap_python builds.
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
+	$(MAKE) $(DEEPFREEZE_OBJS)
 
 DEEPFREEZE_DEPS=$(srcdir)/Tools/scripts/deepfreeze.py $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
 
@@ -1178,12 +1181,10 @@ regen-importlib: regen-frozen
 # Global objects
 
 .PHONY: regen-global-objects
-regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
-	@# Run one more time after deepfreezing, to catch any globals added
-	@# there.  This is necessary because the deep-frozen code isn't
-	@# commited to the repo.
-	$(MAKE) regen-deepfreeze
+regen-global-objects: regen-deepfreeze
+	@# We already ran in once, before deepfreezing, to make sure
+	@# _bootstrap_python builds.  Now we run it again to catch any
+	@# remaining globals, including those added by deepfreeze.
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
 
 ############################################################################
