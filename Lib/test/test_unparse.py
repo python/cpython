@@ -130,23 +130,32 @@ docstring_prefixes = (
 
 class ASTTestCase(unittest.TestCase):
     def assertASTEqual(self, ast1, ast2):
+        # Ensure the comparisons start at an AST node
+        self.assertIsInstance(ast1, ast.AST)
+        self.assertIsInstance(ast2, ast.AST)
+
+        # An AST comparison routine modeled after ast.dump(), but
+        # instead of string building, it traverses the two trees
+        # in lock-step.  Defining an inner function also prevents
+        # the `missing` value from polluting the "real" function
+        # signature or module namespace.
         missing = object()
-        def compare(a, b):
+        def traverse_compare(a, b):
             if type(a) is not type(b):
                 self.fail("type(a) != type(b)")
             if isinstance(a, ast.AST):
                 for field in a._fields:
                     value1 = getattr(a, field, missing)
                     value2 = getattr(b, field, missing)
-                    compare(value1, value2)
+                    traverse_compare(value1, value2)
             elif isinstance(a, list):
                 if len(a) != len(b):
                     self.fail("len(a) != len(b)")
                 for node1, node2 in zip(a, b):
-                    compare(node1, node2)
+                    traverse_compare(node1, node2)
             elif a != b:
                 self.fail(f"{a!r} != {b!r}")
-        compare(ast1, ast2)
+        traverse_compare(ast1, ast2)
 
     def check_ast_roundtrip(self, code1, **kwargs):
         with self.subTest(code1=code1, ast_parse_kwargs=kwargs):
