@@ -18,6 +18,7 @@ static KeywordToken *reserved_keywords[] = {
         {"as", 747},
         {"in", 761},
         {"or", 638},
+        {"ne", 641},
         {"is", 650},
         {"je", 651},
         {NULL, -1},
@@ -62,6 +63,7 @@ static KeywordToken *reserved_keywords[] = {
         {"while", 757},
         {"jinak", 755},
         {"False", 688},
+        {"venku", 644},
         {NULL, -1},
     },
     (KeywordToken[]) {
@@ -13673,7 +13675,7 @@ conjunction_rule(Parser *p)
     return _res;
 }
 
-// inversion: 'not' inversion | comparison
+// inversion: 'not' inversion | 'ne' inversion | comparison
 static expr_ty
 inversion_rule(Parser *p)
 {
@@ -13735,6 +13737,42 @@ inversion_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s inversion[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'not' inversion"));
+    }
+    { // 'ne' inversion
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> inversion[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'ne' inversion"));
+        Token * _keyword;
+        expr_ty a;
+        if (
+            (_keyword = _PyPegen_expect_token(p, 641))  // token='ne'
+            &&
+            (a = inversion_rule(p))  // inversion
+        )
+        {
+            D(fprintf(stderr, "%*c+ inversion[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'ne' inversion"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                p->level--;
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_UnaryOp ( Not , a , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s inversion[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'ne' inversion"));
     }
     { // comparison
         if (p->error_indicator) {
@@ -14348,7 +14386,7 @@ gt_bitwise_or_rule(Parser *p)
     return _res;
 }
 
-// notin_bitwise_or: 'not' 'in' bitwise_or | 'not' 'uvnitr' bitwise_or
+// notin_bitwise_or: 'not' 'in' bitwise_or | 'venku' bitwise_or
 static CmpopExprPair*
 notin_bitwise_or_rule(Parser *p)
 {
@@ -14392,24 +14430,21 @@ notin_bitwise_or_rule(Parser *p)
         D(fprintf(stderr, "%*c%s notin_bitwise_or[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'not' 'in' bitwise_or"));
     }
-    { // 'not' 'uvnitr' bitwise_or
+    { // 'venku' bitwise_or
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> notin_bitwise_or[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'not' 'uvnitr' bitwise_or"));
+        D(fprintf(stderr, "%*c> notin_bitwise_or[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'venku' bitwise_or"));
         Token * _keyword;
-        Token * _keyword_1;
         expr_ty a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 648))  // token='not'
-            &&
-            (_keyword_1 = _PyPegen_expect_token(p, 763))  // token='uvnitr'
+            (_keyword = _PyPegen_expect_token(p, 644))  // token='venku'
             &&
             (a = bitwise_or_rule(p))  // bitwise_or
         )
         {
-            D(fprintf(stderr, "%*c+ notin_bitwise_or[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'not' 'uvnitr' bitwise_or"));
+            D(fprintf(stderr, "%*c+ notin_bitwise_or[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'venku' bitwise_or"));
             _res = _PyPegen_cmpop_expr_pair ( p , NotIn , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -14420,7 +14455,7 @@ notin_bitwise_or_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s notin_bitwise_or[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'not' 'uvnitr' bitwise_or"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'venku' bitwise_or"));
     }
     _res = NULL;
   done:

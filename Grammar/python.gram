@@ -766,6 +766,7 @@ conjunction[expr_ty] (memo):
 
 inversion[expr_ty] (memo):
     | 'not' a=inversion { _PyAST_UnaryOp(Not, a, EXTRA) }
+    | 'ne' a=inversion { _PyAST_UnaryOp(Not, a, EXTRA) }
     | comparison
 
 # Comparison operators
@@ -801,7 +802,7 @@ gte_bitwise_or[CmpopExprPair*]: '>=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, 
 gt_bitwise_or[CmpopExprPair*]: '>' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Gt, a) }
 notin_bitwise_or[CmpopExprPair*]:
     | 'not' 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, NotIn, a) }
-    | 'not' 'uvnitr' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, NotIn, a) }
+    | 'venku' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, NotIn, a) }
 in_bitwise_or[CmpopExprPair*]:
     | 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, In, a) }
     | 'uvnitr' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, In, a) }
