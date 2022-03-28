@@ -37,7 +37,8 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 
    Map the string *key* to the value *v* in object *o*.  Returns ``-1`` on
    failure.  This is the equivalent of the Python statement ``o[key] = v``.
-   See also :c:func:`PyObject_SetItem`.
+   See also :c:func:`PyObject_SetItem`.  This function *does not* steal a
+   reference to *v*.
 
 
 .. c:function:: int PyMapping_DelItem(PyObject *o, PyObject *key)

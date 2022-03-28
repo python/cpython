@@ -430,14 +430,9 @@ _elementtree_Element_insert(ElementObject *self, PyObject *const *args, Py_ssize
     if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -515,6 +510,10 @@ _elementtree_Element_makeelement(ElementObject *self, PyObject *const *args, Py_
         goto exit;
     }
     tag = args[0];
+    if (!PyDict_Check(args[1])) {
+        _PyArg_BadArgument("makeelement", "argument 2", "dict", args[1]);
+        goto exit;
+    }
     attrib = args[1];
     return_value = _elementtree_Element_makeelement_impl(self, tag, attrib);
 
@@ -761,7 +760,7 @@ _elementtree_TreeBuilder_close(TreeBuilderObject *self, PyObject *Py_UNUSED(igno
 }
 
 PyDoc_STRVAR(_elementtree_TreeBuilder_start__doc__,
-"start($self, tag, attrs=None, /)\n"
+"start($self, tag, attrs, /)\n"
 "--\n"
 "\n");
 
@@ -777,17 +776,17 @@ _elementtree_TreeBuilder_start(TreeBuilderObject *self, PyObject *const *args, P
 {
     PyObject *return_value = NULL;
     PyObject *tag;
-    PyObject *attrs = Py_None;
+    PyObject *attrs;
 
-    if (!_PyArg_CheckPositional("start", nargs, 1, 2)) {
+    if (!_PyArg_CheckPositional("start", nargs, 2, 2)) {
         goto exit;
     }
     tag = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
+    if (!PyDict_Check(args[1])) {
+        _PyArg_BadArgument("start", "argument 2", "dict", args[1]);
+        goto exit;
     }
     attrs = args[1];
-skip_optional:
     return_value = _elementtree_TreeBuilder_start_impl(self, tag, attrs);
 
 exit:
@@ -808,7 +807,7 @@ _elementtree_XMLParser___init__(PyObject *self, PyObject *args, PyObject *kwargs
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
-    PyObject *target = NULL;
+    PyObject *target = Py_None;
     const char *encoding = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 0, 0, argsbuf);
@@ -916,4 +915,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bee26d0735a3fddc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=992733cfc7390590 input=a9049054013a1b77]*/

@@ -525,16 +525,16 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       ordering are identical to the :meth:`~pstats.Stats.print_callers` method.
 
 
-    .. method:: get_stats_profile()
+   .. method:: get_stats_profile()
 
       This method returns an instance of StatsProfile, which contains a mapping
       of function names to instances of FunctionProfile. Each FunctionProfile
       instance holds information related to the function's profile such as how
       long the function took to run, how many times it was called, etc...
 
-       .. versionadded:: 3.9
-          Added the following dataclasses: StatsProfile, FunctionProfile.
-          Added the following function: get_stats_profile.
+      .. versionadded:: 3.9
+         Added the following dataclasses: StatsProfile, FunctionProfile.
+         Added the following function: get_stats_profile.
 
 .. _deterministic-profiling:
 
@@ -622,7 +622,7 @@ procedure can be used to obtain a better constant for a given platform (see
 The method executes the number of Python calls given by the argument, directly
 and again under the profiler, measuring the time for both. It then computes the
 hidden overhead per profiler event, and returns that as a float.  For example,
-on a 1.8Ghz Intel Core i5 running Mac OS X, and using Python's time.process_time() as
+on a 1.8Ghz Intel Core i5 running macOS, and using Python's time.process_time() as
 the timer, the magical number is about 4.04e-6.
 
 The object of this exercise is to get a fairly consistent result. If your

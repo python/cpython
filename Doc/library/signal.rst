@@ -53,12 +53,12 @@ This has consequences:
 Signals and threads
 ^^^^^^^^^^^^^^^^^^^
 
-Python signal handlers are always executed in the main Python thread,
+Python signal handlers are always executed in the main Python thread of the main interpreter,
 even if the signal was received in another thread.  This means that signals
 can't be used as a means of inter-thread communication.  You can use
 the synchronization primitives from the :mod:`threading` module instead.
 
-Besides, only the main thread is allowed to set a new signal handler.
+Besides, only the main thread of the main interpreter is allowed to set a new signal handler.
 
 
 Module contents
@@ -68,10 +68,34 @@ Module contents
    signal (SIG*), handler (:const:`SIG_DFL`, :const:`SIG_IGN`) and sigmask
    (:const:`SIG_BLOCK`, :const:`SIG_UNBLOCK`, :const:`SIG_SETMASK`)
    related constants listed below were turned into
-   :class:`enums <enum.IntEnum>`.
+   :class:`enums <enum.IntEnum>` (:class:`Signals`, :class:`Handlers` and :class:`Sigmasks` respectively).
    :func:`getsignal`, :func:`pthread_sigmask`, :func:`sigpending` and
    :func:`sigwait` functions return human-readable
-   :class:`enums <enum.IntEnum>`.
+   :class:`enums <enum.IntEnum>` as :class:`Signals` objects.
+
+
+The signal module defines three enums:
+
+.. class:: Signals
+
+   :class:`enum.IntEnum` collection of SIG* constants and the CTRL_* constants.
+
+   .. versionadded:: 3.5
+
+.. class:: Handlers
+
+   :class:`enum.IntEnum` collection the constants :const:`SIG_DFL` and :const:`SIG_IGN`.
+
+   .. versionadded:: 3.5
+
+.. class:: Sigmasks
+
+   :class:`enum.IntEnum` collection the constants :const:`SIG_BLOCK`, :const:`SIG_UNBLOCK` and :const:`SIG_SETMASK`.
+
+   Availability: Unix. See the man page :manpage:`sigprocmask(3)` and
+   :manpage:`pthread_sigmask(3)` for further information.
+
+   .. versionadded:: 3.5
 
 
 The variables defined in the :mod:`signal` module are:
@@ -90,6 +114,120 @@ The variables defined in the :mod:`signal` module are:
    This is another standard signal handler, which will simply ignore the given
    signal.
 
+
+.. data:: SIGABRT
+
+   Abort signal from :manpage:`abort(3)`.
+
+.. data:: SIGALRM
+
+   Timer signal from :manpage:`alarm(2)`.
+
+   .. availability:: Unix.
+
+.. data:: SIGBREAK
+
+   Interrupt from keyboard (CTRL + BREAK).
+
+   .. availability:: Windows.
+
+.. data:: SIGBUS
+
+   Bus error (bad memory access).
+
+   .. availability:: Unix.
+
+.. data:: SIGCHLD
+
+   Child process stopped or terminated.
+
+   .. availability:: Unix.
+
+.. data:: SIGCLD
+
+   Alias to :data:`SIGCHLD`.
+
+.. data:: SIGCONT
+
+   Continue the process if it is currently stopped
+
+   .. availability:: Unix.
+
+.. data:: SIGFPE
+
+   Floating-point exception. For example, division by zero.
+
+   .. seealso::
+      :exc:`ZeroDivisionError` is raised when the second argument of a division
+      or modulo operation is zero.
+
+.. data:: SIGHUP
+
+   Hangup detected on controlling terminal or death of controlling process.
+
+   .. availability:: Unix.
+
+.. data:: SIGILL
+
+   Illegal instruction.
+
+.. data:: SIGINT
+
+   Interrupt from keyboard (CTRL + C).
+
+   Default action is to raise :exc:`KeyboardInterrupt`.
+
+.. data:: SIGKILL
+
+   Kill signal.
+
+   It cannot be caught, blocked, or ignored.
+
+   .. availability:: Unix.
+
+.. data:: SIGPIPE
+
+   Broken pipe: write to pipe with no readers.
+
+   Default action is to ignore the signal.
+
+   .. availability:: Unix.
+
+.. data:: SIGSEGV
+
+   Segmentation fault: invalid memory reference.
+
+.. data:: SIGSTKFLT
+
+    Stack fault on coprocessor. The Linux kernel does not raise this signal: it
+    can only be raised in user space.
+
+   .. availability:: Linux, on architectures where the signal is available. See
+      the man page :manpage:`signal(7)` for further information.
+
+   .. versionadded:: 3.11
+
+.. data:: SIGTERM
+
+   Termination signal.
+
+.. data:: SIGUSR1
+
+   User-defined signal 1.
+
+   .. availability:: Unix.
+
+.. data:: SIGUSR2
+
+   User-defined signal 2.
+
+   .. availability:: Unix.
+
+.. data:: SIGWINCH
+
+   Window resize signal.
+
+   .. availability:: Unix.
 
 .. data:: SIG*
 
@@ -266,7 +404,7 @@ The :mod:`signal` module defines the following functions:
    same process as the caller.  The target thread can be executing any code
    (Python or not).  However, if the target thread is executing the Python
    interpreter, the Python signal handlers will be :ref:`executed by the main
-   thread <signals-and-threads>`.  Therefore, the only point of sending a
+   thread of the main interpreter <signals-and-threads>`.  Therefore, the only point of sending a
    signal to a particular Python thread would be to force a running system call
    to fail with :exc:`InterruptedError`.
 
@@ -276,6 +414,8 @@ The :mod:`signal` module defines the following functions:
 
    If *signalnum* is 0, then no signal is sent, but error checking is still
    performed; this can be used to check if the target thread is still running.
+
+   .. audit-event:: signal.pthread_kill thread_id,signalnum signal.pthread_kill
 
    .. availability:: Unix.  See the man page :manpage:`pthread_kill(3)` for further
       information.
@@ -308,7 +448,9 @@ The :mod:`signal` module defines the following functions:
    For example, ``signal.pthread_sigmask(signal.SIG_BLOCK, [])`` reads the
    signal mask of the calling thread.
 
-   .. availability:: Unix.  See the man page :manpage:`sigprocmask(3)` and
+   :data:`SIGKILL` and :data:`SIGSTOP` cannot be blocked.
+
+   .. availability:: Unix.  See the man page :manpage:`sigprocmask(2)` and
       :manpage:`pthread_sigmask(3)` for further information.
 
    See also :func:`pause`, :func:`sigpending` and :func:`sigwait`.
@@ -358,7 +500,8 @@ The :mod:`signal` module defines the following functions:
    If not -1, *fd* must be non-blocking.  It is up to the library to remove
    any bytes from *fd* before calling poll or select again.
 
-   When threads are enabled, this function can only be called from the main thread;
+   When threads are enabled, this function can only be called
+   from :ref:`the main thread of the main interpreter <signals-and-threads>`;
    attempting to call it from other threads will cause a :exc:`ValueError`
    exception to be raised.
 
@@ -411,7 +554,8 @@ The :mod:`signal` module defines the following functions:
    signal handler will be returned (see the description of :func:`getsignal`
    above).  (See the Unix man page :manpage:`signal(2)` for further information.)
 
-   When threads are enabled, this function can only be called from the main thread;
+   When threads are enabled, this function can only be called
+   from :ref:`the main thread of the main interpreter <signals-and-threads>`;
    attempting to call it from other threads will cause a :exc:`ValueError`
    exception to be raised.
 
@@ -508,8 +652,8 @@ The :mod:`signal` module defines the following functions:
 
 .. _signal-example:
 
-Example
--------
+Examples
+--------
 
 Here is a minimal example program. It uses the :func:`alarm` function to limit
 the time spent waiting to open a file; this is useful if the file is for a
@@ -521,7 +665,8 @@ be sent, and the handler raises an exception. ::
    import signal, os
 
    def handler(signum, frame):
-       print('Signal handler called with signal', signum)
+       signame = signal.Signals(signum).name
+       print(f'Signal handler called with signal {signame} ({signum})')
        raise OSError("Couldn't open device!")
 
    # Set the signal handler and a 5-second alarm

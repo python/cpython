@@ -9,12 +9,14 @@ from test.fork_wait import ForkWait
 from test import support
 
 # If either of these do not exist, skip this test.
-support.get_attribute(os, 'fork')
+if not support.has_fork_support:
+    raise unittest.SkipTest("requires working os.fork()")
+
 support.get_attribute(os, 'wait4')
 
 
 class Wait4Test(ForkWait):
-    def wait_impl(self, cpid):
+    def wait_impl(self, cpid, *, exitcode):
         option = os.WNOHANG
         if sys.platform.startswith('aix'):
             # Issue #11185: wait4 is broken on AIX and will always return 0
@@ -29,7 +31,7 @@ class Wait4Test(ForkWait):
                 break
             time.sleep(0.1)
         self.assertEqual(spid, cpid)
-        self.assertEqual(status, 0, "cause = %d, exit = %d" % (status&0xff, status>>8))
+        self.assertEqual(os.waitstatus_to_exitcode(status), exitcode)
         self.assertTrue(rusage)
 
 def tearDownModule():

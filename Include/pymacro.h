@@ -101,7 +101,7 @@
 #endif
 
 #if defined(RANDALL_WAS_HERE)
-#define Py_UNREACHABLE() \
+#  define Py_UNREACHABLE() \
     Py_FatalError( \
         "If you're seeing this, the code is in what I thought was\n" \
         "an unreachable state.\n\n" \
@@ -113,14 +113,24 @@
         "I'm so sorry.\n" \
         "https://xkcd.com/2200")
 #elif defined(Py_DEBUG)
-#define Py_UNREACHABLE() \
+#  define Py_UNREACHABLE() \
     Py_FatalError( \
         "We've reached an unreachable state. Anything is possible.\n" \
         "The limits were in our heads all along. Follow your dreams.\n" \
         "https://xkcd.com/2200")
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
+#  define Py_UNREACHABLE() __builtin_unreachable()
+#elif defined(__clang__) || defined(__INTEL_COMPILER)
+#  define Py_UNREACHABLE() __builtin_unreachable()
+#elif defined(_MSC_VER)
+#  define Py_UNREACHABLE() __assume(0)
 #else
-#define Py_UNREACHABLE() \
+#  define Py_UNREACHABLE() \
     Py_FatalError("Unreachable C code path reached")
 #endif
+
+// Prevent using an expression as a l-value.
+// For example, "int x; _Py_RVALUE(x) = 1;" fails with a compiler error.
+#define _Py_RVALUE(EXPR) ((void)0, (EXPR))
 
 #endif /* Py_PYMACRO_H */

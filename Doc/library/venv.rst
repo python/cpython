@@ -27,7 +27,7 @@ See :pep:`405` for more information about Python virtual environments.
 .. seealso::
 
    `Python Packaging User Guide: Creating and using virtual environments
-   <https://packaging.python.org/installing/#creating-virtual-environments>`__
+   <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment>`__
 
 
 Creating virtual environments
@@ -170,11 +170,17 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. method:: ensure_directories(env_dir)
 
-        Creates the environment directory and all necessary directories, and
-        returns a context object.  This is just a holder for attributes (such as
-        paths), for use by the other methods. The directories are allowed to
-        exist already, as long as either ``clear`` or ``upgrade`` were
-        specified to allow operating on an existing environment directory.
+        Creates the environment directory and all necessary subdirectories that
+        don't already exist, and returns a context object.  This context object
+        is just a holder for attributes (such as paths) for use by the other
+        methods.  If the :class:`EnvBuilder` is created with the arg
+        ``clear=True``, contents of the environment directory will be cleared
+        and then all necessary subdirectories will be recreated.
+
+        .. versionchanged:: 3.11
+           The *venv*
+           :ref:`sysconfig installation scheme <installation_paths>`
+           is used to construct the paths of the created directories.
 
     .. method:: create_configuration(context)
 
@@ -249,7 +255,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
 There is also a module-level convenience function:
 
 .. function:: create(env_dir, system_site_packages=False, clear=False, \
-                     symlinks=False, with_pip=False, prompt=None)
+                     symlinks=False, with_pip=False, prompt=None, \
+                     upgrade_deps=False)
 
     Create an :class:`EnvBuilder` with the given keyword arguments, and call its
     :meth:`~EnvBuilder.create` method with the *env_dir* argument.
@@ -261,6 +268,9 @@ There is also a module-level convenience function:
 
     .. versionchanged:: 3.6
        Added the ``prompt`` parameter
+
+    .. versionchanged:: 3.9
+       Added the ``upgrade_deps`` parameter
 
 An example of extending ``EnvBuilder``
 --------------------------------------
@@ -400,7 +410,7 @@ subclass which installs setuptools and pip into a created virtual environment::
             :param context: The information for the virtual environment
                             creation request being processed.
             """
-            url = 'https://raw.github.com/pypa/pip/master/contrib/get-pip.py'
+            url = 'https://bootstrap.pypa.io/get-pip.py'
             self.install_script(context, 'pip', url)
 
     def main(args=None):
@@ -421,7 +431,7 @@ subclass which installs setuptools and pip into a created virtual environment::
                                                          'more target '
                                                          'directories.')
             parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
-                                help='A directory in which to create the
+                                help='A directory in which to create the '
                                      'virtual environment.')
             parser.add_argument('--no-setuptools', default=False,
                                 action='store_true', dest='nodist',

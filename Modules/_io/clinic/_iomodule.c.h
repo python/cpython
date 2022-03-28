@@ -173,11 +173,6 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         }
     }
     if (args[2]) {
-        if (PyFloat_Check(args[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         buffering = _PyLong_AsInt(args[2]);
         if (buffering == -1 && PyErr_Occurred()) {
             goto exit;
@@ -256,11 +251,6 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         }
     }
     if (args[6]) {
-        if (PyFloat_Check(args[6])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         closefd = _PyLong_AsInt(args[6]);
         if (closefd == -1 && PyErr_Occurred()) {
             goto exit;
@@ -272,6 +262,52 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     opener = args[7];
 skip_optional_pos:
     return_value = _io_open_impl(module, file, mode, buffering, encoding, errors, newline, closefd, opener);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_text_encoding__doc__,
+"text_encoding($module, encoding, stacklevel=2, /)\n"
+"--\n"
+"\n"
+"A helper function to choose the text encoding.\n"
+"\n"
+"When encoding is not None, just return it.\n"
+"Otherwise, return the default text encoding (i.e. \"locale\").\n"
+"\n"
+"This function emits an EncodingWarning if encoding is None and\n"
+"sys.flags.warn_default_encoding is true.\n"
+"\n"
+"This can be used in APIs with an encoding=None parameter.\n"
+"However, please consider using encoding=\"utf-8\" for new APIs.");
+
+#define _IO_TEXT_ENCODING_METHODDEF    \
+    {"text_encoding", (PyCFunction)(void(*)(void))_io_text_encoding, METH_FASTCALL, _io_text_encoding__doc__},
+
+static PyObject *
+_io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel);
+
+static PyObject *
+_io_text_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *encoding;
+    int stacklevel = 2;
+
+    if (!_PyArg_CheckPositional("text_encoding", nargs, 1, 2)) {
+        goto exit;
+    }
+    encoding = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    stacklevel = _PyLong_AsInt(args[1]);
+    if (stacklevel == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _io_text_encoding_impl(module, encoding, stacklevel);
 
 exit:
     return return_value;
@@ -318,4 +354,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=680e4b488c7da8a1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6ea315343f6a94ba input=a9049054013a1b77]*/
