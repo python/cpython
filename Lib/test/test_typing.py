@@ -1235,15 +1235,15 @@ class BaseCallableTests:
         alias = Callable[[int, str], float]
         self.assertEqual(weakref.ref(alias)(), alias)
 
-    def test_pickle(self):
+    @all_pickle_protocols
+    def test_pickle(self, proto):
         Callable = self.Callable
         alias = Callable[[int, str], float]
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            s = pickle.dumps(alias, proto)
-            loaded = pickle.loads(s)
-            self.assertEqual(alias.__origin__, loaded.__origin__)
-            self.assertEqual(alias.__args__, loaded.__args__)
-            self.assertEqual(alias.__parameters__, loaded.__parameters__)
+        s = pickle.dumps(alias, proto)
+        loaded = pickle.loads(s)
+        self.assertEqual(alias.__origin__, loaded.__origin__)
+        self.assertEqual(alias.__args__, loaded.__args__)
+        self.assertEqual(alias.__parameters__, loaded.__parameters__)
 
     def test_var_substitution(self):
         Callable = self.Callable
@@ -2218,7 +2218,8 @@ class ProtocolTests(BaseTestCase):
         Alias2 = typing.Union[P, typing.Iterable]
         self.assertEqual(Alias, Alias2)
 
-    def test_protocols_pickleable(self):
+    @all_pickle_protocols
+    def test_protocols_pickleable(self, proto):
         global P, CP  # pickle wants to reference the class by name
         T = TypeVar('T')
 
@@ -2232,20 +2233,20 @@ class ProtocolTests(BaseTestCase):
         c = CP()
         c.foo = 42
         c.bar = 'abc'
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            z = pickle.dumps(c, proto)
-            x = pickle.loads(z)
-            self.assertEqual(x.foo, 42)
-            self.assertEqual(x.bar, 'abc')
-            self.assertEqual(x.x, 1)
-            self.assertEqual(x.__dict__, {'foo': 42, 'bar': 'abc'})
-            s = pickle.dumps(P)
-            D = pickle.loads(s)
 
-            class E:
-                x = 1
+        z = pickle.dumps(c, proto)
+        x = pickle.loads(z)
+        self.assertEqual(x.foo, 42)
+        self.assertEqual(x.bar, 'abc')
+        self.assertEqual(x.x, 1)
+        self.assertEqual(x.__dict__, {'foo': 42, 'bar': 'abc'})
+        s = pickle.dumps(P)
+        D = pickle.loads(s)
 
-            self.assertIsInstance(E(), D)
+        class E:
+            x = 1
+
+        self.assertIsInstance(E(), D)
 
     def test_supports_int(self):
         self.assertIsSubclass(int, typing.SupportsInt)
@@ -2844,7 +2845,8 @@ class GenericTests(BaseTestCase):
                     self.assertNotEqual(repr(base), '')
                     self.assertEqual(base, base)
 
-    def test_pickle(self):
+    @all_pickle_protocols
+    def test_pickle(self, proto):
         global C  # pickle wants to reference the class by name
         T = TypeVar('T')
 
@@ -2857,27 +2859,26 @@ class GenericTests(BaseTestCase):
         c = C()
         c.foo = 42
         c.bar = 'abc'
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            z = pickle.dumps(c, proto)
-            x = pickle.loads(z)
-            self.assertEqual(x.foo, 42)
-            self.assertEqual(x.bar, 'abc')
-            self.assertEqual(x.__dict__, {'foo': 42, 'bar': 'abc'})
+
+        z = pickle.dumps(c, proto)
+        x = pickle.loads(z)
+        self.assertEqual(x.foo, 42)
+        self.assertEqual(x.bar, 'abc')
+        self.assertEqual(x.__dict__, {'foo': 42, 'bar': 'abc'})
+
         samples = [Any, Union, Tuple, Callable, ClassVar,
                    Union[int, str], ClassVar[List], Tuple[int, ...], Callable[[str], bytes],
                    typing.DefaultDict, typing.FrozenSet[int]]
         for s in samples:
-            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                z = pickle.dumps(s, proto)
-                x = pickle.loads(z)
-                self.assertEqual(s, x)
+            z = pickle.dumps(s, proto)
+            x = pickle.loads(z)
+            self.assertEqual(s, x)
         more_samples = [List, typing.Iterable, typing.Type, List[int],
                         typing.Type[typing.Mapping], typing.AbstractSet[Tuple[int, str]]]
         for s in more_samples:
-            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                z = pickle.dumps(s, proto)
-                x = pickle.loads(z)
-                self.assertEqual(s, x)
+            z = pickle.dumps(s, proto)
+            x = pickle.loads(z)
+            self.assertEqual(s, x)
 
     def test_copy_and_deepcopy(self):
         T = TypeVar('T')
@@ -2891,7 +2892,8 @@ class GenericTests(BaseTestCase):
             self.assertEqual(t, copy(t))
             self.assertEqual(t, deepcopy(t))
 
-    def test_immutability_by_copy_and_pickle(self):
+    @all_pickle_protocols
+    def test_immutability_by_copy_and_pickle(self, proto):
         # Special forms like Union, Any, etc., generic aliases to containers like List,
         # Mapping, etc., and type variabcles are considered immutable by copy and pickle.
         global TP, TPB, TPV, PP  # for pickle
@@ -2905,8 +2907,7 @@ class GenericTests(BaseTestCase):
             with self.subTest(thing=X):
                 self.assertIs(copy(X), X)
                 self.assertIs(deepcopy(X), X)
-                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                    self.assertIs(pickle.loads(pickle.dumps(X, proto)), X)
+                self.assertIs(pickle.loads(pickle.dumps(X, proto)), X)
         del TP, TPB, TPV, PP
 
         # Check that local type variables are copyable.
@@ -4977,20 +4978,20 @@ class NewTypeTests:
         self.assertEqual(repr(self.UserName),
                          f'{__name__}.{self.__class__.__qualname__}.UserName')
 
-    def test_pickle(self):
+    @all_pickle_protocols
+    def test_pickle(self, proto):
         UserAge = self.module.NewType('UserAge', float)
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
-                pickled = pickle.dumps(UserId, proto)
-                loaded = pickle.loads(pickled)
-                self.assertIs(loaded, UserId)
 
-                pickled = pickle.dumps(self.UserName, proto)
-                loaded = pickle.loads(pickled)
-                self.assertIs(loaded, self.UserName)
+        pickled = pickle.dumps(UserId, proto)
+        loaded = pickle.loads(pickled)
+        self.assertIs(loaded, UserId)
 
-                with self.assertRaises(pickle.PicklingError):
-                    pickle.dumps(UserAge, proto)
+        pickled = pickle.dumps(self.UserName, proto)
+        loaded = pickle.loads(pickled)
+        self.assertIs(loaded, self.UserName)
+
+        with self.assertRaises(pickle.PicklingError):
+            pickle.dumps(UserAge, proto)
 
     def test_missing__name__(self):
         code = ("import typing\n"
@@ -5142,17 +5143,18 @@ class NamedTupleTests(BaseTestCase):
         with self.assertRaises(TypeError):
             NamedTuple(typename='Emp', name=str, id=int)
 
-    def test_copy_and_pickle(self):
+    @all_pickle_protocols
+    def test_copy_and_pickle(self, proto):
         global Emp  # pickle wants to reference the class by name
         Emp = NamedTuple('Emp', [('name', str), ('cool', int)])
         for cls in Emp, CoolEmployee, self.NestedEmployee:
             with self.subTest(cls=cls):
                 jane = cls('jane', 37)
-                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                    z = pickle.dumps(jane, proto)
-                    jane2 = pickle.loads(z)
-                    self.assertEqual(jane2, jane)
-                    self.assertIsInstance(jane2, cls)
+
+                z = pickle.dumps(jane, proto)
+                jane2 = pickle.loads(z)
+                self.assertEqual(jane2, jane)
+                self.assertIsInstance(jane2, cls)
 
                 jane2 = copy(jane)
                 self.assertEqual(jane2, jane)
@@ -5244,18 +5246,19 @@ class TypedDictTests(BaseTestCase):
         other = LabelPoint2D(x=0, y=1, label='hi')
         self.assertEqual(other['label'], 'hi')
 
-    def test_pickle(self):
+    @all_pickle_protocols
+    def test_pickle(self, proto):
         global EmpD  # pickle wants to reference the class by name
         EmpD = TypedDict('EmpD', {'name': str, 'id': int})
         jane = EmpD({'name': 'jane', 'id': 37})
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            z = pickle.dumps(jane, proto)
-            jane2 = pickle.loads(z)
-            self.assertEqual(jane2, jane)
-            self.assertEqual(jane2, {'name': 'jane', 'id': 37})
-            ZZ = pickle.dumps(EmpD, proto)
-            EmpDnew = pickle.loads(ZZ)
-            self.assertEqual(EmpDnew({'name': 'jane', 'id': 37}), jane)
+
+        z = pickle.dumps(jane, proto)
+        jane2 = pickle.loads(z)
+        self.assertEqual(jane2, jane)
+        self.assertEqual(jane2, {'name': 'jane', 'id': 37})
+        ZZ = pickle.dumps(EmpD, proto)
+        EmpDnew = pickle.loads(ZZ)
+        self.assertEqual(EmpDnew({'name': 'jane', 'id': 37}), jane)
 
     def test_optional(self):
         EmpD = TypedDict('EmpD', {'name': str, 'id': int})
@@ -5645,7 +5648,8 @@ class AnnotatedTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, 'at least two arguments'):
             Annotated[int]
 
-    def test_pickle(self):
+    @all_pickle_protocols
+    def test_pickle(self, proto):
         samples = [typing.Any, typing.Union[int, str],
                    typing.Optional[str], Tuple[int, ...],
                    typing.Callable[[str], bytes]]
@@ -5653,11 +5657,10 @@ class AnnotatedTests(BaseTestCase):
         for t in samples:
             x = Annotated[t, "a"]
 
-            for prot in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(protocol=prot, type=t):
-                    pickled = pickle.dumps(x, prot)
-                    restored = pickle.loads(pickled)
-                    self.assertEqual(x, restored)
+            with self.subTest(type=t):
+                pickled = pickle.dumps(x, proto)
+                restored = pickle.loads(pickled)
+                self.assertEqual(x, restored)
 
         global _Annotated_test_G
 
@@ -5668,12 +5671,11 @@ class AnnotatedTests(BaseTestCase):
         G.foo = 42
         G.bar = 'abc'
 
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            z = pickle.dumps(G, proto)
-            x = pickle.loads(z)
-            self.assertEqual(x.foo, 42)
-            self.assertEqual(x.bar, 'abc')
-            self.assertEqual(x.x, 1)
+        z = pickle.dumps(G, proto)
+        x = pickle.loads(z)
+        self.assertEqual(x.foo, 42)
+        self.assertEqual(x.bar, 'abc')
+        self.assertEqual(x.x, 1)
 
     def test_subst(self):
         dec = "a decoration"
@@ -6040,7 +6042,8 @@ SpecialAttrsT = typing.TypeVar('SpecialAttrsT', int, float, complex)
 
 class SpecialAttrsTests(BaseTestCase):
 
-    def test_special_attrs(self):
+    @all_pickle_protocols
+    def test_special_attrs(self, proto):
         cls_to_check = {
             # ABC classes
             typing.AbstractSet: 'AbstractSet',
@@ -6160,14 +6163,15 @@ class SpecialAttrsTests(BaseTestCase):
                 self.assertEqual(cls.__name__, name, str(cls))
                 self.assertEqual(cls.__qualname__, name, str(cls))
                 self.assertEqual(cls.__module__, 'typing', str(cls))
-                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                    s = pickle.dumps(cls, proto)
-                    loaded = pickle.loads(s)
-                    self.assertIs(cls, loaded)
+
+                s = pickle.dumps(cls, proto)
+                loaded = pickle.loads(s)
+                self.assertIs(cls, loaded)
 
     TypeName = typing.NewType('SpecialAttrsTests.TypeName', Any)
 
-    def test_special_attrs2(self):
+    @all_pickle_protocols
+    def test_special_attrs2(self, proto):
         # Forward refs provide a different introspection API. __name__ and
         # __qualname__ make little sense for forward refs as they can store
         # complex typing expressions.
@@ -6176,9 +6180,8 @@ class SpecialAttrsTests(BaseTestCase):
         self.assertFalse(hasattr(fr, '__qualname__'))
         self.assertEqual(fr.__module__, 'typing')
         # Forward refs are currently unpicklable.
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.assertRaises(TypeError) as exc:
-                pickle.dumps(fr, proto)
+        with self.assertRaises(TypeError) as exc:
+            pickle.dumps(fr, proto)
 
         self.assertEqual(SpecialAttrsTests.TypeName.__name__, 'TypeName')
         self.assertEqual(
@@ -6190,10 +6193,9 @@ class SpecialAttrsTests(BaseTestCase):
             __name__,
         )
         # NewTypes are picklable assuming correct qualname information.
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            s = pickle.dumps(SpecialAttrsTests.TypeName, proto)
-            loaded = pickle.loads(s)
-            self.assertIs(SpecialAttrsTests.TypeName, loaded)
+        s = pickle.dumps(SpecialAttrsTests.TypeName)
+        loaded = pickle.loads(s)
+        self.assertIs(SpecialAttrsTests.TypeName, loaded)
 
         # Type variables don't support non-global instantiation per PEP 484
         # restriction that "The argument to TypeVar() must be a string equal
@@ -6203,19 +6205,17 @@ class SpecialAttrsTests(BaseTestCase):
         self.assertFalse(hasattr(SpecialAttrsT, '__qualname__'))
         self.assertEqual(SpecialAttrsT.__module__, __name__)
         # Module-level type variables are picklable.
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            s = pickle.dumps(SpecialAttrsT, proto)
-            loaded = pickle.loads(s)
-            self.assertIs(SpecialAttrsT, loaded)
+        s = pickle.dumps(SpecialAttrsT, proto)
+        loaded = pickle.loads(s)
+        self.assertIs(SpecialAttrsT, loaded)
 
         self.assertEqual(SpecialAttrsP.__name__, 'SpecialAttrsP')
         self.assertFalse(hasattr(SpecialAttrsP, '__qualname__'))
         self.assertEqual(SpecialAttrsP.__module__, __name__)
         # Module-level ParamSpecs are picklable.
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            s = pickle.dumps(SpecialAttrsP, proto)
-            loaded = pickle.loads(s)
-            self.assertIs(SpecialAttrsP, loaded)
+        s = pickle.dumps(SpecialAttrsP, proto)
+        loaded = pickle.loads(s)
+        self.assertIs(SpecialAttrsP, loaded)
 
     def test_genericalias_dir(self):
         class Foo(Generic[T]):
