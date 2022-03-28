@@ -207,6 +207,16 @@ static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
     return (type->tp_weaklistoffset > 0);
 }
 
+/// Method to copy objects for specified number of times inside a buffer
+static inline _objects_repeat(PyObject** items, Py_ssize_t copied, Py_ssize_t len_dest)
+{
+    while (copied < len_dest) {
+        Py_ssize_t items_to_copy = Py_MIN(copied, len_dest - copied);
+        memcpy(items + copied, items, sizeof(PyObject*) * items_to_copy);
+        copied += items_to_copy;
+    }
+}
+
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
 
 extern int _PyObject_InitializeDict(PyObject *obj);

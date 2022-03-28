@@ -505,16 +505,17 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
             return (PyObject *)a;
         }
     }
-    if (input_size == 0 || n <= 0) {
+    if (n <= 0) {
         return tuple_get_empty();
     }
     assert(n>0);
+    assert(input_size > 0);
 
     if (input_size > PY_SSIZE_T_MAX / n)
         return PyErr_NoMemory();
-    Py_ssize_t size = input_size * n;
+    Py_ssize_t output_size = input_size * n;
 
-    PyTupleObject *np = tuple_alloc(size);
+    PyTupleObject *np = tuple_alloc(output_size);
     if (np == NULL)
         return NULL;
 
@@ -522,7 +523,7 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
     if (input_size == 1) {
         PyObject *elem = a->ob_item[0];
         Py_INCREF_n(elem, n);
-        PyObject **dest_end = dest + size;
+        PyObject **dest_end = dest + output_size;
         while (dest < dest_end) {
             *dest++ = elem;
         }
@@ -535,14 +536,7 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
             *dest++ = *src++;
         }
 
-        Py_ssize_t copied =  input_size;
-        const Py_ssize_t len_dest = n * input_size;
-        dest = np->ob_item;
-        while (copied < len_dest) {
-            Py_ssize_t elements_to_copy = Py_MIN(copied, len_dest - copied);
-            memcpy( dest + copied, dest, sizeof(PyObject*) * elements_to_copy);
-            copied += elements_to_copy;
-        }
+        _objects_repeat(np->ob_item, input_size, output_size);
     }
     _PyObject_GC_TRACK(np);
     return (PyObject *) np;
