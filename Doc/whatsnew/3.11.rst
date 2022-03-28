@@ -786,7 +786,7 @@ Build Changes
 
 * The :mod:`tkinter` package now requires Tcl/Tk version 8.5.12 or newer.
   (Contributed by Serhiy Storchaka in :issue:`46996`.)
-  
+
 * Python.h is now compatible with C++20 compilers. (Contributed by by Hasan
   Aliyev in :issue:`39355`.)
 
