@@ -1,1 +1,0 @@
-:mod:`tkinter`'s ``after()`` method now supports callables without the ``__name__`` attribute.

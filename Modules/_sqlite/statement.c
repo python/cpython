@@ -60,14 +60,14 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     }
 
     sqlite3 *db = connection->db;
-    int max_length = sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1);
-    if (size >= max_length) {
+    int max_length = sqlite3_limit(db, SQLITE_LIMIT_SQL_LENGTH, -1);
+    if (size > max_length) {
         PyErr_SetString(connection->DataError,
                         "query string is too large");
         return NULL;
     }
     if (strlen(sql_cstr) != (size_t)size) {
-        PyErr_SetString(PyExc_ValueError,
+        PyErr_SetString(connection->ProgrammingError,
                         "the query contains a null character");
         return NULL;
     }
@@ -85,7 +85,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     }
 
     if (pysqlite_check_remaining_sql(tail)) {
-        PyErr_SetString(connection->Warning,
+        PyErr_SetString(connection->ProgrammingError,
                         "You can only execute one statement at a time.");
         goto error;
     }
@@ -166,9 +166,16 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
                 rc = sqlite3_bind_int64(self->st, pos, value);
             break;
         }
-        case TYPE_FLOAT:
-            rc = sqlite3_bind_double(self->st, pos, PyFloat_AsDouble(parameter));
+        case TYPE_FLOAT: {
+            double value = PyFloat_AsDouble(parameter);
+            if (value == -1 && PyErr_Occurred()) {
+                rc = -1;
+            }
+            else {
+                rc = sqlite3_bind_double(self->st, pos, value);
+            }
             break;
+        }
         case TYPE_UNICODE:
             string = PyUnicode_AsUTF8AndSize(parameter, &buflen);
             if (string == NULL)
@@ -183,7 +190,6 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
         case TYPE_BUFFER: {
             Py_buffer view;
             if (PyObject_GetBuffer(parameter, &view, PyBUF_SIMPLE) != 0) {
-                PyErr_SetString(PyExc_ValueError, "could not convert BLOB to buffer");
                 return -1;
             }
             if (view.len > INT_MAX) {
@@ -360,31 +366,23 @@ pysqlite_statement_bind_parameters(pysqlite_state *state,
     }
 }
 
-void
-pysqlite_statement_reset(pysqlite_Statement *self)
+int pysqlite_statement_reset(pysqlite_Statement* self)
 {
-    sqlite3_stmt *stmt = self->st;
-    if (stmt == NULL || self->in_use == 0) {
-        return;
-    }
-
-#if SQLITE_VERSION_NUMBER >= 3020000
-    /* Check if the statement has been run (that is, sqlite3_step() has been
-     * called at least once). Third parameter is non-zero in order to reset the
-     * run count. */
-    if (sqlite3_stmt_status(stmt, SQLITE_STMTSTATUS_RUN, 1) == 0) {
-        return;
-    }
-#endif
-
     int rc;
-    Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_reset(stmt);
-    Py_END_ALLOW_THREADS
 
-    if (rc == SQLITE_OK) {
-        self->in_use = 0;
+    rc = SQLITE_OK;
+
+    if (self->in_use && self->st) {
+        Py_BEGIN_ALLOW_THREADS
+        rc = sqlite3_reset(self->st);
+        Py_END_ALLOW_THREADS
+
+        if (rc == SQLITE_OK) {
+            self->in_use = 0;
+        }
     }
+
+    return rc;
 }
 
 void pysqlite_statement_mark_dirty(pysqlite_Statement* self)

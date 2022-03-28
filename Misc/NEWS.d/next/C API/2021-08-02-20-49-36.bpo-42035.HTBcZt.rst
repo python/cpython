@@ -1,2 +1,0 @@
-Add a new :c:func:`PyType_GetQualName` function to get type's qualified
-name.

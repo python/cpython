@@ -85,7 +85,13 @@ Local naming conventions:
 
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #ifdef __APPLE__
+// Issue #35569: Expose RFC 3542 socket options.
+#define __APPLE_USE_RFC_3542 1
 #include <AvailabilityMacros.h>
 /* for getaddrinfo thread safety test on old versions of OS X */
 #ifndef MAC_OS_X_VERSION_10_5
@@ -101,6 +107,7 @@ Local naming conventions:
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "structmember.h"         // PyMemberDef
 
 #ifdef _Py_MEMORY_SANITIZER
@@ -758,7 +765,7 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
     Py_END_ALLOW_THREADS;
 #else
     if (interval >= 0) {
-        _PyTime_AsTimeval_noraise(interval, &tv, _PyTime_ROUND_CEILING);
+        _PyTime_AsTimeval_clamp(interval, &tv, _PyTime_ROUND_CEILING);
         tvp = &tv;
     }
     else
@@ -840,18 +847,20 @@ sock_call_ex(PySocketSockObject *s,
 
                 if (deadline_initialized) {
                     /* recompute the timeout */
-                    interval = deadline - _PyTime_GetMonotonicClock();
+                    interval = _PyDeadline_Get(deadline);
                 }
                 else {
                     deadline_initialized = 1;
-                    deadline = _PyTime_GetMonotonicClock() + timeout;
+                    deadline = _PyDeadline_Init(timeout);
                     interval = timeout;
                 }
 
-                if (interval >= 0)
+                if (interval >= 0) {
                     res = internal_select(s, writing, interval, connect);
-                else
+                }
+                else {
                     res = 1;
+                }
             }
             else {
                 res = internal_select(s, writing, timeout, connect);
@@ -927,7 +936,7 @@ sock_call_ex(PySocketSockObject *s,
                reading, but the data then discarded by the OS because of a
                wrong checksum.
 
-               Loop on select() to recheck for socket readyness. */
+               Loop on select() to recheck for socket readiness. */
             continue;
         }
 
@@ -1680,6 +1689,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                                 "AF_UNIX path too long");
                 goto unix_out;
             }
+
+            *len_ret = path.len + offsetof(struct sockaddr_un, sun_path);
         }
         else
 #endif /* linux */
@@ -1691,10 +1702,13 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 goto unix_out;
             }
             addr->sun_path[path.len] = 0;
+
+            /* including the tailing NUL */
+            *len_ret = path.len + offsetof(struct sockaddr_un, sun_path) + 1;
         }
         addr->sun_family = s->sock_family;
         memcpy(addr->sun_path, path.buf, path.len);
-        *len_ret = path.len + offsetof(struct sockaddr_un, sun_path);
+        
         retval = 1;
     unix_out:
         PyBuffer_Release(&path);
@@ -4176,7 +4190,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
     Py_buffer pbuf;
     struct sock_send ctx;
     int has_timeout = (s->sock_timeout > 0);
-    _PyTime_t interval = s->sock_timeout;
+    _PyTime_t timeout = s->sock_timeout;
     _PyTime_t deadline = 0;
     int deadline_initialized = 0;
     PyObject *res = NULL;
@@ -4195,14 +4209,14 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
         if (has_timeout) {
             if (deadline_initialized) {
                 /* recompute the timeout */
-                interval = deadline - _PyTime_GetMonotonicClock();
+                timeout = _PyDeadline_Get(deadline);
             }
             else {
                 deadline_initialized = 1;
-                deadline = _PyTime_GetMonotonicClock() + s->sock_timeout;
+                deadline = _PyDeadline_Init(timeout);
             }
 
-            if (interval <= 0) {
+            if (timeout <= 0) {
                 PyErr_SetString(PyExc_TimeoutError, "timed out");
                 goto done;
             }
@@ -4211,7 +4225,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
         ctx.buf = buf;
         ctx.len = len;
         ctx.flags = flags;
-        if (sock_call_ex(s, 1, sock_send_impl, &ctx, 0, NULL, interval) < 0)
+        if (sock_call_ex(s, 1, sock_send_impl, &ctx, 0, NULL, timeout) < 0)
             goto done;
         n = ctx.result;
         assert(n >= 0);
@@ -4784,6 +4798,7 @@ Set operation mode, IV and length of associated data for an AF_ALG\n\
 operation socket.");
 #endif
 
+#ifdef HAVE_SHUTDOWN
 /* s.shutdown(how) method */
 
 static PyObject *
@@ -4808,6 +4823,7 @@ PyDoc_STRVAR(shutdown_doc,
 \n\
 Shut down the reading side of the socket (flag == SHUT_RD), the writing side\n\
 of the socket (flag == SHUT_WR), or both ends (flag == SHUT_RDWR).");
+#endif
 
 #if defined(MS_WINDOWS) && defined(SIO_RCVALL)
 static PyObject*
@@ -4953,8 +4969,10 @@ static PyMethodDef sock_methods[] = {
                       gettimeout_doc},
     {"setsockopt",        (PyCFunction)sock_setsockopt, METH_VARARGS,
                       setsockopt_doc},
+#ifdef HAVE_SHUTDOWN
     {"shutdown",          (PyCFunction)sock_shutdown, METH_O,
                       shutdown_doc},
+#endif
 #ifdef CMSG_LEN
     {"recvmsg",           (PyCFunction)sock_recvmsg, METH_VARARGS,
                       recvmsg_doc},
@@ -7568,6 +7586,12 @@ PyInit__socket(void)
 #ifdef SO_PROTOCOL
     PyModule_AddIntMacro(m, SO_PROTOCOL);
 #endif
+#ifdef LOCAL_CREDS
+    PyModule_AddIntMacro(m, LOCAL_CREDS);
+#endif
+#ifdef LOCAL_CREDS_PERSISTENT
+    PyModule_AddIntMacro(m, LOCAL_CREDS_PERSISTENT);
+#endif
 
     /* Maximum number of connections for "listen" */
 #ifdef  SOMAXCONN
@@ -7585,6 +7609,9 @@ PyInit__socket(void)
 #endif
 #ifdef  SCM_CREDS
     PyModule_AddIntMacro(m, SCM_CREDS);
+#endif
+#ifdef  SCM_CREDS2
+    PyModule_AddIntMacro(m, SCM_CREDS2);
 #endif
 
     /* Flags for send, recv */
@@ -7690,7 +7717,7 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, SOL_CAN_RAW);
     PyModule_AddIntMacro(m, CAN_RAW);
 #endif
-#ifdef HAVE_LINUX_CAN_H
+#if defined(HAVE_LINUX_CAN_H) || defined(HAVE_NETCAN_CAN_H)
     PyModule_AddIntMacro(m, CAN_EFF_FLAG);
     PyModule_AddIntMacro(m, CAN_RTR_FLAG);
     PyModule_AddIntMacro(m, CAN_ERR_FLAG);
@@ -7705,9 +7732,11 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, CAN_J1939);
 #endif
 #endif
-#ifdef HAVE_LINUX_CAN_RAW_H
+#if defined(HAVE_LINUX_CAN_RAW_H) || defined(HAVE_NETCAN_CAN_H)
     PyModule_AddIntMacro(m, CAN_RAW_FILTER);
+#ifdef CAN_RAW_ERR_FILTER
     PyModule_AddIntMacro(m, CAN_RAW_ERR_FILTER);
+#endif
     PyModule_AddIntMacro(m, CAN_RAW_LOOPBACK);
     PyModule_AddIntMacro(m, CAN_RAW_RECV_OWN_MSGS);
 #endif
@@ -8056,6 +8085,9 @@ PyInit__socket(void)
 #endif
 #ifdef  IP_TRANSPARENT
     PyModule_AddIntMacro(m, IP_TRANSPARENT);
+#endif
+#ifdef IP_BIND_ADDRESS_NO_PORT
+    PyModule_AddIntMacro(m, IP_BIND_ADDRESS_NO_PORT);
 #endif
 
     /* IPv6 [gs]etsockopt options, defined in RFC2553 */

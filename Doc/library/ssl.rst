@@ -1576,7 +1576,7 @@ to speed up repeated connections from the same clients.
 
    Load a set of default "certification authority" (CA) certificates from
    default locations. On Windows it loads CA certs from the ``CA`` and
-   ``ROOT`` system stores. On other systems it calls
+   ``ROOT`` system stores. On all systems it calls
    :meth:`SSLContext.set_default_verify_paths`. In the future the method may
    load CA certificates from other locations, too.
 
@@ -1753,10 +1753,10 @@ to speed up repeated connections from the same clients.
    Due to the early negotiation phase of the TLS connection, only limited
    methods and attributes are usable like
    :meth:`SSLSocket.selected_alpn_protocol` and :attr:`SSLSocket.context`.
-   :meth:`SSLSocket.getpeercert`, :meth:`SSLSocket.getpeercert`,
-   :meth:`SSLSocket.cipher` and :meth:`SSLSocket.compress` methods require that
+   The :meth:`SSLSocket.getpeercert`,
+   :meth:`SSLSocket.cipher` and :meth:`SSLSocket.compression` methods require that
    the TLS connection has progressed beyond the TLS Client Hello and therefore
-   will not contain return meaningful values nor can they be called safely.
+   will not return meaningful values nor can they be called safely.
 
    The *sni_callback* function must return ``None`` to allow the
    TLS negotiation to continue.  If a TLS failure is required, a constant
@@ -2070,7 +2070,7 @@ to speed up repeated connections from the same clients.
       :attr:`SSLContext.verify_flags` returns :class:`VerifyFlags` flags:
 
          >>> ssl.create_default_context().verify_flags  # doctest: +SKIP
-         ssl.VERIFY_X509_TRUSTED_FIRST
+         <VerifyFlags.VERIFY_X509_TRUSTED_FIRST: 32768>
 
 .. attribute:: SSLContext.verify_mode
 
@@ -2081,8 +2081,8 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.6
       :attr:`SSLContext.verify_mode` returns :class:`VerifyMode` enum:
 
-         >>> ssl.create_default_context().verify_mode
-         ssl.CERT_REQUIRED
+         >>> ssl.create_default_context().verify_mode  # doctest: +SKIP
+         <VerifyMode.CERT_REQUIRED: 2>
 
 .. index:: single: certificates
 

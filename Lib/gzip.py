@@ -398,10 +398,6 @@ class GzipFile(_compression.BaseStream):
         self._check_not_closed()
         return self._buffer.readline(size)
 
-    def __iter__(self):
-        self._check_not_closed()
-        return self._buffer.__iter__()
-
 
 def _read_exact(fp, n):
     '''Read exactly *n* bytes from `fp`
@@ -607,6 +603,9 @@ def decompress(data):
         do = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
         # Read all the data except the header
         decompressed = do.decompress(data[fp.tell():])
+        if not do.eof or len(do.unused_data) < 8:
+            raise EOFError("Compressed file ended before the end-of-stream "
+                           "marker was reached")
         crc, length = struct.unpack("<II", do.unused_data[:8])
         if crc != zlib.crc32(decompressed):
             raise BadGzipFile("CRC check failed")

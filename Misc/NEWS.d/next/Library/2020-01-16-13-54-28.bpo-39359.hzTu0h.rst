@@ -1,1 +1,0 @@
-Add one missing check that the password is a bytes object for an encrypted zipfile.

@@ -8,6 +8,7 @@ import unittest
 
 from test.test_contextlib import TestBaseExitStack
 
+support.requires_working_socket(module=True)
 
 def _async_test(func):
     """Decorator to turn an async function into a test case."""
@@ -645,6 +646,41 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
         inner_exc = saved_details[1]
         self.assertIsInstance(inner_exc, ValueError)
         self.assertIsInstance(inner_exc.__context__, ZeroDivisionError)
+
+    @_async_test
+    async def test_async_exit_exception_explicit_none_context(self):
+        # Ensure AsyncExitStack chaining matches actual nested `with` statements
+        # regarding explicit __context__ = None.
+
+        class MyException(Exception):
+            pass
+
+        @asynccontextmanager
+        async def my_cm():
+            try:
+                yield
+            except BaseException:
+                exc = MyException()
+                try:
+                    raise exc
+                finally:
+                    exc.__context__ = None
+
+        @asynccontextmanager
+        async def my_cm_with_exit_stack():
+            async with self.exit_stack() as stack:
+                await stack.enter_async_context(my_cm())
+                yield stack
+
+        for cm in (my_cm, my_cm_with_exit_stack):
+            with self.subTest():
+                try:
+                    async with cm():
+                        raise IndexError()
+                except MyException as exc:
+                    self.assertIsNone(exc.__context__)
+                else:
+                    self.fail("Expected IndexError, but no exception was raised")
 
     @_async_test
     async def test_instance_bypass_async(self):

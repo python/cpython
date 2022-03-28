@@ -7,11 +7,13 @@
 PYTHON       = python3
 VENVDIR      = ./venv
 SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
+SPHINXLINT   = PATH=$(VENVDIR)/bin:$$PATH sphinx-lint
 BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
 SPHINXERRORHANDLING = -W
+SERVE_PORT   =
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_elements.papersize=a4paper
@@ -117,6 +119,10 @@ suspicious:
 	     "or in build/$(BUILDER)/suspicious.csv.  If all issues are false" \
 	     "positives, append that file to tools/susp-ignored.csv."; \
 	false; }
+	@echo "⚠ make suspicious is deprecated and will be removed soon."
+	@echo "⚠ Use:"
+	@echo "⚠     make check"
+	@echo "⚠ instead."
 
 coverage: BUILDER = coverage
 coverage: build
@@ -209,11 +215,11 @@ dist:
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
 check:
-	$(PYTHON) tools/rstlint.py -i tools -i $(VENVDIR) -i README.rst
-	$(PYTHON) tools/rstlint.py ../Misc/NEWS.d/next/
+	$(SPHINXLINT) -i tools -i $(VENVDIR) -i README.rst
+	$(SPHINXLINT) ../Misc/NEWS.d/next/
 
 serve:
-	$(PYTHON) ../Tools/scripts/serve.py build/html
+	$(PYTHON) ../Tools/scripts/serve.py build/html $(SERVE_PORT)
 
 # Targets for daily automated doc build
 # By default, Sphinx only rebuilds pages where the page content has changed.

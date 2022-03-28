@@ -1577,6 +1577,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.error('No help for %r; please do not run Python with -OO '
                            'if you need command help' % arg)
                 return
+            if command.__doc__ is None:
+                self.error('No help for %r; __doc__ string missing' % arg)
+                return
             self.message(command.__doc__.rstrip())
 
     do_h = do_help

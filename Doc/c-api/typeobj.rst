@@ -476,7 +476,7 @@ PyObject Slots
 --------------
 
 The type object structure extends the :c:type:`PyVarObject` structure. The
-:attr:`ob_size` field is used for dynamic types (created by  :func:`type_new`,
+:attr:`ob_size` field is used for dynamic types (created by :func:`type_new`,
 usually called from a class statement). Note that :c:data:`PyType_Type` (the
 metatype) initializes :c:member:`~PyTypeObject.tp_itemsize`, which means that its instances (i.e.
 type objects) *must* have the :attr:`ob_size` field.
@@ -667,6 +667,18 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    using :c:func:`PyObject_New` or :c:func:`PyObject_VarNew`, or
    :c:func:`PyObject_GC_Del` if the instance was allocated using
    :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar`.
+
+   If the type supports garbage collection (has the :const:`Py_TPFLAGS_HAVE_GC`
+   flag bit set), the destructor should call :c:func:`PyObject_GC_UnTrack`
+   before clearing any member fields.
+
+   .. code-block:: c
+
+     static void foo_dealloc(foo_object *self) {
+         PyObject_GC_UnTrack(self);
+         Py_CLEAR(self->ref);
+         Py_TYPE(self)->tp_free((PyObject *)self);
+     }
 
    Finally, if the type is heap allocated (:const:`Py_TPFLAGS_HEAPTYPE`), the
    deallocator should decrement the reference count for its type object after
@@ -1221,7 +1233,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       .. note::
 
          :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE` are
-         mutually exclusive; it is an error enable both flags simultaneously.
+         mutually exclusive; it is an error to enable both flags simultaneously.
 
       **Inheritance:**
 
@@ -1243,7 +1255,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       .. note::
 
          :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE` are
-         mutually exclusive; it is an error enable both flags simultaneously.
+         mutually exclusive; it is an error to enable both flags simultaneously.
 
       **Inheritance:**
 
@@ -1509,9 +1521,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: getiterfunc PyTypeObject.tp_iter
 
-   An optional pointer to a function that returns an iterator for the object.  Its
-   presence normally signals that the instances of this type are iterable (although
-   sequences may be iterable without this function).
+   An optional pointer to a function that returns an :term:`iterator` for the
+   object.  Its presence normally signals that the instances of this type are
+   :term:`iterable` (although sequences may be iterable without this function).
 
    This function has the same signature as :c:func:`PyObject_GetIter`::
 
@@ -1524,8 +1536,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: iternextfunc PyTypeObject.tp_iternext
 
-   An optional pointer to a function that returns the next item in an iterator.
-   The signature is::
+   An optional pointer to a function that returns the next item in an
+   :term:`iterator`. The signature is::
 
       PyObject *tp_iternext(PyObject *self);
 
@@ -1988,6 +2000,17 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    For this field to be taken into account (even through inheritance),
    you must also set the :const:`Py_TPFLAGS_HAVE_FINALIZE` flags bit.
 
+   Also, note that, in a garbage collected Python,
+   :c:member:`~PyTypeObject.tp_dealloc` may be called from
+   any Python thread, not just the thread which created the object (if the object
+   becomes part of a refcount cycle, that cycle might be collected by a garbage
+   collection on any thread).  This is not a problem for Python API calls, since
+   the thread on which tp_dealloc is called will own the Global Interpreter Lock
+   (GIL). However, if the object being destroyed in turn destroys objects from some
+   other C or C++ library, care should be taken to ensure that destroying those
+   objects on the thread which called tp_dealloc will not violate any assumptions
+   of the library.
+
    **Inheritance:**
 
    This field is inherited by subtypes.
@@ -2010,17 +2033,6 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is never inherited.
 
    .. versionadded:: 3.9 (the field exists since 3.8 but it's only used since 3.9)
-
-
-Also, note that, in a garbage collected Python, :c:member:`~PyTypeObject.tp_dealloc` may be called from
-any Python thread, not just the thread which created the object (if the object
-becomes part of a refcount cycle, that cycle might be collected by a garbage
-collection on any thread).  This is not a problem for Python API calls, since
-the thread on which tp_dealloc is called will own the Global Interpreter Lock
-(GIL). However, if the object being destroyed in turn destroys objects from some
-other C or C++ library, care should be taken to ensure that destroying those
-objects on the thread which called tp_dealloc will not violate any assumptions
-of the library.
 
 
 .. _static-types:
@@ -2417,8 +2429,8 @@ Async Object Structures
 
       PyObject *am_await(PyObject *self);
 
-   The returned object must be an iterator, i.e. :c:func:`PyIter_Check` must
-   return ``1`` for it.
+   The returned object must be an :term:`iterator`, i.e. :c:func:`PyIter_Check`
+   must return ``1`` for it.
 
    This slot may be set to ``NULL`` if an object is not an :term:`awaitable`.
 
@@ -2428,7 +2440,8 @@ Async Object Structures
 
       PyObject *am_aiter(PyObject *self);
 
-   Must return an :term:`awaitable` object.  See :meth:`__anext__` for details.
+   Must return an :term:`asynchronous iterator` object.
+   See :meth:`__anext__` for details.
 
    This slot may be set to ``NULL`` if an object does not implement
    asynchronous iteration protocol.

@@ -818,7 +818,7 @@ class RunStringTests(TestBase):
 
         self.assertEqual(out, 'it worked!')
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     def test_fork(self):
         import tempfile
         with tempfile.NamedTemporaryFile('w+', encoding="utf-8") as file:
@@ -1221,7 +1221,7 @@ class ChannelTests(TestBase):
             import _xxsubinterpreters as _interpreters
             obj = _interpreters.channel_recv({cid})
             """))
-        # Test for channel that has boths ends associated to an interpreter.
+        # Test for channel that has both ends associated to an interpreter.
         send_interps = interpreters.channel_list_interpreters(cid, send=True)
         recv_interps = interpreters.channel_list_interpreters(cid, send=False)
         self.assertEqual(send_interps, [interp0])
