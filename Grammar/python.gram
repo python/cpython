@@ -116,7 +116,9 @@ simple_stmt[stmt_ty] (memo):
     | &'return' return_stmt
     | &'vrat' return_stmt
     | &('import' | 'from') import_stmt
+    | &('dovez' | 'od') import_stmt
     | &'raise' raise_stmt
+    | &'vyvolej' raise_stmt
     | 'pass' { _PyAST_Pass(EXTRA) }
     | 'vynech' { _PyAST_Pass(EXTRA) }
     | &'del' del_stmt
@@ -193,7 +195,9 @@ return_stmt[stmt_ty]:
 
 raise_stmt[stmt_ty]:
     | 'raise' a=expression b=['from' z=expression { z }] { _PyAST_Raise(a, b, EXTRA) }
+    | 'vyvolej' a=expression b=['od' z=expression { z }] { _PyAST_Raise(a, b, EXTRA) }
     | 'raise' { _PyAST_Raise(NULL, NULL, EXTRA) }
+    | 'vyvolej' { _PyAST_Raise(NULL, NULL, EXTRA) }
 
 global_stmt[stmt_ty]: 'global' a[asdl_expr_seq*]=','.NAME+ {
     _PyAST_Global(CHECK(asdl_identifier_seq*, _PyPegen_map_names_to_ids(p, a)), EXTRA) }
@@ -217,12 +221,18 @@ import_stmt[stmt_ty]: import_name | import_from
 # Import statements
 # -----------------
 
-import_name[stmt_ty]: 'import' a=dotted_as_names { _PyAST_Import(a, EXTRA) }
+import_name[stmt_ty]:
+    | 'import' a=dotted_as_names { _PyAST_Import(a, EXTRA) }
+    | 'dovez' a=dotted_as_names { _PyAST_Import(a, EXTRA) }
 # note below: the ('.' | '...') is necessary because '...' is tokenized as ELLIPSIS
 import_from[stmt_ty]:
     | 'from' a=('.' | '...')* b=dotted_name 'import' c=import_from_targets {
         _PyAST_ImportFrom(b->v.Name.id, c, _PyPegen_seq_count_dots(a), EXTRA) }
+    | 'od' a=('.' | '...')* b=dotted_name 'dovez' c=import_from_targets {
+        _PyAST_ImportFrom(b->v.Name.id, c, _PyPegen_seq_count_dots(a), EXTRA) }
     | 'from' a=('.' | '...')+ 'import' b=import_from_targets {
+        _PyAST_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), EXTRA) }
+    | 'od' a=('.' | '...')+ 'dovez' b=import_from_targets {
         _PyAST_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), EXTRA) }
 import_from_targets[asdl_alias_seq*]:
     | '(' a=import_from_as_names [','] ')' { a }
@@ -712,7 +722,7 @@ expression[expr_ty] (memo):
 
 yield_expr[expr_ty]:
     | 'yield' 'from' a=expression { _PyAST_YieldFrom(a, EXTRA) }
-    | 'vynes' 'from' a=expression { _PyAST_YieldFrom(a, EXTRA) }
+    | 'vynes' 'od' a=expression { _PyAST_YieldFrom(a, EXTRA) }
     | 'yield' a=[star_expressions] { _PyAST_Yield(a, EXTRA) }
     | 'vynes' a=[star_expressions] { _PyAST_Yield(a, EXTRA) }
 
