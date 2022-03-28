@@ -412,5 +412,12 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
     def test_install(self):
         data = self.run_py(["-V:3.10"], env={"PYLAUNCHER_ALWAYS_INSTALL": "1"}, expect_returncode=111)
         cmd = data["stdout"].strip()
-        self.assertIn("winget.exe", cmd)
+        # If winget is runnable, we should find it. Otherwise, we'll be trying
+        # to open the Store.
+        try:
+            subprocess.check_call(["winget.exe", "--version"])
+        except FileNotFoundError:
+            self.assertIn("ms-windows-store://", cmd)
+        else:
+            self.assertIn("winget.exe", cmd)
         self.assertIn("9PJPW5LDXLZ5", cmd)
