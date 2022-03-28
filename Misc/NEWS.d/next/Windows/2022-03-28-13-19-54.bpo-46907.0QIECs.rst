@@ -1,0 +1,1 @@
+Update windows sqlite3 version to 3.38.2.
