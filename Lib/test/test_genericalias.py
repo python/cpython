@@ -385,12 +385,13 @@ class BaseTest(unittest.TestCase):
     def test_pickle(self):
         aliases = [GenericAlias(list, T)] + _UNPACKED_TUPLES
         for alias in aliases:
-            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                s = pickle.dumps(alias, proto)
-                loaded = pickle.loads(s)
-                self.assertEqual(loaded.__origin__, alias.__origin__)
-                self.assertEqual(loaded.__args__, alias.__args__)
-                self.assertEqual(loaded.__parameters__, alias.__parameters__)
+            with self.subTest(alias=alias):
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    s = pickle.dumps(alias, proto)
+                    loaded = pickle.loads(s)
+                    self.assertEqual(loaded.__origin__, alias.__origin__)
+                    self.assertEqual(loaded.__args__, alias.__args__)
+                    self.assertEqual(loaded.__parameters__, alias.__parameters__)
 
     def test_copy(self):
         class X(list):
@@ -405,14 +406,15 @@ class BaseTest(unittest.TestCase):
             GenericAlias(X, T)
         ] + _UNPACKED_TUPLES
         for alias in aliases:
-            copied = copy.copy(alias)
-            self.assertEqual(copied.__origin__, alias.__origin__)
-            self.assertEqual(copied.__args__, alias.__args__)
-            self.assertEqual(copied.__parameters__, alias.__parameters__)
-            copied = copy.deepcopy(alias)
-            self.assertEqual(copied.__origin__, alias.__origin__)
-            self.assertEqual(copied.__args__, alias.__args__)
-            self.assertEqual(copied.__parameters__, alias.__parameters__)
+            with self.subTest(alias=alias):
+                copied = copy.copy(alias)
+                self.assertEqual(copied.__origin__, alias.__origin__)
+                self.assertEqual(copied.__args__, alias.__args__)
+                self.assertEqual(copied.__parameters__, alias.__parameters__)
+                copied = copy.deepcopy(alias)
+                self.assertEqual(copied.__origin__, alias.__origin__)
+                self.assertEqual(copied.__args__, alias.__args__)
+                self.assertEqual(copied.__parameters__, alias.__parameters__)
 
     def test_union(self):
         a = typing.Union[list[int], list[str]]
