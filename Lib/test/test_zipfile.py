@@ -2667,7 +2667,7 @@ class TestWithDirectory(unittest.TestCase):
             target = os.path.join(TESTFN2, "target")
             os.mkdir(target)
             zf.extractall(target)
-            self.assertEqual(os.listdir(target), ["directory", "directory2", "directory3", "directory4"])
+            self.assertEqual(set(os.listdir(target)), {"directory", "directory2", "directory3", "directory4"})
 
     def tearDown(self):
         rmtree(TESTFN2)
