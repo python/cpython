@@ -556,15 +556,7 @@ list_repeat(PyListObject *a, Py_ssize_t n)
         return NULL;
 
     PyObject **dest = np->ob_item;
-    if (input_size == 1) {
-        PyObject *elem = a->ob_item[0];
-        Py_INCREF_n(elem, n);
-        PyObject **dest_end = dest + output_size;
-        while (dest < dest_end) {
-            *dest++ = elem;
-        }
-    }
-    else {
+    {
         PyObject **src = a->ob_item;
         PyObject **src_end = src + input_size;
         while (src < src_end) {
