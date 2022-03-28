@@ -35,7 +35,7 @@ Future and Task private constructors
 
 :class:`asyncio.Future` and :class:`asyncio.Task` should be never created directly,
 plase use corresponding :meth:`loop.create_future` and :meth:`loop.create_task`,
-or `asyncio.create_task` factories instead.
+or :func:`asyncio.create_task` factories instead.
 
 However, third-party *event loops* may *reuse* built-in future and task implementations
 for the sake of getting a complex and highly optimized code for free.
