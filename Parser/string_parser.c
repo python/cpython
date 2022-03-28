@@ -360,7 +360,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
     
     if (s == expr_end) {
         if (*expr_end == '!' || *expr_end == ':' || *expr_end == '=') {
-            RAISE_SYNTAX_ERROR("f-string: optional specifier '%c' must follow a non-empty expression", *expr_end);
+            RAISE_SYNTAX_ERROR("f-string: expression required before '%c'", *expr_end);
             return NULL;
         } else {
             RAISE_SYNTAX_ERROR("f-string: empty expression not allowed");

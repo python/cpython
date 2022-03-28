@@ -637,7 +637,7 @@ x = (
                              ])
 
         # Different error messeges are raised when a specfier ('!', ':' or '=') is used after an empty expression
-        self.assertAllRaise(SyntaxError, "f-string: optional specifier '!' must follow a non-empty expression",
+        self.assertAllRaise(SyntaxError, "f-string: expression required before '!'",
                             ["f'{!r}'",
                              "f'{ !r}'",
                              "f'{!}'",
@@ -658,7 +658,7 @@ x = (
                              "f'{ !xr:a}'",
                              ])
 
-        self.assertAllRaise(SyntaxError, "f-string: optional specifier ':' must follow a non-empty expression",
+        self.assertAllRaise(SyntaxError, "f-string: expression required before ':'",
                             ["f'{:}'",
                              "f'{ :!}'",
                              "f'{:2}'",
@@ -666,7 +666,7 @@ x = (
                              "f'{:'",
                              ])
 
-        self.assertAllRaise(SyntaxError, "f-string: optional specifier '=' must follow a non-empty expression",
+        self.assertAllRaise(SyntaxError, "f-string: expression required before '='",
                             ["f'{=}'",
                              "f'{ =}'",
                              "f'{ =:}'",
