@@ -129,7 +129,7 @@ The following exceptions are used mostly as base classes for other exceptions.
    .. method:: add_note(note)
 
       Add the string ``note`` to the exception's notes which appear in the standard
-      traceback after the exception string. A :exc:`TypeError` is raise if ``note``
+      traceback after the exception string. A :exc:`TypeError` is raised if ``note``
       is not a string.
 
       .. versionadded:: 3.11
