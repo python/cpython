@@ -452,6 +452,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_COMPARE_OP_EXTENDED_ARG 24
 
 /* FOR_ITER */
+#define SPEC_FAIL_FOR_ITER_REVERSED 4
 #define SPEC_FAIL_FOR_ITER_SQLITE 5
 #define SPEC_FAIL_FOR_ITER_IO 6
 #define SPEC_FAIL_FOR_ITER_CALLABLE 7
@@ -2060,6 +2061,9 @@ int
     }
     if (t == &PyFilter_Type) {
         return SPEC_FAIL_FOR_ITER_FILTER;
+    }
+    if (t == &PyReversed_Type) {
+        return SPEC_FAIL_FOR_ITER_REVERSED;
     }
     const char *name = t->tp_name;
     if (strncmp(name, "_elementtree", 12) == 0) {
