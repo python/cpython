@@ -277,10 +277,600 @@
       <IntFile>$(IntDir)encodings.ascii.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\encodings.ascii.h</OutFile>
     </None>
+    <None Include="..\Lib\encodings\base64_codec.py">
+      <ModName>encodings.base64_codec</ModName>
+      <IntFile>$(IntDir)encodings.base64_codec.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.base64_codec.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\big5.py">
+      <ModName>encodings.big5</ModName>
+      <IntFile>$(IntDir)encodings.big5.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.big5.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\big5hkscs.py">
+      <ModName>encodings.big5hkscs</ModName>
+      <IntFile>$(IntDir)encodings.big5hkscs.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.big5hkscs.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\bz2_codec.py">
+      <ModName>encodings.bz2_codec</ModName>
+      <IntFile>$(IntDir)encodings.bz2_codec.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.bz2_codec.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\charmap.py">
+      <ModName>encodings.charmap</ModName>
+      <IntFile>$(IntDir)encodings.charmap.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.charmap.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp037.py">
+      <ModName>encodings.cp037</ModName>
+      <IntFile>$(IntDir)encodings.cp037.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp037.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp1006.py">
+      <ModName>encodings.cp1006</ModName>
+      <IntFile>$(IntDir)encodings.cp1006.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp1006.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp1026.py">
+      <ModName>encodings.cp1026</ModName>
+      <IntFile>$(IntDir)encodings.cp1026.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp1026.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp1125.py">
+      <ModName>encodings.cp1125</ModName>
+      <IntFile>$(IntDir)encodings.cp1125.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp1125.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp1140.py">
+      <ModName>encodings.cp1140</ModName>
+      <IntFile>$(IntDir)encodings.cp1140.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp1140.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp1250.py">
+      <ModName>encodings.cp1250</ModName>
+      <IntFile>$(IntDir)encodings.cp1250.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp1250.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp1251.py">
+      <ModName>encodings.cp1251</ModName>
+      <IntFile>$(IntDir)encodings.cp1251.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp1251.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp1252.py">
+      <ModName>encodings.cp1252</ModName>
+      <IntFile>$(IntDir)encodings.cp1252.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp1252.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp1253.py">
+      <ModName>encodings.cp1253</ModName>
+      <IntFile>$(IntDir)encodings.cp1253.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp1253.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp1254.py">
+      <ModName>encodings.cp1254</ModName>
+      <IntFile>$(IntDir)encodings.cp1254.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp1254.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp1255.py">
+      <ModName>encodings.cp1255</ModName>
+      <IntFile>$(IntDir)encodings.cp1255.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp1255.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp1256.py">
+      <ModName>encodings.cp1256</ModName>
+      <IntFile>$(IntDir)encodings.cp1256.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp1256.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp1257.py">
+      <ModName>encodings.cp1257</ModName>
+      <IntFile>$(IntDir)encodings.cp1257.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp1257.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp1258.py">
+      <ModName>encodings.cp1258</ModName>
+      <IntFile>$(IntDir)encodings.cp1258.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp1258.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp273.py">
+      <ModName>encodings.cp273</ModName>
+      <IntFile>$(IntDir)encodings.cp273.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp273.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp424.py">
+      <ModName>encodings.cp424</ModName>
+      <IntFile>$(IntDir)encodings.cp424.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp424.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp437.py">
+      <ModName>encodings.cp437</ModName>
+      <IntFile>$(IntDir)encodings.cp437.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp437.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp500.py">
+      <ModName>encodings.cp500</ModName>
+      <IntFile>$(IntDir)encodings.cp500.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp500.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp720.py">
+      <ModName>encodings.cp720</ModName>
+      <IntFile>$(IntDir)encodings.cp720.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp720.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp737.py">
+      <ModName>encodings.cp737</ModName>
+      <IntFile>$(IntDir)encodings.cp737.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp737.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp775.py">
+      <ModName>encodings.cp775</ModName>
+      <IntFile>$(IntDir)encodings.cp775.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp775.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp850.py">
+      <ModName>encodings.cp850</ModName>
+      <IntFile>$(IntDir)encodings.cp850.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp850.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp852.py">
+      <ModName>encodings.cp852</ModName>
+      <IntFile>$(IntDir)encodings.cp852.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp852.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp855.py">
+      <ModName>encodings.cp855</ModName>
+      <IntFile>$(IntDir)encodings.cp855.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp855.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp856.py">
+      <ModName>encodings.cp856</ModName>
+      <IntFile>$(IntDir)encodings.cp856.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp856.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp857.py">
+      <ModName>encodings.cp857</ModName>
+      <IntFile>$(IntDir)encodings.cp857.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp857.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp858.py">
+      <ModName>encodings.cp858</ModName>
+      <IntFile>$(IntDir)encodings.cp858.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp858.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp860.py">
+      <ModName>encodings.cp860</ModName>
+      <IntFile>$(IntDir)encodings.cp860.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp860.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp861.py">
+      <ModName>encodings.cp861</ModName>
+      <IntFile>$(IntDir)encodings.cp861.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp861.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp862.py">
+      <ModName>encodings.cp862</ModName>
+      <IntFile>$(IntDir)encodings.cp862.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp862.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp863.py">
+      <ModName>encodings.cp863</ModName>
+      <IntFile>$(IntDir)encodings.cp863.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp863.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp864.py">
+      <ModName>encodings.cp864</ModName>
+      <IntFile>$(IntDir)encodings.cp864.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp864.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp865.py">
+      <ModName>encodings.cp865</ModName>
+      <IntFile>$(IntDir)encodings.cp865.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp865.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp866.py">
+      <ModName>encodings.cp866</ModName>
+      <IntFile>$(IntDir)encodings.cp866.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp866.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp869.py">
+      <ModName>encodings.cp869</ModName>
+      <IntFile>$(IntDir)encodings.cp869.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp869.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp874.py">
+      <ModName>encodings.cp874</ModName>
+      <IntFile>$(IntDir)encodings.cp874.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp874.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp875.py">
+      <ModName>encodings.cp875</ModName>
+      <IntFile>$(IntDir)encodings.cp875.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp875.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp932.py">
+      <ModName>encodings.cp932</ModName>
+      <IntFile>$(IntDir)encodings.cp932.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp932.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp949.py">
+      <ModName>encodings.cp949</ModName>
+      <IntFile>$(IntDir)encodings.cp949.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp949.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\cp950.py">
+      <ModName>encodings.cp950</ModName>
+      <IntFile>$(IntDir)encodings.cp950.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.cp950.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\euc_jis_2004.py">
+      <ModName>encodings.euc_jis_2004</ModName>
+      <IntFile>$(IntDir)encodings.euc_jis_2004.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.euc_jis_2004.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\euc_jisx0213.py">
+      <ModName>encodings.euc_jisx0213</ModName>
+      <IntFile>$(IntDir)encodings.euc_jisx0213.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.euc_jisx0213.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\euc_jp.py">
+      <ModName>encodings.euc_jp</ModName>
+      <IntFile>$(IntDir)encodings.euc_jp.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.euc_jp.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\euc_kr.py">
+      <ModName>encodings.euc_kr</ModName>
+      <IntFile>$(IntDir)encodings.euc_kr.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.euc_kr.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\gb18030.py">
+      <ModName>encodings.gb18030</ModName>
+      <IntFile>$(IntDir)encodings.gb18030.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.gb18030.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\gb2312.py">
+      <ModName>encodings.gb2312</ModName>
+      <IntFile>$(IntDir)encodings.gb2312.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.gb2312.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\gbk.py">
+      <ModName>encodings.gbk</ModName>
+      <IntFile>$(IntDir)encodings.gbk.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.gbk.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\hex_codec.py">
+      <ModName>encodings.hex_codec</ModName>
+      <IntFile>$(IntDir)encodings.hex_codec.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.hex_codec.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\hp_roman8.py">
+      <ModName>encodings.hp_roman8</ModName>
+      <IntFile>$(IntDir)encodings.hp_roman8.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.hp_roman8.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\hz.py">
+      <ModName>encodings.hz</ModName>
+      <IntFile>$(IntDir)encodings.hz.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.hz.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\idna.py">
+      <ModName>encodings.idna</ModName>
+      <IntFile>$(IntDir)encodings.idna.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.idna.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso2022_jp.py">
+      <ModName>encodings.iso2022_jp</ModName>
+      <IntFile>$(IntDir)encodings.iso2022_jp.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso2022_jp.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso2022_jp_1.py">
+      <ModName>encodings.iso2022_jp_1</ModName>
+      <IntFile>$(IntDir)encodings.iso2022_jp_1.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso2022_jp_1.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso2022_jp_2.py">
+      <ModName>encodings.iso2022_jp_2</ModName>
+      <IntFile>$(IntDir)encodings.iso2022_jp_2.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso2022_jp_2.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso2022_jp_2004.py">
+      <ModName>encodings.iso2022_jp_2004</ModName>
+      <IntFile>$(IntDir)encodings.iso2022_jp_2004.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso2022_jp_2004.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso2022_jp_3.py">
+      <ModName>encodings.iso2022_jp_3</ModName>
+      <IntFile>$(IntDir)encodings.iso2022_jp_3.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso2022_jp_3.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso2022_jp_ext.py">
+      <ModName>encodings.iso2022_jp_ext</ModName>
+      <IntFile>$(IntDir)encodings.iso2022_jp_ext.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso2022_jp_ext.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso2022_kr.py">
+      <ModName>encodings.iso2022_kr</ModName>
+      <IntFile>$(IntDir)encodings.iso2022_kr.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso2022_kr.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_1.py">
+      <ModName>encodings.iso8859_1</ModName>
+      <IntFile>$(IntDir)encodings.iso8859_1.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso8859_1.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_10.py">
+      <ModName>encodings.iso8859_10</ModName>
+      <IntFile>$(IntDir)encodings.iso8859_10.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso8859_10.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_11.py">
+      <ModName>encodings.iso8859_11</ModName>
+      <IntFile>$(IntDir)encodings.iso8859_11.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso8859_11.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_13.py">
+      <ModName>encodings.iso8859_13</ModName>
+      <IntFile>$(IntDir)encodings.iso8859_13.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso8859_13.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_14.py">
+      <ModName>encodings.iso8859_14</ModName>
+      <IntFile>$(IntDir)encodings.iso8859_14.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso8859_14.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_15.py">
+      <ModName>encodings.iso8859_15</ModName>
+      <IntFile>$(IntDir)encodings.iso8859_15.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso8859_15.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_16.py">
+      <ModName>encodings.iso8859_16</ModName>
+      <IntFile>$(IntDir)encodings.iso8859_16.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso8859_16.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_2.py">
+      <ModName>encodings.iso8859_2</ModName>
+      <IntFile>$(IntDir)encodings.iso8859_2.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso8859_2.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_3.py">
+      <ModName>encodings.iso8859_3</ModName>
+      <IntFile>$(IntDir)encodings.iso8859_3.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso8859_3.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_4.py">
+      <ModName>encodings.iso8859_4</ModName>
+      <IntFile>$(IntDir)encodings.iso8859_4.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso8859_4.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_5.py">
+      <ModName>encodings.iso8859_5</ModName>
+      <IntFile>$(IntDir)encodings.iso8859_5.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso8859_5.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_6.py">
+      <ModName>encodings.iso8859_6</ModName>
+      <IntFile>$(IntDir)encodings.iso8859_6.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso8859_6.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_7.py">
+      <ModName>encodings.iso8859_7</ModName>
+      <IntFile>$(IntDir)encodings.iso8859_7.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso8859_7.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_8.py">
+      <ModName>encodings.iso8859_8</ModName>
+      <IntFile>$(IntDir)encodings.iso8859_8.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso8859_8.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_9.py">
+      <ModName>encodings.iso8859_9</ModName>
+      <IntFile>$(IntDir)encodings.iso8859_9.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.iso8859_9.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\johab.py">
+      <ModName>encodings.johab</ModName>
+      <IntFile>$(IntDir)encodings.johab.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.johab.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\koi8_r.py">
+      <ModName>encodings.koi8_r</ModName>
+      <IntFile>$(IntDir)encodings.koi8_r.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.koi8_r.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\koi8_t.py">
+      <ModName>encodings.koi8_t</ModName>
+      <IntFile>$(IntDir)encodings.koi8_t.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.koi8_t.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\koi8_u.py">
+      <ModName>encodings.koi8_u</ModName>
+      <IntFile>$(IntDir)encodings.koi8_u.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.koi8_u.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\kz1048.py">
+      <ModName>encodings.kz1048</ModName>
+      <IntFile>$(IntDir)encodings.kz1048.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.kz1048.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\latin_1.py">
+      <ModName>encodings.latin_1</ModName>
+      <IntFile>$(IntDir)encodings.latin_1.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.latin_1.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\mac_arabic.py">
+      <ModName>encodings.mac_arabic</ModName>
+      <IntFile>$(IntDir)encodings.mac_arabic.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.mac_arabic.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\mac_croatian.py">
+      <ModName>encodings.mac_croatian</ModName>
+      <IntFile>$(IntDir)encodings.mac_croatian.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.mac_croatian.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\mac_cyrillic.py">
+      <ModName>encodings.mac_cyrillic</ModName>
+      <IntFile>$(IntDir)encodings.mac_cyrillic.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.mac_cyrillic.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\mac_farsi.py">
+      <ModName>encodings.mac_farsi</ModName>
+      <IntFile>$(IntDir)encodings.mac_farsi.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.mac_farsi.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\mac_greek.py">
+      <ModName>encodings.mac_greek</ModName>
+      <IntFile>$(IntDir)encodings.mac_greek.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.mac_greek.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\mac_iceland.py">
+      <ModName>encodings.mac_iceland</ModName>
+      <IntFile>$(IntDir)encodings.mac_iceland.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.mac_iceland.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\mac_latin2.py">
+      <ModName>encodings.mac_latin2</ModName>
+      <IntFile>$(IntDir)encodings.mac_latin2.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.mac_latin2.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\mac_roman.py">
+      <ModName>encodings.mac_roman</ModName>
+      <IntFile>$(IntDir)encodings.mac_roman.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.mac_roman.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\mac_romanian.py">
+      <ModName>encodings.mac_romanian</ModName>
+      <IntFile>$(IntDir)encodings.mac_romanian.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.mac_romanian.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\mac_turkish.py">
+      <ModName>encodings.mac_turkish</ModName>
+      <IntFile>$(IntDir)encodings.mac_turkish.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.mac_turkish.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\mbcs.py">
+      <ModName>encodings.mbcs</ModName>
+      <IntFile>$(IntDir)encodings.mbcs.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.mbcs.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\oem.py">
+      <ModName>encodings.oem</ModName>
+      <IntFile>$(IntDir)encodings.oem.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.oem.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\palmos.py">
+      <ModName>encodings.palmos</ModName>
+      <IntFile>$(IntDir)encodings.palmos.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.palmos.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\ptcp154.py">
+      <ModName>encodings.ptcp154</ModName>
+      <IntFile>$(IntDir)encodings.ptcp154.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.ptcp154.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\punycode.py">
+      <ModName>encodings.punycode</ModName>
+      <IntFile>$(IntDir)encodings.punycode.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.punycode.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\quopri_codec.py">
+      <ModName>encodings.quopri_codec</ModName>
+      <IntFile>$(IntDir)encodings.quopri_codec.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.quopri_codec.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\raw_unicode_escape.py">
+      <ModName>encodings.raw_unicode_escape</ModName>
+      <IntFile>$(IntDir)encodings.raw_unicode_escape.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.raw_unicode_escape.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\rot_13.py">
+      <ModName>encodings.rot_13</ModName>
+      <IntFile>$(IntDir)encodings.rot_13.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.rot_13.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\shift_jis.py">
+      <ModName>encodings.shift_jis</ModName>
+      <IntFile>$(IntDir)encodings.shift_jis.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.shift_jis.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\shift_jis_2004.py">
+      <ModName>encodings.shift_jis_2004</ModName>
+      <IntFile>$(IntDir)encodings.shift_jis_2004.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.shift_jis_2004.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\shift_jisx0213.py">
+      <ModName>encodings.shift_jisx0213</ModName>
+      <IntFile>$(IntDir)encodings.shift_jisx0213.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.shift_jisx0213.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\tis_620.py">
+      <ModName>encodings.tis_620</ModName>
+      <IntFile>$(IntDir)encodings.tis_620.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.tis_620.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\undefined.py">
+      <ModName>encodings.undefined</ModName>
+      <IntFile>$(IntDir)encodings.undefined.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.undefined.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\unicode_escape.py">
+      <ModName>encodings.unicode_escape</ModName>
+      <IntFile>$(IntDir)encodings.unicode_escape.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.unicode_escape.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\utf_16.py">
+      <ModName>encodings.utf_16</ModName>
+      <IntFile>$(IntDir)encodings.utf_16.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.utf_16.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\utf_16_be.py">
+      <ModName>encodings.utf_16_be</ModName>
+      <IntFile>$(IntDir)encodings.utf_16_be.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.utf_16_be.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\utf_16_le.py">
+      <ModName>encodings.utf_16_le</ModName>
+      <IntFile>$(IntDir)encodings.utf_16_le.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.utf_16_le.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\utf_32.py">
+      <ModName>encodings.utf_32</ModName>
+      <IntFile>$(IntDir)encodings.utf_32.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.utf_32.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\utf_32_be.py">
+      <ModName>encodings.utf_32_be</ModName>
+      <IntFile>$(IntDir)encodings.utf_32_be.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.utf_32_be.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\utf_32_le.py">
+      <ModName>encodings.utf_32_le</ModName>
+      <IntFile>$(IntDir)encodings.utf_32_le.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.utf_32_le.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\utf_7.py">
+      <ModName>encodings.utf_7</ModName>
+      <IntFile>$(IntDir)encodings.utf_7.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.utf_7.h</OutFile>
+    </None>
     <None Include="..\Lib\encodings\utf_8.py">
       <ModName>encodings.utf_8</ModName>
       <IntFile>$(IntDir)encodings.utf_8.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\encodings.utf_8.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\utf_8_sig.py">
+      <ModName>encodings.utf_8_sig</ModName>
+      <IntFile>$(IntDir)encodings.utf_8_sig.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.utf_8_sig.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\uu_codec.py">
+      <ModName>encodings.uu_codec</ModName>
+      <IntFile>$(IntDir)encodings.uu_codec.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.uu_codec.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\zlib_codec.py">
+      <ModName>encodings.zlib_codec</ModName>
+      <IntFile>$(IntDir)encodings.zlib_codec.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.zlib_codec.h</OutFile>
     </None>
     <None Include="..\Lib\io.py">
       <ModName>io</ModName>
@@ -423,7 +1013,125 @@
 		 "$(PySourcePath)Python\frozen_modules\encodings.h:encodings" ^
 		 "$(PySourcePath)Python\frozen_modules\encodings.aliases.h:encodings.aliases" ^
 		 "$(PySourcePath)Python\frozen_modules\encodings.ascii.h:encodings.ascii" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.base64_codec.h:encodings.base64_codec" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.big5.h:encodings.big5" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.big5hkscs.h:encodings.big5hkscs" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.bz2_codec.h:encodings.bz2_codec" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.charmap.h:encodings.charmap" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp037.h:encodings.cp037" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp1006.h:encodings.cp1006" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp1026.h:encodings.cp1026" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp1125.h:encodings.cp1125" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp1140.h:encodings.cp1140" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp1250.h:encodings.cp1250" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp1251.h:encodings.cp1251" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp1252.h:encodings.cp1252" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp1253.h:encodings.cp1253" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp1254.h:encodings.cp1254" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp1255.h:encodings.cp1255" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp1256.h:encodings.cp1256" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp1257.h:encodings.cp1257" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp1258.h:encodings.cp1258" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp273.h:encodings.cp273" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp424.h:encodings.cp424" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp437.h:encodings.cp437" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp500.h:encodings.cp500" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp720.h:encodings.cp720" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp737.h:encodings.cp737" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp775.h:encodings.cp775" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp850.h:encodings.cp850" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp852.h:encodings.cp852" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp855.h:encodings.cp855" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp856.h:encodings.cp856" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp857.h:encodings.cp857" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp858.h:encodings.cp858" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp860.h:encodings.cp860" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp861.h:encodings.cp861" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp862.h:encodings.cp862" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp863.h:encodings.cp863" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp864.h:encodings.cp864" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp865.h:encodings.cp865" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp866.h:encodings.cp866" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp869.h:encodings.cp869" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp874.h:encodings.cp874" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp875.h:encodings.cp875" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp932.h:encodings.cp932" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp949.h:encodings.cp949" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.cp950.h:encodings.cp950" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.euc_jis_2004.h:encodings.euc_jis_2004" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.euc_jisx0213.h:encodings.euc_jisx0213" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.euc_jp.h:encodings.euc_jp" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.euc_kr.h:encodings.euc_kr" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.gb18030.h:encodings.gb18030" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.gb2312.h:encodings.gb2312" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.gbk.h:encodings.gbk" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.hex_codec.h:encodings.hex_codec" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.hp_roman8.h:encodings.hp_roman8" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.hz.h:encodings.hz" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.idna.h:encodings.idna" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso2022_jp.h:encodings.iso2022_jp" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso2022_jp_1.h:encodings.iso2022_jp_1" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso2022_jp_2.h:encodings.iso2022_jp_2" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso2022_jp_2004.h:encodings.iso2022_jp_2004" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso2022_jp_3.h:encodings.iso2022_jp_3" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso2022_jp_ext.h:encodings.iso2022_jp_ext" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso2022_kr.h:encodings.iso2022_kr" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso8859_1.h:encodings.iso8859_1" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso8859_10.h:encodings.iso8859_10" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso8859_11.h:encodings.iso8859_11" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso8859_13.h:encodings.iso8859_13" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso8859_14.h:encodings.iso8859_14" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso8859_15.h:encodings.iso8859_15" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso8859_16.h:encodings.iso8859_16" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso8859_2.h:encodings.iso8859_2" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso8859_3.h:encodings.iso8859_3" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso8859_4.h:encodings.iso8859_4" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso8859_5.h:encodings.iso8859_5" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso8859_6.h:encodings.iso8859_6" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso8859_7.h:encodings.iso8859_7" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso8859_8.h:encodings.iso8859_8" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.iso8859_9.h:encodings.iso8859_9" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.johab.h:encodings.johab" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.koi8_r.h:encodings.koi8_r" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.koi8_t.h:encodings.koi8_t" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.koi8_u.h:encodings.koi8_u" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.kz1048.h:encodings.kz1048" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.latin_1.h:encodings.latin_1" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.mac_arabic.h:encodings.mac_arabic" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.mac_croatian.h:encodings.mac_croatian" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.mac_cyrillic.h:encodings.mac_cyrillic" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.mac_farsi.h:encodings.mac_farsi" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.mac_greek.h:encodings.mac_greek" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.mac_iceland.h:encodings.mac_iceland" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.mac_latin2.h:encodings.mac_latin2" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.mac_roman.h:encodings.mac_roman" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.mac_romanian.h:encodings.mac_romanian" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.mac_turkish.h:encodings.mac_turkish" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.mbcs.h:encodings.mbcs" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.oem.h:encodings.oem" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.palmos.h:encodings.palmos" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.ptcp154.h:encodings.ptcp154" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.punycode.h:encodings.punycode" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.quopri_codec.h:encodings.quopri_codec" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.raw_unicode_escape.h:encodings.raw_unicode_escape" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.rot_13.h:encodings.rot_13" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.shift_jis.h:encodings.shift_jis" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.shift_jis_2004.h:encodings.shift_jis_2004" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.shift_jisx0213.h:encodings.shift_jisx0213" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.tis_620.h:encodings.tis_620" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.undefined.h:encodings.undefined" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.unicode_escape.h:encodings.unicode_escape" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.utf_16.h:encodings.utf_16" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.utf_16_be.h:encodings.utf_16_be" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.utf_16_le.h:encodings.utf_16_le" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.utf_32.h:encodings.utf_32" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.utf_32_be.h:encodings.utf_32_be" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.utf_32_le.h:encodings.utf_32_le" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.utf_7.h:encodings.utf_7" ^
 		 "$(PySourcePath)Python\frozen_modules\encodings.utf_8.h:encodings.utf_8" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.utf_8_sig.h:encodings.utf_8_sig" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.uu_codec.h:encodings.uu_codec" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.zlib_codec.h:encodings.zlib_codec" ^
 		 "$(PySourcePath)Python\frozen_modules\io.h:io" ^
 		 "$(PySourcePath)Python\frozen_modules\_collections_abc.h:_collections_abc" ^
 		 "$(PySourcePath)Python\frozen_modules\_sitebuiltins.h:_sitebuiltins" ^

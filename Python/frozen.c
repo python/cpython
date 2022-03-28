@@ -52,9 +52,128 @@ extern PyObject *_Py_get_zipimport_toplevel(void);
 extern PyObject *_Py_get_abc_toplevel(void);
 extern PyObject *_Py_get_codecs_toplevel(void);
 extern PyObject *_Py_get_encodings_toplevel(void);
+extern PyObject *_Py_get_encodings_toplevel(void);
 extern PyObject *_Py_get_encodings_aliases_toplevel(void);
 extern PyObject *_Py_get_encodings_ascii_toplevel(void);
+extern PyObject *_Py_get_encodings_base64_codec_toplevel(void);
+extern PyObject *_Py_get_encodings_big5_toplevel(void);
+extern PyObject *_Py_get_encodings_big5hkscs_toplevel(void);
+extern PyObject *_Py_get_encodings_bz2_codec_toplevel(void);
+extern PyObject *_Py_get_encodings_charmap_toplevel(void);
+extern PyObject *_Py_get_encodings_cp037_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1006_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1026_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1125_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1140_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1250_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1251_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1252_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1253_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1254_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1255_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1256_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1257_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1258_toplevel(void);
+extern PyObject *_Py_get_encodings_cp273_toplevel(void);
+extern PyObject *_Py_get_encodings_cp424_toplevel(void);
+extern PyObject *_Py_get_encodings_cp437_toplevel(void);
+extern PyObject *_Py_get_encodings_cp500_toplevel(void);
+extern PyObject *_Py_get_encodings_cp720_toplevel(void);
+extern PyObject *_Py_get_encodings_cp737_toplevel(void);
+extern PyObject *_Py_get_encodings_cp775_toplevel(void);
+extern PyObject *_Py_get_encodings_cp850_toplevel(void);
+extern PyObject *_Py_get_encodings_cp852_toplevel(void);
+extern PyObject *_Py_get_encodings_cp855_toplevel(void);
+extern PyObject *_Py_get_encodings_cp856_toplevel(void);
+extern PyObject *_Py_get_encodings_cp857_toplevel(void);
+extern PyObject *_Py_get_encodings_cp858_toplevel(void);
+extern PyObject *_Py_get_encodings_cp860_toplevel(void);
+extern PyObject *_Py_get_encodings_cp861_toplevel(void);
+extern PyObject *_Py_get_encodings_cp862_toplevel(void);
+extern PyObject *_Py_get_encodings_cp863_toplevel(void);
+extern PyObject *_Py_get_encodings_cp864_toplevel(void);
+extern PyObject *_Py_get_encodings_cp865_toplevel(void);
+extern PyObject *_Py_get_encodings_cp866_toplevel(void);
+extern PyObject *_Py_get_encodings_cp869_toplevel(void);
+extern PyObject *_Py_get_encodings_cp874_toplevel(void);
+extern PyObject *_Py_get_encodings_cp875_toplevel(void);
+extern PyObject *_Py_get_encodings_cp932_toplevel(void);
+extern PyObject *_Py_get_encodings_cp949_toplevel(void);
+extern PyObject *_Py_get_encodings_cp950_toplevel(void);
+extern PyObject *_Py_get_encodings_euc_jis_2004_toplevel(void);
+extern PyObject *_Py_get_encodings_euc_jisx0213_toplevel(void);
+extern PyObject *_Py_get_encodings_euc_jp_toplevel(void);
+extern PyObject *_Py_get_encodings_euc_kr_toplevel(void);
+extern PyObject *_Py_get_encodings_gb18030_toplevel(void);
+extern PyObject *_Py_get_encodings_gb2312_toplevel(void);
+extern PyObject *_Py_get_encodings_gbk_toplevel(void);
+extern PyObject *_Py_get_encodings_hex_codec_toplevel(void);
+extern PyObject *_Py_get_encodings_hp_roman8_toplevel(void);
+extern PyObject *_Py_get_encodings_hz_toplevel(void);
+extern PyObject *_Py_get_encodings_idna_toplevel(void);
+extern PyObject *_Py_get_encodings_iso2022_jp_toplevel(void);
+extern PyObject *_Py_get_encodings_iso2022_jp_1_toplevel(void);
+extern PyObject *_Py_get_encodings_iso2022_jp_2_toplevel(void);
+extern PyObject *_Py_get_encodings_iso2022_jp_2004_toplevel(void);
+extern PyObject *_Py_get_encodings_iso2022_jp_3_toplevel(void);
+extern PyObject *_Py_get_encodings_iso2022_jp_ext_toplevel(void);
+extern PyObject *_Py_get_encodings_iso2022_kr_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_1_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_10_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_11_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_13_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_14_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_15_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_16_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_2_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_3_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_4_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_5_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_6_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_7_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_8_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_9_toplevel(void);
+extern PyObject *_Py_get_encodings_johab_toplevel(void);
+extern PyObject *_Py_get_encodings_koi8_r_toplevel(void);
+extern PyObject *_Py_get_encodings_koi8_t_toplevel(void);
+extern PyObject *_Py_get_encodings_koi8_u_toplevel(void);
+extern PyObject *_Py_get_encodings_kz1048_toplevel(void);
+extern PyObject *_Py_get_encodings_latin_1_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_arabic_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_croatian_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_cyrillic_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_farsi_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_greek_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_iceland_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_latin2_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_roman_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_romanian_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_turkish_toplevel(void);
+extern PyObject *_Py_get_encodings_mbcs_toplevel(void);
+extern PyObject *_Py_get_encodings_oem_toplevel(void);
+extern PyObject *_Py_get_encodings_palmos_toplevel(void);
+extern PyObject *_Py_get_encodings_ptcp154_toplevel(void);
+extern PyObject *_Py_get_encodings_punycode_toplevel(void);
+extern PyObject *_Py_get_encodings_quopri_codec_toplevel(void);
+extern PyObject *_Py_get_encodings_raw_unicode_escape_toplevel(void);
+extern PyObject *_Py_get_encodings_rot_13_toplevel(void);
+extern PyObject *_Py_get_encodings_shift_jis_toplevel(void);
+extern PyObject *_Py_get_encodings_shift_jis_2004_toplevel(void);
+extern PyObject *_Py_get_encodings_shift_jisx0213_toplevel(void);
+extern PyObject *_Py_get_encodings_tis_620_toplevel(void);
+extern PyObject *_Py_get_encodings_undefined_toplevel(void);
+extern PyObject *_Py_get_encodings_unicode_escape_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_16_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_16_be_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_16_le_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_32_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_32_be_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_32_le_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_7_toplevel(void);
 extern PyObject *_Py_get_encodings_utf_8_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_8_sig_toplevel(void);
+extern PyObject *_Py_get_encodings_uu_codec_toplevel(void);
+extern PyObject *_Py_get_encodings_zlib_codec_toplevel(void);
 extern PyObject *_Py_get_io_toplevel(void);
 extern PyObject *_Py_get__collections_abc_toplevel(void);
 extern PyObject *_Py_get__sitebuiltins_toplevel(void);
@@ -92,9 +211,128 @@ static const struct _frozen stdlib_modules[] = {
     {"abc", NULL, 0, false, GET_CODE(abc)},
     {"codecs", NULL, 0, false, GET_CODE(codecs)},
     {"encodings", NULL, 0, true, GET_CODE(encodings)},
+    {"encodings.__init__", NULL, 0, false, GET_CODE(encodings)},
     {"encodings.aliases", NULL, 0, false, GET_CODE(encodings_aliases)},
     {"encodings.ascii", NULL, 0, false, GET_CODE(encodings_ascii)},
+    {"encodings.base64_codec", NULL, 0, false, GET_CODE(encodings_base64_codec)},
+    {"encodings.big5", NULL, 0, false, GET_CODE(encodings_big5)},
+    {"encodings.big5hkscs", NULL, 0, false, GET_CODE(encodings_big5hkscs)},
+    {"encodings.bz2_codec", NULL, 0, false, GET_CODE(encodings_bz2_codec)},
+    {"encodings.charmap", NULL, 0, false, GET_CODE(encodings_charmap)},
+    {"encodings.cp037", NULL, 0, false, GET_CODE(encodings_cp037)},
+    {"encodings.cp1006", NULL, 0, false, GET_CODE(encodings_cp1006)},
+    {"encodings.cp1026", NULL, 0, false, GET_CODE(encodings_cp1026)},
+    {"encodings.cp1125", NULL, 0, false, GET_CODE(encodings_cp1125)},
+    {"encodings.cp1140", NULL, 0, false, GET_CODE(encodings_cp1140)},
+    {"encodings.cp1250", NULL, 0, false, GET_CODE(encodings_cp1250)},
+    {"encodings.cp1251", NULL, 0, false, GET_CODE(encodings_cp1251)},
+    {"encodings.cp1252", NULL, 0, false, GET_CODE(encodings_cp1252)},
+    {"encodings.cp1253", NULL, 0, false, GET_CODE(encodings_cp1253)},
+    {"encodings.cp1254", NULL, 0, false, GET_CODE(encodings_cp1254)},
+    {"encodings.cp1255", NULL, 0, false, GET_CODE(encodings_cp1255)},
+    {"encodings.cp1256", NULL, 0, false, GET_CODE(encodings_cp1256)},
+    {"encodings.cp1257", NULL, 0, false, GET_CODE(encodings_cp1257)},
+    {"encodings.cp1258", NULL, 0, false, GET_CODE(encodings_cp1258)},
+    {"encodings.cp273", NULL, 0, false, GET_CODE(encodings_cp273)},
+    {"encodings.cp424", NULL, 0, false, GET_CODE(encodings_cp424)},
+    {"encodings.cp437", NULL, 0, false, GET_CODE(encodings_cp437)},
+    {"encodings.cp500", NULL, 0, false, GET_CODE(encodings_cp500)},
+    {"encodings.cp720", NULL, 0, false, GET_CODE(encodings_cp720)},
+    {"encodings.cp737", NULL, 0, false, GET_CODE(encodings_cp737)},
+    {"encodings.cp775", NULL, 0, false, GET_CODE(encodings_cp775)},
+    {"encodings.cp850", NULL, 0, false, GET_CODE(encodings_cp850)},
+    {"encodings.cp852", NULL, 0, false, GET_CODE(encodings_cp852)},
+    {"encodings.cp855", NULL, 0, false, GET_CODE(encodings_cp855)},
+    {"encodings.cp856", NULL, 0, false, GET_CODE(encodings_cp856)},
+    {"encodings.cp857", NULL, 0, false, GET_CODE(encodings_cp857)},
+    {"encodings.cp858", NULL, 0, false, GET_CODE(encodings_cp858)},
+    {"encodings.cp860", NULL, 0, false, GET_CODE(encodings_cp860)},
+    {"encodings.cp861", NULL, 0, false, GET_CODE(encodings_cp861)},
+    {"encodings.cp862", NULL, 0, false, GET_CODE(encodings_cp862)},
+    {"encodings.cp863", NULL, 0, false, GET_CODE(encodings_cp863)},
+    {"encodings.cp864", NULL, 0, false, GET_CODE(encodings_cp864)},
+    {"encodings.cp865", NULL, 0, false, GET_CODE(encodings_cp865)},
+    {"encodings.cp866", NULL, 0, false, GET_CODE(encodings_cp866)},
+    {"encodings.cp869", NULL, 0, false, GET_CODE(encodings_cp869)},
+    {"encodings.cp874", NULL, 0, false, GET_CODE(encodings_cp874)},
+    {"encodings.cp875", NULL, 0, false, GET_CODE(encodings_cp875)},
+    {"encodings.cp932", NULL, 0, false, GET_CODE(encodings_cp932)},
+    {"encodings.cp949", NULL, 0, false, GET_CODE(encodings_cp949)},
+    {"encodings.cp950", NULL, 0, false, GET_CODE(encodings_cp950)},
+    {"encodings.euc_jis_2004", NULL, 0, false, GET_CODE(encodings_euc_jis_2004)},
+    {"encodings.euc_jisx0213", NULL, 0, false, GET_CODE(encodings_euc_jisx0213)},
+    {"encodings.euc_jp", NULL, 0, false, GET_CODE(encodings_euc_jp)},
+    {"encodings.euc_kr", NULL, 0, false, GET_CODE(encodings_euc_kr)},
+    {"encodings.gb18030", NULL, 0, false, GET_CODE(encodings_gb18030)},
+    {"encodings.gb2312", NULL, 0, false, GET_CODE(encodings_gb2312)},
+    {"encodings.gbk", NULL, 0, false, GET_CODE(encodings_gbk)},
+    {"encodings.hex_codec", NULL, 0, false, GET_CODE(encodings_hex_codec)},
+    {"encodings.hp_roman8", NULL, 0, false, GET_CODE(encodings_hp_roman8)},
+    {"encodings.hz", NULL, 0, false, GET_CODE(encodings_hz)},
+    {"encodings.idna", NULL, 0, false, GET_CODE(encodings_idna)},
+    {"encodings.iso2022_jp", NULL, 0, false, GET_CODE(encodings_iso2022_jp)},
+    {"encodings.iso2022_jp_1", NULL, 0, false, GET_CODE(encodings_iso2022_jp_1)},
+    {"encodings.iso2022_jp_2", NULL, 0, false, GET_CODE(encodings_iso2022_jp_2)},
+    {"encodings.iso2022_jp_2004", NULL, 0, false, GET_CODE(encodings_iso2022_jp_2004)},
+    {"encodings.iso2022_jp_3", NULL, 0, false, GET_CODE(encodings_iso2022_jp_3)},
+    {"encodings.iso2022_jp_ext", NULL, 0, false, GET_CODE(encodings_iso2022_jp_ext)},
+    {"encodings.iso2022_kr", NULL, 0, false, GET_CODE(encodings_iso2022_kr)},
+    {"encodings.iso8859_1", NULL, 0, false, GET_CODE(encodings_iso8859_1)},
+    {"encodings.iso8859_10", NULL, 0, false, GET_CODE(encodings_iso8859_10)},
+    {"encodings.iso8859_11", NULL, 0, false, GET_CODE(encodings_iso8859_11)},
+    {"encodings.iso8859_13", NULL, 0, false, GET_CODE(encodings_iso8859_13)},
+    {"encodings.iso8859_14", NULL, 0, false, GET_CODE(encodings_iso8859_14)},
+    {"encodings.iso8859_15", NULL, 0, false, GET_CODE(encodings_iso8859_15)},
+    {"encodings.iso8859_16", NULL, 0, false, GET_CODE(encodings_iso8859_16)},
+    {"encodings.iso8859_2", NULL, 0, false, GET_CODE(encodings_iso8859_2)},
+    {"encodings.iso8859_3", NULL, 0, false, GET_CODE(encodings_iso8859_3)},
+    {"encodings.iso8859_4", NULL, 0, false, GET_CODE(encodings_iso8859_4)},
+    {"encodings.iso8859_5", NULL, 0, false, GET_CODE(encodings_iso8859_5)},
+    {"encodings.iso8859_6", NULL, 0, false, GET_CODE(encodings_iso8859_6)},
+    {"encodings.iso8859_7", NULL, 0, false, GET_CODE(encodings_iso8859_7)},
+    {"encodings.iso8859_8", NULL, 0, false, GET_CODE(encodings_iso8859_8)},
+    {"encodings.iso8859_9", NULL, 0, false, GET_CODE(encodings_iso8859_9)},
+    {"encodings.johab", NULL, 0, false, GET_CODE(encodings_johab)},
+    {"encodings.koi8_r", NULL, 0, false, GET_CODE(encodings_koi8_r)},
+    {"encodings.koi8_t", NULL, 0, false, GET_CODE(encodings_koi8_t)},
+    {"encodings.koi8_u", NULL, 0, false, GET_CODE(encodings_koi8_u)},
+    {"encodings.kz1048", NULL, 0, false, GET_CODE(encodings_kz1048)},
+    {"encodings.latin_1", NULL, 0, false, GET_CODE(encodings_latin_1)},
+    {"encodings.mac_arabic", NULL, 0, false, GET_CODE(encodings_mac_arabic)},
+    {"encodings.mac_croatian", NULL, 0, false, GET_CODE(encodings_mac_croatian)},
+    {"encodings.mac_cyrillic", NULL, 0, false, GET_CODE(encodings_mac_cyrillic)},
+    {"encodings.mac_farsi", NULL, 0, false, GET_CODE(encodings_mac_farsi)},
+    {"encodings.mac_greek", NULL, 0, false, GET_CODE(encodings_mac_greek)},
+    {"encodings.mac_iceland", NULL, 0, false, GET_CODE(encodings_mac_iceland)},
+    {"encodings.mac_latin2", NULL, 0, false, GET_CODE(encodings_mac_latin2)},
+    {"encodings.mac_roman", NULL, 0, false, GET_CODE(encodings_mac_roman)},
+    {"encodings.mac_romanian", NULL, 0, false, GET_CODE(encodings_mac_romanian)},
+    {"encodings.mac_turkish", NULL, 0, false, GET_CODE(encodings_mac_turkish)},
+    {"encodings.mbcs", NULL, 0, false, GET_CODE(encodings_mbcs)},
+    {"encodings.oem", NULL, 0, false, GET_CODE(encodings_oem)},
+    {"encodings.palmos", NULL, 0, false, GET_CODE(encodings_palmos)},
+    {"encodings.ptcp154", NULL, 0, false, GET_CODE(encodings_ptcp154)},
+    {"encodings.punycode", NULL, 0, false, GET_CODE(encodings_punycode)},
+    {"encodings.quopri_codec", NULL, 0, false, GET_CODE(encodings_quopri_codec)},
+    {"encodings.raw_unicode_escape", NULL, 0, false, GET_CODE(encodings_raw_unicode_escape)},
+    {"encodings.rot_13", NULL, 0, false, GET_CODE(encodings_rot_13)},
+    {"encodings.shift_jis", NULL, 0, false, GET_CODE(encodings_shift_jis)},
+    {"encodings.shift_jis_2004", NULL, 0, false, GET_CODE(encodings_shift_jis_2004)},
+    {"encodings.shift_jisx0213", NULL, 0, false, GET_CODE(encodings_shift_jisx0213)},
+    {"encodings.tis_620", NULL, 0, false, GET_CODE(encodings_tis_620)},
+    {"encodings.undefined", NULL, 0, false, GET_CODE(encodings_undefined)},
+    {"encodings.unicode_escape", NULL, 0, false, GET_CODE(encodings_unicode_escape)},
+    {"encodings.utf_16", NULL, 0, false, GET_CODE(encodings_utf_16)},
+    {"encodings.utf_16_be", NULL, 0, false, GET_CODE(encodings_utf_16_be)},
+    {"encodings.utf_16_le", NULL, 0, false, GET_CODE(encodings_utf_16_le)},
+    {"encodings.utf_32", NULL, 0, false, GET_CODE(encodings_utf_32)},
+    {"encodings.utf_32_be", NULL, 0, false, GET_CODE(encodings_utf_32_be)},
+    {"encodings.utf_32_le", NULL, 0, false, GET_CODE(encodings_utf_32_le)},
+    {"encodings.utf_7", NULL, 0, false, GET_CODE(encodings_utf_7)},
     {"encodings.utf_8", NULL, 0, false, GET_CODE(encodings_utf_8)},
+    {"encodings.utf_8_sig", NULL, 0, false, GET_CODE(encodings_utf_8_sig)},
+    {"encodings.uu_codec", NULL, 0, false, GET_CODE(encodings_uu_codec)},
+    {"encodings.zlib_codec", NULL, 0, false, GET_CODE(encodings_zlib_codec)},
     {"io", NULL, 0, false, GET_CODE(io)},
 
     /* stdlib - startup, with site */
@@ -135,6 +373,7 @@ const struct _frozen *_PyImport_FrozenTest = test_modules;
 static const struct _module_alias aliases[] = {
     {"_frozen_importlib", "importlib._bootstrap"},
     {"_frozen_importlib_external", "importlib._bootstrap_external"},
+    {"encodings.__init__", "<encodings"},
     {"os.path", "posixpath"},
     {"__hello_alias__", "__hello__"},
     {"__phello_alias__", "__hello__"},

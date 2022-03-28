@@ -429,7 +429,361 @@
     <None Include="..\Lib\encodings\ascii.py">
       <Filter>Python Files</Filter>
     </None>
+    <None Include="..\Lib\encodings\base64_codec.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\big5.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\big5hkscs.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\bz2_codec.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\charmap.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp037.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp1006.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp1026.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp1125.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp1140.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp1250.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp1251.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp1252.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp1253.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp1254.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp1255.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp1256.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp1257.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp1258.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp273.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp424.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp437.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp500.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp720.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp737.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp775.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp850.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp852.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp855.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp856.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp857.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp858.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp860.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp861.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp862.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp863.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp864.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp865.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp866.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp869.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp874.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp875.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp932.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp949.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\cp950.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\euc_jis_2004.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\euc_jisx0213.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\euc_jp.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\euc_kr.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\gb18030.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\gb2312.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\gbk.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\hex_codec.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\hp_roman8.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\hz.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\idna.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso2022_jp.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso2022_jp_1.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso2022_jp_2.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso2022_jp_2004.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso2022_jp_3.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso2022_jp_ext.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso2022_kr.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_1.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_10.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_11.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_13.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_14.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_15.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_16.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_2.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_3.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_4.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_5.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_6.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_7.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_8.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\iso8859_9.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\johab.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\koi8_r.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\koi8_t.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\koi8_u.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\kz1048.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\latin_1.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\mac_arabic.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\mac_croatian.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\mac_cyrillic.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\mac_farsi.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\mac_greek.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\mac_iceland.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\mac_latin2.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\mac_roman.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\mac_romanian.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\mac_turkish.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\mbcs.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\oem.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\palmos.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\ptcp154.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\punycode.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\quopri_codec.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\raw_unicode_escape.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\rot_13.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\shift_jis.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\shift_jis_2004.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\shift_jisx0213.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\tis_620.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\undefined.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\unicode_escape.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\utf_16.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\utf_16_be.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\utf_16_le.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\utf_32.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\utf_32_be.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\utf_32_le.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\utf_7.py">
+      <Filter>Python Files</Filter>
+    </None>
     <None Include="..\Lib\encodings\utf_8.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\utf_8_sig.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\uu_codec.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\zlib_codec.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\io.py">

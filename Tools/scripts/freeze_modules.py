@@ -49,10 +49,7 @@ FROZEN = [
     ('stdlib - startup, without site (python -S)', [
         'abc',
         'codecs',
-        '<encodings>', # this is equivalent to encodings.__init__
-        'encodings.aliases',
-        'encodings.ascii',
-        'encodings.utf_8',
+        '<encodings.**.*>', # this is equivalent to encodings.__init__
         'io',
         ]),
     ('stdlib - startup, with site', [
