@@ -865,7 +865,6 @@ list_extend(PyListObject *self, PyObject *iterable)
     PyObject *it;      /* iter(v) */
     Py_ssize_t m;                  /* size of self */
     Py_ssize_t n;                  /* guess for size of iterable */
-    Py_ssize_t mn;                 /* m + n */
     Py_ssize_t i;
     PyObject *(*iternext)(PyObject *);
 
@@ -889,7 +888,13 @@ list_extend(PyListObject *self, PyObject *iterable)
         /* It should not be possible to allocate a list large enough to cause
         an overflow on any relevant platform */
         assert(m < PY_SSIZE_T_MAX - n);
-        if (list_resize(self, m + n) < 0) {
+        if (self->ob_item == NULL) {
+            if (list_preallocate_exact(self, n) < 0) {
+                return NULL;
+            }
+            Py_SET_SIZE(self, n);
+        }
+        else if (list_resize(self, m + n) < 0) {
             Py_DECREF(iterable);
             return NULL;
         }
@@ -928,10 +933,13 @@ list_extend(PyListObject *self, PyObject *iterable)
          * eventually run out of memory during the loop.
          */
     }
+    else if (self->ob_item == NULL) {
+        if (n && list_preallocate_exact(self, n) < 0)
+            goto error;
+    }
     else {
-        mn = m + n;
         /* Make room. */
-        if (list_resize(self, mn) < 0)
+        if (list_resize(self, m + n) < 0)
             goto error;
         /* Make the list sane again. */
         Py_SET_SIZE(self, m);
@@ -2814,19 +2822,6 @@ list___init___impl(PyListObject *self, PyObject *iterable)
         (void)_list_clear(self);
     }
     if (iterable != NULL) {
-        if (_PyObject_HasLen(iterable)) {
-            Py_ssize_t iter_len = PyObject_Size(iterable);
-            if (iter_len == -1) {
-                if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
-                    return -1;
-                }
-                PyErr_Clear();
-            }
-            if (iter_len > 0 && self->ob_item == NULL
-                && list_preallocate_exact(self, iter_len)) {
-                return -1;
-            }
-        }
         PyObject *rv = list_extend(self, iterable);
         if (rv == NULL)
             return -1;

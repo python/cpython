@@ -8,6 +8,7 @@ import threading
 import unittest
 import hashlib
 
+from test import support
 from test.support import hashlib_helper
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -16,6 +17,8 @@ try:
     import ssl
 except ImportError:
     ssl = None
+
+support.requires_working_socket(module=True)
 
 here = os.path.dirname(__file__)
 # Self-signed cert file for 'localhost'

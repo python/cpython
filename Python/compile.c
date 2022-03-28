@@ -31,7 +31,7 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_symtable.h"      // PySTEntryObject
 
-#define NEED_OPCODE_JUMP_TABLES
+#define NEED_OPCODE_TABLES
 #include "opcode.h"               // EXTENDED_ARG
 
 
@@ -108,7 +108,7 @@ typedef struct exceptstack {
 #define MASK_LOW_LOG_BITS 31
 
 static inline int
-is_bit_set_in_table(uint32_t *table, int bitindex) {
+is_bit_set_in_table(const uint32_t *table, int bitindex) {
     /* Is the relevant bit set in the relevant word? */
     /* 256 bits fit into 8 32-bits words.
      * Word is indexed by (bitindex>>ln(size of int in bits)).
@@ -134,9 +134,9 @@ static int
 instr_size(struct instr *instruction)
 {
     int opcode = instruction->i_opcode;
-    int oparg = instruction->i_oparg;
+    int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
-    int caches = _PyOpcode_InlineCacheEntries[opcode];
+    int caches = _PyOpcode_Caches[opcode];
     return extended_args + 1 + caches;
 }
 
@@ -144,8 +144,8 @@ static void
 write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
 {
     int opcode = instruction->i_opcode;
-    int oparg = instruction->i_oparg;
-    int caches = _PyOpcode_InlineCacheEntries[opcode];
+    int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
+    int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
         case 4:
             *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 24) & 0xFF);
@@ -1000,7 +1000,7 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
 
         case LOAD_GLOBAL:
-            return 1;
+            return (oparg & 1) + 1;
 
         /* Exception handling pseudo-instructions */
         case SETUP_FINALLY:
@@ -1978,7 +1978,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
                 return 0;
             }
             if (info->fb_type == ASYNC_WITH) {
-                ADDOP(c, GET_AWAITABLE);
+                ADDOP_I(c, GET_AWAITABLE, 2);
                 ADDOP_LOAD_CONST(c, Py_None);
                 ADD_YIELD_FROM(c, 1);
             }
@@ -2335,10 +2335,20 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
     Py_DECREF(mangled);
 
     if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
-        VISIT(c, annexpr, annotation)
+        VISIT(c, annexpr, annotation);
     }
     else {
-        VISIT(c, expr, annotation);
+        if (annotation->kind == Starred_kind) {
+            // *args: *Ts (where Ts is a TypeVarTuple).
+            // Do [annotation_value] = [*Ts].
+            // (Note that in theory we could end up here even for an argument
+            // other than *args, but in practice the grammar doesn't allow it.)
+            VISIT(c, expr, annotation->v.Starred.value);
+            ADDOP_I(c, UNPACK_SEQUENCE, (Py_ssize_t) 1);
+        }
+        else {
+            VISIT(c, expr, annotation);
+        }
     }
     *annotations_len += 2;
     return 1;
@@ -2604,9 +2614,8 @@ compiler_class(struct compiler *c, stmt_ty s)
     /* ultimately generate code for:
          <name> = __build_class__(<func>, <name>, *<bases>, **<keywords>)
        where:
-         <func> is a function/closure created from the class body;
-            it has a single argument (__locals__) where the dict
-            (or MutableSequence) representing the locals is passed
+         <func> is a zero arg function/closure created from the class body.
+            It mutates its locals to build the class namespace.
          <name> is the class name
          <bases> is the positional arguments and *varargs argument
          <keywords> is the keyword arguments and **kwds argument
@@ -4186,8 +4195,12 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     assert(op);
     arg = compiler_add_o(dict, mangled);
     Py_DECREF(mangled);
-    if (arg < 0)
+    if (arg < 0) {
         return 0;
+    }
+    if (op == LOAD_GLOBAL) {
+        arg <<= 1;
+    }
     return compiler_addop_i(c, op, arg);
 }
 
@@ -5354,7 +5367,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     ADDOP_I(c, CALL, 0);
 
     if (is_async_generator && type != COMP_GENEXP) {
-        ADDOP(c, GET_AWAITABLE);
+        ADDOP_I(c, GET_AWAITABLE, 0);
         ADDOP_LOAD_CONST(c, Py_None);
         ADD_YIELD_FROM(c, 1);
     }
@@ -5486,7 +5499,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     VISIT(c, expr, item->context_expr);
 
     ADDOP(c, BEFORE_ASYNC_WITH);
-    ADDOP(c, GET_AWAITABLE);
+    ADDOP_I(c, GET_AWAITABLE, 1);
     ADDOP_LOAD_CONST(c, Py_None);
     ADD_YIELD_FROM(c, 1);
 
@@ -5523,7 +5536,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     SET_LOC(c, s);
     if(!compiler_call_exit_with_nones(c))
         return 0;
-    ADDOP(c, GET_AWAITABLE);
+    ADDOP_I(c, GET_AWAITABLE, 2);
     ADDOP_LOAD_CONST(c, Py_None);
     ADD_YIELD_FROM(c, 1);
 
@@ -5537,7 +5550,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
     ADDOP(c, WITH_EXCEPT_START);
-    ADDOP(c, GET_AWAITABLE);
+    ADDOP_I(c, GET_AWAITABLE, 2);
     ADDOP_LOAD_CONST(c, Py_None);
     ADD_YIELD_FROM(c, 1);
     compiler_with_except_finish(c, cleanup);
@@ -5711,7 +5724,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         }
 
         VISIT(c, expr, e->v.Await.value);
-        ADDOP(c, GET_AWAITABLE);
+        ADDOP_I(c, GET_AWAITABLE, 0);
         ADDOP_LOAD_CONST(c, Py_None);
         ADD_YIELD_FROM(c, 1);
         break;
@@ -8272,6 +8285,9 @@ assemble(struct compiler *c, int addNone)
     if (_PyBytes_Resize(&a.a_except_table, a.a_except_table_off) < 0) {
         goto error;
     }
+    if (!merge_const_one(c, &a.a_except_table)) {
+        goto error;
+    }
     if (!assemble_start_line_range(&a)) {
         return 0;
     }
@@ -8291,6 +8307,9 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
     if (_PyBytes_Resize(&a.a_cnotab, a.a_cnotab_off) < 0) {
+        goto error;
+    }
+    if (!merge_const_one(c, &a.a_cnotab)) {
         goto error;
     }
     if (_PyBytes_Resize(&a.a_bytecode, a.a_offset * sizeof(_Py_CODEUNIT)) < 0) {
@@ -8806,6 +8825,13 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 apply_static_swaps(bb, i);
                 break;
             case KW_NAMES:
+                break;
+            case PUSH_NULL:
+                if (nextop == LOAD_GLOBAL && (inst[1].i_opcode & 1) == 0) {
+                    inst->i_opcode = NOP;
+                    inst->i_oparg = 0;
+                    inst[1].i_oparg |= 1;
+                }
                 break;
             default:
                 /* All HAS_CONST opcodes should be handled with LOAD_CONST */

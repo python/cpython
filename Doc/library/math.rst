@@ -649,6 +649,9 @@ Constants
    A floating-point "not a number" (NaN) value.  Equivalent to the output of
    ``float('nan')``.
 
+   .. versionchanged:: 3.11
+      It is now always available.
+
    .. versionadded:: 3.5
 
 
