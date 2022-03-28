@@ -5,8 +5,13 @@ import os
 import unittest
 import subprocess
 from textwrap import dedent
-from test.support import cpython_only, SuppressCrashReport
+from test.support import cpython_only, has_subprocess_support, SuppressCrashReport
 from test.support.script_helper import kill_python
+
+
+if not has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
+
 
 def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     """Run the Python REPL with the given arguments.

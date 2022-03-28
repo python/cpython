@@ -1,0 +1,2 @@
+:func:`~dataclasses.dataclass` ``slots=True`` now correctly omits slots already
+defined in base classes. Patch by Arie Bovenberg.

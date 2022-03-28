@@ -1,1 +1,0 @@
-:mod:`asyncio` generic classes now return :class:`types.GenericAlias` in ``__class_getitem__`` instead of the same class.

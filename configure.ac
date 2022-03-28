@@ -833,7 +833,7 @@ fi
 
 
 AC_MSG_CHECKING([for the platform triplet based on compiler characteristics])
-cat >> conftest.c <<EOF
+cat > conftest.c <<EOF
 #undef bfin
 #undef cris
 #undef fr30
@@ -973,6 +973,22 @@ cat >> conftest.c <<EOF
         darwin
 #elif defined(__VXWORKS__)
         vxworks
+#elif defined(__wasm32__)
+#  if defined(__EMSCRIPTEN__)
+	wasm32-emscripten
+#  elif defined(__wasi__)
+	wasm32-wasi
+#  else
+#    error unknown wasm32 platform
+#  endif
+#elif defined(__wasm64__)
+#  if defined(__EMSCRIPTEN)
+	wasm64-emscripten
+#  elif defined(__wasi__)
+	wasm64-wasi
+#  else
+#    error unknown wasm64 platform
+#  endif
 #else
 # error unknown platform triplet
 #endif
@@ -981,6 +997,11 @@ EOF
 
 if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   PLATFORM_TRIPLET=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
+  case "$build_os" in
+  linux-musl*)
+    PLATFORM_TRIPLET=`echo "$PLATFORM_TRIPLET" | sed 's/linux-gnu/linux-musl/'`
+    ;;
+  esac
   AC_MSG_RESULT([$PLATFORM_TRIPLET])
 else
   AC_MSG_RESULT([none])
@@ -1023,7 +1044,7 @@ AC_CACHE_CHECK([for -Wl,--no-as-needed], [ac_cv_wl_no_as_needed], [
 AC_SUBST(NO_AS_NEEDED)
 
 AC_MSG_CHECKING([for the Android API level])
-cat >> conftest.c <<EOF
+cat > conftest.c <<EOF
 #ifdef __ANDROID__
 android_api = __ANDROID_API__
 arm_arch = __ARM_ARCH
@@ -1107,7 +1128,7 @@ if test ! -d CaseSensitiveTestDir; then
 mkdir CaseSensitiveTestDir
 fi
 
-if test -d casesensitivetestdir
+if test -d casesensitivetestdir && test -z "$EXEEXT"
 then
     AC_MSG_RESULT(yes)
     BUILDEXEEXT=.exe
@@ -1654,6 +1675,13 @@ if test "$Py_LTO" = 'true' ; then
           ;;
       esac
       ;;
+    *emcc*)
+      if test "$Py_LTO_POLICY" != "default"; then
+        AC_MSG_ERROR([emcc supports only default lto.])
+      fi
+      LTOFLAGS="-flto"
+      LTOCFLAGS="-flto"
+      ;;
     *gcc*)
       if test $Py_LTO_POLICY = thin
       then
@@ -1786,6 +1814,28 @@ case $CC in
         fi
 esac
 
+# Check if CC supports -Og optimization level
+_SAVE_VAR([CFLAGS])
+CFLAGS="-Og"
+AC_CACHE_CHECK([if $CC supports -Og optimization level],
+               [ac_cv_cc_supports_og],
+  AC_COMPILE_IFELSE(
+    [
+      AC_LANG_PROGRAM([[]], [[]])
+    ],[
+      ac_cv_cc_supports_og=yes
+    ],[
+      ac_cv_cc_supports_og=no
+    ])
+)
+_RESTORE_VAR([CFLAGS])
+
+# Optimization messes up debuggers, so turn it off for
+# debug builds.
+PYDEBUG_CFLAGS="-O0"
+AS_VAR_IF([ac_cv_cc_supports_og], [yes],
+          [PYDEBUG_CFLAGS="-Og"])
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 AC_SUBST(OPT)
@@ -1811,13 +1861,7 @@ then
 	case $ac_cv_prog_cc_g in
 	yes)
 	    if test "$Py_DEBUG" = 'true' ; then
-		# Optimization messes up debuggers, so turn it off for
-		# debug builds.
-                if "$CC" -v --help 2>/dev/null |grep -- -Og > /dev/null; then
-                    OPT="-g -Og -Wall"
-                else
-                    OPT="-g -O0 -Wall"
-                fi
+		OPT="-g $PYDEBUG_CFLAGS -Wall"
 	    else
 		OPT="-g $WRAP -O3 -Wall"
 	    fi
@@ -1840,19 +1884,39 @@ then
 fi
 
 # WASM flags
+# TODO: Add -s MAIN_MODULE=2 for dlopen() support.
+# The option disables code elimination, which increases code size of main
+# binary. All objects must be built with -fPIC.
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   [Emscripten/browser], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 --preload-file \$(WASM_ASSETS_DIR)"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1"
+    LINKFORSHARED="--preload-file \$(WASM_ASSETS_DIR)"
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
+    dnl separate-dwarf does not seem to work in Chrome DevTools Support.
+    if test "$Py_DEBUG" = 'true'; then
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
+    else
+      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
+    fi
   ],
   [Emscripten/node], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS -s PROXY_TO_PTHREAD"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s USE_PTHREADS=1"
+    LINKFORSHARED="-s PROXY_TO_PTHREAD=1 -s EXIT_RUNTIME=1"
     CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
+    if test "$Py_DEBUG" = 'true'; then
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
+    else
+      LINKFORSHARED="$LINKFORSHARED -O2 -gseparate-dwarf"
+    fi
   ],
-  [WASI], [
+  [WASI/*], [
     AC_DEFINE([_WASI_EMULATED_SIGNAL], [1], [Define to 1 if you want to emulate signals on WASI])
-    LIBS="$LIBS -lwasi-emulated-signal"
+    AC_DEFINE([_WASI_EMULATED_GETPID], [1], [Define to 1 if you want to emulate getpid() on WASI])
+    AC_DEFINE([_WASI_EMULATED_PROCESS_CLOCKS], [1], [Define to 1 if you want to emulate process clocks on WASI])
+    LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
   ]
 )
@@ -2354,7 +2418,7 @@ AC_DEFINE(STDC_HEADERS, 1, [Define to 1 if you have the ANSI C header files.])
 # checks for header files
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
-  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/memfd.h linux/random.h linux/soundcard.h \
+  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/memfd.h linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
@@ -2533,15 +2597,24 @@ AC_CHECK_SIZEOF(off_t, [], [
 AC_MSG_CHECKING(whether to enable large file support)
 if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 	"$ac_cv_sizeof_long_long" -ge "$ac_cv_sizeof_off_t"; then
+  have_largefile_support="yes"
+else
+  have_largefile_support="no"
+fi
+dnl LFS does not work with Emscripten 3.1
+AS_CASE([$ac_sys_system],
+  [Emscripten], [have_largefile_support="no"]
+)
+AS_VAR_IF([have_largefile_support], [yes], [
   AC_DEFINE(HAVE_LARGEFILE_SUPPORT, 1,
   [Defined to enable large file support when an off_t is bigger than a long
    and long long is at least as big as an off_t. You may need
    to add some flags for configuration and compilation to enable this mode.
    (For Solaris and Linux, the necessary defines are already defined.)])
   AC_MSG_RESULT(yes)
-else
+], [
   AC_MSG_RESULT(no)
-fi
+])
 
 AC_CHECK_SIZEOF(time_t, [], [
 #ifdef HAVE_SYS_TYPES_H
@@ -2850,6 +2923,10 @@ then
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
+	Emscripten*)
+		LDSHARED='$(CC) -shared -s SIDE_MODULE=1'
+		LDCXXSHARED='$(CXX) -shared -s SIDE_MODULE=1'
+    ;;
 	FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
@@ -4123,7 +4200,7 @@ AC_CHECK_FUNCS([ \
   gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
   getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
   getpeername getpgid getpid getppid getpriority _getpty \
-  getpwent getpwnam_r getpwuid_r getresgid getresuid getsid getspent \
+  getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
@@ -4324,6 +4401,10 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
   ], [have_zlib=no])
 ])
 
+if test "$have_zlib" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$ZLIB_LIBS" = "-lz"; then
+  ZLIB_LIBS="-s USE_ZLIB=1"
+fi
+
 dnl binascii can use zlib for optimized crc32.
 AS_VAR_IF([have_zlib], [yes], [
   BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
@@ -4341,6 +4422,11 @@ PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
     ])
   ], [have_bzip2=no])
 ])
+
+if test "$have_bzip2" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$BZIP2_LIBS" = "-lbz2"; then
+  BZIP2_LIBS="-s USE_BZIP2=1"
+fi
+
 
 PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   AC_CHECK_HEADERS([lzma.h], [
@@ -4699,7 +4785,6 @@ fi
 
 # checks for compiler characteristics
 
-AC_C_CHAR_UNSIGNED
 AC_C_CONST
 
 AC_CACHE_CHECK([for working signed char], [ac_cv_working_signed_char_c], [
@@ -6011,6 +6096,7 @@ AC_ARG_WITH(ensurepip,
     [
       AS_CASE([$ac_sys_system],
         [Emscripten], [with_ensurepip=no],
+        [WASI], [with_ensurepip=no],
         [with_ensurepip=upgrade]
       )
     ])
@@ -6305,6 +6391,15 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
 done
 IFS=$as_save_IFS
 
+dnl libb2 for blake2. _blake2 module falls back to vendored copy.
+AS_VAR_IF([with_builtin_blake2], [yes], [
+  PKG_CHECK_MODULES([LIBB2], [libb2], [
+    have_libb2=yes
+    AC_DEFINE([HAVE_LIBB2], [1],
+              [Define to 1 if you want to build _blake2 module with libb2])
+  ], [have_libb2=no])
+])
+
 # --with-experimental-isolated-subinterpreters
 AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
             [Better isolate subinterpreters, experimental build mode.])
@@ -6340,61 +6435,90 @@ AS_VAR_IF([TEST_MODULES], [yes],
 )
 AC_SUBST(TEST_MODULES)
 
+AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
+  m4_foreach([mod], [$@], [
+    AS_VAR_SET([py_cv_module_]mod, [n/a])])
+])
+
+# stdlib not available
 dnl Modules that are not available on some platforms
 dnl AIX has shadow passwords, but access is not via getspent()
 dnl VxWorks does not provide crypt() function
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [AIX/*], [py_stdlib_not_available="_scproxy spwd"],
-  [VxWorks*/*], [py_stdlib_not_available="_scproxy _crypt termios grp"],
-  [Darwin/*], [py_stdlib_not_available="ossaudiodev spwd"],
-  [CYGWIN*/*], [py_stdlib_not_available="_scproxy nis"],
-  [QNX*/*], [py_stdlib_not_available="_scproxy nis"],
-  [FreeBSD*/*], [py_stdlib_not_available="_scproxy spwd"],
+  [AIX/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  [VxWorks*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
+  [Darwin/*], [PY_STDLIB_MOD_SET_NA([ossaudiodev], [spwd])],
+  [CYGWIN*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
+  [QNX*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
+  [FreeBSD*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
   [Emscripten/browser], [
-    py_stdlib_not_available="m4_normalize([
-      _ctypes
-      _curses
-      _curses_panel
-      _dbm
-      _gdbm
-      _multiprocessing
-      _posixshmem
-      _posixsubprocess
-      _scproxy
-      _tkinter
-      _xxsubinterpreters
-      fcntl
-      grp
-      nis
-      ossaudiodev
-      resource
-      readline
-      spwd
-      syslog
-      termios
-    ])"
+    PY_STDLIB_MOD_SET_NA(
+      [_ctypes],
+      [_curses],
+      [_curses_panel],
+      [_dbm],
+      [_gdbm],
+      [_multiprocessing],
+      [_posixshmem],
+      [_posixsubprocess],
+      [_scproxy],
+      [_tkinter],
+      [_xxsubinterpreters],
+      [fcntl],
+      [grp],
+      [nis],
+      [ossaudiodev],
+      [pwd],
+      [resource],
+      [readline],
+      [spwd],
+      [syslog],
+      [termios],
+    )
   ],
   dnl Some modules like _posixsubprocess do not work. We build them anyway
   dnl so imports in tests do not fail.
   [Emscripten/node], [
-    py_stdlib_not_available="m4_normalize([
-      _ctypes
-      _curses
-      _curses_panel
-      _dbm
-      _gdbm
-      _scproxy
-      _tkinter
-      _xxsubinterpreters
-      grp
-      nis
-      ossaudiodev
-      spwd
-      syslog
-    ])"
+    PY_STDLIB_MOD_SET_NA(
+      [_ctypes],
+      [_curses],
+      [_curses_panel],
+      [_dbm],
+      [_gdbm],
+      [_scproxy],
+      [_tkinter],
+      [_xxsubinterpreters],
+      [grp],
+      [nis],
+      [ossaudiodev],
+      [pwd],
+      [spwd],
+      [syslog],
+    )
   ],
-  [py_stdlib_not_available="_scproxy"]
+  [WASI/*], [
+    PY_STDLIB_MOD_SET_NA(
+      [_ctypes],
+      [_ctypes_test],
+      [_curses],
+      [_curses_panel],
+      [_dbm],
+      [_gdbm],
+      [_scproxy],
+      [_tkinter],
+      [_xxsubinterpreters],
+      [grp],
+      [nis],
+      [ossaudiodev],
+      [pwd],
+      [spwd],
+      [syslog],
+    )
+  ],
+  [PY_STDLIB_MOD_SET_NA([_scproxy])]
 )
+
+dnl AC_MSG_NOTICE([m4_set_list([_PY_STDLIB_MOD_SET_NA])])
 
 dnl Default value for Modules/Setup.stdlib build type
 AS_CASE([$host_cpu],
@@ -6407,6 +6531,7 @@ dnl Use Modules/Setup.stdlib as additional provider?
 AC_MSG_CHECKING([for additional Modules/Setup files])
 AS_CASE([$ac_sys_system],
     [Emscripten], [MODULES_SETUP_STDLIB=Modules/Setup.stdlib],
+    [WASI], [MODULES_SETUP_STDLIB=Modules/Setup.stdlib],
     [MODULES_SETUP_STDLIB=]
 )
 AC_MSG_RESULT([$MODULES_SETUP_STDLIB])
@@ -6420,10 +6545,10 @@ MODULE_BLOCK=
 
 dnl Check for stdlib extension modules
 dnl PY_STDLIB_MOD([NAME], [ENABLED-TEST], [SUPPORTED-TEST], [CFLAGS], [LDFLAGS])
-dnl sets MODULE_$NAME based on $py_stdlib_not_available, ENABLED-TEST,
+dnl sets MODULE_$NAME based on PY_STDLIB_MOD_SET_NA(), ENABLED-TEST,
 dnl and SUPPORTED_TEST. ENABLED-TEST and SUPPORTED-TEST default to true if
 dnl empty.
-dnl    n/a: $NAME in $py_stdlib_not_available (not available on platform)
+dnl    n/a: marked unavailable on platform by PY_STDLIB_MOD_SET_NA()
 dnl    yes: enabled and supported
 dnl    missing: enabled and not supported
 dnl    disabled: not enabled
@@ -6432,12 +6557,12 @@ AC_DEFUN([PY_STDLIB_MOD], [
   AC_MSG_CHECKING([for stdlib extension module $1])
   m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
   m4_pushdef([modstate], [py_cv_module_$1])dnl
-  AS_CASE([$py_stdlib_not_available],
-    [*$1*], [modstate=n/a],
-    [AS_IF(m4_ifblank([$2], [true], [$2]),
-        [AS_IF([m4_ifblank([$3], [true], [$3])], [modstate=yes], [modstate=missing])],
-        [modstate=disabled])]
-  )
+  dnl Check if module has been disabled by PY_STDLIB_MOD_SET_NA()
+  AS_IF([test "$modstate" != "n/a"], [
+    AS_IF(m4_ifblank([$2], [true], [$2]),
+       [AS_IF([m4_ifblank([$3], [true], [$3])], [modstate=yes], [modstate=missing])],
+       [modstate=disabled])
+  ])
   _MODULE_BLOCK_ADD(modcond, [$modstate])
   AS_VAR_IF([modstate], [yes], [
     m4_ifblank([$4], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$4])])
@@ -6450,16 +6575,14 @@ AC_DEFUN([PY_STDLIB_MOD], [
 ])
 
 dnl Define simple stdlib extension module
-dnl Always enable unless the module is listed in py_stdlib_not_available
+dnl Always enable unless the module is disabled by PY_STDLIB_MOD_SET_NA
 dnl PY_STDLIB_MOD_SIMPLE([NAME], [CFLAGS], [LDFLAGS])
 dnl cflags and ldflags are optional
 AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
   m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
   m4_pushdef([modstate], [py_cv_module_$1])dnl
-  AS_CASE([$py_stdlib_not_available],
-    [*$1*], [modstate=n/a],
-    [modstate=yes]
-  )
+  dnl Check if module has been disabled by PY_STDLIB_MOD_SET_NA()
+  AS_IF([test "$modstate" != "n/a"], [modstate=yes])
   AM_CONDITIONAL(modcond, [test "$modstate" = yes])
   _MODULE_BLOCK_ADD(modcond, [$modstate])
   AS_VAR_IF([modstate], [yes], [
@@ -6526,6 +6649,7 @@ dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
 PY_STDLIB_MOD([ossaudiodev],
   [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes])
+PY_STDLIB_MOD([pwd], [], [test "$ac_cv_func_getpwuid" = yes -o "$ac_cv_func_getpwuid_r" = yes])
 PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],
   [test "$ac_sys_system" = "Darwin"], [],
@@ -6553,7 +6677,9 @@ PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
 PY_STDLIB_MOD([_sha256], [test "$with_builtin_sha256" = yes])
 PY_STDLIB_MOD([_sha512], [test "$with_builtin_sha512" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
-PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
+PY_STDLIB_MOD([_blake2],
+  [test "$with_builtin_blake2" = yes], [],
+  [$LIBB2_CFLAGS], [$LIBB2_LIBS])
 
 PY_STDLIB_MOD([_crypt],
   [], [test "$ac_cv_crypt_crypt" = yes],
@@ -6599,23 +6725,23 @@ dnl test modules
 PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
-PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes])
-PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
+PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [], [], [-lm])
 
 dnl Limited API template modules.
 dnl The limited C API is not compatible with the Py_TRACE_REFS macro.
 dnl Emscripten does not support shared libraries yet.
-PY_STDLIB_MOD([xxlimited], [test "$with_trace_refs" = "no" -a "$ac_sys_system" != "Emscripten"])
-PY_STDLIB_MOD([xxlimited_35], [test "$with_trace_refs" = "no" -a "$ac_sys_system" != "Emscripten"])
+PY_STDLIB_MOD([xxlimited], [test "$with_trace_refs" = "no"], [test "$ac_cv_func_dlopen" = yes])
+PY_STDLIB_MOD([xxlimited_35], [test "$with_trace_refs" = "no"], [test "$ac_cv_func_dlopen" = yes])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
-AC_CONFIG_FILES([Modules/Setup.stdlib])
+AC_CONFIG_FILES([Modules/Setup.bootstrap Modules/Setup.stdlib])
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 
@@ -6628,7 +6754,7 @@ fi
 AC_MSG_NOTICE([creating Makefile])
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $MODULES_SETUP_STDLIB $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local $MODULES_SETUP_STDLIB Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
