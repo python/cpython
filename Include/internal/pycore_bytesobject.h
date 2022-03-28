@@ -33,6 +33,19 @@ _PyBytes_ReverseFind(const char *haystack, Py_ssize_t len_haystack,
                      const char *needle, Py_ssize_t len_needle,
                      Py_ssize_t offset);
 
+
+/** Helper function to implement the repeat and inplace repeat methods on a buffer
+ *
+ * len_dest is assumed to be an integer multiple of len_src.
+ * If src equals dest, then assume the operation is inplace.
+ *
+ * This method repeately doubles the number of bytes copied to reduce
+ * the number of invocations of memcpy.
+ */
+PyAPI_FUNC(void)
+_PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
+    const char* src, Py_ssize_t len_src);
+
 #ifdef __cplusplus
 }
 #endif

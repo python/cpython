@@ -21,7 +21,7 @@ class Runner:
     and properly finalizes the loop at the context manager exit.
 
     If debug is True, the event loop will be run in debug mode.
-    If factory is passed, it is used for new event loop creation.
+    If loop_factory is passed, it is used for new event loop creation.
 
     asyncio.run(main(), debug=True)
 
@@ -41,10 +41,10 @@ class Runner:
 
     # Note: the class is final, it is not intended for inheritance.
 
-    def __init__(self, *, debug=None, factory=None):
+    def __init__(self, *, debug=None, loop_factory=None):
         self._state = _State.CREATED
         self._debug = debug
-        self._factory = factory
+        self._loop_factory = loop_factory
         self._loop = None
         self._context = None
 
@@ -96,10 +96,10 @@ class Runner:
             raise RuntimeError("Runner is closed")
         if self._state is _State.INITIALIZED:
             return
-        if self._factory is None:
+        if self._loop_factory is None:
             self._loop = events.new_event_loop()
         else:
-            self._loop = self._factory()
+            self._loop = self._loop_factory()
         if self._debug is not None:
             self._loop.set_debug(self._debug)
         self._context = contextvars.copy_context()
