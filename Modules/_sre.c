@@ -75,6 +75,7 @@ static const char copyright[] =
 /* error codes */
 #define SRE_ERROR_ILLEGAL -1 /* illegal opcode */
 #define SRE_ERROR_STATE -2 /* illegal state */
+#define SRE_ERROR_RECURSION_LIMIT -3 /* runaway recursion */
 #define SRE_ERROR_MEMORY -9 /* out of memory */
 #define SRE_ERROR_INTERRUPTED -10 /* signal handler raised exception */
 
@@ -548,6 +549,13 @@ static void
 pattern_error(Py_ssize_t status)
 {
     switch (status) {
+    case SRE_ERROR_RECURSION_LIMIT:
+        /* This error code seems to be unused. */
+        PyErr_SetString(
+            PyExc_RecursionError,
+            "maximum recursion limit exceeded"
+            );
+        break;
     case SRE_ERROR_MEMORY:
         PyErr_NoMemory();
         break;

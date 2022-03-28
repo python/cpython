@@ -981,9 +981,10 @@ entrance:
 
             /* install new repeat context */
             ctx->u.rep = (SRE_REPEAT*) PyObject_Malloc(sizeof(*ctx->u.rep));
-            if (!ctx->u.rep)
-                RETURN_ERROR(SRE_ERROR_MEMORY);
-
+            if (!ctx->u.rep) {
+                PyErr_NoMemory();
+                RETURN_FAILURE;
+            }
             ctx->u.rep->count = -1;
             ctx->u.rep->pattern = ctx->pattern;
             ctx->u.rep->prev = state->repeat;
