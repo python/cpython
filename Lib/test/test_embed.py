@@ -1215,6 +1215,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 dll3_copy = os.path.join(tmpdir, os.path.basename(dll3))
                 shutil.copyfile(dll, dll_copy)
                 shutil.copyfile(dll3, dll3_copy)
+                pgort = os.path.join(os.path.dirname(self.test_exe), 'pgort140.dll')
+                if os.path.exists(pgort):
+                    pgort_copy = os.path.join(tmpdir, os.path.basename(pgort))
+                    shutil.copyfile(pgort, pgort_copy)
 
             # Copy Python program
             exec_copy = os.path.join(tmpdir, os.path.basename(self.test_exe))
