@@ -1,6 +1,6 @@
 import contextlib
 import collections
-from functools import lru_cache
+from functools import lru_cache, wraps
 import inspect
 import pickle
 import re
@@ -65,6 +65,18 @@ class BaseTestCase(TestCase):
     def clear_caches(self):
         for f in typing._cleanups:
             f()
+
+
+def all_pickle_protocols(test_func):
+    """Runs `test_func` with various values for `proto` argument."""
+
+    @wraps(test_func)
+    def wrapper(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(pickle_proto=proto):
+                test_func(self, proto=proto)
+
+    return wrapper
 
 
 class Employee:
@@ -845,72 +857,83 @@ class TypeVarTuplePicklingTests(BaseTestCase):
     # tests into the global scope with `global` statements at the start of each
     # test.
 
-    def test_pickling_then_unpickling_results_in_equality(self):
+    @all_pickle_protocols
+    def test_pickling_then_unpickling_results_in_equality(self, proto):
         global Ts1  # See explanation at start of class.
         Ts1 = TypeVarTuple('Ts1')
-        Ts2 = pickle.loads(pickle.dumps(Ts1))
+        Ts2 = pickle.loads(pickle.dumps(Ts1, proto))
         self.assertEqual(Ts1, Ts2)
 
-    def test_pickling_then_unpickling_unpacked_results_in_equality(self):
+    @all_pickle_protocols
+    def test_pickling_then_unpickling_unpacked_results_in_equality(self, proto):
         global Ts  # See explanation at start of class.
         Ts = TypeVarTuple('Ts')
         unpacked1 = Unpack[Ts]
-        unpacked2 = pickle.loads(pickle.dumps(unpacked1))
+        unpacked2 = pickle.loads(pickle.dumps(unpacked1, proto))
         self.assertEqual(unpacked1, unpacked2)
 
-    def test_pickling_then_unpickling_variadic_class_results_in_equality(self):
+    @all_pickle_protocols
+    def test_pickling_then_unpickling_variadic_class_results_in_equality(
+            self, proto
+    ):
         global T, Ts, A1, B1  # See explanation at start of class.
         T = TypeVar('T')
         Ts = TypeVarTuple('Ts')
 
         class A1(Generic[Unpack[Ts]]): pass
-        A2 = pickle.loads(pickle.dumps(A1))
+        A2 = pickle.loads(pickle.dumps(A1, proto))
         self.assertEqual(A1, A2)
 
         class B1(Generic[T, Unpack[Ts]]): pass
-        B2 = pickle.loads(pickle.dumps(B1))
+        B2 = pickle.loads(pickle.dumps(B1, proto))
         self.assertEqual(B1, B2)
 
-    def test_pickling_then_unpickling_tuple_with_typevartuple_equality(self):
+    @all_pickle_protocols
+    def test_pickling_then_unpickling_tuple_with_typevartuple_equality(
+            self, proto
+    ):
         global T, Ts  # See explanation at start of class.
         T = TypeVar('T')
         Ts = TypeVarTuple('Ts')
 
         a1 = Tuple[Unpack[Ts]]
-        a2 = pickle.loads(pickle.dumps(a1))
+        a2 = pickle.loads(pickle.dumps(a1, proto))
         self.assertEqual(a1, a2)
 
         a1 = Tuple[T, Unpack[Ts]]
-        a2 = pickle.loads(pickle.dumps(a1))
+        a2 = pickle.loads(pickle.dumps(a1, proto))
         self.assertEqual(a1, a2)
 
         a1 = Tuple[int, Unpack[Ts]]
-        a2 = pickle.loads(pickle.dumps(a1))
+        a2 = pickle.loads(pickle.dumps(a1, proto))
         self.assertEqual(a1, a2)
 
-    def test_pickling_then_unpickling_variadic_func_results_in_equality(self):
+    @all_pickle_protocols
+    def test_pickling_then_unpickling_variadic_func_results_in_equality(
+            self, proto
+    ):
         global T, Ts, a1, b1, c1, d1, e1  # See explanation at start of class.
         T = TypeVar('T')
         Ts = TypeVarTuple('Ts')
 
         def a1(*args: Unpack[Ts]): pass
-        a2 = pickle.loads(pickle.dumps(a1))
+        a2 = pickle.loads(pickle.dumps(a1, proto))
         self.assertEqual(a1, a2)
 
         def b1(*args: Unpack[Tuple[int]]): pass
-        b2 = pickle.loads(pickle.dumps(b1))
+        b2 = pickle.loads(pickle.dumps(b1, proto))
         self.assertEqual(b1, b2)
 
         def c1(*args: Unpack[Tuple[int, ...]]): pass
-        c2 = pickle.loads(pickle.dumps(c1))
+        c2 = pickle.loads(pickle.dumps(c1, proto))
         self.assertEqual(c1, c2)
 
         def d1(*args: Unpack[Tuple[int, Unpack[Ts]]]): pass
-        d2 = pickle.loads(pickle.dumps(d1))
+        d2 = pickle.loads(pickle.dumps(d1, proto))
         self.assertEqual(d1, d2)
 
         def e1(*args: Unpack[Tuple[T, Unpack[Ts]]]): pass
-        e2 = pickle.loads(pickle.dumps(e1))
+        e2 = pickle.loads(pickle.dumps(e1, proto))
         self.assertEqual(e1, e2)
 
 
