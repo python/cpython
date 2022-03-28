@@ -805,8 +805,12 @@ notin_bitwise_or[CmpopExprPair*]:
 in_bitwise_or[CmpopExprPair*]:
     | 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, In, a) }
     | 'uvnitr' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, In, a) }
-isnot_bitwise_or[CmpopExprPair*]: 'is' 'not' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, IsNot, a) }
-is_bitwise_or[CmpopExprPair*]: 'is' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Is, a) }
+isnot_bitwise_or[CmpopExprPair*]:
+    | 'is' 'not' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, IsNot, a) }
+    | 'neni' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, IsNot, a) }
+is_bitwise_or[CmpopExprPair*]:
+    | 'is' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Is, a) }
+    | 'je' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Is, a) }
 
 # Bitwise operators
 # -----------------
