@@ -208,7 +208,8 @@ static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
 }
 
 /// Method to copy objects for specified number of times inside a buffer
-static inline _objects_repeat(PyObject** items, Py_ssize_t copied, Py_ssize_t len_dest)
+static inline void
+_objects_repeat(PyObject** items, Py_ssize_t copied, Py_ssize_t len_dest)
 {
     while (copied < len_dest) {
         Py_ssize_t items_to_copy = Py_MIN(copied, len_dest - copied);

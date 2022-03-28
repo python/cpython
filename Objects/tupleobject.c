@@ -505,7 +505,7 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
             return (PyObject *)a;
         }
     }
-    if (n <= 0) {
+    if (input_size == 0 || n <= 0) {
         return tuple_get_empty();
     }
     assert(n>0);
