@@ -362,10 +362,9 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
         if (*expr_end == '!' || *expr_end == ':' || *expr_end == '=') {
             RAISE_SYNTAX_ERROR("f-string: expression required before '%c'", *expr_end);
             return NULL;
-        } else {
-            RAISE_SYNTAX_ERROR("f-string: empty expression not allowed");
-            return NULL;
         }
+        RAISE_SYNTAX_ERROR("f-string: empty expression not allowed");
+        return NULL;
     }
 
     len = expr_end - expr_start;
