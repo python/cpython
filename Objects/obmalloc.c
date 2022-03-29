@@ -2,6 +2,7 @@
 #include "pycore_pymem.h"         // _PyTraceMalloc_Config
 #include "pycore_code.h"         // stats
 
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stdlib.h>               // malloc()
 
@@ -88,16 +89,120 @@ static void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
    library, whereas _Py_NewReference() requires it. */
 struct _PyTraceMalloc_Config _Py_tracemalloc_config = _PyTraceMalloc_Config_INIT;
 
+static char _PyMem_Mmap_Path[128] = "foobar"; // TODO change to /dev/shm/_cpython; getting permission issues?
+static size_t _PyMem_Mmap_Size = 8589934592; // 8GB
+static bool _PyMem_IsInitialized = false;
+static int _PyMem_fd = -1;
+static int _PyMem_OffsetTemp = 0;
+static size_t PageSize = 0;
+
+static int
+_PyMem_GetFd(const char *path, const size_t mmap_size)
+{
+    // get shared memory file descriptor (NOT a file)
+    int fd = shm_open(path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+    if (fd == -1)
+    {
+        perror("open");
+        exit(10);
+    }
+
+    // extend shared memory object as by default it's initialized with size 0
+    if (ftruncate(fd, mmap_size) != 0)
+    {
+        perror("ftruncate");
+        exit(20);
+    }
+
+    return fd;
+}
+
+static void
+_PyMem_Initialize()
+{
+    PageSize = sysconf(_SC_PAGE_SIZE);
+    srand((unsigned) time(0));
+    int rand_num_int = rand();
+    char rand_num_str[64];
+    sprintf(rand_num_str, "%d", rand_num_int);
+    strcat(_PyMem_Mmap_Path, rand_num_str);
+    printf("FILENAME: %s\n\n", _PyMem_Mmap_Path);
+
+    FILE *fptr = fopen("foobarconfig", "r");
+    if (fptr == NULL)
+    {
+        printf("BADFILE GOHAR\n\n");
+    }
+    int enabled;
+    if (fscanf(fptr, "%d", &enabled) == EOF)
+    {
+        printf("BAD READ GOHAR \n");
+    }
+    fclose(fptr);
+
+    printf("ENABLED: %d\n\n", enabled);
+
+    if (enabled == 0)
+    {
+        _PyMem_IsInitialized = true;
+        return;
+    }
+
+    // get shared memory file descriptor (NOT a file)
+    _PyMem_fd = _PyMem_GetFd(_PyMem_Mmap_Path, _PyMem_Mmap_Size);
+    _PyMem_IsInitialized = true;
+}
 
 static void *
 _PyMem_RawMalloc(void *ctx, size_t size)
 {
+    if (!_PyMem_IsInitialized)
+    {
+        _PyMem_Initialize();
+    }
+
+    if (size > _PyMem_Mmap_Size)
+    {
+        perror("malloc");
+        return NULL;
+    }
+
     /* PyMem_RawMalloc(0) means malloc(1). Some systems would return NULL
        for malloc(0), which would be treated as an error. Some platforms would
        return a pointer with no memory behind it, which would break pymalloc.
        To solve these problems, allocate an extra byte. */
     if (size == 0)
         size = 1;
+
+    // We will store the size of allocated memory in the header
+    size += sizeof(size_t);
+
+    if (_PyMem_fd != -1)
+    {
+        int rand_num_int = rand();
+        char rand_num_str[64];
+        sprintf(rand_num_str, "%d", rand_num_int);
+        int fd = _PyMem_GetFd(rand_num_str, size);
+        void *header = mmap(NULL, size, PROT_WRITE, MAP_SHARED, fd, 0);
+        size_t *sizeptr = (size_t*)header;
+        *sizeptr = size;
+        size_t *retsizeptr = sizeptr + 1;
+        void *ret = (void*)retsizeptr;
+        // printf("malloc: %d, %ld\n", fd, size);
+        printf("malloc %p, %p, %s, %ld\n", ret, header, rand_num_str, size);
+
+        // void* ret = mmap(NULL, size, PROT_WRITE, MAP_SHARED, _PyMem_fd, _PyMem_OffsetTemp);
+        // if (ret == MAP_FAILED)
+        // {
+        //     perror("mmap");
+        //     return NULL;
+        // }
+
+        // _PyMem_OffsetTemp += (numpages * PageSize);
+        // printf("MMAP: %d, %ld, %d, %d, \n\n", _PyMem_fd, size, numpages, _PyMem_OffsetTemp);
+        return ret;
+    }
+
     return malloc(size);
 }
 
@@ -112,7 +217,38 @@ _PyMem_RawCalloc(void *ctx, size_t nelem, size_t elsize)
         nelem = 1;
         elsize = 1;
     }
+    if (_PyMem_fd != -1)
+    {
+        // printf("calloc\n\n");
+        return _PyMem_RawMalloc(ctx, nelem * elsize);
+    }
     return calloc(nelem, elsize);
+}
+
+static void
+_PyMem_RawFree(void *ctx, void *ptr)
+{
+    if (_PyMem_fd != -1)
+    {
+        if (ptr == NULL)
+        {
+            return;
+        }
+        size_t *sizeptr = (size_t*)ptr;
+        size_t *header = sizeptr - 1;
+        size_t len = *header;
+        // printf("free %ld, %p, %p\n\n", len, ptr, header);
+        void *headerptr = (void*)header;
+        if (munmap(headerptr, len) != 0)
+        {
+            perror("munmap");
+        }
+        return;
+    }
+    else
+    {
+        free(ptr);
+    }
 }
 
 static void *
@@ -120,15 +256,30 @@ _PyMem_RawRealloc(void *ctx, void *ptr, size_t size)
 {
     if (size == 0)
         size = 1;
+    if (_PyMem_fd != -1)
+    {
+        // printf("realloc\n\n");
+
+        void* newmem = _PyMem_RawMalloc(ctx, size);
+        if (newmem == NULL)
+        {
+            perror("malloc");
+            return NULL;
+        }
+
+        if (ptr != NULL)
+        {
+            size_t *sizeptr = (size_t*)ptr;
+            size_t *header = sizeptr - 1;
+            size_t len = *header;
+            memcpy(newmem, ptr, len);
+            _PyMem_RawFree(ctx, ptr);
+        }
+
+        return newmem;
+    }
     return realloc(ptr, size);
 }
-
-static void
-_PyMem_RawFree(void *ctx, void *ptr)
-{
-    free(ptr);
-}
-
 
 #ifdef MS_WINDOWS
 static void *

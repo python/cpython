@@ -26,6 +26,7 @@ PyAPI_DATA(PyTypeObject) PyListRevIter_Type;
 #define PyList_CheckExact(op) Py_IS_TYPE(op, &PyList_Type)
 
 PyAPI_FUNC(PyObject *) PyList_New(Py_ssize_t size);
+PyAPI_FUNC(PyObject *) PyObject_FromMmap(PyTypeObject *tp, const char *path, const size_t size);
 PyAPI_FUNC(Py_ssize_t) PyList_Size(PyObject *);
 
 PyAPI_FUNC(PyObject *) PyList_GetItem(PyObject *, Py_ssize_t);

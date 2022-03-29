@@ -19,6 +19,17 @@
 #include "frameobject.h"          // PyFrame_Type
 #include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
 
+#include <fcntl.h>
+
+#ifdef MS_WINDOWS
+#  include <windows.h>
+#elif defined(HAVE_MMAP)
+#  include <sys/mman.h>
+#  ifdef MAP_ANONYMOUS
+#    define ARENAS_USE_MMAP
+#  endif
+#endif
+
 #ifdef Py_LIMITED_API
    // Prevent recursive call _Py_IncRef() <=> Py_INCREF()
 #  error "Py_LIMITED_API macro must not be defined"
@@ -168,6 +179,31 @@ PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, Py_ssize_t size)
     }
 
     _PyObject_InitVar(op, tp, size);
+    return op;
+}
+
+PyObject *
+PyObject_FromMmap(PyTypeObject *tp, const char *path, const size_t size)
+{
+    // get shared memory file descriptor (NOT a file)
+    int fd = shm_open(path, O_RDWR, S_IRUSR | S_IWUSR);
+    if (fd == -1)
+    {
+        perror("open");
+        exit(10);
+    }
+
+    void *header = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
+    size_t *sizeptr = (size_t *) header;
+    size_t *dataptr = sizeptr + 1;
+    void *mem = (void *) dataptr;
+
+    PyObject *op = (PyObject *) mem;
+    if (op == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    _PyObject_Init(op, tp);
     return op;
 }
 
