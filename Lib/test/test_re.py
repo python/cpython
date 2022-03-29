@@ -4,6 +4,7 @@ from test.support import (gc_collect, bigmemtest, _2G,
 import locale
 import re
 import string
+import sys
 import time
 import unittest
 import warnings
@@ -2452,6 +2453,17 @@ class ImplementationTest(unittest.TestCase):
         pat = re.compile("")
         check_disallow_instantiation(self, type(pat.scanner("")))
 
+    def test_deprecated_modules(self):
+        for name in 'sre_compile', 'sre_constants', 'sre_parse':
+            with self.subTest(module=name):
+                sys.modules.pop(name, None)
+                with self.assertWarns(DeprecationWarning) as cm:
+                    __import__(name)
+                self.assertEqual(str(cm.warnings[0].message),
+                                 f"module {name!r} is deprecated")
+                self.assertEqual(cm.warnings[0].filename, __file__)
+                self.assertIn(name, sys.modules)
+                del sys.modules[name]
 
 class ExternalTests(unittest.TestCase):
 
