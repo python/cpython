@@ -3928,9 +3928,8 @@ handle_eval_breaker:
 
         TARGET(JUMP_BACKWARD) {
             PREDICTED(JUMP_BACKWARD);
-            JUMPBY(-oparg);
-            CHECK_EVAL_BREAKER();
-            DISPATCH();
+            _PyCode_Warmup(frame->f_code);
+            JUMP_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
         }
 
         TARGET(POP_JUMP_IF_FALSE) {
@@ -4067,6 +4066,14 @@ handle_eval_breaker:
              * (see bpo-30039).
              */
             JUMPTO(oparg);
+            DISPATCH();
+        }
+
+        TARGET(JUMP_BACKWARD_QUICK) {
+            PREDICTED(JUMP_BACKWARD_QUICK);
+            assert(oparg < INSTR_OFFSET());
+            JUMPBY(-oparg);
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
