@@ -659,10 +659,6 @@ Constants
       False
       >>> float('nan') == float('nan')
       False
-      >>> math.nan is math.nan
-      True
-      >>> float('nan') is float('nan')
-      False
       >>> math.isnan(math.nan)
       True
       >>> math.isnan(float('nan'))
