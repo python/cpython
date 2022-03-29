@@ -144,7 +144,7 @@ to enable a higher level of verbosity, and produce the following output::
    test_upper (__main__.TestStringMethods.test_upper) ... ok
 
    ----------------------------------------------------------------------
-   Ran 3 tests in 0.000s
+   Ran 3 tests in 0.001s
 
    OK
 
