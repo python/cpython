@@ -3,7 +3,8 @@
    of int.__float__, etc., that take and return unicode objects */
 
 #include "Python.h"
-#include "pycore_fileutils.h"
+#include "pycore_fileutils.h"     // _Py_GetLocaleconvNumeric()
+#include "pycore_long.h"          // _PyLong_FormatWriter()
 #include <locale.h>
 
 /* Raises an exception about an unknown presentation type for this
@@ -62,7 +63,7 @@ get_integer(PyObject *str, Py_ssize_t *ppos, Py_ssize_t end,
     Py_ssize_t accumulator, digitval, pos = *ppos;
     int numdigits;
     int kind = PyUnicode_KIND(str);
-    void *data = PyUnicode_DATA(str);
+    const void *data = PyUnicode_DATA(str);
 
     accumulator = numdigits = 0;
     for (; pos < end; pos++, numdigits++) {
@@ -136,24 +137,6 @@ typedef struct {
     Py_UCS4 type;
 } InternalFormatSpec;
 
-#if 0
-/* Occasionally useful for debugging. Should normally be commented out. */
-static void
-DEBUG_PRINT_FORMAT_SPEC(InternalFormatSpec *format)
-{
-    printf("internal format spec: fill_char %d\n", format->fill_char);
-    printf("internal format spec: align %d\n", format->align);
-    printf("internal format spec: alternate %d\n", format->alternate);
-    printf("internal format spec: sign %d\n", format->sign);
-    printf("internal format spec: width %zd\n", format->width);
-    printf("internal format spec: thousands_separators %d\n",
-           format->thousands_separators);
-    printf("internal format spec: precision %zd\n", format->precision);
-    printf("internal format spec: type %c\n", format->type);
-    printf("\n");
-}
-#endif
-
 
 /*
   ptr points to the start of the format_spec, end points just past its end.
@@ -162,7 +145,8 @@ DEBUG_PRINT_FORMAT_SPEC(InternalFormatSpec *format)
   if failure, sets the exception
 */
 static int
-parse_internal_render_format_spec(PyObject *format_spec,
+parse_internal_render_format_spec(PyObject *obj,
+                                  PyObject *format_spec,
                                   Py_ssize_t start, Py_ssize_t end,
                                   InternalFormatSpec *format,
                                   char default_type,
@@ -170,7 +154,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
 {
     Py_ssize_t pos = start;
     int kind = PyUnicode_KIND(format_spec);
-    void *data = PyUnicode_DATA(format_spec);
+    const void *data = PyUnicode_DATA(format_spec);
     /* end-pos is used throughout this code to specify the length of
        the input string */
 #define READ_spec(index) PyUnicode_READ(kind, data, index)
@@ -219,7 +203,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
     /* The special case for 0-padding (backwards compat) */
     if (!fill_char_specified && end-pos >= 1 && READ_spec(pos) == '0') {
         format->fill_char = '0';
-        if (!align_specified) {
+        if (!align_specified && default_align == '>') {
             format->align = '=';
         }
         ++pos;
@@ -252,8 +236,10 @@ parse_internal_render_format_spec(PyObject *format_spec,
         ++pos;
     }
     if (end-pos && READ_spec(pos) == ',') {
-        invalid_comma_and_underscore();
-        return 0;
+        if (format->thousands_separators == LT_UNDERSCORE_LOCALE) {
+            invalid_comma_and_underscore();
+            return 0;
+        }
     }
 
     /* Parse field precision */
@@ -277,8 +263,19 @@ parse_internal_render_format_spec(PyObject *format_spec,
     /* Finally, parse the type field. */
 
     if (end-pos > 1) {
-        /* More than one char remain, invalid format specifier. */
-        PyErr_Format(PyExc_ValueError, "Invalid format specifier");
+        /* More than one char remains, so this is an invalid format
+           specifier. */
+        /* Create a temporary object that contains the format spec we're
+           operating on.  It's format_spec[start:end] (in Python syntax). */
+        PyObject* actual_format_spec = PyUnicode_FromKindAndData(kind,
+                                         (char*)data + kind*start,
+                                         end-start);
+        if (actual_format_spec != NULL) {
+            PyErr_Format(PyExc_ValueError,
+                "Invalid format specifier '%U' for object of type '%.200s'",
+                actual_format_spec, Py_TYPE(obj)->tp_name);
+            Py_DECREF(actual_format_spec);
+        }
         return 0;
     }
 
@@ -443,7 +440,7 @@ parse_number(PyObject *s, Py_ssize_t pos, Py_ssize_t end,
 {
     Py_ssize_t remainder;
     int kind = PyUnicode_KIND(s);
-    void *data = PyUnicode_DATA(s);
+    const void *data = PyUnicode_DATA(s);
 
     while (pos<end && Py_ISDIGIT(PyUnicode_READ(kind, data, pos)))
         ++pos;
@@ -466,7 +463,7 @@ parse_number(PyObject *s, Py_ssize_t pos, Py_ssize_t end,
    Return -1 on error. */
 static Py_ssize_t
 calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
-                   Py_UCS4 sign_char, PyObject *number, Py_ssize_t n_start,
+                   Py_UCS4 sign_char, Py_ssize_t n_start,
                    Py_ssize_t n_end, Py_ssize_t n_remainder,
                    int has_decimal, const LocaleInfo *locale,
                    const InternalFormatSpec *format, Py_UCS4 *maxchar)
@@ -574,7 +571,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
             spec->n_lpadding = n_padding;
             break;
         default:
-            /* Shouldn't get here, but treat it as '>' */
+            /* Shouldn't get here */
             Py_UNREACHABLE();
         }
     }
@@ -590,12 +587,12 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
         spec->n_remainder + spec->n_rpadding;
 }
 
-/* Fill in the digit parts of a numbers's string representation,
+/* Fill in the digit parts of a number's string representation,
    as determined in calc_number_widths().
    Return -1 on error, or 0 on success. */
 static int
 fill_number(_PyUnicodeWriter *writer, const NumberFieldWidths *spec,
-            PyObject *digits, Py_ssize_t d_start, Py_ssize_t d_end,
+            PyObject *digits, Py_ssize_t d_start,
             PyObject *prefix, Py_ssize_t p_start,
             Py_UCS4 fill_char,
             LocaleInfo *locale, int toupper)
@@ -771,8 +768,14 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format,
 
     /* sign is not allowed on strings */
     if (format->sign != '\0') {
-        PyErr_SetString(PyExc_ValueError,
-                        "Sign not allowed in string format specifier");
+        if (format->sign == ' ') {
+            PyErr_SetString(PyExc_ValueError,
+                "Space not allowed in string format specifier");
+        }
+        else {
+            PyErr_SetString(PyExc_ValueError,
+                "Sign not allowed in string format specifier");
+        }
         goto done;
     }
 
@@ -983,7 +986,7 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
         goto done;
 
     /* Calculate how much memory we'll need. */
-    n_total = calc_number_widths(&spec, n_prefix, sign_char, tmp, inumeric_chars,
+    n_total = calc_number_widths(&spec, n_prefix, sign_char, inumeric_chars,
                                  inumeric_chars + n_digits, n_remainder, 0,
                                  &locale, format, &maxchar);
     if (n_total == -1) {
@@ -996,7 +999,7 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
 
     /* Populate the memory. */
     result = fill_number(writer, &spec,
-                         tmp, inumeric_chars, inumeric_chars + n_digits,
+                         tmp, inumeric_chars,
                          tmp, prefix, format->fill_char,
                          &locale, format->type == 'X');
 
@@ -1131,7 +1134,7 @@ format_float_internal(PyObject *value,
         goto done;
 
     /* Calculate how much memory we'll need. */
-    n_total = calc_number_widths(&spec, 0, sign_char, unicode_tmp, index,
+    n_total = calc_number_widths(&spec, 0, sign_char, index,
                                  index + n_digits, n_remainder, has_decimal,
                                  &locale, format, &maxchar);
     if (n_total == -1) {
@@ -1144,7 +1147,7 @@ format_float_internal(PyObject *value,
 
     /* Populate the memory. */
     result = fill_number(writer, &spec,
-                         unicode_tmp, index, index + n_digits,
+                         unicode_tmp, index,
                          NULL, 0, format->fill_char,
                          &locale, 0);
 
@@ -1316,7 +1319,7 @@ format_complex_internal(PyObject *value,
     tmp_format.width = -1;
 
     /* Calculate how much memory we'll need. */
-    n_re_total = calc_number_widths(&re_spec, 0, re_sign_char, re_unicode_tmp,
+    n_re_total = calc_number_widths(&re_spec, 0, re_sign_char,
                                     i_re, i_re + n_re_digits, n_re_remainder,
                                     re_has_decimal, &locale, &tmp_format,
                                     &maxchar);
@@ -1329,7 +1332,7 @@ format_complex_internal(PyObject *value,
      * requested by the original format. */
     if (!skip_re)
         tmp_format.sign = '+';
-    n_im_total = calc_number_widths(&im_spec, 0, im_sign_char, im_unicode_tmp,
+    n_im_total = calc_number_widths(&im_spec, 0, im_sign_char,
                                     i_im, i_im + n_im_digits, n_im_remainder,
                                     im_has_decimal, &locale, &tmp_format,
                                     &maxchar);
@@ -1366,7 +1369,7 @@ format_complex_internal(PyObject *value,
 
     if (!skip_re) {
         result = fill_number(writer, &re_spec,
-                             re_unicode_tmp, i_re, i_re + n_re_digits,
+                             re_unicode_tmp, i_re,
                              NULL, 0,
                              0,
                              &locale, 0);
@@ -1374,7 +1377,7 @@ format_complex_internal(PyObject *value,
             goto done;
     }
     result = fill_number(writer, &im_spec,
-                         im_unicode_tmp, i_im, i_im + n_im_digits,
+                         im_unicode_tmp, i_im,
                          NULL, 0,
                          0,
                          &locale, 0);
@@ -1436,7 +1439,7 @@ _PyUnicode_FormatAdvancedWriter(_PyUnicodeWriter *writer,
     }
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, 's', '<'))
         return -1;
 
@@ -1447,7 +1450,7 @@ _PyUnicode_FormatAdvancedWriter(_PyUnicodeWriter *writer,
         return format_string_internal(obj, &format, writer);
     default:
         /* unknown */
-        unknown_presentation_type(format.type, obj->ob_type->tp_name);
+        unknown_presentation_type(format.type, Py_TYPE(obj)->tp_name);
         return -1;
     }
 }
@@ -1458,7 +1461,7 @@ _PyLong_FormatAdvancedWriter(_PyUnicodeWriter *writer,
                              PyObject *format_spec,
                              Py_ssize_t start, Py_ssize_t end)
 {
-    PyObject *tmp = NULL, *str = NULL;
+    PyObject *tmp = NULL;
     InternalFormatSpec format;
     int result = -1;
 
@@ -1472,7 +1475,7 @@ _PyLong_FormatAdvancedWriter(_PyUnicodeWriter *writer,
     }
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, 'd', '>'))
         goto done;
 
@@ -1505,13 +1508,12 @@ _PyLong_FormatAdvancedWriter(_PyUnicodeWriter *writer,
 
     default:
         /* unknown */
-        unknown_presentation_type(format.type, obj->ob_type->tp_name);
+        unknown_presentation_type(format.type, Py_TYPE(obj)->tp_name);
         goto done;
     }
 
 done:
     Py_XDECREF(tmp);
-    Py_XDECREF(str);
     return result;
 }
 
@@ -1529,7 +1531,7 @@ _PyFloat_FormatAdvancedWriter(_PyUnicodeWriter *writer,
         return format_obj(obj, writer);
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, '\0', '>'))
         return -1;
 
@@ -1549,7 +1551,7 @@ _PyFloat_FormatAdvancedWriter(_PyUnicodeWriter *writer,
 
     default:
         /* unknown */
-        unknown_presentation_type(format.type, obj->ob_type->tp_name);
+        unknown_presentation_type(format.type, Py_TYPE(obj)->tp_name);
         return -1;
     }
 }
@@ -1568,7 +1570,7 @@ _PyComplex_FormatAdvancedWriter(_PyUnicodeWriter *writer,
         return format_obj(obj, writer);
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, '\0', '>'))
         return -1;
 
@@ -1587,7 +1589,7 @@ _PyComplex_FormatAdvancedWriter(_PyUnicodeWriter *writer,
 
     default:
         /* unknown */
-        unknown_presentation_type(format.type, obj->ob_type->tp_name);
+        unknown_presentation_type(format.type, Py_TYPE(obj)->tp_name);
         return -1;
     }
 }

@@ -41,7 +41,7 @@ IP addresses, networks and interfaces:
 
    Return an :class:`IPv4Address` or :class:`IPv6Address` object depending on
    the IP address passed as argument.  Either IPv4 or IPv6 addresses may be
-   supplied; integers less than 2**32 will be considered to be IPv4 by default.
+   supplied; integers less than ``2**32`` will be considered to be IPv4 by default.
    A :exc:`ValueError` is raised if *address* does not represent a valid IPv4
    or IPv6 address.
 
@@ -56,7 +56,7 @@ IP addresses, networks and interfaces:
    Return an :class:`IPv4Network` or :class:`IPv6Network` object depending on
    the IP address passed as argument.  *address* is a string or integer
    representing the IP network.  Either IPv4 or IPv6 networks may be supplied;
-   integers less than 2**32 will be considered to be IPv4 by default.  *strict*
+   integers less than ``2**32`` will be considered to be IPv4 by default.  *strict*
    is passed to :class:`IPv4Network` or :class:`IPv6Network` constructor.  A
    :exc:`ValueError` is raised if *address* does not represent a valid IPv4 or
    IPv6 address, or if the network has host bits set.
@@ -70,7 +70,7 @@ IP addresses, networks and interfaces:
    Return an :class:`IPv4Interface` or :class:`IPv6Interface` object depending
    on the IP address passed as argument.  *address* is a string or integer
    representing the IP address.  Either IPv4 or IPv6 addresses may be supplied;
-   integers less than 2**32 will be considered to be IPv4 by default.  A
+   integers less than ``2**32`` will be considered to be IPv4 by default.  A
    :exc:`ValueError` is raised if *address* does not represent a valid IPv4 or
    IPv6 address.
 
@@ -104,8 +104,7 @@ write code that handles both IP versions correctly.  Address objects are
    1. A string in decimal-dot notation, consisting of four decimal integers in
       the inclusive range 0--255, separated by dots (e.g. ``192.168.0.1``). Each
       integer represents an octet (byte) in the address. Leading zeroes are
-      tolerated only for values less than 8 (as there is no ambiguity
-      between the decimal and octal interpretations of such strings).
+      not tolerated to prevent confusion with octal notation.
    2. An integer that fits into 32 bits.
    3. An integer packed into a :class:`bytes` object of length 4 (most
       significant octet first).
@@ -116,6 +115,27 @@ write code that handles both IP versions correctly.  Address objects are
    IPv4Address('192.168.0.1')
    >>> ipaddress.IPv4Address(b'\xC0\xA8\x00\x01')
    IPv4Address('192.168.0.1')
+
+   .. versionchanged:: 3.8
+
+      Leading zeros are tolerated, even in ambiguous cases that look like
+      octal notation.
+
+   .. versionchanged:: 3.10
+
+      Leading zeros are no longer tolerated and are treated as an error.
+      IPv4 address strings are now parsed as strict as glibc
+      :func:`~socket.inet_pton`.
+
+   .. versionchanged:: 3.9.5
+
+      The above change was also included in Python 3.9 starting with
+      version 3.9.5.
+
+   .. versionchanged:: 3.8.12
+
+      The above change was also included in Python 3.8 starting with
+      version 3.8.12.
 
    .. attribute:: version
 
@@ -202,6 +222,32 @@ write code that handles both IP versions correctly.  Address objects are
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
 
+.. method:: IPv4Address.__format__(fmt)
+
+   Returns a string representation of the IP address, controlled by
+   an explicit format string.
+   *fmt* can be one of the following: ``'s'``, the default option,
+   equivalent to :func:`str`, ``'b'`` for a zero-padded binary string,
+   ``'X'`` or ``'x'`` for an uppercase or lowercase hexadecimal
+   representation, or ``'n'``, which is equivalent to ``'b'`` for IPv4
+   addresses and ``'x'`` for IPv6. For binary and hexadecimal
+   representations, the form specifier ``'#'`` and the grouping option
+   ``'_'`` are available. ``__format__`` is used by ``format``, ``str.format``
+   and f-strings.
+
+      >>> format(ipaddress.IPv4Address('192.168.0.1'))
+      '192.168.0.1'
+      >>> '{:#b}'.format(ipaddress.IPv4Address('192.168.0.1'))
+      '0b11000000101010000000000000000001'
+      >>> f'{ipaddress.IPv6Address("2001:db8::1000"):s}'
+      '2001:db8::1000'
+      >>> format(ipaddress.IPv6Address('2001:db8::1000'), '_X')
+      '2001_0DB8_0000_0000_0000_0000_0000_1000'
+      >>> '{:#_n}'.format(ipaddress.IPv6Address('2001:db8::1000'))
+      '0x2001_0db8_0000_0000_0000_0000_0000_1000'
+
+   .. versionadded:: 3.9
+
 
 .. class:: IPv6Address(address)
 
@@ -217,11 +263,20 @@ write code that handles both IP versions correctly.  Address objects are
       :RFC:`4291` for details.  For example,
       ``"0000:0000:0000:0000:0000:0abc:0007:0def"`` can be compressed to
       ``"::abc:7:def"``.
+
+      Optionally, the string may also have a scope zone ID, expressed
+      with a suffix ``%scope_id``. If present, the scope ID must be non-empty,
+      and may not contain ``%``.
+      See :RFC:`4007` for details.
+      For example, ``fe80::1234%1`` might identify address ``fe80::1234`` on the first link of the node.
    2. An integer that fits into 128 bits.
    3. An integer packed into a :class:`bytes` object of length 16, big-endian.
 
+
    >>> ipaddress.IPv6Address('2001:db8::1000')
    IPv6Address('2001:db8::1000')
+   >>> ipaddress.IPv6Address('ff02::5678%1')
+   IPv6Address('ff02::5678%1')
 
    .. attribute:: compressed
 
@@ -237,8 +292,8 @@ write code that handles both IP versions correctly.  Address objects are
    groups consisting entirely of zeroes included.
 
 
-   For the following attributes, see the corresponding documentation of the
-   :class:`IPv4Address` class:
+   For the following attributes and methods, see the corresponding
+   documentation of the :class:`IPv4Address` class:
 
    .. attribute:: packed
    .. attribute:: reverse_pointer
@@ -268,6 +323,12 @@ write code that handles both IP versions correctly.  Address objects are
       ``::FFFF/96``), this property will report the embedded IPv4 address.
       For any other address, this property will be ``None``.
 
+   .. attribute:: scope_id
+
+      For scoped addresses as defined by :RFC:`4007`, this property identifies
+      the particular zone of the address's scope that the address belongs to,
+      as a string. When no scope zone is specified, this property will be ``None``.
+
    .. attribute:: sixtofour
 
       For addresses that appear to be 6to4 addresses  (starting with
@@ -282,6 +343,12 @@ write code that handles both IP versions correctly.  Address objects are
       the embedded ``(server, client)`` IP address pair.  For any other
       address, this property will be ``None``.
 
+.. method:: IPv6Address.__format__(fmt)
+
+   Refer to the corresponding method documentation in
+   :class:`IPv4Address`.
+
+   .. versionadded:: 3.9
 
 Conversion to Strings and Integers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -299,6 +366,8 @@ the :func:`str` and :func:`int` builtin functions::
    >>> int(ipaddress.IPv6Address('::1'))
    1
 
+Note that IPv6 scoped addresses are converted to integers without scope zone ID.
+
 
 Operators
 ^^^^^^^^^
@@ -311,14 +380,19 @@ IPv6).
 Comparison operators
 """"""""""""""""""""
 
-Address objects can be compared with the usual set of comparison operators.  Some
-examples::
+Address objects can be compared with the usual set of comparison operators.
+Same IPv6 addresses with different scope zone IDs are not equal.
+Some examples::
 
    >>> IPv4Address('127.0.0.2') > IPv4Address('127.0.0.1')
    True
    >>> IPv4Address('127.0.0.2') == IPv4Address('127.0.0.1')
    False
    >>> IPv4Address('127.0.0.2') != IPv4Address('127.0.0.1')
+   True
+   >>> IPv6Address('fe80::1234') == IPv6Address('fe80::1234%1')
+   False
+   >>> IPv6Address('fe80::1234%1') != IPv6Address('fe80::1234%2')
    True
 
 
@@ -487,7 +561,8 @@ dictionaries.
       hosts are all the IP addresses that belong to the network, except the
       network address itself and the network broadcast address.  For networks
       with a mask length of 31, the network address and network broadcast
-      address are also included in the result.
+      address are also included in the result. Networks with a mask of 32
+      will return a list containing the single host address.
 
          >>> list(ip_network('192.0.2.0/29').hosts())  #doctest: +NORMALIZE_WHITESPACE
          [IPv4Address('192.0.2.1'), IPv4Address('192.0.2.2'),
@@ -495,6 +570,8 @@ dictionaries.
           IPv4Address('192.0.2.5'), IPv4Address('192.0.2.6')]
          >>> list(ip_network('192.0.2.0/31').hosts())
          [IPv4Address('192.0.2.0'), IPv4Address('192.0.2.1')]
+         >>> list(ip_network('192.0.2.1/32').hosts())
+         [IPv4Address('192.0.2.1')]
 
    .. method:: overlaps(other)
 
@@ -557,7 +634,7 @@ dictionaries.
 
    .. method:: subnet_of(other)
 
-      Returns *True* if this network is a subnet of *other*.
+      Return ``True`` if this network is a subnet of *other*.
 
         >>> a = ip_network('192.168.1.0/24')
         >>> b = ip_network('192.168.1.128/30')
@@ -568,7 +645,7 @@ dictionaries.
 
    .. method:: supernet_of(other)
 
-      Returns *True* if this network is a supernet of *other*.
+      Return ``True`` if this network is a supernet of *other*.
 
         >>> a = ip_network('192.168.1.0/24')
         >>> b = ip_network('192.168.1.128/30')
@@ -605,7 +682,7 @@ dictionaries.
 
       Note that currently expanded netmasks are not supported.  That means
       ``2001:db00::0/24`` is a valid argument while ``2001:db00::0/ffff:ff00::``
-      not.
+      is not.
 
    2. An integer that fits into 128 bits.  This is equivalent to a
       single-address network, with the network address being *address* and
@@ -656,6 +733,8 @@ dictionaries.
       hosts are all the IP addresses that belong to the network, except the
       Subnet-Router anycast address.  For networks with a mask length of 127,
       the Subnet-Router anycast address is also included in the result.
+      Networks with a mask of 128 will return a list containing the
+      single host address.
 
    .. method:: overlaps(other)
    .. method:: address_exclude(network)

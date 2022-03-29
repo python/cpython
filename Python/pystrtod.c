@@ -1,6 +1,8 @@
 /* -*- Mode: C; c-file-style: "python" -*- */
 
 #include <Python.h>
+#include "pycore_dtoa.h"          // _Py_dg_strtod()
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include <locale.h>
 
 /* Case-insensitive string match used for nan and inf detection; t should be
@@ -22,7 +24,7 @@ case_insensitive_match(const char *s, const char *t)
    the successfully parsed portion of the string.  On failure, return -1.0 and
    set *endptr to point to the start of the string. */
 
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
 
 double
 _Py_parse_inf_or_nan(const char *p, char **endptr)
@@ -80,12 +82,10 @@ _Py_parse_inf_or_nan(const char *p, char **endptr)
             s += 5;
         retval = negate ? -Py_HUGE_VAL : Py_HUGE_VAL;
     }
-#ifdef Py_NAN
     else if (case_insensitive_match(s, "nan")) {
         s += 3;
         retval = negate ? -Py_NAN : Py_NAN;
     }
-#endif
     else {
         s = p;
         retval = -1.0;
@@ -125,7 +125,7 @@ _Py_parse_inf_or_nan(const char *p, char **endptr)
  * Return value: the #gdouble value.
  **/
 
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
 
 static double
 _PyOS_ascii_strtod(const char *nptr, char **endptr)
@@ -254,7 +254,7 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
         char *copy, *c;
         /* Create a copy of the input, with the '.' converted to the
            locale-specific decimal point */
-        copy = (char *)PyMem_MALLOC(end - digits_pos +
+        copy = (char *)PyMem_Malloc(end - digits_pos +
                                     1 + decimal_point_len);
         if (copy == NULL) {
             *endptr = (char *)nptr;
@@ -285,7 +285,7 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
                     (fail_pos - copy);
         }
 
-        PyMem_FREE(copy);
+        PyMem_Free(copy);
 
     }
     else {
@@ -342,9 +342,7 @@ PyOS_string_to_double(const char *s,
     char *fail_pos;
 
     errno = 0;
-    PyFPE_START_PROTECT("PyOS_string_to_double", return -1.0)
     x = _PyOS_ascii_strtod(s, &fail_pos);
-    PyFPE_END_PROTECT(x)
 
     if (errno == ENOMEM) {
         PyErr_NoMemory();
@@ -353,15 +351,15 @@ PyOS_string_to_double(const char *s,
     else if (!endptr && (fail_pos == s || *fail_pos != '\0'))
         PyErr_Format(PyExc_ValueError,
                       "could not convert string to float: "
-                      "%.200s", s);
+                      "'%.200s'", s);
     else if (fail_pos == s)
         PyErr_Format(PyExc_ValueError,
                       "could not convert string to float: "
-                      "%.200s", s);
+                      "'%.200s'", s);
     else if (errno == ERANGE && fabs(x) >= 1.0 && overflow_exception)
         PyErr_Format(overflow_exception,
                       "value too large to convert to float: "
-                      "%.200s", s);
+                      "'%.200s'", s);
     else
         result = x;
 
@@ -441,7 +439,7 @@ _Py_string_to_number_with_underscores(
     return NULL;
 }
 
-#ifdef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 0
 
 /* Given a string that may have a decimal point in the current
    locale, change it back to a dot.  Since the string cannot get
@@ -942,7 +940,7 @@ char * PyOS_double_to_string(double val,
     return buf;
 }
 
-#else
+#else  // _PY_SHORT_FLOAT_REPR == 1
 
 /* _Py_dg_dtoa is available. */
 
@@ -1305,4 +1303,4 @@ char * PyOS_double_to_string(double val,
                               flags & Py_DTSF_ALT,
                               float_strings, type);
 }
-#endif /* ifdef PY_NO_SHORT_FLOAT_REPR */
+#endif  // _PY_SHORT_FLOAT_REPR == 1

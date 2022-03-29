@@ -2,6 +2,8 @@
     unicode_format.h -- implementation of str.format().
 */
 
+#include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
+
 /************************************************************************/
 /***********   Global data structures and forward declarations  *********/
 /************************************************************************/
@@ -440,8 +442,13 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs,
 
         /* look up in args */
         obj = PySequence_GetItem(args, index);
-        if (obj == NULL)
-            goto error;
+        if (obj == NULL) {
+            PyErr_Format(PyExc_IndexError,
+                         "Replacement index %zd out of range for positional "
+                         "args tuple",
+                         index);
+             goto error;
+        }
     }
 
     /* iterate over the rest of the field_name */
@@ -823,7 +830,7 @@ output_markup(SubString *field_name, SubString *format_spec,
         tmp = NULL;
     }
 
-    /* if needed, recurively compute the format_spec */
+    /* if needed, recursively compute the format_spec */
     if (format_spec_needs_expanding) {
         tmp = build_string(format_spec, args, kwargs, recursion_depth-1,
                            auto_number);
@@ -978,7 +985,7 @@ static void
 formatteriter_dealloc(formatteriterobject *it)
 {
     Py_XDECREF(it->str);
-    PyObject_FREE(it);
+    PyObject_Free(it);
 }
 
 /* returns a tuple:
@@ -1066,10 +1073,10 @@ static PyTypeObject PyFormatterIter_Type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)formatteriter_dealloc,  /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1142,7 +1149,7 @@ static void
 fieldnameiter_dealloc(fieldnameiterobject *it)
 {
     Py_XDECREF(it->str);
-    PyObject_FREE(it);
+    PyObject_Free(it);
 }
 
 /* returns a tuple:
@@ -1202,10 +1209,10 @@ static PyTypeObject PyFieldNameIter_Type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)fieldnameiter_dealloc,  /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */

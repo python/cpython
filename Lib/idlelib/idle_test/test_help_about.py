@@ -134,7 +134,7 @@ class CloseTest(unittest.TestCase):
             self.dialog.winfo_class()
 
 
-class Dummy_about_dialog():
+class Dummy_about_dialog:
     # Dummy class for testing file display functions.
     idle_credits = About.show_idle_credits
     idle_readme = About.show_readme

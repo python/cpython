@@ -12,6 +12,16 @@ class TestDump:
     def test_dumps(self):
         self.assertEqual(self.dumps({}), '{}')
 
+    def test_dump_skipkeys(self):
+        v = {b'invalid_key': False, 'valid_key': True}
+        with self.assertRaises(TypeError):
+            self.json.dumps(v)
+
+        s = self.json.dumps(v, skipkeys=True)
+        o = self.json.loads(s)
+        self.assertIn('valid_key', o)
+        self.assertNotIn(b'invalid_key', o)
+
     def test_encode_truefalse(self):
         self.assertEqual(self.dumps(
                  {True: False, False: True}, sort_keys=True),

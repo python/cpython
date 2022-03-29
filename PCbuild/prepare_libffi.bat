@@ -22,9 +22,10 @@ echo Based on https://github.com/libffi/libffi/blob/master/.appveyor.yml
 echo.
 echo.
 echo.Available flags:
-echo.  -x64    build for x64
-echo.  -x86    build for x86
-echo.  -arm32  build for arm32
+echo.  -x64    enable x64 build
+echo.  -x86    enable x86 build
+echo.  -arm32  enable arm32 build
+echo.  -arm64  enable arm64 build
 echo.  -?      this help
 echo.  --install-cygwin  install cygwin to c:\cygwin
 exit /b 127
@@ -34,23 +35,34 @@ exit /b 127
 set BUILD_X64=
 set BUILD_X86=
 set BUILD_ARM32=
+set BUILD_ARM64=
+set BUILD_PDB=
+set BUILD_NOOPT=
+set COPY_LICENSE=
 set INSTALL_CYGWIN=
 
 :CheckOpts
 if "%1"=="" goto :CheckOptsDone
 if /I "%1"=="-x64" (set BUILD_X64=1) & shift & goto :CheckOpts
 if /I "%1"=="-x86" (set BUILD_X86=1) & shift & goto :CheckOpts
+if /I "%1"=="-win32" (set BUILD_X86=1) & shift & goto :CheckOpts
 if /I "%1"=="-arm32" (set BUILD_ARM32=1) & shift & goto :CheckOpts
+if /I "%1"=="-arm64" (set BUILD_ARM64=1) & shift & goto :CheckOpts
+if /I "%1"=="-pdb" (set BUILD_PDB=-g) & shift & goto :CheckOpts
+if /I "%1"=="-noopt" (set BUILD_NOOPT=CFLAGS='-Od -warn all') & shift & goto :CheckOpts
+if /I "%1"=="-license" (set COPY_LICENSE=1) & shift & goto :CheckOpts
 if /I "%1"=="-?" goto :Usage
 if /I "%1"=="--install-cygwin" (set INSTALL_CYGWIN=1) & shift & goto :CheckOpts
 goto :Usage
 
 :CheckOptsDone
 
-if NOT DEFINED BUILD_X64 if NOT DEFINED BUILD_X86 if NOT DEFINED BUILD_ARM32 (
+if NOT DEFINED BUILD_X64 if NOT DEFINED BUILD_X86 if NOT DEFINED BUILD_ARM32 if NOT DEFINED BUILD_ARM64 (
     set BUILD_X64=1
     set BUILD_X86=1
     set BUILD_ARM32=1
+    set BUILD_ARM64=1
+    set COPY_LICENSE=1
 )
 
 if "%INSTALL_CYGWIN%"=="1" call :InstallCygwin
@@ -59,9 +71,7 @@ setlocal
 if NOT DEFINED SH if exist c:\cygwin\bin\sh.exe set SH=c:\cygwin\bin\sh.exe
 
 if NOT DEFINED VCVARSALL (
-    if exist "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" (
-        set VCVARSALL="C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat"
-    )
+    for /F "tokens=*" %%i in ('"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -property installationPath -latest -prerelease -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64') DO @(set VCVARSALL="%%i\VC\Auxiliary\Build\vcvarsall.bat")
 )
 if ^%VCVARSALL:~0,1% NEQ ^" SET VCVARSALL="%VCVARSALL%"
 
@@ -85,11 +95,20 @@ echo LIBFFI_SOURCE: %LIBFFI_SOURCE%
 echo MSVCC        : %MSVCC%
 echo.
 
-if not exist Makefile.in (%SH% -lc "(cd $LIBFFI_SOURCE; ./autogen.sh;)")
+if not exist Makefile.in (
+    %SH% -lc "(cd $LIBFFI_SOURCE; ./autogen.sh;)"
+    if errorlevel 1 exit /B 1
+)
 
 if "%BUILD_X64%"=="1" call :BuildOne x64 x86_64-w64-cygwin x86_64-w64-cygwin
+if errorlevel 1 exit /B %ERRORLEVEL%
 if "%BUILD_X86%"=="1" call :BuildOne x86 i686-pc-cygwin i686-pc-cygwin
+if errorlevel 1 exit /B %ERRORLEVEL%
 if "%BUILD_ARM32%"=="1" call :BuildOne x86_arm i686-pc-cygwin arm-w32-cygwin
+if errorlevel 1 exit /B %ERRORLEVEL%
+if "%BUILD_ARM64%"=="1" call :BuildOne x86_arm64 i686-pc-cygwin aarch64-w64-cygwin
+if errorlevel 1 exit /B %ERRORLEVEL%
+if "%COPY_LICENSE%"=="1" copy /y "%LIBFFI_SOURCE%\LICENSE" "%LIBFFI_OUT%\LICENSE"
 
 popd
 endlocal
@@ -129,6 +148,12 @@ if /I "%VCVARS_PLATFORM%" EQU "x86_arm" (
     set ASSEMBLER=-marm
     set SRC_ARCHITECTURE=ARM
 )
+if /I "%VCVARS_PLATFORM%" EQU "x86_arm64" (
+    set ARCH=arm64
+    set ARTIFACTS=%LIBFFI_SOURCE%\aarch64-w64-cygwin
+    set ASSEMBLER=-marm64
+    set SRC_ARCHITECTURE=aarch64
+)
 
 if NOT DEFINED LIBFFI_OUT set LIBFFI_OUT=%~dp0\..\externals\libffi
 set _LIBFFI_OUT=%LIBFFI_OUT%\%ARCH%
@@ -139,11 +164,17 @@ call %VCVARSALL% %VCVARS_PLATFORM%
 echo clean %_LIBFFI_OUT%
 if exist %_LIBFFI_OUT% (rd %_LIBFFI_OUT% /s/q)
 
+echo ================================================================
 echo Configure the build to generate fficonfig.h and ffi.h
-%SH% -lc "(cd $OLDPWD; ./configure CC='%MSVCC% %ASSEMBLER%' CXX='%MSVCC% %ASSEMBLER%' LD='link' CPP='cl -nologo -EP' CXXCPP='cl -nologo -EP' CPPFLAGS='-DFFI_BUILDING_DLL' NM='dumpbin -symbols' STRIP=':' --build=$BUILD --host=$HOST;)"
+echo ================================================================
+%SH% -lc "(cd $OLDPWD; ./configure CC='%MSVCC% %ASSEMBLER% %BUILD_PDB%' CXX='%MSVCC% %ASSEMBLER% %BUILD_PDB%' LD='link' CPP='cl -nologo -EP' CXXCPP='cl -nologo -EP' CPPFLAGS='-DFFI_BUILDING_DLL' %BUILD_NOOPT% NM='dumpbin -symbols' STRIP=':' --build=$BUILD --host=$HOST;)"
+if errorlevel 1 exit /B %ERRORLEVEL%
 
+echo ================================================================
 echo Building libffi
+echo ================================================================
 %SH% -lc "(cd $OLDPWD; export PATH=/usr/bin:$PATH; cp src/%SRC_ARCHITECTURE%/ffitarget.h include; make; find .;)"
+if errorlevel 1 exit /B %ERRORLEVEL%
 
 REM Tests are not needed to produce artifacts
 if "%LIBFFI_TEST%" EQU "1" (
@@ -156,10 +187,11 @@ if "%LIBFFI_TEST%" EQU "1" (
 
 echo copying files to %_LIBFFI_OUT%
 if not exist %_LIBFFI_OUT%\include (md %_LIBFFI_OUT%\include)
-copy %ARTIFACTS%\.libs\libffi-7.dll %_LIBFFI_OUT%
-copy %ARTIFACTS%\.libs\libffi-7.lib %_LIBFFI_OUT%
-copy %ARTIFACTS%\fficonfig.h %_LIBFFI_OUT%\include
-copy %ARTIFACTS%\include\*.h %_LIBFFI_OUT%\include
+copy %ARTIFACTS%\.libs\libffi-*.dll %_LIBFFI_OUT% || exit /B 1
+copy %ARTIFACTS%\.libs\libffi-*.lib %_LIBFFI_OUT% || exit /B 1
+copy %ARTIFACTS%\.libs\libffi-*.pdb %_LIBFFI_OUT%
+copy %ARTIFACTS%\fficonfig.h %_LIBFFI_OUT%\include || exit /B 1
+copy %ARTIFACTS%\include\*.h %_LIBFFI_OUT%\include || exit /B 1
 
 endlocal
 exit /b

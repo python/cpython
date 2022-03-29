@@ -25,7 +25,7 @@ There are several ways to enable asyncio debug mode:
 
 * Setting the :envvar:`PYTHONASYNCIODEBUG` environment variable to ``1``.
 
-* Using the :option:`-X` ``dev`` Python command line option.
+* Using the :ref:`Python Development Mode <devmode>`.
 
 * Passing ``debug=True`` to :func:`asyncio.run`.
 
@@ -57,7 +57,7 @@ When the debug mode is enabled:
 * The execution time of the I/O selector is logged if it takes too long to
   perform an I/O operation.
 
-* Callbacks taking longer than 100ms are logged.  The
+* Callbacks taking longer than 100 milliseconds are logged.  The
   :attr:`loop.slow_callback_duration` attribute can be used to set the
   minimum execution duration in seconds that is considered "slow".
 
@@ -73,7 +73,7 @@ event loop, no other Tasks can run in the same thread.  When a Task
 executes an ``await`` expression, the running Task gets suspended, and
 the event loop executes the next Task.
 
-To schedule a callback from a different OS thread, the
+To schedule a :term:`callback` from another OS thread, the
 :meth:`loop.call_soon_threadsafe` method should be used. Example::
 
     loop.call_soon_threadsafe(callback, *args)
@@ -107,6 +107,16 @@ The :meth:`loop.run_in_executor` method can be used with a
 blocking code in a different OS thread without blocking the OS thread
 that the event loop runs in.
 
+There is currently no way to schedule coroutines or callbacks directly
+from a different process (such as one started with
+:mod:`multiprocessing`). The :ref:`Event Loop Methods <asyncio-event-loop>`
+section lists APIs that can read from pipes and watch file descriptors
+without blocking the event loop. In addition, asyncio's
+:ref:`Subprocess <asyncio-subprocess>` APIs provide a way to start a
+process and communicate with it from the event loop. Lastly, the
+aforementioned :meth:`loop.run_in_executor` method can also be used
+with a :class:`concurrent.futures.ProcessPoolExecutor` to execute
+code in a different process.
 
 .. _asyncio-handle-blocking:
 
@@ -119,7 +129,7 @@ all concurrent asyncio Tasks and IO operations would be delayed
 by 1 second.
 
 An executor can be used to run a task in a different thread or even in
-a different process to avoid blocking block the OS thread with the
+a different process to avoid blocking the OS thread with the
 event loop.  See the :meth:`loop.run_in_executor` method for more
 details.
 

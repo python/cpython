@@ -1,0 +1,50 @@
+parameters:
+  BuildToPublish: ''
+
+jobs:
+- job: Publish_Nuget
+  displayName: Publish Nuget packages
+  condition: and(succeeded(), eq(variables['DoNuget'], 'true'), ne(variables['SkipNugetPublish'], 'true'))
+
+  pool:
+    vmImage: windows-2022
+
+  workspace:
+    clean: all
+
+  steps:
+  - checkout: none
+
+  - ${{ if parameters.BuildToPublish }}:
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download artifact from ${{ parameters.BuildToPublish }}'
+      inputs:
+        artifactName: nuget
+        downloadPath: $(Build.BinariesDirectory)
+        buildType: specific
+        project: $(System.TeamProject)
+        pipeline: $(Build.DefinitionName)
+        buildVersionToDownload: specific
+        buildId: ${{ parameters.BuildToPublish }}
+
+  - ${{ else }}:
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download artifact: nuget'
+      inputs:
+        artifactName: nuget
+        downloadPath: $(Build.BinariesDirectory)
+
+
+  - powershell: 'gci pythonarm*.nupkg | %{ Write-Host "Not publishing: $($_.Name)"; gi $_ } | del'
+    displayName: 'Prevent publishing ARM64 packages'
+    workingDirectory: '$(Build.BinariesDirectory)\nuget'
+    condition: and(succeeded(), ne(variables['PublishARM64'], 'true'))
+
+  - task: NuGetCommand@2
+    displayName: Push packages
+    condition: and(succeeded(), eq(variables['SigningCertificate'], variables['__RealSigningCertificate']))
+    inputs:
+      command: push
+      packagesToPush: '$(Build.BinariesDirectory)\nuget\*.nupkg'
+      nuGetFeedType: external
+      publishFeedCredentials: 'Python on Nuget'

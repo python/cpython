@@ -23,6 +23,12 @@ All Platforms
 Windows
 =======
 
+**Source code:** :source:`Lib/asyncio/proactor_events.py`,
+:source:`Lib/asyncio/windows_events.py`,
+:source:`Lib/asyncio/windows_utils.py`
+
+--------------------------------------
+
 .. versionchanged:: 3.8
 
    On Windows, :class:`ProactorEventLoop` is now the default event loop.
@@ -53,14 +59,11 @@ All event loops on Windows do not support the following methods:
 
 :class:`ProactorEventLoop` has the following limitations:
 
-* The :meth:`loop.create_datagram_endpoint` method
-  is not supported.
-
 * The :meth:`loop.add_reader` and :meth:`loop.add_writer`
   methods are not supported.
 
 The resolution of the monotonic clock on Windows is usually around 15.6
-msec.  The best resolution is 0.5 msec. The resolution depends on the
+milliseconds.  The best resolution is 0.5 milliseconds. The resolution depends on the
 hardware (availability of `HPET
 <https://en.wikipedia.org/wiki/High_Precision_Event_Timer>`_) and on the
 Windows configuration.

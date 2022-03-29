@@ -1,10 +1,10 @@
-﻿from . import util
+from test.test_importlib import util
+
 abc = util.import_importlib('importlib.abc')
 init = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
 importlib_util = util.import_importlib('importlib.util')
 
-import contextlib
 import importlib.util
 import os
 import pathlib
@@ -376,7 +376,7 @@ class ResolveNameTests:
 
     def test_no_package(self):
         # .bacon in ''
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ImportError):
             self.util.resolve_name('.bacon', '')
 
     def test_in_package(self):
@@ -391,7 +391,7 @@ class ResolveNameTests:
 
     def test_escape(self):
         # ..bacon in spam
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ImportError):
             self.util.resolve_name('..bacon', 'spam')
 
 
@@ -519,7 +519,7 @@ class FindSpecTests:
         with util.temp_module(name, pkg=True) as pkg_dir:
             fullname, _ = util.submodule(name, subname, pkg_dir)
             relname = '.' + subname
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ImportError):
                 self.util.find_spec(relname)
             self.assertNotIn(name, sorted(sys.modules))
             self.assertNotIn(fullname, sorted(sys.modules))
@@ -846,23 +846,21 @@ class MagicNumberTests(unittest.TestCase):
         'only applies to candidate or final python release levels'
     )
     def test_magic_number(self):
-        """
-        Each python minor release should generally have a MAGIC_NUMBER
-        that does not change once the release reaches candidate status.
+        # Each python minor release should generally have a MAGIC_NUMBER
+        # that does not change once the release reaches candidate status.
 
-        Once a release reaches candidate status, the value of the constant
-        EXPECTED_MAGIC_NUMBER in this test should be changed.
-        This test will then check that the actual MAGIC_NUMBER matches
-        the expected value for the release.
+        # Once a release reaches candidate status, the value of the constant
+        # EXPECTED_MAGIC_NUMBER in this test should be changed.
+        # This test will then check that the actual MAGIC_NUMBER matches
+        # the expected value for the release.
 
-        In exceptional cases, it may be required to change the MAGIC_NUMBER
-        for a maintenance release. In this case the change should be
-        discussed in python-dev. If a change is required, community
-        stakeholders such as OS package maintainers must be notified
-        in advance. Such exceptional releases will then require an
-        adjustment to this test case.
-        """
-        EXPECTED_MAGIC_NUMBER = 3410
+        # In exceptional cases, it may be required to change the MAGIC_NUMBER
+        # for a maintenance release. In this case the change should be
+        # discussed in python-dev. If a change is required, community
+        # stakeholders such as OS package maintainers must be notified
+        # in advance. Such exceptional releases will then require an
+        # adjustment to this test case.
+        EXPECTED_MAGIC_NUMBER = 3413
         actual = int.from_bytes(importlib.util.MAGIC_NUMBER[:2], 'little')
 
         msg = (

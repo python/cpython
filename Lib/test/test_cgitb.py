@@ -1,4 +1,4 @@
-from test.support import temp_dir
+from test.support.os_helper import temp_dir
 from test.support.script_helper import assert_python_failure
 import unittest
 import sys
@@ -31,7 +31,7 @@ class TestCgitb(unittest.TestCase):
     def test_text(self):
         try:
             raise ValueError("Hello World")
-        except ValueError as err:
+        except ValueError:
             text = cgitb.text(sys.exc_info())
             self.assertIn("ValueError", text)
             self.assertIn("Hello World", text)
@@ -41,8 +41,9 @@ class TestCgitb(unittest.TestCase):
             rc, out, err = assert_python_failure(
                   '-c',
                   ('import cgitb; cgitb.enable(logdir=%s); '
-                   'raise ValueError("Hello World")') % repr(tracedir))
-        out = out.decode(sys.getfilesystemencoding())
+                   'raise ValueError("Hello World")') % repr(tracedir),
+                  PYTHONIOENCODING='utf-8')
+        out = out.decode()
         self.assertIn("ValueError", out)
         self.assertIn("Hello World", out)
         self.assertIn("<strong>&lt;module&gt;</strong>", out)
@@ -56,8 +57,9 @@ class TestCgitb(unittest.TestCase):
             rc, out, err = assert_python_failure(
                   '-c',
                   ('import cgitb; cgitb.enable(format="text", logdir=%s); '
-                   'raise ValueError("Hello World")') % repr(tracedir))
-        out = out.decode(sys.getfilesystemencoding())
+                   'raise ValueError("Hello World")') % repr(tracedir),
+                  PYTHONIOENCODING='utf-8')
+        out = out.decode()
         self.assertIn("ValueError", out)
         self.assertIn("Hello World", out)
         self.assertNotIn('<p>', out)

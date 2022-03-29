@@ -1,4 +1,4 @@
-# Copyright 2001-2016 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2019 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -19,7 +19,7 @@ Configuration functions for the logging package for Python. The core package
 is based on PEP 282 and comments thereto in comp.lang.python, and influenced
 by Apache's log4j system.
 
-Copyright (C) 2001-2016 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2019 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -30,7 +30,6 @@ import logging
 import logging.handlers
 import re
 import struct
-import sys
 import threading
 import traceback
 
@@ -48,7 +47,7 @@ RESET_ERROR = errno.ECONNRESET
 #   _listener holds the server object doing the listening
 _listener = None
 
-def fileConfig(fname, defaults=None, disable_existing_loggers=True):
+def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=None):
     """
     Read the logging configuration from a ConfigParser-format file.
 
@@ -66,7 +65,8 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True):
         if hasattr(fname, 'readline'):
             cp.read_file(fname)
         else:
-            cp.read(fname)
+            encoding = io.text_encoding(encoding)
+            cp.read(fname, encoding=encoding)
 
     formatters = _create_formatters(cp)
 
@@ -143,6 +143,7 @@ def _install_handlers(cp, formatters):
         kwargs = section.get("kwargs", '{}')
         kwargs = eval(kwargs, vars(logging))
         h = klass(*args, **kwargs)
+        h.name = hand
         if "level" in section:
             level = section["level"]
             h.setLevel(level)
@@ -173,9 +174,10 @@ def _handle_existing_loggers(existing, child_loggers, disable_existing):
     for log in existing:
         logger = root.manager.loggerDict[log]
         if log in child_loggers:
-            logger.level = logging.NOTSET
-            logger.handlers = []
-            logger.propagate = True
+            if not isinstance(logger, logging.PlaceHolder):
+                logger.setLevel(logging.NOTSET)
+                logger.handlers = []
+                logger.propagate = True
         else:
             logger.disabled = disable_existing
 
@@ -389,11 +391,9 @@ class BaseConfigurator(object):
                     self.importer(used)
                     found = getattr(found, frag)
             return found
-        except ImportError:
-            e, tb = sys.exc_info()[1:]
+        except ImportError as e:
             v = ValueError('Cannot resolve %r: %s' % (s, e))
-            v.__cause__, v.__traceback__ = e, tb
-            raise v
+            raise v from e
 
     def ext_convert(self, value):
         """Default converter for the ext:// protocol."""
@@ -446,7 +446,7 @@ class BaseConfigurator(object):
             value = ConvertingList(value)
             value.configurator = self
         elif not isinstance(value, ConvertingTuple) and\
-                 isinstance(value, tuple):
+                 isinstance(value, tuple) and not hasattr(value, '_fields'):
             value = ConvertingTuple(value)
             value.configurator = self
         elif isinstance(value, str): # str for py3k
@@ -694,7 +694,11 @@ class DictConfigurator(BaseConfigurator):
         """Add filters to a filterer from a list of names."""
         for f in filters:
             try:
-                filterer.addFilter(self.config['filters'][f])
+                if callable(f) or callable(getattr(f, 'filter', None)):
+                    filter_ = f
+                else:
+                    filter_ = self.config['filters'][f]
+                filterer.addFilter(filter_)
             except Exception as e:
                 raise ValueError('Unable to add filter %r' % f) from e
 

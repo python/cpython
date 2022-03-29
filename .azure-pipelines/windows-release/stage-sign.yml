@@ -1,0 +1,130 @@
+parameters:
+  Include: '*.exe, *.dll, *.pyd, *.cat, *.ps1'
+  Exclude: 'vcruntime*, libffi*, libcrypto*, libssl*'
+
+jobs:
+- job: Sign_Python
+  displayName: Sign Python binaries
+  condition: and(succeeded(), variables['SigningCertificate'])
+
+  pool:
+    name: 'Windows Release'
+
+  workspace:
+    clean: all
+
+  strategy:
+    matrix:
+      win32:
+        Name: win32
+      amd64:
+        Name: amd64
+      arm64:
+        Name: arm64
+
+  steps:
+  - template: ./checkout.yml
+  - template: ./find-sdk.yml
+
+  - powershell: |
+      $d = (.\PCbuild\build.bat -V) | %{ if($_ -match '\s+(\w+):\s*(.+)\s*$') { @{$Matches[1] = $Matches[2];} }};
+      Write-Host "##vso[task.setvariable variable=SigningDescription]Python $($d.PythonVersion)"
+    displayName: 'Update signing description'
+    condition: and(succeeded(), not(variables['SigningDescription']))
+
+  - powershell: |
+      Write-Host "##vso[build.addbuildtag]signed"
+    displayName: 'Add build tags'
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: unsigned_bin_$(Name)'
+    inputs:
+      artifactName: unsigned_bin_$(Name)
+      targetPath: $(Build.BinariesDirectory)\bin
+
+  - powershell: |
+      copy "$(Build.SourcesDirectory)\Lib\venv\scripts\common\Activate.ps1" .
+    displayName: 'Copy files from source'
+    workingDirectory: $(Build.BinariesDirectory)\bin
+
+  - powershell: |
+      $files = (gi ${{ parameters.Include }} -Exclude ${{ parameters.Exclude }})
+      signtool sign /a /n "$(SigningCertificate)" /fd sha256 /d "$(SigningDescription)" $files
+    displayName: 'Sign binaries'
+    workingDirectory: $(Build.BinariesDirectory)\bin
+
+  - powershell: |
+      $files = (gi ${{ parameters.Include }} -Exclude ${{ parameters.Exclude }})
+      $failed = $true
+      foreach ($retry in 1..10) {
+          signtool timestamp /tr http://timestamp.digicert.com/ /td sha256 $files
+          if ($?) {
+              $failed = $false
+              break
+          }
+          sleep 5
+      }
+      if ($failed) {
+          Write-Host "##vso[task.logissue type=error]Failed to timestamp files"
+      }
+    displayName: 'Timestamp binaries'
+    workingDirectory: $(Build.BinariesDirectory)\bin
+    continueOnError: true
+
+  - task: PublishPipelineArtifact@0
+    displayName: 'Publish artifact: bin_$(Name)'
+    inputs:
+      targetPath: '$(Build.BinariesDirectory)\bin'
+      artifactName: bin_$(Name)
+
+
+- job: Dump_CertInfo
+  displayName: Capture certificate info
+  condition: and(succeeded(), variables['SigningCertificate'])
+
+  pool:
+    name: 'Windows Release'
+
+  steps:
+  - checkout: none
+
+  - powershell: |
+      $m = 'CN=$(SigningCertificate)'
+      $c = ((gci Cert:\CurrentUser\My), (gci Cert:\LocalMachine\My)) | %{ $_ } | `
+         ?{ $_.Subject -match $m -and $_.NotBefore -lt (Get-Date) -and $_.NotAfter -gt (Get-Date) } | `
+         select -First 1
+      if (-not $c) {
+          Write-Host "Failed to find certificate for $(SigningCertificate)"
+          exit
+      }
+      $d = mkdir "$(Build.BinariesDirectory)\tmp" -Force
+      $cf = "$d\cert.cer"
+      [IO.File]::WriteAllBytes($cf, $c.Export("Cer"))
+      $csha = (certutil -dump $cf | sls "Cert Hash\(sha256\): (.+)").Matches.Groups[1].Value
+
+      $info = @{ Subject=$c.Subject; SHA256=$csha; }
+
+      $d = mkdir "$(Build.BinariesDirectory)\cert" -Force
+      $info | ConvertTo-JSON -Compress | Out-File -Encoding utf8 "$d\certinfo.json"
+    displayName: "Extract certificate info"
+
+  - task: PublishPipelineArtifact@0
+    displayName: 'Publish artifact: cert'
+    inputs:
+      targetPath: '$(Build.BinariesDirectory)\cert'
+      artifactName: cert
+
+
+- job: Mark_Unsigned
+  displayName: Tag unsigned build
+  condition: and(succeeded(), not(variables['SigningCertificate']))
+
+  pool:
+    vmImage: windows-2022
+
+  steps:
+  - checkout: none
+
+  - powershell: |
+      Write-Host "##vso[build.addbuildtag]unsigned"
+    displayName: 'Add build tag'

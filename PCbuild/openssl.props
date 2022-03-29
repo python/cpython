@@ -11,7 +11,9 @@
   </ItemDefinitionGroup>
   <PropertyGroup>
     <_DLLSuffix>-1_1</_DLLSuffix>
-    <_DLLSuffix Condition="$(Platform) == 'x64'">$(_DLLSuffix)-x64</_DLLSuffix>
+    <_DLLSuffix Condition="$(Platform) == 'ARM'">$(_DLLSuffix)-arm</_DLLSuffix>
+    <_DLLSuffix Condition="$(Platform) == 'ARM64'">$(_DLLSuffix)-arm64</_DLLSuffix>
+    <OpenSSLDLLSuffix>$(_DLLSuffix)</OpenSSLDLLSuffix>
   </PropertyGroup>
   <ItemGroup>
     <_SSLDLL Include="$(opensslOutDir)\libcrypto$(_DLLSuffix).dll" />
@@ -19,10 +21,14 @@
     <_SSLDLL Include="$(opensslOutDir)\libssl$(_DLLSuffix).dll" />
     <_SSLDLL Include="$(opensslOutDir)\libssl$(_DLLSuffix).pdb" />
   </ItemGroup>
-  <Target Name="_CopySSLDLL" Inputs="@(_SSLDLL)" Outputs="@(_SSLDLL->'$(OutDir)%(Filename)%(Extension)')" AfterTargets="Build">
+  <Target Name="_CopySSLDLL"
+          Inputs="@(_SSLDLL)"
+          Outputs="@(_SSLDLL->'$(OutDir)%(Filename)%(Extension)')"
+          Condition="$(SkipCopySSLDLL) == ''"
+          AfterTargets="Build">
     <Copy SourceFiles="@(_SSLDLL)" DestinationFolder="$(OutDir)" />
   </Target>
-  <Target Name="_CleanSSLDLL" BeforeTargets="Clean">
+  <Target Name="_CleanSSLDLL" Condition="$(SkipCopySSLDLL) == ''" BeforeTargets="Clean">
     <Delete Files="@(_SSLDLL->'$(OutDir)%(Filename)%(Extension)')" TreatErrorsAsWarnings="true" />
   </Target>
 </Project>
