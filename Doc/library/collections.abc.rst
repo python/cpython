@@ -122,12 +122,12 @@ ABC                            Inherits from          Abstract Methods        Mi
 ============================== ====================== ======================= ====================================================
 :class:`Container` [1]_                               ``__contains__``
 :class:`Hashable` [1]_                                ``__hash__``
-:class:`Iterable` [1]_                                ``__iter__``
+:class:`Iterable` [1]_ [2]_                           ``__iter__``
 :class:`Iterator` [1]_         :class:`Iterable`      ``__next__``            ``__iter__``
 :class:`Reversible` [1]_       :class:`Iterable`      ``__reversed__``,
                                                       ``__iter__``
-:class:`Generator` [1]_        :class:`Iterator`      ``send``,               Inherited mixin :class:`Iterator` method,
-                                                      ``throw``               ``__next__``, ``close``
+:class:`Generator` [1]_        :class:`Iterator`      ``send``,               ``__iter__``, ``__next__``, ``close``
+                                                      ``throw``               
 :class:`Sized` [1]_                                   ``__len__``
 :class:`Callable` [1]_                                ``__call__``
 :class:`Collection` [1]_       :class:`Sized`,        ``__len__``,
@@ -174,8 +174,8 @@ ABC                            Inherits from          Abstract Methods        Mi
                                                       ``throw``
 :class:`AsyncIterable` [1]_                           ``__aiter__``
 :class:`AsyncIterator` [1]_    :class:`AsyncIterable` ``__anext__``           ``__aiter__``
-:class:`AsyncGenerator` [1]_   :class:`AsyncIterator` ``asend``,              Inherited mixin :class:`AsyncIterator` method,
-                                                      ``athrow``              ``__anext__``, ``aclose``
+:class:`AsyncGenerator` [1]_   :class:`AsyncIterator` ``asend``,              ``__aiter__``, ``__anext__``, ``aclose``
+                                                      ``athrow``
 ============================== ====================== ======================= ====================================================
 
 
@@ -186,6 +186,12 @@ ABC                            Inherits from          Abstract Methods        Mi
    and have not been set to :const:`None`.  This only works for simple
    interfaces.  More complex interfaces require registration or
    inheritance.
+
+.. [2] Checking ``isinstance(obj, Iterable)`` detects classes that are
+   registered as :class:`Iterable` or that have an :meth:`__iter__`
+   method, but it does not detect classes that iterate with the
+   :meth:`__getitem__` method.  The only reliable way to determine
+   whether an object is :term:`iterable` is to call ``iter(obj)``.
 
 
 Collections Abstract Base Classes -- Detailed Descriptions
@@ -213,7 +219,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
    ABC for classes that provide the :meth:`__iter__` method.
 
    Checking ``isinstance(obj, Iterable)`` detects classes that are registered
-   as or inherit from :class:`Iterable`, or that have an :meth:`__iter__` method, but it does
+   as :class:`Iterable` or that have an :meth:`__iter__` method, but it does
    not detect classes that iterate with the :meth:`__getitem__` method.
    The only reliable way to determine whether an object is :term:`iterable`
    is to call ``iter(obj)``.
