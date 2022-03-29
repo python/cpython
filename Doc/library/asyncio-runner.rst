@@ -132,10 +132,6 @@ because it can interrupt asyncio internals and can hang the program from exiting
 
 To mitigate this issue, :mod:`asyncio` handles :const:`signal.SIGINT` as follows:
 
-This approach doesn't work with asyncio, the interruption should never break asyncio
-internals itself but stop a user code.
-
-Asyncio handles the keyboard interruption as follows:
 
 1. :meth:`asyncio.Runner.run` installs a custom :const:`signal.SIGINT` handler before
    any user code is executed and removes it when exiting from the function.
