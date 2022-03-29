@@ -757,10 +757,102 @@ PyTypeObject PyRange_Type = {
 
 /*********************** range Iterator **************************/
 
-/* There are 2 types of iterators, one for C longs, the other for
-   Python ints (ie, PyObjects).  This should make iteration fast
-   in the normal case, but possible for any numeric value.
+/* There are 3 types of iterators: one for small cached ints,
+   one for C longs, and one for Python ints (ie, PyObjects).
+   This should make iteration fast in the normal case,
+   but possible for any numeric value.
 */
+
+typedef struct {
+    PyObject_HEAD
+    // current and end both point into, or just beyond, the small int cache.
+    PyLongObject *next;
+    PyLongObject *stop;
+} smallrangeiterobject;
+
+static PyObject *
+smallrangeiter_next(smallrangeiterobject *r)
+{
+    if (r->next < r->stop) {
+        return Py_NewRef(r->next++);
+    }
+    return NULL;
+}
+
+static PyObject *
+smallrangeiter_len(smallrangeiterobject *r)
+{
+    return PyLong_FromLong((long)(r->stop - r->next));
+}
+
+static PyObject *
+smallrangeiter_reduce(smallrangeiterobject *r)
+{
+    /* create a range object for pickling */
+    PyObject *start = (PyObject *)Py_NewRef(r->next);
+    PyObject *stop = (PyObject *)Py_NewRef(r->stop);
+    PyObject *step = Py_NewRef(_PyLong_GetOne());
+    PyObject *range = (PyObject*)make_range_object(&PyRange_Type,
+                                                   start, stop, step);
+    if (range == NULL) {
+        Py_DECREF(start);
+        Py_DECREF(stop);
+        Py_DECREF(step);
+    }
+    /* return the result */
+    return Py_BuildValue("N(N)O",
+                         _PyEval_GetBuiltin(&_Py_ID(iter)),
+                         range,
+                         _PyLong_GetZero());
+}
+
+static PyObject *
+smallrangeiter_setstate(smallrangeiterobject *r, PyObject *state)
+{
+    long index = PyLong_AsLong(state);
+    if (index == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    /* silently clip the index value */
+    if (index < 0) {
+        index = 0;
+    }
+    else if (index > (long)(r->stop - r->next)) {
+        r->next = r->stop;
+    }
+    else {
+        r->next = r->next + index;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(length_hint_doc,
+             "Private method returning an estimate of len(list(it)).");
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
+
+static PyMethodDef smallrangeiter_methods[] = {
+    {"__length_hint__", (PyCFunction)smallrangeiter_len, METH_NOARGS,
+        length_hint_doc},
+    {"__reduce__", (PyCFunction)smallrangeiter_reduce, METH_NOARGS,
+        reduce_doc},
+    {"__setstate__", (PyCFunction)smallrangeiter_setstate, METH_O,
+        setstate_doc},
+    {NULL,              NULL}           /* sentinel */
+};
+
+PyTypeObject PySmallRangeIter_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "smallrange_iterator",
+    .tp_basicsize = sizeof(smallrangeiterobject),
+    .tp_dealloc = (destructor)PyObject_Del,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags =  Py_TPFLAGS_DEFAULT,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)smallrangeiter_next,
+    .tp_methods = smallrangeiter_methods,
+};
+
 
 typedef struct {
         PyObject_HEAD
@@ -786,9 +878,6 @@ rangeiter_len(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromLong(r->len - r->index);
 }
-
-PyDoc_STRVAR(length_hint_doc,
-             "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
 rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
@@ -834,9 +923,6 @@ rangeiter_setstate(rangeiterobject *r, PyObject *state)
     r->index = index;
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
-PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyMethodDef rangeiter_methods[] = {
     {"__length_hint__", (PyCFunction)rangeiter_len, METH_NOARGS,
@@ -915,14 +1001,25 @@ get_len_of_range(long lo, long hi, long step)
 static PyObject *
 fast_range_iter(long start, long stop, long step, long len)
 {
-    rangeiterobject *it = PyObject_New(rangeiterobject, &PyRangeIter_Type);
-    if (it == NULL)
-        return NULL;
-    it->start = start;
-    it->step = step;
-    it->len = len;
-    it->index = 0;
-    return (PyObject *)it;
+    if (step == 1 && -_PY_NSMALLNEGINTS <= start &&
+        start <= stop && stop <= _PY_NSMALLPOSINTS)
+    {
+        smallrangeiterobject *it;
+        it = PyObject_New(smallrangeiterobject, &PySmallRangeIter_Type);
+        it->next = &_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + start];
+        it->stop = &_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + stop];
+        return (PyObject *)it;
+    }
+    else {
+        rangeiterobject *it = PyObject_New(rangeiterobject, &PyRangeIter_Type);
+        if (it == NULL)
+            return NULL;
+        it->start = start;
+        it->step = step;
+        it->len = len;
+        it->index = 0;
+        return (PyObject *)it;
+    }
 }
 
 typedef struct {
