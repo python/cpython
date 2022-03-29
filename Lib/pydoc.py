@@ -292,7 +292,7 @@ def visiblename(name, all=None, obj=None):
     if name.startswith('_') and hasattr(obj, '_fields'):
         return True
     # Ignore __future__ imports.
-    if name in _future_feature_names:
+    if obj is not __future__ and name in _future_feature_names:
         if isinstance(getattr(obj, name, None), __future__._Feature):
             return False
     if all is not None:
