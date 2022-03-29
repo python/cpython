@@ -1,0 +1,3 @@
+Convert the :mod:`re` module into a package. Modules ``sre_compile``,
+``sre_constants`` and ``sre_parse`` are now private submodules of the ``re``
+package.
