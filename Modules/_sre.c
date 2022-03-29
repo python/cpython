@@ -532,6 +532,14 @@ state_getslice(SRE_STATE* state, Py_ssize_t index, PyObject* string, int empty)
     } else {
         i = STATE_OFFSET(state, state->mark[index]);
         j = STATE_OFFSET(state, state->mark[index+1]);
+
+        /* check wrong span */
+        if (i > j) {
+            PyErr_SetString(PyExc_SystemError,
+                            "The span of capturing group is wrong,"
+                            " please report a bug for the re module.");
+            return NULL;
+        }
     }
 
     return getslice(state->isbytes, state->beginning, string, i, j);
@@ -2477,6 +2485,15 @@ pattern_new_match(_sremodulestate* module_state,
             if (j+1 <= state->lastmark && state->mark[j] && state->mark[j+1]) {
                 match->mark[j+2] = ((char*) state->mark[j] - base) / n;
                 match->mark[j+3] = ((char*) state->mark[j+1] - base) / n;
+
+                /* check wrong span */
+                if (match->mark[j+2] > match->mark[j+3]) {
+                    PyErr_SetString(PyExc_SystemError,
+                                    "The span of capturing group is wrong,"
+                                    " please report a bug for the re module.");
+                    Py_DECREF(match);
+                    return NULL;
+                }
             } else
                 match->mark[j+2] = match->mark[j+3] = -1; /* undefined */
 
