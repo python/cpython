@@ -1,9 +1,13 @@
-/* Prefix all public blake2 symbols with PyBlake2_
- */
+#ifndef Py_BLAKE2MODULE_H
+#define Py_BLAKE2MODULE_H
 
-#ifndef Py_BLAKE2_NS
-#define Py_BLAKE2_NS
+#ifdef HAVE_LIBB2
+#include <blake2.h>
 
+#else
+// use vendored copy of blake2
+
+// Prefix all public blake2 symbols with PyBlake2_
 #define blake2b            PyBlake2_blake2b
 #define blake2b_compress   PyBlake2_blake2b_compress
 #define blake2b_final      PyBlake2_blake2b_final
@@ -29,4 +33,11 @@
 #define blake2sp_init_key  PyBlake2_blake2sp_init_key
 #define blake2sp_update    PyBlake2_blake2sp_update
 
-#endif /* Py_BLAKE2_NS */
+#include "impl/blake2.h"
+
+#endif // HAVE_LIBB2
+
+// for secure_zero_memory(), store32(), store48(), and store64()
+#include "impl/blake2-impl.h" 
+
+#endif // Py_BLAKE2MODULE_H

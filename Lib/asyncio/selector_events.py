@@ -620,7 +620,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
 
-        if not hasattr(socket, 'AF_UNIX') or sock.family != socket.AF_UNIX:
+        if sock.family == socket.AF_INET or (
+                base_events._HAS_IPv6 and sock.family == socket.AF_INET6):
             resolved = await self._ensure_resolved(
                 address, family=sock.family, type=sock.type, proto=sock.proto,
                 loop=self,
