@@ -127,7 +127,10 @@ Handling Keyboard Interruption
 .. versionadded:: 3.11
 
 When :const:`signal.SIGINT` is raised by :kbd:`Ctrl-C`, :exc:`KeyboardInterrupt`
-exception is raised in the main thread by default.
+exception is raised in the main thread by default. However this doesn't work with :mod:`asyncio` 
+because it can interrupt asyncio internals and can hang the program from exiting.
+
+To mitigate this issue, :mod:`asyncio` handles :const:`signal.SIGINT` as follows:
 
 This approach doesn't work with asyncio, the interruption should never break asyncio
 internals itself but stop a user code.
