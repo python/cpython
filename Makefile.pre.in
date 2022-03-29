@@ -1871,6 +1871,7 @@ LIBSUBDIRS=	asyncio \
 		logging \
 		multiprocessing multiprocessing/dummy \
 		pydoc_data \
+		re \
 		site-packages \
 		sqlite3 \
 		tkinter \
