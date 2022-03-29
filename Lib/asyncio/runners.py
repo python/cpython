@@ -133,7 +133,7 @@ class Runner:
         self._state = _State.INITIALIZED
 
     def _on_sigint(self, signum, frame, main_task):
-        self._interrunt_count += 1
+        self._interrupt_count += 1
         if self._interrunt_count == 1 and not main_task.done():
             main_task.cancel()
             # wakeup loop if it is blocked by select() with long timeout
