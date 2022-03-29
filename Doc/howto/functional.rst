@@ -335,7 +335,7 @@ List comprehensions and generator expressions (short form: "listcomps" and
 functional programming language Haskell (https://www.haskell.org/).  You can strip
 all the whitespace from a stream of strings with the following code::
 
-    line_list = ['  line 1\n', 'line 2  \n', ...]
+    line_list = ['  line 1\n', 'line 2  \n', ' \n', '']
 
     # Generator expression -- returns iterator
     stripped_iter = (line.strip() for line in line_list)
@@ -363,7 +363,8 @@ have the form::
                  if condition1
                  for expr2 in sequence2
                  if condition2
-                 for expr3 in sequence3 ...
+                 for expr3 in sequence3
+                 ...
                  if condition3
                  for exprN in sequenceN
                  if conditionN )
