@@ -16,6 +16,8 @@ else:
 
 import hashlib as _hashlib
 
+import sys as _sys
+
 trans_5C = bytes((x ^ 0x5C) for x in range(256))
 trans_36 = bytes((x ^ 0x36) for x in range(256))
 
@@ -55,7 +57,11 @@ class HMAC:
         if not digestmod:
             raise TypeError("Missing required parameter 'digestmod'.")
 
-        if _hashopenssl and isinstance(digestmod, (str, _functype)):
+        if _sys.platform == "linux":
+            self._hmac = _hashlib._LinuxKCAPIHMAC(key, msg, digestmod)
+            self.digest_size = self._hmac.digest_size
+            self.block_size = self._hmac.block_size
+        elif _hashopenssl and isinstance(digestmod, (str, _functype)):
             try:
                 self._init_hmac(key, msg, digestmod)
             except _hashopenssl.UnsupportedDigestmodError:

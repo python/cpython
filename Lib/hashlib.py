@@ -94,7 +94,8 @@ def __get_builtin_constructor(name):
         elif name in {'SHA256', 'sha256', 'SHA224', 'sha224'}:
             import _sha256
             cache['SHA224'] = cache['sha224'] = _sha256.sha224
-            cache['SHA256'] = cache['sha256'] = _sha256.sha256
+            # cache['SHA256'] = cache['sha256'] = _sha256.sha256
+            cache['SHA256'] = cache['sha256'] = linux_sha256
         elif name in {'SHA512', 'sha512', 'SHA384', 'sha384'}:
             import _sha512
             cache['SHA384'] = cache['sha384'] = _sha512.sha384
@@ -252,6 +253,122 @@ try:
     from _hashlib import scrypt
 except ImportError:
     pass
+
+
+import socket as _socket
+import binascii as _binascii
+
+class _LinuxKCAPI:
+    """Linux Kernel Crypto API (AF_ALG socket)
+    """
+
+    # TODO: retrieve info from AF_NETLINK, NETLINK_CRYPTO
+    _digests = {
+        'md5': (16, 64),
+        'sha1': (20, 64),
+        'sha224': (28, 64),
+        'sha256': (32, 64),
+        'sha384': (48, 128),
+        'sha512': (64, 128),
+    }
+    __slots__ = ("_digest", "_opsock")
+
+    def __init__(self, digest):
+        if digest not in self._digests:
+            raise ValueError(digest)
+        self._digest = digest
+
+    def _get_opsock(self, digest, key=None):
+        """Create KCAPI client socket
+
+        Algorithm and MAC key are configured on the server socket. accept()
+        creates a new client socket that consumes data. accept() on a client
+        socket creates an independent copy.
+        """
+        with _socket.socket(_socket.AF_ALG, _socket.SOCK_SEQPACKET, 0) as cfg:
+            binding = ("hash", digest if key is None else f"hmac({digest})")
+            try:
+                cfg.bind(binding)
+            except FileNotFoundError:
+                raise ValueError(binding)
+            if key is not None:
+                cfg.setsockopt(_socket.SOL_ALG, _socket.ALG_SET_KEY, key)
+            return cfg.accept()[0]
+
+    def __del__(self):
+        if getattr(self, "_opsock", None):
+            self._opsock.close()
+            self._opsock = None
+
+    def __repr__(self):
+        return f"<Linux KCAPI {self.name} at 0x{id(self):x}>"
+
+    @property
+    def digest_size(self):
+        return self._digests[self._digest][0]
+
+    @property
+    def block_size(self):
+        return self._digests[self._digest][1]
+
+    def update(self, data):
+        self._opsock.sendall(data, _socket.MSG_MORE)
+
+    def copy(self):
+        new = self.__new__(type(self))
+        new._digest = self._digest
+        new._opsock = self._opsock.accept()[0]
+        return new
+
+    def digest(self):
+        copysock = self._opsock.accept()[0]
+        with copysock:
+            copysock.send(b'')
+            return copysock.recv(64)
+
+    def hexdigest(self):
+        return _binascii.hexlify(self.digest()).decode("ascii")
+
+
+class _LinuxKCAPIHash(_LinuxKCAPI):
+    def __init__(self, name, data=None, usedforsecurity=True):
+        super().__init__(name)
+        # ignores usedforsecurity
+        self._opsock = self._get_opsock(name)
+        if data is not None:
+            self.update(data)
+
+    @property
+    def name(self):
+        return self._digest
+
+
+class _LinuxKCAPIHMAC(_LinuxKCAPI):
+    def __init__(self, key, msg=None, digestmod=''):
+        if not isinstance(key, (bytes, bytearray)):
+            raise TypeError("key: expected bytes or bytearray, but got %r" % type(key).__name__)
+
+        if not digestmod:
+            raise TypeError("Missing required parameter 'digestmod'.")
+        elif isinstance(digestmod, str):
+            digest = digestmod
+        elif callable(digestmod):
+            digest = digestmod().name
+        else:
+            digest = digestmod.new().name
+
+        super().__init__(digest)
+        self._opsock = self._get_opsock(digest, key)
+        if msg is not None:
+            self.update(msg)
+
+    @property
+    def name(self):
+        return f"hmac-{self._digest}"
+
+
+def linux_sha256(data=None, usedforsecurity=True):
+    return _LinuxKCAPIHash("sha256", data, usedforsecurity=usedforsecurity)
 
 
 def file_digest(fileobj, digest, /, *, _bufsize=2**18):
