@@ -4,7 +4,7 @@ import sys
 import unittest
 import warnings
 from test.support import os_helper
-from test.support import TestFailed
+from test.support import TestFailed, is_emscripten
 from test.support.os_helper import FakePath
 from test import test_genericpath
 from tempfile import TemporaryFile
@@ -613,6 +613,40 @@ class TestNtpath(NtpathTestCase):
     @unittest.skipUnless(nt, "abspath requires 'nt' module")
     def test_abspath(self):
         tester('ntpath.abspath("C:\\")', "C:\\")
+        tester('ntpath.abspath("\\\\?\\C:////spam////eggs. . .")', "\\\\?\\C:\\spam\\eggs")
+        tester('ntpath.abspath("\\\\.\\C:////spam////eggs. . .")', "\\\\.\\C:\\spam\\eggs")
+        tester('ntpath.abspath("//spam//eggs. . .")',     "\\\\spam\\eggs")
+        tester('ntpath.abspath("\\\\spam\\\\eggs. . .")', "\\\\spam\\eggs")
+        tester('ntpath.abspath("C:/spam. . .")',  "C:\\spam")
+        tester('ntpath.abspath("C:\\spam. . .")', "C:\\spam")
+        tester('ntpath.abspath("C:/nul")',  "\\\\.\\nul")
+        tester('ntpath.abspath("C:\\nul")', "\\\\.\\nul")
+        tester('ntpath.abspath("//..")',           "\\\\")
+        tester('ntpath.abspath("//../")',          "\\\\..\\")
+        tester('ntpath.abspath("//../..")',        "\\\\..\\")
+        tester('ntpath.abspath("//../../")',       "\\\\..\\..\\")
+        tester('ntpath.abspath("//../../../")',    "\\\\..\\..\\")
+        tester('ntpath.abspath("//../../../..")',  "\\\\..\\..\\")
+        tester('ntpath.abspath("//../../../../")', "\\\\..\\..\\")
+        tester('ntpath.abspath("//server")',           "\\\\server")
+        tester('ntpath.abspath("//server/")',          "\\\\server\\")
+        tester('ntpath.abspath("//server/..")',        "\\\\server\\")
+        tester('ntpath.abspath("//server/../")',       "\\\\server\\..\\")
+        tester('ntpath.abspath("//server/../..")',     "\\\\server\\..\\")
+        tester('ntpath.abspath("//server/../../")',    "\\\\server\\..\\")
+        tester('ntpath.abspath("//server/../../..")',  "\\\\server\\..\\")
+        tester('ntpath.abspath("//server/../../../")', "\\\\server\\..\\")
+        tester('ntpath.abspath("//server/share")',        "\\\\server\\share")
+        tester('ntpath.abspath("//server/share/")',       "\\\\server\\share\\")
+        tester('ntpath.abspath("//server/share/..")',     "\\\\server\\share\\")
+        tester('ntpath.abspath("//server/share/../")',    "\\\\server\\share\\")
+        tester('ntpath.abspath("//server/share/../..")',  "\\\\server\\share\\")
+        tester('ntpath.abspath("//server/share/../../")', "\\\\server\\share\\")
+        tester('ntpath.abspath("C:\\nul. . .")', "\\\\.\\nul")
+        tester('ntpath.abspath("//... . .")',  "\\\\")
+        tester('ntpath.abspath("//.. . . .")', "\\\\")
+        tester('ntpath.abspath("//../... . .")',  "\\\\..\\")
+        tester('ntpath.abspath("//../.. . . .")', "\\\\..\\")
         with os_helper.temp_cwd(os_helper.TESTFN) as cwd_dir: # bpo-31047
             tester('ntpath.abspath("")', cwd_dir)
             tester('ntpath.abspath(" ")', cwd_dir + "\\ ")
@@ -713,6 +747,7 @@ class TestNtpath(NtpathTestCase):
         self.assertRaises(TypeError, ntpath.commonpath,
                           ['Program Files', b'C:\\Program Files\\Foo'])
 
+    @unittest.skipIf(is_emscripten, "Emscripten cannot fstat unnamed files.")
     def test_sameopenfile(self):
         with TemporaryFile() as tf1, TemporaryFile() as tf2:
             # Make sure the same file is really the same

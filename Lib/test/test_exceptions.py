@@ -231,7 +231,7 @@ class ExceptionTests(unittest.TestCase):
         check('a = « hello » « world »', 1, 5)
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
         check('[file for\n str(file) in []]', 2, 2)
-        check("ages = {'Alice'=22, 'Bob'=23}", 1, 16)
+        check("ages = {'Alice'=22, 'Bob'=23}", 1, 9)
         check('match ...:\n    case {**rest, "key": value}:\n        ...', 2, 19)
         check("[a b c d e f]", 1, 2)
         check("for x yfff:", 1, 7)
@@ -280,6 +280,12 @@ class ExceptionTests(unittest.TestCase):
             }
             \"\"\"
             }'''""", 5, 17)
+        check('''f"""
+
+
+            {
+            6
+            0="""''', 5, 13)
 
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 7)
@@ -665,15 +671,27 @@ class ExceptionTests(unittest.TestCase):
         self.assertTrue(str(Exception('a')))
         self.assertTrue(str(Exception('a', 'b')))
 
-    def testExceptionCleanupNames(self):
+    def test_exception_cleanup_names(self):
         # Make sure the local variable bound to the exception instance by
         # an "except" statement is only visible inside the except block.
         try:
             raise Exception()
         except Exception as e:
-            self.assertTrue(e)
+            self.assertIsInstance(e, Exception)
+        self.assertNotIn('e', locals())
+        with self.assertRaises(UnboundLocalError):
+            e
+
+    def test_exception_cleanup_names2(self):
+        # Make sure the cleanup doesn't break if the variable is explicitly deleted.
+        try:
+            raise Exception()
+        except Exception as e:
+            self.assertIsInstance(e, Exception)
             del e
         self.assertNotIn('e', locals())
+        with self.assertRaises(UnboundLocalError):
+            e
 
     def testExceptionCleanupState(self):
         # Make sure exception state is cleaned up as soon as the except
@@ -1144,6 +1162,56 @@ class ExceptionTests(unittest.TestCase):
         self.assertIs(c.__context__, b)
         self.assertIs(b.__context__, a)
         self.assertIs(a.__context__, c)
+
+    def test_context_of_exception_in_try_and_finally(self):
+        try:
+            try:
+                te = TypeError(1)
+                raise te
+            finally:
+                ve = ValueError(2)
+                raise ve
+        except Exception as e:
+            exc = e
+
+        self.assertIs(exc, ve)
+        self.assertIs(exc.__context__, te)
+
+    def test_context_of_exception_in_except_and_finally(self):
+        try:
+            try:
+                te = TypeError(1)
+                raise te
+            except:
+                ve = ValueError(2)
+                raise ve
+            finally:
+                oe = OSError(3)
+                raise oe
+        except Exception as e:
+            exc = e
+
+        self.assertIs(exc, oe)
+        self.assertIs(exc.__context__, ve)
+        self.assertIs(exc.__context__.__context__, te)
+
+    def test_context_of_exception_in_else_and_finally(self):
+        try:
+            try:
+                pass
+            except:
+                pass
+            else:
+                ve = ValueError(1)
+                raise ve
+            finally:
+                oe = OSError(2)
+                raise oe
+        except Exception as e:
+            exc = e
+
+        self.assertIs(exc, oe)
+        self.assertIs(exc.__context__, ve)
 
     def test_unicode_change_attributes(self):
         # See issue 7309. This was a crasher.
@@ -2203,6 +2271,24 @@ class AttributeErrorTests(unittest.TestCase):
                 sys.__excepthook__(*sys.exc_info())
 
         self.assertNotIn("?", err.getvalue())
+
+    def test_attribute_error_inside_nested_getattr(self):
+        class A:
+            bluch = 1
+
+        class B:
+            def __getattribute__(self, attr):
+                a = A()
+                return a.blich
+
+        try:
+            B().something
+        except AttributeError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertIn("Did you mean", err.getvalue())
+        self.assertIn("bluch", err.getvalue())
 
 
 class ImportErrorTests(unittest.TestCase):

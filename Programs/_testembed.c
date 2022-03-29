@@ -1,6 +1,7 @@
 #ifndef Py_BUILD_CORE_MODULE
 #  define Py_BUILD_CORE_MODULE
 #endif
+#define NEEDS_PY_IDENTIFIER
 
 /* Always enable assertion (even in release mode) */
 #undef NDEBUG
@@ -15,16 +16,22 @@
 #include <stdlib.h>               // putenv()
 #include <wchar.h>
 
+int main_argc;
+char **main_argv;
+
 /*********************************************************
  * Embedded interpreter tests that need a custom exe
  *
  * Executed via 'EmbeddingTests' in Lib/test/test_capi.py
  *********************************************************/
 
+// Use to display the usage
+#define PROGRAM "test_embed"
+
 /* Use path starting with "./" avoids a search along the PATH */
 #define PROGRAM_NAME L"./_testembed"
 
-#define INIT_LOOPS 16
+#define INIT_LOOPS 4
 
 // Ignore Py_DEPRECATED() compiler warnings: deprecated functions are
 // tested on purpose here.
@@ -39,10 +46,39 @@ static void error(const char *msg)
 }
 
 
+static void config_set_string(PyConfig *config, wchar_t **config_str, const wchar_t *str)
+{
+    PyStatus status = PyConfig_SetString(config, config_str, str);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(config);
+        Py_ExitStatusException(status);
+    }
+}
+
+
+static void config_set_program_name(PyConfig *config)
+{
+    const wchar_t *program_name = PROGRAM_NAME;
+    config_set_string(config, &config->program_name, program_name);
+}
+
+
+static void init_from_config_clear(PyConfig *config)
+{
+    PyStatus status = Py_InitializeFromConfig(config);
+    PyConfig_Clear(config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+}
+
+
 static void _testembed_Py_Initialize(void)
 {
-    Py_SetProgramName(PROGRAM_NAME);
-    Py_Initialize();
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
 }
 
 
@@ -112,6 +148,36 @@ PyInit_embedded_ext(void)
 {
     return PyModule_Create(&embedded_ext);
 }
+
+/****************************************************************************
+ * Call Py_Initialize()/Py_Finalize() multiple times and execute Python code
+ ***************************************************************************/
+
+// Used by bpo-46417 to test that structseq types used by the sys module are
+// cleared properly and initialized again properly when Python is finalized
+// multiple times.
+static int test_repeated_init_exec(void)
+{
+    if (main_argc < 3) {
+        fprintf(stderr, "usage: %s test_repeated_init_exec CODE\n", PROGRAM);
+        exit(1);
+    }
+    const char *code = main_argv[2];
+
+    for (int i=1; i <= INIT_LOOPS; i++) {
+        fprintf(stderr, "--- Loop #%d ---\n", i);
+        fflush(stderr);
+
+        _testembed_Py_Initialize();
+        int err = PyRun_SimpleString(code);
+        Py_Finalize();
+        if (err) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 
 /*****************************************************
  * Test forcing a particular IO encoding
@@ -355,16 +421,6 @@ static int test_init_initialize_config(void)
 }
 
 
-static void config_set_string(PyConfig *config, wchar_t **config_str, const wchar_t *str)
-{
-    PyStatus status = PyConfig_SetString(config, config_str, str);
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(config);
-        Py_ExitStatusException(status);
-    }
-}
-
-
 static void config_set_argv(PyConfig *config, Py_ssize_t argc, wchar_t * const *argv)
 {
     PyStatus status = PyConfig_SetArgv(config, argc, argv);
@@ -382,23 +438,6 @@ config_set_wide_string_list(PyConfig *config, PyWideStringList *list,
     PyStatus status = PyConfig_SetWideStringList(config, list, length, items);
     if (PyStatus_Exception(status)) {
         PyConfig_Clear(config);
-        Py_ExitStatusException(status);
-    }
-}
-
-
-static void config_set_program_name(PyConfig *config)
-{
-    const wchar_t *program_name = PROGRAM_NAME;
-    config_set_string(config, &config->program_name, program_name);
-}
-
-
-static void init_from_config_clear(PyConfig *config)
-{
-    PyStatus status = Py_InitializeFromConfig(config);
-    PyConfig_Clear(config);
-    if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
 }
@@ -1880,6 +1919,7 @@ struct TestCase
 
 static struct TestCase TestCases[] = {
     // Python initialization
+    {"test_repeated_init_exec", test_repeated_init_exec},
     {"test_forced_io_encoding", test_forced_io_encoding},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
     {"test_repeated_init_and_inittab", test_repeated_init_and_inittab},
@@ -1946,6 +1986,9 @@ static struct TestCase TestCases[] = {
 
 int main(int argc, char *argv[])
 {
+    main_argc = argc;
+    main_argv = argv;
+
     if (argc > 1) {
         for (struct TestCase *tc = TestCases; tc && tc->name; tc++) {
             if (strcmp(argv[1], tc->name) == 0)

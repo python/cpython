@@ -1,0 +1,3 @@
+Check for the existence of the "sys/auxv.h" header in :mod:`faulthandler` to
+avoid compilation problems in systems where this header doesn't exist. Patch
+by Pablo Galindo

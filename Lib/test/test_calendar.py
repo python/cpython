@@ -859,7 +859,8 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertFailure('-L')
         self.assertFailure('--locale')
         self.assertFailure('-L', 'en')
-        lang, enc = locale.getdefaultlocale()
+
+        lang, enc = locale.getlocale()
         lang = lang or 'C'
         enc = enc or 'UTF-8'
         try:

@@ -28,7 +28,6 @@ import pickle
 import random
 import signal
 import sys
-import sysconfig
 import textwrap
 import threading
 import time
@@ -44,6 +43,7 @@ from test.support import import_helper
 from test.support import os_helper
 from test.support import threading_helper
 from test.support import warnings_helper
+from test.support import skip_if_sanitizer
 from test.support.os_helper import FakePath
 
 import codecs
@@ -66,17 +66,6 @@ else:
     class EmptyStruct(ctypes.Structure):
         pass
 
-_cflags = sysconfig.get_config_var('CFLAGS') or ''
-_config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
-MEMORY_SANITIZER = (
-    '-fsanitize=memory' in _cflags or
-    '--with-memory-sanitizer' in _config_args
-)
-
-ADDRESS_SANITIZER = (
-    '-fsanitize=address' in _cflags
-)
-
 # Does io.IOBase finalizer log the exception if the close() method fails?
 # The exception is ignored silently by default in release build.
 IOBASE_EMITS_UNRAISABLE = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
@@ -86,6 +75,10 @@ def _default_chunk_size():
     """Get the default TextIOWrapper chunk size"""
     with open(__file__, "r", encoding="latin-1") as f:
         return f._CHUNK_SIZE
+
+requires_alarm = unittest.skipUnless(
+    hasattr(signal, "alarm"), "test requires signal.alarm()"
+)
 
 
 class MockRawIOWithoutRead:
@@ -433,6 +426,9 @@ class IOTest(unittest.TestCase):
             self.assertRaises(exc, fp.seek, 1, self.SEEK_CUR)
             self.assertRaises(exc, fp.seek, -1, self.SEEK_END)
 
+    @unittest.skipIf(
+        support.is_emscripten, "fstat() of a pipe fd is not supported"
+    )
     def test_optional_abilities(self):
         # Test for OSError when optional APIs are not supported
         # The purpose of this test is to try fileno(), reading, writing and
@@ -1550,8 +1546,8 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
 class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     tp = io.BufferedReader
 
-    @unittest.skipIf(MEMORY_SANITIZER or ADDRESS_SANITIZER, "sanitizer defaults to crashing "
-                     "instead of returning NULL for malloc failure.")
+    @skip_if_sanitizer(memory=True, address=True, reason= "sanitizer defaults to crashing "
+                       "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedReaderTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -1915,8 +1911,8 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
     tp = io.BufferedWriter
 
-    @unittest.skipIf(MEMORY_SANITIZER or ADDRESS_SANITIZER, "sanitizer defaults to crashing "
-                     "instead of returning NULL for malloc failure.")
+    @skip_if_sanitizer(memory=True, address=True, reason= "sanitizer defaults to crashing "
+                       "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedWriterTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -2414,8 +2410,8 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
 class CBufferedRandomTest(BufferedRandomTest, SizeofTest):
     tp = io.BufferedRandom
 
-    @unittest.skipIf(MEMORY_SANITIZER or ADDRESS_SANITIZER, "sanitizer defaults to crashing "
-                     "instead of returning NULL for malloc failure.")
+    @skip_if_sanitizer(memory=True, address=True, reason= "sanitizer defaults to crashing "
+                       "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedRandomTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -3978,6 +3974,9 @@ class MiscIOTest(unittest.TestCase):
                 self.open(os_helper.TESTFN, mode)
             self.assertIn('invalid mode', str(cm.exception))
 
+    @unittest.skipIf(
+        support.is_emscripten, "fstat() of a pipe fd is not supported"
+    )
     def test_open_pipe_with_append(self):
         # bpo-27805: Ignore ESPIPE from lseek() in open().
         r, w = os.pipe()
@@ -4141,9 +4140,15 @@ class MiscIOTest(unittest.TestCase):
                 with self.open(os_helper.TESTFN, **kwargs) as f:
                     self.assertRaises(TypeError, pickle.dumps, f, protocol)
 
+    @unittest.skipIf(
+        support.is_emscripten, "fstat() of a pipe fd is not supported"
+    )
     def test_nonblock_pipe_write_bigbuf(self):
         self._test_nonblock_pipe_write(16*1024)
 
+    @unittest.skipIf(
+        support.is_emscripten, "fstat() of a pipe fd is not supported"
+    )
     def test_nonblock_pipe_write_smallbuf(self):
         self._test_nonblock_pipe_write(1024)
 
@@ -4446,12 +4451,15 @@ class SignalsTest(unittest.TestCase):
                 if e.errno != errno.EBADF:
                     raise
 
+    @requires_alarm
     def test_interrupted_write_unbuffered(self):
         self.check_interrupted_write(b"xy", b"xy", mode="wb", buffering=0)
 
+    @requires_alarm
     def test_interrupted_write_buffered(self):
         self.check_interrupted_write(b"xy", b"xy", mode="wb")
 
+    @requires_alarm
     def test_interrupted_write_text(self):
         self.check_interrupted_write("xy", b"xy", mode="w", encoding="ascii")
 
@@ -4483,9 +4491,11 @@ class SignalsTest(unittest.TestCase):
             wio.close()
             os.close(r)
 
+    @requires_alarm
     def test_reentrant_write_buffered(self):
         self.check_reentrant_write(b"xy", mode="wb")
 
+    @requires_alarm
     def test_reentrant_write_text(self):
         self.check_reentrant_write("xy", mode="w", encoding="ascii")
 
@@ -4513,10 +4523,12 @@ class SignalsTest(unittest.TestCase):
             os.close(w)
             os.close(r)
 
+    @requires_alarm
     def test_interrupted_read_retry_buffered(self):
         self.check_interrupted_read_retry(lambda x: x.decode('latin1'),
                                           mode="rb")
 
+    @requires_alarm
     def test_interrupted_read_retry_text(self):
         self.check_interrupted_read_retry(lambda x: x,
                                           mode="r", encoding="latin1")
@@ -4589,9 +4601,11 @@ class SignalsTest(unittest.TestCase):
                 if e.errno != errno.EBADF:
                     raise
 
+    @requires_alarm
     def test_interrupted_write_retry_buffered(self):
         self.check_interrupted_write_retry(b"x", mode="wb")
 
+    @requires_alarm
     def test_interrupted_write_retry_text(self):
         self.check_interrupted_write_retry("x", mode="w", encoding="latin1")
 

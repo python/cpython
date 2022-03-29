@@ -17,10 +17,15 @@ from sre_constants import *
 assert _sre.MAGIC == MAGIC, "SRE module mismatch"
 
 _LITERAL_CODES = {LITERAL, NOT_LITERAL}
-_REPEATING_CODES = {REPEAT, MIN_REPEAT, MAX_REPEAT}
 _SUCCESS_CODES = {SUCCESS, FAILURE}
 _ASSERT_CODES = {ASSERT, ASSERT_NOT}
 _UNIT_CODES = _LITERAL_CODES | {ANY, IN}
+
+_REPEATING_CODES = {
+    MIN_REPEAT: (REPEAT, MIN_UNTIL, MIN_REPEAT_ONE),
+    MAX_REPEAT: (REPEAT, MAX_UNTIL, REPEAT_ONE),
+    POSSESSIVE_REPEAT: (POSSESSIVE_REPEAT, SUCCESS, POSSESSIVE_REPEAT_ONE),
+}
 
 # Sets of lowercase characters which have the same uppercase.
 _equivalences = (
@@ -138,10 +143,7 @@ def _compile(code, pattern, flags):
             if flags & SRE_FLAG_TEMPLATE:
                 raise error("internal: unsupported template operator %r" % (op,))
             if _simple(av[2]):
-                if op is MAX_REPEAT:
-                    emit(REPEAT_ONE)
-                else:
-                    emit(MIN_REPEAT_ONE)
+                emit(REPEATING_CODES[op][2])
                 skip = _len(code); emit(0)
                 emit(av[0])
                 emit(av[1])
@@ -149,16 +151,13 @@ def _compile(code, pattern, flags):
                 emit(SUCCESS)
                 code[skip] = _len(code) - skip
             else:
-                emit(REPEAT)
+                emit(REPEATING_CODES[op][0])
                 skip = _len(code); emit(0)
                 emit(av[0])
                 emit(av[1])
                 _compile(code, av[2], flags)
                 code[skip] = _len(code) - skip
-                if op is MAX_REPEAT:
-                    emit(MAX_UNTIL)
-                else:
-                    emit(MIN_UNTIL)
+                emit(REPEATING_CODES[op][1])
         elif op is SUBPATTERN:
             group, add_flags, del_flags, p = av
             if group:
@@ -169,6 +168,17 @@ def _compile(code, pattern, flags):
             if group:
                 emit(MARK)
                 emit((group-1)*2+1)
+        elif op is ATOMIC_GROUP:
+            # Atomic Groups are handled by starting with an Atomic
+            # Group op code, then putting in the atomic group pattern
+            # and finally a success op code to tell any repeat
+            # operations within the Atomic Group to stop eating and
+            # pop their stack if they reach it
+            emit(ATOMIC_GROUP)
+            skip = _len(code); emit(0)
+            _compile(code, av, flags)
+            emit(SUCCESS)
+            code[skip] = _len(code) - skip
         elif op in SUCCESS_CODES:
             emit(op)
         elif op in ASSERT_CODES:
@@ -709,7 +719,8 @@ def dis(code):
                     else:
                         print_(FAILURE)
                 i += 1
-            elif op in (REPEAT, REPEAT_ONE, MIN_REPEAT_ONE):
+            elif op in (REPEAT, REPEAT_ONE, MIN_REPEAT_ONE,
+                        POSSESSIVE_REPEAT, POSSESSIVE_REPEAT_ONE):
                 skip, min, max = code[i: i+3]
                 if max == MAXREPEAT:
                     max = 'MAXREPEAT'
@@ -724,6 +735,11 @@ def dis(code):
                 skip, arg = code[i: i+2]
                 print_(op, skip, arg, to=i+skip)
                 dis_(i+2, i+skip)
+                i += skip
+            elif op is ATOMIC_GROUP:
+                skip = code[i]
+                print_(op, skip, to=i+skip)
+                dis_(i+1, i+skip)
                 i += skip
             elif op is INFO:
                 skip, flags, min, max = code[i: i+4]

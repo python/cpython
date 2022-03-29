@@ -9,6 +9,7 @@
 #include "pycore_object.h"        // _PyObject_InitVar()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
+#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
 
 #include <ctype.h>
 #include <float.h>
@@ -20,9 +21,6 @@
 class int "PyObject *" "&PyLong_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec0275e3422a36e3]*/
-
-_Py_IDENTIFIER(little);
-_Py_IDENTIFIER(big);
 
 /* Is this PyLong of size 1, 0 or -1? */
 #define IS_MEDIUM_VALUE(x) (((size_t)Py_SIZE(x)) + 1U < 3U)
@@ -274,44 +272,40 @@ _PyLong_Negate(PyLongObject **x_p)
 }
 
 /* Create a new int object from a C long int */
+
 PyObject *
 PyLong_FromLong(long ival)
 {
+    PyLongObject *v;
+    unsigned long abs_ival, t;
+    int ndigits;
+
+    /* Handle small and medium cases. */
     if (IS_SMALL_INT(ival)) {
         return get_small_int((sdigit)ival);
     }
-    unsigned long abs_ival;
-    int sign;
-    if (ival < 0) {
-        /* negate: can't write this as abs_ival = -ival since that
-           invokes undefined behaviour when ival is LONG_MIN */
-        abs_ival = 0U-(twodigits)ival;
-        sign = -1;
-    }
-    else {
-        abs_ival = (unsigned long)ival;
-        sign = 1;
-    }
-    /* Fast path for single-digit ints */
-    if (!(abs_ival >> PyLong_SHIFT)) {
+    if (-(long)PyLong_MASK <= ival && ival <= (long)PyLong_MASK) {
         return _PyLong_FromMedium((sdigit)ival);
     }
-    /* Must be at least two digits.
-     * Do shift in two steps to avoid undefined behavior. */
-    unsigned long t = (abs_ival >> PyLong_SHIFT) >> PyLong_SHIFT;
-    Py_ssize_t ndigits = 2;
+
+    /* Count digits (at least two - smaller cases were handled above). */
+    abs_ival = ival < 0 ? 0U-(unsigned long)ival : (unsigned long)ival;
+    /* Do shift in two steps to avoid possible undefined behavior. */
+    t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT;
+    ndigits = 2;
     while (t) {
         ++ndigits;
         t >>= PyLong_SHIFT;
     }
-    PyLongObject *v = _PyLong_New(ndigits);
+
+    /* Construct output value. */
+    v = _PyLong_New(ndigits);
     if (v != NULL) {
         digit *p = v->ob_digit;
-        Py_SET_SIZE(v, ndigits * sign);
+        Py_SET_SIZE(v, ival < 0 ? -ndigits : ndigits);
         t = abs_ival;
         while (t) {
-            *p++ = Py_SAFE_DOWNCAST(
-                t & PyLong_MASK, unsigned long, digit);
+            *p++ = (digit)(t & PyLong_MASK);
             t >>= PyLong_SHIFT;
         }
     }
@@ -911,7 +905,7 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
     }
 
     Py_SET_SIZE(v, is_signed ? -idigit : idigit);
-    return (PyObject *)long_normalize(v);
+    return (PyObject *)maybe_small_long(long_normalize(v));
 }
 
 int
@@ -1107,38 +1101,32 @@ PyObject *
 PyLong_FromLongLong(long long ival)
 {
     PyLongObject *v;
-    unsigned long long abs_ival;
-    unsigned long long t;  /* unsigned so >> doesn't propagate sign bit */
-    int ndigits = 0;
-    int negative = 0;
+    unsigned long long abs_ival, t;
+    int ndigits;
 
+    /* Handle small and medium cases. */
     if (IS_SMALL_INT(ival)) {
         return get_small_int((sdigit)ival);
     }
-
-    if (ival < 0) {
-        /* avoid signed overflow on negation;  see comments
-           in PyLong_FromLong above. */
-        abs_ival = (unsigned long long)(-1-ival) + 1;
-        negative = 1;
-    }
-    else {
-        abs_ival = (unsigned long long)ival;
+    if (-(long long)PyLong_MASK <= ival && ival <= (long long)PyLong_MASK) {
+        return _PyLong_FromMedium((sdigit)ival);
     }
 
-    /* Count the number of Python digits.
-       We used to pick 5 ("big enough for anything"), but that's a
-       waste of time and space given that 5*15 = 75 bits are rarely
-       needed. */
-    t = abs_ival;
+    /* Count digits (at least two - smaller cases were handled above). */
+    abs_ival = ival < 0 ? 0U-(unsigned long long)ival : (unsigned long long)ival;
+    /* Do shift in two steps to avoid possible undefined behavior. */
+    t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT;
+    ndigits = 2;
     while (t) {
         ++ndigits;
         t >>= PyLong_SHIFT;
     }
+
+    /* Construct output value. */
     v = _PyLong_New(ndigits);
     if (v != NULL) {
         digit *p = v->ob_digit;
-        Py_SET_SIZE(v, negative ? -ndigits : ndigits);
+        Py_SET_SIZE(v, ival < 0 ? -ndigits : ndigits);
         t = abs_ival;
         while (t) {
             *p++ = (digit)(t & PyLong_MASK);
@@ -1616,24 +1604,40 @@ v_rshift(digit *z, digit *a, Py_ssize_t m, int d)
    in pout, and returning the remainder.  pin and pout point at the LSD.
    It's OK for pin == pout on entry, which saves oodles of mallocs/frees in
    _PyLong_Format, but that should be done with great care since ints are
-   immutable. */
+   immutable.
 
+   This version of the code can be 20% faster than the pre-2022 version
+   on todays compilers on architectures like amd64.  It evolved from Mark
+   Dickinson observing that a 128:64 divide instruction was always being
+   generated by the compiler despite us working with 30-bit digit values.
+   See the thread for full context:
+
+     https://mail.python.org/archives/list/python-dev@python.org/thread/ZICIMX5VFCX4IOFH5NUPVHCUJCQ4Q7QM/#NEUNFZU3TQU4CPTYZNF3WCN7DOJBBTK5
+
+   If you ever want to change this code, pay attention to performance using
+   different compilers, optimization levels, and cpu architectures. Beware of
+   PGO/FDO builds doing value specialization such as a fast path for //10. :)
+
+   Verify that 17 isn't specialized and this works as a quick test:
+     python -m timeit -s 'x = 10**1000; r=x//10; assert r == 10**999, r' 'x//17'
+*/
 static digit
 inplace_divrem1(digit *pout, digit *pin, Py_ssize_t size, digit n)
 {
-    twodigits rem = 0;
+    digit remainder = 0;
 
     assert(n > 0 && n <= PyLong_MASK);
-    pin += size;
-    pout += size;
     while (--size >= 0) {
-        digit hi;
-        rem = (rem << PyLong_SHIFT) | *--pin;
-        *--pout = hi = (digit)(rem / n);
-        rem -= (twodigits)hi * n;
+        twodigits dividend;
+        dividend = ((twodigits)remainder << PyLong_SHIFT) | pin[size];
+        digit quotient;
+        quotient = (digit)(dividend / n);
+        remainder = dividend % n;
+        pout[size] = quotient;
     }
-    return (digit)rem;
+    return remainder;
 }
+
 
 /* Divide an integer by a digit, returning both the quotient
    (as function result) and the remainder (through *prem).
@@ -1651,6 +1655,35 @@ divrem1(PyLongObject *a, digit n, digit *prem)
         return NULL;
     *prem = inplace_divrem1(z->ob_digit, a->ob_digit, size, n);
     return long_normalize(z);
+}
+
+/* Remainder of long pin, w/ size digits, by non-zero digit n,
+   returning the remainder. pin points at the LSD. */
+
+static digit
+inplace_rem1(digit *pin, Py_ssize_t size, digit n)
+{
+    twodigits rem = 0;
+
+    assert(n > 0 && n <= PyLong_MASK);
+    while (--size >= 0)
+        rem = ((rem << PyLong_SHIFT) | pin[size]) % n;
+    return (digit)rem;
+}
+
+/* Get the remainder of an integer divided by a digit, returning
+   the remainder as the result of the function. The sign of a is
+   ignored; n should not be zero. */
+
+static PyLongObject *
+rem1(PyLongObject *a, digit n)
+{
+    const Py_ssize_t size = Py_ABS(Py_SIZE(a));
+
+    assert(n > 0 && n <= PyLong_MASK);
+    return (PyLongObject *)PyLong_FromLong(
+        (long)inplace_rem1(a->ob_digit, size, n)
+    );
 }
 
 /* Convert an integer to a base 10 string.  Returns a new non-shared
@@ -2672,6 +2705,47 @@ long_divrem(PyLongObject *a, PyLongObject *b,
     return 0;
 }
 
+/* Int remainder, top-level routine */
+
+static int
+long_rem(PyLongObject *a, PyLongObject *b, PyLongObject **prem)
+{
+    Py_ssize_t size_a = Py_ABS(Py_SIZE(a)), size_b = Py_ABS(Py_SIZE(b));
+
+    if (size_b == 0) {
+        PyErr_SetString(PyExc_ZeroDivisionError,
+                        "integer modulo by zero");
+        return -1;
+    }
+    if (size_a < size_b ||
+        (size_a == size_b &&
+         a->ob_digit[size_a-1] < b->ob_digit[size_b-1])) {
+        /* |a| < |b|. */
+        *prem = (PyLongObject *)long_long((PyObject *)a);
+        return -(*prem == NULL);
+    }
+    if (size_b == 1) {
+        *prem = rem1(a, b->ob_digit[0]);
+        if (*prem == NULL)
+            return -1;
+    }
+    else {
+        /* Slow path using divrem. */
+        Py_XDECREF(x_divrem(a, b, prem));
+        if (*prem == NULL)
+            return -1;
+    }
+    /* Set the sign. */
+    if (Py_SIZE(a) < 0 && Py_SIZE(*prem) != 0) {
+        _PyLong_Negate(prem);
+        if (*prem == NULL) {
+            Py_CLEAR(*prem);
+            return -1;
+        }
+    }
+    return 0;
+}
+
 /* Unsigned int division with remainder -- the algorithm.  The arguments v1
    and w1 should satisfy 2 <= Py_ABS(Py_SIZE(w1)) <= Py_ABS(Py_SIZE(v1)). */
 
@@ -2750,8 +2824,15 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
         vtop = vk[size_w];
         assert(vtop <= wm1);
         vv = ((twodigits)vtop << PyLong_SHIFT) | vk[size_w-1];
+        /* The code used to compute the remainder via
+         *     r = (digit)(vv - (twodigits)wm1 * q);
+         * and compilers generally generated code to do the * and -.
+         * But modern processors generally compute q and r with a single
+         * instruction, and modern optimizing compilers exploit that if we
+         * _don't_ try to optimize it.
+         */
         q = (digit)(vv / wm1);
-        r = (digit)(vv - (twodigits)wm1 * q); /* r = vv % wm1 */
+        r = (digit)(vv % wm1);
         while ((twodigits)wm2 * q > (((twodigits)r << PyLong_SHIFT)
                                      | vk[size_w-2])) {
             --q;
@@ -3790,6 +3871,37 @@ l_divmod(PyLongObject *v, PyLongObject *w,
     return 0;
 }
 
+/* Compute
+ *     *pmod = v % w
+ * pmod cannot be NULL. The caller owns a reference to pmod.
+ */
+static int
+l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
+{
+    PyLongObject *mod;
+
+    assert(pmod);
+    if (Py_ABS(Py_SIZE(v)) == 1 && Py_ABS(Py_SIZE(w)) == 1) {
+        /* Fast path for single-digit longs */
+        *pmod = (PyLongObject *)fast_mod(v, w);
+        return -(*pmod == NULL);
+    }
+    if (long_rem(v, w, &mod) < 0)
+        return -1;
+    if ((Py_SIZE(mod) < 0 && Py_SIZE(w) > 0) ||
+        (Py_SIZE(mod) > 0 && Py_SIZE(w) < 0)) {
+        PyLongObject *temp;
+        temp = (PyLongObject *) long_add(mod, w);
+        Py_DECREF(mod);
+        mod = temp;
+        if (mod == NULL)
+            return -1;
+    }
+    *pmod = mod;
+
+    return 0;
+}
+
 static PyObject *
 long_div(PyObject *a, PyObject *b)
 {
@@ -4076,11 +4188,7 @@ long_mod(PyObject *a, PyObject *b)
 
     CHECK_BINOP(a, b);
 
-    if (Py_ABS(Py_SIZE(a)) == 1 && Py_ABS(Py_SIZE(b)) == 1) {
-        return fast_mod((PyLongObject*)a, (PyLongObject*)b);
-    }
-
-    if (l_divmod((PyLongObject*)a, (PyLongObject*)b, NULL, &mod) < 0)
+    if (l_mod((PyLongObject*)a, (PyLongObject*)b, &mod) < 0)
         mod = NULL;
     return (PyObject *)mod;
 }
@@ -4215,8 +4323,13 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     /* k-ary values.  If the exponent is large enough, table is
      * precomputed so that table[i] == a**(2*i+1) % c for i in
      * range(EXP_TABLE_LEN).
+     * Note: this is uninitialzed stack trash: don't pay to set it to known
+     * values unless it's needed. Instead ensure that num_table_entries is
+     * set to the number of entries actually filled whenever a branch to the
+     * Error or Done labels is possible.
      */
-    PyLongObject *table[EXP_TABLE_LEN] = {0};
+    PyLongObject *table[EXP_TABLE_LEN];
+    Py_ssize_t num_table_entries = 0;
 
     /* a, b, c = v, w, x */
     CHECK_BINOP(v, w);
@@ -4304,10 +4417,10 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
               while the "large exponent" case multiplies directly by base 31
               times.  It can be unboundedly faster to multiply by
               base % modulus instead.
-           We could _always_ do this reduction, but l_divmod() isn't cheap,
+           We could _always_ do this reduction, but l_mod() isn't cheap,
            so we only do it when it buys something. */
         if (Py_SIZE(a) < 0 || Py_SIZE(a) > Py_SIZE(c)) {
-            if (l_divmod(a, c, NULL, &temp) < 0)
+            if (l_mod(a, c, &temp) < 0)
                 goto Error;
             Py_DECREF(a);
             a = temp;
@@ -4328,7 +4441,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 #define REDUCE(X)                                       \
     do {                                                \
         if (c != NULL) {                                \
-            if (l_divmod(X, c, NULL, &temp) < 0)        \
+            if (l_mod(X, c, &temp) < 0)                 \
                 goto Error;                             \
             Py_XDECREF(X);                              \
             X = temp;                                   \
@@ -4408,10 +4521,14 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
          */
         Py_INCREF(a);
         table[0] = a;
+        num_table_entries = 1;
         MULT(a, a, a2);
         /* table[i] == a**(2*i + 1) % c */
-        for (i = 1; i < EXP_TABLE_LEN; ++i)
+        for (i = 1; i < EXP_TABLE_LEN; ++i) {
+            table[i] = NULL; /* must set to known value for MULT */
             MULT(table[i-1], a2, table[i]);
+            ++num_table_entries; /* incremented iff MULT succeeded */
+        }
         Py_CLEAR(a2);
 
         /* Repeatedly extract the next (no more than) EXP_WINDOW_SIZE bits
@@ -4472,10 +4589,8 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     Py_CLEAR(z);
     /* fall through */
   Done:
-    if (Py_SIZE(b) > HUGE_EXP_CUTOFF / PyLong_SHIFT) {
-        for (i = 0; i < EXP_TABLE_LEN; ++i)
-            Py_XDECREF(table[i]);
-    }
+    for (i = 0; i < num_table_entries; ++i)
+        Py_DECREF(table[i]);
     Py_DECREF(a);
     Py_DECREF(b);
     Py_XDECREF(c);
@@ -4991,7 +5106,7 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
 
         if (k == 0) {
             /* no progress; do a Euclidean step */
-            if (l_divmod(a, b, NULL, &r) < 0)
+            if (l_mod(a, b, &r) < 0)
                 goto error;
             Py_DECREF(a);
             a = b;
@@ -5647,9 +5762,9 @@ int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
 
     if (byteorder == NULL)
         little_endian = 0;
-    else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_little))
+    else if (_PyUnicode_Equal(byteorder, &_Py_ID(little)))
         little_endian = 1;
-    else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_big))
+    else if (_PyUnicode_Equal(byteorder, &_Py_ID(big)))
         little_endian = 0;
     else {
         PyErr_SetString(PyExc_ValueError,
@@ -5709,9 +5824,9 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
 
     if (byteorder == NULL)
         little_endian = 0;
-    else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_little))
+    else if (_PyUnicode_Equal(byteorder, &_Py_ID(little)))
         little_endian = 1;
-    else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_big))
+    else if (_PyUnicode_Equal(byteorder, &_Py_ID(big)))
         little_endian = 0;
     else {
         PyErr_SetString(PyExc_ValueError,
@@ -5941,4 +6056,15 @@ _PyLong_InitTypes(PyInterpreterState *interp)
     }
 
     return _PyStatus_OK();
+}
+
+
+void
+_PyLong_FiniTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    _PyStructSequence_FiniType(&Int_InfoType);
 }

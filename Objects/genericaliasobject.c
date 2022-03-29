@@ -5,13 +5,23 @@
 #include "pycore_unionobject.h"   // _Py_union_type_or, _PyGenericAlias_Check
 #include "structmember.h"         // PyMemberDef
 
+#include <stdbool.h>
+
 typedef struct {
     PyObject_HEAD
     PyObject *origin;
     PyObject *args;
     PyObject *parameters;
-    PyObject* weakreflist;
+    PyObject *weakreflist;
+    // Whether we're a starred type, e.g. *tuple[int].
+    bool starred;
+    vectorcallfunc vectorcall;
 } gaobject;
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *obj;  /* Set to NULL when iterator is exhausted */
+} gaiterobject;
 
 static void
 ga_dealloc(PyObject *self)
@@ -41,10 +51,6 @@ ga_traverse(PyObject *self, visitproc visit, void *arg)
 static int
 ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
 {
-    _Py_IDENTIFIER(__module__);
-    _Py_IDENTIFIER(__qualname__);
-    _Py_IDENTIFIER(__origin__);
-    _Py_IDENTIFIER(__args__);
     PyObject *qualname = NULL;
     PyObject *module = NULL;
     PyObject *r = NULL;
@@ -57,12 +63,12 @@ ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         goto done;
     }
 
-    if (_PyObject_LookupAttrId(p, &PyId___origin__, &tmp) < 0) {
+    if (_PyObject_LookupAttr(p, &_Py_ID(__origin__), &tmp) < 0) {
         goto done;
     }
     if (tmp != NULL) {
         Py_DECREF(tmp);
-        if (_PyObject_LookupAttrId(p, &PyId___args__, &tmp) < 0) {
+        if (_PyObject_LookupAttr(p, &_Py_ID(__args__), &tmp) < 0) {
             goto done;
         }
         if (tmp != NULL) {
@@ -72,13 +78,13 @@ ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         }
     }
 
-    if (_PyObject_LookupAttrId(p, &PyId___qualname__, &qualname) < 0) {
+    if (_PyObject_LookupAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
         goto done;
     }
     if (qualname == NULL) {
         goto use_repr;
     }
-    if (_PyObject_LookupAttrId(p, &PyId___module__, &module) < 0) {
+    if (_PyObject_LookupAttr(p, &_Py_ID(__module__), &module) < 0) {
         goto done;
     }
     if (module == NULL || module == Py_None) {
@@ -124,6 +130,11 @@ ga_repr(PyObject *self)
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
 
+    if (alias->starred) {
+        if (_PyUnicodeWriter_WriteASCIIString(&writer, "*", 1) < 0) {
+            goto error;
+        }
+    }
     if (ga_repr_item(&writer, alias->origin) < 0) {
         goto error;
     }
@@ -154,25 +165,6 @@ ga_repr(PyObject *self)
 error:
     _PyUnicodeWriter_Dealloc(&writer);
     return NULL;
-}
-
-// isinstance(obj, TypeVar) without importing typing.py.
-// Returns -1 for errors.
-static int
-is_typevar(PyObject *obj)
-{
-    PyTypeObject *type = Py_TYPE(obj);
-    if (strcmp(type->tp_name, "TypeVar") != 0) {
-        return 0;
-    }
-    PyObject *module = PyObject_GetAttrString((PyObject *)type, "__module__");
-    if (module == NULL) {
-        return -1;
-    }
-    int res = PyUnicode_Check(module)
-        && _PyUnicode_EqualToASCIIString(module, "typing");
-    Py_DECREF(module);
-    return res;
 }
 
 // Index of item in self[:len], or -1 if not found (self is a tuple)
@@ -209,18 +201,19 @@ _Py_make_parameters(PyObject *args)
     Py_ssize_t iparam = 0;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
-        int typevar = is_typevar(t);
-        if (typevar < 0) {
+        PyObject *subst;
+        if (_PyObject_LookupAttr(t, &_Py_ID(__typing_subst__), &subst) < 0) {
             Py_DECREF(parameters);
             return NULL;
         }
-        if (typevar) {
+        if (subst) {
             iparam += tuple_add(parameters, iparam, t);
+            Py_DECREF(subst);
         }
         else {
-            _Py_IDENTIFIER(__parameters__);
             PyObject *subparams;
-            if (_PyObject_LookupAttrId(t, &PyId___parameters__, &subparams) < 0) {
+            if (_PyObject_LookupAttr(t, &_Py_ID(__parameters__),
+                                     &subparams) < 0) {
                 Py_DECREF(parameters);
                 return NULL;
             }
@@ -260,9 +253,8 @@ _Py_make_parameters(PyObject *args)
 static PyObject *
 subs_tvars(PyObject *obj, PyObject *params, PyObject **argitems)
 {
-    _Py_IDENTIFIER(__parameters__);
     PyObject *subparams;
-    if (_PyObject_LookupAttrId(obj, &PyId___parameters__, &subparams) < 0) {
+    if (_PyObject_LookupAttr(obj, &_Py_ID(__parameters__), &subparams) < 0) {
         return NULL;
     }
     if (subparams && PyTuple_Check(subparams) && PyTuple_GET_SIZE(subparams)) {
@@ -300,7 +292,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     Py_ssize_t nparams = PyTuple_GET_SIZE(parameters);
     if (nparams == 0) {
         return PyErr_Format(PyExc_TypeError,
-                            "There are no type variables left in %R",
+                            "%R is not a generic class",
                             self);
     }
     int is_tuple = PyTuple_Check(item);
@@ -325,23 +317,23 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     }
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(args, iarg);
-        int typevar = is_typevar(arg);
-        if (typevar < 0) {
+        PyObject *subst;
+        if (_PyObject_LookupAttr(arg, &_Py_ID(__typing_subst__), &subst) < 0) {
             Py_DECREF(newargs);
             return NULL;
         }
-        if (typevar) {
+        if (subst) {
             Py_ssize_t iparam = tuple_index(parameters, nparams, arg);
             assert(iparam >= 0);
-            arg = argitems[iparam];
-            Py_INCREF(arg);
+            arg = PyObject_CallOneArg(subst, argitems[iparam]);
+            Py_DECREF(subst);
         }
         else {
             arg = subs_tvars(arg, parameters, argitems);
-            if (arg == NULL) {
-                Py_DECREF(newargs);
-                return NULL;
-            }
+        }
+        if (arg == NULL) {
+            Py_DECREF(newargs);
+            return NULL;
         }
         PyTuple_SET_ITEM(newargs, iarg, arg);
     }
@@ -392,13 +384,11 @@ ga_hash(PyObject *self)
     return h0 ^ h1;
 }
 
-static PyObject *
-ga_call(PyObject *self, PyObject *args, PyObject *kwds)
+static inline PyObject *
+set_orig_class(PyObject *obj, PyObject *self)
 {
-    gaobject *alias = (gaobject *)self;
-    PyObject *obj = PyObject_Call(alias->origin, args, kwds);
     if (obj != NULL) {
-        if (PyObject_SetAttrString(obj, "__orig_class__", self) < 0) {
+        if (PyObject_SetAttr(obj, &_Py_ID(__orig_class__), self) < 0) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError) &&
                 !PyErr_ExceptionMatches(PyExc_TypeError))
             {
@@ -409,6 +399,23 @@ ga_call(PyObject *self, PyObject *args, PyObject *kwds)
         }
     }
     return obj;
+}
+
+static PyObject *
+ga_call(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    gaobject *alias = (gaobject *)self;
+    PyObject *obj = PyObject_Call(alias->origin, args, kwds);
+    return set_orig_class(obj, self);
+}
+
+static PyObject *
+ga_vectorcall(PyObject *self, PyObject *const *args,
+              size_t nargsf, PyObject *kwnames)
+{
+    gaobject *alias = (gaobject *) self;
+    PyObject *obj = PyVectorcall_Function(alias->origin)(alias->origin, args, nargsf, kwnames);
+    return set_orig_class(obj, self);
 }
 
 static const char* const attr_exceptions[] = {
@@ -597,6 +604,14 @@ setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
     alias->args = args;
     alias->parameters = NULL;
     alias->weakreflist = NULL;
+
+    if (PyVectorcall_Function(origin) != NULL) {
+        alias->vectorcall = ga_vectorcall;
+    }
+    else {
+        alias->vectorcall = NULL;
+    }
+
     return 1;
 }
 
@@ -626,6 +641,66 @@ static PyNumberMethods ga_as_number = {
         .nb_or = _Py_union_type_or, // Add __or__ function
 };
 
+static PyObject *
+ga_iternext(gaiterobject *gi) {
+    if (gi->obj == NULL) {
+        PyErr_SetNone(PyExc_StopIteration);
+        return NULL;
+    }
+    gaobject *alias = (gaobject *)gi->obj;
+    PyObject *starred_alias = Py_GenericAlias(alias->origin, alias->args);
+    if (starred_alias == NULL) {
+        return NULL;
+    }
+    ((gaobject *)starred_alias)->starred = true;
+    Py_SETREF(gi->obj, NULL);
+    return starred_alias;
+}
+
+static void
+ga_iter_dealloc(gaiterobject *gi) {
+    PyObject_GC_UnTrack(gi);
+    Py_XDECREF(gi->obj);
+    PyObject_GC_Del(gi);
+}
+
+static int
+ga_iter_traverse(gaiterobject *gi, visitproc visit, void *arg)
+{
+    Py_VISIT(gi->obj);
+    return 0;
+}
+
+static int
+ga_iter_clear(PyObject *self) {
+    gaiterobject *gi = (gaiterobject *)self;
+    Py_CLEAR(gi->obj);
+    return 0;
+}
+
+static PyTypeObject Py_GenericAliasIterType = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "generic_alias_iterator",
+    .tp_basicsize = sizeof(gaiterobject),
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)ga_iternext,
+    .tp_traverse = (traverseproc)ga_iter_traverse,
+    .tp_dealloc = (destructor)ga_iter_dealloc,
+    .tp_clear = (inquiry)ga_iter_clear,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+};
+
+static PyObject *
+ga_iter(PyObject *self) {
+    gaiterobject *gi = PyObject_GC_New(gaiterobject, &Py_GenericAliasIterType);
+    if (gi == NULL) {
+        return NULL;
+    }
+    gi->obj = Py_NewRef(self);
+    PyObject_GC_Track(gi);
+    return (PyObject *)gi;
+}
+
 // TODO:
 // - argument clinic?
 // - __doc__?
@@ -644,7 +719,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_hash = ga_hash,
     .tp_call = ga_call,
     .tp_getattro = ga_getattro,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_VECTORCALL,
     .tp_traverse = ga_traverse,
     .tp_richcompare = ga_richcompare,
     .tp_weaklistoffset = offsetof(gaobject, weakreflist),
@@ -654,6 +729,8 @@ PyTypeObject Py_GenericAliasType = {
     .tp_new = ga_new,
     .tp_free = PyObject_GC_Del,
     .tp_getset = ga_properties,
+    .tp_iter = (getiterfunc)ga_iter,
+    .tp_vectorcall_offset = offsetof(gaobject, vectorcall),
 };
 
 PyObject *
