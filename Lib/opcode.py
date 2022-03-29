@@ -259,6 +259,9 @@ _specializations = {
         "COMPARE_OP_INT_JUMP",
         "COMPARE_OP_STR_JUMP",
     ],
+    "JUMP_BACKWARD": [
+        "JUMP_BACKWARD_QUICK",
+    ],
     "LOAD_ATTR": [
         "LOAD_ATTR_ADAPTIVE",
         "LOAD_ATTR_INSTANCE_VALUE",
