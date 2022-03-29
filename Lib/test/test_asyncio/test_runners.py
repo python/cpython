@@ -201,7 +201,7 @@ class RunnerTests(BaseTest):
 
     def test_custom_factory(self):
         loop = mock.Mock()
-        with asyncio.Runner(factory=lambda: loop) as runner:
+        with asyncio.Runner(loop_factory=lambda: loop) as runner:
             self.assertIs(runner.get_loop(), loop)
 
     def test_run(self):
@@ -296,7 +296,7 @@ class RunnerTests(BaseTest):
             self.assertEqual(-1, runner.run(f(1)))
             self.assertEqual(1, runner.run(f(2)))
 
-            self.assertEqual({cvar: 2}, dict(runner.run(get_context())))
+            self.assertEqual(2, runner.run(get_context()).get(cvar))
 
     def test_recursine_run(self):
         async def g():

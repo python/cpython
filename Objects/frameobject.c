@@ -841,6 +841,7 @@ _PyFrame_New_NoTrack(PyCodeObject *code)
     f->f_trace = NULL;
     f->f_trace_lines = 1;
     f->f_trace_opcodes = 0;
+    f->f_fast_as_locals = 0;
     f->f_lineno = 0;
     return f;
 }
@@ -1006,7 +1007,11 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
         PyErr_BadInternalCall();
         return -1;
     }
-    return _PyFrame_FastToLocalsWithError(f->f_frame);
+    int err = _PyFrame_FastToLocalsWithError(f->f_frame);
+    if (err == 0) {
+        f->f_fast_as_locals = 1;
+    }
+    return err;
 }
 
 void
@@ -1030,8 +1035,9 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
     PyObject *error_type, *error_value, *error_traceback;
     PyCodeObject *co;
     locals = frame->f_locals;
-    if (locals == NULL)
+    if (locals == NULL) {
         return;
+    }
     fast = _PyFrame_GetLocalsArray(frame);
     co = frame->f_code;
 
@@ -1090,12 +1096,11 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
 void
 PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 {
-    if (f == NULL || _PyFrame_GetState(f) == FRAME_CLEARED) {
-        return;
+    if (f && f->f_fast_as_locals && _PyFrame_GetState(f) != FRAME_CLEARED) {
+        _PyFrame_LocalsToFast(f->f_frame, clear);
+        f->f_fast_as_locals = 0;
     }
-    _PyFrame_LocalsToFast(f->f_frame, clear);
 }
-
 
 PyCodeObject *
 PyFrame_GetCode(PyFrameObject *frame)
@@ -1118,6 +1123,12 @@ PyFrame_GetBack(PyFrameObject *frame)
     }
     Py_XINCREF(back);
     return back;
+}
+
+PyObject*
+PyFrame_GetLocals(PyFrameObject *frame)
+{
+    return frame_getlocals(frame, NULL);
 }
 
 PyObject*

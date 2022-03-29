@@ -1446,6 +1446,10 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
             _Py_SET_OPCODE(*instr, PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST);
             return 0;
         }
+        case METH_FASTCALL|METH_KEYWORDS: {
+            _Py_SET_OPCODE(*instr, PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS);
+            return 0;
+        }
     }
     SPECIALIZATION_FAIL(PRECALL, builtin_call_fail_kind(descr->d_method->ml_flags));
     return -1;
@@ -1742,7 +1746,7 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 
 void
 _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                        int oparg)
+                        int oparg, PyObject **locals)
 {
     assert(_PyOpcode_Caches[BINARY_OP] == INLINE_CACHE_ENTRIES_BINARY_OP);
     _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
@@ -1754,7 +1758,9 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
             }
             if (PyUnicode_CheckExact(lhs)) {
                 _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_BINARY_OP + 1];
-                if (_Py_OPCODE(next) == STORE_FAST && Py_REFCNT(lhs) == 2) {
+                bool to_store = (_Py_OPCODE(next) == STORE_FAST ||
+                                 _Py_OPCODE(next) == STORE_FAST__LOAD_FAST);
+                if (to_store && locals[_Py_OPARG(next)] == lhs) {
                     _Py_SET_OPCODE(*instr, BINARY_OP_INPLACE_ADD_UNICODE);
                     goto success;
                 }
