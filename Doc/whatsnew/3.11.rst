@@ -693,6 +693,11 @@ Changes in the Python API
   deprecated since Python 3.6.
   (Contributed by Serhiy Storchaka in :issue:`47066`.)
 
+* :mod:`re` module: Fix a few long-standing bugs where, in rare cases,
+  capturing group could get wrong result. So the result may be different than
+  before.
+  (Contributed by Ma Lin in :issue:`35859`.)
+
 
 Build Changes
 =============
