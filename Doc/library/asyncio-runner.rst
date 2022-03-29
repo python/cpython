@@ -143,6 +143,6 @@ Asyncio handles the keyboard interruption as follows:
    :exc:`asyncio.CancelledError` inside the the main task.  This causes the Python stack 
    to unwind,  ``try/except`` and ``try/finally`` blocks can be used for resource cleanup. 
    After the main task is cancelled, :meth:`asyncio.Runner.run` raises :exc:`KeyboardInterrupt`.
-4. A user could write a thight loop, :meth:`~asyncio.Task.cancel` cannot break it.
-   That's why the second and consequent :kbd:`Ctrl-C` hits immediatelly raise
-   :exc:`KeyboardInterrupt` to stop the program abnormally.
+4. A user could write a tight loop which cannot be interrupted by :meth:`asyncio.Task.cancel`,
+   in which case the second following :kbd:`Ctrl-C` immediately raises the :exc:`KeyboardInterrupt`
+   without cancelling the main task.
