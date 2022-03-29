@@ -204,6 +204,16 @@ class PropertyTests(unittest.TestCase):
                 return 'Second'
         self.assertEqual(A.__doc__, 'Second')
 
+    def test_property_set_name_incorrect_args(self):
+        p = property()
+
+        for i in (0, 1, 3):
+            with self.assertRaisesRegex(
+                TypeError,
+                fr'^__set_name__\(\) takes 2 positional arguments but {i} were given$'
+            ):
+                p.__set_name__(*([0] * i))
+
 
 # Issue 5890: subclasses of property do not preserve method __doc__ strings
 class PropertySub(property):
@@ -298,6 +308,46 @@ class PropertySubclassTests(unittest.TestCase):
                 return 2
         self.assertEqual(Foo.spam.__doc__, "a new docstring")
 
+
+class _PropertyUnreachableAttribute:
+    msg_format = None
+    obj = None
+    cls = None
+
+    def _format_exc_msg(self, msg):
+        return self.msg_format.format(msg)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.obj = cls.cls()
+
+    def test_get_property(self):
+        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("has no getter")):
+            self.obj.foo
+
+    def test_set_property(self):
+        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("has no setter")):
+            self.obj.foo = None
+
+    def test_del_property(self):
+        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("has no deleter")):
+            del self.obj.foo
+
+
+class PropertyUnreachableAttributeWithName(_PropertyUnreachableAttribute, unittest.TestCase):
+    msg_format = r"^property 'foo' of 'PropertyUnreachableAttributeWithName\.cls' object {}$"
+
+    class cls:
+        foo = property()
+
+
+class PropertyUnreachableAttributeNoName(_PropertyUnreachableAttribute, unittest.TestCase):
+    msg_format = r"^property of 'PropertyUnreachableAttributeNoName\.cls' object {}$"
+
+    class cls:
+        pass
+
+    cls.foo = property()
 
 
 if __name__ == '__main__':

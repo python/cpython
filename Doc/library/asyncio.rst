@@ -4,7 +4,7 @@
 .. module:: asyncio
    :synopsis: Asynchronous I/O.
 
---------------
+-------------------------------
 
 .. sidebar:: Hello World!
 
@@ -67,6 +67,7 @@ Additionally, there are **low-level** APIs for
    :caption: High-level APIs
    :maxdepth: 1
 
+   asyncio-runner.rst
    asyncio-task.rst
    asyncio-stream.rst
    asyncio-sync.rst
@@ -91,3 +92,6 @@ Additionally, there are **low-level** APIs for
    asyncio-api-index.rst
    asyncio-llapi-index.rst
    asyncio-dev.rst
+
+.. note::
+   The source code for asyncio can be found in :source:`Lib/asyncio/`.

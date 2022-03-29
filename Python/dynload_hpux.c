@@ -6,7 +6,6 @@
 
 #include "Python.h"
 #include "importdl.h"
-#include "pycore_pystate.h"
 
 #if defined(__hp9000s300)
 #define FUNCNAME_PATTERN "_%.20s_%.200s"
@@ -14,14 +13,14 @@
 #define FUNCNAME_PATTERN "%.20s_%.200s"
 #endif
 
-const char *_PyImport_DynLoadFiletab[] = {SHLIB_EXT, NULL};
+const char *_PyImport_DynLoadFiletab[] = {SHLIB_EXT, ".sl", NULL};
 
 dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
                                        const char *shortname,
                                        const char *pathname, FILE *fp)
 {
     int flags = BIND_FIRST | BIND_DEFERRED;
-    int verbose = _PyInterpreterState_GET_UNSAFE()->config.verbose;
+    int verbose = _Py_GetConfig()->verbose;
     if (verbose) {
         flags = BIND_FIRST | BIND_IMMEDIATE |
             BIND_NONFATAL | BIND_VERBOSE;
@@ -37,9 +36,20 @@ dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
         char buf[256];
         PyOS_snprintf(buf, sizeof(buf), "Failed to load %.200s",
                       pathname);
-        PyObject *buf_ob = PyUnicode_FromString(buf);
+        PyObject *buf_ob = PyUnicode_DecodeFSDefault(buf);
+        if (buf_ob == NULL)
+            return NULL;
         PyObject *shortname_ob = PyUnicode_FromString(shortname);
-        PyObject *pathname_ob = PyUnicode_FromString(pathname);
+        if (shortname_ob == NULL) {
+            Py_DECREF(buf_ob);
+            return NULL;
+        }
+        PyObject *pathname_ob = PyUnicode_DecodeFSDefault(pathname);
+        if (pathname_ob == NULL) {
+            Py_DECREF(buf_ob);
+            Py_DECREF(shortname_ob);
+            return NULL;
+        }
         PyErr_SetImportError(buf_ob, shortname_ob, pathname_ob);
         Py_DECREF(buf_ob);
         Py_DECREF(shortname_ob);

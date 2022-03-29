@@ -1,7 +1,9 @@
 #include "Python.h"
-#include "pycore_pymem.h"
+#include "pycore_pymem.h"         // _PyTraceMalloc_Config
+#include "pycore_code.h"         // stats
 
 #include <stdbool.h>
+#include <stdlib.h>               // malloc()
 
 
 /* Defined in tracemalloc.c */
@@ -25,14 +27,14 @@ static void* _PyMem_DebugRealloc(void *ctx, void *ptr, size_t size);
 static void _PyMem_DebugFree(void *ctx, void *p);
 
 static void _PyObject_DebugDumpAddress(const void *p);
-static void _PyMem_DebugCheckAddress(char api_id, const void *p);
+static void _PyMem_DebugCheckAddress(const char *func, char api_id, const void *p);
 
 static void _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain);
 
 #if defined(__has_feature)  /* Clang */
 #  if __has_feature(address_sanitizer) /* is ASAN enabled? */
-#    define _Py_NO_ADDRESS_SAFETY_ANALYSIS \
-        __attribute__((no_address_safety_analysis))
+#    define _Py_NO_SANITIZE_ADDRESS \
+        __attribute__((no_sanitize("address")))
 #  endif
 #  if __has_feature(thread_sanitizer)  /* is TSAN enabled? */
 #    define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
@@ -42,8 +44,8 @@ static void _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain);
 #  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)    /* GCC 4.8+, is ASAN enabled? */
-#    define _Py_NO_ADDRESS_SAFETY_ANALYSIS \
-        __attribute__((no_address_safety_analysis))
+#    define _Py_NO_SANITIZE_ADDRESS \
+        __attribute__((no_sanitize_address))
 #  endif
    // TSAN is supported since GCC 5.1, but __SANITIZE_THREAD__ macro
    // is provided only since GCC 7.
@@ -52,8 +54,8 @@ static void _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain);
 #  endif
 #endif
 
-#ifndef _Py_NO_ADDRESS_SAFETY_ANALYSIS
-#  define _Py_NO_ADDRESS_SAFETY_ANALYSIS
+#ifndef _Py_NO_SANITIZE_ADDRESS
+#  define _Py_NO_SANITIZE_ADDRESS
 #endif
 #ifndef _Py_NO_SANITIZE_THREAD
 #  define _Py_NO_SANITIZE_THREAD
@@ -552,6 +554,18 @@ PyObject_GetArenaAllocator(PyObjectArenaAllocator *allocator)
     *allocator = _PyObject_Arena;
 }
 
+void *
+_PyObject_VirtualAlloc(size_t size)
+{
+    return _PyObject_Arena.alloc(_PyObject_Arena.ctx, size);
+}
+
+void
+_PyObject_VirtualFree(void *obj, size_t size)
+{
+    _PyObject_Arena.free(_PyObject_Arena.ctx, obj, size);
+}
+
 void
 PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
 {
@@ -682,6 +696,7 @@ PyObject_Malloc(size_t size)
     /* see PyMem_RawMalloc() */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
+    OBJECT_STAT_INC(allocations);
     return _PyObject.malloc(_PyObject.ctx, size);
 }
 
@@ -691,6 +706,7 @@ PyObject_Calloc(size_t nelem, size_t elsize)
     /* see PyMem_RawMalloc() */
     if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
         return NULL;
+    OBJECT_STAT_INC(allocations);
     return _PyObject.calloc(_PyObject.ctx, nelem, elsize);
 }
 
@@ -706,6 +722,7 @@ PyObject_Realloc(void *ptr, size_t new_size)
 void
 PyObject_Free(void *ptr)
 {
+    OBJECT_STAT_INC(frees);
     _PyObject.free(_PyObject.ctx, ptr);
 }
 
@@ -836,7 +853,7 @@ static int running_on_valgrind = -1;
 
 /*
  * Alignment of addresses returned to the user. 8-bytes alignment works
- * on most current architectures (with 32-bit or 64-bit address busses).
+ * on most current architectures (with 32-bit or 64-bit address buses).
  * The alignment value is also used for grouping small requests in size
  * classes spaced ALIGNMENT bytes apart.
  *
@@ -883,7 +900,6 @@ static int running_on_valgrind = -1;
  * currently targets.
  */
 #define SYSTEM_PAGE_SIZE        (4 * 1024)
-#define SYSTEM_PAGE_SIZE_MASK   (SYSTEM_PAGE_SIZE - 1)
 
 /*
  * Maximum amount of memory managed by the allocator for small requests.
@@ -891,6 +907,22 @@ static int running_on_valgrind = -1;
 #ifdef WITH_MEMORY_LIMITS
 #ifndef SMALL_MEMORY_LIMIT
 #define SMALL_MEMORY_LIMIT      (64 * 1024 * 1024)      /* 64 MB -- more? */
+#endif
+#endif
+
+#if !defined(WITH_PYMALLOC_RADIX_TREE)
+/* Use radix-tree to track arena memory regions, for address_in_range().
+ * Enable by default since it allows larger pool sizes.  Can be disabled
+ * using -DWITH_PYMALLOC_RADIX_TREE=0 */
+#define WITH_PYMALLOC_RADIX_TREE 1
+#endif
+
+#if SIZEOF_VOID_P > 4
+/* on 64-bit platforms use larger pools and arenas if we can */
+#define USE_LARGE_ARENAS
+#if WITH_PYMALLOC_RADIX_TREE
+/* large pools only supported if radix-tree is enabled */
+#define USE_LARGE_POOLS
 #endif
 #endif
 
@@ -907,18 +939,34 @@ static int running_on_valgrind = -1;
  * Arenas are allocated with mmap() on systems supporting anonymous memory
  * mappings to reduce heap fragmentation.
  */
-#define ARENA_SIZE              (256 << 10)     /* 256KB */
+#ifdef USE_LARGE_ARENAS
+#define ARENA_BITS              20                    /* 1 MiB */
+#else
+#define ARENA_BITS              18                    /* 256 KiB */
+#endif
+#define ARENA_SIZE              (1 << ARENA_BITS)
+#define ARENA_SIZE_MASK         (ARENA_SIZE - 1)
 
 #ifdef WITH_MEMORY_LIMITS
 #define MAX_ARENAS              (SMALL_MEMORY_LIMIT / ARENA_SIZE)
 #endif
 
 /*
- * Size of the pools used for small blocks. Should be a power of 2,
- * between 1K and SYSTEM_PAGE_SIZE, that is: 1k, 2k, 4k.
+ * Size of the pools used for small blocks.  Must be a power of 2.
  */
-#define POOL_SIZE               SYSTEM_PAGE_SIZE        /* must be 2^N */
-#define POOL_SIZE_MASK          SYSTEM_PAGE_SIZE_MASK
+#ifdef USE_LARGE_POOLS
+#define POOL_BITS               14                  /* 16 KiB */
+#else
+#define POOL_BITS               12                  /* 4 KiB */
+#endif
+#define POOL_SIZE               (1 << POOL_BITS)
+#define POOL_SIZE_MASK          (POOL_SIZE - 1)
+
+#if !WITH_PYMALLOC_RADIX_TREE
+#if POOL_SIZE != SYSTEM_PAGE_SIZE
+#   error "pool size must be equal to system page size"
+#endif
+#endif
 
 #define MAX_POOLS_IN_ARENA  (ARENA_SIZE / POOL_SIZE)
 #if MAX_POOLS_IN_ARENA * POOL_SIZE != ARENA_SIZE
@@ -1233,6 +1281,279 @@ _Py_GetAllocatedBlocks(void)
     return n;
 }
 
+#if WITH_PYMALLOC_RADIX_TREE
+/*==========================================================================*/
+/* radix tree for tracking arena usage.  If enabled, used to implement
+   address_in_range().
+
+   memory address bit allocation for keys
+
+   64-bit pointers, IGNORE_BITS=0 and 2^20 arena size:
+     15 -> MAP_TOP_BITS
+     15 -> MAP_MID_BITS
+     14 -> MAP_BOT_BITS
+     20 -> ideal aligned arena
+   ----
+     64
+
+   64-bit pointers, IGNORE_BITS=16, and 2^20 arena size:
+     16 -> IGNORE_BITS
+     10 -> MAP_TOP_BITS
+     10 -> MAP_MID_BITS
+      8 -> MAP_BOT_BITS
+     20 -> ideal aligned arena
+   ----
+     64
+
+   32-bit pointers and 2^18 arena size:
+     14 -> MAP_BOT_BITS
+     18 -> ideal aligned arena
+   ----
+     32
+
+*/
+
+#if SIZEOF_VOID_P == 8
+
+/* number of bits in a pointer */
+#define POINTER_BITS 64
+
+/* High bits of memory addresses that will be ignored when indexing into the
+ * radix tree.  Setting this to zero is the safe default.  For most 64-bit
+ * machines, setting this to 16 would be safe.  The kernel would not give
+ * user-space virtual memory addresses that have significant information in
+ * those high bits.  The main advantage to setting IGNORE_BITS > 0 is that less
+ * virtual memory will be used for the top and middle radix tree arrays.  Those
+ * arrays are allocated in the BSS segment and so will typically consume real
+ * memory only if actually accessed.
+ */
+#define IGNORE_BITS 0
+
+/* use the top and mid layers of the radix tree */
+#define USE_INTERIOR_NODES
+
+#elif SIZEOF_VOID_P == 4
+
+#define POINTER_BITS 32
+#define IGNORE_BITS 0
+
+#else
+
+ /* Currently this code works for 64-bit or 32-bit pointers only.  */
+#error "obmalloc radix tree requires 64-bit or 32-bit pointers."
+
+#endif /* SIZEOF_VOID_P */
+
+/* arena_coverage_t members require this to be true  */
+#if ARENA_BITS >= 32
+#   error "arena size must be < 2^32"
+#endif
+
+/* the lower bits of the address that are not ignored */
+#define ADDRESS_BITS (POINTER_BITS - IGNORE_BITS)
+
+#ifdef USE_INTERIOR_NODES
+/* number of bits used for MAP_TOP and MAP_MID nodes */
+#define INTERIOR_BITS ((ADDRESS_BITS - ARENA_BITS + 2) / 3)
+#else
+#define INTERIOR_BITS 0
+#endif
+
+#define MAP_TOP_BITS INTERIOR_BITS
+#define MAP_TOP_LENGTH (1 << MAP_TOP_BITS)
+#define MAP_TOP_MASK (MAP_TOP_LENGTH - 1)
+
+#define MAP_MID_BITS INTERIOR_BITS
+#define MAP_MID_LENGTH (1 << MAP_MID_BITS)
+#define MAP_MID_MASK (MAP_MID_LENGTH - 1)
+
+#define MAP_BOT_BITS (ADDRESS_BITS - ARENA_BITS - 2*INTERIOR_BITS)
+#define MAP_BOT_LENGTH (1 << MAP_BOT_BITS)
+#define MAP_BOT_MASK (MAP_BOT_LENGTH - 1)
+
+#define MAP_BOT_SHIFT ARENA_BITS
+#define MAP_MID_SHIFT (MAP_BOT_BITS + MAP_BOT_SHIFT)
+#define MAP_TOP_SHIFT (MAP_MID_BITS + MAP_MID_SHIFT)
+
+#define AS_UINT(p) ((uintptr_t)(p))
+#define MAP_BOT_INDEX(p) ((AS_UINT(p) >> MAP_BOT_SHIFT) & MAP_BOT_MASK)
+#define MAP_MID_INDEX(p) ((AS_UINT(p) >> MAP_MID_SHIFT) & MAP_MID_MASK)
+#define MAP_TOP_INDEX(p) ((AS_UINT(p) >> MAP_TOP_SHIFT) & MAP_TOP_MASK)
+
+#if IGNORE_BITS > 0
+/* Return the ignored part of the pointer address.  Those bits should be same
+ * for all valid pointers if IGNORE_BITS is set correctly.
+ */
+#define HIGH_BITS(p) (AS_UINT(p) >> ADDRESS_BITS)
+#else
+#define HIGH_BITS(p) 0
+#endif
+
+
+/* This is the leaf of the radix tree.  See arena_map_mark_used() for the
+ * meaning of these members. */
+typedef struct {
+    int32_t tail_hi;
+    int32_t tail_lo;
+} arena_coverage_t;
+
+typedef struct arena_map_bot {
+    /* The members tail_hi and tail_lo are accessed together.  So, it
+     * better to have them as an array of structs, rather than two
+     * arrays.
+     */
+    arena_coverage_t arenas[MAP_BOT_LENGTH];
+} arena_map_bot_t;
+
+#ifdef USE_INTERIOR_NODES
+typedef struct arena_map_mid {
+    struct arena_map_bot *ptrs[MAP_MID_LENGTH];
+} arena_map_mid_t;
+
+typedef struct arena_map_top {
+    struct arena_map_mid *ptrs[MAP_TOP_LENGTH];
+} arena_map_top_t;
+#endif
+
+/* The root of radix tree.  Note that by initializing like this, the memory
+ * should be in the BSS.  The OS will only memory map pages as the MAP_MID
+ * nodes get used (OS pages are demand loaded as needed).
+ */
+#ifdef USE_INTERIOR_NODES
+static arena_map_top_t arena_map_root;
+/* accounting for number of used interior nodes */
+static int arena_map_mid_count;
+static int arena_map_bot_count;
+#else
+static arena_map_bot_t arena_map_root;
+#endif
+
+/* Return a pointer to a bottom tree node, return NULL if it doesn't exist or
+ * it cannot be created */
+static arena_map_bot_t *
+arena_map_get(block *p, int create)
+{
+#ifdef USE_INTERIOR_NODES
+    /* sanity check that IGNORE_BITS is correct */
+    assert(HIGH_BITS(p) == HIGH_BITS(&arena_map_root));
+    int i1 = MAP_TOP_INDEX(p);
+    if (arena_map_root.ptrs[i1] == NULL) {
+        if (!create) {
+            return NULL;
+        }
+        arena_map_mid_t *n = PyMem_RawCalloc(1, sizeof(arena_map_mid_t));
+        if (n == NULL) {
+            return NULL;
+        }
+        arena_map_root.ptrs[i1] = n;
+        arena_map_mid_count++;
+    }
+    int i2 = MAP_MID_INDEX(p);
+    if (arena_map_root.ptrs[i1]->ptrs[i2] == NULL) {
+        if (!create) {
+            return NULL;
+        }
+        arena_map_bot_t *n = PyMem_RawCalloc(1, sizeof(arena_map_bot_t));
+        if (n == NULL) {
+            return NULL;
+        }
+        arena_map_root.ptrs[i1]->ptrs[i2] = n;
+        arena_map_bot_count++;
+    }
+    return arena_map_root.ptrs[i1]->ptrs[i2];
+#else
+    return &arena_map_root;
+#endif
+}
+
+
+/* The radix tree only tracks arenas.  So, for 16 MiB arenas, we throw
+ * away 24 bits of the address.  That reduces the space requirement of
+ * the tree compared to similar radix tree page-map schemes.  In
+ * exchange for slashing the space requirement, it needs more
+ * computation to check an address.
+ *
+ * Tracking coverage is done by "ideal" arena address.  It is easier to
+ * explain in decimal so let's say that the arena size is 100 bytes.
+ * Then, ideal addresses are 100, 200, 300, etc.  For checking if a
+ * pointer address is inside an actual arena, we have to check two ideal
+ * arena addresses.  E.g. if pointer is 357, we need to check 200 and
+ * 300.  In the rare case that an arena is aligned in the ideal way
+ * (e.g. base address of arena is 200) then we only have to check one
+ * ideal address.
+ *
+ * The tree nodes for 200 and 300 both store the address of arena.
+ * There are two cases: the arena starts at a lower ideal arena and
+ * extends to this one, or the arena starts in this arena and extends to
+ * the next ideal arena.  The tail_lo and tail_hi members correspond to
+ * these two cases.
+ */
+
+
+/* mark or unmark addresses covered by arena */
+static int
+arena_map_mark_used(uintptr_t arena_base, int is_used)
+{
+    /* sanity check that IGNORE_BITS is correct */
+    assert(HIGH_BITS(arena_base) == HIGH_BITS(&arena_map_root));
+    arena_map_bot_t *n_hi = arena_map_get((block *)arena_base, is_used);
+    if (n_hi == NULL) {
+        assert(is_used); /* otherwise node should already exist */
+        return 0; /* failed to allocate space for node */
+    }
+    int i3 = MAP_BOT_INDEX((block *)arena_base);
+    int32_t tail = (int32_t)(arena_base & ARENA_SIZE_MASK);
+    if (tail == 0) {
+        /* is ideal arena address */
+        n_hi->arenas[i3].tail_hi = is_used ? -1 : 0;
+    }
+    else {
+        /* arena_base address is not ideal (aligned to arena size) and
+         * so it potentially covers two MAP_BOT nodes.  Get the MAP_BOT node
+         * for the next arena.  Note that it might be in different MAP_TOP
+         * and MAP_MID nodes as well so we need to call arena_map_get()
+         * again (do the full tree traversal).
+         */
+        n_hi->arenas[i3].tail_hi = is_used ? tail : 0;
+        uintptr_t arena_base_next = arena_base + ARENA_SIZE;
+        /* If arena_base is a legit arena address, so is arena_base_next - 1
+         * (last address in arena).  If arena_base_next overflows then it
+         * must overflow to 0.  However, that would mean arena_base was
+         * "ideal" and we should not be in this case. */
+        assert(arena_base < arena_base_next);
+        arena_map_bot_t *n_lo = arena_map_get((block *)arena_base_next, is_used);
+        if (n_lo == NULL) {
+            assert(is_used); /* otherwise should already exist */
+            n_hi->arenas[i3].tail_hi = 0;
+            return 0; /* failed to allocate space for node */
+        }
+        int i3_next = MAP_BOT_INDEX(arena_base_next);
+        n_lo->arenas[i3_next].tail_lo = is_used ? tail : 0;
+    }
+    return 1;
+}
+
+/* Return true if 'p' is a pointer inside an obmalloc arena.
+ * _PyObject_Free() calls this so it needs to be very fast. */
+static int
+arena_map_is_used(block *p)
+{
+    arena_map_bot_t *n = arena_map_get(p, 0);
+    if (n == NULL) {
+        return 0;
+    }
+    int i3 = MAP_BOT_INDEX(p);
+    /* ARENA_BITS must be < 32 so that the tail is a non-negative int32_t. */
+    int32_t hi = n->arenas[i3].tail_hi;
+    int32_t lo = n->arenas[i3].tail_lo;
+    int32_t tail = (int32_t)(AS_UINT(p) & ARENA_SIZE_MASK);
+    return (tail < lo) || (tail >= hi && hi != 0);
+}
+
+/* end of radix tree logic */
+/*==========================================================================*/
+#endif /* WITH_PYMALLOC_RADIX_TREE */
+
 
 /* Allocate a new arena.  If we run out of memory, return NULL.  Else
  * allocate a new arena, and return the address of an arena_object
@@ -1251,8 +1572,9 @@ new_arena(void)
         const char *opt = Py_GETENV("PYTHONMALLOCSTATS");
         debug_stats = (opt != NULL && *opt != '\0');
     }
-    if (debug_stats)
+    if (debug_stats) {
         _PyObject_DebugMallocStats(stderr);
+    }
 
     if (unused_arena_objects == NULL) {
         uint i;
@@ -1302,6 +1624,15 @@ new_arena(void)
     unused_arena_objects = arenaobj->nextarena;
     assert(arenaobj->address == 0);
     address = _PyObject_Arena.alloc(_PyObject_Arena.ctx, ARENA_SIZE);
+#if WITH_PYMALLOC_RADIX_TREE
+    if (address != NULL) {
+        if (!arena_map_mark_used((uintptr_t)address, 1)) {
+            /* marking arena in radix tree failed, abort */
+            _PyObject_Arena.free(_PyObject_Arena.ctx, address, ARENA_SIZE);
+            address = NULL;
+        }
+    }
+#endif
     if (address == NULL) {
         /* The allocation failed: return NULL after putting the
          * arenaobj back.
@@ -1332,6 +1663,17 @@ new_arena(void)
 }
 
 
+
+#if WITH_PYMALLOC_RADIX_TREE
+/* Return true if and only if P is an address that was allocated by
+   pymalloc.  When the radix tree is used, 'poolp' is unused.
+ */
+static bool
+address_in_range(void *p, poolp pool)
+{
+    return arena_map_is_used(p);
+}
+#else
 /*
 address_in_range(P, POOL)
 
@@ -1407,7 +1749,7 @@ obmalloc controls.  Since this test is needed at every entry point, it's
 extremely desirable that it be this fast.
 */
 
-static bool _Py_NO_ADDRESS_SAFETY_ANALYSIS
+static bool _Py_NO_SANITIZE_ADDRESS
             _Py_NO_SANITIZE_THREAD
             _Py_NO_SANITIZE_MEMORY
 address_in_range(void *p, poolp pool)
@@ -1423,6 +1765,7 @@ address_in_range(void *p, poolp pool)
         arenas[arenaindex].address != 0;
 }
 
+#endif /* !WITH_PYMALLOC_RADIX_TREE */
 
 /*==========================================================================*/
 
@@ -1768,6 +2111,11 @@ insert_to_freepool(poolp pool)
         ao->nextarena = unused_arena_objects;
         unused_arena_objects = ao;
 
+#if WITH_PYMALLOC_RADIX_TREE
+        /* mark arena region as not under control of obmalloc */
+        arena_map_mark_used(ao->address, 0);
+#endif
+
         /* Free the entire arena. */
         _PyObject_Arena.free(_PyObject_Arena.ctx,
                              (void *)ao->address, ARENA_SIZE);
@@ -2031,20 +2379,6 @@ _Py_GetAllocatedBlocks(void)
  * it wraps a real allocator, adding extra debugging info to the memory blocks.
  */
 
-/* Special bytes broadcast into debug memory blocks at appropriate times.
- * Strings of these are unlikely to be valid addresses, floats, ints or
- * 7-bit ASCII. If modified, _PyMem_IsPtrFreed() should be updated as well.
- *
- * Byte patterns 0xCB, 0xBB and 0xFB have been replaced with 0xCD, 0xDD and
- * 0xFD to use the same values than Windows CRT debug malloc() and free().
- */
-#undef CLEANBYTE
-#undef DEADBYTE
-#undef FORBIDDENBYTE
-#define CLEANBYTE      0xCD    /* clean (newly allocated) memory */
-#define DEADBYTE       0xDD    /* dead (newly freed) memory */
-#define FORBIDDENBYTE  0xFD    /* untouchable bytes at each end of a block */
-
 /* Uncomment this define to add the "serialno" field */
 /* #define PYMEM_DEBUG_SERIALNO */
 
@@ -2106,14 +2440,14 @@ p[0: S]
 p[S]
     API ID.  See PEP 445.  This is a character, but seems undocumented.
 p[S+1: 2*S]
-    Copies of FORBIDDENBYTE.  Used to catch under- writes and reads.
+    Copies of PYMEM_FORBIDDENBYTE.  Used to catch under- writes and reads.
 p[2*S: 2*S+n]
-    The requested memory, filled with copies of CLEANBYTE.
+    The requested memory, filled with copies of PYMEM_CLEANBYTE.
     Used to catch reference to uninitialized memory.
     &p[2*S] is returned.  Note that this is 8-byte aligned if pymalloc
     handled the request itself.
 p[2*S+n: 2*S+n+S]
-    Copies of FORBIDDENBYTE.  Used to catch over- writes and reads.
+    Copies of PYMEM_FORBIDDENBYTE.  Used to catch over- writes and reads.
 p[2*S+n+S: 2*S+n+2*S]
     A serial number, incremented by 1 on each call to _PyMem_DebugMalloc
     and _PyMem_DebugRealloc.
@@ -2170,15 +2504,15 @@ _PyMem_DebugRawAlloc(int use_calloc, void *ctx, size_t nbytes)
     /* at p, write size (SST bytes), id (1 byte), pad (SST-1 bytes) */
     write_size_t(p, nbytes);
     p[SST] = (uint8_t)api->api_id;
-    memset(p + SST + 1, FORBIDDENBYTE, SST-1);
+    memset(p + SST + 1, PYMEM_FORBIDDENBYTE, SST-1);
 
     if (nbytes > 0 && !use_calloc) {
-        memset(data, CLEANBYTE, nbytes);
+        memset(data, PYMEM_CLEANBYTE, nbytes);
     }
 
     /* at tail, write pad (SST bytes) and serialno (SST bytes) */
     tail = data + nbytes;
-    memset(tail, FORBIDDENBYTE, SST);
+    memset(tail, PYMEM_FORBIDDENBYTE, SST);
 #ifdef PYMEM_DEBUG_SERIALNO
     write_size_t(tail + SST, serialno);
 #endif
@@ -2204,7 +2538,7 @@ _PyMem_DebugRawCalloc(void *ctx, size_t nelem, size_t elsize)
 
 /* The debug free first checks the 2*SST bytes on each end for sanity (in
    particular, that the FORBIDDENBYTEs with the api ID are still intact).
-   Then fills the original bytes with DEADBYTE.
+   Then fills the original bytes with PYMEM_DEADBYTE.
    Then calls the underlying free.
 */
 static void
@@ -2219,10 +2553,10 @@ _PyMem_DebugRawFree(void *ctx, void *p)
     uint8_t *q = (uint8_t *)p - 2*SST;  /* address returned from malloc */
     size_t nbytes;
 
-    _PyMem_DebugCheckAddress(api->api_id, p);
+    _PyMem_DebugCheckAddress(__func__, api->api_id, p);
     nbytes = read_size_t(q);
     nbytes += PYMEM_DEBUG_EXTRA_BYTES;
-    memset(q, DEADBYTE, nbytes);
+    memset(q, PYMEM_DEADBYTE, nbytes);
     api->alloc.free(api->alloc.ctx, q);
 }
 
@@ -2244,7 +2578,7 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 #define ERASED_SIZE 64
     uint8_t save[2*ERASED_SIZE];  /* A copy of erased bytes. */
 
-    _PyMem_DebugCheckAddress(api->api_id, p);
+    _PyMem_DebugCheckAddress(__func__, api->api_id, p);
 
     data = (uint8_t *)p;
     head = data - 2*SST;
@@ -2264,14 +2598,14 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
      */
     if (original_nbytes <= sizeof(save)) {
         memcpy(save, data, original_nbytes);
-        memset(data - 2 * SST, DEADBYTE,
+        memset(data - 2 * SST, PYMEM_DEADBYTE,
                original_nbytes + PYMEM_DEBUG_EXTRA_BYTES);
     }
     else {
         memcpy(save, data, ERASED_SIZE);
-        memset(head, DEADBYTE, ERASED_SIZE + 2 * SST);
+        memset(head, PYMEM_DEADBYTE, ERASED_SIZE + 2 * SST);
         memcpy(&save[ERASED_SIZE], tail - ERASED_SIZE, ERASED_SIZE);
-        memset(tail - ERASED_SIZE, DEADBYTE,
+        memset(tail - ERASED_SIZE, PYMEM_DEADBYTE,
                ERASED_SIZE + PYMEM_DEBUG_EXTRA_BYTES - 2 * SST);
     }
 
@@ -2293,10 +2627,10 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 
     write_size_t(head, nbytes);
     head[SST] = (uint8_t)api->api_id;
-    memset(head + SST + 1, FORBIDDENBYTE, SST-1);
+    memset(head + SST + 1, PYMEM_FORBIDDENBYTE, SST-1);
 
     tail = data + nbytes;
-    memset(tail, FORBIDDENBYTE, SST);
+    memset(tail, PYMEM_FORBIDDENBYTE, SST);
 #ifdef PYMEM_DEBUG_SERIALNO
     write_size_t(tail + SST, block_serialno);
 #endif
@@ -2320,31 +2654,34 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 
     if (nbytes > original_nbytes) {
         /* growing: mark new extra memory clean */
-        memset(data + original_nbytes, CLEANBYTE, nbytes - original_nbytes);
+        memset(data + original_nbytes, PYMEM_CLEANBYTE,
+               nbytes - original_nbytes);
     }
 
     return data;
 }
 
-static void
-_PyMem_DebugCheckGIL(void)
+static inline void
+_PyMem_DebugCheckGIL(const char *func)
 {
-    if (!PyGILState_Check())
-        Py_FatalError("Python memory allocator called "
-                      "without holding the GIL");
+    if (!PyGILState_Check()) {
+        _Py_FatalErrorFunc(func,
+                           "Python memory allocator called "
+                           "without holding the GIL");
+    }
 }
 
 static void *
 _PyMem_DebugMalloc(void *ctx, size_t nbytes)
 {
-    _PyMem_DebugCheckGIL();
+    _PyMem_DebugCheckGIL(__func__);
     return _PyMem_DebugRawMalloc(ctx, nbytes);
 }
 
 static void *
 _PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize)
 {
-    _PyMem_DebugCheckGIL();
+    _PyMem_DebugCheckGIL(__func__);
     return _PyMem_DebugRawCalloc(ctx, nelem, elsize);
 }
 
@@ -2352,7 +2689,7 @@ _PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize)
 static void
 _PyMem_DebugFree(void *ctx, void *ptr)
 {
-    _PyMem_DebugCheckGIL();
+    _PyMem_DebugCheckGIL(__func__);
     _PyMem_DebugRawFree(ctx, ptr);
 }
 
@@ -2360,7 +2697,7 @@ _PyMem_DebugFree(void *ctx, void *ptr)
 static void *
 _PyMem_DebugRealloc(void *ctx, void *ptr, size_t nbytes)
 {
-    _PyMem_DebugCheckGIL();
+    _PyMem_DebugCheckGIL(__func__);
     return _PyMem_DebugRawRealloc(ctx, ptr, nbytes);
 }
 
@@ -2370,28 +2707,24 @@ _PyMem_DebugRealloc(void *ctx, void *ptr, size_t nbytes)
  * The API id, is also checked.
  */
 static void
-_PyMem_DebugCheckAddress(char api, const void *p)
+_PyMem_DebugCheckAddress(const char *func, char api, const void *p)
 {
+    assert(p != NULL);
+
     const uint8_t *q = (const uint8_t *)p;
-    char msgbuf[64];
-    const char *msg;
     size_t nbytes;
     const uint8_t *tail;
     int i;
     char id;
 
-    if (p == NULL) {
-        msg = "didn't expect a NULL pointer";
-        goto error;
-    }
-
     /* Check the API id */
     id = (char)q[-SST];
     if (id != api) {
-        msg = msgbuf;
-        snprintf(msgbuf, sizeof(msgbuf), "bad ID: Allocated using API '%c', verified using API '%c'", id, api);
-        msgbuf[sizeof(msgbuf)-1] = 0;
-        goto error;
+        _PyObject_DebugDumpAddress(p);
+        _Py_FatalErrorFormat(func,
+                             "bad ID: Allocated using API '%c', "
+                             "verified using API '%c'",
+                             id, api);
     }
 
     /* Check the stuff at the start of p first:  if there's underwrite
@@ -2399,26 +2732,20 @@ _PyMem_DebugCheckAddress(char api, const void *p)
      * the tail could lead to a segfault then.
      */
     for (i = SST-1; i >= 1; --i) {
-        if (*(q-i) != FORBIDDENBYTE) {
-            msg = "bad leading pad byte";
-            goto error;
+        if (*(q-i) != PYMEM_FORBIDDENBYTE) {
+            _PyObject_DebugDumpAddress(p);
+            _Py_FatalErrorFunc(func, "bad leading pad byte");
         }
     }
 
     nbytes = read_size_t(q - 2*SST);
     tail = q + nbytes;
     for (i = 0; i < SST; ++i) {
-        if (tail[i] != FORBIDDENBYTE) {
-            msg = "bad trailing pad byte";
-            goto error;
+        if (tail[i] != PYMEM_FORBIDDENBYTE) {
+            _PyObject_DebugDumpAddress(p);
+            _Py_FatalErrorFunc(func, "bad trailing pad byte");
         }
     }
-
-    return;
-
-error:
-    _PyObject_DebugDumpAddress(p);
-    Py_FatalError(msg);
 }
 
 /* Display info to stderr about the memory block at p. */
@@ -2441,14 +2768,13 @@ _PyObject_DebugDumpAddress(const void *p)
     fprintf(stderr, " API '%c'\n", id);
 
     nbytes = read_size_t(q - 2*SST);
-    fprintf(stderr, "    %" PY_FORMAT_SIZE_T "u bytes originally "
-                    "requested\n", nbytes);
+    fprintf(stderr, "    %zu bytes originally requested\n", nbytes);
 
     /* In case this is nuts, check the leading pad bytes first. */
     fprintf(stderr, "    The %d pad bytes at p-%d are ", SST-1, SST-1);
     ok = 1;
     for (i = 1; i <= SST-1; ++i) {
-        if (*(q-i) != FORBIDDENBYTE) {
+        if (*(q-i) != PYMEM_FORBIDDENBYTE) {
             ok = 0;
             break;
         }
@@ -2457,11 +2783,11 @@ _PyObject_DebugDumpAddress(const void *p)
         fputs("FORBIDDENBYTE, as expected.\n", stderr);
     else {
         fprintf(stderr, "not all FORBIDDENBYTE (0x%02x):\n",
-            FORBIDDENBYTE);
+            PYMEM_FORBIDDENBYTE);
         for (i = SST-1; i >= 1; --i) {
             const uint8_t byte = *(q-i);
             fprintf(stderr, "        at p-%d: 0x%02x", i, byte);
-            if (byte != FORBIDDENBYTE)
+            if (byte != PYMEM_FORBIDDENBYTE)
                 fputs(" *** OUCH", stderr);
             fputc('\n', stderr);
         }
@@ -2476,7 +2802,7 @@ _PyObject_DebugDumpAddress(const void *p)
     fprintf(stderr, "    The %d pad bytes at tail=%p are ", SST, (void *)tail);
     ok = 1;
     for (i = 0; i < SST; ++i) {
-        if (tail[i] != FORBIDDENBYTE) {
+        if (tail[i] != PYMEM_FORBIDDENBYTE) {
             ok = 0;
             break;
         }
@@ -2485,12 +2811,12 @@ _PyObject_DebugDumpAddress(const void *p)
         fputs("FORBIDDENBYTE, as expected.\n", stderr);
     else {
         fprintf(stderr, "not all FORBIDDENBYTE (0x%02x):\n",
-                FORBIDDENBYTE);
+                PYMEM_FORBIDDENBYTE);
         for (i = 0; i < SST; ++i) {
             const uint8_t byte = tail[i];
             fprintf(stderr, "        at tail+%d: 0x%02x",
                     i, byte);
-            if (byte != FORBIDDENBYTE)
+            if (byte != PYMEM_FORBIDDENBYTE)
                 fputs(" *** OUCH", stderr);
             fputc('\n', stderr);
         }
@@ -2498,8 +2824,9 @@ _PyObject_DebugDumpAddress(const void *p)
 
 #ifdef PYMEM_DEBUG_SERIALNO
     size_t serial = read_size_t(tail + SST);
-    fprintf(stderr, "    The block was made by call #%" PY_FORMAT_SIZE_T
-                    "u to debug malloc/realloc.\n", serial);
+    fprintf(stderr,
+            "    The block was made by call #%zu to debug malloc/realloc.\n",
+            serial);
 #endif
 
     if (nbytes > 0) {
@@ -2574,7 +2901,7 @@ _PyDebugAllocatorStats(FILE *out,
     char buf1[128];
     char buf2[128];
     PyOS_snprintf(buf1, sizeof(buf1),
-                  "%d %ss * %" PY_FORMAT_SIZE_T "d bytes each",
+                  "%d %ss * %zd bytes each",
                   num_blocks, block_name, sizeof_block);
     PyOS_snprintf(buf2, sizeof(buf2),
                   "%48s ", buf1);
@@ -2715,10 +3042,7 @@ _PyObject_DebugMallocStats(FILE *out)
             assert(b == 0 && f == 0);
             continue;
         }
-        fprintf(out, "%5u %6u "
-                        "%11" PY_FORMAT_SIZE_T "u "
-                        "%15" PY_FORMAT_SIZE_T "u "
-                        "%13" PY_FORMAT_SIZE_T "u\n",
+        fprintf(out, "%5u %6u %11zu %15zu %13zu\n",
                 i, size, p, b, f);
         allocated_bytes += b * size;
         available_bytes += f * size;
@@ -2737,12 +3061,13 @@ _PyObject_DebugMallocStats(FILE *out)
     (void)printone(out, "# arenas allocated current", narenas);
 
     PyOS_snprintf(buf, sizeof(buf),
-        "%" PY_FORMAT_SIZE_T "u arenas * %d bytes/arena",
-        narenas, ARENA_SIZE);
+                  "%zu arenas * %d bytes/arena",
+                  narenas, ARENA_SIZE);
     (void)printone(out, buf, narenas * ARENA_SIZE);
 
     fputc('\n', out);
 
+    /* Account for what all of those arena bytes are being used for. */
     total = printone(out, "# bytes in allocated blocks", allocated_bytes);
     total += printone(out, "# bytes in available blocks", available_bytes);
 
@@ -2754,6 +3079,25 @@ _PyObject_DebugMallocStats(FILE *out)
     total += printone(out, "# bytes lost to quantization", quantization);
     total += printone(out, "# bytes lost to arena alignment", arena_alignment);
     (void)printone(out, "Total", total);
+    assert(narenas * ARENA_SIZE == total);
+
+#if WITH_PYMALLOC_RADIX_TREE
+    fputs("\narena map counts\n", out);
+#ifdef USE_INTERIOR_NODES
+    (void)printone(out, "# arena map mid nodes", arena_map_mid_count);
+    (void)printone(out, "# arena map bot nodes", arena_map_bot_count);
+    fputc('\n', out);
+#endif
+    total = printone(out, "# bytes lost to arena map root", sizeof(arena_map_root));
+#ifdef USE_INTERIOR_NODES
+    total += printone(out, "# bytes lost to arena map mid",
+                      sizeof(arena_map_mid_t) * arena_map_mid_count);
+    total += printone(out, "# bytes lost to arena map bot",
+                      sizeof(arena_map_bot_t) * arena_map_bot_count);
+    (void)printone(out, "Total", total);
+#endif
+#endif
+
     return 1;
 }
 

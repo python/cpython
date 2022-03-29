@@ -27,6 +27,9 @@ on efficient attribute extraction for output formatting and manipulation.
    Module :mod:`time`
       Time access and conversions.
 
+   Module :mod:`zoneinfo`
+      Concrete time zones representing the IANA time zone database.
+
    Package `dateutil <https://dateutil.readthedocs.io/en/stable/>`_
       Third-party library with expanded time zone and parsing support.
 
@@ -35,7 +38,8 @@ on efficient attribute extraction for output formatting and manipulation.
 Aware and Naive Objects
 -----------------------
 
-Date and time objects may be categorized as "aware" or "naive."
+Date and time objects may be categorized as "aware" or "naive" depending on
+whether or not they include timezone information.
 
 With sufficient knowledge of applicable algorithmic and political time
 adjustments, such as time zone and daylight saving time information,
@@ -670,7 +674,8 @@ Instance methods:
 
 .. method:: date.isocalendar()
 
-   Return a 3-tuple, (ISO year, ISO week number, ISO weekday).
+   Return a :term:`named tuple` object with three components: ``year``,
+   ``week`` and ``weekday``.
 
    The ISO calendar is a widely used variant of the Gregorian calendar. [#]_
 
@@ -682,11 +687,14 @@ Instance methods:
    For example, 2004 begins on a Thursday, so the first week of ISO year 2004
    begins on Monday, 29 Dec 2003 and ends on Sunday, 4 Jan 2004::
 
-       >>> from datetime import date
-       >>> date(2003, 12, 29).isocalendar()
-       (2004, 1, 1)
-       >>> date(2004, 1, 4).isocalendar()
-       (2004, 1, 7)
+        >>> from datetime import date
+        >>> date(2003, 12, 29).isocalendar()
+        datetime.IsoCalendarDate(year=2004, week=1, weekday=1)
+        >>> date(2004, 1, 4).isocalendar()
+        datetime.IsoCalendarDate(year=2004, week=1, weekday=7)
+
+   .. versionchanged:: 3.9
+      Result changed from a tuple to a :term:`named tuple`.
 
 .. method:: date.isoformat()
 
@@ -881,7 +889,7 @@ Other constructors, all class methods:
       Because naive ``datetime`` objects are treated by many ``datetime`` methods
       as local times, it is preferred to use aware datetimes to represent times
       in UTC. As such, the recommended way to create an object representing the
-      current time in UTC  by calling ``datetime.now(timezone.utc)``.
+      current time in UTC is by calling ``datetime.now(timezone.utc)``.
 
 
 .. classmethod:: datetime.fromtimestamp(timestamp, tz=None)
@@ -942,7 +950,7 @@ Other constructors, all class methods:
       Because naive ``datetime`` objects are treated by many ``datetime`` methods
       as local times, it is preferred to use aware datetimes to represent times
       in UTC. As such, the recommended way to create an object representing a
-      specific timestamp in UTC  by calling
+      specific timestamp in UTC is by calling
       ``datetime.fromtimestamp(timestamp, tz=timezone.utc)``.
 
    .. versionchanged:: 3.3
@@ -997,8 +1005,6 @@ Other constructors, all class methods:
      as the inverse operation of :meth:`datetime.isoformat`. A more full-featured
      ISO 8601 parser, ``dateutil.parser.isoparse`` is available in the third-party package
      `dateutil <https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.isoparse>`__.
-     This does not support parsing arbitrary ISO 8601 strings - it is only intended
-     as the inverse operation of :meth:`datetime.isoformat`.
 
    Examples::
 
@@ -1216,7 +1222,7 @@ Instance methods:
 
 .. method:: datetime.replace(year=self.year, month=self.month, day=self.day, \
    hour=self.hour, minute=self.minute, second=self.second, microsecond=self.microsecond, \
-   tzinfo=self.tzinfo, * fold=0)
+   tzinfo=self.tzinfo, *, fold=0)
 
    Return a datetime with the same attributes, except for those attributes given
    new values by whichever keyword arguments are specified. Note that
@@ -1399,8 +1405,8 @@ Instance methods:
 
 .. method:: datetime.isocalendar()
 
-   Return a 3-tuple, (ISO year, ISO week number, ISO weekday). The same as
-   ``self.date().isocalendar()``.
+   Return a :term:`named tuple` with three components: ``year``, ``week``
+   and ``weekday``. The same as ``self.date().isocalendar()``.
 
 
 .. method:: datetime.isoformat(sep='T', timespec='auto')
@@ -1780,7 +1786,7 @@ Other constructor:
 Instance methods:
 
 .. method:: time.replace(hour=self.hour, minute=self.minute, second=self.second, \
-   microsecond=self.microsecond, tzinfo=self.tzinfo, * fold=0)
+   microsecond=self.microsecond, tzinfo=self.tzinfo, *, fold=0)
 
    Return a :class:`.time` with the same value, except for those attributes given
    new values by whichever keyword arguments are specified. Note that
@@ -2171,14 +2177,13 @@ only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 
 .. seealso::
 
-   `dateutil.tz <https://dateutil.readthedocs.io/en/stable/tz.html>`_
+    :mod:`zoneinfo`
       The :mod:`datetime` module has a basic :class:`timezone` class (for
       handling arbitrary fixed offsets from UTC) and its :attr:`timezone.utc`
       attribute (a UTC timezone instance).
 
-      *dateutil.tz* library brings the *IANA timezone database*
-      (also known as the Olson database) to Python, and its usage is
-      recommended.
+      ``zoneinfo`` brings the *IANA timezone database* (also known as the Olson
+      database) to Python, and its usage is recommended.
 
    `IANA timezone database <https://www.iana.org/time-zones>`_
       The Time Zone Database (often called tz, tzdata or zoneinfo) contains code
@@ -2354,15 +2359,15 @@ requires, and these work on all platforms with a standard C implementation.
 |           | decimal number.                |                        | \(9)  |
 +-----------+--------------------------------+------------------------+-------+
 | ``%f``    | Microsecond as a decimal       | 000000, 000001, ...,   | \(5)  |
-|           | number, zero-padded on the     | 999999                 |       |
-|           | left.                          |                        |       |
+|           | number, zero-padded to 6       | 999999                 |       |
+|           | digits.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%z``    | UTC offset in the form         | (empty), +0000,        | \(6)  |
 |           | ``±HHMM[SS[.ffffff]]`` (empty  | -0400, +1030,          |       |
 |           | string if the object is        | +063415,               |       |
 |           | naive).                        | -030712.345216         |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%Z``    | Time zone name (empty string   | (empty), UTC, EST, CST |       |
+| ``%Z``    | Time zone name (empty string   | (empty), UTC, GMT      | \(6)  |
 |           | if the object is naive).       |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%j``    | Day of the year as a           | 001, 002, ..., 366     | \(9)  |
@@ -2370,7 +2375,7 @@ requires, and these work on all platforms with a standard C implementation.
 +-----------+--------------------------------+------------------------+-------+
 | ``%U``    | Week number of the year        | 00, 01, ..., 53        | \(7), |
 |           | (Sunday as the first day of    |                        | \(9)  |
-|           | the week) as a zero padded     |                        |       |
+|           | the week) as a zero-padded     |                        |       |
 |           | decimal number. All days in a  |                        |       |
 |           | new year preceding the first   |                        |       |
 |           | Sunday are considered to be in |                        |       |
@@ -2378,10 +2383,10 @@ requires, and these work on all platforms with a standard C implementation.
 +-----------+--------------------------------+------------------------+-------+
 | ``%W``    | Week number of the year        | 00, 01, ..., 53        | \(7), |
 |           | (Monday as the first day of    |                        | \(9)  |
-|           | the week) as a decimal number. |                        |       |
-|           | All days in a new year         |                        |       |
-|           | preceding the first Monday     |                        |       |
-|           | are considered to be in        |                        |       |
+|           | the week) as a zero-padded     |                        |       |
+|           | decimal number. All days in a  |                        |       |
+|           | new year preceding the first   |                        |       |
+|           | Monday are considered to be in |                        |       |
 |           | week 0.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%c``    | Locale's appropriate date and  || Tue Aug 16 21:30:00   | \(1)  |
@@ -2428,7 +2433,8 @@ incomplete or ambiguous ISO 8601 directives will raise a :exc:`ValueError`.
 The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :func:`strftime` function, and platform
 variations are common. To see the full set of format codes supported on your
-platform, consult the :manpage:`strftime(3)` documentation.
+platform, consult the :manpage:`strftime(3)` documentation. There are also
+differences between platforms in handling of unsupported format specifiers.
 
 .. versionadded:: 3.6
    ``%G``, ``%u`` and ``%V`` were added.
@@ -2514,7 +2520,7 @@ Notes:
       :meth:`utcoffset` is transformed into a string of the form
       ``±HHMM[SS[.ffffff]]``, where ``HH`` is a 2-digit string giving the number
       of UTC offset hours, ``MM`` is a 2-digit string giving the number of UTC
-      offset minutes, SS is a 2-digit string giving the number of UTC offset
+      offset minutes, ``SS`` is a 2-digit string giving the number of UTC offset
       seconds and ``ffffff`` is a 6-digit string giving the number of UTC
       offset microseconds. The ``ffffff`` part is omitted when the offset is a
       whole number of seconds and both the ``ffffff`` and the ``SS`` part is
@@ -2533,9 +2539,18 @@ Notes:
       In addition, providing ``'Z'`` is identical to ``'+00:00'``.
 
    ``%Z``
-      If :meth:`tzname` returns ``None``, ``%Z`` is replaced by an empty
-      string. Otherwise ``%Z`` is replaced by the returned value, which must
-      be a string.
+      In :meth:`strftime`, ``%Z`` is replaced by an empty string if
+      :meth:`tzname` returns ``None``; otherwise ``%Z`` is replaced by the
+      returned value, which must be a string.
+
+      :meth:`strptime` only accepts certain values for ``%Z``:
+
+      1. any value in ``time.tzname`` for your machine's locale
+      2. the hard-coded values ``UTC`` and ``GMT``
+
+      So someone living in Japan may have ``JST``, ``UTC``, and ``GMT`` as
+      valid values, but probably not ``EST``. It will raise ``ValueError`` for
+      invalid values.
 
    .. versionchanged:: 3.2
       When the ``%z`` directive is provided to the :meth:`strptime` method, an

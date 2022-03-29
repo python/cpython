@@ -6,7 +6,7 @@ import contextlib
 import typing
 
 from . import events
-from . import futures
+from . import exceptions as exceptions_mod
 from . import locks
 from . import tasks
 
@@ -83,7 +83,7 @@ async def staggered_race(
             previous_failed: typing.Optional[locks.Event]) -> None:
         # Wait for the previous task to finish, or for delay seconds
         if previous_failed is not None:
-            with contextlib.suppress(futures.TimeoutError):
+            with contextlib.suppress(exceptions_mod.TimeoutError):
                 # Use asyncio.wait_for() instead of asyncio.wait() here, so
                 # that if we get cancelled at this point, Event.wait() is also
                 # cancelled, otherwise there will be a "Task destroyed but it is

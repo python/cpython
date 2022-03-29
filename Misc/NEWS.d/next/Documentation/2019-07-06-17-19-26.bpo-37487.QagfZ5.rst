@@ -1,1 +1,0 @@
-Fix PyList_GetItem index description to include 0.

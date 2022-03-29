@@ -159,7 +159,7 @@ implementation used by the asyncio event loop:
 
 .. class:: AbstractChildWatcher
 
-   .. method:: add_child_handler(pid, callback, \*args)
+   .. method:: add_child_handler(pid, callback, *args)
 
       Register a new child handler.
 
@@ -209,7 +209,7 @@ implementation used by the asyncio event loop:
    It works reliably even when the asyncio event loop is run in a non-main OS thread.
 
    There is no noticeable overhead when handling a big number of children (*O(1)* each
-   time a child terminates), but stating a thread per process requires extra memory.
+   time a child terminates), but starting a thread per process requires extra memory.
 
    This watcher is used by default.
 
@@ -219,7 +219,7 @@ implementation used by the asyncio event loop:
 
    This implementation registers a :py:data:`SIGCHLD` signal handler on
    instantiation. That can break third-party code that installs a custom handler for
-   `SIGCHLD`.  signal).
+   :py:data:`SIGCHLD` signal.
 
    The watcher avoids disrupting other code spawning processes
    by polling every process explicitly on a :py:data:`SIGCHLD` signal.
@@ -256,6 +256,18 @@ implementation used by the asyncio event loop:
 
    This solution requires a running event loop in the main thread to work, as
    :class:`SafeChildWatcher`.
+
+.. class:: PidfdChildWatcher
+
+   This implementation polls process file descriptors (pidfds) to await child
+   process termination. In some respects, :class:`PidfdChildWatcher` is a
+   "Goldilocks" child watcher implementation. It doesn't require signals or
+   threads, doesn't interfere with any processes launched outside the event
+   loop, and scales linearly with the number of subprocesses launched by the
+   event loop. The main disadvantage is that pidfds are specific to Linux, and
+   only work on recent (5.3+) kernels.
+
+   .. versionadded:: 3.9
 
 
 Custom Policies

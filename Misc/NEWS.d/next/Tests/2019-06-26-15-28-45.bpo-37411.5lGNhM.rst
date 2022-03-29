@@ -1,2 +1,0 @@
-Fix test_wsgiref.testEnviron() to no longer depend on the environment
-variables (don't fail if "X" variable is set).

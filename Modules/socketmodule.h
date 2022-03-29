@@ -8,9 +8,7 @@
 #   include <sys/socket.h>
 # endif
 # include <netinet/in.h>
-# if !defined(__CYGWIN__)
-#  include <netinet/tcp.h>
-# endif
+# include <netinet/tcp.h>
 
 #else /* MS_WINDOWS */
 # include <winsock2.h>
@@ -131,6 +129,8 @@ typedef int socklen_t;
 
 #ifdef HAVE_LINUX_CAN_H
 # include <linux/can.h>
+#elif defined(HAVE_NETCAN_CAN_H)
+# include <netcan/can.h>
 #else
 # undef AF_CAN
 # undef PF_CAN
@@ -142,6 +142,10 @@ typedef int socklen_t;
 
 #ifdef HAVE_LINUX_CAN_BCM_H
 #include <linux/can/bcm.h>
+#endif
+
+#ifdef HAVE_LINUX_CAN_J1939_H
+#include <linux/can/j1939.h>
 #endif
 
 #ifdef HAVE_SYS_SYS_DOMAIN_H
@@ -188,6 +192,21 @@ typedef int socklen_t;
 
 #endif /* HAVE_SOCKADDR_ALG */
 
+#ifdef __EMSCRIPTEN__
+// wasm32-emscripten sockets only support subset of IPv4 and IPv6.
+// SCTP protocol crashes runtime.
+#ifdef IPPROTO_SCTP
+#  undef IPPROTO_SCTP
+#endif
+// setsockopt() fails with ENOPROTOOPT, getsockopt only supports SO_ERROR.
+// undef SO_REUSEADDR and SO_REUSEPORT so they cannot be used.
+#ifdef SO_REUSEADDR
+#  undef SO_REUSEADDR
+#endif
+#ifdef SO_REUSEPORT
+#  undef SO_REUSEPORT
+#endif
+#endif // __EMSCRIPTEN__
 
 #ifndef Py__SOCKET_H
 #define Py__SOCKET_H
@@ -235,7 +254,12 @@ typedef union sock_addr {
     struct sockaddr_in6 in6;
     struct sockaddr_storage storage;
 #endif
-#ifdef HAVE_BLUETOOTH_BLUETOOTH_H
+#if defined(HAVE_BLUETOOTH_H) && defined(__FreeBSD__)
+    struct sockaddr_l2cap bt_l2;
+    struct sockaddr_rfcomm bt_rc;
+    struct sockaddr_sco bt_sco;
+    struct sockaddr_hci bt_hci;
+#elif defined(HAVE_BLUETOOTH_BLUETOOTH_H)
     struct sockaddr_l2 bt_l2;
     struct sockaddr_rc bt_rc;
     struct sockaddr_sco bt_sco;
@@ -246,7 +270,7 @@ typedef union sock_addr {
 #ifdef HAVE_NETPACKET_PACKET_H
     struct sockaddr_ll ll;
 #endif
-#ifdef HAVE_LINUX_CAN_H
+#if defined(HAVE_LINUX_CAN_H) || defined(HAVE_NETCAN_CAN_H)
     struct sockaddr_can can;
 #endif
 #ifdef HAVE_SYS_KERN_CONTROL_H
@@ -260,6 +284,9 @@ typedef union sock_addr {
 #endif
 #ifdef AF_VSOCK
     struct sockaddr_vm vm;
+#endif
+#ifdef HAVE_LINUX_TIPC_H
+    struct sockaddr_tipc tipc;
 #endif
 } sock_addr_t;
 
@@ -330,7 +357,8 @@ typedef struct {
 
 */
 
-/* C API for usage by other Python modules */
+/* C API for usage by other Python modules.
+ * Always add new things to the end for binary compatibility. */
 typedef struct {
     PyTypeObject *Sock_Type;
     PyObject *error;

@@ -1,6 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "structmember.h"
+#include <stddef.h>               // offsetof()
 #include "pycore_accu.h"
 #include "pycore_object.h"
 #include "_iomodule.h"
@@ -192,7 +192,7 @@ write_str(stringio *self, PyObject *obj)
     }
     if (self->writenl) {
         PyObject *translated = PyUnicode_Replace(
-            decoded, _PyIO_str_nl, self->writenl, -1);
+            decoded, &_Py_STR(newline), self->writenl, -1);
         Py_DECREF(decoded);
         decoded = translated;
     }
@@ -402,14 +402,14 @@ stringio_iternext(stringio *self)
     CHECK_CLOSED(self);
     ENSURE_REALIZED(self);
 
-    if (Py_TYPE(self) == &PyStringIO_Type) {
+    if (Py_IS_TYPE(self, &PyStringIO_Type)) {
         /* Skip method call overhead for speed */
         line = _stringio_readline(self, -1);
     }
     else {
         /* XXX is subclassing StringIO really supported? */
-        line = _PyObject_CallMethodNoArgs((PyObject *)self,
-                                             _PyIO_str_readline);
+        line = PyObject_CallMethodNoArgs((PyObject *)self,
+                                             &_Py_ID(readline));
         if (line && !PyUnicode_Check(line)) {
             PyErr_Format(PyExc_OSError,
                          "readline() should have returned a str object, "
@@ -964,7 +964,7 @@ stringio_newlines(stringio *self, void *context)
     CHECK_CLOSED(self);
     if (self->decoder == NULL)
         Py_RETURN_NONE;
-    return PyObject_GetAttr(self->decoder, _PyIO_str_newlines);
+    return PyObject_GetAttr(self->decoder, &_Py_ID(newlines));
 }
 
 #include "clinic/stringio.c.h"

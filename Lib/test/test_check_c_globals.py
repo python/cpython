@@ -3,7 +3,7 @@ import test.test_tools
 
 test.test_tools.skip_if_missing('c-analyzer')
 with test.test_tools.imports_under_tool('c-analyzer'):
-    from c_globals.__main__ import main
+    from cpython.__main__ import main
 
 
 class ActualChecks(unittest.TestCase):

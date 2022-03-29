@@ -1,34 +1,64 @@
-from . import preprocessor
+import contextlib
+import os.path
 
 
-def iter_clean_lines(lines):
-    incomment = False
-    for line in lines:
-        # Deal with comments.
-        if incomment:
-            _, sep, line = line.partition('*/')
-            if sep:
-                incomment = False
-            continue
-        line, _, _ = line.partition('//')
-        line, sep, remainder = line.partition('/*')
-        if sep:
-            _, sep, after = remainder.partition('*/')
-            if not sep:
-                incomment = True
-                continue
-            line += ' ' + after
+def resolve(source, filename):
+    if _looks_like_filename(source):
+        return _resolve_filename(source, filename)
 
-        # Ignore blank lines and leading/trailing whitespace.
-        line = line.strip()
-        if not line:
-            continue
+    if isinstance(source, str):
+        source = source.splitlines()
 
-        yield line
+    # At this point "source" is not a str.
+    if not filename:
+        filename = None
+    elif not isinstance(filename, str):
+        raise TypeError(f'filename should be str (or None), got {filename!r}')
+    else:
+        filename, _ = _resolve_filename(filename)
+    return source, filename
 
 
-def iter_lines(filename, *,
-               preprocess=preprocessor.run,
-               ):
-    content = preprocess(filename)
-    return iter(content.splitlines())
+@contextlib.contextmanager
+def good_file(filename, alt=None):
+    if not _looks_like_filename(filename):
+        raise ValueError(f'expected a filename, got {filename}')
+    filename, _ = _resolve_filename(filename, alt)
+    try:
+        yield filename
+    except Exception:
+        if not os.path.exists(filename):
+            raise FileNotFoundError(f'file not found: {filename}')
+        raise  # re-raise
+
+
+def _looks_like_filename(value):
+    if not isinstance(value, str):
+        return False
+    return value.endswith(('.c', '.h'))
+
+
+def _resolve_filename(filename, alt=None):
+    if os.path.isabs(filename):
+        ...
+#        raise NotImplementedError
+    else:
+        filename = os.path.join('.', filename)
+
+    if not alt:
+        alt = filename
+    elif os.path.abspath(filename) == os.path.abspath(alt):
+        alt = filename
+    else:
+        raise ValueError(f'mismatch: {filename} != {alt}')
+    return filename, alt
+
+
+@contextlib.contextmanager
+def opened(source, filename=None):
+    source, filename = resolve(source, filename)
+    if isinstance(source, str):
+        with open(source) as srcfile:
+            yield srcfile, filename
+    else:
+        yield source, filename

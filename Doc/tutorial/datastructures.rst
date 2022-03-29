@@ -78,7 +78,7 @@ objects:
    Return the number of times *x* appears in the list.
 
 
-.. method:: list.sort(key=None, reverse=False)
+.. method:: list.sort(*, key=None, reverse=False)
    :noindex:
 
    Sort the items of the list in place (the arguments can be used for sort
@@ -614,6 +614,21 @@ To loop over a sequence in sorted order, use the :func:`sorted` function which
 returns a new sorted list while leaving the source unaltered. ::
 
    >>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
+   >>> for i in sorted(basket):
+   ...     print(i)
+   ...
+   apple
+   apple
+   banana
+   orange
+   orange
+   pear
+
+Using :func:`set` on a sequence eliminates duplicate elements. The use of
+:func:`sorted` in combination with :func:`set` over a sequence is an idiomatic
+way to loop over unique elements of the sequence in sorted order. ::
+
+   >>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
    >>> for f in sorted(set(basket)):
    ...     print(f)
    ...
@@ -644,11 +659,12 @@ More on Conditions
 The conditions used in ``while`` and ``if`` statements can contain any
 operators, not just comparisons.
 
-The comparison operators ``in`` and ``not in`` check whether a value occurs
-(does not occur) in a sequence.  The operators ``is`` and ``is not`` compare
-whether two objects are really the same object; this only matters for mutable
-objects like lists.  All comparison operators have the same priority, which is
-lower than that of all numerical operators.
+
+The comparison operators ``in`` and ``not in`` are membership tests that
+determine whether a value is in (or not in) a container.  The operators ``is``
+and ``is not`` compare whether two objects are really the same object.  All
+comparison operators have the same priority, which is lower than that of all
+numerical operators.
 
 Comparisons can be chained.  For example, ``a < b == c`` tests whether ``a`` is
 less than ``b`` and moreover ``b`` equals ``c``.
@@ -675,10 +691,11 @@ to a variable.  For example, ::
    >>> non_null
    'Trondheim'
 
-Note that in Python, unlike C, assignment cannot occur inside expressions. C
-programmers may grumble about this, but it avoids a common class of problems
-encountered in C programs: typing ``=`` in an expression when ``==`` was
-intended.
+Note that in Python, unlike C, assignment inside expressions must be done
+explicitly with the
+:ref:`walrus operator <why-can-t-i-use-an-assignment-in-an-expression>` ``:=``.
+This avoids a common class of problems encountered in C programs: typing ``=``
+in an expression when ``==`` was intended.
 
 
 .. _tut-comparing:

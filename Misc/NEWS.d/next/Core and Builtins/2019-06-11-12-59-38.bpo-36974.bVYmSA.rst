@@ -1,2 +1,0 @@
-Implemented separate vectorcall functions for every calling convention of
-builtin functions and methods. This improves performance for calls.

@@ -1,3 +1,0 @@
-Fix :func:`sys.excepthook` and :c:func:`PyErr_Display` if a filename is a
-bytes string. For example, for a SyntaxError exception where the filename
-attribute is a bytes string.
