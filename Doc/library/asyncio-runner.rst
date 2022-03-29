@@ -126,7 +126,7 @@ Handling Keyboard Interruption
 
 .. versionadded:: 3.11
 
-When a user hits the interrupt key (normally :kbd:`Ctrl-C`), :exc:`KeyboardInterrupt`
+When :const:`signal.SIGINT` is raised by :kbd:`Ctrl-C`, :exc:`KeyboardInterrupt`
 exception is raised in the main thread by default.
 
 This approach doesn't work with asyncio, the interruption should never break asyncio
