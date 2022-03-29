@@ -104,7 +104,7 @@ class Runner:
         else:
             sigint_handler = None
 
-        self._interrunt_count = 0
+        self._interrupt_count = 0
         try:
             return self._loop.run_until_complete(task)
         except exceptions.CancelledError:
