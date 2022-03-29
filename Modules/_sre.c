@@ -1815,6 +1815,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
 
         case SRE_OP_REPEAT_ONE:
         case SRE_OP_MIN_REPEAT_ONE:
+        case SRE_OP_POSSESSIVE_REPEAT_ONE:
             {
                 SRE_CODE min, max;
                 GET_SKIP;
@@ -1834,8 +1835,9 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
             break;
 
         case SRE_OP_REPEAT:
+        case SRE_OP_POSSESSIVE_REPEAT:
             {
-                SRE_CODE min, max;
+                SRE_CODE op1 = op, min, max;
                 GET_SKIP;
                 GET_ARG; min = arg;
                 GET_ARG; max = arg;
@@ -1847,7 +1849,25 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     FAIL;
                 code += skip-3;
                 GET_OP;
-                if (op != SRE_OP_MAX_UNTIL && op != SRE_OP_MIN_UNTIL)
+                if (op1 == SRE_OP_POSSESSIVE_REPEAT) {
+                    if (op != SRE_OP_SUCCESS)
+                        FAIL;
+                }
+                else {
+                    if (op != SRE_OP_MAX_UNTIL && op != SRE_OP_MIN_UNTIL)
+                        FAIL;
+                }
+            }
+            break;
+
+        case SRE_OP_ATOMIC_GROUP:
+            {
+                GET_SKIP;
+                if (!_validate_inner(code, code+skip-2, groups))
+                    FAIL;
+                code += skip-2;
+                GET_OP;
+                if (op != SRE_OP_SUCCESS)
                     FAIL;
             }
             break;
