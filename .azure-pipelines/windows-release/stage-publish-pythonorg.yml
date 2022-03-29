@@ -84,16 +84,32 @@ jobs:
     condition: and(succeeded(), ne(variables['PublishARM64'], 'true'))
 
 
-  - template: ./gpg-sign.yml
-    parameters:
-      GPGKeyFile: 'python-signing.key'
-      Files: 'msi\*\*, embed\*.zip'
+  - task: DownloadSecureFile@1
+    name: gpgkey
+    inputs:
+      secureFile: 'python-signing.key'
+    displayName: 'Download GPG key'
 
-  - template: ./gpg-sign.yml
-    parameters:
-      GPGKeyFile: 'python-signing.key'
-      Files: 'doc\htmlhelp\*.chm'
-      Condition: and(succeeded(), eq(variables['DoCHM'], 'true'))
+  - powershell: |
+      git clone https://github.com/python/cpython-bin-deps --branch gpg --single-branch --depth 1 --progress -v "gpg"
+      gpg/gpg2.exe --import "$(gpgkey.secureFilePath)"
+      $files = gci -File "msi\*\*", "embed\*.zip"
+      if ("$(DoCHM)" -ieq "true") {
+          $files = $files + (gci -File "doc\htmlhelp\*.chm")
+      }
+      $files.FullName | %{
+          gpg/gpg2.exe -ba --batch --passphrase $(GPGPassphrase) $_
+          "Made signature for $_"
+      }
+    displayName: 'Generate GPG signatures'
+    workingDirectory: $(Build.BinariesDirectory)
+
+  - powershell: |
+      $p = gps "gpg-agent" -EA 0
+      if ($p) { $p.Kill() }
+    displayName: 'Kill GPG agent'
+    condition: true
+
 
   - powershell: >
       $(Build.SourcesDirectory)\Tools\msi\uploadrelease.ps1

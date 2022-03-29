@@ -23,3 +23,4 @@ PyAPI_FUNC(int) PyFrame_FastToLocalsWithError(PyFrameObject *f);
 PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
 
 PyAPI_FUNC(PyFrameObject *) PyFrame_GetBack(PyFrameObject *frame);
+PyAPI_FUNC(PyObject *) PyFrame_GetLocals(PyFrameObject *frame);
