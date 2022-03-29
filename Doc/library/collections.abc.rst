@@ -127,7 +127,7 @@ ABC                            Inherits from          Abstract Methods        Mi
 :class:`Reversible` [1]_       :class:`Iterable`      ``__reversed__``,
                                                       ``__iter__``
 :class:`Generator` [1]_        :class:`Iterator`      ``send``,               ``__iter__``, ``__next__``, ``close``
-                                                      ``throw``               
+                                                      ``throw``
 :class:`Sized` [1]_                                   ``__len__``
 :class:`Callable` [1]_                                ``__call__``
 :class:`Collection` [1]_       :class:`Sized`,        ``__len__``,
