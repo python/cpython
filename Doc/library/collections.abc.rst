@@ -126,31 +126,29 @@ ABC                            Inherits from          Abstract Methods        Mi
 :class:`Iterator` [1]_         :class:`Iterable`      ``__next__``            ``__iter__``
 :class:`Reversible` [1]_       :class:`Iterable`      ``__reversed__``,
                                                       ``__iter__``
-:class:`Generator` [1]_        :class:`Iterator`      ``send``,               ``__iter__``, ``__next__``, ``close``
-                                                      ``throw``
+:class:`Generator`  [1]_       :class:`Iterator`      ``send``, ``throw``     ``close``, ``__iter__``, ``__next__``
 :class:`Sized` [1]_                                   ``__len__``
 :class:`Callable` [1]_                                ``__call__``
-:class:`Collection` [1]_       :class:`Sized`,        ``__len__``,
+:class:`Collection` [1]_       :class:`Sized`,        ``__contains__``,
                                :class:`Iterable`,     ``__iter__``,
-                               :class:`Container`     ``__contains__``
-:class:`Sequence`              :class:`Reversible`,   ``__getitem__``,        ``__iter__``, ``__contains__``, ``__reversed__``,
+                               :class:`Container`     ``__len__``
+:class:`Sequence`              :class:`Reversible`,   ``__getitem__``,        ``__contains__``, ``__iter__``, ``__reversed__``,
                                :class:`Collection`    ``__len__``             ``index``, ``count``
 :class:`MutableSequence`       :class:`Sequence`      ``__getitem__``,        Inherited mixin :class:`Sequence` methods,
-                                                      ``__setitem__``,        ``append``, ``clear``, ``reverse``, ``extend``,
-                                                      ``__delitem__``,        ``pop``, ``remove``, ``__iadd__``
+                                                      ``__setitem__``,        ``append``, ``reverse``, ``extend``, ``pop``,
+                                                      ``__delitem__``,        ``remove``, ``clear``, ``__iadd__``
                                                       ``__len__``,
                                                       ``insert``
 :class:`ByteString`            :class:`Sequence`      ``__getitem__``,        Inherited mixin :class:`Sequence` methods
                                                       ``__len__``
-:class:`Set`                   :class:`Collection`    ``__len__``,            ``__le__``, ``__lt__``, ``__ge__``, ``__gt__``,
+:class:`Set`                   :class:`Collection`    ``__contains__``,       ``__le__``, ``__lt__``, ``__ge__``, ``__gt__``,
                                                       ``__iter__``,           ``__eq__``, ``__and__``, ``__rand__``, ``__or__``,
-                                                      ``__contains__``        ``__ror__``, ``__sub__``, ``__rsub__``, ``__xor__``,
+                                                      ``__len__``             ``__ror__``, ``__sub__``, ``__rsub__``, ``__xor__``,
                                                                               ``__rxor__``, ``isdisjoint``
-:class:`MutableSet`            :class:`Set`           ``__len__``,            Inherited mixin :class:`Set` methods,
+:class:`MutableSet`            :class:`Set`           ``__contains__``,       Inherited mixin :class:`Set` methods,
                                                       ``__iter__``,           ``clear``, ``pop``, ``remove``, ``__ior__``,
-                                                      ``__contains__``,       ``__iand__``, ``__ixor__``, ``__isub__``
-                                                      ``add``,
-                                                      ``discard``
+                                                      ``__len__``,            ``__iand__``, ``__ixor__``, ``__isub__``
+                                                      ``add``, ``discard``
 :class:`Mapping`               :class:`Collection`    ``__getitem__``,        ``__contains__``, ``keys``, ``items``, ``values``,
                                                       ``__iter__``,           ``get``, ``__eq__``
                                                       ``__len__``
@@ -160,22 +158,18 @@ ABC                            Inherits from          Abstract Methods        Mi
                                                       ``__iter__``,
                                                       ``__len__``
 :class:`MappingView`           :class:`Sized`                                 ``__len__``
-:class:`ItemsView`             :class:`MappingView`,                          Inherited mixin :class:`MappingView` method,
-                               :class:`Set`                                   inherited mixin :class:`Set` methods,
-                                                                              ``__iter__``, ``__contains__``
-:class:`KeysView`              :class:`MappingView`,                          Inherited mixin :class:`MappingView` method,
-                               :class:`Set`                                   inherited mixin :class:`Set` methods,
-                                                                              ``__iter__``, ``__contains__``
-:class:`ValuesView`            :class:`MappingView`,                          Inherited mixin :class:`MappingView` method,
-                               :class:`Collection`                            ``__iter__``, ``__contains__``
+:class:`ItemsView`             :class:`MappingView`,                          Inherited mixin :class:`Set` methods,
+                               :class:`Set`                                   ``__contains__``, ``__iter__``, ``__len__``
+:class:`KeysView`              :class:`MappingView`,                          Inherited mixin :class:`Set` methods,
+                               :class:`Set`                                   ``__contains__``, ``__iter__``, ``__len__``
+:class:`ValuesView`            :class:`MappingView`,                          ``__contains__``, ``__iter__``, ``__len__``
+                               :class:`Collection`
 :class:`Awaitable` [1]_                               ``__await__``
 :class:`Coroutine` [1]_        :class:`Awaitable`     ``__await__``,          ``close``
-                                                      ``send``,
-                                                      ``throw``
+                                                      ``send``, ``throw``
 :class:`AsyncIterable` [1]_                           ``__aiter__``
 :class:`AsyncIterator` [1]_    :class:`AsyncIterable` ``__anext__``           ``__aiter__``
-:class:`AsyncGenerator` [1]_   :class:`AsyncIterator` ``asend``,              ``__aiter__``, ``__anext__``, ``aclose``
-                                                      ``athrow``
+:class:`AsyncGenerator` [1]_   :class:`AsyncIterator` ``asend``, ``athrow``   ``aclose``, ``__aiter__``, ``__anext__``
 ============================== ====================== ======================= ====================================================
 
 
