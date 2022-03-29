@@ -52,7 +52,7 @@ class Runner:
         self._loop_factory = loop_factory
         self._loop = None
         self._context = None
-        self._interrunt_count = 0
+        self._interrupt_count = 0
 
     def __enter__(self):
         self._lazy_init()
