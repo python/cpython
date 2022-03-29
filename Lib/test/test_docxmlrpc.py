@@ -4,6 +4,9 @@ import re
 import sys
 import threading
 import unittest
+from test import support
+
+support.requires_working_socket(module=True)
 
 def make_request_and_skipIf(condition, reason):
     # If we skip the test, we have to make a request because

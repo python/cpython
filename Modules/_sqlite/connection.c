@@ -578,8 +578,6 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
     } else if (PyObject_CheckBuffer(py_val)) {
         Py_buffer view;
         if (PyObject_GetBuffer(py_val, &view, PyBUF_SIMPLE) != 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "could not convert BLOB to buffer");
             return -1;
         }
         if (view.len > INT_MAX) {
@@ -591,6 +589,11 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
         sqlite3_result_blob(context, view.buf, (int)view.len, SQLITE_TRANSIENT);
         PyBuffer_Release(&view);
     } else {
+        callback_context *ctx = (callback_context *)sqlite3_user_data(context);
+        PyErr_Format(ctx->state->ProgrammingError,
+                     "User-defined functions cannot return '%s' values to "
+                     "SQLite",
+                     Py_TYPE(py_val)->tp_name);
         return -1;
     }
     return 0;

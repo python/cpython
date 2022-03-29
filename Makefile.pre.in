@@ -667,7 +667,6 @@ coverage-lcov:
 	    '*/Modules/_blake2/impl/*' \
 	    '*/Modules/_ctypes/libffi*/*' \
 	    '*/Modules/_decimal/libmpdec/*' \
-	    '*/Modules/_sha3/kcp/*' \
 	    '*/Modules/expat/*' \
 	    '*/Modules/zlib/*' \
 	    '*/Include/*' \
@@ -1137,7 +1136,10 @@ regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES_IN)
 # Deepfreeze targets
 
 .PHONY: regen-deepfreeze
-regen-deepfreeze: $(DEEPFREEZE_OBJS)
+regen-deepfreeze:
+	@# Possibly generate globals first, to make sure _bootstrap_python builds.
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
+	$(MAKE) $(DEEPFREEZE_OBJS)
 
 DEEPFREEZE_DEPS=$(srcdir)/Tools/scripts/deepfreeze.py $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
 
@@ -1179,7 +1181,10 @@ regen-importlib: regen-frozen
 # Global objects
 
 .PHONY: regen-global-objects
-regen-global-objects: regen-deepfreeze $(srcdir)/Tools/scripts/generate_global_objects.py
+regen-global-objects: regen-deepfreeze
+	@# We already ran in once, before deepfreezing, to make sure
+	@# _bootstrap_python builds.  Now we run it again to catch any
+	@# remaining globals, including those added by deepfreeze.
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
 
 ############################################################################
@@ -2352,7 +2357,7 @@ clean-retain-profile: pycremoval
 	-rm -f pybuilddir.txt
 	-rm -f Lib/lib2to3/*Grammar*.pickle
 	-rm -f _bootstrap_python
-	-rm -f python.html python*.js python.data
+	-rm -f python.html python*.js python.data python*.symbols python*.map
 	-rm -rf $(WASM_STDLIB)
 	-rm -f Programs/_testembed Programs/_freeze_module
 	-rm -f Python/deepfreeze/*.[co]
@@ -2477,7 +2482,7 @@ MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_PYEXPAT_DEPS=$(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
 MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
-MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-dispatch.c $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2-kat.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b-test.c $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2bp-test.c $(srcdir)/Modules/_blake2/impl/blake2bp.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s-test.c $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/impl/blake2sp-test.c $(srcdir)/Modules/_blake2/impl/blake2sp.c $(srcdir)/Modules/hashlib.h
+MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/blake2module.h $(srcdir)/Modules/hashlib.h
 MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
 MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h $(LIBMPDEC_HEADERS) @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c $(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
@@ -2486,7 +2491,7 @@ MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
 MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__SHA256_DEPS=$(srcdir)/Modules/hashlib.h
-MODULE__SHA3_DEPS=$(srcdir)/Modules/_sha3/kcp/KeccakHash.c $(srcdir)/Modules/_sha3/kcp/KeccakHash.h $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-64.macros $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-SnP-opt32.h $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-SnP-opt64.h $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-SnP.h $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-inplace32BI.c $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-opt64-config.h $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-opt64.c $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-unrolling.macros $(srcdir)/Modules/_sha3/kcp/KeccakSponge.c $(srcdir)/Modules/_sha3/kcp/KeccakSponge.h $(srcdir)/Modules/_sha3/kcp/KeccakSponge.inc $(srcdir)/Modules/_sha3/kcp/PlSnP-Fallback.inc $(srcdir)/Modules/_sha3/kcp/SnP-Relaned.h $(srcdir)/Modules/_sha3/kcp/align.h $(srcdir)/Modules/hashlib.h
+MODULE__SHA3_DEPS=$(srcdir)/Modules/_sha3/sha3.c $(srcdir)/Modules/_sha3/sha3.h $(srcdir)/Modules/hashlib.h
 MODULE__SHA512_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data.h $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h

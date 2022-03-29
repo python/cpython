@@ -7,7 +7,9 @@ import select
 import threading
 import time
 import unittest
-from test.support import cpython_only, requires_subprocess
+from test.support import (
+    cpython_only, requires_subprocess, requires_working_socket
+)
 from test.support import threading_helper
 from test.support.os_helper import TESTFN
 
@@ -17,6 +19,7 @@ try:
 except AttributeError:
     raise unittest.SkipTest("select.poll not defined")
 
+requires_working_socket(module=True)
 
 def find_ready_matching(ready, flag):
     match = []

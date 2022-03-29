@@ -973,6 +973,22 @@ cat > conftest.c <<EOF
         darwin
 #elif defined(__VXWORKS__)
         vxworks
+#elif defined(__wasm32__)
+#  if defined(__EMSCRIPTEN__)
+	wasm32-emscripten
+#  elif defined(__wasi__)
+	wasm32-wasi
+#  else
+#    error unknown wasm32 platform
+#  endif
+#elif defined(__wasm64__)
+#  if defined(__EMSCRIPTEN)
+	wasm64-emscripten
+#  elif defined(__wasi__)
+	wasm64-wasi
+#  else
+#    error unknown wasm64 platform
+#  endif
 #else
 # error unknown platform triplet
 #endif
@@ -1659,6 +1675,13 @@ if test "$Py_LTO" = 'true' ; then
           ;;
       esac
       ;;
+    *emcc*)
+      if test "$Py_LTO_POLICY" != "default"; then
+        AC_MSG_ERROR([emcc supports only default lto.])
+      fi
+      LTOFLAGS="-flto"
+      LTOCFLAGS="-flto"
+      ;;
     *gcc*)
       if test $Py_LTO_POLICY = thin
       then
@@ -1861,19 +1884,39 @@ then
 fi
 
 # WASM flags
+# TODO: Add -s MAIN_MODULE=2 for dlopen() support.
+# The option disables code elimination, which increases code size of main
+# binary. All objects must be built with -fPIC.
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   [Emscripten/browser], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 --preload-file \$(WASM_ASSETS_DIR)"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1"
+    LINKFORSHARED="--preload-file \$(WASM_ASSETS_DIR)"
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
+    dnl separate-dwarf does not seem to work in Chrome DevTools Support.
+    if test "$Py_DEBUG" = 'true'; then
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
+    else
+      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
+    fi
   ],
   [Emscripten/node], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS -s PROXY_TO_PTHREAD"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s USE_PTHREADS=1"
+    LINKFORSHARED="-s PROXY_TO_PTHREAD=1 -s EXIT_RUNTIME=1"
     CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
+    if test "$Py_DEBUG" = 'true'; then
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
+    else
+      LINKFORSHARED="$LINKFORSHARED -O2 -gseparate-dwarf"
+    fi
   ],
   [WASI/*], [
     AC_DEFINE([_WASI_EMULATED_SIGNAL], [1], [Define to 1 if you want to emulate signals on WASI])
-    LIBS="$LIBS -lwasi-emulated-signal"
+    AC_DEFINE([_WASI_EMULATED_GETPID], [1], [Define to 1 if you want to emulate getpid() on WASI])
+    AC_DEFINE([_WASI_EMULATED_PROCESS_CLOCKS], [1], [Define to 1 if you want to emulate process clocks on WASI])
+    LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
   ]
 )
@@ -2375,7 +2418,7 @@ AC_DEFINE(STDC_HEADERS, 1, [Define to 1 if you have the ANSI C header files.])
 # checks for header files
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
-  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h linux/memfd.h linux/random.h linux/soundcard.h \
+  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/memfd.h linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
@@ -2880,6 +2923,10 @@ then
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
+	Emscripten*)
+		LDSHARED='$(CC) -shared -s SIDE_MODULE=1'
+		LDCXXSHARED='$(CXX) -shared -s SIDE_MODULE=1'
+    ;;
 	FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
@@ -4354,6 +4401,10 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
   ], [have_zlib=no])
 ])
 
+if test "$have_zlib" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$ZLIB_LIBS" = "-lz"; then
+  ZLIB_LIBS="-s USE_ZLIB=1"
+fi
+
 dnl binascii can use zlib for optimized crc32.
 AS_VAR_IF([have_zlib], [yes], [
   BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
@@ -4371,6 +4422,11 @@ PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
     ])
   ], [have_bzip2=no])
 ])
+
+if test "$have_bzip2" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$BZIP2_LIBS" = "-lbz2"; then
+  BZIP2_LIBS="-s USE_BZIP2=1"
+fi
+
 
 PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   AC_CHECK_HEADERS([lzma.h], [
@@ -6040,6 +6096,7 @@ AC_ARG_WITH(ensurepip,
     [
       AS_CASE([$ac_sys_system],
         [Emscripten], [with_ensurepip=no],
+        [WASI], [with_ensurepip=no],
         [with_ensurepip=upgrade]
       )
     ])
@@ -6334,6 +6391,15 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
 done
 IFS=$as_save_IFS
 
+dnl libb2 for blake2. _blake2 module falls back to vendored copy.
+AS_VAR_IF([with_builtin_blake2], [yes], [
+  PKG_CHECK_MODULES([LIBB2], [libb2], [
+    have_libb2=yes
+    AC_DEFINE([HAVE_LIBB2], [1],
+              [Define to 1 if you want to build _blake2 module with libb2])
+  ], [have_libb2=no])
+])
+
 # --with-experimental-isolated-subinterpreters
 AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
             [Better isolate subinterpreters, experimental build mode.])
@@ -6415,6 +6481,25 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   [Emscripten/node], [
     PY_STDLIB_MOD_SET_NA(
       [_ctypes],
+      [_curses],
+      [_curses_panel],
+      [_dbm],
+      [_gdbm],
+      [_scproxy],
+      [_tkinter],
+      [_xxsubinterpreters],
+      [grp],
+      [nis],
+      [ossaudiodev],
+      [pwd],
+      [spwd],
+      [syslog],
+    )
+  ],
+  [WASI/*], [
+    PY_STDLIB_MOD_SET_NA(
+      [_ctypes],
+      [_ctypes_test],
       [_curses],
       [_curses_panel],
       [_dbm],
@@ -6592,7 +6677,9 @@ PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
 PY_STDLIB_MOD([_sha256], [test "$with_builtin_sha256" = yes])
 PY_STDLIB_MOD([_sha512], [test "$with_builtin_sha512" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
-PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
+PY_STDLIB_MOD([_blake2],
+  [test "$with_builtin_blake2" = yes], [],
+  [$LIBB2_CFLAGS], [$LIBB2_LIBS])
 
 PY_STDLIB_MOD([_crypt],
   [], [test "$ac_cv_crypt_crypt" = yes],

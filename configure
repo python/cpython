@@ -777,6 +777,8 @@ MODULE__IO_TRUE
 MODULES_SETUP_STDLIB
 MODULE_BUILDTYPE
 TEST_MODULES
+LIBB2_LIBS
+LIBB2_CFLAGS
 OPENSSL_RPATH
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
@@ -1084,7 +1086,9 @@ BZIP2_LIBS
 LIBLZMA_CFLAGS
 LIBLZMA_LIBS
 LIBCRYPT_CFLAGS
-LIBCRYPT_LIBS'
+LIBCRYPT_LIBS
+LIBB2_CFLAGS
+LIBB2_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1891,6 +1895,9 @@ Some influential environment variables:
               C compiler flags for LIBCRYPT, overriding pkg-config
   LIBCRYPT_LIBS
               linker flags for LIBCRYPT, overriding pkg-config
+  LIBB2_CFLAGS
+              C compiler flags for LIBB2, overriding pkg-config
+  LIBB2_LIBS  linker flags for LIBB2, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -6084,6 +6091,22 @@ cat > conftest.c <<EOF
         darwin
 #elif defined(__VXWORKS__)
         vxworks
+#elif defined(__wasm32__)
+#  if defined(__EMSCRIPTEN__)
+	wasm32-emscripten
+#  elif defined(__wasi__)
+	wasm32-wasi
+#  else
+#    error unknown wasm32 platform
+#  endif
+#elif defined(__wasm64__)
+#  if defined(__EMSCRIPTEN)
+	wasm64-emscripten
+#  elif defined(__wasi__)
+	wasm64-wasi
+#  else
+#    error unknown wasm64 platform
+#  endif
 #else
 # error unknown platform triplet
 #endif
@@ -7396,6 +7419,13 @@ $as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
           ;;
       esac
       ;;
+    *emcc*)
+      if test "$Py_LTO_POLICY" != "default"; then
+        as_fn_error $? "emcc supports only default lto." "$LINENO" 5
+      fi
+      LTOFLAGS="-flto"
+      LTOCFLAGS="-flto"
+      ;;
     *gcc*)
       if test $Py_LTO_POLICY = thin
       then
@@ -7717,24 +7747,47 @@ then
 fi
 
 # WASM flags
+# TODO: Add -s MAIN_MODULE=2 for dlopen() support.
+# The option disables code elimination, which increases code size of main
+# binary. All objects must be built with -fPIC.
 case $ac_sys_system/$ac_sys_emscripten_target in #(
   Emscripten/browser) :
 
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 --preload-file \$(WASM_ASSETS_DIR)"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1"
+    LINKFORSHARED="--preload-file \$(WASM_ASSETS_DIR)"
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
+        if test "$Py_DEBUG" = 'true'; then
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
+    else
+      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
+    fi
    ;; #(
   Emscripten/node) :
 
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS -s PROXY_TO_PTHREAD"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s USE_PTHREADS=1"
+    LINKFORSHARED="-s PROXY_TO_PTHREAD=1 -s EXIT_RUNTIME=1"
     CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
+    if test "$Py_DEBUG" = 'true'; then
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
+    else
+      LINKFORSHARED="$LINKFORSHARED -O2 -gseparate-dwarf"
+    fi
    ;; #(
   WASI/*) :
 
 
 $as_echo "#define _WASI_EMULATED_SIGNAL 1" >>confdefs.h
 
-    LIBS="$LIBS -lwasi-emulated-signal"
+
+$as_echo "#define _WASI_EMULATED_GETPID 1" >>confdefs.h
+
+
+$as_echo "#define _WASI_EMULATED_PROCESS_CLOCKS 1" >>confdefs.h
+
+    LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
 
  ;; #(
@@ -8652,7 +8705,7 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 # checks for header files
 for ac_header in  \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
-  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h linux/memfd.h linux/random.h linux/soundcard.h \
+  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/memfd.h linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
@@ -10403,6 +10456,10 @@ then
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
+	Emscripten*)
+		LDSHARED='$(CC) -shared -s SIDE_MODULE=1'
+		LDCXXSHARED='$(CXX) -shared -s SIDE_MODULE=1'
+    ;;
 	FreeBSD*)
 		if [ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]
 		then
@@ -15063,6 +15120,10 @@ $as_echo "yes" >&6; }
 
 fi
 
+if test "$have_zlib" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$ZLIB_LIBS" = "-lz"; then
+  ZLIB_LIBS="-s USE_ZLIB=1"
+fi
+
 if test "x$have_zlib" = xyes; then :
 
   BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
@@ -15291,6 +15352,11 @@ else
 $as_echo "yes" >&6; }
 	have_bzip2=yes
 fi
+
+if test "$have_bzip2" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$BZIP2_LIBS" = "-lbz2"; then
+  BZIP2_LIBS="-s USE_BZIP2=1"
+fi
+
 
 
 pkg_failed=no
@@ -20512,6 +20578,8 @@ else
       case $ac_sys_system in #(
   Emscripten) :
     with_ensurepip=no ;; #(
+  WASI) :
+    with_ensurepip=no ;; #(
   *) :
     with_ensurepip=upgrade
        ;;
@@ -21279,6 +21347,87 @@ esac
 done
 IFS=$as_save_IFS
 
+if test "x$with_builtin_blake2" = xyes; then :
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBB2" >&5
+$as_echo_n "checking for LIBB2... " >&6; }
+
+if test -n "$LIBB2_CFLAGS"; then
+    pkg_cv_LIBB2_CFLAGS="$LIBB2_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libb2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libb2") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBB2_CFLAGS=`$PKG_CONFIG --cflags "libb2" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBB2_LIBS"; then
+    pkg_cv_LIBB2_LIBS="$LIBB2_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libb2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libb2") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBB2_LIBS=`$PKG_CONFIG --libs "libb2" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBB2_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libb2" 2>&1`
+        else
+	        LIBB2_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libb2" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBB2_PKG_ERRORS" >&5
+
+	have_libb2=no
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	have_libb2=no
+else
+	LIBB2_CFLAGS=$pkg_cv_LIBB2_CFLAGS
+	LIBB2_LIBS=$pkg_cv_LIBB2_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+    have_libb2=yes
+
+$as_echo "#define HAVE_LIBB2 1" >>confdefs.h
+
+
+fi
+
+fi
+
 # --with-experimental-isolated-subinterpreters
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-experimental-isolated-subinterpreters" >&5
@@ -21408,6 +21557,28 @@ case $ac_sys_system/$ac_sys_emscripten_target in #(
 
 
     py_cv_module__ctypes=n/a
+    py_cv_module__curses=n/a
+    py_cv_module__curses_panel=n/a
+    py_cv_module__dbm=n/a
+    py_cv_module__gdbm=n/a
+    py_cv_module__scproxy=n/a
+    py_cv_module__tkinter=n/a
+    py_cv_module__xxsubinterpreters=n/a
+    py_cv_module_grp=n/a
+    py_cv_module_nis=n/a
+    py_cv_module_ossaudiodev=n/a
+    py_cv_module_pwd=n/a
+    py_cv_module_spwd=n/a
+    py_cv_module_syslog=n/a
+    py_cv_module_=n/a
+
+   ;; #(
+  WASI/*) :
+
+
+
+    py_cv_module__ctypes=n/a
+    py_cv_module__ctypes_test=n/a
     py_cv_module__curses=n/a
     py_cv_module__curses_panel=n/a
     py_cv_module__dbm=n/a
@@ -22832,8 +23003,8 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__BLAKE2=$py_cv_module__blake2$as_nl"
   if test "x$py_cv_module__blake2" = xyes; then :
 
-
-
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$LIBB2_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_LDFLAGS=$LIBB2_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__blake2" = yes; then

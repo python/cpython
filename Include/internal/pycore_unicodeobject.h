@@ -18,6 +18,7 @@ extern PyStatus _PyUnicode_InitGlobalObjects(PyInterpreterState *);
 extern PyStatus _PyUnicode_InitTypes(PyInterpreterState *);
 extern void _PyUnicode_Fini(PyInterpreterState *);
 extern void _PyUnicode_FiniTypes(PyInterpreterState *);
+extern void _PyStaticUnicode_Dealloc(PyObject *);
 
 
 /* other API */
