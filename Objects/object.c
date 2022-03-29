@@ -193,10 +193,11 @@ PyObject_FromMmap(PyTypeObject *tp, const char *path, const size_t size)
         exit(10);
     }
 
-    void *header = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
+    void *header = mmap(NULL, size, PROT_WRITE, MAP_SHARED, fd, 0);
     size_t *sizeptr = (size_t *) header;
     size_t *dataptr = sizeptr + 1;
     void *mem = (void *) dataptr;
+    printf("Size read: %ld\n", *sizeptr);
 
     PyObject *op = (PyObject *) mem;
     if (op == NULL) {
