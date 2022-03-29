@@ -1,0 +1,2 @@
+Update the constructor of :exc:`OSError` to use winerror_to_errno()
+unconditionally. Patch by Dong-hee Na.
