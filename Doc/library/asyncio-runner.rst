@@ -136,8 +136,8 @@ Asyncio handles the keyboard interruption as follows:
 
 1. :meth:`asyncio.Runner.run` installs a custom :const:`signal.SIGINT` handler before
    any user code is executed and removes it when exiting from the function.
-2. The :class:`~asyncio.Runner` creates the main task for passed async function
-   processing.
+2. The :class:`~asyncio.Runner` creates the main task for the passed coroutine for 
+    its execution.
 3. When the interruption is requested, the custom signal handler cancels the main task
    by :meth:`~asyncio.Task.cancel` call.  :exc:`asyncio.CancelledError` is raised
    inside the the main task.  The exception unwinds, ``try/except`` and ``try/finally``
