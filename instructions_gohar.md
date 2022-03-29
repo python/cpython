@@ -1,4 +1,6 @@
 ## Build CPython
+- Make sure to change the flag in `foobarconfig` file to be `0`.
+
 ```
 LIBS="-lrt" ./configure --prefix=$HOME/cpython/python3-custom
 make
@@ -11,6 +13,7 @@ sudo make install
 ```
 
 ## Run Toy Examples
+- Make sure to change the flag in `foobarconfig` file to be `1`.
 ### Writer
 ```
 ./writer helloworld

@@ -204,7 +204,7 @@ PyObject_FromMmap(PyTypeObject *tp, const char *path, const size_t size)
         return PyErr_NoMemory();
     }
 
-    _PyObject_Init(op, tp);
+    Py_IncRef(op);
     return op;
 }
 
