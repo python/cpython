@@ -1,2 +1,4 @@
 Update the constructor of :exc:`OSError` to use winerror_to_errno()
-unconditionally. Patch by Dong-hee Na.
+unconditionally. Some :exc:`OSError` now be raised as a subclass and the
+:attr:`OSError.errno` follows the mapping policy of winerror_to_errno().
+Patch by Dong-hee Na.
