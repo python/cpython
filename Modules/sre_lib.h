@@ -449,20 +449,20 @@ do { \
     DATA_STACK_LOOKUP_AT(state,t,p,pos)
 
 #define MARK_PUSH(lastmark) \
-    do if (lastmark > 0) { \
+    do if (lastmark >= 0) { \
         i = lastmark; /* ctx->lastmark may change if reallocated */ \
         DATA_STACK_PUSH(state, state->mark, (i+1)*sizeof(void*)); \
     } while (0)
 #define MARK_POP(lastmark) \
-    do if (lastmark > 0) { \
+    do if (lastmark >= 0) { \
         DATA_STACK_POP(state, state->mark, (lastmark+1)*sizeof(void*), 1); \
     } while (0)
 #define MARK_POP_KEEP(lastmark) \
-    do if (lastmark > 0) { \
+    do if (lastmark >= 0) { \
         DATA_STACK_POP(state, state->mark, (lastmark+1)*sizeof(void*), 0); \
     } while (0)
 #define MARK_POP_DISCARD(lastmark) \
-    do if (lastmark > 0) { \
+    do if (lastmark >= 0) { \
         DATA_STACK_POP_DISCARD(state, (lastmark+1)*sizeof(void*)); \
     } while (0)
 
@@ -770,8 +770,7 @@ entrance:
             /* <BRANCH> <0=skip> code <JUMP> ... <NULL> */
             TRACE(("|%p|%p|BRANCH\n", ctx->pattern, ctx->ptr));
             LASTMARK_SAVE();
-            ctx->u.rep = state->repeat;
-            if (ctx->u.rep)
+            if (state->repeat)
                 MARK_PUSH(ctx->lastmark);
             for (; ctx->pattern[0]; ctx->pattern += ctx->pattern[0]) {
                 if (ctx->pattern[1] == SRE_OP_LITERAL &&
@@ -786,16 +785,16 @@ entrance:
                 state->ptr = ctx->ptr;
                 DO_JUMP(JUMP_BRANCH, jump_branch, ctx->pattern+1);
                 if (ret) {
-                    if (ctx->u.rep)
+                    if (state->repeat)
                         MARK_POP_DISCARD(ctx->lastmark);
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
                 }
-                if (ctx->u.rep)
+                if (state->repeat)
                     MARK_POP_KEEP(ctx->lastmark);
                 LASTMARK_RESTORE();
             }
-            if (ctx->u.rep)
+            if (state->repeat)
                 MARK_POP_DISCARD(ctx->lastmark);
             RETURN_FAILURE;
 
@@ -841,6 +840,8 @@ entrance:
             }
 
             LASTMARK_SAVE();
+            if (state->repeat)
+                MARK_PUSH(ctx->lastmark);
 
             if (ctx->pattern[ctx->pattern[0]] == SRE_OP_LITERAL) {
                 /* tail starts with a literal. skip positions where
@@ -858,16 +859,20 @@ entrance:
                     DO_JUMP(JUMP_REPEAT_ONE_1, jump_repeat_one_1,
                             ctx->pattern+ctx->pattern[0]);
                     if (ret) {
+                        if (state->repeat)
+                            MARK_POP_DISCARD(ctx->lastmark);
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
                     }
-
+                    if (state->repeat)
+                        MARK_POP_KEEP(ctx->lastmark);
                     LASTMARK_RESTORE();
 
                     ctx->ptr--;
                     ctx->count--;
                 }
-
+                if (state->repeat)
+                    MARK_POP_DISCARD(ctx->lastmark);
             } else {
                 /* general case */
                 while (ctx->count >= (Py_ssize_t) ctx->pattern[1]) {
@@ -875,13 +880,20 @@ entrance:
                     DO_JUMP(JUMP_REPEAT_ONE_2, jump_repeat_one_2,
                             ctx->pattern+ctx->pattern[0]);
                     if (ret) {
+                        if (state->repeat)
+                            MARK_POP_DISCARD(ctx->lastmark);
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
                     }
+                    if (state->repeat)
+                        MARK_POP_KEEP(ctx->lastmark);
+                    LASTMARK_RESTORE();
+
                     ctx->ptr--;
                     ctx->count--;
-                    LASTMARK_RESTORE();
                 }
+                if (state->repeat)
+                    MARK_POP_DISCARD(ctx->lastmark);
             }
             RETURN_FAILURE;
 
@@ -930,15 +942,24 @@ entrance:
             } else {
                 /* general case */
                 LASTMARK_SAVE();
+                if (state->repeat)
+                    MARK_PUSH(ctx->lastmark);
+
                 while ((Py_ssize_t)ctx->pattern[2] == SRE_MAXREPEAT
                        || ctx->count <= (Py_ssize_t)ctx->pattern[2]) {
                     state->ptr = ctx->ptr;
                     DO_JUMP(JUMP_MIN_REPEAT_ONE,jump_min_repeat_one,
                             ctx->pattern+ctx->pattern[0]);
                     if (ret) {
+                        if (state->repeat)
+                            MARK_POP_DISCARD(ctx->lastmark);
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
                     }
+                    if (state->repeat)
+                        MARK_POP_KEEP(ctx->lastmark);
+                    LASTMARK_RESTORE();
+
                     state->ptr = ctx->ptr;
                     ret = SRE(count)(state, ctx->pattern+3, 1);
                     RETURN_ON_ERROR(ret);
@@ -948,8 +969,9 @@ entrance:
                     assert(ret == 1);
                     ctx->ptr++;
                     ctx->count++;
-                    LASTMARK_RESTORE();
                 }
+                if (state->repeat)
+                    MARK_POP_DISCARD(ctx->lastmark);
             }
             RETURN_FAILURE;
 
@@ -1098,8 +1120,9 @@ entrance:
                tail matches */
             state->repeat = ctx->u.rep->prev;
             DO_JUMP(JUMP_MAX_UNTIL_3, jump_max_until_3, ctx->pattern);
+            state->repeat = ctx->u.rep; // restore repeat before return
+
             RETURN_ON_SUCCESS(ret);
-            state->repeat = ctx->u.rep;
             state->ptr = ctx->ptr;
             RETURN_FAILURE;
 
@@ -1132,20 +1155,28 @@ entrance:
                 RETURN_FAILURE;
             }
 
-            LASTMARK_SAVE();
-
             /* see if the tail matches */
             state->repeat = ctx->u.rep->prev;
+
+            LASTMARK_SAVE();
+            if (state->repeat)
+                MARK_PUSH(ctx->lastmark);
+
             DO_JUMP(JUMP_MIN_UNTIL_2, jump_min_until_2, ctx->pattern);
+            SRE_REPEAT *repeat_of_tail = state->repeat;
+            state->repeat = ctx->u.rep; // restore repeat before return
+
             if (ret) {
+                if (repeat_of_tail)
+                    MARK_POP_DISCARD(ctx->lastmark);
                 RETURN_ON_ERROR(ret);
                 RETURN_SUCCESS;
             }
-
-            state->repeat = ctx->u.rep;
-            state->ptr = ctx->ptr;
-
+            if (repeat_of_tail)
+                MARK_POP(ctx->lastmark);
             LASTMARK_RESTORE();
+
+            state->ptr = ctx->ptr;
 
             if ((ctx->count >= (Py_ssize_t) ctx->u.rep->pattern[2]
                 && ctx->u.rep->pattern[2] != SRE_MAXREPEAT) ||
@@ -1444,11 +1475,20 @@ entrance:
                    ctx->ptr, ctx->pattern[1]));
             if (ctx->ptr - (SRE_CHAR *)state->beginning >= (Py_ssize_t)ctx->pattern[1]) {
                 state->ptr = ctx->ptr - ctx->pattern[1];
+                LASTMARK_SAVE();
+                if (state->repeat)
+                    MARK_PUSH(ctx->lastmark);
+
                 DO_JUMP0(JUMP_ASSERT_NOT, jump_assert_not, ctx->pattern+2);
                 if (ret) {
+                    if (state->repeat)
+                        MARK_POP_DISCARD(ctx->lastmark);
                     RETURN_ON_ERROR(ret);
                     RETURN_FAILURE;
                 }
+                if (state->repeat)
+                    MARK_POP(ctx->lastmark);
+                LASTMARK_RESTORE();
             }
             ctx->pattern += ctx->pattern[0];
             break;

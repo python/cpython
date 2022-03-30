@@ -850,6 +850,23 @@ class B(A)
         for expected_line in expected_lines:
             self.assertIn(expected_line, as_text)
 
+    def test__future__imports(self):
+        # __future__ features are excluded from module help,
+        # except when it's the __future__ module itself
+        import __future__
+        future_text, _ = get_pydoc_text(__future__)
+        future_html, _ = get_pydoc_html(__future__)
+        pydoc_mod_text, _ = get_pydoc_text(pydoc_mod)
+        pydoc_mod_html, _ = get_pydoc_html(pydoc_mod)
+
+        for feature in __future__.all_feature_names:
+            txt = f"{feature} = _Feature"
+            html = f"<strong>{feature}</strong> = _Feature"
+            self.assertIn(txt, future_text)
+            self.assertIn(html, future_html)
+            self.assertNotIn(txt, pydoc_mod_text)
+            self.assertNotIn(html, pydoc_mod_html)
+
 
 class PydocImportTest(PydocBaseTest):
 
