@@ -1289,6 +1289,9 @@ These are not used in annotations. They are building blocks for creating generic
         class Array(Generic[DType, *Shape]):  # This is fine
             pass
 
+        class Array2(Generic[*Shape, DType]):  # This would also be fine
+            pass
+
         float_array_1d: Array[float, Height] = Array()     # Totally fine
         int_array_2d: Array[int, Height, Width] = Array()  # Yup, fine too
 
