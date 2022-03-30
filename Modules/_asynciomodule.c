@@ -2707,22 +2707,22 @@ task_step_impl(TaskObj *task, PyObject *exc)
             /* The error is StopIteration and that means that
                the underlying coroutine has resolved */
 
-            PyObject *res;
+            PyObject *tmp;
             if (task->task_must_cancel) {
                 // Task is cancelled right before coro stops.
                 task->task_must_cancel = 0;
-                res = future_cancel((FutureObj*)task, task->task_cancel_msg);
+                tmp = future_cancel((FutureObj*)task, task->task_cancel_msg);
             }
             else {
-                res = future_set_result((FutureObj*)task, result);
+                tmp = future_set_result((FutureObj*)task, result);
             }
 
             Py_DECREF(result);
 
-            if (res == NULL) {
+            if (tmp == NULL) {
                 return NULL;
             }
-            Py_DECREF(res);
+            Py_DECREF(tmp);
             Py_RETURN_NONE;
         }
 
@@ -2786,7 +2786,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
     /* Check if `result` is FutureObj or TaskObj (and not a subclass) */
     if (Future_CheckExact(result) || Task_CheckExact(result)) {
         PyObject *wrapper;
-        PyObject *res;
+        PyObject *tmp;
         FutureObj *fut = (FutureObj*)result;
 
         /* Check if `result` future is attached to a different loop */
@@ -2805,13 +2805,13 @@ task_step_impl(TaskObj *task, PyObject *exc)
         if (wrapper == NULL) {
             goto fail;
         }
-        res = future_add_done_callback(
+        tmp = future_add_done_callback(
             (FutureObj*)result, wrapper, task->task_context);
         Py_DECREF(wrapper);
-        if (res == NULL) {
+        if (tmp == NULL) {
             goto fail;
         }
-        Py_DECREF(res);
+        Py_DECREF(tmp);
 
         /* task._fut_waiter = result */
         task->task_fut_waiter = result;  /* no incref is necessary */
@@ -2853,7 +2853,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
     if (o != NULL && o != Py_None) {
         /* `result` is a Future-compatible object */
         PyObject *wrapper;
-        PyObject *res;
+        PyObject *tmp;
 
         int blocking = PyObject_IsTrue(o);
         Py_DECREF(o);
@@ -2897,13 +2897,13 @@ task_step_impl(TaskObj *task, PyObject *exc)
         PyObject *stack[2];
         stack[0] = wrapper;
         stack[1] = (PyObject *)task->task_context;
-        res = PyObject_Vectorcall(add_cb, stack, 1, context_kwname);
+        tmp = PyObject_Vectorcall(add_cb, stack, 1, context_kwname);
         Py_DECREF(add_cb);
         Py_DECREF(wrapper);
-        if (res == NULL) {
+        if (tmp == NULL) {
             goto fail;
         }
-        Py_DECREF(res);
+        Py_DECREF(tmp);
 
         /* task._fut_waiter = result */
         task->task_fut_waiter = result;  /* no incref is necessary */

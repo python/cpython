@@ -719,6 +719,11 @@ Changes in the Python API
   deprecated since Python 3.6.
   (Contributed by Serhiy Storchaka in :issue:`47066`.)
 
+* :mod:`re` module: Fix a few long-standing bugs where, in rare cases,
+  capturing group could get wrong result. So the result may be different than
+  before.
+  (Contributed by Ma Lin in :issue:`35859`.)
+
 * The *population* parameter of :func:`random.sample` must be a sequence.
   Automatic conversion of sets to lists is no longer supported. If the sample size
   is larger than the population size, a :exc:`ValueError` is raised.
