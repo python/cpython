@@ -483,7 +483,8 @@ cfunction_vectorcall_NOARGS(
     if (meth == NULL) {
         return NULL;
     }
-    PyObject *result = meth(PyCFunction_GET_SELF(func), NULL);
+    PyObject *result = _PyCFunction_TrampolineCall(
+        meth, PyCFunction_GET_SELF(func), NULL);
     _Py_LeaveRecursiveCall(tstate);
     return result;
 }
@@ -510,7 +511,8 @@ cfunction_vectorcall_O(
     if (meth == NULL) {
         return NULL;
     }
-    PyObject *result = meth(PyCFunction_GET_SELF(func), args[0]);
+    PyObject *result = _PyCFunction_TrampolineCall(
+        meth, PyCFunction_GET_SELF(func), args[0]);
     _Py_LeaveRecursiveCall(tstate);
     return result;
 }
@@ -537,7 +539,9 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
 
     PyObject *result;
     if (flags & METH_KEYWORDS) {
-        result = (*(PyCFunctionWithKeywords)(void(*)(void))meth)(self, args, kwargs);
+        result = _PyCFunctionWithKeywords_TrampolineCall(
+            (*(PyCFunctionWithKeywords)(void(*)(void))meth),
+            self, args, kwargs);
     }
     else {
         if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
@@ -546,7 +550,15 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
                           ((PyCFunctionObject*)func)->m_ml->ml_name);
             return NULL;
         }
-        result = meth(self, args);
+        result = _PyCFunction_TrampolineCall(meth, self, args);
     }
     return _Py_CheckFunctionResult(tstate, func, result, NULL);
 }
+
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+#include <emscripten.h>
+
+EM_JS(PyObject*, _PyCFunctionWithKeywords_TrampolineCall, (PyCFunctionWithKeywords func, PyObject *self, PyObject *args, PyObject *kw), {
+    return wasmTable.get(func)(self, args, kw);
+});
+#endif
