@@ -213,7 +213,7 @@ class UrlParseTestCase(unittest.TestCase):
                     split = (scheme,) + split
                     self.checkRoundtrips(url, parsed, split)
 
-    def checkJoin(self, base, relurl, expected, classes=[]):
+    def checkJoin(self, base, relurl, expected, classes=urllib.parse.SchemeClass.NONE):
         str_components = (base, relurl, expected)
         self.assertEqual(urllib.parse.urljoin(base, relurl, classes=classes), expected)
         bytes_components = baseb, relurlb, expectedb = [
@@ -420,7 +420,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(
             'nonsensebase://net.loc/url/', '..',
             'nonsensebase://net.loc/',
-            classes=[urllib.parse.SchemeClass.RELATIVE, urllib.parse.SchemeClass.NETLOC],
+            classes=(urllib.parse.SchemeClass.RELATIVE | urllib.parse.SchemeClass.NETLOC),
         )
 
         # XXX: The following tests are no longer compatible with RFC3986

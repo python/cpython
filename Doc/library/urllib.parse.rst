@@ -51,7 +51,7 @@ or on combining URL components into a URL string.
 
    The scheme of the URL determines whether or not parameters are parsed as
    distinct from the path. To override the scheme and parse parameters anyway,
-   pass a set containing ``SchemeClass.PARAMS``.
+   pass a SchemeClass containing instances of ``SchemeClass.PARAMS``.
 
    For example:
 
@@ -60,17 +60,13 @@ or on combining URL components into a URL string.
 
       >>> from urllib.parse import urlparse, SchemeClass
       >>> urlparse("scheme://netloc/path;parameters?query#fragment")
-      ParseResult(scheme='scheme', netloc='netloc', path='/path;parameters', params='',
-                  query='query', fragment='fragment')
-      >>> urlparse("scheme://netloc/path;parameters?query#fragment", classes=[SchemeClass.PARAMS])
-      ParseResult(scheme='scheme', netloc='netloc', path='/path',
-                  params=';parameters', query='query', fragment='fragment')
+      ParseResult(scheme='scheme', netloc='netloc', path='/path;parameters', params='', query='query', fragment='fragment')
+      >>> urlparse("scheme://netloc/path;parameters?query#fragment", classes=SchemeClass.PARAMS)
+      ParseResult(scheme='scheme', netloc='netloc', path='/path', params='parameters', query='query', fragment='fragment')
       >>> o = urlparse("http://docs.python.org:80/3/library/urllib.parse.html?"
       ...              "highlight=params#url-parsing")
       >>> o
-      ParseResult(scheme='http', netloc='docs.python.org:80',
-                  path='/3/library/urllib.parse.html', params='',
-                  query='highlight=params', fragment='url-parsing')
+      ParseResult(scheme='http', netloc='docs.python.org:80', path='/3/library/urllib.parse.html', params='', query='highlight=params', fragment='url-parsing')
       >>> o.scheme
       'http'
       >>> o.netloc
@@ -92,14 +88,11 @@ or on combining URL components into a URL string.
 
       >>> from urllib.parse import urlparse
       >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
-      ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                  params='', query='', fragment='')
+      ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html', params='', query='', fragment='')
       >>> urlparse('www.cwi.nl/%7Eguido/Python.html')
-      ParseResult(scheme='', netloc='', path='www.cwi.nl/%7Eguido/Python.html',
-                  params='', query='', fragment='')
+      ParseResult(scheme='', netloc='', path='www.cwi.nl/%7Eguido/Python.html', params='', query='', fragment='')
       >>> urlparse('help/Python.html')
-      ParseResult(scheme='', netloc='', path='help/Python.html', params='',
-                  query='', fragment='')
+      ParseResult(scheme='', netloc='', path='help/Python.html', params='', query='', fragment='')
 
    The *scheme* argument gives the default addressing scheme, to be
    used only if the URL does not specify one.  It should be the same type
@@ -162,11 +155,9 @@ or on combining URL components into a URL string.
       >>> from urllib.parse import urlparse
       >>> u = urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
       >>> u
-      ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                  params='', query='', fragment='')
+      ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html', params='', query='', fragment='')
       >>> u._replace(scheme='http')
-      ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                  params='', query='', fragment='')
+      ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html', params='', query='', fragment='')
 
 
    .. versionchanged:: 3.2
@@ -358,21 +349,22 @@ or on combining URL components into a URL string.
    with an empty query; the RFC states that these are equivalent).
 
 
-.. function:: urljoin(base, url, allow_fragments=True, classes=set())
+.. function:: urljoin(base, url, allow_fragments=True, classes=SchemeClass.NONE)
 
-   Construct a full ("absolute") URL by combining a "base URL" (*base*) with
-   another URL (*url*), and with behavior given by a set of ``SchemeClass``
-   enums. Informally, this uses components of the base URL, in particular the
-   addressing scheme, the network location and (part of) the path, to provide
-   missing components in the relative URL. For example:
+   Construct a full ("absolute") URL by combining a "base URL"
+   (*base*) with another URL (*url*), and with behavior given by a
+   ``SchemeClass`` enum.  Informally, this uses components of the base
+   URL, in particular the addressing scheme, the network location and
+   (part of) the path, to provide missing components in the relative
+   URL. For example:
 
       >>> from urllib.parse import urljoin
       >>> urljoin('http://www.cwi.nl/%7Eguido/Python.html', 'FAQ.html')
       'http://www.cwi.nl/%7Eguido/FAQ.html'
 
-   The *allow_fragments* argument has the same meaning and default as for
-   :func:`urlparse`. As in :func:`urlparse`, a ``SchemeClass`` set may be given
-   to override behavior inferred by the scheme.
+   The *allow_fragments* argument has the same meaning and default as
+   for :func:`urlparse`. As in :func:`urlparse`, a ``SchemeClass`` may
+   be given to override behavior inferred by the scheme.
 
    .. note::
 
@@ -593,7 +585,7 @@ behavior as that of HTTP:
    >>> from urllib.parse import urljoin, SchemeClass
    >>> urljoin(
    ...     'my-protocol://example.org/post/x/', '../y/',
-   ...     classes=[SchemeClass.NETLOC, SchemeClass.RELATIVE])
+   ...     classes=(SchemeClass.NETLOC | SchemeClass.RELATIVE))
    'my-protocol://example.org/post/y/'
 
 For reference, the following three scheme classes are present (exactly

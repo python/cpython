@@ -28,7 +28,7 @@ test_urlparse.py provides a good indicator of parsing behavior.
 """
 
 from collections import namedtuple
-from enum import Enum
+from enum import Flag, auto
 import functools
 import re
 import sys
@@ -46,11 +46,17 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
 # The empty string classifies URLs with no scheme specified,
 # being the default value returned by “urlsplit” and “urlparse”.
 
-"""SchemeClass is an enum with the members RELATIVE, NETLOC, and PARAMS. These
-describe methods for URL resolution, usually by scheme. These resolution classes
-determine, namely, whether a scheme supports, respectively, relative addressing,
-preserving the netloc (domain name), and preserving the parameters."""
-SchemeClass = Enum('SchemeClass', 'RELATIVE NETLOC PARAMS')
+class SchemeClass(Flag):
+    """SchemeClass is an enum with the members RELATIVE, NETLOC, and
+    PARAMS. These describe methods for URL resolution, usually by
+    scheme. These resolution classes determine, namely, whether a
+    scheme supports, respectively, relative addressing, preserving the
+    netloc (domain name), and preserving the parameters.
+    """
+    NONE = 0
+    RELATIVE = auto()
+    NETLOC = auto()
+    PARAMS = auto()
 
 uses_relative = ['', 'ftp', 'http', 'gopher', 'nntp', 'imap',
                  'wais', 'file', 'https', 'shttp', 'mms',
@@ -68,27 +74,24 @@ uses_params = ['', 'ftp', 'hdl', 'prospero', 'http', 'imap',
                'mms', 'sftp', 'tel']
 
 
-def _scheme_classes(scheme, overrides=set()):
+def _scheme_classes(scheme, overrides=SchemeClass.NONE):
     """Find out what scheme classes a given scheme fits in.
 
     This consults the variables uses_relative, uses_netloc, and
     uses_params. It returns a set of all the classes that apply, with
     at least the unique classes specified by the optional overrides
     parameter.
-
     """
-    scheme_classes = set(overrides)
-
     if scheme in uses_relative:
-        scheme_classes.add(SchemeClass.RELATIVE)
+        overrides |= SchemeClass.RELATIVE
 
     if scheme in uses_netloc:
-        scheme_classes.add(SchemeClass.NETLOC)
+        overrides |= SchemeClass.NETLOC
 
     if scheme in uses_params:
-        scheme_classes.add(SchemeClass.PARAMS)
+        overrides |= SchemeClass.PARAMS
 
-    return scheme_classes
+    return overrides
 
 
 # These are not actually used anymore, but should stay for backwards
@@ -394,7 +397,7 @@ def _fix_result_transcoding():
 _fix_result_transcoding()
 del _fix_result_transcoding
 
-def urlparse(url, scheme='', allow_fragments=True, classes=set()):
+def urlparse(url, scheme='', allow_fragments=True, classes=SchemeClass.NONE):
     """Parse a URL into 6 components:
     <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
 
@@ -418,7 +421,7 @@ def urlparse(url, scheme='', allow_fragments=True, classes=set()):
     splitresult = urlsplit(url, scheme, allow_fragments)
     scheme, netloc, url, query, fragment = splitresult
     scheme_classes = _scheme_classes(scheme, overrides=classes)
-    if SchemeClass.PARAMS in scheme_classes and ';' in url:
+    if SchemeClass.PARAMS & scheme_classes and ';' in url:
         url, params = _splitparams(url)
     else:
         params = ''
@@ -534,7 +537,7 @@ def urlunsplit(components):
                                           _coerce_args(*components))
 
     scheme_classes = _scheme_classes(scheme)
-    if netloc or (scheme and SchemeClass.NETLOC in scheme_classes and url[:2] != '//'):
+    if netloc or (scheme and (SchemeClass.NETLOC & scheme_classes) and url[:2] != '//'):
         if url and url[:1] != '/': url = '/' + url
         url = '//' + (netloc or '') + url
     if scheme:
@@ -545,7 +548,7 @@ def urlunsplit(components):
         url = url + '#' + fragment
     return _coerce_result(url)
 
-def urljoin(base, url, allow_fragments=True, classes=set()):
+def urljoin(base, url, allow_fragments=True, classes=SchemeClass.NONE):
     """Join a base URL and a possibly relative URL to form an absolute
     interpretation of the latter. Some logic may be enabled by setting
     the classes variable."""
@@ -562,7 +565,7 @@ def urljoin(base, url, allow_fragments=True, classes=set()):
 
     scheme_classes = _scheme_classes(scheme, overrides=classes)
 
-    if scheme != bscheme or SchemeClass.RELATIVE not in scheme_classes:
+    if scheme != bscheme or not (SchemeClass.RELATIVE & scheme_classes):
         return _coerce_result(url)
     if SchemeClass.NETLOC in scheme_classes:
         if netloc:
