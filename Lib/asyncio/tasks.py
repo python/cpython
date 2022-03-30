@@ -252,9 +252,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._num_cancels_requested -= 1
         return self._num_cancels_requested
 
-    def _check_future(self, fut):
+    def _check_future(self, future):
         """Return False if task and future loops are not compatible."""
-        return futures._get_loop(fut) is self._loop
+        return futures._get_loop(future) is self._loop
 
     def __step(self, exc=None):
         if self.done():
