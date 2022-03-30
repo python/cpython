@@ -1,0 +1,6 @@
+Upgraded :ref:`launcher` to support a new ``-V:company/tag`` argument for
+full :pep:`514` support and to detect ARM64 installs. The ``-64`` suffix on
+arguments is deprecated, but still selects any non-32-bit install. Setting
+:envvar:`PYLAUNCHER_ALLOW_INSTALL` and specifying a version that is not
+installed will attempt to install the requested version from the Microsoft
+Store.
