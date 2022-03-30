@@ -579,7 +579,9 @@ These can be used as types in annotations and do not support ``[]``.
    * :data:`Any` is compatible with every type.
 
     .. versionchanged:: 3.11
-       :data:`Any` can now be used as a base class
+       :data:`Any` can now be used as a base class. This can be useful for
+       avoiding type checker errors in classes that can duck type anywhere or
+       are highly dynamic.
 
 .. data:: Never
 
