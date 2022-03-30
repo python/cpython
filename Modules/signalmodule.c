@@ -1792,11 +1792,42 @@ PyErr_CheckSignals(void)
     return _PyErr_CheckSignalsTstate(tstate);
 }
 
+#if defined(__EMSCRIPTEN__)
+
+#include <emscripten.h>
+EM_JS(int, _Py_CheckEmscriptenSignals_Helper, (void), {
+    if(!Module.Py_EmscriptenSignalBuffer){
+        return 0;
+    }
+    let result = Module.Py_EmscriptenSignalBuffer[0];
+    Module.Py_EmscriptenSignalBuffer[0] = 0;
+    return result;
+});
+
+void
+_Py_CheckEmscriptenSignals(void)
+{
+    int signal = _Py_CheckEmscriptenSignals_Helper();
+    if (signal) {
+        PyErr_SetInterruptEx(signal);
+    }
+}
+
+
+int Py_EMSCRIPTEN_SIGNAL_HANDLING = 0;
+
+#endif
 
 /* Declared in cpython/pyerrors.h */
 int
 _PyErr_CheckSignalsTstate(PyThreadState *tstate)
 {
+    #if defined(__EMSCRIPTEN__)
+    if (Py_EMSCRIPTEN_SIGNAL_HANDLING) {
+       _Py_CheckEmscriptenSignals();
+    }
+    #endif
+
     if (!_Py_atomic_load(&is_tripped)) {
         return 0;
     }

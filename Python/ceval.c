@@ -1117,7 +1117,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     return _PyEval_EvalFrame(tstate, f->f_frame, throwflag);
 }
 
-
 /* Handle signals, pending calls, GIL drop request
    and asynchronous exception */
 static int
@@ -1292,9 +1291,31 @@ eval_frame_handle_pending(PyThreadState *tstate)
     }
 
 #define CHECK_EVAL_BREAKER() \
+    CHECK_EMSCRIPTEN_SIGNALS(); \
     if (_Py_atomic_load_relaxed(eval_breaker)) { \
         goto handle_eval_breaker; \
     }
+
+
+#if defined(__EMSCRIPTEN__)
+extern int Py_EMSCRIPTEN_SIGNAL_HANDLING;
+void _Py_CheckEmscriptenSignals(void);
+
+static int
+emscripten_signal_clock = 50;
+
+static void
+CHECK_EMSCRIPTEN_SIGNALS()
+{
+    emscripten_signal_clock--;
+    if (emscripten_signal_clock == 0) {
+        emscripten_signal_clock = 50;
+        _Py_CheckEmscriptenSignals();
+    }
+}
+#else
+#define CHECK_EMSCRIPTEN_SIGNALS()
+#endif
 
 
 /* Tuple access macros */
