@@ -153,6 +153,7 @@ static void
 write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
 {
     int opcode = instruction->i_opcode;
+    assert(!IS_VIRTUAL_OPCODE(opcode));
     int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
@@ -166,7 +167,6 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
             *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 8) & 0xFF);
             /* fall through */
         case 1:
-            assert(!IS_VIRTUAL_OPCODE(opcode));
             *codestr++ = _Py_MAKECODEUNIT(opcode, oparg & 0xFF);
             break;
         default:
