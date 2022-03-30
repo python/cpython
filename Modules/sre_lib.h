@@ -807,7 +807,7 @@ entrance:
                collecting backtracking points.  for other cases,
                use the MAX_REPEAT operator */
 
-            /* <REPEAT_ONE> <skip> <1=min> <2=max> <3=repeat_index> item <SUCCESS> tail */
+            /* <REPEAT_ONE> <skip> <1=min> <2=max> item <SUCCESS> tail */
 
             TRACE(("|%p|%p|REPEAT_ONE %d %d\n", ctx->pattern, ctx->ptr,
                    ctx->pattern[1], ctx->pattern[2]));
@@ -817,7 +817,7 @@ entrance:
 
             state->ptr = ctx->ptr;
 
-            ret = SRE(count)(state, ctx->pattern+4, ctx->pattern[2]);
+            ret = SRE(count)(state, ctx->pattern+3, ctx->pattern[2]);
             RETURN_ON_ERROR(ret);
             DATA_LOOKUP_AT(SRE(match_context), ctx, ctx_pos);
             ctx->count = ret;
@@ -906,7 +906,7 @@ entrance:
                collecting backtracking points.  for other cases,
                use the MIN_REPEAT operator */
 
-            /* <MIN_REPEAT_ONE> <skip> <1=min> <2=max> <3=repeat_index> item <SUCCESS> tail */
+            /* <MIN_REPEAT_ONE> <skip> <1=min> <2=max> item <SUCCESS> tail */
 
             TRACE(("|%p|%p|MIN_REPEAT_ONE %d %d\n", ctx->pattern, ctx->ptr,
                    ctx->pattern[1], ctx->pattern[2]));
@@ -920,7 +920,7 @@ entrance:
                 ctx->count = 0;
             else {
                 /* count using pattern min as the maximum */
-                ret = SRE(count)(state, ctx->pattern+4, ctx->pattern[1]);
+                ret = SRE(count)(state, ctx->pattern+3, ctx->pattern[1]);
                 RETURN_ON_ERROR(ret);
                 DATA_LOOKUP_AT(SRE(match_context), ctx, ctx_pos);
                 if (ret < (Py_ssize_t) ctx->pattern[1])
@@ -962,7 +962,7 @@ entrance:
                     LASTMARK_RESTORE();
 
                     state->ptr = ctx->ptr;
-                    ret = SRE(count)(state, ctx->pattern+4, 1);
+                    ret = SRE(count)(state, ctx->pattern+3, 1);
                     RETURN_ON_ERROR(ret);
                     DATA_LOOKUP_AT(SRE(match_context), ctx, ctx_pos);
                     if (ret == 0)
@@ -985,7 +985,7 @@ entrance:
                collecting backtracking points.  for other cases,
                use the MAX_REPEAT operator */
 
-            /* <POSSESSIVE_REPEAT_ONE> <skip> <1=min> <2=max> <3=repeat_index> item <SUCCESS>
+            /* <POSSESSIVE_REPEAT_ONE> <skip> <1=min> <2=max> item <SUCCESS>
                tail */
 
             TRACE(("|%p|%p|POSSESSIVE_REPEAT_ONE %d %d\n", ctx->pattern,
@@ -997,7 +997,7 @@ entrance:
 
             state->ptr = ctx->ptr;
 
-            ret = SRE(count)(state, ctx->pattern + 4, ctx->pattern[2]);
+            ret = SRE(count)(state, ctx->pattern + 3, ctx->pattern[2]);
             RETURN_ON_ERROR(ret);
             DATA_LOOKUP_AT(SRE(match_context), ctx, ctx_pos);
             ctx->count = ret;

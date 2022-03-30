@@ -2298,14 +2298,14 @@ ELSE
         self.assertEqual(get_debug_out(r'(?>ab?)'), '''\
 ATOMIC_GROUP [(LITERAL, 97), (MAX_REPEAT, (0, 1, [(LITERAL, 98)]))]
 
- 0. INFO 5 0b0 1 2 1 (to 6)
- 6: ATOMIC_GROUP 12 (to 19)
+ 0. INFO 5 0b0 1 2 0 (to 6)
+ 6: ATOMIC_GROUP 11 (to 18)
  8.   LITERAL 0x61 ('a')
-10.   REPEAT_ONE 7 0 1 0 (to 18)
-15.     LITERAL 0x62 ('b')
-17.     SUCCESS
-18:   SUCCESS
-19: SUCCESS
+10.   REPEAT_ONE 6 0 1 (to 17)
+14.     LITERAL 0x62 ('b')
+16.     SUCCESS
+17:   SUCCESS
+18: SUCCESS
 ''')
 
     def test_possesive_repeat_one(self):
@@ -2313,11 +2313,11 @@ ATOMIC_GROUP [(LITERAL, 97), (MAX_REPEAT, (0, 1, [(LITERAL, 98)]))]
 POSSESSIVE_REPEAT 0 1
   LITERAL 97
 
- 0. INFO 5 0b0 0 1 1 (to 6)
- 6: POSSESSIVE_REPEAT_ONE 7 0 1 0 (to 14)
-11.   LITERAL 0x61 ('a')
-13.   SUCCESS
-14: SUCCESS
+ 0. INFO 5 0b0 0 1 0 (to 6)
+ 6: POSSESSIVE_REPEAT_ONE 6 0 1 (to 13)
+10.   LITERAL 0x61 ('a')
+12.   SUCCESS
+13: SUCCESS
 ''')
 
     def test_possesive_repeat(self):

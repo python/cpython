@@ -1834,14 +1834,13 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                 GET_SKIP;
                 GET_ARG; min = arg;
                 GET_ARG; max = arg;
-                GET_ARG; // repeat index
                 if (min > max)
                     FAIL;
                 if (max > SRE_MAXREPEAT)
                     FAIL;
-                if (!_validate_inner(code, code+skip-5, groups))
+                if (!_validate_inner(code, code+skip-4, groups))
                     FAIL;
-                code += skip-5;
+                code += skip-4;
                 GET_OP;
                 if (op != SRE_OP_SUCCESS)
                     FAIL;
