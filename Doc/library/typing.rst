@@ -1234,9 +1234,10 @@ These are not used in annotations. They are building blocks for creating generic
 
 .. class:: TypeVarTuple
 
-    :class:`Type variable <TypeVar>` tuple.
+    Type variable tuple. A specialised form of :class:`Type variable <TypeVar>`
+    that enables *variadic* generics.
 
-    A vanilla type variable enables parameterization with a single type. A type
+    A normal type variable enables parameterization with a single type. A type
     variable tuple, in contrast, allows parameterization with an
     *arbitrary* number of types by acting like an *arbitrary* number of type
     variables wrapped in a tuple. For example::
@@ -1252,20 +1253,15 @@ These are not used in annotations. They are building blocks for creating generic
     Note the use of the unpacking operator ``*`` in ``Generic[*Shape]``.
     Conceptually, you can think of ``Shape`` as a tuple of type variables
     ``(T1, T2, ...)``. ``Generic[*Shape]`` would then become
-    ``Generic[*(T1, T2, ...)]``. The ``*`` brings the type variables out of the
-    tuple and into the square brackets directly.
+    ``Generic[*(T1, T2, ...)]``, which is equivalent to
+    ``Generic[T1, T2, ...]``. (Note that in older versions of Python, you might
+    see this written using :data:`Unpack <Unpack>` instead, as
+    ``Unpack[Shape]``.)
 
-    (In older versions of Python, where ``*`` was less flexible, you might see
-    this written using :data:`Unpack <Unpack>` instead, as
-    ``Unpack[Shape]``. This means the same thing as ``*Shape`` - ``Unpack`` and
-    ``*`` can be used interchangeably in the context of types.)
+    Type variable tuples must *always* be unpacked. This helps distinguish type
+    variable types from normal type variables::
 
-
-    Type variable tuples must *always* be used in combination with the unpacking
-    operator. This helps distinguish type variable types from normal type
-    variables::
-
-        class Array(Generic[Shape]): ...  # Not valid
+        class C(Generic[Shape]): ...  # Not valid (should be Generic[*Shape])
 
     In cases where you really do just want a tuple of types, make this explicit
     by wrapping the type variable tuple in ``tuple[]``::
@@ -1274,7 +1270,7 @@ These are not used in annotations. They are building blocks for creating generic
         shape: tuple[Shape]   # Also not valid
         shape: tuple[*Shape]  # The correct way to do it
 
-    Type variable tuples can be used in the same contexts as vanilla type
+    Type variable tuples can be used in the same contexts as normal type
     variables. For example, in class definitions, arguments, and return types::
 
         class Array(Generic[*Shape]):
@@ -1282,7 +1278,7 @@ These are not used in annotations. They are building blocks for creating generic
             def __abs__(self) -> Array[*Shape]: ...
             def get_shape(self) -> tuple[*Shape]: ...
 
-    Type variable tuples can be happily combined with vanilla type variables::
+    Type variable tuples can be happily combined with normal type variables::
 
         DType = TypeVar('DType')
 
@@ -1324,13 +1320,19 @@ These are not used in annotations. They are building blocks for creating generic
     to mark the type variable tuple as having been unpacked::
 
         Ts = TypeVarTuple('Ts')
-        array: tuple[*Ts]
+        tup: tuple[*Ts]
         # Effectively does:
-        array: tuple[Unpack[Ts]]
+        tup: tuple[Unpack[Ts]]
 
     In fact, ``Unpack`` can be used interchangeably with ``*`` in the context
     of types. You might see ``Unpack`` being used explicitly in older versions
-    of Python, where ``*`` couldn't be used in certain places.
+    of Python, where ``*`` couldn't be used in certain places::
+
+        from typing_extensions import TypeVarTuple, Unpack
+
+        Ts = TypeVarTuple('Ts')
+        tup: tuple[*Ts]         # Syntax error on Python <= 3.10!
+        tup: tuple[Unpack[Ts]]  # Semantically equivalent, and backwards-compatible
 
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
 
