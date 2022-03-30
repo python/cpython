@@ -4072,7 +4072,7 @@ handle_eval_breaker:
         TARGET(JUMP_BACKWARD_QUICK) {
             PREDICTED(JUMP_BACKWARD_QUICK);
             assert(oparg < INSTR_OFFSET());
-            JUMPTO(oparg);
+            JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
