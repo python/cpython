@@ -427,8 +427,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->lastmark = -1;
     state->lastindex = -1;
 
-    state->repeats_array = PyMem_RawCalloc(pattern->code[5],
-                                           sizeof(SRE_REPEAT));
+    state->repeats_array = PyMem_New(SRE_REPEAT, pattern->code[5]);
     if (!state->repeats_array) {
         PyErr_NoMemory();
         goto err;
@@ -484,7 +483,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     PyMem_Free((void*) state->mark);
     state->mark = NULL;
 
-    PyMem_RawFree((void*) state->repeats_array);
+    PyMem_Free((void*) state->repeats_array);
     state->repeats_array = NULL;
 
     if (state->buffer.buf)
@@ -501,7 +500,7 @@ state_fini(SRE_STATE* state)
     data_stack_dealloc(state);
     /* See above PyMem_Del for why we explicitly cast here. */
     PyMem_Free((void*) state->mark);
-    PyMem_RawFree((void*) state->repeats_array);
+    PyMem_Free((void*) state->repeats_array);
     state->mark = NULL;
 }
 
