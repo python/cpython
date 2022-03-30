@@ -418,10 +418,14 @@ class partialmethod(object):
 
 # Helper functions
 
-def _unwrap_partial(func):
-    while isinstance(func, partial):
-        func = func.func
-    return func
+def _unwrap_partial(wrapped_func):
+    while isinstance(wrapped_func, partial):
+        unwrapped_func = wrapped_func.func
+        if isinstance(unwrapped_func, partial):
+            wrapped_func = unwrapped_func
+        else:
+            break
+    return unwrapped_func
 
 ################################################################################
 ### LRU Cache function decorator
