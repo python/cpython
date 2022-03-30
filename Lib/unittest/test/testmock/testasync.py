@@ -4,6 +4,9 @@ import inspect
 import re
 import unittest
 from contextlib import contextmanager
+from test import support
+
+support.requires_working_socket(module=True)
 
 from asyncio import run, iscoroutinefunction
 from unittest import IsolatedAsyncioTestCase

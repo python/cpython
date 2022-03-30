@@ -84,9 +84,14 @@ CYGWIN = (HOST_PLATFORM == 'cygwin')
 MACOS = (HOST_PLATFORM == 'darwin')
 AIX = (HOST_PLATFORM.startswith('aix'))
 VXWORKS = ('vxworks' in HOST_PLATFORM)
+EMSCRIPTEN = HOST_PLATFORM == 'emscripten-wasm32'
 CC = os.environ.get("CC")
 if not CC:
     CC = sysconfig.get_config_var("CC")
+
+if EMSCRIPTEN:
+    # emcc is a Python script from a different Python interpreter.
+    os.environ.pop("PYTHONPATH", None)
 
 
 SUMMARY = """
@@ -1247,7 +1252,7 @@ class PyBuildExt(build_ext):
             self.missing.append('_curses_panel')
 
     def detect_crypt(self):
-         self.addext(Extension('_crypt', ['_cryptmodule.c']))
+        self.addext(Extension('_crypt', ['_cryptmodule.c']))
 
     def detect_dbm_gdbm(self):
         # Modules that provide persistent dictionary-like semantics.  You will

@@ -1,0 +1,4 @@
+The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
+deprecated since at least Python 3.6. Their documentation and deprecation
+warnings and have now been updated to note they will removed in Python 3.12
+(:pep:`594`).

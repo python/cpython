@@ -1,0 +1,2 @@
+Remove private functions ``_PySys_GetObjectId()`` and ``_PySys_SetObjectId()``.
+Patch by Dong-hee Na.
