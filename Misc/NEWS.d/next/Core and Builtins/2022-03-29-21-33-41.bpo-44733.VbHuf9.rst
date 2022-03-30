@@ -1,0 +1,1 @@
+Ensured that ``max_tasks_per_child`` is not used with a fork context.

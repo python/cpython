@@ -640,10 +640,6 @@ class ProcessPoolExecutor(_base.Executor):
 
             self._max_workers = max_workers
 
-        if mp_context is None:
-            mp_context = mp.get_context()
-        self._mp_context = mp_context
-
         if initializer is not None and not callable(initializer):
             raise TypeError("initializer must be a callable")
         self._initializer = initializer
@@ -654,7 +650,15 @@ class ProcessPoolExecutor(_base.Executor):
                 raise TypeError("max_tasks_per_child must be an integer")
             elif max_tasks_per_child <= 0:
                 raise ValueError("max_tasks_per_child must be >= 1")
+            if mp_context is None:
+                mp_context = mp.get_context("spawn")
+            if mp_context._name == "fork":
+                raise ValueError("max_tasks_per_child cannot be used with a fork context")
         self._max_tasks_per_child = max_tasks_per_child
+
+        if mp_context is None:
+            mp_context = mp.get_context()
+        self._mp_context = mp_context
 
         # Management thread
         self._executor_manager_thread = None
