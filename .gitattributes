@@ -77,3 +77,6 @@ Python/stdlib_module_names.h                 generated
 Tools/peg_generator/pegen/grammar_parser.py  generated
 aclocal.m4                                   generated
 configure                                    generated
+Doc/data/stable_abi.dat                      generated
+Lib/test/test_stable_abi_ctypes.py           generated
+PC/python3dll.c                              generated
