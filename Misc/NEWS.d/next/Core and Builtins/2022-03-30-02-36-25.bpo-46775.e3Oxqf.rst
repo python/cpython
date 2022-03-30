@@ -1,4 +1,3 @@
-Update the constructor of :exc:`OSError` to use winerror_to_errno()
-unconditionally. Some :exc:`OSError` now be raised as a subclass and the
-:attr:`OSError.errno` follows the mapping policy of winerror_to_errno().
+Some Windows system error codes(>= 10000) are now mapped into
+the correct errno while :exc:`OSError` is raised as a subclass.
 Patch by Dong-hee Na.
