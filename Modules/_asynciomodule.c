@@ -1797,6 +1797,7 @@ static int task_call_step_soon(TaskObj *, PyObject *);
 static PyObject * task_wakeup(TaskObj *, PyObject *);
 static PyObject * task_step(TaskObj *, PyObject *);
 static int task_check_future(TaskObj *, PyObject *);
+static int task_check_future_exact(TaskObj *, PyObject *);
 
 /* ----- Task._step wrapper */
 
@@ -2290,7 +2291,7 @@ static PyObject *
 _asyncio_Task__check_future_impl(TaskObj *self, PyObject *future)
 /*[clinic end generated code: output=2473f5b55d524bd5 input=76b4fa671a14b681]*/
 {
-    int res = task_check_future(self, future);
+    int res = task_check_future_exact(self, future);
     if (res < 0) {
         return NULL;
     }
@@ -2591,22 +2592,29 @@ TaskObj_dealloc(PyObject *self)
 }
 
 static int
+task_check_future_exact(TaskObj *task, PyObject *future)
+{
+    int res;
+    if (Future_CheckExact(future) || Task_CheckExact(future)) {
+        FutureObj *fut = (FutureObj *)future;
+        res = (fut->fut_loop == task->task_loop);
+    } else {
+        PyObject *oloop = get_future_loop(future);
+        if (oloop == NULL) {
+            return -1;
+        }
+        res = (oloop == task->task_loop);
+        Py_DECREF(oloop);
+    }
+    return res;
+}
+
+
+static int
 task_check_future(TaskObj *task, PyObject *future)
 {
     if (Task_CheckExact(task)) {
-        int res;
-        if (Future_CheckExact(future) || Task_CheckExact(future)) {
-            FutureObj *fut = (FutureObj *)future;
-            res = (fut->fut_loop != task->task_loop);
-        } else {
-            PyObject *oloop = get_future_loop(future);
-            if (oloop == NULL) {
-                return -1;
-            }
-            res = (oloop != task->task_loop);
-            Py_DECREF(oloop);
-        }
-        return res;
+        return task_check_future_exact(task, future);
     } else {
         PyObject * ret = _PyObject_CallMethodIdOneArg((PyObject *)task,
                                                       &PyId__check_future,
