@@ -116,8 +116,13 @@ is_bit_set_in_table(const uint32_t *table, int bitindex) {
      * Word is indexed by (bitindex>>ln(size of int in bits)).
      * Bit within word is the low bits of bitindex.
      */
-    uint32_t word = table[bitindex >> LOG_BITS_PER_INT];
-    return (word >> (bitindex & MASK_LOW_LOG_BITS)) & 1;
+    if (bitindex < 256) {
+        uint32_t word = table[bitindex >> LOG_BITS_PER_INT];
+        return (word >> (bitindex & MASK_LOW_LOG_BITS)) & 1;
+    }
+    else {
+        return 0;
+    }
 }
 
 static inline int
@@ -136,7 +141,7 @@ is_block_push(struct instr *instr)
 static inline int
 is_jump(struct instr *i)
 {
-    return !IS_VIRTUAL_OPCODE(i->i_opcode) && is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
+    return is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
 }
 
 static int
