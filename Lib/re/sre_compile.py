@@ -11,8 +11,8 @@
 """Internal support module for sre"""
 
 import _sre
-from . import _parser
-from ._constants import *
+from . import sre_parse
+from .sre_constants import *
 
 assert _sre.MAGIC == MAGIC, "SRE module mismatch"
 
@@ -68,7 +68,7 @@ _ignorecase_fixes = {i: tuple(j for j in t if i != j)
                      for t in _equivalences for i in t}
 
 def _combine_flags(flags, add_flags, del_flags,
-                   TYPE_FLAGS=_parser.TYPE_FLAGS):
+                   TYPE_FLAGS=sre_parse.TYPE_FLAGS):
     if add_flags & TYPE_FLAGS:
         flags &= ~TYPE_FLAGS
     return (flags | add_flags) & ~del_flags
@@ -777,7 +777,7 @@ def compile(p, flags=0):
 
     if isstring(p):
         pattern = p
-        p = _parser.parse(p, flags)
+        p = sre_parse.parse(p, flags)
     else:
         pattern = None
 

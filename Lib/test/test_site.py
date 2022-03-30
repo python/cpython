@@ -523,7 +523,7 @@ class StartupImportTests(unittest.TestCase):
         self.assertIn('site', modules)
 
         # http://bugs.python.org/issue19205
-        re_mods = {'re', '_sre', 're._compiler', 're._constants', 're._parser'}
+        re_mods = {'re', '_sre', 're.sre_compile', 're.sre_constants', 're.sre_parse'}
         self.assertFalse(modules.intersection(re_mods), stderr)
 
         # http://bugs.python.org/issue9548

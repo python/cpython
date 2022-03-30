@@ -74,10 +74,10 @@ the following::
         1    0.000    0.000    0.001    0.001 <string>:1(<module>)
         1    0.000    0.000    0.001    0.001 re.py:212(compile)
         1    0.000    0.000    0.001    0.001 re.py:268(_compile)
-        1    0.000    0.000    0.000    0.000 _compiler.py:172(_compile_charset)
-        1    0.000    0.000    0.000    0.000 _compiler.py:201(_optimize_charset)
-        4    0.000    0.000    0.000    0.000 _compiler.py:25(_identityfunction)
-      3/1    0.000    0.000    0.000    0.000 _compiler.py:33(_compile)
+        1    0.000    0.000    0.000    0.000 sre_compile.py:172(_compile_charset)
+        1    0.000    0.000    0.000    0.000 sre_compile.py:201(_optimize_charset)
+        4    0.000    0.000    0.000    0.000 sre_compile.py:25(_identityfunction)
+      3/1    0.000    0.000    0.000    0.000 sre_compile.py:33(_compile)
 
 The first line indicates that 197 calls were monitored.  Of those calls, 192
 were :dfn:`primitive`, meaning that the call was not induced via recursion. The

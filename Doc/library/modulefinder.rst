@@ -96,14 +96,14 @@ Sample output (may vary depending on the architecture)::
     Loaded modules:
     _types:
     copyreg:  _inverted_registry,_slotnames,__all__
-    re._compiler:  isstring,_sre,_optimize_unicode
+    re.sre_compile:  isstring,_sre,_optimize_unicode
     _sre:
-    re._constants:  REPEAT_ONE,makedict,AT_END_LINE
+    re.sre_constants:  REPEAT_ONE,makedict,AT_END_LINE
     sys:
     re:  __module__,finditer,_expand
     itertools:
     __main__:  re,itertools,baconhameggs
-    re._parser:  _PATTERNENDERS,SRE_FLAG_UNICODE
+    re.sre_parse:  _PATTERNENDERS,SRE_FLAG_UNICODE
     array:
     types:  __module__,IntType,TypeType
     ---------------------------------------------------
