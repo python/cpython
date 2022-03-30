@@ -56,9 +56,7 @@
     <Variable Name="DefaultCustomTargetDir" Value="" bal:Overridable="yes" />
 
     <Variable Name="InstallAllUsersState" Value="enabled" bal:Overridable="yes" />
-    <?if "$(var.Platform)"~="ARM64" ?>
-    <Variable Name="InstallLauncherAllUsersState" Value="hide" bal:Overridable="yes" />
-    <?elseif "$(var.PyTestExt)"="" ?>
+    <?if "$(var.PyTestExt)"="" ?>
     <Variable Name="InstallLauncherAllUsersState" Value="enabled" bal:Overridable="yes" />
     <?else ?>
     <Variable Name="InstallLauncherAllUsersState" Value="disable" bal:Overridable="yes" />
@@ -76,16 +74,11 @@
     <Variable Name="Include_tools" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_tcltk" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_pip" Value="1" bal:Overridable="yes" />
-    <?if $(var.Platform)~="ARM64" ?>
-    <Variable Name="Include_launcher" Value="0" bal:Overridable="yes" />
-    <Variable Name="Include_launcherState" Value="disable" />
-    <?else ?>
     <Variable Name="Include_launcher" Value="-1" bal:Overridable="yes" />
     <?if "$(var.PyTestExt)"="" ?>
     <Variable Name="Include_launcherState" Value="enabled" bal:Overridable="yes" />
     <?else ?>
     <Variable Name="Include_launcherState" Value="disable" />
-    <?endif ?>
     <?endif ?>
     <Variable Name="Include_symbols" Value="0" bal:Overridable="yes" />
     <Variable Name="Include_debug" Value="0" bal:Overridable="yes" />
@@ -115,9 +108,7 @@
       <PackageGroupRef Id="doc" />
       <PackageGroupRef Id="tools" />
       <PackageGroupRef Id="tcltk" />
-      <?if $(var.Platform)!="ARM64" ?>
       <PackageGroupRef Id="launcher" />
-      <?endif ?>
       <PackageGroupRef Id="pip" />
       <PackageGroupRef Id="packageinstall" />
       <PackageGroupRef Id="postinstall" />
