@@ -1033,9 +1033,10 @@ entrance:
         case SRE_OP_REPEAT:
             /* create repeat context.  all the hard work is done
                by the UNTIL operator (MAX_UNTIL, MIN_UNTIL) */
-            /* <REPEAT> <skip> <1=min> <2=max> <3=repeat_index> item <UNTIL> tail */
-            TRACE(("|%p|%p|REPEAT %d %d\n", ctx->pattern, ctx->ptr,
-                   ctx->pattern[1], ctx->pattern[2]));
+            /* <REPEAT> <skip> <1=min> <2=max>
+               <3=repeat_index> item <UNTIL> tail */
+            TRACE(("|%p|%p|REPEAT %d %d %d\n", ctx->pattern, ctx->ptr,
+                   ctx->pattern[1], ctx->pattern[2], ctx->pattern[3]));
 
             /* install repeat context */
             ctx->u.rep = &state->repeats_array[ctx->pattern[3]];
@@ -1058,7 +1059,8 @@ entrance:
 
         case SRE_OP_MAX_UNTIL:
             /* maximizing repeat */
-            /* <REPEAT> <skip> <1=min> <2=max> <3=repeat_index> item <MAX_UNTIL> tail */
+            /* <REPEAT> <skip> <1=min> <2=max>
+               <3=repeat_index> item <MAX_UNTIL> tail */
 
             /* FIXME: we probably need to deal with zero-width
                matches in here... */
@@ -1125,7 +1127,8 @@ entrance:
 
         case SRE_OP_MIN_UNTIL:
             /* minimizing repeat */
-            /* <REPEAT> <skip> <1=min> <2=max> <3=repeat_index> item <MIN_UNTIL> tail */
+            /* <REPEAT> <skip> <1=min> <2=max>
+               <3=repeat_index> item <MIN_UNTIL> tail */
 
             ctx->u.rep = state->repeat;
             if (!ctx->u.rep)
@@ -1197,10 +1200,10 @@ entrance:
 
         case SRE_OP_POSSESSIVE_REPEAT:
             /* create possessive repeat contexts. */
-            /* <POSSESSIVE_REPEAT> <skip> <1=min> <2=max> <3=repeat_index> pattern
-               <SUCCESS> tail */
-            TRACE(("|%p|%p|POSSESSIVE_REPEAT %d %d\n", ctx->pattern,
-                   ctx->ptr, ctx->pattern[1], ctx->pattern[2]));
+            /* <POSSESSIVE_REPEAT> <skip> <1=min> <2=max>
+               <3=repeat_index> pattern <SUCCESS> tail */
+            TRACE(("|%p|%p|POSSESSIVE_REPEAT %d %d %d\n", ctx->pattern,
+                   ctx->ptr, ctx->pattern[1], ctx->pattern[2], ctx->pattern[3]));
 
             /* Set the global Input pointer to this context's Input
                pointer */
