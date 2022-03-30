@@ -689,12 +689,11 @@ do_fork_exec(char *const exec_array[],
             /* If vfork() fails, fall back to using fork(). When it isn't
              * allowed from a process (such as pid==1 init), vfork can return
              * -1 with errno EINVAL. https://bugs.python.org/issue47151. */
-            goto fallback_to_fork;
+            pid = fork();
         }
     } else
 #endif
     {
-fallback_to_fork:
         pid = fork();
     }
 
