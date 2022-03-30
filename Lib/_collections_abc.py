@@ -1013,20 +1013,10 @@ class Sequence(Reversible, Collection):
            Supporting start and stop arguments is optional, but
            recommended.
         '''
-        if start is not None and start < 0:
-            start = max(len(self) + start, 0)
-        if stop is not None and stop < 0:
-            stop += len(self)
-
-        i = start
-        while stop is None or i < stop:
-            try:
-                v = self[i]
-            except IndexError:
-                break
+        for i in range(len(sequence))[start:stop]:
+            v = self[i]
             if v is value or v == value:
                 return i
-            i += 1
         raise ValueError
 
     def count(self, value):
