@@ -136,7 +136,7 @@ is_block_push(struct instr *instr)
 static inline int
 is_jump(struct instr *i)
 {
-    return is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
+    return !IS_VIRTUAL_OPCODE(i->i_opcode) && is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
 }
 
 static int
