@@ -20,6 +20,7 @@ _LITERAL_CODES = {LITERAL, NOT_LITERAL}
 _SUCCESS_CODES = {SUCCESS, FAILURE}
 _ASSERT_CODES = {ASSERT, ASSERT_NOT}
 _UNIT_CODES = _LITERAL_CODES | {ANY, IN}
+_REPEAT_COUNT_OFFSET = 5
 
 _REPEATING_CODES = {
     MIN_REPEAT: (REPEAT, MIN_UNTIL, MIN_REPEAT_ONE),
@@ -147,6 +148,8 @@ def _compile(code, pattern, flags):
                 skip = _len(code); emit(0)
                 emit(av[0])
                 emit(av[1])
+                emit(code[_REPEAT_COUNT_OFFSET]) # REPEAT index
+                code[_REPEAT_COUNT_OFFSET] += 1  # REPEAT count + 1
                 _compile(code, av[2], flags)
                 emit(SUCCESS)
                 code[skip] = _len(code) - skip
@@ -155,6 +158,8 @@ def _compile(code, pattern, flags):
                 skip = _len(code); emit(0)
                 emit(av[0])
                 emit(av[1])
+                emit(code[_REPEAT_COUNT_OFFSET]) # REPEAT index
+                code[_REPEAT_COUNT_OFFSET] += 1  # REPEAT count + 1
                 _compile(code, av[2], flags)
                 code[skip] = _len(code) - skip
                 emit(REPEATING_CODES[op][1])
@@ -551,7 +556,8 @@ def _compile_info(code, pattern, flags):
     if hi > MAXCODE:
         hi = MAXCODE
     if lo == 0:
-        code.extend([INFO, 4, 0, lo, hi])
+        # INFO, skip, mask, lo, hi, repeat_count
+        code.extend([INFO, 5, 0, lo, hi, 0])
         return
     # look for a literal prefix
     prefix = []
@@ -587,6 +593,9 @@ def _compile_info(code, pattern, flags):
         emit(MAXCODE)
         prefix = prefix[:MAXCODE]
     emit(min(hi, MAXCODE))
+    # REPEAT count
+    assert len(code) == _REPEAT_COUNT_OFFSET
+    emit(0)
     # add literal prefix
     if prefix:
         emit(len(prefix)) # length
@@ -721,11 +730,11 @@ def dis(code):
                 i += 1
             elif op in (REPEAT, REPEAT_ONE, MIN_REPEAT_ONE,
                         POSSESSIVE_REPEAT, POSSESSIVE_REPEAT_ONE):
-                skip, min, max = code[i: i+3]
+                skip, min, max, repeat_index = code[i: i+4]
                 if max == MAXREPEAT:
                     max = 'MAXREPEAT'
-                print_(op, skip, min, max, to=i+skip)
-                dis_(i+3, i+skip)
+                print_(op, skip, min, max, repeat_index, to=i+skip)
+                dis_(i+4, i+skip)
                 i += skip
             elif op is GROUPREF_EXISTS:
                 arg, skip = code[i: i+2]
@@ -742,15 +751,15 @@ def dis(code):
                 dis_(i+1, i+skip)
                 i += skip
             elif op is INFO:
-                skip, flags, min, max = code[i: i+4]
+                skip, flags, min, max, repeat_count = code[i: i+5]
                 if max == MAXREPEAT:
                     max = 'MAXREPEAT'
-                print_(op, skip, bin(flags), min, max, to=i+skip)
-                start = i+4
+                print_(op, skip, bin(flags), min, max, repeat_count, to=i+skip)
+                start = i+5
                 if flags & SRE_INFO_PREFIX:
-                    prefix_len, prefix_skip = code[i+4: i+6]
+                    prefix_len, prefix_skip = code[i+5: i+7]
                     print_2('  prefix_skip', prefix_skip)
-                    start = i + 6
+                    start = i + 7
                     prefix = code[start: start+prefix_len]
                     print_2('  prefix',
                             '[%s]' % ', '.join('%#02x' % x for x in prefix),

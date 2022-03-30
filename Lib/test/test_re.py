@@ -2264,30 +2264,30 @@ ELSE
   LITERAL 58
   LITERAL 32
 
- 0. INFO 8 0b1 2 5 (to 9)
+ 0. INFO 9 0b1 2 5 0 (to 10)
       prefix_skip 0
       prefix [0x2e] ('.')
       overlap [0]
- 9: MARK 0
-11. LITERAL 0x2e ('.')
-13. MARK 1
-15. BRANCH 10 (to 26)
-17.   IN 6 (to 24)
-19.     LITERAL 0x63 ('c')
-21.     LITERAL 0x68 ('h')
-23.     FAILURE
-24:   JUMP 9 (to 34)
-26: branch 7 (to 33)
-27.   LITERAL 0x70 ('p')
-29.   LITERAL 0x79 ('y')
-31.   JUMP 2 (to 34)
-33: FAILURE
-34: GROUPREF_EXISTS 0 6 (to 41)
-37. AT END
-39. JUMP 5 (to 45)
-41: LITERAL 0x3a (':')
-43. LITERAL 0x20 (' ')
-45: SUCCESS
+10: MARK 0
+12. LITERAL 0x2e ('.')
+14. MARK 1
+16. BRANCH 10 (to 27)
+18.   IN 6 (to 25)
+20.     LITERAL 0x63 ('c')
+22.     LITERAL 0x68 ('h')
+24.     FAILURE
+25:   JUMP 9 (to 35)
+27: branch 7 (to 34)
+28.   LITERAL 0x70 ('p')
+30.   LITERAL 0x79 ('y')
+32.   JUMP 2 (to 35)
+34: FAILURE
+35: GROUPREF_EXISTS 0 6 (to 42)
+38. AT END
+40. JUMP 5 (to 46)
+42: LITERAL 0x3a (':')
+44. LITERAL 0x20 (' ')
+46: SUCCESS
 '''
         self.assertEqual(get_debug_out(pat), dump)
         # Debug output is output again even a second time (bypassing
@@ -2298,14 +2298,14 @@ ELSE
         self.assertEqual(get_debug_out(r'(?>ab?)'), '''\
 ATOMIC_GROUP [(LITERAL, 97), (MAX_REPEAT, (0, 1, [(LITERAL, 98)]))]
 
- 0. INFO 4 0b0 1 2 (to 5)
- 5: ATOMIC_GROUP 11 (to 17)
- 7.   LITERAL 0x61 ('a')
- 9.   REPEAT_ONE 6 0 1 (to 16)
-13.     LITERAL 0x62 ('b')
-15.     SUCCESS
-16:   SUCCESS
-17: SUCCESS
+ 0. INFO 5 0b0 1 2 1 (to 6)
+ 6: ATOMIC_GROUP 12 (to 19)
+ 8.   LITERAL 0x61 ('a')
+10.   REPEAT_ONE 7 0 1 0 (to 18)
+15.     LITERAL 0x62 ('b')
+17.     SUCCESS
+18:   SUCCESS
+19: SUCCESS
 ''')
 
     def test_possesive_repeat_one(self):
@@ -2313,11 +2313,11 @@ ATOMIC_GROUP [(LITERAL, 97), (MAX_REPEAT, (0, 1, [(LITERAL, 98)]))]
 POSSESSIVE_REPEAT 0 1
   LITERAL 97
 
- 0. INFO 4 0b0 0 1 (to 5)
- 5: POSSESSIVE_REPEAT_ONE 6 0 1 (to 12)
- 9.   LITERAL 0x61 ('a')
-11.   SUCCESS
-12: SUCCESS
+ 0. INFO 5 0b0 0 1 1 (to 6)
+ 6: POSSESSIVE_REPEAT_ONE 7 0 1 0 (to 14)
+11.   LITERAL 0x61 ('a')
+13.   SUCCESS
+14: SUCCESS
 ''')
 
     def test_possesive_repeat(self):
@@ -2326,12 +2326,12 @@ POSSESSIVE_REPEAT 0 1
   LITERAL 97
   LITERAL 98
 
- 0. INFO 4 0b0 0 2 (to 5)
- 5: POSSESSIVE_REPEAT 7 0 1 (to 13)
- 9.   LITERAL 0x61 ('a')
-11.   LITERAL 0x62 ('b')
-13: SUCCESS
-14. SUCCESS
+ 0. INFO 5 0b0 0 2 1 (to 6)
+ 6: POSSESSIVE_REPEAT 8 0 1 0 (to 15)
+11.   LITERAL 0x61 ('a')
+13.   LITERAL 0x62 ('b')
+15: SUCCESS
+16. SUCCESS
 ''')
 
 

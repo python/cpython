@@ -427,6 +427,13 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->lastmark = -1;
     state->lastindex = -1;
 
+    state->repeats_array = PyMem_RawCalloc(pattern->code[5],
+                                           sizeof(SRE_REPEAT));
+    if (!state->repeats_array) {
+        PyErr_NoMemory();
+        goto err;
+    }
+
     state->buffer.buf = NULL;
     ptr = getstring(string, &length, &isbytes, &charsize, &state->buffer);
     if (!ptr)
@@ -476,6 +483,10 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
        safely casted to `void*`, see bpo-39943 for details. */
     PyMem_Free((void*) state->mark);
     state->mark = NULL;
+
+    PyMem_RawFree((void*) state->repeats_array);
+    state->repeats_array = NULL;
+
     if (state->buffer.buf)
         PyBuffer_Release(&state->buffer);
     return NULL;
@@ -490,6 +501,7 @@ state_fini(SRE_STATE* state)
     data_stack_dealloc(state);
     /* See above PyMem_Del for why we explicitly cast here. */
     PyMem_Free((void*) state->mark);
+    PyMem_RawFree((void*) state->repeats_array);
     state->mark = NULL;
 }
 
@@ -1731,7 +1743,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
         case SRE_OP_INFO:
             {
                 /* A minimal info field is
-                   <INFO> <1=skip> <2=flags> <3=min> <4=max>;
+                   <INFO> <1=skip> <2=flags> <3=min> <4=max> <5=repeat_count>;
                    If SRE_INFO_PREFIX or SRE_INFO_CHARSET is in the flags,
                    more follows. */
                 SRE_CODE flags, i;
@@ -1739,8 +1751,9 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                 GET_SKIP;
                 newcode = code+skip-1;
                 GET_ARG; flags = arg;
-                GET_ARG;
-                GET_ARG;
+                GET_ARG; // min
+                GET_ARG; // max
+                GET_ARG; // repeat count
                 /* Check that only valid flags are present */
                 if ((flags & ~(SRE_INFO_PREFIX |
                                SRE_INFO_LITERAL |
@@ -1821,13 +1834,14 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                 GET_SKIP;
                 GET_ARG; min = arg;
                 GET_ARG; max = arg;
+                GET_ARG; // repeat index
                 if (min > max)
                     FAIL;
                 if (max > SRE_MAXREPEAT)
                     FAIL;
-                if (!_validate_inner(code, code+skip-4, groups))
+                if (!_validate_inner(code, code+skip-5, groups))
                     FAIL;
-                code += skip-4;
+                code += skip-5;
                 GET_OP;
                 if (op != SRE_OP_SUCCESS)
                     FAIL;
@@ -1841,13 +1855,14 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                 GET_SKIP;
                 GET_ARG; min = arg;
                 GET_ARG; max = arg;
+                GET_ARG; // repeat index
                 if (min > max)
                     FAIL;
                 if (max > SRE_MAXREPEAT)
                     FAIL;
-                if (!_validate_inner(code, code+skip-3, groups))
+                if (!_validate_inner(code, code+skip-4, groups))
                     FAIL;
-                code += skip-3;
+                code += skip-4;
                 GET_OP;
                 if (op1 == SRE_OP_POSSESSIVE_REPEAT) {
                     if (op != SRE_OP_SUCCESS)

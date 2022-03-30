@@ -1,0 +1,2 @@
+:mod:`re` module: fix memory leak when a match is terminated by a signal.
+Patch by Ma Lin.

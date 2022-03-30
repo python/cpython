@@ -83,6 +83,8 @@ typedef struct {
     size_t data_stack_base;
     /* current repeat context */
     SRE_REPEAT *repeat;
+    /* repeat contexts array */
+    SRE_REPEAT *repeats_array;
 } SRE_STATE;
 
 typedef struct {
