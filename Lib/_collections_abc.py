@@ -1086,8 +1086,9 @@ class MutableSequence(Sequence):
         if values is self:
             for i in range(len(values)):
                 self.append(values[i])
-        for v in values:
-            self.append(v)
+        else:
+            for v in values:
+                self.append(v)
 
     def pop(self, index=-1):
         '''S.pop([index]) -> item -- remove and return item at index (default last).
