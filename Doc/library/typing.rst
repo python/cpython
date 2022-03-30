@@ -578,6 +578,9 @@ These can be used as types in annotations and do not support ``[]``.
    * Every type is compatible with :data:`Any`.
    * :data:`Any` is compatible with every type.
 
+    .. versionchanged:: 3.11
+       :data:`Any` can now be used as a base class
+
 .. data:: Never
 
    The `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
