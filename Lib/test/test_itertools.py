@@ -923,9 +923,9 @@ class TestBasicOps(unittest.TestCase):
         for args in [
                 ['abc', range(6)],
                 [range(6), 'abc'],
-                [range(1000), range(2000,2100), range(3000,3050)],
-                [range(1000), range(0), range(3000,3050), range(1200), range(1500)],
-                [range(1000), range(0), range(3000,3050), range(1200), range(1500), range(0)],
+                [range(1000), range(2000,2100), range(3000, 3050)],
+                [range(1000), range(0), range(3000, 3050), range(1200), range(1500)],
+                [range(1000), range(0), range(3000, 3050), range(1200), range(1500), range(0)],
             ]:
             target = [tuple([arg[i] if i < len(arg) else None for arg in args])
                       for i in range(max(map(len, args)))]
