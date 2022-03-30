@@ -3229,6 +3229,55 @@ class TestDescriptors(unittest.TestCase):
 
         self.assertEqual(D.__set_name__.call_count, 1)
 
+    def test_init_calls_set(self):
+        class D:
+            pass
+
+        D.__set__ = Mock()
+
+        @dataclass
+        class C:
+            i: D = D()
+
+        # Make sure D.__set__ is called.
+        D.__set__.reset_mock()
+        c = C(5)
+        self.assertEqual(D.__set__.call_count, 1)
+
+    def test_getting_field_calls_get(self):
+        class D:
+            pass
+
+        D.__set__ = Mock()
+        D.__get__ = Mock()
+
+        @dataclass
+        class C:
+            i: D = D()
+
+        c = C(5)
+
+        # Make sure D.__set__ is called.
+        D.__get__.reset_mock()
+        value = c.i
+        self.assertEqual(D.__get__.call_count, 1)
+
+    def test_setting_field_calls_set(self):
+        class D:
+            pass
+
+        D.__set__ = Mock()
+
+        @dataclass
+        class C:
+            i: D = D()
+
+        c = C(5)
+
+        # Make sure D.__set__ is called.
+        D.__set__.reset_mock()
+        c.i = 10
+        self.assertEqual(D.__set__.call_count, 1)
 
 class TestStringAnnotations(unittest.TestCase):
     def test_classvar(self):
