@@ -26,6 +26,10 @@ typedef PyObject *(*_PyCFunctionFastWithKeywords) (PyObject *,
 typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
                                size_t, PyObject *);
 
+// Cast an expression to PyCFunction. First cast to the "void func(void)" type
+// to prevent compiler warnings if the function does not have 2 parameters.
+#define _PyCFunction_CAST(func) ((PyCFunction)(void(*)(void))(func))
+
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_GetSelf(PyObject *);
 PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);

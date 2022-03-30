@@ -1353,9 +1353,9 @@ PyDoc_STRVAR(warn_explicit_doc,
 
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF
-    {"warn_explicit", (PyCFunction)(void(*)(void))warnings_warn_explicit,
+    {"warn_explicit", _PyCFunction_CAST(warnings_warn_explicit),
         METH_VARARGS | METH_KEYWORDS, warn_explicit_doc},
-    {"_filters_mutated", (PyCFunction)warnings_filters_mutated, METH_NOARGS,
+    {"_filters_mutated", _PyCFunction_CAST(warnings_filters_mutated), METH_NOARGS,
         NULL},
     /* XXX(brett.cannon): add showwarning? */
     /* XXX(brett.cannon): Reasonable to add formatwarning? */
