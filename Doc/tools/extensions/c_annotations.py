@@ -36,6 +36,7 @@ REST_ROLE_MAP = {
     'type': 'type',
     'macro': 'macro',
     'type': 'type',
+    'member': 'member',
 }
 
 
@@ -113,15 +114,27 @@ class Annotations:
                 ref_node = addnodes.pending_xref(
                     'Stable ABI', refdomain="std", reftarget='stable',
                     reftype='ref', refexplicit="False")
-                ref_node += nodes.Text('Stable ABI')
+                struct_abi_kind = record['struct_abi_kind']
+                if struct_abi_kind == 'opaque':
+                    ref_node += nodes.Text('Limited API')
+                else:
+                    ref_node += nodes.Text('Stable ABI')
                 emph_node += ref_node
+                if struct_abi_kind == 'opaque':
+                    emph_node += nodes.Text(' (as an opaque struct)')
+                elif struct_abi_kind == 'full-abi':
+                    emph_node += nodes.Text(' (including all members)')
+                elif struct_abi_kind == 'fields':
+                    emph_node += nodes.Text(
+                        ' (but only some members are part of the stable ABI)')
                 if record['ifdef_note']:
                     emph_node += nodes.Text(' ' + record['ifdef_note'])
                 if stable_added == '3.2':
                     # Stable ABI was introduced in 3.2.
-                    emph_node += nodes.Text('.')
+                    pass
                 else:
-                    emph_node += nodes.Text(f' since version {stable_added}.')
+                    emph_node += nodes.Text(f' since version {stable_added}')
+                emph_node += nodes.Text('.')
                 node.insert(0, emph_node)
 
             # Return value annotation
