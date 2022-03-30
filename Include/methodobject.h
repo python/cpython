@@ -26,8 +26,22 @@ typedef PyObject *(*_PyCFunctionFastWithKeywords) (PyObject *,
 typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
                                size_t, PyObject *);
 
-// Cast an expression to PyCFunction. First cast to the "void func(void)" type
-// to prevent compiler warnings if the function does not have 2 parameters.
+// Cast an function to the PyCFunction type to use it with PyMethodDef.
+//
+// This macro can be used to prevent compiler warnings if the first parameter
+// uses a different pointer type than PyObject* (ex: METH_VARARGS and METH_O
+// calling conventions).
+//
+// The macro can also be used for METH_FASTCALL and METH_VARARGS|METH_KEYWORDS
+// calling conventions to avoid compiler warnings because the function has more
+// than 2 parameters. The macro first casts the function to the
+// "void func(void)" type to prevent compiler warnings.
+//
+// If a function is declared with the METH_NOARGS calling convention, it must
+// have 2 parameters. The second parameter can be marked with Py_UNUSED() to
+// prevent a compiler warning about the unused argument. If the function has a
+// single parameter, it triggers an undefined behavior when Python calls it
+// with 2 parameters (bpo-33012).
 #define _PyCFunction_CAST(func) ((PyCFunction)(void(*)(void))(func))
 
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
