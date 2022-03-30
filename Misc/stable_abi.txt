@@ -299,11 +299,11 @@ typedef newfunc
     added 3.2
 typedef allocfunc
     added 3.2
-struct PyCFunction
+typedef PyCFunction
     added 3.2
-struct PyCFunctionWithKeywords
+typedef PyCFunctionWithKeywords
     added 3.2
-struct PyCapsule_Destructor
+typedef PyCapsule_Destructor
     added 3.2
 typedef getter
     added 3.2
