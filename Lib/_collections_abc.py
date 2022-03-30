@@ -1013,7 +1013,7 @@ class Sequence(Reversible, Collection):
            Supporting start and stop arguments is optional, but
            recommended.
         '''
-        for i in range(len(sequence))[start:stop]:
+        for i in range(len(self))[start:stop]:
             v = self[i]
             if v is value or v == value:
                 return i
