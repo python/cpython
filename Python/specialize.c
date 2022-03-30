@@ -452,12 +452,6 @@ initial_counter_value(void) {
 #define SPEC_FAIL_COMPARE_OP_EXTENDED_ARG 24
 
 /* FOR_ITER */
-#define SPEC_FAIL_FOR_ITER_REVERSED 4
-#define SPEC_FAIL_FOR_ITER_SQLITE 5
-#define SPEC_FAIL_FOR_ITER_IO 6
-#define SPEC_FAIL_FOR_ITER_CALLABLE 7
-#define SPEC_FAIL_FOR_ITER_FILTER 8
-#define SPEC_FAIL_FOR_ITER_ELEMENTTREE 9
 #define SPEC_FAIL_FOR_ITER_GENERATOR 10
 #define SPEC_FAIL_FOR_ITER_COROUTINE 11
 #define SPEC_FAIL_FOR_ITER_ASYNC_GENERATOR 12
@@ -475,8 +469,8 @@ initial_counter_value(void) {
 #define SPEC_FAIL_FOR_ITER_MAP 24
 #define SPEC_FAIL_FOR_ITER_ZIP 25
 #define SPEC_FAIL_FOR_ITER_SEQ_ITER 26
-#define SPEC_FAIL_FOR_ITER_LIST_REVERSED 27
-#define SPEC_FAIL_FOR_ITER_BYTEARRAY 28
+#define SPEC_FAIL_FOR_ITER_REVERSED_LIST 27
+#define SPEC_FAIL_FOR_ITER_CALLABLE 28
 
 // UNPACK_SEQUENCE
 
@@ -2058,32 +2052,14 @@ int
         return SPEC_FAIL_FOR_ITER_SEQ_ITER;
     }
     if (t == &PyListRevIter_Type) {
-        return SPEC_FAIL_FOR_ITER_LIST_REVERSED;
-    }
-    if (t == &PyByteArrayIter_Type) {
-        return SPEC_FAIL_FOR_ITER_BYTEARRAY;
-    }
-    if (t == &PyFilter_Type) {
-        return SPEC_FAIL_FOR_ITER_FILTER;
-    }
-    if (t == &PyReversed_Type) {
-        return SPEC_FAIL_FOR_ITER_REVERSED;
+        return SPEC_FAIL_FOR_ITER_REVERSED_LIST;
     }
     const char *name = t->tp_name;
-    if (strncmp(name, "_elementtree", 12) == 0) {
-        return SPEC_FAIL_FOR_ITER_ELEMENTTREE;
-    }
     if (strncmp(name, "itertools", 9) == 0) {
         return SPEC_FAIL_FOR_ITER_ITERTOOLS;
     }
-    if (strncmp(name, "_io.", 4) == 0) {
-        return SPEC_FAIL_FOR_ITER_IO;
-    }
     if (strncmp(name, "callable_iterator", 17) == 0) {
         return SPEC_FAIL_FOR_ITER_CALLABLE;
-    }
-    if (strncmp(name, "sqlite3.", 8) == 0) {
-        return SPEC_FAIL_FOR_ITER_SQLITE;
     }
     return SPEC_FAIL_OTHER;
 }
