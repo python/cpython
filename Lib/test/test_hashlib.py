@@ -968,6 +968,9 @@ class HashLibTestCase(unittest.TestCase):
                     h = constructor()
                 except ValueError:
                     continue
+                if isinstance(h, hashlib._LinuxKCAPI):
+                    # Linux KCAPI classes are pure Python
+                    continue
                 with self.subTest(constructor=constructor):
                     support.check_disallow_instantiation(self, type(h))
 
@@ -985,6 +988,9 @@ class HashLibTestCase(unittest.TestCase):
                 try:
                     hash_type = type(constructor())
                 except ValueError:
+                    continue
+                if issubclass(hash_type, hashlib._LinuxKCAPI):
+                    # Linux KCAPI classes are pure Python
                     continue
                 with self.subTest(hash_type=hash_type):
                     with self.assertRaisesRegex(TypeError, "immutable type"):

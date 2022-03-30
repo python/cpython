@@ -343,6 +343,7 @@ class TestVectorsTestCase(unittest.TestCase):
     def test_legacy_block_size_warnings(self):
         class MockCrazyHash(object):
             """Ain't no block_size attribute here."""
+            name = "sha256"
             def __init__(self, *args):
                 self._x = hashlib.sha256(*args)
                 self.digest_size = self._x.digest_size

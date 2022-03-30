@@ -257,6 +257,7 @@ except ImportError:
 
 import socket as _socket
 import binascii as _binascii
+import warnings as _warnings
 
 class _LinuxKCAPI:
     """Linux Kernel Crypto API (AF_ALG socket)
@@ -271,34 +272,66 @@ class _LinuxKCAPI:
         'sha384': (48, 128),
         'sha512': (64, 128),
     }
-    __slots__ = ("_digest", "_opsock")
+    __slots__ = ("_digest", "_kcapi_sock")
 
     def __init__(self, digest):
+        digest = digest.lower()  # SHA256 -> sha256
         if digest not in self._digests:
-            raise ValueError(digest)
+            raise ValueError(f"Kernel Crypto API does not support {digest}.")
         self._digest = digest
 
-    def _get_opsock(self, digest, key=None):
+    def __getstate__(self):
+        raise TypeError(f"cannot pickle {self.__class__.__name__!r} object")
+
+    def __del__(self):
+        if getattr(self, "_kcapi_sock", None):
+            self._kcapi_sock.close()
+            self._kcapi_sock = None
+
+    def _get_kcapi_sock(self, digest, mac_key=None):
         """Create KCAPI client socket
 
         Algorithm and MAC key are configured on the server socket. accept()
         creates a new client socket that consumes data. accept() on a client
         socket creates an independent copy.
+
+        https://www.kernel.org/doc/html/v5.17/crypto/userspace-if.html
         """
         with _socket.socket(_socket.AF_ALG, _socket.SOCK_SEQPACKET, 0) as cfg:
-            binding = ("hash", digest if key is None else f"hmac({digest})")
+            algo = digest if mac_key is None else f"hmac({digest})"
+            binding = ("hash", algo)
             try:
                 cfg.bind(binding)
             except FileNotFoundError:
-                raise ValueError(binding)
-            if key is not None:
-                cfg.setsockopt(_socket.SOL_ALG, _socket.ALG_SET_KEY, key)
+                raise ValueError(
+                    f"Kernel Crypto API does not support {algo}."
+                )
+            if mac_key is not None:
+                # Linux Kernel 5.17 docs are incorrect. AF_ALG setsockopt()
+                # requires a non-connected 'server' socket.
+                # if (sock->state == SS_CONNECTED) return ENOPROTOOPT;
+                cfg.setsockopt(_socket.SOL_ALG, _socket.ALG_SET_KEY, mac_key)
             return cfg.accept()[0]
 
-    def __del__(self):
-        if getattr(self, "_opsock", None):
-            self._opsock.close()
-            self._opsock = None
+    def _digest_by_digestmod(self, digestmod):
+        """Get digest object and name
+        """
+        if isinstance(digestmod, str):
+            return None, digestmod
+        elif callable(digestmod):
+            if _hashlib is not None:
+                # _hashopenssl.c constructor?
+                try:
+                    return None, _hashlib._constructors[digestmod]
+                except KeyError:
+                    pass
+            # callable
+            digestobj = digestmod()
+            return digestobj, digestobj.name
+        else:
+            # digest module with new() function
+            digestobj = digestmod.new()
+            return digestobj, digestobj.name
 
     def __repr__(self):
         return f"<Linux KCAPI {self.name} at 0x{id(self):x}>"
@@ -312,16 +345,16 @@ class _LinuxKCAPI:
         return self._digests[self._digest][1]
 
     def update(self, data):
-        self._opsock.sendall(data, _socket.MSG_MORE)
+        self._kcapi_sock.sendall(data, _socket.MSG_MORE)
 
     def copy(self):
         new = self.__new__(type(self))
         new._digest = self._digest
-        new._opsock = self._opsock.accept()[0]
+        new._kcapi_sock = self._kcapi_sock.accept()[0]
         return new
 
     def digest(self):
-        copysock = self._opsock.accept()[0]
+        copysock = self._kcapi_sock.accept()[0]
         with copysock:
             copysock.send(b'')
             return copysock.recv(64)
@@ -334,7 +367,7 @@ class _LinuxKCAPIHash(_LinuxKCAPI):
     def __init__(self, name, data=None, usedforsecurity=True):
         super().__init__(name)
         # ignores usedforsecurity
-        self._opsock = self._get_opsock(name)
+        self._kcapi_sock = self._get_kcapi_sock(name)
         if data is not None:
             self.update(data)
 
@@ -350,15 +383,22 @@ class _LinuxKCAPIHMAC(_LinuxKCAPI):
 
         if not digestmod:
             raise TypeError("Missing required parameter 'digestmod'.")
-        elif isinstance(digestmod, str):
-            digest = digestmod
-        elif callable(digestmod):
-            digest = digestmod().name
-        else:
-            digest = digestmod.new().name
+        digestobj, name = self._digest_by_digestmod(digestmod)
+        super().__init__(name)
+        if digestobj:
+            if not hasattr(digestobj, "block_size"):
+                _warnings.warn(
+                    "No block_size attribute on given digest object.",
+                    RuntimeWarning, 2
+                )
+            elif digestobj.block_size != self.block_size:
+                _warnings.warn(
+                    f"digest object block_size {digestobj.block_size} does "
+                    f"not match KCAPI block_size {self.block_size}.",
+                    RuntimeWarning, 2
+                )
 
-        super().__init__(digest)
-        self._opsock = self._get_opsock(digest, key)
+        self._kcapi_sock = self._get_kcapi_sock(name, key)
         if msg is not None:
             self.update(msg)
 
