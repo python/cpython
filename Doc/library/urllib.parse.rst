@@ -51,17 +51,17 @@ or on combining URL components into a URL string.
 
    The scheme of the URL determines whether or not parameters are parsed as
    distinct from the path. To override the scheme and parse parameters anyway,
-   pass a SchemeClass containing instances of ``SchemeClass.PARAMS``.
+   pass the corresponding SchemeFlag.
 
    For example:
 
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
 
-      >>> from urllib.parse import urlparse, SchemeClass
+      >>> from urllib.parse import urlparse, SchemeFlag
       >>> urlparse("scheme://netloc/path;parameters?query#fragment")
       ParseResult(scheme='scheme', netloc='netloc', path='/path;parameters', params='', query='query', fragment='fragment')
-      >>> urlparse("scheme://netloc/path;parameters?query#fragment", classes=SchemeClass.PARAMS)
+      >>> urlparse("scheme://netloc/path;parameters?query#fragment", flags=SchemeFlag.PARAMS)
       ParseResult(scheme='scheme', netloc='netloc', path='/path', params='parameters', query='query', fragment='fragment')
       >>> o = urlparse("http://docs.python.org:80/3/library/urllib.parse.html?"
       ...              "highlight=params#url-parsing")
@@ -582,18 +582,18 @@ In addition, any function that takes a ``classes`` parameter (for instance,
 lists, for instance, parsing a custom or widely unused scheme with the same
 behavior as that of HTTP:
 
-   >>> from urllib.parse import urljoin, SchemeClass
+   >>> from urllib.parse import urljoin, SchemeFlag
    >>> urljoin(
    ...     'my-protocol://example.org/post/x/', '../y/',
-   ...     classes=(SchemeClass.NETLOC | SchemeClass.RELATIVE))
+   ...     flags=(SchemeFlag.NETLOC | SchemeFlag.RELATIVE))
    'my-protocol://example.org/post/y/'
 
 For reference, the following three scheme classes are present (exactly
 corresponding to the uses lists):
 
-* ``urllib.SchemeClass.RELATIVE``
-* ``urllib.SchemeClass.NETLOC``
-* ``urllib.SchemeClass.PARAMS``
+* ``urllib.SchemeFlag.RELATIVE``
+* ``urllib.SchemeFlag.NETLOC``
+* ``urllib.SchemeFlag.PARAMS``
 
 URL Quoting
 -----------

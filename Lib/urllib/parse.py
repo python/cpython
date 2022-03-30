@@ -39,15 +39,15 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "urlsplit", "urlunsplit", "urlencode", "parse_qs",
            "parse_qsl", "quote", "quote_plus", "quote_from_bytes",
            "unquote", "unquote_plus", "unquote_to_bytes",
-           "DefragResult", "ParseResult", "SplitResult", "SchemeClass",
+           "DefragResult", "ParseResult", "SplitResult", "SchemeFlag",
            "DefragResultBytes", "ParseResultBytes", "SplitResultBytes"]
 
 # A classification of schemes.
 # The empty string classifies URLs with no scheme specified,
 # being the default value returned by “urlsplit” and “urlparse”.
 
-class SchemeClass(Flag):
-    """SchemeClass is an enum with the members RELATIVE, NETLOC, and
+class SchemeFlag(Flag):
+    """SchemeFlag is an enum with the members RELATIVE, NETLOC, and
     PARAMS. These describe methods for URL resolution, usually by
     scheme. These resolution classes determine, namely, whether a
     scheme supports, respectively, relative addressing, preserving the
@@ -74,7 +74,7 @@ uses_params = ['', 'ftp', 'hdl', 'prospero', 'http', 'imap',
                'mms', 'sftp', 'tel']
 
 
-def _scheme_classes(scheme, overrides=SchemeClass.NONE):
+def _scheme_classes(scheme, overrides=SchemeFlag.NONE):
     """Find out what scheme classes a given scheme fits in.
 
     This consults the variables uses_relative, uses_netloc, and
@@ -83,13 +83,13 @@ def _scheme_classes(scheme, overrides=SchemeClass.NONE):
     parameter.
     """
     if scheme in uses_relative:
-        overrides |= SchemeClass.RELATIVE
+        overrides |= SchemeFlag.RELATIVE
 
     if scheme in uses_netloc:
-        overrides |= SchemeClass.NETLOC
+        overrides |= SchemeFlag.NETLOC
 
     if scheme in uses_params:
-        overrides |= SchemeClass.PARAMS
+        overrides |= SchemeFlag.PARAMS
 
     return overrides
 
@@ -397,7 +397,7 @@ def _fix_result_transcoding():
 _fix_result_transcoding()
 del _fix_result_transcoding
 
-def urlparse(url, scheme='', allow_fragments=True, classes=SchemeClass.NONE):
+def urlparse(url, scheme='', allow_fragments=True, flags=SchemeFlag.NONE):
     """Parse a URL into 6 components:
     <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
 
@@ -420,8 +420,8 @@ def urlparse(url, scheme='', allow_fragments=True, classes=SchemeClass.NONE):
     url, scheme, _coerce_result = _coerce_args(url, scheme)
     splitresult = urlsplit(url, scheme, allow_fragments)
     scheme, netloc, url, query, fragment = splitresult
-    scheme_classes = _scheme_classes(scheme, overrides=classes)
-    if SchemeClass.PARAMS & scheme_classes and ';' in url:
+    scheme_classes = _scheme_classes(scheme, overrides=flags)
+    if SchemeFlag.PARAMS & scheme_classes and ';' in url:
         url, params = _splitparams(url)
     else:
         params = ''
@@ -537,7 +537,7 @@ def urlunsplit(components):
                                           _coerce_args(*components))
 
     scheme_classes = _scheme_classes(scheme)
-    if netloc or (scheme and (SchemeClass.NETLOC & scheme_classes) and url[:2] != '//'):
+    if netloc or (scheme and (SchemeFlag.NETLOC & scheme_classes) and url[:2] != '//'):
         if url and url[:1] != '/': url = '/' + url
         url = '//' + (netloc or '') + url
     if scheme:
@@ -548,7 +548,7 @@ def urlunsplit(components):
         url = url + '#' + fragment
     return _coerce_result(url)
 
-def urljoin(base, url, allow_fragments=True, classes=SchemeClass.NONE):
+def urljoin(base, url, allow_fragments=True, flags=SchemeFlag.NONE):
     """Join a base URL and a possibly relative URL to form an absolute
     interpretation of the latter. Some logic may be enabled by setting
     the classes variable."""
@@ -559,15 +559,15 @@ def urljoin(base, url, allow_fragments=True, classes=SchemeClass.NONE):
 
     base, url, _coerce_result = _coerce_args(base, url)
     bscheme, bnetloc, bpath, bparams, bquery, bfragment = \
-            urlparse(base, '', allow_fragments, classes=classes)
+            urlparse(base, '', allow_fragments, flags=flags)
     scheme, netloc, path, params, query, fragment = \
-            urlparse(url, bscheme, allow_fragments, classes=classes)
+            urlparse(url, bscheme, allow_fragments, flags=flags)
 
-    scheme_classes = _scheme_classes(scheme, overrides=classes)
+    scheme_classes = _scheme_classes(scheme, overrides=flags)
 
-    if scheme != bscheme or not (SchemeClass.RELATIVE & scheme_classes):
+    if scheme != bscheme or not (SchemeFlag.RELATIVE & scheme_classes):
         return _coerce_result(url)
-    if SchemeClass.NETLOC in scheme_classes:
+    if SchemeFlag.NETLOC in scheme_classes:
         if netloc:
             return _coerce_result(urlunparse((scheme, netloc, path,
                                               params, query, fragment)))
