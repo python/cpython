@@ -1003,7 +1003,7 @@ class Sequence(Reversible, Collection):
         return False
 
     def __reversed__(self):
-        for i in range(len(self) - 1, -1, -1):
+        for i in reversed(range(len(self))):
             yield self[i]
 
     def index(self, value, start=0, stop=None):
