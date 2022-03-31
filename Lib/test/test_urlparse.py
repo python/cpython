@@ -213,7 +213,7 @@ class UrlParseTestCase(unittest.TestCase):
                     split = (scheme,) + split
                     self.checkRoundtrips(url, parsed, split)
 
-    def checkJoin(self, base, relurl, expected, flags=urllib.parse.SchemeFlag.NONE):
+    def checkJoin(self, base, relurl, expected, flags=urllib.parse.SchemeFlag(0)):
         str_components = (base, relurl, expected)
         self.assertEqual(urllib.parse.urljoin(base, relurl, flags=flags), expected)
         bytes_components = baseb, relurlb, expectedb = [
