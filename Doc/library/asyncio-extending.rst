@@ -1,9 +1,9 @@
 .. currentmodule:: asyncio
 
 
-=================
-Asyncio Extending
-=================
+=========
+Extending
+=========
 
 The main direction for :mod:`asyncio` extending is writing custom *event loop*
 classes. Asyncio has helpers that could be used to simplify this task.
