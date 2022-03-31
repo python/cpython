@@ -522,6 +522,7 @@ CPython bytecode changes
 
 * :opcode:`JUMP_IF_NOT_EXC_MATCH` no longer pops the active exception.
 
+* Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
 
 Deprecated
 ==========

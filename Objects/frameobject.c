@@ -237,7 +237,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[i+1] = next_stack;
                     break;
                 }
-                case JUMP_ABSOLUTE:
                 case JUMP_NO_INTERRUPT:
                     j = get_arg(code, i);
                     assert(j < len);
@@ -261,6 +260,12 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case JUMP_FORWARD:
                     j = get_arg(code, i) + i + 1;
                     assert(j < len);
+                    assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
+                    stacks[j] = next_stack;
+                    break;
+                case JUMP_BACKWARD:
+                    j = i + 1 - get_arg(code, i);
+                    assert(j >= 0);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
                     stacks[j] = next_stack;
                     break;
