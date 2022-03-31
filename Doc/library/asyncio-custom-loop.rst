@@ -1,24 +1,25 @@
 .. currentmodule:: asyncio
 
 
-=========================
-Custom Event Loop Helpers
-=========================
+=================
+Asyncio Extending
+=================
 
-Asyncio can be extended by writing a custom *event loop* classes.
+The main direction for :mod:`asyncio` extending is writing custom *event loop*
+classes.
 
 
 Writing a Custom Event Loop
 ===========================
 
-:class:`asyncio.AbstractEventLoop` declares very many methods.  Writing all them from
-scratch is a tedious job.
+:class:`asyncio.AbstractEventLoop` declares very many methods.  Implementing all them
+from scratch is a tedious job.
 
-A loop can get many common function implementations for free by inheriting from
+A loop can get many common methods implementation for free by inheriting from
 :class:`asyncio.BaseEventLoop`.
 
 In turn, the successor should implement a bunch of *private* methods declared but not
-implemented by defined by :class:`asyncio.BaseEventLoop`.
+implemented in :class:`asyncio.BaseEventLoop`.
 
 For example, ``loop.create_connection()`` checks arguments, resolves DNS addresses, and
 calls ``loop._make_socket_transport()`` that should be implemented by inherited class.
