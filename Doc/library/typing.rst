@@ -580,7 +580,7 @@ These can be used as types in annotations and do not support ``[]``.
 
     .. versionchanged:: 3.11
        :data:`Any` can now be used as a base class. This can be useful for
-       avoiding type checker errors in classes that can duck type anywhere or
+       avoiding type checker errors with classes that can duck type anywhere or
        are highly dynamic.
 
 .. data:: Never
