@@ -38,10 +38,10 @@ typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
 // "void func(void)" type to prevent compiler warnings.
 //
 // If a function is declared with the METH_NOARGS calling convention, it must
-// have 2 parameters. The second parameter can be marked with Py_UNUSED() to
-// prevent a compiler warning about the unused argument. If the function has a
-// single parameter, it triggers an undefined behavior when Python calls it
-// with 2 parameters (bpo-33012).
+// have 2 parameters. Since the second parameter is unused, Py_UNUSED() can be
+// used to prevent a compiler warning. If the function has a single parameter,
+// it triggers an undefined behavior when Python calls it with 2 parameters
+// (bpo-33012).
 #define _PyCFunction_CAST(func) ((PyCFunction)(void(*)(void))(func))
 
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);

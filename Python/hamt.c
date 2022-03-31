@@ -2845,14 +2845,14 @@ hamt_py_values(PyHamtObject *self, PyObject *args)
 }
 
 static PyObject *
-hamt_py_keys(PyHamtObject *self, PyObject *args)
+hamt_py_keys(PyHamtObject *self, PyObject *Py_UNUSED(args))
 {
     return _PyHamt_NewIterKeys(self);
 }
 
 #ifdef Py_DEBUG
 static PyObject *
-hamt_py_dump(PyHamtObject *self, PyObject *args)
+hamt_py_dump(PyHamtObject *self, PyObject *Py_UNUSED(args))
 {
     return hamt_dump(self);
 }

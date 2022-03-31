@@ -1078,7 +1078,7 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-warnings_filters_mutated(PyObject *self, PyObject *args)
+warnings_filters_mutated(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyInterpreterState *interp = get_current_interp();
     if (interp == NULL) {
