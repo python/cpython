@@ -1811,9 +1811,9 @@ EM_JS(int, _Py_CheckEmscriptenSignals_Helper, (void), {
         Module.Py_EmscriptenSignalBuffer[0] = 0;
         return result;
     } catch(e) {
-        #if !defined(NDEBUG)
-            console.warn("Error occurred while trying to read signal buffer:", e);
-        #endif
+#if !defined(NDEBUG)
+        console.warn("Error occurred while trying to read signal buffer:", e);
+#endif
         return 0;
     }
 });
