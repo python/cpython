@@ -1,4 +1,4 @@
-"""ParenMatch -- An IDLE extension for parenthesis matching.
+"""ParenMatch -- for parenthesis matching.
 
 When you hit a right paren, the cursor should move briefly to the left
 paren.  Paren here is used generically; the matching applies to
@@ -30,18 +30,6 @@ class ParenMatch:
     - Highlight when cursor is moved to the right of a closer.
       This might be too expensive to check.
     """
-    menudefs = [
-        ('edit', [
-            ("Show surrounding parens", "<<flash-paren>>"),
-        ])
-    ]
-    STYLE = idleConf.GetOption(
-            'extensions','ParenMatch','style', default='expression')
-    FLASH_DELAY = idleConf.GetOption(
-            'extensions','ParenMatch','flash-delay', type='int',default=500)
-    BELL = idleConf.GetOption(
-            'extensions','ParenMatch','bell', type='bool',default=1)
-    HILITE_CONFIG = idleConf.GetHighlight(idleConf.CurrentTheme(),'hilite')
 
     RESTORE_VIRTUAL_EVENT_NAME = "<<parenmatch-check-restore>>"
     # We want the restore event be called before the usual return and
@@ -57,10 +45,19 @@ class ParenMatch:
         # and deactivate_restore (which calls event_delete).
         editwin.text.bind(self.RESTORE_VIRTUAL_EVENT_NAME,
                           self.restore_event)
-        self.bell = self.text.bell if self.BELL else lambda: None
         self.counter = 0
         self.is_restore_active = 0
-        self.set_style(self.STYLE)
+
+    @classmethod
+    def reload(cls):
+        cls.STYLE = idleConf.GetOption(
+            'extensions','ParenMatch','style', default='opener')
+        cls.FLASH_DELAY = idleConf.GetOption(
+                'extensions','ParenMatch','flash-delay', type='int',default=500)
+        cls.BELL = idleConf.GetOption(
+                'extensions','ParenMatch','bell', type='bool', default=1)
+        cls.HILITE_CONFIG = idleConf.GetHighlight(idleConf.CurrentTheme(),
+                                                  'hilite')
 
     def activate_restore(self):
         "Activate mechanism to restore text from highlighting."
@@ -76,27 +73,11 @@ class ParenMatch:
                 self.text.event_delete(self.RESTORE_VIRTUAL_EVENT_NAME, seq)
             self.is_restore_active = False
 
-    def set_style(self, style):
-        "Set tag and timeout functions."
-        self.STYLE = style
-        self.create_tag = (
-                self.create_tag_opener if style in {"opener", "default"} else
-                self.create_tag_parens if style == "parens" else
-                self.create_tag_expression)  # "expression" or unknown
-
-        self.set_timeout = (self.set_timeout_last if self.FLASH_DELAY else
-                            self.set_timeout_none)
-
     def flash_paren_event(self, event):
         "Handle editor 'show surrounding parens' event (menu or shortcut)."
         indices = (HyperParser(self.editwin, "insert")
                    .get_surrounding_brackets())
-        if indices is None:
-            self.bell()
-            return "break"
-        self.activate_restore()
-        self.create_tag(indices)
-        self.set_timeout()
+        self.finish_paren_event(indices)
         return "break"
 
     def paren_closed_event(self, event):
@@ -104,18 +85,24 @@ class ParenMatch:
         # If user bound non-closer to <<paren-closed>>, quit.
         closer = self.text.get("insert-1c")
         if closer not in _openers:
-            return "break"
+            return
         hp = HyperParser(self.editwin, "insert-1c")
         if not hp.is_in_code():
-            return "break"
+            return
         indices = hp.get_surrounding_brackets(_openers[closer], True)
-        if indices is None:
-            self.bell()
-            return "break"
+        self.finish_paren_event(indices)
+        return  # Allow calltips to see ')'
+
+    def finish_paren_event(self, indices):
+        if indices is None and self.BELL:
+            self.text.bell()
+            return
         self.activate_restore()
-        self.create_tag(indices)
-        self.set_timeout()
-        return "break"
+        # self.create_tag(indices)
+        self.tagfuncs.get(self.STYLE, self.create_tag_expression)(self, indices)
+        # self.set_timeout()
+        (self.set_timeout_last if self.FLASH_DELAY else
+                            self.set_timeout_none)()
 
     def restore_event(self, event=None):
         "Remove effect of doing match."
@@ -153,6 +140,13 @@ class ParenMatch:
         self.text.tag_add("paren", indices[0], rightindex)
         self.text.tag_config("paren", self.HILITE_CONFIG)
 
+    tagfuncs = {
+        'opener': create_tag_opener,
+        'default': create_tag_opener,
+        'parens': create_tag_parens,
+        'expression': create_tag_expression,
+        }
+
     # any one of the set_timeout_XXX methods can be used depending on
     # the style
 
@@ -181,6 +175,9 @@ class ParenMatch:
             lambda self=self, c=self.counter: self.handle_restore_timer(c))
 
 
+ParenMatch.reload()
+
+
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_parenmatch', verbosity=2)
+    from unittest import main
+    main('idlelib.idle_test.test_parenmatch', verbosity=2)

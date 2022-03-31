@@ -138,7 +138,7 @@ import struct
 import builtins
 import warnings
 
-__all__ = ["Error", "open", "openfp"]
+__all__ = ["Error", "open"]
 
 class Error(Exception):
     pass
@@ -322,6 +322,7 @@ class Aifc_read:
         else:
             raise Error('not an AIFF or AIFF-C file')
         self._comm_chunk_read = 0
+        self._ssnd_chunk = None
         while 1:
             self._ssnd_seek_needed = 1
             try:
@@ -461,11 +462,19 @@ class Aifc_read:
         data, self._adpcmstate = audioop.adpcm2lin(data, 2, self._adpcmstate)
         return data
 
+    def _sowt2lin(self, data):
+        import audioop
+        return audioop.byteswap(data, 2)
+
     def _read_comm_chunk(self, chunk):
         self._nchannels = _read_short(chunk)
         self._nframes = _read_long(chunk)
         self._sampwidth = (_read_short(chunk) + 7) // 8
         self._framerate = int(_read_float(chunk))
+        if self._sampwidth <= 0:
+            raise Error('bad sample width')
+        if self._nchannels <= 0:
+            raise Error('bad # of channels')
         self._framesize = self._nchannels * self._sampwidth
         if self._aifc:
             #DEBUG: SGI's soundeditor produces a bad size :-(
@@ -492,6 +501,8 @@ class Aifc_read:
                     self._convert = self._ulaw2lin
                 elif self._comptype in (b'alaw', b'ALAW'):
                     self._convert = self._alaw2lin
+                elif self._comptype in (b'sowt', b'SOWT'):
+                    self._convert = self._sowt2lin
                 else:
                     raise Error('unsupported compression type')
                 self._sampwidth = 2
@@ -654,7 +665,7 @@ class Aifc_write:
         if self._nframeswritten:
             raise Error('cannot change parameters after starting to write')
         if comptype not in (b'NONE', b'ulaw', b'ULAW',
-                            b'alaw', b'ALAW', b'G722'):
+                            b'alaw', b'ALAW', b'G722', b'sowt', b'SOWT'):
             raise Error('unsupported compression type')
         self._comptype = comptype
         self._compname = compname
@@ -675,7 +686,7 @@ class Aifc_write:
         if self._nframeswritten:
             raise Error('cannot change parameters after starting to write')
         if comptype not in (b'NONE', b'ulaw', b'ULAW',
-                            b'alaw', b'ALAW', b'G722'):
+                            b'alaw', b'ALAW', b'G722', b'sowt', b'SOWT'):
             raise Error('unsupported compression type')
         self.setnchannels(nchannels)
         self.setsampwidth(sampwidth)
@@ -773,14 +784,21 @@ class Aifc_write:
         data, self._adpcmstate = audioop.lin2adpcm(data, 2, self._adpcmstate)
         return data
 
+    def _lin2sowt(self, data):
+        import audioop
+        return audioop.byteswap(data, 2)
+
     def _ensure_header_written(self, datasize):
         if not self._nframeswritten:
-            if self._comptype in (b'ULAW', b'ulaw', b'ALAW', b'alaw', b'G722'):
+            if self._comptype in (b'ULAW', b'ulaw',
+                b'ALAW', b'alaw', b'G722',
+                b'sowt', b'SOWT'):
                 if not self._sampwidth:
                     self._sampwidth = 2
                 if self._sampwidth != 2:
                     raise Error('sample width must be 2 when compressing '
-                                'with ulaw/ULAW, alaw/ALAW or G7.22 (ADPCM)')
+                                'with ulaw/ULAW, alaw/ALAW, sowt/SOWT '
+                                'or G7.22 (ADPCM)')
             if not self._nchannels:
                 raise Error('# channels not specified')
             if not self._sampwidth:
@@ -796,6 +814,8 @@ class Aifc_write:
             self._convert = self._lin2ulaw
         elif self._comptype in (b'alaw', b'ALAW'):
             self._convert = self._lin2alaw
+        elif self._comptype in (b'sowt', b'SOWT'):
+            self._convert = self._lin2sowt
 
     def _write_header(self, initlength):
         if self._aifc and self._comptype != b'NONE':
@@ -915,7 +935,6 @@ def open(f, mode=None):
     else:
         raise Error("mode must be 'r', 'rb', 'w', or 'wb'")
 
-openfp = open # B/W compatibility
 
 if __name__ == '__main__':
     import sys

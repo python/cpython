@@ -52,7 +52,7 @@ comment in Python.
 The script can be given an executable mode, or permission, using the
 :program:`chmod` command.
 
-.. code-block:: bash
+.. code-block:: shell-session
 
    $ chmod +x myscript.py
 

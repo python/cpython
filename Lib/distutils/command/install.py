@@ -3,7 +3,9 @@
 Implements the Distutils 'install' command."""
 
 import sys
+import sysconfig
 import os
+import re
 
 from distutils import log
 from distutils.core import Command
@@ -17,35 +19,55 @@ from distutils.errors import DistutilsOptionError
 
 from site import USER_BASE
 from site import USER_SITE
-HAS_USER_SITE = True
 
-WINDOWS_SCHEME = {
-    'purelib': '$base/Lib/site-packages',
-    'platlib': '$base/Lib/site-packages',
-    'headers': '$base/Include/$dist_name',
-    'scripts': '$base/Scripts',
-    'data'   : '$base',
-}
+HAS_USER_SITE = (USER_SITE is not None)
 
-INSTALL_SCHEMES = {
-    'unix_prefix': {
-        'purelib': '$base/lib/python$py_version_short/site-packages',
-        'platlib': '$platbase/lib/python$py_version_short/site-packages',
-        'headers': '$base/include/python$py_version_short$abiflags/$dist_name',
-        'scripts': '$base/bin',
-        'data'   : '$base',
-        },
-    'unix_home': {
-        'purelib': '$base/lib/python',
-        'platlib': '$base/lib/python',
-        'headers': '$base/include/python/$dist_name',
-        'scripts': '$base/bin',
-        'data'   : '$base',
-        },
-    'nt': WINDOWS_SCHEME,
-    }
+# The keys to an installation scheme; if any new types of files are to be
+# installed, be sure to add an entry to every scheme in
+# sysconfig._INSTALL_SCHEMES, and to SCHEME_KEYS here.
+SCHEME_KEYS = ('purelib', 'platlib', 'headers', 'scripts', 'data')
 
-# user site schemes
+# The following code provides backward-compatible INSTALL_SCHEMES
+# while making the sysconfig module the single point of truth.
+# This makes it easier for OS distributions where they need to
+# alter locations for packages installations in a single place.
+# Note that this module is deprecated (PEP 632); all consumers
+# of this information should switch to using sysconfig directly.
+INSTALL_SCHEMES = {"unix_prefix": {}, "unix_home": {}, "nt": {}}
+
+# Copy from sysconfig._INSTALL_SCHEMES
+for key in SCHEME_KEYS:
+    for distutils_scheme_name, sys_scheme_name in (
+            ("unix_prefix", "posix_prefix"), ("unix_home", "posix_home"),
+            ("nt", "nt")):
+        sys_key = key
+        sys_scheme = sysconfig._INSTALL_SCHEMES[sys_scheme_name]
+        if key == "headers" and key not in sys_scheme:
+            # On POSIX-y platforms, Python will:
+            # - Build from .h files in 'headers' (only there when
+            #   building CPython)
+            # - Install .h files to 'include'
+            # When 'headers' is missing, fall back to 'include'
+            sys_key = 'include'
+        INSTALL_SCHEMES[distutils_scheme_name][key] = sys_scheme[sys_key]
+
+# Transformation to different template format
+for main_key in INSTALL_SCHEMES:
+    for key, value in INSTALL_SCHEMES[main_key].items():
+        # Change all ocurences of {variable} to $variable
+        value = re.sub(r"\{(.+?)\}", r"$\g<1>", value)
+        value = value.replace("$installed_base", "$base")
+        value = value.replace("$py_version_nodot_plat", "$py_version_nodot")
+        if key == "headers":
+            value += "/$dist_name"
+        if sys.version_info >= (3, 9) and key == "platlib":
+            # platlibdir is available since 3.9: bpo-1294959
+            value = value.replace("/lib/", "/$platlibdir/")
+        INSTALL_SCHEMES[main_key][key] = value
+
+# The following part of INSTALL_SCHEMES has a different definition
+# than the one in sysconfig, but because both depend on the site module,
+# the outcomes should be the same.
 if HAS_USER_SITE:
     INSTALL_SCHEMES['nt_user'] = {
         'purelib': '$usersite',
@@ -63,11 +85,6 @@ if HAS_USER_SITE:
         'scripts': '$userbase/bin',
         'data'   : '$userbase',
         }
-
-# The keys to an installation scheme; if any new types of files are to be
-# installed, be sure to add an entry to every installation scheme above,
-# and to SCHEME_KEYS here.
-SCHEME_KEYS = ('purelib', 'platlib', 'headers', 'scripts', 'data')
 
 
 class install(Command):
@@ -169,8 +186,9 @@ class install(Command):
         self.install_lib = None         # set to either purelib or platlib
         self.install_scripts = None
         self.install_data = None
-        self.install_userbase = USER_BASE
-        self.install_usersite = USER_SITE
+        if HAS_USER_SITE:
+            self.install_userbase = USER_BASE
+            self.install_usersite = USER_SITE
 
         self.compile = None
         self.optimize = None
@@ -223,7 +241,7 @@ class install(Command):
 
     def finalize_options(self):
         """Finalizes options."""
-        # This method (and its pliant slaves, like 'finalize_unix()',
+        # This method (and its helpers, like 'finalize_unix()',
         # 'finalize_other()', and 'select_scheme()') is where the default
         # installation directories for modules, extension modules, and
         # anything else we care to install from a Python module
@@ -298,11 +316,15 @@ class install(Command):
                             'sys_exec_prefix': exec_prefix,
                             'exec_prefix': exec_prefix,
                             'abiflags': abiflags,
+                            'platlibdir': sys.platlibdir,
                            }
 
         if HAS_USER_SITE:
             self.config_vars['userbase'] = self.install_userbase
             self.config_vars['usersite'] = self.install_usersite
+
+        if sysconfig.is_python_build(True):
+            self.config_vars['srcdir'] = sysconfig.get_config_var('srcdir')
 
         self.expand_basedirs()
 
@@ -342,8 +364,9 @@ class install(Command):
         # Convert directories from Unix /-separated syntax to the local
         # convention.
         self.convert_paths('lib', 'purelib', 'platlib',
-                           'scripts', 'data', 'headers',
-                           'userbase', 'usersite')
+                           'scripts', 'data', 'headers')
+        if HAS_USER_SITE:
+            self.convert_paths('userbase', 'usersite')
 
         # Deprecated
         # Well, we're not actually fully completely finalized yet: we still

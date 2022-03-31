@@ -1,9 +1,15 @@
 import webbrowser
 import unittest
+import os
+import sys
 import subprocess
 from unittest import mock
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test webserver requires subprocess")
 
 URL = 'http://www.example.com'
 CMD_NAME = 'test'
@@ -170,23 +176,23 @@ class OperaCommandTest(CommandTestMixin, unittest.TestCase):
 
     def test_open(self):
         self._test('open',
-                   options=['-remote'],
-                   arguments=['openURL({})'.format(URL)])
+                   options=[],
+                   arguments=[URL])
 
     def test_open_with_autoraise_false(self):
         self._test('open', kw=dict(autoraise=False),
-                   options=['-remote', '-noraise'],
-                   arguments=['openURL({})'.format(URL)])
+                   options=[],
+                   arguments=[URL])
 
     def test_open_new(self):
         self._test('open_new',
-                   options=['-remote'],
-                   arguments=['openURL({},new-window)'.format(URL)])
+                   options=['--new-window'],
+                   arguments=[URL])
 
     def test_open_new_tab(self):
         self._test('open_new_tab',
-                   options=['-remote'],
-                   arguments=['openURL({},new-page)'.format(URL)])
+                   options=[],
+                   arguments=[URL])
 
 
 class ELinksCommandTest(CommandTestMixin, unittest.TestCase):
@@ -268,7 +274,7 @@ class BrowserRegistrationTest(unittest.TestCase):
 
 class ImportTest(unittest.TestCase):
     def test_register(self):
-        webbrowser = support.import_fresh_module('webbrowser')
+        webbrowser = import_helper.import_fresh_module('webbrowser')
         self.assertIsNone(webbrowser._tryorder)
         self.assertFalse(webbrowser._browsers)
 
@@ -282,13 +288,48 @@ class ImportTest(unittest.TestCase):
         self.assertEqual(webbrowser._browsers['example1'], [ExampleBrowser, None])
 
     def test_get(self):
-        webbrowser = support.import_fresh_module('webbrowser')
+        webbrowser = import_helper.import_fresh_module('webbrowser')
         self.assertIsNone(webbrowser._tryorder)
         self.assertFalse(webbrowser._browsers)
 
         with self.assertRaises(webbrowser.Error):
             webbrowser.get('fakebrowser')
         self.assertIsNotNone(webbrowser._tryorder)
+
+    def test_synthesize(self):
+        webbrowser = import_helper.import_fresh_module('webbrowser')
+        name = os.path.basename(sys.executable).lower()
+        webbrowser.register(name, None, webbrowser.GenericBrowser(name))
+        webbrowser.get(sys.executable)
+
+    def test_environment(self):
+        webbrowser = import_helper.import_fresh_module('webbrowser')
+        try:
+            browser = webbrowser.get().name
+        except webbrowser.Error as err:
+            self.skipTest(str(err))
+        with os_helper.EnvironmentVarGuard() as env:
+            env["BROWSER"] = browser
+            webbrowser = import_helper.import_fresh_module('webbrowser')
+            webbrowser.get()
+
+    def test_environment_preferred(self):
+        webbrowser = import_helper.import_fresh_module('webbrowser')
+        try:
+            webbrowser.get()
+            least_preferred_browser = webbrowser.get(webbrowser._tryorder[-1]).name
+        except (webbrowser.Error, IndexError) as err:
+            self.skipTest(str(err))
+
+        with os_helper.EnvironmentVarGuard() as env:
+            env["BROWSER"] = least_preferred_browser
+            webbrowser = import_helper.import_fresh_module('webbrowser')
+            self.assertEqual(webbrowser.get().name, least_preferred_browser)
+
+        with os_helper.EnvironmentVarGuard() as env:
+            env["BROWSER"] = sys.executable
+            webbrowser = import_helper.import_fresh_module('webbrowser')
+            self.assertEqual(webbrowser.get().name, sys.executable)
 
 
 if __name__=='__main__':

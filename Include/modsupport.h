@@ -7,7 +7,7 @@ extern "C" {
 
 /* Module support interface */
 
-#include <stdarg.h>
+#include <stdarg.h>               // va_list
 
 /* If PY_SSIZE_T_CLEAN is defined, each functions treats #-specifier
    to mean Py_ssize_t */
@@ -50,9 +50,10 @@ PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
 PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
 
 
+#define ANY_VARARGS(n) (n == PY_SSIZE_T_MAX)
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyArg_UnpackStack(
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     const char *name,
     Py_ssize_t min,
@@ -60,11 +61,21 @@ PyAPI_FUNC(int) _PyArg_UnpackStack(
     ...);
 
 PyAPI_FUNC(int) _PyArg_NoKeywords(const char *funcname, PyObject *kwargs);
+PyAPI_FUNC(int) _PyArg_NoKwnames(const char *funcname, PyObject *kwnames);
 PyAPI_FUNC(int) _PyArg_NoPositional(const char *funcname, PyObject *args);
 #define _PyArg_NoKeywords(funcname, kwargs) \
     ((kwargs) == NULL || _PyArg_NoKeywords((funcname), (kwargs)))
+#define _PyArg_NoKwnames(funcname, kwnames) \
+    ((kwnames) == NULL || _PyArg_NoKwnames((funcname), (kwnames)))
 #define _PyArg_NoPositional(funcname, args) \
     ((args) == NULL || _PyArg_NoPositional((funcname), (args)))
+
+PyAPI_FUNC(void) _PyArg_BadArgument(const char *, const char *, const char *, PyObject *);
+PyAPI_FUNC(int) _PyArg_CheckPositional(const char *, Py_ssize_t,
+                                       Py_ssize_t, Py_ssize_t);
+#define _PyArg_CheckPositional(funcname, nargs, min, max) \
+    ((!ANY_VARARGS(max) && (min) <= (nargs) && (nargs) <= (max)) \
+     || _PyArg_CheckPositional((funcname), (nargs), (min), (max)))
 
 #endif
 
@@ -99,24 +110,54 @@ typedef struct _PyArg_Parser {
 PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywordsFast(PyObject *, PyObject *,
                                                  struct _PyArg_Parser *, ...);
 PyAPI_FUNC(int) _PyArg_ParseStack(
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     const char *format,
     ...);
 PyAPI_FUNC(int) _PyArg_ParseStackAndKeywords(
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwnames,
     struct _PyArg_Parser *,
     ...);
 PyAPI_FUNC(int) _PyArg_VaParseTupleAndKeywordsFast(PyObject *, PyObject *,
                                                    struct _PyArg_Parser *, va_list);
-void _PyArg_Fini(void);
+PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywords(
+        PyObject *const *args, Py_ssize_t nargs,
+        PyObject *kwargs, PyObject *kwnames,
+        struct _PyArg_Parser *parser,
+        int minpos, int maxpos, int minkw,
+        PyObject **buf);
+
+PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywordsWithVararg(
+        PyObject *const *args, Py_ssize_t nargs,
+        PyObject *kwargs, PyObject *kwnames,
+        struct _PyArg_Parser *parser,
+        int minpos, int maxpos, int minkw,
+        int vararg, PyObject **buf);
+
+#define _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, parser, minpos, maxpos, minkw, buf) \
+    (((minkw) == 0 && (kwargs) == NULL && (kwnames) == NULL && \
+      (minpos) <= (nargs) && (nargs) <= (maxpos) && args != NULL) ? (args) : \
+     _PyArg_UnpackKeywords((args), (nargs), (kwargs), (kwnames), (parser), \
+                           (minpos), (maxpos), (minkw), (buf)))
 #endif   /* Py_LIMITED_API */
 
-PyAPI_FUNC(int) PyModule_AddObject(PyObject *, const char *, PyObject *);
+// Add an attribute with name 'name' and value 'obj' to the module 'mod.
+// On success, return 0 on success.
+// On error, raise an exception and return -1.
+PyAPI_FUNC(int) PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *value);
+
+// Similar to PyModule_AddObjectRef() but steal a reference to 'obj'
+// (Py_DECREF(obj)) on success (if it returns 0).
+PyAPI_FUNC(int) PyModule_AddObject(PyObject *mod, const char *, PyObject *value);
+
 PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);
 PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char *);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+/* New in 3.9 */
+PyAPI_FUNC(int) PyModule_AddType(PyObject *module, PyTypeObject *type);
+#endif /* Py_LIMITED_API */
 #define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant(m, #c, c)
 #define PyModule_AddStringMacro(m, c) PyModule_AddStringConstant(m, #c, c)
 
@@ -189,8 +230,10 @@ PyAPI_FUNC(int) PyModule_ExecDef(PyObject *module, PyModuleDef *def);
  #define PyModule_FromDefAndSpec2 PyModule_FromDefAndSpec2TraceRefs
 #endif
 
-PyAPI_FUNC(PyObject *) PyModule_Create2(struct PyModuleDef*,
-                                     int apiver);
+PyAPI_FUNC(PyObject *) PyModule_Create2(PyModuleDef*, int apiver);
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyObject *) _PyModule_CreateInitialized(PyModuleDef*, int apiver);
+#endif
 
 #ifdef Py_LIMITED_API
 #define PyModule_Create(module) \

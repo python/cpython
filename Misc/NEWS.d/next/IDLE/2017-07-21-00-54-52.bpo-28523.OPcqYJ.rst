@@ -1,1 +1,0 @@
-IDLE: replace 'colour' with 'color' in configdialog.

@@ -1,0 +1,792 @@
+.. bpo: 27095
+.. date: 9332
+.. nonce: 92UoyH
+.. release date: 2016-06-13
+.. section: Core and Builtins
+
+Simplified MAKE_FUNCTION and removed MAKE_CLOSURE opcodes. Patch by Demur
+Rumed.
+
+..
+
+.. bpo: 27190
+.. date: 9331
+.. nonce: DHDFeD
+.. section: Core and Builtins
+
+Raise NotSupportedError if sqlite3 is older than 3.3.1. Patch by Dave
+Sawyer.
+
+..
+
+.. bpo: 27286
+.. date: 9330
+.. nonce: U8q6B1
+.. section: Core and Builtins
+
+Fixed compiling BUILD_MAP_UNPACK_WITH_CALL opcode.  Calling function with
+generalized unpacking (PEP 448) and conflicting keyword names could cause
+undefined behavior.
+
+..
+
+.. bpo: 27140
+.. date: 9329
+.. nonce: uc39-1
+.. section: Core and Builtins
+
+Added BUILD_CONST_KEY_MAP opcode.
+
+..
+
+.. bpo: 27186
+.. date: 9328
+.. nonce: EAnCS7
+.. section: Core and Builtins
+
+Add support for os.PathLike objects to open() (part of :pep:`519`).
+
+..
+
+.. bpo: 27066
+.. date: 9327
+.. nonce: SNExZi
+.. section: Core and Builtins
+
+Fixed SystemError if a custom opener (for open()) returns a negative number
+without setting an exception.
+
+..
+
+.. bpo: 26983
+.. date: 9326
+.. nonce: A0f3fK
+.. section: Core and Builtins
+
+float() now always return an instance of exact float. The deprecation
+warning is emitted if __float__ returns an instance of a strict subclass of
+float.  In a future versions of Python this can be an error.
+
+..
+
+.. bpo: 27097
+.. date: 9325
+.. nonce: woRKey
+.. section: Core and Builtins
+
+Python interpreter is now about 7% faster due to optimized instruction
+decoding.  Based on patch by Demur Rumed.
+
+..
+
+.. bpo: 26647
+.. date: 9324
+.. nonce: DLSzRi
+.. section: Core and Builtins
+
+Python interpreter now uses 16-bit wordcode instead of bytecode. Patch by
+Demur Rumed.
+
+..
+
+.. bpo: 23275
+.. date: 9323
+.. nonce: YGPb_y
+.. section: Core and Builtins
+
+Allow assigning to an empty target list in round brackets: () = iterable.
+
+..
+
+.. bpo: 27243
+.. date: 9322
+.. nonce: U36M4E
+.. section: Core and Builtins
+
+Update the __aiter__ protocol: instead of returning an awaitable that
+resolves to an asynchronous iterator, the asynchronous iterator should be
+returned directly.  Doing the former will trigger a
+PendingDeprecationWarning.
+
+..
+
+.. bpo: 0
+.. date: 9321
+.. nonce: nBpVM1
+.. section: Library
+
+Comment out socket (SO_REUSEPORT) and posix (O_SHLOCK, O_EXLOCK) constants
+exposed on the API which are not implemented on GNU/Hurd. They would not
+work at runtime anyway.
+
+..
+
+.. bpo: 27025
+.. date: 9320
+.. nonce: ffzxpX
+.. section: Library
+
+Generated names for Tkinter widgets are now more meaningful and recognizable.
+
+..
+
+.. bpo: 25455
+.. date: 9319
+.. nonce: k10GoO
+.. section: Library
+
+Fixed crashes in repr of recursive ElementTree.Element and functools.partial
+objects.
+
+..
+
+.. bpo: 27294
+.. date: 9318
+.. nonce: XPCURr
+.. section: Library
+
+Improved repr for Tkinter event objects.
+
+..
+
+.. bpo: 20508
+.. date: 9317
+.. nonce: 3NMbT2
+.. section: Library
+
+Improve exception message of IPv{4,6}Network.__getitem__. Patch by Gareth
+Rees.
+
+..
+
+.. bpo: 26556
+.. date: 9316
+.. nonce: v5j2uL
+.. original section: Library
+.. section: Security
+
+Update expat to 2.1.1, fixes CVE-2015-1283.
+
+..
+
+.. bpo: 0
+.. date: 9315
+.. nonce: PHOAdg
+.. original section: Library
+.. section: Security
+
+Fix TLS stripping vulnerability in smtplib, CVE-2016-0772. Reported by Team
+Oststrom.
+
+..
+
+.. bpo: 21386
+.. date: 9314
+.. nonce: DjV72U
+.. section: Library
+
+Implement missing IPv4Address.is_global property.  It was documented since
+07a5610bae9d.  Initial patch by Roger Luethi.
+
+..
+
+.. bpo: 27029
+.. date: 9313
+.. nonce: dmycvw
+.. section: Library
+
+Removed deprecated support of universal newlines mode from ZipFile.open().
+
+..
+
+.. bpo: 27030
+.. date: 9312
+.. nonce: p29J7m
+.. section: Library
+
+Unknown escapes consisting of ``'\'`` and an ASCII letter in regular
+expressions now are errors.  The re.LOCALE flag now can be used only with
+bytes patterns.
+
+..
+
+.. bpo: 27186
+.. date: 9311
+.. nonce: UYiwoh
+.. section: Library
+
+Add os.PathLike support to DirEntry (part of :pep:`519`). Initial patch by
+Jelle Zijlstra.
+
+..
+
+.. bpo: 20900
+.. date: 9310
+.. nonce: H5YQPR
+.. section: Library
+
+distutils register command now decodes HTTP responses correctly.  Initial
+patch by ingrid.
+
+..
+
+.. bpo: 27186
+.. date: 9309
+.. nonce: Xo4c_F
+.. section: Library
+
+Add os.PathLike support to pathlib, removing its provisional status (part of
+PEP 519). Initial patch by Dusty Phillips.
+
+..
+
+.. bpo: 27186
+.. date: 9308
+.. nonce: ZD1wpp
+.. section: Library
+
+Add support for os.PathLike objects to os.fsencode() and os.fsdecode() (part
+of :pep:`519`).
+
+..
+
+.. bpo: 27186
+.. date: 9307
+.. nonce: y7YRfj
+.. section: Library
+
+Introduce os.PathLike and os.fspath() (part of :pep:`519`).
+
+..
+
+.. bpo: 0
+.. date: 9306
+.. nonce: iYIeng
+.. section: Library
+
+A new version of typing.py provides several new classes and features:
+@overload outside stubs, Reversible, DefaultDict, Text, ContextManager,
+Type[], NewType(), TYPE_CHECKING, and numerous bug fixes (note that some of
+the new features are not yet implemented in mypy or other static analyzers).
+Also classes for :pep:`492` (Awaitable, AsyncIterable, AsyncIterator) have been
+added (in fact they made it into 3.5.1 but were never mentioned).
+
+..
+
+.. bpo: 25738
+.. date: 9305
+.. nonce: mED9w4
+.. section: Library
+
+Stop http.server.BaseHTTPRequestHandler.send_error() from sending a message
+body for 205 Reset Content.  Also, don't send Content header fields in
+responses that don't have a body.  Patch by Susumu Koshiba.
+
+..
+
+.. bpo: 21313
+.. date: 9304
+.. nonce: W30MBr
+.. section: Library
+
+Fix the "platform" module to tolerate when sys.version contains truncated
+build information.
+
+..
+
+.. bpo: 26839
+.. date: 9303
+.. nonce: yVvy7R
+.. original section: Library
+.. section: Security
+
+On Linux, :func:`os.urandom` now calls ``getrandom()`` with
+``GRND_NONBLOCK`` to fall back on reading ``/dev/urandom`` if the urandom
+entropy pool is not initialized yet. Patch written by Colm Buckley.
+
+..
+
+.. bpo: 23883
+.. date: 9302
+.. nonce: tsZUiM
+.. section: Library
+
+Added missing APIs to __all__ to match the documented APIs for the following
+modules: cgi, mailbox, mimetypes, plistlib and smtpd. Patches by Jacek
+Kołodziej.
+
+..
+
+.. bpo: 27164
+.. date: 9301
+.. nonce: 6wmjx2
+.. section: Library
+
+In the zlib module, allow decompressing raw Deflate streams with a
+predefined zdict.  Based on patch by Xiang Zhang.
+
+..
+
+.. bpo: 24291
+.. date: 9300
+.. nonce: Ac6HvL
+.. section: Library
+
+Fix wsgiref.simple_server.WSGIRequestHandler to completely write data to the
+client.  Previously it could do partial writes and truncate data.  Also,
+wsgiref.handler.ServerHandler can now handle stdout doing partial writes,
+but this is deprecated.
+
+..
+
+.. bpo: 21272
+.. date: 9299
+.. nonce: unScIG
+.. section: Library
+
+Use _sysconfigdata.py to initialize distutils.sysconfig.
+
+..
+
+.. bpo: 19611
+.. date: 9298
+.. nonce: MT-Qga
+.. section: Library
+
+:mod:`inspect` now reports the implicit ``.0`` parameters generated by the
+compiler for comprehension and generator expression scopes as if they were
+positional-only parameters called ``implicit0``. Patch by Jelle Zijlstra.
+
+..
+
+.. bpo: 26809
+.. date: 9297
+.. nonce: ya7JMb
+.. section: Library
+
+Add ``__all__`` to :mod:`string`.  Patch by Emanuel Barry.
+
+..
+
+.. bpo: 26373
+.. date: 9296
+.. nonce: P6qz6o
+.. section: Library
+
+subprocess.Popen.communicate now correctly ignores BrokenPipeError when the
+child process dies before .communicate() is called in more/all
+circumstances.
+
+..
+
+.. bpo: 0
+.. date: 9295
+.. nonce: eKchPz
+.. section: Library
+
+signal, socket, and ssl module IntEnum constant name lookups now return a
+consistent name for values having multiple names.  Ex: signal.Signals(6) now
+refers to itself as signal.SIGALRM rather than flipping between that and
+signal.SIGIOT based on the interpreter's hash randomization seed.
+
+..
+
+.. bpo: 27167
+.. date: 9294
+.. nonce: orA_j0
+.. section: Library
+
+Clarify the subprocess.CalledProcessError error message text when the child
+process died due to a signal.
+
+..
+
+.. bpo: 25931
+.. date: 9293
+.. nonce: W7h6Am
+.. section: Library
+
+Don't define socketserver.Forking* names on platforms such as Windows that
+do not support os.fork().
+
+..
+
+.. bpo: 21776
+.. date: 9292
+.. nonce: 04eQfa
+.. section: Library
+
+distutils.upload now correctly handles HTTPError. Initial patch by Claudiu
+Popa.
+
+..
+
+.. bpo: 26526
+.. date: 9291
+.. nonce: ScewjJ
+.. section: Library
+
+Replace custom parse tree validation in the parser module with a simple DFA
+validator.
+
+..
+
+.. bpo: 27114
+.. date: 9290
+.. nonce: bGCuAM
+.. section: Library
+
+Fix SSLContext._load_windows_store_certs fails with PermissionError
+
+..
+
+.. bpo: 18383
+.. date: 9289
+.. nonce: jr-b0l
+.. section: Library
+
+Avoid creating duplicate filters when using filterwarnings and simplefilter.
+Based on patch by Alex Shkop.
+
+..
+
+.. bpo: 23026
+.. date: 9288
+.. nonce: V2rgYX
+.. section: Library
+
+winreg.QueryValueEx() now return an integer for REG_QWORD type.
+
+..
+
+.. bpo: 26741
+.. date: 9287
+.. nonce: fsbb42
+.. section: Library
+
+subprocess.Popen destructor now emits a ResourceWarning warning if the child
+process is still running.
+
+..
+
+.. bpo: 27056
+.. date: 9286
+.. nonce: rk-BBL
+.. section: Library
+
+Optimize pickle.load() and pickle.loads(), up to 10% faster to deserialize a
+lot of small objects.
+
+..
+
+.. bpo: 21271
+.. date: 9285
+.. nonce: bHIfFA
+.. section: Library
+
+New keyword only parameters in reset_mock call.
+
+..
+
+.. bpo: 5124
+.. date: 9284
+.. nonce: 4kwBvM
+.. section: IDLE
+
+Paste with text selected now replaces the selection on X11. This matches how
+paste works on Windows, Mac, most modern Linux apps, and ttk widgets.
+Original patch by Serhiy Storchaka.
+
+..
+
+.. bpo: 24750
+.. date: 9283
+.. nonce: wA-pc9
+.. section: IDLE
+
+Switch all scrollbars in IDLE to ttk versions. Where needed, minimal tests
+are added to cover changes.
+
+..
+
+.. bpo: 24759
+.. date: 9282
+.. nonce: 76HB4w
+.. section: IDLE
+
+IDLE requires tk 8.5 and availability ttk widgets. Delete now unneeded tk
+version tests and code for older versions. Add test for IDLE syntax
+colorizer.
+
+..
+
+.. bpo: 27239
+.. date: 9281
+.. nonce: fToURh
+.. section: IDLE
+
+idlelib.macosx.isXyzTk functions initialize as needed.
+
+..
+
+.. bpo: 27262
+.. date: 9280
+.. nonce: t7ckly
+.. section: IDLE
+
+move Aqua unbinding code, which enable context menus, to macosx.
+
+..
+
+.. bpo: 24759
+.. date: 9279
+.. nonce: ccmySu
+.. section: IDLE
+
+Make clear in idlelib.idle_test.__init__ that the directory is a private
+implementation of test.test_idle and tool for maintainers.
+
+..
+
+.. bpo: 27196
+.. date: 9278
+.. nonce: 3yp8TF
+.. section: IDLE
+
+Stop 'ThemeChanged' warnings when running IDLE tests. These persisted after
+other warnings were suppressed in #20567. Apply Serhiy Storchaka's
+update_idletasks solution to four test files. Record this additional advice
+in idle_test/README.txt
+
+..
+
+.. bpo: 20567
+.. date: 9277
+.. nonce: hhT32b
+.. section: IDLE
+
+Revise idle_test/README.txt with advice about avoiding tk warning messages
+from tests.  Apply advice to several IDLE tests.
+
+..
+
+.. bpo: 24225
+.. date: 9276
+.. nonce: NxQCka
+.. section: IDLE
+
+Update idlelib/README.txt with new file names and event handlers.
+
+..
+
+.. bpo: 27156
+.. date: 9275
+.. nonce: j1N9br
+.. section: IDLE
+
+Remove obsolete code not used by IDLE.
+
+..
+
+.. bpo: 27117
+.. date: 9274
+.. nonce: YrLPf4
+.. section: IDLE
+
+Make colorizer htest and turtledemo work with dark themes. Move code for
+configuring text widget colors to a new function.
+
+..
+
+.. bpo: 24225
+.. date: 9273
+.. nonce: RbyFuV
+.. section: IDLE
+
+Rename many `idlelib/*.py` and `idle_test/test_*.py` files. Edit files to
+replace old names with new names when the old name referred to the module
+rather than the class it contained. See the issue and IDLE section in What's
+New in 3.6 for more.
+
+..
+
+.. bpo: 26673
+.. date: 9272
+.. nonce: dh0_Ij
+.. section: IDLE
+
+When tk reports font size as 0, change to size 10. Such fonts on Linux
+prevented the configuration dialog from opening.
+
+..
+
+.. bpo: 21939
+.. date: 9271
+.. nonce: pWz-OK
+.. section: IDLE
+
+Add test for IDLE's percolator. Original patch by Saimadhav Heblikar.
+
+..
+
+.. bpo: 21676
+.. date: 9270
+.. nonce: hqy6Qh
+.. section: IDLE
+
+Add test for IDLE's replace dialog. Original patch by Saimadhav Heblikar.
+
+..
+
+.. bpo: 18410
+.. date: 9269
+.. nonce: DLSPZo
+.. section: IDLE
+
+Add test for IDLE's search dialog. Original patch by Westley Martínez.
+
+..
+
+.. bpo: 21703
+.. date: 9268
+.. nonce: bEU8sP
+.. section: IDLE
+
+Add test for undo delegator.  Patch mostly by Saimadhav Heblikar .
+
+..
+
+.. bpo: 27044
+.. date: 9267
+.. nonce: 4y7tyM
+.. section: IDLE
+
+Add ConfigDialog.remove_var_callbacks to stop memory leaks.
+
+..
+
+.. bpo: 23977
+.. date: 9266
+.. nonce: miDjj8
+.. section: IDLE
+
+Add more asserts to test_delegator.
+
+..
+
+.. bpo: 16484
+.. date: 9265
+.. nonce: ITzcGg
+.. section: Documentation
+
+Change the default PYTHONDOCS URL to "https:", and fix the resulting links
+to use lowercase.  Patch by Sean Rodman, test by Kaushik Nadikuditi.
+
+..
+
+.. bpo: 24136
+.. date: 9264
+.. nonce: MUK0zK
+.. section: Documentation
+
+Document the new :pep:`448` unpacking syntax of 3.5.
+
+..
+
+.. bpo: 22558
+.. date: 9263
+.. nonce: Pk02YC
+.. section: Documentation
+
+Add remaining doc links to source code for Python-coded modules. Patch by
+Yoni Lavi.
+
+..
+
+.. bpo: 25285
+.. date: 9262
+.. nonce: 6CxIBo
+.. section: Tests
+
+regrtest now uses subprocesses when the -j1 command line option is used:
+each test file runs in a fresh child process. Before, the -j1 option was
+ignored.
+
+..
+
+.. bpo: 25285
+.. date: 9261
+.. nonce: ENYqUQ
+.. section: Tests
+
+Tools/buildbot/test.bat script now uses -j1 by default to run each test file
+in fresh child process.
+
+..
+
+.. bpo: 27064
+.. date: 9260
+.. nonce: xeY1WF
+.. section: Windows
+
+The py.exe launcher now defaults to Python 3. The Windows launcher
+``py.exe`` no longer prefers an installed Python 2 version over Python 3 by
+default when used interactively.
+
+..
+
+.. bpo: 27229
+.. date: 9259
+.. nonce: C2NDch
+.. section: Build
+
+Fix the cross-compiling pgen rule for in-tree builds.  Patch by Xavier de
+Gaye.
+
+..
+
+.. bpo: 26930
+.. date: 9258
+.. nonce: Sqz2O3
+.. section: Build
+
+Update OS X 10.5+ 32-bit-only installer to build and link with OpenSSL
+1.0.2h.
+
+..
+
+.. bpo: 17500
+.. date: 9257
+.. nonce: QTZbRV
+.. section: Windows
+
+Remove unused and outdated icons. (See also:
+https://github.com/python/pythondotorg/issues/945)
+
+..
+
+.. bpo: 27186
+.. date: 9256
+.. nonce: Ll8R-t
+.. section: C API
+
+Add the PyOS_FSPath() function (part of :pep:`519`).
+
+..
+
+.. bpo: 26282
+.. date: 9255
+.. nonce: Rp-R6L
+.. section: C API
+
+PyArg_ParseTupleAndKeywords() now supports positional-only parameters.
+
+..
+
+.. bpo: 26282
+.. date: 9254
+.. nonce: DRRV--
+.. section: Tools/Demos
+
+Argument Clinic now supports positional-only and keyword parameters in the
+same function.

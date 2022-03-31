@@ -759,7 +759,7 @@ divx959 divide 9E-999999999 -9.100 -> -9.8901099E-1000000000 Inexact Rounded Und
 
 -- overflow and underflow (additional edge tests in multiply.decTest)
 -- 'subnormal' results now possible (all hard underflow or overflow in
--- base arithemtic)
+-- base arithmetic)
 divx960 divide 1e-600000000 1e+400000001 -> 1E-1000000001 Subnormal
 divx961 divide 1e-600000000 1e+400000002 -> 1E-1000000002 Subnormal
 divx962 divide 1e-600000000 1e+400000003 -> 1E-1000000003 Subnormal

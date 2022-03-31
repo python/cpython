@@ -1,4 +1,4 @@
-"""Fixer that addes parentheses where they are required
+"""Fixer that adds parentheses where they are required
 
 This converts ``[x for x in 1, 2]`` to ``[x for x in (1, 2)]``."""
 

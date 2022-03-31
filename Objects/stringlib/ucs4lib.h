@@ -11,7 +11,6 @@
 #define STRINGLIB_CHAR           Py_UCS4
 #define STRINGLIB_TYPE_NAME      "unicode"
 #define STRINGLIB_PARSE_CODE     "U"
-#define STRINGLIB_EMPTY          unicode_empty
 #define STRINGLIB_ISSPACE        Py_UNICODE_ISSPACE
 #define STRINGLIB_ISLINEBREAK    BLOOM_LINEBREAK
 #define STRINGLIB_ISDECIMAL      Py_UNICODE_ISDECIMAL
@@ -21,9 +20,8 @@
 #define STRINGLIB_NEW            _PyUnicode_FromUCS4
 #define STRINGLIB_CHECK          PyUnicode_Check
 #define STRINGLIB_CHECK_EXACT    PyUnicode_CheckExact
+#define STRINGLIB_MUTABLE 0
 
 #define STRINGLIB_TOSTR          PyObject_Str
 #define STRINGLIB_TOASCII        PyObject_ASCII
-
-#define _Py_InsertThousandsGrouping _PyUnicode_ucs4_InsertThousandsGrouping
 

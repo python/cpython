@@ -43,10 +43,11 @@ class Node(xml.dom.Node):
     def __bool__(self):
         return True
 
-    def toxml(self, encoding=None):
-        return self.toprettyxml("", "", encoding)
+    def toxml(self, encoding=None, standalone=None):
+        return self.toprettyxml("", "", encoding, standalone)
 
-    def toprettyxml(self, indent="\t", newl="\n", encoding=None):
+    def toprettyxml(self, indent="\t", newl="\n", encoding=None,
+                    standalone=None):
         if encoding is None:
             writer = io.StringIO()
         else:
@@ -56,7 +57,7 @@ class Node(xml.dom.Node):
                                       newline='\n')
         if self.nodeType == Node.DOCUMENT_NODE:
             # Can pass encoding only to document, to put it into XML header
-            self.writexml(writer, "", indent, newl, encoding)
+            self.writexml(writer, "", indent, newl, encoding, standalone)
         else:
             self.writexml(writer, "", indent, newl)
         if encoding is None:
@@ -718,6 +719,14 @@ class Element(Node):
         Node.unlink(self)
 
     def getAttribute(self, attname):
+        """Returns the value of the specified attribute.
+
+        Returns the value of the element's attribute named attname as
+        a string. An empty string is returned if the element does not
+        have such an attribute. Note that an empty string may also be
+        returned as an explicitly given attribute value, use the
+        hasAttribute method to distinguish these two cases.
+        """
         if self._attrs is None:
             return ""
         try:
@@ -823,10 +832,16 @@ class Element(Node):
         # Restore this since the node is still useful and otherwise
         # unlinked
         node.ownerDocument = self.ownerDocument
+        return node
 
     removeAttributeNodeNS = removeAttributeNode
 
     def hasAttribute(self, name):
+        """Checks whether the element has an attribute with the specified name.
+
+        Returns True if the element has an attribute with the specified name.
+        Otherwise, returns False.
+        """
         if self._attrs is None:
             return False
         return name in self._attrs
@@ -837,6 +852,11 @@ class Element(Node):
         return (namespaceURI, localName) in self._attrsNS
 
     def getElementsByTagName(self, name):
+        """Returns all descendant elements with the given tag name.
+
+        Returns the list of all descendant elements (not direct children
+        only) with the specified tag name.
+        """
         return _get_elements_by_tagName_helper(self, name, NodeList())
 
     def getElementsByTagNameNS(self, namespaceURI, localName):
@@ -847,22 +867,27 @@ class Element(Node):
         return "<DOM Element: %s at %#x>" % (self.tagName, id(self))
 
     def writexml(self, writer, indent="", addindent="", newl=""):
+        """Write an XML element to a file-like object
+
+        Write the element to the writer object that must provide
+        a write method (e.g. a file or StringIO object).
+        """
         # indent = current indentation
         # addindent = indentation to add to higher levels
         # newl = newline string
         writer.write(indent+"<" + self.tagName)
 
         attrs = self._get_attributes()
-        a_names = sorted(attrs.keys())
 
-        for a_name in a_names:
+        for a_name in attrs.keys():
             writer.write(" %s=\"" % a_name)
             _write_data(writer, attrs[a_name].value)
             writer.write("\"")
         if self.childNodes:
             writer.write(">")
             if (len(self.childNodes) == 1 and
-                self.childNodes[0].nodeType == Node.TEXT_NODE):
+                self.childNodes[0].nodeType in (
+                        Node.TEXT_NODE, Node.CDATA_SECTION_NODE)):
                 self.childNodes[0].writexml(writer, '', '', '')
             else:
                 writer.write(newl)
@@ -1318,7 +1343,7 @@ class DocumentType(Identified, Childless, Node):
                     entity.encoding = e.encoding
                     entity.version = e.version
                     clone.entities._seq.append(entity)
-                    e._call_user_data_handler(operation, n, entity)
+                    e._call_user_data_handler(operation, e, entity)
             self._call_user_data_handler(operation, self, clone)
             return clone
         else:
@@ -1786,12 +1811,17 @@ class Document(Node, DocumentLS):
             raise xml.dom.NotSupportedErr("cannot import document type nodes")
         return _clone_node(node, deep, self)
 
-    def writexml(self, writer, indent="", addindent="", newl="", encoding=None):
-        if encoding is None:
-            writer.write('<?xml version="1.0" ?>'+newl)
-        else:
-            writer.write('<?xml version="1.0" encoding="%s"?>%s' % (
-                encoding, newl))
+    def writexml(self, writer, indent="", addindent="", newl="", encoding=None,
+                 standalone=None):
+        declarations = []
+
+        if encoding:
+            declarations.append(f'encoding="{encoding}"')
+        if standalone is not None:
+            declarations.append(f'standalone="{"yes" if standalone else "no"}"')
+
+        writer.write(f'<?xml version="1.0" {" ".join(declarations)}?>{newl}')
+
         for node in self.childNodes:
             node.writexml(writer, indent, addindent, newl)
 
@@ -1921,7 +1951,7 @@ def _clone_node(node, deep, newOwnerDocument):
                 entity.ownerDocument = newOwnerDocument
                 clone.entities._seq.append(entity)
                 if hasattr(e, '_call_user_data_handler'):
-                    e._call_user_data_handler(operation, n, entity)
+                    e._call_user_data_handler(operation, e, entity)
     else:
         # Note the cloning of Document and DocumentType nodes is
         # implementation specific.  minidom handles those cases

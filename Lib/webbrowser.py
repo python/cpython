@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-"""Interfaces for launching and remotely controlling Web browsers."""
+"""Interfaces for launching and remotely controlling web browsers."""
 # Maintained by Georg Brandl.
 
 import os
@@ -8,6 +8,7 @@ import shutil
 import sys
 import subprocess
 import threading
+import warnings
 
 __all__ = ["Error", "open", "open_new", "open_new_tab", "get", "register"]
 
@@ -69,6 +70,14 @@ def get(using=None):
 # instead of "from webbrowser import *".
 
 def open(url, new=0, autoraise=True):
+    """Display url using the default browser.
+
+    If possible, open url in a location determined by new.
+    - 0: the same browser window (the default).
+    - 1: a new browser window.
+    - 2: a new browser page ("tab").
+    If possible, autoraise raises the window (the default) or not.
+    """
     if _tryorder is None:
         with _lock:
             if _tryorder is None:
@@ -80,14 +89,22 @@ def open(url, new=0, autoraise=True):
     return False
 
 def open_new(url):
+    """Open url in a new window of the default browser.
+
+    If not possible, then open url in the only browser window.
+    """
     return open(url, 1)
 
 def open_new_tab(url):
+    """Open url in a new page ("tab") of the default browser.
+
+    If not possible, then the behavior becomes equivalent to open_new().
+    """
     return open(url, 2)
 
 
-def _synthesize(browser, update_tryorder=1):
-    """Attempt to synthesize a controller base on existing controllers.
+def _synthesize(browser, *, preferred=False):
+    """Attempt to synthesize a controller based on existing controllers.
 
     This is useful to create a controller when a user specifies a path to
     an entry in the BROWSER environment variable -- we can copy a general
@@ -113,7 +130,7 @@ def _synthesize(browser, update_tryorder=1):
         controller = copy.copy(controller)
         controller.name = browser
         controller.basename = os.path.basename(browser)
-        register(browser, None, controller, update_tryorder)
+        register(browser, None, instance=controller, preferred=preferred)
         return [None, controller]
     return [None, None]
 
@@ -154,6 +171,7 @@ class GenericBrowser(BaseBrowser):
         self.basename = os.path.basename(self.name)
 
     def open(self, url, new=0, autoraise=True):
+        sys.audit("webbrowser.open", url)
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
         try:
@@ -173,6 +191,7 @@ class BackgroundBrowser(GenericBrowser):
     def open(self, url, new=0, autoraise=True):
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
+        sys.audit("webbrowser.open", url)
         try:
             if sys.platform[:3] == 'win':
                 p = subprocess.Popen(cmdline)
@@ -201,7 +220,7 @@ class UnixBrowser(BaseBrowser):
     remote_action_newwin = None
     remote_action_newtab = None
 
-    def _invoke(self, args, remote, autoraise):
+    def _invoke(self, args, remote, autoraise, url=None):
         raise_opt = []
         if remote and self.raise_opts:
             # use autoraise argument only for remote invocation
@@ -237,6 +256,7 @@ class UnixBrowser(BaseBrowser):
             return not p.wait()
 
     def open(self, url, new=0, autoraise=True):
+        sys.audit("webbrowser.open", url)
         if new == 0:
             action = self.remote_action
         elif new == 1:
@@ -253,7 +273,7 @@ class UnixBrowser(BaseBrowser):
         args = [arg.replace("%s", url).replace("%action", action)
                 for arg in self.remote_args]
         args = [arg for arg in args if arg]
-        success = self._invoke(args, True, autoraise)
+        success = self._invoke(args, True, autoraise, url)
         if not success:
             # remote invocation failed, try straight way
             args = [arg.replace("%s", url) for arg in self.args]
@@ -308,11 +328,10 @@ Chromium = Chrome
 class Opera(UnixBrowser):
     "Launcher class for Opera browser."
 
-    raise_opts = ["-noraise", ""]
-    remote_args = ['-remote', 'openURL(%s%action)']
+    remote_args = ['%action', '%s']
     remote_action = ""
-    remote_action_newwin = ",new-window"
-    remote_action_newtab = ",new-page"
+    remote_action_newwin = "--new-window"
+    remote_action_newtab = ""
     background = True
 
 
@@ -338,6 +357,7 @@ class Konqueror(BaseBrowser):
     """
 
     def open(self, url, new=0, autoraise=True):
+        sys.audit("webbrowser.open", url)
         # XXX Currently I know no way to prevent KFM from opening a new win.
         if new == 2:
             action = "newTab"
@@ -394,7 +414,7 @@ class Grail(BaseBrowser):
         tempdir = os.path.join(tempfile.gettempdir(),
                                ".grail-unix")
         user = pwd.getpwuid(os.getuid())[0]
-        filename = os.path.join(tempdir, user + "-*")
+        filename = os.path.join(glob.escape(tempdir), glob.escape(user) + "-*")
         maybes = glob.glob(filename)
         if not maybes:
             return None
@@ -421,6 +441,7 @@ class Grail(BaseBrowser):
         return 1
 
     def open(self, url, new=0, autoraise=True):
+        sys.audit("webbrowser.open", url)
         if new:
             ok = self._remote("LOADNEW " + url)
         else:
@@ -441,13 +462,14 @@ def register_X_browsers():
     if shutil.which("xdg-open"):
         register("xdg-open", None, BackgroundBrowser("xdg-open"))
 
-    # The default GNOME3 browser
+    # Opens an appropriate browser for the URL scheme according to
+    # freedesktop.org settings (GNOME, KDE, XFCE, etc.)
+    if shutil.which("gio"):
+        register("gio", None, BackgroundBrowser(["gio", "open", "--", "%s"]))
+
+    # Equivalent of gio open before 2015
     if "GNOME_DESKTOP_SESSION_ID" in os.environ and shutil.which("gvfs-open"):
         register("gvfs-open", None, BackgroundBrowser("gvfs-open"))
-
-    # The default GNOME browser
-    if "GNOME_DESKTOP_SESSION_ID" in os.environ and shutil.which("gnome-open"):
-        register("gnome-open", None, BackgroundBrowser("gnome-open"))
 
     # The default KDE browser
     if "KDE_FULL_SESSION" in os.environ and shutil.which("kfmclient"):
@@ -512,6 +534,10 @@ def register_standard_browsers():
         # OS X can use below Unix support (but we prefer using the OS X
         # specific stuff)
 
+    if sys.platform == "serenityos":
+        # SerenityOS webbrowser, simply called "Browser".
+        register("Browser", None, BackgroundBrowser("Browser"))
+
     if sys.platform[:3] == "win":
         # First try to use the default Windows browser
         register("windows-default", WindowsDefault)
@@ -525,12 +551,12 @@ def register_standard_browsers():
                 register(browser, None, BackgroundBrowser(browser))
     else:
         # Prefer X browsers if present
-        if os.environ.get("DISPLAY"):
+        if os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"):
             try:
                 cmd = "xdg-settings get default-web-browser".split()
                 raw_result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
                 result = raw_result.decode().strip()
-            except (FileNotFoundError, subprocess.CalledProcessError):
+            except (FileNotFoundError, subprocess.CalledProcessError, PermissionError, NotADirectoryError) :
                 pass
             else:
                 global _os_preferred_browser
@@ -564,7 +590,7 @@ def register_standard_browsers():
         # and prepend to _tryorder
         for cmdline in userchoices:
             if cmdline != '':
-                cmd = _synthesize(cmdline, -1)
+                cmd = _synthesize(cmdline, preferred=True)
                 if cmd[1] is None:
                     register(cmdline, None, GenericBrowser(cmdline), preferred=True)
 
@@ -578,6 +604,7 @@ def register_standard_browsers():
 if sys.platform[:3] == "win":
     class WindowsDefault(BaseBrowser):
         def open(self, url, new=0, autoraise=True):
+            sys.audit("webbrowser.open", url)
             try:
                 os.startfile(url)
             except OSError:
@@ -604,9 +631,12 @@ if sys.platform == 'darwin':
         Internet System Preferences panel, will be used.
         """
         def __init__(self, name):
+            warnings.warn(f'{self.__class__.__name__} is deprecated in 3.11'
+                          ' use MacOSXOSAScript instead.', DeprecationWarning, stacklevel=2)
             self.name = name
 
         def open(self, url, new=0, autoraise=True):
+            sys.audit("webbrowser.open", url)
             assert "'" not in url
             # hack for local urls
             if not ':' in url:
@@ -640,19 +670,33 @@ if sys.platform == 'darwin':
             return not rc
 
     class MacOSXOSAScript(BaseBrowser):
-        def __init__(self, name):
-            self._name = name
+        def __init__(self, name='default'):
+            super().__init__(name)
+
+        @property
+        def _name(self):
+            warnings.warn(f'{self.__class__.__name__}._name is deprecated in 3.11'
+                          f' use {self.__class__.__name__}.name instead.',
+                          DeprecationWarning, stacklevel=2)
+            return self.name
+
+        @_name.setter
+        def _name(self, val):
+            warnings.warn(f'{self.__class__.__name__}._name is deprecated in 3.11'
+                          f' use {self.__class__.__name__}.name instead.',
+                          DeprecationWarning, stacklevel=2)
+            self.name = val
 
         def open(self, url, new=0, autoraise=True):
-            if self._name == 'default':
+            if self.name == 'default':
                 script = 'open location "%s"' % url.replace('"', '%22') # opens in default browser
             else:
-                script = '''
+                script = f'''
                    tell application "%s"
                        activate
                        open location "%s"
                    end
-                   '''%(self._name, url.replace('"', '%22'))
+                   '''%(self.name, url.replace('"', '%22'))
 
             osapipe = os.popen("osascript", "w")
             if osapipe is None:

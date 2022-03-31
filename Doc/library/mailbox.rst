@@ -308,6 +308,9 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    representation. If *create* is ``True``, the mailbox is created if it does not
    exist.
 
+   If *create* is ``True`` and the *dirname* path exists, it will be treated as
+   an existing maildir without attempting to verify its directory layout.
+
    It is for historical reasons that *dirname* is named as such rather than *path*.
 
    Maildir is a directory-based mailbox format invented for the qmail mail
@@ -423,16 +426,13 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. seealso::
 
-   `maildir man page from qmail <http://www.qmail.org/man/man5/maildir.html>`_
-      The original specification of the format.
+   `maildir man page from Courier <http://www.courier-mta.org/maildir.html>`_
+      A specification of the format. Describes a common extension for
+      supporting folders.
 
    `Using maildir format <https://cr.yp.to/proto/maildir.html>`_
       Notes on Maildir by its inventor. Includes an updated name-creation scheme and
       details on "info" semantics.
-
-   `maildir man page from Courier <http://www.courier-mta.org/maildir.html>`_
-      Another specification of the format. Describes a common extension for supporting
-      folders.
 
 
 .. _mailbox-mbox:
@@ -482,16 +482,13 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. seealso::
 
-   `mbox man page from qmail <http://www.qmail.org/man/man5/mbox.html>`_
-      A specification of the format and its variations.
-
    `mbox man page from tin <http://www.tin.org/bin/man.cgi?section=5&topic=mbox>`_
-      Another specification of the format, with details on locking.
+      A specification of the format, with details on locking.
 
    `Configuring Netscape Mail on Unix: Why The Content-Length Format is Bad <https://www.jwz.org/doc/content-length.html>`_
       An argument for using the original mbox format rather than a variation.
 
-   `"mbox" is a family of several mutually incompatible mailbox formats <http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/mail-mbox-formats.html>`_
+   `"mbox" is a family of several mutually incompatible mailbox formats <https://www.loc.gov/preservation/digital/formats/fdd/fdd000383.shtml>`_
       A history of mbox variations.
 
 
@@ -620,7 +617,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    `nmh - Message Handling System <http://www.nongnu.org/nmh/>`_
       Home page of :program:`nmh`, an updated version of the original :program:`mh`.
 
-   `MH & nmh: Email for Users & Programmers <http://rand-mh.sourceforge.net/book/>`_
+   `MH & nmh: Email for Users & Programmers <https://rand-mh.sourceforge.io/book/>`_
       A GPL-licensed book on :program:`mh` and :program:`nmh`, with some information
       on the mailbox format.
 

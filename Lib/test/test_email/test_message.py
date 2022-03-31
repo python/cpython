@@ -433,7 +433,7 @@ class TestEmailMessageBase:
                 --===
                 Content-Type: text/plain
 
-                Your message has bounced, ser.
+                Your message has bounced, sir.
 
                 --===
                 Content-Type: message/rfc822
@@ -487,10 +487,14 @@ class TestEmailMessageBase:
         self.assertEqual(list(m.iter_attachments()), attachments)
 
     def message_as_iter_parts(self, body_parts, attachments, parts, msg):
+        def _is_multipart_msg(msg):
+            return 'Content-Type: multipart' in msg
+
         m = self._str_msg(msg)
         allparts = list(m.walk())
         parts = [allparts[n] for n in parts]
-        self.assertEqual(list(m.iter_parts()), parts)
+        iter_parts = list(m.iter_parts()) if _is_multipart_msg(msg) else []
+        self.assertEqual(iter_parts, parts)
 
     class _TestContentManager:
         def get_content(self, msg, *args, **kw):
@@ -775,6 +779,13 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         self.assertEqual(len(m.as_string(maxheaderlen=34).strip().splitlines()),
                          6)
 
+    def test_as_string_unixform(self):
+        m = self._str_msg('test')
+        m.set_unixfrom('From foo@bar Thu Jan  1 00:00:00 1970')
+        self.assertEqual(m.as_string(unixfrom=True),
+                        'From foo@bar Thu Jan  1 00:00:00 1970\n\ntest')
+        self.assertEqual(m.as_string(unixfrom=False), '\ntest')
+
     def test_str_defaults_to_policy_max_line_length(self):
         m = self._str_msg('Subject: long line' + ' ab'*50 + '\n\n')
         self.assertEqual(len(str(m).strip().splitlines()), 3)
@@ -783,6 +794,165 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         m = EmailMessage()
         m['Subject'] = 'unicöde'
         self.assertEqual(str(m), 'Subject: unicöde\n\n')
+
+    def test_folding_with_utf8_encoding_1(self):
+        # bpo-36520
+        #
+        # Fold a line that contains UTF-8 words before
+        # and after the whitespace fold point, where the
+        # line length limit is reached within an ASCII
+        # word.
+
+        m = EmailMessage()
+        m['Subject'] = 'Hello Wörld! Hello Wörld! '            \
+                       'Hello Wörld! Hello Wörld!Hello Wörld!'
+        self.assertEqual(bytes(m),
+                         b'Subject: Hello =?utf-8?q?W=C3=B6rld!_Hello_W'
+                         b'=C3=B6rld!_Hello_W=C3=B6rld!?=\n'
+                         b' Hello =?utf-8?q?W=C3=B6rld!Hello_W=C3=B6rld!?=\n\n')
+
+
+    def test_folding_with_utf8_encoding_2(self):
+        # bpo-36520
+        #
+        # Fold a line that contains UTF-8 words before
+        # and after the whitespace fold point, where the
+        # line length limit is reached at the end of an
+        # encoded word.
+
+        m = EmailMessage()
+        m['Subject'] = 'Hello Wörld! Hello Wörld! '                \
+                       'Hello Wörlds123! Hello Wörld!Hello Wörld!'
+        self.assertEqual(bytes(m),
+                         b'Subject: Hello =?utf-8?q?W=C3=B6rld!_Hello_W'
+                         b'=C3=B6rld!_Hello_W=C3=B6rlds123!?=\n'
+                         b' Hello =?utf-8?q?W=C3=B6rld!Hello_W=C3=B6rld!?=\n\n')
+
+    def test_folding_with_utf8_encoding_3(self):
+        # bpo-36520
+        #
+        # Fold a line that contains UTF-8 words before
+        # and after the whitespace fold point, where the
+        # line length limit is reached at the end of the
+        # first word.
+
+        m = EmailMessage()
+        m['Subject'] = 'Hello-Wörld!-Hello-Wörld!-Hello-Wörlds123! ' \
+                       'Hello Wörld!Hello Wörld!'
+        self.assertEqual(bytes(m), \
+                         b'Subject: =?utf-8?q?Hello-W=C3=B6rld!-Hello-W'
+                         b'=C3=B6rld!-Hello-W=C3=B6rlds123!?=\n'
+                         b' Hello =?utf-8?q?W=C3=B6rld!Hello_W=C3=B6rld!?=\n\n')
+
+    def test_folding_with_utf8_encoding_4(self):
+        # bpo-36520
+        #
+        # Fold a line that contains UTF-8 words before
+        # and after the fold point, where the first
+        # word is UTF-8 and the fold point is within
+        # the word.
+
+        m = EmailMessage()
+        m['Subject'] = 'Hello-Wörld!-Hello-Wörld!-Hello-Wörlds123!-Hello' \
+                       ' Wörld!Hello Wörld!'
+        self.assertEqual(bytes(m),
+                         b'Subject: =?utf-8?q?Hello-W=C3=B6rld!-Hello-W'
+                         b'=C3=B6rld!-Hello-W=C3=B6rlds123!?=\n'
+                         b' =?utf-8?q?-Hello_W=C3=B6rld!Hello_W=C3=B6rld!?=\n\n')
+
+    def test_folding_with_utf8_encoding_5(self):
+        # bpo-36520
+        #
+        # Fold a line that contains a UTF-8 word after
+        # the fold point.
+
+        m = EmailMessage()
+        m['Subject'] = '123456789 123456789 123456789 123456789 123456789' \
+                       ' 123456789 123456789 Hello Wörld!'
+        self.assertEqual(bytes(m),
+                         b'Subject: 123456789 123456789 123456789 123456789'
+                         b' 123456789 123456789 123456789\n'
+                         b' Hello =?utf-8?q?W=C3=B6rld!?=\n\n')
+
+    def test_folding_with_utf8_encoding_6(self):
+        # bpo-36520
+        #
+        # Fold a line that contains a UTF-8 word before
+        # the fold point and ASCII words after
+
+        m = EmailMessage()
+        m['Subject'] = '123456789 123456789 123456789 123456789 Hello Wörld!' \
+                       ' 123456789 123456789 123456789 123456789 123456789'   \
+                       ' 123456789'
+        self.assertEqual(bytes(m),
+                         b'Subject: 123456789 123456789 123456789 123456789'
+                         b' Hello =?utf-8?q?W=C3=B6rld!?=\n 123456789 '
+                         b'123456789 123456789 123456789 123456789 '
+                         b'123456789\n\n')
+
+    def test_folding_with_utf8_encoding_7(self):
+        # bpo-36520
+        #
+        # Fold a line twice that contains UTF-8 words before
+        # and after the first fold point, and ASCII words
+        # after the second fold point.
+
+        m = EmailMessage()
+        m['Subject'] = '123456789 123456789 Hello Wörld! Hello Wörld! '       \
+                       '123456789-123456789 123456789 Hello Wörld! 123456789' \
+                       ' 123456789'
+        self.assertEqual(bytes(m),
+                         b'Subject: 123456789 123456789 Hello =?utf-8?q?'
+                         b'W=C3=B6rld!_Hello_W=C3=B6rld!?=\n'
+                         b' 123456789-123456789 123456789 Hello '
+                         b'=?utf-8?q?W=C3=B6rld!?= 123456789\n 123456789\n\n')
+
+    def test_folding_with_utf8_encoding_8(self):
+        # bpo-36520
+        #
+        # Fold a line twice that contains UTF-8 words before
+        # the first fold point, and ASCII words after the
+        # first fold point, and UTF-8 words after the second
+        # fold point.
+
+        m = EmailMessage()
+        m['Subject'] = '123456789 123456789 Hello Wörld! Hello Wörld! '       \
+                       '123456789 123456789 123456789 123456789 123456789 '   \
+                       '123456789-123456789 123456789 Hello Wörld! 123456789' \
+                       ' 123456789'
+        self.assertEqual(bytes(m),
+                         b'Subject: 123456789 123456789 Hello '
+                         b'=?utf-8?q?W=C3=B6rld!_Hello_W=C3=B6rld!?=\n 123456789 '
+                         b'123456789 123456789 123456789 123456789 '
+                         b'123456789-123456789\n 123456789 Hello '
+                         b'=?utf-8?q?W=C3=B6rld!?= 123456789 123456789\n\n')
+
+    def test_get_body_malformed(self):
+        """test for bpo-42892"""
+        msg = textwrap.dedent("""\
+            Message-ID: <674392CA.4347091@email.au>
+            Date: Wed, 08 Nov 2017 08:50:22 +0700
+            From: Foo Bar <email@email.au>
+            MIME-Version: 1.0
+            To: email@email.com <email@email.com>
+            Subject: Python Email
+            Content-Type: multipart/mixed;
+            boundary="------------879045806563892972123996"
+            X-Global-filter:Messagescannedforspamandviruses:passedalltests
+
+            This is a multi-part message in MIME format.
+            --------------879045806563892972123996
+            Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+            Content-Transfer-Encoding: 7bit
+
+            Your message is ready to be sent with the following file or link
+            attachments:
+            XU89 - 08.11.2017
+            """)
+        m = self._str_msg(msg)
+        # In bpo-42892, this would raise
+        # AttributeError: 'str' object has no attribute 'is_attachment'
+        m.get_body()
 
 
 class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
@@ -797,6 +967,15 @@ class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
         self.assertNotIn('MIME-Version', m)
         m.set_content(content_manager=cm)
         self.assertNotIn('MIME-Version', m)
+
+    def test_string_payload_with_multipart_content_type(self):
+        msg = message_from_string(textwrap.dedent("""\
+        Content-Type: multipart/mixed; charset="utf-8"
+
+        sample text
+        """), policy=policy.default)
+        attachments = msg.iter_attachments()
+        self.assertEqual(list(attachments), [])
 
 
 if __name__ == '__main__':

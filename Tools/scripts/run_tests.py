@@ -10,10 +10,6 @@ simply passing a -u option to this script.
 import os
 import sys
 import test.support
-try:
-    import threading
-except ImportError:
-    threading = None
 
 
 def is_multiprocess_flag(arg):
@@ -31,11 +27,9 @@ def main(regrtest_args):
             '-bb',                # Warnings about bytes/bytearray
             '-E',                 # Ignore environment variables
             ]
+
     # Allow user-specified interpreter options to override our defaults.
     args.extend(test.support.args_from_interpreter_flags())
-
-    # Workaround for issue #20361
-    args.extend(['-W', 'error::BytesWarning'])
 
     args.extend(['-m', 'test',    # Run the test suite
                  '-r',            # Randomize test order
@@ -43,7 +37,7 @@ def main(regrtest_args):
                  ])
     if sys.platform == 'win32':
         args.append('-n')         # Silence alerts under Windows
-    if threading and not any(is_multiprocess_flag(arg) for arg in regrtest_args):
+    if not any(is_multiprocess_flag(arg) for arg in regrtest_args):
         args.extend(['-j', '0'])  # Use all CPU cores
     if not any(is_resource_use_flag(arg) for arg in regrtest_args):
         args.extend(['-u', 'all,-largefile,-audio,-gui'])

@@ -6,19 +6,29 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(opensslOutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ws2_32.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;libcrypto.lib;libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <PropertyGroup>
+    <_DLLSuffix>-1_1</_DLLSuffix>
+    <_DLLSuffix Condition="$(Platform) == 'ARM'">$(_DLLSuffix)-arm</_DLLSuffix>
+    <_DLLSuffix Condition="$(Platform) == 'ARM64'">$(_DLLSuffix)-arm64</_DLLSuffix>
+    <OpenSSLDLLSuffix>$(_DLLSuffix)</OpenSSLDLLSuffix>
+  </PropertyGroup>
   <ItemGroup>
-    <_SSLDLL Include="$(opensslOutDir)\libeay32.dll" />
-    <_SSLDLL Include="$(opensslOutDir)\libeay32.pdb" />
-    <_SSLDLL Include="$(opensslOutDir)\ssleay32.dll" />
-    <_SSLDLL Include="$(opensslOutDir)\ssleay32.pdb" />
+    <_SSLDLL Include="$(opensslOutDir)\libcrypto$(_DLLSuffix).dll" />
+    <_SSLDLL Include="$(opensslOutDir)\libcrypto$(_DLLSuffix).pdb" />
+    <_SSLDLL Include="$(opensslOutDir)\libssl$(_DLLSuffix).dll" />
+    <_SSLDLL Include="$(opensslOutDir)\libssl$(_DLLSuffix).pdb" />
   </ItemGroup>
-  <Target Name="_CopySSLDLL" Inputs="@(_SSLDLL)" Outputs="@(_SSLDLL->'$(OutDir)%(Filename)%(Extension)')" AfterTargets="Build">
+  <Target Name="_CopySSLDLL"
+          Inputs="@(_SSLDLL)"
+          Outputs="@(_SSLDLL->'$(OutDir)%(Filename)%(Extension)')"
+          Condition="$(SkipCopySSLDLL) == ''"
+          AfterTargets="Build">
     <Copy SourceFiles="@(_SSLDLL)" DestinationFolder="$(OutDir)" />
   </Target>
-  <Target Name="_CleanSSLDLL" BeforeTargets="Clean">
-    <Delete Files="@(_SSLDLL->'$(OutDir)%(Filename)%(Extension)')" />
+  <Target Name="_CleanSSLDLL" Condition="$(SkipCopySSLDLL) == ''" BeforeTargets="Clean">
+    <Delete Files="@(_SSLDLL->'$(OutDir)%(Filename)%(Extension)')" TreatErrorsAsWarnings="true" />
   </Target>
 </Project>

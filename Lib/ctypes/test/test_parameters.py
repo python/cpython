@@ -1,5 +1,6 @@
 import unittest
 from ctypes.test import need_symbol
+import test.support
 
 class SimpleTypesTestCase(unittest.TestCase):
 
@@ -179,6 +180,69 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRaises(TypeError, _CFuncPtr.from_param, 42)
         self.assertRaises(TypeError, _Pointer.from_param, 42)
         self.assertRaises(TypeError, _SimpleCData.from_param, 42)
+
+    @test.support.cpython_only
+    def test_issue31311(self):
+        # __setstate__ should neither raise a SystemError nor crash in case
+        # of a bad __dict__.
+        from ctypes import Structure
+
+        class BadStruct(Structure):
+            @property
+            def __dict__(self):
+                pass
+        with self.assertRaises(TypeError):
+            BadStruct().__setstate__({}, b'foo')
+
+        class WorseStruct(Structure):
+            @property
+            def __dict__(self):
+                1/0
+        with self.assertRaises(ZeroDivisionError):
+            WorseStruct().__setstate__({}, b'foo')
+
+    def test_parameter_repr(self):
+        from ctypes import (
+            c_bool,
+            c_char,
+            c_wchar,
+            c_byte,
+            c_ubyte,
+            c_short,
+            c_ushort,
+            c_int,
+            c_uint,
+            c_long,
+            c_ulong,
+            c_longlong,
+            c_ulonglong,
+            c_float,
+            c_double,
+            c_longdouble,
+            c_char_p,
+            c_wchar_p,
+            c_void_p,
+        )
+        self.assertRegex(repr(c_bool.from_param(True)), r"^<cparam '\?' at 0x[A-Fa-f0-9]+>$")
+        self.assertEqual(repr(c_char.from_param(97)), "<cparam 'c' ('a')>")
+        self.assertRegex(repr(c_wchar.from_param('a')), r"^<cparam 'u' at 0x[A-Fa-f0-9]+>$")
+        self.assertEqual(repr(c_byte.from_param(98)), "<cparam 'b' (98)>")
+        self.assertEqual(repr(c_ubyte.from_param(98)), "<cparam 'B' (98)>")
+        self.assertEqual(repr(c_short.from_param(511)), "<cparam 'h' (511)>")
+        self.assertEqual(repr(c_ushort.from_param(511)), "<cparam 'H' (511)>")
+        self.assertRegex(repr(c_int.from_param(20000)), r"^<cparam '[li]' \(20000\)>$")
+        self.assertRegex(repr(c_uint.from_param(20000)), r"^<cparam '[LI]' \(20000\)>$")
+        self.assertRegex(repr(c_long.from_param(20000)), r"^<cparam '[li]' \(20000\)>$")
+        self.assertRegex(repr(c_ulong.from_param(20000)), r"^<cparam '[LI]' \(20000\)>$")
+        self.assertRegex(repr(c_longlong.from_param(20000)), r"^<cparam '[liq]' \(20000\)>$")
+        self.assertRegex(repr(c_ulonglong.from_param(20000)), r"^<cparam '[LIQ]' \(20000\)>$")
+        self.assertEqual(repr(c_float.from_param(1.5)), "<cparam 'f' (1.5)>")
+        self.assertEqual(repr(c_double.from_param(1.5)), "<cparam 'd' (1.5)>")
+        self.assertEqual(repr(c_double.from_param(1e300)), "<cparam 'd' (1e+300)>")
+        self.assertRegex(repr(c_longdouble.from_param(1.5)), r"^<cparam ('d' \(1.5\)|'g' at 0x[A-Fa-f0-9]+)>$")
+        self.assertRegex(repr(c_char_p.from_param(b'hihi')), r"^<cparam 'z' \(0x[A-Fa-f0-9]+\)>$")
+        self.assertRegex(repr(c_wchar_p.from_param('hihi')), r"^<cparam 'Z' \(0x[A-Fa-f0-9]+\)>$")
+        self.assertRegex(repr(c_void_p.from_param(0x12)), r"^<cparam 'P' \(0x0*12\)>$")
 
 ################################################################
 

@@ -1,7 +1,7 @@
 /* Accumulator struct implementation */
 
 #include "Python.h"
-#include "accu.h"
+#include "pycore_accu.h"
 
 static PyObject *
 join_list_unicode(PyObject *lst)
@@ -64,7 +64,7 @@ _PyAccu_Accumulate(_PyAccu *acc, PyObject *unicode)
      * builds) of:
      *   - 8 bytes for the list slot
      *   - 56 bytes for the header of the unicode object
-     * that is, 64 bytes.  100000 such objects waste more than 6MB
+     * that is, 64 bytes.  100000 such objects waste more than 6 MiB
      * compared to a single concatenated string.
      */
     if (nsmall < 100000)

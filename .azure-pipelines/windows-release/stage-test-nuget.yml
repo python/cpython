@@ -1,0 +1,58 @@
+jobs:
+- job: Test_Nuget
+  displayName: Test Nuget
+  condition: and(succeeded(), eq(variables['DoNuget'], 'true'))
+
+  pool:
+    vmImage: windows-2022
+
+  workspace:
+    clean: all
+
+  strategy:
+    matrix:
+      win32:
+        Package: pythonx86
+      amd64:
+        Package: python
+
+  steps:
+  - checkout: none
+
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download artifact: nuget'
+    inputs:
+      artifactName: nuget
+      downloadPath: $(Build.BinariesDirectory)
+
+  - task: NugetToolInstaller@0
+    inputs:
+      versionSpec: '>= 5'
+
+  - powershell: >
+      nuget install
+      $(Package)
+      -Source "$(Build.BinariesDirectory)\nuget"
+      -OutputDirectory "$(Build.BinariesDirectory)\install"
+      -Prerelease
+      -ExcludeVersion
+      -NonInteractive
+    displayName: 'Install Python'
+
+  - powershell: |
+      $p = gi "$(Build.BinariesDirectory)\install\$(Package)\tools\python.exe"
+      Write-Host "##vso[task.prependpath]$(Split-Path -Parent $p)"
+    displayName: 'Add test Python to PATH'
+
+  - script: |
+      python -c "import sys; print(sys.version)"
+    displayName: 'Collect version number'
+
+  - script: |
+      python -m site
+    displayName: 'Collect site'
+
+  - script: |
+      python -m pip install "azure<0.10"
+      python -m pip uninstall -y azure python-dateutil six
+    displayName: 'Test (un)install package'

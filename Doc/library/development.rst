@@ -18,6 +18,7 @@ The list of modules described in this chapter is:
 
    typing.rst
    pydoc.rst
+   devmode.rst
    doctest.rst
    unittest.rst
    unittest.mock.rst

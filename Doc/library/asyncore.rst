@@ -4,6 +4,7 @@
 .. module:: asyncore
    :synopsis: A base class for developing asynchronous socket handling
               services.
+   :deprecated:
 
 .. moduleauthor:: Sam Rushing <rushing@nightmare.com>
 .. sectionauthor:: Christopher Petrilli <petrilli@amber.org>
@@ -13,6 +14,7 @@
 **Source code:** :source:`Lib/asyncore.py`
 
 .. deprecated:: 3.6
+   :mod:`asyncore` will be removed in Python 3.12 (:pep:`594`).
    Please use :mod:`asyncio` instead.
 
 --------------
@@ -273,14 +275,18 @@ any that have been added to the map during asynchronous service) is closed.
    with an optional map argument and wraps it for use with the :c:func:`poll`
    or :c:func:`loop` functions.  If provided a file object or anything with a
    :c:func:`fileno` method, that method will be called and passed to the
-   :class:`file_wrapper` constructor.  Availability: UNIX.
+   :class:`file_wrapper` constructor.
+
+   .. availability:: Unix.
 
 .. class:: file_wrapper()
 
    A file_wrapper takes an integer file descriptor and calls :func:`os.dup` to
    duplicate the handle so that the original handle may be closed independently
    of the file_wrapper.  This class implements sufficient methods to emulate a
-   socket for use by the :class:`file_dispatcher` class.  Availability: UNIX.
+   socket for use by the :class:`file_dispatcher` class.
+
+   .. availability:: Unix.
 
 
 .. _asyncore-example-1:

@@ -1,2 +1,0 @@
-Allow requiring 64-bit interpreters from py.exe using -64 suffix. Contributed
-by Steve (Gadget) Barnes.

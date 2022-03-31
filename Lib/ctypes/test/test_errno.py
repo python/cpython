@@ -1,10 +1,8 @@
 import unittest, os, errno
+import threading
+
 from ctypes import *
 from ctypes.util import find_library
-try:
-    import threading
-except ImportError:
-    threading = None
 
 class Test(unittest.TestCase):
     def test_open(self):
@@ -25,25 +23,24 @@ class Test(unittest.TestCase):
         self.assertEqual(set_errno(32), errno.ENOENT)
         self.assertEqual(get_errno(), 32)
 
-        if threading:
-            def _worker():
-                set_errno(0)
-
-                libc = CDLL(libc_name, use_errno=False)
-                if os.name == "nt":
-                    libc_open = libc._open
-                else:
-                    libc_open = libc.open
-                libc_open.argtypes = c_char_p, c_int
-                self.assertEqual(libc_open(b"", 0), -1)
-                self.assertEqual(get_errno(), 0)
-
-            t = threading.Thread(target=_worker)
-            t.start()
-            t.join()
-
-            self.assertEqual(get_errno(), 32)
+        def _worker():
             set_errno(0)
+
+            libc = CDLL(libc_name, use_errno=False)
+            if os.name == "nt":
+                libc_open = libc._open
+            else:
+                libc_open = libc.open
+            libc_open.argtypes = c_char_p, c_int
+            self.assertEqual(libc_open(b"", 0), -1)
+            self.assertEqual(get_errno(), 0)
+
+        t = threading.Thread(target=_worker)
+        t.start()
+        t.join()
+
+        self.assertEqual(get_errno(), 32)
+        set_errno(0)
 
     @unittest.skipUnless(os.name == "nt", 'Test specific to Windows')
     def test_GetLastError(self):

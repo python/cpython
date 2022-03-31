@@ -19,9 +19,8 @@ from . import context
 # Copy stuff from default context
 #
 
-globals().update((name, getattr(context._default_context, name))
-                 for name in context._default_context.__all__)
-__all__ = context._default_context.__all__
+__all__ = [x for x in dir(context._default_context) if not x.startswith('_')]
+globals().update((name, getattr(context._default_context, name)) for name in __all__)
 
 #
 # XXX These should not really be documented or public.

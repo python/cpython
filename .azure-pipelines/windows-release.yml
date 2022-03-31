@@ -1,0 +1,220 @@
+name: Release_$(Build.SourceBranchName)_$(SourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
+
+parameters:
+- name: GitRemote
+  displayName: "Git remote"
+  type: string
+  default: python
+  values:
+  - 'python'
+  - 'pablogsal'
+  - 'ambv'
+  - '(Other)'
+- name: GitRemote_Other
+  displayName: "If Other, specify Git remote"
+  type: string
+  default: 'python'
+- name: SourceTag
+  displayName: "Git tag"
+  type: string
+  default: main
+- name: DoPublish
+  displayName: "Publish release"
+  type: boolean
+  default: false
+- name: SigningCertificate
+  displayName: "Code signing certificate"
+  type: string
+  default: 'Python Software Foundation'
+  values:
+  - 'Python Software Foundation'
+  - 'TestSign'
+  - 'Unsigned'
+- name: SigningDescription
+  displayName: "Signature description"
+  type: string
+  default: 'Built: $(Build.BuildNumber)'
+- name: DoARM64
+  displayName: "Publish ARM64 build"
+  type: boolean
+  default: true
+# Because there is no ARM64 Tcl/Tk pre-3.11, we need a separate option
+# to keep those builds working when the files are going to be absent.
+# Eventually when we stop releasing anything that old, we can drop this
+# argument (and make it implicitly always 'true')
+- name: ARM64TclTk
+  displayName: "Use Tcl/Tk for ARM64 (3.11 and later)"
+  type: boolean
+  default: true
+- name: DoPGO
+  displayName: "Run PGO"
+  type: boolean
+  default: true
+- name: DoCHM
+  displayName: "Produce compiled help document (pre-3.11)"
+  type: boolean
+  default: false
+- name: DoLayout
+  displayName: "Produce full layout artifact"
+  type: boolean
+  default: true
+- name: DoMSIX
+  displayName: "Produce Store packages"
+  type: boolean
+  default: true
+- name: DoNuget
+  displayName: "Produce Nuget packages"
+  type: boolean
+  default: true
+- name: DoEmbed
+  displayName: "Produce embeddable package"
+  type: boolean
+  default: true
+- name: DoMSI
+  displayName: "Produce EXE/MSI installer"
+  type: boolean
+  default: true
+- name: BuildToPublish
+  displayName: "Build number to publish (0 to skip)"
+  type: number
+  default: '0'
+
+variables:
+  __RealSigningCertificate: 'Python Software Foundation'
+  ${{ if ne(parameters.GitRemote, '(Other)') }}:
+    GitRemote: ${{ parameters.GitRemote }}
+  ${{ else }}:
+    GitRemote: ${{ parameters.GitRemote_Other }}
+  SourceTag: ${{ parameters.SourceTag }}
+  DoPGO: ${{ parameters.DoPGO }}
+  ${{ if ne(parameters.SigningCertificate, 'Unsigned') }}:
+    SigningCertificate: ${{ parameters.SigningCertificate }}
+  SigningDescription: ${{ parameters.SigningDescription }}
+  DoCHM: ${{ parameters.DoCHM }}
+  DoLayout: ${{ parameters.DoLayout }}
+  DoMSIX: ${{ parameters.DoMSIX }}
+  DoNuget: ${{ parameters.DoNuget }}
+  DoEmbed: ${{ parameters.DoEmbed }}
+  DoMSI: ${{ parameters.DoMSI }}
+  DoPublish: ${{ parameters.DoPublish }}
+  PublishARM64: ${{ parameters.DoARM64 }}
+# QUEUE TIME VARIABLES
+#  PyDotOrgUsername: ''
+#  PyDotOrgServer: ''
+
+trigger: none
+pr: none
+
+stages:
+- ${{ if eq(parameters.BuildToPublish, '0') }}:
+  - stage: Build
+    displayName: Build binaries
+    jobs:
+    - template: windows-release/stage-build.yml
+      parameters:
+        ARM64TclTk: ${{ parameters.ARM64TclTk }}
+
+  - stage: Sign
+    displayName: Sign binaries
+    dependsOn: Build
+    jobs:
+    - template: windows-release/stage-sign.yml
+
+  - stage: Layout
+    displayName: Generate layouts
+    dependsOn: Sign
+    jobs:
+    - template: windows-release/stage-layout-full.yml
+      parameters:
+        ARM64TclTk: ${{ parameters.ARM64TclTk }}
+    - template: windows-release/stage-layout-embed.yml
+    - template: windows-release/stage-layout-nuget.yml
+
+  - stage: Pack
+    dependsOn: Layout
+    jobs:
+    - template: windows-release/stage-pack-nuget.yml
+
+  - stage: Test
+    dependsOn: Pack
+    jobs:
+    - template: windows-release/stage-test-embed.yml
+    - template: windows-release/stage-test-nuget.yml
+
+  - ${{ if eq(parameters.DoMSIX, 'true') }}:
+    - stage: Layout_MSIX
+      displayName: Generate MSIX layouts
+      dependsOn: Sign
+      jobs:
+      - template: windows-release/stage-layout-msix.yml
+        parameters:
+          ARM64TclTk: ${{ parameters.ARM64TclTk }}
+
+    - stage: Pack_MSIX
+      displayName: Package MSIX
+      dependsOn: Layout_MSIX
+      jobs:
+      - template: windows-release/stage-pack-msix.yml
+
+  - ${{ if eq(parameters.DoMSI, 'true') }}:
+    - stage: Build_MSI
+      displayName: Build MSI installer
+      dependsOn: Sign
+      jobs:
+      - template: windows-release/stage-msi.yml
+        parameters:
+          ARM64TclTk: ${{ parameters.ARM64TclTk }}
+
+    - stage: Test_MSI
+      displayName: Test MSI installer
+      dependsOn: Build_MSI
+      jobs:
+      - template: windows-release/stage-test-msi.yml
+
+  - ${{ if eq(parameters.DoPublish, 'true') }}:
+    - ${{ if eq(parameters.DoMSI, 'true') }}:
+      - stage: PublishPyDotOrg
+        displayName: Publish to python.org
+        dependsOn: ['Test_MSI', 'Test']
+        jobs:
+        - template: windows-release/stage-publish-pythonorg.yml
+
+    - ${{ if eq(parameters.DoNuget, 'true') }}:
+      - stage: PublishNuget
+        displayName: Publish to nuget.org
+        ${{ if eq(parameters.DoMSI, 'true') }}:
+          dependsOn: ['Test_MSI', 'Test']
+        ${{ else }}:
+          dependsOn: 'Test'
+        jobs:
+        - template: windows-release/stage-publish-nugetorg.yml
+
+    - ${{ if eq(parameters.DoMSIX, 'true') }}:
+      - stage: PublishStore
+        displayName: Publish to Store
+        ${{ if eq(parameters.DoMSI, 'true') }}:
+          dependsOn: ['Test_MSI', 'Pack_MSIX']
+        ${{ else }}:
+          dependsOn: 'Pack_MSIX'
+        jobs:
+        - template: windows-release/stage-publish-store.yml
+
+- ${{ else }}:
+  - stage: PublishExisting
+    displayName: Publish existing build
+    dependsOn: []
+    jobs:
+    - ${{ if eq(parameters.DoMSI, 'true') }}:
+      - template: windows-release/stage-publish-pythonorg.yml
+        parameters:
+          BuildToPublish: ${{ parameters.BuildToPublish }}
+
+    - ${{ if eq(parameters.DoNuget, 'true') }}:
+      - template: windows-release/stage-publish-nugetorg.yml
+        parameters:
+          BuildToPublish: ${{ parameters.BuildToPublish }}
+
+    - ${{ if eq(parameters.DoMSIX, 'true') }}:
+      - template: windows-release/stage-publish-store.yml
+        parameters:
+          BuildToPublish: ${{ parameters.BuildToPublish }}

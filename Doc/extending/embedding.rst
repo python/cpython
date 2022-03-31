@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _embedding:
@@ -53,6 +53,7 @@ interface. This interface is intended to execute a Python script without needing
 to interact with the application directly. This can for example be used to
 perform some operation on a file. ::
 
+   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
 
    int
@@ -195,7 +196,7 @@ function is then made with::
 
    pValue = PyObject_CallObject(pFunc, pArgs);
 
-Upon return of the function, ``pValue`` is either *NULL* or it contains a
+Upon return of the function, ``pValue`` is either ``NULL`` or it contains a
 reference to the return value of the function.  Be sure to release the reference
 after examining the value.
 
@@ -323,7 +324,7 @@ options.  In this case, the :mod:`sysconfig` module is a useful tool to
 programmatically extract the configuration values that you will want to
 combine together.  For example:
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> import sysconfig
    >>> sysconfig.get_config_var('LIBS')

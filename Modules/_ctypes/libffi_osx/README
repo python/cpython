@@ -165,7 +165,7 @@ for checking. It will be one of the following:
 Before making the call, the VALUES vector should be initialized 
 with pointers to the appropriate argument values.
 
-To call the the function using the initialized ffi_cif, use the
+To call the function using the initialized ffi_cif, use the
 ffi_call function:
 
 void ffi_call(ffi_cif *cif, void *fn, void *rvalue, void **avalues);
@@ -372,8 +372,8 @@ single-precision anyway.  This causes one test to fail (the `many
 arguments' test).
 
 
-What's With The Crazy Comments?
-===============================
+What's With The Cryptic Comments?
+=================================
 
 You might notice a number of cryptic comments in the code, delimited
 by /*@ and @*/. These are annotations read by the program LCLint, a
