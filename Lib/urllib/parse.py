@@ -40,7 +40,7 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "parse_qsl", "quote", "quote_plus", "quote_from_bytes",
            "unquote", "unquote_plus", "unquote_to_bytes",
            "DefragResult", "ParseResult", "SplitResult",
-           "SchemeFlag", "RELATIVE", "NETLOC", "PARAMS",
+           "SchemeFlag", "RELATIVE", "NETLOC", "PARAMS", "UNIVERSAL",
            "DefragResultBytes", "ParseResultBytes", "SplitResultBytes"]
 
 # A classification of schemes.
@@ -57,6 +57,7 @@ class SchemeFlag(Flag):
     RELATIVE = auto()
     NETLOC = auto()
     PARAMS = auto()
+    UNIVERSAL = RELATIVE | NETLOC | PARAMS
 
     def __repr__(self):
         return f'{self.__module__}.{self._name_}'
@@ -64,6 +65,8 @@ class SchemeFlag(Flag):
     __str__ = __repr__
 
 RELATIVE, NETLOC, PARAMS = SchemeFlag
+# UNIVERSAL must be assigned separately as it's a combination of other variants.
+UNIVERSAL = SchemeFlag.UNIVERSAL
 
 
 uses_relative = ['', 'ftp', 'http', 'gopher', 'nntp', 'imap',

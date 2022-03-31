@@ -573,9 +573,9 @@ Without specifying optional parameters or modifying global variables, Python
 will guess what parameters to apply based on the scheme. Schemes associated with
 each are specified by three lists in :mod:`urllib.parse`:
 
-* ``urllib.uses_relative``
-* ``urllib.uses_netloc``
-* ``urllib.uses_params``
+* ``urllib.parse.uses_relative``
+* ``urllib.parse.uses_netloc``
+* ``urllib.parse.uses_params``
 
 In addition, any function that takes a ``flags`` parameter (for
 instance, :func:`urlparse` and :func:`urljoin`) may override the
@@ -588,12 +588,17 @@ widely unused scheme with the same behavior as that of HTTP:
    ...     flags=(NETLOC | RELATIVE))
    'my-protocol://example.org/post/y/'
 
-For reference, the following three scheme classes are present (exactly
-corresponding to the ``uses`` lists):
+Also provided is the ``UNIVERSAL`` flag, which will use all
+recognizable elements of a URL (``RELATIVE``, ``NETLOC``, and
+``PARAMS``). It is exactly equivalent to the logical or of all other
+flags.
 
-* ``urllib.RELATIVE``
-* ``urllib.NETLOC``
-* ``urllib.PARAMS``
+For reference, the following scheme classes are present:
+
+* ``urllib.parse.RELATIVE``
+* ``urllib.parse.NETLOC``
+* ``urllib.parse.PARAMS``
+* ``urllib.parse.UNIVERSAL``
 
 URL Quoting
 -----------
