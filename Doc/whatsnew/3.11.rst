@@ -770,10 +770,16 @@ Build Changes
 
 * Build dependencies, compiler flags, and linker flags for most stdlib
   extension modules are now detected by :program:`configure`. libffi, libnsl,
-  libsqlite3, zlib, bzip2, liblzma, libcrypt, and uuid flags are detected by
-  ``pkg-config`` (when available).
+  libsqlite3, zlib, bzip2, liblzma, libcrypt, Tcl/Tk libs, and uuid flags
+  are detected by ``pkg-config`` (when available).
   (Contributed by Christian Heimes and Erlend Egeberg Aasland in
   :issue:`bpo-45847`, :issue:`45747`, and :issue:`45763`.)
+
+  .. note::
+     Use the environment variables ``TCLTK_CFLAGS`` and ``TCLTK_LIBS`` to
+     manually specify the location of Tcl/Tk headers and libraries.
+     The :program:`configure` options ``--with-tcltk-includes`` and
+     ``--with-tcltk-libs`` have been removed.
 
 * CPython now has experimental support for cross compiling to WebAssembly
   platform ``wasm32-emscripten``. The effort is inspired by previous work
