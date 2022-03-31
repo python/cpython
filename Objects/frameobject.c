@@ -888,7 +888,7 @@ _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
     assert(_PyOpcode_Deopt[opcode] == opcode);
     int check_oparg = 0;
     for (_Py_CODEUNIT *instruction = _PyCode_CODE(frame->f_code); 
-         instruction < frame->next_instr; instruction++)
+         instruction < frame->next_instr - 1; instruction++)
     {
         int check_opcode = _PyOpcode_Deopt[_Py_OPCODE(*instruction)];
         check_oparg |= _Py_OPARG(*instruction);
