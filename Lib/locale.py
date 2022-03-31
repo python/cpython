@@ -28,7 +28,7 @@ __all__ = ["getlocale", "getdefaultlocale", "getpreferredencoding", "Error",
            "setlocale", "resetlocale", "localeconv", "strcoll", "strxfrm",
            "str", "atof", "atoi", "format", "format_string", "currency",
            "normalize", "LC_CTYPE", "LC_COLLATE", "LC_TIME", "LC_MONETARY",
-           "LC_NUMERIC", "LC_ALL", "CHAR_MAX", "get_encoding"]
+           "LC_NUMERIC", "LC_ALL", "CHAR_MAX", "getencoding"]
 
 def _strcoll(a,b):
     """ strcoll(string,string) -> int.
@@ -637,9 +637,9 @@ def resetlocale(category=LC_ALL):
 
 
 try:
-    from _locale import get_encoding
+    from _locale import getencoding
 except ImportError:
-    def get_encoding():
+    def getencoding():
         if hasattr(sys, 'getandroidapilevel'):
             # On Android langinfo.h and CODESET are missing, and UTF-8 is
             # always used in mbstowcs() and wcstombs().

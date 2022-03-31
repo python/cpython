@@ -545,22 +545,22 @@ exit:
 
 #endif /* defined(HAVE_LIBINTL_H) && defined(HAVE_BIND_TEXTDOMAIN_CODESET) */
 
-PyDoc_STRVAR(_locale_get_encoding__doc__,
-"get_encoding($module, /)\n"
+PyDoc_STRVAR(_locale_getencoding__doc__,
+"getencoding($module, /)\n"
 "--\n"
 "\n"
 "Get the current locale encoding.");
 
-#define _LOCALE_GET_ENCODING_METHODDEF    \
-    {"get_encoding", (PyCFunction)_locale_get_encoding, METH_NOARGS, _locale_get_encoding__doc__},
+#define _LOCALE_GETENCODING_METHODDEF    \
+    {"getencoding", (PyCFunction)_locale_getencoding, METH_NOARGS, _locale_getencoding__doc__},
 
 static PyObject *
-_locale_get_encoding_impl(PyObject *module);
+_locale_getencoding_impl(PyObject *module);
 
 static PyObject *
-_locale_get_encoding(PyObject *module, PyObject *Py_UNUSED(ignored))
+_locale_getencoding(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return _locale_get_encoding_impl(module);
+    return _locale_getencoding_impl(module);
 }
 
 #ifndef _LOCALE_STRCOLL_METHODDEF
@@ -602,4 +602,4 @@ _locale_get_encoding(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
     #define _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
 #endif /* !defined(_LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF) */
-/*[clinic end generated code: output=08f5d9744143d9f2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea71e9b94bdaa47d input=a9049054013a1b77]*/
