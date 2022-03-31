@@ -902,6 +902,13 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
+.. opcode:: JUMP_BACKWARD_NO_INTERRUPT (delta)
+
+   Decrements bytecode counter by *delta*. Does not check for interrupts.
+
+   .. versionadded:: 3.11
+
+
 .. opcode:: POP_JUMP_IF_TRUE (target)
 
    If TOS is true, sets the bytecode counter to *target*.  TOS is popped.
@@ -979,13 +986,6 @@ iterations of the loop.
    stack.  Otherwise (TOS is true), TOS is popped.
 
    .. versionadded:: 3.1
-
-
-.. opcode:: JUMP_NO_INTERRUPT (target)
-
-   Set bytecode counter to *target*. Do not check for interrupts.
-
-   .. versionadded:: 3.11
 
 
 .. opcode:: FOR_ITER (delta)

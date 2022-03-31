@@ -4058,13 +4058,13 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(JUMP_NO_INTERRUPT) {
+        TARGET(JUMP_BACKWARD_NO_INTERRUPT) {
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
              * generator or coroutine, so we deliberately do not check it here.
              * (see bpo-30039).
              */
-            JUMPTO(oparg);
+            JUMPBY(-oparg);
             DISPATCH();
         }
 

@@ -990,7 +990,7 @@ stack_effect(int opcode, int oparg, int jump)
         case JUMP_FORWARD:
         case JUMP_BACKWARD:
         case JUMP:
-        case JUMP_NO_INTERRUPT:
+        case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
 
         case JUMP_IF_TRUE_OR_POP:
@@ -1891,7 +1891,7 @@ compiler_add_yield_from(struct compiler *c, int await)
     compiler_use_next_block(c, resume);
     ADDOP(c, YIELD_VALUE);
     ADDOP_I(c, RESUME, await ? 3 : 2);
-    ADDOP_JUMP(c, JUMP_NO_INTERRUPT, start);
+    ADDOP_JUMP(c, JUMP_BACKWARD_NO_INTERRUPT, start);
     compiler_use_next_block(c, exit);
     return 1;
 }
@@ -7051,7 +7051,7 @@ stackdepth(struct compiler *c)
             depth = new_depth;
             assert(instr->i_opcode != JUMP_FORWARD);
             assert(instr->i_opcode != JUMP_BACKWARD);
-            if (instr->i_opcode == JUMP_NO_INTERRUPT ||
+            if (instr->i_opcode == JUMP_BACKWARD_NO_INTERRUPT ||
                 instr->i_opcode == JUMP ||
                 instr->i_opcode == RETURN_VALUE ||
                 instr->i_opcode == RAISE_VARARGS ||
@@ -7608,11 +7608,13 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
                     instr->i_oparg = instr->i_target->b_offset;
                     if (is_relative_jump(instr)) {
                         if (instr->i_oparg < bsize) {
-                            assert(instr->i_opcode == JUMP_BACKWARD);
+                            assert(instr->i_opcode == JUMP_BACKWARD ||
+                                   instr->i_opcode == JUMP_BACKWARD_NO_INTERRUPT);
                             instr->i_oparg = bsize - instr->i_oparg;
                         }
                         else {
                             assert(instr->i_opcode != JUMP_BACKWARD);
+                            assert(instr->i_opcode != JUMP_BACKWARD_NO_INTERRUPT);
                             instr->i_oparg -= bsize;
                         }
                     }
@@ -8951,7 +8953,7 @@ normalize_basic_block(basicblock *bb) {
                 bb->b_nofallthrough = 1;
                 break;
             case JUMP:
-            case JUMP_NO_INTERRUPT:
+            case JUMP_BACKWARD_NO_INTERRUPT:
                 bb->b_nofallthrough = 1;
                 /* fall through */
             case POP_JUMP_IF_NOT_NONE:
@@ -9138,7 +9140,7 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
             assert(b_last_instr->i_opcode != JUMP_FORWARD);
             assert(b_last_instr->i_opcode != JUMP_BACKWARD);
             if (b_last_instr->i_opcode == JUMP ||
-                b_last_instr->i_opcode == JUMP_NO_INTERRUPT) {
+                b_last_instr->i_opcode == JUMP_BACKWARD_NO_INTERRUPT) {
                 if (b_last_instr->i_target == b->b_next) {
                     assert(b->b_next->b_iused);
                     b->b_nofallthrough = 0;

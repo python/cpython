@@ -87,7 +87,7 @@ extern "C" {
 #define GET_AWAITABLE                          131
 #define MAKE_FUNCTION                          132
 #define BUILD_SLICE                            133
-#define JUMP_NO_INTERRUPT                      134
+#define JUMP_BACKWARD_NO_INTERRUPT             134
 #define MAKE_CELL                              135
 #define LOAD_CLOSURE                           136
 #define LOAD_DEREF                             137
@@ -196,7 +196,7 @@ static const uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     536870912U,
     134234112U,
-    4096U,
+    4160U,
     0U,
     0U,
     0U,
@@ -290,13 +290,13 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [IMPORT_STAR] = IMPORT_STAR,
     [IS_OP] = IS_OP,
     [JUMP_BACKWARD] = JUMP_BACKWARD,
+    [JUMP_BACKWARD_NO_INTERRUPT] = JUMP_BACKWARD_NO_INTERRUPT,
     [JUMP_BACKWARD_QUICK] = JUMP_BACKWARD,
     [JUMP_FORWARD] = JUMP_FORWARD,
     [JUMP_IF_FALSE_OR_POP] = JUMP_IF_FALSE_OR_POP,
     [JUMP_IF_NOT_EG_MATCH] = JUMP_IF_NOT_EG_MATCH,
     [JUMP_IF_NOT_EXC_MATCH] = JUMP_IF_NOT_EXC_MATCH,
     [JUMP_IF_TRUE_OR_POP] = JUMP_IF_TRUE_OR_POP,
-    [JUMP_NO_INTERRUPT] = JUMP_NO_INTERRUPT,
     [KW_NAMES] = KW_NAMES,
     [LIST_APPEND] = LIST_APPEND,
     [LIST_EXTEND] = LIST_EXTEND,
