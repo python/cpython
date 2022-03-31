@@ -110,6 +110,8 @@ _PyCode_Warmup(PyCodeObject *code)
     }
 }
 
+extern uint8_t _PyOpcode_Adaptive[256];
+
 extern Py_ssize_t _Py_QuickenedCount;
 
 // Borrowed references to common callables:

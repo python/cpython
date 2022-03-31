@@ -256,7 +256,7 @@ def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
                 err = a[0]
             # The error can also be wrapped as args[1]:
             #    except socket.error as msg:
-            #        raise OSError('socket error', msg).with_traceback(sys.exc_info()[2])
+            #        raise OSError('socket error', msg) from msg
             elif len(a) >= 2 and isinstance(a[1], OSError):
                 err = a[1]
             else:
