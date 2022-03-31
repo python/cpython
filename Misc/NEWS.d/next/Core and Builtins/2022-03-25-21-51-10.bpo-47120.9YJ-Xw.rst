@@ -1,0 +1,2 @@
+Replaced :opcode:`JUMP_ABSOLUTE` by the relative jump :opcode:`JUMP_BACKWARD`.
+
