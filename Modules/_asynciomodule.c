@@ -2280,22 +2280,18 @@ _asyncio_Task_uncancel_impl(TaskObj *self)
 }
 
 /*[clinic input]
-_asyncio.Task._check_future
+_asyncio.Task._check_future -> bool
 
     future: object
 
 Return False if task and future loops are not compatible.
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _asyncio_Task__check_future_impl(TaskObj *self, PyObject *future)
-/*[clinic end generated code: output=2473f5b55d524bd5 input=76b4fa671a14b681]*/
+/*[clinic end generated code: output=a3bfba79295c8d57 input=3b1d6dfd6fe90aa5]*/
 {
-    int res = task_check_future_exact(self, future);
-    if (res < 0) {
-        return NULL;
-    }
-    return PyBool_FromLong(res);
+    return task_check_future_exact(self, future);
 }
 
 /*[clinic input]

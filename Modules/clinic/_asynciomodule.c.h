@@ -475,7 +475,7 @@ PyDoc_STRVAR(_asyncio_Task__check_future__doc__,
 #define _ASYNCIO_TASK__CHECK_FUTURE_METHODDEF    \
     {"_check_future", (PyCFunction)(void(*)(void))_asyncio_Task__check_future, METH_FASTCALL|METH_KEYWORDS, _asyncio_Task__check_future__doc__},
 
-static PyObject *
+static int
 _asyncio_Task__check_future_impl(TaskObj *self, PyObject *future);
 
 static PyObject *
@@ -486,13 +486,18 @@ _asyncio_Task__check_future(TaskObj *self, PyObject *const *args, Py_ssize_t nar
     static _PyArg_Parser _parser = {NULL, _keywords, "_check_future", 0};
     PyObject *argsbuf[1];
     PyObject *future;
+    int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
     future = args[0];
-    return_value = _asyncio_Task__check_future_impl(self, future);
+    _return_value = _asyncio_Task__check_future_impl(self, future);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -922,4 +927,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2d8c53296ab165b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fdb7129263a8712e input=a9049054013a1b77]*/
