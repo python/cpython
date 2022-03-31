@@ -349,11 +349,11 @@ or on combining URL components into a URL string.
    with an empty query; the RFC states that these are equivalent).
 
 
-.. function:: urljoin(base, url, allow_fragments=True, classes=SchemeClass.NONE)
+.. function:: urljoin(base, url, allow_fragments=True, classes=SchemeFlag.NONE)
 
    Construct a full ("absolute") URL by combining a "base URL"
    (*base*) with another URL (*url*), and with behavior given by a
-   ``SchemeClass`` enum.  Informally, this uses components of the base
+   ``SchemeFlag`` flag.  Informally, this uses components of the base
    URL, in particular the addressing scheme, the network location and
    (part of) the path, to provide missing components in the relative
    URL. For example:
@@ -363,7 +363,7 @@ or on combining URL components into a URL string.
       'http://www.cwi.nl/%7Eguido/FAQ.html'
 
    The *allow_fragments* argument has the same meaning and default as
-   for :func:`urlparse`. As in :func:`urlparse`, a ``SchemeClass`` may
+   for :func:`urlparse`. As in :func:`urlparse`, a ``SchemeFlag`` may
    be given to override behavior inferred by the scheme.
 
    .. note::
@@ -547,8 +547,8 @@ operating on :class:`bytes` or :class:`bytearray` objects:
 
    .. versionadded:: 3.2
 
-Special URL Behaviors and Scheme Classes
-----------------------------------------
+Special URL Behaviors and Scheme Flags
+--------------------------------------
 
 :mod:`urllib.parse` recognizes three special properties of URLs, namely relative
 addressing (used in, for instance, the ``ftp``, ``http``, or ``gopher``
