@@ -3759,7 +3759,7 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
 {
     Py_hash_t hash;
     if (!PyUnicode_CheckExact(name) ||
-        (hash = ((PyASCIIObject *) name)->hash) == -1)
+        (hash = _PyASCIIObject_CAST(name)->hash) == -1)
     {
         hash = PyObject_Hash(name);
         if (hash == -1) {
@@ -3853,7 +3853,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         struct type_cache_entry *entry = &cache->hashtable[h];
         entry->version = type->tp_version_tag;
         entry->value = res;  /* borrowed */
-        assert(((PyASCIIObject *)(name))->hash != -1);
+        assert(_PyASCIIObject_CAST(name)->hash != -1);
 #if MCACHE_STATS
         if (entry->name != Py_None && entry->name != name) {
             cache->collisions++;
@@ -8951,7 +8951,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
         if (cframe->f_lasti >= 0) {
             // MAKE_CELL and COPY_FREE_VARS have no quickened forms, so no need
             // to use _PyOpcode_Deopt here:
-            assert(_Py_OPCODE(_PyCode_CODE(co)[0]) == MAKE_CELL || 
+            assert(_Py_OPCODE(_PyCode_CODE(co)[0]) == MAKE_CELL ||
                    _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS);
             assert(PyCell_Check(firstarg));
             firstarg = PyCell_GET(firstarg);
