@@ -47,20 +47,18 @@ typedef struct _PyInterpreterFrame {
     PyCodeObject *f_code; /* Strong reference */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL */
     struct _PyInterpreterFrame *previous;
-    _Py_CODEUNIT *next_instr;
+    // NOTE: This is not necessarily the last instruction started in the given
+    // frame. Rather, it is the code unit *prior to* the *next* instruction. For
+    // example, it may be an inline CACHE entry, an instruction we just jumped
+    // over, or (in the case of a newly-created frame) a totally invalid value:
+    _Py_CODEUNIT *prev_instr;
     int stacktop;     /* Offset of TOS from localsplus  */
     bool is_entry;  // Whether this is the "root" frame for the current _PyCFrame.
     char owner;
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
-
-// NOTE: This is not necessarily the index of the last instruction started in
-// the given frame. Rather, it is the index *prior to* the *next* instruction.
-// For example, it may be the index of an inline CACHE entry, an instruction we
-// just jumped over, or (in the case of a newly-created frame) a value of -1.
-// It is here for mostly historical reasons.
 #define _PyInterpreterFrame_LASTI(IF) \
-    ((int)((IF)->next_instr - _PyCode_CODE((IF)->f_code) - 1))
+    ((int)((IF)->prev_instr - _PyCode_CODE((IF)->f_code)))
 
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
     return f->localsplus + f->f_code->co_nlocalsplus;
@@ -100,7 +98,7 @@ _PyFrame_InitializeSpecials(
     frame->f_locals = Py_XNewRef(locals);
     frame->stacktop = nlocalsplus;
     frame->frame_obj = NULL;
-    frame->next_instr = _PyCode_CODE(frame->f_code);
+    frame->prev_instr = _PyCode_CODE(frame->f_code) - 1;
     frame->is_entry = false;
     frame->owner = FRAME_OWNED_BY_THREAD;
 }

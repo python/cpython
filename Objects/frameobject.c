@@ -430,7 +430,7 @@ _PyFrame_GetState(PyFrameObject *frame)
             if (_PyInterpreterFrame_LASTI(frame->f_frame) < 0) {
                 return FRAME_CREATED;
             }
-            switch (_PyOpcode_Deopt[_Py_OPCODE(frame->f_frame->next_instr[-1])])
+            switch (_PyOpcode_Deopt[_Py_OPCODE(*frame->f_frame->prev_instr)])
             {
                 case COPY_FREE_VARS:
                 case MAKE_CELL:
@@ -605,7 +605,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     }
     /* Finally set the new lasti and return OK. */
     f->f_lineno = 0;
-    f->f_frame->next_instr = _PyCode_CODE(f->f_frame->f_code) + best_addr + 1;
+    f->f_frame->prev_instr = _PyCode_CODE(f->f_frame->f_code) + best_addr;
     return 0;
 }
 
@@ -888,7 +888,7 @@ _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
     assert(_PyOpcode_Deopt[opcode] == opcode);
     int check_oparg = 0;
     for (_Py_CODEUNIT *instruction = _PyCode_CODE(frame->f_code); 
-         instruction < frame->next_instr - 1; instruction++)
+         instruction < frame->prev_instr; instruction++)
     {
         int check_opcode = _PyOpcode_Deopt[_Py_OPCODE(*instruction)];
         check_oparg |= _Py_OPARG(*instruction);
@@ -934,7 +934,7 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
             frame->localsplus[offset + i] = o;
         }
         // COPY_FREE_VARS doesn't have inline CACHEs, either:
-        frame->next_instr = _PyCode_CODE(frame->f_code) + 1;
+        frame->prev_instr = _PyCode_CODE(frame->f_code);
     }
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);

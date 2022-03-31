@@ -1016,9 +1016,9 @@ class PyFramePtr:
 
     def _f_lasti(self):
         codeunit_p = gdb.lookup_type("_Py_CODEUNIT").pointer()
-        next_instr = self._gdbval["next_instr"]
+        prev_instr = self._gdbval["prev_instr"]
         first_instr = self._f_code().field("co_code_adaptive").cast(codeunit_p)
-        return int(next_instr - first_instr - 1)
+        return int(prev_instr - first_instr)
 
     def is_entry(self):
         return self._f_special("is_entry", bool)

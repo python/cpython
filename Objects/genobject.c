@@ -359,7 +359,7 @@ _PyGen_yf(PyGenObject *gen)
             assert(_Py_OPCODE(_PyCode_CODE(gen->gi_code)[0]) != SEND);
             return NULL;
         }
-        _Py_CODEUNIT next = *frame->next_instr;
+        _Py_CODEUNIT next = frame->prev_instr[1];
         if (_PyOpcode_Deopt[_Py_OPCODE(next)] != RESUME || _Py_OPARG(next) < 2)
         {
             /* Not in a yield from */
@@ -489,9 +489,9 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             /* Termination repetition of SEND loop */
             assert(_PyInterpreterFrame_LASTI(frame) >= 0);
             /* Backup to SEND */
-            assert(_Py_OPCODE(frame->next_instr[-2]) == SEND);
-            int jump = _Py_OPARG(frame->next_instr[-2]);
-            frame->next_instr += jump - 1;
+            assert(_Py_OPCODE(frame->prev_instr[-1]) == SEND);
+            int jump = _Py_OPARG(frame->prev_instr[-1]);
+            frame->prev_instr += jump - 1;
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);
                 Py_DECREF(val);
