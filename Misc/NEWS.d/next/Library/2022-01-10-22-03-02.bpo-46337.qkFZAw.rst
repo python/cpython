@@ -1,1 +1,1 @@
-Expose scheme-specific URL options in ``urllib.parse.urljoin`` and ``urllib.parse.urlparse`` via the enum ``urllib.parse.SchemeClass``.
+Expose scheme-specific URL options in ``urllib.parse.urljoin`` and ``urllib.parse.urlparse`` via the enum ``urllib.parse.SchemeFlag``.
