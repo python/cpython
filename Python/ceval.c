@@ -1117,6 +1117,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     return _PyEval_EvalFrame(tstate, f->f_frame, throwflag);
 }
 
+
 /* Handle signals, pending calls, GIL drop request
    and asynchronous exception */
 static int
