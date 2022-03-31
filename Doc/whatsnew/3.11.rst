@@ -524,6 +524,9 @@ CPython bytecode changes
 
 * Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
 
+* Replaced :opcode:`JUMP_NO_INTERRUPT` by the relative
+  :opcode:`JUMP_BACKWARD_NO_INTERRUPT`.
+
 Deprecated
 ==========
 
