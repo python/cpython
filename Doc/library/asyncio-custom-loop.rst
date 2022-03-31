@@ -6,7 +6,13 @@ Asyncio Extending
 =================
 
 The main direction for :mod:`asyncio` extending is writing custom *event loop*
-classes.
+classes. Asyncio has helpers that could be used to simplify this task.
+
+.. note::
+
+   Third-parties should reuse existing asyncio code with caution,
+   a new Python version is free to break backward compatibility
+   in *internal* part of API.
 
 
 Writing a Custom Event Loop
@@ -26,13 +32,6 @@ calls ``loop._make_socket_transport()`` that should be implemented by inherited 
 The ``_make_socket_transport()`` method is not documented and is considered as an
 *internal* API.
 
-
-.. note::
-
-   Third-parties should reuse existing asyncio code
-   (e.g. ``asyncio.BaseEventLoop``) with caution,
-   a new Python version is free to break backward compatibility
-   in *non-public* API.
 
 
 Future and Task private constructors
