@@ -150,7 +150,7 @@ extern "C" {
      _PyASCIIObject_CAST(op)->state.kind)
 #define _PyUnicode_GET_LENGTH(op)                       \
     (assert(_PyUnicode_CHECK(op)),                      \
-     (_PyASCIIObject_CAST(op)->length)
+     _PyASCIIObject_CAST(op)->length)
 #define _PyUnicode_DATA_ANY(op)                         \
     (_PyUnicodeObject_CAST(op)->data.any)
 
