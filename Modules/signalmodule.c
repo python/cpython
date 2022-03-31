@@ -1827,7 +1827,7 @@ _Py_CheckEmscriptenSignals(void)
     }
 }
 
-EMSCRIPTEN_KEEP_ALIVE int Py_EMSCRIPTEN_SIGNAL_HANDLING = 0;
+EMSCRIPTEN_KEEPALIVE int Py_EMSCRIPTEN_SIGNAL_HANDLING = 0;
 
 #endif // defined(__EMSCRIPTEN__)
 
