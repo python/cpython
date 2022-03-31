@@ -1161,7 +1161,7 @@ return next iterated value or raise StopIteration.");
 
 PyDoc_STRVAR(coro_throw_doc,
 "throw(value)\n\
-throw(type[,value[,traceback]])\n\ 
+throw(type[,value[,traceback]])\n\
 \n\
 Raise exception in coroutine, return next iterated value or raise\n\
 StopIteration.");
