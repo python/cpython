@@ -1145,7 +1145,14 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         }
     }
     if (encoding == NULL && self->encoding == NULL) {
-        self->encoding = _Py_GetLocaleEncodingObject();
+        const PyPreConfig *preconfig = &_PyRuntime.preconfig;
+        if (preconfig->utf8_mode) {
+            // TODO: Use _Py_STR
+            self->encoding = PyUnicode_FromString("utf-8");
+        }
+        else {
+            self->encoding = _Py_GetLocaleEncodingObject();
+        }
         if (self->encoding == NULL) {
             goto error;
         }
