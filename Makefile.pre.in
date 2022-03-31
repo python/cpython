@@ -1161,10 +1161,9 @@ Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/__phello__.spam.h:__phello__.spam \
 	Python/frozen_modules/frozen_only.h:frozen_only \
 	-o Python/deepfreeze/deepfreeze.c
-	@echo "Deepfreeze may have added some global objects,"
-	@echo "  so run 'make regen-global-objects' if necessary."
-
 # END: deepfreeze modules
+	@echo "Note: Deepfreeze may have added some global objects,"
+	@echo "      so run 'make regen-global-objects' if necessary."
 
 # We keep this renamed target around for folks with muscle memory.
 .PHONY: regen-importlib
@@ -1176,8 +1175,8 @@ regen-importlib: regen-frozen
 .PHONY: regen-global-objects
 regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
-	@echo "Global objects can be added or removed by other tools (e.g. deepfreeze), "
-	@echo "  so be sure to re-run regen-global-objects after those tools."
+	@echo "Note: Global objects can be added or removed by other tools (e.g. deepfreeze), "
+	@echo "      so be sure to re-run regen-global-objects after those tools."
 
 ############################################################################
 # ABI
