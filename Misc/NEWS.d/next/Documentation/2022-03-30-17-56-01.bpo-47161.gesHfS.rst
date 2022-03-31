@@ -1,2 +1,2 @@
-Explicitly documented that :class:`pathlib.PurePath` does not collapse
+Document that :class:`pathlib.PurePath` does not collapse
 initial double slashes because they denote UNC paths. Patch by Oleg Iarygin.
