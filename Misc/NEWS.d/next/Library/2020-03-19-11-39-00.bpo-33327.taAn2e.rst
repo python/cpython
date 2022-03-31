@@ -1,0 +1,4 @@
+Provides method :meth:`.move_messages()` of IMAP4 object, which
+moves messages among two IMAP folders. This change introduces and
+uses caching of the server’s capabilities in
+:attr:`__features_available` internal attribute.
