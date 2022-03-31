@@ -1909,14 +1909,24 @@ regen-importlib: regen-frozen
 ############################################################################
 # Global objects
 
+GLOBAL_OBJECTS_TARGETS = \
+		$(srcdir)/Include/internal/pycore_global_objects.h \
+		$(srcdir)/Include/internal/pycore_global_strings.h
+
+# The global objects will get regenerated as soon these files
+# are required, including as a prerequisite for regen-deepfreeze.
+$(GLOBAL_OBJECTS_TARGETS): generate-global-objects
+
+.PHONY: generate-global-objects
+generate-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
+
+.PHONY: generate-global-objects-after-deepfreeze
+generate-global-objects-after-deepfreeze: regen-deepfreeze $(srcdir)/Tools/scripts/generate_global_objects.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
+
 .PHONY: regen-global-objects
-regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
-	@# Run one more time after deepfreezing, to catch any globals added
-	@# there.  This is necessary because the deep-frozen code isn't
-	@# commited to the repo.
-	$(MAKE) regen-deepfreeze
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
+regen-global-objects: regen-deepfreeze generate-global-objects-after-deepfreeze
 
 ############################################################################
 # ABI

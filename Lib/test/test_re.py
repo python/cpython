@@ -2033,6 +2033,75 @@ class ReTests(unittest.TestCase):
                           {'tag': 'foo', 'text': None},
                           {'tag': 'foo', 'text': None}])
 
+    def test_MARK_PUSH_macro_bug(self):
+        # issue35859, MARK_PUSH() macro didn't protect MARK-0 if it
+        # was the only available mark.
+        self.assertEqual(re.match(r'(ab|a)*?b', 'ab').groups(), ('a',))
+        self.assertEqual(re.match(r'(ab|a)+?b', 'ab').groups(), ('a',))
+        self.assertEqual(re.match(r'(ab|a){0,2}?b', 'ab').groups(), ('a',))
+        self.assertEqual(re.match(r'(.b|a)*?b', 'ab').groups(), ('a',))
+
+    def test_MIN_UNTIL_mark_bug(self):
+        # Fixed in issue35859, reported in issue9134.
+        # JUMP_MIN_UNTIL_2 should MARK_PUSH() if in a repeat
+        s = 'axxzbcz'
+        p = r'(?:(?:a|bc)*?(xx)??z)*'
+        self.assertEqual(re.match(p, s).groups(), ('xx',))
+
+        # test-case provided by issue9134
+        s = 'xtcxyzxc'
+        p = r'((x|yz)+?(t)??c)*'
+        m = re.match(p, s)
+        self.assertEqual(m.span(), (0, 8))
+        self.assertEqual(m.span(2), (6, 7))
+        self.assertEqual(m.groups(), ('xyzxc', 'x', 't'))
+
+    def test_REPEAT_ONE_mark_bug(self):
+        # issue35859
+        # JUMP_REPEAT_ONE_1 should MARK_PUSH() if in a repeat
+        s = 'aabaab'
+        p = r'(?:[^b]*a(?=(b)|(a))ab)*'
+        m = re.match(p, s)
+        self.assertEqual(m.span(), (0, 6))
+        self.assertEqual(m.span(2), (4, 5))
+        self.assertEqual(m.groups(), (None, 'a'))
+
+        # JUMP_REPEAT_ONE_2 should MARK_PUSH() if in a repeat
+        s = 'abab'
+        p = r'(?:[^b]*(?=(b)|(a))ab)*'
+        m = re.match(p, s)
+        self.assertEqual(m.span(), (0, 4))
+        self.assertEqual(m.span(2), (2, 3))
+        self.assertEqual(m.groups(), (None, 'a'))
+
+        self.assertEqual(re.match(r'(ab?)*?b', 'ab').groups(), ('a',))
+
+    def test_MIN_REPEAT_ONE_mark_bug(self):
+        # issue35859
+        # JUMP_MIN_REPEAT_ONE should MARK_PUSH() if in a repeat
+        s = 'abab'
+        p = r'(?:.*?(?=(a)|(b))b)*'
+        m = re.match(p, s)
+        self.assertEqual(m.span(), (0, 4))
+        self.assertEqual(m.span(2), (3, 4))
+        self.assertEqual(m.groups(), (None, 'b'))
+
+        s = 'axxzaz'
+        p = r'(?:a*?(xx)??z)*'
+        self.assertEqual(re.match(p, s).groups(), ('xx',))
+
+    def test_ASSERT_NOT_mark_bug(self):
+        # Fixed in issue35859, reported in issue725149.
+        # JUMP_ASSERT_NOT should LASTMARK_SAVE()
+        self.assertEqual(re.match(r'(?!(..)c)', 'ab').groups(), (None,))
+
+        # JUMP_ASSERT_NOT should MARK_PUSH() if in a repeat
+        m = re.match(r'((?!(ab)c)(.))*', 'abab')
+        self.assertEqual(m.span(), (0, 4))
+        self.assertEqual(m.span(1), (3, 4))
+        self.assertEqual(m.span(3), (3, 4))
+        self.assertEqual(m.groups(), ('b', None, 'b'))
+
     def test_bug_40736(self):
         with self.assertRaisesRegex(TypeError, "got 'int'"):
             re.search("x*", 5)
