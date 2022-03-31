@@ -657,7 +657,7 @@ except NameError:
         """Return the charset that the user is likely using."""
         if sys.flags.utf8_mode:
             return 'UTF-8'
-        return get_encoding()
+        return getencoding()
 else:
     # On Unix, if CODESET is available, use that.
     def getpreferredencoding(do_setlocale=True):
@@ -667,7 +667,7 @@ else:
             return 'UTF-8'
 
         if not do_setlocale:
-            return get_encoding()
+            return getencoding()
 
         old_loc = setlocale(LC_CTYPE)
         try:
@@ -675,7 +675,7 @@ else:
                 setlocale(LC_CTYPE, "")
             except Error:
                 pass
-            return get_encoding()
+            return getencoding()
         finally:
             setlocale(LC_CTYPE, old_loc)
 
