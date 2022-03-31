@@ -342,6 +342,9 @@ There are these calling conventions:
    hold a reference to the module or object instance.  In all cases the second
    parameter will be ``NULL``.
 
+   The function must have 2 parameters. Since the second parameter is unused,
+   :c:macro:`Py_UNUSED` can be used to prevent a compiler warning.
+
 
 .. data:: METH_O
 
