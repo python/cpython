@@ -67,7 +67,6 @@ extern "C" {
 #define JUMP_FORWARD                           110
 #define JUMP_IF_FALSE_OR_POP                   111
 #define JUMP_IF_TRUE_OR_POP                    112
-#define JUMP_ABSOLUTE                          113
 #define POP_JUMP_IF_FALSE                      114
 #define POP_JUMP_IF_TRUE                       115
 #define LOAD_GLOBAL                            116
@@ -94,6 +93,7 @@ extern "C" {
 #define LOAD_DEREF                             137
 #define STORE_DEREF                            138
 #define DELETE_DEREF                           139
+#define JUMP_BACKWARD                          140
 #define CALL_FUNCTION_EX                       142
 #define EXTENDED_ARG                           144
 #define LIST_APPEND                            145
@@ -135,7 +135,7 @@ extern "C" {
 #define COMPARE_OP_FLOAT_JUMP                   27
 #define COMPARE_OP_INT_JUMP                     28
 #define COMPARE_OP_STR_JUMP                     29
-#define JUMP_ABSOLUTE_QUICK                     34
+#define JUMP_BACKWARD_QUICK                     34
 #define LOAD_ATTR_ADAPTIVE                      36
 #define LOAD_ATTR_INSTANCE_VALUE                37
 #define LOAD_ATTR_MODULE                        38
@@ -168,7 +168,7 @@ extern "C" {
 #define PRECALL_NO_KW_METHOD_DESCRIPTOR_O       79
 #define PRECALL_NO_KW_STR_1                     80
 #define PRECALL_NO_KW_TUPLE_1                   81
-#define PRECALL_NO_KW_TYPE_1                   140
+#define PRECALL_NO_KW_TYPE_1                   113
 #define PRECALL_PYFUNC                         141
 #define RESUME_QUICK                           143
 #define STORE_ATTR_ADAPTIVE                    150
@@ -196,7 +196,7 @@ static const uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     536870912U,
     134234112U,
-    0U,
+    4096U,
     0U,
     0U,
     0U,
@@ -205,8 +205,8 @@ static const uint32_t _PyOpcode_Jump[8] = {
     0U,
     0U,
     536870912U,
-    2316288000U,
-    67U,
+    2316156928U,
+    4163U,
     0U,
     0U,
     0U,
@@ -289,8 +289,8 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [IMPORT_NAME] = IMPORT_NAME,
     [IMPORT_STAR] = IMPORT_STAR,
     [IS_OP] = IS_OP,
-    [JUMP_ABSOLUTE] = JUMP_ABSOLUTE,
-    [JUMP_ABSOLUTE_QUICK] = JUMP_ABSOLUTE,
+    [JUMP_BACKWARD] = JUMP_BACKWARD,
+    [JUMP_BACKWARD_QUICK] = JUMP_BACKWARD,
     [JUMP_FORWARD] = JUMP_FORWARD,
     [JUMP_IF_FALSE_OR_POP] = JUMP_IF_FALSE_OR_POP,
     [JUMP_IF_NOT_EG_MATCH] = JUMP_IF_NOT_EG_MATCH,

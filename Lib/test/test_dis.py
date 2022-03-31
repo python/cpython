@@ -149,7 +149,7 @@ dis_bug708901 = """\
         >> FOR_ITER                 2 (to 40)
            STORE_FAST               0 (res)
 
-%3d        JUMP_ABSOLUTE           17 (to 34)
+%3d        JUMP_BACKWARD            3 (to 34)
 
 %3d     >> LOAD_CONST               0 (None)
            RETURN_VALUE
@@ -354,7 +354,7 @@ dis_compound_stmt_str = """\
            BINARY_OP               13 (+=)
            STORE_NAME               0 (x)
 
-  2        JUMP_ABSOLUTE            4 (to 8)
+  2        JUMP_BACKWARD            6 (to 8)
 """
 
 dis_traceback = """\
@@ -574,7 +574,7 @@ Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
            LOAD_FAST                1 (z)
            BINARY_OP                0 (+)
            LIST_APPEND              2
-           JUMP_ABSOLUTE            4 (to 8)
+           JUMP_BACKWARD            8 (to 8)
         >> RETURN_VALUE
 """ % (dis_nested_1,
        __file__,
@@ -1227,14 +1227,14 @@ expected_opinfo_jumpy = [
   Instruction(opname='LOAD_CONST', opcode=100, arg=2, argval=4, argrepr='4', offset=68, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='COMPARE_OP', opcode=107, arg=0, argval='<', argrepr='<', offset=70, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_JUMP_IF_FALSE', opcode=114, arg=40, argval=80, argrepr='to 80', offset=76, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='JUMP_ABSOLUTE', opcode=113, arg=16, argval=32, argrepr='to 32', offset=78, starts_line=6, is_jump_target=False, positions=None),
+  Instruction(opname='JUMP_BACKWARD', opcode=140, arg=24, argval=32, argrepr='to 32', offset=78, starts_line=6, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=80, starts_line=7, is_jump_target=True, positions=None),
   Instruction(opname='LOAD_CONST', opcode=100, arg=3, argval=6, argrepr='6', offset=82, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='COMPARE_OP', opcode=107, arg=4, argval='>', argrepr='>', offset=84, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_JUMP_IF_FALSE', opcode=114, arg=48, argval=96, argrepr='to 96', offset=90, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=92, starts_line=8, is_jump_target=False, positions=None),
   Instruction(opname='JUMP_FORWARD', opcode=110, arg=16, argval=128, argrepr='to 128', offset=94, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='JUMP_ABSOLUTE', opcode=113, arg=16, argval=32, argrepr='to 32', offset=96, starts_line=7, is_jump_target=True, positions=None),
+  Instruction(opname='JUMP_BACKWARD', opcode=140, arg=33, argval=32, argrepr='to 32', offset=96, starts_line=7, is_jump_target=True, positions=None),
   Instruction(opname='LOAD_GLOBAL', opcode=116, arg=3, argval='print', argrepr='NULL + print', offset=98, starts_line=10, is_jump_target=True, positions=None),
   Instruction(opname='LOAD_CONST', opcode=100, arg=4, argval='I can haz else clause?', argrepr="'I can haz else clause?'", offset=110, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='PRECALL', opcode=166, arg=1, argval=1, argrepr='', offset=112, starts_line=None, is_jump_target=False, positions=None),
@@ -1255,7 +1255,7 @@ expected_opinfo_jumpy = [
   Instruction(opname='LOAD_CONST', opcode=100, arg=3, argval=6, argrepr='6', offset=174, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='COMPARE_OP', opcode=107, arg=4, argval='>', argrepr='>', offset=176, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_JUMP_IF_FALSE', opcode=114, arg=93, argval=186, argrepr='to 186', offset=182, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='JUMP_ABSOLUTE', opcode=113, arg=64, argval=128, argrepr='to 128', offset=184, starts_line=15, is_jump_target=False, positions=None),
+  Instruction(opname='JUMP_BACKWARD', opcode=140, arg=29, argval=128, argrepr='to 128', offset=184, starts_line=15, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=186, starts_line=16, is_jump_target=True, positions=None),
   Instruction(opname='LOAD_CONST', opcode=100, arg=2, argval=4, argrepr='4', offset=188, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='COMPARE_OP', opcode=107, arg=0, argval='<', argrepr='<', offset=190, starts_line=None, is_jump_target=False, positions=None),
