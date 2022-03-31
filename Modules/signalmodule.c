@@ -1829,7 +1829,7 @@ _Py_CheckEmscriptenSignals(void)
 
 EMSCRIPTEN_KEEP_ALIVE int Py_EMSCRIPTEN_SIGNAL_HANDLING = 0;
 
-#endif
+#endif // defined(__EMSCRIPTEN__)
 
 /* Declared in cpython/pyerrors.h */
 int
