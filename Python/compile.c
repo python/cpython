@@ -72,13 +72,13 @@
 
 /* Pseudo-instructions used in the compiler,
  * but turned into NOPs by the assembler. */
-#define SETUP_FINALLY 256
-#define SETUP_CLEANUP 257
-#define SETUP_WITH 258
-#define POP_BLOCK 259
-#define JUMP 260
+#define SETUP_FINALLY -1
+#define SETUP_CLEANUP -2
+#define SETUP_WITH -3
+#define POP_BLOCK -4
+#define JUMP -5
 
-#define IS_VIRTUAL_OPCODE(opcode) ((opcode) >= 256)
+#define IS_VIRTUAL_OPCODE(opcode) ((opcode) < 0)
 
 #define IS_TOP_LEVEL_AWAIT(c) ( \
         (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
@@ -117,7 +117,7 @@ is_bit_set_in_table(const uint32_t *table, int bitindex) {
      * Word is indexed by (bitindex>>ln(size of int in bits)).
      * Bit within word is the low bits of bitindex.
      */
-    if (bitindex < 256) {
+    if (bitindex >= 0) {
         uint32_t word = table[bitindex >> LOG_BITS_PER_INT];
         return (word >> (bitindex & MASK_LOW_LOG_BITS)) & 1;
     }
@@ -1477,7 +1477,7 @@ static int add_jump_to_block(struct compiler *c, int opcode,
                              int col_offset, int end_col_offset,
                              basicblock *target)
 {
-    assert(HAS_ARG(opcode));
+    assert(HAS_ARG(opcode) || IS_VIRTUAL_OPCODE(opcode));
     assert(target != NULL);
 
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
