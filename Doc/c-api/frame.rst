@@ -30,6 +30,17 @@ See also :ref:`Reflection <reflection>`.
    .. versionadded:: 3.9
 
 
+.. c:function:: PyObject* PyFrame_GetBuiltins(PyFrameObject *frame)
+
+   Get the *frame*'s ``f_builtins`` attribute.
+
+   Return a :term:`strong reference`. The result cannot be ``NULL``.
+
+   *frame* must not be ``NULL``.
+
+   .. versionadded:: 3.11
+
+
 .. c:function:: PyCodeObject* PyFrame_GetCode(PyFrameObject *frame)
 
    Get the *frame* code.
@@ -39,6 +50,30 @@ See also :ref:`Reflection <reflection>`.
    *frame* must not be ``NULL``. The result (frame code) cannot be ``NULL``.
 
    .. versionadded:: 3.9
+
+
+.. c:function:: PyObject* PyFrame_GetGenerator(PyFrameObject *frame)
+
+   Get the generator, coroutine, or async generator that owns this frame,
+   or ``NULL`` if this frame is not owned by a generator.
+   Does not raise an exception, even if the return value is ``NULL``.
+
+   Return a :term:`strong reference`, or ``NULL``.
+
+   *frame* must not be ``NULL``.
+
+   .. versionadded:: 3.11
+
+
+.. c:function:: PyObject* PyFrame_GetGlobals(PyFrameObject *frame)
+
+   Get the *frame*'s ``f_globals`` attribute.
+
+   Return a :term:`strong reference`. The result cannot be ``NULL``.
+
+   *frame* must not be ``NULL``.
+
+   .. versionadded:: 3.11
 
 
 .. c:function:: PyObject* PyFrame_GetLocals(PyFrameObject *frame)
