@@ -1301,15 +1301,15 @@ eval_frame_handle_pending(PyThreadState *tstate)
 extern int Py_EMSCRIPTEN_SIGNAL_HANDLING;
 void _Py_CheckEmscriptenSignals(void);
 
-static int
-emscripten_signal_clock = 50;
+#define PY_EMSCRIPTEN_SIGNAL_INTERVAL 50
+static int emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
 
 static void
 CHECK_EMSCRIPTEN_SIGNALS()
 {
     emscripten_signal_clock--;
     if (emscripten_signal_clock == 0) {
-        emscripten_signal_clock = 50;
+        emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
         _Py_CheckEmscriptenSignals();
     }
 }

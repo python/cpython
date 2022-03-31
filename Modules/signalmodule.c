@@ -1822,11 +1822,11 @@ int Py_EMSCRIPTEN_SIGNAL_HANDLING = 0;
 int
 _PyErr_CheckSignalsTstate(PyThreadState *tstate)
 {
-    #if defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__)
     if (Py_EMSCRIPTEN_SIGNAL_HANDLING) {
        _Py_CheckEmscriptenSignals();
     }
-    #endif
+#endif
 
     if (!_Py_atomic_load(&is_tripped)) {
         return 0;
