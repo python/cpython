@@ -26,7 +26,7 @@ Resource Locators. It supports the following URL schemes: ``file``, ``ftp``,
 ``news``, ``nntp``, ``prospero``, ``rsync``, ``rtsp``, ``rtspu``, ``sftp``,
 ``shttp``, ``sip``, ``sips``, ``snews``, ``svn``, ``svn+ssh``, ``telnet``,
 ``wais``, ``ws``, ``wss``. The behavior of other schemes may be controlled with
-a collection of ``UrlClass`` enums passed to dependent functions.
+a ``UrlFlag`` passed to dependent functions.
 
 The :mod:`urllib.parse` module defines functions that fall into two broad
 categories: URL parsing and URL quoting. These are covered in detail in
@@ -349,7 +349,7 @@ or on combining URL components into a URL string.
    with an empty query; the RFC states that these are equivalent).
 
 
-.. function:: urljoin(base, url, allow_fragments=True, classes=SchemeFlag.NONE)
+.. function:: urljoin(base, url, allow_fragments=True, classes=SchemeFlag(0))
 
    Construct a full ("absolute") URL by combining a "base URL"
    (*base*) with another URL (*url*), and with behavior given by a
@@ -577,10 +577,10 @@ each are specified by three lists in :mod:`urllib.parse`:
 * ``urllib.uses_netloc``
 * ``urllib.uses_params``
 
-In addition, any function that takes a ``classes`` parameter (for instance,
-:func:`urlparse` and :func:`urljoin`) may override the behavior of the uses
-lists, for instance, parsing a custom or widely unused scheme with the same
-behavior as that of HTTP:
+In addition, any function that takes a ``flags`` parameter (for
+instance, :func:`urlparse` and :func:`urljoin`) may override the
+behavior of the ``uses`` lists, for instance, parsing a custom or
+widely unused scheme with the same behavior as that of HTTP:
 
    >>> from urllib.parse import urljoin, SchemeFlag
    >>> urljoin(
@@ -589,7 +589,7 @@ behavior as that of HTTP:
    'my-protocol://example.org/post/y/'
 
 For reference, the following three scheme classes are present (exactly
-corresponding to the uses lists):
+corresponding to the ``uses`` lists):
 
 * ``urllib.SchemeFlag.RELATIVE``
 * ``urllib.SchemeFlag.NETLOC``
