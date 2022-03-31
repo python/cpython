@@ -1176,11 +1176,8 @@ regen-importlib: regen-frozen
 .PHONY: regen-global-objects
 regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
-
-# Note that other code generation in our workflow may add or remove
-# global objects.  "make regen-global-objects" should be run after each.
-# This includes when it happens as part of the build process,
-# e.g. deepfreeze, which can cause the build to fail.
+	@echo "Global objects can be added or removed by other tools (e.g. deepfreeze), "
+	@echo "  so be sure to re-run regen-global-objects after those tools."
 
 ############################################################################
 # ABI
