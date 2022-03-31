@@ -1471,9 +1471,8 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
 
     Py_INCREF(pattern);
     self->pattern = pattern;
-
+    self->repeat_count = repeat_count;
     self->flags = flags;
-
     self->groups = groups;
 
     if (PyDict_GET_SIZE(groupindex) > 0) {
@@ -1838,7 +1837,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, PatternObject *self)
         case SRE_OP_REPEAT:
         case SRE_OP_POSSESSIVE_REPEAT:
             {
-                SRE_CODE op1 = op, min, max;
+                SRE_CODE op1 = op, min, max, repeat_index, _fields;
                 GET_SKIP;
                 GET_ARG; min = arg;
                 GET_ARG; max = arg;
@@ -1846,9 +1845,17 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, PatternObject *self)
                     FAIL;
                 if (max > SRE_MAXREPEAT)
                     FAIL;
-                if (!_validate_inner(code, code+skip-3, self))
+                if (op1 != SRE_OP_POSSESSIVE_REPEAT) {
+                    GET_ARG; repeat_index = arg;
+                    if (repeat_index >= (size_t)self->repeat_count)
+                        FAIL;
+                    _fields = 4;
+                } else {
+                    _fields = 3;
+                }
+                if (!_validate_inner(code, code+skip-_fields, self))
                     FAIL;
-                code += skip-3;
+                code += skip-_fields;
                 GET_OP;
                 if (op1 == SRE_OP_POSSESSIVE_REPEAT) {
                     if (op != SRE_OP_SUCCESS)
@@ -1966,6 +1973,7 @@ static int
 _validate_outer(SRE_CODE *code, SRE_CODE *end, PatternObject *self)
 {
     if (self->groups < 0 || (size_t)self->groups > SRE_MAXGROUPS ||
+        self->repeat_count < 0 ||
         code >= end || end[-1] != SRE_OP_SUCCESS)
         FAIL;
     return _validate_inner(code, end-1, self);
