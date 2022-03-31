@@ -1,0 +1,2 @@
+Add SOABI ``wasm32-emscripten`` for Emscripten and ``wasm32-wasi`` for WASI
+on 32bit WASM as well as ``wasm64`` counter parts.
