@@ -39,8 +39,7 @@ PyFrame_GetLineNumber(PyFrameObject *f)
         return f->f_lineno;
     }
     else {
-        int addr = _PyInterpreterFrame_LASTI(f->f_frame) * sizeof(_Py_CODEUNIT);
-        return PyCode_Addr2Line(f->f_frame->f_code, addr);
+        return _PyInterpreterFrame_GetLine(f->f_frame);
     }
 }
 

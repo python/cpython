@@ -184,6 +184,7 @@ void _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
 _PyInterpreterFrame *
 _PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func);
 
+int _PyInterpreterFrame_GetLine(_PyInterpreterFrame *frame);
 
 static inline
 PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)

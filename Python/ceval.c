@@ -5505,10 +5505,8 @@ handle_eval_breaker:
 #else
         default:
 #endif
-            ;
-            int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
-            int line = PyCode_Addr2Line(frame->f_code, addr);
-            fprintf(stderr, "XXX lineno: %d, opcode: %d\n", line,  opcode);
+            fprintf(stderr, "XXX lineno: %d, opcode: %d\n",
+                    _PyInterpreterFrame_GetLine(frame),  opcode);
             _PyErr_SetString(tstate, PyExc_SystemError, "unknown opcode");
             goto error;
 
@@ -7702,8 +7700,7 @@ dtrace_function_entry(_PyInterpreterFrame *frame)
     PyCodeObject *code = frame->f_code;
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
-    int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
-    lineno = PyCode_Addr2Line(frame->f_code, addr);
+    lineno = _PyInterpreterFrame_GetLine(frame);
 
     PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
 }
