@@ -302,10 +302,6 @@ _PYTHON_HOST_PLATFORM=@_PYTHON_HOST_PLATFORM@
 BUILD_GNU_TYPE=	@build@
 HOST_GNU_TYPE=	@host@
 
-# Tcl and Tk config info from --with-tcltk-includes and -libs options
-TCLTK_INCLUDES=	@TCLTK_INCLUDES@
-TCLTK_LIBS=	@TCLTK_LIBS@
-
 # The task to run while instrumented when building the profile-opt target.
 # To speed up profile generation, we don't run the full unit test suite
 # by default. The default is "-m test --pgo". To run more tests, use
@@ -736,10 +732,8 @@ sharedmods: $(BUILDPYTHON) pybuilddir.txt @LIBMPDEC_INTERNAL@ @LIBEXPAT_INTERNAL
 	    *) quiet="";; \
 	esac; \
 	echo "$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
-		_TCLTK_INCLUDES='$(TCLTK_INCLUDES)' _TCLTK_LIBS='$(TCLTK_LIBS)' \
 		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build"; \
 	$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
-		_TCLTK_INCLUDES='$(TCLTK_INCLUDES)' _TCLTK_LIBS='$(TCLTK_LIBS)' \
 		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build
 
 
@@ -1136,10 +1130,7 @@ regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES_IN)
 # Deepfreeze targets
 
 .PHONY: regen-deepfreeze
-regen-deepfreeze:
-	@# Possibly generate globals first, to make sure _bootstrap_python builds.
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
-	$(MAKE) $(DEEPFREEZE_OBJS)
+regen-deepfreeze: $(DEEPFREEZE_OBJS)
 
 DEEPFREEZE_DEPS=$(srcdir)/Tools/scripts/deepfreeze.py $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
 
@@ -1180,12 +1171,24 @@ regen-importlib: regen-frozen
 ############################################################################
 # Global objects
 
-.PHONY: regen-global-objects
-regen-global-objects: regen-deepfreeze
-	@# We already ran in once, before deepfreezing, to make sure
-	@# _bootstrap_python builds.  Now we run it again to catch any
-	@# remaining globals, including those added by deepfreeze.
+GLOBAL_OBJECTS_TARGETS = \
+		$(srcdir)/Include/internal/pycore_global_objects.h \
+		$(srcdir)/Include/internal/pycore_global_strings.h
+
+# The global objects will get regenerated as soon these files
+# are required, including as a prerequisite for regen-deepfreeze.
+$(GLOBAL_OBJECTS_TARGETS): generate-global-objects
+
+.PHONY: generate-global-objects
+generate-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
+
+.PHONY: generate-global-objects-after-deepfreeze
+generate-global-objects-after-deepfreeze: regen-deepfreeze $(srcdir)/Tools/scripts/generate_global_objects.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
+
+.PHONY: regen-global-objects
+regen-global-objects: regen-deepfreeze generate-global-objects-after-deepfreeze
 
 ############################################################################
 # ABI
