@@ -2200,7 +2200,8 @@ handle_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            frame->next_instr += INLINE_CACHE_ENTRIES_BINARY_SUBSCR;
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            frame->next_instr = next_instr;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             CALL_STAT_INC(inlined_py_calls);
@@ -4615,7 +4616,8 @@ handle_eval_breaker:
                     goto error;
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                frame->next_instr += INLINE_CACHE_ENTRIES_CALL;
+                JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+                frame->next_instr = next_instr;
                 new_frame->previous = frame;
                 cframe.current_frame = frame = new_frame;
                 CALL_STAT_INC(inlined_py_calls);
@@ -4720,7 +4722,8 @@ handle_eval_breaker:
             }
             STACK_SHRINK(2-is_meth);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            frame->next_instr += INLINE_CACHE_ENTRIES_CALL;
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            frame->next_instr = next_instr;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             goto start_frame;
@@ -4760,7 +4763,8 @@ handle_eval_breaker:
             }
             STACK_SHRINK(2-is_meth);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            frame->next_instr += INLINE_CACHE_ENTRIES_CALL;
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            frame->next_instr = next_instr;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             goto start_frame;
@@ -7715,7 +7719,7 @@ dtrace_function_return(_PyInterpreterFrame *frame)
     PyCodeObject *code = frame->f_code;
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
-    lineno = PyCode_Addr2Line(frame->f_code, _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT));
+    lineno = _PyInterpreterFrame_GetLine(frame);
 
     PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
 }

@@ -352,7 +352,7 @@ _PyGen_yf(PyGenObject *gen)
     if (gen->gi_frame_state < FRAME_CLEARED) {
         _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
 
-        if (_PyInterpreterFrame_LASTI(frame) < 1) {
+        if (gen->gi_frame_state == FRAME_CREATED) {
             /* Return immediately if the frame didn't start yet. SEND
                always come after LOAD_CONST: a code object should not start
                with SEND */

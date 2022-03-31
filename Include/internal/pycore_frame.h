@@ -54,6 +54,11 @@ typedef struct _PyInterpreterFrame {
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
 
+// NOTE: This is not necessarily the index of the last instruction started in
+// the given frame. Rather, it is the index *prior to* the *next* instruction.
+// For example, it may the offset of an inline CACHE entry, an instruction we
+// just jumped over, or (in the case of a newly-created frame) a value of -1.
+// It is here for mostly historical reasons.
 #define _PyInterpreterFrame_LASTI(IF) \
     ((int)((IF)->next_instr - _PyCode_CODE((IF)->f_code) - 1))
 
