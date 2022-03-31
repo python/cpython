@@ -5,16 +5,20 @@
 Custom Event Loop Helpers
 =========================
 
-Asyncio can be extended by a custom event loop (and event loop policy) implemented by
-third-party libraries.
+Asyncio can be extended by writing a custom *event loop* classes.
 
 
 Writing a Custom Event Loop
 ===========================
 
-A custom loop can inherit :class:`asyncio.BaseEventLoop` and get for free many loop
-methods. In turn, the base event loop requires some private methods defined by a
-successor.
+:class:`asyncio.AbstractEventLoop` declares very many methods.  Writing all them from
+scratch is a tedious job.
+
+A loop can get many common function implementations for free by inheriting from
+:class:`asyncio.BaseEventLoop`.
+
+In turn, the successor should implement a buch of *private* methods declared but not
+implemented by defined by :class:`asyncio.BaseEventLoop`.
 
 For example, ``loop.create_connection()`` checks arguments, resolves DNS addresses, and
 calls ``loop._make_socket_transport()`` that should be implemented by inherited class.
@@ -68,25 +72,22 @@ visible by :func:`asyncio.get_tasks` and :func:`asyncio.current_task`:
 
    Call the function from a task constructor.
 
-
 .. function:: _unregister_task(task)
 
    Unregister a *task* from *asyncio* internal structures.
 
-   Could be called from a task ``__del__`` method or when a task is about to finish (or
-   get cancelled).
-
+   The function should be called when a task is about to finish.
 
 .. function:: _enter_task(loop, task)
 
    Switch the current task to the *task* argument.
 
    Call the function just before executing a portion of embedded *coroutine*
-   (``coro.send()`` or ``coro.throw()``).
-
+   (:meth:`coroutine.send` or :meth:`coroutine.throw`).
 
 .. function:: _leave_task(loop, task)
 
    Switch the current task back from *task* to ``None``.
 
-   Call the function just after ``coro.send()`` or ``coro.throw()`` execution.
+   Call the function just after :meth:`coroutine.send` or :meth:`coroutine.throw`
+   execution.
