@@ -17,7 +17,7 @@ scratch is a tedious job.
 A loop can get many common function implementations for free by inheriting from
 :class:`asyncio.BaseEventLoop`.
 
-In turn, the successor should implement a buch of *private* methods declared but not
+In turn, the successor should implement a bunch of *private* methods declared but not
 implemented by defined by :class:`asyncio.BaseEventLoop`.
 
 For example, ``loop.create_connection()`` checks arguments, resolves DNS addresses, and
@@ -38,7 +38,7 @@ Future and Task private constructors
 ====================================
 
 :class:`asyncio.Future` and :class:`asyncio.Task` should be never created directly,
-plase use corresponding :meth:`loop.create_future` and :meth:`loop.create_task`,
+please use corresponding :meth:`loop.create_future` and :meth:`loop.create_task`,
 or :func:`asyncio.create_task` factories instead.
 
 However, third-party *event loops* may *reuse* built-in future and task implementations
