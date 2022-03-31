@@ -1161,9 +1161,8 @@ Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/__phello__.spam.h:__phello__.spam \
 	Python/frozen_modules/frozen_only.h:frozen_only \
 	-o Python/deepfreeze/deepfreeze.c
-	@# The script may have added or removed global object definitions,
-	@# so the global objects must be regenerated.
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
+	@echo "Deepfreeze may have added some global objects,"
+	@echo "  so run 'make regen-global-objects' if necessary."
 
 # END: deepfreeze modules
 
@@ -1180,10 +1179,8 @@ regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
 
 # Note that other code generation in our workflow may add or remove
 # global objects.  "make regen-global-objects" should be run after each.
-# In the case where that happens during a build, regen-global-objects
-# should be explicitly run immediately after the code generation
-# completes and before the generated code is used.  For an example, see
-# the Python/deepfreeze/deepfreeze.c target (AKA regen-deepfreeze).
+# This includes when it happens as part of the build process,
+# e.g. deepfreeze, which can cause the build to fail.
 
 ############################################################################
 # ABI
