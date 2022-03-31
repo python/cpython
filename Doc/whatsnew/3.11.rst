@@ -868,6 +868,9 @@ New Features
   :c:func:`PyFloat_Unpack8`.
   (Contributed by Victor Stinner in :issue:`46906`.)
 
+* Add new functions to get frame object attributes:
+  :c:func:`PyFrame_GetBuiltins`, :c:func:`PyFrame_GetGenerator`,
+  :c:func:`PyFrame_GetGlobals`.
 
 Porting to Python 3.11
 ----------------------
@@ -985,13 +988,13 @@ Porting to Python 3.11
 
   * ``f_back``: use :c:func:`PyFrame_GetBack`.
   * ``f_blockstack``: removed.
-  * ``f_builtins``: use ``PyObject_GetAttrString((PyObject*)frame, "f_builtins")``.
+  * ``f_builtins``: use :c:func:`PyFrame_GetBuiltins`.
   * ``f_code``: use :c:func:`PyFrame_GetCode`.
-  * ``f_gen``: removed.
-  * ``f_globals``: use ``PyObject_GetAttrString((PyObject*)frame, "f_globals")``.
+  * ``f_gen``: use :c:func:`PyFrame_GetGenerator`.
+  * ``f_globals``: use :c:func:`PyFrame_GetGlobals`.
   * ``f_iblock``: removed.
   * ``f_lasti``: use ``PyObject_GetAttrString((PyObject*)frame, "f_lasti")``.
-    Code using ``f_lasti`` with ``PyCode_Addr2Line()`` must use
+    Code using ``f_lasti`` with ``PyCode_Addr2Line()`` should use
     :c:func:`PyFrame_GetLineNumber` instead.
   * ``f_lineno``: use :c:func:`PyFrame_GetLineNumber`
   * ``f_locals``: use :c:func:`PyFrame_GetLocals`.
