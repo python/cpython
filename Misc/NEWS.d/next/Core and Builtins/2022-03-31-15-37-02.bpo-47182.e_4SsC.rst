@@ -1,0 +1,2 @@
+Fix a crash when using a named unicode character like ``"\N{digit nine}"``
+after the main interpreter has been initialized a second time.
