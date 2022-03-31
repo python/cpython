@@ -687,8 +687,8 @@ do_fork_exec(char *const exec_array[],
         pid = vfork();
         if (pid == -1) {
             /* If vfork() fails, fall back to using fork(). When it isn't
-             * allowed from a process (such as pid==1 init), vfork can return
-             * -1 with errno EINVAL. https://bugs.python.org/issue47151. */
+             * allowed in a process by the kernel, vfork can return -1
+             * with errno EINVAL. https://bugs.python.org/issue47151. */
             pid = fork();
         }
     } else
