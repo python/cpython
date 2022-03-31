@@ -2218,7 +2218,7 @@ handle_eval_breaker:
             Py_DECREF(v);
             if (err != 0)
                 goto error;
-            PREDICT(JUMP_BACKWARD);
+            PREDICT(JUMP_BACKWARD_QUICK);
             DISPATCH();
         }
 
@@ -2230,7 +2230,7 @@ handle_eval_breaker:
             Py_DECREF(v);
             if (err != 0)
                 goto error;
-            PREDICT(JUMP_BACKWARD);
+            PREDICT(JUMP_BACKWARD_QUICK);
             DISPATCH();
         }
 
@@ -3396,7 +3396,7 @@ handle_eval_breaker:
             if (_PyDict_SetItem_Take2((PyDictObject *)map, key, value) != 0) {
                 goto error;
             }
-            PREDICT(JUMP_BACKWARD);
+            PREDICT(JUMP_BACKWARD_QUICK);
             DISPATCH();
         }
 
@@ -3927,7 +3927,6 @@ handle_eval_breaker:
         }
 
         TARGET(JUMP_BACKWARD) {
-            PREDICTED(JUMP_BACKWARD);
             _PyCode_Warmup(frame->f_code);
             JUMP_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
         }
