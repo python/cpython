@@ -38,7 +38,7 @@ URL Parsing
 The URL parsing functions focus on splitting a URL string into its components,
 or on combining URL components into a URL string.
 
-.. function:: urlparse(urlstring, scheme='', allow_fragments=True, classes=set())
+.. function:: urlparse(urlstring, scheme='', allow_fragments=True, flags=SchemeFlag(0))
 
    Parse a URL into six components with respect to given scheme classes,
    returning a 6-item :term:`named tuple`. This corresponds to the general
@@ -58,10 +58,10 @@ or on combining URL components into a URL string.
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
 
-      >>> from urllib.parse import urlparse, SchemeFlag
+      >>> from urllib.parse import urlparse, PARAMS
       >>> urlparse("scheme://netloc/path;parameters?query#fragment")
       ParseResult(scheme='scheme', netloc='netloc', path='/path;parameters', params='', query='query', fragment='fragment')
-      >>> urlparse("scheme://netloc/path;parameters?query#fragment", flags=SchemeFlag.PARAMS)
+      >>> urlparse("scheme://netloc/path;parameters?query#fragment", flags=PARAMS)
       ParseResult(scheme='scheme', netloc='netloc', path='/path', params='parameters', query='query', fragment='fragment')
       >>> o = urlparse("http://docs.python.org:80/3/library/urllib.parse.html?"
       ...              "highlight=params#url-parsing")
@@ -582,18 +582,18 @@ instance, :func:`urlparse` and :func:`urljoin`) may override the
 behavior of the ``uses`` lists, for instance, parsing a custom or
 widely unused scheme with the same behavior as that of HTTP:
 
-   >>> from urllib.parse import urljoin, SchemeFlag
+   >>> from urllib.parse import urljoin, NETLOC, RELATIVE
    >>> urljoin(
    ...     'my-protocol://example.org/post/x/', '../y/',
-   ...     flags=(SchemeFlag.NETLOC | SchemeFlag.RELATIVE))
+   ...     flags=(NETLOC | RELATIVE))
    'my-protocol://example.org/post/y/'
 
 For reference, the following three scheme classes are present (exactly
 corresponding to the ``uses`` lists):
 
-* ``urllib.SchemeFlag.RELATIVE``
-* ``urllib.SchemeFlag.NETLOC``
-* ``urllib.SchemeFlag.PARAMS``
+* ``urllib.RELATIVE``
+* ``urllib.NETLOC``
+* ``urllib.PARAMS``
 
 URL Quoting
 -----------

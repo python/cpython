@@ -39,7 +39,8 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "urlsplit", "urlunsplit", "urlencode", "parse_qs",
            "parse_qsl", "quote", "quote_plus", "quote_from_bytes",
            "unquote", "unquote_plus", "unquote_to_bytes",
-           "DefragResult", "ParseResult", "SplitResult", "SchemeFlag",
+           "DefragResult", "ParseResult", "SplitResult",
+           "SchemeFlag", "RELATIVE", "NETLOC", "PARAMS",
            "DefragResultBytes", "ParseResultBytes", "SplitResultBytes"]
 
 # A classification of schemes.
@@ -56,6 +57,14 @@ class SchemeFlag(Flag):
     RELATIVE = auto()
     NETLOC = auto()
     PARAMS = auto()
+
+    def __repr__(self):
+        return f'{self.__module__}.{self._name_}'
+
+    __str__ = __repr__
+
+RELATIVE, NETLOC, PARAMS = SchemeFlag
+
 
 uses_relative = ['', 'ftp', 'http', 'gopher', 'nntp', 'imap',
                  'wais', 'file', 'https', 'shttp', 'mms',
@@ -82,13 +91,13 @@ def _scheme_classes(scheme, overrides=SchemeFlag(0)):
     parameter.
     """
     if scheme in uses_relative:
-        overrides |= SchemeFlag.RELATIVE
+        overrides |= RELATIVE
 
     if scheme in uses_netloc:
-        overrides |= SchemeFlag.NETLOC
+        overrides |= NETLOC
 
     if scheme in uses_params:
-        overrides |= SchemeFlag.PARAMS
+        overrides |= PARAMS
 
     return overrides
 
@@ -420,7 +429,7 @@ def urlparse(url, scheme='', allow_fragments=True, flags=SchemeFlag(0)):
     splitresult = urlsplit(url, scheme, allow_fragments)
     scheme, netloc, url, query, fragment = splitresult
     scheme_classes = _scheme_classes(scheme, overrides=flags)
-    if SchemeFlag.PARAMS & scheme_classes and ';' in url:
+    if PARAMS in scheme_classes and ';' in url:
         url, params = _splitparams(url)
     else:
         params = ''
@@ -536,7 +545,7 @@ def urlunsplit(components):
                                           _coerce_args(*components))
 
     scheme_classes = _scheme_classes(scheme)
-    if netloc or (scheme and (SchemeFlag.NETLOC & scheme_classes) and url[:2] != '//'):
+    if netloc or (scheme and (NETLOC in scheme_classes) and url[:2] != '//'):
         if url and url[:1] != '/': url = '/' + url
         url = '//' + (netloc or '') + url
     if scheme:
@@ -564,9 +573,9 @@ def urljoin(base, url, allow_fragments=True, flags=SchemeFlag(0)):
 
     scheme_classes = _scheme_classes(scheme, overrides=flags)
 
-    if scheme != bscheme or not (SchemeFlag.RELATIVE & scheme_classes):
+    if scheme != bscheme or RELATIVE not in scheme_classes:
         return _coerce_result(url)
-    if SchemeFlag.NETLOC in scheme_classes:
+    if NETLOC in scheme_classes:
         if netloc:
             return _coerce_result(urlunparse((scheme, netloc, path,
                                               params, query, fragment)))
