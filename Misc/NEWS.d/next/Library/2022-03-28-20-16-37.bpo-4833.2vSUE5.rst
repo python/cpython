@@ -1,1 +1,1 @@
-Add ZipFile.mkdir
+Add :meth:`ZipFile.mkdir`
