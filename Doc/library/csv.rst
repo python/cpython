@@ -153,7 +153,9 @@ The :mod:`csv` module defines the following classes:
    information in each row to a :class:`dict` whose keys are given by the
    optional *fieldnames* parameter.
 
-   The *fieldnames* parameter is a :term:`sequence`.  If *fieldnames* is
+   The *fieldnames* parameter is a :term:`sequence`.  If the argument passed
+   to *fieldnames* is not a :term:`sequence` then a :exc:`TypeError` is
+   raised.  If *fieldnames* is
    omitted, the values in the first row of file *f* will be used as the
    fieldnames.  Regardless of how the fieldnames are determined, the
    dictionary preserves their original ordering.
@@ -195,7 +197,9 @@ The :mod:`csv` module defines the following classes:
    onto output rows.  The *fieldnames* parameter is a :mod:`sequence
    <collections.abc>` of keys that identify the order in which values in the
    dictionary passed to the :meth:`writerow` method are written to file
-   *f*.  The optional *restval* parameter specifies the value to be
+   *f*.  If the argument passed to *fieldnames* is not a
+   :mod:`sequence <collections.abc>`, a :exc:`TypeError` is raised.  The optional
+   *restval* parameter specifies the value to be
    written if the dictionary is missing a key in *fieldnames*.  If the
    dictionary passed to the :meth:`writerow` method contains a key not found in
    *fieldnames*, the optional *extrasaction* parameter indicates what action to
