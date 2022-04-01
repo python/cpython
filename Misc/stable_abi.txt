@@ -45,11 +45,11 @@
 # For structs, one of the following must be set:
 # - opaque: The struct name is available in the Limited API, but its fields
 #   are not. Users must manipulate it via pointers.
-# - fields: names space-separated fields which are part of the Limited API
+# - fields: Space-separated list of fields which are part of the Limited API
 #   and Stable ABI.
 #   Fields that sren't listed are not accessible to applications.
 # - full-abi: The entire struct -- all its fields and its size -- is part of
-#   the ABI and must not change.
+#   the Stable ABI, and must not change.
 
 # Removing items from this file is generally not allowed, and additions should
 # be considered with that in mind. See the devguide for exact rules:
