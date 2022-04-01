@@ -7,7 +7,7 @@ import io
 
 from opcode import *
 from opcode import __all__ as _opcodes_all
-from opcode import _nb_ops, _inline_cache_entries
+from opcode import _nb_ops, _inline_cache_entries, _specializations, _specialized_instructions
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",
@@ -33,6 +33,18 @@ BINARY_OP = opmap['BINARY_OP']
 JUMP_BACKWARD = opmap['JUMP_BACKWARD']
 
 CACHE = opmap["CACHE"]
+
+_all_opname = list(opname)
+_all_opmap = dict(opmap)
+_empty_slot = [slot for slot, name in enumerate(_all_opname) if name.startswith("<")]
+for spec_op, specialized in zip(_empty_slot, _specialized_instructions):
+    # fill opname and opmap
+    _all_opname[spec_op] = specialized
+    _all_opmap[specialized] = spec_op
+
+deoptmap = {
+    specialized: base for base, family in _specializations.items() for specialized in family
+}
 
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and
@@ -163,11 +175,11 @@ def _get_code_object(x):
                     type(x).__name__)
 
 def _deoptop(op):
-    name = opname[op]
-    return opmap[deoptmap[name]] if name in deoptmap else op
+    name = _all_opname[op]
+    return _all_opmap[deoptmap[name]] if name in deoptmap else op
 
 def _get_code_array(co, adaptive):
-    return co._co_code_adaptive.tobytes() if adaptive else co.co_code
+    return co._co_code_adaptive if adaptive else co.co_code
 
 def code_info(x):
     """Formatted details of methods, functions, or code."""
@@ -476,7 +488,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                                     if arg & (1<<i))
             elif deop == BINARY_OP:
                 _, argrepr = _nb_ops[arg]
-        yield Instruction(opname[op], op,
+        yield Instruction(_all_opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)
 

@@ -6,7 +6,7 @@ operate on bytecodes (e.g. peephole optimizers).
 
 __all__ = ["cmp_op", "hasconst", "hasname", "hasjrel", "hasjabs",
            "haslocal", "hascompare", "hasfree", "opname", "opmap",
-           "HAVE_ARGUMENT", "EXTENDED_ARG", "hasnargs", "deoptmap"]
+           "HAVE_ARGUMENT", "EXTENDED_ARG", "hasnargs"]
 
 # It's a chicken-and-egg I'm afraid:
 # We're imported before _opcode's made.
@@ -336,17 +336,6 @@ _specializations = {
 _specialized_instructions = [
     opcode for family in _specializations.values() for opcode in family
 ]
-
-_empty_slot = [slot for slot, name in enumerate(opname) if name.startswith("<")]
-for spec_op, specialized in zip(_empty_slot, _specialized_instructions):
-    # fill opname and opmap
-    opname[spec_op] = specialized
-    opmap[specialized] = spec_op
-
-deoptmap = {
-    specialized: base for base, family in _specializations.items() for specialized in family
-}
-
 _specialization_stats = [
     "success",
     "failure",

@@ -57,17 +57,23 @@ def main(opcode_py, outfile='Include/opcode.h'):
     hasconst = opcode['hasconst']
     hasjrel = opcode['hasjrel']
     hasjabs = opcode['hasjabs']
-    deoptmap = opcode['deoptmap']
+    used = [ False ] * 256
+    next_op = 1
+    for name, op in opmap.items():
+        used[op] = True
     with open(outfile, 'w') as fobj:
         fobj.write(header)
         for name in opname:
-            if name in opmap and name not in deoptmap:
+            if name in opmap:
                 fobj.write(DEFINE.format(name, opmap[name]))
             if name == 'POP_EXCEPT': # Special entry for HAVE_ARGUMENT
                 fobj.write(DEFINE.format("HAVE_ARGUMENT", opcode["HAVE_ARGUMENT"]))
 
-        for spec_name in deoptmap:
-            fobj.write(DEFINE.format(spec_name, opmap[spec_name]))
+        for name in opcode['_specialized_instructions']:
+            while used[next_op]:
+                next_op += 1
+            fobj.write(DEFINE.format(name, next_op))
+            used[next_op] = True
         fobj.write(DEFINE.format('DO_TRACING', 255))
         fobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
         fobj.write("\nextern const uint8_t _PyOpcode_Deopt[256];\n")
@@ -82,7 +88,10 @@ def main(opcode_py, outfile='Include/opcode.h'):
         fobj.write("};\n")
         deoptcodes = {}
         for basic in opmap:
-            deoptcodes[basic] = deoptmap[basic] if basic in deoptmap else basic
+            deoptcodes[basic] = basic
+        for basic, family in opcode["_specializations"].items():
+            for specialized in family:
+                deoptcodes[specialized] = basic
         fobj.write("\nconst uint8_t _PyOpcode_Deopt[256] = {\n")
         for opt, deopt in sorted(deoptcodes.items()):
             fobj.write(f"    [{opt}] = {deopt},\n")
