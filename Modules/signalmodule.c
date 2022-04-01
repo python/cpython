@@ -1792,6 +1792,7 @@ PyErr_CheckSignals(void)
     return _PyErr_CheckSignalsTstate(tstate);
 }
 
+
 /* Declared in cpython/pyerrors.h */
 int
 _PyErr_CheckSignalsTstate(PyThreadState *tstate)
