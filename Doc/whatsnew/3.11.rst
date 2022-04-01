@@ -627,8 +627,8 @@ See :pep:`659` for more information.)
 |               |                    |                                                       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 | Load          | ``print; len``     | The object's index in the globals/builtins namespace  | 0% [1]_           | Mark Shannon      |
-| global        |                    | is cached. Loading globals and builtins requires      |                   |                   |
-| variable      |                    | no namespace lookups.                                 |                   |                   |
+| global        |                    | is cached. Loading globals and builtins require       |                   |                   |
+| variable      |                    | zero namespace lookups.                               |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 | Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | 0% [2]_           | Mark Shannon      |
 | attribute     |                    | index inside the class/object's namespace is cached.  |                   |                   |
@@ -653,6 +653,15 @@ See :pep:`659` for more information.)
 .. [3] Classes with longer inheritance chains will see greater speedups.
        This optimization effectively makes method lookup constant time
        regardless of inheritance.
+
+
+Misc
+----
+
+* Objects now require less memory due to lazily created object namespaces. Their
+  namespace dictionaries now also share keys more freely.
+  (Contributed Mark Shannon in :issue:`45340` and :issue:`40116`.)
+
 
 FAQ
 ---
