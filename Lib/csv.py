@@ -82,7 +82,7 @@ class DictReader:
     def __init__(self, f, fieldnames=None, restkey=None, restval=None,
                  dialect="excel", *args, **kwds):
         if not isinstance(fieldnames, Sequence):
-            raise TypeError("fieldnames must be a sequence")
+            raise TypeError(f"Expected a sequence, got {type(fieldnames)}")
         self._fieldnames = fieldnames   # list of keys for the dict
         self.restkey = restkey          # key to catch long rows
         self.restval = restval          # default value for short rows
@@ -134,7 +134,7 @@ class DictWriter:
     def __init__(self, f, fieldnames, restval="", extrasaction="raise",
                  dialect="excel", *args, **kwds):
         if not isinstance(fieldnames, Sequence):
-            raise TypeError("fieldnames must be a sequence")
+            raise TypeError(f"Expected a sequence, got {type(fieldnames)}")
         self.fieldnames = fieldnames    # list of keys for the dict
         self.restval = restval          # for writing short dicts
         if extrasaction.lower() not in ("raise", "ignore"):
