@@ -903,7 +903,7 @@ iterations of the loop.
 
 .. opcode:: JUMP_BACKWARD (delta)
 
-   Decrements bytecode counter by *delta*.
+   Decrements bytecode counter by *delta*. Checks for interrupts.
 
    .. versionadded:: 3.11
 
