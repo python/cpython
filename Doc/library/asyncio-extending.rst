@@ -48,16 +48,27 @@ For this purpose the following, *private* constructors are listed:
 
 .. method:: Future.__init__(*, loop=None)
 
-Create a built-in future instance.
+   Create a built-in future instance.
 
-*loop* is an optional event loop instance.
+   *loop* is an optional event loop instance.
 
 .. method:: Task.__init__(coro, *, loop=None, name=None, context=None)
 
-Create a built-in task instance.
+   Create a built-in task instance.
 
-*loop* is an optional event loop instance. The rest of arguments are described in
-:meth:`loop.create_task` description.
+   *loop* is an optional event loop instance. The rest of arguments are described in
+   :meth:`loop.create_task` description.
+
+   .. versionchanged:: 3.11
+
+      *context* argument is added.
+
+.. method:: Tasl._check_future(future)
+
+   Return ``True`` if *future* is attached to the same loop as the task, ``False``
+   otherwise.
+
+   .. versionadded:: 3.11
 
 
 Task lifetime support
