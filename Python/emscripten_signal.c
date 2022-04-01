@@ -6,6 +6,7 @@
 // The address &Py_EMSCRIPTEN_SIGNAL_HANDLING is exported as
 // Module._Py_EMSCRIPTEN_SIGNAL_HANDLING.
 #include <emscripten.h>
+#include "pyerrors.h"
 
 EM_JS(int, _Py_CheckEmscriptenSignals_Helper, (void), {
     if (!Module.Py_EmscriptenSignalBuffer) {
