@@ -460,10 +460,21 @@ class EncodingTest(unittest.TestCase):
 class CommandLineTestsBase:
     """Test compileall's CLI."""
 
+    def setUp(self):
+        self.directory = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, self.directory)
+        self.pkgdir = os.path.join(self.directory, 'foo')
+        os.mkdir(self.pkgdir)
+        self.pkgdir_cachedir = os.path.join(self.pkgdir, '__pycache__')
+        # Create the __init__.py and a package module.
+        self.initfn = script_helper.make_script(self.pkgdir, '__init__', '')
+        self.barfn = script_helper.make_script(self.pkgdir, 'bar', '')
+
     @contextlib.contextmanager
-    def _use_pycache_prefix(self, basedir):
+    def temporary_pycache_prefix(self):
+        """Adjust and restore sys.pycache_prefix."""
         old_prefix = sys.pycache_prefix
-        new_prefix = os.path.join(basedir, '__testcache__')
+        new_prefix = os.path.join(self.directory, '__testcache__')
         try:
             sys.pycache_prefix = new_prefix
             yield {
@@ -499,20 +510,10 @@ class CommandLineTestsBase:
         path = importlib.util.cache_from_source(fn)
         self.assertFalse(os.path.exists(path))
 
-    def setUp(self):
-        self.directory = tempfile.mkdtemp()
-        self.addCleanup(os_helper.rmtree, self.directory)
-        self.pkgdir = os.path.join(self.directory, 'foo')
-        os.mkdir(self.pkgdir)
-        self.pkgdir_cachedir = os.path.join(self.pkgdir, '__pycache__')
-        # Create the __init__.py and a package module.
-        self.initfn = script_helper.make_script(self.pkgdir, '__init__', '')
-        self.barfn = script_helper.make_script(self.pkgdir, 'bar', '')
-
     def test_no_args_compiles_path(self):
         # Note that -l is implied for the no args case.
         bazfn = script_helper.make_script(self.directory, 'baz', '')
-        with self._use_pycache_prefix(self.directory) as env:
+        with self.temporary_pycache_prefix() as env:
             self.assertRunOK(**env)
             self.assertCompiled(bazfn)
             self.assertNotCompiled(self.initfn)
@@ -521,7 +522,7 @@ class CommandLineTestsBase:
     @without_source_date_epoch  # timestamp invalidation test
     def test_no_args_respects_force_flag(self):
         bazfn = script_helper.make_script(self.directory, 'baz', '')
-        with self._use_pycache_prefix(self.directory) as env:
+        with self.temporary_pycache_prefix() as env:
             self.assertRunOK(**env)
             pycpath = importlib.util.cache_from_source(bazfn)
         # Set atime/mtime backward to avoid file timestamp resolution issues
@@ -538,7 +539,7 @@ class CommandLineTestsBase:
 
     def test_no_args_respects_quiet_flag(self):
         script_helper.make_script(self.directory, 'baz', '')
-        with self._use_pycache_prefix(self.directory) as env:
+        with self.temporary_pycache_prefix() as env:
             noisy = self.assertRunOK(**env)
         self.assertIn(b'Listing ', noisy)
         quiet = self.assertRunOK('-q', **env)
