@@ -5040,6 +5040,7 @@ handle_eval_breaker:
             STAT_INC(PRECALL, hit);
             // PRECALL + CALL + POP_TOP
             JUMPBY(INLINE_CACHE_ENTRIES_PRECALL + 1 + INLINE_CACHE_ENTRIES_CALL + 1);
+            assert(next_instr[-1] == POP_TOP);
             PyObject *arg = POP();
             if (_PyList_AppendTakeRef((PyListObject *)list, arg) < 0) {
                 goto error;
