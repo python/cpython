@@ -530,7 +530,7 @@ by the interpreter. This reduces the steps in module execution process to this:
 
 Interpreter startup is now 10-15% faster in Python 3.11. This positively
 impacts short-running programs using Python. Such as ``python -m venv ...``, or
-``python -m pip ...```.
+``python -m pip ...``.
 
 (Contributed by Eric Snow, Guido van Rossum and Kumar Aditya in numerous issues.)
 
@@ -610,7 +610,7 @@ See :pep:`659` for more information.)
 |               |                    |                                                       |                   | Dennis Sweeney    |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 | Subscript     | ``o[i]``           | Subscripting container types such as ``list``,        | 10-30%            | Irit Katriel,     |
-|               |                    | ``tuple`` and ``dict``directly index the underlying   |                   | Mark Shannon      |
+|               |                    | ``tuple`` and ``dict`` directly index the underlying  |                   | Mark Shannon      |
 |               |                    | data structures. Subscripting custom ``__getitem__``  |                   |                   |
 |               |                    | is also inlined similar to :ref:`inline-calls`.       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
