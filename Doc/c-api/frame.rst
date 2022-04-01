@@ -7,10 +7,12 @@ Frame Objects
 
    The C structure of the objects used to describe frame objects.
 
-   The structure is not part of the C API.
+   There are no public members in this structure.
 
    .. versionchanged:: 3.11
-      The structure moved to the internal C API headers.
+      The members of this structure were removed from the public C API.
+      Refer to the :ref:`What's New entry <pyframeobject-3.11-hiding>`
+      for details.
 
 The :c:func:`PyEval_GetFrame` and :c:func:`PyThreadState_GetFrame` functions
 can be used to get a frame object.
