@@ -395,11 +395,6 @@ class PyBuildExt(build_ext):
         # Remove modules that are present on the disabled list
         extensions = [ext for ext in self.extensions
                       if ext.name not in DISABLED_MODULE_LIST]
-        # move ctypes to the end, it depends on other modules
-        ext_map = dict((ext.name, i) for i, ext in enumerate(extensions))
-        if "_ctypes" in ext_map:
-            ctypes = extensions.pop(ext_map["_ctypes"])
-            extensions.append(ctypes)
         self.extensions = extensions
 
     def update_sources_depends(self):
