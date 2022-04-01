@@ -387,6 +387,18 @@ Larry
         self.assertEqual(fs.list[0].name, 'submit-name')
         self.assertEqual(fs.list[0].value, 'Larry')
 
+    def test_content_length_no_content_disposition(self):
+        body = b'{"test":123}'
+        env = {
+            'CONTENT_LENGTH': len(body),
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'application/json',
+            'wsgi.input': BytesIO(body),
+        }
+
+        form = cgi.FieldStorage(fp=env['wsgi.input'], environ=env)
+        self.assertEqual(form.file.read(), body.decode(form.encoding))
+
     def test_field_storage_multipart_no_content_length(self):
         fp = BytesIO(b"""--MyBoundary
 Content-Disposition: form-data; name="my-arg"; filename="foo"

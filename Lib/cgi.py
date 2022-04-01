@@ -679,11 +679,9 @@ class FieldStorage:
 
     def read_single(self):
         """Internal: read an atomic part."""
+        self.read_lines()
         if self.length >= 0:
-            self.read_binary()
             self.skip_lines()
-        else:
-            self.read_lines()
         self.file.seek(0)
 
     bufsize = 8*1024            # I/O buffering size for copy to file
