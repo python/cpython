@@ -3574,17 +3574,28 @@ AS_VAR_IF([with_system_ffi], [yes], [
       ])
     ])
   ])
-], [
-  dnl private ffi copy
-  have_libffi=yes
-  LIBFFI_CFLAGS="-I\$(srcdir)/Modules/_ctypes/darwin -DUSING_MALLOC_CLOSURE_DOT_C=1 -DMACOSX"
-  LIBFFI_LIBS=
 ])
 
-dnl _ctypes needs -ldl for dlopen
-AS_CASE([$LIBS],
-  [*-ldl*], [LIBFFI_LIBS="$LIBFFI_LIBS -ldl"]
+ctypes_malloc_closure=no
+
+AS_CASE([$ac_sys_system],
+  [Darwin], [
+    dnl when do we need USING_APPLE_OS_LIBFFI?
+    AS_VAR_APPEND([LIBFFI_CFLAGS], ['-I$(srcdir)/Modules/_ctypes/darwin -DMACOSX '])
+    ctypes_malloc_closure=yes
+  ],
+  [sunos5], [AS_VAR_APPEND([LIBFFI_LIBS], [-mimpure-text])],
+  [hp*|HP*], [AS_VAR_APPEND([LIBFFI_LIBS], [-fPIC])]
 )
+
+AS_VAR_IF([ctypes_malloc_closure], [yes], [
+  MODULE__CTYPES_MALLOC_CLOSURE=_ctypes/malloc_closure.c
+  AS_VAR_APPEND([LIBFFI_CFLAGS], ['-DUSING_MALLOC_CLOSURE_DOT_C=1 '])
+])
+AC_SUBST([MODULE__CTYPES_MALLOC_CLOSURE])
+
+dnl HAVE_LIBDL: for dlopen, see bpo-32647
+AS_VAR_IF([ac_cv_lib_dl_dlopen], [yes], [AS_VAR_APPEND([LIBFFI_LIBS], [-ldl])])
 
 if test "$with_system_ffi" = yes -a "$have_libffi" = yes; then
   WITH_SAVE_ENV([
@@ -3616,14 +3627,6 @@ if test "$with_system_ffi" = yes -a "$have_libffi" = yes; then
     ])
   ])
 fi
-
-
-if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
-    LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
-else
-    LIBFFI_INCLUDEDIR=""
-fi
-AC_SUBST(LIBFFI_INCLUDEDIR)
 
 # Check for use of the system libmpdec library
 AC_MSG_CHECKING(for --with-system-libmpdec)

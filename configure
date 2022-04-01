@@ -838,7 +838,7 @@ LIBNSL_CFLAGS
 LIBMPDEC_INTERNAL
 LIBMPDEC_LDFLAGS
 LIBMPDEC_CFLAGS
-LIBFFI_INCLUDEDIR
+MODULE__CTYPES_MALLOC_CLOSURE
 LIBFFI_LIBS
 LIBFFI_CFLAGS
 LIBEXPAT_INTERNAL
@@ -12172,21 +12172,36 @@ $as_echo "yes" >&6; }
 	have_libffi=yes
 fi
 
-else
-
-    have_libffi=yes
-  LIBFFI_CFLAGS="-I\$(srcdir)/Modules/_ctypes/darwin -DUSING_MALLOC_CLOSURE_DOT_C=1 -DMACOSX"
-  LIBFFI_LIBS=
-
 fi
 
-case $LIBS in #(
-  *-ldl*) :
-    LIBFFI_LIBS="$LIBFFI_LIBS -ldl"
+ctypes_malloc_closure=no
+
+case $ac_sys_system in #(
+  Darwin) :
+
+        as_fn_append LIBFFI_CFLAGS '-I$(srcdir)/Modules/_ctypes/darwin -DMACOSX '
+    ctypes_malloc_closure=yes
+   ;; #(
+  sunos5) :
+    as_fn_append LIBFFI_LIBS -mimpure-text ;; #(
+  hp*|HP*) :
+    as_fn_append LIBFFI_LIBS -fPIC
  ;; #(
   *) :
      ;;
 esac
+
+if test "x$ctypes_malloc_closure" = xyes; then :
+
+  MODULE__CTYPES_MALLOC_CLOSURE=_ctypes/malloc_closure.c
+  as_fn_append LIBFFI_CFLAGS '-DUSING_MALLOC_CLOSURE_DOT_C=1 '
+
+fi
+
+
+if test "x$ac_cv_lib_dl_dlopen" = xyes; then :
+  as_fn_append LIBFFI_LIBS -ldl
+fi
 
 if test "$with_system_ffi" = yes -a "$have_libffi" = yes; then
   save_CFLAGS=$CFLAGS
@@ -12298,14 +12313,6 @@ LIBS=$save_LIBS
 
 
 fi
-
-
-if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
-    LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
-else
-    LIBFFI_INCLUDEDIR=""
-fi
-
 
 # Check for use of the system libmpdec library
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-system-libmpdec" >&5

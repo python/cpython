@@ -1365,102 +1365,22 @@ class PyBuildExt(build_ext):
         self.addext(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c']))
 
     def detect_ctypes(self):
-        ext = Extension(
-            '_ctypes',
-            [
-                '_ctypes/_ctypes.c',
-                '_ctypes/callbacks.c',
-                '_ctypes/callproc.c',
-                '_ctypes/stgdict.c',
-                '_ctypes/cfield.c',
-            ]
-        )
-        if MACOS:
-            self._build_ctypes_macos(ext)
-        else:
-            self.use_system_libffi = True
-            self.addext(ext)
-
-        self.addext(Extension('_ctypes_test', ['_ctypes/_ctypes_test.c']))
-
-    def _build_ctypes_macos(self, ext):
         # Thomas Heller's _ctypes module
+        src = [
+            '_ctypes/_ctypes.c',
+            '_ctypes/callbacks.c',
+            '_ctypes/callproc.c',
+            '_ctypes/stgdict.c',
+            '_ctypes/cfield.c',
+        ]
+        malloc_closure = sysconfig.get_config_var(
+            "MODULE__CTYPES_MALLOC_CLOSURE"
+        )
+        if malloc_closure:
+            src.append(malloc_closure)
 
-        if (not sysconfig.get_config_var("LIBFFI_INCLUDEDIR") and MACOS):
-            self.use_system_libffi = True
-        else:
-            self.use_system_libffi = '--with-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS")
-
-        if MACOS:
-            ext.sources.append('_ctypes/malloc_closure.c')
-            ext.extra_compile_args.append('-DUSING_MALLOC_CLOSURE_DOT_C=1')
-            ext.extra_compile_args.append('-DMACOSX')
-            ext.include_dirs.append('_ctypes/darwin')
-
-        elif HOST_PLATFORM == 'sunos5':
-            # XXX This shouldn't be necessary; it appears that some
-            # of the assembler code is non-PIC (i.e. it has relocations
-            # when it shouldn't. The proper fix would be to rewrite
-            # the assembler code to be PIC.
-            # This only works with GCC; the Sun compiler likely refuses
-            # this option. If you want to compile ctypes with the Sun
-            # compiler, please research a proper solution, instead of
-            # finding some -z option for the Sun compiler.
-            ext.extra_link_args.append('-mimpure-text')
-
-        elif HOST_PLATFORM.startswith('hp-ux'):
-            ext.extra_link_args.append('-fPIC')
-
-        self.add(ext)
-
-        ffi_inc = sysconfig.get_config_var("LIBFFI_INCLUDEDIR")
-        ffi_lib = None
-
-        ffi_inc_dirs = self.inc_dirs.copy()
-        if MACOS:
-            ffi_in_sdk = os.path.join(macosx_sdk_root(), "usr/include/ffi")
-
-            if not ffi_inc:
-                if os.path.exists(ffi_in_sdk):
-                    ext.extra_compile_args.append("-DUSING_APPLE_OS_LIBFFI=1")
-                    ffi_inc = ffi_in_sdk
-                    ffi_lib = 'ffi'
-                else:
-                    # OS X 10.5 comes with libffi.dylib; the include files are
-                    # in /usr/include/ffi
-                    ffi_inc_dirs.append('/usr/include/ffi')
-
-        if not ffi_inc:
-            found = find_file('ffi.h', [], ffi_inc_dirs)
-            if found:
-                ffi_inc = found[0]
-        if ffi_inc:
-            ffi_h = ffi_inc + '/ffi.h'
-            if not os.path.exists(ffi_h):
-                ffi_inc = None
-                print('Header file {} does not exist'.format(ffi_h))
-        if ffi_lib is None and ffi_inc:
-            for lib_name in ('ffi', 'ffi_pic'):
-                if (self.compiler.find_library_file(self.lib_dirs, lib_name)):
-                    ffi_lib = lib_name
-                    break
-
-        if ffi_inc and ffi_lib:
-            ffi_headers = glob(os.path.join(ffi_inc, '*.h'))
-            if grep_headers_for('ffi_prep_cif_var', ffi_headers):
-                ext.extra_compile_args.append("-DHAVE_FFI_PREP_CIF_VAR=1")
-            if grep_headers_for('ffi_prep_closure_loc', ffi_headers):
-                ext.extra_compile_args.append("-DHAVE_FFI_PREP_CLOSURE_LOC=1")
-            if grep_headers_for('ffi_closure_alloc', ffi_headers):
-                ext.extra_compile_args.append("-DHAVE_FFI_CLOSURE_ALLOC=1")
-
-            ext.include_dirs.append(ffi_inc)
-            ext.libraries.append(ffi_lib)
-            self.use_system_libffi = True
-
-        if sysconfig.get_config_var('HAVE_LIBDL'):
-            # for dlopen, see bpo-32647
-            ext.libraries.append('dl')
+        self.addext(Extension('_ctypes', src))
+        self.addext(Extension('_ctypes_test', ['_ctypes/_ctypes_test.c']))
 
     def detect_decimal(self):
         # Stefan Krah's _decimal module
