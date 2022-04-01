@@ -1,0 +1,2 @@
+The constructors for csv.DictWriter and csv.DictReader raise TypeError when
+the fieldnames argument is not a sequence.
