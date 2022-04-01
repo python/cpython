@@ -998,8 +998,8 @@ stack_effect(int opcode, int oparg, int jump)
         case IS_OP:
         case CONTAINS_OP:
             return -1;
-        case JUMP_IF_NOT_EXC_MATCH:
-            return -1;
+        case CHECK_EXC_MATCH:
+            return 0;
         case JUMP_IF_NOT_EG_MATCH:
             return jump > 0 ? -1 : 0;
         case IMPORT_NAME:
@@ -3376,7 +3376,8 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
    []                           JUMP            L0
 
    [exc]                L1:     <evaluate E1>           )
-   [exc, E1]                    JUMP_IF_NOT_EXC_MATCH L2        ) only if E1
+   [exc, E1]                    CHECK_EXC_MATCH         )
+   [exc, bool]                  POP_JUMP_IF_FALSE L2    ) only if E1
    [exc]                        <assign to V1>  (or POP if no V1)
    []                           <code for S1>
                                 JUMP            L0
@@ -3434,7 +3435,8 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             return 0;
         if (handler->v.ExceptHandler.type) {
             VISIT(c, expr, handler->v.ExceptHandler.type);
-            ADDOP_JUMP(c, JUMP_IF_NOT_EXC_MATCH, except);
+            ADDOP(c, CHECK_EXC_MATCH);
+            ADDOP_JUMP(c, POP_JUMP_IF_FALSE, except);
         }
         if (handler->v.ExceptHandler.name) {
             basicblock *cleanup_end, *cleanup_body;
