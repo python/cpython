@@ -3602,6 +3602,21 @@ class ContextWithStatement(unittest.TestCase):
         self.assertIsNot(new_ctx, set_ctx, 'did not copy the context')
         self.assertIs(set_ctx, enter_ctx, '__enter__ returned wrong context')
 
+    def test_localcontext_kwargs(self):
+        with self.decimal.localcontext(
+            prec=10, rounding=ROUND_HALF_DOWN,
+            Emin=-20, Emax=20, capitals=0,
+            clamp=1
+        ) as ctx:
+            self.assertEqual(ctx.prec, 10)
+            self.assertEqual(ctx.rounding, self.decimal.ROUND_HALF_DOWN)
+            self.assertEqual(ctx.Emin, -20)
+            self.assertEqual(ctx.Emax, 20)
+            self.assertEqual(ctx.capitals, 0)
+            self.assertEqual(ctx.clamp, 1)
+
+        self.assertRaises(TypeError, self.decimal.localcontext, precision=10)
+
     def test_nested_with_statements(self):
         # Use a copy of the supplied context in the block
         Decimal = self.decimal.Decimal

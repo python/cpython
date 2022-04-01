@@ -503,7 +503,10 @@ def localcontext(ctx=None, **kwargs):
     if ctx is None:
         ctx = getcontext()
     for key, value in kwargs.items():
-        setattr(ctx, key, value)
+        try:
+            setattr(ctx, key, value)
+        except:
+            raise TypeError(f"'{key}' is an invalid keyword argument for this function")
     return _ContextManager(ctx)
 
 

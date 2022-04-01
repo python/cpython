@@ -925,12 +925,13 @@ Each thread has its own current context which is accessed or changed using the
 You can also use the :keyword:`with` statement and the :func:`localcontext`
 function to temporarily change the active context.
 
-.. function:: localcontext(ctx=None)
+.. function:: localcontext(ctx=None, \*\*kwargs)
 
    Return a context manager that will set the current context for the active thread
    to a copy of *ctx* on entry to the with-statement and restore the previous context
    when exiting the with-statement. If no context is specified, a copy of the
-   current context is used.
+   current context is used.  The *kwargs* argument is used to specify the attributes
+   of the context that will be returned.
 
    For example, the following code sets the current decimal precision to 42 places,
    performs a calculation, and then automatically restores the previous context::
@@ -942,8 +943,15 @@ function to temporarily change the active context.
           s = calculate_something()
       s = +s  # Round the final result back to the default precision
 
+
+Raises :exc:`TypeError` if *kwargs* supplies an attribute that :class:`Context` doesn't
+support.
+
+Raises :exc:`ValueError` if *kwargs* supplies an invalid value for an attribute.
+
 New contexts can also be created using the :class:`Context` constructor
 described below. In addition, the module provides three pre-made contexts:
+
 
 
 .. class:: BasicContext
