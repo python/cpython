@@ -12233,7 +12233,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      CFLAGS="${SDKROOT}/usr/include/ffi $CFLAGS"
+      CFLAGS="-I${SDKROOT}/usr/include/ffi $CFLAGS"
       ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
 if test "x$ac_cv_header_ffi_h" = xyes; then :
 
@@ -12276,7 +12276,7 @@ $as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
 if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
 
                     have_libffi=yes
-          LIBFFI_CFLAGS="${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
+          LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
           LIBFFI_LIBS="-lffi"
 
 else

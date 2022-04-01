@@ -3592,12 +3592,12 @@ AS_VAR_IF([with_system_ffi], [yes], [
 ], [
   AS_VAR_IF([ac_sys_system], [Darwin], [
     WITH_SAVE_ENV([
-      CFLAGS="${SDKROOT}/usr/include/ffi $CFLAGS"
+      CFLAGS="-I${SDKROOT}/usr/include/ffi $CFLAGS"
       AC_CHECK_HEADER([ffi.h], [
         AC_CHECK_LIB([ffi], [ffi_call], [
           dnl use ffi from SDK root
           have_libffi=yes
-          LIBFFI_CFLAGS="${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
+          LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
           LIBFFI_LIBS="-lffi"
         ], [have_libffi=no])
       ])
