@@ -6,6 +6,7 @@ import inspect
 import keyword
 import builtins
 import functools
+import itertools
 import abc
 import _thread
 from types import FunctionType, GenericAlias
@@ -229,7 +230,7 @@ class InitVar:
         self.type = type
 
     def __repr__(self):
-        if isinstance(self.type, type):
+        if isinstance(self.type, type) and not isinstance(self.type, GenericAlias):
             type_name = self.type.__name__
         else:
             # typing objects, e.g. List[int]
@@ -297,7 +298,7 @@ class Field:
     # This is used to support the PEP 487 __set_name__ protocol in the
     # case where we're using a field that contains a descriptor as a
     # default value.  For details on __set_name__, see
-    # https://www.python.org/dev/peps/pep-0487/#implementation-details.
+    # https://peps.python.org/pep-0487/#implementation-details.
     #
     # Note that in _process_class, this Field object is overwritten
     # with the default value, so the end result is a descriptor that
@@ -808,8 +809,10 @@ def _get_field(cls, a_name, a_type, default_kw_only):
             raise TypeError(f'field {f.name} is a ClassVar but specifies '
                             'kw_only')
 
-    # For real fields, disallow mutable defaults for known types.
-    if f._field_type is _FIELD and isinstance(f.default, (list, dict, set)):
+    # For real fields, disallow mutable defaults.  Use unhashable as a proxy
+    # indicator for mutability.  Read the __hash__ attribute from the class,
+    # not the instance.
+    if f._field_type is _FIELD and f.default.__class__.__hash__ is None:
         raise ValueError(f'mutable default {type(f.default)} for field '
                          f'{f.name} is not allowed: use default_factory')
 
@@ -1120,6 +1123,20 @@ def _dataclass_setstate(self, state):
         object.__setattr__(self, field.name, value)
 
 
+def _get_slots(cls):
+    match cls.__dict__.get('__slots__'):
+        case None:
+            return
+        case str(slot):
+            yield slot
+        # Slots may be any iterable, but we cannot handle an iterator
+        # because it will already be (partially) consumed.
+        case iterable if not hasattr(iterable, '__next__'):
+            yield from iterable
+        case _:
+            raise TypeError(f"Slots of '{cls.__name__}' cannot be determined")
+
+
 def _add_slots(cls, is_frozen):
     # Need to create a new class, since we can't set __slots__
     #  after a class has been created.
@@ -1131,7 +1148,13 @@ def _add_slots(cls, is_frozen):
     # Create a new dict for our new class.
     cls_dict = dict(cls.__dict__)
     field_names = tuple(f.name for f in fields(cls))
-    cls_dict['__slots__'] = field_names
+    # Make sure slots don't overlap with those in base classes.
+    inherited_slots = set(
+        itertools.chain.from_iterable(map(_get_slots, cls.__mro__[1:-1]))
+    )
+    cls_dict["__slots__"] = tuple(
+        itertools.filterfalse(inherited_slots.__contains__, field_names)
+    )
     for field_name in field_names:
         # Remove our attributes, if present. They'll still be
         #  available in _MARKER.
@@ -1211,7 +1234,7 @@ def _is_dataclass_instance(obj):
 def is_dataclass(obj):
     """Returns True if obj is a dataclass or an instance of a
     dataclass."""
-    cls = obj if isinstance(obj, type) else type(obj)
+    cls = obj if isinstance(obj, type) and not isinstance(obj, GenericAlias) else type(obj)
     return hasattr(cls, _FIELDS)
 
 

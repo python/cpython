@@ -1,0 +1,2 @@
+The installer for Windows now includes documentation as loose HTML files
+rather than a single compiled :file:`.chm` file.

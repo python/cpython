@@ -1,2 +1,0 @@
-:program:`configure` has a new option ``--with-pkg-config`` to disable or
-require pkg-config.

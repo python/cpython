@@ -22,6 +22,7 @@
 #define PyPARSE_BARRY_AS_BDFL 0x0020
 #define PyPARSE_TYPE_COMMENTS 0x0040
 #define PyPARSE_ASYNC_HACKS   0x0080
+#define PyPARSE_ALLOW_INCOMPLETE_INPUT 0x0100
 
 #define CURRENT_POS (-5)
 
@@ -77,7 +78,6 @@ typedef struct {
     Token *known_err_token;
     int level;
     int call_invalid_rules;
-    int in_raw_rule;
 } Parser;
 
 typedef struct {
@@ -227,8 +227,9 @@ _RAISE_SYNTAX_ERROR_INVALID_TARGET(Parser *p, TARGETS_TYPE type, void *e)
             msg,
             _PyPegen_get_expr_name(invalid_target)
         );
+        return RAISE_SYNTAX_ERROR_KNOWN_LOCATION(invalid_target, "invalid syntax");
     }
-    return RAISE_SYNTAX_ERROR("invalid syntax");
+    return NULL;
 }
 
 // Action utility functions

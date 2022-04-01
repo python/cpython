@@ -17,7 +17,7 @@ SQLite for internal data storage.  It's also possible to prototype an
 application using SQLite and then port the code to a larger database such as
 PostgreSQL or Oracle.
 
-The sqlite3 module was written by Gerhard Häring.  It provides a SQL interface
+The sqlite3 module was written by Gerhard Häring.  It provides an SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
 requires SQLite 3.7.15 or newer.
 
@@ -191,7 +191,7 @@ Module functions and constants
    |                  |                 |                      | connections and cursors       |
    +------------------+-----------------+----------------------+-------------------------------+
 
-   .. _threadsafety: https://www.python.org/dev/peps/pep-0249/#threadsafety
+   .. _threadsafety: https://peps.python.org/pep-0249/#threadsafety
    .. _SQLITE_THREADSAFE: https://sqlite.org/compile.html#threadsafe
 
    .. versionchanged:: 3.11
@@ -273,14 +273,28 @@ Module functions and constants
    for the connection, you can set the *cached_statements* parameter. The currently
    implemented default is to cache 128 statements.
 
-   If *uri* is true, *database* is interpreted as a URI. This allows you
-   to specify options. For example, to open a database in read-only mode
-   you can use::
+   If *uri* is :const:`True`, *database* is interpreted as a
+   :abbr:`URI (Uniform Resource Identifier)` with a file path and an optional
+   query string.  The scheme part *must* be ``"file:"``.  The path can be a
+   relative or absolute file path.  The query string allows us to pass
+   parameters to SQLite. Some useful URI tricks include::
 
-       db = sqlite3.connect('file:path/to/database?mode=ro', uri=True)
+       # Open a database in read-only mode.
+       con = sqlite3.connect("file:template.db?mode=ro", uri=True)
 
-   More information about this feature, including a list of recognized options, can
-   be found in the `SQLite URI documentation <https://www.sqlite.org/uri.html>`_.
+       # Don't implicitly create a new database file if it does not already exist.
+       # Will raise sqlite3.OperationalError if unable to open a database file.
+       con = sqlite3.connect("file:nosuchdb.db?mode=rw", uri=True)
+
+       # Create a shared named in-memory database.
+       con1 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
+       con2 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
+       con1.executescript("create table t(t); insert into t values(28);")
+       rows = con2.execute("select * from t").fetchall()
+
+   More information about this feature, including a list of recognized
+   parameters, can be found in the
+   `SQLite URI documentation <https://www.sqlite.org/uri.html>`_.
 
    .. audit-event:: sqlite3.connect database sqlite3.connect
    .. audit-event:: sqlite3.connect/handle connection_handle sqlite3.connect
@@ -359,7 +373,7 @@ Connection Objects
 
 .. class:: Connection
 
-   A SQLite database connection has the following attributes and methods:
+   An SQLite database connection has the following attributes and methods:
 
    .. attribute:: isolation_level
 
@@ -575,7 +589,7 @@ Connection Objects
 
    .. method:: load_extension(path)
 
-      This routine loads a SQLite extension from a shared library.  You have to
+      This routine loads an SQLite extension from a shared library.  You have to
       enable extension loading with :meth:`enable_load_extension` before you can
       use this routine.
 
@@ -651,7 +665,7 @@ Connection Objects
 
    .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 
-      This method makes a backup of a SQLite database even while it's being accessed
+      This method makes a backup of an SQLite database even while it's being accessed
       by other clients, or concurrently by the same connection.  The copy will be
       written into the mandatory argument *target*, that must be another
       :class:`Connection` instance.
@@ -822,11 +836,11 @@ Cursor Objects
 
    .. method:: setinputsizes(sizes)
 
-      Required by the DB-API. Is a no-op in :mod:`sqlite3`.
+      Required by the DB-API. Does nothing in :mod:`sqlite3`.
 
    .. method:: setoutputsize(size [, column])
 
-      Required by the DB-API. Is a no-op in :mod:`sqlite3`.
+      Required by the DB-API. Does nothing in :mod:`sqlite3`.
 
    .. attribute:: rowcount
 
@@ -845,14 +859,15 @@ Cursor Objects
 
    .. attribute:: lastrowid
 
-      This read-only attribute provides the rowid of the last modified row. It is
-      only set if you issued an ``INSERT`` or a ``REPLACE`` statement using the
-      :meth:`execute` method.  For operations other than ``INSERT`` or
-      ``REPLACE`` or when :meth:`executemany` is called, :attr:`lastrowid` is
-      set to :const:`None`.
+      This read-only attribute provides the row id of the last inserted row. It
+      is only updated after successful ``INSERT`` or ``REPLACE`` statements
+      using the :meth:`execute` method.  For other statements, after
+      :meth:`executemany` or :meth:`executescript`, or if the insertion failed,
+      the value of ``lastrowid`` is left unchanged.  The initial value of
+      ``lastrowid`` is :const:`None`.
 
-      If the ``INSERT`` or ``REPLACE`` statement failed to insert the previous
-      successful rowid is returned.
+      .. note::
+         Inserts into ``WITHOUT ROWID`` tables are not recorded.
 
       .. versionchanged:: 3.6
          Added support for the ``REPLACE`` statement.
@@ -1053,7 +1068,7 @@ This is how SQLite types are converted to Python types by default:
 +-------------+----------------------------------------------+
 
 The type system of the :mod:`sqlite3` module is extensible in two ways: you can
-store additional Python types in a SQLite database via object adaptation, and
+store additional Python types in an SQLite database via object adaptation, and
 you can let the :mod:`sqlite3` module convert SQLite types to different Python
 types via converters.
 

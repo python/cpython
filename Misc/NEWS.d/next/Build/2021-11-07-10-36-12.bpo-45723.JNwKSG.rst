@@ -1,1 +1,0 @@
-``configure`` now prints a warning when pkg-config is missing.

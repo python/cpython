@@ -51,7 +51,7 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs);
 static inline _functools_state *
 get_functools_state_by_type(PyTypeObject *type)
 {
-    PyObject *module = _PyType_GetModuleByDef(type, &_functools_module);
+    PyObject *module = PyType_GetModuleByDef(type, &_functools_module);
     if (module == NULL) {
         return NULL;
     }

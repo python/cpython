@@ -100,7 +100,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       analyze, test, perform and/or display publicly, prepare derivative works,
       distribute, and otherwise use Python |release| alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
-      copyright, i.e., "Copyright © 2001-2021 Python Software Foundation; All Rights
+      copyright, i.e., "Copyright © 2001-2022 Python Software Foundation; All Rights
       Reserved" are retained in Python |release| alone or in any derivative version
       prepared by Licensee.
 
@@ -381,6 +381,33 @@ Project, http://www.wide.ad.jp/. ::
    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
    OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
    SUCH DAMAGE.
+
+
+Asynchronous socket services
+----------------------------
+
+The :mod:`asynchat` and :mod:`asyncore` modules contain the following notice::
+
+   Copyright 1996 by Sam Rushing
+
+                           All Rights Reserved
+
+   Permission to use, copy, modify, and distribute this software and
+   its documentation for any purpose and without fee is hereby
+   granted, provided that the above copyright notice appear in all
+   copies and that both that copyright notice and this permission
+   notice appear in supporting documentation, and that the name of Sam
+   Rushing not be used in advertising or publicity pertaining to
+   distribution of the software without specific, written prior
+   permission.
+
+   SAM RUSHING DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+   INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN
+   NO EVENT SHALL SAM RUSHING BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+   CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+   OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+   NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 
 Cookie management

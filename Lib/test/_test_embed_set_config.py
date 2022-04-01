@@ -20,6 +20,7 @@ class SetConfigTests(unittest.TestCase):
         self.sys_copy = dict(sys.__dict__)
 
     def tearDown(self):
+        _testinternalcapi.reset_path_config()
         _testinternalcapi.set_config(self.old_config)
         sys.__dict__.clear()
         sys.__dict__.update(self.sys_copy)

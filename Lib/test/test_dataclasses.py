@@ -8,6 +8,7 @@ import abc
 import pickle
 import inspect
 import builtins
+import types
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol
@@ -500,6 +501,32 @@ class TestCase(unittest.TestCase):
         self.assertNotEqual(C(3), C(4, 10))
         self.assertNotEqual(C(3, 10), C(4, 10))
 
+    def test_no_unhashable_default(self):
+        # See bpo-44674.
+        class Unhashable:
+            __hash__ = None
+
+        unhashable_re = 'mutable default .* for field a is not allowed'
+        with self.assertRaisesRegex(ValueError, unhashable_re):
+            @dataclass
+            class A:
+                a: dict = {}
+
+        with self.assertRaisesRegex(ValueError, unhashable_re):
+            @dataclass
+            class A:
+                a: Any = Unhashable()
+
+        # Make sure that the machinery looking for hashability is using the
+        # class's __hash__, not the instance's __hash__.
+        with self.assertRaisesRegex(ValueError, unhashable_re):
+            unhashable = Unhashable()
+            # This shouldn't make the variable hashable.
+            unhashable.__hash__ = lambda: 0
+            @dataclass
+            class A:
+                a: Any = unhashable
+
     def test_hash_field_rules(self):
         # Test all 6 cases of:
         #  hash=True/False/None
@@ -989,6 +1016,65 @@ class TestCase(unittest.TestCase):
         self.assertEqual((c.x, c.y), (3, 4))
         self.assertTrue(C.flag)
 
+    def test_post_init_not_auto_added(self):
+        # See bpo-46757, which had proposed always adding __post_init__.  As
+        # Raymond Hettinger pointed out, that would be a breaking change.  So,
+        # add a test to make sure that the current behavior doesn't change.
+
+        @dataclass
+        class A0:
+            pass
+
+        @dataclass
+        class B0:
+            b_called: bool = False
+            def __post_init__(self):
+                self.b_called = True
+
+        @dataclass
+        class C0(A0, B0):
+            c_called: bool = False
+            def __post_init__(self):
+                super().__post_init__()
+                self.c_called = True
+
+        # Since A0 has no __post_init__, and one wasn't automatically added
+        # (because that's the rule: it's never added by @dataclass, it's only
+        # the class author that can add it), then B0.__post_init__ is called.
+        # Verify that.
+        c = C0()
+        self.assertTrue(c.b_called)
+        self.assertTrue(c.c_called)
+
+        ######################################
+        # Now, the same thing, except A1 defines __post_init__.
+        @dataclass
+        class A1:
+            def __post_init__(self):
+                pass
+
+        @dataclass
+        class B1:
+            b_called: bool = False
+            def __post_init__(self):
+                self.b_called = True
+
+        @dataclass
+        class C1(A1, B1):
+            c_called: bool = False
+            def __post_init__(self):
+                super().__post_init__()
+                self.c_called = True
+
+        # This time, B1.__post_init__ isn't being called.  This mimics what
+        # would happen if A1.__post_init__ had been automatically added,
+        # instead of manually added as we see here.  This test isn't really
+        # needed, but I'm including it just to demonstrate the changed
+        # behavior when A1 does define __post_init__.
+        c = C1()
+        self.assertFalse(c.b_called)
+        self.assertTrue(c.c_called)
+
     def test_class_var(self):
         # Make sure ClassVars are ignored in __init__, __repr__, etc.
         @dataclass
@@ -1126,6 +1212,10 @@ class TestCase(unittest.TestCase):
         self.assertEqual(repr(InitVar[int]), 'dataclasses.InitVar[int]')
         self.assertEqual(repr(InitVar[List[int]]),
                          'dataclasses.InitVar[typing.List[int]]')
+        self.assertEqual(repr(InitVar[list[int]]),
+                         'dataclasses.InitVar[list[int]]')
+        self.assertEqual(repr(InitVar[int|str]),
+                         'dataclasses.InitVar[int | str]')
 
     def test_init_var_inheritance(self):
         # Note that this deliberately tests that a dataclass need not
@@ -1349,6 +1439,17 @@ class TestCase(unittest.TestCase):
                     astuple(obj)
                 with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
                     replace(obj, x=0)
+
+    def test_is_dataclass_genericalias(self):
+        @dataclass
+        class A(types.GenericAlias):
+            origin: type
+            args: type
+        self.assertTrue(is_dataclass(A))
+        a = A(list, int)
+        self.assertTrue(is_dataclass(type(a)))
+        self.assertTrue(is_dataclass(a))
+
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,
@@ -2825,23 +2926,58 @@ class TestSlots(unittest.TestCase):
                 x: int
 
     def test_generated_slots_value(self):
-        @dataclass(slots=True)
-        class Base:
-            x: int
 
-        self.assertEqual(Base.__slots__, ('x',))
+        class Root:
+            __slots__ = {'x'}
+
+        class Root2(Root):
+            __slots__ = {'k': '...', 'j': ''}
+
+        class Root3(Root2):
+            __slots__ = ['h']
+
+        class Root4(Root3):
+            __slots__ = 'aa'
 
         @dataclass(slots=True)
-        class Delivered(Base):
+        class Base(Root4):
             y: int
+            j: str
+            h: str
 
-        self.assertEqual(Delivered.__slots__, ('x', 'y'))
+        self.assertEqual(Base.__slots__, ('y', ))
+
+        @dataclass(slots=True)
+        class Derived(Base):
+            aa: float
+            x: str
+            z: int
+            k: str
+            h: str
+
+        self.assertEqual(Derived.__slots__, ('z', ))
 
         @dataclass
-        class AnotherDelivered(Base):
+        class AnotherDerived(Base):
             z: int
 
-        self.assertTrue('__slots__' not in AnotherDelivered.__dict__)
+        self.assertNotIn('__slots__', AnotherDerived.__dict__)
+
+    def test_cant_inherit_from_iterator_slots(self):
+
+        class Root:
+            __slots__ = iter(['a'])
+
+        class Root2(Root):
+            __slots__ = ('b', )
+
+        with self.assertRaisesRegex(
+           TypeError,
+            "^Slots of 'Root' cannot be determined"
+        ):
+            @dataclass(slots=True)
+            class C(Root2):
+                x: int
 
     def test_returns_new_class(self):
         class A:

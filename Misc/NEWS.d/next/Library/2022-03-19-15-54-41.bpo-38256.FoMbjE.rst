@@ -1,0 +1,14 @@
+Fix :func:`binascii.crc32` when it is compiled to use zlib'c crc32 to
+work properly on inputs 4+GiB in length instead of returning the wrong
+result. The workaround prior to this was to always feed the function
+data in increments smaller than 4GiB or to just call the zlib module
+function.
+
+We also have :func:`binascii.crc32` release the GIL when computing
+on larger inputs as :func:`zlib.crc32` and :mod:`hashlib` do.
+
+This also boosts performance on Windows as it now uses the zlib crc32
+implementation for :func:`binascii.crc32` for a 2-3x speedup.
+
+That the stdlib has a crc32 API in two modules is a known historical
+oddity. This moves us closer to a single implementation behind them.

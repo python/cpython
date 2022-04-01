@@ -8,6 +8,8 @@ from test import support
 from test.support import socket_helper
 import unittest
 
+support.requires_working_socket(module=True)
+
 HOST = socket_helper.HOST
 
 def server(evt, serv):
