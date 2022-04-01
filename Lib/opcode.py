@@ -76,6 +76,7 @@ def_op('MATCH_SEQUENCE', 32)
 def_op('MATCH_KEYS', 33)
 
 def_op('PUSH_EXC_INFO', 35)
+def_op('CHECK_EXC_MATCH', 36)
 
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
@@ -128,10 +129,9 @@ def_op('COMPARE_OP', 107, 2)       # Comparison operator
 hascompare.append(107)
 name_op('IMPORT_NAME', 108)     # Index in name list
 name_op('IMPORT_FROM', 109)     # Index in name list
-jrel_op('JUMP_FORWARD', 110)    # Number of bytes to skip
+jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
 jabs_op('JUMP_IF_FALSE_OR_POP', 111) # Target byte offset from beginning of code
 jabs_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
-jabs_op('JUMP_ABSOLUTE', 113)        # ""
 jabs_op('POP_JUMP_IF_FALSE', 114)    # ""
 jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
 name_op('LOAD_GLOBAL', 116, 5)     # Index in name list
@@ -139,7 +139,6 @@ def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
-jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
 def_op('BINARY_OP', 122, 1)
 jrel_op('SEND', 123) # Number of bytes to skip
 def_op('LOAD_FAST', 124)        # Local variable number
@@ -166,6 +165,7 @@ def_op('STORE_DEREF', 138)
 hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
+jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
@@ -259,8 +259,8 @@ _specializations = {
         "COMPARE_OP_INT_JUMP",
         "COMPARE_OP_STR_JUMP",
     ],
-    "JUMP_ABSOLUTE": [
-        "JUMP_ABSOLUTE_QUICK",
+    "JUMP_BACKWARD": [
+        "JUMP_BACKWARD_QUICK",
     ],
     "LOAD_ATTR": [
         "LOAD_ATTR_ADAPTIVE",
@@ -294,6 +294,7 @@ _specializations = {
         "PRECALL_BOUND_METHOD",
         "PRECALL_BUILTIN_CLASS",
         "PRECALL_BUILTIN_FAST_WITH_KEYWORDS",
+        "PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS",
         "PRECALL_NO_KW_BUILTIN_FAST",
         "PRECALL_NO_KW_BUILTIN_O",
         "PRECALL_NO_KW_ISINSTANCE",
