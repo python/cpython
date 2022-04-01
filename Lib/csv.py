@@ -81,7 +81,7 @@ register_dialect("unix", unix_dialect)
 class DictReader:
     def __init__(self, f, fieldnames=None, restkey=None, restval=None,
                  dialect="excel", *args, **kwds):
-        if not isinstance(fieldnames, Sequence):
+        if fieldnames is not None and not isinstance(fieldnames, Sequence):
             raise TypeError(f"Expected a sequence, got {type(fieldnames)}")
         self._fieldnames = fieldnames   # list of keys for the dict
         self.restkey = restkey          # key to catch long rows
