@@ -894,7 +894,7 @@ PyInit__test_module_state_shared(PyObject *spec)
 static PyModuleDef imp_dummy_def = TEST_MODULE_DEF("imp_dummy", main_slots, testexport_methods);
 
 PyMODINIT_FUNC
-PyInit_imp_dummy(PyObject *spec)
+PyInit_imp_dummy(void)
 {
     return PyModuleDef_Init(&imp_dummy_def);
 }
