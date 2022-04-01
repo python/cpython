@@ -520,7 +520,8 @@ CPython bytecode changes
 * Add :opcode:`POP_JUMP_IF_NOT_NONE` and :opcode:`POP_JUMP_IF_NONE` opcodes to
   speed up conditional jumps.
 
-* :opcode:`JUMP_IF_NOT_EXC_MATCH` no longer pops the active exception.
+* Replaced :opcode:`JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH` which
+  performs the check but does not jump.
 
 * Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
 
