@@ -1101,7 +1101,7 @@ AC_DEFINE_UNQUOTED([PY_SUPPORT_TIER], [$PY_SUPPORT_TIER], [PEP 11 Support tier (
 
 AC_CACHE_CHECK([for -Wl,--no-as-needed], [ac_cv_wl_no_as_needed], [
   save_LDFLAGS="$LDFLAGS"
-  AS_VAR_APPEND([LDFLAGS], [-Wl,--no-as-needed])
+  AS_VAR_APPEND([LDFLAGS], [" -Wl,--no-as-needed"])
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
     [NO_AS_NEEDED="-Wl,--no-as-needed"
      ac_cv_wl_no_as_needed=yes],
@@ -3581,21 +3581,21 @@ ctypes_malloc_closure=no
 AS_CASE([$ac_sys_system],
   [Darwin], [
     dnl when do we need USING_APPLE_OS_LIBFFI?
-    AS_VAR_APPEND([LIBFFI_CFLAGS], ['-I$(srcdir)/Modules/_ctypes/darwin -DMACOSX '])
+    AS_VAR_APPEND([LIBFFI_CFLAGS], [" -I\$(srcdir)/Modules/_ctypes/darwin -DMACOSX"])
     ctypes_malloc_closure=yes
   ],
-  [sunos5], [AS_VAR_APPEND([LIBFFI_LIBS], [-mimpure-text])],
-  [hp*|HP*], [AS_VAR_APPEND([LIBFFI_LIBS], [-fPIC])]
+  [sunos5], [AS_VAR_APPEND([LIBFFI_LIBS], [" -mimpure-text"])],
+  [hp*|HP*], [AS_VAR_APPEND([LIBFFI_LIBS], [" -fPIC"])]
 )
 
 AS_VAR_IF([ctypes_malloc_closure], [yes], [
   MODULE__CTYPES_MALLOC_CLOSURE=_ctypes/malloc_closure.c
-  AS_VAR_APPEND([LIBFFI_CFLAGS], ['-DUSING_MALLOC_CLOSURE_DOT_C=1 '])
+  AS_VAR_APPEND([LIBFFI_CFLAGS], [" -DUSING_MALLOC_CLOSURE_DOT_C=1"])
 ])
 AC_SUBST([MODULE__CTYPES_MALLOC_CLOSURE])
 
 dnl HAVE_LIBDL: for dlopen, see bpo-32647
-AS_VAR_IF([ac_cv_lib_dl_dlopen], [yes], [AS_VAR_APPEND([LIBFFI_LIBS], [-ldl])])
+AS_VAR_IF([ac_cv_lib_dl_dlopen], [yes], [AS_VAR_APPEND([LIBFFI_LIBS], [" -ldl"])])
 
 if test "$with_system_ffi" = yes -a "$have_libffi" = yes; then
   WITH_SAVE_ENV([
