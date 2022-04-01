@@ -3561,7 +3561,8 @@ if test "$ac_sys_system" = "Darwin"
 then
     case "$with_system_ffi" in
         "")
-            with_system_ffi="no"
+            dnl XXX WIP hack
+            with_system_ffi="yes"
             ;;
         yes|no)
             ;;
