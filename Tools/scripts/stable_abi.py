@@ -119,7 +119,7 @@ class ABIItem:
     abi_only: bool = False
     ifdef: str = None
     struct_abi_kind: str = None
-    fields: list = None
+    members: list = None
 
     KINDS = frozenset({
         'struct', 'function', 'macro', 'data', 'const', 'typedef',
@@ -174,15 +174,15 @@ def parse_manifest(file):
             if parent.kind not in {'function', 'data'}:
                 raise_error(f'{kind} cannot go in {parent.kind}')
             parent.abi_only = True
-        elif kind in {'fields', 'full-abi', 'opaque'}:
+        elif kind in {'members', 'full-abi', 'opaque'}:
             if parent.kind not in {'struct'}:
                 raise_error(f'{kind} cannot go in {parent.kind}')
             if prev := getattr(parent, 'struct_abi_kind', None):
                 raise_error(
                     f'{parent.name} already has {prev}, cannot add {kind}')
             parent.struct_abi_kind = kind
-            if kind == 'fields':
-                parent.fields = content.split()
+            if kind == 'members':
+                parent.members = content.split()
         else:
             raise_error(f"unknown kind {kind!r}")
             # When adding more, update the comment in stable_abi.txt.
@@ -272,10 +272,10 @@ def gen_doc_annotations(manifest, args, outfile):
             'added': item.added,
             'ifdef_note': ifdef_note,
             'struct_abi_kind': item.struct_abi_kind})
-        for field_name in item.fields or ():
+        for member_name in item.members or ():
             writer.writerow({
                 'role': 'member',
-                'name': f'{item.name}.{field_name}',
+                'name': f'{item.name}.{member_name}',
                 'added': item.added})
 
 @generator("ctypes_test", 'Lib/test/test_stable_abi_ctypes.py')

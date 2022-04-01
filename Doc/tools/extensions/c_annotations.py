@@ -124,7 +124,7 @@ class Annotations:
                     emph_node += nodes.Text(' (as an opaque struct)')
                 elif struct_abi_kind == 'full-abi':
                     emph_node += nodes.Text(' (including all members)')
-                elif struct_abi_kind == 'fields':
+                elif struct_abi_kind == 'members':
                     emph_node += nodes.Text(
                         ' (but only some members are part of the stable ABI)')
                 if record['ifdef_note']:

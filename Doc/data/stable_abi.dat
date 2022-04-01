@@ -470,7 +470,7 @@ function,PyOS_string_to_double,3.2,,
 function,PyOS_strtol,3.2,,
 function,PyOS_strtoul,3.2,,
 function,PyOS_vsnprintf,3.2,,
-type,PyObject,3.2,,fields
+type,PyObject,3.2,,members
 member,PyObject.ob_refcnt,3.2,,
 member,PyObject.ob_type,3.2,,
 function,PyObject_ASCII,3.2,,
@@ -779,7 +779,7 @@ function,PyUnicode_Tailmatch,3.2,,
 function,PyUnicode_Translate,3.2,,
 var,PyUnicode_Type,3.2,,
 function,PyUnicode_WriteChar,3.7,,
-type,PyVarObject,3.2,,fields
+type,PyVarObject,3.2,,members
 member,PyVarObject.ob_base,3.2,,
 member,PyVarObject.ob_size,3.2,,
 type,PyWeakReference,3.2,,opaque
