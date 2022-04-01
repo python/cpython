@@ -82,6 +82,9 @@ jobs:
         run: make regen-configure
       - name: Build CPython
         run: |
+          # Deepfreeze will usually cause global objects to be added or removed,
+          # so we run it before regen-global-objects gets rum (in regen-all).
+          make regen-deepfreeze
           make -j4 regen-all
           make regen-stdlib-module-names
       - name: Check for changes
