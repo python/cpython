@@ -15,7 +15,6 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
-
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
 #endif
