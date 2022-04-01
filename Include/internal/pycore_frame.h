@@ -57,6 +57,7 @@ typedef struct _PyInterpreterFrame {
     char owner;
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
+
 #define _PyInterpreterFrame_LASTI(IF) \
     ((int)((IF)->prev_instr - _PyCode_CODE((IF)->f_code)))
 
