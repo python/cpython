@@ -4142,7 +4142,7 @@ then
     fi
 fi
 
-dnl platform specific C and header files
+dnl Platform-specific C and header files.
 PLATFORM_HEADERS=
 PLATFORM_OBJS=
 
