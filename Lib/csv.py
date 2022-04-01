@@ -10,6 +10,7 @@ from _csv import Error, __version__, writer, reader, register_dialect, \
                  QUOTE_MINIMAL, QUOTE_ALL, QUOTE_NONNUMERIC, QUOTE_NONE, \
                  __doc__
 from _csv import Dialect as _Dialect
+from _collections_abc import Sequence
 
 from io import StringIO
 
@@ -80,6 +81,8 @@ register_dialect("unix", unix_dialect)
 class DictReader:
     def __init__(self, f, fieldnames=None, restkey=None, restval=None,
                  dialect="excel", *args, **kwds):
+        if not isinstance(fieldnames, Sequence):
+            raise TypeError("fieldnames must be a sequence")
         self._fieldnames = fieldnames   # list of keys for the dict
         self.restkey = restkey          # key to catch long rows
         self.restval = restval          # default value for short rows
@@ -130,6 +133,8 @@ class DictReader:
 class DictWriter:
     def __init__(self, f, fieldnames, restval="", extrasaction="raise",
                  dialect="excel", *args, **kwds):
+        if not isinstance(fieldnames, Sequence):
+            raise TypeError("fieldnames must be a sequence")
         self.fieldnames = fieldnames    # list of keys for the dict
         self.restval = restval          # for writing short dicts
         if extrasaction.lower() not in ("raise", "ignore"):
