@@ -713,6 +713,21 @@ fi
 
 if test "$ac_sys_system" = "Darwin"
 then
+  dnl look for SDKROOT
+  AC_CHECK_PROG([HAS_XCRUN], [xcrun], [yes], [missing])
+  AC_MSG_CHECKING([macOS SDKROOT])
+  if test -z "$SDKROOT"; then
+    dnl SDKROOT not set
+    if test "$HAS_XCRUN" = "yes"; then
+      dnl detect with Xcode
+      SDKROOT=$(xcrun --show-sdk-path)
+    else
+      dnl default to root
+      SDKROOT="/"
+    fi
+  fi
+  AC_MSG_RESULT([$SDKROOT])
+
 	# Compiler selection on MacOSX is more complicated than
 	# AC_PROG_CC can handle, see Mac/README for more
 	# information
@@ -3571,6 +3586,20 @@ AS_VAR_IF([with_system_ffi], [yes], [
     AC_CHECK_HEADER([ffi.h], [
       WITH_SAVE_ENV([
         AC_CHECK_LIB([ffi], [ffi_call], [have_libffi=yes], [have_libffi=no])
+      ])
+    ])
+  ])
+], [
+  AS_VAR_IF([ac_sys_system], [Darwin], [
+    WITH_SAVE_ENV([
+      CFLAGS="${SDKROOT}/usr/include/ffi $CFLAGS"
+      AC_CHECK_HEADER([ffi.h], [
+        AC_CHECK_LIB([ffi], [ffi_call], [
+          dnl use ffi from SDK root
+          have_libffi=yes
+          LIBFFI_CFLAGS="${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
+          LIBFFI_LIBS="-lffi"
+        ], [have_libffi=no])
       ])
     ])
   ])
