@@ -628,6 +628,12 @@ iterations of the loop.
 
     .. versionadded:: 3.11
 
+.. opcode:: CHECK_EXC_MATCH
+
+   Performs exception matching for ``except``. Tests whether the TOS1 is an exception
+   matching TOS. Pops TOS and pushes the boolean result of the test.
+
+   .. versionadded:: 3.11
 
 .. opcode:: WITH_EXCEPT_START
 
@@ -921,18 +927,6 @@ iterations of the loop.
    If TOS is false, sets the bytecode counter to *target*.  TOS is popped.
 
    .. versionadded:: 3.1
-
-
-.. opcode:: JUMP_IF_NOT_EXC_MATCH (target)
-
-   Performs exception matching for ``except``.
-   Tests whether the second value on the stack is an exception matching TOS,
-   and jumps if it is not. Pops one value from the stack.
-
-   .. versionadded:: 3.9
-
-   .. versionchanged:: 3.11
-      This opcode no longer pops the active exception.
 
 
 .. opcode:: JUMP_IF_NOT_EG_MATCH (target)

@@ -76,6 +76,7 @@ def_op('MATCH_SEQUENCE', 32)
 def_op('MATCH_KEYS', 33)
 
 def_op('PUSH_EXC_INFO', 35)
+def_op('CHECK_EXC_MATCH', 36)
 
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
@@ -138,7 +139,6 @@ def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
-jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
 def_op('BINARY_OP', 122, 1)
 jrel_op('SEND', 123) # Number of bytes to skip
 def_op('LOAD_FAST', 124)        # Local variable number

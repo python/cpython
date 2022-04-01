@@ -84,6 +84,7 @@ Additionally, there are **low-level** APIs for
    asyncio-protocol.rst
    asyncio-policy.rst
    asyncio-platforms.rst
+   asyncio-extending.rst
 
 .. toctree::
    :caption: Guides and Tutorials
