@@ -464,7 +464,7 @@ def setcontext(context):
 
 del contextvars        # Don't contaminate the namespace
 
-def localcontext(ctx=None):
+def localcontext(ctx=None, **kwargs):
     """Return a context manager for a copy of the supplied context
 
     Uses a copy of the current context if no context is specified
@@ -500,7 +500,10 @@ def localcontext(ctx=None):
     >>> print(getcontext().prec)
     28
     """
-    if ctx is None: ctx = getcontext()
+    if ctx is None:
+        ctx = getcontext()
+    for key, value in kwargs.items():
+        setattr(ctx, key, value)
     return _ContextManager(ctx)
 
 
