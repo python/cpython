@@ -62,7 +62,7 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.11.
    Brevity is key.
 
-- Python 3.11 is 20% faster than Python 3.10. See `Faster CPython`_ for details.
+- Python 3.11 is 22% faster than Python 3.10. See `Faster CPython`_ for details.
 
 .. PEP-sized items next.
 
@@ -484,7 +484,7 @@ Optimizations
 Faster CPython
 ==============
 
-CPython 3.11 is on average `1.20x faster <https://github.com/faster-cpython/ideas/blob/main/main-vs-310.rst>`_
+CPython 3.11 is on average `1.22x faster <https://github.com/faster-cpython/ideas/blob/main/main-vs-310.rst>`_
 than CPython 3.10 when measured with the
 `pyperformance <https://github.com/python/pyperformance>`_ benchmark suite, on
 Ubuntu Linux.
@@ -573,6 +573,9 @@ to those use cases/types and will generally outperform their generic
 counterparts. This also brings in another concept called *inline caching*, where
 Python caches the results of expensive operations directly in the bytecode.
 
+The specializer will also combine certain common instruction pairs into one
+super instruction. This reduces the overhead during execution.
+
 Since this exta information requires more memory, Python will only specialize
 when it sees code that is "hot" (executed multiple times). It can also
 de-specialize when code is too dynamic. This is attempted every so often, and
@@ -605,36 +608,36 @@ See :pep:`659` for more information.)
 |               |                    | and ``isinstance`` directly call their underlying C   |                   | Ken Jin           |
 |               | ``T(arg)``         | version. This avoids going through the internal       | 170%              |                   |
 |               |                    | calling convention.                                   |                   |                   |
-|               |                    |                                                       | ?                 |                   |
+|               |                    |                                                       |                   |                   |
 |               |                    | Calls to certain Python functions are inlined similar |                   |                   |
 |               |                    | to :ref:`inline-calls`.                               |                   |                   |
 |               |                    |                                                       |                   |                   |
-|               |                    | ``__init__`` is also inlined when creating            |                   |                   |
-|               |                    | Python classes.                                       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 | Load          | ``print; len``     | The object's index in the globals/builtins namespace  | 0% [1]_           | Mark Shannon      |
 | global        |                    | is cached. Loading globals and builtins requires      |                   |                   |
 | variable      |                    | no namespace lookups.                                 |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | ?                 | Mark Shannon      |
+| Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | 0% [2]_           | Mark Shannon      |
 | attribute     |                    | index inside the class/object's namespace is cached.  |                   |                   |
 |               |                    | In most cases, attribute loading will require zero    |                   |                   |
 |               |                    | namespace lookups.                                    |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Load          | ``o.meth()``       | The actual address of the method is cached. Method    | 10-20% [2]_       | Ken Jin,          |
+| Load          | ``o.meth()``       | The actual address of the method is cached. Method    | 10-20% [3]_       | Ken Jin,          |
 | methods for   |                    | loading now has no namespace lookups -- even for      |                   | Mark Shannon      |
 | call          |                    | classes with long inheritance chains.                 |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Store         | ``o.attr = z``     | Similar to load attribute optimization.               | ?                 | Mark Shannon      |
-| attribute     |                    |                                                       |                   |                   |
+| Store         | ``o.attr = z``     | Similar to load attribute optimization.               | 2%                | Mark Shannon      |
+| attribute     |                    |                                                       | in pyperformance  |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Unpack        | ``*seq``           | Specialized for common containers such as ``list``    | ?                 | ?                 |
+| Unpack        | ``*seq``           | Specialized for common containers such as ``list``    | 8%                | Brandt Bucher     |
 | Sequence      |                    | and ``tuple``. Avoids internal calling convention.    |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 
 .. [1] Note that a similar optimization already existed since Python 3.8.
 
-.. [2] Classes with longer inheritance chains will see greater speedups.
+.. [2] Note that a similar optimization has already existed since Python 3.10.
+
+.. [3] Classes with longer inheritance chains will see greater speedups.
        This optimization effectively makes method lookup constant time
        regardless of inheritance.
 
@@ -662,6 +665,10 @@ FAQ
   its time on IO(Input/Output) operations, or already does most of its
   computation in a C extension library like numpy, there won't be significant
   speedup. This project currently benefits pure-Python workloads the most.
+|
+| Furthermore, the pyperformance figures are a geometric mean. Even within the
+  pyperformance benchmarks, certain benchmarks have slowed down slightly, while
+  others have sped up by nearly 1.9x!
 |
 |
 | Q: Is there a JIT compiler?
