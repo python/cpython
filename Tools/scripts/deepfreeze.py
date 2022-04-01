@@ -117,6 +117,8 @@ class Printer:
         self.write('#include "internal/pycore_code.h"')
         self.write('#include "internal/pycore_long.h"')
         self.write("")
+        self.write("extern PyTypeObject _PyExc_StopIteration;")
+        self.write("")
 
     @contextlib.contextmanager
     def indent(self) -> None:
@@ -404,6 +406,8 @@ class Printer:
             return "Py_Ellipsis"
         elif obj is None:
             return "Py_None"
+        elif obj is StopIteration:
+            return "(PyObject *)&_PyExc_StopIteration"
         else:
             raise TypeError(
                 f"Cannot generate code for {type(obj).__name__} object")

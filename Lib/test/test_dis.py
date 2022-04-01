@@ -1023,9 +1023,11 @@ Flags:             OPTIMIZED, NEWLOCALS, COROUTINE
 Constants:
    0: None
    1: 1
+   2: <class 'StopIteration'>
 Names:
-   0: b
-   1: c
+   0: value
+   1: b
+   2: c
 Variable names:
    0: a
    1: d"""

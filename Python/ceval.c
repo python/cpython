@@ -2580,6 +2580,9 @@ handle_eval_breaker:
         }
 
         TARGET(YIELD_VALUE) {
+            // NOTE: It's important that YIELD_VALUE never raises an exception!
+            // The compiler treats *anything* raised here as part of a close()
+            // or throw() call.
             assert(frame->is_entry);
             PyObject *retval = POP();
             _PyFrame_GetGenerator(frame)->gi_frame_state = FRAME_SUSPENDED;

@@ -298,6 +298,8 @@ class Reader:
             retval = self.refs[n]
             assert retval is not None
             return retval
+        elif type == Type.STOPITER:
+            return StopIteration
         else:
             breakpoint()
             raise AssertionError(f"Unknown type {type} {chr(type)!r}")

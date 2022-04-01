@@ -585,17 +585,23 @@ StopIteration_traverse(PyStopIterationObject *self, visitproc visit, void *arg)
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
 }
 
-ComplexExtendsException(
-    PyExc_Exception,       /* base */
-    StopIteration,         /* name */
-    StopIteration,         /* prefix for *_init, etc */
-    0,                     /* new */
-    0,                     /* methods */
-    StopIteration_members, /* members */
-    0,                     /* getset */
-    0,                     /* str */
-    "Signal the end from iterator.__next__()."
-);
+// Don't use ComplexExtendsException for this, since deepfreeze doesn't work if
+// the type is static:
+PyTypeObject _PyExc_StopIteration = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "StopIteration",
+    .tp_basicsize = sizeof(PyStopIterationObject),
+    .tp_dealloc = (destructor)StopIteration_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .tp_doc = PyDoc_STR("Signal the end from iterator.__next__()."),
+    .tp_traverse = (traverseproc)StopIteration_traverse,
+    .tp_clear = (inquiry)StopIteration_clear,
+    .tp_members = StopIteration_members,
+    .tp_base = &_PyExc_Exception,
+    .tp_dictoffset = offsetof(PyStopIterationObject, dict),
+    .tp_init = (initproc)StopIteration_init,
+};
+PyObject *PyExc_StopIteration = (PyObject *)&_PyExc_StopIteration;
 
 
 /*

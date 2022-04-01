@@ -1875,19 +1875,37 @@ compiler_call_exit_with_nones(struct compiler *c) {
 static int
 compiler_add_yield_from(struct compiler *c, int await)
 {
-    basicblock *start, *resume, *exit;
-    start = compiler_new_block(c);
-    resume = compiler_new_block(c);
-    exit = compiler_new_block(c);
-    if (start == NULL || resume == NULL || exit == NULL) {
-        return 0;
-    }
+    basicblock *start, *resume, *stopiter, *error, *exit;
+    RETURN_IF_FALSE(start = compiler_new_block(c));
+    RETURN_IF_FALSE(resume = compiler_new_block(c));
+    RETURN_IF_FALSE(stopiter = compiler_new_block(c));
+    RETURN_IF_FALSE(error = compiler_new_block(c));
+    RETURN_IF_FALSE(exit = compiler_new_block(c));
+
     compiler_use_next_block(c, start);
     ADDOP_JUMP(c, SEND, exit);
     compiler_use_next_block(c, resume);
+    // Set up a virtual try/except to handle StopIteration raised during a
+    // close() or throw():
+    ADDOP_JUMP(c, SETUP_FINALLY, stopiter);
+    RETURN_IF_FALSE(compiler_push_fblock(c, TRY_EXCEPT, resume, NULL, NULL));
+    // The only way YIELD_VALUE can raise is if close() or throw() raises:
     ADDOP(c, YIELD_VALUE);
+    compiler_pop_fblock(c, TRY_EXCEPT, resume);
+    ADDOP_NOLINE(c, POP_BLOCK);
     ADDOP_I(c, RESUME, await ? 3 : 2);
     ADDOP_JUMP(c, JUMP_NO_INTERRUPT, start);
+    compiler_use_next_block(c, stopiter);
+    ADDOP_LOAD_CONST(c, PyExc_StopIteration);  // StopIteration is marshallable!
+    ADDOP_JUMP(c, JUMP_IF_NOT_EXC_MATCH, error);
+    // StopIteration was raised. Push the return value and continue execution:
+    ADDOP_NAME(c, LOAD_ATTR, &_Py_ID(value), names);
+    ADDOP_I(c, SWAP, 3);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
+    ADDOP_JUMP(c, JUMP_FORWARD, exit);
+    compiler_use_next_block(c, error);
+    ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, exit);
     return 1;
 }

@@ -967,6 +967,7 @@ extern "C" {
                 INIT_ID(top), \
                 INIT_ID(truncate), \
                 INIT_ID(unraisablehook), \
+                INIT_ID(value), \
                 INIT_ID(values), \
                 INIT_ID(version), \
                 INIT_ID(warnings), \

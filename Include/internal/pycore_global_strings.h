@@ -344,6 +344,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(top)
         STRUCT_FOR_ID(truncate)
         STRUCT_FOR_ID(unraisablehook)
+        STRUCT_FOR_ID(value)
         STRUCT_FOR_ID(values)
         STRUCT_FOR_ID(version)
         STRUCT_FOR_ID(warnings)
