@@ -930,7 +930,7 @@ function to temporarily change the active context.
    Return a context manager that will set the current context for the active thread
    to a copy of *ctx* on entry to the with-statement and restore the previous context
    when exiting the with-statement. If no context is specified, a copy of the
-   current context is used.  The *kwargs* argument is used to specify the attributes
+   current context is used.  The *kwargs* argument is used to set the attributes
    of the new context.
 
    For example, the following code sets the current decimal precision to 42 places,
