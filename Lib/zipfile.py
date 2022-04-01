@@ -1841,7 +1841,7 @@ class ZipFile:
             zinfo = ZipInfo(directory_name)
             zinfo.compress_size = 0
             zinfo.CRC = 0
-            zinfo.external_attr = (mode & 0xFFFF) << 16
+            zinfo.external_attr = ((0o40000 | mode) & 0xFFFF) << 16
             zinfo.file_size = 0
             zinfo.external_attr |= 0x10
         else:
