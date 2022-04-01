@@ -5038,15 +5038,14 @@ handle_eval_breaker:
             PyObject *list = SECOND();
             DEOPT_IF(!PyList_Check(list), PRECALL);
             STAT_INC(PRECALL, hit);
-            SKIP_CALL();
+            // PRECALL + CALL + POP_TOP
+            JUMPBY(INLINE_CACHE_ENTRIES_PRECALL + 1 + INLINE_CACHE_ENTRIES_CALL + 1);
             PyObject *arg = POP();
             if (_PyList_AppendTakeRef((PyListObject *)list, arg) < 0) {
                 goto error;
             }
+            STACK_SHRINK(2);
             Py_DECREF(list);
-            STACK_SHRINK(1);
-            Py_INCREF(Py_None);
-            SET_TOP(Py_None);
             Py_DECREF(callable);
             NOTRACE_DISPATCH();
         }
