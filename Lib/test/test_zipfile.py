@@ -2682,7 +2682,7 @@ class TestWithDirectory(unittest.TestCase):
             zf.write(directory, arcname="directory2/")
             zinfo = zf.filelist[1]
             self.assertEqual(zinfo.filename, "directory2/")
-            self.assertEqual(zinfo.external_attr, ((0o40000 | mode) << 16) | 0x10)
+            self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
 
             target = os.path.join(TESTFN2, "target")
             os.mkdir(target)
