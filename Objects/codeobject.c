@@ -1523,8 +1523,8 @@ code_getfreevars(PyCodeObject *code, void *closure)
 static PyObject *
 code_getcodeadaptive(PyCodeObject *code, void *closure)
 {
-    return PyMemoryView_FromMemory(code->co_code_adaptive, _PyCode_NBYTES(code),
-                                   PyBUF_READ);
+    return PyBytes_FromStringAndSize(code->co_code_adaptive,
+                                     _PyCode_NBYTES(code));
 }
 
 static PyObject *
