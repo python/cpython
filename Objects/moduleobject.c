@@ -510,10 +510,12 @@ const char *
 PyModule_GetName(PyObject *m)
 {
     PyObject *name = PyModule_GetNameObject(m);
-    if (name == NULL)
+    if (name == NULL) {
         return NULL;
+    }
+    const char *utf8 = PyUnicode_AsUTF8(name);
     Py_DECREF(name);   /* module dict has still a reference */
-    return PyUnicode_AsUTF8(name);
+    return utf8;
 }
 
 PyObject*
