@@ -840,6 +840,7 @@ extern "C" {
                 INIT_ID(_initializing), \
                 INIT_ID(_is_text_encoding), \
                 INIT_ID(_lock_unlock_module), \
+                INIT_ID(_registrycleared), \
                 INIT_ID(_showwarnmsg), \
                 INIT_ID(_shutdown), \
                 INIT_ID(_slotnames), \

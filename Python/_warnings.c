@@ -393,6 +393,39 @@ get_filter(PyInterpreterState *interp, PyObject *category,
 
 
 static int
+call_registrycleared(PyInterpreterState *interp, PyObject *registry)
+{
+    PyObject *_registrycleared, *res;
+
+    _registrycleared = GET_WARNINGS_ATTR(interp, _registrycleared, 0);
+    if (_registrycleared == NULL) {
+        if (PyErr_Occurred())
+            return -1;
+        return 0;
+    }
+
+    if (!PyCallable_Check(_registrycleared)) {
+        PyErr_SetString(PyExc_TypeError,
+                "warnings._registrycleared() must be set to a callable");
+        goto error;
+    }
+
+    res = PyObject_CallFunctionObjArgs(_registrycleared, registry, NULL);
+    Py_DECREF(_registrycleared);
+
+    if (res == NULL);
+        return -1;
+
+    Py_DECREF(res);
+    return 0;
+
+error:
+    Py_XDECREF(_registrycleared);
+    return -1;
+}
+
+
+static int
 already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
                int should_set)
 {
@@ -413,6 +446,7 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
         if (PyErr_Occurred()) {
             return -1;
         }
+        call_registrycleared(interp, registry);
         PyDict_Clear(registry);
         version_obj = PyLong_FromLong(st->filters_version);
         if (version_obj == NULL)
@@ -1088,7 +1122,27 @@ warnings_filters_mutated(PyObject *self, PyObject *Py_UNUSED(args))
     if (st == NULL) {
         return NULL;
     }
-    st->filters_version++;
+    return PyLong_FromLong(st->filters_version++);
+}
+
+static PyObject *
+warnings_set_filters_version(PyObject *self, PyObject *args)
+{
+    long filters_version;
+
+    if (!PyArg_ParseTuple(args, "l:_set_filters_version", &filters_version)) {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = get_current_interp();
+    if (interp == NULL) {
+        return NULL;
+    }
+    WarningsState *st = warnings_get_state(interp);
+    if (st == NULL) {
+        return NULL;
+    }
+    st->filters_version = filters_version;
     Py_RETURN_NONE;
 }
 
@@ -1357,6 +1411,8 @@ static PyMethodDef warnings_functions[] = {
         METH_VARARGS | METH_KEYWORDS, warn_explicit_doc},
     {"_filters_mutated", _PyCFunction_CAST(warnings_filters_mutated), METH_NOARGS,
         NULL},
+    {"_set_filters_version", (PyCFunction)warnings_set_filters_version,
+        METH_VARARGS, NULL},
     /* XXX(brett.cannon): add showwarning? */
     /* XXX(brett.cannon): Reasonable to add formatwarning? */
     {NULL, NULL}                /* sentinel */

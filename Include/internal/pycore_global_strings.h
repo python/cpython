@@ -217,6 +217,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(_initializing)
         STRUCT_FOR_ID(_is_text_encoding)
         STRUCT_FOR_ID(_lock_unlock_module)
+        STRUCT_FOR_ID(_registrycleared)
         STRUCT_FOR_ID(_showwarnmsg)
         STRUCT_FOR_ID(_shutdown)
         STRUCT_FOR_ID(_slotnames)
