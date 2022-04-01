@@ -78,6 +78,12 @@
 #define POP_BLOCK -4
 #define JUMP -5
 
+#define MIN_VIRTUAL_OPCODE -5
+#define MAX_ALLOWED_OPCODE 254
+
+#define IS_WITHIN_OPCODE_RANGE(opcode) \
+        ((opcode) >= MIN_VIRTUAL_OPCODE && (opcode) <= MAX_ALLOWED_OPCODE)
+
 #define IS_VIRTUAL_OPCODE(opcode) ((opcode) < 0)
 
 #define IS_TOP_LEVEL_AWAIT(c) ( \
@@ -117,7 +123,7 @@ is_bit_set_in_table(const uint32_t *table, int bitindex) {
      * Word is indexed by (bitindex>>ln(size of int in bits)).
      * Bit within word is the low bits of bitindex.
      */
-    if (bitindex >= 0) {
+    if (bitindex >= 0 && bitindex < 256) {
         uint32_t word = table[bitindex >> LOG_BITS_PER_INT];
         return (word >> (bitindex & MASK_LOW_LOG_BITS)) & 1;
     }
@@ -1192,6 +1198,7 @@ static int
 compiler_addop_line(struct compiler *c, int opcode, int line,
                     int end_line, int col_offset, int end_col_offset)
 {
+    assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!HAS_ARG(opcode) || IS_ARTIFICIAL(opcode));
 
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
@@ -1434,6 +1441,7 @@ compiler_addop_i_line(struct compiler *c, int opcode, Py_ssize_t oparg,
        The argument of a concrete bytecode instruction is limited to 8-bit.
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
+    assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(HAS_ARG(opcode));
     assert(0 <= oparg && oparg <= 2147483647);
 
@@ -1477,6 +1485,7 @@ static int add_jump_to_block(struct compiler *c, int opcode,
                              int col_offset, int end_col_offset,
                              basicblock *target)
 {
+    assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(HAS_ARG(opcode) || IS_VIRTUAL_OPCODE(opcode));
     assert(target != NULL);
 
