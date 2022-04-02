@@ -1341,6 +1341,8 @@ These are not used in annotations. They are building blocks for creating generic
     of types. You might see ``Unpack`` being used explicitly in older versions
     of Python, where ``*`` couldn't be used in certain places::
 
+        # In older versions of Python, TypeVarTuple and Unpack
+        # are located in the `typing_extensions` backports package.
         from typing_extensions import TypeVarTuple, Unpack
 
         Ts = TypeVarTuple('Ts')
