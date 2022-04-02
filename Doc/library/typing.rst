@@ -1248,17 +1248,17 @@ These are not used in annotations. They are building blocks for creating generic
         def remove_first_element(xs: tuple[T, *Ts]) -> tuple[*Ts]:
             return xs[1:]
 
-        remove_first_element(xs=(1,))
         # T is bound to int, Ts is bound to ()
         # Return value is (), which has type tuple[()]
+        remove_first_element(xs=(1,))
 
-        remove_first_element(xs=(1, 'spam'))
         # T is bound to int, Ts is bound to (str,)
         # Return value is ('foo',), which has type tuple[str]
+        remove_first_element(xs=(1, 'spam'))
 
-        remove_first_element(xs=(1, 'spam', 3.0))
         # T is bound to int, Ts is bound to (str, float)
         # Return value is ('spam', 3.0), which has type tuple[str, float]
+        remove_first_element(xs=(1, 'spam', 3.0))
 
     Note the use of the unpacking operator ``*`` in ``tuple[T, *Ts]``.
     Conceptually, you can think of ``Ts`` as a tuple of type variables
