@@ -10564,7 +10564,7 @@ fi;;
 	esac
 fi
 
-if test "$enable_wasm_dynamic_linking" = "yes" -a "$ac_sys_system" = "Emscripten; then
+if test "$enable_wasm_dynamic_linking" = "yes" -a "$ac_sys_system" = "Emscripten"; then
   BLDSHARED='$(CC) -shared -s SIDE_MODULE=1 -s WASM=1'
 fi
 

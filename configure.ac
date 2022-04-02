@@ -3008,7 +3008,7 @@ fi
 
 dnl Emscripten's emconfigure sets LDSHARED. Set BLDSHARED outside the
 dnl test -z $LDSHARED block to configure BLDSHARED for side module support.
-if test "$enable_wasm_dynamic_linking" = "yes" -a "$ac_sys_system" = "Emscripten; then
+if test "$enable_wasm_dynamic_linking" = "yes" -a "$ac_sys_system" = "Emscripten"; then
   BLDSHARED='$(CC) -shared -s SIDE_MODULE=1 -s WASM=1'
 fi
 
