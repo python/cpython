@@ -607,7 +607,10 @@ def _syscmd_file(target, default=''):
         # XXX Others too ?
         return default
 
-    import subprocess
+    try:
+        import subprocess
+    except ImportError:
+        return default
     target = _follow_symlinks(target)
     # "file" output is locale dependent: force the usage of the C locale
     # to get deterministic behavior.
@@ -746,7 +749,10 @@ class _Processor:
         """
         Fall back to `uname -p`
         """
-        import subprocess
+        try:
+            import subprocess
+        except ImportError:
+            return None
         try:
             return subprocess.check_output(
                 ['uname', '-p'],

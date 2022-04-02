@@ -42,18 +42,15 @@ typedef struct _callback_context
 typedef struct
 {
     PyObject_HEAD
-    sqlite3* db;
+    sqlite3 *db;
     pysqlite_state *state;
 
     /* the type detection mode. Only 0, PARSE_DECLTYPES, PARSE_COLNAMES or a
      * bitwise combination thereof makes sense */
     int detect_types;
 
-    /* None for autocommit, otherwise a PyUnicode with the isolation level */
-    PyObject* isolation_level;
-
-    /* NULL for autocommit, otherwise a string with the BEGIN statement */
-    const char* begin_statement;
+    /* NULL for autocommit, otherwise a string with the isolation level */
+    const char *isolation_level;
 
     /* 1 if a check should be performed for each API call if the connection is
      * used from the same thread it was created in */

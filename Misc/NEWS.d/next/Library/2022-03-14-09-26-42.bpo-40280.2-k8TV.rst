@@ -1,0 +1,1 @@
+:func:`select.select` now passes ``NULL`` to ``select`` for each empty fdset.

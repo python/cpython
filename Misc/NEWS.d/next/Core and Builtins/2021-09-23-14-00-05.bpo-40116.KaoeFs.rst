@@ -1,4 +1,0 @@
-Change to the implementation of split dictionaries. Classes where the
-instances differ either in the exact set of attributes, or in the order in
-which those attributes are set, can still share keys. This should have no
-observable effect on users of Python or the C-API. Patch by Mark Shannon.

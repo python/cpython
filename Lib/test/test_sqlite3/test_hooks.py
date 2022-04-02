@@ -24,7 +24,7 @@ import unittest
 import sqlite3 as sqlite
 
 from test.support.os_helper import TESTFN, unlink
-from .test_userfunctions import with_tracebacks
+from test.test_sqlite3.test_userfunctions import with_tracebacks
 
 class CollationTests(unittest.TestCase):
     def test_create_collation_not_string(self):
@@ -197,7 +197,7 @@ class ProgressTests(unittest.TestCase):
         con.execute("select 1 union select 2 union select 3").fetchall()
         self.assertEqual(action, 0, "progress handler was not cleared")
 
-    @with_tracebacks(['bad_progress', 'ZeroDivisionError'])
+    @with_tracebacks(ZeroDivisionError, name="bad_progress")
     def test_error_in_progress_handler(self):
         con = sqlite.connect(":memory:")
         def bad_progress():
@@ -208,7 +208,7 @@ class ProgressTests(unittest.TestCase):
                 create table foo(a, b)
                 """)
 
-    @with_tracebacks(['__bool__', 'ZeroDivisionError'])
+    @with_tracebacks(ZeroDivisionError, name="bad_progress")
     def test_error_in_progress_handler_result(self):
         con = sqlite.connect(":memory:")
         class BadBool:

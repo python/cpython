@@ -1,2 +1,0 @@
-Fix test_sys.test_stdlib_dir() when Python is built outside the source tree:
-compare normalized paths. Patch by Victor Stinner.

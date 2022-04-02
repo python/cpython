@@ -21,14 +21,14 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import datetime
-import sys
 import unittest
 import sqlite3 as sqlite
 import weakref
 import functools
-from test import support
 
-from .test_dbapi import managed_connect
+from test import support
+from test.test_sqlite3.test_dbapi import memory_database, managed_connect, cx_limit
+
 
 class RegressionTests(unittest.TestCase):
     def setUp(self):
@@ -230,28 +230,6 @@ class RegressionTests(unittest.TestCase):
         with self.assertRaises(sqlite.ProgrammingError):
             cur = con.cursor()
 
-    def test_cursor_registration(self):
-        """
-        Verifies that subclassed cursor classes are correctly registered with
-        the connection object, too.  (fetch-across-rollback problem)
-        """
-        class Connection(sqlite.Connection):
-            def cursor(self):
-                return Cursor(self)
-
-        class Cursor(sqlite.Cursor):
-            def __init__(self, con):
-                sqlite.Cursor.__init__(self, con)
-
-        con = Connection(":memory:")
-        cur = con.cursor()
-        cur.execute("create table foo(x)")
-        cur.executemany("insert into foo(x) values (?)", [(3,), (4,), (5,)])
-        cur.execute("select x from foo")
-        con.rollback()
-        with self.assertRaises(sqlite.InterfaceError):
-            cur.fetchall()
-
     def test_auto_commit(self):
         """
         Verifies that creating a connection in autocommit mode works.
@@ -341,12 +319,15 @@ class RegressionTests(unittest.TestCase):
 
     def test_null_character(self):
         # Issue #21147
-        con = sqlite.connect(":memory:")
-        self.assertRaises(ValueError, con, "\0select 1")
-        self.assertRaises(ValueError, con, "select 1\0")
-        cur = con.cursor()
-        self.assertRaises(ValueError, cur.execute, " \0select 2")
-        self.assertRaises(ValueError, cur.execute, "select 2\0")
+        cur = self.con.cursor()
+        queries = ["\0select 1", "select 1\0"]
+        for query in queries:
+            with self.subTest(query=query):
+                self.assertRaisesRegex(sqlite.ProgrammingError, "null char",
+                                       self.con.execute, query)
+            with self.subTest(query=query):
+                self.assertRaisesRegex(sqlite.ProgrammingError, "null char",
+                                       cur.execute, query)
 
     def test_surrogates(self):
         con = sqlite.connect(":memory:")
@@ -356,17 +337,18 @@ class RegressionTests(unittest.TestCase):
         self.assertRaises(UnicodeEncodeError, cur.execute, "select '\ud8ff'")
         self.assertRaises(UnicodeEncodeError, cur.execute, "select '\udcff'")
 
-    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
-    @support.bigmemtest(size=2**31, memuse=4, dry_run=False)
-    def test_large_sql(self, maxsize):
-        # Test two cases: size+1 > INT_MAX and size+1 <= INT_MAX.
-        for size in (2**31, 2**31-2):
-            con = sqlite.connect(":memory:")
-            sql = "select 1".ljust(size)
-            self.assertRaises(sqlite.DataError, con, sql)
-            cur = con.cursor()
-            self.assertRaises(sqlite.DataError, cur.execute, sql)
-            del sql
+    def test_large_sql(self):
+        msg = "query string is too large"
+        with memory_database() as cx, cx_limit(cx) as lim:
+            cu = cx.cursor()
+
+            cx("select 1".ljust(lim))
+            # use a different SQL statement; don't reuse from the LRU cache
+            cu.execute("select 2".ljust(lim))
+
+            sql = "select 3".ljust(lim+1)
+            self.assertRaisesRegex(sqlite.DataError, msg, cx, sql)
+            self.assertRaisesRegex(sqlite.DataError, msg, cu.execute, sql)
 
     def test_commit_cursor_reset(self):
         """

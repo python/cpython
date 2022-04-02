@@ -1,2 +1,0 @@
-Clarify :exc:`ImportError` message when we try to explicitly import a
-frozen module but frozen modules are disabled.

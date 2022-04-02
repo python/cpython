@@ -16,12 +16,12 @@ There are two kinds of configuration:
 
 * The :ref:`Python Configuration <init-python-config>` can be used to build a
   customized Python which behaves as the regular Python. For example,
-  environments variables and command line arguments are used to configure
+  environment variables and command line arguments are used to configure
   Python.
 
 * The :ref:`Isolated Configuration <init-isolated-conf>` can be used to embed
   Python into an application. It isolates Python from the system. For example,
-  environments variables are ignored, the LC_CTYPE locale is left unchanged and
+  environment variables are ignored, the LC_CTYPE locale is left unchanged and
   no signal handler is registered.
 
 The :c:func:`Py_RunMain` function can be used to write a customized Python
@@ -479,6 +479,9 @@ PyConfig
 
       Fields which are already initialized are left unchanged.
 
+      Fields for :ref:`path configuration <init-path-config>` are no longer
+      calculated or modified when calling this function, as of Python 3.11.
+
       The :c:func:`PyConfig_Read` function only parses
       :c:member:`PyConfig.argv` arguments once: :c:member:`PyConfig.parse_argv`
       is set to ``2`` after arguments are parsed. Since Python arguments are
@@ -492,6 +495,12 @@ PyConfig
          :c:member:`PyConfig.parse_argv` is set to ``2`` after arguments are
          parsed, and arguments are only parsed if
          :c:member:`PyConfig.parse_argv` equals ``1``.
+
+      .. versionchanged:: 3.11
+         :c:func:`PyConfig_Read` no longer calculates all paths, and so fields
+         listed under :ref:`Python Path Configuration <init-path-config>` may
+         no longer be updated until :c:func:`Py_InitializeFromConfig` is
+         called.
 
    .. c:function:: void PyConfig_Clear(PyConfig *config)
 
@@ -596,13 +605,16 @@ PyConfig
 
       .. versionadded:: 3.10
 
-   .. c:member:: int no_debug_ranges
+   .. c:member:: int code_debug_ranges
 
-      If equals to ``1``, disables the inclusion of the end line and column
+      If equals to ``0``, disables the inclusion of the end line and column
       mappings in code objects. Also disables traceback printing carets to
       specific error locations.
 
-      Default: ``0``.
+      Set to ``0`` by the :envvar:`PYTHONNODEBUGRANGES` environment variable
+      and by the :option:`-X no_debug_ranges <-X>` command line option.
+
+      Default: ``1``.
 
       .. versionadded:: 3.11
 
@@ -644,7 +656,7 @@ PyConfig
 
    .. c:member:: int dump_refs
 
-      Dump Python refererences?
+      Dump Python references?
 
       If non-zero, dump all objects which are still alive at exit.
 
@@ -845,11 +857,18 @@ PyConfig
 
       Default: value of the ``PLATLIBDIR`` macro which is set by the
       :option:`configure --with-platlibdir option <--with-platlibdir>`
-      (default: ``"lib"``).
+      (default: ``"lib"``, or ``"DLLs"`` on Windows).
 
       Part of the :ref:`Python Path Configuration <init-path-config>` input.
 
       .. versionadded:: 3.9
+
+      .. versionchanged:: 3.11
+         This macro is now used on Windows to locate the standard
+         library extension modules, typically under ``DLLs``. However,
+         for compatibility, note that this value is ignored for any
+         non-standard layouts, including in-tree builds and virtual
+         environments.
 
    .. c:member:: wchar_t* pythonpath_env
 
@@ -867,9 +886,9 @@ PyConfig
 
       Module search paths: :data:`sys.path`.
 
-      If :c:member:`~PyConfig.module_search_paths_set` is equal to 0, the
-      function calculating the :ref:`Python Path Configuration <init-path-config>`
-      overrides the :c:member:`~PyConfig.module_search_paths` and sets
+      If :c:member:`~PyConfig.module_search_paths_set` is equal to 0,
+      :c:func:`Py_InitializeFromConfig` will replace
+      :c:member:`~PyConfig.module_search_paths` and sets
       :c:member:`~PyConfig.module_search_paths_set` to ``1``.
 
       Default: empty list (``module_search_paths``) and ``0``
@@ -941,15 +960,15 @@ PyConfig
 
    .. c:member:: int pathconfig_warnings
 
-      On Unix, if non-zero, calculating the :ref:`Python Path Configuration
-      <init-path-config>` can log warnings into ``stderr``. If equals to 0,
-      suppress these warnings.
-
-      It has no effect on Windows.
+      If non-zero, calculation of path configuration is allowed to log
+      warnings into ``stderr``. If equals to 0, suppress these warnings.
 
       Default: ``1`` in Python mode, ``0`` in isolated mode.
 
       Part of the :ref:`Python Path Configuration <init-path-config>` input.
+
+      .. versionchanged:: 3.11
+         Now also applies on Windows.
 
    .. c:member:: wchar_t* prefix
 
@@ -1297,15 +1316,14 @@ Isolated Configuration
 isolate Python from the system. For example, to embed Python into an
 application.
 
-This configuration ignores global configuration variables, environments
+This configuration ignores global configuration variables, environment
 variables, command line arguments (:c:member:`PyConfig.argv` is not parsed)
 and user site directory. The C standard streams (ex: ``stdout``) and the
 LC_CTYPE locale are left unchanged. Signal handlers are not installed.
 
-Configuration files are still used with this configuration. Set the
-:ref:`Python Path Configuration <init-path-config>` ("output fields") to ignore these
-configuration files and avoid the function computing the default path
-configuration.
+Configuration files are still used with this configuration to determine
+paths that are unspecified. Ensure :c:member:`PyConfig.home` is specified
+to avoid computing the default path configuration.
 
 
 .. _init-python-config:
@@ -1442,7 +1460,7 @@ Multi-Phase Initialization Private Provisional API
 ==================================================
 
 This section is a private provisional API introducing multi-phase
-initialization, the core feature of the :pep:`432`:
+initialization, the core feature of :pep:`432`:
 
 * "Core" initialization phase, "bare minimum Python":
 

@@ -246,10 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1l",
-              url="https://www.openssl.org/source/openssl-1.1.1l.tar.gz",
-              checksum='ac0d4387f3ba0ad741b0580dd45f6ff3',
-              patches=['0001-Darwin-platform-allows-to-build-on-releases-before-Y.patch'],
+              name="OpenSSL 1.1.1n",
+              url="https://www.openssl.org/source/openssl-1.1.1n.tar.gz",
+              checksum='2aad5635f9bb338bc2c6b7d19cbc9676',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -265,11 +264,11 @@ def library_recipes():
             tk_patches = ['tk868_on_10_8_10_9.patch']
 
         else:
-            tcl_tk_ver='8.6.12rc1'
-            tcl_checksum='82fd1637c0f7d4b76cb909f8abc373ec'
+            tcl_tk_ver='8.6.12'
+            tcl_checksum='87ea890821d2221f2ab5157bc5eb885f'
 
-            tk_checksum='d63c3b91b86cd8b6fa54e83ef2c5153e'
-            tk_patches = ['bpo-44828-filedialog-crash-monterey-8612rc1.patch']
+            tk_checksum='1d6dcf6120356e3d211e056dff5e462a'
+            tk_patches = [ ]
 
 
         result.extend([
@@ -359,9 +358,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.36.0",
-              url="https://sqlite.org/2021/sqlite-autoconf-3360000.tar.gz",
-              checksum='f5752052fc5b8e1b539af86a3671eac7',
+              name="SQLite 3.38.1",
+              url="https://sqlite.org/2022/sqlite-autoconf-3380100.tar.gz",
+              checksum="5af57892dc0993af596bef56931db23f",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
