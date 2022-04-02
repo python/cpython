@@ -736,35 +736,29 @@ class TestDictFields(unittest.TestCase):
         csv.DictWriter.writerow(writer, dictrow)
         self.assertEqual(fileobj.getvalue(), "1,2\r\n")
 
-    def test_dict_reader_accepts_only_sequences(self):
+    def test_dict_reader_rejects_iter(self):
         fieldnames = ["a", "b", "c"]
         f = StringIO()
         self.assertRaises(TypeError, csv.DictReader, f, iter(fieldnames))
 
-        try:
-            reader = csv.DictReader(f, fieldnames)
-        except:
-            self.fail("csv.DictReader(f, fieldnames) threw an error")
+    def test_dict_reader_accepts_list(self):
+        fieldnames = ["a", "b", "c"]
+        f = StringIO()
+        reader = csv.DictReader(f, fieldnames)
 
-    def test_dict_writer_accepts_only_sequences(self):
+    def test_dict_writer_rejects_iter(self):
         fieldnames = ["a", "b", "c"]
         f = StringIO()
         self.assertRaises(TypeError, csv.DictWriter, f, iter(fieldnames))
 
-        try:
-            writer = csv.DictWriter(f, fieldnames)
-        except:
-            self.fail("csv.DictWriter(f, fieldnames) threw an error")
-
-
-    def test_dict_reader_fieldnames_is_optional(self):
+    def test_dict_writer_accepts_list(self):
         fieldnames = ["a", "b", "c"]
         f = StringIO()
+        writer = csv.DictWriter(f, fieldnames)
 
-        try:
-            reader = csv.DictReader(f, fieldnames=None)
-        except:
-            self.fail("csv.DictReader(f, fieldnames=None) threw an error")
+    def test_dict_reader_fieldnames_is_optional(self):
+        f = StringIO()
+        reader = csv.DictReader(f, fieldnames=None)
 
     def test_read_dict_fields(self):
         with TemporaryFile("w+", encoding="utf-8") as fileobj:
