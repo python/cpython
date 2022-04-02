@@ -12003,7 +12003,7 @@ if test "$ac_sys_system" = "Darwin"
 then
     case "$with_system_ffi" in
         "")
-                        with_system_ffi="yes"
+            with_system_ffi="no"
             ;;
         yes|no)
             ;;
@@ -12301,36 +12301,35 @@ fi
 
 fi
 
-ctypes_malloc_closure=no
+if test "x$with_system_ffi" = xyes; then :
 
-case $ac_sys_system in #(
+  ctypes_malloc_closure=no
+  case $ac_sys_system in #(
   Darwin) :
 
-        as_fn_append LIBFFI_CFLAGS " -I\$(srcdir)/Modules/_ctypes/darwin -DMACOSX"
-    ctypes_malloc_closure=yes
-   ;; #(
+            as_fn_append LIBFFI_CFLAGS " -I\$(srcdir)/Modules/_ctypes/darwin -DMACOSX"
+      ctypes_malloc_closure=yes
+     ;; #(
   sunos5) :
     as_fn_append LIBFFI_LIBS " -mimpure-text" ;; #(
   hp*|HP*) :
     as_fn_append LIBFFI_LIBS " -fPIC"
- ;; #(
+   ;; #(
   *) :
      ;;
 esac
+  if test "x$ctypes_malloc_closure" = xyes; then :
 
-if test "x$ctypes_malloc_closure" = xyes; then :
-
-  MODULE__CTYPES_MALLOC_CLOSURE=_ctypes/malloc_closure.c
-  as_fn_append LIBFFI_CFLAGS " -DUSING_MALLOC_CLOSURE_DOT_C=1"
+    MODULE__CTYPES_MALLOC_CLOSURE=_ctypes/malloc_closure.c
+    as_fn_append LIBFFI_CFLAGS " -DUSING_MALLOC_CLOSURE_DOT_C=1"
 
 fi
 
 
-if test "x$ac_cv_lib_dl_dlopen" = xyes; then :
+    if test "x$ac_cv_lib_dl_dlopen" = xyes; then :
   as_fn_append LIBFFI_LIBS " -ldl"
 fi
 
-if test "$with_system_ffi" = yes -a "$have_libffi" = yes; then
   save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
@@ -12453,6 +12452,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+
 
 
 fi

@@ -3581,8 +3581,7 @@ if test "$ac_sys_system" = "Darwin"
 then
     case "$with_system_ffi" in
         "")
-            dnl XXX WIP hack
-            with_system_ffi="yes"
+            with_system_ffi="no"
             ;;
         yes|no)
             ;;
@@ -3626,28 +3625,26 @@ AS_VAR_IF([with_system_ffi], [yes], [
   ])
 ])
 
-ctypes_malloc_closure=no
+AS_VAR_IF([with_system_ffi], [yes], [
+  ctypes_malloc_closure=no
+  AS_CASE([$ac_sys_system],
+    [Darwin], [
+      dnl when do we need USING_APPLE_OS_LIBFFI?
+      AS_VAR_APPEND([LIBFFI_CFLAGS], [" -I\$(srcdir)/Modules/_ctypes/darwin -DMACOSX"])
+      ctypes_malloc_closure=yes
+    ],
+    [sunos5], [AS_VAR_APPEND([LIBFFI_LIBS], [" -mimpure-text"])],
+    [hp*|HP*], [AS_VAR_APPEND([LIBFFI_LIBS], [" -fPIC"])]
+  )
+  AS_VAR_IF([ctypes_malloc_closure], [yes], [
+    MODULE__CTYPES_MALLOC_CLOSURE=_ctypes/malloc_closure.c
+    AS_VAR_APPEND([LIBFFI_CFLAGS], [" -DUSING_MALLOC_CLOSURE_DOT_C=1"])
+  ])
+  AC_SUBST([MODULE__CTYPES_MALLOC_CLOSURE])
 
-AS_CASE([$ac_sys_system],
-  [Darwin], [
-    dnl when do we need USING_APPLE_OS_LIBFFI?
-    AS_VAR_APPEND([LIBFFI_CFLAGS], [" -I\$(srcdir)/Modules/_ctypes/darwin -DMACOSX"])
-    ctypes_malloc_closure=yes
-  ],
-  [sunos5], [AS_VAR_APPEND([LIBFFI_LIBS], [" -mimpure-text"])],
-  [hp*|HP*], [AS_VAR_APPEND([LIBFFI_LIBS], [" -fPIC"])]
-)
+  dnl HAVE_LIBDL: for dlopen, see bpo-32647
+  AS_VAR_IF([ac_cv_lib_dl_dlopen], [yes], [AS_VAR_APPEND([LIBFFI_LIBS], [" -ldl"])])
 
-AS_VAR_IF([ctypes_malloc_closure], [yes], [
-  MODULE__CTYPES_MALLOC_CLOSURE=_ctypes/malloc_closure.c
-  AS_VAR_APPEND([LIBFFI_CFLAGS], [" -DUSING_MALLOC_CLOSURE_DOT_C=1"])
-])
-AC_SUBST([MODULE__CTYPES_MALLOC_CLOSURE])
-
-dnl HAVE_LIBDL: for dlopen, see bpo-32647
-AS_VAR_IF([ac_cv_lib_dl_dlopen], [yes], [AS_VAR_APPEND([LIBFFI_LIBS], [" -ldl"])])
-
-if test "$with_system_ffi" = yes -a "$have_libffi" = yes; then
   WITH_SAVE_ENV([
     CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
     LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
@@ -3656,7 +3653,7 @@ if test "$with_system_ffi" = yes -a "$have_libffi" = yes; then
     PY_CHECK_FUNC([ffi_prep_closure_loc], [#include <ffi.h>])
     PY_CHECK_FUNC([ffi_closure_alloc], [#include <ffi.h>])
   ])
-fi
+])
 
 # Check for use of the system libmpdec library
 AC_MSG_CHECKING(for --with-system-libmpdec)
