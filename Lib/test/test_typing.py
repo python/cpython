@@ -3859,7 +3859,7 @@ class OverloadTests(BaseTestCase):
         clear_overloads()
         self.assertEqual(get_overloads(impl), [])
 
-    def test_variant_registry_repeated(self):
+    def test_overload_registry_repeated(self):
         for _ in range(2):
             impl, overloads = self.set_up_overloads()
 

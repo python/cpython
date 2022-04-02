@@ -2260,10 +2260,10 @@ Functions and decorators
 
 .. function:: get_overloads(func)
 
-   Return a sequence of :func:`overload`-decorated definitions for *func*. *func* is
+   Return a sequence of :func:`@overload <overload>`-decorated definitions for *func*. *func* is
    the function object for the implementation of the overloaded function.
    For example, given the definition of ``process`` in the documentation for
-   :func:`overload`, ``get_overloads(process)`` will return a sequence of three
+   :func:`@overload <overload>`, ``get_overloads(process)`` will return a sequence of three
    function objects for the three defined overloads.
 
    This function can be used for introspecting an overloaded function at runtime.
