@@ -1228,17 +1228,24 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    .. versionadded:: 3.8
 
-.. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, PyFrameObject *frame, int throwflag)
+.. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
+
+   Internal C API.
 
    Type of a frame evaluation function.
 
    The *throwflag* parameter is used by the ``throw()`` method of generators:
    if non-zero, handle the current exception.
 
+   .. versionchanged:: 3.11
+      The second parameter type becomes ``_PyInterpreterFrame``.
+
    .. versionchanged:: 3.9
       The function now takes a *tstate* parameter.
 
 .. c:function:: _PyFrameEvalFunction _PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
+
+   Internal C API.
 
    Get the frame evaluation function.
 
@@ -1247,6 +1254,8 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.9
 
 .. c:function:: void _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp, _PyFrameEvalFunction eval_frame)
+
+   Internal C API.
 
    Set the frame evaluation function.
 

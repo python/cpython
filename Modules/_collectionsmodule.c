@@ -2352,7 +2352,7 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
                 break;
 
             if (!PyUnicode_CheckExact(key) ||
-                (hash = ((PyASCIIObject *) key)->hash) == -1)
+                (hash = _PyASCIIObject_CAST(key)->hash) == -1)
             {
                 hash = PyObject_Hash(key);
                 if (hash == -1)
