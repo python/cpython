@@ -24,18 +24,20 @@ EM_JS(int, _Py_CheckEmscriptenSignals_Helper, (void), {
     }
 });
 
+EMSCRIPTEN_KEEPALIVE int Py_EMSCRIPTEN_SIGNAL_HANDLING = 0;
+
 void
 _Py_CheckEmscriptenSignals(void)
 {
+    if (!Py_EMSCRIPTEN_SIGNAL_HANDLING) {
+        return;
+    }
     int signal = _Py_CheckEmscriptenSignals_Helper();
     if (signal) {
         PyErr_SetInterruptEx(signal);
     }
 }
 
-EMSCRIPTEN_KEEPALIVE int Py_EMSCRIPTEN_SIGNAL_HANDLING = 0;
-
-void _Py_CheckEmscriptenSignals(void);
 
 #define PY_EMSCRIPTEN_SIGNAL_INTERVAL 50
 static int emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
@@ -43,6 +45,9 @@ static int emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
 void
 _Py_CheckEmscriptenSignalsPeriodically(void)
 {
+    if (!Py_EMSCRIPTEN_SIGNAL_HANDLING) {
+        return;
+    }
     emscripten_signal_clock--;
     if (emscripten_signal_clock == 0) {
         emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
