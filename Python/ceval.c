@@ -3853,7 +3853,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(JUMP_IF_NOT_EXC_MATCH) {
+        TARGET(CHECK_EXC_MATCH) {
             PyObject *right = POP();
             PyObject *left = TOP();
             assert(PyExceptionInstance_Check(left));
@@ -3864,9 +3864,7 @@ handle_eval_breaker:
 
             int res = PyErr_GivenExceptionMatches(left, right);
             Py_DECREF(right);
-            if (res == 0) {
-                JUMPTO(oparg);
-            }
+            PUSH(Py_NewRef(res ? Py_True : Py_False));
             DISPATCH();
         }
 

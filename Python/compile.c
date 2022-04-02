@@ -72,18 +72,26 @@
 
 /* Pseudo-instructions used in the compiler,
  * but turned into NOPs by the assembler. */
-#define SETUP_FINALLY 255
-#define SETUP_CLEANUP 254
-#define SETUP_WITH 253
-#define POP_BLOCK 252
-#define JUMP 251
+#define SETUP_FINALLY -1
+#define SETUP_CLEANUP -2
+#define SETUP_WITH -3
+#define POP_BLOCK -4
+#define JUMP -5
+
+#define MIN_VIRTUAL_OPCODE -5
+#define MAX_ALLOWED_OPCODE 254
+
+#define IS_WITHIN_OPCODE_RANGE(opcode) \
+        ((opcode) >= MIN_VIRTUAL_OPCODE && (opcode) <= MAX_ALLOWED_OPCODE)
+
+#define IS_VIRTUAL_OPCODE(opcode) ((opcode) < 0)
 
 #define IS_TOP_LEVEL_AWAIT(c) ( \
         (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
         && (c->u->u_ste->ste_type == ModuleBlock))
 
 struct instr {
-    unsigned char i_opcode;
+    int i_opcode;
     int i_oparg;
     /* target block (if jump instruction) */
     struct basicblock_ *i_target;
@@ -115,8 +123,13 @@ is_bit_set_in_table(const uint32_t *table, int bitindex) {
      * Word is indexed by (bitindex>>ln(size of int in bits)).
      * Bit within word is the low bits of bitindex.
      */
-    uint32_t word = table[bitindex >> LOG_BITS_PER_INT];
-    return (word >> (bitindex & MASK_LOW_LOG_BITS)) & 1;
+    if (bitindex >= 0 && bitindex < 256) {
+        uint32_t word = table[bitindex >> LOG_BITS_PER_INT];
+        return (word >> (bitindex & MASK_LOW_LOG_BITS)) & 1;
+    }
+    else {
+        return 0;
+    }
 }
 
 static inline int
@@ -126,10 +139,16 @@ is_relative_jump(struct instr *i)
 }
 
 static inline int
+is_block_push(struct instr *instr)
+{
+    int opcode = instr->i_opcode;
+    return opcode == SETUP_FINALLY || opcode == SETUP_WITH || opcode == SETUP_CLEANUP;
+}
+
+static inline int
 is_jump(struct instr *i)
 {
-    return i->i_opcode >= SETUP_WITH ||
-           i->i_opcode == JUMP ||
+    return i->i_opcode == JUMP ||
            is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
 }
 
@@ -137,6 +156,7 @@ static int
 instr_size(struct instr *instruction)
 {
     int opcode = instruction->i_opcode;
+    assert(!IS_VIRTUAL_OPCODE(opcode));
     int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
@@ -147,6 +167,7 @@ static void
 write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
 {
     int opcode = instruction->i_opcode;
+    assert(!IS_VIRTUAL_OPCODE(opcode));
     int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
@@ -977,8 +998,8 @@ stack_effect(int opcode, int oparg, int jump)
         case IS_OP:
         case CONTAINS_OP:
             return -1;
-        case JUMP_IF_NOT_EXC_MATCH:
-            return -1;
+        case CHECK_EXC_MATCH:
+            return 0;
         case JUMP_IF_NOT_EG_MATCH:
             return jump > 0 ? -1 : 0;
         case IMPORT_NAME:
@@ -1177,6 +1198,7 @@ static int
 compiler_addop_line(struct compiler *c, int opcode, int line,
                     int end_line, int col_offset, int end_col_offset)
 {
+    assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!HAS_ARG(opcode) || IS_ARTIFICIAL(opcode));
 
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
@@ -1419,6 +1441,7 @@ compiler_addop_i_line(struct compiler *c, int opcode, Py_ssize_t oparg,
        The argument of a concrete bytecode instruction is limited to 8-bit.
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
+    assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(HAS_ARG(opcode));
     assert(0 <= oparg && oparg <= 2147483647);
 
@@ -1462,7 +1485,8 @@ static int add_jump_to_block(struct compiler *c, int opcode,
                              int col_offset, int end_col_offset,
                              basicblock *target)
 {
-    assert(HAS_ARG(opcode));
+    assert(IS_WITHIN_OPCODE_RANGE(opcode));
+    assert(HAS_ARG(opcode) || IS_VIRTUAL_OPCODE(opcode));
     assert(target != NULL);
 
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
@@ -3352,7 +3376,8 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
    []                           JUMP            L0
 
    [exc]                L1:     <evaluate E1>           )
-   [exc, E1]                    JUMP_IF_NOT_EXC_MATCH L2        ) only if E1
+   [exc, E1]                    CHECK_EXC_MATCH         )
+   [exc, bool]                  POP_JUMP_IF_FALSE L2    ) only if E1
    [exc]                        <assign to V1>  (or POP if no V1)
    []                           <code for S1>
                                 JUMP            L0
@@ -3410,7 +3435,8 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             return 0;
         if (handler->v.ExceptHandler.type) {
             VISIT(c, expr, handler->v.ExceptHandler.type);
-            ADDOP_JUMP(c, JUMP_IF_NOT_EXC_MATCH, except);
+            ADDOP(c, CHECK_EXC_MATCH);
+            ADDOP_JUMP(c, POP_JUMP_IF_FALSE, except);
         }
         if (handler->v.ExceptHandler.name) {
             basicblock *cleanup_end, *cleanup_body;
@@ -7038,7 +7064,7 @@ stackdepth(struct compiler *c)
                 maxdepth = new_depth;
             }
             assert(depth >= 0); /* invalid code or bug in stackdepth() */
-            if (is_jump(instr)) {
+            if (is_jump(instr) || is_block_push(instr)) {
                 effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
                 assert(effect != PY_INVALID_STACK_EFFECT);
                 int target_depth = depth + effect;
@@ -7155,13 +7181,6 @@ assemble_emit_table_pair(struct assembler* a, PyObject** table, int* offset,
     *table_entry++ = left;
     *table_entry++ = right;
     return 1;
-}
-
-static int
-is_block_push(struct instr *instr)
-{
-    int opcode = instr->i_opcode;
-    return opcode == SETUP_FINALLY || opcode == SETUP_WITH || opcode == SETUP_CLEANUP;
 }
 
 static basicblock *
@@ -8598,6 +8617,7 @@ apply_static_swaps(basicblock *block, int i)
 static bool
 jump_thread(struct instr *inst, struct instr *target, int opcode)
 {
+    assert(!IS_VIRTUAL_OPCODE(opcode) || opcode == JUMP);
     assert(is_jump(inst));
     assert(is_jump(target));
     // bpo-45773: If inst->i_target == target->i_target, then nothing actually
@@ -8627,7 +8647,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
         struct instr *inst = &bb->b_instr[i];
         int oparg = inst->i_oparg;
         int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
-        if (is_jump(inst)) {
+        if (is_jump(inst) || is_block_push(inst)) {
             /* Skip over empty basic blocks. */
             while (inst->i_target->b_iused == 0) {
                 inst->i_target = inst->i_target->b_next;
@@ -8994,8 +9014,9 @@ mark_reachable(struct assembler *a) {
         }
         for (int i = 0; i < b->b_iused; i++) {
             basicblock *target;
-            if (is_jump(&b->b_instr[i])) {
-                target = b->b_instr[i].i_target;
+            struct instr *instr = &b->b_instr[i];
+            if (is_jump(instr) || is_block_push(instr)) {
+                target = instr->i_target;
                 if (target->b_predecessors == 0) {
                     *sp++ = target;
                 }
@@ -9071,13 +9092,6 @@ propagate_line_numbers(struct assembler *a) {
             }
         }
         if (is_jump(&b->b_instr[b->b_iused-1])) {
-            switch (b->b_instr[b->b_iused-1].i_opcode) {
-                /* Note: Only actual jumps, not exception handlers */
-                case SETUP_WITH:
-                case SETUP_FINALLY:
-                case SETUP_CLEANUP:
-                    continue;
-            }
             basicblock *target = b->b_instr[b->b_iused-1].i_target;
             if (target->b_predecessors == 1) {
                 if (target->b_instr[0].i_lineno < 0) {
@@ -9203,13 +9217,6 @@ duplicate_exits_without_lineno(struct compiler *c)
      */
     for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
         if (b->b_iused > 0 && is_jump(&b->b_instr[b->b_iused-1])) {
-            switch (b->b_instr[b->b_iused-1].i_opcode) {
-                /* Note: Only actual jumps, not exception handlers */
-                case SETUP_WITH:
-                case SETUP_FINALLY:
-                case SETUP_CLEANUP:
-                    continue;
-            }
             basicblock *target = b->b_instr[b->b_iused-1].i_target;
             if (is_exit_without_lineno(target) && target->b_predecessors > 1) {
                 basicblock *new_target = compiler_copy_block(c, target);

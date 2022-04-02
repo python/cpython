@@ -122,8 +122,7 @@ This module also defines an exception 'error'.
 """
 
 import enum
-import sre_compile
-import sre_parse
+from . import _compiler, _parser
 import functools
 try:
     import _locale
@@ -146,21 +145,21 @@ __version__ = "2.2.1"
 @enum._simple_enum(enum.IntFlag, boundary=enum.KEEP)
 class RegexFlag:
     NOFLAG = 0
-    ASCII = A = sre_compile.SRE_FLAG_ASCII # assume ascii "locale"
-    IGNORECASE = I = sre_compile.SRE_FLAG_IGNORECASE # ignore case
-    LOCALE = L = sre_compile.SRE_FLAG_LOCALE # assume current 8-bit locale
-    UNICODE = U = sre_compile.SRE_FLAG_UNICODE # assume unicode "locale"
-    MULTILINE = M = sre_compile.SRE_FLAG_MULTILINE # make anchors look for newline
-    DOTALL = S = sre_compile.SRE_FLAG_DOTALL # make dot match newline
-    VERBOSE = X = sre_compile.SRE_FLAG_VERBOSE # ignore whitespace and comments
+    ASCII = A = _compiler.SRE_FLAG_ASCII # assume ascii "locale"
+    IGNORECASE = I = _compiler.SRE_FLAG_IGNORECASE # ignore case
+    LOCALE = L = _compiler.SRE_FLAG_LOCALE # assume current 8-bit locale
+    UNICODE = U = _compiler.SRE_FLAG_UNICODE # assume unicode "locale"
+    MULTILINE = M = _compiler.SRE_FLAG_MULTILINE # make anchors look for newline
+    DOTALL = S = _compiler.SRE_FLAG_DOTALL # make dot match newline
+    VERBOSE = X = _compiler.SRE_FLAG_VERBOSE # ignore whitespace and comments
     # sre extensions (experimental, don't rely on these)
-    TEMPLATE = T = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
-    DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
+    TEMPLATE = T = _compiler.SRE_FLAG_TEMPLATE # disable backtracking
+    DEBUG = _compiler.SRE_FLAG_DEBUG # dump pattern after compilation
     __str__ = object.__str__
     _numeric_repr_ = hex
 
 # sre exception
-error = sre_compile.error
+error = _compiler.error
 
 # --------------------------------------------------------------------
 # public interface
@@ -257,8 +256,8 @@ def escape(pattern):
         pattern = str(pattern, 'latin1')
         return pattern.translate(_special_chars_map).encode('latin1')
 
-Pattern = type(sre_compile.compile('', 0))
-Match = type(sre_compile.compile('', 0).match(''))
+Pattern = type(_compiler.compile('', 0))
+Match = type(_compiler.compile('', 0).match(''))
 
 # --------------------------------------------------------------------
 # internals
@@ -279,9 +278,9 @@ def _compile(pattern, flags):
             raise ValueError(
                 "cannot process flags argument with a compiled pattern")
         return pattern
-    if not sre_compile.isstring(pattern):
+    if not _compiler.isstring(pattern):
         raise TypeError("first argument must be string or compiled pattern")
-    p = sre_compile.compile(pattern, flags)
+    p = _compiler.compile(pattern, flags)
     if not (flags & DEBUG):
         if len(_cache) >= _MAXCACHE:
             # Drop the oldest item
@@ -295,12 +294,12 @@ def _compile(pattern, flags):
 @functools.lru_cache(_MAXCACHE)
 def _compile_repl(repl, pattern):
     # internal: compile replacement pattern
-    return sre_parse.parse_template(repl, pattern)
+    return _parser.parse_template(repl, pattern)
 
 def _expand(pattern, match, template):
     # internal: Match.expand implementation hook
-    template = sre_parse.parse_template(template, pattern)
-    return sre_parse.expand_template(template, match)
+    template = _parser.parse_template(template, pattern)
+    return _parser.expand_template(template, match)
 
 def _subx(pattern, template):
     # internal: Pattern.sub/subn implementation helper
@@ -309,7 +308,7 @@ def _subx(pattern, template):
         # literal replacement
         return template[1][0]
     def filter(match, template=template):
-        return sre_parse.expand_template(template, match)
+        return _parser.expand_template(template, match)
     return filter
 
 # register myself for pickling
@@ -326,22 +325,22 @@ copyreg.pickle(Pattern, _pickle, _compile)
 
 class Scanner:
     def __init__(self, lexicon, flags=0):
-        from sre_constants import BRANCH, SUBPATTERN
+        from ._constants import BRANCH, SUBPATTERN
         if isinstance(flags, RegexFlag):
             flags = flags.value
         self.lexicon = lexicon
         # combine phrases into a compound pattern
         p = []
-        s = sre_parse.State()
+        s = _parser.State()
         s.flags = flags
         for phrase, action in lexicon:
             gid = s.opengroup()
-            p.append(sre_parse.SubPattern(s, [
-                (SUBPATTERN, (gid, 0, 0, sre_parse.parse(phrase, flags))),
+            p.append(_parser.SubPattern(s, [
+                (SUBPATTERN, (gid, 0, 0, _parser.parse(phrase, flags))),
                 ]))
             s.closegroup(gid, p[-1])
-        p = sre_parse.SubPattern(s, [(BRANCH, (None, p))])
-        self.scanner = sre_compile.compile(p)
+        p = _parser.SubPattern(s, [(BRANCH, (None, p))])
+        self.scanner = _compiler.compile(p)
     def scan(self, string):
         result = []
         append = result.append

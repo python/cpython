@@ -1398,20 +1398,20 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     if (!eq) goto unequal;
     eq = co->co_firstlineno == cp->co_firstlineno;
     if (!eq) goto unequal;
-    PyObject *co_code = _PyCode_GetCode(co);
-    if (co_code == NULL) {
-        return NULL;
-    }
-    PyObject *cp_code = _PyCode_GetCode(cp);
-    if (cp_code == NULL) {
-        Py_DECREF(co_code);
-        return NULL;
-    }
-    eq = PyObject_RichCompareBool(co_code, cp_code, Py_EQ);
-    Py_DECREF(co_code);
-    Py_DECREF(cp_code);
-    if (eq <= 0) {
+    eq = Py_SIZE(co) == Py_SIZE(cp);
+    if (!eq) {
         goto unequal;
+    }
+    for (int i = 0; i < Py_SIZE(co); i++) {
+        _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
+        _Py_CODEUNIT cp_instr = _PyCode_CODE(cp)[i];
+        _Py_SET_OPCODE(co_instr, _PyOpcode_Deopt[_Py_OPCODE(co_instr)]);
+        _Py_SET_OPCODE(cp_instr, _PyOpcode_Deopt[_Py_OPCODE(cp_instr)]);
+        eq = co_instr == cp_instr;
+        if (!eq) {
+            goto unequal;
+        }
+        i += _PyOpcode_Caches[_Py_OPCODE(co_instr)];
     }
 
     /* compare constants */
@@ -1523,8 +1523,8 @@ code_getfreevars(PyCodeObject *code, void *closure)
 static PyObject *
 code_getcodeadaptive(PyCodeObject *code, void *closure)
 {
-    return PyMemoryView_FromMemory(code->co_code_adaptive, _PyCode_NBYTES(code),
-                                   PyBUF_READ);
+    return PyBytes_FromStringAndSize(code->co_code_adaptive,
+                                     _PyCode_NBYTES(code));
 }
 
 static PyObject *

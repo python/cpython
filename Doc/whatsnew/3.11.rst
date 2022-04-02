@@ -520,7 +520,8 @@ CPython bytecode changes
 * Add :opcode:`POP_JUMP_IF_NOT_NONE` and :opcode:`POP_JUMP_IF_NONE` opcodes to
   speed up conditional jumps.
 
-* :opcode:`JUMP_IF_NOT_EXC_MATCH` no longer pops the active exception.
+* Replaced :opcode:`JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH` which
+  performs the check but does not jump.
 
 * Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
 
@@ -530,6 +531,10 @@ Deprecated
 * The :mod:`lib2to3` package and ``2to3`` tool are now deprecated and may not
   be able to parse Python 3.10 or newer. See the :pep:`617` (New PEG parser for
   CPython).  (Contributed by Victor Stinner in :issue:`40360`.)
+
+* Undocumented modules ``sre_compile``, ``sre_constants`` and ``sre_parse``
+  are now deprecated.
+  (Contributed by Serhiy Storchaka in :issue:`47152`.)
 
 * :class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
   It is untested and undocumented and also not used by webbrowser itself.
@@ -1012,8 +1017,8 @@ Porting to Python 3.11
   instead.
 
   Debuggers that accessed the ``f_locals`` directly *must* call
-  `:c:func:`PyFrame_GetLocals` instead. They no longer need to call
-  `:c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
+  :c:func:`PyFrame_GetLocals` instead. They no longer need to call
+  :c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
   in fact they should not call those functions. The necessary updating of the
   frame is now managed by the virtual machine.
 
