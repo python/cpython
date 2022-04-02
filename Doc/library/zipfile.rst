@@ -839,6 +839,9 @@ Instances have the following methods and attributes:
 
    Size of the uncompressed file.
 
+.. attribute:: ZipInfo.mode
+
+  The mode of the file (permissions)
 
 .. _zipfile-commandline:
 .. program:: zipfile
