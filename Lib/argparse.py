@@ -1268,8 +1268,14 @@ class FileType(object):
 
         # all other arguments are used as file names
         try:
-            return open(string, self._mode, self._bufsize, self._encoding,
+            file = open(string, self._mode, self._bufsize, self._encoding,
                         self._errors)
+
+            # Register cleanup function to close file
+            import atexit
+            atexit.register(file.close)
+
+            return file
         except OSError as e:
             args = {'filename': string, 'error': e}
             message = _("can't open '%(filename)s': %(error)s")
