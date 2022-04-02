@@ -737,7 +737,7 @@ of the OpenSSL license here::
      * The implementation was written so as to conform with Netscapes SSL.
      *
      * This library is free for commercial and non-commercial use as long as
-     * the following conditions are aheared to.  The following conditions
+     * the following conditions are adhered to.  The following conditions
      * apply to all code found in this distribution, be it the RC4, RSA,
      * lhash, DES, etc., code; not just the SSL code.  The SSL documentation
      * included with this distribution is covered by the same copyright terms
@@ -762,7 +762,7 @@ of the OpenSSL license here::
      *    must display the following acknowledgement:
      *    "This product includes cryptographic software written by
      *     Eric Young (eay@cryptsoft.com)"
-     *    The word 'cryptographic' can be left out if the rouines from the library
+     *    The word 'cryptographic' can be left out if the routines from the library
      *    being used are not cryptographic related :-).
      * 4. If you include any Windows specific code (or a derivative thereof) from
      *    the apps directory (application code) you must include an acknowledgement:
