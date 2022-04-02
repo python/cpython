@@ -53,7 +53,7 @@ programs, however, and result in error messages as shown here::
    >>> '2' + 2
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: Can't convert 'int' object to str implicitly
+   TypeError: can only concatenate str (not "int") to str
 
 The last line of the error message indicates what happened. Exceptions come in
 different types, and the type is printed as part of the message: the types in
@@ -147,10 +147,10 @@ For example, the following code will print B, C, D in that order::
 Note that if the *except clauses* were reversed (with ``except B`` first), it
 would have printed B, B, B --- the first matching *except clause* is triggered.
 
-The last *except clause* may omit the exception name(s), to serve as a wildcard.
-Use this with extreme caution, since it is easy to mask a real programming error
-in this way!  It can also be used to print an error message and then re-raise
-the exception (allowing a caller to handle the exception as well)::
+All exceptions inherit from :exc:`BaseException`, and so it can be used to serve
+as a wildcard. Use this with extreme caution, since it is easy to mask a real
+programming error in this way!  It can also be used to print an error message and
+then re-raise the exception (allowing a caller to handle the exception as well)::
 
    import sys
 
@@ -162,9 +162,12 @@ the exception (allowing a caller to handle the exception as well)::
        print("OS error: {0}".format(err))
    except ValueError:
        print("Could not convert data to an integer.")
-   except:
-       print("Unexpected error:", sys.exc_info()[0])
+   except BaseException as err:
+       print(f"Unexpected {err=}, {type(err)=}")
        raise
+
+Alternatively the last except clause may omit the exception name(s), however the exception
+value must then be retrieved with ``sys.exception()``.
 
 The :keyword:`try` ... :keyword:`except` statement has an optional *else
 clause*, which, when present, must follow all *except clauses*.  It is useful
@@ -272,7 +275,7 @@ re-raise the exception::
 Exception Chaining
 ==================
 
-The :keyword:`raise` statement allows an optional :keyword:`from` which enables
+The :keyword:`raise` statement allows an optional :keyword:`from<raise>` which enables
 chaining exceptions. For example::
 
     # exc must be exception instance or None.
@@ -305,7 +308,7 @@ disabled by using ``from None`` idiom:
 
     >>> try:
     ...     open('database.sqlite')
-    ... except IOError:
+    ... except OSError:
     ...     raise RuntimeError from None
     ...
     Traceback (most recent call last):
@@ -326,41 +329,7 @@ be derived from the :exc:`Exception` class, either directly or indirectly.
 
 Exception classes can be defined which do anything any other class can do, but
 are usually kept simple, often only offering a number of attributes that allow
-information about the error to be extracted by handlers for the exception.  When
-creating a module that can raise several distinct errors, a common practice is
-to create a base class for exceptions defined by that module, and subclass that
-to create specific exception classes for different error conditions::
-
-   class Error(Exception):
-       """Base class for exceptions in this module."""
-       pass
-
-   class InputError(Error):
-       """Exception raised for errors in the input.
-
-       Attributes:
-           expression -- input expression in which the error occurred
-           message -- explanation of the error
-       """
-
-       def __init__(self, expression, message):
-           self.expression = expression
-           self.message = message
-
-   class TransitionError(Error):
-       """Raised when an operation attempts a state transition that's not
-       allowed.
-
-       Attributes:
-           previous -- state at beginning of transition
-           next -- attempted new state
-           message -- explanation of why the specific transition is not allowed
-       """
-
-       def __init__(self, previous, next, message):
-           self.previous = previous
-           self.next = next
-           self.message = message
+information about the error to be extracted by handlers for the exception.
 
 Most exceptions are defined with names that end in "Error", similar to the
 naming of the standard exceptions.
@@ -404,6 +373,10 @@ points discuss more complex cases when an exception occurs:
 * An exception could occur during execution of an :keyword:`!except`
   or :keyword:`!else` clause. Again, the exception is re-raised after
   the :keyword:`!finally` clause has been executed.
+
+* If the :keyword:`!finally` clause executes a :keyword:`break`,
+  :keyword:`continue` or :keyword:`return` statement, exceptions are not
+  re-raised.
 
 * If the :keyword:`!try` statement reaches a :keyword:`break`,
   :keyword:`continue` or :keyword:`return` statement, the
@@ -490,4 +463,91 @@ After the statement is executed, the file *f* is always closed, even if a
 problem was encountered while processing the lines. Objects which, like files,
 provide predefined clean-up actions will indicate this in their documentation.
 
+
+.. _tut-exception-groups:
+
+Raising and Handling Multiple Unrelated Exceptions
+==================================================
+
+There are situations where it is necessary to report several exceptions that
+have occurred. This it often the case in concurrency frameworks, when several
+tasks may have failed in parallel, but there are also other use cases where
+it is desirable to continue execution and collect multiple errors rather than
+raise the first exception.
+
+The builtin :exc:`ExceptionGroup` wraps a list of exception instances so
+that they can be raised together. It is an exception itself, so it can be
+caught like any other exception. ::
+
+   >>> def f():
+   ...     excs = [OSError('error 1'), SystemError('error 2')]
+   ...     raise ExceptionGroup('there were problems', excs)
+   ...
+   >>> f()
+     + Exception Group Traceback (most recent call last):
+     |   File "<stdin>", line 1, in <module>
+     |   File "<stdin>", line 3, in f
+     | ExceptionGroup: there were problems
+     +-+---------------- 1 ----------------
+       | OSError: error 1
+       +---------------- 2 ----------------
+       | SystemError: error 2
+       +------------------------------------
+   >>> try:
+   ...     f()
+   ... except Exception as e:
+   ...     print(f'caught {type(e)}: e')
+   ...
+   caught <class 'ExceptionGroup'>: e
+   >>>
+
+By using ``except*`` instead of ``except``, we can selectively
+handle only the exceptions in the group that match a certain
+type. In the following example, which shows a nested exception
+group, each ``except*`` clause extracts from the group exceptions
+of a certain type while letting all other exceptions propagate to
+other clauses and eventually to be reraised. ::
+
+   >>> def f():
+   ...     raise ExceptionGroup("group1",
+   ...                          [OSError(1),
+   ...                           SystemError(2),
+   ...                           ExceptionGroup("group2",
+   ...                                          [OSError(3), RecursionError(4)])])
+   ...
+   >>> try:
+   ...     f()
+   ... except* OSError as e:
+   ...     print("There were OSErrors")
+   ... except* SystemError as e:
+   ...     print("There were SystemErrors")
+   ...
+   There were OSErrors
+   There were SystemErrors
+     + Exception Group Traceback (most recent call last):
+     |   File "<stdin>", line 2, in <module>
+     |   File "<stdin>", line 2, in f
+     | ExceptionGroup: group1
+     +-+---------------- 1 ----------------
+       | ExceptionGroup: group2
+       +-+---------------- 1 ----------------
+         | RecursionError: 4
+         +------------------------------------
+   >>>
+
+Note that the exceptions nested in an exception group must be instances,
+not types. This is because in practice the exceptions would typically
+be ones that have already been raised and caught by the program, along
+the following pattern::
+
+   >>> excs = []
+   ... for test in tests:
+   ...     try:
+   ...         test.run()
+   ...     except Exception as e:
+   ...         excs.append(e)
+   ...
+   >>> if excs:
+   ...    raise ExceptionGroup("Test Failures", excs)
+   ...
 

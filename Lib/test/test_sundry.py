@@ -1,7 +1,5 @@
 """Do a minimal test of all the modules that aren't otherwise tested."""
 import importlib
-import platform
-import sys
 from test import support
 from test.support import import_helper
 from test.support import warnings_helper
@@ -28,8 +26,6 @@ class TestUntestedModules(unittest.TestCase):
             import distutils.unixccompiler
 
             import distutils.command.bdist_dumb
-            if sys.platform.startswith('win') and not platform.win32_is_iot():
-                import distutils.command.bdist_msi
             import distutils.command.bdist
             import distutils.command.bdist_rpm
             import distutils.command.build_clib

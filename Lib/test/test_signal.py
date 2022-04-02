@@ -1,5 +1,6 @@
 import enum
 import errno
+import inspect
 import os
 import random
 import signal
@@ -60,6 +61,14 @@ class GenericTests(unittest.TestCase):
                     )
             enum._test_simple_enum(CheckedSigmasks, Sigmasks)
 
+    def test_functions_module_attr(self):
+        # Issue #27718: If __all__ is not defined all non-builtin functions
+        # should have correct __module__ to be displayed by pydoc.
+        for name in dir(signal):
+            value = getattr(signal, name)
+            if inspect.isroutine(value) and not inspect.isbuiltin(value):
+                self.assertEqual(value.__module__, 'signal')
+
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 class PosixTests(unittest.TestCase):
@@ -107,6 +116,7 @@ class PosixTests(unittest.TestCase):
         self.assertLess(len(s), signal.NSIG)
 
     @unittest.skipUnless(sys.executable, "sys.executable required.")
+    @support.requires_subprocess()
     def test_keyboard_interrupt_exit_code(self):
         """KeyboardInterrupt triggers exit via SIGINT."""
         process = subprocess.run(
@@ -157,6 +167,7 @@ class WindowsSignalTests(unittest.TestCase):
             signal.signal(7, handler)
 
     @unittest.skipUnless(sys.executable, "sys.executable required.")
+    @support.requires_subprocess()
     def test_keyboard_interrupt_exit_code(self):
         """KeyboardInterrupt triggers an exit using STATUS_CONTROL_C_EXIT."""
         # We don't test via os.kill(os.getpid(), signal.CTRL_C_EVENT) here
@@ -194,6 +205,9 @@ class WakeupFDTests(unittest.TestCase):
         self.assertRaises((ValueError, OSError),
                           signal.set_wakeup_fd, fd)
 
+    # Emscripten does not support fstat on pipes yet.
+    # https://github.com/emscripten-core/emscripten/issues/16414
+    @unittest.skipIf(support.is_emscripten, "Emscripten cannot fstat pipes.")
     def test_set_wakeup_fd_result(self):
         r1, w1 = os.pipe()
         self.addCleanup(os.close, r1)
@@ -211,6 +225,7 @@ class WakeupFDTests(unittest.TestCase):
         self.assertEqual(signal.set_wakeup_fd(-1), w2)
         self.assertEqual(signal.set_wakeup_fd(-1), -1)
 
+    @unittest.skipIf(support.is_emscripten, "Emscripten cannot fstat pipes.")
     def test_set_wakeup_fd_socket_result(self):
         sock1 = socket.socket()
         self.addCleanup(sock1.close)
@@ -230,6 +245,7 @@ class WakeupFDTests(unittest.TestCase):
     # On Windows, files are always blocking and Windows does not provide a
     # function to test if a socket is in non-blocking mode.
     @unittest.skipIf(sys.platform == "win32", "tests specific to POSIX")
+    @unittest.skipIf(support.is_emscripten, "Emscripten cannot fstat pipes.")
     def test_set_wakeup_fd_blocking(self):
         rfd, wfd = os.pipe()
         self.addCleanup(os.close, rfd)
@@ -628,6 +644,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 @unittest.skipUnless(hasattr(signal, 'siginterrupt'), "needs signal.siginterrupt()")
+@support.requires_subprocess()
 class SiginterruptTest(unittest.TestCase):
 
     def readpipe_interrupted(self, interrupt):
@@ -899,7 +916,7 @@ class PendingSignalsTests(unittest.TestCase):
 
         %s
 
-        blocked = %r
+        blocked = %s
         signum = signal.SIGALRM
 
         # child: block and wait the signal
@@ -1323,7 +1340,7 @@ class StressTest(unittest.TestCase):
                     # race condition, check it.
                     self.assertIsInstance(cm.unraisable.exc_value, OSError)
                     self.assertIn(
-                        f"Signal {signum} ignored due to race condition",
+                        f"Signal {signum:d} ignored due to race condition",
                         str(cm.unraisable.exc_value))
                     ignored = True
 

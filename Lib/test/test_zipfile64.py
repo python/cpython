@@ -18,8 +18,9 @@ import sys
 from tempfile import TemporaryFile
 
 from test.support import os_helper
-from test.support import TESTFN, requires_zlib
+from test.support import requires_zlib
 
+TESTFN = os_helper.TESTFN
 TESTFN2 = TESTFN + "2"
 
 # How much time in seconds can pass before we print a 'Still working' message.

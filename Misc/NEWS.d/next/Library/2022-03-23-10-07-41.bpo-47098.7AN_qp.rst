@@ -1,0 +1,3 @@
+The Keccak Code Package for :mod:`hashlib`'s internal ``_sha3`` module has
+been replaced with tiny_sha3. The module is used as fallback when Python is
+built without OpenSSL.

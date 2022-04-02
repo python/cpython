@@ -15,7 +15,7 @@
  * 2001-05-14 fl   fixes for 1.5.2 compatibility
  * 2001-07-01 fl   added BIGCHARSET support (from Martin von Loewis)
  * 2001-10-18 fl   fixed group reset issue (from Matthew Mueller)
- * 2001-10-20 fl   added split primitive; reenable unicode for 1.6/2.0/2.1
+ * 2001-10-20 fl   added split primitive; re-enable unicode for 1.6/2.0/2.1
  * 2001-10-21 fl   added sub/subn primitive
  * 2001-10-24 fl   added finditer primitive (for 2.2 only)
  * 2001-12-07 fl   fixed memory leak in sub/subn (Guido van Rossum)
@@ -42,6 +42,7 @@ static const char copyright[] =
 
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 
 #include "sre.h"
@@ -258,7 +259,7 @@ typedef struct {
 static _sremodulestate *
 get_sre_module_state(PyObject *m)
 {
-    _sremodulestate *state = (_sremodulestate *)PyModule_GetState(m);
+    _sremodulestate *state = (_sremodulestate *)_PyModule_GetState(m);
     assert(state);
     return state;
 }
@@ -388,7 +389,8 @@ getstring(PyObject* string, Py_ssize_t* p_length,
 
     /* get pointer to byte string buffer */
     if (PyObject_GetBuffer(string, view, PyBUF_SIMPLE) != 0) {
-        PyErr_SetString(PyExc_TypeError, "expected string or bytes-like object");
+        PyErr_Format(PyExc_TypeError, "expected string or bytes-like "
+                     "object, got '%.200s'", Py_TYPE(string)->tp_name);
         return NULL;
     }
 
@@ -530,6 +532,14 @@ state_getslice(SRE_STATE* state, Py_ssize_t index, PyObject* string, int empty)
     } else {
         i = STATE_OFFSET(state, state->mark[index]);
         j = STATE_OFFSET(state, state->mark[index+1]);
+
+        /* check wrong span */
+        if (i > j) {
+            PyErr_SetString(PyExc_SystemError,
+                            "The span of capturing group is wrong,"
+                            " please report a bug for the re module.");
+            return NULL;
+        }
     }
 
     return getslice(state->isbytes, state->beginning, string, i, j);
@@ -561,17 +571,36 @@ pattern_error(Py_ssize_t status)
     }
 }
 
+static int
+pattern_traverse(PatternObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->groupindex);
+    Py_VISIT(self->indexgroup);
+    Py_VISIT(self->pattern);
+    return 0;
+}
+
+static int
+pattern_clear(PatternObject *self)
+{
+    Py_CLEAR(self->groupindex);
+    Py_CLEAR(self->indexgroup);
+    Py_CLEAR(self->pattern);
+    return 0;
+}
+
 static void
 pattern_dealloc(PatternObject* self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
-    if (self->weakreflist != NULL)
+    PyObject_GC_UnTrack(self);
+    if (self->weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) self);
-    Py_XDECREF(self->pattern);
-    Py_XDECREF(self->groupindex);
-    Py_XDECREF(self->indexgroup);
-    PyObject_Free(self);
+    }
+    (void)pattern_clear(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -1395,7 +1424,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
 
     n = PyList_GET_SIZE(code);
     /* coverity[ampersand_in_size] */
-    self = PyObject_NewVar(PatternObject, module_state->Pattern_Type, n);
+    self = PyObject_GC_NewVar(PatternObject, module_state->Pattern_Type, n);
     if (!self)
         return NULL;
     self->weakreflist = NULL;
@@ -1415,6 +1444,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
             break;
         }
     }
+    PyObject_GC_Track(self);
 
     if (PyErr_Occurred()) {
         Py_DECREF(self);
@@ -1785,6 +1815,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
 
         case SRE_OP_REPEAT_ONE:
         case SRE_OP_MIN_REPEAT_ONE:
+        case SRE_OP_POSSESSIVE_REPEAT_ONE:
             {
                 SRE_CODE min, max;
                 GET_SKIP;
@@ -1804,8 +1835,9 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
             break;
 
         case SRE_OP_REPEAT:
+        case SRE_OP_POSSESSIVE_REPEAT:
             {
-                SRE_CODE min, max;
+                SRE_CODE op1 = op, min, max;
                 GET_SKIP;
                 GET_ARG; min = arg;
                 GET_ARG; max = arg;
@@ -1817,7 +1849,25 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     FAIL;
                 code += skip-3;
                 GET_OP;
-                if (op != SRE_OP_MAX_UNTIL && op != SRE_OP_MIN_UNTIL)
+                if (op1 == SRE_OP_POSSESSIVE_REPEAT) {
+                    if (op != SRE_OP_SUCCESS)
+                        FAIL;
+                }
+                else {
+                    if (op != SRE_OP_MAX_UNTIL && op != SRE_OP_MIN_UNTIL)
+                        FAIL;
+                }
+            }
+            break;
+
+        case SRE_OP_ATOMIC_GROUP:
+            {
+                GET_SKIP;
+                if (!_validate_inner(code, code+skip-2, groups))
+                    FAIL;
+                code += skip-2;
+                GET_OP;
+                if (op != SRE_OP_SUCCESS)
                     FAIL;
             }
             break;
@@ -1936,15 +1986,33 @@ _validate(PatternObject *self)
 /* -------------------------------------------------------------------- */
 /* match methods */
 
+static int
+match_traverse(MatchObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->string);
+    Py_VISIT(self->regs);
+    Py_VISIT(self->pattern);
+    return 0;
+}
+
+static int
+match_clear(MatchObject *self)
+{
+    Py_CLEAR(self->string);
+    Py_CLEAR(self->regs);
+    Py_CLEAR(self->pattern);
+    return 0;
+}
+
 static void
 match_dealloc(MatchObject* self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
-    Py_XDECREF(self->regs);
-    Py_XDECREF(self->string);
-    Py_DECREF(self->pattern);
-    PyObject_Free(self);
+    PyObject_GC_UnTrack(self);
+    (void)match_clear(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -2390,9 +2458,9 @@ pattern_new_match(_sremodulestate* module_state,
 
         /* create match object (with room for extra group marks) */
         /* coverity[ampersand_in_size] */
-        match = PyObject_NewVar(MatchObject,
-                                module_state->Match_Type,
-                                2*(pattern->groups+1));
+        match = PyObject_GC_NewVar(MatchObject,
+                                   module_state->Match_Type,
+                                   2*(pattern->groups+1));
         if (!match)
             return NULL;
 
@@ -2417,6 +2485,15 @@ pattern_new_match(_sremodulestate* module_state,
             if (j+1 <= state->lastmark && state->mark[j] && state->mark[j+1]) {
                 match->mark[j+2] = ((char*) state->mark[j] - base) / n;
                 match->mark[j+3] = ((char*) state->mark[j+1] - base) / n;
+
+                /* check wrong span */
+                if (match->mark[j+2] > match->mark[j+3]) {
+                    PyErr_SetString(PyExc_SystemError,
+                                    "The span of capturing group is wrong,"
+                                    " please report a bug for the re module.");
+                    Py_DECREF(match);
+                    return NULL;
+                }
             } else
                 match->mark[j+2] = match->mark[j+3] = -1; /* undefined */
 
@@ -2425,6 +2502,7 @@ pattern_new_match(_sremodulestate* module_state,
 
         match->lastindex = state->lastindex;
 
+        PyObject_GC_Track(match);
         return (PyObject*) match;
 
     } else if (status == 0) {
@@ -2443,15 +2521,50 @@ pattern_new_match(_sremodulestate* module_state,
 /* -------------------------------------------------------------------- */
 /* scanner methods (experimental) */
 
+static int
+scanner_traverse(ScannerObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->pattern);
+    return 0;
+}
+
+static int
+scanner_clear(ScannerObject *self)
+{
+    Py_CLEAR(self->pattern);
+    return 0;
+}
+
 static void
 scanner_dealloc(ScannerObject* self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
+    PyObject_GC_UnTrack(self);
     state_fini(&self->state);
-    Py_XDECREF(self->pattern);
-    PyObject_Free(self);
+    (void)scanner_clear(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
+}
+
+static int
+scanner_begin(ScannerObject* self)
+{
+    if (self->executing) {
+        PyErr_SetString(PyExc_ValueError,
+                        "regular expression scanner already executing");
+        return 0;
+    }
+    self->executing = 1;
+    return 1;
+}
+
+static void
+scanner_end(ScannerObject* self)
+{
+    assert(self->executing);
+    self->executing = 0;
 }
 
 /*[clinic input]
@@ -2471,16 +2584,23 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls)
     PyObject* match;
     Py_ssize_t status;
 
-    if (state->start == NULL)
+    if (!scanner_begin(self)) {
+        return NULL;
+    }
+    if (state->start == NULL) {
+        scanner_end(self);
         Py_RETURN_NONE;
+    }
 
     state_reset(state);
 
     state->ptr = state->start;
 
     status = sre_match(state, PatternObject_GetCode(self->pattern));
-    if (PyErr_Occurred())
+    if (PyErr_Occurred()) {
+        scanner_end(self);
         return NULL;
+    }
 
     match = pattern_new_match(module_state, (PatternObject*) self->pattern,
                               state, status);
@@ -2492,6 +2612,7 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls)
         state->start = state->ptr;
     }
 
+    scanner_end(self);
     return match;
 }
 
@@ -2513,16 +2634,23 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls)
     PyObject* match;
     Py_ssize_t status;
 
-    if (state->start == NULL)
+    if (!scanner_begin(self)) {
+        return NULL;
+    }
+    if (state->start == NULL) {
+        scanner_end(self);
         Py_RETURN_NONE;
+    }
 
     state_reset(state);
 
     state->ptr = state->start;
 
     status = sre_search(state, PatternObject_GetCode(self->pattern));
-    if (PyErr_Occurred())
+    if (PyErr_Occurred()) {
+        scanner_end(self);
         return NULL;
+    }
 
     match = pattern_new_match(module_state, (PatternObject*) self->pattern,
                               state, status);
@@ -2534,6 +2662,7 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls)
         state->start = state->ptr;
     }
 
+    scanner_end(self);
     return match;
 }
 
@@ -2547,10 +2676,11 @@ pattern_scanner(_sremodulestate *module_state,
     ScannerObject* scanner;
 
     /* create scanner object */
-    scanner = PyObject_New(ScannerObject, module_state->Scanner_Type);
+    scanner = PyObject_GC_New(ScannerObject, module_state->Scanner_Type);
     if (!scanner)
         return NULL;
     scanner->pattern = NULL;
+    scanner->executing = 0;
 
     /* create search state object */
     if (!state_init(&scanner->state, self, string, pos, endpos)) {
@@ -2561,6 +2691,7 @@ pattern_scanner(_sremodulestate *module_state,
     Py_INCREF(self);
     scanner->pattern = (PyObject*) self;
 
+    PyObject_GC_Track(scanner);
     return (PyObject*) scanner;
 }
 
@@ -2650,7 +2781,7 @@ static PyMethodDef pattern_methods[] = {
     _SRE_SRE_PATTERN_SCANNER_METHODDEF
     _SRE_SRE_PATTERN___COPY___METHODDEF
     _SRE_SRE_PATTERN___DEEPCOPY___METHODDEF
-    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
      PyDoc_STR("See PEP 585")},
     {NULL, NULL}
 };
@@ -2682,6 +2813,8 @@ static PyType_Slot pattern_slots[] = {
     {Py_tp_methods, pattern_methods},
     {Py_tp_members, pattern_members},
     {Py_tp_getset, pattern_getset},
+    {Py_tp_traverse, pattern_traverse},
+    {Py_tp_clear, pattern_clear},
     {0, NULL},
 };
 
@@ -2689,7 +2822,8 @@ static PyType_Spec pattern_spec = {
     .name = "re.Pattern",
     .basicsize = sizeof(PatternObject),
     .itemsize = sizeof(SRE_CODE),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC),
     .slots = pattern_slots,
 };
 
@@ -2703,7 +2837,7 @@ static PyMethodDef match_methods[] = {
     _SRE_SRE_MATCH_EXPAND_METHODDEF
     _SRE_SRE_MATCH___COPY___METHODDEF
     _SRE_SRE_MATCH___DEEPCOPY___METHODDEF
-    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
      PyDoc_STR("See PEP 585")},
     {NULL, NULL}
 };
@@ -2739,6 +2873,8 @@ static PyType_Slot match_slots[] = {
     {Py_tp_methods, match_methods},
     {Py_tp_members, match_members},
     {Py_tp_getset, match_getset},
+    {Py_tp_traverse, match_traverse},
+    {Py_tp_clear, match_clear},
 
     /* As mapping.
      *
@@ -2754,7 +2890,8 @@ static PyType_Spec match_spec = {
     .name = "re.Match",
     .basicsize = sizeof(MatchObject),
     .itemsize = sizeof(Py_ssize_t),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC),
     .slots = match_slots,
 };
 
@@ -2774,13 +2911,16 @@ static PyType_Slot scanner_slots[] = {
     {Py_tp_dealloc, scanner_dealloc},
     {Py_tp_methods, scanner_methods},
     {Py_tp_members, scanner_members},
+    {Py_tp_traverse, scanner_traverse},
+    {Py_tp_clear, scanner_clear},
     {0, NULL},
 };
 
 static PyType_Spec scanner_spec = {
     .name = "_" SRE_MODULE ".SRE_Scanner",
     .basicsize = sizeof(ScannerObject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC),
     .slots = scanner_slots,
 };
 

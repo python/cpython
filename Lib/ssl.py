@@ -94,7 +94,7 @@ import sys
 import os
 from collections import namedtuple
 from enum import Enum as _Enum, IntEnum as _IntEnum, IntFlag as _IntFlag
-from enum import _simple_enum, _test_simple_enum
+from enum import _simple_enum
 
 import _ssl             # if we can't import it, let the error propagate
 
@@ -118,7 +118,6 @@ from _ssl import (
     HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3
 )
 from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
-
 
 _IntEnum._convert_(
     '_SSLMethod', __name__,
@@ -258,7 +257,7 @@ if sys.platform == "win32":
     from _ssl import enum_certificates, enum_crls
 
 from socket import socket, SOCK_STREAM, create_connection
-from socket import SOL_SOCKET, SO_TYPE
+from socket import SOL_SOCKET, SO_TYPE, _GLOBAL_DEFAULT_TIMEOUT
 import socket as _socket
 import base64        # for DER-to-PEM translation
 import errno
@@ -280,7 +279,7 @@ CertificateError = SSLCertVerificationError
 def _dnsname_match(dn, hostname):
     """Matching according to RFC 6125, section 6.4.3
 
-    - Hostnames are compared lower case.
+    - Hostnames are compared lower-case.
     - For IDNA, both dn and hostname must be encoded as IDN A-label (ACE).
     - Partial wildcards like 'www*.example.org', multiple wildcards, sole
       wildcard or wildcards in labels other then the left-most label are not
@@ -368,7 +367,7 @@ def _ipaddress_match(cert_ipaddress, host_ip):
     (section 1.7.2 - "Out of Scope").
     """
     # OpenSSL may add a trailing newline to a subjectAltName's IP address,
-    # commonly woth IPv6 addresses. Strip off trailing \n.
+    # commonly with IPv6 addresses. Strip off trailing \n.
     ip = _inet_paton(cert_ipaddress.rstrip())
     return ip == host_ip
 
@@ -387,7 +386,7 @@ def match_hostname(cert, hostname):
     returns nothing.
     """
     warnings.warn(
-        "ssl module: match_hostname() is deprecated",
+        "ssl.match_hostname() is deprecated",
         category=DeprecationWarning,
         stacklevel=2
     )
@@ -492,8 +491,7 @@ class SSLContext(_SSLContext):
     def __new__(cls, protocol=None, *args, **kwargs):
         if protocol is None:
             warnings.warn(
-                "ssl module: "
-                "SSLContext() without protocol argument is deprecated.",
+                "ssl.SSLContext() without protocol argument is deprecated.",
                 category=DeprecationWarning,
                 stacklevel=2
             )
@@ -536,7 +534,11 @@ class SSLContext(_SSLContext):
         )
 
     def set_npn_protocols(self, npn_protocols):
-        warnings.warn("NPN is deprecated, use ALPN instead", stacklevel=2)
+        warnings.warn(
+            "ssl NPN is deprecated, use ALPN instead",
+            DeprecationWarning,
+            stacklevel=2
+        )
         protos = bytearray()
         for protocol in npn_protocols:
             b = bytes(protocol, 'ascii')
@@ -940,7 +942,9 @@ class SSLObject:
         if a next protocol was not negotiated or if NPN is not supported by one
         of the peers."""
         warnings.warn(
-            "ssl module: NPN is deprecated, use ALPN instead", stacklevel=2
+            "ssl NPN is deprecated, use ALPN instead",
+            DeprecationWarning,
+            stacklevel=2
         )
 
     def selected_alpn_protocol(self):
@@ -1157,7 +1161,9 @@ class SSLSocket(socket):
     def selected_npn_protocol(self):
         self._checkClosed()
         warnings.warn(
-            "ssl module: NPN is deprecated, use ALPN instead", stacklevel=2
+            "ssl NPN is deprecated, use ALPN instead",
+            DeprecationWarning,
+            stacklevel=2
         )
         return None
 
@@ -1419,7 +1425,7 @@ def wrap_socket(sock, keyfile=None, certfile=None,
                 suppress_ragged_eofs=True,
                 ciphers=None):
     warnings.warn(
-        "ssl module: wrap_socket is deprecated, use SSLContext.wrap_socket()",
+        "ssl.wrap_socket() is deprecated, use SSLContext.wrap_socket()",
         category=DeprecationWarning,
         stacklevel=2
     )
@@ -1500,11 +1506,14 @@ def PEM_cert_to_DER_cert(pem_cert_string):
     d = pem_cert_string.strip()[len(PEM_HEADER):-len(PEM_FOOTER)]
     return base64.decodebytes(d.encode('ASCII', 'strict'))
 
-def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT, ca_certs=None):
+def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT,
+                           ca_certs=None, timeout=_GLOBAL_DEFAULT_TIMEOUT):
     """Retrieve the certificate from the server at the specified address,
     and return it as a PEM-encoded string.
     If 'ca_certs' is specified, validate the server cert against it.
-    If 'ssl_version' is specified, use it in the connection attempt."""
+    If 'ssl_version' is specified, use it in the connection attempt.
+    If 'timeout' is specified, use it in the connection attempt.
+    """
 
     host, port = addr
     if ca_certs is not None:
@@ -1514,7 +1523,7 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT, ca_certs=None)
     context = _create_stdlib_context(ssl_version,
                                      cert_reqs=cert_reqs,
                                      cafile=ca_certs)
-    with  create_connection(addr) as sock:
+    with create_connection(addr, timeout=timeout) as sock:
         with context.wrap_socket(sock, server_hostname=host) as sslsock:
             dercert = sslsock.getpeercert(True)
     return DER_cert_to_PEM_cert(dercert)

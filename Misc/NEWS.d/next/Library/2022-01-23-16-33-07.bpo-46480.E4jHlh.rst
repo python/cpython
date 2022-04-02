@@ -1,0 +1,1 @@
+Add :func:`typing.assert_type`. Patch by Jelle Zijlstra.

@@ -16,11 +16,14 @@ with warnings.catch_warnings():
 import _imp
 
 
+OS_PATH_NAME = os.path.__name__
+
+
 def requires_load_dynamic(meth):
     """Decorator to skip a test if not running under CPython or lacking
     imp.load_dynamic()."""
     meth = support.cpython_only(meth)
-    return unittest.skipIf(not hasattr(imp, 'load_dynamic'),
+    return unittest.skipIf(getattr(imp, 'load_dynamic', None) is None,
                            'imp.load_dynamic() required')(meth)
 
 
@@ -213,15 +216,17 @@ class ImportTests(unittest.TestCase):
         # state after reversion. Reinitialising the module contents
         # and just reverting os.environ to its previous state is an OK
         # workaround
-        orig_path = os.path
-        orig_getenv = os.getenv
-        with os_helper.EnvironmentVarGuard():
-            x = imp.find_module("os")
-            self.addCleanup(x[0].close)
-            new_os = imp.load_module("os", *x)
-            self.assertIs(os, new_os)
-            self.assertIs(orig_path, new_os.path)
-            self.assertIsNot(orig_getenv, new_os.getenv)
+        with import_helper.CleanImport('os', 'os.path', OS_PATH_NAME):
+            import os
+            orig_path = os.path
+            orig_getenv = os.getenv
+            with os_helper.EnvironmentVarGuard():
+                x = imp.find_module("os")
+                self.addCleanup(x[0].close)
+                new_os = imp.load_module("os", *x)
+                self.assertIs(os, new_os)
+                self.assertIs(orig_path, new_os.path)
+                self.assertIsNot(orig_getenv, new_os.getenv)
 
     @requires_load_dynamic
     def test_issue15828_load_extensions(self):
@@ -346,8 +351,8 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(_frozen_importlib.__spec__.origin, "frozen")
 
     def test_source_hash(self):
-        self.assertEqual(_imp.source_hash(42, b'hi'), b'\xc6\xe7Z\r\x03:}\xab')
-        self.assertEqual(_imp.source_hash(43, b'hi'), b'\x85\x9765\xf8\x9a\x8b9')
+        self.assertEqual(_imp.source_hash(42, b'hi'), b'\xfb\xd9G\x05\xaf$\x9b~')
+        self.assertEqual(_imp.source_hash(43, b'hi'), b'\xd0/\x87C\xccC\xff\xe2')
 
     def test_pyc_invalidation_mode_from_cmdline(self):
         cases = [

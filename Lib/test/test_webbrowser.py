@@ -8,6 +8,8 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test webserver requires subprocess")
 
 URL = 'http://www.example.com'
 CMD_NAME = 'test'
@@ -304,7 +306,7 @@ class ImportTest(unittest.TestCase):
         webbrowser = import_helper.import_fresh_module('webbrowser')
         try:
             browser = webbrowser.get().name
-        except (webbrowser.Error, AttributeError) as err:
+        except webbrowser.Error as err:
             self.skipTest(str(err))
         with os_helper.EnvironmentVarGuard() as env:
             env["BROWSER"] = browser
@@ -316,7 +318,7 @@ class ImportTest(unittest.TestCase):
         try:
             webbrowser.get()
             least_preferred_browser = webbrowser.get(webbrowser._tryorder[-1]).name
-        except (webbrowser.Error, AttributeError, IndexError) as err:
+        except (webbrowser.Error, IndexError) as err:
             self.skipTest(str(err))
 
         with os_helper.EnvironmentVarGuard() as env:

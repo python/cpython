@@ -12,17 +12,15 @@ extern "C" {
 #endif
 
 
-    /* Instruction opcodes for compiled code */
+/* Instruction opcodes for compiled code */
 """.lstrip()
 
 footer = """
-/* EXCEPT_HANDLER is a special, implicit block type which is created when
-   entering an except handler. It is not an opcode but we define it here
-   as we want it to be available to both frameobject.c and ceval.c, while
-   remaining private.*/
-#define EXCEPT_HANDLER 257
-
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
+
+/* Reserve some bytecodes for internal use in the compiler.
+ * The value of 240 is arbitrary. */
+#define IS_ARTIFICIAL(op) ((op) > 240)
 
 #ifdef __cplusplus
 }
@@ -30,13 +28,15 @@ footer = """
 #endif /* !Py_OPCODE_H */
 """
 
+DEFINE = "#define {:<38} {:>3}\n"
+
 UINT32_MASK = (1<<32)-1
 
 def write_int_array_from_ops(name, ops, out):
     bits = 0
     for op in ops:
         bits |= 1<<op
-    out.write(f"static uint32_t {name}[8] = {{\n")
+    out.write(f"static const uint32_t {name}[8] = {{\n")
     for i in range(8):
         out.write(f"    {bits & UINT32_MASK}U,\n")
         bits >>= 32
@@ -53,24 +53,65 @@ def main(opcode_py, outfile='Include/opcode.h'):
         code = fp.read()
     exec(code, opcode)
     opmap = opcode['opmap']
+    opname = opcode['opname']
+    hasconst = opcode['hasconst']
     hasjrel = opcode['hasjrel']
     hasjabs = opcode['hasjabs']
+    used = [ False ] * 256
+    next_op = 1
+    for name, op in opmap.items():
+        used[op] = True
     with open(outfile, 'w') as fobj:
         fobj.write(header)
-        for name in opcode['opname']:
+        for name in opname:
             if name in opmap:
-                fobj.write("#define %-23s %3s\n" % (name, opmap[name]))
+                fobj.write(DEFINE.format(name, opmap[name]))
             if name == 'POP_EXCEPT': # Special entry for HAVE_ARGUMENT
-                fobj.write("#define %-23s %3d\n" %
-                            ('HAVE_ARGUMENT', opcode['HAVE_ARGUMENT']))
-        fobj.write("#ifdef NEED_OPCODE_JUMP_TABLES\n")
+                fobj.write(DEFINE.format("HAVE_ARGUMENT", opcode["HAVE_ARGUMENT"]))
+
+        for name in opcode['_specialized_instructions']:
+            while used[next_op]:
+                next_op += 1
+            fobj.write(DEFINE.format(name, next_op))
+            used[next_op] = True
+        fobj.write(DEFINE.format('DO_TRACING', 255))
+        fobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
+        fobj.write("\nextern const uint8_t _PyOpcode_Deopt[256];\n")
+        fobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
         write_int_array_from_ops("_PyOpcode_RelativeJump", opcode['hasjrel'], fobj)
         write_int_array_from_ops("_PyOpcode_Jump", opcode['hasjrel'] + opcode['hasjabs'], fobj)
+
+        fobj.write("\nconst uint8_t _PyOpcode_Caches[256] = {\n")
+        for i, entries in enumerate(opcode["_inline_cache_entries"]):
+            if entries:
+                fobj.write(f"    [{opname[i]}] = {entries},\n")
+        fobj.write("};\n")
+        deoptcodes = {}
+        for basic in opmap:
+            deoptcodes[basic] = basic
+        for basic, family in opcode["_specializations"].items():
+            for specialized in family:
+                deoptcodes[specialized] = basic
+        fobj.write("\nconst uint8_t _PyOpcode_Deopt[256] = {\n")
+        for opt, deopt in sorted(deoptcodes.items()):
+            fobj.write(f"    [{opt}] = {deopt},\n")
+        fobj.write("};\n")
         fobj.write("#endif /* OPCODE_TABLES */\n")
+
+        fobj.write("\n")
+        fobj.write("#define HAS_CONST(op) (false\\")
+        for op in hasconst:
+            fobj.write(f"\n    || ((op) == {op}) \\")
+        fobj.write("\n    )\n")
+
+        fobj.write("\n")
+        for i, (op, _) in enumerate(opcode["_nb_ops"]):
+            fobj.write(DEFINE.format(op, i))
+
         fobj.write(footer)
 
 
-    print("%s regenerated from %s" % (outfile, opcode_py))
+    print(f"{outfile} regenerated from {opcode_py}")
 
 
 if __name__ == '__main__':

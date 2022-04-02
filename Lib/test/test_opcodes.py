@@ -31,10 +31,9 @@ class OpcodeTest(unittest.TestCase):
         except OSError:
             pass
 
-    def test_no_annotations_if_not_needed(self):
+    def test_default_annotations_exist(self):
         class C: pass
-        with self.assertRaises(AttributeError):
-            C.__annotations__
+        self.assertEqual(C.__annotations__, {})
 
     def test_use_existing_annotations(self):
         ns = {'__annotations__': {1: 2}}

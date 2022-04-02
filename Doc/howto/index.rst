@@ -30,4 +30,5 @@ Currently, the HOWTOs are:
    ipaddress.rst
    clinic.rst
    instrumentation.rst
+   annotations.rst
 

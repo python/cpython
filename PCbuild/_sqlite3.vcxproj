@@ -97,7 +97,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\Modules\_sqlite\cache.h" />
     <ClInclude Include="..\Modules\_sqlite\connection.h" />
     <ClInclude Include="..\Modules\_sqlite\cursor.h" />
     <ClInclude Include="..\Modules\_sqlite\microprotocols.h" />
@@ -108,7 +107,6 @@
     <ClInclude Include="..\Modules\_sqlite\util.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\_sqlite\cache.c" />
     <ClCompile Include="..\Modules\_sqlite\connection.c" />
     <ClCompile Include="..\Modules\_sqlite\cursor.c" />
     <ClCompile Include="..\Modules\_sqlite\microprotocols.c" />
