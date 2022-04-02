@@ -2996,9 +2996,9 @@ then
 		LDSHARED='$(CC) -Wl,-G,-Bexport'
 		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
 	WASI*)
-    AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
-      dnl not iplemented yet
-    ]);;
+		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+			dnl not iplemented yet
+		]);;
 	CYGWIN*)
 		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
 		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
@@ -3040,8 +3040,7 @@ then
 	Emscripten*|WASI*)
 		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
 			CCSHARED="-fPIC"
-		])
-		;;
+		]);;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)

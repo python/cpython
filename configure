@@ -10553,7 +10553,7 @@ then
 		LDSHARED='$(CC) -Wl,-G,-Bexport'
 		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
 	WASI*)
-    if test "x$enable_wasm_dynamic_linking" = xyes; then :
+		if test "x$enable_wasm_dynamic_linking" = xyes; then :
 
 
 fi;;
@@ -10602,8 +10602,7 @@ then
 
 			CCSHARED="-fPIC"
 
-fi
-		;;
+fi;;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
