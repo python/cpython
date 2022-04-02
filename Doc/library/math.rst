@@ -298,7 +298,7 @@ Number-theoretic and representation functions
 
 .. function:: trunc(x)
 
-   Given a :class:`~numbers.Real` value *x*, return *x* with the fractional part
+   Return *x* with the fractional part
    removed, leaving the integer part.  This rounds toward 0: ``trunc()`` is
    equivalent to :func:`floor` for positive *x*, and equivalent to :func:`ceil`
    for negative *x*. If *x* is not a float, delegates to :meth:`x.__trunc__
