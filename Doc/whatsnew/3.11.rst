@@ -1017,8 +1017,8 @@ Porting to Python 3.11
   instead.
 
   Debuggers that accessed the ``f_locals`` directly *must* call
-  `:c:func:`PyFrame_GetLocals` instead. They no longer need to call
-  `:c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
+  :c:func:`PyFrame_GetLocals` instead. They no longer need to call
+  :c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
   in fact they should not call those functions. The necessary updating of the
   frame is now managed by the virtual machine.
 
