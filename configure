@@ -3052,6 +3052,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
@@ -12336,100 +12338,116 @@ save_LIBS=$LIBS
 
 
     CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
-    LIBS="$LIBFFI_LIBS $LIBS"
+    LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_prep_cif_var in ffi.h" >&5
-$as_echo_n "checking for ffi_prep_cif_var in ffi.h... " >&6; }
-if ${ac_cv_ffi_prep_cif_var+:} false; then :
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_prep_cif_var" >&5
+$as_echo_n "checking for ffi_prep_cif_var... " >&6; }
+if ${ac_cv_func_ffi_prep_cif_var+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <ffi.h>
-
+int
+main ()
+{
+void *x=ffi_prep_cif_var
+  ;
+  return 0;
+}
 _ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "ffi_prep_cif_var" >/dev/null 2>&1; then :
-  ac_cv_ffi_prep_cif_var=yes
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_ffi_prep_cif_var=yes
 else
-  ac_cv_ffi_prep_cif_var=no
+  ac_cv_func_ffi_prep_cif_var=no
 fi
-rm -f conftest*
-
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ffi_prep_cif_var" >&5
-$as_echo "$ac_cv_ffi_prep_cif_var" >&6; }
-    if test "x$ac_cv_ffi_prep_cif_var" = xyes; then :
-
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_ffi_prep_cif_var" >&5
+$as_echo "$ac_cv_func_ffi_prep_cif_var" >&6; }
+  if test "x$ac_cv_func_ffi_prep_cif_var" = xyes; then :
 
 $as_echo "#define HAVE_FFI_PREP_CIF_VAR 1" >>confdefs.h
 
-
 fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_prep_closure_loc in ffi.h" >&5
-$as_echo_n "checking for ffi_prep_closure_loc in ffi.h... " >&6; }
-if ${ac_cv_ffi_prep_closure_loc+:} false; then :
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_prep_closure_loc" >&5
+$as_echo_n "checking for ffi_prep_closure_loc... " >&6; }
+if ${ac_cv_func_ffi_prep_closure_loc+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <ffi.h>
-
+int
+main ()
+{
+void *x=ffi_prep_closure_loc
+  ;
+  return 0;
+}
 _ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "ffi_prep_closure_loc" >/dev/null 2>&1; then :
-  ac_cv_ffi_prep_closure_loc=yes
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_ffi_prep_closure_loc=yes
 else
-  ac_cv_ffi_prep_closure_loc=no
+  ac_cv_func_ffi_prep_closure_loc=no
 fi
-rm -f conftest*
-
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ffi_prep_closure_loc" >&5
-$as_echo "$ac_cv_ffi_prep_closure_loc" >&6; }
-    if test "x$ac_cv_ffi_prep_closure_loc" = xyes; then :
-
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_ffi_prep_closure_loc" >&5
+$as_echo "$ac_cv_func_ffi_prep_closure_loc" >&6; }
+  if test "x$ac_cv_func_ffi_prep_closure_loc" = xyes; then :
 
 $as_echo "#define HAVE_FFI_PREP_CLOSURE_LOC 1" >>confdefs.h
 
-
 fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_closure_alloc in ffi.h" >&5
-$as_echo_n "checking for ffi_closure_alloc in ffi.h... " >&6; }
-if ${ac_cv_ffi_closure_alloc+:} false; then :
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_closure_alloc" >&5
+$as_echo_n "checking for ffi_closure_alloc... " >&6; }
+if ${ac_cv_func_ffi_closure_alloc+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <ffi.h>
-
+int
+main ()
+{
+void *x=ffi_closure_alloc
+  ;
+  return 0;
+}
 _ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "ffi_closure_alloc" >/dev/null 2>&1; then :
-  ac_cv_ffi_closure_alloc=yes
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_ffi_closure_alloc=yes
 else
-  ac_cv_ffi_closure_alloc=no
+  ac_cv_func_ffi_closure_alloc=no
 fi
-rm -f conftest*
-
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ffi_closure_alloc" >&5
-$as_echo "$ac_cv_ffi_closure_alloc" >&6; }
-    if test "x$ac_cv_ffi_closure_alloc" = xyes; then :
-
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_ffi_closure_alloc" >&5
+$as_echo "$ac_cv_func_ffi_closure_alloc" >&6; }
+  if test "x$ac_cv_func_ffi_closure_alloc" = xyes; then :
 
 $as_echo "#define HAVE_FFI_CLOSURE_ALLOC 1" >>confdefs.h
 
-
 fi
+
+
+
 
 CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
@@ -15466,8 +15484,6 @@ if test "x$ac_cv_have_decl_dirfd" = xyes; then :
 $as_echo "#define HAVE_DIRFD 1" >>confdefs.h
 
 fi
-
-
 
 
 # For some functions, having a definition is not sufficient, since

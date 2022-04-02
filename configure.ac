@@ -49,6 +49,26 @@ AC_DEFUN([WITH_SAVE_ENV],
 [RESTORE_ENV]
 )dnl
 
+dnl PY_CHECK_FUNC(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
+AC_DEFUN([PY_CHECK_FUNC],
+[ AS_VAR_PUSHDEF([py_var], [ac_cv_func_$1])
+  AS_VAR_PUSHDEF([py_define], m4_ifblank([$3], [[HAVE_]m4_toupper($1)], [$3]))
+  AC_CACHE_CHECK(
+    [for $1],
+    [py_var],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([$2], [void *x=$1])],
+      [AS_VAR_SET([py_var], [yes])],
+      [AS_VAR_SET([py_var], [no])])]
+  )
+  AS_VAR_IF(
+    [py_var],
+    [yes],
+    [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
+  AS_VAR_POPDEF([py_var])
+  AS_VAR_POPDEF([py_define])
+])
+
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
@@ -3630,31 +3650,11 @@ AS_VAR_IF([ac_cv_lib_dl_dlopen], [yes], [AS_VAR_APPEND([LIBFFI_LIBS], [" -ldl"])
 if test "$with_system_ffi" = yes -a "$have_libffi" = yes; then
   WITH_SAVE_ENV([
     CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
-    LIBS="$LIBFFI_LIBS $LIBS"
+    LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
 
-    AC_CACHE_CHECK([for ffi_prep_cif_var in ffi.h], [ac_cv_ffi_prep_cif_var], [
-      AC_EGREP_HEADER([ffi_prep_cif_var], [ffi.h], [ac_cv_ffi_prep_cif_var=yes], [ac_cv_ffi_prep_cif_var=no])
-    ])
-    AS_VAR_IF([ac_cv_ffi_prep_cif_var], [yes], [
-      AC_DEFINE([HAVE_FFI_PREP_CIF_VAR], [1],
-      [Define to 1 if you have the ffi_prep_cif_var function in <ffi.h> header file.])
-    ])
-
-    AC_CACHE_CHECK([for ffi_prep_closure_loc in ffi.h], [ac_cv_ffi_prep_closure_loc], [
-      AC_EGREP_HEADER([ffi_prep_closure_loc], [ffi.h], [ac_cv_ffi_prep_closure_loc=yes], [ac_cv_ffi_prep_closure_loc=no])
-    ])
-    AS_VAR_IF([ac_cv_ffi_prep_closure_loc], [yes], [
-      AC_DEFINE([HAVE_FFI_PREP_CLOSURE_LOC], [1],
-      [Define to 1 if you have the ffi_prep_closure_loc function in <ffi.h> header file.])
-    ])
-
-    AC_CACHE_CHECK([for ffi_closure_alloc in ffi.h], [ac_cv_ffi_closure_alloc], [
-      AC_EGREP_HEADER([ffi_closure_alloc], [ffi.h], [ac_cv_ffi_closure_alloc=yes], [ac_cv_ffi_closure_alloc=no])
-    ])
-    AS_VAR_IF([ac_cv_ffi_closure_alloc], [yes], [
-      AC_DEFINE([HAVE_FFI_CLOSURE_ALLOC], [1],
-      [Define to 1 if you have the ffi_closure_alloc function in <ffi.h> header file.])
-    ])
+    PY_CHECK_FUNC([ffi_prep_cif_var], [#include <ffi.h>])
+    PY_CHECK_FUNC([ffi_prep_closure_loc], [#include <ffi.h>])
+    PY_CHECK_FUNC([ffi_closure_alloc], [#include <ffi.h>])
   ])
 fi
 
@@ -4612,26 +4612,6 @@ AC_CHECK_DECL(dirfd,
               Define if you have the 'dirfd' function or macro.), ,
       [#include <sys/types.h>
        #include <dirent.h>])
-
-dnl PY_CHECK_FUNC(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
-AC_DEFUN([PY_CHECK_FUNC],
-[ AS_VAR_PUSHDEF([py_var], [ac_cv_func_$1])
-  AS_VAR_PUSHDEF([py_define], m4_ifblank([$3], [[HAVE_]m4_toupper($1)], [$3]))
-  AC_CACHE_CHECK(
-    [for $1],
-    [py_var],
-    [AC_COMPILE_IFELSE(
-      [AC_LANG_PROGRAM([$2], [void *x=$1])],
-      [AS_VAR_SET([py_var], [yes])],
-      [AS_VAR_SET([py_var], [no])])]
-  )
-  AS_VAR_IF(
-    [py_var],
-    [yes],
-    [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
-  AS_VAR_POPDEF([py_var])
-  AS_VAR_POPDEF([py_define])
-])
 
 # For some functions, having a definition is not sufficient, since
 # we want to take their address.
