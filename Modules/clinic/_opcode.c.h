@@ -56,4 +56,22 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bcf66d25c2624197 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_opcode_get_specialization_stats__doc__,
+"get_specialization_stats($module, /)\n"
+"--\n"
+"\n"
+"Return the specialization stats");
+
+#define _OPCODE_GET_SPECIALIZATION_STATS_METHODDEF    \
+    {"get_specialization_stats", (PyCFunction)_opcode_get_specialization_stats, METH_NOARGS, _opcode_get_specialization_stats__doc__},
+
+static PyObject *
+_opcode_get_specialization_stats_impl(PyObject *module);
+
+static PyObject *
+_opcode_get_specialization_stats(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _opcode_get_specialization_stats_impl(module);
+}
+/*[clinic end generated code: output=1699b4b1488b49c1 input=a9049054013a1b77]*/

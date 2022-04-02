@@ -1,0 +1,1 @@
+Speed up calls to c functions with keyword arguments by 25% with specialization. Patch by Kumar Aditya.

@@ -413,6 +413,7 @@ def get_importer(path_item):
     The cache (or part of it) can be cleared manually if a
     rescan of sys.path_hooks is necessary.
     """
+    path_item = os.fsdecode(path_item)
     try:
         importer = sys.path_importer_cache[path_item]
     except KeyError:
@@ -671,7 +672,7 @@ def resolve_name(name):
     ValueError - if `name` isn't in a recognised format
     ImportError - if an import failed when it shouldn't have
     AttributeError - if a failure occurred when traversing the object hierarchy
-                     within the imported package to get to the desired object)
+                     within the imported package to get to the desired object.
     """
     global _NAME_PATTERN
     if _NAME_PATTERN is None:
