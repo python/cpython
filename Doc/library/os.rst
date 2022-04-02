@@ -113,7 +113,7 @@ of the UTF-8 encoding:
   :ref:`error handler <error-handlers>` being enabled for :data:`sys.stdin`
   and :data:`sys.stdout` (:data:`sys.stderr` continues to use
   ``backslashreplace`` as it does in the default locale-aware mode)
-* On Unix, :func:`os.device_encoding` returns ``'UTF-8'``. rather than the
+* On Unix, :func:`os.device_encoding` returns ``'UTF-8'`` rather than the
   device encoding.
 
 Note that the standard stream settings in UTF-8 mode can be overridden by
