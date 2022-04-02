@@ -617,7 +617,7 @@ See :pep:`659` for more information.)
 |               |                    | data structures. Subscripting custom ``__getitem__``  |                   |                   |
 |               |                    | is also inlined similar to :ref:`inline-calls`.       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Store         | ``o[i] = z``       | Similar to subscripting specialization above.         | ?                 |                   |
+| Store         | ``o[i] = z``       | Similar to subscripting specialization above.         | 10-90%            | Dennis Sweeney    |
 | subscript     |                    |                                                       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 | Calls         | ``f(arg)``         | Calls to common builtin (C) functions such as ``len`` | 20%               | Mark Shannon,     |
