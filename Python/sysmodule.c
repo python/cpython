@@ -924,14 +924,18 @@ static PyObject *
 call_trampoline(PyThreadState *tstate, PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
-    if (PyFrame_FastToLocalsWithError(frame) < 0) {
-        return NULL;
-    }
 
     PyObject *stack[3];
     stack[0] = (PyObject *)frame;
     stack[1] = whatstrings[what];
     stack[2] = (arg != NULL) ? arg : Py_None;
+
+    /* Discard any previous modifications the frame's fast locals */
+    if (frame->f_fast_as_locals) {
+        if (PyFrame_FastToLocalsWithError(frame) < 0) {
+            return NULL;
+        }
+    }
 
     /* call the Python-level function */
     PyObject *result = _PyObject_FastCallTstate(tstate, callback, stack, 3);
@@ -1925,8 +1929,8 @@ sys_getandroidapilevel_impl(PyObject *module)
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     SYS_ADDAUDITHOOK_METHODDEF
-    {"audit",           (PyCFunction)(void(*)(void))sys_audit, METH_FASTCALL, audit_doc },
-    {"breakpointhook",  (PyCFunction)(void(*)(void))sys_breakpointhook,
+    {"audit", _PyCFunction_CAST(sys_audit), METH_FASTCALL, audit_doc },
+    {"breakpointhook", _PyCFunction_CAST(sys_breakpointhook),
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
     SYS__CLEAR_TYPE_CACHE_METHODDEF
     SYS__CURRENT_FRAMES_METHODDEF
@@ -1940,18 +1944,18 @@ static PyMethodDef sys_methods[] = {
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
 #ifdef Py_STATS
-    {"getdxp",          _Py_GetDXProfile, METH_VARARGS},
+    {"getdxp", _Py_GetDXProfile, METH_VARARGS},
 #endif
     SYS_GETFILESYSTEMENCODING_METHODDEF
     SYS_GETFILESYSTEMENCODEERRORS_METHODDEF
     SYS__GETQUICKENEDCOUNT_METHODDEF
 #ifdef Py_TRACE_REFS
-    {"getobjects",      _Py_GetObjects, METH_VARARGS},
+    {"getobjects", _Py_GetObjects, METH_VARARGS},
 #endif
     SYS_GETTOTALREFCOUNT_METHODDEF
     SYS_GETREFCOUNT_METHODDEF
     SYS_GETRECURSIONLIMIT_METHODDEF
-    {"getsizeof",   (PyCFunction)(void(*)(void))sys_getsizeof,
+    {"getsizeof", _PyCFunction_CAST(sys_getsizeof),
      METH_VARARGS | METH_KEYWORDS, getsizeof_doc},
     SYS__GETFRAME_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
@@ -1962,21 +1966,21 @@ static PyMethodDef sys_methods[] = {
     SYS_SETSWITCHINTERVAL_METHODDEF
     SYS_GETSWITCHINTERVAL_METHODDEF
     SYS_SETDLOPENFLAGS_METHODDEF
-    {"setprofile",      sys_setprofile, METH_O, setprofile_doc},
+    {"setprofile", sys_setprofile, METH_O, setprofile_doc},
     SYS_GETPROFILE_METHODDEF
     SYS_SETRECURSIONLIMIT_METHODDEF
-    {"settrace",        sys_settrace, METH_O, settrace_doc},
+    {"settrace", sys_settrace, METH_O, settrace_doc},
     SYS_GETTRACE_METHODDEF
     SYS_CALL_TRACING_METHODDEF
     SYS__DEBUGMALLOCSTATS_METHODDEF
     SYS_SET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
     SYS_GET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
-    {"set_asyncgen_hooks", (PyCFunction)(void(*)(void))sys_set_asyncgen_hooks,
+    {"set_asyncgen_hooks", _PyCFunction_CAST(sys_set_asyncgen_hooks),
      METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GETANDROIDAPILEVEL_METHODDEF
     SYS_UNRAISABLEHOOK_METHODDEF
-    {NULL,              NULL}           /* sentinel */
+    {NULL, NULL}  // sentinel
 };
 
 

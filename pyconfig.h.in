@@ -622,6 +622,9 @@
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
+/* Define to 1 if you want to build _blake2 module with libb2 */
+#undef HAVE_LIBB2
+
 /* Define to 1 if you have the `db' library (-ldb). */
 #undef HAVE_LIBDB
 
@@ -1353,9 +1356,6 @@
 /* Define to 1 if you don't have `tm_zone' but do have the external array
    `tzname'. */
 #undef HAVE_TZNAME
-
-/* Define this if you have tcl and TCL_UTF_MAX==6 */
-#undef HAVE_UCS4_TCL
 
 /* Define to 1 if you have the `umask' function. */
 #undef HAVE_UMASK

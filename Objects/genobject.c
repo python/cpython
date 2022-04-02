@@ -410,8 +410,11 @@ gen_close(PyGenObject *gen, PyObject *args)
 
 
 PyDoc_STRVAR(throw_doc,
-"throw(typ[,val[,tb]]) -> raise exception in generator,\n\
-return next yielded value or raise StopIteration.");
+"throw(value)\n\
+throw(type[,value[,tb]])\n\
+\n\
+Raise exception in generator, return next yielded value or raise\n\
+StopIteration.");
 
 static PyObject *
 _gen_throw(PyGenObject *gen, int close_on_genexit,
@@ -1157,8 +1160,11 @@ PyDoc_STRVAR(coro_send_doc,
 return next iterated value or raise StopIteration.");
 
 PyDoc_STRVAR(coro_throw_doc,
-"throw(typ[,val[,tb]]) -> raise exception in coroutine,\n\
-return next iterated value or raise StopIteration.");
+"throw(value)\n\
+throw(type[,value[,traceback]])\n\
+\n\
+Raise exception in coroutine, return next iterated value or raise\n\
+StopIteration.");
 
 PyDoc_STRVAR(coro_close_doc,
 "close() -> raise GeneratorExit inside coroutine.");

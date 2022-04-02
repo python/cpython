@@ -757,10 +757,19 @@ class ForwardRef(_Final, _root=True):
     def __init__(self, arg, is_argument=True, module=None, *, is_class=False):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
+
+        # If we do `def f(*args: *Ts)`, then we'll have `arg = '*Ts'`.
+        # Unfortunately, this isn't a valid expression on its own, so we
+        # do the unpacking manually.
+        if arg[0] == '*':
+            arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0]
+        else:
+            arg_to_compile = arg
         try:
-            code = compile(arg, '<string>', 'eval')
+            code = compile(arg_to_compile, '<string>', 'eval')
         except SyntaxError:
             raise SyntaxError(f"Forward reference must be an expression -- got {arg!r}")
+
         self.__forward_arg__ = arg
         self.__forward_code__ = code
         self.__forward_evaluated__ = False
@@ -2108,7 +2117,7 @@ def cast(typ, val):
 
 
 def assert_type(val, typ, /):
-    """Assert (to the type checker) that the value is of the given type.
+    """Ask a static type checker to confirm that the value is of the given type.
 
     When the type checker encounters a call to assert_type(), it
     emits an error if the value is not of the specified type::

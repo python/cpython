@@ -973,6 +973,22 @@ cat > conftest.c <<EOF
         darwin
 #elif defined(__VXWORKS__)
         vxworks
+#elif defined(__wasm32__)
+#  if defined(__EMSCRIPTEN__)
+	wasm32-emscripten
+#  elif defined(__wasi__)
+	wasm32-wasi
+#  else
+#    error unknown wasm32 platform
+#  endif
+#elif defined(__wasm64__)
+#  if defined(__EMSCRIPTEN)
+	wasm64-emscripten
+#  elif defined(__wasi__)
+	wasm64-wasi
+#  else
+#    error unknown wasm64 platform
+#  endif
 #else
 # error unknown platform triplet
 #endif
@@ -1075,6 +1091,12 @@ AC_ARG_WITH([emscripten-target],
     AS_CASE([$with_emscripten_target],
       [browser], [ac_sys_emscripten_target=browser],
       [node], [ac_sys_emscripten_target=node],
+dnl Debug builds with source map / dwarf symbols. Py_DEBUG builds easily
+dnl run out of stack space. Detached sybmols and map prohibit some
+dnl optimizations and increase file size. Options are undocumented so we
+dnl are free to remove them in the future.
+      [browser-debug], [ac_sys_emscripten_target=browser-debug],
+      [node-debug], [ac_sys_emscripten_target=node-debug],
       [AC_MSG_ERROR([Invalid argument: --with-emscripten-target=browser|node])]
     )
   ], [
@@ -1096,8 +1118,8 @@ AC_ARG_WITH([suffix],
   )
 ], [
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/browser], [EXEEXT=.html],
-    [Emscripten/node], [EXEEXT=.js],
+    [Emscripten/browser*], [EXEEXT=.html],
+    [Emscripten/node*], [EXEEXT=.js],
     [WASI/*], [EXEEXT=.wasm],
     [EXEEXT=]
   )
@@ -1360,7 +1382,7 @@ AC_MSG_RESULT($LDLIBRARY)
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)'],
+  [Emscripten/browser*], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)'],
   [LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)']
 )
 LINK_PYTHON_DEPS='$(LIBRARY_DEPS)'
@@ -1872,28 +1894,28 @@ fi
 # The option disables code elimination, which increases code size of main
 # binary. All objects must be built with -fPIC.
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser], [
+  [Emscripten/browser*], [
     LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1"
     LINKFORSHARED="--preload-file \$(WASM_ASSETS_DIR)"
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
     dnl separate-dwarf does not seem to work in Chrome DevTools Support.
-    if test "$Py_DEBUG" = 'true'; then
+    if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "browser-debug"; then
       LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
       LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
     else
       LINKFORSHARED="$LINKFORSHARED -O2 -g0"
     fi
   ],
-  [Emscripten/node], [
+  [Emscripten/node*], [
     LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s USE_PTHREADS=1"
     LINKFORSHARED="-s PROXY_TO_PTHREAD=1 -s EXIT_RUNTIME=1"
     CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
-    if test "$Py_DEBUG" = 'true'; then
+    if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "node-debug"; then
       LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
       LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
     else
-      LINKFORSHARED="$LINKFORSHARED -O2 -gseparate-dwarf"
+      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
     fi
   ],
   [WASI/*], [
@@ -3530,38 +3552,77 @@ AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
   [Define to 1 to build the sqlite module with loadable extensions support.])
 ])
 
-# Check for --with-tcltk-includes=path and --with-tcltk-libs=path
-AC_SUBST(TCLTK_INCLUDES)
-AC_SUBST(TCLTK_LIBS)
-AC_MSG_CHECKING(for --with-tcltk-includes)
-AC_ARG_WITH(tcltk-includes,
-            AS_HELP_STRING([--with-tcltk-includes='-I...'], [override search for Tcl and Tk include files]),
-            [],
-            [with_tcltk_includes="default"])
-AC_MSG_RESULT($with_tcltk_includes)
-AC_MSG_CHECKING(for --with-tcltk-libs)
-AC_ARG_WITH(tcltk-libs,
-            AS_HELP_STRING([--with-tcltk-libs='-L...'], [override search for Tcl and Tk libs]),
-            [],
-            [with_tcltk_libs="default"])
-AC_MSG_RESULT($with_tcltk_libs)
-if test "x$with_tcltk_includes" = xdefault || test "x$with_tcltk_libs" = xdefault
-then
-  if test "x$with_tcltk_includes" != "x$with_tcltk_libs"
-  then
-    AC_MSG_ERROR([use both --with-tcltk-includes='...' and --with-tcltk-libs='...' or neither])
-  fi
-  if test -n "$PKG_CONFIG" && "$PKG_CONFIG" --exists tcl tk; then
-    TCLTK_INCLUDES="`"$PKG_CONFIG" tcl tk --cflags-only-I 2>/dev/null`"
-    TCLTK_LIBS="`"$PKG_CONFIG" tcl tk --libs 2>/dev/null`"
-  else
-    TCLTK_INCLUDES=""
-    TCLTK_LIBS=""
-  fi
-else
-  TCLTK_INCLUDES="$with_tcltk_includes"
-  TCLTK_LIBS="$with_tcltk_libs"
-fi
+dnl
+dnl Detect Tcl/Tk. Use pkg-config if available.
+dnl
+found_tcltk=no
+for _QUERY in \
+  "tcl >= 8.5.12 tk >= 8.5.12" \
+  "tcl8.6 tk8.6" \
+  "tcl86 tk86" \
+  "tcl8.5 >= 8.5.12 tk8.5 >= 8.5.12" \
+  "tcl85 >= 8.5.12 tk85 >= 8.5.12" \
+; do
+  PKG_CHECK_EXISTS([$_QUERY], [
+    PKG_CHECK_MODULES([TCLTK], [$_QUERY], [found_tcltk=yes], [found_tcltk=no])
+  ])
+  AS_VAR_IF([found_tcltk], [yes], [break])
+done
+
+AS_VAR_IF([found_tcltk], [no], [
+  TCLTK_CFLAGS=${TCLTK_CFLAGS-""}
+  TCLTK_LIBS=${TCLTK_LIBS-""}
+])
+
+dnl FreeBSD has an X11 dependency which is not implicitly resolved.
+AS_CASE([$ac_sys_system],
+  [FreeBSD*], [
+    PKG_CHECK_EXISTS([x11], [
+      PKG_CHECK_MODULES([X11], [x11], [
+        TCLTK_CFLAGS="$TCLTK_CFLAGS $X11_CFLAGS"
+        TCLTK_LIBS="$TCLTK_LIBS $X11_LIBS"
+      ])
+    ])
+  ]
+)
+
+WITH_SAVE_ENV([
+  CPPFLAGS="$TCLTK_CFLAGS $CFLAGS"
+  LIBS="$TCLTK_LIBS $LDFLAGS"
+
+  AC_LINK_IFELSE([
+    AC_LANG_PROGRAM([
+      #include <tcl.h>
+      #include <tk.h>
+      #if defined(TK_HEX_VERSION)
+      #  if TK_HEX_VERSION < 0x0805020c
+      #    error "Tk older than 8.5.12 not supported"
+      #  endif
+      #endif
+      #if (TCL_MAJOR_VERSION < 8) || \
+          ((TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 5)) || \
+          ((TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION == 5) && (TCL_RELEASE_SERIAL < 12))
+      #  error "Tcl older than 8.5.12 not supported"
+      #endif
+      #if (TK_MAJOR_VERSION < 8) || \
+          ((TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION < 5)) || \
+          ((TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION == 5) && (TK_RELEASE_SERIAL < 12))
+      #  error "Tk older than 8.5.12 not supported"
+      #endif
+    ], [
+      void *x1 = Tcl_Init;
+      void *x2 = Tk_Init;
+    ])
+  ], [
+    have_tcltk=yes
+    dnl The X11/xlib.h file bundled in the Tk sources can cause function
+    dnl prototype warnings from the compiler. Since we cannot easily fix
+    dnl that, suppress the warnings here instead.
+    AS_VAR_APPEND([TCLTK_CFLAGS], [" -Wno-strict-prototypes -DWITH_APPINIT=1"])
+  ], [
+    have_tcltk=no
+  ])
+])
 
 dnl check for _gdbmmodule dependencies
 dnl NOTE: gdbm does not provide a pkgconf file.
@@ -5188,18 +5249,6 @@ then
   AC_CHECK_SIZEOF(wchar_t, 4, [#include <wchar.h>])
 fi
 
-AC_MSG_CHECKING(for UCS-4 tcl)
-have_ucs4_tcl=no
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <tcl.h>
-#if TCL_UTF_MAX != 6
-# error "NOT UCS4_TCL"
-#endif]], [[]])],[
-  AC_DEFINE(HAVE_UCS4_TCL, 1, [Define this if you have tcl and TCL_UTF_MAX==6])
-  have_ucs4_tcl=yes
-],[])
-AC_MSG_RESULT($have_ucs4_tcl)
-
 # check whether wchar_t is signed or not
 if test "$wchar_h" = yes
 then
@@ -6375,6 +6424,15 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
 done
 IFS=$as_save_IFS
 
+dnl libb2 for blake2. _blake2 module falls back to vendored copy.
+AS_VAR_IF([with_builtin_blake2], [yes], [
+  PKG_CHECK_MODULES([LIBB2], [libb2], [
+    have_libb2=yes
+    AC_DEFINE([HAVE_LIBB2], [1],
+              [Define to 1 if you want to build _blake2 module with libb2])
+  ], [have_libb2=no])
+])
+
 # --with-experimental-isolated-subinterpreters
 AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
             [Better isolate subinterpreters, experimental build mode.])
@@ -6401,7 +6459,7 @@ if test "$enable_test_modules" = no; then
     TEST_MODULES=no
 else
     AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-      [Emscripten/browser], [TEST_MODULES=no],
+      [Emscripten/browser*], [TEST_MODULES=no],
       [TEST_MODULES=yes]
     )
 fi
@@ -6426,7 +6484,7 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   [CYGWIN*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
   [QNX*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
   [FreeBSD*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
-  [Emscripten/browser], [
+  [Emscripten/browser*], [
     PY_STDLIB_MOD_SET_NA(
       [_ctypes],
       [_curses],
@@ -6453,13 +6511,16 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   ],
   dnl Some modules like _posixsubprocess do not work. We build them anyway
   dnl so imports in tests do not fail.
-  [Emscripten/node], [
+  [Emscripten/node*], [
     PY_STDLIB_MOD_SET_NA(
       [_ctypes],
       [_curses],
       [_curses_panel],
       [_dbm],
       [_gdbm],
+      [_multiprocessing],
+      [_posixshmem],
+      [_posixsubprocess],
       [_scproxy],
       [_tkinter],
       [_xxsubinterpreters],
@@ -6652,7 +6713,9 @@ PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
 PY_STDLIB_MOD([_sha256], [test "$with_builtin_sha256" = yes])
 PY_STDLIB_MOD([_sha512], [test "$with_builtin_sha512" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
-PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
+PY_STDLIB_MOD([_blake2],
+  [test "$with_builtin_blake2" = yes], [],
+  [$LIBB2_CFLAGS], [$LIBB2_LIBS])
 
 PY_STDLIB_MOD([_crypt],
   [], [test "$ac_cv_crypt_crypt" = yes],
@@ -6677,6 +6740,8 @@ dnl PY_STDLIB_MOD([_tkinter], [], [], [], [])
 PY_STDLIB_MOD([_uuid],
   [], [test "$have_uuid" = "yes"],
   [$LIBUUID_CFLAGS], [$LIBUUID_LIBS])
+PY_STDLIB_MOD([_tkinter], [],
+  [test "$have_tcltk" = "yes"], [$TCLTK_CFLAGS], [$TCLTK_LIBS])
 
 dnl compression libs
 PY_STDLIB_MOD([zlib], [], [test "$have_zlib" = yes],
