@@ -551,6 +551,14 @@ class ZipInfo (object):
 
         return zinfo
 
+    @property
+    def mode(self):
+        return (self.external_attr >> 16) & (0o777)
+
+    @mode.setter
+    def mode(self, value):
+        self.external_attr = (self.external_attr & ~(0o777 << 16)) | (value << 16 )
+
     def is_dir(self):
         """Return True if this archive member is a directory."""
         return self.filename[-1] == '/'
