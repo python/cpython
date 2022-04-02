@@ -2454,7 +2454,17 @@ class ImplementationTest(unittest.TestCase):
         check_disallow_instantiation(self, type(pat.scanner("")))
 
     def test_deprecated_modules(self):
-        for name in 'sre_compile', 'sre_constants', 'sre_parse':
+        deprecated = {
+            'sre_compile': ['compile', 'error',
+                            'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
+                            '_compile_info'],
+            'sre_constants': ['error', 'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
+                              '_NamedIntConstant'],
+            'sre_parse': ['SubPattern', 'parse',
+                          'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
+                          '_parse_sub'],
+        }
+        for name in deprecated:
             with self.subTest(module=name):
                 sys.modules.pop(name, None)
                 with self.assertWarns(DeprecationWarning) as cm:
@@ -2463,6 +2473,11 @@ class ImplementationTest(unittest.TestCase):
                                  f"module {name!r} is deprecated")
                 self.assertEqual(cm.warnings[0].filename, __file__)
                 self.assertIn(name, sys.modules)
+                mod = sys.modules[name]
+                self.assertEqual(mod.__name__, name)
+                self.assertEqual(mod.__package__, '')
+                for attr in deprecated[name]:
+                    self.assertTrue(hasattr(mod, attr))
                 del sys.modules[name]
 
 class ExternalTests(unittest.TestCase):
