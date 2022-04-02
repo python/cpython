@@ -124,7 +124,7 @@ The :mod:`crypt` module defines the following functions:
 .. function:: mksalt(method=None, *, rounds=None)
 
    Return a randomly generated salt of the specified method.  If no
-   *method* is given, the strongest method available in :attr:`methods` is 
+   *method* is given, the strongest method available in :attr:`methods` is
    used.
 
    The return value is a string suitable for passing as the *salt* argument
