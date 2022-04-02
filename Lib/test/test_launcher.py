@@ -151,6 +151,30 @@ class RunPyMixin:
                     py_exe = Path(p) / PY_EXE
                     if py_exe.is_file():
                         break
+            else:
+                py_exe = None
+
+        # Test launch and check version, to exclude installs of older
+        # releases when running outside of a source tree
+        if py_exe:
+            try:
+                with subprocess.Popen(
+                    [py_exe, "-h"],
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    encoding="ascii",
+                    errors="ignore",
+                ) as p:
+                    p.stdin.close()
+                    version = next(p.stdout).splitlines()[0].rpartition(" ")[2]
+                    p.stdout.read()
+                    p.wait(10)
+                if not sys.version.startswith(version):
+                    py_exe = None
+            except OSError:
+                py_exe = None
+
         if not py_exe:
             raise unittest.SkipTest(
                 "cannot locate '{}' for test".format(PY_EXE)
@@ -162,6 +186,7 @@ class RunPyMixin:
             self.py_exe = self.find_py()
 
         env = {**os.environ, **(env or {}), "PYLAUNCHER_DEBUG": "1", "PYLAUNCHER_DRYRUN": "1"}
+        env.pop("VIRTUAL_ENV", None)
         with subprocess.Popen(
             [self.py_exe, *args],
             env=env,
@@ -216,7 +241,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
 
         if support.verbose:
             p = subprocess.check_output("reg query HKCU\\Software\\Python /s")
-            print(p.decode('mbcs'))
+            #print(p.decode('mbcs'))
 
 
     @classmethod
@@ -251,9 +276,9 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         found = {}
         expect = {}
         for line in data["stdout"].splitlines():
-            m = re.match(r"\s*(.+?)\s+(.+)$", line)
+            m = re.match(r"\s*(.+?)\s+?(\*\s+)?(.+)$", line)
             if m:
-                found[m.group(1)] = m.group(2)
+                found[m.group(1)] = m.group(3)
         for company in TEST_DATA:
             company_data = TEST_DATA[company]
             tags = [t for t in company_data if isinstance(company_data[t], dict)]
@@ -276,9 +301,9 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         found = {}
         expect = {}
         for line in data["stdout"].splitlines():
-            m = re.match(r"\s*(.+?)\s+(.+)$", line)
+            m = re.match(r"\s*(.+?)\s+?(\*\s+)?(.+)$", line)
             if m:
-                found[m.group(1)] = m.group(2)
+                found[m.group(1)] = m.group(3)
         for company in TEST_DATA:
             company_data = TEST_DATA[company]
             tags = [t for t in company_data if isinstance(company_data[t], dict)]
@@ -415,9 +440,10 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         # If winget is runnable, we should find it. Otherwise, we'll be trying
         # to open the Store.
         try:
-            subprocess.check_call(["winget.exe", "--version"])
+            subprocess.check_call(["winget.exe", "--version"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         except FileNotFoundError:
             self.assertIn("ms-windows-store://", cmd)
         else:
             self.assertIn("winget.exe", cmd)
+        # Both command lines include the store ID
         self.assertIn("9PJPW5LDXLZ5", cmd)

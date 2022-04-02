@@ -146,3 +146,6 @@ Lib/ast.py                    @isidentical
 # macOS
 /Mac/                         @python/macos-team
 **/*osx_support*              @python/macos-team
+
+# pathlib
+**/*pathlib*                  @brettcannon
