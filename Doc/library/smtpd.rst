@@ -3,6 +3,7 @@
 
 .. module:: smtpd
    :synopsis: A SMTP server implementation in Python.
+   :deprecated:
 
 .. moduleauthor:: Barry Warsaw <barry@python.org>
 .. sectionauthor:: Moshe Zadka <moshez@moshez.org>
@@ -13,11 +14,11 @@
 
 This module offers several classes to implement SMTP (email) servers.
 
-.. seealso::
-
-    The `aiosmtpd <http://aiosmtpd.readthedocs.io/>`_ package is a recommended
-    replacement for this module.  It is based on :mod:`asyncio` and provides a
-    more straightforward API.  :mod:`smtpd` should be considered deprecated.
+.. deprecated:: 3.6
+   :mod:`smtpd` will be removed in Python 3.12 (:pep:`594`).
+   The `aiosmtpd <https://aiosmtpd.readthedocs.io/>`_ package is a recommended
+   replacement for this module.  It is based on :mod:`asyncio` and provides a
+   more straightforward API.
 
 Several server implementations are present; one is a generic
 do-nothing implementation, which can be overridden, while the other two offer

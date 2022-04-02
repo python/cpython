@@ -33,6 +33,7 @@ from test import support
 from test.support import os_helper
 from test.support import threading_helper
 
+support.requires_working_socket(module=True)
 
 class NoLogRequestHandler:
     def log_message(self, *args):
@@ -593,9 +594,18 @@ cgi_file6 = """\
 #!%s
 import os
 
-print("Content-type: text/plain")
+print("X-ambv: was here")
+print("Content-type: text/html")
 print()
-print(repr(os.environ))
+print("<pre>")
+for k, v in os.environ.items():
+    try:
+        k.encode('ascii')
+        v.encode('ascii')
+    except UnicodeEncodeError:
+        continue  # see: BPO-44647
+    print(f"{k}={v}")
+print("</pre>")
 """
 
 
@@ -850,8 +860,8 @@ class CGIHTTPServerTestCase(BaseTestCase):
             with self.subTest(headers):
                 res = self.request('/cgi-bin/file6.py', 'GET', headers=headers)
                 self.assertEqual(http.HTTPStatus.OK, res.status)
-                expected = f"'HTTP_ACCEPT': {expected!r}"
-                self.assertIn(expected.encode('ascii'), res.read())
+                expected = f"HTTP_ACCEPT={expected}".encode('ascii')
+                self.assertIn(expected, res.read())
 
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
@@ -1293,21 +1303,9 @@ class ScriptTestCase(unittest.TestCase):
             self.assertEqual(mock_server.address_family, socket.AF_INET)
 
 
-def test_main(verbose=None):
-    cwd = os.getcwd()
-    try:
-        support.run_unittest(
-            RequestHandlerLoggingTestCase,
-            BaseHTTPRequestHandlerTestCase,
-            BaseHTTPServerTestCase,
-            SimpleHTTPServerTestCase,
-            CGIHTTPServerTestCase,
-            SimpleHTTPRequestHandlerTestCase,
-            MiscTestCase,
-            ScriptTestCase
-        )
-    finally:
-        os.chdir(cwd)
+def setUpModule():
+    unittest.addModuleCleanup(os.chdir, os.getcwd())
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

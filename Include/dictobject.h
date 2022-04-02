@@ -87,7 +87,7 @@ PyAPI_DATA(PyTypeObject) PyDictRevIterValue_Type;
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_DICTOBJECT_H
-#  include  "cpython/dictobject.h"
+#  include "cpython/dictobject.h"
 #  undef Py_CPYTHON_DICTOBJECT_H
 #endif
 

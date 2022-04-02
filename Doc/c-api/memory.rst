@@ -306,7 +306,7 @@ memory from the Python heap.
 
 .. note::
     There is no guarantee that the memory returned by these allocators can be
-    successfully casted to a Python object when intercepting the allocating
+    successfully cast to a Python object when intercepting the allocating
     functions in this domain by the methods described in
     the :ref:`Customize Memory Allocators <customize-memory-allocators>` section.
 
@@ -490,7 +490,7 @@ Customize Memory Allocators
 Debug hooks on the Python memory allocators
 ===========================================
 
-When :ref:`Python is built is debug mode <debug-build>`, the
+When :ref:`Python is built in debug mode <debug-build>`, the
 :c:func:`PyMem_SetupDebugHooks` function is called at the :ref:`Python
 preinitialization <c-preinit>` to setup debug hooks on Python memory allocators
 to detect memory errors.

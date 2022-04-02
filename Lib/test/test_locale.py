@@ -1,5 +1,5 @@
 from decimal import Decimal
-from test.support import verbose, is_android
+from test.support import verbose, is_android, is_emscripten
 from test.support.warnings_helper import check_warnings
 import unittest
 import locale
@@ -373,11 +373,13 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
+    @unittest.skipIf(is_emscripten, "musl libc issue on Emscripten, bpo-46390")
     def test_strcoll_with_diacritic(self):
         self.assertLess(locale.strcoll('à', 'b'), 0)
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
+    @unittest.skipIf(is_emscripten, "musl libc issue on Emscripten, bpo-46390")
     def test_strxfrm_with_diacritic(self):
         self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
 
@@ -496,7 +498,7 @@ class NormalizeTest(unittest.TestCase):
 class TestMiscellaneous(unittest.TestCase):
     def test_defaults_UTF8(self):
         # Issue #18378: on (at least) macOS setting LC_CTYPE to "UTF-8" is
-        # valid. Futhermore LC_CTYPE=UTF is used by the UTF-8 locale coercing
+        # valid. Furthermore LC_CTYPE=UTF is used by the UTF-8 locale coercing
         # during interpreter startup (on macOS).
         import _locale
         import os
@@ -518,7 +520,8 @@ class TestMiscellaneous(unittest.TestCase):
 
             os.environ['LC_CTYPE'] = 'UTF-8'
 
-            self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
+            with check_warnings(('', DeprecationWarning)):
+                self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
 
         finally:
             for k in orig_env:

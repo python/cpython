@@ -2,7 +2,7 @@ from importlib import _bootstrap_external
 from test.support import os_helper
 import unittest
 import sys
-from .. import util
+from test.test_importlib import util
 
 importlib = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')

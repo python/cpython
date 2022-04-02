@@ -110,4 +110,4 @@ class NonASCIILocalPartDefect(HeaderDefect):
     # parsing messages decoded from binary.
 
 class InvalidDateDefect(HeaderDefect):
-    """Header has unparseable or invalid date"""
+    """Header has unparsable or invalid date"""
