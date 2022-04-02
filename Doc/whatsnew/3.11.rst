@@ -62,7 +62,8 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.11.
    Brevity is key.
 
-- Python 3.11 is 22% faster than Python 3.10. See `Faster CPython`_ for details.
+- Python 3.11 is 10-60% faster than Python 3.10. On average, we measured a 1.22x
+  speedup on the standard benchmark suite. See `Faster CPython`_ for details.
 
 .. PEP-sized items next.
 
@@ -500,7 +501,7 @@ Faster CPython
 CPython 3.11 is on average `1.22x faster <https://github.com/faster-cpython/ideas/blob/main/main-vs-310.rst>`_
 than CPython 3.10 when measured with the
 `pyperformance <https://github.com/python/pyperformance>`_ benchmark suite, on
-Ubuntu Linux.
+Ubuntu Linux. Depending on your workload, the speedup could be 10-60% faster.
 
 The project focuses on two major areas in Python: faster startup and faster
 runtime. Other optimizations not under this project are listed in `Optimizations`_.
@@ -576,23 +577,25 @@ is not exceeded. This resulted in a 1-3% improvement in pyperformance.
 PEP 659: Specializing Adaptive Interpreter
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :pep:`659` is one of the key parts of the faster CPython project. The general
-idea is that while Python is a dynamic language, most code have regions where
+idea is that while Python is a dynamic language, most code has regions where
 objects and types rarely change. This concept is known as *type stability*.
 
 At runtime, Python will try to look for common patterns and type stability
 in the executing code. Python will then replace the current operation with a
-more specialized one. This specialized operation use fast paths available only
-to those use cases/types and will generally outperform their generic
+more specialized one. This specialized operation uses fast paths available only
+to those use cases/types, which generally outperform their generic
 counterparts. This also brings in another concept called *inline caching*, where
 Python caches the results of expensive operations directly in the bytecode.
 
 The specializer will also combine certain common instruction pairs into one
-super instruction. This reduces the overhead during execution.
+superinstruction. This reduces the overhead during execution.
 
-Since this exta information requires more memory, Python will only specialize
-when it sees code that is "hot" (executed multiple times). It can also
-de-specialize when code is too dynamic. This is attempted every so often, and
-specialization attempts are not too expensive.
+This extra information requires more memory. Python will only specialize
+when it sees code that is "hot" (executed multiple times). This prevents Python
+from wasting time for run-once code. Python can also de-specialize when code is
+too dynamic or when the use changes. Specialization is attempted periodically,
+and specialization attempts are not too expensive. This allows specialization
+to adapt to new circumstances.
 
 (PEP written by Mark Shannon, with ideas inspired by Stefan Brunthaler.
 See :pep:`659` for more information.)
@@ -626,11 +629,11 @@ See :pep:`659` for more information.)
 |               |                    | to :ref:`inline-calls`.                               |                   |                   |
 |               |                    |                                                       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Load          | ``print; len``     | The object's index in the globals/builtins namespace  | 0% [1]_           | Mark Shannon      |
+| Load          | ``print; len``     | The object's index in the globals/builtins namespace  | - [1]_            | Mark Shannon      |
 | global        |                    | is cached. Loading globals and builtins require       |                   |                   |
 | variable      |                    | zero namespace lookups.                               |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | 0% [2]_           | Mark Shannon      |
+| Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | - [2]_            | Mark Shannon      |
 | attribute     |                    | index inside the class/object's namespace is cached.  |                   |                   |
 |               |                    | In most cases, attribute loading will require zero    |                   |                   |
 |               |                    | namespace lookups.                                    |                   |                   |
@@ -646,9 +649,12 @@ See :pep:`659` for more information.)
 | Sequence      |                    | and ``tuple``. Avoids internal calling convention.    |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 
-.. [1] Note that a similar optimization already existed since Python 3.8.
+.. [1] Note that a similar optimization already existed since Python 3.8.  3.11
+       specializes for more forms and reduces some overhead.
 
 .. [2] Note that a similar optimization has already existed since Python 3.10.
+       3.11 speicalizes for more forms. Furthermore, all attribute loads should
+       be sped up by :issue:`45947`.
 
 .. [3] Classes with longer inheritance chains will see greater speedups.
        This optimization effectively makes method lookup constant time
@@ -675,8 +681,8 @@ FAQ
 |
 | Q: Will CPython 3.11 use more memory?
 |
-| A: Yes. However, how much exactly depends on how much code is "hot". We don't
-  expect memory use to exceed 20% more versus 3.10. This may be offset by
+| A: Maybe not. However, how much exactly depends on how much code is "hot". We
+  don't expect memory use to exceed 20% more versus 3.10. This is offset by
   memory optimizations for frame objects and object dictionaries as mentioned
   above.
 |
@@ -684,31 +690,27 @@ FAQ
 | Q: I don't see any speedups in my workload. Why?
 |
 | A: Certain code won't have noticeable benefits. If your code spends most of
-  its time on IO(Input/Output) operations, or already does most of its
+  its time on I/O operations, or already does most of its
   computation in a C extension library like numpy, there won't be significant
   speedup. This project currently benefits pure-Python workloads the most.
 |
 | Furthermore, the pyperformance figures are a geometric mean. Even within the
   pyperformance benchmarks, certain benchmarks have slowed down slightly, while
-  others have sped up by nearly 1.9x!
+  others have sped up by nearly 2x!
 |
 |
 | Q: Is there a JIT compiler?
 |
 | A: No. We're still exploring other optimizations.
 
+
 About
 -----
 
 Faster CPython explores optimizations for :term:`CPython`. The main team is
 funded by Microsoft to work on this full-time. The team also collaborates
-extensively with volunteer contributors in the community. The following list of
-people involved is non-exhaustive:
+extensively with volunteer contributors in the community.
 
-* Faster CPython team: Guido van Rossum, Mark Shannon, Eric Snow, Brandt Bucher
-* External collaborators: Irit Katriel, Pablo Galindo
-* Additional contributors: Dennis Sweeney, Dong-hee Na, Ken Jin, Jelle Zijlstra, Kumar Aditya
-* There are too many people contributing ideas to list!
 
 CPython bytecode changes
 ========================
