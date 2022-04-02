@@ -488,23 +488,6 @@ class IdleConfTest(unittest.TestCase):
         eq(conf.GetKeyBinding('NOT EXISTS', '<<copy>>'), [])
         eq(conf.GetKeyBinding('IDLE Modern Unix', 'NOT EXISTS'), [])
 
-    def test_get_current_keyset(self):
-        current_platform = sys.platform
-        conf = self.mock_config()
-
-        # Ensure that platform isn't darwin
-        sys.platform = 'some-linux'
-        self.assertEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
-
-        # This should not be the same, since replace <Alt- to <Option-.
-        # Above depended on config-extensions.def having Alt keys,
-        # which is no longer true.
-        # sys.platform = 'darwin'
-        # self.assertNotEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
-
-        # Restore platform
-        sys.platform = current_platform
-
     def test_get_keyset(self):
         conf = self.mock_config()
 
