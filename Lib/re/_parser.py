@@ -12,7 +12,7 @@
 
 # XXX: show string offset and offending character for all errors
 
-from .sre_constants import *
+from ._constants import *
 
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS = "*+?{"

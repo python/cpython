@@ -3,4 +3,4 @@ warnings.warn(f"module {__name__!r} is deprecated",
               DeprecationWarning,
               stacklevel=2)
 
-from re.sre_constants import *
+from re._constants import *

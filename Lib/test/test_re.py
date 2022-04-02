@@ -569,7 +569,7 @@ class ReTests(unittest.TestCase):
                                'two branches', 10)
 
     def test_re_groupref_overflow(self):
-        from re.sre_constants import MAXGROUPS
+        from re._constants import MAXGROUPS
         self.checkTemplateError('()', r'\g<%s>' % MAXGROUPS, 'xx',
                                 'invalid group reference %d' % MAXGROUPS, 3)
         self.checkPatternError(r'(?P<a>)(?(%d))' % MAXGROUPS,
@@ -2433,7 +2433,7 @@ class ImplementationTest(unittest.TestCase):
             tp.foo = 1
 
     def test_overlap_table(self):
-        f = re.sre_compile._generate_overlap_table
+        f = re._compiler._generate_overlap_table
         self.assertEqual(f(""), [])
         self.assertEqual(f("a"), [0])
         self.assertEqual(f("abcd"), [0, 0, 0, 0])
@@ -2442,8 +2442,8 @@ class ImplementationTest(unittest.TestCase):
         self.assertEqual(f("abcabdac"), [0, 0, 0, 1, 2, 0, 1, 0])
 
     def test_signedness(self):
-        self.assertGreaterEqual(re.sre_compile.MAXREPEAT, 0)
-        self.assertGreaterEqual(re.sre_compile.MAXGROUPS, 0)
+        self.assertGreaterEqual(re._compiler.MAXREPEAT, 0)
+        self.assertGreaterEqual(re._compiler.MAXGROUPS, 0)
 
     @cpython_only
     def test_disallow_instantiation(self):
