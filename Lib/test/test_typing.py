@@ -3810,8 +3810,6 @@ class MethodHolder:
 class OverloadTests(BaseTestCase):
 
     def test_overload_fails(self):
-        from typing import overload
-
         with self.assertRaises(RuntimeError):
 
             @overload
@@ -3821,8 +3819,6 @@ class OverloadTests(BaseTestCase):
             blah()
 
     def test_overload_succeeds(self):
-        from typing import overload
-
         @overload
         def blah():
             pass
