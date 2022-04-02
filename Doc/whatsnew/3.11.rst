@@ -520,8 +520,10 @@ CPython bytecode changes
 * Add :opcode:`POP_JUMP_IF_NOT_NONE` and :opcode:`POP_JUMP_IF_NONE` opcodes to
   speed up conditional jumps.
 
-* :opcode:`JUMP_IF_NOT_EXC_MATCH` no longer pops the active exception.
+* Replaced :opcode:`JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH` which
+  performs the check but does not jump.
 
+* Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
 
 Deprecated
 ==========
@@ -529,6 +531,10 @@ Deprecated
 * The :mod:`lib2to3` package and ``2to3`` tool are now deprecated and may not
   be able to parse Python 3.10 or newer. See the :pep:`617` (New PEG parser for
   CPython).  (Contributed by Victor Stinner in :issue:`40360`.)
+
+* Undocumented modules ``sre_compile``, ``sre_constants`` and ``sre_parse``
+  are now deprecated.
+  (Contributed by Serhiy Storchaka in :issue:`47152`.)
 
 * :class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
   It is untested and undocumented and also not used by webbrowser itself.
@@ -718,6 +724,11 @@ Changes in the Python API
   deprecated since Python 3.6.
   (Contributed by Serhiy Storchaka in :issue:`47066`.)
 
+* :mod:`re` module: Fix a few long-standing bugs where, in rare cases,
+  capturing group could get wrong result. So the result may be different than
+  before.
+  (Contributed by Ma Lin in :issue:`35859`.)
+
 * The *population* parameter of :func:`random.sample` must be a sequence.
   Automatic conversion of sets to lists is no longer supported. If the sample size
   is larger than the population size, a :exc:`ValueError` is raised.
@@ -765,10 +776,16 @@ Build Changes
 
 * Build dependencies, compiler flags, and linker flags for most stdlib
   extension modules are now detected by :program:`configure`. libffi, libnsl,
-  libsqlite3, zlib, bzip2, liblzma, libcrypt, and uuid flags are detected by
-  ``pkg-config`` (when available).
+  libsqlite3, zlib, bzip2, liblzma, libcrypt, Tcl/Tk libs, and uuid flags
+  are detected by ``pkg-config`` (when available).
   (Contributed by Christian Heimes and Erlend Egeberg Aasland in
   :issue:`bpo-45847`, :issue:`45747`, and :issue:`45763`.)
+
+  .. note::
+     Use the environment variables ``TCLTK_CFLAGS`` and ``TCLTK_LIBS`` to
+     manually specify the location of Tcl/Tk headers and libraries.
+     The :program:`configure` options ``--with-tcltk-includes`` and
+     ``--with-tcltk-libs`` have been removed.
 
 * CPython now has experimental support for cross compiling to WebAssembly
   platform ``wasm32-emscripten``. The effort is inspired by previous work
@@ -856,6 +873,9 @@ New Features
   :c:func:`PyFloat_Unpack8`.
   (Contributed by Victor Stinner in :issue:`46906`.)
 
+* Add new functions to get frame object attributes:
+  :c:func:`PyFrame_GetBuiltins`, :c:func:`PyFrame_GetGenerator`,
+  :c:func:`PyFrame_GetGlobals`.
 
 Porting to Python 3.11
 ----------------------
@@ -973,13 +993,13 @@ Porting to Python 3.11
 
   * ``f_back``: use :c:func:`PyFrame_GetBack`.
   * ``f_blockstack``: removed.
-  * ``f_builtins``: use ``PyObject_GetAttrString((PyObject*)frame, "f_builtins")``.
+  * ``f_builtins``: use :c:func:`PyFrame_GetBuiltins`.
   * ``f_code``: use :c:func:`PyFrame_GetCode`.
-  * ``f_gen``: removed.
-  * ``f_globals``: use ``PyObject_GetAttrString((PyObject*)frame, "f_globals")``.
+  * ``f_gen``: use :c:func:`PyFrame_GetGenerator`.
+  * ``f_globals``: use :c:func:`PyFrame_GetGlobals`.
   * ``f_iblock``: removed.
   * ``f_lasti``: use ``PyObject_GetAttrString((PyObject*)frame, "f_lasti")``.
-    Code using ``f_lasti`` with ``PyCode_Addr2Line()`` must use
+    Code using ``f_lasti`` with ``PyCode_Addr2Line()`` should use
     :c:func:`PyFrame_GetLineNumber` instead.
   * ``f_lineno``: use :c:func:`PyFrame_GetLineNumber`
   * ``f_locals``: use :c:func:`PyFrame_GetLocals`.
@@ -997,8 +1017,8 @@ Porting to Python 3.11
   instead.
 
   Debuggers that accessed the ``f_locals`` directly *must* call
-  `:c:func:`PyFrame_GetLocals` instead. They no longer need to call
-  `:c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
+  :c:func:`PyFrame_GetLocals` instead. They no longer need to call
+  :c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
   in fact they should not call those functions. The necessary updating of the
   frame is now managed by the virtual machine.
 
@@ -1082,6 +1102,17 @@ Porting to Python 3.11
 * Distributors are encouraged to build Python with the optimized Blake2
   library `libb2`_.
 
+* Move the private undocumented ``_PyEval_EvalFrameDefault()`` function to the
+  internal C API. The function now uses the ``_PyInterpreterFrame`` type which
+  is part of the internal C API.
+  (Contributed by Victor Stinner in :issue:`46850`.)
+
+* Move the private ``_PyFrameEvalFunction`` type, and private
+  ``_PyInterpreterState_GetEvalFrameFunc()`` and
+  ``_PyInterpreterState_SetEvalFrameFunc()`` functions to the internal C API.
+  The ``_PyFrameEvalFunction`` callback function type now uses the
+  ``_PyInterpreterFrame`` type which is part of the internal C API.
+  (Contributed by Victor Stinner in :issue:`46850`.)
 
 Deprecated
 ----------

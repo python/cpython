@@ -302,10 +302,6 @@ _PYTHON_HOST_PLATFORM=@_PYTHON_HOST_PLATFORM@
 BUILD_GNU_TYPE=	@build@
 HOST_GNU_TYPE=	@host@
 
-# Tcl and Tk config info from --with-tcltk-includes and -libs options
-TCLTK_INCLUDES=	@TCLTK_INCLUDES@
-TCLTK_LIBS=	@TCLTK_LIBS@
-
 # The task to run while instrumented when building the profile-opt target.
 # To speed up profile generation, we don't run the full unit test suite
 # by default. The default is "-m test --pgo". To run more tests, use
@@ -736,10 +732,8 @@ sharedmods: $(BUILDPYTHON) pybuilddir.txt @LIBMPDEC_INTERNAL@ @LIBEXPAT_INTERNAL
 	    *) quiet="";; \
 	esac; \
 	echo "$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
-		_TCLTK_INCLUDES='$(TCLTK_INCLUDES)' _TCLTK_LIBS='$(TCLTK_LIBS)' \
 		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build"; \
 	$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
-		_TCLTK_INCLUDES='$(TCLTK_INCLUDES)' _TCLTK_LIBS='$(TCLTK_LIBS)' \
 		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build
 
 
@@ -1167,8 +1161,9 @@ Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/__phello__.spam.h:__phello__.spam \
 	Python/frozen_modules/frozen_only.h:frozen_only \
 	-o Python/deepfreeze/deepfreeze.c
-
 # END: deepfreeze modules
+	@echo "Note: Deepfreeze may have added some global objects,"
+	@echo "      so run 'make regen-global-objects' if necessary."
 
 # We keep this renamed target around for folks with muscle memory.
 .PHONY: regen-importlib
@@ -1180,11 +1175,8 @@ regen-importlib: regen-frozen
 .PHONY: regen-global-objects
 regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
-	@# Run one more time after deepfreezing, to catch any globals added
-	@# there.  This is necessary because the deep-frozen code isn't
-	@# commited to the repo.
-	$(MAKE) regen-deepfreeze
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
+	@echo "Note: Global objects can be added or removed by other tools (e.g. deepfreeze), "
+	@echo "      so be sure to re-run regen-global-objects after those tools."
 
 ############################################################################
 # ABI
@@ -1870,6 +1862,7 @@ LIBSUBDIRS=	asyncio \
 		logging \
 		multiprocessing multiprocessing/dummy \
 		pydoc_data \
+		re \
 		site-packages \
 		sqlite3 \
 		tkinter \

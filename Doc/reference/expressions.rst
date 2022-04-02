@@ -561,13 +561,26 @@ is already executing raises a :exc:`ValueError` exception.
    could receive the value.
 
 
-.. method:: generator.throw(type[, value[, traceback]])
+.. method:: generator.throw(value)
+            generator.throw(type[, value[, traceback]])
 
-   Raises an exception of type ``type`` at the point where the generator was paused,
+   Raises an exception at the point where the generator was paused,
    and returns the next value yielded by the generator function.  If the generator
    exits without yielding another value, a :exc:`StopIteration` exception is
    raised.  If the generator function does not catch the passed-in exception, or
    raises a different exception, then that exception propagates to the caller.
+
+   In typical use, this is called with a single exception instance similar to the
+   way the :keyword:`raise` keyword is used.
+
+   For backwards compatability, however, the second signature is
+   supported, following a convention from older versions of Python.
+   The *type* argument should be an exception class, and *value*
+   should be an exception instance. If the *value* is not provided, the
+   *type* constructor is called to get an instance. If *traceback*
+   is provided, it is set on the exception, otherwise any existing
+   :attr:`~BaseException.__traceback__` attribute stored in *value* may
+   be cleared.
 
 .. index:: exception: GeneratorExit
 

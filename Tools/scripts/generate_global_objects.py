@@ -115,7 +115,12 @@ def iter_global_strings():
     id_regex = re.compile(r'\b_Py_ID\((\w+)\)')
     str_regex = re.compile(r'\b_Py_DECLARE_STR\((\w+), "(.*?)"\)')
     for filename in iter_files():
-        with open(filename, encoding='utf-8') as infile:
+        try:
+            infile = open(filename, encoding='utf-8')
+        except FileNotFoundError:
+            # The file must have been a temporary file.
+            continue
+        with infile:
             for lno, line in enumerate(infile, 1):
                 for m in id_regex.finditer(line):
                     identifier, = m.groups()

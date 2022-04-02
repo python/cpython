@@ -2383,7 +2383,13 @@ def add_subclass_tests(cls):
             return super().add_done_callback(*args, **kwargs)
 
     class Task(CommonFuture, BaseTask):
-        pass
+        def __init__(self, *args, **kwargs):
+            self._check_future_called = 0
+            super().__init__(*args, **kwargs)
+
+        def _check_future(self, future):
+            self._check_future_called += 1
+            return super()._check_future(future)
 
     class Future(CommonFuture, BaseFuture):
         pass
@@ -2408,6 +2414,8 @@ def add_subclass_tests(cls):
         self.assertEqual(
             dict(fut.calls),
             {'add_done_callback': 1})
+
+        self.assertEqual(1, task._check_future_called)
 
     # Add patched Task & Future back to the test case
     cls.Task = Task
