@@ -513,9 +513,9 @@ PyModule_GetName(PyObject *m)
     if (name == NULL) {
         return NULL;
     }
-    const char *utf8 = PyUnicode_AsUTF8(name);
+    assert(Py_REFCNT(name) >= 2);
     Py_DECREF(name);   /* module dict has still a reference */
-    return utf8;
+    return PyUnicode_AsUTF8(name);
 }
 
 PyObject*
