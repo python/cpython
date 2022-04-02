@@ -1242,33 +1242,37 @@ These are not used in annotations. They are building blocks for creating generic
     *arbitrary* number of types by acting like an *arbitrary* number of type
     variables wrapped in a tuple. For example::
 
-        Shape = TypeVarTuple('Shape')
+        T = TypeVar('T')
+        Ts = TypeVarTuple('Ts')
 
-        class Array(Generic[*Shape]): ...
+        def remove_first_element(xs: tuple[T, *Ts]) -> tuple[*Ts]: ...
 
-        array_1d: Array[int] = Array()       # 1 type parameter: fine
-        array_2d: Array[int, int] = Array()  # 2 type parameters: also fine
-        array_0d: Array[()] = Array()        # 0 type parameters: also fine
+        remove_first_element(xs=(1,))
+        # T is bound to int, Ts is bound to ()
+        # Return type is tuple[()]
 
-    Note the use of the unpacking operator ``*`` in ``Generic[*Shape]``.
-    Conceptually, you can think of ``Shape`` as a tuple of type variables
-    ``(T1, T2, ...)``. ``Generic[*Shape]`` would then become
-    ``Generic[*(T1, T2, ...)]``, which is equivalent to
-    ``Generic[T1, T2, ...]``. (Note that in older versions of Python, you might
+        remove_first_element(xs=(1, '2'))
+        # T is bound to int, Ts is bound to (str,)
+        # Return type is tuple[str]
+
+        remove_first_element(xs=(1, '2', 3.0))
+        # T is bound to int, Ts is bound to (str, float)
+        # Return type is tuple[str, float]
+
+    Note the use of the unpacking operator ``*`` in ``tuple[T, *Ts]``.
+    Conceptually, you can think of ``Ts`` as a tuple of type variables
+    ``(T1, T2, ...)``. ``tuple[T, *Ts]`` would then become
+    ``tuple[T, *(T1, T2, ...)]``, which is equivalent to
+    ``tuple[T, T1, T2, ...]``. (Note that in older versions of Python, you might
     see this written using :data:`Unpack <Unpack>` instead, as
-    ``Unpack[Shape]``.)
+    ``Unpack[Ts]``.)
 
     Type variable tuples must *always* be unpacked. This helps distinguish type
     variable types from normal type variables::
 
-        class C(Generic[Shape]): ...  # Not valid (should be Generic[*Shape])
-
-    In cases where you really do just want a tuple of types, make this explicit
-    by wrapping the type variable tuple in ``tuple[]``::
-
-        shape: Shape          # Not valid
-        shape: tuple[Shape]   # Also not valid
-        shape: tuple[*Shape]  # The correct way to do it
+        x: Ts          # Not valid
+        x: tuple[Ts]   # Not valid
+        x: tuple[*Ts]  # The correct way to to do it
 
     Type variable tuples can be used in the same contexts as normal type
     variables. For example, in class definitions, arguments, and return types::
