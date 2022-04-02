@@ -1,2 +1,2 @@
-Add a mechanism to register function variants, such as overloads and
-singledispatch implementation functions. Patch by Jelle Zijlstra.
+Add :func:`typing.get_overloads` and :func:`typing.clear_overloads`.
+Patch by Jelle Zijlstra.

@@ -1890,14 +1890,6 @@ class TestLRUC(TestLRU, unittest.TestCase):
         return 3 * x + y
 
 
-class MethodHolder:
-    @classmethod
-    def clsmethod(cls): ...
-    @staticmethod
-    def stmethod(): ...
-    def method(self): ...
-
-
 class TestSingleDispatch(unittest.TestCase):
     def test_simple_overloads(self):
         @functools.singledispatch

@@ -535,6 +535,7 @@ The :mod:`functools` module defines the following functions:
    .. versionchanged:: 3.7
       The :func:`register` attribute now supports using type annotations.
 
+
 .. class:: singledispatchmethod(func)
 
    Transform a method into a :term:`single-dispatch <single
@@ -585,9 +586,6 @@ The :mod:`functools` module defines the following functions:
    :func:`@abstractmethod<abc.abstractmethod>`, and others.
 
    .. versionadded:: 3.8
-
-   .. versionchanged:: 3.11
-      Implementation functions are now registered using :func:`register_variant`.
 
 
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)

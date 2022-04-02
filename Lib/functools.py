@@ -16,8 +16,7 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
 
 from abc import get_cache_token
 from collections import namedtuple
-import types
-# import weakref  # Deferred to single_dispatch()
+# import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
 from types import GenericAlias
@@ -810,12 +809,11 @@ def singledispatch(func):
     # There are many programs that use functools without singledispatch, so we
     # trade-off making singledispatch marginally slower for the benefit of
     # making start-up of such applications slightly faster.
-    import weakref
+    import types, weakref
 
     registry = {}
     dispatch_cache = weakref.WeakKeyDictionary()
     cache_token = None
-    outer_func = func
 
     def dispatch(cls):
         """generic_func.dispatch(cls) -> <function implementation>
@@ -950,7 +948,6 @@ class singledispatchmethod:
 
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.register = self.register
-        _method.registry = self.dispatcher.registry
         update_wrapper(_method, self.func)
         return _method
 
