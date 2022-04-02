@@ -3794,6 +3794,19 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual("x" | X, Union["x", X])
 
 
+@lru_cache()
+def cached_func(x, y):
+    return 3 * x + y
+
+
+class MethodHolder:
+    @classmethod
+    def clsmethod(cls): ...
+    @staticmethod
+    def stmethod(): ...
+    def method(self): ...
+
+
 class OverloadTests(BaseTestCase):
 
     def test_overload_fails(self):
@@ -3841,14 +3854,14 @@ class OverloadTests(BaseTestCase):
         impl, overloads = self.set_up_overloads()
 
         self.assertEqual(list(get_overloads(impl)), overloads)
-        clear_overloads(blah)
-        self.assertEqual(get_overloads(blah), [])
+        clear_overloads(impl)
+        self.assertEqual(get_overloads(impl), [])
 
         impl, overloads = self.set_up_overloads()
 
         self.assertEqual(list(get_overloads(impl)), overloads)
         clear_overloads()
-        self.assertEqual(get_overloads(blah), [])
+        self.assertEqual(get_overloads(impl), [])
 
     def test_variant_registry_repeated(self):
         for _ in range(2):
@@ -3862,8 +3875,8 @@ class OverloadTests(BaseTestCase):
             "builtins.len",
         )
         self.assertEqual(
-            typing._get_key_for_callable(py_cached_func),
-            f"{__name__}.py_cached_func",
+            typing._get_key_for_callable(cached_func),
+            f"{__name__}.cached_func",
         )
         self.assertEqual(
             typing._get_key_for_callable(MethodHolder.clsmethod),
