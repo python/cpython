@@ -585,6 +585,8 @@ These can be used as types in annotations and do not support ``[]``.
    Special type that includes only literal strings. A string
    literal is compatible with ``LiteralString``, as is another
    ``LiteralString``, but an object typed as just ``str`` is not.
+   A string created by composing ``LiteralString``-typed objects
+   is also acceptable as a ``LiteralString``.
 
    Example::
 
@@ -594,6 +596,7 @@ These can be used as types in annotations and do not support ``[]``.
       def caller(arbitrary_string: str, literal_string: LiteralString) -> None:
          run_query("SELECT * FROM students")  # ok
          run_query(literal_string)  # ok
+         run_query("SELECT * FROM " + literal_string)  # ok
          run_query(arbitrary_string)  # type checker error
          run_query(  # type checker error
             f"SELECT * FROM students WHERE name = {arbitrary_string}"
