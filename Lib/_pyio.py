@@ -63,6 +63,13 @@ def text_encoding(encoding, stacklevel=2):
     return encoding
 
 
+# Wrapper for builtins.open
+#
+# Trick so that open() won't become a bound method when stored
+# as a class variable (as dbm.dumb does).
+#
+# See init_set_builtins_open() in Python/pylifecycle.c.
+@staticmethod
 def open(file, mode="r", buffering=-1, encoding=None, errors=None,
          newline=None, closefd=True, opener=None):
 
@@ -94,7 +101,6 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     'b'       binary mode
     't'       text mode (default)
     '+'       open a disk file for updating (reading and writing)
-    'U'       universal newline mode (deprecated)
     ========= ===============================================================
 
     The default mode is 'rt' (open for reading text). For binary random
@@ -109,10 +115,6 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     't' is appended to the mode argument), the contents of the file are
     returned as strings, the bytes having been first decoded using a
     platform-dependent encoding or using the specified encoding if given.
-
-    'U' mode is deprecated and will raise an exception in future versions
-    of Python.  It has no effect in Python 3.  Use newline to control
-    universal newlines mode.
 
     buffering is an optional integer used to set the buffering policy.
     Pass 0 to switch buffering off (only allowed in binary mode), 1 to select
@@ -199,7 +201,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     if errors is not None and not isinstance(errors, str):
         raise TypeError("invalid errors: %r" % errors)
     modes = set(mode)
-    if modes - set("axrwb+tU") or len(mode) > len(modes):
+    if modes - set("axrwb+t") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)
     creating = "x" in modes
     reading = "r" in modes
@@ -208,13 +210,6 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     updating = "+" in modes
     text = "t" in modes
     binary = "b" in modes
-    if "U" in modes:
-        if creating or writing or appending or updating:
-            raise ValueError("mode U cannot be combined with 'x', 'w', 'a', or '+'")
-        import warnings
-        warnings.warn("'U' mode is deprecated",
-                      DeprecationWarning, 2)
-        reading = True
     if text and binary:
         raise ValueError("can't have text and binary mode at once")
     if creating + reading + writing + appending > 1:
@@ -304,27 +299,20 @@ except AttributeError:
     open_code = _open_code_with_warning
 
 
-class DocDescriptor:
-    """Helper for builtins.open.__doc__
-    """
-    def __get__(self, obj, typ=None):
-        return (
-            "open(file, mode='r', buffering=-1, encoding=None, "
-                 "errors=None, newline=None, closefd=True)\n\n" +
-            open.__doc__)
-
-class OpenWrapper:
-    """Wrapper for builtins.open
-
-    Trick so that open won't become a bound method when stored
-    as a class variable (as dbm.dumb does).
-
-    See initstdio() in Python/pylifecycle.c.
-    """
-    __doc__ = DocDescriptor()
-
-    def __new__(cls, *args, **kwargs):
-        return open(*args, **kwargs)
+def __getattr__(name):
+    if name == "OpenWrapper":
+        # bpo-43680: Until Python 3.9, _pyio.open was not a static method and
+        # builtins.open was set to OpenWrapper to not become a bound method
+        # when set to a class variable. _io.open is a built-in function whereas
+        # _pyio.open is a Python function. In Python 3.10, _pyio.open() is now
+        # a static method, and builtins.open() is now io.open().
+        import warnings
+        warnings.warn('OpenWrapper is deprecated, use open instead',
+                      DeprecationWarning, stacklevel=2)
+        global OpenWrapper
+        OpenWrapper = open
+        return OpenWrapper
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 # In normal operation, both `UnsupportedOperation`s should be bound to the
@@ -338,8 +326,7 @@ except AttributeError:
 
 class IOBase(metaclass=abc.ABCMeta):
 
-    """The abstract base class for all I/O classes, acting on streams of
-    bytes. There is no public constructor.
+    """The abstract base class for all I/O classes.
 
     This class provides dummy implementations for many methods that
     derived classes can override selectively; the default implementations
@@ -1845,7 +1832,7 @@ class TextIOBase(IOBase):
     """Base class for text I/O.
 
     This class provides a character and line based interface to stream
-    I/O. There is no public constructor.
+    I/O.
     """
 
     def read(self, size=-1):

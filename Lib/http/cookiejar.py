@@ -89,8 +89,7 @@ def _timegm(tt):
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-MONTHS_LOWER = []
-for month in MONTHS: MONTHS_LOWER.append(month.lower())
+MONTHS_LOWER = [month.lower() for month in MONTHS]
 
 def time2isoz(t=None):
     """Return a string representing time in seconds since epoch, t.

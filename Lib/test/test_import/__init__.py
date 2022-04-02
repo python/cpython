@@ -19,9 +19,10 @@ import unittest
 from unittest import mock
 
 from test.support import os_helper
-from test.support import (is_jython, swap_attr, swap_item, cpython_only)
+from test.support import (
+    STDLIB_DIR, is_jython, swap_attr, swap_item, cpython_only, is_emscripten)
 from test.support.import_helper import (
-    forget, make_legacy_pyc, unlink, unload, DirsOnSysPath)
+    forget, make_legacy_pyc, unlink, unload, DirsOnSysPath, CleanImport)
 from test.support.os_helper import (
     TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE, temp_dir)
 from test.support import script_helper
@@ -86,8 +87,10 @@ class ImportTests(unittest.TestCase):
             from importlib import something_that_should_not_exist_anywhere
 
     def test_from_import_missing_attr_has_name_and_path(self):
-        with self.assertRaises(ImportError) as cm:
-            from os import i_dont_exist
+        with CleanImport('os'):
+            import os
+            with self.assertRaises(ImportError) as cm:
+                from os import i_dont_exist
         self.assertEqual(cm.exception.name, 'os')
         self.assertEqual(cm.exception.path, os.__file__)
         self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'os' \(.*os.py\)")
@@ -98,8 +101,17 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ImportError) as cm:
             from _testcapi import i_dont_exist
         self.assertEqual(cm.exception.name, '_testcapi')
-        self.assertEqual(cm.exception.path, _testcapi.__file__)
-        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)\)")
+        if hasattr(_testcapi, "__file__"):
+            self.assertEqual(cm.exception.path, _testcapi.__file__)
+            self.assertRegex(
+                str(cm.exception),
+                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)\)"
+            )
+        else:
+            self.assertEqual(
+                str(cm.exception),
+                "cannot import name 'i_dont_exist' from '_testcapi' (unknown location)"
+            )
 
     def test_from_import_missing_attr_has_name(self):
         with self.assertRaises(ImportError) as cm:
@@ -493,7 +505,7 @@ class ImportTests(unittest.TestCase):
 
             env = None
             env = {k.upper(): os.environ[k] for k in os.environ}
-            env["PYTHONPATH"] = tmp2 + ";" + os.path.dirname(os.__file__)
+            env["PYTHONPATH"] = tmp2 + ";" + STDLIB_DIR
 
             # Test 1: import with added DLL directory
             subprocess.check_call([
@@ -522,6 +534,7 @@ class FilePermissionTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
+    @unittest.skipIf(is_emscripten, "Emscripten's umask is a stub.")
     def test_creation_mode(self):
         mask = 0o022
         with temp_umask(mask), _ready_to_import() as (name, path):
@@ -906,7 +919,7 @@ class PycacheTests(unittest.TestCase):
         m = __import__(TESTFN)
         try:
             self.assertEqual(m.__file__,
-                             os.path.join(os.curdir, os.path.relpath(pyc_file)))
+                             os.path.join(os.getcwd(), os.curdir, os.path.relpath(pyc_file)))
         finally:
             os.remove(pyc_file)
 
@@ -914,7 +927,7 @@ class PycacheTests(unittest.TestCase):
         # Modules now also have an __cached__ that points to the pyc file.
         m = __import__(TESTFN)
         pyc_file = importlib.util.cache_from_source(TESTFN + '.py')
-        self.assertEqual(m.__cached__, os.path.join(os.curdir, pyc_file))
+        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), os.curdir, pyc_file))
 
     @skip_if_dont_write_bytecode
     def test___cached___legacy_pyc(self):
@@ -930,7 +943,7 @@ class PycacheTests(unittest.TestCase):
         importlib.invalidate_caches()
         m = __import__(TESTFN)
         self.assertEqual(m.__cached__,
-                         os.path.join(os.curdir, os.path.relpath(pyc_file)))
+                         os.path.join(os.getcwd(), os.curdir, os.path.relpath(pyc_file)))
 
     @skip_if_dont_write_bytecode
     def test_package___cached__(self):
@@ -950,10 +963,10 @@ class PycacheTests(unittest.TestCase):
         m = __import__('pep3147.foo')
         init_pyc = importlib.util.cache_from_source(
             os.path.join('pep3147', '__init__.py'))
-        self.assertEqual(m.__cached__, os.path.join(os.curdir, init_pyc))
+        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), os.curdir, init_pyc))
         foo_pyc = importlib.util.cache_from_source(os.path.join('pep3147', 'foo.py'))
         self.assertEqual(sys.modules['pep3147.foo'].__cached__,
-                         os.path.join(os.curdir, foo_pyc))
+                         os.path.join(os.getcwd(), os.curdir, foo_pyc))
 
     def test_package___cached___from_pyc(self):
         # Like test___cached__ but ensuring __cached__ when imported from a
@@ -977,10 +990,10 @@ class PycacheTests(unittest.TestCase):
         m = __import__('pep3147.foo')
         init_pyc = importlib.util.cache_from_source(
             os.path.join('pep3147', '__init__.py'))
-        self.assertEqual(m.__cached__, os.path.join(os.curdir, init_pyc))
+        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), os.curdir, init_pyc))
         foo_pyc = importlib.util.cache_from_source(os.path.join('pep3147', 'foo.py'))
         self.assertEqual(sys.modules['pep3147.foo'].__cached__,
-                         os.path.join(os.curdir, foo_pyc))
+                         os.path.join(os.getcwd(), os.curdir, foo_pyc))
 
     def test_recompute_pyc_same_second(self):
         # Even when the source file doesn't change timestamp, a change in
@@ -1086,7 +1099,7 @@ class GetSourcefileTests(unittest.TestCase):
         # Given a valid bytecode path, return the path to the corresponding
         # source file if it exists.
         with mock.patch('importlib._bootstrap_external._path_isfile') as _path_isfile:
-            _path_isfile.return_value = True;
+            _path_isfile.return_value = True
             path = TESTFN + '.pyc'
             expect = TESTFN + '.py'
             self.assertEqual(_get_sourcefile(path), expect)
@@ -1095,7 +1108,7 @@ class GetSourcefileTests(unittest.TestCase):
         # Given a valid bytecode path without a corresponding source path,
         # return the original bytecode path.
         with mock.patch('importlib._bootstrap_external._path_isfile') as _path_isfile:
-            _path_isfile.return_value = False;
+            _path_isfile.return_value = False
             path = TESTFN + '.pyc'
             self.assertEqual(_get_sourcefile(path), path)
 
@@ -1346,6 +1359,16 @@ class CircularImportTests(unittest.TestCase):
         self.assertIn(
             "cannot import name 'b' from partially initialized module "
             "'test.test_import.data.circular_imports.from_cycle1' "
+            "(most likely due to a circular import)",
+            str(cm.exception),
+        )
+
+    def test_absolute_circular_submodule(self):
+        with self.assertRaises(AttributeError) as cm:
+            import test.test_import.data.circular_imports.subpkg2.parent
+        self.assertIn(
+            "cannot access submodule 'parent' of module "
+            "'test.test_import.data.circular_imports.subpkg2' "
             "(most likely due to a circular import)",
             str(cm.exception),
         )

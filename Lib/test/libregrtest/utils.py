@@ -71,11 +71,13 @@ orig_unraisablehook = None
 def regrtest_unraisable_hook(unraisable):
     global orig_unraisablehook
     support.environment_altered = True
-    print_warning("Unraisable exception")
+    support.print_warning("Unraisable exception")
     old_stderr = sys.stderr
     try:
-        sys.stderr = sys.__stderr__
+        support.flush_std_streams()
+        sys.stderr = support.print_warning.orig_stderr
         orig_unraisablehook(unraisable)
+        sys.stderr.flush()
     finally:
         sys.stderr = old_stderr
 
@@ -84,6 +86,30 @@ def setup_unraisable_hook():
     global orig_unraisablehook
     orig_unraisablehook = sys.unraisablehook
     sys.unraisablehook = regrtest_unraisable_hook
+
+
+orig_threading_excepthook = None
+
+
+def regrtest_threading_excepthook(args):
+    global orig_threading_excepthook
+    support.environment_altered = True
+    support.print_warning(f"Uncaught thread exception: {args.exc_type.__name__}")
+    old_stderr = sys.stderr
+    try:
+        support.flush_std_streams()
+        sys.stderr = support.print_warning.orig_stderr
+        orig_threading_excepthook(args)
+        sys.stderr.flush()
+    finally:
+        sys.stderr = old_stderr
+
+
+def setup_threading_excepthook():
+    global orig_threading_excepthook
+    import threading
+    orig_threading_excepthook = threading.excepthook
+    threading.excepthook = regrtest_threading_excepthook
 
 
 def clear_caches():
@@ -184,5 +210,3 @@ def clear_caches():
     else:
         for f in typing._cleanups:
             f()
-
-    support.gc_collect()

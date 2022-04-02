@@ -1,1 +1,0 @@
-Fixed processing of empty dataclasses.

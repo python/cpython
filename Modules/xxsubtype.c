@@ -237,10 +237,11 @@ spam_bench(PyObject *self, PyObject *args)
 {
     PyObject *obj, *name, *res;
     int n = 1000;
-    time_t t0, t1;
+    time_t t0 = 0, t1 = 0;
 
     if (!PyArg_ParseTuple(args, "OU|i", &obj, &name, &n))
         return NULL;
+#ifdef HAVE_CLOCK
     t0 = clock();
     while (--n >= 0) {
         res = PyObject_GetAttr(obj, name);
@@ -249,6 +250,7 @@ spam_bench(PyObject *self, PyObject *args)
         Py_DECREF(res);
     }
     t1 = clock();
+#endif
     return PyFloat_FromDouble((double)(t1-t0) / CLOCKS_PER_SEC);
 }
 

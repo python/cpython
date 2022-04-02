@@ -473,7 +473,7 @@ match.
 .. nonce: uxVOpk
 .. section: Library
 
-Abort asyncio SSLProtocol connection if handshake not complete within 10s
+Abort asyncio SSLProtocol connection if handshake not complete within 10 seconds.
 
 ..
 

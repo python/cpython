@@ -9,7 +9,7 @@ import unittest
 from unittest import mock
 import warnings
 
-from . import util as test_util
+from test.test_importlib import util as test_util
 
 init = test_util.import_importlib('importlib')
 abc = test_util.import_importlib('importlib.abc')
@@ -55,7 +55,7 @@ class InheritanceTests:
 
 
 class MetaPathFinder(InheritanceTests):
-    superclass_names = ['Finder']
+    superclass_names = []
     subclass_names = ['BuiltinImporter', 'FrozenImporter', 'PathFinder',
                       'WindowsRegistryFinder']
 
@@ -66,7 +66,7 @@ class MetaPathFinder(InheritanceTests):
 
 
 class PathEntryFinder(InheritanceTests):
-    superclass_names = ['Finder']
+    superclass_names = []
     subclass_names = ['FileFinder']
 
 

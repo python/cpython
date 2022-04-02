@@ -189,7 +189,7 @@ _NOT_SET = object()
 @contextlib.contextmanager
 def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
     """Return a context manager that raises ResourceDenied when various issues
-    with the Internet connection manifest themselves as exceptions."""
+    with the internet connection manifest themselves as exceptions."""
     import nntplib
     import urllib.error
     if timeout is _NOT_SET:
@@ -256,7 +256,7 @@ def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
                 err = a[0]
             # The error can also be wrapped as args[1]:
             #    except socket.error as msg:
-            #        raise OSError('socket error', msg).with_traceback(sys.exc_info()[2])
+            #        raise OSError('socket error', msg) from msg
             elif len(a) >= 2 and isinstance(a[1], OSError):
                 err = a[1]
             else:

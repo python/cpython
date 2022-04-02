@@ -65,16 +65,16 @@ __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            # NOTE: We intentionally exclude list2cmdline as it is
            # considered an internal implementation detail.  issue10838.
 
+# use presence of msvcrt to detect Windows-like platforms (see bpo-8110)
 try:
     import msvcrt
-    import _winapi
-    _mswindows = True
 except ModuleNotFoundError:
     _mswindows = False
-    import _posixsubprocess
-    import select
-    import selectors
 else:
+    _mswindows = True
+
+if _mswindows:
+    import _winapi
     from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
                          STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
                          STD_ERROR_HANDLE, SW_HIDE,
@@ -95,6 +95,16 @@ else:
                     "NORMAL_PRIORITY_CLASS", "REALTIME_PRIORITY_CLASS",
                     "CREATE_NO_WINDOW", "DETACHED_PROCESS",
                     "CREATE_DEFAULT_ERROR_MODE", "CREATE_BREAKAWAY_FROM_JOB"])
+else:
+    if sys.platform in {"emscripten", "wasi"}:
+        def _fork_exec(*args, **kwargs):
+            raise OSError(
+                errno.ENOTSUP, f"{sys.platform} does not support processes."
+            )
+    else:
+        from _posixsubprocess import fork_exec as _fork_exec
+    import select
+    import selectors
 
 
 # Exception classes used by this module.
@@ -405,8 +415,9 @@ def check_output(*popenargs, timeout=None, **kwargs):
     decoded according to locale encoding, or by "encoding" if set. Text mode
     is triggered by setting any of text, encoding, errors or universal_newlines.
     """
-    if 'stdout' in kwargs:
-        raise ValueError('stdout argument not allowed, it will be overridden.')
+    for kw in ('stdout', 'check'):
+        if kw in kwargs:
+            raise ValueError(f'{kw} argument not allowed, it will be overridden.')
 
     if 'input' in kwargs and kwargs['input'] is None:
         # Explicitly passing input=None was previously equivalent to passing an
@@ -660,8 +671,9 @@ def _use_posix_spawn():
         # os.posix_spawn() is not available
         return False
 
-    if sys.platform == 'darwin':
-        # posix_spawn() is a syscall on macOS and properly reports errors
+    if sys.platform in ('darwin', 'sunos5'):
+        # posix_spawn() is a syscall on both macOS and Solaris,
+        # and properly reports errors
         return True
 
     # Check libc name and runtime libc version
@@ -1003,7 +1015,7 @@ class Popen:
     def __repr__(self):
         obj_repr = (
             f"<{self.__class__.__name__}: "
-            f"returncode: {self.returncode} args: {list(self.args)!r}>"
+            f"returncode: {self.returncode} args: {self.args!r}>"
         )
         if len(obj_repr) > 80:
             obj_repr = obj_repr[:76] + "...>"
@@ -1771,7 +1783,7 @@ class Popen:
                             for dir in os.get_exec_path(env))
                     fds_to_keep = set(pass_fds)
                     fds_to_keep.add(errpipe_write)
-                    self.pid = _posixsubprocess.fork_exec(
+                    self.pid = _fork_exec(
                             args, executable_list,
                             close_fds, tuple(sorted(map(int, fds_to_keep))),
                             cwd, env_list,
@@ -2086,7 +2098,7 @@ class Popen:
             try:
                 os.kill(self.pid, sig)
             except ProcessLookupError:
-                # Supress the race condition error; bpo-40550.
+                # Suppress the race condition error; bpo-40550.
                 pass
 
         def terminate(self):
