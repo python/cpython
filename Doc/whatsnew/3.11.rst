@@ -500,10 +500,11 @@ Faster CPython
 
 CPython 3.11 is on average `1.22x faster <https://github.com/faster-cpython/ideas/blob/main/main-vs-310.rst>`_
 than CPython 3.10 when measured with the
-`pyperformance <https://github.com/python/pyperformance>`_ benchmark suite, on
-Ubuntu Linux. Depending on your workload, the speedup could be 10-60% faster.
+`pyperformance <https://github.com/python/pyperformance>`_ benchmark suite,
+and compiled with GCC on Ubuntu Linux. Depending on your workload, the speedup
+could be 10-60% faster.
 
-The project focuses on two major areas in Python: faster startup and faster
+This project focuses on two major areas in Python: faster startup and faster
 runtime. Other optimizations not under this project are listed in `Optimizations`_.
 
 Faster Startup
@@ -546,13 +547,14 @@ holds execution information. The following are new frame optimizations:
 
 - Streamlined the frame creation process.
 - Avoided memory allocation by generously re-using frame space on the C stack.
-- Streamlined the internal frame object to only contain essential information.
+- Streamlined the internal frame object to contain only essential information.
   Frames previously held extra debugging and memory management information.
-  Old-style frames are now created only when required by debuggers. For most
-  user code, no frames are created at all.
 
-Nearly all Python functions calls have sped up significantly.
-This resulted in a 3-7% improvement in pyperformance.
+Old-style frames are now created only when required by debuggers. For most
+user code, no frames are created at all. As a result, nearly all Python
+functions calls have sped up significantly. We measured a 3-7% speedup
+in pyperformance.
+
 (Contributed by Mark Shannon in :issue:`44590`.)
 
 .. _inline-calls:
@@ -571,7 +573,8 @@ Python function calls now consume almost no C stack space. This speeds up Python
 to Python function calls. In simple recursive functions like fibonacci or
 factorial, a 1.7x speedup was observed. This also means recursive functions
 can recurse significantly deeper, assuming the recursion limit and memory limit
-is not exceeded. This resulted in a 1-3% improvement in pyperformance.
+is not exceeded. We measured a 1-3% improvement in pyperformance.
+
 (Contributed by Pablo Galindo and Mark Shannon in :issue:`45256`.)
 
 PEP 659: Specializing Adaptive Interpreter
@@ -649,11 +652,11 @@ See :pep:`659` for more information.)
 | Sequence      |                    | and ``tuple``. Avoids internal calling convention.    |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 
-.. [1] Note that a similar optimization already existed since Python 3.8.  3.11
+.. [1] A similar optimization already existed since Python 3.8.  3.11
        specializes for more forms and reduces some overhead.
 
-.. [2] Note that a similar optimization has already existed since Python 3.10.
-       3.11 speicalizes for more forms. Furthermore, all attribute loads should
+.. [2] A similar optimization already existed since Python 3.10.
+       3.11 specializes for more forms. Furthermore, all attribute loads should
        be sped up by :issue:`45947`.
 
 .. [3] Classes with longer inheritance chains will see greater speedups.
