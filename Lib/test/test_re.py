@@ -3,8 +3,8 @@ from test.support import (gc_collect, bigmemtest, _2G,
                           check_disallow_instantiation, is_emscripten)
 import locale
 import re
-import sre_compile
 import string
+import sys
 import time
 import unittest
 import warnings
@@ -569,7 +569,7 @@ class ReTests(unittest.TestCase):
                                'two branches', 10)
 
     def test_re_groupref_overflow(self):
-        from sre_constants import MAXGROUPS
+        from re._constants import MAXGROUPS
         self.checkTemplateError('()', r'\g<%s>' % MAXGROUPS, 'xx',
                                 'invalid group reference %d' % MAXGROUPS, 3)
         self.checkPatternError(r'(?P<a>)(?(%d))' % MAXGROUPS,
@@ -2433,7 +2433,7 @@ class ImplementationTest(unittest.TestCase):
             tp.foo = 1
 
     def test_overlap_table(self):
-        f = sre_compile._generate_overlap_table
+        f = re._compiler._generate_overlap_table
         self.assertEqual(f(""), [])
         self.assertEqual(f("a"), [0])
         self.assertEqual(f("abcd"), [0, 0, 0, 0])
@@ -2442,8 +2442,8 @@ class ImplementationTest(unittest.TestCase):
         self.assertEqual(f("abcabdac"), [0, 0, 0, 1, 2, 0, 1, 0])
 
     def test_signedness(self):
-        self.assertGreaterEqual(sre_compile.MAXREPEAT, 0)
-        self.assertGreaterEqual(sre_compile.MAXGROUPS, 0)
+        self.assertGreaterEqual(re._compiler.MAXREPEAT, 0)
+        self.assertGreaterEqual(re._compiler.MAXGROUPS, 0)
 
     @cpython_only
     def test_disallow_instantiation(self):
@@ -2453,6 +2453,32 @@ class ImplementationTest(unittest.TestCase):
         pat = re.compile("")
         check_disallow_instantiation(self, type(pat.scanner("")))
 
+    def test_deprecated_modules(self):
+        deprecated = {
+            'sre_compile': ['compile', 'error',
+                            'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
+                            '_compile_info'],
+            'sre_constants': ['error', 'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
+                              '_NamedIntConstant'],
+            'sre_parse': ['SubPattern', 'parse',
+                          'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
+                          '_parse_sub'],
+        }
+        for name in deprecated:
+            with self.subTest(module=name):
+                sys.modules.pop(name, None)
+                with self.assertWarns(DeprecationWarning) as cm:
+                    __import__(name)
+                self.assertEqual(str(cm.warnings[0].message),
+                                 f"module {name!r} is deprecated")
+                self.assertEqual(cm.warnings[0].filename, __file__)
+                self.assertIn(name, sys.modules)
+                mod = sys.modules[name]
+                self.assertEqual(mod.__name__, name)
+                self.assertEqual(mod.__package__, '')
+                for attr in deprecated[name]:
+                    self.assertTrue(hasattr(mod, attr))
+                del sys.modules[name]
 
 class ExternalTests(unittest.TestCase):
 
