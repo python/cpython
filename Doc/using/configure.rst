@@ -35,8 +35,7 @@ General Options
 
    Define the size in bits of Python :class:`int` digits: 15 or 30 bits.
 
-   By default, the number of bits is selected depending on ``sizeof(void*)``:
-   30 bits if ``void*`` size is 64-bit or larger, 15 bits otherwise.
+   By default, the digit size is 30.
 
    Define the ``PYLONG_BITS_IN_DIGIT`` to ``15`` or ``30``.
 
@@ -128,6 +127,17 @@ General Options
    * ``check`` (default): :program:`pkg-config` is optional
    * ``yes``: :program:`pkg-config` is mandatory
    * ``no``: configure does not use :program:`pkg-config` even when present
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --enable-pystats
+
+   Turn on internal statistics gathering.
+
+   The statistics will be dumped to a arbitrary (probably unique) file in
+   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows.
+
+   Use ``Tools//summarize_stats.py`` to read the stats.
 
    .. versionadded:: 3.11
 
@@ -394,14 +404,6 @@ Libraries options
 
    .. versionadded:: 3.10
 
-.. cmdoption:: --with-tcltk-includes='-I...'
-
-   Override search for Tcl and Tk include files.
-
-.. cmdoption:: --with-tcltk-libs='-L...'
-
-   Override search for Tcl and Tk libraries.
-
 .. cmdoption:: --with-libm=STRING
 
    Override ``libm`` math library to *STRING* (default is system-dependent).
@@ -518,9 +520,8 @@ Cross Compiling Options
 
 Cross compiling, also known as cross building, can be used to build Python
 for another CPU architecture or platform. Cross compiling requires a Python
-interpreter and the :program:`_freeze_module` binary from another build. The
-version of the build Python and :program:`_freeze_module` command must be
-the same as the cross compiled host Python.
+interpreter for the build platform. The version of the build Python must match
+the version of the cross compiled host Python.
 
 .. cmdoption:: --build=BUILD
 
@@ -530,13 +531,7 @@ the same as the cross compiled host Python.
 
    cross-compile to build programs to run on HOST (target platform)
 
-.. cmdoption:: --with-freeze-module=Programs/_freeze_module
-
-   path to ``_freeze_module`` binary for cross compiling.
-
-   .. versionadded:: 3.11
-
-.. cmdoption:: --with-build-python=python3.xx
+.. cmdoption:: --with-build-python=path/to/python
 
    path to build ``python`` binary for cross compiling
 
@@ -559,7 +554,6 @@ Cross compiling example::
    CONFIG_SITE=config.site-aarch64 ../configure \
        --build=x86_64-pc-linux-gnu \
        --host=aarch64-unknown-linux-gnu \
-       --with-freeze-module=../x86_64/Programs/_freeze_module \
        --with-build-python=../x86_64/python
 
 

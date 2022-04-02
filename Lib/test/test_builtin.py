@@ -393,6 +393,7 @@ class BuiltinTest(unittest.TestCase):
                                 msg=f"source={source} mode={mode}")
 
 
+    @unittest.skipIf(support.is_emscripten, "socket.accept is broken")
     def test_compile_top_level_await(self):
         """Test whether code some top level await can be compiled.
 
@@ -509,6 +510,9 @@ class BuiltinTest(unittest.TestCase):
         sys.spam = 1
         delattr(sys, 'spam')
         self.assertRaises(TypeError, delattr)
+        self.assertRaises(TypeError, delattr, sys)
+        msg = r"^attribute name must be string, not 'int'$"
+        self.assertRaisesRegex(TypeError, msg, delattr, sys, 1)
 
     def test_dir(self):
         # dir(wrong number of arguments)
@@ -581,8 +585,8 @@ class BuiltinTest(unittest.TestCase):
         # dir(traceback)
         try:
             raise IndexError
-        except:
-            self.assertEqual(len(dir(sys.exc_info()[2])), 4)
+        except IndexError as e:
+            self.assertEqual(len(dir(e.__traceback__)), 4)
 
         # test that object has a __dir__()
         self.assertEqual(sorted([].__dir__()), dir([]))
@@ -801,17 +805,21 @@ class BuiltinTest(unittest.TestCase):
 
     def test_getattr(self):
         self.assertTrue(getattr(sys, 'stdout') is sys.stdout)
-        self.assertRaises(TypeError, getattr, sys, 1)
-        self.assertRaises(TypeError, getattr, sys, 1, "foo")
         self.assertRaises(TypeError, getattr)
+        self.assertRaises(TypeError, getattr, sys)
+        msg = r"^attribute name must be string, not 'int'$"
+        self.assertRaisesRegex(TypeError, msg, getattr, sys, 1)
+        self.assertRaisesRegex(TypeError, msg, getattr, sys, 1, 'spam')
         self.assertRaises(AttributeError, getattr, sys, chr(sys.maxunicode))
         # unicode surrogates are not encodable to the default encoding (utf8)
         self.assertRaises(AttributeError, getattr, 1, "\uDAD1\uD51E")
 
     def test_hasattr(self):
         self.assertTrue(hasattr(sys, 'stdout'))
-        self.assertRaises(TypeError, hasattr, sys, 1)
         self.assertRaises(TypeError, hasattr)
+        self.assertRaises(TypeError, hasattr, sys)
+        msg = r"^attribute name must be string, not 'int'$"
+        self.assertRaisesRegex(TypeError, msg, hasattr, sys, 1)
         self.assertEqual(False, hasattr(sys, chr(sys.maxunicode)))
 
         # Check that hasattr propagates all exceptions outside of
@@ -1206,6 +1214,7 @@ class BuiltinTest(unittest.TestCase):
             os.environ.clear()
             os.environ.update(old_environ)
 
+    @support.requires_subprocess()
     def test_open_non_inheritable(self):
         fileobj = open(__file__, encoding="utf-8")
         with fileobj:
@@ -1457,8 +1466,11 @@ class BuiltinTest(unittest.TestCase):
     def test_setattr(self):
         setattr(sys, 'spam', 1)
         self.assertEqual(sys.spam, 1)
-        self.assertRaises(TypeError, setattr, sys, 1, 'spam')
         self.assertRaises(TypeError, setattr)
+        self.assertRaises(TypeError, setattr, sys)
+        self.assertRaises(TypeError, setattr, sys, 'spam')
+        msg = r"^attribute name must be string, not 'int'$"
+        self.assertRaisesRegex(TypeError, msg, setattr, sys, 1, 'spam')
 
     # test_str(): see test_unicode.py and test_bytes.py for str() tests.
 
@@ -2090,12 +2102,24 @@ class PtyTests(unittest.TestCase):
         # is different and invokes GNU readline if available).
         self.check_input_tty("prompt", b"quux")
 
+    def skip_if_readline(self):
+        # bpo-13886: When the readline module is loaded, PyOS_Readline() uses
+        # the readline implementation. In some cases, the Python readline
+        # callback rlhandler() is called by readline with a string without
+        # non-ASCII characters. Skip tests on non-ASCII characters if the
+        # readline module is loaded, since test_builtin is not intented to test
+        # the readline module, but the builtins module.
+        if 'readline' in sys.modules:
+            self.skipTest("the readline module is loaded")
+
     def test_input_tty_non_ascii(self):
-        # Check stdin/stdout encoding is used when invoking GNU readline
+        self.skip_if_readline()
+        # Check stdin/stdout encoding is used when invoking PyOS_Readline()
         self.check_input_tty("prompté", b"quux\xe9", "utf-8")
 
     def test_input_tty_non_ascii_unicode_errors(self):
-        # Check stdin/stdout error handler is used when invoking GNU readline
+        self.skip_if_readline()
+        # Check stdin/stdout error handler is used when invoking PyOS_Readline()
         self.check_input_tty("prompté", b"quux\xe9", "ascii")
 
     def test_input_no_stdout_fileno(self):

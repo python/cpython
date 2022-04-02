@@ -1,4 +1,4 @@
-# Copyright 2001-2019 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2021 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -16,7 +16,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2019 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -36,6 +36,7 @@ import os
 import queue
 import random
 import re
+import shutil
 import socket
 import struct
 import sys
@@ -73,6 +74,7 @@ try:
     import zlib
 except ImportError:
     pass
+
 
 class BaseTest(unittest.TestCase):
 
@@ -625,6 +627,9 @@ class HandlerTest(BaseTest):
             os.unlink(fn)
 
     @unittest.skipIf(os.name == 'nt', 'WatchedFileHandler not appropriate for Windows.')
+    @unittest.skipIf(
+        support.is_emscripten, "Emscripten cannot fstat unlinked files."
+    )
     def test_race(self):
         # Issue #14632 refers.
         def remove_loop(fname, tries):
@@ -673,7 +678,7 @@ class HandlerTest(BaseTest):
     # based on os.fork existing because that is what users and this test use.
     # This helps ensure that when fork exists (the important concept) that the
     # register_at_fork mechanism is also present and used.
-    @unittest.skipIf(not hasattr(os, 'fork'), 'Test requires os.fork().')
+    @support.requires_fork()
     def test_post_fork_child_no_deadlock(self):
         """Ensure child logging locks are not held; bpo-6721 & bpo-36533."""
         class _OurHandler(logging.Handler):
@@ -1057,6 +1062,7 @@ if hasattr(socket, "AF_UNIX"):
 
 # - end of server_helper section
 
+@support.requires_working_socket()
 class SMTPHandlerTest(BaseTest):
     # bpo-14314, bpo-19665, bpo-34092: don't wait forever
     TIMEOUT = support.LONG_TIMEOUT
@@ -1680,6 +1686,7 @@ class ConfigFileTest(BaseTest):
             os.unlink(fn)
 
 
+@support.requires_working_socket()
 class SocketHandlerTest(BaseTest):
 
     """Test for SocketHandler objects."""
@@ -1794,6 +1801,7 @@ class UnixSocketHandlerTest(SocketHandlerTest):
         SocketHandlerTest.tearDown(self)
         os_helper.unlink(self.address)
 
+@support.requires_working_socket()
 class DatagramHandlerTest(BaseTest):
 
     """Test for DatagramHandler."""
@@ -1875,6 +1883,7 @@ class UnixDatagramHandlerTest(DatagramHandlerTest):
         DatagramHandlerTest.tearDown(self)
         os_helper.unlink(self.address)
 
+@support.requires_working_socket()
 class SysLogHandlerTest(BaseTest):
 
     """Test for SysLogHandler using UDP."""
@@ -1984,6 +1993,7 @@ class IPv6SysLogHandlerTest(SysLogHandlerTest):
         self.server_class.address_family = socket.AF_INET
         super(IPv6SysLogHandlerTest, self).tearDown()
 
+@support.requires_working_socket()
 class HTTPHandlerTest(BaseTest):
     """Test for HTTPHandler."""
 
@@ -3260,6 +3270,7 @@ class ConfigDictTest(BaseTest):
             logging.config.stopListening()
             threading_helper.join_thread(t)
 
+    @support.requires_working_socket()
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:
             self.setup_via_listener(json.dumps(self.config10))
@@ -3279,6 +3290,7 @@ class ConfigDictTest(BaseTest):
                 ('ERROR', '4'),
             ], stream=output)
 
+    @support.requires_working_socket()
     def test_listen_config_1_ok(self):
         with support.captured_stdout() as output:
             self.setup_via_listener(textwrap.dedent(ConfigFileTest.config1))
@@ -3293,6 +3305,7 @@ class ConfigDictTest(BaseTest):
             # Original logger output is empty.
             self.assert_log_lines([])
 
+    @support.requires_working_socket()
     def test_listen_verify(self):
 
         def verify_fail(stuff):
@@ -3445,6 +3458,44 @@ class ConfigDictTest(BaseTest):
             self.apply_config(config)
             logging.info('some log')
         self.assertEqual(stderr.getvalue(), 'some log my_type\n')
+
+    def test_config_callable_filter_works(self):
+        def filter_(_):
+            return 1
+        self.apply_config({
+            "version": 1, "root": {"level": "DEBUG", "filters": [filter_]}
+        })
+        assert logging.getLogger().filters[0] is filter_
+        logging.getLogger().filters = []
+
+    def test_config_filter_works(self):
+        filter_ = logging.Filter("spam.eggs")
+        self.apply_config({
+            "version": 1, "root": {"level": "DEBUG", "filters": [filter_]}
+        })
+        assert logging.getLogger().filters[0] is filter_
+        logging.getLogger().filters = []
+
+    def test_config_filter_method_works(self):
+        class FakeFilter:
+            def filter(self, _):
+                return 1
+        filter_ = FakeFilter()
+        self.apply_config({
+            "version": 1, "root": {"level": "DEBUG", "filters": [filter_]}
+        })
+        assert logging.getLogger().filters[0] is filter_
+        logging.getLogger().filters = []
+
+    def test_invalid_type_raises(self):
+        class NotAFilter: pass
+        for filter_ in [None, 1, NotAFilter()]:
+            self.assertRaises(
+                ValueError,
+                self.apply_config,
+                {"version": 1, "root": {"level": "DEBUG", "filters": [filter_]}}
+            )
+
 
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
@@ -4454,6 +4505,7 @@ class LogRecordTest(BaseTest):
             return results
 
     def test_multiprocessing(self):
+        support.skip_if_broken_multiprocessing_synchronize()
         multiprocessing_imported = 'multiprocessing' in sys.modules
         try:
             # logMultiprocessing is True by default
@@ -4998,9 +5050,10 @@ class LoggerTest(BaseTest, AssertErrorMessage):
 
     def test_find_caller_with_stacklevel(self):
         the_level = 1
+        trigger = self.logger.warning
 
         def innermost():
-            self.logger.warning('test', stacklevel=the_level)
+            trigger('test', stacklevel=the_level)
 
         def inner():
             innermost()
@@ -5022,6 +5075,13 @@ class LoggerTest(BaseTest, AssertErrorMessage):
         self.assertEqual(records[-1].funcName, 'outer')
         self.assertGreater(records[-1].lineno, lineno)
         lineno = records[-1].lineno
+        root_logger = logging.getLogger()
+        root_logger.addHandler(self.recording)
+        trigger = logging.warning
+        outer()
+        self.assertEqual(records[-1].funcName, 'outer')
+        root_logger.removeHandler(self.recording)
+        trigger = self.logger.warning
         the_level += 1
         outer()
         self.assertEqual(records[-1].funcName, 'test_find_caller_with_stacklevel')
@@ -5434,6 +5494,54 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             finally:
                 rh.close()
 
+    def test_compute_files_to_delete(self):
+        # See bpo-46063 for background
+        wd = tempfile.mkdtemp(prefix='test_logging_')
+        self.addCleanup(shutil.rmtree, wd)
+        times = []
+        dt = datetime.datetime.now()
+        for i in range(10):
+            times.append(dt.strftime('%Y-%m-%d_%H-%M-%S'))
+            dt += datetime.timedelta(seconds=5)
+        prefixes = ('a.b', 'a.b.c', 'd.e', 'd.e.f')
+        files = []
+        rotators = []
+        for prefix in prefixes:
+            p = os.path.join(wd, '%s.log' % prefix)
+            rotator = logging.handlers.TimedRotatingFileHandler(p, when='s',
+                                                                interval=5,
+                                                                backupCount=7,
+                                                                delay=True)
+            rotators.append(rotator)
+            if prefix.startswith('a.b'):
+                for t in times:
+                    files.append('%s.log.%s' % (prefix, t))
+            else:
+                rotator.namer = lambda name: name.replace('.log', '') + '.log'
+                for t in times:
+                    files.append('%s.%s.log' % (prefix, t))
+        # Create empty files
+        for fn in files:
+            p = os.path.join(wd, fn)
+            with open(p, 'wb') as f:
+                pass
+        # Now the checks that only the correct files are offered up for deletion
+        for i, prefix in enumerate(prefixes):
+            rotator = rotators[i]
+            candidates = rotator.getFilesToDelete()
+            self.assertEqual(len(candidates), 3)
+            if prefix.startswith('a.b'):
+                p = '%s.log.' % prefix
+                for c in candidates:
+                    d, fn = os.path.split(c)
+                    self.assertTrue(fn.startswith(p))
+            else:
+                for c in candidates:
+                    d, fn = os.path.split(c)
+                    self.assertTrue(fn.endswith('.log'))
+                    self.assertTrue(fn.startswith(prefix + '.') and
+                                    fn[len(prefix) + 2].isdigit())
+
 
 def secs(**kw):
     return datetime.timedelta(**kw) // datetime.timedelta(seconds=1)
@@ -5475,8 +5583,8 @@ for when, exp in (('S', 1),
                     print('currentSecond: %s' % currentSecond, file=sys.stderr)
                     print('r: %s' % r, file=sys.stderr)
                     print('result: %s' % result, file=sys.stderr)
-                except Exception:
-                    print('exception in diagnostic code: %s' % sys.exc_info()[1], file=sys.stderr)
+                except Exception as e:
+                    print('exception in diagnostic code: %s' % e, file=sys.stderr)
         self.assertEqual(exp, actual)
         rh.close()
     setattr(TimedRotatingFileHandlerTest, "test_compute_rollover_%s" % when, test_compute_rollover)

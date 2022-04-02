@@ -12,8 +12,13 @@ extern "C" {
 struct pyruntimestate;
 struct _ceval_runtime_state;
 
+#ifndef Py_DEFAULT_RECURSION_LIMIT
+#  define Py_DEFAULT_RECURSION_LIMIT 1000
+#endif
+
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+
 
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
 extern void _PyEval_InitRuntimeState(struct _ceval_runtime_state *);
@@ -28,21 +33,39 @@ PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 #ifdef HAVE_FORK
 extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
 #endif
-PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(
-    PyThreadState *tstate,
-    int new_depth);
 
-void _PyEval_Fini(void);
+// Used by sys.call_tracing()
+extern PyObject* _PyEval_CallTracing(PyObject *func, PyObject *args);
+
+// Used by sys.get_asyncgen_hooks()
+extern PyObject* _PyEval_GetAsyncGenFirstiter(void);
+extern PyObject* _PyEval_GetAsyncGenFinalizer(void);
+
+// Used by sys.set_asyncgen_hooks()
+extern int _PyEval_SetAsyncGenFirstiter(PyObject *);
+extern int _PyEval_SetAsyncGenFinalizer(PyObject *);
+
+// Used by sys.get_coroutine_origin_tracking_depth()
+// and sys.set_coroutine_origin_tracking_depth()
+extern int _PyEval_GetCoroutineOriginTrackingDepth(void);
+extern int _PyEval_SetCoroutineOriginTrackingDepth(int depth);
+
+extern void _PyEval_Fini(void);
 
 
 extern PyObject* _PyEval_GetBuiltins(PyThreadState *tstate);
-extern PyObject *_PyEval_BuiltinsFromGlobals(
+extern PyObject* _PyEval_BuiltinsFromGlobals(
     PyThreadState *tstate,
     PyObject *globals);
 
 
+PyAPI_FUNC(PyObject *) _PyEval_EvalFrameDefault(
+    PyThreadState *tstate,
+    struct _PyInterpreterFrame *frame,
+    int throwflag);
+
 static inline PyObject*
-_PyEval_EvalFrame(PyThreadState *tstate, struct _interpreter_frame *frame, int throwflag)
+_PyEval_EvalFrame(PyThreadState *tstate, struct _PyInterpreterFrame *frame, int throwflag)
 {
     if (tstate->interp->eval_frame == NULL) {
         return _PyEval_EvalFrameDefault(tstate, frame, throwflag);
@@ -50,7 +73,7 @@ _PyEval_EvalFrame(PyThreadState *tstate, struct _interpreter_frame *frame, int t
     return tstate->interp->eval_frame(tstate, frame, throwflag);
 }
 
-extern PyObject *
+extern PyObject*
 _PyEval_Vector(PyThreadState *tstate,
             PyFunctionObject *func, PyObject *locals,
             PyObject* const* args, size_t argcount,
@@ -111,9 +134,9 @@ static inline void _Py_LeaveRecursiveCall_inline(void)  {
 
 #define Py_LeaveRecursiveCall() _Py_LeaveRecursiveCall_inline()
 
-struct _interpreter_frame *_PyEval_GetFrame(void);
+extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
 
-PyObject *_Py_MakeCoro(PyFunctionObject *func);
+extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 
 #ifdef __cplusplus
 }

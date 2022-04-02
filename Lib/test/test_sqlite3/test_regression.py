@@ -21,14 +21,13 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import datetime
-import sys
 import unittest
 import sqlite3 as sqlite
 import weakref
 import functools
-from test import support
 
-from .test_dbapi import memory_database, managed_connect, cx_limit
+from test import support
+from test.test_sqlite3.test_dbapi import memory_database, managed_connect, cx_limit
 
 
 class RegressionTests(unittest.TestCase):
@@ -231,28 +230,6 @@ class RegressionTests(unittest.TestCase):
         with self.assertRaises(sqlite.ProgrammingError):
             cur = con.cursor()
 
-    def test_cursor_registration(self):
-        """
-        Verifies that subclassed cursor classes are correctly registered with
-        the connection object, too.  (fetch-across-rollback problem)
-        """
-        class Connection(sqlite.Connection):
-            def cursor(self):
-                return Cursor(self)
-
-        class Cursor(sqlite.Cursor):
-            def __init__(self, con):
-                sqlite.Cursor.__init__(self, con)
-
-        con = Connection(":memory:")
-        cur = con.cursor()
-        cur.execute("create table foo(x)")
-        cur.executemany("insert into foo(x) values (?)", [(3,), (4,), (5,)])
-        cur.execute("select x from foo")
-        con.rollback()
-        with self.assertRaises(sqlite.InterfaceError):
-            cur.fetchall()
-
     def test_auto_commit(self):
         """
         Verifies that creating a connection in autocommit mode works.
@@ -342,12 +319,15 @@ class RegressionTests(unittest.TestCase):
 
     def test_null_character(self):
         # Issue #21147
-        con = sqlite.connect(":memory:")
-        self.assertRaises(ValueError, con, "\0select 1")
-        self.assertRaises(ValueError, con, "select 1\0")
-        cur = con.cursor()
-        self.assertRaises(ValueError, cur.execute, " \0select 2")
-        self.assertRaises(ValueError, cur.execute, "select 2\0")
+        cur = self.con.cursor()
+        queries = ["\0select 1", "select 1\0"]
+        for query in queries:
+            with self.subTest(query=query):
+                self.assertRaisesRegex(sqlite.ProgrammingError, "null char",
+                                       self.con.execute, query)
+            with self.subTest(query=query):
+                self.assertRaisesRegex(sqlite.ProgrammingError, "null char",
+                                       cur.execute, query)
 
     def test_surrogates(self):
         con = sqlite.connect(":memory:")

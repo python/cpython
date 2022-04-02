@@ -19,7 +19,7 @@ doscript(const char *command)
     AEDesc desc;
     OSStatus err;
 
-    [[NSWorkspace sharedWorkspace] launchApplication:@"/Applications/Utilities/Terminal.app/"];
+    [[NSWorkspace sharedWorkspace] launchApplication:@"Terminal.app"];
 
     // Build event
     err = AEBuildAppleEvent(kAECoreSuite, kAEDoScript,
