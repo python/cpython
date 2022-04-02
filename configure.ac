@@ -1107,6 +1107,25 @@ dnl are free to remove them in the future.
 ])
 AC_MSG_RESULT([$ac_sys_emscripten_target])
 
+dnl On Emscripten dlopen() requires -s MAIN_MODULE and -fPIC. The flags
+dnl disables dead code elimination and increases the size of the WASM module
+dnl by about 1.5 to 2MB. MAIN_MODULE defines __wasm_mutable_globals__.
+dnl See https://emscripten.org/docs/compiling/Dynamic-Linking.html
+AC_MSG_CHECKING([for --enable-wasm-dynamic-linking])
+AC_ARG_ENABLE([wasm-dynamic-linking],
+  [AS_HELP_STRING([--enable-wasm-dynamic-linking],
+                  [Enable dynamic linking support for WebAssembly (default is no)])],
+[
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [],
+    [WASI], [AC_MSG_ERROR([WASI dynamic linking is not implemented yet.])],
+    [AC_MSG_ERROR([--enable-wasm-dynamic-linking only applies to Emscripten and WASI])]
+  )
+], [
+  enable_wasm_dynamic_linking=no
+])
+AC_MSG_RESULT([$enable_wasm_dynamic_linking])
+
 AC_MSG_CHECKING([for --with-suffix])
 AC_ARG_WITH([suffix],
             [AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is empty, yes is mapped to '.exe')])],
@@ -1890,13 +1909,13 @@ then
 fi
 
 # WASM flags
-# TODO: Add -s MAIN_MODULE=2 for dlopen() support.
-# The option disables code elimination, which increases code size of main
-# binary. All objects must be built with -fPIC.
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   [Emscripten/browser*], [
     LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1"
     LINKFORSHARED="--preload-file \$(WASM_ASSETS_DIR)"
+    AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+      AS_VAR_APPEND([LINKFORSHARED], [" -s MAIN_MODULE=1"])
+    ])
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
     dnl separate-dwarf does not seem to work in Chrome DevTools Support.
@@ -1910,6 +1929,9 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   [Emscripten/node*], [
     LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s USE_PTHREADS=1"
     LINKFORSHARED="-s PROXY_TO_PTHREAD=1 -s EXIT_RUNTIME=1"
+    AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+      AS_VAR_APPEND([LINKFORSHARED], [" -s MAIN_MODULE=1"])
+    ])
     CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
     if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "node-debug"; then
       LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
@@ -1925,6 +1947,12 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
   ]
+)
+
+AS_CASE([$enable_wasm_dynamic_linking],
+  [yes], [ac_cv_func_dlopen=yes],
+  [no], [ac_cv_func_dlopen=no],
+  [missing], []
 )
 
 AC_SUBST(BASECFLAGS)
@@ -2929,10 +2957,6 @@ then
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
-	Emscripten*)
-		LDSHARED='$(CC) -shared -s SIDE_MODULE=1'
-		LDCXXSHARED='$(CXX) -shared -s SIDE_MODULE=1'
-    ;;
 	FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
@@ -2977,9 +3001,24 @@ then
 	*)	LDSHARED="ld";;
 	esac
 fi
+
+dnl Emscripten's emconfigure sets LDSHARED. Set BLDSHARED outside the
+dnl test -z $LDSHARED block to set BLDSHARED flag for side module support.
+AS_CASE([$ac_sys_system],
+  [Emscripten], [
+    AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+      BLDSHARED='$(CC) -shared -s SIDE_MODULE=1 -s WASM=1'
+    ])
+  ]
+)
+
 AC_MSG_RESULT($LDSHARED)
 LDCXXSHARED=${LDCXXSHARED-$LDSHARED}
+
+AC_MSG_CHECKING([BLDSHARED flags])
 BLDSHARED=${BLDSHARED-$LDSHARED}
+AC_MSG_RESULT([$BLDSHARED])
+
 # CCSHARED are the C *flags* used to create objects to go into a shared
 # library (module) -- this is only needed for a few systems
 AC_MSG_CHECKING(CCSHARED)
@@ -2998,6 +3037,11 @@ then
 		 fi;;
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
+	Emscripten*)
+		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+			CCSHARED="-fPIC"
+		])
+		;;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
@@ -3099,6 +3143,12 @@ then
 		CFLAGSFORSHARED='$(CCSHARED)'
 	esac
 fi
+
+dnl WASM dynamic linking requires -fPIC.
+AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+  CFLAGSFORSHARED='$(CCSHARED)'
+])
+
 AC_MSG_RESULT($CFLAGSFORSHARED)
 
 # SHLIBS are libraries (except -lc and -lm) to link to the python shared

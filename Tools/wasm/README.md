@@ -81,24 +81,31 @@ node --experimental-wasm-threads --experimental-wasm-bulk-memory builddir/emscri
 
 ## wasm32-emscripten limitations and issues
 
+- Heap and stack are limited.
 - Most stdlib modules with a dependency on external libraries are missing:
   ``ctypes``, ``readline``, ``sqlite3``, ``ssl``, and more.
 - Shared extension modules are not implemented yet. All extension modules
   are statically linked into the main binary.
+  The experimental configure option ``--enable-wasm-dynamic-linking`` enables
+  dynamic extensions.
 - Processes are not supported. System calls like fork, popen, and subprocess
   fail with ``ENOSYS`` or ``ENOSUP``.
+- Only ``AF_INET`` and ``AF_INET6`` with ``SOCK_STREAM`` (TCP) or
+  ``SOCK_DGRAM`` (UDP) are available. ``AF_UNIX`` is not supported.
+- ``socketpair`` does not work.
 - Blocking sockets are not available and non-blocking sockets don't work
   correctly, e.g. ``socket.accept`` crashes the runtime. ``gethostbyname``
   does not resolve to a real IP address. IPv6 is not available.
 - The ``select`` module is limited. ``select.select()`` crashes the runtime
   due to lack of exectfd support.
-- The ``*at`` variants of functions (e.g. ``openat``) are not available.
-  The ``dir_fd`` argument of *os* module functions can't be used.
 - Signal support is limited. ``signal.alarm``, ``itimer``, ``sigaction``
   are not available or do not work correctly. ``SIGTERM`` exits the runtime.
 - Most user, group, and permission related function and modules are not
   supported or don't work as expected, e.g.``pwd`` module, ``grp`` module,
-  ``os.setgroups``, ``os.chown``, and so on.
+  ``os.setgroups``, ``os.chown``, and so on. ``lchown`` and `lchmod`` are
+  not available.
+- ``umask`` is a no-op.
+- hard links (``os.link``) are not supported.
 - Offset and iovec I/O functions (e.g. ``os.pread``, ``os.preadv``) are not
   available.
 - ``os.mknod`` and ``os.mkfifo``
@@ -108,17 +115,9 @@ node --experimental-wasm-threads --experimental-wasm-bulk-memory builddir/emscri
 - ``mmap`` module is unstable. flush (``msync``) can crash the runtime.
 - Resource-related functions like ``os.nice`` and most functions of the
   ``resource`` module are not available.
-- Some time and datetime features are broken. ``strftime`` and ``strptime``
-  have known bugs, e.g.
-  [%% quoting](https://github.com/emscripten-core/emscripten/issues/16155),
-  [%U off-by-one](https://github.com/emscripten-core/emscripten/issues/16156).
-  Extended glibc formatting features are not available.
+- glibc extensions for date and time formatting are not available.
 - ``locales`` module is affected by musl libc issues,
   [bpo-46390](https://bugs.python.org/issue46390).
-- ``uuid`` module is affected by
-  [memory leak](https://github.com/emscripten-core/emscripten/issues/16081)
-  and crasher in Emscripten's ``freeaddrinfo``,
-- Recursive ``glob`` leaks file descriptors.
 - Python's object allocator ``obmalloc`` is disabled by default.
 - ``ensurepip`` is not available.
 
