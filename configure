@@ -13760,7 +13760,8 @@ PLATFORM_OBJS=
 case $ac_sys_system in #(
   Emscripten) :
 
-    as_fn_append PLATFORM_OBJS Python/emscripten_signal.o
+    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o'
+    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h'
    ;; #(
   *) :
      ;;
