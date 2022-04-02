@@ -558,7 +558,7 @@ class IdleConf:
             for k, v in result.items():
                 v2 = [re.sub(pat, replace, x) for x in v]
                 if v != v2:
-                   v.extend(v2)
+                    v.extend(v2)
 
         return result
 
