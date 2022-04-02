@@ -1,0 +1,1 @@
+Enables installing the :file:`py.exe` launcher on Windows ARM64.

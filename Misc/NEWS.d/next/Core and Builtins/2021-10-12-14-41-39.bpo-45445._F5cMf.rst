@@ -1,2 +1,0 @@
-Python now fails to initialize if it finds an invalid :option:`-X` option in the
-command line. Patch by Pablo Galindo.

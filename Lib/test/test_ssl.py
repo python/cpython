@@ -373,7 +373,8 @@ class BasicSocketTests(unittest.TestCase):
         # Make sure that the PROTOCOL_* constants have enum-like string
         # reprs.
         proto = ssl.PROTOCOL_TLS_CLIENT
-        self.assertEqual(str(proto), 'PROTOCOL_TLS_CLIENT')
+        self.assertEqual(repr(proto), '<_SSLMethod.PROTOCOL_TLS_CLIENT: %r>' % proto.value)
+        self.assertEqual(str(proto), str(proto.value))
         ctx = ssl.SSLContext(proto)
         self.assertIs(ctx.protocol, proto)
 
@@ -540,7 +541,11 @@ class BasicSocketTests(unittest.TestCase):
         self.assertLessEqual(status, 15)
 
         libressl_ver = f"LibreSSL {major:d}"
-        openssl_ver = f"OpenSSL {major:d}.{minor:d}.{fix:d}"
+        if major >= 3:
+            # 3.x uses 0xMNN00PP0L
+            openssl_ver = f"OpenSSL {major:d}.{minor:d}.{patch:d}"
+        else:
+            openssl_ver = f"OpenSSL {major:d}.{minor:d}.{fix:d}"
         self.assertTrue(
             s.startswith((openssl_ver, libressl_ver)),
             (s, t, hex(n))
@@ -618,7 +623,7 @@ class BasicSocketTests(unittest.TestCase):
                 with self.assertWarns(DeprecationWarning) as cm:
                     ssl.SSLContext(protocol)
                 self.assertEqual(
-                    f'{protocol!r} is deprecated',
+                    f'ssl.{protocol.name} is deprecated',
                     str(cm.warning)
                 )
 
@@ -627,8 +632,9 @@ class BasicSocketTests(unittest.TestCase):
                 ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
                 with self.assertWarns(DeprecationWarning) as cm:
                     ctx.minimum_version = version
+                version_text = '%s.%s' % (version.__class__.__name__, version.name)
                 self.assertEqual(
-                    f'ssl.{version!r} is deprecated',
+                    f'ssl.{version_text} is deprecated',
                     str(cm.warning)
                 )
 

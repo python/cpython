@@ -1,3 +1,0 @@
-Make :mod:`xmlrpc.client` more robust to C runtimes where the underlying C
-``strftime`` function results in a ``ValueError`` when testing for year
-formatting options.

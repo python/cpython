@@ -66,9 +66,6 @@ are always available.  They are listed here in alphabetical order.
    Return an :term:`asynchronous iterator` for an :term:`asynchronous iterable`.
    Equivalent to calling ``x.__aiter__()``.
 
-   ``aiter(x)`` itself has an ``__aiter__()`` method that returns ``x``,
-   so ``aiter(aiter(x))`` is the same as ``aiter(x)``.
-
    Note: Unlike :func:`iter`, :func:`aiter` has no 2-argument variant.
 
    .. versionadded:: 3.10
@@ -251,7 +248,7 @@ are always available.  They are listed here in alphabetical order.
 
       class C:
           @classmethod
-          def f(cls, arg1, arg2, ...): ...
+          def f(cls, arg1, arg2): ...
 
    The ``@classmethod`` form is a function :term:`decorator` -- see
    :ref:`function` for details.
@@ -736,9 +733,9 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: globals()
 
-   Return a dictionary representing the current global symbol table. This is always
-   the dictionary of the current module (inside a function or method, this is the
-   module where it is defined, not the module from which it is called).
+   Return the dictionary implementing the current module namespace. For code within
+   functions, this is set when the function is defined and remains the same
+   regardless of where the function is called.
 
 
 .. function:: hasattr(object, name)
@@ -894,6 +891,9 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       Falls back to :meth:`__index__` if :meth:`__int__` is not defined.
 
+   .. versionchanged:: 3.11
+      The delegation to :meth:`__trunc__` is deprecated.
+
 
 .. function:: isinstance(object, classinfo)
 
@@ -929,8 +929,8 @@ are always available.  They are listed here in alphabetical order.
    Return an :term:`iterator` object.  The first argument is interpreted very
    differently depending on the presence of the second argument. Without a
    second argument, *object* must be a collection object which supports the
-   iteration protocol (the :meth:`__iter__` method), or it must support the
-   sequence protocol (the :meth:`__getitem__` method with integer arguments
+   :term:`iterable` protocol (the :meth:`__iter__` method), or it must support
+   the sequence protocol (the :meth:`__getitem__` method with integer arguments
    starting at ``0``).  If it does not support either of those protocols,
    :exc:`TypeError` is raised. If the second argument, *sentinel*, is given,
    then *object* must be a callable object.  The iterator created in this case
@@ -1060,7 +1060,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: next(iterator[, default])
 
-   Retrieve the next item from the *iterator* by calling its
+   Retrieve the next item from the :term:`iterator` by calling its
    :meth:`~iterator.__next__` method.  If *default* is given, it is returned
    if the iterator is exhausted, otherwise :exc:`StopIteration` is raised.
 
@@ -1574,7 +1574,7 @@ are always available.  They are listed here in alphabetical order.
    :func:`itertools.islice` for an alternate version that returns an iterator.
 
 
-.. function:: sorted(iterable, *, key=None, reverse=False)
+.. function:: sorted(iterable, /, *, key=None, reverse=False)
 
    Return a new sorted list from the items in *iterable*.
 

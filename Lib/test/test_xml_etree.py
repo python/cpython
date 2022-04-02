@@ -658,6 +658,14 @@ class ElementTreeTest(unittest.TestCase):
                     'junk after document element: line 1, column 12')
             del cm, it
 
+        # Not exhausting the iterator still closes the resource (bpo-43292)
+        with warnings_helper.check_no_resource_warning(self):
+            it = iterparse(TESTFN)
+            del it
+
+        with self.assertRaises(FileNotFoundError):
+            iterparse("nonexistent")
+
     def test_writefile(self):
         elem = ET.Element("tag")
         elem.text = "text"
@@ -757,6 +765,15 @@ class ElementTreeTest(unittest.TestCase):
                 ('end-ns', 'p'),
                 ('end-ns', ''),
             ])
+
+    def test_initialize_parser_without_target(self):
+        # Explicit None
+        parser = ET.XMLParser(target=None)
+        self.assertIsInstance(parser.target, ET.TreeBuilder)
+
+        # Implicit None
+        parser2 = ET.XMLParser()
+        self.assertIsInstance(parser2.target, ET.TreeBuilder)
 
     def test_children(self):
         # Test Element children iteration
@@ -1341,8 +1358,9 @@ class ElementTreeTest(unittest.TestCase):
     def test_html_empty_elems_serialization(self):
         # issue 15970
         # from http://www.w3.org/TR/html401/index/elements.html
-        for element in ['AREA', 'BASE', 'BASEFONT', 'BR', 'COL', 'FRAME', 'HR',
-                        'IMG', 'INPUT', 'ISINDEX', 'LINK', 'META', 'PARAM']:
+        for element in ['AREA', 'BASE', 'BASEFONT', 'BR', 'COL', 'EMBED', 'FRAME',
+                        'HR', 'IMG', 'INPUT', 'ISINDEX', 'LINK', 'META', 'PARAM',
+                        'SOURCE', 'TRACK', 'WBR']:
             for elem in [element, element.lower()]:
                 expected = '<%s>' % elem
                 serialized = serialize(ET.XML('<%s />' % elem), method='html')
@@ -2182,12 +2200,6 @@ class BugsTest(unittest.TestCase):
         self.assertEqual(ET.tostring(e, 'ascii'),
                 b"<?xml version='1.0' encoding='ascii'?>\n"
                 b'<body>t&#227;g</body>')
-
-    def test_issue3151(self):
-        e = ET.XML('<prefix:localname xmlns:prefix="${stuff}"/>')
-        self.assertEqual(e.tag, '{${stuff}}localname')
-        t = ET.ElementTree(e)
-        self.assertEqual(ET.tostring(e), b'<ns0:localname xmlns:ns0="${stuff}" />')
 
     def test_issue6565(self):
         elem = ET.XML("<body><tag/></body>")

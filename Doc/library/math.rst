@@ -356,6 +356,13 @@ Power and logarithmic functions
    or ``pow(math.e, x)``.
 
 
+.. function:: exp2(x)
+
+   Return *2* raised to the power *x*.
+
+   .. versionadded:: 3.11
+
+
 .. function:: expm1(x)
 
    Return *e* raised to the power *x*, minus 1.  Here *e* is the base of natural
@@ -639,8 +646,26 @@ Constants
 
 .. data:: nan
 
-   A floating-point "not a number" (NaN) value.  Equivalent to the output of
-   ``float('nan')``.
+   A floating-point "not a number" (NaN) value. Equivalent to the output of
+   ``float('nan')``. Due to the requirements of the `IEEE-754 standard
+   <https://en.wikipedia.org/wiki/IEEE_754>`_, ``math.nan`` and ``float('nan')`` are
+   not considered to equal to any other numeric value, including themselves. To check
+   whether a number is a NaN, use the :func:`isnan` function to test
+   for NaNs instead of ``is`` or ``==``.
+   Example::
+
+      >>> import math
+      >>> math.nan == math.nan
+      False
+      >>> float('nan') == float('nan')
+      False
+      >>> math.isnan(math.nan)
+      True
+      >>> math.isnan(float('nan'))
+      True
+
+   .. versionchanged:: 3.11
+      It is now always available.
 
    .. versionadded:: 3.5
 

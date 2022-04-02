@@ -1,0 +1,3 @@
+Exception chaining is changed from
+:func:`Exception.with_traceback`/:func:`sys.exc_info` to :pep:`3134`.
+Patch by Oleg Iarygin.

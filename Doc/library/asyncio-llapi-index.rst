@@ -189,8 +189,17 @@ See also the main documentation section about the
     * - ``await`` :meth:`loop.sock_recv_into`
       - Receive data from the :class:`~socket.socket` into a buffer.
 
+    * - ``await`` :meth:`loop.sock_recvfrom`
+      - Receive a datagram from the :class:`~socket.socket`.
+
+    * - ``await`` :meth:`loop.sock_recvfrom_into`
+      - Receive a datagram from the :class:`~socket.socket` into a buffer.
+
     * - ``await`` :meth:`loop.sock_sendall`
       - Send data to the :class:`~socket.socket`.
+
+    * - ``await`` :meth:`loop.sock_sendto`
+      - Send a datagram via the :class:`~socket.socket` to the given address.
 
     * - ``await`` :meth:`loop.sock_connect`
       - Connect the :class:`~socket.socket`.

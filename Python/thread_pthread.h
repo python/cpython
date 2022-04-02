@@ -1,4 +1,4 @@
-#include "pycore_interp.h"    // _PyInterpreterState.pythread_stacksize
+#include "pycore_interp.h"    // _PyInterpreterState.threads.stacksize
 
 /* Posix threads interface */
 
@@ -262,7 +262,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #endif
 #if defined(THREAD_STACK_SIZE)
     PyThreadState *tstate = _PyThreadState_GET();
-    size_t stacksize = tstate ? tstate->interp->pythread_stacksize : 0;
+    size_t stacksize = tstate ? tstate->interp->threads.stacksize : 0;
     tss = (stacksize != 0) ? stacksize : THREAD_STACK_SIZE;
     if (tss != 0) {
         if (pthread_attr_setstacksize(&attrs, tss) != 0) {
@@ -764,7 +764,7 @@ _pythread_pthread_set_stacksize(size_t size)
 
     /* set to default */
     if (size == 0) {
-        _PyInterpreterState_GET()->pythread_stacksize = 0;
+        _PyInterpreterState_GET()->threads.stacksize = 0;
         return 0;
     }
 
@@ -781,7 +781,7 @@ _pythread_pthread_set_stacksize(size_t size)
             rc = pthread_attr_setstacksize(&attrs, size);
             pthread_attr_destroy(&attrs);
             if (rc == 0) {
-                _PyInterpreterState_GET()->pythread_stacksize = size;
+                _PyInterpreterState_GET()->threads.stacksize = size;
                 return 0;
             }
         }

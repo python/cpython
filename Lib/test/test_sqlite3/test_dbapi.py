@@ -29,7 +29,6 @@ import unittest
 
 from test.support import (
     SHORT_TIMEOUT,
-    bigmemtest,
     check_disallow_instantiation,
     threading_helper,
 )
@@ -46,6 +45,22 @@ def managed_connect(*args, in_mem=False, **kwargs):
         cx.close()
         if not in_mem:
             unlink(TESTFN)
+
+
+# Helper for temporary memory databases
+def memory_database(*args, **kwargs):
+    cx = sqlite.connect(":memory:", *args, **kwargs)
+    return contextlib.closing(cx)
+
+
+# Temporarily limit a database connection parameter
+@contextlib.contextmanager
+def cx_limit(cx, category=sqlite.SQLITE_LIMIT_SQL_LENGTH, limit=128):
+    try:
+        _prev = cx.setlimit(category, limit)
+        yield limit
+    finally:
+        cx.setlimit(category, _prev)
 
 
 class ModuleTests(unittest.TestCase):
@@ -480,7 +495,7 @@ class ConnectionTests(unittest.TestCase):
             prev_limit = self.cx.setlimit(category, new_limit)
             self.assertEqual(saved_limit, prev_limit)
             self.assertEqual(self.cx.getlimit(category), new_limit)
-            msg = "string or blob too big"
+            msg = "query string is too large"
             self.assertRaisesRegex(sqlite.DataError, msg,
                                    self.cx.execute, "select 1 as '16'")
         finally:  # restore saved limit
@@ -493,6 +508,79 @@ class ConnectionTests(unittest.TestCase):
                                self.cx.getlimit, cat)
         self.assertRaisesRegex(sqlite.ProgrammingError, msg,
                                self.cx.setlimit, cat, 0)
+
+    def test_connection_init_bad_isolation_level(self):
+        msg = (
+            "isolation_level string must be '', 'DEFERRED', 'IMMEDIATE', or "
+            "'EXCLUSIVE'"
+        )
+        levels = (
+            "BOGUS",
+            " ",
+            "DEFERRE",
+            "IMMEDIAT",
+            "EXCLUSIV",
+            "DEFERREDS",
+            "IMMEDIATES",
+            "EXCLUSIVES",
+        )
+        for level in levels:
+            with self.subTest(level=level):
+                with self.assertRaisesRegex(ValueError, msg):
+                    memory_database(isolation_level=level)
+                with memory_database() as cx:
+                    with self.assertRaisesRegex(ValueError, msg):
+                        cx.isolation_level = level
+                    # Check that the default level is not changed
+                    self.assertEqual(cx.isolation_level, "")
+
+    def test_connection_init_good_isolation_levels(self):
+        for level in ("", "DEFERRED", "IMMEDIATE", "EXCLUSIVE", None):
+            with self.subTest(level=level):
+                with memory_database(isolation_level=level) as cx:
+                    self.assertEqual(cx.isolation_level, level)
+                with memory_database() as cx:
+                    self.assertEqual(cx.isolation_level, "")
+                    cx.isolation_level = level
+                    self.assertEqual(cx.isolation_level, level)
+
+    def test_connection_reinit(self):
+        db = ":memory:"
+        cx = sqlite.connect(db)
+        cx.text_factory = bytes
+        cx.row_factory = sqlite.Row
+        cu = cx.cursor()
+        cu.execute("create table foo (bar)")
+        cu.executemany("insert into foo (bar) values (?)",
+                       ((str(v),) for v in range(4)))
+        cu.execute("select bar from foo")
+
+        rows = [r for r in cu.fetchmany(2)]
+        self.assertTrue(all(isinstance(r, sqlite.Row) for r in rows))
+        self.assertEqual([r[0] for r in rows], [b"0", b"1"])
+
+        cx.__init__(db)
+        cx.execute("create table foo (bar)")
+        cx.executemany("insert into foo (bar) values (?)",
+                       ((v,) for v in ("a", "b", "c", "d")))
+
+        # This uses the old database, old row factory, but new text factory
+        rows = [r for r in cu.fetchall()]
+        self.assertTrue(all(isinstance(r, sqlite.Row) for r in rows))
+        self.assertEqual([r[0] for r in rows], ["2", "3"])
+
+    def test_connection_bad_reinit(self):
+        cx = sqlite.connect(":memory:")
+        with cx:
+            cx.execute("create table t(t)")
+        with temp_dir() as db:
+            self.assertRaisesRegex(sqlite.OperationalError,
+                                   "unable to open database file",
+                                   cx.__init__, db)
+            self.assertRaisesRegex(sqlite.ProgrammingError,
+                                   "Base Connection.__init__ not called",
+                                   cx.executemany, "insert into t values(?)",
+                                   ((v,) for v in range(3)))
 
 
 class UninitialisedConnectionTests(unittest.TestCase):
@@ -564,8 +652,9 @@ class CursorTests(unittest.TestCase):
             self.cu.execute("select asdf")
 
     def test_execute_too_much_sql(self):
-        with self.assertRaises(sqlite.Warning):
-            self.cu.execute("select 5+4; select 4+5")
+        self.assertRaisesRegex(sqlite.ProgrammingError,
+                               "You can only execute one statement at a time",
+                               self.cu.execute, "select 5+4; select 4+5")
 
     def test_execute_too_much_sql2(self):
         self.cu.execute("select 5+4; -- foo bar")
@@ -649,6 +738,15 @@ class CursorTests(unittest.TestCase):
         self.cu.execute("insert into test(name) values ('foo')")
         with self.assertRaises(ZeroDivisionError):
             self.cu.execute("select name from test where name=?", L())
+
+    def test_execute_too_many_params(self):
+        category = sqlite.SQLITE_LIMIT_VARIABLE_NUMBER
+        msg = "too many SQL variables"
+        with cx_limit(self.cx, category=category, limit=1):
+            self.cu.execute("select * from test where id=?", (1,))
+            with self.assertRaisesRegex(sqlite.OperationalError, msg):
+                self.cu.execute("select * from test where id!=? and id!=?",
+                                (1, 2))
 
     def test_execute_dict_mapping(self):
         self.cu.execute("insert into test(name) values ('foo')")
@@ -1036,14 +1134,12 @@ class ExtensionTests(unittest.TestCase):
                 insert into a(s) values ('\ud8ff');
                 """)
 
-    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
-    @bigmemtest(size=2**31, memuse=3, dry_run=False)
-    def test_cursor_executescript_too_large_script(self, maxsize):
-        con = sqlite.connect(":memory:")
-        cur = con.cursor()
-        for size in 2**31-1, 2**31:
-            with self.assertRaises(sqlite.DataError):
-                cur.executescript("create table a(s);".ljust(size))
+    def test_cursor_executescript_too_large_script(self):
+        msg = "query string is too large"
+        with memory_database() as cx, cx_limit(cx) as lim:
+            cx.executescript("select 'almost too large'".ljust(lim))
+            with self.assertRaisesRegex(sqlite.DataError, msg):
+                cx.executescript("select 'too large'".ljust(lim+1))
 
     def test_cursor_executescript_tx_control(self):
         con = sqlite.connect(":memory:")

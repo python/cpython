@@ -5,9 +5,9 @@ preserve
 static int
 pysqlite_connection_init_impl(pysqlite_Connection *self,
                               const char *database, double timeout,
-                              int detect_types, PyObject *isolation_level,
+                              int detect_types, const char *isolation_level,
                               int check_same_thread, PyObject *factory,
-                              int cached_statements, int uri);
+                              int cache_size, int uri);
 
 static int
 pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -22,10 +22,10 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     const char *database = NULL;
     double timeout = 5.0;
     int detect_types = 0;
-    PyObject *isolation_level = NULL;
+    const char *isolation_level = "";
     int check_same_thread = 1;
     PyObject *factory = (PyObject*)clinic_state()->ConnectionType;
-    int cached_statements = 128;
+    int cache_size = 128;
     int uri = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 8, 0, argsbuf);
@@ -63,7 +63,9 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[3]) {
-        isolation_level = fastargs[3];
+        if (!isolation_level_converter(fastargs[3], &isolation_level)) {
+            goto exit;
+        }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -84,8 +86,8 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[6]) {
-        cached_statements = _PyLong_AsInt(fastargs[6]);
-        if (cached_statements == -1 && PyErr_Occurred()) {
+        cache_size = _PyLong_AsInt(fastargs[6]);
+        if (cache_size == -1 && PyErr_Occurred()) {
             goto exit;
         }
         if (!--noptargs) {
@@ -97,7 +99,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional_pos:
-    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri);
+    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database, timeout, detect_types, isolation_level, check_same_thread, factory, cache_size, uri);
 
 exit:
     /* Cleanup for database */
@@ -201,7 +203,7 @@ PyDoc_STRVAR(pysqlite_connection_create_function__doc__,
 "create_function($self, /, name, narg, func, *, deterministic=False)\n"
 "--\n"
 "\n"
-"Creates a new function. Non-standard.");
+"Creates a new function.");
 
 #define PYSQLITE_CONNECTION_CREATE_FUNCTION_METHODDEF    \
     {"create_function", (PyCFunction)(void(*)(void))pysqlite_connection_create_function, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_create_function__doc__},
@@ -237,7 +239,7 @@ PyDoc_STRVAR(pysqlite_connection_create_aggregate__doc__,
 "create_aggregate($self, /, name, n_arg, aggregate_class)\n"
 "--\n"
 "\n"
-"Creates a new aggregate. Non-standard.");
+"Creates a new aggregate.");
 
 #define PYSQLITE_CONNECTION_CREATE_AGGREGATE_METHODDEF    \
     {"create_aggregate", (PyCFunction)(void(*)(void))pysqlite_connection_create_aggregate, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_create_aggregate__doc__},
@@ -272,7 +274,7 @@ PyDoc_STRVAR(pysqlite_connection_set_authorizer__doc__,
 "set_authorizer($self, /, authorizer_callback)\n"
 "--\n"
 "\n"
-"Sets authorizer callback. Non-standard.");
+"Sets authorizer callback.");
 
 #define PYSQLITE_CONNECTION_SET_AUTHORIZER_METHODDEF    \
     {"set_authorizer", (PyCFunction)(void(*)(void))pysqlite_connection_set_authorizer, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_set_authorizer__doc__},
@@ -304,7 +306,7 @@ PyDoc_STRVAR(pysqlite_connection_set_progress_handler__doc__,
 "set_progress_handler($self, /, progress_handler, n)\n"
 "--\n"
 "\n"
-"Sets progress handler callback. Non-standard.");
+"Sets progress handler callback.");
 
 #define PYSQLITE_CONNECTION_SET_PROGRESS_HANDLER_METHODDEF    \
     {"set_progress_handler", (PyCFunction)(void(*)(void))pysqlite_connection_set_progress_handler, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_set_progress_handler__doc__},
@@ -337,9 +339,7 @@ PyDoc_STRVAR(pysqlite_connection_set_trace_callback__doc__,
 "set_trace_callback($self, /, trace_callback)\n"
 "--\n"
 "\n"
-"Sets a trace callback called for each SQL statement (passed as unicode).\n"
-"\n"
-"Non-standard.");
+"Sets a trace callback called for each SQL statement (passed as unicode).");
 
 #define PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF    \
     {"set_trace_callback", (PyCFunction)(void(*)(void))pysqlite_connection_set_trace_callback, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_set_trace_callback__doc__},
@@ -367,13 +367,13 @@ exit:
     return return_value;
 }
 
-#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
+#if defined(PY_SQLITE_ENABLE_LOAD_EXTENSION)
 
 PyDoc_STRVAR(pysqlite_connection_enable_load_extension__doc__,
 "enable_load_extension($self, enable, /)\n"
 "--\n"
 "\n"
-"Enable dynamic loading of SQLite extension modules. Non-standard.");
+"Enable dynamic loading of SQLite extension modules.");
 
 #define PYSQLITE_CONNECTION_ENABLE_LOAD_EXTENSION_METHODDEF    \
     {"enable_load_extension", (PyCFunction)pysqlite_connection_enable_load_extension, METH_O, pysqlite_connection_enable_load_extension__doc__},
@@ -398,15 +398,15 @@ exit:
     return return_value;
 }
 
-#endif /* !defined(SQLITE_OMIT_LOAD_EXTENSION) */
+#endif /* defined(PY_SQLITE_ENABLE_LOAD_EXTENSION) */
 
-#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
+#if defined(PY_SQLITE_ENABLE_LOAD_EXTENSION)
 
 PyDoc_STRVAR(pysqlite_connection_load_extension__doc__,
 "load_extension($self, name, /)\n"
 "--\n"
 "\n"
-"Load SQLite extension module. Non-standard.");
+"Load SQLite extension module.");
 
 #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF    \
     {"load_extension", (PyCFunction)pysqlite_connection_load_extension, METH_O, pysqlite_connection_load_extension__doc__},
@@ -440,13 +440,13 @@ exit:
     return return_value;
 }
 
-#endif /* !defined(SQLITE_OMIT_LOAD_EXTENSION) */
+#endif /* defined(PY_SQLITE_ENABLE_LOAD_EXTENSION) */
 
 PyDoc_STRVAR(pysqlite_connection_execute__doc__,
 "execute($self, sql, parameters=<unrepresentable>, /)\n"
 "--\n"
 "\n"
-"Executes a SQL statement. Non-standard.");
+"Executes an SQL statement.");
 
 #define PYSQLITE_CONNECTION_EXECUTE_METHODDEF    \
     {"execute", (PyCFunction)(void(*)(void))pysqlite_connection_execute, METH_FASTCALL, pysqlite_connection_execute__doc__},
@@ -488,7 +488,7 @@ PyDoc_STRVAR(pysqlite_connection_executemany__doc__,
 "executemany($self, sql, parameters, /)\n"
 "--\n"
 "\n"
-"Repeatedly executes a SQL statement. Non-standard.");
+"Repeatedly executes an SQL statement.");
 
 #define PYSQLITE_CONNECTION_EXECUTEMANY_METHODDEF    \
     {"executemany", (PyCFunction)(void(*)(void))pysqlite_connection_executemany, METH_FASTCALL, pysqlite_connection_executemany__doc__},
@@ -526,7 +526,7 @@ PyDoc_STRVAR(pysqlite_connection_executescript__doc__,
 "executescript($self, sql_script, /)\n"
 "--\n"
 "\n"
-"Executes multiple SQL statements at once. Non-standard.");
+"Executes multiple SQL statements at once.");
 
 #define PYSQLITE_CONNECTION_EXECUTESCRIPT_METHODDEF    \
     {"executescript", (PyCFunction)pysqlite_connection_executescript, METH_O, pysqlite_connection_executescript__doc__},
@@ -535,7 +535,7 @@ PyDoc_STRVAR(pysqlite_connection_interrupt__doc__,
 "interrupt($self, /)\n"
 "--\n"
 "\n"
-"Abort any pending database operation. Non-standard.");
+"Abort any pending database operation.");
 
 #define PYSQLITE_CONNECTION_INTERRUPT_METHODDEF    \
     {"interrupt", (PyCFunction)pysqlite_connection_interrupt, METH_NOARGS, pysqlite_connection_interrupt__doc__},
@@ -553,9 +553,7 @@ PyDoc_STRVAR(pysqlite_connection_iterdump__doc__,
 "iterdump($self, /)\n"
 "--\n"
 "\n"
-"Returns iterator to the dump of the database in an SQL text format.\n"
-"\n"
-"Non-standard.");
+"Returns iterator to the dump of the database in an SQL text format.");
 
 #define PYSQLITE_CONNECTION_ITERDUMP_METHODDEF    \
     {"iterdump", (PyCFunction)pysqlite_connection_iterdump, METH_NOARGS, pysqlite_connection_iterdump__doc__},
@@ -574,7 +572,7 @@ PyDoc_STRVAR(pysqlite_connection_backup__doc__,
 "       sleep=0.25)\n"
 "--\n"
 "\n"
-"Makes a backup of the database. Non-standard.");
+"Makes a backup of the database.");
 
 #define PYSQLITE_CONNECTION_BACKUP_METHODDEF    \
     {"backup", (PyCFunction)(void(*)(void))pysqlite_connection_backup, METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_backup__doc__},
@@ -665,7 +663,7 @@ PyDoc_STRVAR(pysqlite_connection_create_collation__doc__,
 "create_collation($self, name, callback, /)\n"
 "--\n"
 "\n"
-"Creates a collation function. Non-standard.");
+"Creates a collation function.");
 
 #define PYSQLITE_CONNECTION_CREATE_COLLATION_METHODDEF    \
     {"create_collation", (PyCFunction)(void(*)(void))pysqlite_connection_create_collation, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_create_collation__doc__},
@@ -834,4 +832,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=0c3901153a3837a5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=176c9095219b17c4 input=a9049054013a1b77]*/

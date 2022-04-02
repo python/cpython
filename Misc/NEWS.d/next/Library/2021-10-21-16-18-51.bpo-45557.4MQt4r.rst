@@ -1,2 +1,0 @@
-pprint.pprint() now handles underscore_numbers correctly. Previously it was
-always setting it to False.
