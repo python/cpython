@@ -1253,7 +1253,7 @@ These are not used in annotations. They are building blocks for creating generic
         remove_first_element(xs=(1,))
 
         # T is bound to int, Ts is bound to (str,)
-        # Return value is ('foo',), which has type tuple[str]
+        # Return value is ('spam',), which has type tuple[str]
         remove_first_element(xs=(1, 'spam'))
 
         # T is bound to int, Ts is bound to (str, float)
