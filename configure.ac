@@ -1122,7 +1122,7 @@ AC_ARG_ENABLE([wasm-dynamic-linking],
     [AC_MSG_ERROR([--enable-wasm-dynamic-linking only applies to Emscripten and WASI])]
   )
 ], [
-  enable_wasm_dynamic_linking=no
+  enable_wasm_dynamic_linking=missing
 ])
 AC_MSG_RESULT([$enable_wasm_dynamic_linking])
 
@@ -2995,6 +2995,10 @@ then
 	SCO_SV*)
 		LDSHARED='$(CC) -Wl,-G,-Bexport'
 		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
+	WASI*)
+    AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+      dnl not iplemented yet
+    ]);;
 	CYGWIN*)
 		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
 		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
@@ -3003,14 +3007,10 @@ then
 fi
 
 dnl Emscripten's emconfigure sets LDSHARED. Set BLDSHARED outside the
-dnl test -z $LDSHARED block to set BLDSHARED flag for side module support.
-AS_CASE([$ac_sys_system],
-  [Emscripten], [
-    AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
-      BLDSHARED='$(CC) -shared -s SIDE_MODULE=1 -s WASM=1'
-    ])
-  ]
-)
+dnl test -z $LDSHARED block to configure BLDSHARED for side module support.
+if test "$enable_wasm_dynamic_linking" = "yes" -a "$ac_sys_system" = "Emscripten; then
+  BLDSHARED='$(CC) -shared -s SIDE_MODULE=1 -s WASM=1'
+fi
 
 AC_MSG_RESULT($LDSHARED)
 LDCXXSHARED=${LDCXXSHARED-$LDSHARED}
@@ -3037,7 +3037,7 @@ then
 		 fi;;
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
-	Emscripten*)
+	Emscripten*|WASI*)
 		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
 			CCSHARED="-fPIC"
 		])

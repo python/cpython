@@ -6309,7 +6309,7 @@ esac
 
 else
 
-  enable_wasm_dynamic_linking=no
+  enable_wasm_dynamic_linking=missing
 
 fi
 
@@ -10552,6 +10552,11 @@ then
 	SCO_SV*)
 		LDSHARED='$(CC) -Wl,-G,-Bexport'
 		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
+	WASI*)
+    if test "x$enable_wasm_dynamic_linking" = xyes; then :
+
+
+fi;;
 	CYGWIN*)
 		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
 		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
@@ -10559,19 +10564,9 @@ then
 	esac
 fi
 
-case $ac_sys_system in #(
-  Emscripten) :
-
-    if test "x$enable_wasm_dynamic_linking" = xyes; then :
-
-      BLDSHARED='$(CC) -shared -s SIDE_MODULE=1 -s WASM=1'
-
+if test "$enable_wasm_dynamic_linking" = "yes" -a "$ac_sys_system" = "Emscripten; then
+  BLDSHARED='$(CC) -shared -s SIDE_MODULE=1 -s WASM=1'
 fi
-
- ;; #(
-  *) :
-     ;;
-esac
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDSHARED" >&5
 $as_echo "$LDSHARED" >&6; }
@@ -10602,7 +10597,7 @@ then
 		 fi;;
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
-	Emscripten*)
+	Emscripten*|WASI*)
 		if test "x$enable_wasm_dynamic_linking" = xyes; then :
 
 			CCSHARED="-fPIC"
