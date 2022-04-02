@@ -1277,6 +1277,7 @@ These are not used in annotations. They are building blocks for creating generic
     Type variable tuples can be used in the same contexts as normal type
     variables. For example, in class definitions, arguments, and return types::
 
+        Shape = TypeVarTuple('Shape')
         class Array(Generic[*Shape]):
             def __getitem__(self, key: tuple[*Shape]) -> float: ...
             def __abs__(self) -> Array[*Shape]: ...
@@ -1304,13 +1305,19 @@ These are not used in annotations. They are building blocks for creating generic
     Finally, an unpacked type variable tuple can be used as the type annotation
     of ``*args``::
 
-        def args_to_tuple(*args: *Ts) -> tuple[*Ts]:
-            return tuple(args)
+        def call_soon(
+                callback: Callable[[*Ts], None],
+                *args: *Ts
+        ) -> None:
+            ...
+            callback(*args)
 
     In contrast to non-unpacked annotations of ``*args`` - e.g. ``*args: int``,
     which would specify that *all* arguments are ``int`` - ``*args: *Ts``
     enables reference to the types of the *individual* arguments in ``*args``.
-    In this case, it binds those types to ``Ts``.
+    Here, this allows us to ensure the types of the ``*args`` passed
+    to ``call_soon`` match the types of the (positional) arguments of
+    ``callback``.
 
     For more details on type variable tuples, see :pep:`646`.
 
