@@ -655,63 +655,6 @@ def cache(user_function, /):
 
 
 ################################################################################
-### Function variant registry
-################################################################################
-
-# {key: [variant]}
-_variant_registry = {}
-
-
-def register_variant(func, variant):
-    """Register a function variant."""
-    key = _get_key_for_callable(func)
-    _variant_registry.setdefault(key, []).append(variant)
-
-
-def get_variants(func):
-    """Get all function variants for the given function."""
-    key = _get_key_for_callable(func)
-    variants = list(_variant_registry.get(key, []))
-
-    # We directly retrieve variants from the singledispatch
-    # and singledispatchmethod registries.
-    if isinstance(func, singledispatchmethod):
-        variants += func.dispatcher.registry.values()
-    else:
-        try:
-            registry = func.registry
-        except AttributeError:
-            pass
-        else:
-            if isinstance(registry, types.MappingProxyType):
-                variants += registry.values()
-    return variants
-
-
-def clear_variants(func=None):
-    """Clear all variants for the given function (or all functions)."""
-    if func is None:
-        _variant_registry.clear()
-    else:
-        key = _get_key_for_callable(func)
-        _variant_registry.pop(key, None)
-
-
-def _get_key_for_callable(func):
-    """Return a key for the given callable.
-
-    This key can be used to register the callable in the variant registry
-    with register_variant() or to get variants for this callable with get_variants().
-
-    If no key can be created (because the object is not of a supported type), raise
-    AttributeError.
-    """
-    # classmethod and staticmethod
-    func = getattr(func, "__func__", func)
-    return f"{func.__module__}.{func.__qualname__}"
-
-
-################################################################################
 ### singledispatch() - single-dispatch generic function decorator
 ################################################################################
 

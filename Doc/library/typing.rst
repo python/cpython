@@ -2255,7 +2255,30 @@ Functions and decorators
    See :pep:`484` for details and comparison with other typing semantics.
 
    .. versionchanged:: 3.11
-      Overloaded functions can now be retrieved using :func:`functools.get_variants`.
+      Overloaded functions can now be retrieved at runtime :func:`get_overloads`.
+
+
+.. function:: get_overloads(func)
+
+   Return a sequence of :func:`overload`-decorated definitions for *func*. *func* is
+   the function object for the implementation of the overloaded function.
+   For example, given the definition of ``process`` in the documentation for
+   :func:`overload`, ``get_overloads(process)`` will return a sequence of three
+   function objects for the three defined overloads.
+
+   This function can be used for introspecting an overloaded function at runtime.
+
+   .. versionadded:: 3.11
+
+
+.. function:: clear_overloads(func=None)
+
+   Clear all registered overloads for the given *func*. If *func* is None, clear
+   all overloads stored in the internal registry. This can be used to reclaim the
+   memory used by the registry.
+
+   .. versionadded:: 3.11
+
 
 .. decorator:: final
 

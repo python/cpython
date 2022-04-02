@@ -1,7 +1,6 @@
 import contextlib
 import collections
 from functools import lru_cache
-import functools
 import inspect
 import pickle
 import re
@@ -10,7 +9,7 @@ import warnings
 from unittest import TestCase, main, skipUnless, skip
 from copy import copy, deepcopy
 
-from typing import Any, NoReturn, Never, assert_never, overload
+from typing import Any, NoReturn, Never, assert_never, overload, get_overloads, clear_overloads
 from typing import TypeVar, TypeVarTuple, Unpack, AnyStr
 from typing import T, KT, VT  # Not in __all__.
 from typing import Union, Optional, Literal
@@ -3820,9 +3819,7 @@ class OverloadTests(BaseTestCase):
 
         blah()
 
-    def test_variant_registry(self):
-        # Test the interaction with the variants registry in
-        # the functools module.
+    def set_up_overloads(self):
         def blah():
             pass
 
@@ -3838,20 +3835,48 @@ class OverloadTests(BaseTestCase):
         def blah():
             pass
 
-        self.assertEqual(functools.get_variants(blah), [overload1, overload2])
+        return blah, [overload1, overload2]
+
+    def test_overload_registry(self):
+        impl, overloads = self.set_up_overloads()
+
+        self.assertEqual(list(get_overloads(impl)), overloads)
+        clear_overloads(blah)
+        self.assertEqual(get_overloads(blah), [])
+
+        impl, overloads = self.set_up_overloads()
+
+        self.assertEqual(list(get_overloads(impl)), overloads)
+        clear_overloads()
+        self.assertEqual(get_overloads(blah), [])
 
     def test_variant_registry_repeated(self):
         for _ in range(2):
-            def blah():
-                pass
+            impl, overloads = self.set_up_overloads()
 
-            overload_func = blah
-            overload(blah)
+            self.assertEqual(list(get_overloads(impl)), overloads)
 
-            def blah():
-                pass
-
-            self.assertEqual(functools.get_variants(blah), [overload_func])
+    def test_get_key_for_callable(self):
+        self.assertEqual(
+            typing._get_key_for_callable(len),
+            "builtins.len",
+        )
+        self.assertEqual(
+            typing._get_key_for_callable(py_cached_func),
+            f"{__name__}.py_cached_func",
+        )
+        self.assertEqual(
+            typing._get_key_for_callable(MethodHolder.clsmethod),
+            f"{__name__}.MethodHolder.clsmethod",
+        )
+        self.assertEqual(
+            typing._get_key_for_callable(MethodHolder.stmethod),
+            f"{__name__}.MethodHolder.stmethod",
+        )
+        self.assertEqual(
+            typing._get_key_for_callable(MethodHolder.method),
+            f"{__name__}.MethodHolder.method",
+        )
 
 
 # Definitions needed for features introduced in Python 3.6

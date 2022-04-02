@@ -535,9 +535,6 @@ The :mod:`functools` module defines the following functions:
    .. versionchanged:: 3.7
       The :func:`register` attribute now supports using type annotations.
 
-   .. versionchanged:: 3.11
-      Implementation functions can now be retrieved using :func:`get_variants`.
-
 .. class:: singledispatchmethod(func)
 
    Transform a method into a :term:`single-dispatch <single
@@ -590,7 +587,7 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.8
 
    .. versionchanged:: 3.11
-      Implementation functions can now be retrieved using :func:`get_variants`.
+      Implementation functions are now registered using :func:`register_variant`.
 
 
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
@@ -668,31 +665,6 @@ The :mod:`functools` module defines the following functions:
    Without the use of this decorator factory, the name of the example function
    would have been ``'wrapper'``, and the docstring of the original :func:`example`
    would have been lost.
-
-.. function:: get_variants(func)
-
-   Return all registered function variants for this function. Function variants are
-   objects that represent some subset of the functionality of a function, for
-   example overloads decorated with :func:`typing.overload` or :func:`singledispatch`
-   implementation functions.
-
-   Variants are registered by calling :func:`register_variant`.
-
-   .. versionadded:: 3.11
-
-.. function:: register_variant(func, variant)
-
-   Register *variant* for function *func* that can later be retrieved using
-   :func:`get_variants`.
-
-   .. versionadded:: 3.11
-
-.. function:: clear_variants(func=None)
-
-   Clear all registered variants for the given *func*. If *func* is None, clear
-   all variants.
-
-   .. versionadded:: 3.11
 
 
 .. _partial-objects:

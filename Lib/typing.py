@@ -2413,11 +2413,11 @@ def overload(func):
       def utf8(value):
           # implementation goes here
 
-    Each overload is registered with functools.register_variant and can be
-    retrieved using functools.get_variants.
+    Overload definition can be retrieved at runtime using the
+    get_overloads() function.
     """
     try:
-        existing = functools.get_variants(func)
+        existing = get_overloads(func)
     except AttributeError:
         # Not a normal function; ignore.
         pass
@@ -2431,19 +2431,51 @@ def overload(func):
             if firstlineno is not None:
                 existing_lineno = _get_firstlineno(existing[-1])
                 if existing_lineno is not None and firstlineno <= existing_lineno:
-                    functools.clear_variants(func)
+                    clear_overloads(func)
 
-        functools.register_variant(func, func)
+        key = _get_key_for_callable(func)
+        _overload_registry.setdefault(key, []).append(func)
     return _overload_dummy
 
 
 def _get_firstlineno(func):
     # staticmethod, classmethod
-    if hasattr(func, "__func__"):
-        func = func.__func__
+    func = getattr(func, "__func__", func)
     if not hasattr(func, '__code__'):
         return None
     return func.__code__.co_firstlineno
+
+
+# {key: [overload]}
+_overload_registry = {}
+
+
+def get_overloads(func):
+    """Return all defined overloads for *func* as a sequence."""
+    key = _get_key_for_callable(func)
+    return _overload_registry.get(key, [])
+
+
+def clear_overloads(func=None):
+    """Clear all overloads for the given function (or all functions)."""
+    if func is None:
+        _overload_registry.clear()
+    else:
+        key = _get_key_for_callable(func)
+        _overload_registry.pop(key, None)
+
+
+def _get_key_for_callable(func):
+    """Return a key for the given callable.
+
+    This is used as a key in the overload registry.
+
+    If no key can be created (because the object is not of a supported type), raise
+    AttributeError.
+    """
+    # classmethod and staticmethod
+    func = getattr(func, "__func__", func)
+    return f"{func.__module__}.{func.__qualname__}"
 
 
 def final(f):
