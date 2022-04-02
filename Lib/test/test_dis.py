@@ -7,7 +7,7 @@ import re
 import sys
 import types
 import unittest
-from test.support import captured_stdout, requires_debug_ranges
+from test.support import captured_stdout, requires_debug_ranges, import_helper, cpython_only
 from test.support.bytecode_helper import BytecodeTestCase
 
 import opcode
@@ -583,6 +583,31 @@ Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
        _h.__code__.co_firstlineno + 3,
 )
 
+def load_test(x, y):
+    a, b = x, y
+    return a, b
+
+dis_load_test_quickened_code = """\
+%3d           0 RESUME_QUICK             0
+
+%3d           2 LOAD_FAST__LOAD_FAST     0 (x)
+              4 LOAD_FAST                1 (y)
+              6 STORE_FAST__STORE_FAST     3 (b)
+              8 STORE_FAST__LOAD_FAST     2 (a)
+
+%3d          10 LOAD_FAST__LOAD_FAST     2 (a)
+             12 LOAD_FAST                3 (b)
+             14 BUILD_TUPLE              2
+             16 RETURN_VALUE
+""" % (load_test.__code__.co_firstlineno,
+       load_test.__code__.co_firstlineno + 1,
+       load_test.__code__.co_firstlineno + 2)
+
+def binary_test(x, y):
+    a = x + y
+    b = x - y
+    return a + b
+
 class DisTestBase(unittest.TestCase):
     "Common utilities for DisTests and TestDisTraceback"
 
@@ -861,6 +886,79 @@ class DisTests(DisTestBase):
         check(dis_nested_2, depth=3)
         check(dis_nested_2, depth=None)
         check(dis_nested_2)
+
+    _testinternalcapi = import_helper.import_module('_testinternalcapi')
+
+    @cpython_only
+    def test_super_instructions(self):
+        self._testinternalcapi.code_quicken(load_test.__code__)
+        got = self.get_disassembly(load_test, adaptive=True)
+        self.do_disassembly_compare(got, dis_load_test_quickened_code, True)
+
+    @cpython_only
+    def test_binary_specialize(self):
+        binary_op_quicken = """\
+              0 RESUME_QUICK             0
+
+  1           2 LOAD_NAME                0 (a)
+              4 LOAD_NAME                1 (b)
+              6 %s
+             10 RETURN_VALUE
+"""
+        co_int = compile('a + b', "<int>", "eval")
+        self._testinternalcapi.code_quicken(co_int)
+        got = self.get_disassembly(co_int, adaptive=True)
+        self.do_disassembly_compare(got, binary_op_quicken % "BINARY_OP_ADAPTIVE       0 (+)", True)
+        exec(co_int, {}, {'a': 1, 'b': 2})
+        got = self.get_disassembly(co_int, adaptive=True)
+        self.do_disassembly_compare(got, binary_op_quicken % "BINARY_OP_ADD_INT        0 (+)", True)
+
+        co_unicode = compile('a + b', "<unicode>", "eval")
+        self._testinternalcapi.code_quicken(co_unicode)
+        exec(co_unicode, {}, {'a': 'a', 'b': 'b'})
+        got = self.get_disassembly(co_unicode, adaptive=True)
+        self.do_disassembly_compare(got, binary_op_quicken % "BINARY_OP_ADD_UNICODE     0 (+)", True)
+
+    @cpython_only
+    def test_load_attr_specialize(self):
+        load_attr_quicken = """\
+              0 RESUME_QUICK             0
+
+  1           2 LOAD_CONST               0 ('a')
+              4 %s
+             14 RETURN_VALUE
+"""
+        co = compile("'a'.__class__", "", "eval")
+        self._testinternalcapi.code_quicken(co)
+        got = self.get_disassembly(co, adaptive=True)
+        self.do_disassembly_compare(got, load_attr_quicken % "LOAD_ATTR_ADAPTIVE       0 (__class__)", True)
+        exec(co, {}, {})
+        got = self.get_disassembly(co, adaptive=True)
+        self.do_disassembly_compare(got, load_attr_quicken % "LOAD_ATTR_SLOT           0 (__class__)", True)
+
+    @cpython_only
+    def test_call_specialize(self):
+        call_quicken = """\
+              0 RESUME_QUICK             0
+
+  1           2 PUSH_NULL
+              4 LOAD_NAME                0 (str)
+              6 LOAD_CONST               0 (1)
+              8 %s
+             12 %s
+             22 RETURN_VALUE
+"""
+        co = compile("str(1)", "", "eval")
+        self._testinternalcapi.code_quicken(co)
+        got = self.get_disassembly(co, adaptive=True)
+        self.do_disassembly_compare(got, call_quicken % (
+            "PRECALL_ADAPTIVE         1",
+            "CALL_ADAPTIVE            1"), True)
+        exec(co, {}, {})
+        got = self.get_disassembly(co, adaptive=True)
+        self.do_disassembly_compare(got, call_quicken % (
+            "PRECALL_NO_KW_STR_1      1",
+            "CALL_ADAPTIVE            1"), True)
 
 
 class DisWithFileTests(DisTests):
