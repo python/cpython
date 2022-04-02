@@ -4148,7 +4148,8 @@ PLATFORM_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
-    AS_VAR_APPEND([PLATFORM_OBJS], [Python/emscripten_signal.o])
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o'])
+    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h'])
   ],
 )
 AC_SUBST([PLATFORM_HEADERS])
