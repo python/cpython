@@ -5,7 +5,7 @@
 #
 # Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
 #
-# See the re.py file for information on usage and redistribution.
+# See the __init__.py file for information on usage and redistribution.
 #
 
 """Internal support module for sre"""
