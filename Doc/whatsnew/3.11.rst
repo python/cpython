@@ -681,10 +681,9 @@ FAQ
 |
 | Q: Will CPython 3.11 use more memory?
 |
-| A: Maybe not. However, how much exactly depends on how much code is "hot". We
-  don't expect memory use to exceed 20% more versus 3.10. This is offset by
-  memory optimizations for frame objects and object dictionaries as mentioned
-  above.
+| A: Maybe not. We don't expect memory use to exceed 20% more versus 3.10.
+  This is offset by memory optimizations for frame objects and object
+  dictionaries as mentioned above.
 |
 |
 | Q: I don't see any speedups in my workload. Why?
