@@ -1032,16 +1032,14 @@ entrance:
         case SRE_OP_REPEAT:
             /* create repeat context.  all the hard work is done
                by the UNTIL operator (MAX_UNTIL, MIN_UNTIL) */
-            /* <REPEAT> <skip> <1=min> <2=max> item <UNTIL> tail */
-            TRACE(("|%p|%p|REPEAT %d %d\n", ctx->pattern, ctx->ptr,
-                   ctx->pattern[1], ctx->pattern[2]));
+            /* <REPEAT> <skip> <1=min> <2=max>
+               <3=repeat_index> item <UNTIL> tail */
+            TRACE(("|%p|%p|REPEAT %d %d %d\n", ctx->pattern, ctx->ptr,
+                   ctx->pattern[1], ctx->pattern[2], ctx->pattern[3]));
 
-            /* install new repeat context */
-            ctx->u.rep = (SRE_REPEAT*) PyObject_Malloc(sizeof(*ctx->u.rep));
-            if (!ctx->u.rep) {
-                PyErr_NoMemory();
-                RETURN_FAILURE;
-            }
+            /* install repeat context */
+            ctx->u.rep = &state->repeats_array[ctx->pattern[3]];
+
             ctx->u.rep->count = -1;
             ctx->u.rep->pattern = ctx->pattern;
             ctx->u.rep->prev = state->repeat;
@@ -1051,7 +1049,6 @@ entrance:
             state->ptr = ctx->ptr;
             DO_JUMP(JUMP_REPEAT, jump_repeat, ctx->pattern+ctx->pattern[0]);
             state->repeat = ctx->u.rep->prev;
-            PyObject_Free(ctx->u.rep);
 
             if (ret) {
                 RETURN_ON_ERROR(ret);
@@ -1061,7 +1058,8 @@ entrance:
 
         case SRE_OP_MAX_UNTIL:
             /* maximizing repeat */
-            /* <REPEAT> <skip> <1=min> <2=max> item <MAX_UNTIL> tail */
+            /* <REPEAT> <skip> <1=min> <2=max>
+               <3=repeat_index> item <MAX_UNTIL> tail */
 
             /* FIXME: we probably need to deal with zero-width
                matches in here... */
@@ -1081,7 +1079,7 @@ entrance:
                 /* not enough matches */
                 ctx->u.rep->count = ctx->count;
                 DO_JUMP(JUMP_MAX_UNTIL_1, jump_max_until_1,
-                        ctx->u.rep->pattern+3);
+                        ctx->u.rep->pattern+4);
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
@@ -1103,7 +1101,7 @@ entrance:
                 DATA_PUSH(&ctx->u.rep->last_ptr);
                 ctx->u.rep->last_ptr = state->ptr;
                 DO_JUMP(JUMP_MAX_UNTIL_2, jump_max_until_2,
-                        ctx->u.rep->pattern+3);
+                        ctx->u.rep->pattern+4);
                 DATA_POP(&ctx->u.rep->last_ptr);
                 if (ret) {
                     MARK_POP_DISCARD(ctx->lastmark);
@@ -1128,7 +1126,8 @@ entrance:
 
         case SRE_OP_MIN_UNTIL:
             /* minimizing repeat */
-            /* <REPEAT> <skip> <1=min> <2=max> item <MIN_UNTIL> tail */
+            /* <REPEAT> <skip> <1=min> <2=max>
+               <3=repeat_index> item <MIN_UNTIL> tail */
 
             ctx->u.rep = state->repeat;
             if (!ctx->u.rep)
@@ -1145,7 +1144,7 @@ entrance:
                 /* not enough matches */
                 ctx->u.rep->count = ctx->count;
                 DO_JUMP(JUMP_MIN_UNTIL_1, jump_min_until_1,
-                        ctx->u.rep->pattern+3);
+                        ctx->u.rep->pattern+4);
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
@@ -1188,7 +1187,7 @@ entrance:
             DATA_PUSH(&ctx->u.rep->last_ptr);
             ctx->u.rep->last_ptr = state->ptr;
             DO_JUMP(JUMP_MIN_UNTIL_3,jump_min_until_3,
-                    ctx->u.rep->pattern+3);
+                    ctx->u.rep->pattern+4);
             DATA_POP(&ctx->u.rep->last_ptr);
             if (ret) {
                 RETURN_ON_ERROR(ret);
