@@ -1805,7 +1805,7 @@ class POSIXProcessTestCase(BaseTestCase):
         def __del__(self):
             pass
 
-    @mock.patch("subprocess._posixsubprocess.fork_exec")
+    @mock.patch("subprocess._fork_exec")
     def test_exception_errpipe_normal(self, fork_exec):
         """Test error passing done through errpipe_write in the good case"""
         def proper_error(*args):
@@ -1822,7 +1822,7 @@ class POSIXProcessTestCase(BaseTestCase):
             with self.assertRaises(IsADirectoryError):
                 self.PopenNoDestructor(["non_existent_command"])
 
-    @mock.patch("subprocess._posixsubprocess.fork_exec")
+    @mock.patch("subprocess._fork_exec")
     def test_exception_errpipe_bad_data(self, fork_exec):
         """Test error passing done through errpipe_write where its not
         in the expected format"""
@@ -2112,7 +2112,7 @@ class POSIXProcessTestCase(BaseTestCase):
                                  preexec_fn=raise_it)
         except subprocess.SubprocessError as e:
             self.assertTrue(
-                    subprocess._posixsubprocess,
+                    subprocess._fork_exec,
                     "Expected a ValueError from the preexec_fn")
         except ValueError as e:
             self.assertIn("coconut", e.args[0])
@@ -2600,11 +2600,11 @@ class POSIXProcessTestCase(BaseTestCase):
                 preexec_fn=prepare)
         except ValueError as err:
             # Pure Python implementations keeps the message
-            self.assertIsNone(subprocess._posixsubprocess)
+            self.assertIsNone(subprocess._fork_exec)
             self.assertEqual(str(err), "surrogate:\uDCff")
         except subprocess.SubprocessError as err:
             # _posixsubprocess uses a default message
-            self.assertIsNotNone(subprocess._posixsubprocess)
+            self.assertIsNotNone(subprocess._fork_exec)
             self.assertEqual(str(err), "Exception occurred in preexec_fn.")
         else:
             self.fail("Expected ValueError or subprocess.SubprocessError")
