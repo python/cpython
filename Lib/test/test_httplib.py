@@ -19,6 +19,7 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import warnings_helper
 
+support.requires_working_socket(module=True)
 
 here = os.path.dirname(__file__)
 # Self-signed cert file for 'localhost'
@@ -1186,7 +1187,12 @@ class BasicTest(TestCase):
             'r\n' * 32768
         )
         resp = client.HTTPResponse(FakeSocket(body))
-        self.assertRaises(client.HTTPException, resp.begin)
+        with self.assertRaises(client.HTTPException) as cm:
+            resp.begin()
+        # We must assert more because other reasonable errors that we
+        # do not want can also be HTTPException derived.
+        self.assertIn('got more than ', str(cm.exception))
+        self.assertIn('headers', str(cm.exception))
 
     def test_overflowing_chunked_line(self):
         body = (

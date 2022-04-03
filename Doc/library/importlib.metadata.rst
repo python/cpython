@@ -8,12 +8,10 @@
    :synopsis: The implementation of the importlib metadata.
 
 .. versionadded:: 3.8
+.. versionchanged:: 3.10
+   ``importlib.metadata`` is no longer provisional.
 
-**Source code:** :source:`Lib/importlib/metadata.py`
-
-.. note::
-   This functionality is provisional and may deviate from the usual
-   version semantics of the standard library.
+**Source code:** :source:`Lib/importlib/metadata/__init__.py`
 
 ``importlib.metadata`` is a library that provides for access to installed
 package metadata.  Built in part on Python's import system, this library
@@ -257,7 +255,7 @@ function::
 Package distributions
 ---------------------
 
-A convience method to resolve the distribution or
+A convenience method to resolve the distribution or
 distributions (in the case of a namespace package) for top-level
 Python packages or modules::
 
@@ -266,6 +264,7 @@ Python packages or modules::
 
 .. versionadded:: 3.10
 
+.. _distributions:
 
 Distributions
 =============
@@ -337,6 +336,3 @@ a custom finder, return instances of this derived ``Distribution`` in the
 .. _`entry point API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points
 .. _`metadata API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#metadata-api
 .. _`importlib_resources`: https://importlib-resources.readthedocs.io/en/latest/index.html
-
-
-.. rubric:: Footnotes

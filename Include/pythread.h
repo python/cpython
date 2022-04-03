@@ -61,9 +61,11 @@ PyAPI_FUNC(int) _PyThread_at_fork_reinit(PyThread_type_lock *lock);
       convert microseconds to nanoseconds. */
 #  define PY_TIMEOUT_MAX (LLONG_MAX / 1000)
 #elif defined (NT_THREADS)
-   /* In the NT API, the timeout is a DWORD and is expressed in milliseconds */
-#  if 0xFFFFFFFFLL * 1000 < LLONG_MAX
-#    define PY_TIMEOUT_MAX (0xFFFFFFFFLL * 1000)
+   // WaitForSingleObject() accepts timeout in milliseconds in the range
+   // [0; 0xFFFFFFFE] (DWORD type). INFINITE value (0xFFFFFFFF) means no
+   // timeout. 0xFFFFFFFE milliseconds is around 49.7 days.
+#  if 0xFFFFFFFELL * 1000 < LLONG_MAX
+#    define PY_TIMEOUT_MAX (0xFFFFFFFELL * 1000)
 #  else
 #    define PY_TIMEOUT_MAX LLONG_MAX
 #  endif
@@ -123,7 +125,7 @@ Py_DEPRECATED(3.7) PyAPI_FUNC(void) PyThread_ReInitTLS(void);
 typedef struct _Py_tss_t Py_tss_t;  /* opaque */
 
 #ifndef Py_LIMITED_API
-#if defined(_POSIX_THREADS)
+#ifdef HAVE_PTHREAD_H
     /* Darwin needs pthread.h to know type name the pthread_key_t. */
 #   include <pthread.h>
 #   define NATIVE_TSS_KEY_T     pthread_key_t

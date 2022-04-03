@@ -1,0 +1,1 @@
+Added :class:`ctypes.BigEndianUnion` and :class:`ctypes.LittleEndianUnion` classes, as originally documented in the library docs but not yet implemented.

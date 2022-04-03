@@ -3,6 +3,7 @@ import textwrap
 import unittest
 import warnings
 import importlib
+import contextlib
 
 from . import fixtures
 from importlib.metadata import (
@@ -15,6 +16,13 @@ from importlib.metadata import (
     requires,
     version,
 )
+
+
+@contextlib.contextmanager
+def suppress_known_deprecation():
+    with warnings.catch_warnings(record=True) as ctx:
+        warnings.simplefilter('default', category=DeprecationWarning)
+        yield ctx
 
 
 class APITests(
@@ -105,7 +113,7 @@ class APITests(
             for ep in entries
         )
         # ns:sub doesn't exist in alt_pkg
-        assert 'ns:sub' not in entries
+        assert 'ns:sub' not in entries.names
 
     def test_entry_points_missing_name(self):
         with self.assertRaises(KeyError):
@@ -118,8 +126,7 @@ class APITests(
         # Prior versions of entry_points() returned simple lists and
         # allowed casting those lists into maps by name using ``dict()``.
         # Capture this now deprecated use-case.
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.filterwarnings("default", category=DeprecationWarning)
+        with suppress_known_deprecation() as caught:
             eps = dict(entry_points(group='entries'))
 
         assert 'main' in eps
@@ -130,11 +137,27 @@ class APITests(
         assert expected.category is DeprecationWarning
         assert "Construction of dict of EntryPoints is deprecated" in str(expected)
 
+    def test_entry_points_by_index(self):
+        """
+        Prior versions of Distribution.entry_points would return a
+        tuple that allowed access by index.
+        Capture this now deprecated use-case
+        See python/importlib_metadata#300 and bpo-44246.
+        """
+        eps = distribution('distinfo-pkg').entry_points
+        with suppress_known_deprecation() as caught:
+            eps[0]
+
+        # check warning
+        expected = next(iter(caught))
+        assert expected.category is DeprecationWarning
+        assert "Accessing entry points by index is deprecated" in str(expected)
+
     def test_entry_points_groups_getitem(self):
         # Prior versions of entry_points() returned a dict. Ensure
         # that callers using '.__getitem__()' are supported but warned to
         # migrate.
-        with warnings.catch_warnings(record=True):
+        with suppress_known_deprecation():
             entry_points()['entries'] == entry_points(group='entries')
 
             with self.assertRaises(KeyError):
@@ -144,10 +167,15 @@ class APITests(
         # Prior versions of entry_points() returned a dict. Ensure
         # that callers using '.get()' are supported but warned to
         # migrate.
-        with warnings.catch_warnings(record=True):
+        with suppress_known_deprecation():
             entry_points().get('missing', 'default') == 'default'
             entry_points().get('entries', 'default') == entry_points()['entries']
             entry_points().get('missing', ()) == ()
+
+    def test_entry_points_allows_no_attributes(self):
+        ep = entry_points().select(group='entries', name='main')
+        with self.assertRaises(AttributeError):
+            ep.foo = 4
 
     def test_metadata_for_this_package(self):
         md = metadata('egginfo-pkg')
@@ -171,10 +199,8 @@ class APITests(
                 file.read_text()
 
     def test_file_hash_repr(self):
-        assertRegex = self.assertRegex
-
         util = [p for p in files('distinfo-pkg') if p.name == 'mod.py'][0]
-        assertRegex(repr(util.hash), '<FileHash mode: sha256 value: .*>')
+        self.assertRegex(repr(util.hash), '<FileHash mode: sha256 value: .*>')
 
     def test_files_dist_info(self):
         self._test_files(files('distinfo-pkg'))
@@ -194,6 +220,16 @@ class APITests(
         assert len(deps) == 2
         assert any(dep == 'wheel >= 1.0; python_version >= "2.7"' for dep in deps)
 
+    def test_requires_egg_info_empty(self):
+        fixtures.build_files(
+            {
+                'requires.txt': '',
+            },
+            self.site_dir.joinpath('egginfo_pkg.egg-info'),
+        )
+        deps = requires('egginfo-pkg')
+        assert deps == []
+
     def test_requires_dist_info(self):
         deps = requires('distinfo-pkg')
         assert len(deps) == 2
@@ -212,6 +248,7 @@ class APITests(
 
             [extra1]
             dep4
+            dep6@ git+https://example.com/python/dep.git@v1.0.0
 
             [extra2:python_version < "3"]
             dep5
@@ -224,6 +261,7 @@ class APITests(
             'dep3; python_version < "3"',
             'dep4; extra == "extra1"',
             'dep5; (python_version < "3") and extra == "extra2"',
+            'dep6@ git+https://example.com/python/dep.git@v1.0.0 ; extra == "extra1"',
         ]
         # It's important that the environment marker expression be
         # wrapped in parentheses to avoid the following 'and' binding more

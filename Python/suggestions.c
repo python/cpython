@@ -1,7 +1,9 @@
 #include "Python.h"
 #include "frameobject.h"
+#include "pycore_frame.h"
 
 #include "pycore_pyerrors.h"
+#include "pycore_code.h"        // _PyCode_GetVarnames()
 
 #define MAX_CANDIDATE_ITEMS 750
 #define MAX_STRING_SIZE 40
@@ -149,6 +151,9 @@ calculate_suggestions(PyObject *dir,
         if (item_str == NULL) {
             return NULL;
         }
+        if (PyUnicode_CompareWithASCIIString(name, item_str) == 0) {
+            continue;
+        }
         // No more than 1/3 of the involved characters should need changed.
         Py_ssize_t max_distance = (name_size + item_size + 3) * MOVE_COST / 6;
         // Don't take matches we've already beaten.
@@ -197,20 +202,34 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     PyTracebackObject *traceback = (PyTracebackObject *) exc->traceback; // borrowed reference
     // Abort if we don't have a variable name or we have an invalid one
     // or if we don't have a traceback to work with
-    if (name == NULL || traceback == NULL || !PyUnicode_CheckExact(name)) {
+    if (name == NULL || !PyUnicode_CheckExact(name) ||
+        traceback == NULL || !Py_IS_TYPE(traceback, &PyTraceBack_Type)
+    ) {
         return NULL;
     }
 
     // Move to the traceback of the exception
-    while (traceback->tb_next != NULL) {
-        traceback = traceback->tb_next;
+    while (1) {
+        PyTracebackObject *next = traceback->tb_next;
+        if (next == NULL || !Py_IS_TYPE(next, &PyTraceBack_Type)) {
+            break;
+        }
+        else {
+            traceback = next;
+        }
     }
 
     PyFrameObject *frame = traceback->tb_frame;
     assert(frame != NULL);
-    PyCodeObject *code = frame->f_code;
-    assert(code != NULL && code->co_varnames != NULL);
-    PyObject *dir = PySequence_List(code->co_varnames);
+    PyCodeObject *code = PyFrame_GetCode(frame);
+    assert(code != NULL && code->co_localsplusnames != NULL);
+    PyObject *varnames = _PyCode_GetVarnames(code);
+    if (varnames == NULL) {
+        return NULL;
+    }
+    PyObject *dir = PySequence_List(varnames);
+    Py_DECREF(varnames);
+    Py_DECREF(code);
     if (dir == NULL) {
         return NULL;
     }
@@ -221,7 +240,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
         return suggestions;
     }
 
-    dir = PySequence_List(frame->f_globals);
+    dir = PySequence_List(frame->f_frame->f_globals);
     if (dir == NULL) {
         return NULL;
     }
@@ -231,7 +250,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
         return suggestions;
     }
 
-    dir = PySequence_List(frame->f_builtins);
+    dir = PySequence_List(frame->f_frame->f_builtins);
     if (dir == NULL) {
         return NULL;
     }

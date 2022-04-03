@@ -4,7 +4,7 @@ jobs:
   condition: and(succeeded(), eq(variables['DoEmbed'], 'true'))
 
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
 
   workspace:
     clean: all

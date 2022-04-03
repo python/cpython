@@ -250,6 +250,17 @@ Operations which work with sequences (some of them with mappings too) include:
 
    .. versionadded:: 3.4
 
+
+The following operation works with callables:
+
+.. function:: call(obj, /, *args, **kwargs)
+              __call__(obj, /, *args, **kwargs)
+
+   Return ``obj(*args, **kwargs)``.
+
+   .. versionadded:: 3.11
+
+
 The :mod:`operator` module also defines tools for generalized attribute and item
 lookups.  These are useful for making fast field extractors as arguments for
 :func:`map`, :func:`sorted`, :meth:`itertools.groupby`, or other functions that

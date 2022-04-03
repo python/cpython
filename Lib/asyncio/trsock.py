@@ -1,5 +1,4 @@
 import socket
-import warnings
 
 
 class TransportSocket:
@@ -15,13 +14,6 @@ class TransportSocket:
 
     def __init__(self, sock: socket.socket):
         self._sock = sock
-
-    def _na(self, what):
-        warnings.warn(
-            f"Using {what} on sockets returned from get_extra_info('socket') "
-            f"will be prohibited in asyncio 3.9. Please report your use case "
-            f"to bugs.python.org.",
-            DeprecationWarning, source=self)
 
     @property
     def family(self):
@@ -90,98 +82,6 @@ class TransportSocket:
     def getsockbyname(self):
         return self._sock.getsockbyname()
 
-    def accept(self):
-        self._na('accept() method')
-        return self._sock.accept()
-
-    def connect(self, *args, **kwargs):
-        self._na('connect() method')
-        return self._sock.connect(*args, **kwargs)
-
-    def connect_ex(self, *args, **kwargs):
-        self._na('connect_ex() method')
-        return self._sock.connect_ex(*args, **kwargs)
-
-    def bind(self, *args, **kwargs):
-        self._na('bind() method')
-        return self._sock.bind(*args, **kwargs)
-
-    def ioctl(self, *args, **kwargs):
-        self._na('ioctl() method')
-        return self._sock.ioctl(*args, **kwargs)
-
-    def listen(self, *args, **kwargs):
-        self._na('listen() method')
-        return self._sock.listen(*args, **kwargs)
-
-    def makefile(self):
-        self._na('makefile() method')
-        return self._sock.makefile()
-
-    def sendfile(self, *args, **kwargs):
-        self._na('sendfile() method')
-        return self._sock.sendfile(*args, **kwargs)
-
-    def close(self):
-        self._na('close() method')
-        return self._sock.close()
-
-    def detach(self):
-        self._na('detach() method')
-        return self._sock.detach()
-
-    def sendmsg_afalg(self, *args, **kwargs):
-        self._na('sendmsg_afalg() method')
-        return self._sock.sendmsg_afalg(*args, **kwargs)
-
-    def sendmsg(self, *args, **kwargs):
-        self._na('sendmsg() method')
-        return self._sock.sendmsg(*args, **kwargs)
-
-    def sendto(self, *args, **kwargs):
-        self._na('sendto() method')
-        return self._sock.sendto(*args, **kwargs)
-
-    def send(self, *args, **kwargs):
-        self._na('send() method')
-        return self._sock.send(*args, **kwargs)
-
-    def sendall(self, *args, **kwargs):
-        self._na('sendall() method')
-        return self._sock.sendall(*args, **kwargs)
-
-    def set_inheritable(self, *args, **kwargs):
-        self._na('set_inheritable() method')
-        return self._sock.set_inheritable(*args, **kwargs)
-
-    def share(self, process_id):
-        self._na('share() method')
-        return self._sock.share(process_id)
-
-    def recv_into(self, *args, **kwargs):
-        self._na('recv_into() method')
-        return self._sock.recv_into(*args, **kwargs)
-
-    def recvfrom_into(self, *args, **kwargs):
-        self._na('recvfrom_into() method')
-        return self._sock.recvfrom_into(*args, **kwargs)
-
-    def recvmsg_into(self, *args, **kwargs):
-        self._na('recvmsg_into() method')
-        return self._sock.recvmsg_into(*args, **kwargs)
-
-    def recvmsg(self, *args, **kwargs):
-        self._na('recvmsg() method')
-        return self._sock.recvmsg(*args, **kwargs)
-
-    def recvfrom(self, *args, **kwargs):
-        self._na('recvfrom() method')
-        return self._sock.recvfrom(*args, **kwargs)
-
-    def recv(self, *args, **kwargs):
-        self._na('recv() method')
-        return self._sock.recv(*args, **kwargs)
-
     def settimeout(self, value):
         if value == 0:
             return
@@ -196,11 +96,3 @@ class TransportSocket:
             return
         raise ValueError(
             'setblocking(): transport sockets cannot be blocking')
-
-    def __enter__(self):
-        self._na('context manager protocol')
-        return self._sock.__enter__()
-
-    def __exit__(self, *err):
-        self._na('context manager protocol')
-        return self._sock.__exit__(*err)

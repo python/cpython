@@ -1,9 +1,5 @@
-This is Python version 3.11.0 alpha 0
+This is Python version 3.11.0 alpha 6
 =====================================
-
-.. image:: https://travis-ci.com/python/cpython.svg?branch=main
-   :alt: CPython build status on Travis CI
-   :target: https://travis-ci.com/python/cpython
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
    :alt: CPython build status on GitHub Actions
@@ -18,7 +14,7 @@ This is Python version 3.11.0 alpha 0
    :target: https://discuss.python.org/
 
 
-Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
+Copyright © 2001-2022 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -110,12 +106,12 @@ The entire Python directory is cleaned of temporary files that may have
 resulted from a previous compilation.
 
 An instrumented version of the interpreter is built, using suitable compiler
-flags for each flavour. Note that this is just an intermediary step.  The
-binary resulting from this step is not good for real life workloads as it has
+flags for each flavor. Note that this is just an intermediary step.  The
+binary resulting from this step is not good for real-life workloads as it has
 profiling instructions embedded inside.
 
 After the instrumented interpreter is built, the Makefile will run a training
-workload.  This is necessary in order to profile the interpreter execution.
+workload.  This is necessary in order to profile the interpreter's execution.
 Note also that any output, both stdout and stderr, that may appear at this step
 is suppressed.
 
@@ -137,7 +133,7 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.10 <https://docs.python.org/3.10/whatsnew/3.10.html>`_ document.  For a more
+3.11 <https://docs.python.org/3.11/whatsnew/3.11.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
 <https://github.com/python/cpython/blob/main/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
@@ -150,7 +146,7 @@ entitled "Installing multiple versions".
 Documentation
 -------------
 
-`Documentation for Python 3.10 <https://docs.python.org/3.10/>`_ is online,
+`Documentation for Python 3.11 <https://docs.python.org/3.11/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -209,8 +205,8 @@ intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.10 with 3.10 being the
-primary version, you would execute ``make install`` in your 3.10 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.11 with 3.11 being the
+primary version, you would execute ``make install`` in your 3.11 build directory
 and ``make altinstall`` in the others.
 
 
@@ -229,31 +225,33 @@ Proposals for enhancement
 -------------------------
 
 If you have a proposal to change Python, you may want to send an email to the
-comp.lang.python or `python-ideas`_ mailing lists for initial feedback.  A
+`comp.lang.python`_ or `python-ideas`_ mailing lists for initial feedback.  A
 Python Enhancement Proposal (PEP) may be submitted if your idea gains ground.
 All current PEPs, as well as guidelines for submitting a new PEP, are listed at
-`python.org/dev/peps/ <https://www.python.org/dev/peps/>`_.
+`peps.python.org <https://peps.python.org/>`_.
 
 .. _python-ideas: https://mail.python.org/mailman/listinfo/python-ideas/
+.. _comp.lang.python: https://mail.python.org/mailman/listinfo/python-list
 
 
 Release Schedule
 ----------------
 
-See :pep:`619` for Python 3.10 release details.
+See :pep:`664` for Python 3.11 release details.
 
 
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
 
-Copyright (c) 2000 BeOpen.com.  All rights reserved.
+Copyright © 2001-2022 Python Software Foundation.  All rights reserved.
 
-Copyright (c) 1995-2001 Corporation for National Research Initiatives.  All
+Copyright © 2000 BeOpen.com.  All rights reserved.
+
+Copyright © 1995-2001 Corporation for National Research Initiatives.  All
 rights reserved.
 
-Copyright (c) 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
+Copyright © 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
 
 See the `LICENSE <https://github.com/python/cpython/blob/main/LICENSE>`_ for
 information on the history of this software, terms & conditions for usage, and a

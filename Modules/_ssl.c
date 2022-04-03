@@ -40,8 +40,6 @@
 #define PySSL_BEGIN_ALLOW_THREADS { \
             PyThreadState *_save = NULL;  \
             PySSL_BEGIN_ALLOW_THREADS_S(_save);
-#define PySSL_BLOCK_THREADS     PySSL_END_ALLOW_THREADS_S(_save);
-#define PySSL_UNBLOCK_THREADS   PySSL_BEGIN_ALLOW_THREADS_S(_save);
 #define PySSL_END_ALLOW_THREADS PySSL_END_ALLOW_THREADS_S(_save); }
 
 
@@ -434,11 +432,10 @@ static PyType_Slot sslerror_type_slots[] = {
 };
 
 static PyType_Spec sslerror_type_spec = {
-    "ssl.SSLError",
-    sizeof(PyOSErrorObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_IMMUTABLETYPE,
-    sslerror_type_slots
+    .name = "ssl.SSLError",
+    .basicsize = sizeof(PyOSErrorObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = sslerror_type_slots
 };
 
 static void
@@ -449,10 +446,6 @@ fill_and_set_sslerror(_sslmodulestate *state,
     PyObject *err_value = NULL, *reason_obj = NULL, *lib_obj = NULL;
     PyObject *verify_obj = NULL, *verify_code_obj = NULL;
     PyObject *init_value, *msg, *key;
-    _Py_IDENTIFIER(reason);
-    _Py_IDENTIFIER(library);
-    _Py_IDENTIFIER(verify_message);
-    _Py_IDENTIFIER(verify_code);
 
     if (errcode != 0) {
         int lib, reason;
@@ -546,20 +539,20 @@ fill_and_set_sslerror(_sslmodulestate *state,
 
     if (reason_obj == NULL)
         reason_obj = Py_None;
-    if (_PyObject_SetAttrId(err_value, &PyId_reason, reason_obj))
+    if (PyObject_SetAttr(err_value, state->str_reason, reason_obj))
         goto fail;
 
     if (lib_obj == NULL)
         lib_obj = Py_None;
-    if (_PyObject_SetAttrId(err_value, &PyId_library, lib_obj))
+    if (PyObject_SetAttr(err_value, state->str_library, lib_obj))
         goto fail;
 
     if ((sslsock != NULL) && (type == state->PySSLCertVerificationErrorObject)) {
         /* Only set verify code / message for SSLCertVerificationError */
-        if (_PyObject_SetAttrId(err_value, &PyId_verify_code,
+        if (PyObject_SetAttr(err_value, state->str_verify_code,
                                 verify_code_obj))
             goto fail;
-        if (_PyObject_SetAttrId(err_value, &PyId_verify_message, verify_obj))
+        if (PyObject_SetAttr(err_value, state->str_verify_message, verify_obj))
             goto fail;
     }
 
@@ -698,10 +691,9 @@ _setSSLError (_sslmodulestate *state, const char *errstr, int errcode, const cha
 }
 
 static int
-_ssl_deprecated(const char* name, int stacklevel) {
-    return PyErr_WarnFormat(
-        PyExc_DeprecationWarning, stacklevel,
-        "ssl module: %s is deprecated", name
+_ssl_deprecated(const char* msg, int stacklevel) {
+    return PyErr_WarnEx(
+        PyExc_DeprecationWarning, msg, stacklevel
     );
 }
 
@@ -789,7 +781,23 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     SSL_CTX *ctx = sslctx->ctx;
     _PySSLError err = { 0 };
 
-    self = PyObject_New(PySSLSocket, get_state_ctx(sslctx)->PySSLSocket_Type);
+    if ((socket_type == PY_SSL_SERVER) &&
+        (sslctx->protocol == PY_SSL_VERSION_TLS_CLIENT)) {
+        _setSSLError(get_state_ctx(sslctx),
+                     "Cannot create a server socket with a "
+                     "PROTOCOL_TLS_CLIENT context", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    if ((socket_type == PY_SSL_CLIENT) &&
+        (sslctx->protocol == PY_SSL_VERSION_TLS_SERVER)) {
+        _setSSLError(get_state_ctx(sslctx),
+                     "Cannot create a client socket with a "
+                     "PROTOCOL_TLS_SERVER context", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+
+    self = PyObject_GC_New(PySSLSocket,
+                           get_state_ctx(sslctx)->PySSLSocket_Type);
     if (self == NULL)
         return NULL;
 
@@ -896,6 +904,8 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
             return NULL;
         }
     }
+
+    PyObject_GC_Track(self);
     return self;
 }
 
@@ -933,8 +943,9 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
 
     timeout = GET_SOCKET_TIMEOUT(sock);
     has_timeout = (timeout > 0);
-    if (has_timeout)
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+    if (has_timeout) {
+        deadline = _PyDeadline_Init(timeout);
+    }
 
     /* Actually negotiate SSL connection */
     /* XXX If SSL_do_handshake() returns 0, it's also a failure. */
@@ -949,7 +960,7 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
             goto error;
 
         if (has_timeout)
-            timeout = deadline - _PyTime_GetMonotonicClock();
+            timeout = _PyDeadline_Get(deadline);
 
         if (err.ssl == SSL_ERROR_WANT_READ) {
             sockstate = PySSL_select(sock, 0, timeout);
@@ -1037,17 +1048,29 @@ _create_tuple_for_attribute(_sslmodulestate *state,
                             ASN1_OBJECT *name, ASN1_STRING *value)
 {
     Py_ssize_t buflen;
-    unsigned char *valuebuf = NULL;
-    PyObject *attr;
+    PyObject *pyattr;
+    PyObject *pyname = _asn1obj2py(state, name, 0);
 
-    buflen = ASN1_STRING_to_UTF8(&valuebuf, value);
-    if (buflen < 0) {
+    if (pyname == NULL) {
         _setSSLError(state, NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
-    attr = Py_BuildValue("Ns#", _asn1obj2py(state, name, 0), valuebuf, buflen);
-    OPENSSL_free(valuebuf);
-    return attr;
+
+    if (ASN1_STRING_type(value) == V_ASN1_BIT_STRING) {
+        buflen = ASN1_STRING_length(value);
+        pyattr = Py_BuildValue("Ny#", pyname, ASN1_STRING_get0_data(value), buflen);
+    } else {
+        unsigned char *valuebuf = NULL;
+        buflen = ASN1_STRING_to_UTF8(&valuebuf, value);
+        if (buflen < 0) {
+            _setSSLError(state, NULL, 0, __FILE__, __LINE__);
+            Py_DECREF(pyname);
+            return NULL;
+        }
+        pyattr = Py_BuildValue("Ns#", pyname, valuebuf, buflen);
+        OPENSSL_free(valuebuf);
+    }
+    return pyattr;
 }
 
 static PyObject *
@@ -2169,6 +2192,7 @@ PySSL_traverse(PySSLSocket *self, visitproc visit, void *arg)
     Py_VISIT(self->exc_type);
     Py_VISIT(self->exc_value);
     Py_VISIT(self->exc_tb);
+    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
@@ -2185,13 +2209,15 @@ static void
 PySSL_dealloc(PySSLSocket *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    if (self->ssl)
+    PyObject_GC_UnTrack(self);
+    if (self->ssl) {
         SSL_free(self->ssl);
+    }
     Py_XDECREF(self->Socket);
     Py_XDECREF(self->ctx);
     Py_XDECREF(self->server_hostname);
     Py_XDECREF(self->owner);
-    PyObject_Free(self);
+    PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
 
@@ -2245,7 +2271,7 @@ PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout)
     if (!_PyIsSelectable_fd(s->sock_fd))
         return SOCKET_TOO_LARGE_FOR_SELECT;
 
-    _PyTime_AsTimeval_noraise(timeout, &tv, _PyTime_ROUND_CEILING);
+    _PyTime_AsTimeval_clamp(timeout, &tv, _PyTime_ROUND_CEILING);
 
     FD_ZERO(&fds);
     FD_SET(s->sock_fd, &fds);
@@ -2307,8 +2333,9 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
 
     timeout = GET_SOCKET_TIMEOUT(sock);
     has_timeout = (timeout > 0);
-    if (has_timeout)
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+    if (has_timeout) {
+        deadline = _PyDeadline_Init(timeout);
+    }
 
     sockstate = PySSL_select(sock, 1, timeout);
     if (sockstate == SOCKET_HAS_TIMED_OUT) {
@@ -2327,7 +2354,7 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
 
     do {
         PySSL_BEGIN_ALLOW_THREADS
-        retval = SSL_write_ex(self->ssl, b->buf, (int)b->len, &count);
+        retval = SSL_write_ex(self->ssl, b->buf, (size_t)b->len, &count);
         err = _PySSL_errno(retval == 0, self->ssl, retval);
         PySSL_END_ALLOW_THREADS
         self->err = err;
@@ -2335,8 +2362,9 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
         if (PyErr_CheckSignals())
             goto error;
 
-        if (has_timeout)
-            timeout = deadline - _PyTime_GetMonotonicClock();
+        if (has_timeout) {
+            timeout = _PyDeadline_Get(deadline);
+        }
 
         if (err.ssl == SSL_ERROR_WANT_READ) {
             sockstate = PySSL_select(sock, 0, timeout);
@@ -2399,7 +2427,7 @@ _ssl__SSLSocket_pending_impl(PySSLSocket *self)
 
 /*[clinic input]
 _ssl._SSLSocket.read
-    size as len: int
+    size as len: Py_ssize_t
     [
     buffer: Py_buffer(accept={rwbuffer})
     ]
@@ -2409,9 +2437,9 @@ Read up to size bytes from the SSL socket.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
-                          Py_buffer *buffer)
-/*[clinic end generated code: output=00097776cec2a0af input=ff157eb918d0905b]*/
+_ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
+                          int group_right_1, Py_buffer *buffer)
+/*[clinic end generated code: output=49b16e6406023734 input=ec48bf622be1c4a1]*/
 {
     PyObject *dest = NULL;
     char *mem;
@@ -2475,11 +2503,11 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
     timeout = GET_SOCKET_TIMEOUT(sock);
     has_timeout = (timeout > 0);
     if (has_timeout)
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+        deadline = _PyDeadline_Init(timeout);
 
     do {
         PySSL_BEGIN_ALLOW_THREADS
-        retval = SSL_read_ex(self->ssl, mem, len, &count);
+        retval = SSL_read_ex(self->ssl, mem, (size_t)len, &count);
         err = _PySSL_errno(retval == 0, self->ssl, retval);
         PySSL_END_ALLOW_THREADS
         self->err = err;
@@ -2487,8 +2515,9 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
         if (PyErr_CheckSignals())
             goto error;
 
-        if (has_timeout)
-            timeout = deadline - _PyTime_GetMonotonicClock();
+        if (has_timeout) {
+            timeout = _PyDeadline_Get(deadline);
+        }
 
         if (err.ssl == SSL_ERROR_WANT_READ) {
             sockstate = PySSL_select(sock, 0, timeout);
@@ -2573,8 +2602,9 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
 
     timeout = GET_SOCKET_TIMEOUT(sock);
     has_timeout = (timeout > 0);
-    if (has_timeout)
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+    if (has_timeout) {
+        deadline = _PyDeadline_Init(timeout);
+    }
 
     while (1) {
         PySSL_BEGIN_ALLOW_THREADS
@@ -2607,8 +2637,9 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
             continue;
         }
 
-        if (has_timeout)
-            timeout = deadline - _PyTime_GetMonotonicClock();
+        if (has_timeout) {
+            timeout = _PyDeadline_Get(deadline);
+        }
 
         /* Possibly retry shutdown until timeout or failure */
         if (err.ssl == SSL_ERROR_WANT_READ)
@@ -2903,11 +2934,11 @@ static PyType_Slot PySSLSocket_slots[] = {
 };
 
 static PyType_Spec PySSLSocket_spec = {
-    "_ssl._SSLSocket",
-    sizeof(PySSLSocket),
-    0,
-    Py_TPFLAGS_DEFAULT  | Py_TPFLAGS_IMMUTABLETYPE,
-    PySSLSocket_slots,
+    .name = "_ssl._SSLSocket",
+    .basicsize = sizeof(PySSLSocket),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_HAVE_GC),
+    .slots = PySSLSocket_slots,
 };
 
 /*
@@ -2964,8 +2995,8 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     int result;
 
    /* slower approach, walk MRO and get borrowed reference to module.
-    * _PyType_GetModuleByDef is required for SSLContext subclasses */
-    PyObject *module = _PyType_GetModuleByDef(type, &_sslmodule_def);
+    * PyType_GetModuleByDef is required for SSLContext subclasses */
+    PyObject *module = PyType_GetModuleByDef(type, &_sslmodule_def);
     if (module == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "Cannot find internal module state");
@@ -2975,7 +3006,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     switch(proto_version) {
 #if defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
     case PY_SSL_VERSION_SSL3:
-        PY_SSL_DEPRECATED("PROTOCOL_SSLv3", 2, NULL);
+        PY_SSL_DEPRECATED("ssl.PROTOCOL_SSLv3 is deprecated", 2, NULL);
         method = SSLv3_method();
         break;
 #endif
@@ -2983,7 +3014,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         !defined(OPENSSL_NO_TLS1) && \
         !defined(OPENSSL_NO_TLS1_METHOD))
     case PY_SSL_VERSION_TLS1:
-        PY_SSL_DEPRECATED("PROTOCOL_TLSv1", 2, NULL);
+        PY_SSL_DEPRECATED("ssl.PROTOCOL_TLSv1 is deprecated", 2, NULL);
         method = TLSv1_method();
         break;
 #endif
@@ -2991,7 +3022,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         !defined(OPENSSL_NO_TLS1_1) && \
         !defined(OPENSSL_NO_TLS1_1_METHOD))
     case PY_SSL_VERSION_TLS1_1:
-        PY_SSL_DEPRECATED("PROTOCOL_TLSv1_1", 2, NULL);
+        PY_SSL_DEPRECATED("ssl.PROTOCOL_TLSv1_1 is deprecated", 2, NULL);
         method = TLSv1_1_method();
         break;
 #endif
@@ -2999,12 +3030,12 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         !defined(OPENSSL_NO_TLS1_2) && \
         !defined(OPENSSL_NO_TLS1_2_METHOD))
     case PY_SSL_VERSION_TLS1_2:
-        PY_SSL_DEPRECATED("PROTOCOL_TLSv1_2", 2, NULL);
+        PY_SSL_DEPRECATED("ssl.PROTOCOL_TLSv1_2 is deprecated", 2, NULL);
         method = TLSv1_2_method();
         break;
 #endif
     case PY_SSL_VERSION_TLS:
-        PY_SSL_DEPRECATED("PROTOCOL_TLS", 2, NULL);
+        PY_SSL_DEPRECATED("ssl.PROTOCOL_TLS is deprecated", 2, NULL);
         method = TLS_method();
         break;
     case PY_SSL_VERSION_TLS_CLIENT:
@@ -3159,6 +3190,7 @@ context_traverse(PySSLContext *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->set_sni_cb);
     Py_VISIT(self->msg_cb);
+    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
@@ -3427,13 +3459,13 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
     /* check for deprecations and supported values */
     switch(v) {
         case PY_PROTO_SSLv3:
-            PY_SSL_DEPRECATED("TLSVersion.SSLv3", 2, -1);
+            PY_SSL_DEPRECATED("ssl.TLSVersion.SSLv3 is deprecated", 2, -1);
             break;
         case PY_PROTO_TLSv1:
-            PY_SSL_DEPRECATED("TLSVersion.TLSv1", 2, -1);
+            PY_SSL_DEPRECATED("ssl.TLSVersion.TLSv1 is deprecated", 2, -1);
             break;
         case PY_PROTO_TLSv1_1:
-            PY_SSL_DEPRECATED("TLSVersion.TLSv1_1", 2, -1);
+            PY_SSL_DEPRECATED("ssl.TLSVersion.TLSv1_1 is deprecated", 2, -1);
             break;
         case PY_PROTO_MINIMUM_SUPPORTED:
         case PY_PROTO_MAXIMUM_SUPPORTED:
@@ -3567,7 +3599,7 @@ set_options(PySSLContext *self, PyObject *arg, void *c)
     long new_opts, opts, set, clear;
     long opt_no = (
         SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 |
-        SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_2
+        SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3
     );
 
     if (!PyArg_Parse(arg, "l", &new_opts))
@@ -3577,7 +3609,7 @@ set_options(PySSLContext *self, PyObject *arg, void *c)
     set = ~opts & new_opts;
 
     if ((set & opt_no) != 0) {
-        if (_ssl_deprecated("Setting OP_NO_SSL* or SSL_NO_TLS* options is "
+        if (_ssl_deprecated("ssl.OP_NO_SSL*/ssl.OP_NO_TLS* options are "
                             "deprecated", 2) < 0) {
             return -1;
         }
@@ -3747,7 +3779,7 @@ _password_callback(char *buf, int size, int rwflag, void *userdata)
     }
 
     if (pw_info->callable) {
-        fn_ret = _PyObject_CallNoArg(pw_info->callable);
+        fn_ret = PyObject_CallNoArgs(pw_info->callable);
         if (!fn_ret) {
             /* TODO: It would be nice to move _ctypes_add_traceback() into the
                core python API, so we could use it to add a frame here */
@@ -4027,7 +4059,7 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
         goto error;
     }
 
-    /* validata cadata type and load cadata */
+    /* validate cadata type and load cadata */
     if (cadata) {
         if (PyUnicode_Check(cadata)) {
             PyObject *cadata_ascii = PyUnicode_AsASCIIString(cadata);
@@ -4641,11 +4673,11 @@ static PyType_Slot PySSLContext_slots[] = {
 };
 
 static PyType_Spec PySSLContext_spec = {
-    "_ssl._SSLContext",
-    sizeof(PySSLContext),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
-    PySSLContext_slots,
+    .name = "_ssl._SSLContext",
+    .basicsize = sizeof(PySSLContext),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = PySSLContext_slots,
 };
 
 
@@ -4689,10 +4721,18 @@ _ssl_MemoryBIO_impl(PyTypeObject *type)
     return (PyObject *) self;
 }
 
+static int
+memory_bio_traverse(PySSLMemoryBIO *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static void
 memory_bio_dealloc(PySSLMemoryBIO *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
     BIO_free(self->bio);
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
@@ -4843,15 +4883,16 @@ static PyType_Slot PySSLMemoryBIO_slots[] = {
     {Py_tp_getset, memory_bio_getsetlist},
     {Py_tp_new, _ssl_MemoryBIO},
     {Py_tp_dealloc, memory_bio_dealloc},
+    {Py_tp_traverse, memory_bio_traverse},
     {0, 0},
 };
 
 static PyType_Spec PySSLMemoryBIO_spec = {
-    "_ssl.MemoryBIO",
-    sizeof(PySSLMemoryBIO),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
-    PySSLMemoryBIO_slots,
+    .name = "_ssl.MemoryBIO",
+    .basicsize = sizeof(PySSLMemoryBIO),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_HAVE_GC),
+    .slots = PySSLMemoryBIO_slots,
 };
 
 /*
@@ -4934,6 +4975,7 @@ static int
 PySSLSession_traverse(PySSLSession *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->ctx);
+    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
@@ -5022,11 +5064,11 @@ static PyType_Slot PySSLSession_slots[] = {
 };
 
 static PyType_Spec PySSLSession_spec = {
-    "_ssl.SSLSession",
-    sizeof(PySSLSession),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
-    PySSLSession_slots,
+    .name = "_ssl.SSLSession",
+    .basicsize = sizeof(PySSLSession),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = PySSLSession_slots,
 };
 
 
@@ -5130,7 +5172,7 @@ static PyObject *
 _ssl_RAND_pseudo_bytes_impl(PyObject *module, int n)
 /*[clinic end generated code: output=b1509e937000e52d input=58312bd53f9bbdd0]*/
 {
-    PY_SSL_DEPRECATED("RAND_pseudo_bytes", 1, NULL);
+    PY_SSL_DEPRECATED("ssl.RAND_pseudo_bytes() is deprecated", 1, NULL);
     return PySSL_RAND(module, n, 1);
 }
 
@@ -6111,6 +6153,29 @@ sslmodule_init_types(PyObject *module)
     return 0;
 }
 
+static int
+sslmodule_init_strings(PyObject *module)
+{
+    _sslmodulestate *state = get_ssl_state(module);
+    state->str_library = PyUnicode_InternFromString("library");
+    if (state->str_library == NULL) {
+        return -1;
+    }
+    state->str_reason = PyUnicode_InternFromString("reason");
+    if (state->str_reason == NULL) {
+        return -1;
+    }
+    state->str_verify_message = PyUnicode_InternFromString("verify_message");
+    if (state->str_verify_message == NULL) {
+        return -1;
+    }
+    state->str_verify_code = PyUnicode_InternFromString("verify_code");
+    if (state->str_verify_code == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
 static PyModuleDef_Slot sslmodule_slots[] = {
     {Py_mod_exec, sslmodule_init_types},
     {Py_mod_exec, sslmodule_init_exceptions},
@@ -6118,6 +6183,7 @@ static PyModuleDef_Slot sslmodule_slots[] = {
     {Py_mod_exec, sslmodule_init_errorcodes},
     {Py_mod_exec, sslmodule_init_constants},
     {Py_mod_exec, sslmodule_init_versioninfo},
+    {Py_mod_exec, sslmodule_init_strings},
     {0, NULL}
 };
 
@@ -6167,7 +6233,10 @@ sslmodule_clear(PyObject *m)
     Py_CLEAR(state->err_names_to_codes);
     Py_CLEAR(state->lib_codes_to_names);
     Py_CLEAR(state->Sock_Type);
-
+    Py_CLEAR(state->str_library);
+    Py_CLEAR(state->str_reason);
+    Py_CLEAR(state->str_verify_code);
+    Py_CLEAR(state->str_verify_message);
     return 0;
 }
 

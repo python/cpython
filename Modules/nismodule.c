@@ -12,6 +12,7 @@
 
 #include "Python.h"
 
+#include <stdlib.h>               // free()
 #include <sys/time.h>
 #include <sys/types.h>
 #include <rpc/rpc.h>
