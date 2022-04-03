@@ -120,6 +120,29 @@ The module defines the following items:
       methods, and may either refuse to process the ZIP file altogether,
       or fail to extract individual files.
 
+.. data:: PERMS_PRESERVE_NONE
+
+    Constant for use in :meth:`extractall` and :meth:`extract` methods. Do not
+    preserve permissions of zipped files.
+
+    .. versionadded:: 3.11
+
+.. data:: PERMS_PRESERVE_SAFE
+
+    Constant for use in :meth:`extractall` and :meth:`extract` methods.
+    Preserve safe subset of permissions of the zipped files only: permissions
+    for reading, writing, execution for user, group and others.
+
+    .. versionadded:: 3.11
+
+.. data:: PERMS_PRESERVE_ALL
+
+    Constant for use in :meth:`extractall` and :meth:`extract` methods.
+    Preserve all the permissions of the zipped files, including unsafe ones:
+    UID bit (:data:`stat.S_ISUID`), group UID bit (:data:`stat.S_ISGID`),
+    sticky bit (:data:`stat.S_ISVTX`).
+
+    .. versionadded:: 3.11
 
 .. seealso::
 
