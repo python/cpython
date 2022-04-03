@@ -162,6 +162,10 @@ def _compile(data, pattern, flags):
                 skip = _len(code); emit(0)
                 emit(av[0])
                 emit(av[1])
+                # now op is in (MIN_REPEAT, MAX_REPEAT, POSSESSIVE_REPEAT)
+                if op != POSSESSIVE_REPEAT:
+                    emit(data.repeat_count)
+                    data.repeat_count += 1
                 _compile(data, av[2], flags)
                 code[skip] = _len(code) - skip
                 emit(REPEATING_CODES[op][1])
@@ -726,13 +730,20 @@ def dis(code):
                     else:
                         print_(FAILURE)
                 i += 1
-            elif op in (REPEAT, REPEAT_ONE, MIN_REPEAT_ONE,
+            elif op in (REPEAT_ONE, MIN_REPEAT_ONE,
                         POSSESSIVE_REPEAT, POSSESSIVE_REPEAT_ONE):
                 skip, min, max = code[i: i+3]
                 if max == MAXREPEAT:
                     max = 'MAXREPEAT'
                 print_(op, skip, min, max, to=i+skip)
                 dis_(i+3, i+skip)
+                i += skip
+            elif op is REPEAT:
+                skip, min, max, repeat_index = code[i: i+4]
+                if max == MAXREPEAT:
+                    max = 'MAXREPEAT'
+                print_(op, skip, min, max, repeat_index, to=i+skip)
+                dis_(i+4, i+skip)
                 i += skip
             elif op is GROUPREF_EXISTS:
                 arg, skip = code[i: i+2]
@@ -802,6 +813,5 @@ def compile(p, flags=0):
 
     return _sre.compile(
         pattern, flags | p.state.flags, data.code,
-        p.state.groups-1,
-        groupindex, tuple(indexgroup)
-        )
+        p.state.groups-1, groupindex, tuple(indexgroup),
+        data.repeat_count)
