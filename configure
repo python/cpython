@@ -817,6 +817,8 @@ TRUE
 MACHDEP_OBJS
 DYNLOADFILE
 DLINCLDIR
+PLATFORM_OBJS
+PLATFORM_HEADERS
 DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
@@ -13992,6 +13994,21 @@ $as_echo "$ac_cv_dtrace_link" >&6; }
         DTRACE_OBJS="Python/pydtrace.o"
     fi
 fi
+
+PLATFORM_HEADERS=
+PLATFORM_OBJS=
+
+case $ac_sys_system in #(
+  Emscripten) :
+
+    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o'
+    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h'
+   ;; #(
+  *) :
+     ;;
+esac
+
+
 
 # -I${DLINCLDIR} is added to the compile rule for importdl.o
 
