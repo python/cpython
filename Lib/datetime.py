@@ -1123,7 +1123,7 @@ class tzinfo:
         raise NotImplementedError("tzinfo subclass must override tzname()")
 
     def utcoffset(self, dt):
-        "Returns the difference between local time and UTC as a timedelta object."
+        "Return the difference between local time and UTC as a timedelta object."
         raise NotImplementedError("tzinfo subclass must override utcoffset()")
 
     def dst(self, dt):
