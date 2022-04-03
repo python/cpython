@@ -807,14 +807,21 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 	else true; \
 	fi
 
-# wasm32-emscripten build
+# wasm32-emscripten browser build
 # wasm assets directory is relative to current build dir, e.g. "./usr/local".
 # --preload-file turns a relative asset path into an absolute path.
 
 $(WASM_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
-                pybuilddir.txt $(srcdir)/Tools/wasm/wasm_assets.py
+                pybuilddir.txt $(srcdir)/Tools/wasm/wasm_assets.py \
+				python.html python.worker.js
 	$(PYTHON_FOR_BUILD) $(srcdir)/Tools/wasm/wasm_assets.py \
 	    --builddir . --prefix $(prefix)
+
+python.html: $(srcdir)/Tools/wasm/python.html python.worker.js
+	@cp $(srcdir)/Tools/wasm/python.html $@
+
+python.worker.js: $(srcdir)/Tools/wasm/python.worker.js
+	@cp $(srcdir)/Tools/wasm/python.worker.js $@
 
 ##########################################################################
 # Build static libmpdec.a

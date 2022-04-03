@@ -55,8 +55,12 @@ emrun builddir/emscripten-browser/python.html
 or
 
 ```shell
-python3 -m http.server
+./Tools/wasm/wasm_webserver.py
 ```
+
+and open http://localhost:8000/builddir/emscripten-browser/python.html . This
+directory structure enables the *C/C++ DevTools Support (DWARF)* to load C
+and header files with debug builds.
 
 ### Cross compile to wasm32-emscripten for node
 
