@@ -2418,9 +2418,12 @@ def overload(func):
     The overloads for a function can be retrieved at runtime using the
     get_overloads() function.
     """
+    # Inline version of _get_key_for_callable
+    # classmethod and staticmethod
+    func = getattr(func, "__func__", func)
     try:
-        key = _get_key_for_callable(func)
-    except TypeError:
+        key = (func.__module__, func.__qualname__)
+    except AttributeError:
         # Not a normal function; ignore.
         pass
     else:
@@ -2450,7 +2453,7 @@ def _get_firstlineno(func):
 
 
 # {key: [overload]}
-_overload_registry = {}
+_overload_registry: dict[tuple[str, str], list[Any]] = {}
 
 
 def get_overloads(func):
@@ -2479,7 +2482,7 @@ def _get_key_for_callable(func):
     # classmethod and staticmethod
     func = getattr(func, "__func__", func)
     try:
-        return f"{func.__module__}.{func.__qualname__}"
+        return (func.__module__, func.__qualname__)
     except AttributeError:
         raise TypeError(f"Cannot create key for {func!r}") from None
 

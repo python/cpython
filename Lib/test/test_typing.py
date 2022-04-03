@@ -3869,23 +3869,23 @@ class OverloadTests(BaseTestCase):
     def test_get_key_for_callable(self):
         self.assertEqual(
             typing._get_key_for_callable(len),
-            "builtins.len",
+            ("builtins", "len"),
         )
         self.assertEqual(
             typing._get_key_for_callable(cached_func),
-            f"{__name__}.cached_func",
+            (__name__, "cached_func"),
         )
         self.assertEqual(
             typing._get_key_for_callable(MethodHolder.clsmethod),
-            f"{__name__}.MethodHolder.clsmethod",
+            (__name__, "MethodHolder.clsmethod"),
         )
         self.assertEqual(
             typing._get_key_for_callable(MethodHolder.stmethod),
-            f"{__name__}.MethodHolder.stmethod",
+            (__name__, "MethodHolder.stmethod"),
         )
         self.assertEqual(
             typing._get_key_for_callable(MethodHolder.method),
-            f"{__name__}.MethodHolder.method",
+            (__name__, "MethodHolder.method"),
         )
 
 
