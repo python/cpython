@@ -2338,8 +2338,8 @@ POSSESSIVE_REPEAT 0 1
 ''')
 
     def test_repeat_index(self):
-        self.assertEqual(get_debug_out(r'(?:ab)*(?:cd)*'), '''\
-MAX_REPEAT 0 MAXREPEAT
+        self.assertEqual(get_debug_out(r'(?:ab)*?(?:cd)*'), '''\
+MIN_REPEAT 0 MAXREPEAT
   LITERAL 97
   LITERAL 98
 MAX_REPEAT 0 MAXREPEAT
@@ -2350,7 +2350,7 @@ MAX_REPEAT 0 MAXREPEAT
  5: REPEAT 8 0 MAXREPEAT 0 (to 14)
 10.   LITERAL 0x61 ('a')
 12.   LITERAL 0x62 ('b')
-14: MAX_UNTIL
+14: MIN_UNTIL
 15. REPEAT 8 0 MAXREPEAT 1 (to 24)
 20.   LITERAL 0x63 ('c')
 22.   LITERAL 0x64 ('d')
