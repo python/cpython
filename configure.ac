@@ -1911,30 +1911,30 @@ fi
 # WASM flags
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   [Emscripten/browser*], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1"
-    LINKFORSHARED="--preload-file \$(WASM_ASSETS_DIR)"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH=1"
+    LINKFORSHARED="--preload-file=\$(WASM_ASSETS_DIR)"
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
-      AS_VAR_APPEND([LINKFORSHARED], [" -s MAIN_MODULE=1"])
+      AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE=1"])
     ])
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
     dnl separate-dwarf does not seem to work in Chrome DevTools Support.
     if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "browser-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS=1"
       LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
     else
       LINKFORSHARED="$LINKFORSHARED -O2 -g0"
     fi
   ],
   [Emscripten/node*], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s USE_PTHREADS=1"
-    LINKFORSHARED="-s PROXY_TO_PTHREAD=1 -s EXIT_RUNTIME=1"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH=1 -sNODERAWFS=1 -sUSE_PTHREADS=1"
+    LINKFORSHARED="-sPROXY_TO_PTHREAD=1 -sEXIT_RUNTIME=1"
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
-      AS_VAR_APPEND([LINKFORSHARED], [" -s MAIN_MODULE=1"])
+      AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE=1"])
     ])
     CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
     if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "node-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS=1"
       LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
     else
       LINKFORSHARED="$LINKFORSHARED -O2 -g0"
@@ -3009,7 +3009,7 @@ fi
 dnl Emscripten's emconfigure sets LDSHARED. Set BLDSHARED outside the
 dnl test -z $LDSHARED block to configure BLDSHARED for side module support.
 if test "$enable_wasm_dynamic_linking" = "yes" -a "$ac_sys_system" = "Emscripten"; then
-  BLDSHARED='$(CC) -shared -s SIDE_MODULE=1 -s WASM=1'
+  BLDSHARED='$(CC) -shared -sSIDE_MODULE=1 -sWASM=1'
 fi
 
 AC_MSG_RESULT($LDSHARED)
@@ -4496,7 +4496,8 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
 ])
 
 if test "$have_zlib" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$ZLIB_LIBS" = "-lz"; then
-  ZLIB_LIBS="-s USE_ZLIB=1"
+  ZLIB_CFLAGS="-sUSE_ZLIB=1"
+  ZLIB_LIBS="-sUSE_ZLIB=1"
 fi
 
 dnl binascii can use zlib for optimized crc32.
@@ -4518,7 +4519,8 @@ PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
 ])
 
 if test "$have_bzip2" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$BZIP2_LIBS" = "-lbz2"; then
-  BZIP2_LIBS="-s USE_BZIP2=1"
+  BZIP2_CFLAGS="-sUSE_BZIP2=1"
+  BZIP2_LIBS="-sUSE_BZIP2=1"
 fi
 
 
