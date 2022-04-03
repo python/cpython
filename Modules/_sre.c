@@ -1849,7 +1849,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, PatternObject *self)
         case SRE_OP_REPEAT:
         case SRE_OP_POSSESSIVE_REPEAT:
             {
-                SRE_CODE op1 = op, min, max, repeat_index, _fields;
+                SRE_CODE op1 = op, min, max, repeat_index;
                 GET_SKIP;
                 GET_ARG; min = arg;
                 GET_ARG; max = arg;
@@ -1861,13 +1861,13 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, PatternObject *self)
                     GET_ARG; repeat_index = arg;
                     if (repeat_index >= (size_t)self->repeat_count)
                         FAIL;
-                    _fields = 4;
+                    skip -= 4;
                 } else {
-                    _fields = 3;
+                    skip -= 3;
                 }
-                if (!_validate_inner(code, code+skip-_fields, self))
+                if (!_validate_inner(code, code+skip, self))
                     FAIL;
-                code += skip-_fields;
+                code += skip;
                 GET_OP;
                 if (op1 == SRE_OP_POSSESSIVE_REPEAT) {
                     if (op != SRE_OP_SUCCESS)
