@@ -2415,7 +2415,7 @@ def overload(func):
       def utf8(value):
           # implementation goes here
 
-    Overload definition can be retrieved at runtime using the
+    The overloads for a function can be retrieved at runtime using the
     get_overloads() function.
     """
     try:

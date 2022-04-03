@@ -9,7 +9,8 @@ import warnings
 from unittest import TestCase, main, skipUnless, skip
 from copy import copy, deepcopy
 
-from typing import Any, NoReturn, Never, assert_never, overload, get_overloads, clear_overloads
+from typing import Any, NoReturn, Never, assert_never
+from typing import overload, get_overloads, clear_overloads
 from typing import TypeVar, TypeVarTuple, Unpack, AnyStr
 from typing import T, KT, VT  # Not in __all__.
 from typing import Union, Optional, Literal
