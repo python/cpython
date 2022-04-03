@@ -20,7 +20,7 @@ library and will be able to skip this step.)
 
 For third-party packages, search the `Python Package Index
 <https://pypi.org>`_ or try `Google <https://www.google.com>`_ or
-another Web search engine.  Searching for "Python" plus a keyword or two for
+another web search engine.  Searching for "Python" plus a keyword or two for
 your topic of interest will usually find something helpful.
 
 
@@ -105,9 +105,6 @@ functions from ncurses and SYSV curses such as colour, alternative character set
 support, pads, and mouse support. This means the module isn't compatible with
 operating systems that only have BSD curses, but there don't seem to be any
 currently maintained OSes that fall into this category.
-
-For Windows: use `the consolelib module
-<http://effbot.org/zone/console-index.htm>`_.
 
 
 Is there an equivalent to C's onexit() in Python?
@@ -243,9 +240,6 @@ Be sure to use the :mod:`threading` module and not the :mod:`_thread` module.
 The :mod:`threading` module builds convenient abstractions on top of the
 low-level primitives provided by the :mod:`_thread` module.
 
-Aahz has a set of slides from his threading tutorial that are helpful; see
-http://www.pythoncraft.com/OSCON2001/.
-
 
 None of my threads seem to run: why?
 ------------------------------------
@@ -319,11 +313,11 @@ Here's a trivial example::
            try:
                arg = q.get(block=False)
            except queue.Empty:
-               print('Worker', threading.currentThread(), end=' ')
+               print('Worker', threading.current_thread(), end=' ')
                print('queue empty')
                break
            else:
-               print('Worker', threading.currentThread(), end=' ')
+               print('Worker', threading.current_thread(), end=' ')
                print('running with argument', arg)
                time.sleep(0.5)
 
@@ -617,9 +611,9 @@ use ``p.read(n)``.
 How do I access the serial (RS232) port?
 ----------------------------------------
 
-For Win32, POSIX (Linux, BSD, etc.), Jython:
+For Win32, OSX, Linux, BSD, Jython, IronPython:
 
-   http://pyserial.sourceforge.net
+   https://pypi.org/project/pyserial/
 
 For Unix, see a Usenet post by Mitch Chapman:
 

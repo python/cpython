@@ -187,3 +187,13 @@ def save_restore_warnings_filters():
         yield
     finally:
         warnings.filters[:] = old_filters
+
+
+def _warn_about_deprecation():
+    warnings.warn(
+        "This is used in test_support test to ensure"
+        " support.ignore_deprecations_from() works as expected."
+        " You should not be seeing this.",
+        DeprecationWarning,
+        stacklevel=0,
+    )

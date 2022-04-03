@@ -26,12 +26,12 @@ always available.
 .. function:: addaudithook(hook)
 
    Append the callable *hook* to the list of active auditing hooks for the
-   current interpreter.
+   current (sub)interpreter.
 
    When an auditing event is raised through the :func:`sys.audit` function, each
    hook will be called in the order it was added with the event name and the
    tuple of arguments. Native hooks added by :c:func:`PySys_AddAuditHook` are
-   called first, followed by hooks added in the current interpreter.  Hooks
+   called first, followed by hooks added in the current (sub)interpreter.  Hooks
    can then log the event, raise an exception to abort the operation,
    or terminate the process entirely.
 
@@ -250,7 +250,8 @@ always available.
    Print low-level information to stderr about the state of CPython's memory
    allocator.
 
-   If Python is configured --with-pydebug, it also performs some expensive
+   If Python is `built in debug mode <debug-build>` (:option:`configure
+   --with-pydebug option <--with-pydebug>`), it also performs some expensive
    internal consistency checks.
 
    .. versionadded:: 3.3
@@ -377,27 +378,47 @@ always available.
    .. versionadded:: 3.8
       __unraisablehook__
 
-.. function:: exc_info()
 
-   This function returns a tuple of three values that give information about the
-   exception that is currently being handled.  The information returned is specific
-   both to the current thread and to the current stack frame.  If the current stack
-   frame is not handling an exception, the information is taken from the calling
-   stack frame, or its caller, and so on until a stack frame is found that is
-   handling an exception.  Here, "handling an exception" is defined as "executing
-   an except clause."  For any stack frame, only information about the exception
-   being currently handled is accessible.
+.. function:: exception()
+
+   This function returns the exception instance that is currently being
+   handled.  This exception is specific both to the current thread and
+   to the current stack frame.  If the current stack frame is not handling
+   an exception, the exception is taken from the calling stack frame, or its
+   caller, and so on until a stack frame is found that is handling an
+   exception.  Here, "handling an exception" is defined as "executing an
+   except clause." For any stack frame, only the exception being currently
+   handled is accessible.
 
    .. index:: object: traceback
 
-   If no exception is being handled anywhere on the stack, a tuple containing
-   three ``None`` values is returned.  Otherwise, the values returned are
-   ``(type, value, traceback)``.  Their meaning is: *type* gets the type of the
-   exception being handled (a subclass of :exc:`BaseException`); *value* gets
-   the exception instance (an instance of the exception type); *traceback* gets
-   a :ref:`traceback object <traceback-objects>` which encapsulates the call
-   stack at the point where the exception originally occurred.
+   If no exception is being handled anywhere on the stack, ``None`` is
+   returned.
 
+   .. versionadded:: 3.11
+
+
+.. function:: exc_info()
+
+   This function returns the old-style representation of the handled
+   exception. If an exception ``e`` is currently handled (so
+   :func:`exception` would return ``e``), :func:`exc_info` returns the
+   tuple ``(type(e), e, e.__traceback__)``.
+   That is, a tuple containing the type of the exception (a subclass of
+   :exc:`BaseException`), the exception itself, and a :ref:`traceback
+   object <traceback-objects>` which typically encapsulates the call
+   stack at the point where the exception last occurred.
+
+   .. index:: object: traceback
+
+   If no exception is being handled anywhere on the stack, this function
+   return a tuple containing three ``None`` values.
+
+   .. versionchanged:: 3.11
+      The ``type`` and ``traceback`` fields are now derived from the ``value``
+      (the exception instance), so when an exception is modified while it is
+      being handled, the changes are reflected in the results of subsequent
+      calls to :func:`exc_info`.
 
 .. data:: exec_prefix
 
@@ -428,10 +449,7 @@ always available.
 
 .. function:: exit([arg])
 
-   Exit from Python.  This is implemented by raising the :exc:`SystemExit`
-   exception, so cleanup actions specified by finally clauses of :keyword:`try`
-   statements are honored, and it is possible to intercept the exit attempt at
-   an outer level.
+   Raise a :exc:`SystemExit` exception, signaling an intention to exit the interpreter.
 
    The optional argument *arg* can be an integer giving the exit status
    (defaulting to zero), or another type of object.  If it is an integer, zero
@@ -448,7 +466,8 @@ always available.
 
    Since :func:`exit` ultimately "only" raises an exception, it will only exit
    the process when called from the main thread, and the exception is not
-   intercepted.
+   intercepted. Cleanup actions specified by finally clauses of :keyword:`try` statements
+   are honored, and it is possible to intercept the exit attempt at an outer level.
 
    .. versionchanged:: 3.6
       If an error occurs in the cleanup after the Python interpreter
@@ -795,10 +814,15 @@ always available.
    Microsoft documentation on :c:func:`OSVERSIONINFOEX` for more information
    about these fields.
 
-   *platform_version* returns the accurate major version, minor version and
+   *platform_version* returns the major version, minor version and
    build number of the current operating system, rather than the version that
    is being emulated for the process. It is intended for use in logging rather
    than for feature detection.
+
+   .. note::
+      *platform_version* derives the version from kernel32.dll which can be of a different
+      version than the OS version. Please use :mod:`platform` module for achieving accurate
+      OS version.
 
    .. availability:: Windows.
 
@@ -854,7 +878,7 @@ always available.
    +---------------------+--------------------------------------------------+
    | :const:`inf`        | hash value returned for a positive infinity      |
    +---------------------+--------------------------------------------------+
-   | :const:`nan`        | hash value returned for a nan                    |
+   | :const:`nan`        | (this attribute is no longer used)               |
    +---------------------+--------------------------------------------------+
    | :const:`imag`       | multiplier used for the imaginary part of a      |
    |                     | complex number                                   |
@@ -1067,7 +1091,11 @@ always available.
    This is a dictionary that maps module names to modules which have already been
    loaded.  This can be manipulated to force reloading of modules and other tricks.
    However, replacing the dictionary will not necessarily work as expected and
-   deleting essential items from the dictionary may cause Python to fail.
+   deleting essential items from the dictionary may cause Python to fail.  If
+   you want to iterate over this global dictionary always use
+   ``sys.modules.copy()`` or ``tuple(sys.modules)`` to avoid exceptions as its
+   size may change during iteration as a side effect of code or activity in
+   other threads.
 
 
 .. data:: orig_argv
@@ -1096,15 +1124,16 @@ always available.
    current directory first.  Notice that the script directory is inserted *before*
    the entries inserted as a result of :envvar:`PYTHONPATH`.
 
+   The initialization of :data:`sys.path` is documented at :ref:`sys-path-init`.
+
    A program is free to modify this list for its own purposes.  Only strings
    and bytes should be added to :data:`sys.path`; all other data types are
    ignored during import.
 
 
    .. seealso::
-      Module :mod:`site` This describes how to use .pth files to extend
-      :data:`sys.path`.
-
+      * Module :mod:`site` This describes how to use .pth files to
+        extend :data:`sys.path`.
 
 .. data:: path_hooks
 
@@ -1206,13 +1235,10 @@ always available.
 .. data:: prefix
 
    A string giving the site-specific directory prefix where the platform
-   independent Python files are installed; by default, this is the string
+   independent Python files are installed; on Unix, the default is
    ``'/usr/local'``.  This can be set at build time with the ``--prefix``
-   argument to the :program:`configure` script.  The main collection of Python
-   library modules is installed in the directory :file:`{prefix}/lib/python{X.Y}`
-   while the platform independent header files (all except :file:`pyconfig.h`) are
-   stored in :file:`{prefix}/include/python{X.Y}`, where *X.Y* is the version
-   number of Python, for example ``3.2``.
+   argument to the :program:`configure` script.  See
+   :ref:`installation_paths` for derived paths.
 
    .. note:: If a :ref:`virtual environment <venv-def>` is in effect, this
       value will be changed in ``site.py`` to point to the virtual
@@ -1719,13 +1745,13 @@ always available.
 
    .. code-block:: shell-session
 
-      $ ./python -Xa=b -Xc
+      $ ./python -Xpycache_prefix=some_path -Xdev
       Python 3.2a3+ (py3k, Oct 16 2010, 20:14:50)
       [GCC 4.4.3] on linux2
       Type "help", "copyright", "credits" or "license" for more information.
       >>> import sys
       >>> sys._xoptions
-      {'a': 'b', 'c': True}
+      {'pycache_prefix': 'some_path', 'dev': True}
 
    .. impl-detail::
 

@@ -100,7 +100,7 @@ For convenience, some of these functions will always return a
    This is the most common way to set the error indicator.  The first argument
    specifies the exception type; it is normally one of the standard exceptions,
    e.g. :c:data:`PyExc_RuntimeError`.  You need not increment its reference count.
-   The second argument is an error message; it is decoded from ``'utf-8``'.
+   The second argument is an error message; it is decoded from ``'utf-8'``.
 
 
 .. c:function:: void PyErr_SetObject(PyObject *type, PyObject *value)
@@ -253,6 +253,14 @@ For convenience, some of these functions will always return a
    .. versionadded:: 3.3
 
 
+.. c:function:: PyObject* PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg, PyObject *name, PyObject *path)
+
+   Much like :c:func:`PyErr_SetImportError` but this function allows for
+   specifying a subclass of :exc:`ImportError` to raise.
+
+   .. versionadded:: 3.6
+
+
 .. c:function:: void PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset)
 
    Set file, line, and offset information for the current exception.  If the
@@ -319,13 +327,6 @@ an error value).
    For information about warning control, see the documentation for the
    :mod:`warnings` module and the :option:`-W` option in the command line
    documentation.  There is no C API for warning control.
-
-.. c:function:: PyObject* PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg, PyObject *name, PyObject *path)
-
-   Much like :c:func:`PyErr_SetImportError` but this function allows for
-   specifying a subclass of :exc:`ImportError` to raise.
-
-   .. versionadded:: 3.6
 
 
 .. c:function:: int PyErr_WarnExplicitObject(PyObject *category, PyObject *message, PyObject *filename, int lineno, PyObject *module, PyObject *registry)
@@ -482,7 +483,6 @@ Querying the error indicator
    to an exception that was *already caught*, not to an exception that was
    freshly raised.  This function steals the references of the arguments.
    To clear the exception state, pass ``NULL`` for all three arguments.
-   For general rules about the three arguments, see :c:func:`PyErr_Restore`.
 
    .. note::
 
@@ -492,6 +492,12 @@ Querying the error indicator
       state.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.11
+      The ``type`` and ``traceback`` arguments are no longer used and
+      can be NULL. The interpreter now derives them from the exception
+      instance (the ``value`` argument). The function still steals
+      references of all three arguments.
 
 
 Signal Handling
@@ -512,7 +518,7 @@ Signal Handling
    and if so, invokes the corresponding signal handler.  If the :mod:`signal`
    module is supported, this can invoke a signal handler written in Python.
 
-   The function attemps to handle all pending signals, and then returns ``0``.
+   The function attempts to handle all pending signals, and then returns ``0``.
    However, if a Python signal handler raises an exception, the error
    indicator is set and the function returns ``-1`` immediately (such that
    other pending signals may not have been handled yet: they will be on the
@@ -674,27 +680,6 @@ The following functions are used to create and modify Unicode exceptions from C.
    Create a :class:`UnicodeDecodeError` object with the attributes *encoding*,
    *object*, *length*, *start*, *end* and *reason*. *encoding* and *reason* are
    UTF-8 encoded strings.
-
-.. c:function:: PyObject* PyUnicodeEncodeError_Create(const char *encoding, const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
-
-   Create a :class:`UnicodeEncodeError` object with the attributes *encoding*,
-   *object*, *length*, *start*, *end* and *reason*. *encoding* and *reason* are
-   UTF-8 encoded strings.
-
-   .. deprecated:: 3.3 3.11
-
-      ``Py_UNICODE`` is deprecated since Python 3.3. Please migrate to
-      ``PyObject_CallFunction(PyExc_UnicodeEncodeError, "sOnns", ...)``.
-
-.. c:function:: PyObject* PyUnicodeTranslateError_Create(const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
-
-   Create a :class:`UnicodeTranslateError` object with the attributes *object*,
-   *length*, *start*, *end* and *reason*. *reason* is a UTF-8 encoded string.
-
-   .. deprecated:: 3.3 3.11
-
-      ``Py_UNICODE`` is deprecated since Python 3.3. Please migrate to
-      ``PyObject_CallFunction(PyExc_UnicodeTranslateError, "Onns", ...)``.
 
 .. c:function:: PyObject* PyUnicodeDecodeError_GetEncoding(PyObject *exc)
                 PyObject* PyUnicodeEncodeError_GetEncoding(PyObject *exc)

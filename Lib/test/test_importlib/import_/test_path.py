@@ -1,4 +1,4 @@
-from .. import util
+from test.test_importlib import util
 
 importlib = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
@@ -75,7 +75,8 @@ class FinderTests:
         with util.import_state(path_importer_cache={}, path_hooks=[],
                                path=[path_entry]):
             with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter('always')
+                warnings.simplefilter('always', ImportWarning)
+                warnings.simplefilter('ignore', DeprecationWarning)
                 self.assertIsNone(self.find('os'))
                 self.assertIsNone(sys.path_importer_cache[path_entry])
                 self.assertEqual(len(w), 1)
@@ -123,12 +124,16 @@ class FinderTests:
         failing_finder.to_return = None
         path = 'testing path'
         with util.import_state(path_importer_cache={path: failing_finder}):
-            self.assertIsNone(
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ImportWarning)
+                self.assertIsNone(
                     self.machinery.PathFinder.find_spec('whatever', [path]))
         success_finder = TestFinder()
         success_finder.to_return = __loader__
         with util.import_state(path_importer_cache={path: success_finder}):
-            spec = self.machinery.PathFinder.find_spec('whatever', [path])
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ImportWarning)
+                spec = self.machinery.PathFinder.find_spec('whatever', [path])
         self.assertEqual(spec.loader, __loader__)
 
     def test_finder_with_find_loader(self):
@@ -139,12 +144,16 @@ class FinderTests:
                 return self.loader, self.portions
         path = 'testing path'
         with util.import_state(path_importer_cache={path: TestFinder()}):
-            self.assertIsNone(
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ImportWarning)
+                self.assertIsNone(
                     self.machinery.PathFinder.find_spec('whatever', [path]))
         success_finder = TestFinder()
         success_finder.loader = __loader__
         with util.import_state(path_importer_cache={path: success_finder}):
-            spec = self.machinery.PathFinder.find_spec('whatever', [path])
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ImportWarning)
+                spec = self.machinery.PathFinder.find_spec('whatever', [path])
         self.assertEqual(spec.loader, __loader__)
 
     def test_finder_with_find_spec(self):
@@ -208,7 +217,9 @@ class FinderTests:
 
 class FindModuleTests(FinderTests):
     def find(self, *args, **kwargs):
-        return self.machinery.PathFinder.find_module(*args, **kwargs)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return self.machinery.PathFinder.find_module(*args, **kwargs)
     def check_found(self, found, importer):
         self.assertIs(found, importer)
 
@@ -248,7 +259,9 @@ class PathEntryFinderTests:
 
         with util.import_state(path=[Finder.path_location]+sys.path[:],
                                path_hooks=[Finder]):
-            self.machinery.PathFinder.find_spec('importlib')
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ImportWarning)
+                self.machinery.PathFinder.find_spec('importlib')
 
     def test_finder_with_failing_find_module(self):
         # PathEntryFinder with find_module() defined should work.
@@ -266,7 +279,10 @@ class PathEntryFinderTests:
 
         with util.import_state(path=[Finder.path_location]+sys.path[:],
                                path_hooks=[Finder]):
-            self.machinery.PathFinder.find_module('importlib')
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ImportWarning)
+                warnings.simplefilter("ignore", DeprecationWarning)
+                self.machinery.PathFinder.find_module('importlib')
 
 
 (Frozen_PEFTests,

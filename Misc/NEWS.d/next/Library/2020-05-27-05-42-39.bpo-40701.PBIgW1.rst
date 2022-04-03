@@ -1,6 +1,0 @@
-When the :data:`tempfile.tempdir` global variable is set to a value of
-type bytes, it is now handled consistently.  Previously exceptions
-could be raised from some tempfile APIs when the directory did not
-already exist in this situation.  Also ensures that the
-:func:`tempfile.gettempdir()` and :func:`tempfile.gettempdirb()`
-functions *always* return ``str`` and ``bytes`` respectively.

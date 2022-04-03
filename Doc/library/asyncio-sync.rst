@@ -64,6 +64,9 @@ Lock
        finally:
            lock.release()
 
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
+
    .. coroutinemethod:: acquire()
 
       Acquire the lock.
@@ -105,6 +108,9 @@ Event
    with the :meth:`~Event.set` method and reset to *false* with the
    :meth:`clear` method.  The :meth:`~Event.wait` method blocks until the
    flag is set to *true*.  The flag is set to *false* initially.
+
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
    .. _asyncio_example_sync_event:
 
@@ -177,6 +183,9 @@ Condition
    The optional *lock* argument must be a :class:`Lock` object or
    ``None``.  In the latter case a new Lock object is created
    automatically.
+
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
    The preferred way to use a Condition is an :keyword:`async with`
    statement::
@@ -274,6 +283,9 @@ Semaphore
    internal counter (``1`` by default). If the given value is
    less than ``0`` a :exc:`ValueError` is raised.
 
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
+
    The preferred way to use a Semaphore is an :keyword:`async with`
    statement::
 
@@ -326,111 +338,94 @@ BoundedSemaphore
    a :exc:`ValueError` in :meth:`~Semaphore.release` if it
    increases the internal counter above the initial *value*.
 
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
+
 
 Barrier
 =======
 
-   .. versionadded:: 3.10
+.. class:: Barrier(parties, action=None)
 
    A barrier object.  Not thread-safe.
 
-   This class, as a clone of :class:`threading.Barrier`, provides a simple synchronization
-   primitive for use by a fixed number of tasks that need to wait for each other.
-   Each of the task tries to pass the barrier by calling the :meth:`~Barrier.wait` method
-   and will block until all of the tasks have made their :meth:`~Barrier.wait` calls.
-   At this point, the tasks are released simultaneously.
+   A barrier is a simple synchronization primitive that allows to block until
+   *parties* number of tasks are waiting on it.
+   Tasks can wait on the :meth:`~Barrier.wait` method and would be blocked until
+   the specified number of tasks end up waiting on :meth:`~Barrier.wait`.
+   At that point all of the waiting tasks would unblock simultaneously.
 
-   The barrier can be reused any number of times for the same number of tasks.
+   :keyword:`async with` can be used as an alternative to awaiting on
+   :meth:`~Barrier.wait`.
+
+   The barrier can be reused any number of times.
 
    .. _asyncio_example_barrier:
 
    Example::
 
-       import asyncio
-       import os
-       import random
+      async def example_barrier():
+         # barrier with 3 parties
+         b = asyncio.Barrier(3)
 
-       DELAYS = (1.0, 4.0, 2.0, 0.5)
-       NB = 10
+         # create 2 new waiting tasks
+         asyncio.create_task(b.wait())
+         asyncio.create_task(b.wait())
 
-       def job_done():
-          msg = 'ACTION: All files removed'
-          print(f'{os.linesep}{msg:-^80s}{os.linesep}')
+         await asyncio.sleep(0)
+         print(b)
 
-       async def remove_file(barrier, filename):
-          print(f'Remove {filename!r} ...')
+         # The third .wait() call passes the barrier
+         await b.wait()
+         print(b)
+         print("barrier passed")
 
-          # remove filename (simulation)
-          await asyncio.sleep(random.choice(DELAYS))
-          print(f'\tFile {filename!r} is removed')
+         await asyncio.sleep(0)
+         print(b)
 
-          # wait for others files
-          return await barrier.wait()
+      asyncio.run(example_barrier())
 
-       async def remove_folder(barrier, folder):
-          print(f'Waiting for remove all files from folder {folder!r} ...')
+   Result of this example is::
 
-          # wait for all removed files
-          await barrier.wait()
+      <asyncio.locks.Barrier object at 0x... [filling, waiters:2/3]>
+      <asyncio.locks.Barrier object at 0x... [draining, waiters:0/3]>
+      barrier passed
+      <asyncio.locks.Barrier object at 0x... [filling, waiters:0/3]>
 
-          # remove folder (simulation)
-          await asyncio.sleep(1.0)
-          print(f'Folder {folder!r} is now removed ...')
-
-          return -1
-
-       async def main(folder, files, nb_files):
-          # Create a Barrier object with parties equal to nb_files+1
-          # corresponding to the number of all removing items,
-          # and an action as a print message.
-          barrier = asyncio.Barrier(nb_files+1, action=job_done)
-
-          # Add remove_file task for each filename.
-          tasks = [asyncio.create_task(remove_file(barrier, f)) for f in files]
-
-          # Add remove_folder task for the folder.
-          tasks.append(asyncio.create_task(remove_folder(barrier, folder)))
-
-          # Wait until folder+filenames are removed.
-          await asyncio.gather(*tasks)
-
-       asyncio.run(main("Datas", [f'file{i+1:02d}.txt' for i in range(NB)], NB))
-
-.. class:: Barrier(parties, action=None)
-
-   Create a barrier object for *parties* number of tasks.  A callable *action*, when
-   provided, is called once just before the release phasis (draining state).
+   .. versionadded:: 3.11
 
    .. coroutinemethod:: wait()
 
-      Pass the barrier.  When all the tasks party to the barrier have called
-      this function, they are all released simultaneously.
+      Pass the barrier. When all the tasks party to the barrier have called
+      this function, they are all unblocked simultaneously.
 
-      The return value is an integer in the range 0 to *parties* -- 1, different
-      for each task.  This can be used to select a task to do some special
+      When a waiting or blocked task in the barrier is cancelled,
+      this task exits the barrier which stays in the same state.
+      If the state of the barrier is "filling", the number of waiting task
+      decreases by 1.
+
+      The return value is an integer in the range of 0 to ``parties-1``, different
+      for each task. This can be used to select a task to do some special
       housekeeping, e.g.::
 
          ...
-          file_position = await barrier.wait()
-          if file_position == 0:
-             # Only one tasks needs to print this
-             print(f"I have the position #{file_position}")
-
-      If an *action* was provided to the constructor, the last calling task of
-      :meth:`wait` method will have called it prior to being released.
-      Should this call raise an error, the barrier is put into the broken state.
+         async with barrier as position:
+            if position == 0:
+               # Only one task print this
+               print('End of *draining phasis*')
 
       This method may raise a :class:`BrokenBarrierError` exception if the
       barrier is broken or reset while a task is waiting.
+      It could raise a :exc:`CancelledError` if a task is cancelled.
 
-   .. method:: reset()
+   .. coroutinemethod:: reset()
 
       Return the barrier to the default, empty state.  Any tasks waiting on it
       will receive the :class:`BrokenBarrierError` exception.
 
       If a barrier is broken it may be better to just leave it and create a new one.
 
-   .. method:: abort()
+   .. coroutinemethod:: abort()
 
       Put the barrier into a broken state.  This causes any active or future
       calls to :meth:`wait` to fail with the :class:`BrokenBarrierError`.
@@ -443,7 +438,7 @@ Barrier
 
    .. attribute:: n_waiting
 
-      The number of tasks currently waiting in the barrier.
+      The number of tasks currently waiting in the barrier while filling.
 
    .. attribute:: broken
 

@@ -137,12 +137,15 @@ __all__ = [
     "findall", "finditer", "compile", "purge", "template", "escape",
     "error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
     "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
-    "UNICODE",
+    "UNICODE", "NOFLAG", "RegexFlag",
 ]
 
 __version__ = "2.2.1"
 
-class RegexFlag(enum.IntFlag, boundary=enum.KEEP):
+@enum.global_enum
+@enum._simple_enum(enum.IntFlag, boundary=enum.KEEP)
+class RegexFlag:
+    NOFLAG = 0
     ASCII = A = sre_compile.SRE_FLAG_ASCII # assume ascii "locale"
     IGNORECASE = I = sre_compile.SRE_FLAG_IGNORECASE # ignore case
     LOCALE = L = sre_compile.SRE_FLAG_LOCALE # assume current 8-bit locale
@@ -153,22 +156,8 @@ class RegexFlag(enum.IntFlag, boundary=enum.KEEP):
     # sre extensions (experimental, don't rely on these)
     TEMPLATE = T = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
     DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
-
-    def __repr__(self):
-        res = ''
-        if self._name_:
-            member_names = self._name_.split('|')
-            constant = None
-            if member_names[-1].startswith('0x'):
-                constant = member_names.pop()
-            res = 're.' + '|re.'.join(member_names)
-            if constant:
-                res += '|%s' % constant
-        return res
-
     __str__ = object.__str__
-
-globals().update(RegexFlag.__members__)
+    _numeric_repr_ = hex
 
 # sre exception
 error = sre_compile.error

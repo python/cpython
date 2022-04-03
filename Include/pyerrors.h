@@ -60,11 +60,14 @@ PyAPI_FUNC(const char *) PyExceptionClass_Name(PyObject *);
 
 #define PyExceptionInstance_Class(x) ((PyObject*)Py_TYPE(x))
 
+#define _PyBaseExceptionGroup_Check(x)                   \
+    PyObject_TypeCheck(x, (PyTypeObject *)PyExc_BaseExceptionGroup)
 
 /* Predefined exceptions */
 
 PyAPI_DATA(PyObject *) PyExc_BaseException;
 PyAPI_DATA(PyObject *) PyExc_Exception;
+PyAPI_DATA(PyObject *) PyExc_BaseExceptionGroup;
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 PyAPI_DATA(PyObject *) PyExc_StopAsyncIteration;
 #endif
@@ -146,6 +149,7 @@ PyAPI_DATA(PyObject *) PyExc_FutureWarning;
 PyAPI_DATA(PyObject *) PyExc_ImportWarning;
 PyAPI_DATA(PyObject *) PyExc_UnicodeWarning;
 PyAPI_DATA(PyObject *) PyExc_BytesWarning;
+PyAPI_DATA(PyObject *) PyExc_EncodingWarning;
 PyAPI_DATA(PyObject *) PyExc_ResourceWarning;
 
 
@@ -313,7 +317,7 @@ PyAPI_FUNC(int) PyOS_vsnprintf(char *str, size_t size, const char  *format, va_l
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_ERRORS_H
-#  include  "cpython/pyerrors.h"
+#  include "cpython/pyerrors.h"
 #  undef Py_CPYTHON_ERRORS_H
 #endif
 

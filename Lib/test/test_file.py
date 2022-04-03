@@ -7,6 +7,7 @@ from weakref import proxy
 import io
 import _pyio as pyio
 
+from test.support import gc_collect
 from test.support.os_helper import TESTFN
 from test.support import os_helper
 from test.support import warnings_helper
@@ -30,6 +31,7 @@ class AutoFileTests:
         self.assertEqual(self.f.tell(), p.tell())
         self.f.close()
         self.f = None
+        gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, getattr, p, 'tell')
 
     def testAttributes(self):
@@ -52,7 +54,7 @@ class AutoFileTests:
         # verify readinto refuses text files
         a = array('b', b'x'*10)
         self.f.close()
-        self.f = self.open(TESTFN, 'r')
+        self.f = self.open(TESTFN, encoding="utf-8")
         if hasattr(self.f, "readinto"):
             self.assertRaises(TypeError, self.f.readinto, a)
 
@@ -153,6 +155,22 @@ class OtherFileTests:
             else:
                 f.close()
                 self.fail('%r is an invalid file mode' % mode)
+
+    def testStdin(self):
+        if sys.platform == 'osf1V5':
+            # This causes the interpreter to exit on OSF1 v5.1.
+            self.skipTest(
+                ' sys.stdin.seek(-1) may crash the interpreter on OSF1.'
+                ' Test manually.')
+
+        if not sys.stdin.isatty():
+            # Issue 14853: stdin becomes seekable when redirected to a file
+            self.skipTest('stdin must be a TTY in this test')
+
+        with self.assertRaises((IOError, ValueError)):
+            sys.stdin.seek(-1)
+        with self.assertRaises((IOError, ValueError)):
+            sys.stdin.truncate()
 
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument

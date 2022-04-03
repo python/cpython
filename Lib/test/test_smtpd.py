@@ -5,8 +5,12 @@ from test.support import socket_helper
 from test.support import warnings_helper
 import socket
 import io
-import smtpd
-import asyncore
+
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import smtpd
+    import asyncore
 
 
 class DummyServer(smtpd.SMTPServer):

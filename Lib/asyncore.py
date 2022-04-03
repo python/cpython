@@ -57,6 +57,13 @@ from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, EINVAL, \
      ENOTCONN, ESHUTDOWN, EISCONN, EBADF, ECONNABORTED, EPIPE, EAGAIN, \
      errorcode
 
+warnings.warn(
+    'The asyncore module is deprecated and will be removed in Python 3.12. '
+    'The recommended replacement is asyncio',
+    DeprecationWarning,
+    stacklevel=2)
+
+
 _DISCONNECTED = frozenset({ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE,
                            EBADF})
 

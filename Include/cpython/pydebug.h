@@ -29,7 +29,7 @@ PyAPI_DATA(int) Py_LegacyWindowsStdioFlag;
 /* this is a wrapper around getenv() that pays attention to
    Py_IgnoreEnvironmentFlag.  It should be used for getting variables like
    PYTHONPATH and PYTHONHOME from the environment */
-#define Py_GETENV(s) (Py_IgnoreEnvironmentFlag ? NULL : getenv(s))
+PyAPI_DATA(char*) Py_GETENV(const char *name);
 
 #ifdef __cplusplus
 }

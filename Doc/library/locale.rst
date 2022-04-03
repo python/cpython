@@ -301,6 +301,8 @@ The :mod:`locale` module defines the following exception and functions:
    *language code* and *encoding* may be ``None`` if their values cannot be
    determined.
 
+   .. deprecated:: 3.11 3.13
+
 
 .. function:: getlocale(category=LC_CTYPE)
 
@@ -425,6 +427,14 @@ The :mod:`locale` module defines the following exception and functions:
     :const:`LC_NUMERIC` settings.
 
     .. versionadded:: 3.5
+
+
+.. function:: localize(string, grouping=False, monetary=False)
+
+    Converts a normalized number string into a formatted string following the
+    :const:`LC_NUMERIC` settings.
+
+    .. versionadded:: 3.10
 
 
 .. function:: atof(string)

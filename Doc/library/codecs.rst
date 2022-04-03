@@ -159,9 +159,13 @@ function:
 .. function:: register(search_function)
 
    Register a codec search function. Search functions are expected to take one
-   argument, being the encoding name in all lower case letters, and return a
-   :class:`CodecInfo` object. In case a search function cannot find
-   a given encoding, it should return ``None``.
+   argument, being the encoding name in all lower case letters with hyphens
+   and spaces converted to underscores, and return a :class:`CodecInfo` object.
+   In case a search function cannot find a given encoding, it should return
+   ``None``.
+
+   .. versionchanged:: 3.9
+      Hyphens and spaces are converted to underscore.
 
 
 .. function:: unregister(search_function)
@@ -199,6 +203,9 @@ wider range of codecs when working with binary files:
 
    *buffering* has the same meaning as for the built-in :func:`open` function.
    It defaults to -1 which means that the default buffer size will be used.
+
+   .. versionchanged:: 3.11
+      The ``'U'`` mode has been removed.
 
 
 .. function:: EncodedFile(file, data_encoding, file_encoding=None, errors='strict')
@@ -690,8 +697,9 @@ compatible with the Python codec registry.
 
    .. method:: writelines(list)
 
-      Writes the concatenated list of strings to the stream (possibly by reusing
-      the :meth:`write` method). The standard bytes-to-bytes codecs
+      Writes the concatenated iterable of strings to the stream (possibly by reusing
+      the :meth:`write` method). Infinite or
+      very large iterables are not supported. The standard bytes-to-bytes codecs
       do not support this method.
 
 
@@ -919,7 +927,7 @@ it's a device to determine the storage layout of the encoded bytes, and vanishes
 once the byte sequence has been decoded into a string; as a ``ZERO WIDTH
 NO-BREAK SPACE`` it's a normal character that will be decoded like any other.
 
-There's another encoding that is able to encoding the full range of Unicode
+There's another encoding that is able to encode the full range of Unicode
 characters: UTF-8. UTF-8 is an 8-bit encoding, which means there are no issues
 with byte order in UTF-8. Each byte in a UTF-8 byte sequence consists of two
 parts: marker bits (the most significant bits) and payload bits. The marker bits
@@ -1416,6 +1424,9 @@ This module implements :rfc:`3490` (Internationalized Domain Names in
 Applications) and :rfc:`3492` (Nameprep: A Stringprep Profile for
 Internationalized Domain Names (IDN)). It builds upon the ``punycode`` encoding
 and :mod:`stringprep`.
+
+If you need the IDNA 2008 standard from :rfc:`5891` and :rfc:`5895`, use the
+third-party `idna module <https://pypi.org/project/idna/>_`.
 
 These RFCs together define a protocol to support non-ASCII characters in domain
 names. A domain name containing non-ASCII characters (such as

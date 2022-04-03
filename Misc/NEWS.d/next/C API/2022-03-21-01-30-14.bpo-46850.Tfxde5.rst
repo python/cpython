@@ -1,0 +1,4 @@
+Remove the private undocumented function
+``_PyEval_GetCoroutineOriginTrackingDepth()`` from the C API. Call the
+public :func:`sys.get_coroutine_origin_tracking_depth` function instead.
+Patch by Victor Stinner.

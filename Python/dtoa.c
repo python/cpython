@@ -118,21 +118,12 @@
 /* Linking of Python's #defines to Gay's #defines starts here. */
 
 #include "Python.h"
-#include "pycore_dtoa.h"
-#include "pycore_interp.h"
-#include "pycore_pystate.h"
+#include "pycore_dtoa.h"          // _PY_SHORT_FLOAT_REPR
+#include <stdlib.h>               // exit()
 
-#define ULong _PyDtoa_ULong
-#define Long _PyDtoa_Long
-#define ULLong _PyDtoa_ULLong
-#define Kmax _PyDtoa_Kmax
-
-typedef struct _PyDtoa_Bigint Bigint;
-
-
-/* if PY_NO_SHORT_FLOAT_REPR is defined, then don't even try to compile
+/* if _PY_SHORT_FLOAT_REPR == 0, then don't even try to compile
    the following code */
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
 
 #include "float.h"
 
@@ -163,6 +154,11 @@ typedef struct _PyDtoa_Bigint Bigint;
 #if !defined(WORDS_BIGENDIAN) && defined(DOUBLE_IS_BIG_ENDIAN_IEEE754)
 #error "doubles and ints have incompatible endianness"
 #endif
+
+
+typedef uint32_t ULong;
+typedef int32_t Long;
+typedef uint64_t ULLong;
 
 #undef DEBUG
 #ifdef Py_DEBUG
@@ -302,6 +298,8 @@ BCinfo {
 
 #define FFFFFFFF 0xffffffffUL
 
+#define Kmax 7
+
 /* struct Bigint is used to represent arbitrary-precision integers.  These
    integers are stored in sign-magnitude format, with the magnitude stored as
    an array of base 2**32 digits.  Bigints are always normalized: if x is a
@@ -324,6 +322,14 @@ BCinfo {
        significant (x[0]) to most significant (x[wds-1]).
 */
 
+struct
+Bigint {
+    struct Bigint *next;
+    int k, maxwds, sign, wds;
+    ULong x[1];
+};
+
+typedef struct Bigint Bigint;
 
 #ifndef Py_USING_MEMORY_DEBUGGER
 
@@ -346,13 +352,7 @@ BCinfo {
    Bfree to PyMem_Free.  Investigate whether this has any significant
    performance on impact. */
 
-
-/* Get Bigint freelist from interpreter  */
-static Bigint **
-get_freelist(void) {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return interp->dtoa_freelist;
-} 
+static Bigint *freelist[Kmax+1];
 
 /* Allocate space for a Bigint with up to 1<<k digits */
 
@@ -362,7 +362,7 @@ Balloc(int k)
     int x;
     Bigint *rv;
     unsigned int len;
-    Bigint **freelist = get_freelist();
+
     if (k <= Kmax && (rv = freelist[k]))
         freelist[k] = rv->next;
     else {
@@ -394,7 +394,6 @@ Bfree(Bigint *v)
         if (v->k > Kmax)
             FREE((void*)v);
         else {
-            Bigint **freelist = get_freelist();
             v->next = freelist[v->k];
             freelist[v->k] = v;
         }
@@ -2858,4 +2857,4 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
 }
 #endif
 
-#endif  /* PY_NO_SHORT_FLOAT_REPR */
+#endif  // _PY_SHORT_FLOAT_REPR == 1
