@@ -1199,7 +1199,7 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
  * doesn't return None or timedelta, TypeError is raised and this returns -1.
  * If utcoffset() returns an out of range timedelta,
  * ValueError is raised and this returns -1.  Else *none is
- * set to 0 and the offset from UTC is returned as int # of minutes.
+ * set to 0 and the offset from UTC is returned as int number of minutes.
  */
 static PyObject *
 call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg)
@@ -1213,7 +1213,7 @@ call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg)
  * doesn't return None or timedelta, TypeError is raised and this
  * returns -1.  If dst() returns an invalid timedelta for a UTC offset,
  * ValueError is raised and this returns -1.  Else *none is set to 0 and
- * the offset from local time is returned as an int # of minutes.
+ * the offset from local time is returned as an int number of minutes.
  */
 static PyObject *
 call_dst(PyObject *tzinfo, PyObject *tzinfoarg)
@@ -3790,11 +3790,11 @@ static PyMethodDef tzinfo_methods[] = {
      PyDoc_STR("datetime -> string name of time zone.")},
 
     {"utcoffset",       (PyCFunction)tzinfo_utcoffset,          METH_O,
-     PyDoc_STR("Returns the difference between local time and UTC as a timedelta "
+     PyDoc_STR("Return the difference between local time and UTC as a timedelta "
         "object.")},
 
     {"dst",             (PyCFunction)tzinfo_dst,                METH_O,
-     PyDoc_STR("Returns the DST offset as a timedelta object.")},
+     PyDoc_STR("Return the DST offset as a timedelta object.")},
 
     {"fromutc",         (PyCFunction)tzinfo_fromutc,            METH_O,
      PyDoc_STR("datetime in UTC -> datetime in local time.")},

@@ -1954,7 +1954,7 @@ Examples of working with a :class:`.time` object::
 
 .. method:: tzinfo.utcoffset(dt)
 
-   Returns the dfference between local time and UTC as a :class:`timedelta` object.
+   Return the difference between local time and UTC as a :class:`timedelta` object.
    One must add this offset to UTC to arrive at local time.
 
    This represents the *total* offset from UTC; for example, if a

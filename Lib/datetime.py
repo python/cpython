@@ -1127,7 +1127,7 @@ class tzinfo:
         raise NotImplementedError("tzinfo subclass must override utcoffset()")
 
     def dst(self, dt):
-        """Returns the DST offset as a timedelta object.
+        """Return the DST offset as a timedelta object.
 
         Return 0 if DST not in effect.  utcoffset() must include the DST
         offset.
@@ -1466,7 +1466,7 @@ class time:
     # Timezone functions
 
     def utcoffset(self):
-        """Returns the difference between local time and UTC as a timedelta object."""
+        """Return the difference between local time and UTC as a timedelta object."""
         if self._tzinfo is None:
             return None
         offset = self._tzinfo.utcoffset(None)
@@ -1487,7 +1487,7 @@ class time:
         return name
 
     def dst(self):
-        """Returns the DST offset as a timedelta object, or timedelta(0) if
+        """Return the DST offset as a timedelta object, or timedelta(0) if
         DST is not in effect.
 
         This is purely informational; the DST offset has already been added to
@@ -1950,7 +1950,7 @@ class datetime(date):
         return _strptime._strptime_datetime(cls, date_string, format)
 
     def utcoffset(self):
-        """Returns the difference between local time and UTC as a timedelta object."""
+        """Return the difference between local time and UTC as a timedelta object."""
         if self._tzinfo is None:
             return None
         offset = self._tzinfo.utcoffset(self)
@@ -1971,7 +1971,7 @@ class datetime(date):
         return name
 
     def dst(self):
-        """Returns the DST offset as a timedelta object, or timedelta(0) if
+        """Return the DST offset as a timedelta object, or timedelta(0) if
         DST is not in effect.
 
         This is purely informational; the DST offset has already been added to
