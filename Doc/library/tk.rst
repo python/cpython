@@ -40,6 +40,7 @@ alternative `GUI frameworks and tools <https://wiki.python.org/moin/GuiProgrammi
    tkinter.dnd.rst
    tkinter.ttk.rst
    tkinter.tix.rst
+   tkinter.async.rst
    idle.rst
 
 .. Other sections I have in mind are
