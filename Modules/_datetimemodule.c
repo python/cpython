@@ -1199,7 +1199,7 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
  * doesn't return None or timedelta, TypeError is raised and this returns -1.
  * If utcoffset() returns an out of range timedelta,
  * ValueError is raised and this returns -1.  Else *none is
- * set to 0 and the offset from UTC is returned as int number of minutes.
+ * set to 0 and the offset from UTC is returned as an int number of minutes.
  */
 static PyObject *
 call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg)
