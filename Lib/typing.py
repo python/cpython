@@ -2420,9 +2420,9 @@ def overload(func):
     """
     # Inline version of _get_key_for_callable
     # classmethod and staticmethod
-    func = getattr(func, "__func__", func)
+    inner_func = getattr(func, "__func__", func)
     try:
-        key = (func.__module__, func.__qualname__)
+        key = (inner_func.__module__, inner_func.__qualname__)
     except AttributeError:
         # Not a normal function; ignore.
         pass
@@ -2434,22 +2434,24 @@ def overload(func):
             # most recent existing variant, we're probably re-creating overloads for a
             # function that already exists. In that case, we clear the existing variants
             # to avoid leaking memory.
-            firstlineno = _get_firstlineno(func)
-            if firstlineno is not None:
-                existing_lineno = _get_firstlineno(existing[-1])
-                if existing_lineno is not None and firstlineno <= existing_lineno:
-                    existing.clear()
+            try:
+                firstlineno = inner_func.__code__.co_firstlineno
+            except AttributeError:
+                pass
+            else:
+                existing_func = existing[-1]
+                # classmethod and staticmethod
+                existing_func = getattr(existing_func, "__func__", existing_func)
+                try:
+                    existing_lineno = existing_func.__code__.co_firstlineno
+                except AttributeError:
+                    pass
+                else:
+                    if firstlineno <= existing_lineno:
+                        existing.clear()
 
         existing.append(func)
     return _overload_dummy
-
-
-def _get_firstlineno(func):
-    # staticmethod, classmethod
-    func = getattr(func, "__func__", func)
-    if not hasattr(func, '__code__'):
-        return None
-    return func.__code__.co_firstlineno
 
 
 # {key: [overload]}
