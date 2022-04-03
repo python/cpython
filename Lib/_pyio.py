@@ -44,9 +44,9 @@ def text_encoding(encoding, stacklevel=2):
     """
     A helper function to choose the text encoding.
 
-    When encoding is not None, just return it.
-    Otherwise, return the default text encoding (i.e. "locale", or "utf-8"
-    if UTF-8 mode is enabled).
+    When encoding is not None, this function returns it.
+    Otherwise, this function returns the default text encoding
+    (i.e. "locale" or "utf-8" depends on UTF-8 mode).
 
     This function emits an EncodingWarning if *encoding* is None and
     sys.flags.warn_default_encoding is true.
