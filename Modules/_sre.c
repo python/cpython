@@ -427,6 +427,12 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->lastmark = -1;
     state->lastindex = -1;
 
+    state->repeats_array = PyMem_New(SRE_REPEAT, pattern->repeat_count);
+    if (!state->repeats_array) {
+        PyErr_NoMemory();
+        goto err;
+    }
+
     state->buffer.buf = NULL;
     ptr = getstring(string, &length, &isbytes, &charsize, &state->buffer);
     if (!ptr)
@@ -476,6 +482,9 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
        safely casted to `void*`, see bpo-39943 for details. */
     PyMem_Free((void*) state->mark);
     state->mark = NULL;
+    PyMem_Free(state->repeats_array);
+    state->repeats_array = NULL;
+
     if (state->buffer.buf)
         PyBuffer_Release(&state->buffer);
     return NULL;
@@ -491,6 +500,8 @@ state_fini(SRE_STATE* state)
     /* See above PyMem_Del for why we explicitly cast here. */
     PyMem_Free((void*) state->mark);
     state->mark = NULL;
+    PyMem_Free(state->repeats_array);
+    state->repeats_array = NULL;
 }
 
 /* calculate offset from start of string */
