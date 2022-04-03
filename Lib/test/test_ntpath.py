@@ -235,6 +235,15 @@ class TestNtpath(NtpathTestCase):
 
         tester("ntpath.normpath('\\\\.\\NUL')", r'\\.\NUL')
         tester("ntpath.normpath('\\\\?\\D:/XY\\Z')", r'\\?\D:/XY\Z')
+        tester("ntpath.normpath('handbook/../../Tests/image.png')", r'..\Tests\image.png')
+        tester("ntpath.normpath('handbook/../../../Tests/image.png')", r'..\..\Tests\image.png')
+        tester("ntpath.normpath('handbook///../a/.././../b/c')", r'..\b\c')
+        tester("ntpath.normpath('handbook/a/../..///../../b/c')", r'..\..\b\c')
+
+        tester("ntpath.normpath('//server/share/..')" ,    '\\\\server\\share\\')
+        tester("ntpath.normpath('//server/share/../')" ,   '\\\\server\\share\\')
+        tester("ntpath.normpath('//server/share/../..')",  '\\\\server\\share\\')
+        tester("ntpath.normpath('//server/share/../../')", '\\\\server\\share\\')
 
     def test_realpath_curdir(self):
         expected = ntpath.normpath(os.getcwd())
@@ -604,6 +613,40 @@ class TestNtpath(NtpathTestCase):
     @unittest.skipUnless(nt, "abspath requires 'nt' module")
     def test_abspath(self):
         tester('ntpath.abspath("C:\\")', "C:\\")
+        tester('ntpath.abspath("\\\\?\\C:////spam////eggs. . .")', "\\\\?\\C:\\spam\\eggs")
+        tester('ntpath.abspath("\\\\.\\C:////spam////eggs. . .")', "\\\\.\\C:\\spam\\eggs")
+        tester('ntpath.abspath("//spam//eggs. . .")',     "\\\\spam\\eggs")
+        tester('ntpath.abspath("\\\\spam\\\\eggs. . .")', "\\\\spam\\eggs")
+        tester('ntpath.abspath("C:/spam. . .")',  "C:\\spam")
+        tester('ntpath.abspath("C:\\spam. . .")', "C:\\spam")
+        tester('ntpath.abspath("C:/nul")',  "\\\\.\\nul")
+        tester('ntpath.abspath("C:\\nul")', "\\\\.\\nul")
+        tester('ntpath.abspath("//..")',           "\\\\")
+        tester('ntpath.abspath("//../")',          "\\\\..\\")
+        tester('ntpath.abspath("//../..")',        "\\\\..\\")
+        tester('ntpath.abspath("//../../")',       "\\\\..\\..\\")
+        tester('ntpath.abspath("//../../../")',    "\\\\..\\..\\")
+        tester('ntpath.abspath("//../../../..")',  "\\\\..\\..\\")
+        tester('ntpath.abspath("//../../../../")', "\\\\..\\..\\")
+        tester('ntpath.abspath("//server")',           "\\\\server")
+        tester('ntpath.abspath("//server/")',          "\\\\server\\")
+        tester('ntpath.abspath("//server/..")',        "\\\\server\\")
+        tester('ntpath.abspath("//server/../")',       "\\\\server\\..\\")
+        tester('ntpath.abspath("//server/../..")',     "\\\\server\\..\\")
+        tester('ntpath.abspath("//server/../../")',    "\\\\server\\..\\")
+        tester('ntpath.abspath("//server/../../..")',  "\\\\server\\..\\")
+        tester('ntpath.abspath("//server/../../../")', "\\\\server\\..\\")
+        tester('ntpath.abspath("//server/share")',        "\\\\server\\share")
+        tester('ntpath.abspath("//server/share/")',       "\\\\server\\share\\")
+        tester('ntpath.abspath("//server/share/..")',     "\\\\server\\share\\")
+        tester('ntpath.abspath("//server/share/../")',    "\\\\server\\share\\")
+        tester('ntpath.abspath("//server/share/../..")',  "\\\\server\\share\\")
+        tester('ntpath.abspath("//server/share/../../")', "\\\\server\\share\\")
+        tester('ntpath.abspath("C:\\nul. . .")', "\\\\.\\nul")
+        tester('ntpath.abspath("//... . .")',  "\\\\")
+        tester('ntpath.abspath("//.. . . .")', "\\\\")
+        tester('ntpath.abspath("//../... . .")',  "\\\\..\\")
+        tester('ntpath.abspath("//../.. . . .")', "\\\\..\\")
         with os_helper.temp_cwd(os_helper.TESTFN) as cwd_dir: # bpo-31047
             tester('ntpath.abspath("")', cwd_dir)
             tester('ntpath.abspath(" ")', cwd_dir + "\\ ")
@@ -741,8 +784,9 @@ class TestNtpath(NtpathTestCase):
             # (or any other volume root). The drive-relative
             # locations below cannot then refer to mount points
             #
-            drive, path = ntpath.splitdrive(sys.executable)
-            with os_helper.change_cwd(ntpath.dirname(sys.executable)):
+            test_cwd = os.getenv("SystemRoot")
+            drive, path = ntpath.splitdrive(test_cwd)
+            with os_helper.change_cwd(test_cwd):
                 self.assertFalse(ntpath.ismount(drive.lower()))
                 self.assertFalse(ntpath.ismount(drive.upper()))
 

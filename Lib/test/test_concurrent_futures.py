@@ -32,6 +32,12 @@ import multiprocessing.process
 import multiprocessing.util
 
 
+if support.check_sanitizer(address=True, memory=True):
+    # bpo-46633: Skip the test because it is too slow when Python is built
+    # with ASAN/MSAN: between 5 and 20 minutes on GitHub Actions.
+    raise unittest.SkipTest("test too slow on ASAN/MSAN build")
+
+
 def create_future(state=PENDING, exception=None, result=None):
     f = Future()
     f._state = state
@@ -48,7 +54,6 @@ EXCEPTION_FUTURE = create_future(state=FINISHED, exception=OSError())
 SUCCESSFUL_FUTURE = create_future(state=FINISHED, result=42)
 
 INITIALIZER_STATUS = 'uninitialized'
-
 
 def mul(x, y):
     return x * y
@@ -579,6 +584,14 @@ create_executor_tests(ProcessPoolShutdownTest,
 
 
 class WaitTests:
+    def test_20369(self):
+        # See https://bugs.python.org/issue20369
+        future = self.executor.submit(time.sleep, 1.5)
+        done, not_done = futures.wait([future, future],
+                            return_when=futures.ALL_COMPLETED)
+        self.assertEqual({future}, done)
+        self.assertEqual(set(), not_done)
+
 
     def test_first_completed(self):
         future1 = self.executor.submit(mul, 21, 2)
@@ -911,6 +924,20 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         self.assertEqual(len(executor._threads), 1)
         executor.shutdown(wait=True)
 
+    @unittest.skipUnless(hasattr(os, 'register_at_fork'), 'need os.register_at_fork')
+    def test_hang_global_shutdown_lock(self):
+        # bpo-45021: _global_shutdown_lock should be reinitialized in the child
+        # process, otherwise it will never exit
+        def submit(pool):
+            pool.submit(submit, pool)
+
+        with futures.ThreadPoolExecutor(1) as pool:
+            pool.submit(submit, pool)
+
+            for _ in range(50):
+                with futures.ProcessPoolExecutor(1, mp_context=get_context('fork')) as workers:
+                    workers.submit(tuple)
+
 
 class ProcessPoolExecutorTest(ExecutorTest):
 
@@ -1023,6 +1050,36 @@ class ProcessPoolExecutorTest(ExecutorTest):
         executor.submit(mul, 18, 29)
         self.assertLessEqual(len(executor._processes), 2)
         executor.shutdown()
+
+    def test_max_tasks_per_child(self):
+        executor = self.executor_type(1, max_tasks_per_child=3)
+        f1 = executor.submit(os.getpid)
+        original_pid = f1.result()
+        # The worker pid remains the same as the worker could be reused
+        f2 = executor.submit(os.getpid)
+        self.assertEqual(f2.result(), original_pid)
+        self.assertEqual(len(executor._processes), 1)
+        f3 = executor.submit(os.getpid)
+        self.assertEqual(f3.result(), original_pid)
+
+        # A new worker is spawned, with a statistically different pid,
+        # while the previous was reaped.
+        f4 = executor.submit(os.getpid)
+        new_pid = f4.result()
+        self.assertNotEqual(original_pid, new_pid)
+        self.assertEqual(len(executor._processes), 1)
+
+        executor.shutdown()
+
+    def test_max_tasks_early_shutdown(self):
+        executor = self.executor_type(3, max_tasks_per_child=1)
+        futures = []
+        for i in range(6):
+            futures.append(executor.submit(mul, i, i))
+        executor.shutdown()
+        for i, future in enumerate(futures):
+            self.assertEqual(future.result(), mul(i, i))
+
 
 create_executor_tests(ProcessPoolExecutorTest,
                       executor_mixins=(ProcessPoolForkMixin,
@@ -1515,16 +1572,10 @@ class FutureTests(BaseTestCase):
         self.assertEqual(f.exception(), e)
 
 
-_threads_key = None
-
 def setUpModule():
-    global _threads_key
-    _threads_key = threading_helper.threading_setup()
-
-
-def tearDownModule():
-    threading_helper.threading_cleanup(*_threads_key)
-    multiprocessing.util._cleanup_tests()
+    unittest.addModuleCleanup(multiprocessing.util._cleanup_tests)
+    thread_info = threading_helper.threading_setup()
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
 
 
 if __name__ == "__main__":

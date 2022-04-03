@@ -3,7 +3,6 @@ import contextlib
 import filecmp
 import importlib.util
 import io
-import itertools
 import os
 import pathlib
 import py_compile
@@ -16,22 +15,21 @@ import time
 import unittest
 
 from unittest import mock, skipUnless
-from concurrent.futures import ProcessPoolExecutor
 try:
     # compileall relies on ProcessPoolExecutor if ProcessPoolExecutor exists
     # and it can function.
+    from concurrent.futures import ProcessPoolExecutor
     from concurrent.futures.process import _check_system_limits
     _check_system_limits()
     _have_multiprocessing = True
-except NotImplementedError:
+except (NotImplementedError, ModuleNotFoundError):
     _have_multiprocessing = False
 
 from test import support
 from test.support import os_helper
 from test.support import script_helper
-
-from .test_py_compile import without_source_date_epoch
-from .test_py_compile import SourceDateEpochTestMeta
+from test.test_py_compile import without_source_date_epoch
+from test.test_py_compile import SourceDateEpochTestMeta
 
 
 def get_pyc(script, opt):
@@ -91,7 +89,8 @@ class CompileallTestsBase:
             os.utime(self.source_path, (2**32 - 1, 2**32 - 1))
         except (OverflowError, OSError):
             self.skipTest("filesystem doesn't support timestamps near 2**32")
-        self.assertTrue(compileall.compile_file(self.source_path))
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertTrue(compileall.compile_file(self.source_path))
 
     def test_larger_than_32_bit_times(self):
         # This is similar to the test above but we skip it if the OS doesn't
@@ -100,7 +99,8 @@ class CompileallTestsBase:
             os.utime(self.source_path, (2**35, 2**35))
         except (OverflowError, OSError):
             self.skipTest("filesystem doesn't support large timestamps")
-        self.assertTrue(compileall.compile_file(self.source_path))
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertTrue(compileall.compile_file(self.source_path))
 
     def recreation_check(self, metadata):
         """Check that compileall recreates bytecode when the new metadata is
@@ -244,6 +244,7 @@ class CompileallTestsBase:
         self.assertFalse(pool_mock.called)
         self.assertTrue(compile_file_mock.called)
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     @mock.patch('concurrent.futures.ProcessPoolExecutor', new=None)
     @mock.patch('compileall.compile_file')
     def test_compile_missing_multiprocessing(self, compile_file_mock):
@@ -296,6 +297,7 @@ class CompileallTestsBase:
         """Recursive compile_dir ddir= contains package paths; bpo39769."""
         return self._test_ddir_only(ddir="<a prefix>", parallel=False)
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     def test_ddir_multiple_workers(self):
         """Recursive compile_dir ddir= contains package paths; bpo39769."""
         return self._test_ddir_only(ddir="<a prefix>", parallel=True)
@@ -304,6 +306,7 @@ class CompileallTestsBase:
         """Recursive compile_dir ddir='' contains package paths; bpo39769."""
         return self._test_ddir_only(ddir="", parallel=False)
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     def test_ddir_empty_multiple_workers(self):
         """Recursive compile_dir ddir='' contains package paths; bpo39769."""
         return self._test_ddir_only(ddir="", parallel=True)
@@ -924,6 +927,7 @@ class CommandLineTestsNoSourceEpoch(CommandLineTestsBase,
 
 
 
+@unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
 class HardlinkDedupTestsBase:
     # Test hardlink_dupes parameter of compileall.compile_dir()
 

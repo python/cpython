@@ -60,8 +60,8 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     }
 
     sqlite3 *db = connection->db;
-    int max_length = sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1);
-    if (size >= max_length) {
+    int max_length = sqlite3_limit(db, SQLITE_LIMIT_SQL_LENGTH, -1);
+    if (size > max_length) {
         PyErr_SetString(connection->DataError,
                         "query string is too large");
         return NULL;
@@ -166,9 +166,16 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
                 rc = sqlite3_bind_int64(self->st, pos, value);
             break;
         }
-        case TYPE_FLOAT:
-            rc = sqlite3_bind_double(self->st, pos, PyFloat_AsDouble(parameter));
+        case TYPE_FLOAT: {
+            double value = PyFloat_AsDouble(parameter);
+            if (value == -1 && PyErr_Occurred()) {
+                rc = -1;
+            }
+            else {
+                rc = sqlite3_bind_double(self->st, pos, value);
+            }
             break;
+        }
         case TYPE_UNICODE:
             string = PyUnicode_AsUTF8AndSize(parameter, &buflen);
             if (string == NULL)

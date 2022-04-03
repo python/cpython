@@ -206,7 +206,7 @@ directory.
 If you don't choose an installation directory---i.e., if you just run ``setup.py
 install``\ ---then the :command:`install` command installs to the standard
 location for third-party Python modules.  This location varies by platform and
-by how you built/installed Python itself.  On Unix (and Mac OS X, which is also
+by how you built/installed Python itself.  On Unix (and macOS, which is also
 Unix-based), it also depends on whether the module distribution being installed
 is pure Python or contains extensions ("non-pure"):
 
@@ -236,7 +236,7 @@ Notes:
 
 :file:`{prefix}` and :file:`{exec-prefix}` stand for the directories that Python
 is installed to, and where it finds its libraries at run-time.  They are always
-the same under Windows, and very often the same under Unix and Mac OS X.  You
+the same under Windows, and very often the same under Unix and macOS.  You
 can find out what your Python installation uses for :file:`{prefix}` and
 :file:`{exec-prefix}` by running Python in interactive mode and typing a few
 simple commands. Under Unix, just type ``python`` at the shell prompt.  Under
@@ -312,7 +312,7 @@ install into it.  It is enabled with a simple option::
 Files will be installed into subdirectories of :data:`site.USER_BASE` (written
 as :file:`{userbase}` hereafter).  This scheme installs pure Python modules and
 extension modules in the same location (also known as :data:`site.USER_SITE`).
-Here are the values for UNIX, including Mac OS X:
+Here are the values for UNIX, including macOS:
 
 =============== ===========================================================
 Type of file    Installation directory
@@ -735,7 +735,7 @@ Location and names of config files
 ----------------------------------
 
 The names and locations of the configuration files vary slightly across
-platforms.  On Unix and Mac OS X, the three configuration files (in the order
+platforms.  On Unix and macOS, the three configuration files (in the order
 they are processed) are:
 
 +--------------+----------------------------------------------------------+-------+
