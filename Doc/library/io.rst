@@ -218,7 +218,7 @@ High-level Module Interface
    See :ref:`io-text-encoding` for more information.
 
    .. versionadded:: 3.10
-   
+
    .. versionchanged:: 3.11
       :func:`text_encoding` returns "utf-8" when UTF-8 mode is enabled and
       *encoding* is ``None``.
