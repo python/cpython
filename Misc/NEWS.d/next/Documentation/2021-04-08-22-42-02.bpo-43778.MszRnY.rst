@@ -1,2 +1,0 @@
-Fix the Sphinx glossary_search extension: create the _static/ sub-directory
-if it doesn't exist.

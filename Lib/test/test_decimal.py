@@ -34,9 +34,10 @@ import numbers
 import locale
 from test.support import (run_unittest, run_doctest, is_resource_enabled,
                           requires_IEEE_754, requires_docstrings,
-                          requires_legacy_unicode_capi)
+                          requires_legacy_unicode_capi, check_sanitizer)
 from test.support import (TestFailed,
-                          run_with_locale, cpython_only)
+                          run_with_locale, cpython_only,
+                          darwin_malloc_err_warning)
 from test.support.import_helper import import_fresh_module
 from test.support import warnings_helper
 import random
@@ -44,9 +45,13 @@ import inspect
 import threading
 
 
+if sys.platform == 'darwin':
+    darwin_malloc_err_warning('test_decimal')
+
+
 C = import_fresh_module('decimal', fresh=['_decimal'])
 P = import_fresh_module('decimal', blocked=['_decimal'])
-orig_sys_decimal = sys.modules['decimal']
+import decimal as orig_sys_decimal
 
 # fractions module must import the correct decimal module.
 cfractions = import_fresh_module('fractions', fresh=['fractions'])
@@ -1814,13 +1819,7 @@ class UsabilityTest(unittest.TestCase):
 
         # check that hash(d) == hash(int(d)) for integral values
         for value in test_values:
-            self.assertEqual(hashit(value), hashit(int(value)))
-
-        #the same hash that to an int
-        self.assertEqual(hashit(Decimal(23)), hashit(23))
-        self.assertRaises(TypeError, hash, Decimal('sNaN'))
-        self.assertTrue(hashit(Decimal('Inf')))
-        self.assertTrue(hashit(Decimal('-Inf')))
+            self.assertEqual(hashit(value), hash(int(value)))
 
         # check that the hashes of a Decimal float match when they
         # represent exactly the same values
@@ -1829,7 +1828,7 @@ class UsabilityTest(unittest.TestCase):
         for s in test_strings:
             f = float(s)
             d = Decimal(s)
-            self.assertEqual(hashit(f), hashit(d))
+            self.assertEqual(hashit(d), hash(f))
 
         with localcontext() as c:
             # check that the value of the hash doesn't depend on the
@@ -1849,6 +1848,19 @@ class UsabilityTest(unittest.TestCase):
             c.prec = 10000
             x = 1100 ** 1248
             self.assertEqual(hashit(Decimal(x)), hashit(x))
+
+    def test_hash_method_nan(self):
+        Decimal = self.decimal.Decimal
+        self.assertRaises(TypeError, hash, Decimal('sNaN'))
+        value = Decimal('NaN')
+        self.assertEqual(hash(value), object.__hash__(value))
+        class H:
+            def __hash__(self):
+                return 42
+        class D(Decimal, H):
+            pass
+        value = D('NaN')
+        self.assertEqual(hash(value), object.__hash__(value))
 
     def test_min_and_max_methods(self):
         Decimal = self.decimal.Decimal
@@ -2528,6 +2540,13 @@ class PythonAPItests(unittest.TestCase):
         self.assertRaises(ValueError, int, Decimal('snan'))
         self.assertRaises(OverflowError, int, Decimal('inf'))
         self.assertRaises(OverflowError, int, Decimal('-inf'))
+
+    @cpython_only
+    def test_small_ints(self):
+        Decimal = self.decimal.Decimal
+        # bpo-46361
+        for x in range(-5, 257):
+            self.assertIs(int(Decimal(x)), x)
 
     def test_trunc(self):
         Decimal = self.decimal.Decimal
@@ -5488,6 +5507,9 @@ class CWhitebox(unittest.TestCase):
     # Issue 41540:
     @unittest.skipIf(sys.platform.startswith("aix"),
                      "AIX: default ulimit: test is flaky because of extreme over-allocation")
+    @unittest.skipIf(check_sanitizer(address=True, memory=True),
+                     "ASAN/MSAN sanitizer defaults to crashing "
+                     "instead of returning NULL for malloc failure.")
     def test_maxcontext_exact_arith(self):
 
         # Make sure that exact operations do not raise MemoryError due

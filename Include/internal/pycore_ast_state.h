@@ -92,7 +92,13 @@ struct ast_state {
     PyObject *MatMult_singleton;
     PyObject *MatMult_type;
     PyObject *MatchAs_type;
+    PyObject *MatchClass_type;
+    PyObject *MatchMapping_type;
     PyObject *MatchOr_type;
+    PyObject *MatchSequence_type;
+    PyObject *MatchSingleton_type;
+    PyObject *MatchStar_type;
+    PyObject *MatchValue_type;
     PyObject *Match_type;
     PyObject *Mod_singleton;
     PyObject *Mod_type;
@@ -126,6 +132,7 @@ struct ast_state {
     PyObject *Sub_singleton;
     PyObject *Sub_type;
     PyObject *Subscript_type;
+    PyObject *TryStar_type;
     PyObject *Try_type;
     PyObject *Tuple_type;
     PyObject *TypeIgnore_type;
@@ -159,6 +166,7 @@ struct ast_state {
     PyObject *boolop_type;
     PyObject *cases;
     PyObject *cause;
+    PyObject *cls;
     PyObject *cmpop_type;
     PyObject *col_offset;
     PyObject *comparators;
@@ -194,6 +202,8 @@ struct ast_state {
     PyObject *kind;
     PyObject *kw_defaults;
     PyObject *kwarg;
+    PyObject *kwd_attrs;
+    PyObject *kwd_patterns;
     PyObject *kwonlyargs;
     PyObject *left;
     PyObject *level;
@@ -212,8 +222,10 @@ struct ast_state {
     PyObject *optional_vars;
     PyObject *orelse;
     PyObject *pattern;
+    PyObject *pattern_type;
     PyObject *patterns;
     PyObject *posonlyargs;
+    PyObject *rest;
     PyObject *returns;
     PyObject *right;
     PyObject *simple;

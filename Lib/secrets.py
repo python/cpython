@@ -2,7 +2,7 @@
 managing secrets such as account authentication, tokens, and similar.
 
 See PEP 506 for more information.
-https://www.python.org/dev/peps/pep-0506/
+https://peps.python.org/pep-0506/
 
 """
 

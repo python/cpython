@@ -88,6 +88,40 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl__SSLSocket_get_verified_chain__doc__,
+"get_verified_chain($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_GET_VERIFIED_CHAIN_METHODDEF    \
+    {"get_verified_chain", (PyCFunction)_ssl__SSLSocket_get_verified_chain, METH_NOARGS, _ssl__SSLSocket_get_verified_chain__doc__},
+
+static PyObject *
+_ssl__SSLSocket_get_verified_chain_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_get_verified_chain(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
+{
+    return _ssl__SSLSocket_get_verified_chain_impl(self);
+}
+
+PyDoc_STRVAR(_ssl__SSLSocket_get_unverified_chain__doc__,
+"get_unverified_chain($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_GET_UNVERIFIED_CHAIN_METHODDEF    \
+    {"get_unverified_chain", (PyCFunction)_ssl__SSLSocket_get_unverified_chain, METH_NOARGS, _ssl__SSLSocket_get_unverified_chain__doc__},
+
+static PyObject *
+_ssl__SSLSocket_get_unverified_chain_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_get_unverified_chain(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
+{
+    return _ssl__SSLSocket_get_unverified_chain_impl(self);
+}
+
 PyDoc_STRVAR(_ssl__SSLSocket_shared_ciphers__doc__,
 "shared_ciphers($self, /)\n"
 "--\n"
@@ -237,25 +271,25 @@ PyDoc_STRVAR(_ssl__SSLSocket_read__doc__,
     {"read", (PyCFunction)_ssl__SSLSocket_read, METH_VARARGS, _ssl__SSLSocket_read__doc__},
 
 static PyObject *
-_ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
-                          Py_buffer *buffer);
+_ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
+                          int group_right_1, Py_buffer *buffer);
 
 static PyObject *
 _ssl__SSLSocket_read(PySSLSocket *self, PyObject *args)
 {
     PyObject *return_value = NULL;
-    int len;
+    Py_ssize_t len;
     int group_right_1 = 0;
     Py_buffer buffer = {NULL, NULL};
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
-            if (!PyArg_ParseTuple(args, "i:read", &len)) {
+            if (!PyArg_ParseTuple(args, "n:read", &len)) {
                 goto exit;
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "iw*:read", &len, &buffer)) {
+            if (!PyArg_ParseTuple(args, "nw*:read", &len, &buffer)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -374,7 +408,8 @@ _ssl__SSLContext(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     int proto_version;
 
-    if ((type == get_state_type(type)->PySSLContext_Type) &&
+    if ((type == get_state_type(type)->PySSLContext_Type ||
+         type->tp_init == get_state_type(type)->PySSLContext_Type->tp_init) &&
         !_PyArg_NoKeywords("_SSLContext", kwargs)) {
         goto exit;
     }
@@ -850,11 +885,13 @@ _ssl_MemoryBIO(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
 
-    if ((type == get_state_type(type)->PySSLMemoryBIO_Type) &&
+    if ((type == get_state_type(type)->PySSLMemoryBIO_Type ||
+         type->tp_init == get_state_type(type)->PySSLMemoryBIO_Type->tp_init) &&
         !_PyArg_NoPositional("MemoryBIO", args)) {
         goto exit;
     }
-    if ((type == get_state_type(type)->PySSLMemoryBIO_Type) &&
+    if ((type == get_state_type(type)->PySSLMemoryBIO_Type ||
+         type->tp_init == get_state_type(type)->PySSLMemoryBIO_Type->tp_init) &&
         !_PyArg_NoKeywords("MemoryBIO", kwargs)) {
         goto exit;
     }
@@ -1088,7 +1125,7 @@ PyDoc_STRVAR(_ssl_RAND_status__doc__,
 "RAND_status($module, /)\n"
 "--\n"
 "\n"
-"Returns 1 if the OpenSSL PRNG has been seeded with enough data and 0 if not.\n"
+"Returns True if the OpenSSL PRNG has been seeded with enough data and False if not.\n"
 "\n"
 "It is necessary to seed the PRNG with RAND_add() on some platforms before\n"
 "using the ssl() function.");
@@ -1324,4 +1361,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=83e68c77bd96789a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cd2a53c26eda295e input=a9049054013a1b77]*/

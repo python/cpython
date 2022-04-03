@@ -21,9 +21,11 @@
 #  endif
 #  define SEM_HANDLE HANDLE
 #  define SEM_VALUE_MAX LONG_MAX
+#  define HAVE_MP_SEMAPHORE
 #else
 #  include <fcntl.h>                 /* O_CREAT and O_EXCL */
 #  if defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED)
+#    define HAVE_MP_SEMAPHORE
 #    include <semaphore.h>
      typedef sem_t *SEM_HANDLE;
 #  endif

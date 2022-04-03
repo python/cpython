@@ -914,7 +914,7 @@ call fails (for example because the path doesn't exist).
 
    The children are yielded in arbitrary order, and the special entries
    ``'.'`` and ``'..'`` are not included.  If a file is removed from or added
-   to the directory after creating the iterator, whether an path object for
+   to the directory after creating the iterator, whether a path object for
    that file be included is unspecified.
 
 .. method:: Path.lchmod(mode)
@@ -1052,6 +1052,18 @@ call fails (for example because the path doesn't exist).
       Added return value, return the new Path instance.
 
 
+.. method:: Path.absolute()
+
+   Make the path absolute, without normalization or resolving symlinks.
+   Returns a new path object::
+
+      >>> p = Path('tests')
+      >>> p
+      PosixPath('tests')
+      >>> p.absolute()
+      PosixPath('/home/antoine/pathlib/tests')
+
+
 .. method:: Path.resolve(strict=False)
 
    Make the path absolute, resolving any symlinks.  A new path object is
@@ -1140,6 +1152,15 @@ call fails (for example because the path doesn't exist).
       The order of arguments (link, target) is the reverse
       of :func:`os.symlink`'s.
 
+.. method:: Path.hardlink_to(target)
+
+   Make this path a hard link to the same file as *target*.
+
+   .. note::
+      The order of arguments (link, target) is the reverse
+      of :func:`os.link`'s.
+
+   .. versionadded:: 3.10
 
 .. method:: Path.link_to(target)
 
@@ -1149,10 +1170,16 @@ call fails (for example because the path doesn't exist).
 
       This function does not make this path a hard link to *target*, despite
       the implication of the function and argument names. The argument order
-      (target, link) is the reverse of :func:`Path.symlink_to`, but matches
-      that of :func:`os.link`.
+      (target, link) is the reverse of :func:`Path.symlink_to` and
+      :func:`Path.hardlink_to`, but matches that of :func:`os.link`.
 
    .. versionadded:: 3.8
+
+   .. deprecated:: 3.10
+
+      This method is deprecated in favor of :meth:`Path.hardlink_to`, as the
+      argument order of :meth:`Path.link_to`  does not match that of
+      :meth:`Path.symlink_to`.
 
 
 .. method:: Path.touch(mode=0o666, exist_ok=True)
@@ -1224,13 +1251,14 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 
    Not all pairs of functions/methods below are equivalent. Some of them,
    despite having some overlapping use-cases, have different semantics. They
-   include :func:`os.path.abspath` and :meth:`Path.resolve`,
+   include :func:`os.path.abspath` and :meth:`Path.absolute`,
    :func:`os.path.relpath` and :meth:`PurePath.relative_to`.
 
 ====================================   ==============================
 :mod:`os` and :mod:`os.path`           :mod:`pathlib`
 ====================================   ==============================
-:func:`os.path.abspath`                :meth:`Path.resolve` [#]_
+:func:`os.path.abspath`                :meth:`Path.absolute` [#]_
+:func:`os.path.realpath`               :meth:`Path.resolve`
 :func:`os.chmod`                       :meth:`Path.chmod`
 :func:`os.mkdir`                       :meth:`Path.mkdir`
 :func:`os.makedirs`                    :meth:`Path.mkdir`
@@ -1246,7 +1274,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :func:`os.path.isdir`                  :meth:`Path.is_dir`
 :func:`os.path.isfile`                 :meth:`Path.is_file`
 :func:`os.path.islink`                 :meth:`Path.is_symlink`
-:func:`os.link`                        :meth:`Path.link_to`
+:func:`os.link`                        :meth:`Path.hardlink_to`
 :func:`os.symlink`                     :meth:`Path.symlink_to`
 :func:`os.readlink`                    :meth:`Path.readlink`
 :func:`os.path.relpath`                :meth:`Path.relative_to` [#]_
@@ -1263,5 +1291,5 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 
 .. rubric:: Footnotes
 
-.. [#] :func:`os.path.abspath` does not resolve symbolic links while :meth:`Path.resolve` does.
+.. [#] :func:`os.path.abspath` normalizes the resulting path, which may change its meaning in the presence of symlinks, while :meth:`Path.absolute` does not.
 .. [#] :meth:`Path.relative_to` requires ``self`` to be the subpath of the argument, but :func:`os.path.relpath` does not.

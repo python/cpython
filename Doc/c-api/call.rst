@@ -26,7 +26,7 @@ This convention is not only used by *tp_call*:
 :c:member:`~PyTypeObject.tp_new` and :c:member:`~PyTypeObject.tp_init`
 also pass arguments this way.
 
-To call an object, use :c:func:`PyObject_Call` or other
+To call an object, use :c:func:`PyObject_Call` or another
 :ref:`call API <capi-call>`.
 
 
@@ -185,7 +185,7 @@ Object Calling API
 Various functions are available for calling a Python object.
 Each converts its arguments to a convention supported by the called object –
 either *tp_call* or vectorcall.
-In order to do as litle conversion as possible, pick one that best fits
+In order to do as little conversion as possible, pick one that best fits
 the format of data you have available.
 
 The following table summarizes the available functions;

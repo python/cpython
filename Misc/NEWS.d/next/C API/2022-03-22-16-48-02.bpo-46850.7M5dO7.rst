@@ -1,0 +1,3 @@
+Move the private undocumented ``_PyEval_EvalFrameDefault()`` function to the
+internal C API. The function now uses the ``_PyInterpreterFrame`` type which is
+part of the internal C API. Patch by Victor Stinner.
