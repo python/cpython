@@ -1,0 +1,6 @@
+Emscripten builds cannot handle signals in the usual way due to platform
+limitations. Python can now handle signals. To use, set
+Module.Py_EmscriptenSignalBuffer to be a single byte SharedArrayBuffer and
+set Py_EMSCRIPTEN_SIGNAL_HANDLING to 1. Writing a number into the
+SharedArrayBuffer will cause the corresponding signal to be raised into the
+Python thread.
