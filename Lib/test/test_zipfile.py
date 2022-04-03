@@ -15,6 +15,7 @@ import unittest
 import unittest.mock as mock
 import zipfile
 import functools
+import stat
 
 
 from tempfile import TemporaryFile
@@ -1342,7 +1343,6 @@ class PyZipFileTests(unittest.TestCase):
 
 
 class ExtractTests(unittest.TestCase):
-
     def make_test_file(self):
         with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED) as zipfp:
             for fpath, fdata in SMALL_TEST_DATA:
@@ -2055,6 +2055,78 @@ class OtherTests(unittest.TestCase):
         unlink(TESTFN)
         unlink(TESTFN2)
 
+class TestsPermissionExtraction(unittest.TestCase):
+    def setUp(self):
+        self.files = []
+
+        for mode in range(0o1000):
+            filename = str(mode)
+            pathlib.Path(filename).touch(mode=mode)
+            real_mode = os.stat(filename).st_mode & 0xFFFF
+            self.files.append((filename, real_mode))
+
+        with zipfile.ZipFile(TESTFN2, 'w', zipfile.ZIP_STORED) as zf:
+            for filename, mode in self.files:
+                zf.write(filename)
+                os.remove(filename)
+
+    def tearDown(self):
+        os.unlink(TESTFN2)
+
+    def test_extractall_preserve_none(self):
+        with zipfile.ZipFile(TESTFN2, 'r') as zf:
+            zf.extractall()
+            for filename, mode in self.files:
+                expected_mode = 0o644 # TODO: Why are the files extracted with mode 777?
+                self.assertTrue(os.path.exists(filename))
+                self.assertEqual(os.stat(filename).st_mode,
+                                 stat.S_IFREG | expected_mode)
+
+    def test_extractall_preserve_safe(self):
+        with zipfile.ZipFile(TESTFN2, 'r') as zf:
+            zf.extractall(preserve_permissions=zipfile.PERMS_PRESERVE_SAFE)
+            for filename, mode in self.files:
+                expected_mode = mode
+                self.assertTrue(os.path.exists(filename))
+                self.assertEqual(os.stat(filename).st_mode,
+                                 stat.S_IFREG | (expected_mode & 0o777))
+
+
+    @unittest.skipUnless(os.getuid() == 0, "requires root")
+    def test_extractall_preserve_all(self):
+        with zipfile.ZipFile(TESTFN2, 'r') as zf:
+            zf.extractall(preserve_permissions=zipfile.PERMS_PRESERVE_ALL)
+            for filename, mode in self.files:
+                self.assertTrue(os.path.exists(filename))
+                self.assertEqual(os.stat(filename).st_mode, mode)
+
+    def test_extract_preserve_none(self):
+        with zipfile.ZipFile(TESTFN2, 'r') as zf:
+            for filename, mode in self.files:
+                zf.extract(filename)
+                expected_mode = 0o644
+                self.assertTrue(os.path.exists(filename))
+                self.assertEqual(os.stat(filename).st_mode,
+                                 stat.S_IFREG | expected_mode)
+
+    def test_extract_preserve_safe(self):
+        with zipfile.ZipFile(TESTFN2, 'r') as zf:
+            for filename, mode in self.files:
+                zf.extract(filename,
+                              preserve_permissions=zipfile.PERMS_PRESERVE_SAFE)
+                expected_mode = mode
+                self.assertTrue(os.path.exists(filename))
+                self.assertEqual(os.stat(filename).st_mode,
+                                 stat.S_IFREG | (expected_mode & 0o777))
+
+    @unittest.skipUnless(os.getuid() == 0, "requires root")
+    def test_extract_preserve_all(self):
+        with zipfile.ZipFile(TESTFN2, 'r') as zf:
+            for filename, mode in self.files:
+                zf.extract(filename,
+                              preserve_permissions=zipfile.PERMS_PRESERVE_ALL)
+                self.assertTrue(os.path.exists(filename))
+                self.assertEqual(os.stat(filename).st_mode, mode)
 
 class AbstractBadCrcTests:
     def test_testzip_with_bad_crc(self):
