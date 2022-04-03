@@ -544,7 +544,7 @@ PyDoc_STRVAR(_sre_SRE_Pattern___deepcopy____doc__,
 
 PyDoc_STRVAR(_sre_compile__doc__,
 "compile($module, /, pattern, flags, code, groups, groupindex,\n"
-"        indexgroup)\n"
+"        indexgroup, repeat_count)\n"
 "--\n"
 "\n");
 
@@ -554,23 +554,24 @@ PyDoc_STRVAR(_sre_compile__doc__,
 static PyObject *
 _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
                   PyObject *code, Py_ssize_t groups, PyObject *groupindex,
-                  PyObject *indexgroup);
+                  PyObject *indexgroup, Py_ssize_t repeat_count);
 
 static PyObject *
 _sre_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"pattern", "flags", "code", "groups", "groupindex", "indexgroup", NULL};
+    static const char * const _keywords[] = {"pattern", "flags", "code", "groups", "groupindex", "indexgroup", "repeat_count", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "compile", 0};
-    PyObject *argsbuf[6];
+    PyObject *argsbuf[7];
     PyObject *pattern;
     int flags;
     PyObject *code;
     Py_ssize_t groups;
     PyObject *groupindex;
     PyObject *indexgroup;
+    Py_ssize_t repeat_count;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 6, 6, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 7, 7, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -606,7 +607,19 @@ _sre_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         goto exit;
     }
     indexgroup = args[5];
-    return_value = _sre_compile_impl(module, pattern, flags, code, groups, groupindex, indexgroup);
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[6]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        repeat_count = ival;
+    }
+    return_value = _sre_compile_impl(module, pattern, flags, code, groups, groupindex, indexgroup, repeat_count);
 
 exit:
     return return_value;
@@ -910,4 +923,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=518f7bb775c1184f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d7510a57a157a38 input=a9049054013a1b77]*/
