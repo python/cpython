@@ -2428,7 +2428,7 @@ def overload(func):
         pass
     else:
         # We're inlining get_overloads() here to avoid computing the key twice.
-        existing = _overload_registry.setdefault(key, [])
+        existing = _overload_registry[key]
         if existing:
             # If we are registering a variant with a lineno below or equal to that of the
             # most recent existing variant, we're probably re-creating overloads for a
@@ -2455,7 +2455,7 @@ def overload(func):
 
 
 # {key: [overload]}
-_overload_registry: dict[tuple[str, str], list[Any]] = {}
+_overload_registry = collections.defaultdict(list)
 
 
 def get_overloads(func):
