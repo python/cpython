@@ -429,7 +429,8 @@ PYTHON_OBJS=	\
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
-		$(DTRACE_OBJS)
+		$(DTRACE_OBJS) \
+		@PLATFORM_OBJS@
 
 
 ##########################################################################
@@ -1608,6 +1609,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_unicodeobject.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(DTRACE_HEADERS) \
+		@PLATFORM_HEADERS@ \
 		\
 		$(srcdir)/Python/stdlib_module_names.h
 
