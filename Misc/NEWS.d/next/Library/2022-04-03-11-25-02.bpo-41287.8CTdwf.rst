@@ -1,0 +1,1 @@
+Handle doc argument of property.__init__ in subclasses
