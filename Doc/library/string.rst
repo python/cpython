@@ -188,8 +188,8 @@ Format String Syntax
 The :meth:`str.format` method and the :class:`Formatter` class share the same
 syntax for format strings (although in the case of :class:`Formatter`,
 subclasses can define their own format string syntax).  The syntax is
-related to that of :ref:`formatted string literals <f-strings>`, but
-there are differences.
+related to that of :ref:`formatted string literals <f-strings>`, but it is
+less sophisticated and, in particular, does not support arbitrary expressions.
 
 .. index::
    single: {} (curly brackets); in string formatting
@@ -386,8 +386,8 @@ The ``'#'`` option causes the "alternate form" to be used for the
 conversion.  The alternate form is defined differently for different
 types.  This option is only valid for integer, float and complex
 types. For integers, when binary, octal, or hexadecimal output
-is used, this option adds the prefix respective ``'0b'``, ``'0o'``, or
-``'0x'`` to the output value. For float and complex the
+is used, this option adds the respective prefix ``'0b'``, ``'0o'``,
+``'0x'``, or ``'0X'`` to the output value. For float and complex the
 alternate form causes the result of the conversion to always contain a
 decimal-point character, even if no digits follow it. Normally, a
 decimal-point character appears in the result of these conversions
@@ -428,12 +428,13 @@ character of ``'0'`` with an *alignment* type of ``'='``.
    Preceding the *width* field by ``'0'`` no longer affects the default
    alignment for strings.
 
-The *precision* is a decimal number indicating how many digits should be
-displayed after the decimal point for a floating point value formatted with
-``'f'`` and ``'F'``, or before and after the decimal point for a floating point
-value formatted with ``'g'`` or ``'G'``.  For non-number types the field
+The *precision* is a decimal integer indicating how many digits should be
+displayed after the decimal point for presentation types
+``'f'`` and ``'F'``, or before and after the decimal point for presentation
+types ``'g'`` or ``'G'``.  For string presentation types the field
 indicates the maximum field size - in other words, how many characters will be
-used from the field content. The *precision* is not allowed for integer values.
+used from the field content.  The *precision* is not allowed for integer
+presentation types.
 
 Finally, the *type* determines how the data should be presented.
 
@@ -467,6 +468,8 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | ``'X'`` | Hex format. Outputs the number in base 16, using         |
    |         | upper-case letters for the digits above 9.               |
+   |         | In case ``'#'`` is specified, the prefix ``'0x'`` will   |
+   |         | be upper-cased to ``'0X'`` as well.                      |
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
@@ -781,6 +784,22 @@ these rules.  The methods of :class:`Template` are:
       templates containing dangling delimiters, unmatched braces, or
       placeholders that are not valid Python identifiers.
 
+
+   .. method:: is_valid()
+
+      Returns false if the template has invalid placeholders that will cause
+      :meth:`substitute` to raise :exc:`ValueError`.
+
+      .. versionadded:: 3.11
+
+
+   .. method:: get_identifiers()
+
+      Returns a list of the valid identifiers in the template, in the order
+      they first appear, ignoring any invalid identifiers.
+
+      .. versionadded:: 3.11
+
    :class:`Template` instances also provide one public data attribute:
 
    .. attribute:: template
@@ -866,6 +885,9 @@ rule:
 
 * *invalid* -- This group matches any other delimiter pattern (usually a single
   delimiter), and it should appear last in the regular expression.
+
+The methods on this class will raise :exc:`ValueError` if the pattern matches
+the template without one of these named groups matching.
 
 
 Helper functions

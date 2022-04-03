@@ -1,0 +1,2 @@
+Use low bit of ``LOAD_GLOBAL`` to indicate whether to push a ``NULL`` before
+the global. Helps streamline the call sequence a bit.

@@ -950,7 +950,7 @@ exit:
     return return_value;
 }
 
-#if (OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(OPENSSL_NO_SCRYPT) && !defined(LIBRESSL_VERSION_NUMBER))
+#if defined(PY_OPENSSL_HAS_SCRYPT)
 
 PyDoc_STRVAR(_hashlib_scrypt__doc__,
 "scrypt($module, /, password, *, salt=None, n=None, r=None, p=None,\n"
@@ -1068,7 +1068,7 @@ exit:
     return return_value;
 }
 
-#endif /* (OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(OPENSSL_NO_SCRYPT) && !defined(LIBRESSL_VERSION_NUMBER)) */
+#endif /* defined(PY_OPENSSL_HAS_SCRYPT) */
 
 PyDoc_STRVAR(_hashlib_hmac_singleshot__doc__,
 "hmac_digest($module, /, key, msg, digest)\n"
@@ -1081,7 +1081,7 @@ PyDoc_STRVAR(_hashlib_hmac_singleshot__doc__,
 
 static PyObject *
 _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
-                              Py_buffer *msg, const char *digest);
+                              Py_buffer *msg, PyObject *digest);
 
 static PyObject *
 _hashlib_hmac_singleshot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1092,7 +1092,7 @@ _hashlib_hmac_singleshot(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *argsbuf[3];
     Py_buffer key = {NULL, NULL};
     Py_buffer msg = {NULL, NULL};
-    const char *digest;
+    PyObject *digest;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
     if (!args) {
@@ -1112,19 +1112,7 @@ _hashlib_hmac_singleshot(PyObject *module, PyObject *const *args, Py_ssize_t nar
         _PyArg_BadArgument("hmac_digest", "argument 'msg'", "contiguous buffer", args[1]);
         goto exit;
     }
-    if (!PyUnicode_Check(args[2])) {
-        _PyArg_BadArgument("hmac_digest", "argument 'digest'", "str", args[2]);
-        goto exit;
-    }
-    Py_ssize_t digest_length;
-    digest = PyUnicode_AsUTF8AndSize(args[2], &digest_length);
-    if (digest == NULL) {
-        goto exit;
-    }
-    if (strlen(digest) != (size_t)digest_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
+    digest = args[2];
     return_value = _hashlib_hmac_singleshot_impl(module, &key, &msg, digest);
 
 exit:
@@ -1151,7 +1139,7 @@ PyDoc_STRVAR(_hashlib_hmac_new__doc__,
 
 static PyObject *
 _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
-                       const char *digestmod);
+                       PyObject *digestmod);
 
 static PyObject *
 _hashlib_hmac_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1163,7 +1151,7 @@ _hashlib_hmac_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer key = {NULL, NULL};
     PyObject *msg_obj = NULL;
-    const char *digestmod = NULL;
+    PyObject *digestmod = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
     if (!args) {
@@ -1185,19 +1173,7 @@ _hashlib_hmac_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
             goto skip_optional_pos;
         }
     }
-    if (!PyUnicode_Check(args[2])) {
-        _PyArg_BadArgument("hmac_new", "argument 'digestmod'", "str", args[2]);
-        goto exit;
-    }
-    Py_ssize_t digestmod_length;
-    digestmod = PyUnicode_AsUTF8AndSize(args[2], &digestmod_length);
-    if (digestmod == NULL) {
-        goto exit;
-    }
-    if (strlen(digestmod) != (size_t)digestmod_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
+    digestmod = args[2];
 skip_optional_pos:
     return_value = _hashlib_hmac_new_impl(module, &key, msg_obj, digestmod);
 
@@ -1299,8 +1275,6 @@ _hashlib_HMAC_hexdigest(HMACobject *self, PyObject *Py_UNUSED(ignored))
     return _hashlib_HMAC_hexdigest_impl(self);
 }
 
-#if !defined(LIBRESSL_VERSION_NUMBER)
-
 PyDoc_STRVAR(_hashlib_get_fips_mode__doc__,
 "get_fips_mode($module, /)\n"
 "--\n"
@@ -1335,8 +1309,6 @@ _hashlib_get_fips_mode(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-
-#endif /* !defined(LIBRESSL_VERSION_NUMBER) */
 
 PyDoc_STRVAR(_hashlib_compare_digest__doc__,
 "compare_digest($module, a, b, /)\n"
@@ -1413,8 +1385,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-
-#ifndef _HASHLIB_GET_FIPS_MODE_METHODDEF
-    #define _HASHLIB_GET_FIPS_MODE_METHODDEF
-#endif /* !defined(_HASHLIB_GET_FIPS_MODE_METHODDEF) */
-/*[clinic end generated code: output=2bbd6159493f44ea input=a9049054013a1b77]*/
+/*[clinic end generated code: output=162369cb9d43f1cc input=a9049054013a1b77]*/

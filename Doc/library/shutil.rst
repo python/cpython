@@ -286,7 +286,7 @@ Directory and files operations
    .. versionadded:: 3.8
       The *dirs_exist_ok* parameter.
 
-.. function:: rmtree(path, ignore_errors=False, onerror=None)
+.. function:: rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None)
 
    .. index:: single: directory; deleting
 
@@ -295,6 +295,9 @@ Directory and files operations
    from failed removals will be ignored; if false or omitted, such errors are
    handled by calling a handler specified by *onerror* or, if that is omitted,
    they raise an exception.
+
+   This function can support :ref:`paths relative to directory descriptors
+   <dir_fd>`.
 
    .. note::
 
@@ -315,7 +318,7 @@ Directory and files operations
    *excinfo*, will be the exception information returned by
    :func:`sys.exc_info`.  Exceptions raised by *onerror* will not be caught.
 
-   .. audit-event:: shutil.rmtree path shutil.rmtree
+   .. audit-event:: shutil.rmtree path,dir_fd shutil.rmtree
 
    .. versionchanged:: 3.3
       Added a symlink attack resistant version that is used automatically
@@ -324,6 +327,9 @@ Directory and files operations
    .. versionchanged:: 3.8
       On Windows, will no longer delete the contents of a directory junction
       before removing the junction.
+
+   .. versionchanged:: 3.11
+      The *dir_fd* parameter.
 
    .. attribute:: rmtree.avoids_symlink_attacks
 
@@ -560,6 +566,10 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    .. audit-event:: shutil.make_archive base_name,format,root_dir,base_dir shutil.make_archive
 
+   .. note::
+
+      This function is not thread-safe.
+
    .. versionchanged:: 3.8
       The modern pax (POSIX.1-2001) format is now used instead of
       the legacy GNU format for archives created with ``format="tar"``.
@@ -764,6 +774,10 @@ Querying the size of the output terminal
    `Other Environment Variables`_.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.11
+      The ``fallback`` values are also used if :func:`os.get_terminal_size`
+      returns zeroes.
 
 .. _`fcopyfile`:
    http://www.manpagez.com/man/3/copyfile/

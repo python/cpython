@@ -77,7 +77,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 
    .. versionadded:: 3.2
 
-.. function:: fileConfig(fname, defaults=None, disable_existing_loggers=True)
+.. function:: fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=None)
 
    Reads the logging configuration from a :mod:`configparser`\-format file. The
    format of the file should be as described in
@@ -111,6 +111,8 @@ in :mod:`logging` itself) and defining handlers which are declared either in
                                     they or their ancestors are explicitly named
                                     in the logging configuration.
 
+    :param encoding: The encoding used to open file when *fname* is filename.
+
    .. versionchanged:: 3.4
       An instance of a subclass of :class:`~configparser.RawConfigParser` is
       now accepted as a value for ``fname``. This facilitates:
@@ -120,6 +122,9 @@ in :mod:`logging` itself) and defining handlers which are declared either in
       * Use of a configuration read from a file, and then modified by the using
         application (e.g. based on command-line parameters or other aspects
         of the runtime environment) before being passed to ``fileConfig``.
+
+    .. versionadded:: 3.10
+       The *encoding* parameter is added.
 
 .. function:: listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None)
 
@@ -147,6 +152,8 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    send it to the socket as a sequence of bytes preceded by a four-byte length
    string packed in binary using ``struct.pack('>L', n)``.
 
+   .. _logging-eval-security:
+
    .. note::
 
       Because portions of the configuration are passed through
@@ -161,7 +168,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
       :func:`listen` socket and sending a configuration which runs whatever
       code the attacker wants to have executed in the victim's process. This is
       especially easy to do if the default port is used, but not hard even if a
-      different port is used). To avoid the risk of this happening, use the
+      different port is used. To avoid the risk of this happening, use the
       ``verify`` argument to :func:`listen` to prevent unrecognised
       configurations from being applied.
 
@@ -182,6 +189,20 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    Stops the listening server which was created with a call to :func:`listen`.
    This is typically called before calling :meth:`join` on the return value from
    :func:`listen`.
+
+
+Security considerations
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The logging configuration functionality tries to offer convenience, and in part this
+is done by offering the ability to convert text in configuration files into Python
+objects used in logging configuration - for example, as described in
+:ref:`logging-config-dict-userdef`. However, these same mechanisms (importing
+callables from user-defined modules and calling them with parameters from the
+configuration) could be used to invoke any code you like, and for this reason you
+should treat configuration files from untrusted sources with *extreme caution* and
+satisfy yourself that nothing bad can happen if you load them, before actually loading
+them.
 
 
 .. _logging-config-dictschema:
@@ -267,6 +288,9 @@ otherwise, the context is used to determine what to instantiate.
   * ``filters`` (optional).  A list of ids of the filters for this
     handler.
 
+    .. versionchanged:: 3.11
+       ``filters`` can take filter instances in addition to ids.
+
   All *other* keys are passed through as keyword arguments to the
   handler's constructor.  For example, given the snippet:
 
@@ -304,6 +328,9 @@ otherwise, the context is used to determine what to instantiate.
 
   * ``filters`` (optional).  A list of ids of the filters for this
     logger.
+
+    .. versionchanged:: 3.11
+       ``filters`` can take filter instances in addition to ids.
 
   * ``handlers`` (optional).  A list of ids of the handlers for this
     logger.
@@ -502,6 +529,10 @@ The key ``'()'`` has been used as the special key because it is not a
 valid keyword parameter name, and so will not clash with the names of
 the keyword arguments used in the call.  The ``'()'`` also serves as a
 mnemonic that the corresponding value is a callable.
+
+    .. versionchanged:: 3.11
+       The ``filters`` member of ``handlers`` and ``loggers`` can take
+       filter instances in addition to ids.
 
 
 .. _logging-config-dict-externalobj:

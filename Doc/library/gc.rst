@@ -72,6 +72,8 @@ The :mod:`gc` module provides the following functions:
    .. versionchanged:: 3.8
       New *generation* parameter.
 
+   .. audit-event:: gc.get_objects generation gc.get_objects
+
 .. function:: get_stats()
 
    Return a list of three per-generation dictionaries containing collection
@@ -141,6 +143,8 @@ The :mod:`gc` module provides the following functions:
       invalid state. Avoid using :func:`get_referrers` for any purpose other than
       debugging.
 
+   .. audit-event:: gc.get_referrers objs gc.get_referrers
+
 
 .. function:: get_referents(*objs)
 
@@ -152,6 +156,7 @@ The :mod:`gc` module provides the following functions:
    be involved in a cycle.  So, for example, if an integer is directly reachable
    from an argument, that integer object may or may not appear in the result list.
 
+   .. audit-event:: gc.get_referents objs gc.get_referents
 
 .. function:: is_tracked(obj)
 

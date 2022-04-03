@@ -67,14 +67,13 @@ useful than quitting the debugger upon program's exit.
    before the first line of the module.
 
 
-The typical usage to break into the debugger from a running program is to
-insert ::
+The typical usage to break into the debugger is to insert::
 
    import pdb; pdb.set_trace()
 
-at the location you want to break into the debugger.  You can then step through
-the code following this statement, and continue running without the debugger
-using the :pdbcmd:`continue` command.
+at the location you want to break into the debugger, and then run the program.
+You can then step through the code following this statement, and continue
+running without the debugger using the :pdbcmd:`continue` command.
 
 .. versionadded:: 3.7
    The built-in :func:`breakpoint()`, when called with defaults, can be used
@@ -241,10 +240,14 @@ middle of a quoted string.
    triple: debugger; configuration; file
 
 If a file :file:`.pdbrc` exists in the user's home directory or in the current
-directory, it is read in and executed as if it had been typed at the debugger
-prompt.  This is particularly useful for aliases.  If both files exist, the one
-in the home directory is read first and aliases defined there can be overridden
-by the local file.
+directory, it is read with ``'utf-8'`` encoding and executed as if it had been
+typed at the debugger prompt.  This is particularly useful for aliases.  If both
+files exist, the one in the home directory is read first and aliases defined there
+can be overridden by the local file.
+
+.. versionchanged:: 3.11
+   :file:`.pdbrc` is now read with ``'utf-8'`` encoding. Previously, it was read
+   with the system locale encoding.
 
 .. versionchanged:: 3.2
    :file:`.pdbrc` can now contain commands that continue debugging, such as

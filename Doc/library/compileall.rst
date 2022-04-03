@@ -166,9 +166,10 @@ Public functions
    If *force* is true, modules are re-compiled even if the timestamps are up to
    date.
 
-   If *rx* is given, its search method is called on the complete path to each
+   If *rx* is given, its ``search`` method is called on the complete path to each
    file considered for compilation, and if it returns a true value, the file
-   is skipped.
+   is skipped. This can be used to exclude files matching a regular expression,
+   given as a :ref:`re.Pattern <re-objects>` object.
 
    If *quiet* is ``False`` or ``0`` (the default), the filenames and other
    information are printed to standard out. Set to ``1``, only errors are
@@ -242,9 +243,10 @@ Public functions
    cases where the source file does not exist at the time the byte-code file is
    executed.
 
-   If *rx* is given, its search method is passed the full path name to the
+   If *rx* is given, its ``search`` method is passed the full path name to the
    file being compiled, and if it returns a true value, the file is not
-   compiled and ``True`` is returned.
+   compiled and ``True`` is returned. This can be used to exclude files matching
+   a regular expression, given as a :ref:`re.Pattern <re-objects>` object.
 
    If *quiet* is ``False`` or ``0`` (the default), the filenames and other
    information are printed to standard out. Set to ``1``, only errors are

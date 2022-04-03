@@ -87,27 +87,48 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_a2b_base64__doc__,
-"a2b_base64($module, data, /)\n"
+"a2b_base64($module, data, /, *, strict_mode=False)\n"
 "--\n"
 "\n"
-"Decode a line of base64 data.");
+"Decode a line of base64 data.\n"
+"\n"
+"  strict_mode\n"
+"    When set to True, bytes that are not part of the base64 standard are not allowed.\n"
+"    The same applies to excess data after padding (= / ==).");
 
 #define BINASCII_A2B_BASE64_METHODDEF    \
-    {"a2b_base64", (PyCFunction)binascii_a2b_base64, METH_O, binascii_a2b_base64__doc__},
+    {"a2b_base64", (PyCFunction)(void(*)(void))binascii_a2b_base64, METH_FASTCALL|METH_KEYWORDS, binascii_a2b_base64__doc__},
 
 static PyObject *
-binascii_a2b_base64_impl(PyObject *module, Py_buffer *data);
+binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode);
 
 static PyObject *
-binascii_a2b_base64(PyObject *module, PyObject *arg)
+binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "strict_mode", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "a2b_base64", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
+    int strict_mode = 0;
 
-    if (!ascii_buffer_converter(arg, &data)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = binascii_a2b_base64_impl(module, &data);
+    if (!ascii_buffer_converter(args[0], &data)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    strict_mode = _PyLong_AsInt(args[1]);
+    if (strict_mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = binascii_a2b_base64_impl(module, &data, strict_mode);
 
 exit:
     /* Cleanup for data */
@@ -160,145 +181,6 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     }
 skip_optional_kwonly:
     return_value = binascii_b2a_base64_impl(module, &data, newline);
-
-exit:
-    /* Cleanup for data */
-    if (data.obj) {
-       PyBuffer_Release(&data);
-    }
-
-    return return_value;
-}
-
-PyDoc_STRVAR(binascii_a2b_hqx__doc__,
-"a2b_hqx($module, data, /)\n"
-"--\n"
-"\n"
-"Decode .hqx coding.");
-
-#define BINASCII_A2B_HQX_METHODDEF    \
-    {"a2b_hqx", (PyCFunction)binascii_a2b_hqx, METH_O, binascii_a2b_hqx__doc__},
-
-static PyObject *
-binascii_a2b_hqx_impl(PyObject *module, Py_buffer *data);
-
-static PyObject *
-binascii_a2b_hqx(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
-
-    if (!ascii_buffer_converter(arg, &data)) {
-        goto exit;
-    }
-    return_value = binascii_a2b_hqx_impl(module, &data);
-
-exit:
-    /* Cleanup for data */
-    if (data.obj)
-       PyBuffer_Release(&data);
-
-    return return_value;
-}
-
-PyDoc_STRVAR(binascii_rlecode_hqx__doc__,
-"rlecode_hqx($module, data, /)\n"
-"--\n"
-"\n"
-"Binhex RLE-code binary data.");
-
-#define BINASCII_RLECODE_HQX_METHODDEF    \
-    {"rlecode_hqx", (PyCFunction)binascii_rlecode_hqx, METH_O, binascii_rlecode_hqx__doc__},
-
-static PyObject *
-binascii_rlecode_hqx_impl(PyObject *module, Py_buffer *data);
-
-static PyObject *
-binascii_rlecode_hqx(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
-
-    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("rlecode_hqx", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
-    return_value = binascii_rlecode_hqx_impl(module, &data);
-
-exit:
-    /* Cleanup for data */
-    if (data.obj) {
-       PyBuffer_Release(&data);
-    }
-
-    return return_value;
-}
-
-PyDoc_STRVAR(binascii_b2a_hqx__doc__,
-"b2a_hqx($module, data, /)\n"
-"--\n"
-"\n"
-"Encode .hqx data.");
-
-#define BINASCII_B2A_HQX_METHODDEF    \
-    {"b2a_hqx", (PyCFunction)binascii_b2a_hqx, METH_O, binascii_b2a_hqx__doc__},
-
-static PyObject *
-binascii_b2a_hqx_impl(PyObject *module, Py_buffer *data);
-
-static PyObject *
-binascii_b2a_hqx(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
-
-    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("b2a_hqx", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
-    return_value = binascii_b2a_hqx_impl(module, &data);
-
-exit:
-    /* Cleanup for data */
-    if (data.obj) {
-       PyBuffer_Release(&data);
-    }
-
-    return return_value;
-}
-
-PyDoc_STRVAR(binascii_rledecode_hqx__doc__,
-"rledecode_hqx($module, data, /)\n"
-"--\n"
-"\n"
-"Decode hexbin RLE-coded string.");
-
-#define BINASCII_RLEDECODE_HQX_METHODDEF    \
-    {"rledecode_hqx", (PyCFunction)binascii_rledecode_hqx, METH_O, binascii_rledecode_hqx__doc__},
-
-static PyObject *
-binascii_rledecode_hqx_impl(PyObject *module, Py_buffer *data);
-
-static PyObject *
-binascii_rledecode_hqx(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
-
-    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("rledecode_hqx", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
-    return_value = binascii_rledecode_hqx_impl(module, &data);
 
 exit:
     /* Cleanup for data */
@@ -746,4 +628,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=95a0178f30801b89 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4162d08536697182 input=a9049054013a1b77]*/

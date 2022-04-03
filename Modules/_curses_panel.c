@@ -520,7 +520,7 @@ static PyType_Slot PyCursesPanel_Type_slots[] = {
 static PyType_Spec PyCursesPanel_Type_spec = {
     .name = "_curses_panel.panel",
     .basicsize = sizeof(PyCursesPanelObject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = PyCursesPanel_Type_slots
 };
 
@@ -656,7 +656,6 @@ _curses_panel_exec(PyObject *mod)
     if (state->PyCursesPanel_Type == NULL) {
         return -1;
     }
-    ((PyTypeObject *)state->PyCursesPanel_Type)->tp_new = NULL;
 
     if (PyModule_AddType(mod, state->PyCursesPanel_Type) < 0) {
         return -1;

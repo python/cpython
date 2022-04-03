@@ -1,4 +1,6 @@
+import enum
 import errno
+import inspect
 import os
 import random
 import signal
@@ -32,6 +34,40 @@ class GenericTests(unittest.TestCase):
             elif name.startswith('CTRL_'):
                 self.assertIsInstance(sig, signal.Signals)
                 self.assertEqual(sys.platform, "win32")
+
+        CheckedSignals = enum._old_convert_(
+                enum.IntEnum, 'Signals', 'signal',
+                lambda name:
+                    name.isupper()
+                    and (name.startswith('SIG') and not name.startswith('SIG_'))
+                    or name.startswith('CTRL_'),
+                source=signal,
+                )
+        enum._test_simple_enum(CheckedSignals, signal.Signals)
+
+        CheckedHandlers = enum._old_convert_(
+                enum.IntEnum, 'Handlers', 'signal',
+                lambda name: name in ('SIG_DFL', 'SIG_IGN'),
+                source=signal,
+                )
+        enum._test_simple_enum(CheckedHandlers, signal.Handlers)
+
+        Sigmasks = getattr(signal, 'Sigmasks', None)
+        if Sigmasks is not None:
+            CheckedSigmasks = enum._old_convert_(
+                    enum.IntEnum, 'Sigmasks', 'signal',
+                    lambda name: name in ('SIG_BLOCK', 'SIG_UNBLOCK', 'SIG_SETMASK'),
+                    source=signal,
+                    )
+            enum._test_simple_enum(CheckedSigmasks, Sigmasks)
+
+    def test_functions_module_attr(self):
+        # Issue #27718: If __all__ is not defined all non-builtin functions
+        # should have correct __module__ to be displayed by pydoc.
+        for name in dir(signal):
+            value = getattr(signal, name)
+            if inspect.isroutine(value) and not inspect.isbuiltin(value):
+                self.assertEqual(value.__module__, 'signal')
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
@@ -80,6 +116,7 @@ class PosixTests(unittest.TestCase):
         self.assertLess(len(s), signal.NSIG)
 
     @unittest.skipUnless(sys.executable, "sys.executable required.")
+    @support.requires_subprocess()
     def test_keyboard_interrupt_exit_code(self):
         """KeyboardInterrupt triggers exit via SIGINT."""
         process = subprocess.run(
@@ -130,6 +167,7 @@ class WindowsSignalTests(unittest.TestCase):
             signal.signal(7, handler)
 
     @unittest.skipUnless(sys.executable, "sys.executable required.")
+    @support.requires_subprocess()
     def test_keyboard_interrupt_exit_code(self):
         """KeyboardInterrupt triggers an exit using STATUS_CONTROL_C_EXIT."""
         # We don't test via os.kill(os.getpid(), signal.CTRL_C_EVENT) here
@@ -167,6 +205,9 @@ class WakeupFDTests(unittest.TestCase):
         self.assertRaises((ValueError, OSError),
                           signal.set_wakeup_fd, fd)
 
+    # Emscripten does not support fstat on pipes yet.
+    # https://github.com/emscripten-core/emscripten/issues/16414
+    @unittest.skipIf(support.is_emscripten, "Emscripten cannot fstat pipes.")
     def test_set_wakeup_fd_result(self):
         r1, w1 = os.pipe()
         self.addCleanup(os.close, r1)
@@ -184,6 +225,7 @@ class WakeupFDTests(unittest.TestCase):
         self.assertEqual(signal.set_wakeup_fd(-1), w2)
         self.assertEqual(signal.set_wakeup_fd(-1), -1)
 
+    @unittest.skipIf(support.is_emscripten, "Emscripten cannot fstat pipes.")
     def test_set_wakeup_fd_socket_result(self):
         sock1 = socket.socket()
         self.addCleanup(sock1.close)
@@ -203,6 +245,7 @@ class WakeupFDTests(unittest.TestCase):
     # On Windows, files are always blocking and Windows does not provide a
     # function to test if a socket is in non-blocking mode.
     @unittest.skipIf(sys.platform == "win32", "tests specific to POSIX")
+    @unittest.skipIf(support.is_emscripten, "Emscripten cannot fstat pipes.")
     def test_set_wakeup_fd_blocking(self):
         rfd, wfd = os.pipe()
         self.addCleanup(os.close, rfd)
@@ -601,6 +644,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 @unittest.skipUnless(hasattr(signal, 'siginterrupt'), "needs signal.siginterrupt()")
+@support.requires_subprocess()
 class SiginterruptTest(unittest.TestCase):
 
     def readpipe_interrupted(self, interrupt):
@@ -1280,21 +1324,31 @@ class StressTest(unittest.TestCase):
 
         old_handler = signal.signal(signum, custom_handler)
         self.addCleanup(signal.signal, signum, old_handler)
+
         t = threading.Thread(target=set_interrupts)
-        t.start()
         try:
+            ignored = False
             with support.catch_unraisable_exception() as cm:
+                t.start()
                 cycle_handlers()
+                do_stop = True
+                t.join()
+
                 if cm.unraisable is not None:
                     # An unraisable exception may be printed out when
                     # a signal is ignored due to the aforementioned
                     # race condition, check it.
                     self.assertIsInstance(cm.unraisable.exc_value, OSError)
                     self.assertIn(
-                        f"Signal {signum} ignored due to race condition",
+                        f"Signal {signum:d} ignored due to race condition",
                         str(cm.unraisable.exc_value))
-            # Sanity check that some signals were received, but not all
-            self.assertGreater(num_received_signals, 0)
+                    ignored = True
+
+            # bpo-43406: Even if it is unlikely, it's technically possible that
+            # all signals were ignored because of race conditions.
+            if not ignored:
+                # Sanity check that some signals were received, but not all
+                self.assertGreater(num_received_signals, 0)
             self.assertLess(num_received_signals, num_sent_signals)
         finally:
             do_stop = True
