@@ -2419,11 +2419,13 @@ def overload(func):
     get_overloads() function.
     """
     try:
-        existing = get_overloads(func)
-    except AttributeError:
+        key = _get_key_for_callable(func)
+    except TypeError:
         # Not a normal function; ignore.
         pass
     else:
+        # We're inlining get_overloads() here to avoid computing the key twice.
+        existing = _overload_registry.setdefault(key, [])
         if existing:
             # If we are registering a variant with a lineno below or equal to that of the
             # most recent existing variant, we're probably re-creating overloads for a
@@ -2433,10 +2435,9 @@ def overload(func):
             if firstlineno is not None:
                 existing_lineno = _get_firstlineno(existing[-1])
                 if existing_lineno is not None and firstlineno <= existing_lineno:
-                    clear_overloads(func)
+                    existing.clear()
 
-        key = _get_key_for_callable(func)
-        _overload_registry.setdefault(key, []).append(func)
+        existing.append(func)
     return _overload_dummy
 
 
@@ -2477,7 +2478,10 @@ def _get_key_for_callable(func):
     """
     # classmethod and staticmethod
     func = getattr(func, "__func__", func)
-    return f"{func.__module__}.{func.__qualname__}"
+    try:
+        return f"{func.__module__}.{func.__qualname__}"
+    except AttributeError:
+        raise TypeError(f"Cannot create key for {func!r}") from None
 
 
 def final(f):
