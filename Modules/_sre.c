@@ -1407,14 +1407,15 @@ _sre.compile
     groups: Py_ssize_t
     groupindex: object(subclass_of='&PyDict_Type')
     indexgroup: object(subclass_of='&PyTuple_Type')
+    repeat_count: Py_ssize_t
 
 [clinic start generated code]*/
 
 static PyObject *
 _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
                   PyObject *code, Py_ssize_t groups, PyObject *groupindex,
-                  PyObject *indexgroup)
-/*[clinic end generated code: output=ef9c2b3693776404 input=0a68476dbbe5db30]*/
+                  PyObject *indexgroup, Py_ssize_t repeat_count)
+/*[clinic end generated code: output=922af562d51b1657 input=77e39c322501ec2a]*/
 {
     /* "compile" pattern descriptor to pattern object */
 
