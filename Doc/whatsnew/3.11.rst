@@ -474,13 +474,6 @@ Optimizations
   almost eliminated when no exception is raised.
   (Contributed by Mark Shannon in :issue:`40222`.)
 
-* Method calls with keywords are now faster due to bytecode
-  changes which avoid creating bound method instances. Previously, this
-  optimization was applied only to method calls with purely positional
-  arguments.
-  (Contributed by Ken Jin and Mark Shannon in :issue:`26110`, based on ideas
-  implemented in PyPy.)
-
 * Pure ASCII strings are now normalized in constant time by :func:`unicodedata.normalize`.
   (Contributed by Dong-hee Na in :issue:`44987`.)
 
