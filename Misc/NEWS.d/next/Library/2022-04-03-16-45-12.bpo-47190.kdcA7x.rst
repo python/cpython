@@ -1,0 +1,2 @@
+This change adds a `tkinter.async` module to the stdlib which has an
+`AsyncTk` class useable by `asyncio`.
