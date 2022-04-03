@@ -2788,7 +2788,7 @@ pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
     return PyBool_FromLong(cmp);
 }
 
-#include "clinic/_sre.c.h"
+#include "clinic/sre.c.h"
 
 static PyMethodDef pattern_methods[] = {
     _SRE_SRE_PATTERN_MATCH_METHODDEF
