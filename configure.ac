@@ -5979,6 +5979,7 @@ SRCDIRS="\
   Modules/_multiprocessing \
   Modules/_sha3 \
   Modules/_sqlite \
+  Modules/_sre \
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
