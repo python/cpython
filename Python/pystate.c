@@ -783,9 +783,7 @@ init_threadstate(PyThreadState *tstate,
     tstate->exc_info = &tstate->exc_state;
 
     tstate->cframe = &tstate->root_cframe;
-    tstate->datastack_chunk = NULL;
-    tstate->datastack_top = NULL;
-    tstate->datastack_limit = NULL;
+    _PyFrameStack_Init(&tstate->frame_stack, DATA_STACK_CHUNK_SIZE);
 
     tstate->_initialized = 1;
 }
@@ -1073,13 +1071,7 @@ tstate_delete_common(PyThreadState *tstate,
     {
         PyThread_tss_set(&gilstate->autoTSSkey, NULL);
     }
-    _PyStackChunk *chunk = tstate->datastack_chunk;
-    tstate->datastack_chunk = NULL;
-    while (chunk != NULL) {
-        _PyStackChunk *prev = chunk->previous;
-        _PyObject_VirtualFree(chunk, chunk->size);
-        chunk = prev;
-    }
+    _PyFrameStack_Free(&tstate->frame_stack);
 }
 
 static void
@@ -2159,27 +2151,27 @@ _Py_GetConfig(void)
 #define MINIMUM_OVERHEAD 1000
 
 static PyObject **
-push_chunk(PyThreadState *tstate, int size)
+push_chunk(_PyFrameStack *frame_stack, int size)
 {
-    int allocate_size = DATA_STACK_CHUNK_SIZE;
+    int allocate_size = frame_stack->chunk_size;
     while (allocate_size < (int)sizeof(PyObject*)*(size + MINIMUM_OVERHEAD)) {
         allocate_size *= 2;
     }
-    _PyStackChunk *new = allocate_chunk(allocate_size, tstate->datastack_chunk);
+    _PyStackChunk *new = allocate_chunk(allocate_size, frame_stack->current_chunk);
     if (new == NULL) {
         return NULL;
     }
-    if (tstate->datastack_chunk) {
-        tstate->datastack_chunk->top = tstate->datastack_top -
-                                       &tstate->datastack_chunk->data[0];
+    if (frame_stack->current_chunk) {
+        frame_stack->current_chunk->top = frame_stack->top -
+                                       &frame_stack->current_chunk->data[0];
     }
-    tstate->datastack_chunk = new;
-    tstate->datastack_limit = (PyObject **)(((char *)new) + allocate_size);
+    frame_stack->current_chunk = new;
+    frame_stack->limit = (PyObject **)(((char *)new) + allocate_size);
     // When new is the "root" chunk (i.e. new->previous == NULL), we can keep
     // _PyThreadState_PopFrame from freeing it later by "skipping" over the
     // first element:
     PyObject **res = &new->data[new->previous == NULL];
-    tstate->datastack_top = res + size;
+    frame_stack->top = res + size;
     return res;
 }
 
@@ -2187,13 +2179,13 @@ _PyInterpreterFrame *
 _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size)
 {
     assert(size < INT_MAX/sizeof(PyObject *));
-    PyObject **base = tstate->datastack_top;
+    PyObject **base = tstate->frame_stack.top;
     PyObject **top = base + size;
-    if (top >= tstate->datastack_limit) {
-        base = push_chunk(tstate, (int)size);
+    if (top >= tstate->frame_stack.limit) {
+        base = push_chunk(&tstate->frame_stack, (int)size);
     }
     else {
-        tstate->datastack_top = top;
+        tstate->frame_stack.top = top;
     }
     return (_PyInterpreterFrame *)base;
 }
@@ -2201,25 +2193,51 @@ _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size)
 void
 _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
-    assert(tstate->datastack_chunk);
+    assert(tstate->frame_stack.current_chunk);
     PyObject **base = (PyObject **)frame;
-    if (base == &tstate->datastack_chunk->data[0]) {
-        _PyStackChunk *chunk = tstate->datastack_chunk;
+    if (base == &tstate->frame_stack.current_chunk->data[0]) {
+        _PyStackChunk *chunk = tstate->frame_stack.current_chunk;
         _PyStackChunk *previous = chunk->previous;
         // push_chunk ensures that the root chunk is never popped:
         assert(previous);
-        tstate->datastack_top = &previous->data[previous->top];
-        tstate->datastack_chunk = previous;
+        tstate->frame_stack.top = &previous->data[previous->top];
+        tstate->frame_stack.current_chunk = previous;
         _PyObject_VirtualFree(chunk, chunk->size);
-        tstate->datastack_limit = (PyObject **)(((char *)previous) + previous->size);
+        tstate->frame_stack.limit = (PyObject **)(((char *)previous) + previous->size);
     }
     else {
-        assert(tstate->datastack_top);
-        assert(tstate->datastack_top >= base);
-        tstate->datastack_top = base;
+        assert(tstate->frame_stack.top);
+        assert(tstate->frame_stack.top >= base);
+        tstate->frame_stack.top = base;
     }
 }
 
+void _PyFrameStack_Init(_PyFrameStack *fs, int chunk_size)
+{
+    fs->chunk_size = chunk_size;
+    fs->current_chunk = NULL;
+    fs->top = NULL;
+    fs->limit = NULL;
+}
+
+void _PyFrameStack_Swap(_PyFrameStack *fs)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyFrameStack temp = *fs;
+    *fs = tstate->frame_stack;
+    tstate->frame_stack = temp;
+}
+
+void _PyFrameStack_Free(_PyFrameStack *fs)
+{
+    _PyStackChunk *chunk = fs->current_chunk;
+    fs->current_chunk = NULL;
+    while (chunk != NULL) {
+        _PyStackChunk *previous = chunk->previous;
+        _PyObject_VirtualFree(chunk, chunk->size);
+        chunk = previous;
+    }
+}
 
 #ifdef __cplusplus
 }

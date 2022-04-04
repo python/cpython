@@ -79,6 +79,13 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
+typedef struct _frame_stack {
+    _PyStackChunk *current_chunk;
+    PyObject **top;
+    PyObject **limit;
+    int chunk_size;
+} _PyFrameStack;
+
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -178,10 +185,7 @@ struct _ts {
     uint64_t id;
 
     PyTraceInfo trace_info;
-
-    _PyStackChunk *datastack_chunk;
-    PyObject **datastack_top;
-    PyObject **datastack_limit;
+    _PyFrameStack frame_stack;
     /* XXX signal handlers should also be here */
 
     /* The following fields are here to avoid allocation during init.
@@ -364,3 +368,8 @@ typedef int (*crossinterpdatafunc)(PyObject *, _PyCrossInterpreterData *);
 
 PyAPI_FUNC(int) _PyCrossInterpreterData_RegisterClass(PyTypeObject *, crossinterpdatafunc);
 PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
+
+
+PyAPI_FUNC(void) _PyFrameStack_Init(_PyFrameStack *fs, int chunk_size);
+PyAPI_FUNC(void) _PyFrameStack_Swap(_PyFrameStack *fs);
+PyAPI_FUNC(void) _PyFrameStack_Free(_PyFrameStack *fs);
