@@ -1369,7 +1369,7 @@ class ZipFile:
         try:
             fp.seek(self.start_dir, 0)
         except ValueError as e:
-            raise BadZipFile("Bad offset for central directory")
+            raise BadZipFile("Bad offset for central directory")  from e
         data = fp.read(size_cd)
         fp = io.BytesIO(data)
         total = 0
