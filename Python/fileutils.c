@@ -94,7 +94,10 @@ _Py_device_encoding(int fd)
     return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
 #else
     if (_PyRuntime.preconfig.utf8_mode) {
-        return PyUnicode_FromString("utf-8"); //TODO: Use _Py_STR
+        _Py_DECLARE_STR(utf_8, "utf-8");
+        PyObject *encoding = &_Py_STR(utf_8);
+        Py_INCREF(encoding);
+        return encoding;
     }
     return _Py_GetLocaleEncodingObject();
 #endif
