@@ -1017,6 +1017,7 @@ with_framework_name
 enable_framework
 with_cxx_main
 with_emscripten_target
+enable_wasm_dynamic_linking
 with_suffix
 enable_shared
 with_static_libpython
@@ -1730,6 +1731,9 @@ Optional Features:
                           Unix install. optional INSTALLDIR specifies the
                           installation path. see Mac/README.rst (default is
                           no)
+  --enable-wasm-dynamic-linking
+                          Enable dynamic linking support for WebAssembly
+                          (default is no)
   --enable-shared         enable building a shared Python library (default is
                           no)
   --enable-profiling      enable C-level code profiling with gprof (default is
@@ -6290,6 +6294,30 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_sys_emscripten_target" >&5
 $as_echo "$ac_sys_emscripten_target" >&6; }
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-wasm-dynamic-linking" >&5
+$as_echo_n "checking for --enable-wasm-dynamic-linking... " >&6; }
+# Check whether --enable-wasm-dynamic-linking was given.
+if test "${enable_wasm_dynamic_linking+set}" = set; then :
+  enableval=$enable_wasm_dynamic_linking;
+  case $ac_sys_system in #(
+  Emscripten) :
+     ;; #(
+  WASI) :
+    as_fn_error $? "WASI dynamic linking is not implemented yet." "$LINENO" 5 ;; #(
+  *) :
+    as_fn_error $? "--enable-wasm-dynamic-linking only applies to Emscripten and WASI" "$LINENO" 5
+   ;;
+esac
+
+else
+
+  enable_wasm_dynamic_linking=missing
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_wasm_dynamic_linking" >&5
+$as_echo "$enable_wasm_dynamic_linking" >&6; }
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-suffix" >&5
 $as_echo_n "checking for --with-suffix... " >&6; }
 
@@ -7760,18 +7788,20 @@ then
 fi
 
 # WASM flags
-# TODO: Add -s MAIN_MODULE=2 for dlopen() support.
-# The option disables code elimination, which increases code size of main
-# binary. All objects must be built with -fPIC.
 case $ac_sys_system/$ac_sys_emscripten_target in #(
   Emscripten/browser*) :
 
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1"
-    LINKFORSHARED="--preload-file \$(WASM_ASSETS_DIR)"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH=1"
+    LINKFORSHARED="--preload-file=\$(WASM_ASSETS_DIR)"
+    if test "x$enable_wasm_dynamic_linking" = xyes; then :
+
+      as_fn_append LINKFORSHARED " -sMAIN_MODULE=1"
+
+fi
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
         if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "browser-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS=1"
       LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
     else
       LINKFORSHARED="$LINKFORSHARED -O2 -g0"
@@ -7779,11 +7809,16 @@ case $ac_sys_system/$ac_sys_emscripten_target in #(
    ;; #(
   Emscripten/node*) :
 
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s USE_PTHREADS=1"
-    LINKFORSHARED="-s PROXY_TO_PTHREAD=1 -s EXIT_RUNTIME=1"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH=1 -sNODERAWFS=1 -sUSE_PTHREADS=1"
+    LINKFORSHARED="-sPROXY_TO_PTHREAD=1 -sEXIT_RUNTIME=1"
+    if test "x$enable_wasm_dynamic_linking" = xyes; then :
+
+      as_fn_append LINKFORSHARED " -sMAIN_MODULE=1"
+
+fi
     CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
     if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "node-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS=1"
       LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
     else
       LINKFORSHARED="$LINKFORSHARED -O2 -g0"
@@ -7802,6 +7837,18 @@ $as_echo "#define _WASI_EMULATED_PROCESS_CLOCKS 1" >>confdefs.h
 
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
+
+ ;; #(
+  *) :
+     ;;
+esac
+
+case $enable_wasm_dynamic_linking in #(
+  yes) :
+    ac_cv_func_dlopen=yes ;; #(
+  no) :
+    ac_cv_func_dlopen=no ;; #(
+  missing) :
 
  ;; #(
   *) :
@@ -10469,10 +10516,6 @@ then
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
-	Emscripten*)
-		LDSHARED='$(CC) -shared -s SIDE_MODULE=1'
-		LDCXXSHARED='$(CXX) -shared -s SIDE_MODULE=1'
-    ;;
 	FreeBSD*)
 		if [ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]
 		then
@@ -10511,16 +10554,32 @@ then
 	SCO_SV*)
 		LDSHARED='$(CC) -Wl,-G,-Bexport'
 		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
+	WASI*)
+		if test "x$enable_wasm_dynamic_linking" = xyes; then :
+
+
+fi;;
 	CYGWIN*)
 		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
 		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
 	*)	LDSHARED="ld";;
 	esac
 fi
+
+if test "$enable_wasm_dynamic_linking" = "yes" -a "$ac_sys_system" = "Emscripten"; then
+  BLDSHARED='$(CC) -shared -sSIDE_MODULE=1 -sWASM=1'
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDSHARED" >&5
 $as_echo "$LDSHARED" >&6; }
 LDCXXSHARED=${LDCXXSHARED-$LDSHARED}
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking BLDSHARED flags" >&5
+$as_echo_n "checking BLDSHARED flags... " >&6; }
 BLDSHARED=${BLDSHARED-$LDSHARED}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $BLDSHARED" >&5
+$as_echo "$BLDSHARED" >&6; }
+
 # CCSHARED are the C *flags* used to create objects to go into a shared
 # library (module) -- this is only needed for a few systems
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking CCSHARED" >&5
@@ -10540,6 +10599,12 @@ then
 		 fi;;
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
+	Emscripten*|WASI*)
+		if test "x$enable_wasm_dynamic_linking" = xyes; then :
+
+			CCSHARED="-fPIC"
+
+fi;;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
@@ -10647,6 +10712,13 @@ then
 		CFLAGSFORSHARED='$(CCSHARED)'
 	esac
 fi
+
+if test "x$enable_wasm_dynamic_linking" = xyes; then :
+
+  CFLAGSFORSHARED='$(CCSHARED)'
+
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CFLAGSFORSHARED" >&5
 $as_echo "$CFLAGSFORSHARED" >&6; }
 
@@ -15379,7 +15451,8 @@ $as_echo "yes" >&6; }
 fi
 
 if test "$have_zlib" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$ZLIB_LIBS" = "-lz"; then
-  ZLIB_LIBS="-s USE_ZLIB=1"
+  ZLIB_CFLAGS="-sUSE_ZLIB=1"
+  ZLIB_LIBS="-sUSE_ZLIB=1"
 fi
 
 if test "x$have_zlib" = xyes; then :
@@ -15612,7 +15685,8 @@ $as_echo "yes" >&6; }
 fi
 
 if test "$have_bzip2" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$BZIP2_LIBS" = "-lbz2"; then
-  BZIP2_LIBS="-s USE_BZIP2=1"
+  BZIP2_CFLAGS="-sUSE_BZIP2=1"
+  BZIP2_LIBS="-sUSE_BZIP2=1"
 fi
 
 
