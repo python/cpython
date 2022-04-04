@@ -94,6 +94,11 @@ class BZ2File(_compression.BaseStream):
         else:
             self._pos = 0
 
+        if not isinstance(filename, (str, bytes)):
+            self.name = ''
+        else:
+            self.name = os.fspath(filename)
+
     def close(self):
         """Flush and close the file.
 

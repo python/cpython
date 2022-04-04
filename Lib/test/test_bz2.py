@@ -106,6 +106,27 @@ class BZ2FileTest(BaseTest):
         # compresslevel is keyword-only
         self.assertRaises(TypeError, BZ2File, os.devnull, "r", 3)
 
+    def testNameFile(self):
+        self.createTempFile()
+        with BZ2File(self.filename) as bz2f:
+            self.assertTrue(hasattr(bz2f, 'name'))
+            self.assertTrue(bz2f.name == self.filename)
+
+    def testNameBytesIO(self):
+        bz2f = BZ2File(BytesIO(self.DATA))
+        try:
+            self.assertTrue(hasattr(bz2f, 'name'))
+            self.assertTrue(bz2f.name == '')
+        finally:
+            bz2f.close()
+
+        bz2f = BZ2File(BytesIO(), "w")
+        try:
+            self.assertTrue(hasattr(bz2f, 'name'))
+            self.assertTrue(bz2f.name == '')
+        finally:
+            bz2f.close()
+
     def testRead(self):
         self.createTempFile()
         with BZ2File(self.filename) as bz2f:
