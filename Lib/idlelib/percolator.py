@@ -38,6 +38,21 @@ class Percolator:
         filter.setdelegate(self.top)
         self.top = filter
 
+    def insertfilterafter(self, filter, after):
+        assert isinstance(filter, Delegator)
+        assert isinstance(after, Delegator)
+        assert filter.delegate is None
+
+        f = self.top
+        f.resetcache()
+        while f is not after:
+            assert f is not self.bottom
+            f = f.delegate
+            f.resetcache()
+
+        filter.setdelegate(f.delegate)
+        f.setdelegate(filter)
+
     def removefilter(self, filter):
         # XXX Perhaps should only support popfilter()?
         assert isinstance(filter, Delegator)

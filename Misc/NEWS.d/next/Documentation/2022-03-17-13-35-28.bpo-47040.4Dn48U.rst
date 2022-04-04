@@ -1,0 +1,2 @@
+Clarified the old Python versions compatiblity note of :func:`binascii.crc32` /
+:func:`zlib.adler32` / :func:`zlib.crc32` functions.

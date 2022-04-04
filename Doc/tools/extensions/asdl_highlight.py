@@ -1,6 +1,9 @@
 import os
 import sys
-sys.path.append(os.path.abspath("../Parser/"))
+from pathlib import Path
+
+CPYTHON_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+sys.path.append(str(CPYTHON_ROOT / "Parser"))
 
 from pygments.lexer import RegexLexer, bygroups, include, words
 from pygments.token import (Comment, Generic, Keyword, Name, Operator,

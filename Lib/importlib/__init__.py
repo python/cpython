@@ -34,7 +34,7 @@ try:
     import _frozen_importlib_external as _bootstrap_external
 except ImportError:
     from . import _bootstrap_external
-    _bootstrap_external._setup(_bootstrap)
+    _bootstrap_external._set_bootstrap_module(_bootstrap)
     _bootstrap._bootstrap_external = _bootstrap_external
 else:
     _bootstrap_external.__name__ = 'importlib._bootstrap_external'
@@ -78,8 +78,8 @@ def find_loader(name, path=None):
     This function is deprecated in favor of importlib.util.find_spec().
 
     """
-    warnings.warn('Deprecated since Python 3.4. '
-                  'Use importlib.util.find_spec() instead.',
+    warnings.warn('Deprecated since Python 3.4 and slated for removal in '
+                  'Python 3.12; use importlib.util.find_spec() instead',
                   DeprecationWarning, stacklevel=2)
     try:
         loader = sys.modules[name].__loader__

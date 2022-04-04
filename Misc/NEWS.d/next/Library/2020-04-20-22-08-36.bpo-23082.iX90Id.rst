@@ -1,1 +1,0 @@
-Updated the error message and docs of PurePath.relative_to() to better reflect the function behaviour.

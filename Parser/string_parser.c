@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #include <Python.h>
 
 #include "tokenizer.h"
@@ -10,7 +12,7 @@ static int
 warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char, Token *t)
 {
     PyObject *msg =
-        PyUnicode_FromFormat("invalid escape sequence \\%c", first_invalid_escape_char);
+        PyUnicode_FromFormat("invalid escape sequence '\\%c'", first_invalid_escape_char);
     if (msg == NULL) {
         return -1;
     }
@@ -25,7 +27,7 @@ warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char,
                since _PyPegen_raise_error uses p->tokens[p->fill - 1] for the
                error location, if p->known_err_token is not set. */
             p->known_err_token = t;
-            RAISE_SYNTAX_ERROR("invalid escape sequence \\%c", first_invalid_escape_char);
+            RAISE_SYNTAX_ERROR("invalid escape sequence '\\%c'", first_invalid_escape_char);
         }
         Py_DECREF(msg);
         return -1;
@@ -67,6 +69,9 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
         return NULL;
     }
     p = buf = PyBytes_AsString(u);
+    if (p == NULL) {
+        return NULL;
+    }
     end = s + len;
     while (s < end) {
         if (*s == '\\') {
@@ -82,7 +87,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
         if (*s & 0x80) {
             PyObject *w;
             int kind;
-            void *data;
+            const void *data;
             Py_ssize_t w_len;
             Py_ssize_t i;
             w = decode_utf8(&s, end);
@@ -110,7 +115,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     s = buf;
 
     const char *first_invalid_escape;
-    v = _PyUnicode_DecodeUnicodeEscape(s, len, NULL, &first_invalid_escape);
+    v = _PyUnicode_DecodeUnicodeEscapeInternal(s, len, NULL, NULL, &first_invalid_escape);
 
     if (v != NULL && first_invalid_escape != NULL) {
         if (warn_invalid_escape_sequence(parser, *first_invalid_escape, t) < 0) {
@@ -245,7 +250,7 @@ _PyPegen_parsestr(Parser *p, int *bytesmode, int *rawmode, PyObject **result,
             if (Py_CHARMASK(*ch) >= 0x80) {
                 RAISE_SYNTAX_ERROR(
                                    "bytes can only contain ASCII "
-                                   "literal characters.");
+                                   "literal characters");
                 return -1;
             }
         }
@@ -271,288 +276,55 @@ _PyPegen_parsestr(Parser *p, int *bytesmode, int *rawmode, PyObject **result,
 
 // FSTRING STUFF
 
-static void fstring_shift_expr_locations(expr_ty n, int lineno, int col_offset);
-static void fstring_shift_argument(expr_ty parent, arg_ty args, int lineno, int col_offset);
-
-
-static inline void shift_expr(expr_ty parent, expr_ty n, int line, int col) {
-    if (n == NULL) {
-        return;
-    }
-    if (parent->lineno < n->lineno) {
-        col = 0;
-    }
-    fstring_shift_expr_locations(n, line, col);
-}
-
-static inline void shift_arg(expr_ty parent, arg_ty n, int line, int col) {
-    if (parent->lineno < n->lineno) {
-        col = 0;
-    }
-    fstring_shift_argument(parent, n, line, col);
-}
-
-static void fstring_shift_seq_locations(expr_ty parent, asdl_seq *seq, int lineno, int col_offset) {
-    for (Py_ssize_t i = 0, l = asdl_seq_LEN(seq); i < l; i++) {
-        expr_ty expr = asdl_seq_GET(seq, i);
-        if (expr == NULL){
-            continue;
-        }
-        shift_expr(parent, expr, lineno, col_offset);
-    }
-}
-
-static void fstring_shift_slice_locations(expr_ty parent, expr_ty slice, int lineno, int col_offset) {
-    switch (slice->kind) {
-        case Slice_kind:
-            if (slice->v.Slice.lower) {
-                shift_expr(parent, slice->v.Slice.lower, lineno, col_offset);
-            }
-            if (slice->v.Slice.upper) {
-                shift_expr(parent, slice->v.Slice.upper, lineno, col_offset);
-            }
-            if (slice->v.Slice.step) {
-                shift_expr(parent, slice->v.Slice.step, lineno, col_offset);
-            }
-            break;
-        case Tuple_kind:
-            fstring_shift_seq_locations(parent, slice->v.Tuple.elts, lineno, col_offset);
-            break;
-        default:
-            break;
-    }
-}
-
-static void fstring_shift_comprehension(expr_ty parent, comprehension_ty comp, int lineno, int col_offset) {
-    shift_expr(parent, comp->target, lineno, col_offset);
-    shift_expr(parent, comp->iter, lineno, col_offset);
-    fstring_shift_seq_locations(parent, comp->ifs, lineno, col_offset);
-}
-
-static void fstring_shift_argument(expr_ty parent, arg_ty arg, int lineno, int col_offset) {
-    if (arg->annotation != NULL){
-        shift_expr(parent, arg->annotation, lineno, col_offset);
-    }
-    arg->col_offset = arg->col_offset + col_offset;
-    arg->end_col_offset = arg->end_col_offset + col_offset;
-    arg->lineno = arg->lineno + lineno;
-    arg->end_lineno = arg->end_lineno + lineno;
-}
-
-static void fstring_shift_arguments(expr_ty parent, arguments_ty args, int lineno, int col_offset) {
-    for (Py_ssize_t i = 0, l = asdl_seq_LEN(args->posonlyargs); i < l; i++) {
-       arg_ty arg = asdl_seq_GET(args->posonlyargs, i);
-       shift_arg(parent, arg, lineno, col_offset);
-    }
-
-    for (Py_ssize_t i = 0, l = asdl_seq_LEN(args->args); i < l; i++) {
-       arg_ty arg = asdl_seq_GET(args->args, i);
-       shift_arg(parent, arg, lineno, col_offset);
-    }
-
-    if (args->vararg != NULL) {
-        shift_arg(parent, args->vararg, lineno, col_offset);
-    }
-
-    for (Py_ssize_t i = 0, l = asdl_seq_LEN(args->kwonlyargs); i < l; i++) {
-       arg_ty arg = asdl_seq_GET(args->kwonlyargs, i);
-       shift_arg(parent, arg, lineno, col_offset);
-    }
-
-    fstring_shift_seq_locations(parent, args->kw_defaults, lineno, col_offset);
-
-    if (args->kwarg != NULL) {
-        shift_arg(parent, args->kwarg, lineno, col_offset);
-    }
-
-    fstring_shift_seq_locations(parent, args->defaults, lineno, col_offset);
-}
-
-static void fstring_shift_children_locations(expr_ty node, int lineno, int col_offset) {
-    switch (node->kind) {
-        case BoolOp_kind:
-            fstring_shift_seq_locations(node, node->v.BoolOp.values, lineno, col_offset);
-            break;
-        case NamedExpr_kind:
-            shift_expr(node, node->v.NamedExpr.target, lineno, col_offset);
-            shift_expr(node, node->v.NamedExpr.value, lineno, col_offset);
-            break;
-        case BinOp_kind:
-            shift_expr(node, node->v.BinOp.left, lineno, col_offset);
-            shift_expr(node, node->v.BinOp.right, lineno, col_offset);
-            break;
-        case UnaryOp_kind:
-            shift_expr(node, node->v.UnaryOp.operand, lineno, col_offset);
-            break;
-        case Lambda_kind:
-            fstring_shift_arguments(node, node->v.Lambda.args, lineno, col_offset);
-            shift_expr(node, node->v.Lambda.body, lineno, col_offset);
-            break;
-        case IfExp_kind:
-            shift_expr(node, node->v.IfExp.test, lineno, col_offset);
-            shift_expr(node, node->v.IfExp.body, lineno, col_offset);
-            shift_expr(node, node->v.IfExp.orelse, lineno, col_offset);
-            break;
-        case Dict_kind:
-            fstring_shift_seq_locations(node, node->v.Dict.keys, lineno, col_offset);
-            fstring_shift_seq_locations(node, node->v.Dict.values, lineno, col_offset);
-            break;
-        case Set_kind:
-            fstring_shift_seq_locations(node, node->v.Set.elts, lineno, col_offset);
-            break;
-        case ListComp_kind:
-            shift_expr(node, node->v.ListComp.elt, lineno, col_offset);
-            for (Py_ssize_t i = 0, l = asdl_seq_LEN(node->v.ListComp.generators); i < l; i++) {
-                comprehension_ty comp = asdl_seq_GET(node->v.ListComp.generators, i);
-                fstring_shift_comprehension(node, comp, lineno, col_offset);
-            }
-            break;
-        case SetComp_kind:
-            shift_expr(node, node->v.SetComp.elt, lineno, col_offset);
-            for (Py_ssize_t i = 0, l = asdl_seq_LEN(node->v.SetComp.generators); i < l; i++) {
-                comprehension_ty comp = asdl_seq_GET(node->v.SetComp.generators, i);
-                fstring_shift_comprehension(node, comp, lineno, col_offset);
-            }
-            break;
-        case DictComp_kind:
-            shift_expr(node, node->v.DictComp.key, lineno, col_offset);
-            shift_expr(node, node->v.DictComp.value, lineno, col_offset);
-            for (Py_ssize_t i = 0, l = asdl_seq_LEN(node->v.DictComp.generators); i < l; i++) {
-                comprehension_ty comp = asdl_seq_GET(node->v.DictComp.generators, i);
-                fstring_shift_comprehension(node, comp, lineno, col_offset);
-            }
-            break;
-        case GeneratorExp_kind:
-            shift_expr(node, node->v.GeneratorExp.elt, lineno, col_offset);
-            for (Py_ssize_t i = 0, l = asdl_seq_LEN(node->v.GeneratorExp.generators); i < l; i++) {
-                comprehension_ty comp = asdl_seq_GET(node->v.GeneratorExp.generators, i);
-                fstring_shift_comprehension(node, comp, lineno, col_offset);
-            }
-            break;
-        case Await_kind:
-            shift_expr(node, node->v.Await.value, lineno, col_offset);
-            break;
-        case Yield_kind:
-            shift_expr(node, node->v.Yield.value, lineno, col_offset);
-            break;
-        case YieldFrom_kind:
-            shift_expr(node, node->v.YieldFrom.value, lineno, col_offset);
-            break;
-        case Compare_kind:
-            shift_expr(node, node->v.Compare.left, lineno, col_offset);
-            fstring_shift_seq_locations(node, node->v.Compare.comparators, lineno, col_offset);
-            break;
-        case Call_kind:
-            shift_expr(node, node->v.Call.func, lineno, col_offset);
-            fstring_shift_seq_locations(node, node->v.Call.args, lineno, col_offset);
-            for (Py_ssize_t i = 0, l = asdl_seq_LEN(node->v.Call.keywords); i < l; i++) {
-                keyword_ty keyword = asdl_seq_GET(node->v.Call.keywords, i);
-                shift_expr(node, keyword->value, lineno, col_offset);
-            }
-            break;
-        case Attribute_kind:
-            shift_expr(node, node->v.Attribute.value, lineno, col_offset);
-            break;
-        case Subscript_kind:
-            shift_expr(node, node->v.Subscript.value, lineno, col_offset);
-            fstring_shift_slice_locations(node, node->v.Subscript.slice, lineno, col_offset);
-            shift_expr(node, node->v.Subscript.slice, lineno, col_offset);
-            break;
-        case Starred_kind:
-            shift_expr(node, node->v.Starred.value, lineno, col_offset);
-            break;
-        case List_kind:
-            fstring_shift_seq_locations(node, node->v.List.elts, lineno, col_offset);
-            break;
-        case Tuple_kind:
-            fstring_shift_seq_locations(node, node->v.Tuple.elts, lineno, col_offset);
-            break;
-        case JoinedStr_kind:
-            fstring_shift_seq_locations(node, node->v.JoinedStr.values, lineno, col_offset);
-            break;
-        case FormattedValue_kind:
-            shift_expr(node, node->v.FormattedValue.value, lineno, col_offset);
-            if (node->v.FormattedValue.format_spec) {
-                shift_expr(node, node->v.FormattedValue.format_spec, lineno, col_offset);
-            }
-            break;
-        default:
-            return;
-    }
-}
-
-/* Shift locations for the given node and all its children by adding `lineno`
-   and `col_offset` to existing locations. Note that n is the already parsed
-   expression. */
-static void fstring_shift_expr_locations(expr_ty n, int lineno, int col_offset)
-{
-    n->col_offset = n->col_offset + col_offset;
-
-    // The following is needed, in order for nodes spanning across multiple lines
-    // to be shifted correctly. An example of such a node is a Call node, the closing
-    // parenthesis of which is not on the same line as its name.
-    if (n->lineno == n->end_lineno) {
-        n->end_col_offset = n->end_col_offset + col_offset;
-    }
-
-    fstring_shift_children_locations(n, lineno, col_offset);
-    n->lineno = n->lineno + lineno;
-    n->end_lineno = n->end_lineno + lineno;
-}
-
 /* Fix locations for the given node and its children.
 
    `parent` is the enclosing node.
+   `expr_start` is the starting position of the expression (pointing to the open brace).
    `n` is the node which locations are going to be fixed relative to parent.
    `expr_str` is the child node's string representation, including braces.
 */
-static void
-fstring_fix_expr_location(Token *parent, expr_ty n, char *expr_str)
+static bool
+fstring_find_expr_location(Token *parent, const char* expr_start, char *expr_str, int *p_lines, int *p_cols)
 {
-    char *substr = NULL;
-    char *start;
-    int lines = 0;
-    int cols = 0;
-
+    *p_lines = 0;
+    *p_cols = 0;
+    assert(expr_start != NULL && *expr_start == '{');
     if (parent && parent->bytes) {
-        char *parent_str = PyBytes_AsString(parent->bytes);
+        const char *parent_str = PyBytes_AsString(parent->bytes);
         if (!parent_str) {
-            return;
+            return false;
         }
-        substr = strstr(parent_str, expr_str);
-        if (substr) {
-            // The following is needed, in order to correctly shift the column
-            // offset, in the case that (disregarding any whitespace) a newline
-            // immediately follows the opening curly brace of the fstring expression.
-            int newline_after_brace = 1;
-            start = substr + 1;
-            while (start && *start != '}' && *start != '\n') {
-                if (*start != ' ' && *start != '\t' && *start != '\f') {
-                    newline_after_brace = 0;
-                    break;
-                }
-                start++;
+        // The following is needed, in order to correctly shift the column
+        // offset, in the case that (disregarding any whitespace) a newline
+        // immediately follows the opening curly brace of the fstring expression.
+        bool newline_after_brace = 1;
+        const char *start = expr_start + 1;
+        while (start && *start != '}' && *start != '\n') {
+            if (*start != ' ' && *start != '\t' && *start != '\f') {
+                newline_after_brace = 0;
+                break;
             }
+            start++;
+        }
 
-            // Account for the characters from the last newline character to our
-            // left until the beginning of substr.
-            if (!newline_after_brace) {
-                start = substr;
-                while (start > parent_str && *start != '\n') {
-                    start--;
-                }
-                cols += (int)(substr - start);
+        // Account for the characters from the last newline character to our
+        // left until the beginning of expr_start.
+        if (!newline_after_brace) {
+            start = expr_start;
+            while (start > parent_str && *start != '\n') {
+                start--;
             }
-            /* adjust the start based on the number of newlines encountered
-               before the f-string expression */
-            for (char* p = parent_str; p < substr; p++) {
-                if (*p == '\n') {
-                    lines++;
-                }
+            *p_cols += (int)(expr_start - start);
+        }
+        /* adjust the start based on the number of newlines encountered
+           before the f-string expression */
+        for (const char *p = parent_str; p < expr_start; p++) {
+            if (*p == '\n') {
+                (*p_lines)++;
             }
         }
     }
-    fstring_shift_expr_locations(n, lines, cols);
+    return true;
 }
 
 
@@ -585,55 +357,67 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
             break;
         }
     }
+    
     if (s == expr_end) {
+        if (*expr_end == '!' || *expr_end == ':' || *expr_end == '=') {
+            RAISE_SYNTAX_ERROR("f-string: expression required before '%c'", *expr_end);
+            return NULL;
+        }
         RAISE_SYNTAX_ERROR("f-string: empty expression not allowed");
         return NULL;
     }
 
     len = expr_end - expr_start;
     /* Allocate 3 extra bytes: open paren, close paren, null byte. */
-    str = PyMem_RawMalloc(len + 3);
+    str = PyMem_Calloc(len + 3, sizeof(char));
     if (str == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
 
-    str[0] = '(';
+    // The call to fstring_find_expr_location is responsible for finding the column offset
+    // the generated AST nodes need to be shifted to the right, which is equal to the number
+    // of the f-string characters before the expression starts.
     memcpy(str+1, expr_start, len);
-    str[len+1] = ')';
-    str[len+2] = 0;
+    int lines, cols;
+    if (!fstring_find_expr_location(t, expr_start-1, str+1, &lines, &cols)) {
+        PyMem_Free(str);
+        return NULL;
+    }
 
-    struct tok_state* tok = PyTokenizer_FromString(str, 1);
+    // The parentheses are needed in order to allow for leading whitespace within
+    // the f-string expression. This consequently gets parsed as a group (see the
+    // group rule in python.gram).
+    str[0] = '(';
+    str[len+1] = ')';
+
+    struct tok_state* tok = _PyTokenizer_FromString(str, 1);
     if (tok == NULL) {
-        PyMem_RawFree(str);
+        PyMem_Free(str);
         return NULL;
     }
     Py_INCREF(p->tok->filename);
+
     tok->filename = p->tok->filename;
+    tok->lineno = t->lineno + lines - 1;
 
     Parser *p2 = _PyPegen_Parser_New(tok, Py_fstring_input, p->flags, p->feature_version,
                                      NULL, p->arena);
-    p2->starting_lineno = p->starting_lineno + p->tok->first_lineno - 1;
-    p2->starting_col_offset = p->tok->first_lineno == p->tok->lineno
-                              ? p->starting_col_offset + t->col_offset : 0;
+
+    p2->starting_lineno = t->lineno + lines;
+    p2->starting_col_offset = t->col_offset + cols;
 
     expr = _PyPegen_run_parser(p2);
 
     if (expr == NULL) {
         goto exit;
     }
-
-    /* Reuse str to find the correct column offset. */
-    str[0] = '{';
-    str[len+1] = '}';
-    fstring_fix_expr_location(t, expr, str);
-
     result = expr;
 
 exit:
-    PyMem_RawFree(str);
+    PyMem_Free(str);
     _PyPegen_Parser_Free(p2);
-    PyTokenizer_Free(tok);
+    _PyTokenizer_Free(tok);
     return result;
 }
 
@@ -663,12 +447,23 @@ fstring_find_literal(Parser *p, const char **str, const char *end, int raw,
         if (!raw && ch == '\\' && s < end) {
             ch = *s++;
             if (ch == 'N') {
+                /* We need to look at and skip matching braces for "\N{name}"
+                   sequences because otherwise we'll think the opening '{'
+                   starts an expression, which is not the case with "\N".
+                   Keep looking for either a matched '{' '}' pair, or the end
+                   of the string. */
+
                 if (s < end && *s++ == '{') {
                     while (s < end && *s++ != '}') {
                     }
                     continue;
                 }
-                break;
+
+                /* This is an invalid "\N" sequence, since it's a "\N" not
+                   followed by a "{".  Just keep parsing this literal.  This
+                   error will be caught later by
+                   decode_unicode_with_escapes(). */
+                continue;
             }
             if (ch == '{' && warn_invalid_escape_sequence(p, ch, t) < 0) {
                 return -1;
@@ -712,7 +507,8 @@ done:
             *literal = PyUnicode_DecodeUTF8Stateful(literal_start,
                                                     s - literal_start,
                                                     NULL, NULL);
-        } else {
+        }
+        else {
             *literal = decode_unicode_with_escapes(p, literal_start,
                                                    s - literal_start, t);
         }
@@ -875,12 +671,12 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
                     *str += 1;
                     continue;
                 }
-                /* Don't get out of the loop for these, if they're single
-                   chars (not part of 2-char tokens). If by themselves, they
-                   don't end an expression (unlike say '!'). */
-                if (ch == '>' || ch == '<') {
-                    continue;
-                }
+            }
+            /* Don't get out of the loop for these, if they're single
+               chars (not part of 2-char tokens). If by themselves, they
+               don't end an expression (unlike say '!'). */
+            if (ch == '>' || ch == '<') {
+                continue;
             }
 
             /* Normal way out of this loop. */
@@ -907,10 +703,10 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
         }
     }
     expr_end = *str;
-    /* If we leave this loop in a string or with mismatched parens, we
-       don't care. We'll get a syntax error when compiling the
-       expression. But, we can produce a better error message, so
-       let's just do that.*/
+    /* If we leave the above loop in a string or with mismatched parens, we
+       don't really care. We'll get a syntax error when compiling the
+       expression. But, we can produce a better error message, so let's just
+       do that.*/
     if (quote_char) {
         RAISE_SYNTAX_ERROR("f-string: unterminated string");
         goto error;
@@ -1013,10 +809,11 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
     /* And now create the FormattedValue node that represents this
        entire expression with the conversion and format spec. */
     //TODO: Fix this
-    *expression = FormattedValue(simple_expression, conversion,
-                                 format_spec, first_token->lineno,
-                                 first_token->col_offset, last_token->end_lineno,
-                                 last_token->end_col_offset, p->arena);
+    *expression = _PyAST_FormattedValue(simple_expression, conversion,
+                                        format_spec, first_token->lineno,
+                                        first_token->col_offset,
+                                        last_token->end_lineno,
+                                        last_token->end_col_offset, p->arena);
     if (!*expression) {
         goto error;
     }
@@ -1143,7 +940,7 @@ ExprList_Append(ExprList *l, expr_ty exp)
             Py_ssize_t i;
             /* We're still using the cached data. Switch to
                alloc-ing. */
-            l->p = PyMem_RawMalloc(sizeof(expr_ty) * new_size);
+            l->p = PyMem_Malloc(sizeof(expr_ty) * new_size);
             if (!l->p) {
                 return -1;
             }
@@ -1153,9 +950,9 @@ ExprList_Append(ExprList *l, expr_ty exp)
             }
         } else {
             /* Just realloc. */
-            expr_ty *tmp = PyMem_RawRealloc(l->p, sizeof(expr_ty) * new_size);
+            expr_ty *tmp = PyMem_Realloc(l->p, sizeof(expr_ty) * new_size);
             if (!tmp) {
-                PyMem_RawFree(l->p);
+                PyMem_Free(l->p);
                 l->p = NULL;
                 return -1;
             }
@@ -1183,21 +980,21 @@ ExprList_Dealloc(ExprList *l)
         /* Do nothing. */
     } else {
         /* We have dynamically allocated. Free the memory. */
-        PyMem_RawFree(l->p);
+        PyMem_Free(l->p);
     }
     l->p = NULL;
     l->size = -1;
 }
 
-static asdl_seq *
+static asdl_expr_seq *
 ExprList_Finish(ExprList *l, PyArena *arena)
 {
-    asdl_seq *seq;
+    asdl_expr_seq *seq;
 
     ExprList_check_invariants(l);
 
     /* Allocate the asdl_seq and copy the expressions in to it. */
-    seq = _Py_asdl_seq_new(l->size, arena);
+    seq = _Py_asdl_expr_seq_new(l->size, arena);
     if (seq) {
         Py_ssize_t i;
         for (i = 0; i < l->size; i++) {
@@ -1247,7 +1044,7 @@ make_str_node_and_del(Parser *p, PyObject **str, Token* first_token, Token *last
     PyObject *kind = NULL;
     *str = NULL;
     assert(PyUnicode_CheckExact(s));
-    if (PyArena_AddPyObject(p->arena, s) < 0) {
+    if (_PyArena_AddPyObject(p->arena, s) < 0) {
         Py_DECREF(s);
         return NULL;
     }
@@ -1260,8 +1057,9 @@ make_str_node_and_del(Parser *p, PyObject **str, Token* first_token, Token *last
         return NULL;
     }
 
-    return Constant(s, kind, first_token->lineno, first_token->col_offset,
-                    last_token->end_lineno, last_token->end_col_offset, p->arena);
+    return _PyAST_Constant(s, kind, first_token->lineno, first_token->col_offset,
+                           last_token->end_lineno, last_token->end_col_offset,
+                           p->arena);
 
 }
 
@@ -1349,9 +1147,7 @@ _PyPegen_FstringParser_ConcatFstring(Parser *p, FstringParser *state, const char
 
         /* We know we have an expression. Convert any existing string
            to a Constant node. */
-        if (!state->last_str) {
-            /* Do nothing. No previous literal. */
-        } else {
+        if (state->last_str) {
             /* Convert the existing last_str literal to a Constant node. */
             expr_ty last_str = make_str_node_and_del(p, &state->last_str, first_token, last_token);
             if (!last_str || ExprList_Append(&state->expr_list, last_str) < 0) {
@@ -1386,7 +1182,7 @@ expr_ty
 _PyPegen_FstringParser_Finish(Parser *p, FstringParser *state, Token* first_token,
                      Token *last_token)
 {
-    asdl_seq *seq;
+    asdl_expr_seq *seq;
 
     FstringParser_check_invariants(state);
 
@@ -1420,8 +1216,9 @@ _PyPegen_FstringParser_Finish(Parser *p, FstringParser *state, Token* first_toke
         goto error;
     }
 
-    return _Py_JoinedStr(seq, first_token->lineno, first_token->col_offset,
-                         last_token->end_lineno, last_token->end_col_offset, p->arena);
+    return _PyAST_JoinedStr(seq, first_token->lineno, first_token->col_offset,
+                            last_token->end_lineno, last_token->end_col_offset,
+                            p->arena);
 
 error:
     _PyPegen_FstringParser_Dealloc(state);
