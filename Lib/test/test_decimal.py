@@ -3623,6 +3623,8 @@ class ContextWithStatement(unittest.TestCase):
         self.assertRaises(ValueError, self.decimal.localcontext, clamp=2)
 
         self.assertRaises(TypeError, self.decimal.localcontext, rounding="")
+        self.assertRaises(TypeError, self.decimal.localcontext, rounding=1)
+
         self.assertRaises(TypeError, self.decimal.localcontext, flags="")
         self.assertRaises(TypeError, self.decimal.localcontext, traps="")
         self.assertRaises(TypeError, self.decimal.localcontext, Emin="")
