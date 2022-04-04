@@ -441,6 +441,8 @@ import contextvars
 
 _current_context_var = contextvars.ContextVar('decimal_context')
 
+_context_attributes = ['prec', 'Emin', 'Emax', 'capitals', 'clamp', 'rounding', 'flags', 'traps']
+
 def getcontext():
     """Returns this thread's context.
 
@@ -503,10 +505,9 @@ def localcontext(ctx=None, **kwargs):
     if ctx is None:
         ctx = getcontext()
     for key, value in kwargs.items():
-        try:
-            setattr(ctx, key, value)
-        except AttributeError:
+        if not key in _context_attributes:
             raise TypeError(f"'{key}' is an invalid keyword argument for this function")
+        setattr(ctx, key, value)
     return _ContextManager(ctx)
 
 
