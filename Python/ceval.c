@@ -3804,7 +3804,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(JUMP_IF_NOT_EG_MATCH) {
+        TARGET(CHECK_EG_MATCH) {
             PyObject *match_type = POP();
             if (check_except_star_type_valid(tstate, match_type) < 0) {
                 Py_DECREF(match_type);
@@ -3825,15 +3825,11 @@ handle_eval_breaker:
                 assert(rest == NULL);
                 goto error;
             }
-
             if (Py_IsNone(match)) {
-                Py_DECREF(match);
+                PUSH(match);
                 Py_XDECREF(rest);
-                /* no match - jump to target */
-                JUMPTO(oparg);
             }
             else {
-
                 /* Total or partial match - update the stack from
                  * [val]
                  * to
@@ -3841,17 +3837,11 @@ handle_eval_breaker:
                  * (rest can be Py_None)
                  */
 
-                PyObject *exc = TOP();
-
                 SET_TOP(rest);
                 PUSH(match);
-
                 PyErr_SetExcInfo(NULL, Py_NewRef(match), NULL);
-
-                Py_DECREF(exc);
-
+                Py_DECREF(exc_value);
             }
-
             DISPATCH();
         }
 

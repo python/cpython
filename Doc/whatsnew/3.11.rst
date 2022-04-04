@@ -523,6 +523,9 @@ CPython bytecode changes
 * Replaced :opcode:`JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH` which
   performs the check but does not jump.
 
+* Replaced :opcode:`JUMP_IF_NOT_EG_MATCH` by :opcode:`CHECK_EG_MATCH` which
+  performs the check but does not jump.
+
 * Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
 
 Deprecated

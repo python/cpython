@@ -1000,8 +1000,8 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case CHECK_EXC_MATCH:
             return 0;
-        case JUMP_IF_NOT_EG_MATCH:
-            return jump > 0 ? -1 : 0;
+        case CHECK_EG_MATCH:
+            return 0;
         case IMPORT_NAME:
             return -1;
         case IMPORT_FROM:
@@ -3622,6 +3622,10 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         if (except == NULL) {
             return 0;
         }
+        basicblock *handle_match = compiler_new_block(c);
+        if (handle_match == NULL) {
+            return 0;
+        }
         if (i == 0) {
             /* Push the original EG into the stack */
             /*
@@ -3641,8 +3645,14 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         }
         if (handler->v.ExceptHandler.type) {
             VISIT(c, expr, handler->v.ExceptHandler.type);
-            ADDOP_JUMP(c, JUMP_IF_NOT_EG_MATCH, except);
+            ADDOP(c, CHECK_EG_MATCH);
+            ADDOP_I(c, COPY, 1);
+            ADDOP_JUMP(c, POP_JUMP_IF_NOT_NONE, handle_match);
+            ADDOP(c, POP_TOP);  // match
+            ADDOP_JUMP(c, JUMP, except);
         }
+
+        compiler_use_next_block(c, handle_match);
 
         basicblock *cleanup_end = compiler_new_block(c);
         if (cleanup_end == NULL) {
@@ -3657,7 +3667,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
         }
         else {
-            ADDOP(c, POP_TOP);  // exc
+            ADDOP(c, POP_TOP);  // match
         }
 
         /*
