@@ -2137,7 +2137,7 @@ expression support in the :mod:`re` module).
         "They'Re Bill'S Friends From The Uk"
 
    The :func:`string.capwords` function does not have this problem, as it
-   splits words on spaces first.
+   splits words on spaces only.
 
    Alternatively, a workaround for apostrophes can be constructed using regular
    expressions::
