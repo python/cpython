@@ -8,7 +8,7 @@
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
- * See the _sre.c file for information on usage and redistribution.
+ * See the sre.c file for information on usage and redistribution.
  */
 
 #define SRE_MAGIC 20220402
