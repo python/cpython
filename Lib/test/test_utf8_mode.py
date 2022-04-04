@@ -161,7 +161,7 @@ class UTF8ModeTests(unittest.TestCase):
         filename = __file__
 
         out = self.get_output('-c', code, filename, PYTHONUTF8='1')
-        self.assertEqual(out, 'UTF-8/strict')
+        self.assertEqual(out.lower(), 'utf-8/strict')
 
     def _check_io_encoding(self, module, encoding=None, errors=None):
         filename = __file__
@@ -183,10 +183,10 @@ class UTF8ModeTests(unittest.TestCase):
                               PYTHONUTF8='1')
 
         if not encoding:
-            encoding = 'UTF-8'
+            encoding = 'utf-8'
         if not errors:
             errors = 'strict'
-        self.assertEqual(out, f'{encoding}/{errors}')
+        self.assertEqual(out.lower(), f'{encoding}/{errors}')
 
     def check_io_encoding(self, module):
         self._check_io_encoding(module, encoding="latin1")
