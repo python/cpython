@@ -235,6 +235,10 @@ class ExceptionTests(unittest.TestCase):
         check('match ...:\n    case {**rest, "key": value}:\n        ...', 2, 19)
         check("[a b c d e f]", 1, 2)
         check("for x yfff:", 1, 7)
+        check("f(a for a in b, c)", 3, 15)
+        check("f(a for a in b if a, c)", 3, 20)
+        check("f(a, b for b in c)", 6, 18)
+        check("f(a, b for b in c, d)", 6, 18)
 
         # Errors thrown by compile.c
         check('class foo:return 1', 1, 11)
