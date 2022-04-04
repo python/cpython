@@ -710,6 +710,12 @@ If you see the following error, you do not have the launcher installed:
 Per-user installations of Python do not add the launcher to :envvar:`PATH`
 unless the option was selected on installation.
 
+::
+
+  py --list
+
+You should see the currently installed versions of Python.
+
 Virtual environments
 ^^^^^^^^^^^^^^^^^^^^
 
