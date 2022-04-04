@@ -124,10 +124,6 @@ This module also defines an exception 'error'.
 import enum
 from . import _compiler, _parser
 import functools
-try:
-    import _locale
-except ImportError:
-    _locale = None
 
 
 # public symbols
