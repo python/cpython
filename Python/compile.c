@@ -3533,14 +3533,18 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    []                                         POP_BLOCK
    []                                         JUMP                  L0
 
-   [exc]                            L1:       COPY 1      )  save copy of the original exception
+   [exc]                            L1:       COPY 1       )  save copy of the original exception
    [orig, exc]                                BUILD_LIST   )  list for raised/reraised excs ("result")
    [orig, exc, res]                           SWAP 2
 
    [orig, res, exc]                           <evaluate E1>
-   [orig, res, exc, E1]                       JUMP_IF_NOT_EG_MATCH L2
+   [orig, res, exc, E1]                       CHECK_EG_MATCH
+   [orig, red, rest/exc, match?]              COPY 1
+   [orig, red, rest/exc, match?, match?]      POP_JUMP_IF_NOT_NONE  H1
+   [orig, red, exc, None]                     POP_TOP
+   [orig, red, exc]                           JUMP L2
 
-   [orig, res, rest, match]                   <assign to V1>  (or POP if no V1)
+   [orig, res, rest, match]         H1:       <assign to V1>  (or POP if no V1)
 
    [orig, res, rest]                          SETUP_FINALLY         R1
    [orig, res, rest]                          <code for S1>
