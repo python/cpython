@@ -59,18 +59,6 @@ is numbered `N-1`.
 This allows the locals, specials and linkage to accessed from the frame pointer.
 We may implement this in the future.
 
-### Linkage section
-
-The linkage section contains pointers, offsets and codes necessary for the
-VM to manage and introspect stacks.
-The linkage section contains at least the following information:
-* Stack size
-* Pointer to previous activation record
-* Memory management information: a `_PyInterpreterFrame` can be part of a
-  thread's stack, or embedded in an object.
-* Current instruction offset. Used for return address and debugging.
-
-
 #### Note:
 
 > In a contiguous stack, we would need to save one fewer registers, as the
@@ -78,8 +66,9 @@ The linkage section contains at least the following information:
 > callee's. However, since some activation records are kept on the heap we 
 > cannot do this.
 
-### Specials section
+### Generators and Coroutines
 
+Generators and coroutines contain a `_PyInterpreterFrame`
 The specials sections contains the following pointers:
 
 * Globals dict
@@ -108,12 +97,26 @@ The linkage section is updated to reflect the new location of the frame.
 This mechanism provides the appearance of persistent, heap-allocated
 frames for each activation, but with low runtime overhead.
 
+### Generators and Coroutines
+
+
+Generator objects have a `_PyInterpreterFrame` embedded in them.
+This means that creating a generator requires only a single allocation,
+reducing allocation overhead and improving locality of reference.
+The embedded frame is linked into the per-thread frame when iterated or
+awaited. 
+
+If a frame object associated with a generator outlives the generator, then
+the embedded `_PyInterpreterFrame` is copied into the frame object.
+
+
+All the above applies to coroutines and async generators as well.
 
 ### Field names
 
 Many of the fields in `_PyInterpreterFrame` were copied from the 3.10 `PyFrameObject`.
-Consequently, some of the field names may be a bit misleading.
+Thus, some of the field names may be a bit misleading.
 
 For example the `f_globals` field has a `f_` prefix implying it belongs to the
 `PyFrameObject` struct, although it belongs to the `_PyInterpreterFrame` struct.
-We may rationale the naming scheme for 3.12.
+We may rationalize this naming scheme for 3.12.
