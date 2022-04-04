@@ -237,21 +237,9 @@ window.onload = () => {
     </div>
     <div id="info">
         The simple REPL provides a limited Python experience in the browser.
-        <ul>
-            <li>
-                Large parts of the stdlib are not provided or do not work
-                correctly.
-            </li>
-            <li>
-                Python's socket and networking modules do not work with
-                emulated POSIX sockets yet. asyncio and urllib are not
-                available.
-            </li>
-            <li>In-memory file system is not persistent and limited.</li>
-            <li>Sub processes and threading APIs are not available.</li>
-            <li>Heap memory and stack size are restricted.</li>
-            <li>Copy 'n paste and unicode support are limited.</li>
-        </ul>
+        <a href="https://github.com/python/cpython/blob/main/Tools/wasm/README.md">
+        Tools/wasm/README.md</a> contains a list of known limitations and
+        issues. Networking, subprocesses, and threading are not available.
     </div>
 </body>
 </html>
