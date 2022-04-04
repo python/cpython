@@ -342,13 +342,19 @@ ZipFile Objects
       Previously, a :exc:`RuntimeError` was raised.
 
 
-.. method:: ZipFile.extract(member, path=None, pwd=None)
+.. method:: ZipFile.extract(member, path=None, pwd=None, \
+                            preserve_permissions=zipfile.PERMS_PRESERVE_NONE)
 
    Extract a member from the archive to the current working directory; *member*
    must be its full name or a :class:`ZipInfo` object.  Its file information is
    extracted as accurately as possible.  *path* specifies a different directory
    to extract to.  *member* can be a filename or a :class:`ZipInfo` object.
-   *pwd* is the password used for encrypted files.
+   *pwd* is the password used for encrypted files.  *preserve_permissions*
+   controls how the permissions of zipped files are preserved.  The default is
+   :data:`PERMS_PRESERVE_NONE` --- do not preserve any permissions. Other
+   options are to preserve a safe subset of permissions
+   (:data:`PERMS_PRESERVE_SAFE`) or all permissions
+   (:data:`PERMS_PRESERVE_ALL`).
 
    Returns the normalized path created (a directory or new file).
 
@@ -370,12 +376,18 @@ ZipFile Objects
       The *path* parameter accepts a :term:`path-like object`.
 
 
-.. method:: ZipFile.extractall(path=None, members=None, pwd=None)
+.. method:: ZipFile.extractall(path=None, members=None, pwd=None, \
+                            preserve_permissions=zipfile.PERMS_PRESERVE_NONE)
 
    Extract all members from the archive to the current working directory.  *path*
    specifies a different directory to extract to.  *members* is optional and must
    be a subset of the list returned by :meth:`namelist`.  *pwd* is the password
-   used for encrypted files.
+   used for encrypted files.  *preserve_permissions* controls how the permissions
+   of zipped files are preserved.  The default is :data:`PERMS_PRESERVE_NONE`
+   --- do not preserve any permissions. Other options are to preserve a safe
+   subset of permissions (:data:`PERMS_PRESERVE_SAFE`) or all permissions
+   (:data:`PERMS_PRESERVE_ALL`).
+
 
    .. warning::
 
