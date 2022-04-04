@@ -1788,10 +1788,10 @@ ctxmanager_new(PyTypeObject *type UNUSED, PyObject *args, PyObject *kwds)
         clamp, flags, traps
     );
 
-    if(ret < 0){
+    if (ret < 0) {
+        Py_DECREF(self);
         return NULL;
-    };
-
+    }
 
     return (PyObject *)self;
 }
