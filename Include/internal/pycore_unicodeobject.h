@@ -18,6 +18,7 @@ extern PyStatus _PyUnicode_InitGlobalObjects(PyInterpreterState *);
 extern PyStatus _PyUnicode_InitTypes(PyInterpreterState *);
 extern void _PyUnicode_Fini(PyInterpreterState *);
 extern void _PyUnicode_FiniTypes(PyInterpreterState *);
+extern void _PyStaticUnicode_Dealloc(PyObject *);
 
 
 /* other API */
@@ -44,11 +45,6 @@ struct _Py_unicode_ids {
 };
 
 struct _Py_unicode_state {
-    // The empty Unicode object is a singleton to improve performance.
-    PyObject *empty_string;
-    /* Single character Unicode strings in the Latin-1 range are being
-       shared as well. */
-    PyObject *latin1[256];
     struct _Py_unicode_fs_codec fs_codec;
 
     // Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId()

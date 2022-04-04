@@ -2061,7 +2061,6 @@ order (MRO) for bases """
             ("__format__", format, format_impl, set(), {}),
             ("__floor__", math.floor, zero, set(), {}),
             ("__trunc__", math.trunc, zero, set(), {}),
-            ("__trunc__", int, zero, set(), {}),
             ("__ceil__", math.ceil, zero, set(), {}),
             ("__dir__", dir, empty_seq, set(), {}),
             ("__round__", round, zero, set(), {}),
@@ -5506,7 +5505,7 @@ class SharedKeyTests(unittest.TestCase):
             pass
 
         #Shrink keys by repeatedly creating instances
-        [(A(), B()) for _ in range(20)]
+        [(A(), B()) for _ in range(30)]
 
         a, b = A(), B()
         self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))

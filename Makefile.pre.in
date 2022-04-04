@@ -302,10 +302,6 @@ _PYTHON_HOST_PLATFORM=@_PYTHON_HOST_PLATFORM@
 BUILD_GNU_TYPE=	@build@
 HOST_GNU_TYPE=	@host@
 
-# Tcl and Tk config info from --with-tcltk-includes and -libs options
-TCLTK_INCLUDES=	@TCLTK_INCLUDES@
-TCLTK_LIBS=	@TCLTK_LIBS@
-
 # The task to run while instrumented when building the profile-opt target.
 # To speed up profile generation, we don't run the full unit test suite
 # by default. The default is "-m test --pgo". To run more tests, use
@@ -433,7 +429,8 @@ PYTHON_OBJS=	\
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
-		$(DTRACE_OBJS)
+		$(DTRACE_OBJS) \
+		@PLATFORM_OBJS@
 
 
 ##########################################################################
@@ -667,7 +664,6 @@ coverage-lcov:
 	    '*/Modules/_blake2/impl/*' \
 	    '*/Modules/_ctypes/libffi*/*' \
 	    '*/Modules/_decimal/libmpdec/*' \
-	    '*/Modules/_sha3/kcp/*' \
 	    '*/Modules/expat/*' \
 	    '*/Modules/zlib/*' \
 	    '*/Include/*' \
@@ -737,10 +733,8 @@ sharedmods: $(BUILDPYTHON) pybuilddir.txt @LIBMPDEC_INTERNAL@ @LIBEXPAT_INTERNAL
 	    *) quiet="";; \
 	esac; \
 	echo "$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
-		_TCLTK_INCLUDES='$(TCLTK_INCLUDES)' _TCLTK_LIBS='$(TCLTK_LIBS)' \
 		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build"; \
 	$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
-		_TCLTK_INCLUDES='$(TCLTK_INCLUDES)' _TCLTK_LIBS='$(TCLTK_LIBS)' \
 		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build
 
 
@@ -917,6 +911,9 @@ Modules/Setup.local:
 	@# Create empty Setup.local when file was deleted by user
 	echo "# Edit this file for local setup changes" > $@
 
+Modules/Setup.bootstrap: $(srcdir)/Modules/Setup.bootstrap.in config.status
+	./config.status $@
+
 Modules/Setup.stdlib: $(srcdir)/Modules/Setup.stdlib.in config.status
 	./config.status $@
 
@@ -925,13 +922,13 @@ Makefile Modules/config.c: Makefile.pre \
 				$(MAKESETUP) \
 				$(srcdir)/Modules/Setup \
 				Modules/Setup.local \
-				$(srcdir)/Modules/Setup.bootstrap \
+				Modules/Setup.bootstrap \
 				Modules/Setup.stdlib
 	$(SHELL) $(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
 				-s Modules \
 				Modules/Setup.local \
 				@MODULES_SETUP_STDLIB@ \
-				$(srcdir)/Modules/Setup.bootstrap \
+				Modules/Setup.bootstrap \
 				$(srcdir)/Modules/Setup
 	@mv config.c Modules
 	@echo "The Makefile was updated, you may need to re-run make."
@@ -1165,12 +1162,22 @@ Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/__phello__.spam.h:__phello__.spam \
 	Python/frozen_modules/frozen_only.h:frozen_only \
 	-o Python/deepfreeze/deepfreeze.c
-
 # END: deepfreeze modules
+	@echo "Note: Deepfreeze may have added some global objects,"
+	@echo "      so run 'make regen-global-objects' if necessary."
 
 # We keep this renamed target around for folks with muscle memory.
 .PHONY: regen-importlib
 regen-importlib: regen-frozen
+
+############################################################################
+# Global objects
+
+.PHONY: regen-global-objects
+regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
+	@echo "Note: Global objects can be added or removed by other tools (e.g. deepfreeze), "
+	@echo "      so be sure to re-run regen-global-objects after those tools."
 
 ############################################################################
 # ABI
@@ -1183,9 +1190,10 @@ regen-limited-abi: all
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-frozen clinic \
-	regen-pegen-metaparser regen-pegen regen-test-frozenmain
+	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
+	regen-global-objects
 	@echo
-	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
+	@echo "Note: make regen-stdlib-module-names and make regen-configure should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -1463,6 +1471,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
+		$(srcdir)/Include/pybuffer.h \
 		$(srcdir)/Include/pycapsule.h \
 		$(srcdir)/Include/pydtrace.h \
 		$(srcdir)/Include/pyerrors.h \
@@ -1479,6 +1488,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pythonrun.h \
 		$(srcdir)/Include/pythread.h \
+		$(srcdir)/Include/pytypedefs.h \
 		$(srcdir)/Include/rangeobject.h \
 		$(srcdir)/Include/setobject.h \
 		$(srcdir)/Include/sliceobject.h \
@@ -1505,6 +1515,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/code.h \
 		$(srcdir)/Include/cpython/compile.h \
 		$(srcdir)/Include/cpython/context.h \
+		$(srcdir)/Include/cpython/descrobject.h \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \
 		$(srcdir)/Include/cpython/fileutils.h \
@@ -1598,6 +1609,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_unicodeobject.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(DTRACE_HEADERS) \
+		@PLATFORM_HEADERS@ \
 		\
 		$(srcdir)/Python/stdlib_module_names.h
 
@@ -1852,9 +1864,11 @@ LIBSUBDIRS=	asyncio \
 		logging \
 		multiprocessing multiprocessing/dummy \
 		pydoc_data \
+		re \
 		site-packages \
 		sqlite3 \
 		tkinter \
+		tomllib \
 		turtledemo \
 		unittest \
 		urllib \
@@ -2135,7 +2149,7 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 	$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(DESTDIR)$(LIBPL)/config.c.in
 	$(INSTALL_DATA) Makefile $(DESTDIR)$(LIBPL)/Makefile
 	$(INSTALL_DATA) $(srcdir)/Modules/Setup $(DESTDIR)$(LIBPL)/Setup
-	$(INSTALL_DATA) $(srcdir)/Modules/Setup.bootstrap $(DESTDIR)$(LIBPL)/Setup.bootstrap
+	$(INSTALL_DATA) Modules/Setup.bootstrap $(DESTDIR)$(LIBPL)/Setup.bootstrap
 	$(INSTALL_DATA) Modules/Setup.stdlib $(DESTDIR)$(LIBPL)/Setup.stdlib
 	$(INSTALL_DATA) Modules/Setup.local $(DESTDIR)$(LIBPL)/Setup.local
 	$(INSTALL_DATA) Misc/python.pc $(DESTDIR)$(LIBPC)/python-$(VERSION).pc
@@ -2279,10 +2293,16 @@ recheck:
 # Regenerate configure and pyconfig.h.in
 .PHONY: autoconf
 autoconf:
-	# Regenerate the configure script from configure.ac using autoconf
-	(cd $(srcdir); autoconf -Wall)
-	# Regenerate pyconfig.h.in from configure.ac using autoheader
-	(cd $(srcdir); autoheader -Wall)
+	(cd $(srcdir); autoreconf -ivf -Werror)
+
+.PHONY: regen-configure
+regen-configure:
+	@if command -v podman >/dev/null; then RUNTIME="podman"; else RUNTIME="docker"; fi; \
+	if ! command -v $$RUNTIME; then echo "$@ needs either Podman or Docker container runtime." >&2; exit 1; fi; \
+	if command -v selinuxenabled >/dev/null && selinuxenabled; then OPT=":Z"; fi; \
+	CMD="$$RUNTIME run --rm --pull=always -v $(abs_srcdir):/src$$OPT quay.io/tiran/cpython_autoconf:269"; \
+	echo $$CMD; \
+	$$CMD || exit $?
 
 # Create a tags file for vi
 tags::
@@ -2331,7 +2351,7 @@ clean-retain-profile: pycremoval
 	-rm -f pybuilddir.txt
 	-rm -f Lib/lib2to3/*Grammar*.pickle
 	-rm -f _bootstrap_python
-	-rm -f python.html python*.js python.data
+	-rm -f python.html python*.js python.data python*.symbols python*.map
 	-rm -rf $(WASM_STDLIB)
 	-rm -f Programs/_testembed Programs/_freeze_module
 	-rm -f Python/deepfreeze/*.[co]
@@ -2371,7 +2391,8 @@ distclean: clobber
 	    if test "$$file" != "$(srcdir)/Lib/test/data/README"; then rm "$$file"; fi; \
 	done
 	-rm -f core Makefile Makefile.pre config.status Modules/Setup.local \
-		Modules/Setup.stdlib Modules/ld_so_aix Modules/python.exp Misc/python.pc \
+	    Modules/Setup.bootstrap Modules/Setup.stdlib \
+		Modules/ld_so_aix Modules/python.exp Misc/python.pc \
 		Misc/python-embed.pc Misc/python-config.sh
 	-rm -f python*-gdb.py
 	# Issue #28258: set LC_ALL to avoid issues with Estonian locale.
@@ -2455,7 +2476,7 @@ MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_PYEXPAT_DEPS=$(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
 MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
-MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-dispatch.c $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2-kat.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b-test.c $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2bp-test.c $(srcdir)/Modules/_blake2/impl/blake2bp.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s-test.c $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/impl/blake2sp-test.c $(srcdir)/Modules/_blake2/impl/blake2sp.c $(srcdir)/Modules/hashlib.h
+MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/blake2module.h $(srcdir)/Modules/hashlib.h
 MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
 MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h $(LIBMPDEC_HEADERS) @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c $(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
@@ -2464,7 +2485,7 @@ MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
 MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__SHA256_DEPS=$(srcdir)/Modules/hashlib.h
-MODULE__SHA3_DEPS=$(srcdir)/Modules/_sha3/kcp/KeccakHash.c $(srcdir)/Modules/_sha3/kcp/KeccakHash.h $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-64.macros $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-SnP-opt32.h $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-SnP-opt64.h $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-SnP.h $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-inplace32BI.c $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-opt64-config.h $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-opt64.c $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-unrolling.macros $(srcdir)/Modules/_sha3/kcp/KeccakSponge.c $(srcdir)/Modules/_sha3/kcp/KeccakSponge.h $(srcdir)/Modules/_sha3/kcp/KeccakSponge.inc $(srcdir)/Modules/_sha3/kcp/PlSnP-Fallback.inc $(srcdir)/Modules/_sha3/kcp/SnP-Relaned.h $(srcdir)/Modules/_sha3/kcp/align.h $(srcdir)/Modules/hashlib.h
+MODULE__SHA3_DEPS=$(srcdir)/Modules/_sha3/sha3.c $(srcdir)/Modules/_sha3/sha3.h $(srcdir)/Modules/hashlib.h
 MODULE__SHA512_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data.h $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h

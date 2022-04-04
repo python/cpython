@@ -24,38 +24,6 @@
 #include <windows.h>
 #endif
 
-/* Various interned strings */
-
-PyObject *_PyIO_str_close = NULL;
-PyObject *_PyIO_str_closed = NULL;
-PyObject *_PyIO_str_decode = NULL;
-PyObject *_PyIO_str_encode = NULL;
-PyObject *_PyIO_str_fileno = NULL;
-PyObject *_PyIO_str_flush = NULL;
-PyObject *_PyIO_str_getstate = NULL;
-PyObject *_PyIO_str_isatty = NULL;
-PyObject *_PyIO_str_locale = NULL;
-PyObject *_PyIO_str_newlines = NULL;
-PyObject *_PyIO_str_nl = NULL;
-PyObject *_PyIO_str_peek = NULL;
-PyObject *_PyIO_str_read = NULL;
-PyObject *_PyIO_str_read1 = NULL;
-PyObject *_PyIO_str_readable = NULL;
-PyObject *_PyIO_str_readall = NULL;
-PyObject *_PyIO_str_readinto = NULL;
-PyObject *_PyIO_str_readline = NULL;
-PyObject *_PyIO_str_reset = NULL;
-PyObject *_PyIO_str_seek = NULL;
-PyObject *_PyIO_str_seekable = NULL;
-PyObject *_PyIO_str_setstate = NULL;
-PyObject *_PyIO_str_tell = NULL;
-PyObject *_PyIO_str_truncate = NULL;
-PyObject *_PyIO_str_writable = NULL;
-PyObject *_PyIO_str_write = NULL;
-
-PyObject *_PyIO_empty_str = NULL;
-PyObject *_PyIO_empty_bytes = NULL;
-
 PyDoc_STRVAR(module_doc,
 "The io module provides the Python interfaces to stream handling. The\n"
 "builtin open function is defined in this module.\n"
@@ -241,11 +209,6 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     PyObject *raw, *modeobj = NULL, *buffer, *wrapper, *result = NULL, *path_or_fd = NULL;
 
-    _Py_IDENTIFIER(_blksize);
-    _Py_IDENTIFIER(isatty);
-    _Py_IDENTIFIER(mode);
-    _Py_IDENTIFIER(close);
-
     is_number = PyNumber_Check(file);
 
     if (is_number) {
@@ -381,7 +344,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     /* buffering */
     if (buffering < 0) {
-        PyObject *res = _PyObject_CallMethodIdNoArgs(raw, &PyId_isatty);
+        PyObject *res = PyObject_CallMethodNoArgs(raw, &_Py_ID(isatty));
         if (res == NULL)
             goto error;
         isatty = PyLong_AsLong(res);
@@ -399,7 +362,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     if (buffering < 0) {
         PyObject *blksize_obj;
-        blksize_obj = _PyObject_GetAttrId(raw, &PyId__blksize);
+        blksize_obj = PyObject_GetAttr(raw, &_Py_ID(_blksize));
         if (blksize_obj == NULL)
             goto error;
         buffering = PyLong_AsLong(blksize_obj);
@@ -466,7 +429,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     result = wrapper;
     Py_DECREF(buffer);
 
-    if (_PyObject_SetAttrId(wrapper, &PyId_mode, modeobj) < 0)
+    if (PyObject_SetAttr(wrapper, &_Py_ID(mode), modeobj) < 0)
         goto error;
     Py_DECREF(modeobj);
     return result;
@@ -475,7 +438,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     if (result != NULL) {
         PyObject *exc, *val, *tb, *close_result;
         PyErr_Fetch(&exc, &val, &tb);
-        close_result = _PyObject_CallMethodIdNoArgs(result, &PyId_close);
+        close_result = PyObject_CallMethodNoArgs(result, &_Py_ID(close));
         _PyErr_ChainExceptions(exc, val, tb);
         Py_XDECREF(close_result);
         Py_DECREF(result);
@@ -516,8 +479,7 @@ _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
                 return NULL;
             }
         }
-        Py_INCREF(_PyIO_str_locale);
-        return _PyIO_str_locale;
+        return &_Py_ID(locale);
     }
     Py_INCREF(encoding);
     return encoding;
@@ -704,41 +666,6 @@ _PyIO_Fini(void)
         PyTypeObject *exc = static_types[i];
         _PyStaticType_Dealloc(exc);
     }
-
-    /* Interned strings */
-#define CLEAR_INTERNED(name) \
-    Py_CLEAR(_PyIO_str_ ## name)
-
-    CLEAR_INTERNED(close);
-    CLEAR_INTERNED(closed);
-    CLEAR_INTERNED(decode);
-    CLEAR_INTERNED(encode);
-    CLEAR_INTERNED(fileno);
-    CLEAR_INTERNED(flush);
-    CLEAR_INTERNED(getstate);
-    CLEAR_INTERNED(isatty);
-    CLEAR_INTERNED(locale);
-    CLEAR_INTERNED(newlines);
-    CLEAR_INTERNED(peek);
-    CLEAR_INTERNED(read);
-    CLEAR_INTERNED(read1);
-    CLEAR_INTERNED(readable);
-    CLEAR_INTERNED(readall);
-    CLEAR_INTERNED(readinto);
-    CLEAR_INTERNED(readline);
-    CLEAR_INTERNED(reset);
-    CLEAR_INTERNED(seek);
-    CLEAR_INTERNED(seekable);
-    CLEAR_INTERNED(setstate);
-    CLEAR_INTERNED(tell);
-    CLEAR_INTERNED(truncate);
-    CLEAR_INTERNED(write);
-    CLEAR_INTERNED(writable);
-#undef CLEAR_INTERNED
-
-    Py_CLEAR(_PyIO_str_nl);
-    Py_CLEAR(_PyIO_empty_str);
-    Py_CLEAR(_PyIO_empty_bytes);
 }
 
 
@@ -801,50 +728,6 @@ PyInit__io(void)
             }
         }
     }
-
-    /* Interned strings */
-#define ADD_INTERNED(name) \
-    if (!_PyIO_str_ ## name && \
-        !(_PyIO_str_ ## name = PyUnicode_InternFromString(# name))) \
-        goto fail;
-
-    ADD_INTERNED(close)
-    ADD_INTERNED(closed)
-    ADD_INTERNED(decode)
-    ADD_INTERNED(encode)
-    ADD_INTERNED(fileno)
-    ADD_INTERNED(flush)
-    ADD_INTERNED(getstate)
-    ADD_INTERNED(isatty)
-    ADD_INTERNED(locale)
-    ADD_INTERNED(newlines)
-    ADD_INTERNED(peek)
-    ADD_INTERNED(read)
-    ADD_INTERNED(read1)
-    ADD_INTERNED(readable)
-    ADD_INTERNED(readall)
-    ADD_INTERNED(readinto)
-    ADD_INTERNED(readline)
-    ADD_INTERNED(reset)
-    ADD_INTERNED(seek)
-    ADD_INTERNED(seekable)
-    ADD_INTERNED(setstate)
-    ADD_INTERNED(tell)
-    ADD_INTERNED(truncate)
-    ADD_INTERNED(write)
-    ADD_INTERNED(writable)
-#undef ADD_INTERNED
-
-    if (!_PyIO_str_nl &&
-        !(_PyIO_str_nl = PyUnicode_InternFromString("\n")))
-        goto fail;
-
-    if (!_PyIO_empty_str &&
-        !(_PyIO_empty_str = PyUnicode_FromStringAndSize(NULL, 0)))
-        goto fail;
-    if (!_PyIO_empty_bytes &&
-        !(_PyIO_empty_bytes = PyBytes_FromStringAndSize(NULL, 0)))
-        goto fail;
 
     state->initialized = 1;
 
