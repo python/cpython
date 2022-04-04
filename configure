@@ -12301,7 +12301,7 @@ fi
 
 fi
 
-if test "x$with_system_ffi" = xyes; then :
+if test "x$have_libffi" = xyes; then :
 
   ctypes_malloc_closure=no
   case $ac_sys_system in #(

@@ -3625,7 +3625,7 @@ AS_VAR_IF([with_system_ffi], [yes], [
   ])
 ])
 
-AS_VAR_IF([with_system_ffi], [yes], [
+AS_VAR_IF([have_libffi], [yes], [
   ctypes_malloc_closure=no
   AS_CASE([$ac_sys_system],
     [Darwin], [
