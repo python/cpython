@@ -1,0 +1,1 @@
+Added name attribute for LZMAFile (where appropriate and possible).
