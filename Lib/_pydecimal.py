@@ -441,7 +441,9 @@ import contextvars
 
 _current_context_var = contextvars.ContextVar('decimal_context')
 
-_context_attributes = ['prec', 'Emin', 'Emax', 'capitals', 'clamp', 'rounding', 'flags', 'traps']
+_context_attributes = frozenset(
+    ['prec', 'Emin', 'Emax', 'capitals', 'clamp', 'rounding', 'flags', 'traps']
+)
 
 def getcontext():
     """Returns this thread's context.
