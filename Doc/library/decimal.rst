@@ -948,7 +948,7 @@ function to temporarily change the active context.
    support.
 
    .. versionchanged:: 3.11
-   Raises :exc:`ValueError` if *kwargs* supplies an invalid value for an attribute.
+   Raises either :exc:`TypeError` or :exc:`ValueError` if *kwargs* supplies an invalid value for an attribute.
 
 New contexts can also be created using the :class:`Context` constructor
 described below. In addition, the module provides three pre-made contexts:
