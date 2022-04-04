@@ -2429,11 +2429,15 @@ def overload(func):
     else:
         # We're inlining get_overloads() here to avoid computing the key twice.
         existing = _overload_registry[key]
-        if existing:
-            # If we are registering a variant with a lineno below or equal to that of the
-            # most recent existing variant, we're probably re-creating overloads for a
-            # function that already exists. In that case, we clear the existing variants
-            # to avoid leaking memory.
+        if existing and len(existing) > 20:
+            # If we are registering an overload with a lineno below or equal to that of the
+            # most recent existing overload, we're probably re-creating overloads for a
+            # function that already exists. This can happen if the module is being reloaded
+            # or if the overloads are being created in a nested function.
+            # In that case, we clear the existing overloads
+            # to avoid leaking memory. But we do this only if there are already a lot of
+            # overloads, so we don't have to figure out the linenos in the common case
+            # where there are only a few overloads.
             try:
                 firstlineno = inner_func.__code__.co_firstlineno
             except AttributeError:
@@ -2461,7 +2465,38 @@ _overload_registry = collections.defaultdict(list)
 def get_overloads(func):
     """Return all defined overloads for *func* as a sequence."""
     key = _get_key_for_callable(func)
-    return _overload_registry.get(key, [])
+    overloads = _overload_registry.get(key, [])
+
+    # We clear out overloads that have higher linenos than a later
+    # overload, because they're probably the result of a recreation of
+    # the function (see the comments in @overload). But we have to do it
+    # here too because @overload only clears out overloads when there are
+    # many.
+    final_overloads = []
+    last_lineno = -1
+    should_clear = False
+    for overloaded_func in overloads:
+        lineno = _get_firstlineno(overloaded_func)
+        if lineno is not None:
+            # If the same function is registered multiple times on the same line,
+            # we skip the duplicates.
+            if lineno <= last_lineno:
+                final_overloads.clear()
+                should_clear = True
+            last_lineno = lineno
+        final_overloads.append(overloaded_func)
+    if should_clear:
+        _overload_registry[key] = final_overloads
+    return final_overloads
+
+
+def _get_firstlineno(func):
+    # staticmethod, classmethod
+    func = getattr(func, "__func__", func)
+    if not hasattr(func, '__code__'):
+        return None
+    return func.__code__.co_firstlineno
+
 
 
 def clear_overloads(func=None):
