@@ -30,57 +30,10 @@ class Pair(collections.namedtuple('Pair', 'name value')):
         return cls(*map(str.strip, text.split("=", 1)))
 
 
-not_allowed = {
-    'abs': '<built-in function abs>',
-    'all': '<built-in function all>',
-    'any': '<built-in function any>',
-    'ascii': '<built-in function ascii>',
-    'bin': '<built-in function bin>',
-    'breakpoint': '<built-in function breakpoint>',
-    'callable': '<built-in function callable>',
-    'chr': '<built-in function chr>',
-    'compile': '<built-in function compile>',
-    'delattr': '<built-in function delattr>',
-    'divmod': '<built-in function divmod>',
-    'eval': '<built-in function eval>',
-    'exec': '<built-in function exec>',
-    'format': '<built-in function format>',
-    'getattr': '<built-in function getattr>',
-    'hasattr': '<built-in function hasattr>',
-    'hash': '<built-in function hash>',
-    'hex': '<built-in function hex>',
-    'id': '<built-in function id>',
-    'isinstance': '<built-in function isinstance>',
-    'issubclass': '<built-in function issubclass>',
-    'iter': '<built-in function iter>',
-    'len': '<built-in function len>',
-    'max': '<built-in function max>',
-    'min': '<built-in function min>',
-    'next': '<built-in function next>',
-    'oct': '<built-in function oct>',
-    'ord': '<built-in function ord>',
-    'pow': '<built-in function pow>',
-    'repr': '<built-in function repr>',
-    'round': '<built-in function round>',
-    'setattr': '<built-in function setattr>',
-    'sorted': '<built-in function sorted>',
-    'sum': '<built-in function sum>',
-    'None': 'None',
-    'memoryview': "<class 'memoryview'>",
-    'classmethod': "<class 'classmethod'>",
-    'enumerate': "<class 'enumerate'>",
-    'filter': "<class 'filter'>",
-    'map': "<class 'map'>",
-    'range': "<class 'range'>",
-    'reversed': "<class 'reversed'>",
-    'slice': "<class 'slice'>",
-    'staticmethod': "<class 'staticmethod'>",
-    'super': "<class 'super'>",
-    'type': "<class 'type'>",
-    'open': '<built-in function open>',
-    'execfile': '<function execfile at 0x103555820>',
-    'runfile': '<function runfile at 0x104847310>'
-}
+not_allowed = {abs, all, any, ascii, bin, breakpoint, callable, chr, compile, delattr, divmod, eval, exec, format,
+               getattr, hasattr, hash, hex, id, isinstance, issubclass, iter, len, max, min, next, oct, ord, pow, repr,
+               round, setattr, sorted, sum, memoryview, classmethod, enumerate, filter, map, range, reversed, slice,
+               staticmethod, super, type, open, execfile, runfile, None}
 
 
 class CustomDefaultDict(collections.defaultdict):
@@ -95,11 +48,11 @@ class CustomDefaultDict(collections.defaultdict):
             raise TypeError('NoneType not allowed')
 
         if inspect.isbuiltin(arg):
-            if str(arg) in not_allowed.values():
+            if arg in not_allowed:
                 raise TypeError('builtin_function_or_method with arguments not allowed')
 
-        if isinstance(arg, type):
-            if str(arg) in not_allowed.values():
+        if inspect.isclass(arg):
+            if (arg in not_allowed) or (len(inspect.getfullargspec(arg).args) > 1):
                 raise TypeError('class which requires arguments not allowed')
 
         super().__init__(arg)
