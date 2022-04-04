@@ -23,7 +23,7 @@ _COMPRESS_LEVEL_BEST = 9
 
 
 def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_BEST,
-         encoding=None, errors=None, newline=None):
+         encoding=None, errors=None, newline=None, mtime=None):
     """Open a gzip-compressed file in binary or text mode.
 
     The filename argument can be an actual filename (a str or bytes object), or
@@ -55,9 +55,9 @@ def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_BEST,
 
     gz_mode = mode.replace("t", "")
     if isinstance(filename, (str, bytes, os.PathLike)):
-        binary_file = GzipFile(filename, gz_mode, compresslevel)
+        binary_file = GzipFile(filename, gz_mode, compresslevel, mtime=mtime)
     elif hasattr(filename, "read") or hasattr(filename, "write"):
-        binary_file = GzipFile(None, gz_mode, compresslevel, filename)
+        binary_file = GzipFile(None, gz_mode, compresslevel, filename, mtime=mtime)
     else:
         raise TypeError("filename must be a str or bytes object, or a file")
 
