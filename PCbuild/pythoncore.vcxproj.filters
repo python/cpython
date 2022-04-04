@@ -240,15 +240,6 @@
     <ClInclude Include="..\Modules\rotatingtree.h">
       <Filter>Modules</Filter>
     </ClInclude>
-    <ClInclude Include="..\Modules\sre.h">
-      <Filter>Modules</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\sre_constants.h">
-      <Filter>Modules</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\sre_lib.h">
-      <Filter>Modules</Filter>
-    </ClInclude>
     <ClInclude Include="..\Modules\_io\_iomodule.h">
       <Filter>Modules\_io</Filter>
     </ClInclude>
@@ -731,9 +722,18 @@
     <ClCompile Include="..\Modules\_sha3\sha3module.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_sre.c">
+    <ClCompile Include="..\Modules\_sre\sre.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClInclude Include="..\Modules\_sre\sre.h">
+      <Filter>Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_sre\sre_constants.h">
+      <Filter>Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_sre\sre_lib.h">
+      <Filter>Modules</Filter>
+    </ClInclude>
     <ClCompile Include="..\Modules\_statisticsmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
