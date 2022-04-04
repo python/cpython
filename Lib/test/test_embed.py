@@ -346,7 +346,8 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_ucnhash_capi_reset(self):
         # bpo-47182: unicodeobject.c:ucnhash_capi was not reset on shutdown.
         code = "print('\\N{digit nine}')"
-        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code,
+                                                 env=remove_python_envvars())
         self.assertEqual(out, '9\n' * INIT_LOOPS)
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
