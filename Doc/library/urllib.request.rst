@@ -109,6 +109,11 @@ The :mod:`urllib.request` module defines the following functions:
    .. versionchanged:: 3.4.3
       *context* was added.
 
+   .. versionchanged:: 3.10
+      HTTPS connection now send an ALPN extension with protocol indicator
+      ``http/1.1`` when no *context* is given. Custom *context* should set
+      ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocol`.
+
    .. deprecated:: 3.6
 
        *cafile*, *capath* and *cadefault* are deprecated in favor of *context*.
@@ -164,8 +169,8 @@ The :mod:`urllib.request` module defines the following functions:
    This helper function returns a dictionary of scheme to proxy server URL
    mappings. It scans the environment for variables named ``<scheme>_proxy``,
    in a case insensitive approach, for all operating systems first, and when it
-   cannot find it, looks for proxy information from Mac OSX System
-   Configuration for Mac OS X and Windows Systems Registry for Windows.
+   cannot find it, looks for proxy information from System
+   Configuration for macOS and Windows Systems Registry for Windows.
    If both lowercase and uppercase environment variables exist (and disagree),
    lowercase is preferred.
 
@@ -298,8 +303,8 @@ The following classes are provided:
    the list of proxies from the environment variables
    ``<protocol>_proxy``.  If no proxy environment variables are set, then
    in a Windows environment proxy settings are obtained from the registry's
-   Internet Settings section, and in a Mac OS X environment proxy information
-   is retrieved from the OS X System Configuration Framework.
+   Internet Settings section, and in a macOS environment proxy information
+   is retrieved from the System Configuration Framework.
 
    To disable autodetected proxy pass an empty dictionary.
 
@@ -650,7 +655,7 @@ OpenerDirector Objects
    optional *timeout* parameter specifies a timeout in seconds for blocking
    operations like the connection attempt (if not specified, the global default
    timeout setting will be used). The timeout feature actually works only for
-   HTTP, HTTPS and FTP connections).
+   HTTP, HTTPS and FTP connections.
 
 
 .. method:: OpenerDirector.error(proto, *args)
@@ -871,7 +876,17 @@ HTTPRedirectHandler Objects
 .. method:: HTTPRedirectHandler.http_error_307(req, fp, code, msg, hdrs)
 
    The same as :meth:`http_error_301`, but called for the 'temporary redirect'
-   response.
+   response. It does not allow changing the request method from ``POST``
+   to ``GET``.
+
+
+.. method:: HTTPRedirectHandler.http_error_308(req, fp, code, msg, hdrs)
+
+   The same as :meth:`http_error_301`, but called for the 'permanent redirect'
+   response. It does not allow changing the request method from ``POST``
+   to ``GET``.
+
+   .. versionadded:: 3.11
 
 
 .. _http-cookie-processor:
@@ -946,7 +961,7 @@ tracking URIs for which authentication credentials should always be sent.
    If *is_authenticated* is specified as ``True``, *realm* is ignored.
 
 
-.. method:: HTTPPasswordMgr.find_user_password(realm, authuri)
+.. method:: HTTPPasswordMgrWithPriorAuth.find_user_password(realm, authuri)
 
    Same as for :class:`HTTPPasswordMgrWithDefaultRealm` objects
 
@@ -1538,7 +1553,7 @@ some point in the future.
 
 * The :func:`urlopen` and :func:`urlretrieve` functions can cause arbitrarily
   long delays while waiting for a network connection to be set up.  This means
-  that it is difficult to build an interactive Web client using these functions
+  that it is difficult to build an interactive web client using these functions
   without using threads.
 
   .. index::

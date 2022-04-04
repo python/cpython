@@ -1,6 +1,7 @@
 from test.support import verbose, TestFailed
 import locale
 import sys
+import re
 import test.support as support
 import unittest
 
@@ -248,7 +249,7 @@ class FormatTest(unittest.TestCase):
         # base marker shouldn't change the size
         testcommon("%0#35.33o", big, "0o012345670123456701234567012345670")
 
-        # Some small ints, in both Python int and flavors).
+        # Some small ints, in both Python int and flavors.
         testcommon("%d", 42, "42")
         testcommon("%d", -42, "-42")
         testcommon("%d", 42.0, "42")
@@ -274,9 +275,9 @@ class FormatTest(unittest.TestCase):
         test_exc_common('% %s', 1, ValueError,
                         "unsupported format character '%' (0x25) at index 2")
         test_exc_common('%d', '1', TypeError,
-                        "%d format: a number is required, not str")
+                        "%d format: a real number is required, not str")
         test_exc_common('%d', b'1', TypeError,
-                        "%d format: a number is required, not bytes")
+                        "%d format: a real number is required, not bytes")
         test_exc_common('%x', '1', TypeError,
                         "%x format: an integer is required, not str")
         test_exc_common('%x', 3.14, TypeError,
@@ -427,13 +428,16 @@ class FormatTest(unittest.TestCase):
             localeconv = locale.localeconv()
             sep = localeconv['thousands_sep']
             point = localeconv['decimal_point']
+            grouping = localeconv['grouping']
 
             text = format(123456789, "n")
-            self.assertIn(sep, text)
+            if grouping:
+                self.assertIn(sep, text)
             self.assertEqual(text.replace(sep, ''), '123456789')
 
             text = format(1234.5, "n")
-            self.assertIn(sep, text)
+            if grouping:
+                self.assertIn(sep, text)
             self.assertIn(point, text)
             self.assertEqual(text.replace(sep, ''), '1234' + point + '5')
         finally:
@@ -494,6 +498,53 @@ class FormatTest(unittest.TestCase):
 
         self.assertEqual(format(12300050.0, ".6g"), "1.23e+07")
         self.assertEqual(format(12300050.0, "#.6g"), "1.23000e+07")
+
+    def test_with_two_commas_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify ',' with ','.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:,,}'.format(1)
+
+    def test_with_two_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify '_' with '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:__}'.format(1)
+
+    def test_with_a_commas_and_an_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:,_}'.format(1)
+
+    def test_with_an_underscore_and_a_comma_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:_,}'.format(1)
+
+    def test_better_error_message_format(self):
+        # https://bugs.python.org/issue20524
+        for value in [12j, 12, 12.0, "12"]:
+            with self.subTest(value=value):
+                # The format spec must be invalid for all types we're testing.
+                # '%M' will suffice.
+                bad_format_spec = '%M'
+                err = re.escape("Invalid format specifier "
+                                f"'{bad_format_spec}' for object of type "
+                                f"'{type(value).__name__}'")
+                with self.assertRaisesRegex(ValueError, err):
+                    f"xx{{value:{bad_format_spec}}}yy".format(value=value)
+
+                # Also test the builtin format() function.
+                with self.assertRaisesRegex(ValueError, err):
+                    format(value, bad_format_spec)
+
+                # Also test f-strings.
+                with self.assertRaisesRegex(ValueError, err):
+                    eval("f'xx{value:{bad_format_spec}}yy'")
+
+    def test_unicode_in_error_message(self):
+        str_err = re.escape(
+            "Invalid format specifier '%ЫйЯЧ' for object of type 'str'")
+        with self.assertRaisesRegex(ValueError, str_err):
+            "{a:%ЫйЯЧ}".format(a='a')
 
 
 if __name__ == "__main__":

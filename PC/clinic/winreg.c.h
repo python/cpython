@@ -1143,8 +1143,7 @@ PyDoc_STRVAR(winreg_SetValue__doc__,
 
 static PyObject *
 winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
-                     DWORD type, const Py_UNICODE *value,
-                     Py_ssize_clean_t value_length);
+                     DWORD type, PyObject *value_obj);
 
 static PyObject *
 winreg_SetValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1153,14 +1152,13 @@ winreg_SetValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HKEY key;
     const Py_UNICODE *sub_key;
     DWORD type;
-    const Py_UNICODE *value;
-    Py_ssize_clean_t value_length;
+    PyObject *value_obj;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&ku#:SetValue",
-        clinic_HKEY_converter, &key, _PyUnicode_WideCharString_Opt_Converter, &sub_key, &type, &value, &value_length)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&O&kU:SetValue",
+        clinic_HKEY_converter, &key, _PyUnicode_WideCharString_Opt_Converter, &sub_key, &type, &value_obj)) {
         goto exit;
     }
-    return_value = winreg_SetValue_impl(module, key, sub_key, type, value, value_length);
+    return_value = winreg_SetValue_impl(module, key, sub_key, type, value_obj);
 
 exit:
     /* Cleanup for sub_key */
@@ -1348,4 +1346,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=30b1311886c13907 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=497a2e804821d5c9 input=a9049054013a1b77]*/

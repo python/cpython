@@ -113,7 +113,7 @@ to many different classes of problems.
 
 The language comes with a large standard library that covers areas such as
 string processing (regular expressions, Unicode, calculating differences between
-files), Internet protocols (HTTP, FTP, SMTP, XML-RPC, POP, IMAP, CGI
+files), internet protocols (HTTP, FTP, SMTP, XML-RPC, POP, IMAP, CGI
 programming), software engineering (unit testing, logging, profiling, parsing
 Python code), and operating system interfaces (system calls, filesystems, TCP/IP
 sockets).  Look at the table of contents for :ref:`library-index` to get an idea
@@ -142,9 +142,9 @@ to fix critical bugs.
 Alpha, beta and release candidate versions have an additional suffix.  The
 suffix for an alpha version is "aN" for some small number N, the suffix for a
 beta version is "bN" for some small number N, and the suffix for a release
-candidate version is "cN" for some small number N.  In other words, all versions
+candidate version is "rcN" for some small number N.  In other words, all versions
 labeled 2.0aN precede the versions labeled 2.0bN, which precede versions labeled
-2.0cN, and *those* precede 2.0.
+2.0rcN, and *those* precede 2.0.
 
 You may also find version numbers with a "+" suffix, e.g. "2.2+".  These are
 unreleased versions, built directly from the CPython development repository.  In
@@ -309,8 +309,8 @@ releases.
 The latest stable releases can always be found on the `Python download page
 <https://www.python.org/downloads/>`_.  There are two production-ready versions
 of Python: 2.x and 3.x. The recommended version is 3.x, which is supported by
-most widely used libraries.  Although 2.x is still widely used, `it will not
-be maintained after January 1, 2020 <https://www.python.org/dev/peps/pep-0373/>`_.
+most widely used libraries.  Although 2.x is still widely used, `it is not
+maintained anymore <https://peps.python.org/pep-0373/>`_.
 
 How many people are using Python?
 ---------------------------------
@@ -345,7 +345,7 @@ include Google, Yahoo, and Lucasfilm Ltd.
 What new developments are expected for Python in the future?
 ------------------------------------------------------------
 
-See https://www.python.org/dev/peps/ for the Python Enhancement Proposals
+See https://peps.python.org/ for the Python Enhancement Proposals
 (PEPs). PEPs are design documents describing a suggested new feature for Python,
 providing a concise technical specification and a rationale.  Look for a PEP
 titled "Python X.Y Release Schedule", where X.Y is a version that hasn't been

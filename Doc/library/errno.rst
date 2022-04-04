@@ -651,3 +651,10 @@ defined by the module.  The specific list of defined symbols is available as
 .. data:: EDQUOT
 
    Quota exceeded
+
+
+.. data:: EQFULL
+
+   Interface output queue is full
+
+   .. versionadded:: 3.11

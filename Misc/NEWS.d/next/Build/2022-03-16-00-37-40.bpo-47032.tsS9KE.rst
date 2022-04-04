@@ -1,0 +1,2 @@
+Ensure Windows install builds fail correctly with a non-zero exit code when
+part of the build fails.
