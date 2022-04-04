@@ -950,7 +950,7 @@ function to temporarily change the active context.
       with localcontext(prec=42) as ctx:
           s = calculate_something()
       s = +s
-   
+
    Raises :exc:`TypeError` if *kwargs* supplies an attribute that :class:`Context` doesn't
    support.  Raises either :exc:`TypeError` or :exc:`ValueError` if *kwargs* supplies an
    invalid value for an attribute.
