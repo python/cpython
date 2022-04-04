@@ -1323,7 +1323,6 @@ pattern_repr(PatternObject *obj)
         const char *name;
         int value;
     } flag_names[] = {
-        {"re.TEMPLATE", SRE_FLAG_TEMPLATE},
         {"re.IGNORECASE", SRE_FLAG_IGNORECASE},
         {"re.LOCALE", SRE_FLAG_LOCALE},
         {"re.MULTILINE", SRE_FLAG_MULTILINE},
