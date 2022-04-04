@@ -3616,6 +3616,10 @@ class ContextWithStatement(unittest.TestCase):
             self.assertEqual(ctx.clamp, 1)
 
         self.assertRaises(TypeError, self.decimal.localcontext, precision=10)
+        self.assertRaises(ValueError, self.decimal.localcontext, Emin=1)
+        self.assertRaises(ValueError, self.decimal.localcontext, Emax=-1)
+        self.assertRaises(ValueError, self.decimal.localcontext, capitals=2)
+        self.assertRaises(ValueError, self.decimal.localcontext, clamp=2)
 
     def test_nested_with_statements(self):
         # Use a copy of the supplied context in the block

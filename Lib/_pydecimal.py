@@ -505,7 +505,7 @@ def localcontext(ctx=None, **kwargs):
     for key, value in kwargs.items():
         try:
             setattr(ctx, key, value)
-        except:
+        except AttributeError:
             raise TypeError(f"'{key}' is an invalid keyword argument for this function")
     return _ContextManager(ctx)
 
