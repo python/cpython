@@ -2072,7 +2072,7 @@ _PyTokenizer_Get(struct tok_state *tok,
     return result;
 }
 
-#if defined(__wasi__) || defined(__EMSCRIPTEN__)
+#if defined(__wasi__) || (defined(__EMSCRIPTEN__) && (__EMSCRIPTEN_major__ >= 3))
 // fdopen() with borrowed fd. WASI does not provide dup() and Emscripten's
 // dup() emulation with open() is slow.
 typedef union {

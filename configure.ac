@@ -1091,6 +1091,12 @@ AC_ARG_WITH([emscripten-target],
     AS_CASE([$with_emscripten_target],
       [browser], [ac_sys_emscripten_target=browser],
       [node], [ac_sys_emscripten_target=node],
+dnl Debug builds with source map / dwarf symbols. Py_DEBUG builds easily
+dnl run out of stack space. Detached sybmols and map prohibit some
+dnl optimizations and increase file size. Options are undocumented so we
+dnl are free to remove them in the future.
+      [browser-debug], [ac_sys_emscripten_target=browser-debug],
+      [node-debug], [ac_sys_emscripten_target=node-debug],
       [AC_MSG_ERROR([Invalid argument: --with-emscripten-target=browser|node])]
     )
   ], [
@@ -1112,8 +1118,8 @@ AC_ARG_WITH([suffix],
   )
 ], [
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/browser], [EXEEXT=.html],
-    [Emscripten/node], [EXEEXT=.js],
+    [Emscripten/browser*], [EXEEXT=.html],
+    [Emscripten/node*], [EXEEXT=.js],
     [WASI/*], [EXEEXT=.wasm],
     [EXEEXT=]
   )
@@ -1376,7 +1382,7 @@ AC_MSG_RESULT($LDLIBRARY)
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)'],
+  [Emscripten/browser*], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)'],
   [LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)']
 )
 LINK_PYTHON_DEPS='$(LIBRARY_DEPS)'
@@ -1888,28 +1894,28 @@ fi
 # The option disables code elimination, which increases code size of main
 # binary. All objects must be built with -fPIC.
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser], [
+  [Emscripten/browser*], [
     LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1"
     LINKFORSHARED="--preload-file \$(WASM_ASSETS_DIR)"
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
     dnl separate-dwarf does not seem to work in Chrome DevTools Support.
-    if test "$Py_DEBUG" = 'true'; then
+    if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "browser-debug"; then
       LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
       LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
     else
       LINKFORSHARED="$LINKFORSHARED -O2 -g0"
     fi
   ],
-  [Emscripten/node], [
+  [Emscripten/node*], [
     LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s USE_PTHREADS=1"
     LINKFORSHARED="-s PROXY_TO_PTHREAD=1 -s EXIT_RUNTIME=1"
     CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
-    if test "$Py_DEBUG" = 'true'; then
+    if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "node-debug"; then
       LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
       LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
     else
-      LINKFORSHARED="$LINKFORSHARED -O2 -gseparate-dwarf"
+      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
     fi
   ],
   [WASI/*], [
@@ -4181,6 +4187,19 @@ then
     fi
 fi
 
+dnl Platform-specific C and header files.
+PLATFORM_HEADERS=
+PLATFORM_OBJS=
+
+AS_CASE([$ac_sys_system],
+  [Emscripten], [
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o'])
+    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h'])
+  ],
+)
+AC_SUBST([PLATFORM_HEADERS])
+AC_SUBST([PLATFORM_OBJS])
+
 # -I${DLINCLDIR} is added to the compile rule for importdl.o
 AC_SUBST(DLINCLDIR)
 DLINCLDIR=.
@@ -5973,6 +5992,7 @@ SRCDIRS="\
   Modules/_multiprocessing \
   Modules/_sha3 \
   Modules/_sqlite \
+  Modules/_sre \
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
@@ -6453,7 +6473,7 @@ if test "$enable_test_modules" = no; then
     TEST_MODULES=no
 else
     AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-      [Emscripten/browser], [TEST_MODULES=no],
+      [Emscripten/browser*], [TEST_MODULES=no],
       [TEST_MODULES=yes]
     )
 fi
@@ -6478,7 +6498,7 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   [CYGWIN*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
   [QNX*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
   [FreeBSD*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
-  [Emscripten/browser], [
+  [Emscripten/browser*], [
     PY_STDLIB_MOD_SET_NA(
       [_ctypes],
       [_curses],
@@ -6505,13 +6525,16 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   ],
   dnl Some modules like _posixsubprocess do not work. We build them anyway
   dnl so imports in tests do not fail.
-  [Emscripten/node], [
+  [Emscripten/node*], [
     PY_STDLIB_MOD_SET_NA(
       [_ctypes],
       [_curses],
       [_curses_panel],
       [_dbm],
       [_gdbm],
+      [_multiprocessing],
+      [_posixshmem],
+      [_posixsubprocess],
       [_scproxy],
       [_tkinter],
       [_xxsubinterpreters],

@@ -817,6 +817,8 @@ TRUE
 MACHDEP_OBJS
 DYNLOADFILE
 DLINCLDIR
+PLATFORM_OBJS
+PLATFORM_HEADERS
 DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
@@ -6262,6 +6264,10 @@ if test "${with_emscripten_target+set}" = set; then :
     ac_sys_emscripten_target=browser ;; #(
   node) :
     ac_sys_emscripten_target=node ;; #(
+        browser-debug) :
+    ac_sys_emscripten_target=browser-debug ;; #(
+  node-debug) :
+    ac_sys_emscripten_target=node-debug ;; #(
   *) :
     as_fn_error $? "Invalid argument: --with-emscripten-target=browser|node" "$LINENO" 5
      ;;
@@ -6303,9 +6309,9 @@ esac
 else
 
   case $ac_sys_system/$ac_sys_emscripten_target in #(
-  Emscripten/browser) :
+  Emscripten/browser*) :
     EXEEXT=.html ;; #(
-  Emscripten/node) :
+  Emscripten/node*) :
     EXEEXT=.js ;; #(
   WASI/*) :
     EXEEXT=.wasm ;; #(
@@ -6615,7 +6621,7 @@ $as_echo "$LDLIBRARY" >&6; }
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
 case $ac_sys_system/$ac_sys_emscripten_target in #(
-  Emscripten/browser) :
+  Emscripten/browser*) :
     LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)' ;; #(
   *) :
     LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
@@ -7758,29 +7764,29 @@ fi
 # The option disables code elimination, which increases code size of main
 # binary. All objects must be built with -fPIC.
 case $ac_sys_system/$ac_sys_emscripten_target in #(
-  Emscripten/browser) :
+  Emscripten/browser*) :
 
     LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1"
     LINKFORSHARED="--preload-file \$(WASM_ASSETS_DIR)"
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
-        if test "$Py_DEBUG" = 'true'; then
+        if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "browser-debug"; then
       LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
       LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
     else
       LINKFORSHARED="$LINKFORSHARED -O2 -g0"
     fi
    ;; #(
-  Emscripten/node) :
+  Emscripten/node*) :
 
     LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s USE_PTHREADS=1"
     LINKFORSHARED="-s PROXY_TO_PTHREAD=1 -s EXIT_RUNTIME=1"
     CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
-    if test "$Py_DEBUG" = 'true'; then
+    if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "node-debug"; then
       LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
       LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
     else
-      LINKFORSHARED="$LINKFORSHARED -O2 -gseparate-dwarf"
+      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
     fi
    ;; #(
   WASI/*) :
@@ -13988,6 +13994,21 @@ $as_echo "$ac_cv_dtrace_link" >&6; }
         DTRACE_OBJS="Python/pydtrace.o"
     fi
 fi
+
+PLATFORM_HEADERS=
+PLATFORM_OBJS=
+
+case $ac_sys_system in #(
+  Emscripten) :
+
+    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o'
+    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h'
+   ;; #(
+  *) :
+     ;;
+esac
+
+
 
 # -I${DLINCLDIR} is added to the compile rule for importdl.o
 
@@ -20536,6 +20557,7 @@ SRCDIRS="\
   Modules/_multiprocessing \
   Modules/_sha3 \
   Modules/_sqlite \
+  Modules/_sre \
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
@@ -21672,7 +21694,7 @@ if test "$enable_test_modules" = no; then
     TEST_MODULES=no
 else
     case $ac_sys_system/$ac_sys_emscripten_target in #(
-  Emscripten/browser) :
+  Emscripten/browser*) :
     TEST_MODULES=no ;; #(
   *) :
     TEST_MODULES=yes
@@ -21731,7 +21753,7 @@ case $ac_sys_system/$ac_sys_emscripten_target in #(
     py_cv_module__scproxy=n/a
     py_cv_module_spwd=n/a
  ;; #(
-  Emscripten/browser) :
+  Emscripten/browser*) :
 
 
 
@@ -21759,7 +21781,7 @@ case $ac_sys_system/$ac_sys_emscripten_target in #(
     py_cv_module_=n/a
 
    ;; #(
-      Emscripten/node) :
+      Emscripten/node*) :
 
 
 
@@ -21768,6 +21790,9 @@ case $ac_sys_system/$ac_sys_emscripten_target in #(
     py_cv_module__curses_panel=n/a
     py_cv_module__dbm=n/a
     py_cv_module__gdbm=n/a
+    py_cv_module__multiprocessing=n/a
+    py_cv_module__posixshmem=n/a
+    py_cv_module__posixsubprocess=n/a
     py_cv_module__scproxy=n/a
     py_cv_module__tkinter=n/a
     py_cv_module__xxsubinterpreters=n/a

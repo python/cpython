@@ -73,12 +73,12 @@ the following::
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
         1    0.000    0.000    0.002    0.002 {built-in method builtins.exec}
         1    0.000    0.000    0.001    0.001 <string>:1(<module>)
-        1    0.000    0.000    0.001    0.001 re.py:250(compile)
-        1    0.000    0.000    0.001    0.001 re.py:289(_compile)
-        1    0.000    0.000    0.000    0.000 sre_compile.py:759(compile)
-        1    0.000    0.000    0.000    0.000 sre_parse.py:937(parse)
-        1    0.000    0.000    0.000    0.000 sre_compile.py:598(_code)
-        1    0.000    0.000    0.000    0.000 sre_parse.py:435(_parse_sub)
+        1    0.000    0.000    0.001    0.001 __init__.py:250(compile)
+        1    0.000    0.000    0.001    0.001 __init__.py:289(_compile)
+        1    0.000    0.000    0.000    0.000 _compiler.py:759(compile)
+        1    0.000    0.000    0.000    0.000 _parser.py:937(parse)
+        1    0.000    0.000    0.000    0.000 _compiler.py:598(_code)
+        1    0.000    0.000    0.000    0.000 _parser.py:435(_parse_sub)
 
 The first line indicates that 214 calls were monitored.  Of those calls, 207
 were :dfn:`primitive`, meaning that the call was not induced via recursion. The
