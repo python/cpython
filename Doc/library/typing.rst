@@ -1234,7 +1234,7 @@ These are not used in annotations. They are building blocks for creating generic
 
 .. class:: TypeVarTuple
 
-    Type variable tuple. A specialised form of :class:`Type variable <TypeVar>`
+    Type variable tuple. A specialized form of :class:`Type variable <TypeVar>`
     that enables *variadic* generics.
 
     A normal type variable enables parameterization with a single type. A type
@@ -1329,7 +1329,7 @@ These are not used in annotations. They are building blocks for creating generic
 
     A typing operator that conceptually marks an object as having been
     unpacked. For example, using the unpack operator ``*`` on a
-    :class:`type variable tuple <TypeVarTuple>` internally uses ``Unpack``
+    :class:`type variable tuple <TypeVarTuple>` is equivalent to using ``Unpack``
     to mark the type variable tuple as having been unpacked::
 
         Ts = TypeVarTuple('Ts')
