@@ -369,7 +369,15 @@ typedef int (*crossinterpdatafunc)(PyObject *, _PyCrossInterpreterData *);
 PyAPI_FUNC(int) _PyCrossInterpreterData_RegisterClass(PyTypeObject *, crossinterpdatafunc);
 PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
 
+/* UNSTABLE API for stackful coroutines.
+ * It it the responsibility of the caller to manage the memory for the _PyFrameStack struct.
+ * The memory for the actual frame stack will be managed by the VM.
+ * All functions need the GIL to be held.
+ */
 
+/* Initialize fs with given chunk size */
 PyAPI_FUNC(void) _PyFrameStack_Init(_PyFrameStack *fs, int chunk_size);
+/* Swap the frame stack of the current thread with fs */
 PyAPI_FUNC(void) _PyFrameStack_Swap(_PyFrameStack *fs);
+/* Free any allocated memory chunks from fs. Does not free fs itself */
 PyAPI_FUNC(void) _PyFrameStack_Free(_PyFrameStack *fs);
