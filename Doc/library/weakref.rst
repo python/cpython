@@ -233,6 +233,8 @@ objects.
       >>> r()
       >>>
 
+   *callback* is the same as the parameter of the same name to the :func:`ref` function.
+
    .. versionadded:: 3.4
 
 .. class:: finalize(obj, func, /, *args, **kwargs)
