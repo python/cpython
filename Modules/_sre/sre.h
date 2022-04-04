@@ -54,6 +54,16 @@ typedef struct {
     Py_ssize_t mark[1];
 } MatchObject;
 
+typedef struct {
+    PyObject_VAR_HEAD
+    Py_ssize_t chunks;
+    PyObject *literal;
+    struct {
+        Py_ssize_t index;
+        PyObject *literal;
+    } items[0];
+} TemplateObject;
+
 typedef struct SRE_REPEAT_T {
     Py_ssize_t count;
     const SRE_CODE* pattern; /* points to REPEAT operator arguments */

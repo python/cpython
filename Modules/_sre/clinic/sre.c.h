@@ -625,6 +625,39 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_sre_template__doc__,
+"template($module, pattern, template, /)\n"
+"--\n"
+"\n");
+
+#define _SRE_TEMPLATE_METHODDEF    \
+    {"template", (PyCFunction)(void(*)(void))_sre_template, METH_FASTCALL, _sre_template__doc__},
+
+static PyObject *
+_sre_template_impl(PyObject *module, PyObject *pattern, PyObject *template);
+
+static PyObject *
+_sre_template(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *pattern;
+    PyObject *template;
+
+    if (!_PyArg_CheckPositional("template", nargs, 2, 2)) {
+        goto exit;
+    }
+    pattern = args[0];
+    if (!PyList_Check(args[1])) {
+        _PyArg_BadArgument("template", "argument 2", "list", args[1]);
+        goto exit;
+    }
+    template = args[1];
+    return_value = _sre_template_impl(module, pattern, template);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_sre_SRE_Match_expand__doc__,
 "expand($self, /, template)\n"
 "--\n"
@@ -923,4 +956,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9d7510a57a157a38 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9454416028280667 input=a9049054013a1b77]*/

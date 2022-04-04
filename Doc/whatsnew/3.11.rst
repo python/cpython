@@ -512,6 +512,11 @@ Optimizations
   becomes 272 bytes from 352 bytes on 64bit platform.
   (Contributed by Inada Naoki in :issue:`46845`.)
 
+* Speed up the regular expression substitution (functions :func:`re.sub` and
+  :func:`re.subn` and corresponding :class:`re.Pattern` methods) for
+  replacement strings containing group references by 2--3 times.
+  (Contributed by Serhiy Storchaka in :issue:`91524`.)
+
 
 Faster CPython
 ==============
