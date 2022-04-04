@@ -670,6 +670,34 @@ class FileTestCase(unittest.TestCase):
             LZMAFile(BytesIO(), "w", format=lzma.FORMAT_RAW,
                      preset=6, filters=FILTERS_RAW_1)
 
+    def test_filename(self):
+        with TempFile(TESTFN):
+            with LZMAFile(TESTFN) as f:
+                self.assertTrue(hasattr(f, 'name'))
+                self.assertTrue(f.name == TESTFN)
+
+    def test_path_filename(self):
+        filename = pathlib.Path(TESTFN)
+        with TempFile(filename):
+            with LZMAFile(filename) as f:
+                self.assertTrue(hasattr(f, 'name'))
+                self.assertTrue(f.name == '')
+
+    def test_name_bytesIO(self):
+        f = LZMAFile(BytesIO(COMPRESSED_XZ))
+        try:
+            self.assertTrue(hasattr(f, 'name'))
+            self.assertTrue(f.name == '')
+        finally:
+            f.close()
+
+        f = LZMAFile(BytesIO(), "w")
+        try:
+            self.assertTrue(hasattr(f, 'name'))
+            self.assertTrue(f.name == '')
+        finally:
+            f.close()
+
     def test_close(self):
         with BytesIO(COMPRESSED_XZ) as src:
             f = LZMAFile(src)

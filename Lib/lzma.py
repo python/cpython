@@ -131,6 +131,11 @@ class LZMAFile(_compression.BaseStream):
                 trailing_error=LZMAError, format=format, filters=filters)
             self._buffer = io.BufferedReader(raw)
 
+        if not isinstance(filename, (str, bytes)):
+            self.name = ''
+        else:
+            self.name = os.fspath(filename)
+
     def close(self):
         """Flush and close the file.
 
