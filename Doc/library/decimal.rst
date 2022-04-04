@@ -943,12 +943,20 @@ function to temporarily change the active context.
           s = calculate_something()
       s = +s  # Round the final result back to the default precision
 
-   .. versionchanged:: 3.11
-   Raises :exc:`TypeError` if *kwargs* supplies an attribute that :class:`Context` doesn't
-   support.
+   Using keyword arguments, the code would be the following::
+
+      from decimal import localcontext
+
+      with localcontext(prec=42) as ctx:
+          s = calculate_something()
+      s = +s
 
    .. versionchanged:: 3.11
-   Raises either :exc:`TypeError` or :exc:`ValueError` if *kwargs* supplies an invalid value for an attribute.
+      Raises :exc:`TypeError` if *kwargs* supplies an attribute that :class:`Context` doesn't
+      support.
+
+   .. versionchanged:: 3.11
+      Raises either :exc:`TypeError` or :exc:`ValueError` if *kwargs* supplies an invalid value for an attribute.
 
 New contexts can also be created using the :class:`Context` constructor
 described below. In addition, the module provides three pre-made contexts:
