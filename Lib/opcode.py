@@ -154,7 +154,7 @@ def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('GET_AWAITABLE', 131)
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
-jabs_op('JUMP_NO_INTERRUPT', 134) # Target byte offset from beginning of code
+jrel_op('JUMP_BACKWARD_NO_INTERRUPT', 134) # Number of words to skip (backwards)
 def_op('MAKE_CELL', 135)
 hasfree.append(135)
 def_op('LOAD_CLOSURE', 136)
