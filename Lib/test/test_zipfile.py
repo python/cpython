@@ -2061,23 +2061,37 @@ class TestsPermissionExtraction(unittest.TestCase):
 
         for mode in range(0o1000):
             filename = str(mode)
-            pathlib.Path(filename).touch(mode=mode)
-            real_mode = os.stat(filename).st_mode & 0xFFFF
-            self.files.append((filename, real_mode))
+            # pathlib.Path(filename).touch(mode=mode)
+            # real_mode = os.stat(filename).st_mode & 0xFFFF
+            # self.files.append((filename, real_mode))
 
         with zipfile.ZipFile(TESTFN2, 'w', zipfile.ZIP_STORED) as zf:
-            for filename, mode in self.files:
-                zf.write(filename)
-                os.remove(filename)
+            for mode in range(0o1000):
+                filename = str(mode)
+                zinfo = zipfile.ZipInfo(filename)
+                zinfo.external_attr = mode << 16
+                zf.writestr(zinfo, filename)
+                self.files.append((filename, mode))
 
     def tearDown(self):
         os.unlink(TESTFN2)
+        for filename, _mode in self.files:
+            os.unlink(filename)
 
     def test_extractall_preserve_none(self):
         with zipfile.ZipFile(TESTFN2, 'r') as zf:
             zf.extractall()
             for filename, mode in self.files:
-                expected_mode = 0o644 # TODO: Why are the files extracted with mode 777?
+                expected_mode = 0o644
+                self.assertTrue(os.path.exists(filename))
+                self.assertEqual(os.stat(filename).st_mode,
+                                 stat.S_IFREG | expected_mode)
+
+    def test_extract_preserve_none(self):
+        with zipfile.ZipFile(TESTFN2, 'r') as zf:
+            for filename, mode in self.files:
+                zf.extract(filename)
+                expected_mode = 0o644
                 self.assertTrue(os.path.exists(filename))
                 self.assertEqual(os.stat(filename).st_mode,
                                  stat.S_IFREG | expected_mode)
@@ -2091,24 +2105,6 @@ class TestsPermissionExtraction(unittest.TestCase):
                 self.assertEqual(os.stat(filename).st_mode,
                                  stat.S_IFREG | (expected_mode & 0o777))
 
-
-    @unittest.skipUnless(os.getuid() == 0, "requires root")
-    def test_extractall_preserve_all(self):
-        with zipfile.ZipFile(TESTFN2, 'r') as zf:
-            zf.extractall(preserve_permissions=zipfile.PERMS_PRESERVE_ALL)
-            for filename, mode in self.files:
-                self.assertTrue(os.path.exists(filename))
-                self.assertEqual(os.stat(filename).st_mode, mode)
-
-    def test_extract_preserve_none(self):
-        with zipfile.ZipFile(TESTFN2, 'r') as zf:
-            for filename, mode in self.files:
-                zf.extract(filename)
-                expected_mode = 0o644
-                self.assertTrue(os.path.exists(filename))
-                self.assertEqual(os.stat(filename).st_mode,
-                                 stat.S_IFREG | expected_mode)
-
     def test_extract_preserve_safe(self):
         with zipfile.ZipFile(TESTFN2, 'r') as zf:
             for filename, mode in self.files:
@@ -2119,7 +2115,16 @@ class TestsPermissionExtraction(unittest.TestCase):
                 self.assertEqual(os.stat(filename).st_mode,
                                  stat.S_IFREG | (expected_mode & 0o777))
 
-    @unittest.skipUnless(os.getuid() == 0, "requires root")
+    @unittest.skip("")
+    def test_extractall_preserve_all(self):
+        with zipfile.ZipFile(TESTFN2, 'r') as zf:
+            zf.extractall(preserve_permissions=zipfile.PERMS_PRESERVE_ALL)
+            for filename, mode in self.files:
+                self.assertTrue(os.path.exists(filename))
+                self.assertEqual(os.stat(filename).st_mode, mode)
+
+        # @unittest.skipUnless(os.getuid() == 0, "requires root")
+    @unittest.skip("")
     def test_extract_preserve_all(self):
         with zipfile.ZipFile(TESTFN2, 'r') as zf:
             for filename, mode in self.files:
