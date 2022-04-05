@@ -11,7 +11,7 @@ from unittest.mock import (
     call, DEFAULT, patch, sentinel,
     MagicMock, Mock, NonCallableMock,
     NonCallableMagicMock, AsyncMock, _Call, _CallList,
-    create_autospec
+    create_autospec, InvalidSpecError
 )
 
 
@@ -36,6 +36,12 @@ class Something(object):
 
     @staticmethod
     def smeth(a, b, c, d=None): pass
+
+
+class Typos():
+    autospect = None
+    auto_spec = None
+    set_spec = None
 
 
 def something(a): pass
@@ -197,6 +203,36 @@ class MockTest(unittest.TestCase):
         mock = create_autospec(f)
         mock.side_effect = ValueError('Bazinga!')
         self.assertRaisesRegex(ValueError, 'Bazinga!', mock)
+
+
+    def test_autospec_mock(self):
+        class A(object):
+            class B(object):
+                C = None
+
+        with mock.patch.object(A, 'B'):
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot autospec attr 'B' from target <MagicMock spec='A'"):
+                create_autospec(A).B
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot autospec attr 'B' from target 'A'"):
+                mock.patch.object(A, 'B', autospec=True).start()
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot autospec attr 'C' as the patch target "):
+                mock.patch.object(A.B, 'C', autospec=True).start()
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot spec attr 'B' as the spec "):
+                mock.patch.object(A, 'B', spec=A.B).start()
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot spec attr 'B' as the spec_set "):
+                mock.patch.object(A, 'B', spec_set=A.B).start()
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot spec attr 'B' as the spec_set "):
+                mock.patch.object(A, 'B', spec_set=A.B).start()
+            with self.assertRaisesRegex(InvalidSpecError, "Cannot spec a Mock object."):
+                mock.Mock(A.B)
+            with mock.patch('builtins.open', mock.mock_open()):
+                mock.mock_open()  # should still be valid with open() mocked
 
 
     def test_reset_mock(self):
@@ -1598,7 +1634,7 @@ class MockTest(unittest.TestCase):
     #Issue21238
     def test_mock_unsafe(self):
         m = Mock()
-        msg = "Attributes cannot start with 'assert' or its misspellings"
+        msg = "is not a valid assertion. Use a spec for the mock"
         with self.assertRaisesRegex(AttributeError, msg):
             m.assert_foo_call()
         with self.assertRaisesRegex(AttributeError, msg):
@@ -2164,6 +2200,62 @@ class MockTest(unittest.TestCase):
             for mock in mocks:
                 obj = mock(spec=Something)
                 self.assertIsInstance(obj, Something)
+
+    def test_bool_not_called_when_passing_spec_arg(self):
+        class Something:
+            def __init__(self):
+                self.obj_with_bool_func = unittest.mock.MagicMock()
+
+        obj = Something()
+        with unittest.mock.patch.object(obj, 'obj_with_bool_func', spec=object): pass
+
+        self.assertEqual(obj.obj_with_bool_func.__bool__.call_count, 0)
+
+    def test_misspelled_arguments(self):
+        class Foo():
+            one = 'one'
+        # patch, patch.object and create_autospec need to check for misspelled
+        # arguments explicitly and throw a RuntimError if found.
+        with self.assertRaises(RuntimeError):
+            with patch(f'{__name__}.Something.meth', autospect=True): pass
+        with self.assertRaises(RuntimeError):
+            with patch.object(Foo, 'one', autospect=True): pass
+        with self.assertRaises(RuntimeError):
+            with patch(f'{__name__}.Something.meth', auto_spec=True): pass
+        with self.assertRaises(RuntimeError):
+            with patch.object(Foo, 'one', auto_spec=True): pass
+        with self.assertRaises(RuntimeError):
+            with patch(f'{__name__}.Something.meth', set_spec=True): pass
+        with self.assertRaises(RuntimeError):
+            with patch.object(Foo, 'one', set_spec=True): pass
+        with self.assertRaises(RuntimeError):
+            m = create_autospec(Foo, set_spec=True)
+        # patch.multiple, on the other hand, should flag misspelled arguments
+        # through an AttributeError, when trying to find the keys from kwargs
+        # as attributes on the target.
+        with self.assertRaises(AttributeError):
+            with patch.multiple(
+                f'{__name__}.Something', meth=DEFAULT, autospect=True): pass
+        with self.assertRaises(AttributeError):
+            with patch.multiple(
+                f'{__name__}.Something', meth=DEFAULT, auto_spec=True): pass
+        with self.assertRaises(AttributeError):
+            with patch.multiple(
+                f'{__name__}.Something', meth=DEFAULT, set_spec=True): pass
+
+        with patch(f'{__name__}.Something.meth', unsafe=True, autospect=True):
+            pass
+        with patch.object(Foo, 'one', unsafe=True, autospect=True): pass
+        with patch(f'{__name__}.Something.meth', unsafe=True, auto_spec=True):
+            pass
+        with patch.object(Foo, 'one', unsafe=True, auto_spec=True): pass
+        with patch(f'{__name__}.Something.meth', unsafe=True, set_spec=True):
+            pass
+        with patch.object(Foo, 'one', unsafe=True, set_spec=True): pass
+        m = create_autospec(Foo, set_spec=True, unsafe=True)
+        with patch.multiple(
+            f'{__name__}.Typos', autospect=True, set_spec=True, auto_spec=True):
+            pass
 
 
 if __name__ == '__main__':

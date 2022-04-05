@@ -61,9 +61,8 @@ See also the `Examples`_ subsection.
 Creating Subprocesses
 =====================
 
-.. coroutinefunction:: create_subprocess_exec(program, \*args, stdin=None, \
-                          stdout=None, stderr=None, loop=None, \
-                          limit=None, \*\*kwds)
+.. coroutinefunction:: create_subprocess_exec(program, *args, stdin=None, \
+                          stdout=None, stderr=None, limit=None, **kwds)
 
    Create a subprocess.
 
@@ -76,13 +75,12 @@ Creating Subprocesses
    See the documentation of :meth:`loop.subprocess_exec` for other
    parameters.
 
-   .. deprecated-removed:: 3.8 3.10
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
-      The *loop* parameter.
 
 .. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, \
-                          stdout=None, stderr=None, loop=None, \
-                          limit=None, \*\*kwds)
+                          stdout=None, stderr=None, limit=None, **kwds)
 
    Run the *cmd* shell command.
 
@@ -104,9 +102,8 @@ Creating Subprocesses
       escape whitespace and special shell characters in strings that are going
       to be used to construct shell commands.
 
-   .. deprecated-removed:: 3.8 3.10
-
-      The *loop* parameter.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
 .. note::
 
@@ -251,7 +248,7 @@ their completion.
 
    .. method:: kill()
 
-      Kill the child.
+      Kill the child process.
 
       On POSIX systems this method sends :py:data:`SIGKILL` to the child
       process.

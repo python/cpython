@@ -22,6 +22,7 @@ def parse_args():
     cmd = 'check'
     verbosity, traceback_cm = process_args_by_key(
         args,
+        argv,
         processors,
         ['verbosity', 'traceback_cm'],
     )

@@ -1,3 +1,7 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "structmember.h"
@@ -164,7 +168,7 @@ is_leap_year(int year);
 static size_t
 _bisect(const int64_t value, const int64_t *arr, size_t size);
 
-static void
+static int
 eject_from_strong_cache(const PyTypeObject *const type, PyObject *key);
 static void
 clear_strong_cache(const PyTypeObject *const type);
@@ -172,7 +176,7 @@ static void
 update_strong_cache(const PyTypeObject *const type, PyObject *key,
                     PyObject *zone);
 static PyObject *
-zone_from_strong_cache(const PyTypeObject *const type, PyObject *key);
+zone_from_strong_cache(const PyTypeObject *const type, PyObject *const key);
 
 static PyObject *
 zoneinfo_new_instance(PyTypeObject *type, PyObject *key)
@@ -266,7 +270,7 @@ zoneinfo_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
 
     PyObject *instance = zone_from_strong_cache(type, key);
-    if (instance != NULL) {
+    if (instance != NULL || PyErr_Occurred()) {
         return instance;
     }
 
@@ -429,7 +433,10 @@ zoneinfo_clear_cache(PyObject *cls, PyObject *args, PyObject *kwargs)
 
         while ((item = PyIter_Next(iter))) {
             // Remove from strong cache
-            eject_from_strong_cache(type, item);
+            if (eject_from_strong_cache(type, item) < 0) {
+                Py_DECREF(item);
+                break;
+            }
 
             // Remove from weak cache
             PyObject *tmp = PyObject_CallMethodObjArgs(weak_cache, pop, item,
@@ -904,7 +911,13 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     // Load the transition indices and list
     self->trans_list_utc =
         PyMem_Malloc(self->num_transitions * sizeof(int64_t));
+    if (self->trans_list_utc == NULL) {
+        goto error;
+    }
     trans_idx = PyMem_Malloc(self->num_transitions * sizeof(Py_ssize_t));
+    if (trans_idx == NULL) {
+        goto error;
+    }
 
     for (size_t i = 0; i < self->num_transitions; ++i) {
         PyObject *num = PyTuple_GetItem(trans_utc, i);
@@ -986,6 +999,9 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
 
     // Build _ttinfo objects from utcoff, dstoff and abbr
     self->_ttinfos = PyMem_Malloc(self->num_ttinfos * sizeof(_ttinfo));
+    if (self->_ttinfos == NULL) {
+        goto error;
+    }
     for (size_t i = 0; i < self->num_ttinfos; ++i) {
         PyObject *tzname = PyTuple_GetItem(abbr, i);
         if (tzname == NULL) {
@@ -1001,6 +1017,9 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     // Build our mapping from transition to the ttinfo that applies
     self->trans_ttinfos =
         PyMem_Calloc(self->num_transitions, sizeof(_ttinfo *));
+    if (self->trans_ttinfos == NULL) {
+        goto error;
+    }
     for (size_t i = 0; i < self->num_transitions; ++i) {
         size_t ttinfo_idx = trans_idx[i];
         assert(ttinfo_idx < self->num_ttinfos);
@@ -1214,15 +1233,9 @@ calendarrule_new(uint8_t month, uint8_t week, uint8_t day, int8_t hour,
         return -1;
     }
 
-    // day is an unsigned integer, so day < 0 should always return false, but
-    // if day's type changes to a signed integer *without* changing this value,
-    // it may create a bug. Considering that the compiler should be able to
-    // optimize out the first comparison if day is an unsigned integer anyway,
-    // we will leave this comparison in place and disable the compiler warning.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wtype-limits"
-    if (day < 0 || day > 6) {
-#pragma GCC diagnostic pop
+    // If the 'day' parameter type is changed to a signed type,
+    // "day < 0" check must be added.
+    if (/* day < 0 || */ day > 6) {
         PyErr_Format(PyExc_ValueError, "Day must be in [0, 6]");
         return -1;
     }
@@ -1333,7 +1346,7 @@ tzrule_transitions(_tzrule *rule, int year, int64_t *start, int64_t *end)
  * could technically be calculated from the timestamp, but given that the
  * callers of this function already have the year information accessible from
  * the datetime struct, it is taken as an additional parameter to reduce
- * unncessary calculation.
+ * unnecessary calculation.
  * */
 static _ttinfo *
 find_tzrule_ttinfo(_tzrule *rule, int64_t ts, unsigned char fold, int year)
@@ -1459,11 +1472,11 @@ parse_tz_str(PyObject *tz_str_obj, _tzrule *out)
     long std_offset = 1 << 20;
     long dst_offset = 1 << 20;
 
-    char *tz_str = PyBytes_AsString(tz_str_obj);
+    const char *tz_str = PyBytes_AsString(tz_str_obj);
     if (tz_str == NULL) {
         return -1;
     }
-    char *p = tz_str;
+    const char *p = tz_str;
 
     // Read the `std` abbreviation, which must be at least 3 characters long.
     Py_ssize_t num_chars = parse_abbr(p, &std_abbr);
@@ -2336,7 +2349,11 @@ find_in_strong_cache(const StrongCacheNode *const root, PyObject *const key)
 {
     const StrongCacheNode *node = root;
     while (node != NULL) {
-        if (PyObject_RichCompareBool(key, node->key, Py_EQ)) {
+        int rv = PyObject_RichCompareBool(key, node->key, Py_EQ);
+        if (rv < 0) {
+            return NULL;
+        }
+        if (rv) {
             return (StrongCacheNode *)node;
         }
 
@@ -2350,11 +2367,11 @@ find_in_strong_cache(const StrongCacheNode *const root, PyObject *const key)
  *
  * This function is used to enable the per-key functionality in clear_cache.
  */
-static void
+static int
 eject_from_strong_cache(const PyTypeObject *const type, PyObject *key)
 {
     if (type != &PyZoneInfo_ZoneInfoType) {
-        return;
+        return 0;
     }
 
     StrongCacheNode *node = find_in_strong_cache(ZONEINFO_STRONG_CACHE, key);
@@ -2363,6 +2380,10 @@ eject_from_strong_cache(const PyTypeObject *const type, PyObject *key)
 
         strong_cache_node_free(node);
     }
+    else if (PyErr_Occurred()) {
+        return -1;
+    }
+    return 0;
 }
 
 /* Moves a node to the front of the LRU cache.
@@ -2519,7 +2540,11 @@ zoneinfo_init_subclass(PyTypeObject *cls, PyObject *args, PyObject **kwargs)
         return NULL;
     }
 
-    PyObject_SetAttrString((PyObject *)cls, "_weak_cache", weak_cache);
+    if (PyObject_SetAttrString((PyObject *)cls, "_weak_cache",
+                               weak_cache) < 0) {
+        Py_DECREF(weak_cache);
+        return NULL;
+    }
     Py_DECREF(weak_cache);
     Py_RETURN_NONE;
 }
@@ -2587,7 +2612,7 @@ static PyTypeObject PyZoneInfo_ZoneInfoType = {
 // Specify the _zoneinfo module
 static PyMethodDef module_methods[] = {{NULL, NULL}};
 static void
-module_free()
+module_free(void *m)
 {
     Py_XDECREF(_tzpath_find_tzfile);
     _tzpath_find_tzfile = NULL;
@@ -2619,6 +2644,9 @@ static int
 zoneinfomodule_exec(PyObject *m)
 {
     PyDateTime_IMPORT;
+    if (PyDateTimeAPI == NULL) {
+        goto error;
+    }
     PyZoneInfo_ZoneInfoType.tp_base = PyDateTimeAPI->TZInfoType;
     if (PyType_Ready(&PyZoneInfo_ZoneInfoType) < 0) {
         goto error;

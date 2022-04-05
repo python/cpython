@@ -11,6 +11,7 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import captured_stderr
 from test.support.os_helper import TESTFN, EnvironmentVarGuard, change_cwd
+import ast
 import builtins
 import encodings
 import glob
@@ -36,6 +37,7 @@ if sys.flags.no_site:
 import site
 
 
+HAS_USER_SITE = (site.USER_SITE is not None)
 OLD_SYS_PATH = None
 
 
@@ -78,8 +80,10 @@ class HelperFunctionsTests(unittest.TestCase):
         site.USER_SITE = self.old_site
         site.PREFIXES = self.old_prefixes
         sysconfig._CONFIG_VARS = self.original_vars
-        sysconfig._CONFIG_VARS.clear()
-        sysconfig._CONFIG_VARS.update(self.old_vars)
+        # _CONFIG_VARS is None before get_config_vars() is called
+        if sysconfig._CONFIG_VARS is not None:
+            sysconfig._CONFIG_VARS.clear()
+            sysconfig._CONFIG_VARS.update(self.old_vars)
 
     def test_makepath(self):
         # Test makepath() have an absolute path for its first return value
@@ -172,6 +176,7 @@ class HelperFunctionsTests(unittest.TestCase):
         pth_dir, pth_fn = self.make_pth("abc\x00def\n")
         with captured_stderr() as err_out:
             self.assertFalse(site.addpackage(pth_dir, pth_fn, set()))
+        self.maxDiff = None
         self.assertEqual(err_out.getvalue(), "")
         for path in sys.path:
             if isinstance(path, str):
@@ -195,6 +200,7 @@ class HelperFunctionsTests(unittest.TestCase):
     def test__getuserbase(self):
         self.assertEqual(site._getuserbase(), sysconfig._getuserbase())
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_get_path(self):
         if sys.platform == 'darwin' and sys._framework:
             scheme = 'osx_framework_user'
@@ -205,6 +211,7 @@ class HelperFunctionsTests(unittest.TestCase):
 
     @unittest.skipUnless(site.ENABLE_USER_SITE, "requires access to PEP 370 "
                           "user-site (site.ENABLE_USER_SITE)")
+    @support.requires_subprocess()
     def test_s_option(self):
         # (ncoghlan) Change this to use script_helper...
         usersite = site.USER_SITE
@@ -244,6 +251,7 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assertEqual(rc, 1,
                         "User base not set by PYTHONUSERBASE")
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_getuserbase(self):
         site.USER_BASE = None
         user_base = site.getuserbase()
@@ -261,6 +269,7 @@ class HelperFunctionsTests(unittest.TestCase):
             self.assertTrue(site.getuserbase().startswith('xoxo'),
                             site.getuserbase())
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_getusersitepackages(self):
         site.USER_SITE = None
         site.USER_BASE = None
@@ -293,8 +302,10 @@ class HelperFunctionsTests(unittest.TestCase):
             self.assertEqual(len(dirs), 2)
             self.assertEqual(dirs[0], 'xoxo')
             wanted = os.path.join('xoxo', 'lib', 'site-packages')
-            self.assertEqual(dirs[1], wanted)
+            self.assertEqual(os.path.normcase(dirs[1]),
+                             os.path.normcase(wanted))
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_no_home_directory(self):
         # bpo-10496: getuserbase() and getusersitepackages() must not fail if
         # the current user has no home directory (if expanduser() returns the
@@ -403,55 +414,6 @@ class ImportSideEffectTests(unittest.TestCase):
         """Restore sys.path"""
         sys.path[:] = self.sys_path
 
-    def test_abs_paths(self):
-        # Make sure all imported modules have their __file__ and __cached__
-        # attributes as absolute paths.  Arranging to put the Lib directory on
-        # PYTHONPATH would cause the os module to have a relative path for
-        # __file__ if abs_paths() does not get run.  sys and builtins (the
-        # only other modules imported before site.py runs) do not have
-        # __file__ or __cached__ because they are built-in.
-        try:
-            parent = os.path.relpath(os.path.dirname(os.__file__))
-            cwd = os.getcwd()
-        except ValueError:
-            # Failure to get relpath probably means we need to chdir
-            # to the same drive.
-            cwd, parent = os.path.split(os.path.dirname(os.__file__))
-        with change_cwd(cwd):
-            env = os.environ.copy()
-            env['PYTHONPATH'] = parent
-            code = ('import os, sys',
-                # use ASCII to avoid locale issues with non-ASCII directories
-                'os_file = os.__file__.encode("ascii", "backslashreplace")',
-                r'sys.stdout.buffer.write(os_file + b"\n")',
-                'os_cached = os.__cached__.encode("ascii", "backslashreplace")',
-                r'sys.stdout.buffer.write(os_cached + b"\n")')
-            command = '\n'.join(code)
-            # First, prove that with -S (no 'import site'), the paths are
-            # relative.
-            proc = subprocess.Popen([sys.executable, '-S', '-c', command],
-                                    env=env,
-                                    stdout=subprocess.PIPE)
-            stdout, stderr = proc.communicate()
-
-            self.assertEqual(proc.returncode, 0)
-            os__file__, os__cached__ = stdout.splitlines()[:2]
-            self.assertFalse(os.path.isabs(os__file__))
-            self.assertFalse(os.path.isabs(os__cached__))
-            # Now, with 'import site', it works.
-            proc = subprocess.Popen([sys.executable, '-c', command],
-                                    env=env,
-                                    stdout=subprocess.PIPE)
-            stdout, stderr = proc.communicate()
-            self.assertEqual(proc.returncode, 0)
-            os__file__, os__cached__ = stdout.splitlines()[:2]
-            self.assertTrue(os.path.isabs(os__file__),
-                            "expected absolute path, got {}"
-                            .format(os__file__.decode('ascii')))
-            self.assertTrue(os.path.isabs(os__cached__),
-                            "expected absolute path, got {}"
-                            .format(os__cached__.decode('ascii')))
-
     def test_abs_paths_cached_None(self):
         """Test for __cached__ is None.
 
@@ -494,16 +456,6 @@ class ImportSideEffectTests(unittest.TestCase):
         # 'help' should be set in builtins
         self.assertTrue(hasattr(builtins, "help"))
 
-    def test_aliasing_mbcs(self):
-        if sys.platform == "win32":
-            import locale
-            if locale.getdefaultlocale()[1].startswith('cp'):
-                for value in encodings.aliases.aliases.values():
-                    if value == "mbcs":
-                        break
-                else:
-                    self.fail("did not alias mbcs")
-
     def test_sitecustomize_executed(self):
         # If sitecustomize is available, it should have been imported.
         if "sitecustomize" not in sys.modules:
@@ -536,15 +488,17 @@ class ImportSideEffectTests(unittest.TestCase):
 
 class StartupImportTests(unittest.TestCase):
 
+    @support.requires_subprocess()
     def test_startup_imports(self):
         # Get sys.path in isolated mode (python3 -I)
-        popen = subprocess.Popen([sys.executable, '-I', '-c',
-                                  'import sys; print(repr(sys.path))'],
+        popen = subprocess.Popen([sys.executable, '-X', 'utf8', '-I',
+                                  '-c', 'import sys; print(repr(sys.path))'],
                                  stdout=subprocess.PIPE,
-                                 encoding='utf-8')
+                                 encoding='utf-8',
+                                 errors='surrogateescape')
         stdout = popen.communicate()[0]
         self.assertEqual(popen.returncode, 0, repr(stdout))
-        isolated_paths = eval(stdout)
+        isolated_paths = ast.literal_eval(stdout)
 
         # bpo-27807: Even with -I, the site module executes all .pth files
         # found in sys.path (see site.addpackage()). Skip the test if at least
@@ -556,19 +510,20 @@ class StartupImportTests(unittest.TestCase):
 
         # This tests checks which modules are loaded by Python when it
         # initially starts upon startup.
-        popen = subprocess.Popen([sys.executable, '-I', '-v', '-c',
-                                  'import sys; print(set(sys.modules))'],
+        popen = subprocess.Popen([sys.executable, '-X', 'utf8', '-I', '-v',
+                                  '-c', 'import sys; print(set(sys.modules))'],
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
-                                 encoding='utf-8')
+                                 encoding='utf-8',
+                                 errors='surrogateescape')
         stdout, stderr = popen.communicate()
         self.assertEqual(popen.returncode, 0, (stdout, stderr))
-        modules = eval(stdout)
+        modules = ast.literal_eval(stdout)
 
         self.assertIn('site', modules)
 
         # http://bugs.python.org/issue19205
-        re_mods = {'re', '_sre', 'sre_compile', 'sre_constants', 'sre_parse'}
+        re_mods = {'re', '_sre', 're._compiler', 're._constants', 're._parser'}
         self.assertFalse(modules.intersection(re_mods), stderr)
 
         # http://bugs.python.org/issue9548
@@ -584,43 +539,59 @@ class StartupImportTests(unittest.TestCase):
                           }.difference(sys.builtin_module_names)
         self.assertFalse(modules.intersection(collection_mods), stderr)
 
+    @support.requires_subprocess()
     def test_startup_interactivehook(self):
         r = subprocess.Popen([sys.executable, '-c',
             'import sys; sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
         self.assertTrue(r, "'__interactivehook__' not added by site")
 
+    @support.requires_subprocess()
     def test_startup_interactivehook_isolated(self):
         # issue28192 readline is not automatically enabled in isolated mode
         r = subprocess.Popen([sys.executable, '-I', '-c',
             'import sys; sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
         self.assertFalse(r, "'__interactivehook__' added in isolated mode")
 
+    @support.requires_subprocess()
     def test_startup_interactivehook_isolated_explicit(self):
         # issue28192 readline can be explicitly enabled in isolated mode
         r = subprocess.Popen([sys.executable, '-I', '-c',
             'import site, sys; site.enablerlcompleter(); sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
         self.assertTrue(r, "'__interactivehook__' not added by enablerlcompleter()")
 
-@unittest.skipUnless(sys.platform == 'win32', "only supported on Windows")
 class _pthFileTests(unittest.TestCase):
 
-    def _create_underpth_exe(self, lines, exe_pth=True):
-        import _winapi
-        temp_dir = tempfile.mkdtemp()
-        self.addCleanup(os_helper.rmtree, temp_dir)
-        exe_file = os.path.join(temp_dir, os.path.split(sys.executable)[1])
-        dll_src_file = _winapi.GetModuleFileName(sys.dllhandle)
-        dll_file = os.path.join(temp_dir, os.path.split(dll_src_file)[1])
-        shutil.copy(sys.executable, exe_file)
-        shutil.copy(dll_src_file, dll_file)
-        if exe_pth:
-            _pth_file = os.path.splitext(exe_file)[0] + '._pth'
-        else:
-            _pth_file = os.path.splitext(dll_file)[0] + '._pth'
-        with open(_pth_file, 'w') as f:
-            for line in lines:
-                print(line, file=f)
-        return exe_file
+    if sys.platform == 'win32':
+        def _create_underpth_exe(self, lines, exe_pth=True):
+            import _winapi
+            temp_dir = tempfile.mkdtemp()
+            self.addCleanup(os_helper.rmtree, temp_dir)
+            exe_file = os.path.join(temp_dir, os.path.split(sys.executable)[1])
+            dll_src_file = _winapi.GetModuleFileName(sys.dllhandle)
+            dll_file = os.path.join(temp_dir, os.path.split(dll_src_file)[1])
+            shutil.copy(sys.executable, exe_file)
+            shutil.copy(dll_src_file, dll_file)
+            if exe_pth:
+                _pth_file = os.path.splitext(exe_file)[0] + '._pth'
+            else:
+                _pth_file = os.path.splitext(dll_file)[0] + '._pth'
+            with open(_pth_file, 'w') as f:
+                for line in lines:
+                    print(line, file=f)
+            return exe_file
+    else:
+        def _create_underpth_exe(self, lines, exe_pth=True):
+            if not exe_pth:
+                raise unittest.SkipTest("library ._pth file not supported on this platform")
+            temp_dir = tempfile.mkdtemp()
+            self.addCleanup(os_helper.rmtree, temp_dir)
+            exe_file = os.path.join(temp_dir, os.path.split(sys.executable)[1])
+            os.symlink(sys.executable, exe_file)
+            _pth_file = exe_file + '._pth'
+            with open(_pth_file, 'w') as f:
+                for line in lines:
+                    print(line, file=f)
+            return exe_file
 
     def _calc_sys_path_for_underpth_nosite(self, sys_prefix, lines):
         sys_path = []
@@ -631,8 +602,30 @@ class _pthFileTests(unittest.TestCase):
             sys_path.append(abs_path)
         return sys_path
 
+    @support.requires_subprocess()
+    def test_underpth_basic(self):
+        libpath = test.support.STDLIB_DIR
+        exe_prefix = os.path.dirname(sys.executable)
+        pth_lines = ['#.', '# ..', *sys.path, '.', '..']
+        exe_file = self._create_underpth_exe(pth_lines)
+        sys_path = self._calc_sys_path_for_underpth_nosite(
+            os.path.dirname(exe_file),
+            pth_lines)
+
+        output = subprocess.check_output([exe_file, '-c',
+            'import sys; print("\\n".join(sys.path) if sys.flags.no_site else "")'
+        ], encoding='utf-8', errors='surrogateescape')
+        actual_sys_path = output.rstrip().split('\n')
+        self.assertTrue(actual_sys_path, "sys.flags.no_site was False")
+        self.assertEqual(
+            actual_sys_path,
+            sys_path,
+            "sys.path is incorrect"
+        )
+
+    @support.requires_subprocess()
     def test_underpth_nosite_file(self):
-        libpath = os.path.dirname(os.path.dirname(encodings.__file__))
+        libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
         pth_lines = [
             'fake-path-name',
@@ -647,10 +640,10 @@ class _pthFileTests(unittest.TestCase):
 
         env = os.environ.copy()
         env['PYTHONPATH'] = 'from-env'
-        env['PATH'] = '{};{}'.format(exe_prefix, os.getenv('PATH'))
+        env['PATH'] = '{}{}{}'.format(exe_prefix, os.pathsep, os.getenv('PATH'))
         output = subprocess.check_output([exe_file, '-c',
             'import sys; print("\\n".join(sys.path) if sys.flags.no_site else "")'
-        ], env=env, encoding='ansi')
+        ], env=env, encoding='utf-8', errors='surrogateescape')
         actual_sys_path = output.rstrip().split('\n')
         self.assertTrue(actual_sys_path, "sys.flags.no_site was False")
         self.assertEqual(
@@ -659,8 +652,9 @@ class _pthFileTests(unittest.TestCase):
             "sys.path is incorrect"
         )
 
+    @support.requires_subprocess()
     def test_underpth_file(self):
-        libpath = os.path.dirname(os.path.dirname(encodings.__file__))
+        libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
         exe_file = self._create_underpth_exe([
             'fake-path-name',
@@ -683,9 +677,9 @@ class _pthFileTests(unittest.TestCase):
             )], env=env)
         self.assertTrue(rc, "sys.path is incorrect")
 
-
+    @support.requires_subprocess()
     def test_underpth_dll_file(self):
-        libpath = os.path.dirname(os.path.dirname(encodings.__file__))
+        libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
         exe_file = self._create_underpth_exe([
             'fake-path-name',

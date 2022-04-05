@@ -1,0 +1,3 @@
+Fix a regression in the setting of ``sys._base_executable`` in framework
+builds, and thereby fix a regression in :mod:`venv` virtual environments
+with such builds.

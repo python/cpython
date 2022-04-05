@@ -264,13 +264,14 @@ default values. The arguments that are most commonly needed are:
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
    are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing file object, and ``None``.  :data:`PIPE` indicates
-   that a new pipe to the child should be created.  :data:`DEVNULL` indicates
-   that the special file :data:`os.devnull` will be used.  With the default
-   settings of ``None``, no redirection will occur; the child's file handles
-   will be inherited from the parent.  Additionally, *stderr* can be
-   :data:`STDOUT`, which indicates that the stderr data from the child
-   process should be captured into the same file handle as for *stdout*.
+   integer), an existing file object with a valid file descriptor, and ``None``.
+   :data:`PIPE` indicates that a new pipe to the child should be created.
+   :data:`DEVNULL` indicates that the special file :data:`os.devnull` will
+   be used.  With the default settings of ``None``, no redirection will occur;
+   the child's file handles will be inherited from the parent.
+   Additionally, *stderr* can be :data:`STDOUT`, which indicates that the
+   stderr data from the child process should be captured into the same file
+   handle as for *stdout*.
 
    .. index::
       single: universal newlines; subprocess module
@@ -339,7 +340,7 @@ functions.
                  stderr=None, preexec_fn=None, close_fds=True, shell=False, \
                  cwd=None, env=None, universal_newlines=None, \
                  startupinfo=None, creationflags=0, restore_signals=True, \
-                 start_new_session=False, pass_fds=(), \*, group=None, \
+                 start_new_session=False, pass_fds=(), *, group=None, \
                  extra_groups=None, user=None, umask=-1, \
                  encoding=None, errors=None, text=None, pipesize=-1)
 
@@ -482,13 +483,14 @@ functions.
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
    are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing :term:`file object`, and ``None``.  :data:`PIPE`
-   indicates that a new pipe to the child should be created.  :data:`DEVNULL`
-   indicates that the special file :data:`os.devnull` will be used. With the
-   default settings of ``None``, no redirection will occur; the child's file
-   handles will be inherited from the parent.  Additionally, *stderr* can be
-   :data:`STDOUT`, which indicates that the stderr data from the applications
-   should be captured into the same file handle as for stdout.
+   integer), an existing :term:`file object` with a valid file descriptor,
+   and ``None``.  :data:`PIPE` indicates that a new pipe to the child should
+   be created.  :data:`DEVNULL` indicates that the special file
+   :data:`os.devnull` will be used. With the default settings of ``None``,
+   no redirection will occur; the child's file handles will be inherited from
+   the parent.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
+   that the stderr data from the applications should be captured into the same
+   file handle as for stdout.
 
    If *preexec_fn* is set to a callable object, this object will be called in the
    child process just before the child is executed.
@@ -543,7 +545,7 @@ functions.
 
    If *cwd* is not ``None``, the function changes the working directory to
    *cwd* before executing the child.  *cwd* can be a string, bytes or
-   :term:`path-like <path-like object>` object.  In POSIX, the function
+   :term:`path-like <path-like object>` object.  On POSIX, the function
    looks for *executable* (or for the first item in *args*) relative to *cwd*
    if the executable path is a relative path.
 
@@ -689,7 +691,10 @@ execute, will be re-raised in the parent.
 
 The most common exception raised is :exc:`OSError`.  This occurs, for example,
 when trying to execute a non-existent file.  Applications should prepare for
-:exc:`OSError` exceptions.
+:exc:`OSError` exceptions. Note that, when ``shell=True``, :exc:`OSError`
+will be raised by the child only if the selected shell itself was not found.
+To determine if the shell failed to find the requested application, it is
+necessary to check the return code or output from the subprocess.
 
 A :exc:`ValueError` will be raised if :class:`Popen` is called with invalid
 arguments.
@@ -707,6 +712,7 @@ Exceptions defined in this module all inherit from :exc:`SubprocessError`.
    .. versionadded:: 3.3
       The :exc:`SubprocessError` base class was added.
 
+.. _subprocess-security:
 
 Security Considerations
 -----------------------
@@ -1145,6 +1151,8 @@ calls these functions.
    code was zero then return, otherwise raise :exc:`CalledProcessError`. The
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`~CalledProcessError.returncode` attribute.
+   If :func:`check_call` was unable to start the process it will propagate the exception
+   that was raised.
 
    Code needing to capture stdout or stderr should use :func:`run` instead::
 
@@ -1187,8 +1195,9 @@ calls these functions.
    The arguments shown above are merely some common ones.
    The full function signature is largely the same as that of :func:`run` -
    most arguments are passed directly through to that interface.
-   However, explicitly passing ``input=None`` to inherit the parent's
-   standard input file handle is not supported.
+   One API deviation from :func:`run` behavior exists: passing ``input=None``
+   will behave the same as ``input=b''`` (or ``input=''``, depending on other
+   arguments) rather than using the parent's standard input file handle.
 
    By default, this function will return the data as encoded bytes. The actual
    encoding of the output data may depend on the command being invoked, so the
@@ -1281,7 +1290,7 @@ be used directly:
 
 becomes::
 
-   output=check_output("dmesg | grep hda", shell=True)
+   output = check_output("dmesg | grep hda", shell=True)
 
 
 Replacing :func:`os.system`
@@ -1291,11 +1300,17 @@ Replacing :func:`os.system`
 
    sts = os.system("mycmd" + " myarg")
    # becomes
-   sts = call("mycmd" + " myarg", shell=True)
+   retcode = call("mycmd" + " myarg", shell=True)
 
 Notes:
 
 * Calling the program through the shell is usually not required.
+* The :func:`call` return value is encoded differently to that of
+  :func:`os.system`.
+
+* The :func:`os.system` function ignores SIGINT and SIGQUIT signals while
+  the command is running, but the caller must do this separately when
+  using the :mod:`subprocess` module.
 
 A more realistic example would look like this::
 

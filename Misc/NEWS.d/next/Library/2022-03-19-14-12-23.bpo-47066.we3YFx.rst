@@ -1,0 +1,3 @@
+Global inline flags (e.g. ``(?i)``) can now only be used at the start of the
+regular expressions.  Using them not at the start of expression was
+deprecated since Python 3.6.

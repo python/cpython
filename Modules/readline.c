@@ -6,9 +6,11 @@
 
 /* Standard definitions */
 #include "Python.h"
-#include <stddef.h>
-#include <signal.h>
+
 #include <errno.h>
+#include <signal.h>
+#include <stddef.h>
+#include <stdlib.h>               // free()
 #include <sys/time.h>
 
 #if defined(HAVE_SETLOCALE)
@@ -26,10 +28,14 @@
 #  define RESTORE_LOCALE(sl)
 #endif
 
+#ifdef WITH_EDITLINE
+#  include <editline/readline.h>
+#else
 /* GNU readline definitions */
-#undef HAVE_CONFIG_H /* Else readline/chardefs.h includes strings.h */
-#include <readline/readline.h>
-#include <readline/history.h>
+#  undef HAVE_CONFIG_H /* Else readline/chardefs.h includes strings.h */
+#  include <readline/readline.h>
+#  include <readline/history.h>
+#endif
 
 #ifdef HAVE_RL_COMPLETION_MATCHES
 #define completion_matches(x, y) \
@@ -51,7 +57,7 @@ extern char **completion_matches(char *, CPFunction *);
  *
  * This emulation library is not 100% API compatible with the "real" readline
  * and cannot be detected at compile-time,
- * hence we use a runtime check to detect if the Python readlinke module is
+ * hence we use a runtime check to detect if the Python readline module is
  * linked to libedit.
  *
  * Currently there is one known API incompatibility:
@@ -63,7 +69,8 @@ extern char **completion_matches(char *, CPFunction *);
 static int using_libedit_emulation = 0;
 static const char libedit_version_tag[] = "EditLine wrapper";
 
-static int libedit_history_start = 0;
+static int8_t libedit_history_start = 0;
+static int8_t libedit_append_replace_history_offset = 0;
 
 #ifdef HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK
 static void
@@ -151,6 +158,26 @@ decode(const char *s)
 }
 
 
+/*
+Explicitly disable bracketed paste in the interactive interpreter, even if it's
+set in the inputrc, is enabled by default (eg GNU Readline 8.1), or a user calls
+readline.read_init_file(). The Python REPL has not implemented bracketed
+paste support. Also, bracketed mode writes the "\x1b[?2004h" escape sequence
+into stdout which causes test failures in applications that don't support it.
+It can still be explicitly enabled by calling readline.parse_and_bind("set
+enable-bracketed-paste on"). See bpo-42819 for more details.
+
+This should be removed if bracketed paste mode is implemented (bpo-39820).
+*/
+
+static void
+disable_bracketed_paste(void)
+{
+    if (!using_libedit_emulation) {
+        rl_variable_bind ("enable-bracketed-paste", "off");
+    }
+}
+
 /* Exported function to send one line to readline's init file parser */
 
 /*[clinic input]
@@ -212,6 +239,7 @@ readline_read_init_file_impl(PyObject *module, PyObject *filename_obj)
         errno = rl_read_init_file(NULL);
     if (errno)
         return PyErr_SetFromErrno(PyExc_OSError);
+    disable_bracketed_paste();
     Py_RETURN_NONE;
 }
 
@@ -316,7 +344,8 @@ readline_append_history_file_impl(PyObject *module, int nelements,
         filename_bytes = NULL;
         filename = NULL;
     }
-    errno = err = append_history(nelements, filename);
+    errno = err = append_history(
+        nelements - libedit_append_replace_history_offset, filename);
     if (!err && _history_length >= 0)
         history_truncate_file(filename, _history_length);
     Py_XDECREF(filename_bytes);
@@ -588,12 +617,12 @@ readline.remove_history_item
     pos as entry_number: int
     /
 
-Remove history item given by its position.
+Remove history item given by its zero-based position.
 [clinic start generated code]*/
 
 static PyObject *
 readline_remove_history_item_impl(PyObject *module, int entry_number)
-/*[clinic end generated code: output=ab114f029208c7e8 input=c8520ac3da50224e]*/
+/*[clinic end generated code: output=ab114f029208c7e8 input=f248beb720ff1838]*/
 {
     HIST_ENTRY *entry;
 
@@ -622,12 +651,14 @@ readline.replace_history_item
     /
 
 Replaces history item given by its position with contents of line.
+
+pos is zero-based.
 [clinic start generated code]*/
 
 static PyObject *
 readline_replace_history_item_impl(PyObject *module, int entry_number,
                                    PyObject *line)
-/*[clinic end generated code: output=f8cec2770ca125eb input=b7ccef0780ae041b]*/
+/*[clinic end generated code: output=f8cec2770ca125eb input=368bb66fe5ee5222]*/
 {
     PyObject *encoded;
     HIST_ENTRY *old_entry;
@@ -641,7 +672,9 @@ readline_replace_history_item_impl(PyObject *module, int entry_number,
     if (encoded == NULL) {
         return NULL;
     }
-    old_entry = replace_history_entry(entry_number, PyBytes_AS_STRING(encoded), (void *)NULL);
+    old_entry = replace_history_entry(
+        entry_number + libedit_append_replace_history_offset,
+        PyBytes_AS_STRING(encoded), (void *)NULL);
     Py_DECREF(encoded);
     if (!old_entry) {
         PyErr_Format(PyExc_ValueError,
@@ -782,12 +815,12 @@ readline.get_history_item
     index as idx: int
     /
 
-Return the current contents of history item at index.
+Return the current contents of history item at one-based index.
 [clinic start generated code]*/
 
 static PyObject *
 readline_get_history_item_impl(PyObject *module, int idx)
-/*[clinic end generated code: output=83d3e53ea5f34b3d input=63fff0c3c4323269]*/
+/*[clinic end generated code: output=83d3e53ea5f34b3d input=8adf5c80e6c7ff2b]*/
 {
     HIST_ENTRY *hist_ent;
 
@@ -1187,6 +1220,22 @@ setup_readline(readlinestate *mod_state)
     } else {
         libedit_history_start = 1;
     }
+    /* Some libedit implementations use 1 based indexing on
+     * replace_history_entry where libreadline uses 0 based.
+     * The API our module presents is supposed to be 0 based.
+     * It's a mad mad mad mad world.
+     */
+    {
+        add_history("2");
+        HIST_ENTRY *old_entry = replace_history_entry(1, "X", NULL);
+        _py_free_history_entry(old_entry);
+        HIST_ENTRY *item = history_get(libedit_history_start);
+        if (item && item->line && strcmp(item->line, "X")) {
+            libedit_append_replace_history_offset = 0;
+        } else {
+            libedit_append_replace_history_offset = 1;
+        }
+    }
     clear_history();
 
     using_history();
@@ -1240,6 +1289,8 @@ setup_readline(readlinestate *mod_state)
         rl_read_init_file(NULL);
     else
         rl_initialize();
+
+    disable_bracketed_paste();
 
     RESTORE_LOCALE(saved_locale)
     return 0;

@@ -581,6 +581,14 @@ all_ins(PyObject* m)
     if (PyModule_AddIntMacro(m, F_NOCACHE)) return -1;
 #endif
 
+/* FreeBSD specifics */
+#ifdef F_DUP2FD
+    if (PyModule_AddIntMacro(m, F_DUP2FD)) return -1;
+#endif
+#ifdef F_DUP2FD_CLOEXEC
+    if (PyModule_AddIntMacro(m, F_DUP2FD_CLOEXEC)) return -1;
+#endif
+
 /* For F_{GET|SET}FL */
 #ifdef FD_CLOEXEC
     if (PyModule_AddIntMacro(m, FD_CLOEXEC)) return -1;

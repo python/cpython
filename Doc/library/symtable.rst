@@ -156,9 +156,11 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is local to its block.
 
-    .. method:: is_annotated()
+   .. method:: is_annotated()
 
       Return ``True`` if the symbol is annotated.
+
+      .. versionadded:: 3.6
 
    .. method:: is_free()
 
@@ -192,5 +194,5 @@ Examining Symbol Tables
 
    .. method:: get_namespace()
 
-      Return the namespace bound to this name.  If more than one namespace is
-      bound, :exc:`ValueError` is raised.
+      Return the namespace bound to this name. If more than one or no namespace
+      is bound to this name, a :exc:`ValueError` is raised.

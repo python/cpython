@@ -6,6 +6,7 @@ module with arguments identifying each test.
 """
 
 import contextlib
+import os
 import sys
 
 
@@ -104,6 +105,32 @@ def test_block_add_hook_baseexception():
             # Adding this next hook should raise BaseException
             with TestHook() as hook2:
                 pass
+
+
+def test_marshal():
+    import marshal
+    o = ("a", "b", "c", 1, 2, 3)
+    payload = marshal.dumps(o)
+
+    with TestHook() as hook:
+        assertEqual(o, marshal.loads(marshal.dumps(o)))
+
+        try:
+            with open("test-marshal.bin", "wb") as f:
+                marshal.dump(o, f)
+            with open("test-marshal.bin", "rb") as f:
+                assertEqual(o, marshal.load(f))
+        finally:
+            os.unlink("test-marshal.bin")
+
+    actual = [(a[0], a[1]) for e, a in hook.seen if e == "marshal.dumps"]
+    assertSequenceEqual(actual, [(o, marshal.version)] * 2)
+
+    actual = [a[0] for e, a in hook.seen if e == "marshal.loads"]
+    assertSequenceEqual(actual, [payload])
+
+    actual = [e for e, a in hook.seen if e == "marshal.load"]
+    assertSequenceEqual(actual, ["marshal.load"])
 
 
 def test_pickle():
@@ -321,6 +348,64 @@ def test_socket():
         pass
     finally:
         sock.close()
+
+
+def test_gc():
+    import gc
+
+    def hook(event, args):
+        if event.startswith("gc."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+
+    gc.get_objects(generation=1)
+
+    x = object()
+    y = [x]
+
+    gc.get_referrers(x)
+    gc.get_referents(y)
+
+
+def test_http_client():
+    import http.client
+
+    def hook(event, args):
+        if event.startswith("http.client."):
+            print(event, *args[1:])
+
+    sys.addaudithook(hook)
+
+    conn = http.client.HTTPConnection('www.python.org')
+    try:
+        conn.request('GET', '/')
+    except OSError:
+        print('http.client.send', '[cannot send]')
+    finally:
+        conn.close()
+
+
+def test_sqlite3():
+    import sqlite3
+
+    def hook(event, *args):
+        if event.startswith("sqlite3."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+    cx1 = sqlite3.connect(":memory:")
+    cx2 = sqlite3.Connection(":memory:")
+
+    # Configured without --enable-loadable-sqlite-extensions
+    if hasattr(sqlite3.Connection, "enable_load_extension"):
+        cx1.enable_load_extension(False)
+        try:
+            cx1.load_extension("test")
+        except sqlite3.OperationalError:
+            pass
+        else:
+            raise RuntimeError("Expected sqlite3.load_extension to fail")
 
 
 if __name__ == "__main__":

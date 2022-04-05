@@ -267,10 +267,10 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: INTERNET_TIMEOUT
 
-   Timeout in seconds for network requests going to the Internet.
+   Timeout in seconds for network requests going to the internet.
 
    The timeout is short enough to prevent a test to wait for too long if the
-   Internet request is blocked for whatever reason.
+   internet request is blocked for whatever reason.
 
    Usually, a timeout using :data:`INTERNET_TIMEOUT` should not mark a test as
    failed, but skip the test instead: see
@@ -453,7 +453,7 @@ The :mod:`test.support` module defines the following functions:
    Define match test with regular expression *patterns*.
 
 
-.. function:: run_unittest(\*classes)
+.. function:: run_unittest(*classes)
 
    Execute :class:`unittest.TestCase` subclasses passed to the function. The
    function scans the classes for methods starting with the prefix ``test_``
@@ -607,6 +607,15 @@ The :mod:`test.support` module defines the following functions:
    target of the "as" clause, if there is one.
 
 
+.. function:: flush_std_streams()
+
+   Call the ``flush()`` method on :data:`sys.stdout` and then on
+   :data:`sys.stderr`. It can be used to make sure that the logs order is
+   consistent before writing into stderr.
+
+   .. versionadded:: 3.11
+
+
 .. function:: print_warning(msg)
 
    Print a warning into :data:`sys.__stderr__`. Format the message as:
@@ -684,8 +693,8 @@ The :mod:`test.support` module defines the following functions:
 
 .. decorator:: requires_mac_version(*min_version)
 
-   Decorator for the minimum version when running test on Mac OS X.  If the
-   MAC OS X version is less than the minimum, raise :exc:`unittest.SkipTest`.
+   Decorator for the minimum version when running test on macOS.  If the
+   macOS version is less than the minimum, raise :exc:`unittest.SkipTest`.
 
 
 .. decorator:: requires_IEEE_754
@@ -928,7 +937,15 @@ The :mod:`test.support` module defines the following functions:
    .. versionadded:: 3.10
 
 
+.. function:: check_disallow_instantiation(test_case, tp, *args, **kwds)
+
+   Assert that type *tp* cannot be instantiated using *args* and *kwds*.
+
+   .. versionadded:: 3.10
+
+
 The :mod:`test.support` module defines the following classes:
+
 
 .. class:: SuppressCrashReport()
 
@@ -1241,7 +1258,7 @@ The :mod:`test.support.threading_helper` module provides support for threading t
    Context manager catching :class:`threading.Thread` exception using
    :func:`threading.excepthook`.
 
-   Attributes set when an exception is catched:
+   Attributes set when an exception is caught:
 
    * ``exc_type``
    * ``exc_value``
@@ -1450,7 +1467,7 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 .. function:: unlink(filename)
 
    Call :func:`os.unlink` on *filename*.  On Windows platforms, this is
-   wrapped with a wait loop that checks for the existence fo the file.
+   wrapped with a wait loop that checks for the existence of the file.
 
 
 :mod:`test.support.import_helper` --- Utilities for import tests
@@ -1599,7 +1616,7 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
    .. versionadded:: 3.8
 
 
-.. function:: check_warnings(\*filters, quiet=True)
+.. function:: check_warnings(*filters, quiet=True)
 
    A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
    easier to test that a warning was correctly raised.  It is approximately

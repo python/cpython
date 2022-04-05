@@ -1,0 +1,10 @@
+Raise more accurate and :pep:`249` compatible exceptions in :mod:`sqlite3`.
+
+* Raise :exc:`~sqlite3.InterfaceError` instead of
+  :exc:`~sqlite3.ProgrammingError` for ``SQLITE_MISUSE`` errors.
+* Don't overwrite :exc:`BufferError` with :exc:`ValueError` when conversion to
+  BLOB fails.
+* Raise :exc:`~sqlite3.ProgrammingError` instead of :exc:`~sqlite3.Warning` if
+  user tries to :meth:`~sqlite3.Cursor.execute()` more than one SQL statement.
+* Raise :exc:`~sqlite3.ProgrammingError` instead of :exc:`ValueError` if an SQL
+  query contains null characters.

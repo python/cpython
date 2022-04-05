@@ -2,10 +2,10 @@ This directory contains the Distutils package.
 
 There's a full documentation available at:
 
-    http://docs.python.org/distutils/
+    https://docs.python.org/distutils/
 
 The Distutils-SIG web page is also a good starting point:
 
-    http://www.python.org/sigs/distutils-sig/
+    https://www.python.org/sigs/distutils-sig/
 
 $Id$
