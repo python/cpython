@@ -2050,7 +2050,8 @@ features:
 
    Create a directory named *path* with numeric mode *mode*.
 
-   If the directory already exists, :exc:`FileExistsError` is raised.
+   If the directory already exists, :exc:`FileExistsError` is raised. If a parent
+   directory in the path does not exist, :exc:`FileNotFoundError` is raised.
 
    .. _mkdir_modebits:
 
@@ -4754,6 +4755,9 @@ Miscellaneous System Information
    determine the set of names known to the system.
 
    .. availability:: Unix.
+
+   .. versionchanged:: 3.11
+      Add ``'SC_MINSIGSTKSZ'`` name.
 
 The following data values are used to support path manipulation operations.  These
 are defined for all platforms.

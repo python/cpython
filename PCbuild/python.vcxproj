@@ -94,7 +94,8 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <StackReserveSize>2000000</StackReserveSize>
+      <StackReserveSize Condition="$(Configuration) != 'Debug'">2000000</StackReserveSize>
+      <StackReserveSize Condition="$(Configuration) == 'Debug'">4000000</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

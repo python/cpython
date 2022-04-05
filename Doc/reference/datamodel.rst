@@ -1501,7 +1501,7 @@ Basic customization
 
    Called by built-in function :func:`hash` and for operations on members of
    hashed collections including :class:`set`, :class:`frozenset`, and
-   :class:`dict`.  :meth:`__hash__` should return an integer. The only required
+   :class:`dict`.  The ``__hash__()`` method should return an integer. The only required
    property is that objects which compare equal have the same hash value; it is
    advised to mix together the hash values of the components of the object that
    also play a part in comparison of objects by packing them into a tuple and
@@ -1971,7 +1971,7 @@ Customizing class creation
 --------------------------
 
 Whenever a class inherits from another class, :meth:`~object.__init_subclass__` is
-called on that class. This way, it is possible to write classes which
+called on the parent class. This way, it is possible to write classes which
 change the behavior of subclasses. This is closely related to class
 decorators, but where class decorators only affect the specific class they're
 applied to, ``__init_subclass__`` solely applies to future subclasses of the

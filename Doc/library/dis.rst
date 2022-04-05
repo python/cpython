@@ -43,7 +43,7 @@ the following command can be used to display the disassembly of
      1           0 RESUME                   0
 
      2           2 PUSH_NULL
-                 4 LOAD_GLOBAL              0 (len)
+                 4 LOAD_GLOBAL              1 (NULL + len)
                  6 LOAD_FAST                0 (alist)
                  8 PRECALL                  1
                 10 CALL                     1
@@ -996,8 +996,11 @@ iterations of the loop.
 
 .. opcode:: LOAD_GLOBAL (namei)
 
-   Loads the global named ``co_names[namei]`` onto the stack.
+   Loads the global named ``co_names[namei>>1]`` onto the stack.
 
+   .. versionchanged:: 3.11
+      If the low bit of ``namei`` is set, then a ``NULL`` is pushed to the
+      stack before the global variable.
 
 .. opcode:: LOAD_FAST (var_num)
 

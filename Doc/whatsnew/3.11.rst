@@ -65,10 +65,15 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
-PEP-654: Exception Groups and ``except*``.
-(Contributed by Irit Katriel in :issue:`45292`.)
-PEP-673: ``Self`` Type.
-(Contributed by James Hilton-Balfe and Pradeep Kumar in :issue:`30924`.)
+New syntax features:
+
+* :pep:`654`: Exception Groups and ``except*``.
+  (Contributed by Irit Katriel in :issue:`45292`.)
+
+New typing features:
+
+* :pep:`673`: ``Self`` Type.
+  (Contributed by James Hilton-Balfe and Pradeep Kumar in :issue:`30924`.)
 
 New Features
 ============
@@ -188,9 +193,9 @@ Other CPython Implementation Changes
   support :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
   (Contributed by Mark Dickinson and Dong-hee Na in :issue:`24234`.)
 
-* ``siphash13`` is added as a new internal hashing algorithms. It's has similar security
+* ``siphash13`` is added as a new internal hashing algorithms. It has similar security
   properties as ``siphash24`` but it is slightly faster for long inputs. ``str``, ``bytes``,
-  and some other types now use it as default algorithm for ``hash()``. :pep:`552`
+  and some other types now use it as default algorithm for :func:`hash`. :pep:`552`
   hash-based pyc files now use ``siphash13``, too.
   (Contributed by Inada Naoki in :issue:`29410`.)
 
@@ -205,20 +210,30 @@ Other CPython Implementation Changes
   have been removed as their values can be derived from ``exc_value``.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
-* A new command line option for the Windows installer ``AppendPath`` has beend added.
+* A new command line option for the Windows installer ``AppendPath`` has been added.
   It behaves similiar to ``PrependPath`` but appends the install and scripts directories
-  instead of prepending it.
+  instead of prepending them.
   (Contributed by Bastian Neuburger in :issue:`44934`.)
 
 
 New Modules
 ===========
 
-* None yet.
+* A new module, :mod:`tomllib`, was added for parsing TOML.
+  (Contributed by Taneli Hukkinen in :issue:`40059`.)
 
 
 Improved Modules
 ================
+
+asyncio
+-------
+
+* Add raw datagram socket functions to the event loop:
+  :meth:`~asyncio.AbstractEventLoop.sock_sendto`,
+  :meth:`~asyncio.AbstractEventLoop.sock_recvfrom` and
+  :meth:`~asyncio.AbstractEventLoop.sock_recvfrom_into`.
+  (Contributed by Alex Grönholm in :issue:`46805`.)
 
 fractions
 ---------
@@ -230,6 +245,19 @@ fractions
   that an ``isinstance(some_fraction, typing.SupportsInt)`` check passes.
   (Contributed by Mark Dickinson in :issue:`44547`.)
 
+hashlib
+-------
+
+* :func:`hashlib.blake2b` and :func:`hashlib.blake2s` now prefer `libb2`_
+  over Python's vendored copy.
+  (Contributed by Christian Heimes in :issue:`47095`.)
+
+* The internal ``_sha3`` module with SHA3 and SHAKE algorithms now uses
+  *tiny_sha3* instead of the *Keccak Code Package* to reduce code and binary
+  size. The :mod:`hashlib` module prefers optimized SHA3 and SHAKE
+  implementations from OpenSSL. The change affects only installations without
+  OpenSSL support.
+  (Contributed by Christian Heimes in :issue:`47098`.)
 
 IDLE and idlelib
 ----------------
@@ -248,6 +276,7 @@ inspect
 
 math
 ----
+
 * Add :func:`math.exp2`: return 2 raised to the power of x.
   (Contributed by Gideon Mitchell in :issue:`45917`.)
 
@@ -259,6 +288,9 @@ math
   ``math.pow(0.0, -math.inf)`` and ``math.pow(-0.0, -math.inf)`` now return
   ``inf``. Previously they raised :exc:`ValueError`. (Contributed by Mark
   Dickinson in :issue:`44339`.)
+
+* The :data:`math.nan` value is now always available.
+  (Contributed by Victor Stinner in :issue:`46917`.)
 
 
 operator
@@ -275,6 +307,19 @@ os
 * On Windows, :func:`os.urandom` now uses ``BCryptGenRandom()``,
   instead of ``CryptGenRandom()`` which is deprecated.
   (Contributed by Dong-hee Na in :issue:`44611`.)
+
+re
+--
+
+* Atomic grouping (``(?>...)``) and possessive quantifiers (``*+``, ``++``,
+  ``?+``, ``{m,n}+``) are now supported in regular expressions.
+  (Contributed by Jeffrey C. Jacobs and Serhiy Storchaka in :issue:`433030`.)
+
+shutil
+------
+
+* Add optional parameter *dir_fd* in :func:`shutil.rmtree`.
+  (Contributed by Serhiy Storchaka in :issue:`46245`.)
 
 
 socket
@@ -335,6 +380,24 @@ sys
   (equivalent to ``sys.exc_info()[1]``).
   (Contributed by Irit Katriel in :issue:`46328`.)
 
+
+sysconfig
+---------
+
+* Two new :ref:`installation schemes <installation_paths>`
+  (*posix_venv*, *nt_venv* and *venv*) were added and are used when Python
+  creates new virtual environments or when it is running from a virtual
+  environment.
+  The first two schemes (*posix_venv* and *nt_venv*) are OS-specific
+  for non-Windows and Windows, the *venv* is essentially an alias to one of
+  them according to the OS Python runs on.
+  This is useful for downstream distributors who modify
+  :func:`sysconfig.get_preferred_scheme`.
+  Third party code that creates new virtual environments should use the new
+  *venv* installation scheme to determine the paths, as does :mod:`venv`.
+  (Contributed by Miro Hrončok in :issue:`45413`.)
+
+
 threading
 ---------
 
@@ -368,6 +431,26 @@ unicodedata
 
 * The Unicode database has been updated to version 14.0.0. (:issue:`45190`).
 
+
+venv
+----
+
+* When new Python virtual environments are created, the *venv*
+  :ref:`sysconfig installation scheme <installation_paths>` is used
+  to determine the paths inside the environment.
+  When Python runs in a virtual environment, the same installation scheme
+  is the default.
+  That means that downstream distributors can change the default sysconfig install
+  scheme without changing behavior of virtual environments.
+  Third party code that also creates new virtual environments should do the same.
+  (Contributed by Miro Hrončok in :issue:`45413`.)
+
+zipfile
+-------
+
+* Added support for specifying member name encoding for reading
+  metadata in the zipfile's directory and file headers.
+  (Contributed by Stephen J. Turnbull and Serhiy Storchaka in :issue:`28080`.)
 
 fcntl
 -----
@@ -497,6 +580,11 @@ Deprecated
   :func:`locale.getlocale` functions instead.
   (Contributed by Victor Stinner in :issue:`46659`.)
 
+* The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
+  deprecated since at least Python 3.6. Their documentation and deprecation
+  warnings have now been updated to note they will removed in Python 3.12
+  (:pep:`594`).
+  (Contributed by Hugo van Kemenade in :issue:`47022`.)
 
 Removed
 =======
@@ -625,12 +713,30 @@ Changes in the Python API
   if no locale is specified.
   (Contributed by Victor Stinner in :issue:`46659`.)
 
+* Global inline flags (e.g. ``(?i)``) can now only be used at the start of
+  the regular expressions.  Using them not at the start of expression was
+  deprecated since Python 3.6.
+  (Contributed by Serhiy Storchaka in :issue:`47066`.)
+
+* :mod:`re` module: Fix a few long-standing bugs where, in rare cases,
+  capturing group could get wrong result. So the result may be different than
+  before.
+  (Contributed by Ma Lin in :issue:`35859`.)
+
+* The *population* parameter of :func:`random.sample` must be a sequence.
+  Automatic conversion of sets to lists is no longer supported. If the sample size
+  is larger than the population size, a :exc:`ValueError` is raised.
+  (Contributed by Raymond Hettinger in :issue:`40465`.)
+
 
 Build Changes
 =============
 
 * Building Python now requires a C11 compiler without optional C11 features.
   (Contributed by Victor Stinner in :issue:`46656`.)
+
+* Building Python now requires support of IEEE 754 floating point numbers.
+  (Contributed by Victor Stinner in :issue:`46917`.)
 
 * CPython can now be built with the ThinLTO option via ``--with-lto=thin``.
   (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
@@ -682,6 +788,9 @@ Build Changes
   ``PYLONG_BITS_IN_DIGIT`` variable in ``PC/pyconfig.h``, but this option may
   be removed at some point in the future. (Contributed by Mark Dickinson in
   :issue:`45569`.)
+
+* The :mod:`tkinter` package now requires Tcl/Tk version 8.5.12 or newer.
+  (Contributed by Serhiy Storchaka in :issue:`46996`.)
 
 
 C API Changes
@@ -745,6 +854,12 @@ New Features
   in which a method was defined, in cases where this information is not
   available directly (via :c:type:`PyCMethod`).
   (Contributed by Petr Viktorin in :issue:`46613`.)
+
+* Add new functions to pack and unpack C double (serialize and deserialize):
+  :c:func:`PyFloat_Pack2`, :c:func:`PyFloat_Pack4`, :c:func:`PyFloat_Pack8`,
+  :c:func:`PyFloat_Unpack2`, :c:func:`PyFloat_Unpack4` and
+  :c:func:`PyFloat_Unpack8`.
+  (Contributed by Victor Stinner in :issue:`46906`.)
 
 
 Porting to Python 3.11
@@ -872,14 +987,12 @@ Porting to Python 3.11
     Code using ``f_lasti`` with ``PyCode_Addr2Line()`` must use
     :c:func:`PyFrame_GetLineNumber` instead.
   * ``f_lineno``: use :c:func:`PyFrame_GetLineNumber`
-  * ``f_locals``: use ``PyObject_GetAttrString((PyObject*)frame, "f_locals")``.
+  * ``f_locals``: use :c:func:`PyFrame_GetLocals`.
   * ``f_stackdepth``: removed.
   * ``f_state``: no public API (renamed to ``f_frame.f_state``).
   * ``f_trace``: no public API.
-  * ``f_trace_lines``: use ``PyObject_GetAttrString((PyObject*)frame, "f_trace_lines")``
-    (it also be modified).
-  * ``f_trace_opcodes``: use ``PyObject_GetAttrString((PyObject*)frame, "f_trace_opcodes")``
-    (it also be modified).
+  * ``f_trace_lines``: use ``PyObject_GetAttrString((PyObject*)frame, "f_trace_lines")``.
+  * ``f_trace_opcodes``: use ``PyObject_GetAttrString((PyObject*)frame, "f_trace_opcodes")``.
   * ``f_localsplus``: no public API (renamed to ``f_frame.localsplus``).
   * ``f_valuestack``: removed.
 
@@ -887,6 +1000,12 @@ Porting to Python 3.11
   ``f_back`` member must not be accessed directly, since its value is now also
   computed lazily. The :c:func:`PyFrame_GetBack` function must be called
   instead.
+
+  Debuggers that accessed the ``f_locals`` directly *must* call
+  `:c:func:`PyFrame_GetLocals` instead. They no longer need to call
+  `:c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
+  in fact they should not call those functions. The necessary updating of the
+  frame is now managed by the virtual machine.
 
   Code defining ``PyFrame_GetCode()`` on Python 3.8 and older::
 
@@ -964,6 +1083,9 @@ Porting to Python 3.11
   Or use `the pythoncapi_compat project
   <https://github.com/python/pythoncapi_compat>`__ to get these functions
   on old Python functions.
+
+* Distributors are encouraged to build Python with the optimized Blake2
+  library `libb2`_.
 
 
 Deprecated
@@ -1044,3 +1166,6 @@ Removed
 * Remove the ``HAVE_PY_SET_53BIT_PRECISION`` macro (moved to the internal C
   API).
   (Contributed by Victor Stinner in :issue:`45412`.)
+
+
+.. _libb2: https://www.blake2.net/
