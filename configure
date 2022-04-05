@@ -6338,7 +6338,7 @@ else
 
   case $ac_sys_system/$ac_sys_emscripten_target in #(
   Emscripten/browser*) :
-    EXEEXT=.html ;; #(
+    EXEEXT=.js ;; #(
   Emscripten/node*) :
     EXEEXT=.js ;; #(
   WASI/*) :
