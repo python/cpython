@@ -1218,6 +1218,7 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h M
 		-DVERSION='"$(VERSION)"' \
 		-DVPATH='"$(VPATH)"' \
 		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
+		-DPYTHONFRAMEWORK='"$(PYTHONFRAMEWORK)"' \
 		-o $@ $(srcdir)/Modules/getpath.c
 
 Programs/python.o: $(srcdir)/Programs/python.c
