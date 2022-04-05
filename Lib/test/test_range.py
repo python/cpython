@@ -104,6 +104,23 @@ class RangeTest(unittest.TestCase):
         ):
             range(1, 2, 3, 4, 5, 6)
 
+    def test_small_range_iter_edge_cases(self):
+        Small = type(iter(range(2)))
+        Medium = type(iter(range(1000)))
+        self.assertEqual(Small.__name__, "smallrange_iterator")
+        self.assertEqual(Medium.__name__, "range_iterator")
+        self.assertIsInstance(iter(range(0)), Small)
+        self.assertIsInstance(iter(range(1)), Small)
+        self.assertIsInstance(iter(range(10)), Small)
+        self.assertIsInstance(iter(range(256)), Small)
+        self.assertIsInstance(iter(range(257)), Small)
+        self.assertIsInstance(iter(range(258)), Medium)
+        self.assertIsInstance(iter(range(-1, 0)), Small)
+        self.assertIsInstance(iter(range(-5, 0)), Small)
+        self.assertIsInstance(iter(range(-6, 0)), Medium)
+        self.assertIsInstance(iter(range(-5, 257)), Small)
+        self.assertIsInstance(iter(range(-5, 258)), Medium)
+
     def test_large_operands(self):
         x = range(10**20, 10**20+10, 3)
         self.assertEqual(len(x), 4)

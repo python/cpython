@@ -1012,8 +1012,9 @@ fast_range_iter(long start, long stop, long step, long len)
     }
     else {
         rangeiterobject *it = PyObject_New(rangeiterobject, &PyRangeIter_Type);
-        if (it == NULL)
+        if (it == NULL) {
             return NULL;
+        }
         it->start = start;
         it->step = step;
         it->len = len;
