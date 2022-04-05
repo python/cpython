@@ -1137,7 +1137,7 @@ AC_ARG_WITH([suffix],
   )
 ], [
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/browser*], [EXEEXT=.html],
+    [Emscripten/browser*], [EXEEXT=.js],
     [Emscripten/node*], [EXEEXT=.js],
     [WASI/*], [EXEEXT=.wasm],
     [EXEEXT=]
