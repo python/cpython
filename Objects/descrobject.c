@@ -1808,7 +1808,7 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     if (Py_IS_TYPE(self, &PyProperty_Type)) {
         Py_XSETREF(self->prop_doc, prop_doc);
     }
-    else {
+    else if (prop_doc != NULL) {
         /* If this is a property subclass, put __doc__
            in dict of the subclass instance instead,
            otherwise it gets shadowed by __doc__ in the
