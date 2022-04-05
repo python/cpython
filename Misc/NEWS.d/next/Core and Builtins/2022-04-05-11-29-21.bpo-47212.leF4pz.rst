@@ -1,0 +1,4 @@
+- raise IndentationError instead of SyntaxError for a bare except with no following indent
+- improve SyntaxError locations for un-parenthesized generator used as arguments
+- re-generate the parser
+- add tests for the above two fixes
