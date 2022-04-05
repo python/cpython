@@ -96,7 +96,13 @@ if _mswindows:
                     "CREATE_NO_WINDOW", "DETACHED_PROCESS",
                     "CREATE_DEFAULT_ERROR_MODE", "CREATE_BREAKAWAY_FROM_JOB"])
 else:
-    import _posixsubprocess
+    if sys.platform in {"emscripten", "wasi"}:
+        def _fork_exec(*args, **kwargs):
+            raise OSError(
+                errno.ENOTSUP, f"{sys.platform} does not support processes."
+            )
+    else:
+        from _posixsubprocess import fork_exec as _fork_exec
     import select
     import selectors
 
@@ -1777,7 +1783,7 @@ class Popen:
                             for dir in os.get_exec_path(env))
                     fds_to_keep = set(pass_fds)
                     fds_to_keep.add(errpipe_write)
-                    self.pid = _posixsubprocess.fork_exec(
+                    self.pid = _fork_exec(
                             args, executable_list,
                             close_fds, tuple(sorted(map(int, fds_to_keep))),
                             cwd, env_list,

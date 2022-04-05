@@ -460,31 +460,29 @@ class EncodingTest(unittest.TestCase):
 class CommandLineTestsBase:
     """Test compileall's CLI."""
 
-    @classmethod
-    def setUpClass(cls):
-        for path in filter(os.path.isdir, sys.path):
-            directory_created = False
-            directory = pathlib.Path(path) / '__pycache__'
-            path = directory / 'test.try'
-            try:
-                if not directory.is_dir():
-                    directory.mkdir()
-                    directory_created = True
-                path.write_text('# for test_compileall', encoding="utf-8")
-            except OSError:
-                sys_path_writable = False
-                break
-            finally:
-                os_helper.unlink(str(path))
-                if directory_created:
-                    directory.rmdir()
-        else:
-            sys_path_writable = True
-        cls._sys_path_writable = sys_path_writable
+    def setUp(self):
+        self.directory = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, self.directory)
+        self.pkgdir = os.path.join(self.directory, 'foo')
+        os.mkdir(self.pkgdir)
+        self.pkgdir_cachedir = os.path.join(self.pkgdir, '__pycache__')
+        # Create the __init__.py and a package module.
+        self.initfn = script_helper.make_script(self.pkgdir, '__init__', '')
+        self.barfn = script_helper.make_script(self.pkgdir, 'bar', '')
 
-    def _skip_if_sys_path_not_writable(self):
-        if not self._sys_path_writable:
-            raise unittest.SkipTest('not all entries on sys.path are writable')
+    @contextlib.contextmanager
+    def temporary_pycache_prefix(self):
+        """Adjust and restore sys.pycache_prefix."""
+        old_prefix = sys.pycache_prefix
+        new_prefix = os.path.join(self.directory, '__testcache__')
+        try:
+            sys.pycache_prefix = new_prefix
+            yield {
+                'PYTHONPATH': self.directory,
+                'PYTHONPYCACHEPREFIX': new_prefix,
+            }
+        finally:
+            sys.pycache_prefix = old_prefix
 
     def _get_run_args(self, args):
         return [*support.optim_args_from_interpreter_flags(),
@@ -512,49 +510,39 @@ class CommandLineTestsBase:
         path = importlib.util.cache_from_source(fn)
         self.assertFalse(os.path.exists(path))
 
-    def setUp(self):
-        self.directory = tempfile.mkdtemp()
-        self.addCleanup(os_helper.rmtree, self.directory)
-        self.pkgdir = os.path.join(self.directory, 'foo')
-        os.mkdir(self.pkgdir)
-        self.pkgdir_cachedir = os.path.join(self.pkgdir, '__pycache__')
-        # Create the __init__.py and a package module.
-        self.initfn = script_helper.make_script(self.pkgdir, '__init__', '')
-        self.barfn = script_helper.make_script(self.pkgdir, 'bar', '')
-
     def test_no_args_compiles_path(self):
         # Note that -l is implied for the no args case.
-        self._skip_if_sys_path_not_writable()
         bazfn = script_helper.make_script(self.directory, 'baz', '')
-        self.assertRunOK(PYTHONPATH=self.directory)
-        self.assertCompiled(bazfn)
-        self.assertNotCompiled(self.initfn)
-        self.assertNotCompiled(self.barfn)
+        with self.temporary_pycache_prefix() as env:
+            self.assertRunOK(**env)
+            self.assertCompiled(bazfn)
+            self.assertNotCompiled(self.initfn)
+            self.assertNotCompiled(self.barfn)
 
     @without_source_date_epoch  # timestamp invalidation test
     def test_no_args_respects_force_flag(self):
-        self._skip_if_sys_path_not_writable()
         bazfn = script_helper.make_script(self.directory, 'baz', '')
-        self.assertRunOK(PYTHONPATH=self.directory)
-        pycpath = importlib.util.cache_from_source(bazfn)
+        with self.temporary_pycache_prefix() as env:
+            self.assertRunOK(**env)
+            pycpath = importlib.util.cache_from_source(bazfn)
         # Set atime/mtime backward to avoid file timestamp resolution issues
         os.utime(pycpath, (time.time()-60,)*2)
         mtime = os.stat(pycpath).st_mtime
         # Without force, no recompilation
-        self.assertRunOK(PYTHONPATH=self.directory)
+        self.assertRunOK(**env)
         mtime2 = os.stat(pycpath).st_mtime
         self.assertEqual(mtime, mtime2)
         # Now force it.
-        self.assertRunOK('-f', PYTHONPATH=self.directory)
+        self.assertRunOK('-f', **env)
         mtime2 = os.stat(pycpath).st_mtime
         self.assertNotEqual(mtime, mtime2)
 
     def test_no_args_respects_quiet_flag(self):
-        self._skip_if_sys_path_not_writable()
         script_helper.make_script(self.directory, 'baz', '')
-        noisy = self.assertRunOK(PYTHONPATH=self.directory)
+        with self.temporary_pycache_prefix() as env:
+            noisy = self.assertRunOK(**env)
         self.assertIn(b'Listing ', noisy)
-        quiet = self.assertRunOK('-q', PYTHONPATH=self.directory)
+        quiet = self.assertRunOK('-q', **env)
         self.assertNotIn(b'Listing ', quiet)
 
     # Ensure that the default behavior of compileall's CLI is to create

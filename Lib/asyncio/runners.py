@@ -2,8 +2,13 @@ __all__ = ('Runner', 'run')
 
 import contextvars
 import enum
+import functools
+import threading
+import signal
+import sys
 from . import coroutines
 from . import events
+from . import exceptions
 from . import tasks
 
 
@@ -21,7 +26,7 @@ class Runner:
     and properly finalizes the loop at the context manager exit.
 
     If debug is True, the event loop will be run in debug mode.
-    If factory is passed, it is used for new event loop creation.
+    If loop_factory is passed, it is used for new event loop creation.
 
     asyncio.run(main(), debug=True)
 
@@ -41,12 +46,13 @@ class Runner:
 
     # Note: the class is final, it is not intended for inheritance.
 
-    def __init__(self, *, debug=None, factory=None):
+    def __init__(self, *, debug=None, loop_factory=None):
         self._state = _State.CREATED
         self._debug = debug
-        self._factory = factory
+        self._loop_factory = loop_factory
         self._loop = None
         self._context = None
+        self._interrupt_count = 0
 
     def __enter__(self):
         self._lazy_init()
@@ -89,22 +95,51 @@ class Runner:
         if context is None:
             context = self._context
         task = self._loop.create_task(coro, context=context)
-        return self._loop.run_until_complete(task)
+
+        if (threading.current_thread() is threading.main_thread()
+            and signal.getsignal(signal.SIGINT) is signal.default_int_handler
+        ):
+            sigint_handler = functools.partial(self._on_sigint, main_task=task)
+            signal.signal(signal.SIGINT, sigint_handler)
+        else:
+            sigint_handler = None
+
+        self._interrupt_count = 0
+        try:
+            return self._loop.run_until_complete(task)
+        except exceptions.CancelledError:
+            if self._interrupt_count > 0 and task.uncancel() == 0:
+                raise KeyboardInterrupt()
+            else:
+                raise  # CancelledError
+        finally:
+            if (sigint_handler is not None
+                and signal.getsignal(signal.SIGINT) is sigint_handler
+            ):
+                signal.signal(signal.SIGINT, signal.default_int_handler)
 
     def _lazy_init(self):
         if self._state is _State.CLOSED:
             raise RuntimeError("Runner is closed")
         if self._state is _State.INITIALIZED:
             return
-        if self._factory is None:
+        if self._loop_factory is None:
             self._loop = events.new_event_loop()
         else:
-            self._loop = self._factory()
+            self._loop = self._loop_factory()
         if self._debug is not None:
             self._loop.set_debug(self._debug)
         self._context = contextvars.copy_context()
         self._state = _State.INITIALIZED
 
+    def _on_sigint(self, signum, frame, main_task):
+        self._interrupt_count += 1
+        if self._interrupt_count == 1 and not main_task.done():
+            main_task.cancel()
+            # wakeup loop if it is blocked by select() with long timeout
+            self._loop.call_soon_threadsafe(lambda: None)
+            return
+        raise KeyboardInterrupt()
 
 
 def run(main, *, debug=None):
