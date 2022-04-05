@@ -22,6 +22,7 @@
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
+#include "pycore_range.h"         // _PyRangeIterObject
 
 #include "code.h"
 #include "pycore_dict.h"
@@ -4203,8 +4204,25 @@ handle_eval_breaker:
         }
 
         TARGET(FOR_ITER_RANGE) {
+            assert(cframe.use_tracing == 0);
             assert(Py_TYPE(TOP()) == &PyRangeIter_Type);
-            JUMP_TO_INSTRUCTION(FOR_ITER);
+            _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();
+            if (r->index < r->len) {
+                PyObject *res = PyLong_FromLong(
+                    (long)(r->start + (unsigned long)(r->index++) * r->step));
+                if (res == NULL) {
+                    goto error;
+                }
+                PUSH(res);
+                PREDICT(STORE_FAST);
+                NOTRACE_DISPATCH();
+            }
+            else {
+                STACK_SHRINK(1);
+                Py_DECREF(r);
+                JUMPBY(oparg);
+                NOTRACE_DISPATCH();
+            }
         }
 
         TARGET(FOR_ITER_LIST) {
