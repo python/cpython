@@ -1,1 +1,1 @@
-Handle doc argument of property.__init__ in subclasses
+Fix handling of the ``doc`` argument in subclasses of :func:`property`.
