@@ -307,7 +307,7 @@ if ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__:
         # In a framework build the binary in {sys.exec_prefix}/bin is
         # a stub executable that execs the real interpreter in an
         # embedded app bundle. That bundle is an implementation detail
-        # and should not affect base_execuble.
+        # and should not affect base_executable.
         base_executable = f"{dirname(library)}/bin/python{VERSION_MAJOR}.{VERSION_MINOR}"
     else:
         base_executable = executable
