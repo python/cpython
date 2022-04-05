@@ -153,37 +153,41 @@ extern "C" {
 #define LOAD_METHOD_NO_DICT                     58
 #define LOAD_METHOD_WITH_DICT                   59
 #define LOAD_METHOD_WITH_VALUES                 62
-#define PRECALL_ADAPTIVE                        63
-#define PRECALL_BOUND_METHOD                    64
-#define PRECALL_BUILTIN_CLASS                   65
-#define PRECALL_BUILTIN_FAST_WITH_KEYWORDS      66
-#define PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS  67
-#define PRECALL_NO_KW_BUILTIN_FAST              72
-#define PRECALL_NO_KW_BUILTIN_O                 73
-#define PRECALL_NO_KW_ISINSTANCE                76
-#define PRECALL_NO_KW_LEN                       77
-#define PRECALL_NO_KW_LIST_APPEND               78
-#define PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST    79
-#define PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS  80
-#define PRECALL_NO_KW_METHOD_DESCRIPTOR_O       81
-#define PRECALL_NO_KW_STR_1                    113
-#define PRECALL_NO_KW_TUPLE_1                  121
-#define PRECALL_NO_KW_TYPE_1                   127
-#define PRECALL_PYFUNC                         141
-#define RESUME_QUICK                           143
-#define STORE_ATTR_ADAPTIVE                    150
-#define STORE_ATTR_INSTANCE_VALUE              153
-#define STORE_ATTR_SLOT                        154
-#define STORE_ATTR_WITH_HINT                   158
-#define STORE_FAST__LOAD_FAST                  159
-#define STORE_FAST__STORE_FAST                 161
-#define STORE_SUBSCR_ADAPTIVE                  167
-#define STORE_SUBSCR_DICT                      168
-#define STORE_SUBSCR_LIST_INT                  169
-#define UNPACK_SEQUENCE_ADAPTIVE               170
-#define UNPACK_SEQUENCE_LIST                   173
-#define UNPACK_SEQUENCE_TUPLE                  174
-#define UNPACK_SEQUENCE_TWO_TUPLE              175
+#define FOR_ITER_RANGE                          63
+#define FOR_ITER_LIST                           64
+#define GET_ITER_ADAPT                          65
+#define GET_ITER_MAINTAIN_SPECIALIZED           66
+#define PRECALL_ADAPTIVE                        67
+#define PRECALL_BOUND_METHOD                    72
+#define PRECALL_BUILTIN_CLASS                   73
+#define PRECALL_BUILTIN_FAST_WITH_KEYWORDS      76
+#define PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS  77
+#define PRECALL_NO_KW_BUILTIN_FAST              78
+#define PRECALL_NO_KW_BUILTIN_O                 79
+#define PRECALL_NO_KW_ISINSTANCE                80
+#define PRECALL_NO_KW_LEN                       81
+#define PRECALL_NO_KW_LIST_APPEND              113
+#define PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST   121
+#define PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS 127
+#define PRECALL_NO_KW_METHOD_DESCRIPTOR_O      141
+#define PRECALL_NO_KW_STR_1                    143
+#define PRECALL_NO_KW_TUPLE_1                  150
+#define PRECALL_NO_KW_TYPE_1                   153
+#define PRECALL_PYFUNC                         154
+#define RESUME_QUICK                           158
+#define STORE_ATTR_ADAPTIVE                    159
+#define STORE_ATTR_INSTANCE_VALUE              161
+#define STORE_ATTR_SLOT                        167
+#define STORE_ATTR_WITH_HINT                   168
+#define STORE_FAST__LOAD_FAST                  169
+#define STORE_FAST__STORE_FAST                 170
+#define STORE_SUBSCR_ADAPTIVE                  173
+#define STORE_SUBSCR_DICT                      174
+#define STORE_SUBSCR_LIST_INT                  175
+#define UNPACK_SEQUENCE_ADAPTIVE               176
+#define UNPACK_SEQUENCE_LIST                   177
+#define UNPACK_SEQUENCE_TUPLE                  178
+#define UNPACK_SEQUENCE_TWO_TUPLE              179
 #define DO_TRACING                             255
 
 extern const uint8_t _PyOpcode_Caches[256];
@@ -281,10 +285,14 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [EXTENDED_ARG] = EXTENDED_ARG,
     [FORMAT_VALUE] = FORMAT_VALUE,
     [FOR_ITER] = FOR_ITER,
+    [FOR_ITER_LIST] = FOR_ITER,
+    [FOR_ITER_RANGE] = FOR_ITER,
     [GET_AITER] = GET_AITER,
     [GET_ANEXT] = GET_ANEXT,
     [GET_AWAITABLE] = GET_AWAITABLE,
     [GET_ITER] = GET_ITER,
+    [GET_ITER_ADAPT] = GET_ITER,
+    [GET_ITER_MAINTAIN_SPECIALIZED] = GET_ITER,
     [GET_LEN] = GET_LEN,
     [GET_YIELD_FROM_ITER] = GET_YIELD_FROM_ITER,
     [IMPORT_FROM] = IMPORT_FROM,

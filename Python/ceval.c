@@ -4149,6 +4149,69 @@ handle_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(GET_ITER_ADAPT) {
+            _Py_CODEUNIT *this_instr = next_instr - 1;
+            // only execute this instruction once.
+            _Py_SET_OPCODE(*this_instr, GET_ITER);
+
+            PyObject *iterable = TOP();
+            PyObject *iter = PyObject_GetIter(iterable);
+            Py_DECREF(iterable);
+            SET_TOP(iter);
+            if (iter == NULL) {
+                goto error;
+            }
+
+            if (_Py_OPCODE(*next_instr) == FOR_ITER) {
+                PyTypeObject *tp = Py_TYPE(iter);
+                if (tp == &PyRangeIter_Type) {
+                    _Py_SET_OPCODE(*this_instr, GET_ITER_MAINTAIN_SPECIALIZED);
+                    _Py_SET_OPCODE(*next_instr, FOR_ITER_RANGE);
+                }
+                else if (tp == &PyListIter_Type) {
+                    _Py_SET_OPCODE(*this_instr, GET_ITER_MAINTAIN_SPECIALIZED);
+                    _Py_SET_OPCODE(*next_instr, FOR_ITER_LIST);
+                }
+            }
+            DISPATCH();
+        }
+
+        static const PyTypeObject *const for_iter_types[256] = {
+            [FOR_ITER_LIST] = &PyListIter_Type,
+            [FOR_ITER_RANGE] = &PyRangeIter_Type,
+        };
+
+        TARGET(GET_ITER_MAINTAIN_SPECIALIZED) {
+            PyObject *iterable = TOP();
+            PyObject *iter = PyObject_GetIter(iterable);
+            Py_DECREF(iterable);
+            SET_TOP(iter);
+            if (iter == NULL) {
+                goto error;
+            }
+            _Py_CODEUNIT next_op = _Py_OPCODE(*next_instr);
+            if (Py_TYPE(iter) == for_iter_types[next_op]) {
+                NOTRACE_DISPATCH();
+            }
+            else {
+                // deopt.
+                _Py_CODEUNIT *this_instr = next_instr - 1;
+                _Py_SET_OPCODE(*this_instr, GET_ITER);
+                _Py_SET_OPCODE(*next_instr, FOR_ITER);
+                NOTRACE_DISPATCH();
+            }
+        }
+
+        TARGET(FOR_ITER_RANGE) {
+            assert(Py_TYPE(TOP()) == &PyRangeIter_Type);
+            JUMP_TO_INSTRUCTION(FOR_ITER);
+        }
+
+        TARGET(FOR_ITER_LIST) {
+            assert(Py_TYPE(TOP()) == &PyListIter_Type);
+            JUMP_TO_INSTRUCTION(FOR_ITER);
+        }
+
         TARGET(GET_YIELD_FROM_ITER) {
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iterable = TOP();

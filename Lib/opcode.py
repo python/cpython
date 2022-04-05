@@ -289,6 +289,14 @@ _specializations = {
         "LOAD_METHOD_WITH_DICT",
         "LOAD_METHOD_WITH_VALUES",
     ],
+    "FOR_ITER": [
+        "FOR_ITER_RANGE",
+        "FOR_ITER_LIST",
+    ],
+    "GET_ITER": [
+        "GET_ITER_ADAPT",
+        "GET_ITER_MAINTAIN_SPECIALIZED",
+    ],
     "PRECALL": [
         "PRECALL_ADAPTIVE",
         "PRECALL_BOUND_METHOD",
