@@ -4218,6 +4218,7 @@ handle_eval_breaker:
                 NOTRACE_DISPATCH();
             }
             else {
+                assert(!PyErr_Occurred());
                 STACK_SHRINK(1);
                 Py_DECREF(r);
                 JUMPBY(oparg);
@@ -4226,8 +4227,27 @@ handle_eval_breaker:
         }
 
         TARGET(FOR_ITER_LIST) {
+            assert(cframe.use_tracing == 0);
             assert(Py_TYPE(TOP()) == &PyListIter_Type);
-            JUMP_TO_INSTRUCTION(FOR_ITER);
+            _PyListIterObject *it = (_PyListIterObject *)TOP();
+            PyListObject *seq = it->it_seq;
+            if (seq == NULL) {
+                goto stopped;
+            }
+            if (it->it_index < PyList_GET_SIZE(seq)) {
+                PyObject *res = PyList_GET_ITEM(seq, it->it_index++);
+                Py_INCREF(res);
+                PUSH(res);
+                NOTRACE_DISPATCH();
+            }
+            it->it_seq = NULL;
+            Py_DECREF(seq);
+        stopped:
+            assert(!PyErr_Occurred());
+            STACK_SHRINK(1);
+            Py_DECREF(it);
+            JUMPBY(oparg);
+            NOTRACE_DISPATCH();
         }
 
         TARGET(GET_YIELD_FROM_ITER) {
