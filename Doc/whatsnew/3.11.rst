@@ -561,7 +561,7 @@ In 3.11, when Python detects Python code calling another Python function,
 it sets up a new frame, and "jumps" to the new code inside the new frame. This
 avoids calling the C interpreting function altogether.
 
-Python function calls now consume almost no C stack space. This speeds up
+Most Python function calls now consume no C stack space. This speeds up
 most of such calls. In simple recursive functions like fibonacci or
 factorial, a 1.7x speedup was observed. This also means recursive functions
 can recurse significantly deeper, (if the user increases the recursion limit).
