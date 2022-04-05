@@ -703,8 +703,9 @@ About
 -----
 
 Faster CPython explores optimizations for :term:`CPython`. The main team is
-funded by Microsoft to work on this full-time. The team also collaborates
-extensively with volunteer contributors in the community.
+funded by Microsoft to work on this full-time. Pablo Galindo Salgado is also
+funded by Bloomberg LP to work on the project part-time. Finally, many
+contributors are volunteers from the community.
 
 
 CPython bytecode changes
