@@ -590,6 +590,12 @@ Deprecated
 
   (Contributed by Hugo van Kemenade in :issue:`45173`.)
 
+* :class:`configparser.LegacyInterpolation` has been deprecated in the docstring
+  since Python 3.2. It now emits a :exc:`DeprecationWarning` and will be removed
+  in Python 3.13. Use :class:`configparser.BasicInterpolation` or
+  :class:`configparser.ExtendedInterpolation instead.
+  (Contributed by Hugo van Kemenade in :issue:`46607`.)
+
 * The :func:`locale.getdefaultlocale` function is deprecated and will be
   removed in Python 3.13. Use :func:`locale.setlocale`,
   :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
