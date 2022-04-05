@@ -126,6 +126,7 @@ __all__ = [
     'get_origin',
     'get_type_hints',
     'is_typeddict',
+    'LiteralString',
     'Never',
     'NewType',
     'no_type_check',
@@ -180,7 +181,7 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
-    if arg in (Any, NoReturn, Never, Self, TypeAlias):
+    if arg in (Any, LiteralString, NoReturn, Never, Self, TypeAlias):
         return arg
     if allow_special_forms and arg in (ClassVar, Final):
         return arg
@@ -519,6 +520,34 @@ def Self(self, parameters):
     This is especially useful for:
         - classmethods that are used as alternative constructors
         - annotating an `__enter__` method which returns self
+    """
+    raise TypeError(f"{self} is not subscriptable")
+
+
+@_SpecialForm
+def LiteralString(self, parameters):
+    """Represents an arbitrary literal string.
+
+    Example::
+
+        from typing import LiteralString
+
+        def run_query(sql: LiteralString) -> ...
+            ...
+
+        def caller(arbitrary_string: str, literal_string: LiteralString) -> None:
+            run_query("SELECT * FROM students")  # ok
+            run_query(literal_string)  # ok
+            run_query("SELECT * FROM " + literal_string)  # ok
+            run_query(arbitrary_string)  # type checker error
+            run_query(  # type checker error
+                f"SELECT * FROM students WHERE name = {arbitrary_string}"
+            )
+
+    Only string literals and other LiteralStrings are compatible
+    with LiteralString. This provides a tool to help prevent
+    security issues such as SQL injection.
+
     """
     raise TypeError(f"{self} is not subscriptable")
 
