@@ -174,7 +174,7 @@ The special characters are:
   characters to match, the expression cannot be backtracked and will thus
   fail to match.
   ``x*+``, ``x++`` and ``x?+`` are equivalent to ``(?>x*)``, ``(?>x+)``
-  and ``(?>x?)`` correspondigly.
+  and ``(?>x?)`` correspondingly.
 
    .. versionadded:: 3.11
 
