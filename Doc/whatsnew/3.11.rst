@@ -222,6 +222,10 @@ New Modules
 * A new module, :mod:`tomllib`, was added for parsing TOML.
   (Contributed by Taneli Hukkinen in :issue:`40059`.)
 
+* :mod:`wsgiref.types`, containing WSGI-specific types for static type
+  checking, was added.
+  (Contributed by Sebastian Rittau in :issue:`42012`.)
+
 
 Improved Modules
 ================

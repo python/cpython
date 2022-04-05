@@ -754,6 +754,49 @@ input, output, and error streams.
    .. versionadded:: 3.2
 
 
+:mod:`wsgiref.types` -- WSGI types for static type checking
+-----------------------------------------------------------
+
+.. module:: wsgiref.types
+   :synopsis: WSGI types for static type checking
+
+
+This module provides various types for static type checking as described
+in :pep:`3333`.
+
+.. versionadded:: 3.11
+
+
+.. class:: StartResponse()
+
+   A :class:`typing.Protocol` describing `start_response()
+   <https://peps.python.org/pep-3333/#the-start-response-callable>`_
+   callables (:pep:`3333`).
+
+.. data:: WSGIEnvironment
+
+   A type alias describing a WSGI environment dictionary.
+
+.. data:: WSGIApplication
+
+   A type alias describing a WSGI application callable.
+
+.. class:: InputStream()
+
+   A :class:`typing.Protocol` describing a `WSGI Input Stream
+   <https://peps.python.org/pep-3333/#input-and-error-streams>`_.
+
+.. class:: ErrorStream()
+
+   A :class:`typing.Protocol` describing a `WSGI Error Stream
+   <https://peps.python.org/pep-3333/#input-and-error-streams>`_.
+
+.. class:: FileWrapper()
+
+   A :class:`typing.Protocol` describing a `file wrapper
+   <https://peps.python.org/pep-3333/#optional-platform-specific-file-handling>`_.
+
+
 Examples
 --------
 
