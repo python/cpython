@@ -528,6 +528,8 @@ CPython bytecode changes
 
 * Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
 
+* Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`, which is used in certain loops where it is undesirable to handle interrupts.
+
 Deprecated
 ==========
 
