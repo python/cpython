@@ -1,0 +1,1 @@
+Replace :opcode:`JUMP_IF_NOT_EG_MATCH` by :opcode:`CHECK_EG_MATCH` + jump.

@@ -1000,8 +1000,8 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case CHECK_EXC_MATCH:
             return 0;
-        case JUMP_IF_NOT_EG_MATCH:
-            return jump > 0 ? -1 : 0;
+        case CHECK_EG_MATCH:
+            return 0;
         case IMPORT_NAME:
             return -1;
         case IMPORT_FROM:
@@ -3533,14 +3533,18 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    []                                         POP_BLOCK
    []                                         JUMP                  L0
 
-   [exc]                            L1:       COPY 1      )  save copy of the original exception
+   [exc]                            L1:       COPY 1       )  save copy of the original exception
    [orig, exc]                                BUILD_LIST   )  list for raised/reraised excs ("result")
    [orig, exc, res]                           SWAP 2
 
    [orig, res, exc]                           <evaluate E1>
-   [orig, res, exc, E1]                       JUMP_IF_NOT_EG_MATCH L2
+   [orig, res, exc, E1]                       CHECK_EG_MATCH
+   [orig, red, rest/exc, match?]              COPY 1
+   [orig, red, rest/exc, match?, match?]      POP_JUMP_IF_NOT_NONE  H1
+   [orig, red, exc, None]                     POP_TOP
+   [orig, red, exc]                           JUMP L2
 
-   [orig, res, rest, match]                   <assign to V1>  (or POP if no V1)
+   [orig, res, rest, match]         H1:       <assign to V1>  (or POP if no V1)
 
    [orig, res, rest]                          SETUP_FINALLY         R1
    [orig, res, rest]                          <code for S1>
@@ -3622,6 +3626,10 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         if (except == NULL) {
             return 0;
         }
+        basicblock *handle_match = compiler_new_block(c);
+        if (handle_match == NULL) {
+            return 0;
+        }
         if (i == 0) {
             /* Push the original EG into the stack */
             /*
@@ -3641,8 +3649,14 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         }
         if (handler->v.ExceptHandler.type) {
             VISIT(c, expr, handler->v.ExceptHandler.type);
-            ADDOP_JUMP(c, JUMP_IF_NOT_EG_MATCH, except);
+            ADDOP(c, CHECK_EG_MATCH);
+            ADDOP_I(c, COPY, 1);
+            ADDOP_JUMP(c, POP_JUMP_IF_NOT_NONE, handle_match);
+            ADDOP(c, POP_TOP);  // match
+            ADDOP_JUMP(c, JUMP, except);
         }
+
+        compiler_use_next_block(c, handle_match);
 
         basicblock *cleanup_end = compiler_new_block(c);
         if (cleanup_end == NULL) {
@@ -3657,7 +3671,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
         }
         else {
-            ADDOP(c, POP_TOP);  // exc
+            ADDOP(c, POP_TOP);  // match
         }
 
         /*
