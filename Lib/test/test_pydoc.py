@@ -449,25 +449,6 @@ class PydocDocTest(unittest.TestCase):
         result, doc_loc = get_pydoc_text(xml.etree)
         self.assertEqual(doc_loc, "", "MODULE DOCS incorrectly includes a link")
 
-    def test_issue41287(self):
-        # Test issue41287 to ensure property subclass handles `doc` argument correctly
-
-        class Property(property):
-            """A subclass of builtin property"""
-
-        self.assertEqual(Property.__doc__, "A subclass of builtin property", "Docstring of `property` subclass is ignored")
-
-        doc = Property(None, None, None, "issue 41287 is fixed").__doc__
-        self.assertEqual(doc, "issue 41287 is fixed", "Subclasses of `property` ignores `doc` constructor argument")
-
-        def getter(x):
-            """Getter docstring"""
-        doc = Property(getter, None, None, "issue 41287 is fixed").__doc__
-        self.assertEqual(doc, "issue 41287 is fixed", "Getter overrides explicit property docstring docstring")
-
-        doc = Property(getter, None, None, None).__doc__
-        self.assertEqual(doc, "Getter docstring", "Getter docstring is not picked-up")
-
     def test_getpager_with_stdin_none(self):
         previous_stdin = sys.stdin
         try:

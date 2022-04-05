@@ -239,6 +239,26 @@ class PropertySubclassTests(unittest.TestCase):
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
+    def test_issue41287(self):
+
+        self.assertEqual(PropertySub.__doc__, "This is a subclass of property",
+                         "Docstring of `property` subclass is ignored")
+
+        doc = PropertySub(None, None, None, "issue 41287 is fixed").__doc__
+        self.assertEqual(doc, "issue 41287 is fixed",
+                         "Subclasses of `property` ignores `doc` constructor argument")
+
+        def getter(x):
+            """Getter docstring"""
+        doc = PropertySub(getter, None, None, "issue 41287 is fixed").__doc__
+        self.assertEqual(doc, "issue 41287 is fixed",
+                         "Getter overrides explicit property docstring docstring")
+
+        doc = PropertySub(getter, None, None, None).__doc__
+        self.assertEqual(doc, "Getter docstring", "Getter docstring is not picked-up")
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
     def test_docstring_copy(self):
         class Foo(object):
             @PropertySub
