@@ -221,7 +221,7 @@ class PyclbrTest(TestCase):
         cm('cgi', ignore=('log',))      # set with = in module
         cm('pickle', ignore=('partial', 'PickleBuffer'))
         cm('aifc', ignore=('_aifc_params',))  # set with = in module
-        cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
+        cm('re._parser', ignore=('dump', 'groups', 'pos')) # from ._constants import *; property
         cm(
             'pdb',
             # pyclbr does not handle elegantly `typing` or properties

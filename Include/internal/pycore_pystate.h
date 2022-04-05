@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_runtime.h"   /* PyRuntimeState */
+#include "pycore_runtime.h"       // _PyRuntime
 
 
 /* Check if the current thread is the main thread.

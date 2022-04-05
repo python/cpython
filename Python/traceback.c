@@ -149,7 +149,7 @@ tb_next_set(PyTracebackObject *self, PyObject *new_next, void *Py_UNUSED(_))
 
 
 static PyMethodDef tb_methods[] = {
-   {"__dir__", (PyCFunction)tb_dir, METH_NOARGS},
+   {"__dir__", _PyCFunction_CAST(tb_dir), METH_NOARGS},
    {NULL, NULL, 0, NULL},
 };
 
@@ -1073,7 +1073,7 @@ _Py_DumpHexadecimal(int fd, uintptr_t value, Py_ssize_t width)
 void
 _Py_DumpASCII(int fd, PyObject *text)
 {
-    PyASCIIObject *ascii = (PyASCIIObject *)text;
+    PyASCIIObject *ascii = _PyASCIIObject_CAST(text);
     Py_ssize_t i, size;
     int truncated;
     int kind;
@@ -1087,19 +1087,19 @@ _Py_DumpASCII(int fd, PyObject *text)
     size = ascii->length;
     kind = ascii->state.kind;
     if (kind == PyUnicode_WCHAR_KIND) {
-        wstr = ((PyASCIIObject *)text)->wstr;
+        wstr = ascii->wstr;
         if (wstr == NULL)
             return;
-        size = ((PyCompactUnicodeObject *)text)->wstr_length;
+        size = _PyCompactUnicodeObject_CAST(text)->wstr_length;
     }
     else if (ascii->state.compact) {
         if (ascii->state.ascii)
-            data = ((PyASCIIObject*)text) + 1;
+            data = ascii + 1;
         else
-            data = ((PyCompactUnicodeObject*)text) + 1;
+            data = _PyCompactUnicodeObject_CAST(text) + 1;
     }
     else {
-        data = ((PyUnicodeObject *)text)->data.any;
+        data = _PyUnicodeObject_CAST(text)->data.any;
         if (data == NULL)
             return;
     }

@@ -296,9 +296,6 @@
     <ClInclude Include="..\Modules\_math.h" />
     <ClInclude Include="..\Modules\hashtable.h" />
     <ClInclude Include="..\Modules\rotatingtree.h" />
-    <ClInclude Include="..\Modules\sre.h" />
-    <ClInclude Include="..\Modules\sre_constants.h" />
-    <ClInclude Include="..\Modules\sre_lib.h" />
     <ClInclude Include="..\Modules\_io\_iomodule.h" />
     <ClInclude Include="..\Modules\cjkcodecs\alg_jisx0201.h" />
     <ClInclude Include="..\Modules\cjkcodecs\cjkcodecs.h" />
@@ -359,7 +356,10 @@
     <ClCompile Include="..\Modules\_pickle.c" />
     <ClCompile Include="..\Modules\_randommodule.c" />
     <ClCompile Include="..\Modules\_sha3\sha3module.c" />
-    <ClCompile Include="..\Modules\_sre.c" />
+    <ClCompile Include="..\Modules\_sre\sre.c" />
+    <ClInclude Include="..\Modules\_sre\sre.h" />
+    <ClInclude Include="..\Modules\_sre\sre_constants.h" />
+    <ClInclude Include="..\Modules\_sre\sre_lib.h" />
     <ClCompile Include="..\Modules\_stat.c" />
     <ClCompile Include="..\Modules\_struct.c" />
     <ClCompile Include="..\Modules\_weakref.c" />

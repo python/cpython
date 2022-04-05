@@ -21,6 +21,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
 #include "code.h"
 #include "pycore_dict.h"
@@ -1292,6 +1293,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
     }
 
 #define CHECK_EVAL_BREAKER() \
+    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
     if (_Py_atomic_load_relaxed(eval_breaker)) { \
         goto handle_eval_breaker; \
     }
@@ -1431,7 +1433,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define JUMP_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 
 
-#define DEOPT_IF(cond, instname) if (cond) { goto instname ## _miss; }
+#define DEOPT_IF(cond, instname) if (cond) { goto miss; }
 
 
 #define GLOBALS() frame->f_globals
@@ -2213,12 +2215,9 @@ handle_eval_breaker:
         TARGET(LIST_APPEND) {
             PyObject *v = POP();
             PyObject *list = PEEK(oparg);
-            int err;
-            err = PyList_Append(list, v);
-            Py_DECREF(v);
-            if (err != 0)
+            if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0)
                 goto error;
-            PREDICT(JUMP_ABSOLUTE);
+            PREDICT(JUMP_BACKWARD_QUICK);
             DISPATCH();
         }
 
@@ -2230,7 +2229,7 @@ handle_eval_breaker:
             Py_DECREF(v);
             if (err != 0)
                 goto error;
-            PREDICT(JUMP_ABSOLUTE);
+            PREDICT(JUMP_BACKWARD_QUICK);
             DISPATCH();
         }
 
@@ -2551,18 +2550,18 @@ handle_eval_breaker:
             }
             Py_DECREF(v);
             if (gen_status == PYGEN_ERROR) {
-                assert (retval == NULL);
+                assert(retval == NULL);
                 goto error;
             }
             if (gen_status == PYGEN_RETURN) {
-                assert (retval != NULL);
+                assert(retval != NULL);
                 Py_DECREF(receiver);
                 SET_TOP(retval);
                 JUMPBY(oparg);
                 DISPATCH();
             }
-            assert (gen_status == PYGEN_NEXT);
-            assert (retval != NULL);
+            assert(gen_status == PYGEN_NEXT);
+            assert(retval != NULL);
             PUSH(retval);
             DISPATCH();
         }
@@ -3396,7 +3395,7 @@ handle_eval_breaker:
             if (_PyDict_SetItem_Take2((PyDictObject *)map, key, value) != 0) {
                 goto error;
             }
-            PREDICT(JUMP_ABSOLUTE);
+            PREDICT(JUMP_BACKWARD_QUICK);
             DISPATCH();
         }
 
@@ -3856,7 +3855,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(JUMP_IF_NOT_EXC_MATCH) {
+        TARGET(CHECK_EXC_MATCH) {
             PyObject *right = POP();
             PyObject *left = TOP();
             assert(PyExceptionInstance_Check(left));
@@ -3867,9 +3866,7 @@ handle_eval_breaker:
 
             int res = PyErr_GivenExceptionMatches(left, right);
             Py_DECREF(right);
-            if (res == 0) {
-                JUMPTO(oparg);
-            }
+            PUSH(Py_NewRef(res ? Py_True : Py_False));
             DISPATCH();
         }
 
@@ -3924,6 +3921,11 @@ handle_eval_breaker:
         TARGET(JUMP_FORWARD) {
             JUMPBY(oparg);
             DISPATCH();
+        }
+
+        TARGET(JUMP_BACKWARD) {
+            _PyCode_Warmup(frame->f_code);
+            JUMP_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
         }
 
         TARGET(POP_JUMP_IF_FALSE) {
@@ -4053,12 +4055,6 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(JUMP_ABSOLUTE) {
-            PREDICTED(JUMP_ABSOLUTE);
-            _PyCode_Warmup(frame->f_code);
-            JUMP_TO_INSTRUCTION(JUMP_ABSOLUTE_QUICK);
-        }
-
         TARGET(JUMP_NO_INTERRUPT) {
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
@@ -4069,10 +4065,10 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(JUMP_ABSOLUTE_QUICK) {
-            PREDICTED(JUMP_ABSOLUTE_QUICK);
+        TARGET(JUMP_BACKWARD_QUICK) {
+            PREDICTED(JUMP_BACKWARD_QUICK);
             assert(oparg < INSTR_OFFSET());
-            JUMPTO(oparg);
+            JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -4595,7 +4591,6 @@ handle_eval_breaker:
         }
 
         TARGET(CALL) {
-            PREDICTED(CALL);
             int is_meth;
         call_function:
             is_meth = is_method(stack_pointer, oparg);
@@ -5046,14 +5041,12 @@ handle_eval_breaker:
             DEOPT_IF(!PyList_Check(list), PRECALL);
             STAT_INC(PRECALL, hit);
             SKIP_CALL();
-            PyObject *arg = TOP();
-            int err = PyList_Append(list, arg);
-            if (err) {
+            PyObject *arg = POP();
+            if (_PyList_AppendTakeRef((PyListObject *)list, arg) < 0) {
                 goto error;
             }
-            Py_DECREF(arg);
             Py_DECREF(list);
-            STACK_SHRINK(2);
+            STACK_SHRINK(1);
             Py_INCREF(Py_None);
             SET_TOP(Py_None);
             Py_DECREF(callable);
@@ -5524,33 +5517,24 @@ handle_eval_breaker:
 
 /* Specialization misses */
 
-#define MISS_WITH_INLINE_CACHE(opname) \
-opname ## _miss: \
-    { \
-        STAT_INC(opcode, miss); \
-        STAT_INC(opname, miss); \
-        /* The counter is always the first cache entry: */ \
-        _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr; \
-        *counter -= 1; \
-        if (*counter == 0) { \
-            _Py_SET_OPCODE(next_instr[-1], opname ## _ADAPTIVE); \
-            STAT_INC(opname, deopt); \
-            *counter = ADAPTIVE_CACHE_BACKOFF; \
-        } \
-        JUMP_TO_INSTRUCTION(opname); \
+miss:
+    {
+        STAT_INC(opcode, miss);
+        opcode = _PyOpcode_Deopt[opcode];
+        STAT_INC(opcode, miss);
+        /* The counter is always the first cache entry: */
+        _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr;
+        *counter -= 1;
+        if (*counter == 0) {
+            int adaptive_opcode = _PyOpcode_Adaptive[opcode];
+            assert(adaptive_opcode);
+            _Py_SET_OPCODE(next_instr[-1], adaptive_opcode);
+            STAT_INC(opcode, deopt);
+            *counter = ADAPTIVE_CACHE_BACKOFF;
+        }
+        next_instr--;
+        DISPATCH_GOTO();
     }
-
-MISS_WITH_INLINE_CACHE(LOAD_ATTR)
-MISS_WITH_INLINE_CACHE(STORE_ATTR)
-MISS_WITH_INLINE_CACHE(LOAD_GLOBAL)
-MISS_WITH_INLINE_CACHE(LOAD_METHOD)
-MISS_WITH_INLINE_CACHE(PRECALL)
-MISS_WITH_INLINE_CACHE(CALL)
-MISS_WITH_INLINE_CACHE(BINARY_OP)
-MISS_WITH_INLINE_CACHE(COMPARE_OP)
-MISS_WITH_INLINE_CACHE(BINARY_SUBSCR)
-MISS_WITH_INLINE_CACHE(UNPACK_SEQUENCE)
-MISS_WITH_INLINE_CACHE(STORE_SUBSCR)
 
 binary_subscr_dict_error:
         {
@@ -6717,7 +6701,7 @@ call_trace(Py_tracefunc func, PyObject *obj,
     int old_what = tstate->tracing_what;
     tstate->tracing_what = what;
     PyThreadState_EnterTracing(tstate);
-    assert (frame->f_lasti >= 0);
+    assert(frame->f_lasti >= 0);
     initialize_trace_info(&tstate->trace_info, frame);
     f->f_lineno = _PyCode_CheckLineNumber(frame->f_lasti*sizeof(_Py_CODEUNIT), &tstate->trace_info.bounds);
     result = func(obj, f, what, arg);
