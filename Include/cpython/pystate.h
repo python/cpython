@@ -103,6 +103,7 @@ struct _ts {
        This is to prevent the actual trace/profile code from being recorded in
        the trace/profile. */
     int tracing;
+    int tracing_what; /* The event currently being traced, if any. */
 
     /* Pointer to current _PyCFrame in the C stack frame of the currently,
      * or most recently, executing _PyEval_EvalFrameDefault. */
@@ -257,16 +258,6 @@ PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
 PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
-
-/* Frame evaluation API */
-
-typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, struct _PyInterpreterFrame *, int);
-
-PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
-    PyInterpreterState *interp);
-PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
-    PyInterpreterState *interp,
-    _PyFrameEvalFunction eval_frame);
 
 PyAPI_FUNC(const PyConfig*) _PyInterpreterState_GetConfig(PyInterpreterState *interp);
 

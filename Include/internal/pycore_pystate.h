@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_runtime.h"   /* PyRuntimeState */
+#include "pycore_runtime.h"       // _PyRuntime
 
 
 /* Check if the current thread is the main thread.
@@ -139,14 +139,9 @@ PyAPI_FUNC(void) _PyThreadState_DeleteExcept(
     _PyRuntimeState *runtime,
     PyThreadState *tstate);
 
-static inline void
-_PyThreadState_PauseTracing(PyThreadState *tstate)
-{
-    tstate->cframe->use_tracing = 0;
-}
 
 static inline void
-_PyThreadState_ResumeTracing(PyThreadState *tstate)
+_PyThreadState_UpdateTracingState(PyThreadState *tstate)
 {
     int use_tracing = (tstate->c_tracefunc != NULL
                        || tstate->c_profilefunc != NULL);

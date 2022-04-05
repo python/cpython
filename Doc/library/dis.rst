@@ -43,7 +43,7 @@ the following command can be used to display the disassembly of
      1           0 RESUME                   0
 
      2           2 PUSH_NULL
-                 4 LOAD_GLOBAL              0 (len)
+                 4 LOAD_GLOBAL              1 (NULL + len)
                  6 LOAD_FAST                0 (alist)
                  8 PRECALL                  1
                 10 CALL                     1
@@ -628,6 +628,12 @@ iterations of the loop.
 
     .. versionadded:: 3.11
 
+.. opcode:: CHECK_EXC_MATCH
+
+   Performs exception matching for ``except``. Tests whether the TOS1 is an exception
+   matching TOS. Pops TOS and pushes the boolean result of the test.
+
+   .. versionadded:: 3.11
 
 .. opcode:: WITH_EXCEPT_START
 
@@ -895,6 +901,13 @@ iterations of the loop.
    Increments bytecode counter by *delta*.
 
 
+.. opcode:: JUMP_BACKWARD (delta)
+
+   Decrements bytecode counter by *delta*.
+
+   .. versionadded:: 3.11
+
+
 .. opcode:: POP_JUMP_IF_TRUE (target)
 
    If TOS is true, sets the bytecode counter to *target*.  TOS is popped.
@@ -907,18 +920,6 @@ iterations of the loop.
    If TOS is false, sets the bytecode counter to *target*.  TOS is popped.
 
    .. versionadded:: 3.1
-
-
-.. opcode:: JUMP_IF_NOT_EXC_MATCH (target)
-
-   Performs exception matching for ``except``.
-   Tests whether the second value on the stack is an exception matching TOS,
-   and jumps if it is not. Pops one value from the stack.
-
-   .. versionadded:: 3.9
-
-   .. versionchanged:: 3.11
-      This opcode no longer pops the active exception.
 
 
 .. opcode:: JUMP_IF_NOT_EG_MATCH (target)
@@ -974,11 +975,6 @@ iterations of the loop.
    .. versionadded:: 3.1
 
 
-.. opcode:: JUMP_ABSOLUTE (target)
-
-   Set bytecode counter to *target*.
-
-
 .. opcode:: JUMP_NO_INTERRUPT (target)
 
    Set bytecode counter to *target*. Do not check for interrupts.
@@ -996,8 +992,11 @@ iterations of the loop.
 
 .. opcode:: LOAD_GLOBAL (namei)
 
-   Loads the global named ``co_names[namei]`` onto the stack.
+   Loads the global named ``co_names[namei>>1]`` onto the stack.
 
+   .. versionchanged:: 3.11
+      If the low bit of ``namei`` is set, then a ``NULL`` is pushed to the
+      stack before the global variable.
 
 .. opcode:: LOAD_FAST (var_num)
 

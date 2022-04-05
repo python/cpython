@@ -70,6 +70,7 @@ unittest.main()
 """
 
 
+@support.requires_subprocess()
 class TestCParser(unittest.TestCase):
     def setUp(self):
         self._backup_config_vars = dict(sysconfig._CONFIG_VARS)

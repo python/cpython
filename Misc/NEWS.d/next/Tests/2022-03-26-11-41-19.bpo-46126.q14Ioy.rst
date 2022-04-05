@@ -1,0 +1,1 @@
+Restore 'descriptions' when running tests internally.

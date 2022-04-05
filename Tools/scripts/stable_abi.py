@@ -656,7 +656,7 @@ def main():
 
         And in PEP 384:
 
-        https://www.python.org/dev/peps/pep-0384/
+        https://peps.python.org/pep-0384/
         """)
 
 

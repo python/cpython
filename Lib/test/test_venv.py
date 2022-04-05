@@ -16,7 +16,7 @@ import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr, requires_zlib,
                           skip_if_broken_multiprocessing_synchronize, verbose,
-                          requires_subprocess)
+                          requires_subprocess, is_emscripten)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
@@ -33,6 +33,9 @@ requireVenvCreate = unittest.skipUnless(
     sys.prefix == sys.base_prefix
     or sys._base_executable != sys.executable,
     'cannot run venv.create from within a venv on this platform')
+
+if is_emscripten:
+    raise unittest.SkipTest("venv is not available on Emscripten.")
 
 @requires_subprocess()
 def check_output(cmd, encoding=None):
@@ -235,6 +238,20 @@ class BasicTest(BaseTest):
             cmd[2] = 'import sys; print(sys.%s)' % prefix
             out, err = check_output(cmd)
             self.assertEqual(out.strip(), expected.encode(), prefix)
+
+    @requireVenvCreate
+    def test_sysconfig_preferred_and_default_scheme(self):
+        """
+        Test that the sysconfig preferred(prefix) and default scheme is venv.
+        """
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir)
+        envpy = os.path.join(self.env_dir, self.bindir, self.exe)
+        cmd = [envpy, '-c', None]
+        for call in ('get_preferred_scheme("prefix")', 'get_default_scheme()'):
+            cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
+            out, err = check_output(cmd)
+            self.assertEqual(out.strip(), b'venv', err)
 
     if sys.platform == 'win32':
         ENV_SUBDIRS = (
