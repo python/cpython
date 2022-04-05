@@ -253,33 +253,24 @@ class PropertySubclassTests(unittest.TestCase):
 
         def getter(x):
             """Getter docstring"""
-        doc = PropertySub(getter, None, None, "issue 41287 is fixed").__doc__
-        self.assertEqual(doc, "issue 41287 is fixed",
-                         "Getter overrides explicit property docstring docstring")
-
-        doc = PropertySub(getter, None, None, None).__doc__
-        self.assertEqual(doc, "Getter docstring", "Getter docstring is not picked-up")
-
-        doc = PropertySubWoDoc(getter, None, None, "issue 41287 is fixed").__doc__
-        self.assertEqual(doc, "issue 41287 is fixed",
-                         "Getter overrides explicit property docstring docstring")
-
-        doc = PropertySubWoDoc(getter, None, None, None).__doc__
-        self.assertEqual(doc, "Getter docstring", "Getter docstring is not picked-up")
 
         def getter_wo_doc(x):
             pass
-        doc = PropertySub(getter_wo_doc, None, None, "issue 41287 is fixed").__doc__
-        self.assertEqual(doc, "issue 41287 is fixed",
-                         "Getter overrides explicit property docstring docstring")
 
-        doc = PropertySub(getter_wo_doc, None, None, None).__doc__
-        self.assertEqual(doc, "This is a subclass of property",
-                         "Getter without docstring overrides PropertySub.__doc__")
+        for ps in PropertySub, PropertySubWoDoc:
+            doc = ps(getter, None, None, "issue 41287 is fixed").__doc__
+            self.assertEqual(doc, "issue 41287 is fixed",
+                             "Getter overrides explicit property docstring (%s)" % ps.__name__)
 
-        doc = PropertySubWoDoc(getter_wo_doc, None, None, "issue 41287 is fixed").__doc__
-        self.assertEqual(doc, "issue 41287 is fixed",
-                         "Getter overrides explicit property docstring docstring")
+            doc = ps(getter, None, None, None).__doc__
+            self.assertEqual(doc, "Getter docstring", "Getter docstring is not picked-up (%s)" % ps.__name__)
+
+            doc = ps(getter_wo_doc, None, None, "issue 41287 is fixed").__doc__
+            self.assertEqual(doc, "issue 41287 is fixed",
+                             "Getter overrides explicit property docstring (%s)" % ps.__name__)
+
+            doc = ps(getter_wo_doc, None, None, None).__doc__
+            self.assertIsNone(doc)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
