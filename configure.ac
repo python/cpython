@@ -6832,8 +6832,8 @@ PY_STDLIB_MOD([nis],
   [$LIBNSL_CFLAGS], [$LIBNSL_LIBS])
 dnl PY_STDLIB_MOD([readline], [], [], [], [])
 PY_STDLIB_MOD([_sqlite3],
-  [test "x$have_sqlite3" = "xyes"],
-  [test "x$have_supported_sqlite3" = "xyes"],
+  [test "$have_sqlite3" = "yes"],
+  [test "$have_supported_sqlite3" = "yes"],
   [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
 dnl PY_STDLIB_MOD([_tkinter], [], [], [], [])
 PY_STDLIB_MOD([_uuid],
