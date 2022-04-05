@@ -1126,11 +1126,6 @@ Porting to Python 3.11
 * Distributors are encouraged to build Python with the optimized Blake2
   library `libb2`_.
 
-* Move the private undocumented ``_PyEval_EvalFrameDefault()`` function to the
-  internal C API. The function now uses the ``_PyInterpreterFrame`` type which
-  is part of the internal C API.
-  (Contributed by Victor Stinner in :issue:`46850`.)
-
 
 Deprecated
 ----------
