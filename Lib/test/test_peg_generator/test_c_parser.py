@@ -83,6 +83,9 @@ class TestCParser(unittest.TestCase):
         cls.tmp_base = os.getcwd()
         if os.path.samefile(cls.tmp_base, os_helper.SAVEDCWD):
             cls.tmp_base = None
+        # Create a directory for the reuseable static library part of
+        # the pegen extension build process.  This greatly reduces the
+        # runtime overhead of spawning compiler processes.
         cls.library_dir = tempfile.mkdtemp(dir=cls.tmp_base)
         cls.addClassCleanup(shutil.rmtree, cls.library_dir)
 

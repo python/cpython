@@ -44,6 +44,10 @@ def compile_c_extension(
 
     If *build_dir* is provided, that path will be used as the temporary build directory
     of distutils (this is useful in case you want to use a temporary directory).
+
+    If *library_dir* is provided, that path will be used as the directory for a
+    static library of the common parser sources (this is useful in case you are
+    creating multiple extensions).
     """
     import distutils.log
     from distutils.core import Distribution, Extension
@@ -103,19 +107,18 @@ def compile_c_extension(
         cmd.build_temp = build_dir
     cmd.ensure_finalized()
 
+    compiler = new_compiler()
+    customize_compiler(compiler)
+    compiler.set_include_dirs(cmd.include_dirs)
+    compiler.set_library_dirs(cmd.library_dirs)
     # build static lib
     if library_dir:
-        compiler = new_compiler()
-        customize_compiler(compiler)
-        compiler.set_include_dirs(cmd.include_dirs)
-        if cmd.library_dirs:
-            compiler.set_library_dirs(cmd.library_dirs)
-        library_name = f"lib{extension_name}"
-        library_filename = compiler.library_filename(library_name,
+        library_filename = compiler.library_filename(extension_name,
                                                      output_dir=library_dir)
         if newer_group(common_sources, library_filename, 'newer'):
             if sys.platform == 'win32':
-                compile_opts = [f"/Fd{library_dir}\\{library_name}"]
+                pdb = compiler.static_lib_format % (extension_name, '.pdb')
+                compile_opts = [f"/Fd{library_dir}\\{pdb}"]
                 compile_opts.extend(extra_compile_args)
             else:
                 compile_opts = extra_compile_args
@@ -123,15 +126,39 @@ def compile_c_extension(
                                        output_dir=library_dir,
                                        debug=cmd.debug,
                                        extra_postargs=compile_opts)
-            compiler.create_static_lib(objects, library_name,
+            compiler.create_static_lib(objects, extension_name,
                                        output_dir=library_dir,
                                        debug=cmd.debug)
-        extension.extra_objects = [library_filename]
+        if sys.platform == 'win32':
+            compiler.add_library_dir(library_dir)
+            extension.libraries = [extension_name]
+        else:
+            compiler.set_link_objects([
+                '-Wl,--whole-archive', library_filename, '-Wl,--no-whole-archive',
+            ])
     else:
         extension.sources[0:0] = common_sources
-    cmd.run()
 
-    return pathlib.Path(cmd.get_ext_filename(extension_name))
+    # Compile the source code to object files.
+    ext_path = cmd.get_ext_fullpath(extension_name)
+    if newer_group(extension.sources, ext_path, 'newer'):
+        objects = compiler.compile(extension.sources,
+                                    output_dir=cmd.build_temp,
+                                    debug=cmd.debug,
+                                    extra_postargs=extra_compile_args)
+    else:
+        objects = compiler.object_filenames(extension.sources,
+                                            output_dir=cmd.build_temp)
+    # Now link the object files together into a "shared object"
+    compiler.link_shared_object(
+        objects, ext_path,
+        libraries=cmd.get_libraries(extension),
+        extra_postargs=extra_link_args,
+        export_symbols=cmd.get_export_symbols(extension),
+        debug=cmd.debug,
+        build_temp=cmd.build_temp)
+
+    return pathlib.Path(ext_path)
 
 
 def build_parser(
