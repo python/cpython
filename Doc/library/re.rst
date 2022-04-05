@@ -166,9 +166,9 @@ The special characters are:
   back-tracking when the expression following it fails to match.
   These are known as :dfn:`possessive` quantifiers.
   For example, ``a*a`` will match ``'aaaa'`` because the ``a*`` will match
-  all 4 ``'a'``s, but, when the final ``'a'`` is encountered, the
+  all 4 ``'a'``, but, when the final ``'a'`` is encountered, the
   expression is backtracked so that in the end the ``a*`` ends up matching
-  3 ``'a'``s total, and the fourth ``'a'`` is matched by the final ``'a'``.
+  3 ``'a'`` total, and the fourth ``'a'`` is matched by the final ``'a'``.
   However, when ``a*+a`` is used to match ``'aaaa'``, the ``a*+`` will
   match all 4 ``'a'``, but when the final ``'a'`` fails to find any more
   characters to match, the expression cannot be backtracked and will thus
