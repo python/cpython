@@ -1,6 +1,5 @@
 import itertools
 import pathlib
-import shutil
 import sys
 import sysconfig
 import tempfile
@@ -33,7 +32,8 @@ def compile_c_extension(
     build_dir: Optional[str] = None,
     verbose: bool = False,
     keep_asserts: bool = True,
-    disable_optimization: bool = True,  # Significant test_peg_generator speedup.
+    disable_optimization: bool = False,
+    library_dir: Optional[str] = None,
 ) -> str:
     """Compile the generated source for a parser generator into an extension module.
 
@@ -46,13 +46,15 @@ def compile_c_extension(
     of distutils (this is useful in case you want to use a temporary directory).
     """
     import distutils.log
-    from distutils.command.build_ext import build_ext  # type: ignore
-    from distutils.command.clean import clean  # type: ignore
     from distutils.core import Distribution, Extension
     from distutils.tests.support import fixup_build_ext  # type: ignore
 
+    from distutils.ccompiler import new_compiler
+    from distutils.dep_util import newer_group
+    from distutils.sysconfig import customize_compiler
+
     if verbose:
-        distutils.log.set_verbosity(distutils.log.DEBUG)
+        distutils.log.set_threshold(distutils.log.DEBUG)
 
     source_file_path = pathlib.Path(generated_source_path)
     extension_name = source_file_path.stem
@@ -71,46 +73,65 @@ def compile_c_extension(
             extra_compile_args.append("-O0")
             if sysconfig.get_config_var("GNULD") == "yes":
                 extra_link_args.append("-fno-lto")
-    extension = [
-        Extension(
-            extension_name,
-            sources=[
-                str(MOD_DIR.parent.parent.parent / "Python" / "Python-ast.c"),
-                str(MOD_DIR.parent.parent.parent / "Python" / "asdl.c"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer.c"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen.c"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen_errors.c"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "action_helpers.c"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "string_parser.c"),
-                str(MOD_DIR.parent / "peg_extension" / "peg_extension.c"),
-                generated_source_path,
-            ],
-            include_dirs=[
-                str(MOD_DIR.parent.parent.parent / "Include" / "internal"),
-                str(MOD_DIR.parent.parent.parent / "Parser"),
-            ],
-            extra_compile_args=extra_compile_args,
-            extra_link_args=extra_link_args,
-        )
+
+    common_sources = [
+        str(MOD_DIR.parent.parent.parent / "Python" / "Python-ast.c"),
+        str(MOD_DIR.parent.parent.parent / "Python" / "asdl.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "pegen.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "pegen_errors.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "action_helpers.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "string_parser.c"),
+        str(MOD_DIR.parent / "peg_extension" / "peg_extension.c"),
     ]
-    dist = Distribution({"name": extension_name, "ext_modules": extension})
-    cmd = build_ext(dist)
+    include_dirs = [
+        str(MOD_DIR.parent.parent.parent / "Include" / "internal"),
+        str(MOD_DIR.parent.parent.parent / "Parser"),
+    ]
+    extension = Extension(
+        extension_name,
+        sources=[generated_source_path],
+        extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
+    )
+    dist = Distribution({"name": extension_name, "ext_modules": [extension]})
+    cmd = dist.get_command_obj("build_ext")
     fixup_build_ext(cmd)
-    cmd.inplace = True
+    cmd.build_lib = str(source_file_path.parent)
+    cmd.include_dirs = include_dirs
     if build_dir:
         cmd.build_temp = build_dir
-        cmd.build_lib = build_dir
     cmd.ensure_finalized()
+
+    # build static lib
+    if library_dir:
+        compiler = new_compiler()
+        customize_compiler(compiler)
+        compiler.set_include_dirs(cmd.include_dirs)
+        if cmd.library_dirs:
+            compiler.set_library_dirs(cmd.library_dirs)
+        library_name = f"lib{extension_name}"
+        library_filename = compiler.library_filename(library_name,
+                                                     output_dir=library_dir)
+        if newer_group(common_sources, library_filename, 'newer'):
+            if sys.platform == 'win32':
+                compile_opts = [f"/Fd{library_dir}\\{library_name}"]
+                compile_opts.extend(extra_compile_args)
+            else:
+                compile_opts = extra_compile_args
+            objects = compiler.compile(common_sources,
+                                       output_dir=library_dir,
+                                       debug=cmd.debug,
+                                       extra_postargs=compile_opts)
+            compiler.create_static_lib(objects, library_name,
+                                       output_dir=library_dir,
+                                       debug=cmd.debug)
+        extension.extra_objects = [library_filename]
+    else:
+        extension.sources[0:0] = common_sources
     cmd.run()
 
-    extension_path = source_file_path.parent / cmd.get_ext_filename(extension_name)
-    shutil.move(cmd.get_ext_fullpath(extension_name), extension_path)
-
-    cmd = clean(dist)
-    cmd.finalize_options()
-    cmd.run()
-
-    return extension_path
+    return pathlib.Path(cmd.get_ext_filename(extension_name))
 
 
 def build_parser(
