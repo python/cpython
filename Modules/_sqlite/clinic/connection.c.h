@@ -693,6 +693,156 @@ exit:
     return return_value;
 }
 
+#if defined(PY_SQLITE_HAVE_SERIALIZE)
+
+PyDoc_STRVAR(serialize__doc__,
+"serialize($self, /, *, name=\'main\')\n"
+"--\n"
+"\n"
+"Serialize a database into a byte string.\n"
+"\n"
+"  name\n"
+"    Which database to serialize.\n"
+"\n"
+"For an ordinary on-disk database file, the serialization is just a copy of the\n"
+"disk file. For an in-memory database or a \"temp\" database, the serialization is\n"
+"the same sequence of bytes which would be written to disk if that database\n"
+"were backed up to disk.");
+
+#define SERIALIZE_METHODDEF    \
+    {"serialize", (PyCFunction)(void(*)(void))serialize, METH_FASTCALL|METH_KEYWORDS, serialize__doc__},
+
+static PyObject *
+serialize_impl(pysqlite_Connection *self, const char *name);
+
+static PyObject *
+serialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"name", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "serialize", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    const char *name = "main";
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("serialize", "argument 'name'", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
+    if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = serialize_impl(self, name);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(PY_SQLITE_HAVE_SERIALIZE) */
+
+#if defined(PY_SQLITE_HAVE_SERIALIZE)
+
+PyDoc_STRVAR(deserialize__doc__,
+"deserialize($self, data, /, *, name=\'main\')\n"
+"--\n"
+"\n"
+"Load a serialized database.\n"
+"\n"
+"  data\n"
+"    The serialized database content.\n"
+"  name\n"
+"    Which database to reopen with the deserialization.\n"
+"\n"
+"The deserialize interface causes the database connection to disconnect from the\n"
+"target database, and then reopen it as an in-memory database based on the given\n"
+"serialized data.\n"
+"\n"
+"The deserialize interface will fail with SQLITE_BUSY if the database is\n"
+"currently in a read transaction or is involved in a backup operation.");
+
+#define DESERIALIZE_METHODDEF    \
+    {"deserialize", (PyCFunction)(void(*)(void))deserialize, METH_FASTCALL|METH_KEYWORDS, deserialize__doc__},
+
+static PyObject *
+deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
+                 const char *name);
+
+static PyObject *
+deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "name", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "deserialize", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    Py_buffer data = {NULL, NULL};
+    const char *name = "main";
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyUnicode_Check(args[0])) {
+        Py_ssize_t len;
+        const char *ptr = PyUnicode_AsUTF8AndSize(args[0], &len);
+        if (ptr == NULL) {
+            goto exit;
+        }
+        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+    }
+    else { /* any bytes-like object */
+        if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+            goto exit;
+        }
+        if (!PyBuffer_IsContiguous(&data, 'C')) {
+            _PyArg_BadArgument("deserialize", "argument 1", "contiguous buffer", args[0]);
+            goto exit;
+        }
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("deserialize", "argument 'name'", "str", args[1]);
+        goto exit;
+    }
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[1], &name_length);
+    if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = deserialize_impl(self, &data, name);
+
+exit:
+    /* Cleanup for data */
+    if (data.obj) {
+       PyBuffer_Release(&data);
+    }
+
+    return return_value;
+}
+
+#endif /* defined(PY_SQLITE_HAVE_SERIALIZE) */
+
 PyDoc_STRVAR(pysqlite_connection_enter__doc__,
 "__enter__($self, /)\n"
 "--\n"
@@ -832,4 +982,12 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=176c9095219b17c4 input=a9049054013a1b77]*/
+
+#ifndef SERIALIZE_METHODDEF
+    #define SERIALIZE_METHODDEF
+#endif /* !defined(SERIALIZE_METHODDEF) */
+
+#ifndef DESERIALIZE_METHODDEF
+    #define DESERIALIZE_METHODDEF
+#endif /* !defined(DESERIALIZE_METHODDEF) */
+/*[clinic end generated code: output=d965a68f9229a56c input=a9049054013a1b77]*/
