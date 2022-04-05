@@ -13,6 +13,7 @@ import unittest
 from unittest import mock
 
 from test.support import import_helper
+from test.support import is_emscripten
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 
@@ -2158,6 +2159,7 @@ class _BasePathTest(object):
         self.assertTrue(p.exists())
         self.assertEqual(p.stat().st_ctime, st_ctime_first)
 
+    @unittest.skipIf(is_emscripten, "FS root cannot be modified on Emscripten.")
     def test_mkdir_exist_ok_root(self):
         # Issue #25803: A drive root could raise PermissionError on Windows.
         self.cls('/').resolve().mkdir(exist_ok=True)
@@ -2342,6 +2344,9 @@ class _BasePathTest(object):
         self.assertIs((P / 'fileA\x00').is_socket(), False)
 
     @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
+    @unittest.skipIf(
+        is_emscripten, "Unix sockets are not implemented on Emscripten."
+    )
     def test_is_socket_true(self):
         P = self.cls(BASE, 'mysock')
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -2497,6 +2502,9 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         with self.assertRaises(RuntimeError):
             print(path.resolve(strict))
 
+    @unittest.skipIf(
+        is_emscripten, "umask is not implemented on Emscripten."
+    )
     def test_open_mode(self):
         old_mask = os.umask(0)
         self.addCleanup(os.umask, old_mask)
@@ -2520,6 +2528,9 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         finally:
             os.chdir(current_directory)
 
+    @unittest.skipIf(
+        is_emscripten, "umask is not implemented on Emscripten."
+    )
     def test_touch_mode(self):
         old_mask = os.umask(0)
         self.addCleanup(os.umask, old_mask)

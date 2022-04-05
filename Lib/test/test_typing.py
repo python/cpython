@@ -16,7 +16,7 @@ from typing import Union, Optional, Literal
 from typing import Tuple, List, Dict, MutableMapping
 from typing import Callable
 from typing import Generic, ClassVar, Final, final, Protocol
-from typing import cast, runtime_checkable
+from typing import assert_type, cast, runtime_checkable
 from typing import get_type_hints
 from typing import get_origin, get_args
 from typing import is_typeddict
@@ -89,12 +89,6 @@ class AnyTests(BaseTestCase):
         with self.assertRaises(TypeError):
             isinstance(42, Any)
 
-    def test_any_subclass_type_error(self):
-        with self.assertRaises(TypeError):
-            issubclass(Employee, Any)
-        with self.assertRaises(TypeError):
-            issubclass(Any, Employee)
-
     def test_repr(self):
         self.assertEqual(repr(Any), 'typing.Any')
 
@@ -104,13 +98,21 @@ class AnyTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Any[int]  # Any is not a generic type.
 
-    def test_cannot_subclass(self):
-        with self.assertRaises(TypeError):
-            class A(Any):
-                pass
-        with self.assertRaises(TypeError):
-            class A(type(Any)):
-                pass
+    def test_can_subclass(self):
+        class Mock(Any): pass
+        self.assertTrue(issubclass(Mock, Any))
+        self.assertIsInstance(Mock(), Mock)
+
+        class Something: pass
+        self.assertFalse(issubclass(Something, Any))
+        self.assertNotIsInstance(Something(), Mock)
+
+        class MockSomething(Something, Mock): pass
+        self.assertTrue(issubclass(MockSomething, Any))
+        ms = MockSomething()
+        self.assertIsInstance(ms, MockSomething)
+        self.assertIsInstance(ms, Something)
+        self.assertIsInstance(ms, Mock)
 
     def test_cannot_instantiate(self):
         with self.assertRaises(TypeError):
@@ -345,7 +347,7 @@ class TypeVarTests(BaseTestCase):
 
     def test_bound_errors(self):
         with self.assertRaises(TypeError):
-            TypeVar('X', bound=42)
+            TypeVar('X', bound=Union)
         with self.assertRaises(TypeError):
             TypeVar('X', str, float, bound=Employee)
 
@@ -360,10 +362,31 @@ class TypeVarTests(BaseTestCase):
         with self.assertRaises(ValueError):
             TypeVar('T', covariant=True, contravariant=True)
 
+    def test_var_substitution(self):
+        T = TypeVar('T')
+        subst = T.__typing_subst__
+        self.assertIs(subst(int), int)
+        self.assertEqual(subst(list[int]), list[int])
+        self.assertEqual(subst(List[int]), List[int])
+        self.assertEqual(subst(List), List)
+        self.assertIs(subst(Any), Any)
+        self.assertIs(subst(None), type(None))
+        self.assertIs(subst(T), T)
+        self.assertEqual(subst(int|str), int|str)
+        self.assertEqual(subst(Union[int, str]), Union[int, str])
+
     def test_bad_var_substitution(self):
         T = TypeVar('T')
-        for arg in (), (int, str):
+        P = ParamSpec("P")
+        bad_args = (
+            (), (int, str), Union,
+            Generic, Generic[T], Protocol, Protocol[T],
+            Final, Final[int], ClassVar, ClassVar[int],
+        )
+        for arg in bad_args:
             with self.subTest(arg=arg):
+                with self.assertRaises(TypeError):
+                    T.__typing_subst__(arg)
                 with self.assertRaises(TypeError):
                     List[T][arg]
                 with self.assertRaises(TypeError):
@@ -389,6 +412,16 @@ class UnpackTests(BaseTestCase):
 
 
 class TypeVarTupleTests(BaseTestCase):
+
+    def assertEndsWith(self, string, tail):
+        if not string.endswith(tail):
+            self.fail(f"String {string!r} does not end with {tail!r}")
+
+    def test_name(self):
+        Ts = TypeVarTuple('Ts')
+        self.assertEqual(Ts.__name__, 'Ts')
+        Ts2 = TypeVarTuple('Ts2')
+        self.assertEqual(Ts2.__name__, 'Ts2')
 
     def test_instance_is_equal_to_itself(self):
         Ts = TypeVarTuple('Ts')
@@ -436,6 +469,45 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertEqual(t2.__args__, (Unpack[Ts],))
         self.assertEqual(t2.__parameters__, (Ts,))
 
+    def test_var_substitution(self):
+        Ts = TypeVarTuple('Ts')
+        T = TypeVar('T')
+        T2 = TypeVar('T2')
+        class G(Generic[Unpack[Ts]]): pass
+
+        for A in G, Tuple:
+            B = A[Unpack[Ts]]
+            self.assertEqual(B[()], A[()])
+            self.assertEqual(B[float], A[float])
+            self.assertEqual(B[float, str], A[float, str])
+
+            C = List[A[Unpack[Ts]]]
+            self.assertEqual(C[()], List[A[()]])
+            self.assertEqual(C[float], List[A[float]])
+            self.assertEqual(C[float, str], List[A[float, str]])
+
+            D = A[T, Unpack[Ts], T2]
+            with self.assertRaises(TypeError):
+                D[()]
+            with self.assertRaises(TypeError):
+                D[float]
+            self.assertEqual(D[float, str], A[float, str])
+            self.assertEqual(D[float, str, int], A[float, str, int])
+            self.assertEqual(D[float, str, int, bytes], A[float, str, int, bytes])
+
+            E = Tuple[List[T], A[Unpack[Ts]], List[T2]]
+            with self.assertRaises(TypeError):
+                E[()]
+            with self.assertRaises(TypeError):
+                E[float]
+            if A != Tuple:
+                self.assertEqual(E[float, str],
+                                 Tuple[List[float], A[()], List[str]])
+            self.assertEqual(E[float, str, int],
+                             Tuple[List[float], A[str], List[int]])
+            self.assertEqual(E[float, str, int, bytes],
+                             Tuple[List[float], A[str, int], List[bytes]])
+
     def test_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
         self.assertEqual(repr(Ts), 'Ts')
@@ -449,78 +521,51 @@ class TypeVarTupleTests(BaseTestCase):
         Ts = TypeVarTuple('Ts')
         class A(Generic[Unpack[Ts]]): pass
 
-        self.assertTrue(repr(A[()]).endswith('A[()]'))
-        self.assertTrue(repr(A[float]).endswith('A[float]'))
-        self.assertTrue(repr(A[float, str]).endswith('A[float, str]'))
-        self.assertTrue(repr(
-            A[Unpack[tuple[int, ...]]]
-        ).endswith(
-            'A[*tuple[int, ...]]'
-        ))
-        self.assertTrue(repr(
-            A[float, Unpack[tuple[int, ...]]]
-        ).endswith(
-            'A[float, *tuple[int, ...]]'
-        ))
-        self.assertTrue(repr(
-            A[Unpack[tuple[int, ...]], str]
-        ).endswith(
-            'A[*tuple[int, ...], str]'
-        ))
-        self.assertTrue(repr(
-            A[float, Unpack[tuple[int, ...]], str]
-        ).endswith(
-            'A[float, *tuple[int, ...], str]'
-        ))
+        self.assertEndsWith(repr(A[()]), 'A[()]')
+        self.assertEndsWith(repr(A[float]), 'A[float]')
+        self.assertEndsWith(repr(A[float, str]), 'A[float, str]')
+        self.assertEndsWith(repr(A[Unpack[tuple[int, ...]]]),
+                            'A[*tuple[int, ...]]')
+        self.assertEndsWith(repr(A[float, Unpack[tuple[int, ...]]]),
+                            'A[float, *tuple[int, ...]]')
+        self.assertEndsWith(repr(A[Unpack[tuple[int, ...]], str]),
+                            'A[*tuple[int, ...], str]')
+        self.assertEndsWith(repr(A[float, Unpack[tuple[int, ...]], str]),
+                            'A[float, *tuple[int, ...], str]')
 
     def test_variadic_class_alias_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
         class A(Generic[Unpack[Ts]]): pass
 
         B = A[Unpack[Ts]]
-        self.assertTrue(repr(B).endswith('A[*Ts]'))
-        with self.assertRaises(NotImplementedError):
-            B[()]
-        with self.assertRaises(NotImplementedError):
-            B[float]
-        with self.assertRaises(NotImplementedError):
-            B[float, str]
+        self.assertEndsWith(repr(B), 'A[*Ts]')
+        self.assertEndsWith(repr(B[()]), 'A[()]')
+        self.assertEndsWith(repr(B[float]), 'A[float]')
+        self.assertEndsWith(repr(B[float, str]), 'A[float, str]')
 
         C = A[Unpack[Ts], int]
-        self.assertTrue(repr(C).endswith('A[*Ts, int]'))
-        with self.assertRaises(NotImplementedError):
-            C[()]
-        with self.assertRaises(NotImplementedError):
-            C[float]
-        with self.assertRaises(NotImplementedError):
-            C[float, str]
+        self.assertEndsWith(repr(C), 'A[*Ts, int]')
+        self.assertEndsWith(repr(C[()]), 'A[int]')
+        self.assertEndsWith(repr(C[float]), 'A[float, int]')
+        self.assertEndsWith(repr(C[float, str]), 'A[float, str, int]')
 
         D = A[int, Unpack[Ts]]
-        self.assertTrue(repr(D).endswith('A[int, *Ts]'))
-        with self.assertRaises(NotImplementedError):
-            D[()]
-        with self.assertRaises(NotImplementedError):
-            D[float]
-        with self.assertRaises(NotImplementedError):
-            D[float, str]
+        self.assertEndsWith(repr(D), 'A[int, *Ts]')
+        self.assertEndsWith(repr(D[()]), 'A[int]')
+        self.assertEndsWith(repr(D[float]), 'A[int, float]')
+        self.assertEndsWith(repr(D[float, str]), 'A[int, float, str]')
 
         E = A[int, Unpack[Ts], str]
-        self.assertTrue(repr(E).endswith('A[int, *Ts, str]'))
-        with self.assertRaises(NotImplementedError):
-            E[()]
-        with self.assertRaises(NotImplementedError):
-            E[float]
-        with self.assertRaises(NotImplementedError):
-            E[float, bool]
+        self.assertEndsWith(repr(E), 'A[int, *Ts, str]')
+        self.assertEndsWith(repr(E[()]), 'A[int, str]')
+        self.assertEndsWith(repr(E[float]), 'A[int, float, str]')
+        self.assertEndsWith(repr(E[float, str]), 'A[int, float, str, str]')
 
         F = A[Unpack[Ts], Unpack[tuple[str, ...]]]
-        self.assertTrue(repr(F).endswith('A[*Ts, *tuple[str, ...]]'))
-        with self.assertRaises(NotImplementedError):
-            F[()]
-        with self.assertRaises(NotImplementedError):
-            F[float]
-        with self.assertRaises(NotImplementedError):
-            F[float, int]
+        self.assertEndsWith(repr(F), 'A[*Ts, *tuple[str, ...]]')
+        self.assertEndsWith(repr(F[()]), 'A[*tuple[str, ...]]')
+        self.assertEndsWith(repr(F[float]), 'A[float, *tuple[str, ...]]')
+        self.assertEndsWith(repr(F[float, str]), 'A[float, str, *tuple[str, ...]]')
 
     def test_cannot_subclass_class(self):
         with self.assertRaises(TypeError):
@@ -1110,8 +1155,7 @@ class BaseCallableTests:
         C2 = Callable[[KT, T], VT]
         C3 = Callable[..., T]
         self.assertEqual(C1[str], Callable[[int, str], str])
-        if Callable is typing.Callable:
-            self.assertEqual(C1[None], Callable[[int, type(None)], type(None)])
+        self.assertEqual(C1[None], Callable[[int, type(None)], type(None)])
         self.assertEqual(C2[int, float, str], Callable[[int, float], str])
         self.assertEqual(C3[int], Callable[..., int])
         self.assertEqual(C3[NoReturn], Callable[..., NoReturn])
@@ -2544,9 +2588,6 @@ class GenericTests(BaseTestCase):
         class Base: ...
         class Derived(Base): ...
         self.assertEqual(Union[T, Base][Union[Base, Derived]], Union[Base, Derived])
-        with self.assertRaises(TypeError):
-            Union[T, int][1]
-
         self.assertEqual(Callable[[T], T][KT], Callable[[KT], KT])
         self.assertEqual(Callable[..., List[T]][int], Callable[..., List[int]])
 
@@ -2696,7 +2737,10 @@ class GenericTests(BaseTestCase):
         for obj in objs:
             self.assertNotEqual(repr(obj), '')
             self.assertEqual(obj, obj)
-            if getattr(obj, '__parameters__', None) and len(obj.__parameters__) == 1:
+            if (getattr(obj, '__parameters__', None)
+                    and not isinstance(obj, typing.TypeVar)
+                    and isinstance(obj.__parameters__, tuple)
+                    and len(obj.__parameters__) == 1):
                 self.assertEqual(obj[Any].__args__, (Any,))
             if isinstance(obj, type):
                 for base in obj.__mro__:
@@ -3087,8 +3131,6 @@ class ClassVarTests(BaseTestCase):
 
     def test_basics(self):
         with self.assertRaises(TypeError):
-            ClassVar[1]
-        with self.assertRaises(TypeError):
             ClassVar[int, str]
         with self.assertRaises(TypeError):
             ClassVar[int][str]
@@ -3126,8 +3168,6 @@ class FinalTests(BaseTestCase):
 
     def test_basics(self):
         Final[int]  # OK
-        with self.assertRaises(TypeError):
-            Final[1]
         with self.assertRaises(TypeError):
             Final[int, str]
         with self.assertRaises(TypeError):
@@ -3257,6 +3297,22 @@ class CastTests(BaseTestCase):
         # Bogus calls are not expected to fail.
         cast(42, 42)
         cast('hello', 42)
+
+
+class AssertTypeTests(BaseTestCase):
+
+    def test_basics(self):
+        arg = 42
+        self.assertIs(assert_type(arg, int), arg)
+        self.assertIs(assert_type(arg, str | float), arg)
+        self.assertIs(assert_type(arg, AnyStr), arg)
+        self.assertIs(assert_type(arg, None), arg)
+
+    def test_errors(self):
+        # Bogus calls are not expected to fail.
+        arg = 42
+        self.assertIs(assert_type(arg, 42), arg)
+        self.assertIs(assert_type(arg, 'hello'), arg)
 
 
 # We need this to make sure that `@no_type_check` respects `__module__` attr:
@@ -3539,14 +3595,6 @@ class ForwardRefTests(BaseTestCase):
             pass
 
         with self.assertRaises(SyntaxError):
-            get_type_hints(foo)
-
-    def test_type_error(self):
-
-        def foo(a: Tuple['42']):
-            pass
-
-        with self.assertRaises(TypeError):
             get_type_hints(foo)
 
     def test_name_error(self):
@@ -4197,7 +4245,7 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(Union[int, Callable[[Tuple[T, ...]], str]]),
                          (int, Callable[[Tuple[T, ...]], str]))
         self.assertEqual(get_args(Tuple[int, ...]), (int, ...))
-        self.assertEqual(get_args(Tuple[()]), ((),))
+        self.assertEqual(get_args(Tuple[()]), ())
         self.assertEqual(get_args(Annotated[T, 'one', 2, ['three']]), (T, 'one', 2, ['three']))
         self.assertEqual(get_args(List), ())
         self.assertEqual(get_args(Tuple), ())
@@ -4961,8 +5009,6 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(LocalEmployee.__annotations__, dict(name=str, age=int))
         with self.assertRaises(TypeError):
             NamedTuple('Name', [('x', int)], y=str)
-        with self.assertRaises(TypeError):
-            NamedTuple('Name', x=1, y='a')
 
     def test_namedtuple_special_keyword_names(self):
         NT = NamedTuple("NT", cls=type, self=object, typename=str, fields=list)
@@ -4998,8 +5044,6 @@ class NamedTupleTests(BaseTestCase):
             NamedTuple('Emp', [('_name', str)])
         with self.assertRaises(TypeError):
             NamedTuple(typename='Emp', name=str, id=int)
-        with self.assertRaises(TypeError):
-            NamedTuple('Emp', fields=[('name', str), ('id', int)])
 
     def test_copy_and_pickle(self):
         global Emp  # pickle wants to reference the class by name
@@ -5074,7 +5118,6 @@ class TypedDictTests(BaseTestCase):
             TypedDict()
         with self.assertRaises(TypeError):
             TypedDict('Emp', [('name', str)], None)
-
         with self.assertRaises(TypeError):
             TypedDict(_typename='Emp', name=str, id=int)
 
@@ -5088,13 +5131,6 @@ class TypedDictTests(BaseTestCase):
             isinstance(jim, Emp)
         with self.assertRaises(TypeError):
             issubclass(dict, Emp)
-        # We raise a DeprecationWarning for the keyword syntax
-        # before the TypeError.
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(TypeError):
-                TypedDict('Hi', x=1)
-        with self.assertRaises(TypeError):
-            TypedDict('Hi', [('x', int), ('y', 1)])
         with self.assertRaises(TypeError):
             TypedDict('Hi', [('x', int)], y=int)
 
@@ -5748,6 +5784,17 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G1.__args__, ((int, str), (bytes,)))
         self.assertEqual(G2.__args__, ((int,), (str, bytes)))
 
+    def test_var_substitution(self):
+        T = TypeVar("T")
+        P = ParamSpec("P")
+        subst = P.__typing_subst__
+        self.assertEqual(subst((int, str)), (int, str))
+        self.assertEqual(subst([int, str]), (int, str))
+        self.assertEqual(subst([None]), (type(None),))
+        self.assertIs(subst(...), ...)
+        self.assertIs(subst(P), P)
+        self.assertEqual(subst(Concatenate[int, P]), Concatenate[int, P])
+
     def test_bad_var_substitution(self):
         T = TypeVar('T')
         P = ParamSpec('P')
@@ -5755,25 +5802,11 @@ class ParamSpecTests(BaseTestCase):
         for arg in bad_args:
             with self.subTest(arg=arg):
                 with self.assertRaises(TypeError):
+                    P.__typing_subst__(arg)
+                with self.assertRaises(TypeError):
                     typing.Callable[P, T][arg, str]
                 with self.assertRaises(TypeError):
                     collections.abc.Callable[P, T][arg, str]
-
-    def test_no_paramspec_in__parameters__(self):
-        # ParamSpec should not be found in __parameters__
-        # of generics. Usages outside Callable, Concatenate
-        # and Generic are invalid.
-        T = TypeVar("T")
-        P = ParamSpec("P")
-        self.assertNotIn(P, List[P].__parameters__)
-        self.assertIn(T, Tuple[T, P].__parameters__)
-
-        # Test for consistency with builtin generics.
-        self.assertNotIn(P, list[P].__parameters__)
-        self.assertIn(T, tuple[T, P].__parameters__)
-
-        self.assertNotIn(P, (list[P] | int).__parameters__)
-        self.assertIn(T, (tuple[T, P] | int).__parameters__)
 
     def test_paramspec_in_nested_generics(self):
         # Although ParamSpec should not be found in __parameters__ of most
@@ -5792,6 +5825,27 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G1[[int, str], float], List[C])
         self.assertEqual(G2[[int, str], float], list[C])
         self.assertEqual(G3[[int, str], float], list[C] | int)
+
+    def test_paramspec_gets_copied(self):
+        # bpo-46581
+        P = ParamSpec('P')
+        P2 = ParamSpec('P2')
+        C1 = Callable[P, int]
+        self.assertEqual(C1.__parameters__, (P,))
+        self.assertEqual(C1[P2].__parameters__, (P2,))
+        self.assertEqual(C1[str].__parameters__, ())
+        self.assertEqual(C1[str, T].__parameters__, (T,))
+        self.assertEqual(C1[Concatenate[str, P2]].__parameters__, (P2,))
+        self.assertEqual(C1[Concatenate[T, P2]].__parameters__, (T, P2))
+        self.assertEqual(C1[...].__parameters__, ())
+
+        C2 = Callable[Concatenate[str, P], int]
+        self.assertEqual(C2.__parameters__, (P,))
+        self.assertEqual(C2[P2].__parameters__, (P2,))
+        self.assertEqual(C2[str].__parameters__, ())
+        self.assertEqual(C2[str, T].__parameters__, (T,))
+        self.assertEqual(C2[Concatenate[str, P2]].__parameters__, (P2,))
+        self.assertEqual(C2[Concatenate[T, P2]].__parameters__, (T, P2))
 
 
 class ConcatenateTests(BaseTestCase):
@@ -5847,6 +5901,9 @@ class TypeGuardTests(BaseTestCase):
 
         def foo(arg) -> TypeGuard[int]: ...
         self.assertEqual(gth(foo), {'return': TypeGuard[int]})
+
+        with self.assertRaises(TypeError):
+            TypeGuard[int, str]
 
     def test_repr(self):
         self.assertEqual(repr(TypeGuard), 'typing.TypeGuard')

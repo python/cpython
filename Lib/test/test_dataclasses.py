@@ -2926,23 +2926,58 @@ class TestSlots(unittest.TestCase):
                 x: int
 
     def test_generated_slots_value(self):
-        @dataclass(slots=True)
-        class Base:
-            x: int
 
-        self.assertEqual(Base.__slots__, ('x',))
+        class Root:
+            __slots__ = {'x'}
+
+        class Root2(Root):
+            __slots__ = {'k': '...', 'j': ''}
+
+        class Root3(Root2):
+            __slots__ = ['h']
+
+        class Root4(Root3):
+            __slots__ = 'aa'
 
         @dataclass(slots=True)
-        class Delivered(Base):
+        class Base(Root4):
             y: int
+            j: str
+            h: str
 
-        self.assertEqual(Delivered.__slots__, ('x', 'y'))
+        self.assertEqual(Base.__slots__, ('y', ))
+
+        @dataclass(slots=True)
+        class Derived(Base):
+            aa: float
+            x: str
+            z: int
+            k: str
+            h: str
+
+        self.assertEqual(Derived.__slots__, ('z', ))
 
         @dataclass
-        class AnotherDelivered(Base):
+        class AnotherDerived(Base):
             z: int
 
-        self.assertTrue('__slots__' not in AnotherDelivered.__dict__)
+        self.assertNotIn('__slots__', AnotherDerived.__dict__)
+
+    def test_cant_inherit_from_iterator_slots(self):
+
+        class Root:
+            __slots__ = iter(['a'])
+
+        class Root2(Root):
+            __slots__ = ('b', )
+
+        with self.assertRaisesRegex(
+           TypeError,
+            "^Slots of 'Root' cannot be determined"
+        ):
+            @dataclass(slots=True)
+            class C(Root2):
+                x: int
 
     def test_returns_new_class(self):
         class A:

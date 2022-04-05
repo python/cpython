@@ -343,6 +343,11 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
 
+    def test_ucnhash_capi_reset(self):
+        # bpo-47182: unicodeobject.c:ucnhash_capi was not reset on shutdown.
+        code = "print('\\N{digit nine}')"
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, '9\n' * INIT_LOOPS)
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
@@ -1645,24 +1650,29 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
                          '-X showrefcount requires a Python debug build')
     def test_no_memleak(self):
         # bpo-1635741: Python must release all memory at exit
-        cmd = [sys.executable, "-I", "-X", "showrefcount", "-c", "pass"]
-        proc = subprocess.run(cmd,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT,
-                              text=True)
-        self.assertEqual(proc.returncode, 0)
-        out = proc.stdout.rstrip()
-        match = re.match(r'^\[(-?\d+) refs, (-?\d+) blocks\]', out)
-        if not match:
-            self.fail(f"unexpected output: {out!a}")
-        refs = int(match.group(1))
-        blocks = int(match.group(2))
-        self.assertEqual(refs, 0, out)
-        if not MS_WINDOWS:
-            self.assertEqual(blocks, 0, out)
-        else:
-            # bpo-46857: on Windows, Python still leaks 1 memory block at exit
-            self.assertIn(blocks, (0, 1), out)
+        tests = (
+            ('off', 'pass'),
+            ('on', 'pass'),
+            ('off', 'import __hello__'),
+            ('on', 'import __hello__'),
+        )
+        for flag, stmt in tests:
+            xopt = f"frozen_modules={flag}"
+            cmd = [sys.executable, "-I", "-X", "showrefcount", "-X", xopt, "-c", stmt]
+            proc = subprocess.run(cmd,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT,
+                                  text=True)
+            self.assertEqual(proc.returncode, 0)
+            out = proc.stdout.rstrip()
+            match = re.match(r'^\[(-?\d+) refs, (-?\d+) blocks\]', out)
+            if not match:
+                self.fail(f"unexpected output: {out!a}")
+            refs = int(match.group(1))
+            blocks = int(match.group(2))
+            with self.subTest(frozen_modules=flag, stmt=stmt):
+                self.assertEqual(refs, 0, out)
+                self.assertEqual(blocks, 0, out)
 
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
