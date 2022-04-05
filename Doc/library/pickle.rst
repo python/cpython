@@ -793,8 +793,7 @@ share the private dispatch table.  On the other hand, the code ::
    f = io.BytesIO()
    p = pickle.Pickler(f)
 
-does the same but all instances of :class:`pickle.Pickler` will by default
-share the modified global dispatch table.
+modifies the global dispatch table shared by all users of the :mod:`copyreg` module.
 
 .. _pickle-state:
 
