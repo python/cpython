@@ -91,7 +91,3 @@ ac_cv_func_linkat=no
 
 # alarm signal is not delivered, may need a callback into the event loop?
 ac_cv_func_alarm=no
-
-# To use dlopen, you need to use Emscripten's linking support,
-# see https://emscripten.org/docs/compiling/Dynamic-Linking.html
-ac_cv_func_dlopen=no

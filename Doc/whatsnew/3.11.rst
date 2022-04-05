@@ -523,6 +523,9 @@ CPython bytecode changes
 * Replaced :opcode:`JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH` which
   performs the check but does not jump.
 
+* Replaced :opcode:`JUMP_IF_NOT_EG_MATCH` by :opcode:`CHECK_EG_MATCH` which
+  performs the check but does not jump.
+
 * Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
 
 * Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`, which is used in certain loops where it is undesirable to handle interrupts.
@@ -781,7 +784,7 @@ Build Changes
   libsqlite3, zlib, bzip2, liblzma, libcrypt, Tcl/Tk libs, and uuid flags
   are detected by ``pkg-config`` (when available).
   (Contributed by Christian Heimes and Erlend Egeberg Aasland in
-  :issue:`bpo-45847`, :issue:`45747`, and :issue:`45763`.)
+  :issue:`45847`, :issue:`45747`, and :issue:`45763`.)
 
   .. note::
      Use the environment variables ``TCLTK_CFLAGS`` and ``TCLTK_LIBS`` to

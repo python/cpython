@@ -1107,6 +1107,25 @@ dnl are free to remove them in the future.
 ])
 AC_MSG_RESULT([$ac_sys_emscripten_target])
 
+dnl On Emscripten dlopen() requires -s MAIN_MODULE and -fPIC. The flags
+dnl disables dead code elimination and increases the size of the WASM module
+dnl by about 1.5 to 2MB. MAIN_MODULE defines __wasm_mutable_globals__.
+dnl See https://emscripten.org/docs/compiling/Dynamic-Linking.html
+AC_MSG_CHECKING([for --enable-wasm-dynamic-linking])
+AC_ARG_ENABLE([wasm-dynamic-linking],
+  [AS_HELP_STRING([--enable-wasm-dynamic-linking],
+                  [Enable dynamic linking support for WebAssembly (default is no)])],
+[
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [],
+    [WASI], [AC_MSG_ERROR([WASI dynamic linking is not implemented yet.])],
+    [AC_MSG_ERROR([--enable-wasm-dynamic-linking only applies to Emscripten and WASI])]
+  )
+], [
+  enable_wasm_dynamic_linking=missing
+])
+AC_MSG_RESULT([$enable_wasm_dynamic_linking])
+
 AC_MSG_CHECKING([for --with-suffix])
 AC_ARG_WITH([suffix],
             [AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is empty, yes is mapped to '.exe')])],
@@ -1118,7 +1137,7 @@ AC_ARG_WITH([suffix],
   )
 ], [
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/browser*], [EXEEXT=.html],
+    [Emscripten/browser*], [EXEEXT=.js],
     [Emscripten/node*], [EXEEXT=.js],
     [WASI/*], [EXEEXT=.wasm],
     [EXEEXT=]
@@ -1890,29 +1909,32 @@ then
 fi
 
 # WASM flags
-# TODO: Add -s MAIN_MODULE=2 for dlopen() support.
-# The option disables code elimination, which increases code size of main
-# binary. All objects must be built with -fPIC.
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   [Emscripten/browser*], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1"
-    LINKFORSHARED="--preload-file \$(WASM_ASSETS_DIR)"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH=1"
+    LINKFORSHARED="--preload-file=\$(WASM_ASSETS_DIR)"
+    AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+      AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE=1"])
+    ])
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
     dnl separate-dwarf does not seem to work in Chrome DevTools Support.
     if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "browser-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS=1"
       LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
     else
       LINKFORSHARED="$LINKFORSHARED -O2 -g0"
     fi
   ],
   [Emscripten/node*], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s USE_PTHREADS=1"
-    LINKFORSHARED="-s PROXY_TO_PTHREAD=1 -s EXIT_RUNTIME=1"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH=1 -sNODERAWFS=1 -sUSE_PTHREADS=1"
+    LINKFORSHARED="-sPROXY_TO_PTHREAD=1 -sEXIT_RUNTIME=1"
+    AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+      AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE=1"])
+    ])
     CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
     if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "node-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS=1"
       LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
     else
       LINKFORSHARED="$LINKFORSHARED -O2 -g0"
@@ -1925,6 +1947,12 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
   ]
+)
+
+AS_CASE([$enable_wasm_dynamic_linking],
+  [yes], [ac_cv_func_dlopen=yes],
+  [no], [ac_cv_func_dlopen=no],
+  [missing], []
 )
 
 AC_SUBST(BASECFLAGS)
@@ -2929,10 +2957,6 @@ then
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
-	Emscripten*)
-		LDSHARED='$(CC) -shared -s SIDE_MODULE=1'
-		LDCXXSHARED='$(CXX) -shared -s SIDE_MODULE=1'
-    ;;
 	FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
@@ -2971,15 +2995,30 @@ then
 	SCO_SV*)
 		LDSHARED='$(CC) -Wl,-G,-Bexport'
 		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
+	WASI*)
+		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+			dnl not iplemented yet
+		]);;
 	CYGWIN*)
 		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
 		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
 	*)	LDSHARED="ld";;
 	esac
 fi
+
+dnl Emscripten's emconfigure sets LDSHARED. Set BLDSHARED outside the
+dnl test -z $LDSHARED block to configure BLDSHARED for side module support.
+if test "$enable_wasm_dynamic_linking" = "yes" -a "$ac_sys_system" = "Emscripten"; then
+  BLDSHARED='$(CC) -shared -sSIDE_MODULE=1 -sWASM=1'
+fi
+
 AC_MSG_RESULT($LDSHARED)
 LDCXXSHARED=${LDCXXSHARED-$LDSHARED}
+
+AC_MSG_CHECKING([BLDSHARED flags])
 BLDSHARED=${BLDSHARED-$LDSHARED}
+AC_MSG_RESULT([$BLDSHARED])
+
 # CCSHARED are the C *flags* used to create objects to go into a shared
 # library (module) -- this is only needed for a few systems
 AC_MSG_CHECKING(CCSHARED)
@@ -2998,6 +3037,10 @@ then
 		 fi;;
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
+	Emscripten*|WASI*)
+		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+			CCSHARED="-fPIC"
+		]);;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
@@ -3099,6 +3142,12 @@ then
 		CFLAGSFORSHARED='$(CCSHARED)'
 	esac
 fi
+
+dnl WASM dynamic linking requires -fPIC.
+AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
+  CFLAGSFORSHARED='$(CCSHARED)'
+])
+
 AC_MSG_RESULT($CFLAGSFORSHARED)
 
 # SHLIBS are libraries (except -lc and -lm) to link to the python shared
@@ -4460,7 +4509,8 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
 ])
 
 if test "$have_zlib" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$ZLIB_LIBS" = "-lz"; then
-  ZLIB_LIBS="-s USE_ZLIB=1"
+  ZLIB_CFLAGS="-sUSE_ZLIB=1"
+  ZLIB_LIBS="-sUSE_ZLIB=1"
 fi
 
 dnl binascii can use zlib for optimized crc32.
@@ -4482,7 +4532,8 @@ PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
 ])
 
 if test "$have_bzip2" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$BZIP2_LIBS" = "-lbz2"; then
-  BZIP2_LIBS="-s USE_BZIP2=1"
+  BZIP2_CFLAGS="-sUSE_BZIP2=1"
+  BZIP2_LIBS="-sUSE_BZIP2=1"
 fi
 
 
