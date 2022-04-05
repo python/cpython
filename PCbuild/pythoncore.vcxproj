@@ -534,13 +534,15 @@
     <!-- BEGIN deepfreeze -->
     <ClCompile Include="..\Python\deepfreeze\deepfreeze.c" />
     <!-- END deepfreeze -->
-    </ItemGroup>
+  </ItemGroup>
   <ItemGroup Condition="$(IncludeExternals)">
     <ClCompile Include="..\Modules\zlibmodule.c" />
     <ClCompile Include="$(zlibDir)\adler32.c" />
     <ClCompile Include="$(zlibDir)\compress.c" />
     <ClCompile Include="$(zlibDir)\crc32.c" />
-    <ClCompile Include="$(zlibDir)\deflate.c" />
+    <ClCompile Include="$(zlibDir)\deflate.c">
+      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
+    </ClCompile>
     <ClCompile Include="$(zlibDir)\infback.c" />
     <ClCompile Include="$(zlibDir)\inffast.c" />
     <ClCompile Include="$(zlibDir)\inflate.c" />
