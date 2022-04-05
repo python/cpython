@@ -447,6 +447,83 @@ class TypeVarTests(BaseTestCase):
                     list[T][arg]
 
 
+class TypeVarSubstitutionTests(BaseTestCase):
+
+    def test(self):
+        T = TypeVar('T')
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+        Ts = TypeVarTuple('Ts')
+        class A(Generic[T]): pass
+        class B(Generic[T1, T2]): pass
+        class C(Generic[*Ts]): pass
+        tests = [
+            ('A[T]',                        '[()]',                                    TypeError),
+            ('A[T]',                        '[int]',                                   A[int]),
+            ('A[T]',                        '[int, str]',                              TypeError),
+            ('A[T]',                        '[tuple[int, ...]]',                       A[tuple[int, ...]]),
+            ('A[T]',                        '[*tuple[()]]',                            A[*tuple[()]]),  # Should raise TypeError?
+            ('A[T]',                        '[*tuple[int]]',                           A[*tuple[int]]),  # Should be A[int]?
+            ('A[T]',                        '[*tuple[int, str]]',                      A[*tuple[int, str]]), # Should raise TypeError?
+            ('A[T]',                        '[*tuple[int, ...]]',                      A[*tuple[int, ...]]),  # Should raise TypeError?
+            ('A[T]',                        '[*Ts]',                                   A[T][*Ts]),  # Should raise TypeError?
+            ('A[T]',                        '[T, *Ts]',                                TypeError),
+            ('A[T]',                        '[*Ts, T]',                                TypeError),
+            ('A[T, *tuple[int, ...]]',      '[int]',                                   TypeError),
+
+            ('B[T1, T2]',                   '[()]',                                    TypeError),
+            ('B[T1, T2]',                   '[int]',                                   TypeError),
+            ('B[T1, T2]',                   '[int, str]',                              B[int, str]),
+            ('B[T1, T2]',                   '[int, str, bool]',                        TypeError),
+            ('B[T1, T2]',                   '[*tuple[int]]',                           TypeError),
+            ('B[T1, T2]',                   '[*tuple[int, str]]',                      TypeError),  # Should be B[int, str]?
+            ('B[T1, T2]',                   '[*tuple[int, str, bool]]',                TypeError),
+            ('B[T1, T2]',                   '[*tuple[int, str], *tuple[float, bool]]', B[*tuple[int, str], *tuple[float, bool]]),  # Should raise TypeError?
+            ('B[T1, T2]',                   '[tuple[int, ...]]',                       TypeError),
+            ('B[T1, T2]',                   '[tuple[int, ...], tuple[str, ...]]',      B[tuple[int, ...], tuple[str, ...]]),
+            ('B[T1, T2]',                   '[*tuple[int, ...]]',                      TypeError),
+            ('B[T1, T2]',                   '[*tuple[int, ...], *tuple[str, ...]]',    B[*tuple[int, ...], *tuple[str, ...]]),  # Should raise TypeError?
+            ('B[T1, T2]',                   '[*Ts]',                                   TypeError),
+            ('B[T1, T2]',                   '[T, *Ts]',                                B[T, *Ts]),  # Should raise TypeError?
+            ('B[T1, T2]',                   '[*Ts, T]',                                B[*Ts, T]),  # Should raise TypeError?
+            ('B[T1, *tuple[int, ...]]',     '[str]',                                   B[str, *tuple[int, ...]]),  # Should raise TypeError?
+            ('B[T1, T2, *tuple[int, ...]]', '[int, str]',                              TypeError),
+
+            ('C[*Ts]',                      '[()]',                                    C[()]),
+            ('C[*Ts]',                      '[int]',                                   C[int]),
+            ('C[*Ts]',                      '[int, str]',                              C[int, str]),
+            ('C[*Ts]',                      '[*tuple[int]]',                           C[*tuple[int]]),  # Should be C[int]?
+            ('C[*Ts]',                      '[*tuple[int, str]]',                      C[*tuple[int, str]]),  # Should be C[int, str]?
+            ('C[*Ts]',                      '[tuple[int, ...]]',                       C[tuple[int, ...]]),
+            ('C[*Ts]',                      '[tuple[int, ...], tuple[str, ...]]',      C[tuple[int, ...], tuple[str, ...]]),
+            ('C[*Ts]',                      '[*tuple[int, ...]]',                      C[*tuple[int, ...]]),
+            ('C[*Ts]',                      '[*tuple[int, ...], *tuple[str, ...]]',    C[*tuple[int, ...], *tuple[str, ...]]),
+            ('C[*Ts]',                      '[*Ts]',                                   C[*Ts]),
+            ('C[*Ts]',                      '[T, *Ts]',                                C[T, *Ts]),
+            ('C[*Ts]',                      '[*Ts, T]',                                C[*Ts, T]),
+            ('C[T, *Ts]',                   '[int]',                                   C[int]),
+            ('C[T, *Ts]',                   '[int, str]',                              C[int, str]),
+            ('C[T, *Ts]',                   '[int, str, bool]',                        C[int, str, bool]),
+            ('C[*Ts, T]',                   '[int]',                                   C[int]),
+            ('C[*Ts, T]',                   '[int, str]',                              C[int, str]),
+            ('C[*Ts, T]',                   '[int, str, bool]',                        C[int, str, bool]),
+            ('C[T, *Ts]',                   '[*tuple[int, ...]]',                      C[*tuple[int, ...]]),  # Should be C[int, *tuple[int, ...]]?
+            ('C[T, *tuple[int, ...]]',      '[str]',                                   C[str, *tuple[int, ...]]),
+            ('C[T1, T2, *tuple[int, ...]]', '[str, bool]',                             C[str, bool, *tuple[int, ...]]),
+            ('C[T1, *tuple[int, ...], T2]', '[str, bool]',                             C[str, *tuple[int, ...], bool]),
+        ]
+        for alias, args, expected in tests:
+            with self.subTest(alias=alias, args=args, expected=expected):
+                if inspect.isclass(expected) and issubclass(expected, Exception):
+                    with self.assertRaises(expected):
+                        eval(alias + args)
+                else:
+                    self.assertEqual(
+                        eval(alias + args),
+                        expected,
+                    )
+
+
 class UnpackTests(BaseTestCase):
 
     def test_accepts_single_type(self):
