@@ -196,7 +196,7 @@ class TestReversed(unittest.TestCase, PickleTest):
         self.assertEqual(type(reversed(x)), type(iter(x)))
         y = range(10)
         self.assertEqual(type(reversed(y)), type(iter(x)))
-        
+
     def test_len(self):
         for s in ('hello', tuple('hello'), list('hello'), range(5)):
             self.assertEqual(operator.length_hint(reversed(s)), len(s))
