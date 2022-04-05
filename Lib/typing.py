@@ -429,8 +429,17 @@ class _LiteralSpecialForm(_SpecialForm, _root=True):
         return self._getitem(self, *parameters)
 
 
-@_SpecialForm
-def Any(self, parameters):
+class _AnyMeta(type):
+    def __instancecheck__(self, obj):
+        if self is Any:
+            raise TypeError("typing.Any cannot be used with isinstance()")
+        return super().__instancecheck__(obj)
+
+    def __repr__(self):
+        return "typing.Any"
+
+
+class Any(metaclass=_AnyMeta):
     """Special type indicating an unconstrained type.
 
     - Any is compatible with every type.
@@ -439,9 +448,13 @@ def Any(self, parameters):
 
     Note that all the above statements are true from the point of view of
     static type checkers. At runtime, Any should not be used with instance
-    or class checks.
+    checks.
     """
-    raise TypeError(f"{self} is not subscriptable")
+    def __new__(cls, *args, **kwargs):
+        if cls is Any:
+            raise TypeError("Any cannot be instantiated")
+        return super().__new__(cls, *args, **kwargs)
+
 
 @_SpecialForm
 def NoReturn(self, parameters):
