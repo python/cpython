@@ -132,6 +132,10 @@ def compile_c_extension(
         if sys.platform == 'win32':
             compiler.add_library_dir(library_dir)
             extension.libraries = [extension_name]
+        elif sys.platform == 'darwin':
+            compiler.set_link_objects([
+                '-Wl,-all_load', library_filename, '-Wl,-noall_load',
+            ])
         else:
             compiler.set_link_objects([
                 '-Wl,--whole-archive', library_filename, '-Wl,--no-whole-archive',
