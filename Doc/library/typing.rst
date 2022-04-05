@@ -598,16 +598,16 @@ These can be used as types in annotations and do not support ``[]``.
    Example::
 
       def run_query(sql: LiteralString) -> ...
-         ...
+          ...
 
       def caller(arbitrary_string: str, literal_string: LiteralString) -> None:
-         run_query("SELECT * FROM students")  # ok
-         run_query(literal_string)  # ok
-         run_query("SELECT * FROM " + literal_string)  # ok
-         run_query(arbitrary_string)  # type checker error
-         run_query(  # type checker error
-            f"SELECT * FROM students WHERE name = {arbitrary_string}"
-         )
+          run_query("SELECT * FROM students")  # ok
+          run_query(literal_string)  # ok
+          run_query("SELECT * FROM " + literal_string)  # ok
+          run_query(arbitrary_string)  # type checker error
+          run_query(  # type checker error
+              f"SELECT * FROM students WHERE name = {arbitrary_string}"
+          )
 
    This is useful for sensitive APIs where arbitrary user-generated
    strings could generate problems. For example, the two cases above
