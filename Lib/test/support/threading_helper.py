@@ -207,3 +207,30 @@ class catch_threading_exception:
         del self.exc_value
         del self.exc_traceback
         del self.thread
+
+
+def _can_start_thread() -> bool:
+    """Detect if Python can start new threads.
+
+    Some WebAssembly platforms do not provide a working pthread
+    implementation. Thread support is stubbed and any attempt
+    to create a new thread fails.
+
+    - wasm32-wasi does not have threading.
+    - wasm32-emscripten can be compiled with or without pthread
+      support (-s USE_PTHREADS / __EMSCRIPTEN_PTHREADS__).
+    """
+    if sys.platform == "emscripten":
+        try:
+            _thread.start_new_thread(lambda: None, ())
+        except RuntimeError:
+            return False
+        else:
+            return True
+    elif sys.platform == "wasi":
+        return False
+    else:
+        # assume all other platforms have working thread support.
+        return True
+
+can_start_thread = _can_start_thread()

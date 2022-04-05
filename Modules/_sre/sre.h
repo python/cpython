@@ -5,7 +5,7 @@
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
- * See the _sre.c file for information on usage and redistribution.
+ * See the sre.c file for information on usage and redistribution.
  */
 
 #ifndef SRE_INCLUDED
@@ -29,6 +29,8 @@ typedef struct {
     Py_ssize_t groups; /* must be first! */
     PyObject* groupindex; /* dict */
     PyObject* indexgroup; /* tuple */
+    /* the number of REPEATs */
+    Py_ssize_t repeat_count;
     /* compatibility */
     PyObject* pattern; /* pattern source (or None) */
     int flags; /* flags used when compiling pattern source */
@@ -83,6 +85,8 @@ typedef struct {
     size_t data_stack_base;
     /* current repeat context */
     SRE_REPEAT *repeat;
+    /* repeat contexts array */
+    SRE_REPEAT *repeats_array;
 } SRE_STATE;
 
 typedef struct {

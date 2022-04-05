@@ -427,6 +427,12 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->lastmark = -1;
     state->lastindex = -1;
 
+    state->repeats_array = PyMem_New(SRE_REPEAT, pattern->repeat_count);
+    if (!state->repeats_array) {
+        PyErr_NoMemory();
+        goto err;
+    }
+
     state->buffer.buf = NULL;
     ptr = getstring(string, &length, &isbytes, &charsize, &state->buffer);
     if (!ptr)
@@ -476,6 +482,9 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
        safely casted to `void*`, see bpo-39943 for details. */
     PyMem_Free((void*) state->mark);
     state->mark = NULL;
+    PyMem_Free(state->repeats_array);
+    state->repeats_array = NULL;
+
     if (state->buffer.buf)
         PyBuffer_Release(&state->buffer);
     return NULL;
@@ -491,6 +500,8 @@ state_fini(SRE_STATE* state)
     /* See above PyMem_Del for why we explicitly cast here. */
     PyMem_Free((void*) state->mark);
     state->mark = NULL;
+    PyMem_Free(state->repeats_array);
+    state->repeats_array = NULL;
 }
 
 /* calculate offset from start of string */
@@ -532,6 +543,14 @@ state_getslice(SRE_STATE* state, Py_ssize_t index, PyObject* string, int empty)
     } else {
         i = STATE_OFFSET(state, state->mark[index]);
         j = STATE_OFFSET(state, state->mark[index+1]);
+
+        /* check wrong span */
+        if (i > j) {
+            PyErr_SetString(PyExc_SystemError,
+                            "The span of capturing group is wrong,"
+                            " please report a bug for the re module.");
+            return NULL;
+        }
     }
 
     return getslice(state->isbytes, state->beginning, string, i, j);
@@ -1399,14 +1418,15 @@ _sre.compile
     groups: Py_ssize_t
     groupindex: object(subclass_of='&PyDict_Type')
     indexgroup: object(subclass_of='&PyTuple_Type')
+    repeat_count: Py_ssize_t
 
 [clinic start generated code]*/
 
 static PyObject *
 _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
                   PyObject *code, Py_ssize_t groups, PyObject *groupindex,
-                  PyObject *indexgroup)
-/*[clinic end generated code: output=ef9c2b3693776404 input=0a68476dbbe5db30]*/
+                  PyObject *indexgroup, Py_ssize_t repeat_count)
+/*[clinic end generated code: output=922af562d51b1657 input=77e39c322501ec2a]*/
 {
     /* "compile" pattern descriptor to pattern object */
 
@@ -1464,8 +1484,8 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
     self->pattern = pattern;
 
     self->flags = flags;
-
     self->groups = groups;
+    self->repeat_count = repeat_count;
 
     if (PyDict_GET_SIZE(groupindex) > 0) {
         Py_INCREF(groupindex);
@@ -1637,7 +1657,7 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
 }
 
 static int
-_validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
+_validate_inner(SRE_CODE *code, SRE_CODE *end, PatternObject *self)
 {
     /* Some variables are manipulated by the macros above */
     SRE_CODE op;
@@ -1658,8 +1678,8 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                sre_match() code is robust even if they don't, and the worst
                you can get is nonsensical match results. */
             GET_ARG;
-            if (arg > 2 * (size_t)groups + 1) {
-                VTRACE(("arg=%d, groups=%d\n", (int)arg, (int)groups));
+            if (arg > 2 * (size_t)self->groups + 1) {
+                VTRACE(("arg=%d, groups=%d\n", (int)arg, (int)self->groups));
                 FAIL;
             }
             break;
@@ -1788,7 +1808,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     if (skip == 0)
                         break;
                     /* Stop 2 before the end; we check the JUMP below */
-                    if (!_validate_inner(code, code+skip-3, groups))
+                    if (!_validate_inner(code, code+skip-3, self))
                         FAIL;
                     code += skip-3;
                     /* Check that it ends with a JUMP, and that each JUMP
@@ -1817,7 +1837,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     FAIL;
                 if (max > SRE_MAXREPEAT)
                     FAIL;
-                if (!_validate_inner(code, code+skip-4, groups))
+                if (!_validate_inner(code, code+skip-4, self))
                     FAIL;
                 code += skip-4;
                 GET_OP;
@@ -1829,7 +1849,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
         case SRE_OP_REPEAT:
         case SRE_OP_POSSESSIVE_REPEAT:
             {
-                SRE_CODE op1 = op, min, max;
+                SRE_CODE op1 = op, min, max, repeat_index;
                 GET_SKIP;
                 GET_ARG; min = arg;
                 GET_ARG; max = arg;
@@ -1837,9 +1857,17 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     FAIL;
                 if (max > SRE_MAXREPEAT)
                     FAIL;
-                if (!_validate_inner(code, code+skip-3, groups))
+                if (op1 == SRE_OP_REPEAT) {
+                    GET_ARG; repeat_index = arg;
+                    if (repeat_index >= (size_t)self->repeat_count)
+                        FAIL;
+                    skip -= 4;
+                } else {
+                    skip -= 3;
+                }
+                if (!_validate_inner(code, code+skip, self))
                     FAIL;
-                code += skip-3;
+                code += skip;
                 GET_OP;
                 if (op1 == SRE_OP_POSSESSIVE_REPEAT) {
                     if (op != SRE_OP_SUCCESS)
@@ -1855,7 +1883,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
         case SRE_OP_ATOMIC_GROUP:
             {
                 GET_SKIP;
-                if (!_validate_inner(code, code+skip-2, groups))
+                if (!_validate_inner(code, code+skip-2, self))
                     FAIL;
                 code += skip-2;
                 GET_OP;
@@ -1869,7 +1897,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
         case SRE_OP_GROUPREF_UNI_IGNORE:
         case SRE_OP_GROUPREF_LOC_IGNORE:
             GET_ARG;
-            if (arg >= (size_t)groups)
+            if (arg >= (size_t)self->groups)
                 FAIL;
             break;
 
@@ -1878,7 +1906,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                'group' is either an integer group number or a group name,
                'then' and 'else' are sub-regexes, and 'else' is optional. */
             GET_ARG;
-            if (arg >= (size_t)groups)
+            if (arg >= (size_t)self->groups)
                 FAIL;
             GET_SKIP_ADJ(1);
             code--; /* The skip is relative to the first arg! */
@@ -1911,17 +1939,17 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                 code[skip-3] == SRE_OP_JUMP)
             {
                 VTRACE(("both then and else parts present\n"));
-                if (!_validate_inner(code+1, code+skip-3, groups))
+                if (!_validate_inner(code+1, code+skip-3, self))
                     FAIL;
                 code += skip-2; /* Position after JUMP, at <skipno> */
                 GET_SKIP;
-                if (!_validate_inner(code, code+skip-1, groups))
+                if (!_validate_inner(code, code+skip-1, self))
                     FAIL;
                 code += skip-1;
             }
             else {
                 VTRACE(("only a then part present\n"));
-                if (!_validate_inner(code+1, code+skip-1, groups))
+                if (!_validate_inner(code+1, code+skip-1, self))
                     FAIL;
                 code += skip-1;
             }
@@ -1935,7 +1963,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
             if (arg & 0x80000000)
                 FAIL; /* Width too large */
             /* Stop 1 before the end; we check the SUCCESS below */
-            if (!_validate_inner(code+1, code+skip-2, groups))
+            if (!_validate_inner(code+1, code+skip-2, self))
                 FAIL;
             code += skip-2;
             GET_OP;
@@ -1954,18 +1982,19 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
 }
 
 static int
-_validate_outer(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
+_validate_outer(SRE_CODE *code, SRE_CODE *end, PatternObject *self)
 {
-    if (groups < 0 || (size_t)groups > SRE_MAXGROUPS ||
+    if (self->groups < 0 || (size_t)self->groups > SRE_MAXGROUPS ||
+        self->repeat_count < 0 ||
         code >= end || end[-1] != SRE_OP_SUCCESS)
         FAIL;
-    return _validate_inner(code, end-1, groups);
+    return _validate_inner(code, end-1, self);
 }
 
 static int
 _validate(PatternObject *self)
 {
-    if (!_validate_outer(self->code, self->code+self->codesize, self->groups))
+    if (!_validate_outer(self->code, self->code+self->codesize, self))
     {
         PyErr_SetString(PyExc_RuntimeError, "invalid SRE code");
         return 0;
@@ -2477,6 +2506,15 @@ pattern_new_match(_sremodulestate* module_state,
             if (j+1 <= state->lastmark && state->mark[j] && state->mark[j+1]) {
                 match->mark[j+2] = ((char*) state->mark[j] - base) / n;
                 match->mark[j+3] = ((char*) state->mark[j+1] - base) / n;
+
+                /* check wrong span */
+                if (match->mark[j+2] > match->mark[j+3]) {
+                    PyErr_SetString(PyExc_SystemError,
+                                    "The span of capturing group is wrong,"
+                                    " please report a bug for the re module.");
+                    Py_DECREF(match);
+                    return NULL;
+                }
             } else
                 match->mark[j+2] = match->mark[j+3] = -1; /* undefined */
 
@@ -2750,7 +2788,7 @@ pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
     return PyBool_FromLong(cmp);
 }
 
-#include "clinic/_sre.c.h"
+#include "clinic/sre.c.h"
 
 static PyMethodDef pattern_methods[] = {
     _SRE_SRE_PATTERN_MATCH_METHODDEF

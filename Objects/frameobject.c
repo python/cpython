@@ -207,7 +207,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case JUMP_IF_TRUE_OR_POP:
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
-                case JUMP_IF_NOT_EXC_MATCH:
                 case JUMP_IF_NOT_EG_MATCH:
                 {
                     int64_t target_stack;
@@ -216,8 +215,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     if (stacks[j] == UNINITIALIZED && j < i) {
                         todo = 1;
                     }
-                    if (opcode == JUMP_IF_NOT_EXC_MATCH ||
-                        opcode == JUMP_IF_NOT_EG_MATCH)
+                    if (opcode == JUMP_IF_NOT_EG_MATCH)
                     {
                         next_stack = pop_value(pop_value(next_stack));
                         target_stack = next_stack;
@@ -237,7 +235,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[i+1] = next_stack;
                     break;
                 }
-                case JUMP_ABSOLUTE:
                 case JUMP_NO_INTERRUPT:
                     j = get_arg(code, i);
                     assert(j < len);
@@ -261,6 +258,12 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case JUMP_FORWARD:
                     j = get_arg(code, i) + i + 1;
                     assert(j < len);
+                    assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
+                    stacks[j] = next_stack;
+                    break;
+                case JUMP_BACKWARD:
+                    j = i + 1 - get_arg(code, i);
+                    assert(j >= 0);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
                     stacks[j] = next_stack;
                     break;
@@ -1127,6 +1130,28 @@ PyObject*
 PyFrame_GetLocals(PyFrameObject *frame)
 {
     return frame_getlocals(frame, NULL);
+}
+
+PyObject*
+PyFrame_GetGlobals(PyFrameObject *frame)
+{
+    return frame_getglobals(frame, NULL);
+}
+
+PyObject*
+PyFrame_GetBuiltins(PyFrameObject *frame)
+{
+    return frame_getbuiltins(frame, NULL);
+}
+
+PyObject *
+PyFrame_GetGenerator(PyFrameObject *frame)
+{
+    if (frame->f_frame->owner != FRAME_OWNED_BY_GENERATOR) {
+        return NULL;
+    }
+    PyGenObject *gen = _PyFrame_GetGenerator(frame->f_frame);
+    return Py_NewRef(gen);
 }
 
 PyObject*

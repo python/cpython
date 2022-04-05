@@ -3,8 +3,8 @@ from test.support import (gc_collect, bigmemtest, _2G,
                           check_disallow_instantiation, is_emscripten)
 import locale
 import re
-import sre_compile
 import string
+import sys
 import time
 import unittest
 import warnings
@@ -569,7 +569,7 @@ class ReTests(unittest.TestCase):
                                'two branches', 10)
 
     def test_re_groupref_overflow(self):
-        from sre_constants import MAXGROUPS
+        from re._constants import MAXGROUPS
         self.checkTemplateError('()', r'\g<%s>' % MAXGROUPS, 'xx',
                                 'invalid group reference %d' % MAXGROUPS, 3)
         self.checkPatternError(r'(?P<a>)(?(%d))' % MAXGROUPS,
@@ -1643,9 +1643,12 @@ class ReTests(unittest.TestCase):
         long_overflow = 2**128
         self.assertRaises(TypeError, re.finditer, "a", {})
         with self.assertRaises(OverflowError):
-            _sre.compile("abc", 0, [long_overflow], 0, {}, ())
+            _sre.compile("abc", 0, [long_overflow], 0, {}, (), 0)
         with self.assertRaises(TypeError):
-            _sre.compile({}, 0, [], 0, [], [])
+            _sre.compile({}, 0, [], 0, [], [], 0)
+        with self.assertRaises(RuntimeError):
+            # invalid repeat_count -1
+            _sre.compile("abc", 0, [1], 0, {}, (), -1)
 
     def test_search_dot_unicode(self):
         self.assertTrue(re.search("123.*-", '123abc-'))
@@ -2033,6 +2036,75 @@ class ReTests(unittest.TestCase):
                           {'tag': 'foo', 'text': None},
                           {'tag': 'foo', 'text': None}])
 
+    def test_MARK_PUSH_macro_bug(self):
+        # issue35859, MARK_PUSH() macro didn't protect MARK-0 if it
+        # was the only available mark.
+        self.assertEqual(re.match(r'(ab|a)*?b', 'ab').groups(), ('a',))
+        self.assertEqual(re.match(r'(ab|a)+?b', 'ab').groups(), ('a',))
+        self.assertEqual(re.match(r'(ab|a){0,2}?b', 'ab').groups(), ('a',))
+        self.assertEqual(re.match(r'(.b|a)*?b', 'ab').groups(), ('a',))
+
+    def test_MIN_UNTIL_mark_bug(self):
+        # Fixed in issue35859, reported in issue9134.
+        # JUMP_MIN_UNTIL_2 should MARK_PUSH() if in a repeat
+        s = 'axxzbcz'
+        p = r'(?:(?:a|bc)*?(xx)??z)*'
+        self.assertEqual(re.match(p, s).groups(), ('xx',))
+
+        # test-case provided by issue9134
+        s = 'xtcxyzxc'
+        p = r'((x|yz)+?(t)??c)*'
+        m = re.match(p, s)
+        self.assertEqual(m.span(), (0, 8))
+        self.assertEqual(m.span(2), (6, 7))
+        self.assertEqual(m.groups(), ('xyzxc', 'x', 't'))
+
+    def test_REPEAT_ONE_mark_bug(self):
+        # issue35859
+        # JUMP_REPEAT_ONE_1 should MARK_PUSH() if in a repeat
+        s = 'aabaab'
+        p = r'(?:[^b]*a(?=(b)|(a))ab)*'
+        m = re.match(p, s)
+        self.assertEqual(m.span(), (0, 6))
+        self.assertEqual(m.span(2), (4, 5))
+        self.assertEqual(m.groups(), (None, 'a'))
+
+        # JUMP_REPEAT_ONE_2 should MARK_PUSH() if in a repeat
+        s = 'abab'
+        p = r'(?:[^b]*(?=(b)|(a))ab)*'
+        m = re.match(p, s)
+        self.assertEqual(m.span(), (0, 4))
+        self.assertEqual(m.span(2), (2, 3))
+        self.assertEqual(m.groups(), (None, 'a'))
+
+        self.assertEqual(re.match(r'(ab?)*?b', 'ab').groups(), ('a',))
+
+    def test_MIN_REPEAT_ONE_mark_bug(self):
+        # issue35859
+        # JUMP_MIN_REPEAT_ONE should MARK_PUSH() if in a repeat
+        s = 'abab'
+        p = r'(?:.*?(?=(a)|(b))b)*'
+        m = re.match(p, s)
+        self.assertEqual(m.span(), (0, 4))
+        self.assertEqual(m.span(2), (3, 4))
+        self.assertEqual(m.groups(), (None, 'b'))
+
+        s = 'axxzaz'
+        p = r'(?:a*?(xx)??z)*'
+        self.assertEqual(re.match(p, s).groups(), ('xx',))
+
+    def test_ASSERT_NOT_mark_bug(self):
+        # Fixed in issue35859, reported in issue725149.
+        # JUMP_ASSERT_NOT should LASTMARK_SAVE()
+        self.assertEqual(re.match(r'(?!(..)c)', 'ab').groups(), (None,))
+
+        # JUMP_ASSERT_NOT should MARK_PUSH() if in a repeat
+        m = re.match(r'((?!(ab)c)(.))*', 'abab')
+        self.assertEqual(m.span(), (0, 4))
+        self.assertEqual(m.span(1), (3, 4))
+        self.assertEqual(m.span(3), (3, 4))
+        self.assertEqual(m.groups(), ('b', None, 'b'))
+
     def test_bug_40736(self):
         with self.assertRaisesRegex(TypeError, "got 'int'"):
             re.search("x*", 5)
@@ -2265,6 +2337,27 @@ POSSESSIVE_REPEAT 0 1
 14. SUCCESS
 ''')
 
+    def test_repeat_index(self):
+        self.assertEqual(get_debug_out(r'(?:ab)*?(?:cd)*'), '''\
+MIN_REPEAT 0 MAXREPEAT
+  LITERAL 97
+  LITERAL 98
+MAX_REPEAT 0 MAXREPEAT
+  LITERAL 99
+  LITERAL 100
+
+ 0. INFO 4 0b0 0 MAXREPEAT (to 5)
+ 5: REPEAT 8 0 MAXREPEAT 0 (to 14)
+10.   LITERAL 0x61 ('a')
+12.   LITERAL 0x62 ('b')
+14: MIN_UNTIL
+15. REPEAT 8 0 MAXREPEAT 1 (to 24)
+20.   LITERAL 0x63 ('c')
+22.   LITERAL 0x64 ('d')
+24: MAX_UNTIL
+25. SUCCESS
+''')
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):
@@ -2364,7 +2457,7 @@ class ImplementationTest(unittest.TestCase):
             tp.foo = 1
 
     def test_overlap_table(self):
-        f = sre_compile._generate_overlap_table
+        f = re._compiler._generate_overlap_table
         self.assertEqual(f(""), [])
         self.assertEqual(f("a"), [0])
         self.assertEqual(f("abcd"), [0, 0, 0, 0])
@@ -2373,8 +2466,8 @@ class ImplementationTest(unittest.TestCase):
         self.assertEqual(f("abcabdac"), [0, 0, 0, 1, 2, 0, 1, 0])
 
     def test_signedness(self):
-        self.assertGreaterEqual(sre_compile.MAXREPEAT, 0)
-        self.assertGreaterEqual(sre_compile.MAXGROUPS, 0)
+        self.assertGreaterEqual(re._compiler.MAXREPEAT, 0)
+        self.assertGreaterEqual(re._compiler.MAXGROUPS, 0)
 
     @cpython_only
     def test_disallow_instantiation(self):
@@ -2384,6 +2477,32 @@ class ImplementationTest(unittest.TestCase):
         pat = re.compile("")
         check_disallow_instantiation(self, type(pat.scanner("")))
 
+    def test_deprecated_modules(self):
+        deprecated = {
+            'sre_compile': ['compile', 'error',
+                            'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
+                            '_compile_info'],
+            'sre_constants': ['error', 'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
+                              '_NamedIntConstant'],
+            'sre_parse': ['SubPattern', 'parse',
+                          'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
+                          '_parse_sub'],
+        }
+        for name in deprecated:
+            with self.subTest(module=name):
+                sys.modules.pop(name, None)
+                with self.assertWarns(DeprecationWarning) as cm:
+                    __import__(name)
+                self.assertEqual(str(cm.warnings[0].message),
+                                 f"module {name!r} is deprecated")
+                self.assertEqual(cm.warnings[0].filename, __file__)
+                self.assertIn(name, sys.modules)
+                mod = sys.modules[name]
+                self.assertEqual(mod.__name__, name)
+                self.assertEqual(mod.__package__, '')
+                for attr in deprecated[name]:
+                    self.assertTrue(hasattr(mod, attr))
+                del sys.modules[name]
 
 class ExternalTests(unittest.TestCase):
 

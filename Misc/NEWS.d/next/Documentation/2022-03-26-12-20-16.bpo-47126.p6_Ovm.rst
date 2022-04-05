@@ -1,0 +1,1 @@
+Update PEP URLs to :pep:`676`'s new canonical form.

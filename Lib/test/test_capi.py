@@ -1087,5 +1087,25 @@ class Test_ModuleStateAccess(unittest.TestCase):
         self.assertIs(Subclass().get_defining_module(), self.module)
 
 
+class Test_FrameAPI(unittest.TestCase):
+
+    def getframe(self):
+        return sys._getframe()
+
+    def getgenframe(self):
+        yield sys._getframe()
+
+    def test_frame_getters(self):
+        frame = self.getframe()
+        self.assertEquals(frame.f_locals, _testcapi.frame_getlocals(frame))
+        self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
+        self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
+
+    def test_frame_get_generator(self):
+        gen = self.getgenframe()
+        frame = next(gen)
+        self.assertIs(gen, _testcapi.frame_getgenerator(frame))
+
+
 if __name__ == "__main__":
     unittest.main()
