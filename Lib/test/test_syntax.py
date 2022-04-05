@@ -1014,6 +1014,13 @@ Specialized indentation errors:
 
    >>> try:
    ...     something()
+   ... except:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'except' statement on line 3
+
+   >>> try:
+   ...     something()
    ... except A:
    ... pass
    Traceback (most recent call last):
