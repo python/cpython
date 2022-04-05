@@ -1,0 +1,2 @@
+Replace Emscripten's limited shell with Katie Bell's browser-ui REPL from
+python-wasm project.
