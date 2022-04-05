@@ -89,12 +89,6 @@ class AnyTests(BaseTestCase):
         with self.assertRaises(TypeError):
             isinstance(42, Any)
 
-    def test_any_subclass_type_error(self):
-        with self.assertRaises(TypeError):
-            issubclass(Employee, Any)
-        with self.assertRaises(TypeError):
-            issubclass(Any, Employee)
-
     def test_repr(self):
         self.assertEqual(repr(Any), 'typing.Any')
 
@@ -104,13 +98,21 @@ class AnyTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Any[int]  # Any is not a generic type.
 
-    def test_cannot_subclass(self):
-        with self.assertRaises(TypeError):
-            class A(Any):
-                pass
-        with self.assertRaises(TypeError):
-            class A(type(Any)):
-                pass
+    def test_can_subclass(self):
+        class Mock(Any): pass
+        self.assertTrue(issubclass(Mock, Any))
+        self.assertIsInstance(Mock(), Mock)
+
+        class Something: pass
+        self.assertFalse(issubclass(Something, Any))
+        self.assertNotIsInstance(Something(), Mock)
+
+        class MockSomething(Something, Mock): pass
+        self.assertTrue(issubclass(MockSomething, Any))
+        ms = MockSomething()
+        self.assertIsInstance(ms, MockSomething)
+        self.assertIsInstance(ms, Something)
+        self.assertIsInstance(ms, Mock)
 
     def test_cannot_instantiate(self):
         with self.assertRaises(TypeError):

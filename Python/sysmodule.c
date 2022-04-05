@@ -841,7 +841,10 @@ static PyObject *
 sys_getdefaultencoding_impl(PyObject *module)
 /*[clinic end generated code: output=256d19dfcc0711e6 input=d416856ddbef6909]*/
 {
-    return PyUnicode_FromString(PyUnicode_GetDefaultEncoding());
+    _Py_DECLARE_STR(utf_8, "utf-8");
+    PyObject *ret = &_Py_STR(utf_8);
+    Py_INCREF(ret);
+    return ret;
 }
 
 /*[clinic input]

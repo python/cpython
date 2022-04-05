@@ -1,0 +1,1 @@
+Link the errnos referenced in ``Doc/library/exceptions.rst`` to their respective section in ``Doc/library/errno.rst``, and vice versa. Previously this was only done for EINTR and InterruptedError. Patch by Yan "yyyyyyyan" Orestes.

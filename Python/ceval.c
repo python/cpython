@@ -21,6 +21,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
 #include "code.h"
 #include "pycore_dict.h"
@@ -1292,6 +1293,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
     }
 
 #define CHECK_EVAL_BREAKER() \
+    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
     if (_Py_atomic_load_relaxed(eval_breaker)) { \
         goto handle_eval_breaker; \
     }

@@ -779,7 +779,7 @@ Build Changes
   libsqlite3, zlib, bzip2, liblzma, libcrypt, Tcl/Tk libs, and uuid flags
   are detected by ``pkg-config`` (when available).
   (Contributed by Christian Heimes and Erlend Egeberg Aasland in
-  :issue:`bpo-45847`, :issue:`45747`, and :issue:`45763`.)
+  :issue:`45847`, :issue:`45747`, and :issue:`45763`.)
 
   .. note::
      Use the environment variables ``TCLTK_CFLAGS`` and ``TCLTK_LIBS`` to

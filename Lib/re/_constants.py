@@ -13,7 +13,7 @@
 
 # update when constants are added or removed
 
-MAGIC = 20220318
+MAGIC = 20220402
 
 from _sre import MAXREPEAT, MAXGROUPS
 
@@ -234,7 +234,7 @@ if __name__ == "__main__":
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
- * See the _sre.c file for information on usage and redistribution.
+ * See the sre.c file for information on usage and redistribution.
  */
 
 """)
