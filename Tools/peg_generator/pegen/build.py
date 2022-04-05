@@ -134,7 +134,7 @@ def compile_c_extension(
             extension.libraries = [extension_name]
         elif sys.platform == 'darwin':
             compiler.set_link_objects([
-                '-Wl,-all_load', library_filename, '-Wl,-noall_load',
+                '-Wl,-force_load', library_filename,
             ])
         else:
             compiler.set_link_objects([
