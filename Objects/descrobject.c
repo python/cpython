@@ -1789,24 +1789,24 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     Py_XSETREF(self->prop_name, NULL);
 
     self->getter_doc = 0;
-    PyObject *get_doc = NULL;
+    PyObject *prop_doc = NULL;
 
     /* if no docstring given and the getter has one, use that one */
     if ((doc == NULL || doc == Py_None) && fget != NULL) {
-        int rc = _PyObject_LookupAttr(fget, &_Py_ID(__doc__), &get_doc);
+        int rc = _PyObject_LookupAttr(fget, &_Py_ID(__doc__), &prop_doc);
         if (rc <= 0) {
             return rc;
         }
         self->getter_doc = 1;
     }
     else {
-        get_doc = doc;
-        Py_XINCREF(get_doc);
+        prop_doc = doc;
+        Py_XINCREF(prop_doc);
     }
 
 
     if (Py_IS_TYPE(self, &PyProperty_Type)) {
-        Py_XSETREF(self->prop_doc, get_doc);
+        Py_XSETREF(self->prop_doc, prop_doc);
     }
     else {
         /* If this is a property subclass, put __doc__
@@ -1814,8 +1814,8 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
            otherwise it gets shadowed by __doc__ in the
            class's dict. */
         int err = PyObject_SetAttr(
-                    (PyObject *)self, &_Py_ID(__doc__), get_doc);
-        Py_XDECREF(get_doc);
+                    (PyObject *)self, &_Py_ID(__doc__), prop_doc);
+        Py_XDECREF(prop_doc);
         if (err < 0)
             return -1;
     }
