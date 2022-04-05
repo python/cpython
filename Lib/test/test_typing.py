@@ -27,7 +27,7 @@ from typing import NamedTuple, TypedDict
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
 from typing import Annotated, ForwardRef
-from typing import Self
+from typing import Self, LiteralString
 from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
 from typing import TypeGuard
@@ -264,6 +264,60 @@ class SelfTests(BaseTestCase):
         self.assertEqual(get_args(alias_2), (Self,))
         self.assertEqual(get_args(alias_3), (Self,))
 
+
+class LiteralStringTests(BaseTestCase):
+    def test_equality(self):
+        self.assertEqual(LiteralString, LiteralString)
+        self.assertIs(LiteralString, LiteralString)
+        self.assertNotEqual(LiteralString, None)
+
+    def test_basics(self):
+        class Foo:
+            def bar(self) -> LiteralString: ...
+        class FooStr:
+            def bar(self) -> 'LiteralString': ...
+        class FooStrTyping:
+            def bar(self) -> 'typing.LiteralString': ...
+
+        for target in [Foo, FooStr, FooStrTyping]:
+            with self.subTest(target=target):
+                self.assertEqual(gth(target.bar), {'return': LiteralString})
+        self.assertIs(get_origin(LiteralString), None)
+
+    def test_repr(self):
+        self.assertEqual(repr(LiteralString), 'typing.LiteralString')
+
+    def test_cannot_subscript(self):
+        with self.assertRaises(TypeError):
+            LiteralString[int]
+
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class C(type(LiteralString)):
+                pass
+        with self.assertRaises(TypeError):
+            class C(LiteralString):
+                pass
+
+    def test_cannot_init(self):
+        with self.assertRaises(TypeError):
+            LiteralString()
+        with self.assertRaises(TypeError):
+            type(LiteralString)()
+
+    def test_no_isinstance(self):
+        with self.assertRaises(TypeError):
+            isinstance(1, LiteralString)
+        with self.assertRaises(TypeError):
+            issubclass(int, LiteralString)
+
+    def test_alias(self):
+        alias_1 = Tuple[LiteralString, LiteralString]
+        alias_2 = List[LiteralString]
+        alias_3 = ClassVar[LiteralString]
+        self.assertEqual(get_args(alias_1), (LiteralString, LiteralString))
+        self.assertEqual(get_args(alias_2), (LiteralString,))
+        self.assertEqual(get_args(alias_3), (LiteralString,))
 
 class TypeVarTests(BaseTestCase):
     def test_basic_plain(self):

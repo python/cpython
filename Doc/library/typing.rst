@@ -76,6 +76,8 @@ annotations. These include:
      *Introducing* :data:`TypeGuard`
 * :pep:`673`: Self type
     *Introducing* :data:`Self`
+* :pep:`675`: Arbitrary Literal String Type
+    *Introducing* :data:`LiteralString`
 
 .. _type-aliases:
 
@@ -584,6 +586,33 @@ These can be used as types in annotations and do not support ``[]``.
        :data:`Any` can now be used as a base class. This can be useful for
        avoiding type checker errors with classes that can duck type anywhere or
        are highly dynamic.
+
+.. data:: LiteralString
+
+   Special type that includes only literal strings. A string
+   literal is compatible with ``LiteralString``, as is another
+   ``LiteralString``, but an object typed as just ``str`` is not.
+   A string created by composing ``LiteralString``-typed objects
+   is also acceptable as a ``LiteralString``.
+
+   Example::
+
+      def run_query(sql: LiteralString) -> ...
+          ...
+
+      def caller(arbitrary_string: str, literal_string: LiteralString) -> None:
+          run_query("SELECT * FROM students")  # ok
+          run_query(literal_string)  # ok
+          run_query("SELECT * FROM " + literal_string)  # ok
+          run_query(arbitrary_string)  # type checker error
+          run_query(  # type checker error
+              f"SELECT * FROM students WHERE name = {arbitrary_string}"
+          )
+
+   This is useful for sensitive APIs where arbitrary user-generated
+   strings could generate problems. For example, the two cases above
+   that generate type checker errors could be vulnerable to an SQL
+   injection attack.
 
 .. data:: Never
 
