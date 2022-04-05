@@ -69,30 +69,10 @@
  */
 #define MAX_ALLOWED_STACK_USE (STACK_USE_GUIDELINE * 100)
 
-
-/* Pseudo-instructions used in the compiler,
- * but turned into NOPs by the assembler. */
-#define SETUP_FINALLY -1
-#define SETUP_CLEANUP -2
-#define SETUP_WITH -3
-#define POP_BLOCK -4
-#define JUMP -5
-#define JUMP_NO_INTERRUPT -6
-
-#define MIN_VIRTUAL_OPCODE -6
-#define MAX_ALLOWED_OPCODE 254
-
 #define IS_WITHIN_OPCODE_RANGE(opcode) \
         ((opcode) >= MIN_VIRTUAL_OPCODE && (opcode) <= MAX_ALLOWED_OPCODE)
 
 #define IS_VIRTUAL_OPCODE(opcode) ((opcode) < 0)
-
-/* opcodes which are not emitted in codegen stage, only by the assembler */
-#define IS_ASSEMBLER_OPCODE(opcode) \
-        ((opcode) == JUMP_FORWARD || \
-         (opcode) == JUMP_BACKWARD || \
-         (opcode) == JUMP_BACKWARD_NO_INTERRUPT)
-
 
 #define IS_TOP_LEVEL_AWAIT(c) ( \
         (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
@@ -156,7 +136,7 @@ is_block_push(struct instr *instr)
 static inline int
 is_jump(struct instr *i)
 {
-    return i->i_opcode == JUMP ||
+    return is_virtual_jump_opcode(i->i_opcode) ||
            is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
 }
 

@@ -31,28 +31,47 @@ haslocal = []
 hascompare = []
 hasfree = []
 hasnargs = [] # unused
+assembler = []
 
 opmap = {}
 opname = ['<%r>' % (op,) for op in range(256)]
+virtual = {}
+
+RELATIVE = 0x1
+ABSOLUTE = 0x2
+BACKWARD = 0x4
+FORWARD = 0x8
+ASSEMBLER = 0x10  # Not emitted in codegen stage, only by assembler
 
 _inline_cache_entries = [0] * 256
 
+
+def jump_flags(op, flags):
+    assert flags & RELATIVE != flags & ABSOLUTE
+    if flags & RELATIVE:
+        assert not (flags & BACKWARD) or not (flags & FORWARD)
+        hasjrel.append(op)
+    elif flags & ABSOLUTE:
+        hasjabs.append(op)
+    if flags & ASSEMBLER:
+        assembler.append(op)
+
 def def_op(name, op, entries=0):
-    opname[op] = name
-    opmap[name] = op
+    if op >= 0:
+        opname[op] = name
+        opmap[name] = op
+    else:
+        virtual[name] = op
     _inline_cache_entries[op] = entries
+
+def jump_op(flags, name, op, entries=0):
+    jump_flags(op, flags)
+    def_op(name, op, entries=entries)
 
 def name_op(name, op, entries=0):
     def_op(name, op, entries)
     hasname.append(op)
 
-def jrel_op(name, op, entries=0):
-    def_op(name, op, entries)
-    hasjrel.append(op)
-
-def jabs_op(name, op, entries=0):
-    def_op(name, op, entries)
-    hasjabs.append(op)
 
 # Instruction opcodes for compiled code
 # Blank lines correspond to available opcodes
@@ -111,7 +130,6 @@ HAVE_ARGUMENT = 90              # Opcodes from here have an argument:
 name_op('STORE_NAME', 90)       # Index in name list
 name_op('DELETE_NAME', 91)      # ""
 def_op('UNPACK_SEQUENCE', 92, 1)   # Number of tuple items
-jrel_op('FOR_ITER', 93)
 def_op('UNPACK_EX', 94)
 name_op('STORE_ATTR', 95, 4)       # Index in name list
 name_op('DELETE_ATTR', 96)      # ""
@@ -130,31 +148,22 @@ def_op('COMPARE_OP', 107, 2)       # Comparison operator
 hascompare.append(107)
 name_op('IMPORT_NAME', 108)     # Index in name list
 name_op('IMPORT_FROM', 109)     # Index in name list
-jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
-jabs_op('JUMP_IF_FALSE_OR_POP', 111) # Target byte offset from beginning of code
-jabs_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
-jabs_op('POP_JUMP_IF_FALSE', 114)    # ""
-jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
 name_op('LOAD_GLOBAL', 116, 5)     # Index in name list
 def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
 def_op('BINARY_OP', 122, 1)
-jrel_op('SEND', 123) # Number of bytes to skip
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)
 def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
-jabs_op('POP_JUMP_IF_NOT_NONE', 128)
-jabs_op('POP_JUMP_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('GET_AWAITABLE', 131)
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
-jrel_op('JUMP_BACKWARD_NO_INTERRUPT', 134) # Number of words to skip (backwards)
 def_op('MAKE_CELL', 135)
 hasfree.append(135)
 def_op('LOAD_CLOSURE', 136)
@@ -165,7 +174,6 @@ def_op('STORE_DEREF', 138)
 hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
-jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
@@ -197,8 +205,32 @@ def_op('CALL', 171, 4)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
 
+jump_op(RELATIVE | FORWARD, 'FOR_ITER', 173)
+jump_op(RELATIVE | FORWARD, 'SEND', 174)
+jump_op(RELATIVE | FORWARD | ASSEMBLER, 'JUMP_FORWARD', 175)
+jump_op(RELATIVE | BACKWARD | ASSEMBLER, 'JUMP_BACKWARD', 176)
+jump_op(RELATIVE | BACKWARD | ASSEMBLER, 'JUMP_BACKWARD_NO_INTERRUPT', 177)
 
-del def_op, name_op, jrel_op, jabs_op
+jump_op(ABSOLUTE, 'JUMP_IF_FALSE_OR_POP', 178)
+jump_op(ABSOLUTE, 'JUMP_IF_TRUE_OR_POP', 179)
+jump_op(ABSOLUTE, 'POP_JUMP_IF_FALSE', 180)
+jump_op(ABSOLUTE, 'POP_JUMP_IF_TRUE', 181)
+jump_op(ABSOLUTE, 'POP_JUMP_IF_NOT_NONE', 182)
+jump_op(ABSOLUTE, 'POP_JUMP_IF_NONE', 183)
+
+
+# Virtual Opcodes
+# (Pseudo-instructions used in the compiler,
+# but turned into NOPs by the assembler)
+
+def_op('SETUP_FINALLY', -1)
+def_op('SETUP_CLEANUP', -2)
+def_op('SETUP_WITH', -3)
+def_op('POP_BLOCK', -4)
+jump_op(RELATIVE, 'JUMP', -5)
+jump_op(RELATIVE, 'JUMP_NO_INTERRUPT', -6)
+
+del def_op, name_op, jump_op, jump_flags
 
 _nb_ops = [
     ("NB_ADD", "+"),

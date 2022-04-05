@@ -49,7 +49,6 @@ extern "C" {
 #define STORE_NAME                              90
 #define DELETE_NAME                             91
 #define UNPACK_SEQUENCE                         92
-#define FOR_ITER                                93
 #define UNPACK_EX                               94
 #define STORE_ATTR                              95
 #define DELETE_ATTR                             96
@@ -66,34 +65,24 @@ extern "C" {
 #define COMPARE_OP                             107
 #define IMPORT_NAME                            108
 #define IMPORT_FROM                            109
-#define JUMP_FORWARD                           110
-#define JUMP_IF_FALSE_OR_POP                   111
-#define JUMP_IF_TRUE_OR_POP                    112
-#define POP_JUMP_IF_FALSE                      114
-#define POP_JUMP_IF_TRUE                       115
 #define LOAD_GLOBAL                            116
 #define IS_OP                                  117
 #define CONTAINS_OP                            118
 #define RERAISE                                119
 #define COPY                                   120
 #define BINARY_OP                              122
-#define SEND                                   123
 #define LOAD_FAST                              124
 #define STORE_FAST                             125
 #define DELETE_FAST                            126
-#define POP_JUMP_IF_NOT_NONE                   128
-#define POP_JUMP_IF_NONE                       129
 #define RAISE_VARARGS                          130
 #define GET_AWAITABLE                          131
 #define MAKE_FUNCTION                          132
 #define BUILD_SLICE                            133
-#define JUMP_BACKWARD_NO_INTERRUPT             134
 #define MAKE_CELL                              135
 #define LOAD_CLOSURE                           136
 #define LOAD_DEREF                             137
 #define STORE_DEREF                            138
 #define DELETE_DEREF                           139
-#define JUMP_BACKWARD                          140
 #define CALL_FUNCTION_EX                       142
 #define EXTENDED_ARG                           144
 #define LIST_APPEND                            145
@@ -114,6 +103,17 @@ extern "C" {
 #define PRECALL                                166
 #define CALL                                   171
 #define KW_NAMES                               172
+#define FOR_ITER                               173
+#define SEND                                   174
+#define JUMP_FORWARD                           175
+#define JUMP_BACKWARD                          176
+#define JUMP_BACKWARD_NO_INTERRUPT             177
+#define JUMP_IF_FALSE_OR_POP                   178
+#define JUMP_IF_TRUE_OR_POP                    179
+#define POP_JUMP_IF_FALSE                      180
+#define POP_JUMP_IF_TRUE                       181
+#define POP_JUMP_IF_NOT_NONE                   182
+#define POP_JUMP_IF_NONE                       183
 #define BINARY_OP_ADAPTIVE                       3
 #define BINARY_OP_ADD_FLOAT                      4
 #define BINARY_OP_ADD_INT                        5
@@ -166,24 +166,32 @@ extern "C" {
 #define PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST    79
 #define PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS  80
 #define PRECALL_NO_KW_METHOD_DESCRIPTOR_O       81
-#define PRECALL_NO_KW_STR_1                    113
-#define PRECALL_NO_KW_TUPLE_1                  121
-#define PRECALL_NO_KW_TYPE_1                   127
-#define PRECALL_PYFUNC                         141
-#define RESUME_QUICK                           143
-#define STORE_ATTR_ADAPTIVE                    150
-#define STORE_ATTR_INSTANCE_VALUE              153
-#define STORE_ATTR_SLOT                        154
-#define STORE_ATTR_WITH_HINT                   158
-#define STORE_FAST__LOAD_FAST                  159
-#define STORE_FAST__STORE_FAST                 161
-#define STORE_SUBSCR_ADAPTIVE                  167
-#define STORE_SUBSCR_DICT                      168
-#define STORE_SUBSCR_LIST_INT                  169
-#define UNPACK_SEQUENCE_ADAPTIVE               170
-#define UNPACK_SEQUENCE_LIST                   173
-#define UNPACK_SEQUENCE_TUPLE                  174
-#define UNPACK_SEQUENCE_TWO_TUPLE              175
+#define PRECALL_NO_KW_STR_1                     93
+#define PRECALL_NO_KW_TUPLE_1                  110
+#define PRECALL_NO_KW_TYPE_1                   111
+#define PRECALL_PYFUNC                         112
+#define RESUME_QUICK                           113
+#define STORE_ATTR_ADAPTIVE                    114
+#define STORE_ATTR_INSTANCE_VALUE              115
+#define STORE_ATTR_SLOT                        121
+#define STORE_ATTR_WITH_HINT                   123
+#define STORE_FAST__LOAD_FAST                  127
+#define STORE_FAST__STORE_FAST                 128
+#define STORE_SUBSCR_ADAPTIVE                  129
+#define STORE_SUBSCR_DICT                      134
+#define STORE_SUBSCR_LIST_INT                  140
+#define UNPACK_SEQUENCE_ADAPTIVE               141
+#define UNPACK_SEQUENCE_LIST                   143
+#define UNPACK_SEQUENCE_TUPLE                  150
+#define UNPACK_SEQUENCE_TWO_TUPLE              153
+#define SETUP_FINALLY                           -1
+#define SETUP_CLEANUP                           -2
+#define SETUP_WITH                              -3
+#define POP_BLOCK                               -4
+#define JUMP                                    -5
+#define JUMP_NO_INTERRUPT                       -6
+#define MIN_VIRTUAL_OPCODE                      -6
+#define MAX_ALLOWED_OPCODE                     254
 #define DO_TRACING                             255
 
 extern const uint8_t _PyOpcode_Caches[256];
@@ -194,23 +202,31 @@ extern const uint8_t _PyOpcode_Deopt[256];
 static const uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     0U,
-    536870912U,
-    134234112U,
-    4160U,
     0U,
+    0U,
+    0U,
+    253952U,
     0U,
     0U,
 };
 static const uint32_t _PyOpcode_Jump[8] = {
     0U,
     0U,
-    536870912U,
-    135118848U,
-    4163U,
     0U,
+    0U,
+    0U,
+    16769024U,
     0U,
     0U,
 };
+
+static inline int
+is_virtual_jump_opcode(int op)
+{
+    return op == -5 ||
+           op == -6 ||
+           0;
+}
 
 const uint8_t _PyOpcode_Caches[256] = {
     [BINARY_SUBSCR] = 4,
@@ -409,6 +425,12 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #define HAS_CONST(op) (false\
     || ((op) == 100) \
     || ((op) == 172) \
+    )
+
+#define IS_ASSEMBLER_OPCODE(op) (false\
+    || ((op) == 175) \
+    || ((op) == 176) \
+    || ((op) == 177) \
     )
 
 #define NB_ADD                                   0

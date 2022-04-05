@@ -35,7 +35,8 @@ UINT32_MASK = (1<<32)-1
 def write_int_array_from_ops(name, ops, out):
     bits = 0
     for op in ops:
-        bits |= 1<<op
+        if op >= 0:
+            bits |= 1<<op
     out.write(f"static const uint32_t {name}[8] = {{\n")
     for i in range(8):
         out.write(f"    {bits & UINT32_MASK}U,\n")
@@ -57,6 +58,8 @@ def main(opcode_py, outfile='Include/opcode.h'):
     hasconst = opcode['hasconst']
     hasjrel = opcode['hasjrel']
     hasjabs = opcode['hasjabs']
+    virtual = opcode['virtual']
+    assembler = opcode['assembler']
     used = [ False ] * 256
     next_op = 1
     for name, op in opmap.items():
@@ -74,12 +77,27 @@ def main(opcode_py, outfile='Include/opcode.h'):
                 next_op += 1
             fobj.write(DEFINE.format(name, next_op))
             used[next_op] = True
+        for name, value in virtual.items():
+            fobj.write(DEFINE.format(name, value))
+        fobj.write(DEFINE.format('MIN_VIRTUAL_OPCODE', min(virtual.values())))
+        fobj.write(DEFINE.format('MAX_ALLOWED_OPCODE', 254))
         fobj.write(DEFINE.format('DO_TRACING', 255))
         fobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
         fobj.write("\nextern const uint8_t _PyOpcode_Deopt[256];\n")
         fobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
         write_int_array_from_ops("_PyOpcode_RelativeJump", opcode['hasjrel'], fobj)
         write_int_array_from_ops("_PyOpcode_Jump", opcode['hasjrel'] + opcode['hasjabs'], fobj)
+
+        fobj.write("\nstatic inline int\n");
+        fobj.write("is_virtual_jump_opcode(int op)\n");
+        fobj.write("{\n");
+        fobj.write("    return ");
+        for op in opcode['hasjrel'] + opcode['hasjabs']:
+            if op < 0:
+                fobj.write(f"op == {op} ||\n           ");
+        fobj.write("0;\n");
+        fobj.write("}\n");
+
 
         fobj.write("\nconst uint8_t _PyOpcode_Caches[256] = {\n")
         for i, entries in enumerate(opcode["_inline_cache_entries"]):
@@ -101,6 +119,12 @@ def main(opcode_py, outfile='Include/opcode.h'):
         fobj.write("\n")
         fobj.write("#define HAS_CONST(op) (false\\")
         for op in hasconst:
+            fobj.write(f"\n    || ((op) == {op}) \\")
+        fobj.write("\n    )\n")
+
+        fobj.write("\n")
+        fobj.write("#define IS_ASSEMBLER_OPCODE(op) (false\\")
+        for op in assembler:
             fobj.write(f"\n    || ((op) == {op}) \\")
         fobj.write("\n    )\n")
 
