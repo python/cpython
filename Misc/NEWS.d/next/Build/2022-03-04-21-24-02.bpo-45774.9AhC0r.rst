@@ -1,0 +1,2 @@
+``configure`` now verifies that all SQLite C APIs needed for the
+:mod:`sqlite3` extension module are found.

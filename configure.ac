@@ -1137,7 +1137,7 @@ AC_ARG_WITH([suffix],
   )
 ], [
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/browser*], [EXEEXT=.html],
+    [Emscripten/browser*], [EXEEXT=.js],
     [Emscripten/node*], [EXEEXT=.js],
     [WASI/*], [EXEEXT=.wasm],
     [EXEEXT=]
@@ -3562,44 +3562,84 @@ PKG_CHECK_MODULES(
 )
 AS_VAR_APPEND([LIBSQLITE3_CFLAGS], [' -I$(srcdir)/Modules/_sqlite'])
 
-WITH_SAVE_ENV(
+dnl PY_CHECK_SQLITE_FUNC(FUNCTION, IF-FOUND, IF-NOT-FOUND)
+AC_DEFUN([PY_CHECK_SQLITE_FUNC], [
+  AC_CHECK_LIB([sqlite3], [$1], [$2], [
+    m4_ifblank([$3], [have_supported_sqlite3=no], [$3])
+  ])
+])
+
+WITH_SAVE_ENV([
 dnl bpo-45774/GH-29507: The CPP check in AC_CHECK_HEADER can fail on FreeBSD,
 dnl hence CPPFLAGS instead of CFLAGS.
   CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
   LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
 
   AC_CHECK_HEADER([sqlite3.h], [
-    AC_CHECK_LIB([sqlite3], [sqlite3_open_v2], [
-      have_sqlite3=yes
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([
-          #include <sqlite3.h>
-          #if SQLITE_VERSION_NUMBER < 3007015
-          #  error "SQLite 3.7.15 or higher required"
-          #endif
-        ], [])
-      ], [have_supported_sqlite3=yes], [have_supported_sqlite3=no])
-    ], [have_sqlite3=no])
-    AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
-                 [have_sqlite3_load_extension=yes],
-                 [have_sqlite3_load_extension=no])
+    have_sqlite3=yes
+
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([
+        #include <sqlite3.h>
+        #if SQLITE_VERSION_NUMBER < 3007015
+        #  error "SQLite 3.7.15 or higher required"
+        #endif
+      ], [])
+    ], [
+      have_supported_sqlite3=yes
+      dnl Check that required functions are in place. A lot of stuff may be
+      dnl omitted with SQLITE_OMIT_* compile time defines.
+      PY_CHECK_SQLITE_FUNC([sqlite3_bind_double])
+      PY_CHECK_SQLITE_FUNC([sqlite3_column_decltype])
+      PY_CHECK_SQLITE_FUNC([sqlite3_column_double])
+      PY_CHECK_SQLITE_FUNC([sqlite3_complete])
+      PY_CHECK_SQLITE_FUNC([sqlite3_enable_shared_cache])
+      PY_CHECK_SQLITE_FUNC([sqlite3_progress_handler])
+      PY_CHECK_SQLITE_FUNC([sqlite3_result_double])
+      PY_CHECK_SQLITE_FUNC([sqlite3_set_authorizer])
+      PY_CHECK_SQLITE_FUNC([sqlite3_trace_v2], [], [
+        PY_CHECK_SQLITE_FUNC([sqlite3_trace])
+      ])
+      PY_CHECK_SQLITE_FUNC([sqlite3_value_double])
+      AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
+        [have_sqlite3_load_extension=yes],
+        [have_sqlite3_load_extension=no]
+      )
+      AC_CHECK_LIB([sqlite3], [sqlite3_serialize], [
+        AC_DEFINE(
+          [PY_SQLITE_HAVE_SERIALIZE], [1],
+          [Define if SQLite was compiled with the serialize API]
+        )
+      ])
+    ], [
+      have_supported_sqlite3=no
+    ])
   ])
-)
-
-# Check for support for loadable sqlite extensions
-AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
-AC_ARG_ENABLE(loadable-sqlite-extensions,
-              AS_HELP_STRING([--enable-loadable-sqlite-extensions],
-                             [support loadable extensions in _sqlite module, see Doc/library/sqlite3.rst (default is no)]),
-              [AS_VAR_IF([have_sqlite3_load_extension], [no],
-                         [AC_MSG_WARN([Your version of SQLite does not support loadable extensions])])],
-              [enable_loadable_sqlite_extensions=no])
-AC_MSG_RESULT($enable_loadable_sqlite_extensions)
-
-AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
-  AC_DEFINE(PY_SQLITE_ENABLE_LOAD_EXTENSION, 1,
-  [Define to 1 to build the sqlite module with loadable extensions support.])
 ])
+
+dnl Check for support for loadable sqlite extensions
+AC_MSG_CHECKING([for --enable-loadable-sqlite-extensions])
+AC_ARG_ENABLE([loadable-sqlite-extensions],
+  AS_HELP_STRING(
+    [--enable-loadable-sqlite-extensions], [
+      support loadable extensions in the sqlite3 module, see
+      Doc/library/sqlite3.rst (default is no)
+    ]
+  ), [
+    AS_VAR_IF([have_sqlite3_load_extension], [no], [
+      AC_MSG_RESULT([n/a])
+      AC_MSG_WARN([Your version of SQLite does not support loadable extensions])
+    ], [
+      AC_MSG_RESULT([yes])
+      AC_DEFINE(
+        [PY_SQLITE_ENABLE_LOAD_EXTENSION], [1],
+        [Define to 1 to build the sqlite module with loadable extensions support.]
+      )
+    ])
+  ], [
+    AC_MSG_RESULT([no])
+  ]
+)
 
 dnl
 dnl Detect Tcl/Tk. Use pkg-config if available.

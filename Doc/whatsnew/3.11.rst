@@ -366,6 +366,11 @@ sqlite3
   Instead we leave it to the SQLite library to handle these cases.
   (Contributed by Erlend E. Aasland in :issue:`44092`.)
 
+* Add :meth:`~sqlite3.Connection.serialize` and
+  :meth:`~sqlite3.Connection.deserialize` to :class:`sqlite3.Connection` for
+  serializing and deserializing databases.
+  (Contributed by Erlend E. Aasland in :issue:`41930`.)
+
 
 sys
 ---
@@ -523,7 +528,12 @@ CPython bytecode changes
 * Replaced :opcode:`JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH` which
   performs the check but does not jump.
 
+* Replaced :opcode:`JUMP_IF_NOT_EG_MATCH` by :opcode:`CHECK_EG_MATCH` which
+  performs the check but does not jump.
+
 * Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
+
+* Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`, which is used in certain loops where it is undesirable to handle interrupts.
 
 Deprecated
 ==========
@@ -579,6 +589,12 @@ Deprecated
   * the :meth:`configparser.ParsingError.readfp` method
 
   (Contributed by Hugo van Kemenade in :issue:`45173`.)
+
+* :class:`configparser.LegacyInterpolation` has been deprecated in the docstring
+  since Python 3.2. It now emits a :exc:`DeprecationWarning` and will be removed
+  in Python 3.13. Use :class:`configparser.BasicInterpolation` or
+  :class:`configparser.ExtendedInterpolation instead.
+  (Contributed by Hugo van Kemenade in :issue:`46607`.)
 
 * The :func:`locale.getdefaultlocale` function is deprecated and will be
   removed in Python 3.13. Use :func:`locale.setlocale`,
