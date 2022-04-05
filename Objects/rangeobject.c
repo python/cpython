@@ -780,13 +780,13 @@ smallrangeiter_next(smallrangeiterobject *r)
 }
 
 static PyObject *
-smallrangeiter_len(smallrangeiterobject *r)
+smallrangeiter_len(smallrangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromLong((long)(r->stop - r->next));
 }
 
 static PyObject *
-smallrangeiter_reduce(smallrangeiterobject *r)
+smallrangeiter_reduce(smallrangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
     /* create a range object for pickling */
     PyObject *start = (PyObject *)Py_NewRef(r->next);
