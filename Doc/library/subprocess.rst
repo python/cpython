@@ -357,7 +357,8 @@ functions.
                  start_new_session=False, pass_fds=(), *, group=None, \
                  extra_groups=None, user=None, umask=-1, \
                  encoding=None, errors=None, text=None, pipesize=-1, \
-                 process_group=None)
+                 process_group=None, read_stdout_callback=None, \
+                 read_stderr_callback=None)
 
    Execute a child program in a new process.  On POSIX, the class uses
    :meth:`os.execvpe`-like behavior to execute the child program.  On Windows,
@@ -683,6 +684,20 @@ functions.
 
    .. versionadded:: 3.10
       The ``pipesize`` parameter was added.
+
+   *read_stdout_callback*, if supplied, is called upon :data:`PIPE` data
+   being read for *stdout* of the child process. It must expect four
+   args: The :class:`Popen` instance, an ``output_buffer`` list of bytes
+   to append accumulated data to, and the ``data`` (bytes) just read from
+   the pipe. In order to maintain standard Popen behavior of collecting pipe
+   data to be available at the finish in the *stdout* attribute,
+   ``output_buffer.append(data)`` must be called within the callback.
+
+   *read_stderr_callback*, as above, but for *stderr*.
+
+   .. versionadded: 3.11
+      The ``read_stdout_callback`` and ``read_stderr_callback`` parameters
+      were added.
 
    Popen objects are supported as context managers via the :keyword:`with` statement:
    on exit, standard file descriptors are closed, and the process is waited for.

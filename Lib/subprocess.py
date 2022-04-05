@@ -799,6 +799,12 @@ class Popen:
       encoding and errors: Text mode encoding and error handling to use for
           file objects stdin, stdout and stderr.
 
+      read_stdout_callback: Callable to handle reading from the output pipes.
+          It takes a Popen object, a list of bytes objects to append the
+          new bytes to, and the new bytes themselves.
+
+      read_stderr_callback: As above, but for stderr.
+
     Attributes:
         stdin, stdout, stderr, pid, returncode
     """
@@ -812,7 +818,8 @@ class Popen:
                  restore_signals=True, start_new_session=False,
                  pass_fds=(), *, user=None, group=None, extra_groups=None,
                  encoding=None, errors=None, text=None, umask=-1, pipesize=-1,
-                 process_group=None):
+                 process_group=None, read_stdout_callback=None,
+                 read_stderr_callback=None):
         """Create new Popen instance."""
         if not _can_fork_exec:
             raise OSError(
@@ -864,6 +871,18 @@ class Popen:
         self.encoding = encoding
         self.errors = errors
         self.pipesize = pipesize
+        if read_stdout_callback is not None:
+            if not callable(read_stdout_callback):
+                raise ValueError("read_stdout_callback not a callable")
+            self.read_stdout_callback = read_stdout_callback
+        else:
+            self.read_stdout_callback = Popen._read_common_handler
+        if read_stderr_callback is not None:
+            if not callable(read_stderr_callback):
+                raise ValueError("read_stderr_callback not a callable")
+            self.read_stderr_callback = read_stderr_callback
+        else:
+            self.read_stderr_callback = Popen._read_common_handler
 
         # Validate the combinations of text and universal_newlines
         if (text is not None and universal_newlines is not None
@@ -1306,6 +1325,10 @@ class Popen:
         # Prevent a double close of these handles/fds from __init__ on error.
         self._closed_child_pipe_fds = True
 
+    def _read_common_handler(self, buffer, data):
+        """Default handler for read_stdout_callback and read_stderr_callback."""
+        buffer.append(data)
+
     if _mswindows:
         #
         # Windows methods
@@ -1565,7 +1588,12 @@ class Popen:
 
 
         def _readerthread(self, fh, buffer):
-            buffer.append(fh.read())
+            is_stdout = fh == self.stdout
+            data = fh.read()
+            if is_stdout:
+                self.read_stdout_callback(self, buffer, data)
+            else:
+                self.read_stderr_callback(self, buffer, data)
             fh.close()
 
 
@@ -2096,7 +2124,11 @@ class Popen:
                             if not data:
                                 selector.unregister(key.fileobj)
                                 key.fileobj.close()
-                            self._fileobj2output[key.fileobj].append(data)
+                            else:
+                                if key.fileobj == self.stdout:
+                                    self.read_stdout_callback(self, stdout, data)
+                                else:
+                                    self.read_stderr_callback(self, stderr, data)
 
             self.wait(timeout=self._remaining_time(endtime))
 

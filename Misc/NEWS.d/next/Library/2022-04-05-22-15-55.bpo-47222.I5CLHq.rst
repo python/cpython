@@ -1,0 +1,1 @@
+In the :mod:`subprocess` :class:`Popen`, factor the read callback handler for the ``PIPE`` file descriptors into its own function.  Also add class variables pointing to the *stdout* and *stderr* read handlers.  Lastly, add constructor variable ``read_stdout_callback`` and ``read_stderr_callback`` to allow overriding the handler with a user-supplied function.
