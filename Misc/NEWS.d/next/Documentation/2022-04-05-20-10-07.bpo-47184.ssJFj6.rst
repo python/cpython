@@ -1,0 +1,1 @@
+Document the *force* parameter of :meth:`multiprocessing.set_start_method`
