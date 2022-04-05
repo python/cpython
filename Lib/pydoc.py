@@ -292,7 +292,7 @@ def visiblename(name, all=None, obj=None):
     if name.startswith('_') and hasattr(obj, '_fields'):
         return True
     # Ignore __future__ imports.
-    if name in _future_feature_names:
+    if obj is not __future__ and name in _future_feature_names:
         if isinstance(getattr(obj, name, None), __future__._Feature):
             return False
     if all is not None:
@@ -701,10 +701,10 @@ class HTMLDoc(Doc):
                 url = escape(all).replace('"', '&quot;')
                 results.append('<a href="%s">%s</a>' % (url, url))
             elif rfc:
-                url = 'http://www.rfc-editor.org/rfc/rfc%d.txt' % int(rfc)
+                url = 'https://www.rfc-editor.org/rfc/rfc%d.txt' % int(rfc)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
             elif pep:
-                url = 'https://www.python.org/dev/peps/pep-%04d/' % int(pep)
+                url = 'https://peps.python.org/pep-%04d/' % int(pep)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
             elif selfdot:
                 # Create a link for methods like 'self.method(...)'

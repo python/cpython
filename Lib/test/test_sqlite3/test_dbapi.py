@@ -29,6 +29,7 @@ import unittest
 
 from test.support import (
     SHORT_TIMEOUT,
+    bigmemtest,
     check_disallow_instantiation,
     threading_helper,
 )
@@ -603,6 +604,56 @@ class UninitialisedConnectionTests(unittest.TestCase):
                                        func)
 
 
+@unittest.skipUnless(hasattr(sqlite.Connection, "serialize"),
+                     "Needs SQLite serialize API")
+class SerializeTests(unittest.TestCase):
+    def test_serialize_deserialize(self):
+        with memory_database() as cx:
+            with cx:
+                cx.execute("create table t(t)")
+            data = cx.serialize()
+            self.assertEqual(len(data), 8192)
+
+            # Remove test table, verify that it was removed.
+            with cx:
+                cx.execute("drop table t")
+            regex = "no such table"
+            with self.assertRaisesRegex(sqlite.OperationalError, regex):
+                cx.execute("select t from t")
+
+            # Deserialize and verify that test table is restored.
+            cx.deserialize(data)
+            cx.execute("select t from t")
+
+    def test_deserialize_wrong_args(self):
+        dataset = (
+            (BufferError, memoryview(b"blob")[::2]),
+            (TypeError, []),
+            (TypeError, 1),
+            (TypeError, None),
+        )
+        for exc, arg in dataset:
+            with self.subTest(exc=exc, arg=arg):
+                with memory_database() as cx:
+                    self.assertRaises(exc, cx.deserialize, arg)
+
+    def test_deserialize_corrupt_database(self):
+        with memory_database() as cx:
+            regex = "file is not a database"
+            with self.assertRaisesRegex(sqlite.DatabaseError, regex):
+                cx.deserialize(b"\0\1\3")
+                # SQLite does not generate an error until you try to query the
+                # deserialized database.
+                cx.execute("create table fail(f)")
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @bigmemtest(size=2**63, memuse=3, dry_run=False)
+    def test_deserialize_too_much_data_64bit(self):
+        with memory_database() as cx:
+            with self.assertRaisesRegex(OverflowError, "'data' is too large"):
+                cx.deserialize(b"b" * size)
+
+
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
 
@@ -1030,6 +1081,10 @@ class ThreadTests(unittest.TestCase):
             lambda: self.con.setlimit(sqlite.SQLITE_LIMIT_LENGTH, -1),
             lambda: self.con.getlimit(sqlite.SQLITE_LIMIT_LENGTH),
         ]
+        if hasattr(sqlite.Connection, "serialize"):
+            fns.append(lambda: self.con.serialize())
+            fns.append(lambda: self.con.deserialize(b""))
+
         for fn in fns:
             with self.subTest(fn=fn):
                 self._run_test(fn)

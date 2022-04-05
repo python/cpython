@@ -346,7 +346,7 @@ set_add_key(PySetObject *so, PyObject *key)
     Py_hash_t hash;
 
     if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1) {
+        (hash = _PyASCIIObject_CAST(key)->hash) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return -1;
@@ -360,7 +360,7 @@ set_contains_key(PySetObject *so, PyObject *key)
     Py_hash_t hash;
 
     if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1) {
+        (hash = _PyASCIIObject_CAST(key)->hash) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return -1;
@@ -374,7 +374,7 @@ set_discard_key(PySetObject *so, PyObject *key)
     Py_hash_t hash;
 
     if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1) {
+        (hash = _PyASCIIObject_CAST(key)->hash) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return -1;
