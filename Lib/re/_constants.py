@@ -202,7 +202,6 @@ CH_UNICODE = {
 }
 
 # flags
-SRE_FLAG_TEMPLATE = 1 # template mode (disable backtracking)
 SRE_FLAG_IGNORECASE = 2 # case insensitive
 SRE_FLAG_LOCALE = 4 # honour system locale
 SRE_FLAG_MULTILINE = 8 # treat target as multiline string
@@ -245,7 +244,6 @@ if __name__ == "__main__":
         dump(f, ATCODES, "SRE")
         dump(f, CHCODES, "SRE")
 
-        f.write("#define SRE_FLAG_TEMPLATE %d\n" % SRE_FLAG_TEMPLATE)
         f.write("#define SRE_FLAG_IGNORECASE %d\n" % SRE_FLAG_IGNORECASE)
         f.write("#define SRE_FLAG_LOCALE %d\n" % SRE_FLAG_LOCALE)
         f.write("#define SRE_FLAG_MULTILINE %d\n" % SRE_FLAG_MULTILINE)
