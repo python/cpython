@@ -290,7 +290,7 @@ def generate_runtime_init(identifiers, strings):
                             printer.write(f'_PyUnicode_LATIN1_INIT("\\x{i:02x}"),')
                 printer.write('')
                 with printer.block('.tuple_empty =', ','):
-                    printer.write('.ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0)')
+                    printer.write('.ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, _PyTuple_NOGC_FLAG)')
         printer.write(END)
         printer.write(after)
 

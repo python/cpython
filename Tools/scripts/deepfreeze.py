@@ -142,7 +142,7 @@ class Printer:
             self.write(f".ob_refcnt = 999999999,")
             self.write(f".ob_type = &{typename},")
 
-    def object_var_head(self, typename: str, size: int) -> None:
+    def object_var_head(self, typename: str, size: int|str) -> None:
         with self.block(".ob_base =", ","):
             self.object_head(typename)
             self.write(f".ob_size = {size},")
@@ -293,14 +293,13 @@ class Printer:
         self.write("static")
         with self.indent():
             with self.block("struct"):
-                self.write("PyGC_Head _gc_head;")
                 with self.block("struct", "_object;"):
                     self.write("PyObject_VAR_HEAD")
                     if t:
                         self.write(f"PyObject *ob_item[{len(t)}];")
         with self.block(f"{name} =", ";"):
             with self.block("._object =", ","):
-                self.object_var_head("PyTuple_Type", len(t))
+                self.object_var_head("PyTuple_Type", f"{len(t)} | _PyTuple_NOGC_FLAG")
                 if items:
                     with self.block(f".ob_item =", ","):
                         for item in items:

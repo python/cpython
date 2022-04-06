@@ -12,6 +12,8 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_tuple.h"         // _PyTuple_NewNoGC
+#include "pycore_object.h"        // _PyObject_IS_GC
 #include "code.h"
 #include "marshal.h"              // Py_MARSHAL_VERSION
 
@@ -1208,26 +1210,37 @@ r_object(RFILE *p)
             break;
         }
     _read_tuple:
-        v = PyTuple_New(n);
-        R_REF(v);
-        if (v == NULL)
-            break;
-
-        for (i = 0; i < n; i++) {
-            v2 = r_object(p);
-            if ( v2 == NULL ) {
-                if (!PyErr_Occurred())
-                    PyErr_SetString(PyExc_TypeError,
-                        "NULL object in marshal data for tuple");
-                Py_DECREF(v);
-                v = NULL;
+        {
+            int gc = 0;
+            v = _PyTuple_NewNoGC(n);
+            R_REF(v);
+            if (v == NULL) {
                 break;
             }
-            PyTuple_SET_ITEM(v, i, v2);
-        }
-        retval = v;
-        break;
+            for (i = 0; i < n; i++) {
+                v2 = r_object(p);
+                if ( v2 == NULL ) {
+                    if (!PyErr_Occurred())
+                        PyErr_SetString(PyExc_TypeError,
+                                "NULL object in marshal data for tuple");
+                    Py_DECREF(v);
+                    v = NULL;
+                    break;
+                }
+                PyTuple_SET_ITEM(v, i, v2);
+                if (_PyObject_IS_GC(v)) {
+                    gc = 1;
+                }
+            }
 
+            if (gc) {
+                v2 = _PyTuple_FromArray(&PyTuple_GET_ITEM(v, 0), n);
+                Py_DECREF(v);
+                v = v2;
+            }
+            retval = v;
+            break;
+        }
     case TYPE_LIST:
         n = r_long(p);
         if (PyErr_Occurred())

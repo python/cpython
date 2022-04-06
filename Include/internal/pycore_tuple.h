@@ -66,6 +66,7 @@ struct _Py_tuple_state {
 
 extern PyObject *_PyTuple_FromArray(PyObject *const *, Py_ssize_t);
 extern PyObject *_PyTuple_FromArraySteal(PyObject *const *, Py_ssize_t);
+extern PyObject *_PyTuple_NewNoGC(Py_ssize_t);
 
 #ifdef __cplusplus
 }

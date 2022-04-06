@@ -533,9 +533,9 @@ class GCTests(unittest.TestCase):
         got.sort()
         self.assertEqual(got, expected)
 
-        got = gc.get_referents([1, 2], {3: 4}, (0, 0, 0))
+        got = gc.get_referents([0, 1, 2], {3: 4})
         got.sort()
-        self.assertEqual(got, [0, 0] + list(range(5)))
+        self.assertEqual(got, list(range(5)))
 
         self.assertEqual(gc.get_referents(1, 'a', 4j), [])
 
