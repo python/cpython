@@ -141,7 +141,7 @@ pydoc-topics: build
 	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py"
 
 htmlview: html
-	 $(PYTHON) -c "import webbrowser; webbrowser.open('build/html/index.html')"
+	$(PYTHON) -c "import os, webbrowser; webbrowser.open('file://' + os.path.realpath('build/html/index.html'))"
 
 clean: clean-venv
 	-rm -rf build/*
