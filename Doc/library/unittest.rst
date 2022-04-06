@@ -72,8 +72,9 @@ test runner
    a GUI tool for test discovery and execution.  This is intended largely for ease of use
    for those new to unit testing.  For production environments it is
    recommended that tests be driven by a continuous integration system such as
-   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_
-   or `Travis-CI <https://travis-ci.com>`_, or `AppVeyor <https://www.appveyor.com/>`_.
+   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_,
+   `GitHub Actions <https://github.com/features/actions>`_, or
+   `AppVeyor <https://www.appveyor.com/>`_.
 
 
 .. _unittest-minimal-example:
@@ -138,9 +139,9 @@ line, the above script produces an output that looks like this::
 Passing the ``-v`` option to your test script will instruct :func:`unittest.main`
 to enable a higher level of verbosity, and produce the following output::
 
-   test_isupper (__main__.TestStringMethods) ... ok
-   test_split (__main__.TestStringMethods) ... ok
-   test_upper (__main__.TestStringMethods) ... ok
+   test_isupper (__main__.TestStringMethods.test_isupper) ... ok
+   test_split (__main__.TestStringMethods.test_split) ... ok
+   test_upper (__main__.TestStringMethods.test_upper) ... ok
 
    ----------------------------------------------------------------------
    Ran 3 tests in 0.001s
@@ -150,6 +151,10 @@ to enable a higher level of verbosity, and produce the following output::
 The above examples show the most commonly used :mod:`unittest` features which
 are sufficient to meet many everyday testing needs.  The remainder of the
 documentation explores the full feature set from first principles.
+
+.. versionchanged:: 3.11
+   The behavior of returning a value from a test method (other than the default
+   ``None`` value), is now deprecated.
 
 
 .. _unittest-command-line-interface:
@@ -223,7 +228,7 @@ Command-line options
 
    Only run test methods and classes that match the pattern or substring.
    This option may be used multiple times, in which case all test cases that
-   match of the given patterns are included.
+   match any of the given patterns are included.
 
    Patterns that contain a wildcard character (``*``) are matched against the
    test name using :meth:`fnmatch.fnmatchcase`; otherwise simple case-sensitive
@@ -261,8 +266,7 @@ Test Discovery
 
 Unittest supports simple test discovery. In order to be compatible with test
 discovery, all of the test files must be :ref:`modules <tut-modules>` or
-:ref:`packages <tut-packages>` (including :term:`namespace packages
-<namespace package>`) importable from the top-level directory of
+:ref:`packages <tut-packages>` importable from the top-level directory of
 the project (this means that their filenames must be valid :ref:`identifiers
 <identifiers>`).
 
@@ -330,7 +334,28 @@ Test modules and packages can customize test loading and discovery by through
 the `load_tests protocol`_.
 
 .. versionchanged:: 3.4
-   Test discovery supports :term:`namespace packages <namespace package>`.
+   Test discovery supports :term:`namespace packages <namespace package>`
+   for the start directory. Note that you need to specify the top level
+   directory too (e.g.
+   ``python -m unittest discover -s root/namespace -t root``).
+
+.. versionchanged:: 3.11
+   Python 3.11 dropped the :term:`namespace packages <namespace package>`
+   support. It has been broken since Python 3.7. Start directory and
+   subdirectories containing tests must be regular package that have
+   ``__init__.py`` file.
+
+   Directories containing start directory still can be a namespace package.
+   In this case, you need to specify start directory as dotted package name,
+   and target directory explicitly. For example::
+
+      # proj/  <-- current directory
+      #   namespace/
+      #     mypkg/
+      #       __init__.py
+      #       test_mypkg.py
+
+      python -m unittest discover -s namespace.mypkg -t .
 
 
 .. _organizing-tests:
@@ -540,10 +565,10 @@ Basic skipping looks like this::
 
 This is the output of running the example above in verbose mode::
 
-   test_format (__main__.MyTestCase) ... skipped 'not supported in this library version'
-   test_nothing (__main__.MyTestCase) ... skipped 'demonstrating skipping'
-   test_maybe_skipped (__main__.MyTestCase) ... skipped 'external resource not available'
-   test_windows_support (__main__.MyTestCase) ... skipped 'requires Windows'
+   test_format (__main__.MyTestCase.test_format) ... skipped 'not supported in this library version'
+   test_nothing (__main__.MyTestCase.test_nothing) ... skipped 'demonstrating skipping'
+   test_maybe_skipped (__main__.MyTestCase.test_maybe_skipped) ... skipped 'external resource not available'
+   test_windows_support (__main__.MyTestCase.test_windows_support) ... skipped 'requires Windows'
 
    ----------------------------------------------------------------------
    Ran 4 tests in 0.005s
@@ -594,8 +619,9 @@ The following decorators and exception implement test skipping and expected fail
 .. decorator:: expectedFailure
 
    Mark the test as an expected failure or error.  If the test fails or errors
-   it will be considered a success.  If the test passes, it will be considered
-   a failure.
+   in the test function itself (rather than in one of the :dfn:`test fixture`
+   methods) then it will be considered a success.  If the test passes, it will
+   be considered a failure.
 
 .. exception:: SkipTest(reason)
 
@@ -635,27 +661,33 @@ For example, the following test::
 will produce the following output::
 
    ======================================================================
-   FAIL: test_even (__main__.NumbersTest) (i=1)
+   FAIL: test_even (__main__.NumbersTest.test_even) (i=1)
+   Test that numbers between 0 and 5 are all even.
    ----------------------------------------------------------------------
    Traceback (most recent call last):
-     File "subtests.py", line 32, in test_even
+     File "subtests.py", line 11, in test_even
        self.assertEqual(i % 2, 0)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
    AssertionError: 1 != 0
 
    ======================================================================
-   FAIL: test_even (__main__.NumbersTest) (i=3)
+   FAIL: test_even (__main__.NumbersTest.test_even) (i=3)
+   Test that numbers between 0 and 5 are all even.
    ----------------------------------------------------------------------
    Traceback (most recent call last):
-     File "subtests.py", line 32, in test_even
+     File "subtests.py", line 11, in test_even
        self.assertEqual(i % 2, 0)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
    AssertionError: 1 != 0
 
    ======================================================================
-   FAIL: test_even (__main__.NumbersTest) (i=5)
+   FAIL: test_even (__main__.NumbersTest.test_even) (i=5)
+   Test that numbers between 0 and 5 are all even.
    ----------------------------------------------------------------------
    Traceback (most recent call last):
-     File "subtests.py", line 32, in test_even
+     File "subtests.py", line 11, in test_even
        self.assertEqual(i % 2, 0)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
    AssertionError: 1 != 0
 
 Without using a subtest, execution would stop after the first failure,
@@ -663,7 +695,7 @@ and the error would be less easy to diagnose because the value of ``i``
 wouldn't be displayed::
 
    ======================================================================
-   FAIL: test_even (__main__.NumbersTest)
+   FAIL: test_even (__main__.NumbersTest.test_even)
    ----------------------------------------------------------------------
    Traceback (most recent call last):
      File "subtests.py", line 32, in test_even
@@ -1870,16 +1902,24 @@ Loading and running tests
 
       .. versionchanged:: 3.4
          Modules that raise :exc:`SkipTest` on import are recorded as skips,
-           not errors.
-         Discovery works for :term:`namespace packages <namespace package>`.
-         Paths are sorted before being imported so that execution order is
-           the same even if the underlying file system's ordering is not
-           dependent on file name.
+         not errors.
+
+      .. versionchanged:: 3.4
+         *start_dir* can be a :term:`namespace packages <namespace package>`.
+
+      .. versionchanged:: 3.4
+         Paths are sorted before being imported so that execution order is the
+         same even if the underlying file system's ordering is not dependent
+         on file name.
 
       .. versionchanged:: 3.5
          Found packages are now checked for ``load_tests`` regardless of
          whether their path matches *pattern*, because it is impossible for
          a package name to match the default pattern.
+
+      .. versionchanged:: 3.11
+         *start_dir* can not be a :term:`namespace packages <namespace package>`.
+         It has been broken since Python 3.7 and Python 3.11 officially remove it.
 
 
    The following attributes of a :class:`TestLoader` can be configured either by

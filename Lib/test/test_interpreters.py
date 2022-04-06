@@ -5,7 +5,9 @@ from textwrap import dedent
 import unittest
 import time
 
-import _xxsubinterpreters as _interpreters
+from test import support
+from test.support import import_helper
+_interpreters = import_helper.import_module('_xxsubinterpreters')
 from test.support import interpreters
 
 
@@ -14,11 +16,11 @@ def _captured_script(script):
     indented = script.replace('\n', '\n                ')
     wrapped = dedent(f"""
         import contextlib
-        with open({w}, 'w') as spipe:
+        with open({w}, 'w', encoding='utf-8') as spipe:
             with contextlib.redirect_stdout(spipe):
                 {indented}
         """)
-    return wrapped, open(r)
+    return wrapped, open(r, encoding='utf-8')
 
 
 def clean_up_interpreters():
@@ -407,11 +409,11 @@ class TestInterpreterRun(TestBase):
 
         self.assertEqual(out, 'it worked!')
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     def test_fork(self):
         interp = interpreters.create()
         import tempfile
-        with tempfile.NamedTemporaryFile('w+') as file:
+        with tempfile.NamedTemporaryFile('w+', encoding='utf-8') as file:
             file.write('')
             file.flush()
 
@@ -421,7 +423,7 @@ class TestInterpreterRun(TestBase):
                 try:
                     os.fork()
                 except RuntimeError:
-                    with open('{file.name}', 'w') as out:
+                    with open('{file.name}', 'w', encoding='utf-8') as out:
                         out.write('{expected}')
                 """)
             interp.run(script)

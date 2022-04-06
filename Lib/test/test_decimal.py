@@ -34,26 +34,24 @@ import numbers
 import locale
 from test.support import (run_unittest, run_doctest, is_resource_enabled,
                           requires_IEEE_754, requires_docstrings,
-                          requires_legacy_unicode_capi)
+                          requires_legacy_unicode_capi, check_sanitizer)
 from test.support import (TestFailed,
-                          run_with_locale, cpython_only)
+                          run_with_locale, cpython_only,
+                          darwin_malloc_err_warning)
 from test.support.import_helper import import_fresh_module
 from test.support import warnings_helper
 import random
 import inspect
 import threading
 
-from _testcapi import decimal_is_special
-from _testcapi import decimal_is_nan
-from _testcapi import decimal_is_infinite
-from _testcapi import decimal_get_digits
-from _testcapi import decimal_as_triple
-from _testcapi import decimal_from_triple
+
+if sys.platform == 'darwin':
+    darwin_malloc_err_warning('test_decimal')
 
 
 C = import_fresh_module('decimal', fresh=['_decimal'])
 P = import_fresh_module('decimal', blocked=['_decimal'])
-orig_sys_decimal = sys.modules['decimal']
+import decimal as orig_sys_decimal
 
 # fractions module must import the correct decimal module.
 cfractions = import_fresh_module('fractions', fresh=['fractions'])
@@ -296,7 +294,7 @@ class IBMTestCases(unittest.TestCase):
         global skip_expected
         if skip_expected:
             raise unittest.SkipTest
-        with open(file) as f:
+        with open(file, encoding="utf-8") as f:
             for line in f:
                 line = line.replace('\r\n', '').replace('\n', '')
                 #print line
@@ -1821,13 +1819,7 @@ class UsabilityTest(unittest.TestCase):
 
         # check that hash(d) == hash(int(d)) for integral values
         for value in test_values:
-            self.assertEqual(hashit(value), hashit(int(value)))
-
-        #the same hash that to an int
-        self.assertEqual(hashit(Decimal(23)), hashit(23))
-        self.assertRaises(TypeError, hash, Decimal('sNaN'))
-        self.assertTrue(hashit(Decimal('Inf')))
-        self.assertTrue(hashit(Decimal('-Inf')))
+            self.assertEqual(hashit(value), hash(int(value)))
 
         # check that the hashes of a Decimal float match when they
         # represent exactly the same values
@@ -1836,7 +1828,7 @@ class UsabilityTest(unittest.TestCase):
         for s in test_strings:
             f = float(s)
             d = Decimal(s)
-            self.assertEqual(hashit(f), hashit(d))
+            self.assertEqual(hashit(d), hash(f))
 
         with localcontext() as c:
             # check that the value of the hash doesn't depend on the
@@ -1856,6 +1848,19 @@ class UsabilityTest(unittest.TestCase):
             c.prec = 10000
             x = 1100 ** 1248
             self.assertEqual(hashit(Decimal(x)), hashit(x))
+
+    def test_hash_method_nan(self):
+        Decimal = self.decimal.Decimal
+        self.assertRaises(TypeError, hash, Decimal('sNaN'))
+        value = Decimal('NaN')
+        self.assertEqual(hash(value), object.__hash__(value))
+        class H:
+            def __hash__(self):
+                return 42
+        class D(Decimal, H):
+            pass
+        value = D('NaN')
+        self.assertEqual(hash(value), object.__hash__(value))
 
     def test_min_and_max_methods(self):
         Decimal = self.decimal.Decimal
@@ -2535,6 +2540,13 @@ class PythonAPItests(unittest.TestCase):
         self.assertRaises(ValueError, int, Decimal('snan'))
         self.assertRaises(OverflowError, int, Decimal('inf'))
         self.assertRaises(OverflowError, int, Decimal('-inf'))
+
+    @cpython_only
+    def test_small_ints(self):
+        Decimal = self.decimal.Decimal
+        # bpo-46361
+        for x in range(-5, 257):
+            self.assertIs(int(Decimal(x)), x)
 
     def test_trunc(self):
         Decimal = self.decimal.Decimal
@@ -4758,175 +4770,6 @@ class CFunctionality(unittest.TestCase):
         self.assertEqual(C.DecTraps,
                          C.DecErrors|C.DecOverflow|C.DecUnderflow)
 
-    def test_decimal_api_predicates(self):
-        # Capsule API
-
-        d = C.Decimal("0")
-        self.assertFalse(decimal_is_special(d))
-        self.assertFalse(decimal_is_nan(d))
-        self.assertFalse(decimal_is_infinite(d))
-
-        d = C.Decimal("NaN")
-        self.assertTrue(decimal_is_special(d))
-        self.assertTrue(decimal_is_nan(d))
-        self.assertFalse(decimal_is_infinite(d))
-
-        d = C.Decimal("sNaN")
-        self.assertTrue(decimal_is_special(d))
-        self.assertTrue(decimal_is_nan(d))
-        self.assertFalse(decimal_is_infinite(d))
-
-        d = C.Decimal("inf")
-        self.assertTrue(decimal_is_special(d))
-        self.assertFalse(decimal_is_nan(d))
-        self.assertTrue(decimal_is_infinite(d))
-
-    def test_decimal_api_get_digits(self):
-        # Capsule API
-
-        d = C.Decimal("0")
-        self.assertEqual(decimal_get_digits(d), 1)
-
-        d = C.Decimal("1234567890")
-        self.assertEqual(decimal_get_digits(d), 10)
-
-        d = C.Decimal("inf")
-        self.assertEqual(decimal_get_digits(d), 0)
-
-        d = C.Decimal("NaN")
-        self.assertEqual(decimal_get_digits(d), 0)
-
-        d = C.Decimal("sNaN")
-        self.assertEqual(decimal_get_digits(d), 0)
-
-        d = C.Decimal("NaN1234567890")
-        self.assertEqual(decimal_get_digits(d), 10)
-
-        d = C.Decimal("sNaN1234567890")
-        self.assertEqual(decimal_get_digits(d), 10)
-
-    def test_decimal_api_triple(self):
-        # Capsule API
-
-        def as_triple(d):
-            """Convert a decimal to a decimal triple with a split uint128_t
-               coefficient:
-
-                   (sign, hi, lo, exp)
-
-               It is called 'triple' because (hi, lo) are regarded as a single
-               uint128_t that is split because not all compilers support uint128_t.
-            """
-            sign, digits, exp = d.as_tuple()
-
-            s = "".join(str(d) for d in digits)
-            coeff = int(s) if s else 0
-
-            if coeff < 0 or coeff >= 2**128:
-                raise ValueError("value out of bounds for a uint128 triple");
-
-            hi, lo = divmod(coeff, 2**64)
-            return (sign, hi, lo, exp)
-
-        def from_triple(triple):
-            """Convert a decimal triple with a split uint128_t coefficient to a string.
-            """
-            sign, hi, lo, exp = triple
-            coeff = hi * 2**64 + lo
-
-            if coeff < 0 or coeff >= 2**128:
-                raise ValueError("value out of bounds for a uint128 triple");
-
-            digits = tuple(int(c) for c in str(coeff))
-
-            return P.Decimal((sign, digits, exp))
-
-        signs = ["", "-"]
-
-        coefficients = [
-            "000000000000000000000000000000000000000",
-
-            "299999999999999999999999999999999999999",
-            "299999999999999999990000000000000000000",
-            "200000000000000000009999999999999999999",
-            "000000000000000000009999999999999999999",
-
-            "299999999999999999999999999999000000000",
-            "299999999999999999999000000000999999999",
-            "299999999999000000000999999999999999999",
-            "299000000000999999999999999999999999999",
-            "000999999999999999999999999999999999999",
-
-            "300000000000000000000000000000000000000",
-            "310000000000000000001000000000000000000",
-            "310000000000000000000000000000000000000",
-            "300000000000000000001000000000000000000",
-
-            "340100000000100000000100000000100000000",
-            "340100000000100000000100000000000000000",
-            "340100000000100000000000000000100000000",
-            "340100000000000000000100000000100000000",
-            "340000000000100000000100000000100000000",
-
-            "340282366920938463463374607431768211455",
-        ]
-
-        exponents = [
-            "E+0", "E+1", "E-1",
-            "E+%s" % str(C.MAX_EMAX-38),
-            "E-%s" % str(C.MIN_ETINY+38),
-        ]
-
-        for sign in signs:
-            for coeff in coefficients:
-                for exp in exponents:
-                    s = sign + coeff + exp
-
-                    ctriple = decimal_as_triple(C.Decimal(s))
-                    ptriple = as_triple(P.Decimal(s))
-                    self.assertEqual(ctriple, ptriple)
-
-                    c = decimal_from_triple(ctriple)
-                    p = decimal_from_triple(ptriple)
-                    self.assertEqual(str(c), str(p))
-
-        for s in ["NaN", "-NaN", "sNaN", "-sNaN", "NaN123", "sNaN123", "inf", "-inf"]:
-            ctriple = decimal_as_triple(C.Decimal(s))
-            ptriple = as_triple(P.Decimal(s))
-            self.assertEqual(ctriple, ptriple)
-
-            c = decimal_from_triple(ctriple)
-            p = decimal_from_triple(ptriple)
-            self.assertEqual(str(c), str(p))
-
-    def test_decimal_api_errors(self):
-        # Capsule API
-
-        self.assertRaises(TypeError, decimal_as_triple, "X")
-        self.assertRaises(ValueError, decimal_as_triple, C.Decimal(2**128))
-        self.assertRaises(ValueError, decimal_as_triple, C.Decimal(-2**128))
-
-        self.assertRaises(TypeError, decimal_from_triple, "X")
-        self.assertRaises(ValueError, decimal_from_triple, ())
-        self.assertRaises(ValueError, decimal_from_triple, (1, 2, 3, 4, 5))
-        self.assertRaises(ValueError, decimal_from_triple, (2**8, 0, 0, 0))
-        self.assertRaises(OverflowError, decimal_from_triple, (0, 2**64, 0, 0))
-        self.assertRaises(OverflowError, decimal_from_triple, (0, 0, 2**64, 0))
-        self.assertRaises(OverflowError, decimal_from_triple, (0, 0, 0, 2**63))
-        self.assertRaises(OverflowError, decimal_from_triple, (0, 0, 0, -2**63-1))
-        self.assertRaises(ValueError, decimal_from_triple, (0, 0, 0, "X"))
-        self.assertRaises(TypeError, decimal_from_triple, (0, 0, 0, ()))
-
-        with C.localcontext(C.Context()):
-            self.assertRaises(C.InvalidOperation, decimal_from_triple, (2, 0, 0, 0))
-            self.assertRaises(C.InvalidOperation, decimal_from_triple, (0, 0, 0, 2**63-1))
-            self.assertRaises(C.InvalidOperation, decimal_from_triple, (0, 0, 0, -2**63))
-
-        self.assertRaises(TypeError, decimal_is_special, "X")
-        self.assertRaises(TypeError, decimal_is_nan, "X")
-        self.assertRaises(TypeError, decimal_is_infinite, "X")
-        self.assertRaises(TypeError, decimal_get_digits, "X")
-
 class CWhitebox(unittest.TestCase):
     """Whitebox testing for _decimal"""
 
@@ -5664,6 +5507,9 @@ class CWhitebox(unittest.TestCase):
     # Issue 41540:
     @unittest.skipIf(sys.platform.startswith("aix"),
                      "AIX: default ulimit: test is flaky because of extreme over-allocation")
+    @unittest.skipIf(check_sanitizer(address=True, memory=True),
+                     "ASAN/MSAN sanitizer defaults to crashing "
+                     "instead of returning NULL for malloc failure.")
     def test_maxcontext_exact_arith(self):
 
         # Make sure that exact operations do not raise MemoryError due

@@ -1920,14 +1920,5 @@ class LWPCookieTests(unittest.TestCase):
         self.assertNotEqual(counter["session_before"], 0)
 
 
-def test_main(verbose=None):
-    test.support.run_unittest(
-        DateTimeTests,
-        HeaderTests,
-        CookieTests,
-        FileCookieJarTests,
-        LWPCookieTests,
-        )
-
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

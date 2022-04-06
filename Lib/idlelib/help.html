@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IDLE &#8212; Python 3.10.0a1 documentation</title>
+    <title>IDLE &#8212; Python 3.11.0a4 documentation</title>
     <link rel="stylesheet" href="../_static/pydoctheme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
 
@@ -18,16 +18,15 @@
     <script src="../_static/sidebar.js"></script>
 
     <link rel="search" type="application/opensearchdescription+xml"
-          title="Search within Python 3.10.0a1 documentation"
+          title="Search within Python 3.11.0a4 documentation"
           href="../_static/opensearch.xml"/>
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="copyright" title="Copyright" href="../copyright.html" />
-    <link rel="next" title="Other Graphical User Interface Packages" href="othergui.html" />
+    <link rel="next" title="Development Tools" href="development.html" />
     <link rel="prev" title="tkinter.tix — Extension widgets for Tk" href="tkinter.tix.html" />
     <link rel="canonical" href="https://docs.python.org/3/library/idle.html" />
-
 
 
 
@@ -60,7 +59,7 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="othergui.html" title="Other Graphical User Interface Packages"
+          <a href="development.html" title="Development Tools"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="tkinter.tix.html" title="tkinter.tix — Extension widgets for Tk"
@@ -71,8 +70,8 @@
     <li><a href="https://www.python.org/">Python</a> &#187;</li>
 
 
-    <li>
-      <a href="../index.html">3.10.0a1 Documentation</a> &#187;
+    <li id="cpython-language-and-version">
+      <a href="../index.html">3.11.0a4 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -103,7 +102,7 @@
 
   <div class="section" id="idle">
 <span id="id1"></span><h1>IDLE<a class="headerlink" href="#idle" title="Permalink to this headline">¶</a></h1>
-<p><strong>Source code:</strong> <a class="reference external" href="https://github.com/python/cpython/tree/master/Lib/idlelib/">Lib/idlelib/</a></p>
+<p><strong>Source code:</strong> <a class="reference external" href="https://github.com/python/cpython/tree/main/Lib/idlelib/">Lib/idlelib/</a></p>
 <hr class="docutils" id="index-0" />
 <p>IDLE is Python’s Integrated Development and Learning Environment.</p>
 <p>IDLE has the following features:</p>
@@ -164,9 +163,11 @@ file.</p>
 </dd>
 <dt>Print Window</dt><dd><p>Print the current window to the default printer.</p>
 </dd>
-<dt>Close</dt><dd><p>Close the current window (ask to save if unsaved).</p>
+<dt>Close Window</dt><dd><p>Close the current window (if an unsaved editor, ask to save; if an unsaved
+Shell, ask to quit execution).  Calling <code class="docutils literal notranslate"><span class="pre">exit()</span></code> or <code class="docutils literal notranslate"><span class="pre">close()</span></code> in the Shell
+window also closes Shell.  If this is the only window, also exit IDLE.</p>
 </dd>
-<dt>Exit</dt><dd><p>Close all windows and quit IDLE (ask to save unsaved windows).</p>
+<dt>Exit IDLE</dt><dd><p>Close all windows and quit IDLE (ask to save unsaved edit windows).</p>
 </dd>
 </dl>
 </div>
@@ -285,7 +286,7 @@ Editor window.</p>
 <dl class="simple">
 <dt>View Last Restart</dt><dd><p>Scroll the shell window to the last Shell restart.</p>
 </dd>
-<dt>Restart Shell</dt><dd><p>Restart the shell to clean the environment.</p>
+<dt>Restart Shell</dt><dd><p>Restart the shell to clean the environment and reset display and exception handling.</p>
 </dd>
 <dt>Previous History</dt><dd><p>Cycle through earlier commands in history which match the current entry.</p>
 </dd>
@@ -505,7 +506,7 @@ available module-level names by running your code
 and not restarting the Shell thereafter.  This is especially useful
 after adding imports at the top of a file.  This also increases
 possible attribute completions.</p>
-<p>Completion boxes intially exclude names beginning with ‘_’ or, for
+<p>Completion boxes initially exclude names beginning with ‘_’ or, for
 modules, not included in ‘__all__’.  The hidden names can be accessed
 by typing ‘_’ after ‘.’, either before or after the box is opened.</p>
 </div>
@@ -582,6 +583,11 @@ user error.  For Python code, at the shell prompt or in an editor, these are
 keywords, builtin class and function names, names following <code class="docutils literal notranslate"><span class="pre">class</span></code> and
 <code class="docutils literal notranslate"><span class="pre">def</span></code>, strings, and comments. For any text window, these are the cursor (when
 present), found text (when possible), and selected text.</p>
+<p>IDLE also highlights the <a class="reference internal" href="../reference/lexical_analysis.html#soft-keywords"><span class="std std-ref">soft keywords</span></a> <a class="reference internal" href="../reference/compound_stmts.html#match"><code class="xref std std-keyword docutils literal notranslate"><span class="pre">match</span></code></a>,
+<a class="reference internal" href="../reference/compound_stmts.html#match"><code class="xref std std-keyword docutils literal notranslate"><span class="pre">case</span></code></a>, and <a class="reference internal" href="../reference/compound_stmts.html#wildcard-patterns"><code class="xref std std-keyword docutils literal notranslate"><span class="pre">_</span></code></a> in
+pattern-matching statements. However, this highlighting is not perfect and
+will be incorrect in some rare cases, including some <code class="docutils literal notranslate"><span class="pre">_</span></code>-s in <code class="docutils literal notranslate"><span class="pre">case</span></code>
+patterns.</p>
 <p>Text coloring is done in the background, so uncolorized text is occasionally
 visible.  To change the color scheme, use the Configure IDLE dialog
 Highlighting tab.  The marking of debugger breakpoint lines in the editor and
@@ -633,8 +639,15 @@ set in the Options dialog.</p></li>
 code execution process.  A connection must be established whenever the Shell
 starts or restarts.  (The latter is indicated by a divider line that says
 ‘RESTART’). If the user process fails to connect to the GUI process, it
-displays a <code class="docutils literal notranslate"><span class="pre">Tk</span></code> error box with a ‘cannot connect’ message that directs the
-user here.  It then exits.</p>
+usually displays a <code class="docutils literal notranslate"><span class="pre">Tk</span></code> error box with a ‘cannot connect’ message
+that directs the user here.  It then exits.</p>
+<p>One specific connection failure on Unix systems results from
+misconfigured masquerading rules somewhere in a system’s network setup.
+When IDLE is started from a terminal, one will see a message starting
+with <code class="docutils literal notranslate"><span class="pre">**</span> <span class="pre">Invalid</span> <span class="pre">host:</span></code>.
+The valid value is <code class="docutils literal notranslate"><span class="pre">127.0.0.1</span> <span class="pre">(idlelib.rpc.LOCALHOST)</span></code>.
+One can diagnose with <code class="docutils literal notranslate"><span class="pre">tcpconnect</span> <span class="pre">-irv</span> <span class="pre">127.0.0.1</span> <span class="pre">6543</span></code> in one
+terminal window and <code class="docutils literal notranslate"><span class="pre">tcplisten</span> <span class="pre">&lt;same</span> <span class="pre">args&gt;</span></code> in another.</p>
 <p>A common cause of failure is a user-written file with the same name as a
 standard library module, such as <em>random.py</em> and <em>tkinter.py</em>. When such a
 file is located in the same directory as a file that is about to be run,
@@ -665,6 +678,12 @@ with the settings dialog.</p>
 <p>If IDLE quits with no message, and it was not started from a console, try
 starting it from a console or terminal (<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">idlelib</span></code>) and see if
 this results in an error message.</p>
+<p>On Unix-based systems with tcl/tk older than <code class="docutils literal notranslate"><span class="pre">8.6.11</span></code> (see
+<code class="docutils literal notranslate"><span class="pre">About</span> <span class="pre">IDLE</span></code>) certain characters of certain fonts can cause
+a tk failure with a message to the terminal.  This can happen either
+if one starts IDLE to edit a file with such a character or later
+when entering such a character.  If one cannot upgrade tcl/tk,
+then re-configure IDLE to use a font that works better.</p>
 </div>
 <div class="section" id="running-user-code">
 <h3>Running user code<a class="headerlink" href="#running-user-code" title="Permalink to this headline">¶</a></h3>
@@ -673,31 +692,40 @@ intended to be the same as executing the same code by the default method,
 directly with Python in a text-mode system console or terminal window.
 However, the different interface and operation occasionally affect
 visible results.  For instance, <code class="docutils literal notranslate"><span class="pre">sys.modules</span></code> starts with more entries,
-and <code class="docutils literal notranslate"><span class="pre">threading.activeCount()</span></code> returns 2 instead of 1.</p>
+and <code class="docutils literal notranslate"><span class="pre">threading.active_count()</span></code> returns 2 instead of 1.</p>
 <p>By default, IDLE runs user code in a separate OS process rather than in
 the user interface process that runs the shell and editor.  In the execution
 process, it replaces <code class="docutils literal notranslate"><span class="pre">sys.stdin</span></code>, <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code>, and <code class="docutils literal notranslate"><span class="pre">sys.stderr</span></code>
 with objects that get input from and send output to the Shell window.
 The original values stored in <code class="docutils literal notranslate"><span class="pre">sys.__stdin__</span></code>, <code class="docutils literal notranslate"><span class="pre">sys.__stdout__</span></code>, and
 <code class="docutils literal notranslate"><span class="pre">sys.__stderr__</span></code> are not touched, but may be <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<p>Sending print output from one process to a text widget in another is
+slower than printing to a system terminal in the same process.
+This has the most effect when printing multiple arguments, as the string
+for each argument, each separator, the newline are sent separately.
+For development, this is usually not a problem, but if one wants to
+print faster in IDLE, format and join together everything one wants
+displayed together and then print a single string.  Both format strings
+and <a class="reference internal" href="stdtypes.html#str.join" title="str.join"><code class="xref py py-meth docutils literal notranslate"><span class="pre">str.join()</span></code></a> can help combine fields and lines.</p>
+<p>IDLE’s standard stream replacements are not inherited by subprocesses
+created in the execution process, whether directly by user code or by
+modules such as multiprocessing.  If such subprocess use <code class="docutils literal notranslate"><span class="pre">input</span></code> from
+sys.stdin or <code class="docutils literal notranslate"><span class="pre">print</span></code> or <code class="docutils literal notranslate"><span class="pre">write</span></code> to sys.stdout or sys.stderr,
+IDLE should be started in a command line window.  The secondary subprocess
+will then be attached to that window for input and output.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">sys</span></code> is reset by user code, such as with <code class="docutils literal notranslate"><span class="pre">importlib.reload(sys)</span></code>,
+IDLE’s changes are lost and input from the keyboard and output to the screen
+will not work correctly.</p>
 <p>When Shell has the focus, it controls the keyboard and screen.  This is
 normally transparent, but functions that directly access the keyboard
 and screen will not work.  These include system-specific functions that
 determine whether a key has been pressed and if so, which.</p>
-<p>IDLE’s standard stream replacements are not inherited by subprocesses
-created in the execution process, whether directly by user code or by modules
-such as multiprocessing.  If such subprocess use <code class="docutils literal notranslate"><span class="pre">input</span></code> from sys.stdin
-or <code class="docutils literal notranslate"><span class="pre">print</span></code> or <code class="docutils literal notranslate"><span class="pre">write</span></code> to sys.stdout or sys.stderr,
-IDLE should be started in a command line window.  The secondary subprocess
-will then be attached to that window for input and output.</p>
 <p>The IDLE code running in the execution process adds frames to the call stack
 that would not be there otherwise.  IDLE wraps <code class="docutils literal notranslate"><span class="pre">sys.getrecursionlimit</span></code> and
-<code class="docutils literal notranslate"><span class="pre">sys.setrecursionlimit</span></code> to reduce the effect of the additional stack frames.</p>
-<p>If <code class="docutils literal notranslate"><span class="pre">sys</span></code> is reset by user code, such as with <code class="docutils literal notranslate"><span class="pre">importlib.reload(sys)</span></code>,
-IDLE’s changes are lost and input from the keyboard and output to the screen
-will not work correctly.</p>
-<p>When user code raises SystemExit either directly or by calling sys.exit, IDLE
-returns to a Shell prompt instead of exiting.</p>
+<code class="docutils literal notranslate"><span class="pre">sys.setrecursionlimit</span></code> to reduce the effect of the additional stack
+frames.</p>
+<p>When user code raises SystemExit either directly or by calling sys.exit,
+IDLE returns to a Shell prompt instead of exiting.</p>
 </div>
 <div class="section" id="user-output-in-shell">
 <h3>User output in Shell<a class="headerlink" href="#user-output-in-shell" title="Permalink to this headline">¶</a></h3>
@@ -777,7 +805,7 @@ re-enable the mainloop call when running in standard Python.</p>
 <h3>Running without a subprocess<a class="headerlink" href="#running-without-a-subprocess" title="Permalink to this headline">¶</a></h3>
 <p>By default, IDLE executes user code in a separate subprocess via a socket,
 which uses the internal loopback interface.  This connection is not
-externally visible and no data is sent to or received from the Internet.
+externally visible and no data is sent to or received from the internet.
 If firewall software complains anyway, you can ignore it.</p>
 <p>If the attempt to make the socket connection fails, Idle will notify you.
 Such failures are sometimes transient, but if persistent, the problem
@@ -911,14 +939,14 @@ also used for testing.</p>
   <p class="topless"><a href="tkinter.tix.html"
                         title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tkinter.tix</span></code> — Extension widgets for Tk</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="othergui.html"
-                        title="next chapter">Other Graphical User Interface Packages</a></p>
+  <p class="topless"><a href="development.html"
+                        title="next chapter">Development Tools</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
       <li><a href="../bugs.html">Report a Bug</a></li>
       <li>
-        <a href="https://github.com/python/cpython/blob/master/Doc/library/idle.rst"
+        <a href="https://github.com/python/cpython/blob/main/Doc/library/idle.rst"
             rel="nofollow">Show Source
         </a>
       </li>
@@ -938,7 +966,7 @@ also used for testing.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="othergui.html" title="Other Graphical User Interface Packages"
+          <a href="development.html" title="Development Tools"
              >next</a> |</li>
         <li class="right" >
           <a href="tkinter.tix.html" title="tkinter.tix — Extension widgets for Tk"
@@ -949,8 +977,8 @@ also used for testing.</p>
     <li><a href="https://www.python.org/">Python</a> &#187;</li>
 
 
-    <li>
-      <a href="../index.html">3.10.0a1 Documentation</a> &#187;
+    <li id="cpython-language-and-version">
+      <a href="../index.html">3.11.0a4 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -974,7 +1002,7 @@ also used for testing.</p>
       </ul>
     </div>
     <div class="footer">
-    &copy; <a href="../copyright.html">Copyright</a> 2001-2020, Python Software Foundation.
+    &copy; <a href="../copyright.html">Copyright</a> 2001-2022, Python Software Foundation.
     <br />
 
     The Python Software Foundation is a non-profit corporation.
@@ -982,8 +1010,8 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Oct 20, 2020.
-    <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
+    Last updated on Jan 26, 2022.
+    <a href="/bugs.html">Found a bug</a>?
     <br />
 
     Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.

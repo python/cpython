@@ -9,8 +9,8 @@ PyDoc_STRVAR(_bisect_bisect_right__doc__,
 "Return the index where to insert item x in list a, assuming a is sorted.\n"
 "\n"
 "The return value i is such that all e in a[:i] have e <= x, and all e in\n"
-"a[i:] have e > x.  So if x already appears in the list, i points just\n"
-"beyond the rightmost x already there\n"
+"a[i:] have e > x.  So if x already appears in the list, a.insert(i, x) will\n"
+"insert just after the rightmost x already there.\n"
 "\n"
 "Optional args lo (default 0) and hi (default len(a)) bound the\n"
 "slice of a to be searched.");
@@ -172,8 +172,8 @@ PyDoc_STRVAR(_bisect_bisect_left__doc__,
 "Return the index where to insert item x in list a, assuming a is sorted.\n"
 "\n"
 "The return value i is such that all e in a[:i] have e < x, and all e in\n"
-"a[i:] have e >= x.  So if x already appears in the list, i points just\n"
-"before the leftmost x already there.\n"
+"a[i:] have e >= x.  So if x already appears in the list, a.insert(i, x) will\n"
+"insert just before the leftmost x already there.\n"
 "\n"
 "Optional args lo (default 0) and hi (default len(a)) bound the\n"
 "slice of a to be searched.");
@@ -327,4 +327,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b3a5be025aa4ed7e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aeb97db6db79bf96 input=a9049054013a1b77]*/

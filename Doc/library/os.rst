@@ -113,7 +113,7 @@ of the UTF-8 encoding:
   :ref:`error handler <error-handlers>` being enabled for :data:`sys.stdin`
   and :data:`sys.stdout` (:data:`sys.stderr` continues to use
   ``backslashreplace`` as it does in the default locale-aware mode)
-* On Unix, :func:`os.device_encoding` returns ``'UTF-8'``. rather than the
+* On Unix, :func:`os.device_encoding` returns ``'UTF-8'`` rather than the
   device encoding.
 
 Note that the standard stream settings in UTF-8 mode can be overridden by
@@ -170,9 +170,10 @@ process and user.
 
 .. data:: environ
 
-   A :term:`mapping` object representing the string environment. For example,
-   ``environ['HOME']`` is the pathname of your home directory (on some platforms),
-   and is equivalent to ``getenv("HOME")`` in C.
+   A :term:`mapping` object where keys and values are strings that represent
+   the process environment.  For example, ``environ['HOME']`` is the pathname
+   of your home directory (on some platforms), and is equivalent to
+   ``getenv("HOME")`` in C.
 
    This mapping is captured the first time the :mod:`os` module is imported,
    typically during Python startup as part of processing :file:`site.py`.  Changes
@@ -194,7 +195,7 @@ process and user.
 
    .. note::
 
-      On some platforms, including FreeBSD and Mac OS X, setting ``environ`` may
+      On some platforms, including FreeBSD and macOS, setting ``environ`` may
       cause memory leaks.  Refer to the system documentation for
       :c:func:`putenv`.
 
@@ -209,10 +210,10 @@ process and user.
 
 .. data:: environb
 
-   Bytes version of :data:`environ`: a :term:`mapping` object representing the
-   environment as byte strings. :data:`environ` and :data:`environb` are
-   synchronized (modify :data:`environb` updates :data:`environ`, and vice
-   versa).
+   Bytes version of :data:`environ`: a :term:`mapping` object where both keys
+   and values are :class:`bytes` objects representing the process environment.
+   :data:`environ` and :data:`environb` are synchronized (modifying
+   :data:`environb` updates :data:`environ`, and vice versa).
 
    :data:`environb` is only available if :data:`supports_bytes_environ` is
    ``True``.
@@ -369,7 +370,7 @@ process and user.
 
    .. note::
 
-      On Mac OS X, :func:`getgroups` behavior differs somewhat from
+      On macOS, :func:`getgroups` behavior differs somewhat from
       other Unix platforms. If the Python interpreter was built with a
       deployment target of :const:`10.5` or earlier, :func:`getgroups` returns
       the list of effective group ids associated with the current user process;
@@ -516,7 +517,7 @@ process and user.
 
    .. note::
 
-      On some platforms, including FreeBSD and Mac OS X, setting ``environ`` may
+      On some platforms, including FreeBSD and macOS, setting ``environ`` may
       cause memory leaks. Refer to the system documentation for :c:func:`putenv`.
 
    .. audit-event:: os.putenv key,value os.putenv
@@ -554,7 +555,7 @@ process and user.
 
    .. availability:: Unix.
 
-   .. note:: On Mac OS X, the length of *groups* may not exceed the
+   .. note:: On macOS, the length of *groups* may not exceed the
       system-defined maximum number of effective group ids, typically 16.
       See the documentation for :func:`getgroups` for cases where it may not
       return the same group list set by calling setgroups().
@@ -1379,11 +1380,11 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    On Linux, if *offset* is given as ``None``, the bytes are read from the
    current position of *in_fd* and the position of *in_fd* is updated.
 
-   The second case may be used on Mac OS X and FreeBSD where *headers* and
+   The second case may be used on macOS and FreeBSD where *headers* and
    *trailers* are arbitrary sequences of buffers that are written before and
    after the data from *in_fd* is written. It returns the same as the first case.
 
-   On Mac OS X and FreeBSD, a value of ``0`` for *count* specifies to send until
+   On macOS and FreeBSD, a value of ``0`` for *count* specifies to send until
    the end of *in_fd* is reached.
 
    All platforms support sockets as *out_fd* file descriptor, and some platforms
@@ -1427,6 +1428,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Unix.
 
    .. versionadded:: 3.3
+
+.. data:: SF_NOCACHE
+
+   Parameter to the :func:`sendfile` function, if the implementation supports
+   it. The data won't be cached in the virtual memory and will be freed afterwards.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.11
 
 
 .. function:: splice(src, dst, count, offset_src=None, offset_dst=None)
@@ -2027,7 +2037,7 @@ features:
       Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
-      Accepts a :term:`path-like object` for *src* and *dst*.
+      Accepts a :term:`path-like object`.
 
    .. versionchanged:: 3.8
       On Windows, now opens reparse points that represent another path
@@ -2040,7 +2050,8 @@ features:
 
    Create a directory named *path* with numeric mode *mode*.
 
-   If the directory already exists, :exc:`FileExistsError` is raised.
+   If the directory already exists, :exc:`FileExistsError` is raised. If a parent
+   directory in the path does not exist, :exc:`FileNotFoundError` is raised.
 
    .. _mkdir_modebits:
 
@@ -2080,7 +2091,7 @@ features:
    directories you can set the umask before invoking :func:`makedirs`.  The
    file permission bits of existing parent directories are not changed.
 
-   If *exist_ok* is ``False`` (the default), an :exc:`FileExistsError` is
+   If *exist_ok* is ``False`` (the default), a :exc:`FileExistsError` is
    raised if the target directory already exists.
 
    .. note::
@@ -2247,6 +2258,7 @@ features:
 
    Remove (delete) the file *path*.  If *path* is a directory, an
    :exc:`IsADirectoryError` is raised.  Use :func:`rmdir` to remove directories.
+   If the file does not exist, a :exc:`FileNotFoundError` is raised.
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
@@ -2355,7 +2367,7 @@ features:
 .. function:: rmdir(path, *, dir_fd=None)
 
    Remove (delete) the directory *path*.  If the directory does not exist or is
-   not empty, an :exc:`FileNotFoundError` or an :exc:`OSError` is raised
+   not empty, a :exc:`FileNotFoundError` or an :exc:`OSError` is raised
    respectively.  In order to remove whole directory trees,
    :func:`shutil.rmtree` can be used.
 
@@ -2788,7 +2800,7 @@ features:
       String that uniquely identifies the type of the filesystem that
       contains the file.
 
-   On Mac OS systems, the following attributes may also be available:
+   On macOS systems, the following attributes may also be available:
 
    .. attribute:: st_rsize
 
@@ -3477,9 +3489,9 @@ These functions are all available on Linux only.
    indirectly through the :class:`PathLike` interface). If it is a str,
    it is encoded with the :term:`filesystem encoding and error handler`.  *flags* may be
    :data:`XATTR_REPLACE` or :data:`XATTR_CREATE`. If :data:`XATTR_REPLACE` is
-   given and the attribute does not exist, ``EEXISTS`` will be raised.
+   given and the attribute does not exist, ``ENODATA`` will be raised.
    If :data:`XATTR_CREATE` is given and the attribute already exists, the
-   attribute will not be created and ``ENODATA`` will be raised.
+   attribute will not be created and ``EEXISTS`` will be raised.
 
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
@@ -3655,9 +3667,10 @@ written in Python, such as a mail server's external command delivery program.
 
 .. data:: EX_OK
 
-   Exit code that means no error occurred.
+   Exit code that means no error occurred. May be taken from the defined value of
+   ``EXIT_SUCCESS`` on some platforms. Generally has a value of zero.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
 
 .. data:: EX_USAGE
@@ -4155,7 +4168,7 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Windows.
 
 
-.. function:: startfile(path[, operation])
+.. function:: startfile(path, [operation], [arguments], [cwd], [show_cmd])
 
    Start a file with its associated application.
 
@@ -4169,13 +4182,25 @@ written in Python, such as a mail server's external command delivery program.
    ``'print'`` and  ``'edit'`` (to be used on files) as well as ``'explore'`` and
    ``'find'`` (to be used on directories).
 
+   When launching an application, specify *arguments* to be passed as a single
+   string. This argument may have no effect when using this function to launch a
+   document.
+
+   The default working directory is inherited, but may be overridden by the *cwd*
+   argument. This should be an absolute path. A relative *path* will be resolved
+   against this argument.
+
+   Use *show_cmd* to override the default window style. Whether this has any
+   effect will depend on the application being launched. Values are integers as
+   supported by the Win32 :c:func:`ShellExecute` function.
+
    :func:`startfile` returns as soon as the associated application is launched.
    There is no option to wait for the application to close, and no way to retrieve
    the application's exit status.  The *path* parameter is relative to the current
-   directory.  If you want to use an absolute path, make sure the first character
-   is not a slash (``'/'``); the underlying Win32 :c:func:`ShellExecute` function
-   doesn't work if it is.  Use the :func:`os.path.normpath` function to ensure that
-   the path is properly encoded for Win32.
+   directory or *cwd*.  If you want to use an absolute path, make sure the first
+   character is not a slash (``'/'``)  Use :mod:`pathlib` or the
+   :func:`os.path.normpath` function to ensure that paths are properly encoded for
+   Win32.
 
    To reduce interpreter startup overhead, the Win32 :c:func:`ShellExecute`
    function is not resolved until this function is first called.  If the function
@@ -4183,7 +4208,13 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.startfile path,operation os.startfile
 
+   .. audit-event:: os.startfile/2 path,operation,arguments,cwd,show_cmd os.startfile
+
    .. availability:: Windows.
+
+   .. versionchanged:: 3.10
+      Added the *arguments*, *cwd* and *show_cmd* arguments, and the
+      ``os.startfile/2`` audit event.
 
 
 .. function:: system(command)
@@ -4192,12 +4223,12 @@ written in Python, such as a mail server's external command delivery program.
    the Standard C function :c:func:`system`, and has the same limitations.
    Changes to :data:`sys.stdin`, etc. are not reflected in the environment of
    the executed command. If *command* generates any output, it will be sent to
-   the interpreter standard output stream.
+   the interpreter standard output stream. The C standard does not
+   specify the meaning of the return value of the C function, so the return
+   value of the Python function is system-dependent.
 
    On Unix, the return value is the exit status of the process encoded in the
-   format specified for :func:`wait`.  Note that POSIX does not specify the
-   meaning of the return value of the C :c:func:`system` function, so the return
-   value of the Python function is system-dependent.
+   format specified for :func:`wait`.
 
    On Windows, the return value is that returned by the system shell after
    running *command*.  The shell is given by the Windows environment variable
@@ -4224,20 +4255,20 @@ written in Python, such as a mail server's external command delivery program.
    Returns the current global process times.
    The return value is an object with five attributes:
 
-   * :attr:`user` - user time
-   * :attr:`system` - system time
-   * :attr:`children_user` - user time of all child processes
-   * :attr:`children_system` - system time of all child processes
-   * :attr:`elapsed` - elapsed real time since a fixed point in the past
+   * :attr:`!user` - user time
+   * :attr:`!system` - system time
+   * :attr:`!children_user` - user time of all child processes
+   * :attr:`!children_system` - system time of all child processes
+   * :attr:`!elapsed` - elapsed real time since a fixed point in the past
 
    For backwards compatibility, this object also behaves like a five-tuple
-   containing :attr:`user`, :attr:`system`, :attr:`children_user`,
-   :attr:`children_system`, and :attr:`elapsed` in that order.
+   containing :attr:`!user`, :attr:`!system`, :attr:`!children_user`,
+   :attr:`!children_system`, and :attr:`!elapsed` in that order.
 
    See the Unix manual page
    :manpage:`times(2)` and :manpage:`times(3)` manual page on Unix or `the GetProcessTimes MSDN
    <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`_
-   on Windows. On Windows, only :attr:`user` and :attr:`system` are known; the other attributes are zero.
+   on Windows. On Windows, only :attr:`!user` and :attr:`!system` are known; the other attributes are zero.
 
    .. availability:: Unix, Windows.
 
@@ -4616,7 +4647,7 @@ operating system.
 
 .. function:: sched_setparam(pid, param)
 
-   Set a scheduling parameters for the process with PID *pid*. A *pid* of 0 means
+   Set the scheduling parameters for the process with PID *pid*. A *pid* of 0 means
    the calling process. *param* is a :class:`sched_param` instance.
 
 
@@ -4724,6 +4755,9 @@ Miscellaneous System Information
    determine the set of names known to the system.
 
    .. availability:: Unix.
+
+   .. versionchanged:: 3.11
+      Add ``'SC_MINSIGSTKSZ'`` name.
 
 The following data values are used to support path manipulation operations.  These
 are defined for all platforms.
@@ -4849,7 +4883,7 @@ Random numbers
 
 .. function:: urandom(size)
 
-   Return a string of *size* random bytes suitable for cryptographic use.
+   Return a bytestring of *size* random bytes suitable for cryptographic use.
 
    This function returns random bytes from an OS-specific randomness source.  The
    returned data should be unpredictable enough for cryptographic applications,
@@ -4866,7 +4900,7 @@ Random numbers
    device. If the ``/dev/urandom`` device is not available or not readable, the
    :exc:`NotImplementedError` exception is raised.
 
-   On Windows, it will use ``CryptGenRandom()``.
+   On Windows, it will use ``BCryptGenRandom()``.
 
    .. seealso::
       The :mod:`secrets` module provides higher level functions. For an
@@ -4886,6 +4920,10 @@ Random numbers
       when available.  On OpenBSD 5.6 and newer, the C ``getentropy()``
       function is now used. These functions avoid the usage of an internal file
       descriptor.
+
+   .. versionchanged:: 3.11
+      On Windows, ``BCryptGenRandom()`` is used instead of ``CryptGenRandom()``
+      which is deprecated.
 
 .. data:: GRND_NONBLOCK
 

@@ -2,6 +2,10 @@
 """
 This script is used to build "official" universal installers on macOS.
 
+NEW for 3.10 and backports:
+- support universal2 variant with arm64 and x86_64 archs
+- enable clang optimizations when building on 10.15+
+
 NEW for 3.9.0 and backports:
 - 2.7 end-of-life issues:
     - Python 3 installs now update the Current version link
@@ -161,8 +165,10 @@ def getTargetCompilers():
         '10.4': ('gcc-4.0', 'g++-4.0'),
         '10.5': ('gcc', 'g++'),
         '10.6': ('gcc', 'g++'),
+        '10.7': ('gcc', 'g++'),
+        '10.8': ('gcc', 'g++'),
     }
-    return target_cc_map.get(DEPTARGET, ('gcc', 'g++') )
+    return target_cc_map.get(DEPTARGET, ('clang', 'clang++') )
 
 CC, CXX = getTargetCompilers()
 
@@ -234,17 +240,15 @@ THIRD_PARTY_LIBS = []
 def library_recipes():
     result = []
 
-    LT_10_5 = bool(getDeptargetTuple() < (10, 5))
-
     # Since Apple removed the header files for the deprecated system
     # OpenSSL as of the Xcode 7 release (for OS X 10.10+), we do not
     # have much choice but to build our own copy here, too.
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1i",
-              url="https://www.openssl.org/source/openssl-1.1.1i.tar.gz",
-              checksum='08987c3cf125202e2b0840035efb392c',
+              name="OpenSSL 1.1.1n",
+              url="https://www.openssl.org/source/openssl-1.1.1n.tar.gz",
+              checksum='2aad5635f9bb338bc2c6b7d19cbc9676',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -260,10 +264,10 @@ def library_recipes():
             tk_patches = ['tk868_on_10_8_10_9.patch']
 
         else:
-            tcl_tk_ver='8.6.11'
-            tcl_checksum='8a4c004f48984a03a7747e9ba06e4da4'
+            tcl_tk_ver='8.6.12'
+            tcl_checksum='87ea890821d2221f2ab5157bc5eb885f'
 
-            tk_checksum='c7ee71a2d05bba78dfffd76528dc17c6'
+            tk_checksum='1d6dcf6120356e3d211e056dff5e462a'
             tk_patches = [ ]
 
 
@@ -354,64 +358,24 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.34.0",
-              url="https://sqlite.org/2020/sqlite-autoconf-3340000.tar.gz",
-              checksum='7f33c9db7b713957fcb9271fe9049fef',
+              name="SQLite 3.38.1",
+              url="https://sqlite.org/2022/sqlite-autoconf-3380100.tar.gz",
+              checksum="5af57892dc0993af596bef56931db23f",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
                             '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
                             '-DSQLITE_ENABLE_JSON1 '
                             '-DSQLITE_ENABLE_RTREE '
+                            '-DSQLITE_OMIT_AUTOINIT '
                             '-DSQLITE_TCL=0 '
-                 '%s' % ('','-DSQLITE_WITHOUT_ZONEMALLOC ')[LT_10_5]),
+                            ),
               configure_pre=[
                   '--enable-threadsafe',
                   '--enable-shared=no',
                   '--enable-static=yes',
                   '--disable-readline',
                   '--disable-dependency-tracking',
-              ]
-          ),
-        ])
-
-    if getDeptargetTuple() < (10, 5):
-        result.extend([
-          dict(
-              name="Bzip2 1.0.6",
-              url="http://bzip.org/1.0.6/bzip2-1.0.6.tar.gz",
-              checksum='00b516f4704d4a7cb50a1d97e6e8e15b',
-              configure=None,
-              install='make install CC=%s CXX=%s, PREFIX=%s/usr/local/ CFLAGS="-arch %s"'%(
-                  CC, CXX,
-                  shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  ' -arch '.join(ARCHLIST),
-              ),
-          ),
-          dict(
-              name="ZLib 1.2.3",
-              url="http://www.gzip.org/zlib/zlib-1.2.3.tar.gz",
-              checksum='debc62758716a169df9f62e6ab2bc634',
-              configure=None,
-              install='make install CC=%s CXX=%s, prefix=%s/usr/local/ CFLAGS="-arch %s"'%(
-                  CC, CXX,
-                  shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  ' -arch '.join(ARCHLIST),
-              ),
-          ),
-          dict(
-              # Note that GNU readline is GPL'd software
-              name="GNU Readline 6.1.2",
-              url="http://ftp.gnu.org/pub/gnu/readline/readline-6.1.tar.gz" ,
-              checksum='fc2f7e714fe792db1ce6ddc4c9fb4ef3',
-              patchlevel='0',
-              patches=[
-                  # The readline maintainers don't do actual micro releases, but
-                  # just ship a set of patches.
-                  ('http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-001',
-                   'c642f2e84d820884b0bf9fd176bc6c3f'),
-                  ('http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-002',
-                   '1a76781a1ea734e831588285db7ec9b1'),
               ]
           ),
         ])
@@ -432,6 +396,14 @@ def library_recipes():
 
     return result
 
+def compilerCanOptimize():
+    """
+    Return True iff the default Xcode version can use PGO and LTO
+    """
+    # bpo-42235: The version check is pretty conservative, can be
+    # adjusted after testing
+    mac_ver = tuple(map(int, platform.mac_ver()[0].split('.')))
+    return mac_ver >= (10, 15)
 
 # Instructions for building packages inside the .mpkg.
 def pkg_recipes():
@@ -481,7 +453,7 @@ def pkg_recipes():
             source="/pydocs",
             readme="""\
                 This package installs the python documentation at a location
-                that is useable for pydoc and IDLE.
+                that is usable for pydoc and IDLE.
                 """,
             postflight="scripts/postflight.documentation",
             required=False,
@@ -756,6 +728,10 @@ def extractArchive(builddir, archiveName):
             if ((retval.startswith('tcl') or retval.startswith('tk'))
                     and retval.endswith('-src')):
                 retval = retval[:-4]
+                # Strip rcxx suffix from Tcl/Tk release candidates
+                retval_rc = retval.find('rc')
+                if retval_rc > 0:
+                    retval = retval[:retval_rc]
             if os.path.exists(retval):
                 shutil.rmtree(retval)
             fp = os.popen("tar zxf %s 2>&1"%(shellQuote(archiveName),), 'r')
@@ -1172,6 +1148,7 @@ def buildPython():
                "%s "
                "%s "
                "%s "
+               "%s "
                "LDFLAGS='-g -L%s/libraries/usr/local/lib' "
                "CFLAGS='-g -I%s/libraries/usr/local/include' 2>&1"%(
         shellQuote(os.path.join(SRCDIR, 'configure')),
@@ -1180,9 +1157,10 @@ def buildPython():
         (' ', '--without-ensurepip ')[PYTHON_3],
         (' ', "--with-openssl='%s/libraries/usr/local'"%(
                             shellQuote(WORKDIR)[1:-1],))[PYTHON_3],
-        (' ', "--with-tcltk-includes='-I%s/libraries/usr/local/include'"%(
+        (' ', "--enable-optimizations --with-lto")[compilerCanOptimize()],
+        (' ', "TCLTK_CFLAGS='-I%s/libraries/usr/local/include'"%(
                             shellQuote(WORKDIR)[1:-1],))[internalTk()],
-        (' ', "--with-tcltk-libs='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
+        (' ', "TCLTK_LIBS='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
                             shellQuote(WORKDIR)[1:-1],))[internalTk()],
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
@@ -1615,13 +1593,35 @@ def buildDMG():
     # installer file name. With the introduction of weaklinked installer
     # variants, we may have two variants with the same file name, i.e.
     # both ending in '10.9'.  To avoid this, we now use the major/minor
-    # version numbers of the macOS version we are building on, i.e.
-    # '10.9' as before for 10.9+ variant, '11.0' for universal2 11.0-.
-    # it's not ideal but should cause the least disruption to packaging
-    # workflows.
-    build_system_version = '.'.join(platform.mac_ver()[0].split('.')[0:2])
+    # version numbers of the macOS version we are building on.
+    # Also, as of macOS 11, operating system version numbering has
+    # changed from three components to two, i.e.
+    #   10.14.1, 10.14.2, ...
+    #   10.15.1, 10.15.2, ...
+    #   11.1, 11.2, ...
+    #   12.1, 12.2, ...
+    # (A further twist is that, when running on macOS 11, binaries built
+    # on older systems may be shown an operating system version of 10.16
+    # instead of 11.  We should not run into that situation here.)
+    # Also we should use "macos" instead of "macosx" going forward.
+    #
+    # To maintain compatibility for legacy variants, the file name for
+    # builds on macOS 10.15 and earlier remains:
+    #   python-3.x.y-macosx10.z.{dmg->pkg}
+    #   e.g. python-3.9.4-macosx10.9.{dmg->pkg}
+    # and for builds on macOS 11+:
+    #   python-3.x.y-macosz.{dmg->pkg}
+    #   e.g. python-3.9.4-macos11.{dmg->pkg}
+
+    build_tuple = getBuildTuple()
+    if build_tuple[0] < 11:
+        os_name = 'macosx'
+        build_system_version = '%s.%s' % build_tuple
+    else:
+        os_name = 'macos'
+        build_system_version = str(build_tuple[0])
     imagepath = os.path.join(outdir,
-                    'python-%s-macosx%s'%(getFullVersion(),build_system_version))
+                    'python-%s-%s%s'%(getFullVersion(),os_name,build_system_version))
     if INCLUDE_TIMESTAMP:
         imagepath = imagepath + '-%04d-%02d-%02d'%(time.localtime()[:3])
     imagepath = imagepath + '.dmg'

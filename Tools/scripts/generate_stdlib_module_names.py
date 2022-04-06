@@ -1,5 +1,6 @@
 # This script lists the names of standard library modules
 # to update Python/stdlib_mod_names.h
+import _imp
 import os.path
 import re
 import subprocess
@@ -17,8 +18,12 @@ IGNORE = {
     '__pycache__',
     'site-packages',
 
-    # test modules
-    '__phello__.foo',
+    # Test modules and packages
+    '__hello__',
+    '__phello__',
+    '__hello_alias__',
+    '__phello_alias__',
+    '__hello_only__',
     '_ctypes_test',
     '_testbuffer',
     '_testcapi',
@@ -26,6 +31,7 @@ IGNORE = {
     '_testimportmultiple',
     '_testinternalcapi',
     '_testmultiphase',
+    '_xxsubinterpreters',
     '_xxtestfuzz',
     'distutils.tests',
     'idlelib.idle_test',
@@ -39,6 +45,7 @@ IGNORE = {
 # Windows extension modules
 WINDOWS_MODULES = (
     '_msi',
+    '_overlapped',
     '_testconsole',
     '_winapi',
     'msvcrt',
@@ -47,6 +54,10 @@ WINDOWS_MODULES = (
     'winsound'
 )
 
+# macOS extension modules
+MACOS_MODULES = (
+    '_scproxy',
+)
 
 # Pure Python modules (Lib/*.py)
 def list_python_modules(names):
@@ -103,13 +114,45 @@ def list_modules_setup_extensions(names):
             names.add(name)
 
 
+# List frozen modules of the PyImport_FrozenModules list (Python/frozen.c).
+# Use the "./Programs/_testembed list_frozen" command.
+def list_frozen(names):
+    submodules = set()
+    for name in _imp._frozen_module_names():
+        # To skip __hello__, __hello_alias__ and etc.
+        if name.startswith('__'):
+            continue
+        if '.' in name:
+            submodules.add(name)
+        else:
+            names.add(name)
+    # Make sure all frozen submodules have a known parent.
+    for name in list(submodules):
+        if name.partition('.')[0] in names:
+            submodules.remove(name)
+    if submodules:
+        raise Exception(f'unexpected frozen submodules: {sorted(submodules)}')
+
+
 def list_modules():
-    names = set(sys.builtin_module_names) | set(WINDOWS_MODULES)
+    names = set(sys.builtin_module_names) | set(WINDOWS_MODULES) | set(MACOS_MODULES)
     list_modules_setup_extensions(names)
     list_setup_extensions(names)
     list_packages(names)
     list_python_modules(names)
-    names -= set(IGNORE)
+    list_frozen(names)
+
+    # Remove ignored packages and modules
+    for name in list(names):
+        package_name = name.split('.')[0]
+        # package_name can be equal to name
+        if package_name in IGNORE:
+            names.discard(name)
+
+    for name in names:
+        if "." in name:
+            raise Exception("sub-modules must not be listed")
+
     return names
 
 
