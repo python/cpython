@@ -1347,27 +1347,24 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
 static PyObject *
 deque_reduce(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *dict, *it;
+    PyObject *state, *it;
 
-    if (_PyObject_LookupAttr((PyObject *)deque, &_Py_ID(__dict__), &dict) < 0) {
+    state = _PyObject_GetState((PyObject *)deque);
+    if (state == NULL) {
         return NULL;
-    }
-    if (dict == NULL) {
-        dict = Py_None;
-        Py_INCREF(dict);
     }
 
     it = PyObject_GetIter((PyObject *)deque);
     if (it == NULL) {
-        Py_DECREF(dict);
+        Py_DECREF(state);
         return NULL;
     }
 
     if (deque->maxlen < 0) {
-        return Py_BuildValue("O()NN", Py_TYPE(deque), dict, it);
+        return Py_BuildValue("O()NN", Py_TYPE(deque), state, it);
     }
     else {
-        return Py_BuildValue("O(()n)NN", Py_TYPE(deque), deque->maxlen, dict, it);
+        return Py_BuildValue("O(()n)NN", Py_TYPE(deque), deque->maxlen, state, it);
     }
 }
 

@@ -1947,7 +1947,7 @@ an exception when an element is missing from the set.");
 static PyObject *
 set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *keys=NULL, *args=NULL, *result=NULL, *dict=NULL;
+    PyObject *keys=NULL, *args=NULL, *result=NULL, *state=NULL;
 
     keys = PySequence_List((PyObject *)so);
     if (keys == NULL)
@@ -1955,18 +1955,14 @@ set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
     args = PyTuple_Pack(1, keys);
     if (args == NULL)
         goto done;
-    if (_PyObject_LookupAttr((PyObject *)so, &_Py_ID(__dict__), &dict) < 0) {
+    state = _PyObject_GetState((PyObject *)so);
+    if (state == NULL)
         goto done;
-    }
-    if (dict == NULL) {
-        dict = Py_None;
-        Py_INCREF(dict);
-    }
-    result = PyTuple_Pack(3, Py_TYPE(so), args, dict);
+    result = PyTuple_Pack(3, Py_TYPE(so), args, state);
 done:
     Py_XDECREF(args);
     Py_XDECREF(keys);
-    Py_XDECREF(dict);
+    Py_XDECREF(state);
     return result;
 }
 
