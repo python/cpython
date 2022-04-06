@@ -401,6 +401,7 @@ class SysModuleTest(unittest.TestCase):
 
     # sys._current_frames() is a CPython-only gimmick.
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_current_frames(self):
         import threading
         import traceback
@@ -466,6 +467,7 @@ class SysModuleTest(unittest.TestCase):
         t.join()
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_current_exceptions(self):
         import threading
         import traceback
