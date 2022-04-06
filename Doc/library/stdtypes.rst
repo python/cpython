@@ -3546,7 +3546,7 @@ The conversion types are:
 |            | be used for Python2/3 code bases.                   |       |
 +------------+-----------------------------------------------------+-------+
 | ``'a'``    | Bytes (converts any Python object using             | \(5)  |
-|            | ``repr(obj).encode('ascii','backslashreplace)``).   |       |
+|            | ``repr(obj).encode('ascii', 'backslashreplace')``). |       |
 +------------+-----------------------------------------------------+-------+
 | ``'r'``    | ``'r'`` is an alias for ``'a'`` and should only     | \(7)  |
 |            | be used for Python2/3 code bases.                   |       |
