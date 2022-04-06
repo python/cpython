@@ -1,0 +1,1 @@
+Add :func:`locale.getencoding`.
