@@ -187,6 +187,15 @@ Other Language Changes
   protocols correspondingly.
   (Contributed by Serhiy Storchaka in :issue:`12022`.)
 
+* Added :meth:`object.__getstate__` which provides the default
+  implementation of the ``__getstate__()`` method.  :mod:`Copying <copy>`
+  and :mod:`pickling <pickle>` instances of subclasses of builtin types
+  :class:`bytearray`, :class:`set`, :class:`frozenset`,
+  :class:`collections.OrderedDict`, :class:`collections.deque`,
+  :class:`weakref.WeakSet`, and :class:`datetime.tzinfo` now copies and
+  pickles instance attributes implemented as :term:`slots <__slots__>`.
+  (Contributed by Serhiy Storchaka in :issue:`26579`.)
+
 
 Other CPython Implementation Changes
 ====================================

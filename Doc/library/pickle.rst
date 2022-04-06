@@ -509,9 +509,8 @@ The following types can be pickled:
 
 * classes that are defined at the top level of a module
 
-* instances of such classes whose :attr:`~object.__dict__` or the result of
-  calling :meth:`__getstate__` is picklable  (see section :ref:`pickle-inst` for
-  details).
+* instances of such classes whose the result of calling :meth:`__getstate__`
+  is picklable  (see section :ref:`pickle-inst` for details).
 
 Attempts to pickle unpicklable objects will raise the :exc:`PicklingError`
 exception; when this happens, an unspecified number of bytes may have already
@@ -611,11 +610,31 @@ methods:
 
 .. method:: object.__getstate__()
 
-   Classes can further influence how their instances are pickled; if the class
-   defines the method :meth:`__getstate__`, it is called and the returned object
-   is pickled as the contents for the instance, instead of the contents of the
-   instance's dictionary.  If the :meth:`__getstate__` method is absent, the
-   instance's :attr:`~object.__dict__` is pickled as usual.
+   Classes can further influence how their instances are pickled by overriding
+   the method :meth:`__getstate__`.  It is called and the returned object
+   is pickled as the contents for the instance, instead of a default state.
+   There are several cases:
+
+   * For a class that has no instance :attr:`~object.__dict__` and no
+     :attr:`~object.__slots__`, the default state is ``None``.
+
+   * For a class that has an instance :attr:`~object.__dict__` and no
+     :attr:`~object.__slots__`, the default state is ``self.__dict__``.
+
+   * For a class that has an instance :attr:`~object.__dict__` and
+     :attr:`~object.__slots__`, the default state is a tuple consisting of two
+     dictionaries:  ``self.__dict__``, and a dictionary mapping slot
+     names to slot values.  Only slots that have a value are
+     included in the latter.
+
+   * For a class that has :attr:`~object.__slots__` and no instance
+     :attr:`~object.__dict__`, the default state is a tuple whose first item
+     is ``None`` and whose second item is a dictionary mapping slot names
+     to slot values described in the previous bullet.
+
+   .. versionchanged:: 3.11
+      Added the default implementation of the ``__getstate__()`` method in the
+      :class:`object` class.
 
 
 .. method:: object.__setstate__(state)
