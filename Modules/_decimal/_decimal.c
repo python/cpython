@@ -3184,8 +3184,9 @@ dotsep_as_utf8(const char *s)
 }
 
 /* copy of libmpdec _mpd_round() */
-static void _mpd_round(mpd_t *result, const mpd_t *a, mpd_ssize_t prec,
-                       const mpd_context_t *ctx, uint32_t *status)
+static void
+_mpd_round(mpd_t *result, const mpd_t *a, mpd_ssize_t prec,
+           const mpd_context_t *ctx, uint32_t *status)
 {
     mpd_ssize_t exp = a->exp + a->digits - prec;
 
@@ -3202,6 +3203,34 @@ static void _mpd_round(mpd_t *result, const mpd_t *a, mpd_ssize_t prec,
     if (result->digits > prec) {
         mpd_qrescale_fmt(result, result, exp+1, ctx, status);
     }
+}
+
+/* Locate negative zero "z" option within a UTF-8 format spec string.
+ * Returns pointer to "z", else NULL.
+ * The portion of the spec we're working with is [[fill]align][sign][z] */
+static const char *
+format_spec_z_search(char const *fmt, Py_ssize_t size) {
+    char const *pos = fmt;
+    char const *fmt_end = fmt + size;
+    /* skip over [[fill]align] (fill may be multi-byte character) */
+    pos += 1;
+    while (pos < fmt_end && *pos & 0x80) {
+        pos += 1;
+    }
+    if (pos < fmt_end && strchr("<>=^", *pos) != NULL) {
+        pos += 1;
+    } else {
+        /* fill not present-- skip over [align] */
+        pos = fmt;
+        if (pos < fmt_end && strchr("<>=^", *pos) != NULL) {
+            pos += 1;
+        }
+    }
+    /* skip over [sign] */
+    if (pos < fmt_end && strchr("+- ", *pos) != NULL) {
+        pos += 1;
+    }
+    return pos < fmt_end && *pos == 'z' ? pos : NULL;
 }
 
 static int
@@ -3259,10 +3288,13 @@ dec_format(PyObject *dec, PyObject *args)
     }
 
     if (PyUnicode_Check(fmtarg)) {
-        fmt = (char *)PyUnicode_AsUTF8AndSize(fmtarg, &size);
+        fmt = PyUnicode_AsUTF8AndSize(fmtarg, &size);
         if (fmt == NULL) {
             return NULL;
         }
+        /* NOTE: If https://github.com/python/cpython/pull/29438 lands, the
+         *   format string manipulation below can be eliminated by enhancing
+         *   the forked mpd_parse_fmt_str(). */
         if (size > 0 && fmt[0] == '\0') {
             /* NUL fill character: must be replaced with a valid UTF-8 char
                before calling mpd_parse_fmt_str(). */
@@ -3274,14 +3306,11 @@ dec_format(PyObject *dec, PyObject *args)
             fmt_copy[0] = '_';
         }
         /* Strip 'z' option, which isn't understood by mpd_parse_fmt_str().
-         * First, skip [[fill]align], since 'fill' itself may be 'z'.
          * NOTE: fmt is always null terminated by PyUnicode_AsUTF8AndSize() */
-        char const *fmt_offset = size >= 2 && strchr("<>=^", fmt[1]) != NULL ?
-                                 fmt + 2 : fmt;
-        char *z_start = strchr(fmt_offset, 'z');
-        if (z_start != NULL) {
+        char const *z_position = format_spec_z_search(fmt, size);
+        if (z_position != NULL) {
             no_neg_0 = 1;
-            size_t z_index = z_start - fmt;
+            size_t z_index = z_position - fmt;
             if (fmt_copy == NULL) {
                 fmt = fmt_copy = dec_strdup(fmt, size);
                 if (fmt_copy == NULL) {

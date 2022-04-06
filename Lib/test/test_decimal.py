@@ -1118,6 +1118,7 @@ class FormatTest(unittest.TestCase):
             ('z>6.1f', '-0.', 'zz-0.0'),
             ('z>z6.1f', '-0.', 'zzz0.0'),
             ('x>z6.1f', '-0.', 'xxx0.0'),
+            ('🖤>z6.1f', '-0.', '🖤🖤🖤0.0'),  # multi-byte fill char
 
             # issue 6850
             ('a=-7.0', '0.12345', 'aaaa0.1'),
@@ -1138,6 +1139,9 @@ class FormatTest(unittest.TestCase):
             ctx.rounding = ROUND_CEILING
             self.assertEqual(format(self.decimal.Decimal('-0.001'), 'z.2f'),
                             '0.00')
+
+    def test_negative_zero_bad_format(self):
+        self.assertRaises(ValueError, format, self.decimal.Decimal('1.23'), 'fz')
 
     def test_n_format(self):
         Decimal = self.decimal.Decimal

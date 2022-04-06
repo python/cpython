@@ -601,11 +601,14 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(f"{-0.:z>6.1f}", "zz-0.0")  # test fill, esp. 'z' fill
         self.assertEqual(f"{-0.:z>z6.1f}", "zzz0.0")
         self.assertEqual(f"{-0.:x>z6.1f}", "xxx0.0")
+        self.assertEqual(f"{-0.:🖤>z6.1f}", "🖤🖤🖤0.0")  # multi-byte fill char
 
     def test_specifier_z_error(self):
         error_msg = re.compile("Invalid format specifier '.*z.*'")
         with self.assertRaisesRegex(ValueError, error_msg):
             f"{0:z+f}"  # wrong position
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f"{0:fz}"  # wrong position
 
         error_msg = re.escape("Negative zero coercion (z) not allowed")
         with self.assertRaisesRegex(ValueError, error_msg):
