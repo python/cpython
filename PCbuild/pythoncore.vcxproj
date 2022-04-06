@@ -129,7 +129,6 @@
     <ClInclude Include="..\Include\bytearrayobject.h" />
     <ClInclude Include="..\Include\bytesobject.h" />
     <ClInclude Include="..\Include\ceval.h" />
-    <ClInclude Include="..\Include\code.h" />
     <ClInclude Include="..\Include\codecs.h" />
     <ClInclude Include="..\Include\compile.h" />
     <ClInclude Include="..\Include\complexobject.h" />
