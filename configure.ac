@@ -1122,7 +1122,11 @@ AC_ARG_ENABLE([wasm-dynamic-linking],
     [AC_MSG_ERROR([--enable-wasm-dynamic-linking only applies to Emscripten and WASI])]
   )
 ], [
-  enable_wasm_dynamic_linking=missing
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [enable_wasm_dynamic_linking=no],
+    [WASI], [enable_wasm_dynamic_linking=no],
+    [enable_wasm_dynamic_linking=missing]
+  )
 ])
 AC_MSG_RESULT([$enable_wasm_dynamic_linking])
 
