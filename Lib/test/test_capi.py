@@ -1097,7 +1097,7 @@ class Test_FrameAPI(unittest.TestCase):
 
     def test_frame_getters(self):
         frame = self.getframe()
-        self.assertEquals(frame.f_locals, _testcapi.frame_getlocals(frame))
+        self.assertEqual(frame.f_locals, _testcapi.frame_getlocals(frame))
         self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
         self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
 
