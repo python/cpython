@@ -1,0 +1,1 @@
+Make :opcode:`POP_JUMP_IF_TRUE` and :opcode:`POP_JUMP_IF_FALSE` virtual, mapping to new relative jump opcodes.
