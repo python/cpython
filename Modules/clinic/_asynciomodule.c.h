@@ -292,23 +292,6 @@ _asyncio_Future__make_cancelled_error(FutureObj *self, PyObject *Py_UNUSED(ignor
     return _asyncio_Future__make_cancelled_error_impl(self);
 }
 
-PyDoc_STRVAR(_asyncio_Future__repr_info__doc__,
-"_repr_info($self, /)\n"
-"--\n"
-"\n");
-
-#define _ASYNCIO_FUTURE__REPR_INFO_METHODDEF    \
-    {"_repr_info", (PyCFunction)_asyncio_Future__repr_info, METH_NOARGS, _asyncio_Future__repr_info__doc__},
-
-static PyObject *
-_asyncio_Future__repr_info_impl(FutureObj *self);
-
-static PyObject *
-_asyncio_Future__repr_info(FutureObj *self, PyObject *Py_UNUSED(ignored))
-{
-    return _asyncio_Future__repr_info_impl(self);
-}
-
 PyDoc_STRVAR(_asyncio_Task___init____doc__,
 "Task(coro, *, loop=None, name=None, context=None)\n"
 "--\n"
@@ -381,23 +364,6 @@ static PyObject *
 _asyncio_Task__make_cancelled_error(TaskObj *self, PyObject *Py_UNUSED(ignored))
 {
     return _asyncio_Task__make_cancelled_error_impl(self);
-}
-
-PyDoc_STRVAR(_asyncio_Task__repr_info__doc__,
-"_repr_info($self, /)\n"
-"--\n"
-"\n");
-
-#define _ASYNCIO_TASK__REPR_INFO_METHODDEF    \
-    {"_repr_info", (PyCFunction)_asyncio_Task__repr_info, METH_NOARGS, _asyncio_Task__repr_info__doc__},
-
-static PyObject *
-_asyncio_Task__repr_info_impl(TaskObj *self);
-
-static PyObject *
-_asyncio_Task__repr_info(TaskObj *self, PyObject *Py_UNUSED(ignored))
-{
-    return _asyncio_Task__repr_info_impl(self);
 }
 
 PyDoc_STRVAR(_asyncio_Task_cancel__doc__,
@@ -498,6 +464,43 @@ static PyObject *
 _asyncio_Task_uncancel(TaskObj *self, PyObject *Py_UNUSED(ignored))
 {
     return _asyncio_Task_uncancel_impl(self);
+}
+
+PyDoc_STRVAR(_asyncio_Task__check_future__doc__,
+"_check_future($self, /, future)\n"
+"--\n"
+"\n"
+"Return False if task and future loops are not compatible.");
+
+#define _ASYNCIO_TASK__CHECK_FUTURE_METHODDEF    \
+    {"_check_future", (PyCFunction)(void(*)(void))_asyncio_Task__check_future, METH_FASTCALL|METH_KEYWORDS, _asyncio_Task__check_future__doc__},
+
+static int
+_asyncio_Task__check_future_impl(TaskObj *self, PyObject *future);
+
+static PyObject *
+_asyncio_Task__check_future(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"future", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_check_future", 0};
+    PyObject *argsbuf[1];
+    PyObject *future;
+    int _return_value;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    future = args[0];
+    _return_value = _asyncio_Task__check_future_impl(self, future);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_asyncio_Task_get_stack__doc__,
@@ -924,4 +927,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=540ed3caf5a4d57d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fdb7129263a8712e input=a9049054013a1b77]*/

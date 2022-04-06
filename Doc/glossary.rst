@@ -628,7 +628,7 @@ Glossary
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
       with an :meth:`__iter__` method or with a :meth:`__getitem__` method
-      that implements :term:`Sequence <sequence>` semantics.
+      that implements :term:`sequence` semantics.
 
       Iterables can be
       used in a :keyword:`for` loop and in many other places where a sequence is
@@ -680,9 +680,8 @@ Glossary
       :meth:`str.lower` method can serve as a key function for case insensitive
       sorts.  Alternatively, a key function can be built from a
       :keyword:`lambda` expression such as ``lambda r: (r[0], r[2])``.  Also,
-      the :mod:`operator` module provides three key function constructors:
-      :func:`~operator.attrgetter`, :func:`~operator.itemgetter`, and
-      :func:`~operator.methodcaller`.  See the :ref:`Sorting HOW TO
+      :func:`operator.attrgetter`, :func:`operator.itemgetter`, and
+      :func:`operator.methodcaller` are three key function constructors.  See the :ref:`Sorting HOW TO
       <sortinghowto>` for examples of how to create and use key functions.
 
    keyword argument
@@ -743,8 +742,8 @@ Glossary
 
    mapping
       A container object that supports arbitrary key lookups and implements the
-      methods specified in the :class:`~collections.abc.Mapping` or
-      :class:`~collections.abc.MutableMapping`
+      methods specified in the :class:`collections.abc.Mapping` or
+      :class:`collections.abc.MutableMapping`
       :ref:`abstract base classes <collections-abstract-base-classes>`.  Examples
       include :class:`dict`, :class:`collections.defaultdict`,
       :class:`collections.OrderedDict` and :class:`collections.Counter`.
@@ -1049,8 +1048,8 @@ Glossary
       The number of references to an object.  When the reference count of an
       object drops to zero, it is deallocated.  Reference counting is
       generally not visible to Python code, but it is a key element of the
-      :term:`CPython` implementation.  The :mod:`sys` module defines a
-      :func:`~sys.getrefcount` function that programmers can call to return the
+      :term:`CPython` implementation.  Programmers can call the
+      :func:`sys.getrefcount` function to return the
       reference count for a particular object.
 
    regular package
