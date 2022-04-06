@@ -1,1 +1,0 @@
-Improved the performance of :meth:`list.append()` and list comprehensions by optimizing for the common case, where no resize is needed. Patch by Dennis Sweeney.

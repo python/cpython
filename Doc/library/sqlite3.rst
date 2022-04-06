@@ -748,6 +748,44 @@ Connection Objects
       .. versionadded:: 3.11
 
 
+   .. method:: serialize(*, name="main")
+
+      This method serializes a database into a :class:`bytes` object.  For an
+      ordinary on-disk database file, the serialization is just a copy of the
+      disk file.  For an in-memory database or a "temp" database, the
+      serialization is the same sequence of bytes which would be written to
+      disk if that database were backed up to disk.
+
+      *name* is the database to be serialized, and defaults to the main
+      database.
+
+      .. note::
+
+         This method is only available if the underlying SQLite library has the
+         serialize API.
+
+      .. versionadded:: 3.11
+
+
+   .. method:: deserialize(data, /, *, name="main")
+
+      This method causes the database connection to disconnect from database
+      *name*, and reopen *name* as an in-memory database based on the
+      serialization contained in *data*.  Deserialization will raise
+      :exc:`OperationalError` if the database connection is currently involved
+      in a read transaction or a backup operation.  :exc:`DataError` will be
+      raised if ``len(data)`` is larger than ``2**63 - 1``, and
+      :exc:`DatabaseError` will be raised if *data* does not contain a valid
+      SQLite database.
+
+      .. note::
+
+         This method is only available if the underlying SQLite library has the
+         deserialize API.
+
+      .. versionadded:: 3.11
+
+
 .. _sqlite3-cursor-objects:
 
 Cursor Objects
