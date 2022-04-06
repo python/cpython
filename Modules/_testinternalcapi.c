@@ -14,7 +14,6 @@
 #include "Python.h"
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
-#include "pycore_code.h"         // _PyCode_Quicken
 #include "pycore_fileutils.h"    // _Py_normpath
 #include "pycore_gc.h"           // PyGC_Head
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
@@ -492,19 +491,6 @@ decode_locale_ex(PyObject *self, PyObject *args)
     return res;
 }
 
-static PyObject *
-code_quicken(PyObject *self, PyObject *code)
-{
-    if (!PyCode_Check(code)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
-        return NULL;
-    }
-    PyCodeObject *co = (PyCodeObject *) code;
-    co->co_warmup = 0;
-    _PyCode_Quicken(co);
-    Py_RETURN_NONE;
-}
-
 
 static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -522,7 +508,6 @@ static PyMethodDef TestMethods[] = {
     {"get_getpath_codeobject", get_getpath_codeobject, METH_NOARGS, NULL},
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
-    {"code_quicken", code_quicken, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 
