@@ -1,5 +1,6 @@
 /* Definitions for bytecode */
 
+#ifndef Py_LIMITED_API
 #ifndef Py_CODE_H
 #define Py_CODE_H
 #ifdef __cplusplus
@@ -212,4 +213,5 @@ PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_CODE_H */
+#endif  // !Py_CODE_H
+#endif  // !Py_LIMITED_API
