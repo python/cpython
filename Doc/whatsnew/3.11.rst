@@ -555,16 +555,16 @@ Inlined Python function calls
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 During a Python function call, Python will call an evaluating C function to
 interpret that function's code. This effectively limits pure Python recursion to
-what's safe for the C stack
+what's safe for the C stack.
 
-In 3.11, when Python detects Python code calling another Python function,
+In 3.11, when CPython detects Python code calling another Python function,
 it sets up a new frame, and "jumps" to the new code inside the new frame. This
 avoids calling the C interpreting function altogether.
 
 Most Python function calls now consume no C stack space. This speeds up
 most of such calls. In simple recursive functions like fibonacci or
 factorial, a 1.7x speedup was observed. This also means recursive functions
-can recurse significantly deeper, (if the user increases the recursion limit).
+can recurse significantly deeper (if the user increases the recursion limit).
 We measured a 1-3% improvement in pyperformance.
 
 (Contributed by Pablo Galindo and Mark Shannon in :issue:`45256`.)
@@ -607,30 +607,27 @@ See :pep:`659` for more information.)
 |               |                    | fast paths for their underlying types.                |                   | Brandt Bucher,    |
 |               |                    |                                                       |                   | Dennis Sweeney    |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Subscript     | ``a[i]``           | Subscripting container types such as ``list``,        | 10-30%            | Irit Katriel,     |
+| Subscript     | ``a[i]``           | Subscripting container types such as ``list``,        | 10-25%            | Irit Katriel,     |
 |               |                    | ``tuple`` and ``dict`` directly index the underlying  |                   | Mark Shannon      |
 |               |                    | data structures.                                      |                   |                   |
 |               |                    |                                                       |                   |                   |
 |               |                    | Subscripting custom ``__getitem__``                   |                   |                   |
 |               |                    | is also inlined similar to :ref:`inline-calls`.       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Store         | ``a[i] = z``       | Similar to subscripting specialization above.         | 10-90%            | Dennis Sweeney    |
+| Store         | ``a[i] = z``       | Similar to subscripting specialization above.         | 10-25%            | Dennis Sweeney    |
 | subscript     |                    |                                                       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Calls         | ``f(arg)``         | Calls to common builtin (C) functions such as ``len`` | 20%               | Mark Shannon,     |
-|               |                    | and ``isinstance`` directly call their underlying C   |                   | Ken Jin           |
-|               | ``C(arg)``         | version. This avoids going through the internal       | 170%              |                   |
+| Calls         | ``f(arg)``         | Calls to common builtin (C) functions and types such  | 20%               | Mark Shannon,     |
+|               | ``C(arg)``         | as ``len`` and ``str`` directly call their underlying |                   | Ken Jin           |
+|               |                    | C version. This avoids going through the internal     |                   |                   |
 |               |                    | calling convention.                                   |                   |                   |
 |               |                    |                                                       |                   |                   |
-|               |                    | Calls to certain Python functions are inlined similar |                   |                   |
-|               |                    | to :ref:`inline-calls`.                               |                   |                   |
-|               |                    |                                                       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Load          | ``print``          | The object's index in the globals/builtins namespace  | - [1]_            | Mark Shannon      |
+| Load          | ``print``          | The object's index in the globals/builtins namespace  | [1]_              | Mark Shannon      |
 | global        | ``len``            | is cached. Loading globals and builtins require       |                   |                   |
 | variable      |                    | zero namespace lookups.                               |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | - [2]_            | Mark Shannon      |
+| Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | [2]_              | Mark Shannon      |
 | attribute     |                    | index inside the class/object's namespace is cached.  |                   |                   |
 |               |                    | In most cases, attribute loading will require zero    |                   |                   |
 |               |                    | namespace lookups.                                    |                   |                   |
