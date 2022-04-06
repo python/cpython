@@ -334,8 +334,21 @@ The :mod:`locale` module defines the following exception and functions:
    locale. See also the :term:`filesystem encoding and error handler`.
 
    .. versionchanged:: 3.7
-      The function now always returns ``UTF-8`` on Android or if the
+      The function now always returns ``"UTF-8"`` on Android or if the
       :ref:`Python UTF-8 Mode <utf8-mode>` is enabled.
+
+
+.. function:: getencoding()
+
+   Returns the :term:`locale encoding`.
+
+   On Android, it always returns ``"UTF-8"``, the :term:`locale encoding` is
+   ignored.
+
+   This function is same to ``getpreferredencoding(False)`` except this
+   function ignore the :ref:`UTF-8 Mode <utf8-mode>`.
+
+   .. versionadded:: 3.11
 
 
 .. function:: normalize(localename)
