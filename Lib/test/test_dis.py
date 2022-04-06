@@ -735,7 +735,7 @@ class DisTests(DisTestBase):
 
     def test_widths(self):
         for opcode, opname in enumerate(dis.opname):
-            if opname in dis.deoptmap:
+            if opname in dis.deoptmap or opname == 'JUMP_BACKWARD_NO_INTERRUPT':
                 continue
             with self.subTest(opname=opname):
                 width = dis._OPNAME_WIDTH

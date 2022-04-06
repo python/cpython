@@ -1,3 +1,0 @@
-Add missing terminated NUL in sockaddr_un's length
-
-This was potentially observable when using non-abstract AF_UNIX datagram sockets to processes written in another programming language.

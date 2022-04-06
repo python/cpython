@@ -273,8 +273,9 @@ PyDoc_STRVAR(_io_text_encoding__doc__,
 "\n"
 "A helper function to choose the text encoding.\n"
 "\n"
-"When encoding is not None, just return it.\n"
-"Otherwise, return the default text encoding (i.e. \"locale\").\n"
+"When encoding is not None, this function returns it.\n"
+"Otherwise, this function returns the default text encoding\n"
+"(i.e. \"locale\" or \"utf-8\" depends on UTF-8 mode).\n"
 "\n"
 "This function emits an EncodingWarning if encoding is None and\n"
 "sys.flags.warn_default_encoding is true.\n"
@@ -354,4 +355,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6ea315343f6a94ba input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1a7fd7755c9a9609 input=a9049054013a1b77]*/

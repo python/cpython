@@ -652,8 +652,8 @@ depending on the system error code.
 
    Raised when an operation would block on an object (e.g. socket) set
    for non-blocking operation.
-   Corresponds to :c:data:`errno` ``EAGAIN``, ``EALREADY``,
-   ``EWOULDBLOCK`` and ``EINPROGRESS``.
+   Corresponds to :c:data:`errno` :py:data:`~errno.EAGAIN`, :py:data:`~errno.EALREADY`,
+   :py:data:`~errno.EWOULDBLOCK` and :py:data:`~errno.EINPROGRESS`.
 
    In addition to those of :exc:`OSError`, :exc:`BlockingIOError` can have
    one more attribute:
@@ -667,7 +667,7 @@ depending on the system error code.
 .. exception:: ChildProcessError
 
    Raised when an operation on a child process failed.
-   Corresponds to :c:data:`errno` ``ECHILD``.
+   Corresponds to :c:data:`errno` :py:data:`~errno.ECHILD`.
 
 .. exception:: ConnectionError
 
@@ -681,35 +681,35 @@ depending on the system error code.
    A subclass of :exc:`ConnectionError`, raised when trying to write on a
    pipe while the other end has been closed, or trying to write on a socket
    which has been shutdown for writing.
-   Corresponds to :c:data:`errno` ``EPIPE`` and ``ESHUTDOWN``.
+   Corresponds to :c:data:`errno` :py:data:`~errno.EPIPE` and :py:data:`~errno.ESHUTDOWN`.
 
 .. exception:: ConnectionAbortedError
 
    A subclass of :exc:`ConnectionError`, raised when a connection attempt
    is aborted by the peer.
-   Corresponds to :c:data:`errno` ``ECONNABORTED``.
+   Corresponds to :c:data:`errno` :py:data:`~errno.ECONNABORTED`.
 
 .. exception:: ConnectionRefusedError
 
    A subclass of :exc:`ConnectionError`, raised when a connection attempt
    is refused by the peer.
-   Corresponds to :c:data:`errno` ``ECONNREFUSED``.
+   Corresponds to :c:data:`errno` :py:data:`~errno.ECONNREFUSED`.
 
 .. exception:: ConnectionResetError
 
    A subclass of :exc:`ConnectionError`, raised when a connection is
    reset by the peer.
-   Corresponds to :c:data:`errno` ``ECONNRESET``.
+   Corresponds to :c:data:`errno` :py:data:`~errno.ECONNRESET`.
 
 .. exception:: FileExistsError
 
    Raised when trying to create a file or directory which already exists.
-   Corresponds to :c:data:`errno` ``EEXIST``.
+   Corresponds to :c:data:`errno` :py:data:`~errno.EEXIST`.
 
 .. exception:: FileNotFoundError
 
    Raised when a file or directory is requested but doesn't exist.
-   Corresponds to :c:data:`errno` ``ENOENT``.
+   Corresponds to :c:data:`errno` :py:data:`~errno.ENOENT`.
 
 .. exception:: InterruptedError
 
@@ -725,7 +725,7 @@ depending on the system error code.
 
    Raised when a file operation (such as :func:`os.remove`) is requested
    on a directory.
-   Corresponds to :c:data:`errno` ``EISDIR``.
+   Corresponds to :c:data:`errno` :py:data:`~errno.EISDIR`.
 
 .. exception:: NotADirectoryError
 
@@ -733,23 +733,23 @@ depending on the system error code.
    something which is not a directory.  On most POSIX platforms, it may also be
    raised if an operation attempts to open or traverse a non-directory file as if
    it were a directory.
-   Corresponds to :c:data:`errno` ``ENOTDIR``.
+   Corresponds to :c:data:`errno` :py:data:`~errno.ENOTDIR`.
 
 .. exception:: PermissionError
 
    Raised when trying to run an operation without the adequate access
    rights - for example filesystem permissions.
-   Corresponds to :c:data:`errno` ``EACCES`` and ``EPERM``.
+   Corresponds to :c:data:`errno` :py:data:`~errno.EACCES` and :py:data:`~errno.EPERM`.
 
 .. exception:: ProcessLookupError
 
    Raised when a given process doesn't exist.
-   Corresponds to :c:data:`errno` ``ESRCH``.
+   Corresponds to :c:data:`errno` :py:data:`~errno.ESRCH`.
 
 .. exception:: TimeoutError
 
    Raised when a system function timed out at the system level.
-   Corresponds to :c:data:`errno` ``ETIMEDOUT``.
+   Corresponds to :c:data:`errno` :py:data:`~errno.ETIMEDOUT`.
 
 .. versionadded:: 3.3
    All the above :exc:`OSError` subclasses were added.

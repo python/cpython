@@ -366,6 +366,11 @@ sqlite3
   Instead we leave it to the SQLite library to handle these cases.
   (Contributed by Erlend E. Aasland in :issue:`44092`.)
 
+* Add :meth:`~sqlite3.Connection.serialize` and
+  :meth:`~sqlite3.Connection.deserialize` to :class:`sqlite3.Connection` for
+  serializing and deserializing databases.
+  (Contributed by Erlend E. Aasland in :issue:`41930`.)
+
 
 sys
 ---
@@ -523,7 +528,12 @@ CPython bytecode changes
 * Replaced :opcode:`JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH` which
   performs the check but does not jump.
 
+* Replaced :opcode:`JUMP_IF_NOT_EG_MATCH` by :opcode:`CHECK_EG_MATCH` which
+  performs the check but does not jump.
+
 * Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
+
+* Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`, which is used in certain loops where it is undesirable to handle interrupts.
 
 Deprecated
 ==========
@@ -531,6 +541,10 @@ Deprecated
 * The :mod:`lib2to3` package and ``2to3`` tool are now deprecated and may not
   be able to parse Python 3.10 or newer. See the :pep:`617` (New PEG parser for
   CPython).  (Contributed by Victor Stinner in :issue:`40360`.)
+
+* Undocumented modules ``sre_compile``, ``sre_constants`` and ``sre_parse``
+  are now deprecated.
+  (Contributed by Serhiy Storchaka in :issue:`47152`.)
 
 * :class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
   It is untested and undocumented and also not used by webbrowser itself.
@@ -576,6 +590,12 @@ Deprecated
 
   (Contributed by Hugo van Kemenade in :issue:`45173`.)
 
+* :class:`configparser.LegacyInterpolation` has been deprecated in the docstring
+  since Python 3.2. It now emits a :exc:`DeprecationWarning` and will be removed
+  in Python 3.13. Use :class:`configparser.BasicInterpolation` or
+  :class:`configparser.ExtendedInterpolation instead.
+  (Contributed by Hugo van Kemenade in :issue:`46607`.)
+
 * The :func:`locale.getdefaultlocale` function is deprecated and will be
   removed in Python 3.13. Use :func:`locale.setlocale`,
   :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
@@ -587,6 +607,14 @@ Deprecated
   warnings have now been updated to note they will removed in Python 3.12
   (:pep:`594`).
   (Contributed by Hugo van Kemenade in :issue:`47022`.)
+
+* :pep:`594` led to the deprecations of the following modules which are
+  slated for removal in Python 3.13:
+
+  * :mod:`aifc`
+
+  (Contributed by Brett Cannon in :issue:`47061`.)
+
 
 Removed
 =======
@@ -775,7 +803,7 @@ Build Changes
   libsqlite3, zlib, bzip2, liblzma, libcrypt, Tcl/Tk libs, and uuid flags
   are detected by ``pkg-config`` (when available).
   (Contributed by Christian Heimes and Erlend Egeberg Aasland in
-  :issue:`bpo-45847`, :issue:`45747`, and :issue:`45763`.)
+  :issue:`45847`, :issue:`45747`, and :issue:`45763`.)
 
   .. note::
      Use the environment variables ``TCLTK_CFLAGS`` and ``TCLTK_LIBS`` to
@@ -1013,8 +1041,8 @@ Porting to Python 3.11
   instead.
 
   Debuggers that accessed the ``f_locals`` directly *must* call
-  `:c:func:`PyFrame_GetLocals` instead. They no longer need to call
-  `:c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
+  :c:func:`PyFrame_GetLocals` instead. They no longer need to call
+  :c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
   in fact they should not call those functions. The necessary updating of the
   frame is now managed by the virtual machine.
 

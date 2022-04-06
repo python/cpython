@@ -77,6 +77,7 @@ def_op('MATCH_KEYS', 33)
 
 def_op('PUSH_EXC_INFO', 35)
 def_op('CHECK_EXC_MATCH', 36)
+def_op('CHECK_EG_MATCH', 37)
 
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
@@ -147,14 +148,13 @@ def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
-jabs_op('JUMP_IF_NOT_EG_MATCH', 127)
 jabs_op('POP_JUMP_IF_NOT_NONE', 128)
 jabs_op('POP_JUMP_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('GET_AWAITABLE', 131)
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
-jabs_op('JUMP_NO_INTERRUPT', 134) # Target byte offset from beginning of code
+jrel_op('JUMP_BACKWARD_NO_INTERRUPT', 134) # Number of words to skip (backwards)
 def_op('MAKE_CELL', 135)
 hasfree.append(135)
 def_op('LOAD_CLOSURE', 136)
