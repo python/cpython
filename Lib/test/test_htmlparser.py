@@ -788,29 +788,25 @@ class AttributesTestCase(TestCaseBase):
                                 [('action', 'bogus|&#()value')])])
 
     def test_invalid_keyword_error_exception(self):
+        # bpo-34480: check that subclasses that define an
+        # error method that raises an exception work
         class InvalidMarkupException(Exception):
             pass
-
         class MyHTMLParser(html.parser.HTMLParser):
-
             def error(self, message):
                 raise InvalidMarkupException(message)
-
         parser = MyHTMLParser()
         with self.assertRaises(InvalidMarkupException):
             parser.feed('<![invalid>')
 
     def test_invalid_keyword_error_pass(self):
+        # bpo-34480: check that subclasses that define an
+        # error method that doesn't raise an exception work
         class MyHTMLParser(html.parser.HTMLParser):
-
             def error(self, message):
                 pass
-
         parser = MyHTMLParser()
-        self.assertEqual(
-            parser.feed('<![invalid>'),
-            None
-        )
+        self.assertEqual(parser.feed('<![invalid>'), None)
 
 
 if __name__ == "__main__":
