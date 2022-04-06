@@ -13,7 +13,6 @@ PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
 SPHINXERRORHANDLING = -W
-SERVE_PORT   =
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_elements.papersize=a4paper
@@ -23,7 +22,7 @@ ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) \
                 $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help build html htmlhelp latex text texinfo changes linkcheck \
-	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
+	suspicious coverage doctest pydoc-topics htmlview clean dist check \
 	autobuild-dev autobuild-stable venv
 
 help:
@@ -45,7 +44,6 @@ help:
 	@echo "  dist       to create a \"dist\" directory with archived docs for download"
 	@echo "  suspicious to check for suspicious markup in output text"
 	@echo "  check      to run a check for frequent markup errors"
-	@echo "  serve      to serve the documentation on the localhost (8000)"
 
 build:
 	-mkdir -p build
@@ -217,9 +215,6 @@ dist:
 check:
 	$(SPHINXLINT) -i tools -i $(VENVDIR) -i README.rst
 	$(SPHINXLINT) ../Misc/NEWS.d/next/
-
-serve:
-	$(PYTHON) ../Tools/scripts/serve.py build/html $(SERVE_PORT)
 
 # Targets for daily automated doc build
 # By default, Sphinx only rebuilds pages where the page content has changed.
