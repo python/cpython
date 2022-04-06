@@ -344,8 +344,8 @@ The :mod:`locale` module defines the following exception and functions:
 
    * On Android and VxWorks, return ``"UTF-8"``.
    * On Unix, return the encoding of the current :data:`LC_CTYPE` locale.
-     Return ``"UTF-8"`` if :ref:`nl_langinfo(CODESET) <nl_langinfo>`
-     returns an empty string: for example, if the current LC_CTYPE locale is not supported.
+     Return ``"UTF-8"`` if ``nl_langinfo(CODESET)`` returns an empty string:
+     for example, if the current LC_CTYPE locale is not supported.
    * On Windows, return the ANSI code page.
 
    This function is same to ``getpreferredencoding(False)`` except this
