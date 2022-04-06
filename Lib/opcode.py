@@ -148,8 +148,8 @@ def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
-jabs_op('POP_JUMP_IF_NOT_NONE', 128)
-jabs_op('POP_JUMP_IF_NONE', 129)
+jrel_op('POP_JUMP_FORWARD_IF_NOT_NONE', 128)
+jrel_op('POP_JUMP_FORWARD_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('GET_AWAITABLE', 131)
 def_op('MAKE_FUNCTION', 132)    # Flags
@@ -197,6 +197,8 @@ def_op('CALL', 171, 4)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
 
+jrel_op('POP_JUMP_BACKWARD_IF_NOT_NONE', 173)
+jrel_op('POP_JUMP_BACKWARD_IF_NONE', 174)
 
 del def_op, name_op, jrel_op, jabs_op
 
