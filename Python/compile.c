@@ -87,6 +87,10 @@
 
 #define IS_VIRTUAL_OPCODE(opcode) ((opcode) < 0)
 
+#define IS_VIRTUAL_JUMP_OPCODE(opcode) \
+        ((opcode) == JUMP || \
+         (opcode) == JUMP_NO_INTERRUPT)
+
 /* opcodes which are not emitted in codegen stage, only by the assembler */
 #define IS_ASSEMBLER_OPCODE(opcode) \
         ((opcode) == JUMP_FORWARD || \
@@ -156,7 +160,7 @@ is_block_push(struct instr *instr)
 static inline int
 is_jump(struct instr *i)
 {
-    return i->i_opcode == JUMP ||
+    return IS_VIRTUAL_JUMP_OPCODE(i->i_opcode) ||
            is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
 }
 
