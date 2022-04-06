@@ -141,6 +141,7 @@
     <ClInclude Include="..\Include\cpython\classobject.h" />
     <ClInclude Include="..\Include\cpython\code.h" />
     <ClInclude Include="..\Include\cpython\compile.h" />
+    <ClInclude Include="..\Include\cpython\complexobject.h" />
     <ClInclude Include="..\Include\cpython\context.h" />
     <ClInclude Include="..\Include\cpython\descrobject.h" />
     <ClInclude Include="..\Include\cpython\dictobject.h" />
