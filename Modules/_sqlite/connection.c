@@ -578,8 +578,6 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
     } else if (PyObject_CheckBuffer(py_val)) {
         Py_buffer view;
         if (PyObject_GetBuffer(py_val, &view, PyBUF_SIMPLE) != 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "could not convert BLOB to buffer");
             return -1;
         }
         if (view.len > INT_MAX) {
@@ -591,6 +589,11 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
         sqlite3_result_blob(context, view.buf, (int)view.len, SQLITE_TRANSIENT);
         PyBuffer_Release(&view);
     } else {
+        callback_context *ctx = (callback_context *)sqlite3_user_data(context);
+        PyErr_Format(ctx->state->ProgrammingError,
+                     "User-defined functions cannot return '%s' values to "
+                     "SQLite",
+                     Py_TYPE(py_val)->tp_name);
         return -1;
     }
     return 0;
@@ -1815,6 +1818,125 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
     Py_RETURN_NONE;
 }
 
+#ifdef PY_SQLITE_HAVE_SERIALIZE
+/*[clinic input]
+_sqlite3.Connection.serialize as serialize
+
+    *
+    name: str = "main"
+        Which database to serialize.
+
+Serialize a database into a byte string.
+
+For an ordinary on-disk database file, the serialization is just a copy of the
+disk file. For an in-memory database or a "temp" database, the serialization is
+the same sequence of bytes which would be written to disk if that database
+were backed up to disk.
+[clinic start generated code]*/
+
+static PyObject *
+serialize_impl(pysqlite_Connection *self, const char *name)
+/*[clinic end generated code: output=97342b0e55239dd3 input=d2eb5194a65abe2b]*/
+{
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
+    /* If SQLite has a contiguous memory representation of the database, we can
+     * avoid memory allocations, so we try with the no-copy flag first.
+     */
+    sqlite3_int64 size;
+    unsigned int flags = SQLITE_SERIALIZE_NOCOPY;
+    const char *data;
+
+    Py_BEGIN_ALLOW_THREADS
+    data = (const char *)sqlite3_serialize(self->db, name, &size, flags);
+    if (data == NULL) {
+        flags &= ~SQLITE_SERIALIZE_NOCOPY;
+        data = (const char *)sqlite3_serialize(self->db, name, &size, flags);
+    }
+    Py_END_ALLOW_THREADS
+
+    if (data == NULL) {
+        PyErr_Format(self->OperationalError, "unable to serialize '%s'",
+                     name);
+        return NULL;
+    }
+    PyObject *res = PyBytes_FromStringAndSize(data, size);
+    if (!(flags & SQLITE_SERIALIZE_NOCOPY)) {
+        sqlite3_free((void *)data);
+    }
+    return res;
+}
+
+/*[clinic input]
+_sqlite3.Connection.deserialize as deserialize
+
+    data: Py_buffer(accept={buffer, str})
+        The serialized database content.
+    /
+    *
+    name: str = "main"
+        Which database to reopen with the deserialization.
+
+Load a serialized database.
+
+The deserialize interface causes the database connection to disconnect from the
+target database, and then reopen it as an in-memory database based on the given
+serialized data.
+
+The deserialize interface will fail with SQLITE_BUSY if the database is
+currently in a read transaction or is involved in a backup operation.
+[clinic start generated code]*/
+
+static PyObject *
+deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
+                 const char *name)
+/*[clinic end generated code: output=e394c798b98bad89 input=1be4ca1faacf28f2]*/
+{
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
+    /* Transfer ownership of the buffer to SQLite:
+     * - Move buffer from Py to SQLite
+     * - Tell SQLite to free buffer memory
+     * - Tell SQLite that it is permitted to grow the resulting database
+     *
+     * Make sure we don't overflow sqlite3_deserialize(); it accepts a signed
+     * 64-bit int as its data size argument.
+     *
+     * We can safely use sqlite3_malloc64 here, since it was introduced before
+     * the serialize APIs.
+     */
+    if (data->len > 9223372036854775807) {  // (1 << 63) - 1
+        PyErr_SetString(PyExc_OverflowError, "'data' is too large");
+        return NULL;
+    }
+
+    sqlite3_int64 size = (sqlite3_int64)data->len;
+    unsigned char *buf = sqlite3_malloc64(size);
+    if (buf == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    const unsigned int flags = SQLITE_DESERIALIZE_FREEONCLOSE |
+                               SQLITE_DESERIALIZE_RESIZEABLE;
+    int rc;
+    Py_BEGIN_ALLOW_THREADS
+    (void)memcpy(buf, data->buf, data->len);
+    rc = sqlite3_deserialize(self->db, name, buf, size, size, flags);
+    Py_END_ALLOW_THREADS
+
+    if (rc != SQLITE_OK) {
+        (void)_pysqlite_seterror(self->state, self->db);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+#endif  // PY_SQLITE_HAVE_SERIALIZE
+
+
 /*[clinic input]
 _sqlite3.Connection.__enter__ as pysqlite_connection_enter
 
@@ -1968,6 +2090,8 @@ static PyMethodDef connection_methods[] = {
     PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF
     SETLIMIT_METHODDEF
     GETLIMIT_METHODDEF
+    SERIALIZE_METHODDEF
+    DESERIALIZE_METHODDEF
     {NULL, NULL}
 };
 

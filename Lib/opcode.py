@@ -77,6 +77,8 @@ def_op('MATCH_SEQUENCE', 32)
 def_op('MATCH_KEYS', 33)
 
 def_op('PUSH_EXC_INFO', 35)
+def_op('CHECK_EXC_MATCH', 36)
+def_op('CHECK_EG_MATCH', 37)
 
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
@@ -129,10 +131,9 @@ def_op('COMPARE_OP', 107, 2)       # Comparison operator
 hascompare.append(107)
 name_op('IMPORT_NAME', 108)     # Index in name list
 name_op('IMPORT_FROM', 109)     # Index in name list
-jrel_op('JUMP_FORWARD', 110)    # Number of bytes to skip
+jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
 jabs_op('JUMP_IF_FALSE_OR_POP', 111) # Target byte offset from beginning of code
 jabs_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
-jabs_op('JUMP_ABSOLUTE', 113)        # ""
 jabs_op('POP_JUMP_IF_FALSE', 114)    # ""
 jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
 name_op('LOAD_GLOBAL', 116, 5)     # Index in name list
@@ -140,7 +141,6 @@ def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
-jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
 def_op('BINARY_OP', 122, 1)
 jrel_op('SEND', 123) # Number of bytes to skip
 def_op('LOAD_FAST', 124)        # Local variable number
@@ -149,14 +149,13 @@ def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
-jabs_op('JUMP_IF_NOT_EG_MATCH', 127)
 jabs_op('POP_JUMP_IF_NOT_NONE', 128)
 jabs_op('POP_JUMP_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('GET_AWAITABLE', 131)
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
-jabs_op('JUMP_NO_INTERRUPT', 134) # Target byte offset from beginning of code
+jrel_op('JUMP_BACKWARD_NO_INTERRUPT', 134) # Number of words to skip (backwards)
 def_op('MAKE_CELL', 135)
 hasfree.append(135)
 def_op('LOAD_CLOSURE', 136)
@@ -167,6 +166,7 @@ def_op('STORE_DEREF', 138)
 hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
+jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
@@ -230,78 +230,113 @@ _nb_ops = [
     ("NB_INPLACE_XOR", "^="),
 ]
 
+_specializations = {
+    "BINARY_OP": [
+        "BINARY_OP_ADAPTIVE",
+        "BINARY_OP_ADD_FLOAT",
+        "BINARY_OP_ADD_INT",
+        "BINARY_OP_ADD_UNICODE",
+        "BINARY_OP_INPLACE_ADD_UNICODE",
+        "BINARY_OP_MULTIPLY_FLOAT",
+        "BINARY_OP_MULTIPLY_INT",
+        "BINARY_OP_SUBTRACT_FLOAT",
+        "BINARY_OP_SUBTRACT_INT",
+    ],
+    "BINARY_SUBSCR": [
+        "BINARY_SUBSCR_ADAPTIVE",
+        "BINARY_SUBSCR_DICT",
+        "BINARY_SUBSCR_GETITEM",
+        "BINARY_SUBSCR_LIST_INT",
+        "BINARY_SUBSCR_TUPLE_INT",
+    ],
+    "CALL": [
+        "CALL_ADAPTIVE",
+        "CALL_PY_EXACT_ARGS",
+        "CALL_PY_WITH_DEFAULTS",
+    ],
+    "COMPARE_OP": [
+        "COMPARE_OP_ADAPTIVE",
+        "COMPARE_OP_FLOAT_JUMP",
+        "COMPARE_OP_INT_JUMP",
+        "COMPARE_OP_STR_JUMP",
+    ],
+    "JUMP_BACKWARD": [
+        "JUMP_BACKWARD_QUICK",
+    ],
+    "LOAD_ATTR": [
+        "LOAD_ATTR_ADAPTIVE",
+        "LOAD_ATTR_INSTANCE_VALUE",
+        "LOAD_ATTR_MODULE",
+        "LOAD_ATTR_SLOT",
+        "LOAD_ATTR_WITH_HINT",
+    ],
+    "LOAD_CONST": [
+        "LOAD_CONST__LOAD_FAST",
+    ],
+    "LOAD_FAST": [
+        "LOAD_FAST__LOAD_CONST",
+        "LOAD_FAST__LOAD_FAST",
+    ],
+    "LOAD_GLOBAL": [
+        "LOAD_GLOBAL_ADAPTIVE",
+        "LOAD_GLOBAL_BUILTIN",
+        "LOAD_GLOBAL_MODULE",
+    ],
+    "LOAD_METHOD": [
+        "LOAD_METHOD_ADAPTIVE",
+        "LOAD_METHOD_CLASS",
+        "LOAD_METHOD_MODULE",
+        "LOAD_METHOD_NO_DICT",
+        "LOAD_METHOD_WITH_DICT",
+        "LOAD_METHOD_WITH_VALUES",
+    ],
+    "PRECALL": [
+        "PRECALL_ADAPTIVE",
+        "PRECALL_BOUND_METHOD",
+        "PRECALL_BUILTIN_CLASS",
+        "PRECALL_BUILTIN_FAST_WITH_KEYWORDS",
+        "PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS",
+        "PRECALL_NO_KW_BUILTIN_FAST",
+        "PRECALL_NO_KW_BUILTIN_O",
+        "PRECALL_NO_KW_ISINSTANCE",
+        "PRECALL_NO_KW_LEN",
+        "PRECALL_NO_KW_LIST_APPEND",
+        "PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST",
+        "PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS",
+        "PRECALL_NO_KW_METHOD_DESCRIPTOR_O",
+        "PRECALL_NO_KW_STR_1",
+        "PRECALL_NO_KW_TUPLE_1",
+        "PRECALL_NO_KW_TYPE_1",
+        "PRECALL_PYFUNC",
+        "PRECALL_PY_CLASS",
+    ],
+    "RESUME": [
+        "RESUME_QUICK",
+    ],
+    "STORE_ATTR": [
+        "STORE_ATTR_ADAPTIVE",
+        "STORE_ATTR_INSTANCE_VALUE",
+        "STORE_ATTR_SLOT",
+        "STORE_ATTR_WITH_HINT",
+    ],
+    "STORE_FAST": [
+        "STORE_FAST__LOAD_FAST",
+        "STORE_FAST__STORE_FAST",
+    ],
+    "STORE_SUBSCR": [
+        "STORE_SUBSCR_ADAPTIVE",
+        "STORE_SUBSCR_DICT",
+        "STORE_SUBSCR_LIST_INT",
+    ],
+    "UNPACK_SEQUENCE": [
+        "UNPACK_SEQUENCE_ADAPTIVE",
+        "UNPACK_SEQUENCE_LIST",
+        "UNPACK_SEQUENCE_TUPLE",
+        "UNPACK_SEQUENCE_TWO_TUPLE",
+    ],
+}
 _specialized_instructions = [
-    "BINARY_OP_ADAPTIVE",
-    "BINARY_OP_ADD_INT",
-    "BINARY_OP_ADD_FLOAT",
-    "BINARY_OP_ADD_UNICODE",
-    "BINARY_OP_INPLACE_ADD_UNICODE",
-    "BINARY_OP_MULTIPLY_INT",
-    "BINARY_OP_MULTIPLY_FLOAT",
-    "BINARY_OP_SUBTRACT_INT",
-    "BINARY_OP_SUBTRACT_FLOAT",
-    "COMPARE_OP_ADAPTIVE",
-    "COMPARE_OP_FLOAT_JUMP",
-    "COMPARE_OP_INT_JUMP",
-    "COMPARE_OP_STR_JUMP",
-    "BINARY_SUBSCR_ADAPTIVE",
-    "BINARY_SUBSCR_GETITEM",
-    "BINARY_SUBSCR_LIST_INT",
-    "BINARY_SUBSCR_TUPLE_INT",
-    "BINARY_SUBSCR_DICT",
-    "STORE_SUBSCR_ADAPTIVE",
-    "STORE_SUBSCR_LIST_INT",
-    "STORE_SUBSCR_DICT",
-    "CALL_ADAPTIVE",
-    "CALL_PY_EXACT_ARGS",
-    "CALL_PY_WITH_DEFAULTS",
-    "JUMP_ABSOLUTE_QUICK",
-    "LOAD_ATTR_ADAPTIVE",
-    "LOAD_ATTR_INSTANCE_VALUE",
-    "LOAD_ATTR_WITH_HINT",
-    "LOAD_ATTR_SLOT",
-    "LOAD_ATTR_MODULE",
-    "LOAD_GLOBAL_ADAPTIVE",
-    "LOAD_GLOBAL_MODULE",
-    "LOAD_GLOBAL_BUILTIN",
-    "LOAD_METHOD_ADAPTIVE",
-    "LOAD_METHOD_CLASS",
-    "LOAD_METHOD_MODULE",
-    "LOAD_METHOD_NO_DICT",
-    "LOAD_METHOD_WITH_DICT",
-    "LOAD_METHOD_WITH_VALUES",
-    "PRECALL_ADAPTIVE",
-    "PRECALL_BUILTIN_CLASS",
-    "PRECALL_NO_KW_BUILTIN_O",
-    "PRECALL_NO_KW_BUILTIN_FAST",
-    "PRECALL_BUILTIN_FAST_WITH_KEYWORDS",
-    "PRECALL_NO_KW_LEN",
-    "PRECALL_NO_KW_ISINSTANCE",
-    "PRECALL_NO_KW_LIST_APPEND",
-    "PRECALL_NO_KW_METHOD_DESCRIPTOR_O",
-    "PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS",
-    "PRECALL_NO_KW_STR_1",
-    "PRECALL_NO_KW_TUPLE_1",
-    "PRECALL_NO_KW_TYPE_1",
-    "PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST",
-    "PRECALL_BOUND_METHOD",
-    "PRECALL_PYFUNC",
-    "PRECALL_PY_CLASS",
-    "RESUME_QUICK",
-    "STORE_ATTR_ADAPTIVE",
-    "STORE_ATTR_INSTANCE_VALUE",
-    "STORE_ATTR_SLOT",
-    "STORE_ATTR_WITH_HINT",
-    "UNPACK_SEQUENCE_ADAPTIVE",
-    "UNPACK_SEQUENCE_LIST",
-    "UNPACK_SEQUENCE_TUPLE",
-    "UNPACK_SEQUENCE_TWO_TUPLE",
-    # Super instructions
-    "LOAD_FAST__LOAD_FAST",
-    "STORE_FAST__LOAD_FAST",
-    "LOAD_FAST__LOAD_CONST",
-    "LOAD_CONST__LOAD_FAST",
-    "STORE_FAST__STORE_FAST",
+    opcode for family in _specializations.values() for opcode in family
 ]
 _specialization_stats = [
     "success",

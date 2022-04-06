@@ -28,7 +28,9 @@ MAKE_FUNCTION = opmap['MAKE_FUNCTION']
 MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 
 LOAD_CONST = opmap['LOAD_CONST']
+LOAD_GLOBAL = opmap['LOAD_GLOBAL']
 BINARY_OP = opmap['BINARY_OP']
+JUMP_BACKWARD = opmap['JUMP_BACKWARD']
 
 CACHE = opmap["CACHE"]
 
@@ -430,12 +432,18 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             if op in hasconst:
                 argval, argrepr = _get_const_info(op, arg, co_consts)
             elif op in hasname:
-                argval, argrepr = _get_name_info(arg, get_name)
+                if op == LOAD_GLOBAL:
+                    argval, argrepr = _get_name_info(arg//2, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = "NULL + " + argrepr
+                else:
+                    argval, argrepr = _get_name_info(arg, get_name)
             elif op in hasjabs:
                 argval = arg*2
                 argrepr = "to " + repr(argval)
             elif op in hasjrel:
-                argval = offset + 2 + arg*2
+                signed_arg = -arg if op == JUMP_BACKWARD else arg
+                argval = offset + 2 + signed_arg*2
                 argrepr = "to " + repr(argval)
             elif op in haslocal or op in hasfree:
                 argval, argrepr = _get_name_info(arg, varname_from_oparg)
@@ -560,6 +568,8 @@ def findlabels(code):
     for offset, op, arg in _unpack_opargs(code):
         if arg is not None:
             if op in hasjrel:
+                if op == JUMP_BACKWARD:
+                    arg = -arg
                 label = offset + 2 + arg*2
             elif op in hasjabs:
                 label = arg*2

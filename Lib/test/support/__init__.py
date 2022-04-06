@@ -42,6 +42,7 @@ __all__ = [
     "requires_IEEE_754", "requires_zlib",
     "has_fork_support", "requires_fork",
     "has_subprocess_support", "requires_subprocess",
+    "has_socket_support", "requires_working_socket",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
@@ -517,9 +518,32 @@ def requires_fork():
 has_subprocess_support = not is_emscripten and not is_wasi
 
 def requires_subprocess():
-    """Used for subprocess, os.spawn calls"""
+    """Used for subprocess, os.spawn calls, fd inheritance"""
     return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
 
+# Emscripten's socket emulation has limitation. WASI doesn't have sockets yet.
+has_socket_support = not is_emscripten and not is_wasi
+
+def requires_working_socket(*, module=False):
+    """Skip tests or modules that require working sockets
+
+    Can be used as a function/class decorator or to skip an entire module.
+    """
+    msg = "requires socket support"
+    if module:
+        if not has_socket_support:
+            raise unittest.SkipTest(msg)
+    else:
+        return unittest.skipUnless(has_socket_support, msg)
+
+# Does strftime() support glibc extension like '%4Y'?
+has_strftime_extensions = False
+if sys.platform != "win32":
+    # bpo-47037: Windows debug builds crash with "Debug Assertion Failed"
+    try:
+        has_strftime_extensions = time.strftime("%4Y") != "%4Y"
+    except ValueError:
+        pass
 
 # Define the URL of a dedicated HTTP server for the network tests.
 # The URL must use clear-text HTTP: no redirection to encrypted HTTPS.
@@ -769,29 +793,29 @@ def check_sizeof(test, o, size):
 
 @contextlib.contextmanager
 def run_with_locale(catstr, *locales):
+    try:
+        import locale
+        category = getattr(locale, catstr)
+        orig_locale = locale.setlocale(category)
+    except AttributeError:
+        # if the test author gives us an invalid category string
+        raise
+    except:
+        # cannot retrieve original locale, so do nothing
+        locale = orig_locale = None
+    else:
+        for loc in locales:
             try:
-                import locale
-                category = getattr(locale, catstr)
-                orig_locale = locale.setlocale(category)
-            except AttributeError:
-                # if the test author gives us an invalid category string
-                raise
+                locale.setlocale(category, loc)
+                break
             except:
-                # cannot retrieve original locale, so do nothing
-                locale = orig_locale = None
-            else:
-                for loc in locales:
-                    try:
-                        locale.setlocale(category, loc)
-                        break
-                    except:
-                        pass
+                pass
 
-            try:
-                yield
-            finally:
-                if locale and orig_locale:
-                    locale.setlocale(category, orig_locale)
+    try:
+        yield
+    finally:
+        if locale and orig_locale:
+            locale.setlocale(category, orig_locale)
 
 #=======================================================================
 # Decorator for running a function in a specific timezone, correctly
@@ -1442,9 +1466,6 @@ class PythonSymlink:
 
         self._platform_specific()
 
-    def _platform_specific(self):
-        pass
-
     if sys.platform == "win32":
         def _platform_specific(self):
             import glob
@@ -1472,6 +1493,9 @@ class PythonSymlink:
             self._env["PYTHONHOME"] = os.path.dirname(self.real)
             if sysconfig.is_python_build(True):
                 self._env["PYTHONPATH"] = STDLIB_DIR
+    else:
+        def _platform_specific(self):
+            pass
 
     def __enter__(self):
         os.symlink(self.real, self.link)

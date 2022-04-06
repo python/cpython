@@ -426,6 +426,9 @@ class IOTest(unittest.TestCase):
             self.assertRaises(exc, fp.seek, 1, self.SEEK_CUR)
             self.assertRaises(exc, fp.seek, -1, self.SEEK_END)
 
+    @unittest.skipIf(
+        support.is_emscripten, "fstat() of a pipe fd is not supported"
+    )
     def test_optional_abilities(self):
         # Test for OSError when optional APIs are not supported
         # The purpose of this test is to try fileno(), reading, writing and
@@ -3971,6 +3974,9 @@ class MiscIOTest(unittest.TestCase):
                 self.open(os_helper.TESTFN, mode)
             self.assertIn('invalid mode', str(cm.exception))
 
+    @unittest.skipIf(
+        support.is_emscripten, "fstat() of a pipe fd is not supported"
+    )
     def test_open_pipe_with_append(self):
         # bpo-27805: Ignore ESPIPE from lseek() in open().
         r, w = os.pipe()
@@ -4134,9 +4140,15 @@ class MiscIOTest(unittest.TestCase):
                 with self.open(os_helper.TESTFN, **kwargs) as f:
                     self.assertRaises(TypeError, pickle.dumps, f, protocol)
 
+    @unittest.skipIf(
+        support.is_emscripten, "fstat() of a pipe fd is not supported"
+    )
     def test_nonblock_pipe_write_bigbuf(self):
         self._test_nonblock_pipe_write(16*1024)
 
+    @unittest.skipIf(
+        support.is_emscripten, "fstat() of a pipe fd is not supported"
+    )
     def test_nonblock_pipe_write_smallbuf(self):
         self._test_nonblock_pipe_write(1024)
 
@@ -4276,6 +4288,17 @@ class MiscIOTest(unittest.TestCase):
             warnings[0].startswith(b"<string>:5: EncodingWarning: "))
         self.assertTrue(
             warnings[1].startswith(b"<string>:8: EncodingWarning: "))
+
+    def test_text_encoding(self):
+        # PEP 597, bpo-47000. io.text_encoding() returns "locale" or "utf-8"
+        # based on sys.flags.utf8_mode
+        code = "import io; print(io.text_encoding(None))"
+
+        proc = assert_python_ok('-X', 'utf8=0', '-c', code)
+        self.assertEqual(b"locale", proc.out.strip())
+
+        proc = assert_python_ok('-X', 'utf8=1', '-c', code)
+        self.assertEqual(b"utf-8", proc.out.strip())
 
     @support.cpython_only
     # Depending if OpenWrapper was already created or not, the warning is
