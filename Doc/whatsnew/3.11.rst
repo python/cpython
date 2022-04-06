@@ -1214,8 +1214,10 @@ Porting to Python 3.11
   which are not available in the limited C API.
   (Contributed by Victor Stinner in :issue:`46007`.)
 
-* The :c:type:`PyFrameObject` structure member has been moved to the internal C
-  API headers.
+.. _pyframeobject-3.11-hiding:
+
+* The :c:type:`PyFrameObject` structure members have been removed from the
+  public C API.
 
   While the documentation notes that the :c:type:`PyFrameObject` fields are
   subject to change at any time, they have been stable for a long time and were
