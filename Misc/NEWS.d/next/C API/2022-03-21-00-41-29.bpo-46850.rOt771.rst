@@ -1,9 +1,0 @@
-Remove the following private undocumented functions from the C API:
-
-* ``_PyEval_GetAsyncGenFirstiter()``
-* ``_PyEval_GetAsyncGenFinalizer()``
-* ``_PyEval_SetAsyncGenFirstiter()``
-* ``_PyEval_SetAsyncGenFinalizer()``
-
-Call the public :func:`sys.get_asyncgen_hooks` and
-:func:`sys.set_asyncgen_hooks` functions instead. Patch by Victor Stinner.
