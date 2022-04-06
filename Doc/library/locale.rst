@@ -340,10 +340,13 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: getencoding()
 
-   Returns the :term:`locale encoding`.
+   Get the current :term:`locale encoding`:
 
-   On Android, it always returns ``"UTF-8"``, the :term:`locale encoding` is
-   ignored.
+   * On Android and VxWorks, return ``"UTF-8"``.
+   * On Unix, return the encoding of the current :data:`LC_CTYPE` locale.
+     Return ``"UTF-8"`` if :ref:`nl_langinfo(CODESET) <nl_langinfo>`
+     returns an empty string: for example, if the current LC_CTYPE locale is not supported.
+   * On Windows, return the ANSI code page.
 
    This function is same to ``getpreferredencoding(False)`` except this
    function ignore the :ref:`UTF-8 Mode <utf8-mode>`.

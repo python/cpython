@@ -710,8 +710,9 @@ Glossary
 
       On Windows, it is the ANSI code page (ex: ``cp1252``).
 
-      ``locale.getpreferredencoding(False)`` can be used to get the locale
-      encoding.
+      On Android and VxWorks, return ``"UTF-8"``.
+
+      ``locale.getencoding()`` can be used to get the locale encoding.
 
       Python uses the :term:`filesystem encoding and error handler` to convert
       between Unicode filenames and bytes filenames.
