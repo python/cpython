@@ -682,6 +682,10 @@ and :c:type:`PyType_Type` effectively act as defaults.)
          PyErr_Restore(et, ev, etb);
      }
 
+   The dealloc handler itself must not raise an exception; if it hits an error
+   case it should call :c:func:`PyErr_WriteUnraisable` to log (and clear) an
+   unraisable exception.
+
    If the type supports garbage collection (has the :const:`Py_TPFLAGS_HAVE_GC`
    flag bit set), the destructor should call :c:func:`PyObject_GC_UnTrack`
    before clearing any member fields.
