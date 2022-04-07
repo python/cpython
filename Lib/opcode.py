@@ -133,8 +133,8 @@ name_op('IMPORT_FROM', 109)     # Index in name list
 jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
 jabs_op('JUMP_IF_FALSE_OR_POP', 111) # Target byte offset from beginning of code
 jabs_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
-jabs_op('POP_JUMP_IF_FALSE', 114)    # ""
-jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
+jrel_op('POP_JUMP_FORWARD_IF_FALSE', 114)
+jrel_op('POP_JUMP_FORWARD_IF_TRUE', 115)
 name_op('LOAD_GLOBAL', 116, 5)     # Index in name list
 def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
@@ -199,6 +199,9 @@ hasconst.append(172)
 
 jrel_op('POP_JUMP_BACKWARD_IF_NOT_NONE', 173)
 jrel_op('POP_JUMP_BACKWARD_IF_NONE', 174)
+jrel_op('POP_JUMP_BACKWARD_IF_FALSE', 175)
+jrel_op('POP_JUMP_BACKWARD_IF_TRUE', 176)
+
 
 del def_op, name_op, jrel_op, jabs_op
 

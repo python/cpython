@@ -34,6 +34,14 @@ JUMP_BACKWARD = opmap['JUMP_BACKWARD']
 
 CACHE = opmap["CACHE"]
 
+BACKWARDS_JUMPS = set([opmap[name] for name in (
+        'JUMP_BACKWARD',
+        'POP_JUMP_BACKWARD_IF_NONE',
+        'POP_JUMP_BACKWARD_IF_NOT_NONE',
+        'POP_JUMP_BACKWARD_IF_TRUE',
+        'POP_JUMP_BACKWARD_IF_FALSE',
+    )])
+
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and
        then as a statement if the first approach fails.
@@ -442,7 +450,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 argval = arg*2
                 argrepr = "to " + repr(argval)
             elif op in hasjrel:
-                signed_arg = -arg if op == JUMP_BACKWARD else arg
+                signed_arg = -arg if op in BACKWARDS_JUMPS else arg
                 argval = offset + 2 + signed_arg*2
                 argrepr = "to " + repr(argval)
             elif op in haslocal or op in hasfree:
@@ -568,7 +576,7 @@ def findlabels(code):
     for offset, op, arg in _unpack_opargs(code):
         if arg is not None:
             if op in hasjrel:
-                if op == JUMP_BACKWARD:
+                if op in BACKWARDS_JUMPS:
                     arg = -arg
                 label = offset + 2 + arg*2
             elif op in hasjabs:

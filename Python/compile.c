@@ -78,10 +78,12 @@
 #define POP_BLOCK -4
 #define JUMP -5
 #define JUMP_NO_INTERRUPT -6
-#define POP_JUMP_IF_NONE -7
-#define POP_JUMP_IF_NOT_NONE -8
+#define POP_JUMP_IF_FALSE -7
+#define POP_JUMP_IF_TRUE -8
+#define POP_JUMP_IF_NONE -9
+#define POP_JUMP_IF_NOT_NONE -10
 
-#define MIN_VIRTUAL_OPCODE -8
+#define MIN_VIRTUAL_OPCODE -10
 #define MAX_ALLOWED_OPCODE 254
 
 #define IS_WITHIN_OPCODE_RANGE(opcode) \
@@ -93,7 +95,9 @@
         ((opcode) == JUMP || \
          (opcode) == JUMP_NO_INTERRUPT || \
          (opcode) == POP_JUMP_IF_NONE || \
-         (opcode) == POP_JUMP_IF_NOT_NONE)
+         (opcode) == POP_JUMP_IF_NOT_NONE || \
+         (opcode) == POP_JUMP_IF_FALSE || \
+         (opcode) == POP_JUMP_IF_TRUE)
 
 /* opcodes which are not emitted in codegen stage, only by the assembler */
 #define IS_ASSEMBLER_OPCODE(opcode) \
@@ -103,13 +107,20 @@
          (opcode) == POP_JUMP_FORWARD_IF_NONE || \
          (opcode) == POP_JUMP_BACKWARD_IF_NONE || \
          (opcode) == POP_JUMP_FORWARD_IF_NOT_NONE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_NOT_NONE)
+         (opcode) == POP_JUMP_BACKWARD_IF_NOT_NONE || \
+         (opcode) == POP_JUMP_FORWARD_IF_TRUE || \
+         (opcode) == POP_JUMP_BACKWARD_IF_TRUE || \
+         (opcode) == POP_JUMP_FORWARD_IF_FALSE || \
+         (opcode) == POP_JUMP_BACKWARD_IF_FALSE)
+
 
 #define IS_BACKWARDS_JUMP_OPCODE(opcode) \
         ((opcode) == JUMP_BACKWARD || \
          (opcode) == JUMP_BACKWARD_NO_INTERRUPT || \
          (opcode) == POP_JUMP_BACKWARD_IF_NONE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_NOT_NONE)
+         (opcode) == POP_JUMP_BACKWARD_IF_NOT_NONE || \
+         (opcode) == POP_JUMP_BACKWARD_IF_TRUE || \
+         (opcode) == POP_JUMP_BACKWARD_IF_FALSE)
 
 
 #define IS_TOP_LEVEL_AWAIT(c) ( \
@@ -1051,7 +1062,11 @@ stack_effect(int opcode, int oparg, int jump)
         case POP_JUMP_BACKWARD_IF_NOT_NONE:
         case POP_JUMP_FORWARD_IF_NOT_NONE:
         case POP_JUMP_IF_NOT_NONE:
+        case POP_JUMP_FORWARD_IF_FALSE:
+        case POP_JUMP_BACKWARD_IF_FALSE:
         case POP_JUMP_IF_FALSE:
+        case POP_JUMP_FORWARD_IF_TRUE:
+        case POP_JUMP_BACKWARD_IF_TRUE:
         case POP_JUMP_IF_TRUE:
             return -1;
 
@@ -7639,7 +7654,7 @@ normalize_jumps(struct assembler *a)
                     break;
                 case JUMP_NO_INTERRUPT:
                     last->i_opcode = is_forward ?
-                                     JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
+                        JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
                     break;
                 case POP_JUMP_IF_NOT_NONE:
                     last->i_opcode = is_forward ?
@@ -7648,6 +7663,14 @@ normalize_jumps(struct assembler *a)
                 case POP_JUMP_IF_NONE:
                     last->i_opcode = is_forward ?
                         POP_JUMP_FORWARD_IF_NONE : POP_JUMP_BACKWARD_IF_NONE;
+                    break;
+                case POP_JUMP_IF_FALSE:
+                    last->i_opcode = is_forward ?
+                        POP_JUMP_FORWARD_IF_FALSE : POP_JUMP_BACKWARD_IF_FALSE;
+                    break;
+                case POP_JUMP_IF_TRUE:
+                    last->i_opcode = is_forward ?
+                        POP_JUMP_FORWARD_IF_TRUE : POP_JUMP_BACKWARD_IF_TRUE;
                     break;
             }
         }
@@ -7692,6 +7715,9 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
                             assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
                             instr->i_oparg -= bsize;
                         }
+                    }
+                    else {
+                        assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
                     }
                     if (instr_size(instr) != isize) {
                         extended_arg_recompile = 1;

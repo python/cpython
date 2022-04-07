@@ -3649,8 +3649,10 @@ handle_eval_breaker:
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-            PREDICT(POP_JUMP_IF_FALSE);
-            PREDICT(POP_JUMP_IF_TRUE);
+            PREDICT(POP_JUMP_FORWARD_IF_FALSE);
+            PREDICT(POP_JUMP_BACKWARD_IF_FALSE);
+            PREDICT(POP_JUMP_FORWARD_IF_TRUE);
+            PREDICT(POP_JUMP_BACKWARD_IF_TRUE);
             DISPATCH();
         }
 
@@ -3673,7 +3675,7 @@ handle_eval_breaker:
 
         TARGET(COMPARE_OP_FLOAT_JUMP) {
             assert(cframe.use_tracing == 0);
-            // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
+            // Combined: COMPARE_OP (float ? float) + POP_JUMP_(direction)_IF_(true/false)
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             int when_to_jump_mask = cache->mask;
             PyObject *right = TOP();
@@ -3691,14 +3693,23 @@ handle_eval_breaker:
             STACK_SHRINK(2);
             Py_DECREF(left);
             Py_DECREF(right);
-            assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
+            assert(opcode == POP_JUMP_FORWARD_IF_FALSE ||
+                   opcode == POP_JUMP_BACKWARD_IF_FALSE ||
+                   opcode == POP_JUMP_FORWARD_IF_TRUE ||
+                   opcode == POP_JUMP_BACKWARD_IF_TRUE);
             int jump = (1 << (sign + 1)) & when_to_jump_mask;
             if (!jump) {
                 next_instr++;
                 NOTRACE_DISPATCH();
             }
             else {
-                JUMPTO(oparg);
+                if (opcode == POP_JUMP_BACKWARD_IF_FALSE ||
+                    opcode == POP_JUMP_BACKWARD_IF_TRUE) {
+                    JUMPBY(1 - oparg);
+                }
+                else {
+                    JUMPBY(1 + oparg);
+                }
                 CHECK_EVAL_BREAKER();
                 NOTRACE_DISPATCH();
             }
@@ -3706,7 +3717,7 @@ handle_eval_breaker:
 
         TARGET(COMPARE_OP_INT_JUMP) {
             assert(cframe.use_tracing == 0);
-            // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
+            // Combined: COMPARE_OP (int ? int) + POP_JUMP_(direction)_IF_(true/false)
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             int when_to_jump_mask = cache->mask;
             PyObject *right = TOP();
@@ -3725,14 +3736,23 @@ handle_eval_breaker:
             STACK_SHRINK(2);
             Py_DECREF(left);
             Py_DECREF(right);
-            assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
+            assert(opcode == POP_JUMP_FORWARD_IF_FALSE ||
+                   opcode == POP_JUMP_BACKWARD_IF_FALSE ||
+                   opcode == POP_JUMP_FORWARD_IF_TRUE ||
+                   opcode == POP_JUMP_BACKWARD_IF_TRUE);
             int jump = (1 << (sign + 1)) & when_to_jump_mask;
             if (!jump) {
                 next_instr++;
                 NOTRACE_DISPATCH();
             }
             else {
-                JUMPTO(oparg);
+                if (opcode == POP_JUMP_BACKWARD_IF_FALSE ||
+                    opcode == POP_JUMP_BACKWARD_IF_TRUE) {
+                    JUMPBY(1 - oparg);
+                }
+                else {
+                    JUMPBY(1 + oparg);
+                }
                 CHECK_EVAL_BREAKER();
                 NOTRACE_DISPATCH();
             }
@@ -3740,7 +3760,7 @@ handle_eval_breaker:
 
         TARGET(COMPARE_OP_STR_JUMP) {
             assert(cframe.use_tracing == 0);
-            // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
+            // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_(direction)_IF_(true/false)
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             int invert = cache->mask;
             PyObject *right = TOP();
@@ -3755,7 +3775,10 @@ handle_eval_breaker:
             assert(oparg == Py_EQ || oparg == Py_NE);
             JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
             NEXTOPARG();
-            assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
+            assert(opcode == POP_JUMP_FORWARD_IF_FALSE ||
+                   opcode == POP_JUMP_BACKWARD_IF_FALSE ||
+                   opcode == POP_JUMP_FORWARD_IF_TRUE ||
+                   opcode == POP_JUMP_BACKWARD_IF_TRUE);
             STACK_SHRINK(2);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -3767,7 +3790,13 @@ handle_eval_breaker:
                 NOTRACE_DISPATCH();
             }
             else {
-                JUMPTO(oparg);
+                if (opcode == POP_JUMP_BACKWARD_IF_FALSE ||
+                    opcode == POP_JUMP_BACKWARD_IF_TRUE) {
+                    JUMPBY(1 - oparg);
+                }
+                else {
+                    JUMPBY(1 + oparg);
+                }
                 CHECK_EVAL_BREAKER();
                 NOTRACE_DISPATCH();
             }
@@ -3782,8 +3811,10 @@ handle_eval_breaker:
             SET_TOP(b);
             Py_DECREF(left);
             Py_DECREF(right);
-            PREDICT(POP_JUMP_IF_FALSE);
-            PREDICT(POP_JUMP_IF_TRUE);
+            PREDICT(POP_JUMP_FORWARD_IF_FALSE);
+            PREDICT(POP_JUMP_BACKWARD_IF_FALSE);
+            PREDICT(POP_JUMP_FORWARD_IF_TRUE);
+            PREDICT(POP_JUMP_BACKWARD_IF_TRUE);
             DISPATCH();
         }
 
@@ -3799,8 +3830,10 @@ handle_eval_breaker:
             PyObject *b = (res^oparg) ? Py_True : Py_False;
             Py_INCREF(b);
             PUSH(b);
-            PREDICT(POP_JUMP_IF_FALSE);
-            PREDICT(POP_JUMP_IF_TRUE);
+            PREDICT(POP_JUMP_FORWARD_IF_FALSE);
+            PREDICT(POP_JUMP_BACKWARD_IF_FALSE);
+            PREDICT(POP_JUMP_FORWARD_IF_TRUE);
+            PREDICT(POP_JUMP_BACKWARD_IF_TRUE);
             DISPATCH();
         }
 
@@ -3918,8 +3951,14 @@ handle_eval_breaker:
             JUMP_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
         }
 
-        TARGET(POP_JUMP_IF_FALSE) {
-            PREDICTED(POP_JUMP_IF_FALSE);
+        TARGET(POP_JUMP_BACKWARD_IF_FALSE) {
+            PREDICTED(POP_JUMP_BACKWARD_IF_FALSE);
+            oparg = -oparg;
+            JUMP_TO_INSTRUCTION(POP_JUMP_FORWARD_IF_FALSE);
+        }
+
+        TARGET(POP_JUMP_FORWARD_IF_FALSE) {
+            PREDICTED(POP_JUMP_FORWARD_IF_FALSE);
             PyObject *cond = POP();
             int err;
             if (Py_IsTrue(cond)) {
@@ -3928,7 +3967,7 @@ handle_eval_breaker:
             }
             if (Py_IsFalse(cond)) {
                 Py_DECREF(cond);
-                JUMPTO(oparg);
+                JUMPBY(oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
             }
@@ -3937,7 +3976,7 @@ handle_eval_breaker:
             if (err > 0)
                 ;
             else if (err == 0) {
-                JUMPTO(oparg);
+                JUMPBY(oparg);
                 CHECK_EVAL_BREAKER();
             }
             else
@@ -3945,8 +3984,14 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(POP_JUMP_IF_TRUE) {
-            PREDICTED(POP_JUMP_IF_TRUE);
+        TARGET(POP_JUMP_BACKWARD_IF_TRUE) {
+            PREDICTED(POP_JUMP_BACKWARD_IF_TRUE);
+            oparg = -oparg;
+            JUMP_TO_INSTRUCTION(POP_JUMP_FORWARD_IF_TRUE);
+        }
+
+        TARGET(POP_JUMP_FORWARD_IF_TRUE) {
+            PREDICTED(POP_JUMP_FORWARD_IF_TRUE);
             PyObject *cond = POP();
             int err;
             if (Py_IsFalse(cond)) {
@@ -3955,14 +4000,14 @@ handle_eval_breaker:
             }
             if (Py_IsTrue(cond)) {
                 Py_DECREF(cond);
-                JUMPTO(oparg);
+                JUMPBY(oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
             }
             err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
             if (err > 0) {
-                JUMPTO(oparg);
+                JUMPBY(oparg);
                 CHECK_EVAL_BREAKER();
             }
             else if (err == 0)
@@ -4129,7 +4174,8 @@ handle_eval_breaker:
             PyObject *res = match ? Py_True : Py_False;
             Py_INCREF(res);
             PUSH(res);
-            PREDICT(POP_JUMP_IF_FALSE);
+            PREDICT(POP_JUMP_FORWARD_IF_FALSE);
+            PREDICT(POP_JUMP_BACKWARD_IF_FALSE);
             DISPATCH();
         }
 
@@ -4139,7 +4185,8 @@ handle_eval_breaker:
             PyObject *res = match ? Py_True : Py_False;
             Py_INCREF(res);
             PUSH(res);
-            PREDICT(POP_JUMP_IF_FALSE);
+            PREDICT(POP_JUMP_FORWARD_IF_FALSE);
+            PREDICT(POP_JUMP_BACKWARD_IF_FALSE);
             DISPATCH();
         }
 
