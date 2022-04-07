@@ -57,9 +57,9 @@
 #undef Py_XDECREF
 #define Py_XDECREF(arg) do { PyObject *op1 = _PyObject_CAST(arg); if (op1 != NULL) { Py_DECREF(op1); } } while (0)
 
-#define _Py_atomic_load_32bit_impl(value, order) (assert((order) == _Py_memory_order_relaxed), *(value))
-
 #endif
+
+#define _Py_atomic_load_32bit_impl(value, order) (assert((order) == _Py_memory_order_relaxed), *(value))
 
 /* Forward declarations */
 static PyObject *trace_call_function(
