@@ -1,7 +1,6 @@
 #include <stdbool.h>
 
 #include "Python.h"
-#include "code.h"
 #include "opcode.h"
 #include "structmember.h"         // PyMemberDef
 #include "pycore_code.h"          // _PyCodeConstructor
