@@ -1618,5 +1618,23 @@ class TestDisTracebackWithFile(TestDisTraceback):
         return output.getvalue()
 
 
+class TestShowCaches(unittest.TestCase):
+    def test_show_caches(self):
+        def example_code():
+            # this code is never executed
+            a.b.c(1 * x)
+            if x:
+                c = 5
+
+        def get_instructions(show_caches):
+            return [
+                instr
+                for instr in dis.Bytecode(example_code, show_caches=show_caches)
+                if instr.opname != "CACHE"
+            ]
+
+        self.assertEqual(get_instructions(True), get_instructions(False))
+
+
 if __name__ == "__main__":
     unittest.main()

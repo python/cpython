@@ -413,6 +413,9 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             labels.add(target)
     starts_line = None
     for offset, op, arg in _unpack_opargs(code):
+        # get the next position before we skip a CACHE instruction
+        # to associate the correct position information. 
+        positions = Positions(*next(co_positions, ()))
         if not show_caches and op == CACHE:
             continue
         if linestarts is not None:
@@ -422,7 +425,6 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         is_jump_target = offset in labels
         argval = None
         argrepr = ''
-        positions = Positions(*next(co_positions, ()))
         if arg is not None:
             #  Set argval to the dereferenced value of the argument when
             #  available, and argrepr to the string representation of argval.

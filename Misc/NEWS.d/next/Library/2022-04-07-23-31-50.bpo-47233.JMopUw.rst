@@ -1,0 +1,2 @@
+Fix an issue where the default argument ``show_caches=False`` in :mod:`dis`
+utilities could result in incorrect position information.
