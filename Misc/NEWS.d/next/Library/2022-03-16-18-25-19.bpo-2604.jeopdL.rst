@@ -1,1 +1,0 @@
-Fix bug where doctests using globals would fail when run multiple times.

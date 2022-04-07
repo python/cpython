@@ -915,7 +915,7 @@ there's the so called BOM ("Byte Order Mark"). This is the Unicode character
 ``U+FEFF``. This character can be prepended to every ``UTF-16`` or ``UTF-32``
 byte sequence. The byte swapped version of this character (``0xFFFE``) is an
 illegal character that may not appear in a Unicode text. So when the
-first character in an ``UTF-16`` or ``UTF-32`` byte sequence
+first character in a ``UTF-16`` or ``UTF-32`` byte sequence
 appears to be a ``U+FFFE`` the bytes have to be swapped on decoding.
 Unfortunately the character ``U+FEFF`` had a second purpose as
 a ``ZERO WIDTH NO-BREAK SPACE``: a character that has no width and doesn't allow

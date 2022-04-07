@@ -42,6 +42,15 @@
 #   - a combination of the above (functions that were called by macros that
 #     were public in the past)
 
+# For structs, one of the following must be set:
+# - opaque: The struct name is available in the Limited API, but its members
+#   are not. Users must manipulate it via pointers.
+# - members: Space-separated list of members which are part of the
+#   Limited API and Stable ABI.
+#   Members that aren't listed are not accessible to applications.
+# - full-abi: The entire struct -- all its members and its size -- is part of
+#   the Stable ABI, and must not change.
+
 # Removing items from this file is generally not allowed, and additions should
 # be considered with that in mind. See the devguide for exact rules:
 #    https://devguide.python.org/c-api/#limited-api
@@ -54,40 +63,58 @@
 
 struct PyObject
     added 3.2
+    members ob_refcnt ob_type
 struct PyVarObject
     added 3.2
+    members ob_base ob_size
 struct PyMethodDef
     added 3.2
+    full-abi
 struct PyMemberDef
     added 3.2
+    full-abi
 struct PyGetSetDef
     added 3.2
+    full-abi
 struct PyModuleDef_Base
     added 3.2
+    full-abi
 struct PyModuleDef
     added 3.2
+    full-abi
 struct PyStructSequence_Field
     added 3.2
+    full-abi
 struct PyStructSequence_Desc
     added 3.2
+    full-abi
 struct PyType_Slot
     added 3.2
+    full-abi
 struct PyType_Spec
     added 3.2
+    full-abi
 struct PyThreadState
     added 3.2
+    opaque
 struct PyInterpreterState
     added 3.2
+    opaque
 struct PyFrameObject
     added 3.2
+    opaque
 struct symtable
     added 3.2
+    opaque
 struct PyWeakReference
     added 3.2
+    opaque
 struct PyLongObject
     added 3.2
+    opaque
 struct PyTypeObject
     added 3.2
+    opaque
 
 function PyType_FromSpec
     added 3.2
@@ -299,11 +326,11 @@ typedef newfunc
     added 3.2
 typedef allocfunc
     added 3.2
-struct PyCFunction
+typedef PyCFunction
     added 3.2
-struct PyCFunctionWithKeywords
+typedef PyCFunctionWithKeywords
     added 3.2
-struct PyCapsule_Destructor
+typedef PyCapsule_Destructor
     added 3.2
 typedef getter
     added 3.2
@@ -2194,6 +2221,7 @@ data PyStructSequence_UnnamedField
 # Add stable Py_buffer API in Python 3.11 (https://bugs.python.org/issue45459)
 struct Py_buffer
     added 3.11
+    full-abi
 function PyObject_CheckBuffer
     added 3.11
 function PyObject_GetBuffer

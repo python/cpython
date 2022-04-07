@@ -270,8 +270,8 @@ _PyCode_Quicken(PyCodeObject *code)
         else {
             assert(!_PyOpcode_Caches[opcode]);
             switch (opcode) {
-                case JUMP_ABSOLUTE:
-                    _Py_SET_OPCODE(instructions[i], JUMP_ABSOLUTE_QUICK);
+                case JUMP_BACKWARD:
+                    _Py_SET_OPCODE(instructions[i], JUMP_BACKWARD_QUICK);
                     break;
                 case RESUME:
                     _Py_SET_OPCODE(instructions[i], RESUME_QUICK);
@@ -1435,7 +1435,10 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
             }
             PyInterpreterState *interp = _PyInterpreterState_GET();
             PyObject *list_append = interp->callable_cache.list_append;
-            if ((PyObject *)descr == list_append && oparg == 1) {
+            _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_PRECALL + 1
+                                      + INLINE_CACHE_ENTRIES_CALL + 1];
+            bool pop = (_Py_OPCODE(next) == POP_TOP);
+            if ((PyObject *)descr == list_append && oparg == 1 && pop) {
                 _Py_SET_OPCODE(*instr, PRECALL_NO_KW_LIST_APPEND);
                 return 0;
             }

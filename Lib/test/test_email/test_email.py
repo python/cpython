@@ -3285,6 +3285,7 @@ Foo
         addrs = utils.getaddresses([Header('Al Person <aperson@dom.ain>')])
         self.assertEqual(addrs[0][1], 'aperson@dom.ain')
 
+    @threading_helper.requires_working_threading()
     def test_make_msgid_collisions(self):
         # Test make_msgid uniqueness, even with multiple threads
         class MsgidsThread(Thread):
