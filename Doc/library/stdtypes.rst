@@ -2189,7 +2189,11 @@ expression support in the :mod:`re` module).
         >>> "they're bill's friends from the UK".title()
         "They'Re Bill'S Friends From The Uk"
 
-   A workaround for apostrophes can be constructed using regular expressions::
+   The :func:`string.capwords` function does not have this problem, as it
+   splits words on spaces only.
+
+   Alternatively, a workaround for apostrophes can be constructed using regular
+   expressions::
 
         >>> import re
         >>> def titlecase(s):
