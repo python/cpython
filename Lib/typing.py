@@ -2465,7 +2465,7 @@ _overload_registry = collections.defaultdict(list)
 def get_overloads(func):
     """Return all defined overloads for *func* as a sequence."""
     key = _get_key_for_callable(func)
-    overloads = _overload_registry.get(key, [])
+    overloads = _overload_registry[key]
 
     # We clear out overloads that have higher linenos than a later
     # overload, because they're probably the result of a recreation of
