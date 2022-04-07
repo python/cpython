@@ -3392,25 +3392,27 @@ dec_format(PyObject *dec, PyObject *args)
            If so, clear the sign and format the resulting positive zero. */
         mpd_ssize_t prec;
         mpd_qcopy(&tmp, mpd, &status);
-        switch (spec.type) {
-          case 'f':
-              mpd_qrescale(&tmp, &tmp, -spec.prec, CTX(context), &status);
-              break;
-          case '%':
-              tmp.exp += 2;
-              mpd_qrescale(&tmp, &tmp, -spec.prec, CTX(context), &status);
-              break;
-          case 'g':
-              prec = (spec.prec == 0) ? 1 : spec.prec;
-              if (tmp.digits > prec) {
-                  _mpd_round(&tmp, &tmp, prec, CTX(context), &status);
-              }
-              break;
-          case 'e':
-              if (!mpd_iszero(&tmp)) {
-                  _mpd_round(&tmp, &tmp, spec.prec+1, CTX(context), &status);
-              }
-              break;
+        if (spec.prec >= 0) {
+            switch (spec.type) {
+              case 'f':
+                  mpd_qrescale(&tmp, &tmp, -spec.prec, CTX(context), &status);
+                  break;
+              case '%':
+                  tmp.exp += 2;
+                  mpd_qrescale(&tmp, &tmp, -spec.prec, CTX(context), &status);
+                  break;
+              case 'g':
+                  prec = (spec.prec == 0) ? 1 : spec.prec;
+                  if (tmp.digits > prec) {
+                      _mpd_round(&tmp, &tmp, prec, CTX(context), &status);
+                  }
+                  break;
+              case 'e':
+                  if (!mpd_iszero(&tmp)) {
+                      _mpd_round(&tmp, &tmp, spec.prec+1, CTX(context), &status);
+                  }
+                  break;
+            }
         }
         if (status & MPD_Errors) {
             PyErr_SetString(PyExc_ValueError, "unexpected error when rounding");
