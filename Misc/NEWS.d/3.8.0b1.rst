@@ -568,7 +568,7 @@ Make :func:`asyncio.create_subprocess_exec` accept path-like arguments.
 .. section: Library
 
 Change default *max_workers* of ``ThreadPoolExecutor`` from ``cpu_count() *
-5`` to ``min(32, cpu_count() + 4))``.  Previous value was unreasonably large
+5`` to ``min(32, cpu_count() + 4)``.  Previous value was unreasonably large
 on many cores machines.
 
 ..

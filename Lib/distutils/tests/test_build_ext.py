@@ -17,6 +17,7 @@ import unittest
 from test import support
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok
+from test.support import threading_helper
 
 # http://bugs.python.org/issue4373
 # Don't load the xx module more than once.
@@ -56,6 +57,7 @@ class BuildExtTestCase(TempdirManager,
     def build_ext(self, *args, **kwargs):
         return build_ext(*args, **kwargs)
 
+    @support.requires_subprocess()
     def test_build_ext(self):
         cmd = support.missing_compiler_executable()
         if cmd is not None:
@@ -164,6 +166,7 @@ class BuildExtTestCase(TempdirManager,
         self.assertIn(lib, cmd.rpath)
         self.assertIn(incl, cmd.include_dirs)
 
+    @threading_helper.requires_working_threading()
     def test_optional_extension(self):
 
         # this extension will fail, but let's ignore this failure
@@ -332,6 +335,7 @@ class BuildExtTestCase(TempdirManager,
         cmd.run()
         self.assertEqual(cmd.compiler, 'unix')
 
+    @support.requires_subprocess()
     def test_get_outputs(self):
         cmd = support.missing_compiler_executable()
         if cmd is not None:
@@ -545,8 +549,8 @@ class ParallelBuildExtTestCase(BuildExtTestCase):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(BuildExtTestCase))
-    suite.addTest(unittest.makeSuite(ParallelBuildExtTestCase))
+    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(BuildExtTestCase))
+    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(ParallelBuildExtTestCase))
     return suite
 
 if __name__ == '__main__':

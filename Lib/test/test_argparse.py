@@ -1,6 +1,8 @@
 # Author: Steven J. Bethard <steven.bethard@gmail.com>.
 
 import inspect
+import io
+import operator
 import os
 import shutil
 import stat
@@ -9,14 +11,29 @@ import textwrap
 import tempfile
 import unittest
 import argparse
+import warnings
 
-from io import StringIO
-
-from test import support
 from test.support import os_helper
 from unittest import mock
-class StdIOBuffer(StringIO):
-    pass
+
+
+class StdIOBuffer(io.TextIOWrapper):
+    '''Replacement for writable io.StringIO that behaves more like real file
+
+    Unlike StringIO, provides a buffer attribute that holds the underlying
+    binary data, allowing it to replace sys.stdout/sys.stderr in more
+    contexts.
+    '''
+
+    def __init__(self, initial_value='', newline='\n'):
+        initial_value = initial_value.encode('utf-8')
+        super().__init__(io.BufferedWriter(io.BytesIO(initial_value)),
+                         'utf-8', newline=newline)
+
+    def getvalue(self):
+        self.flush()
+        return self.buffer.raw.getvalue().decode('utf-8')
+
 
 class TestCase(unittest.TestCase):
 
@@ -43,11 +60,14 @@ class TempDirMixin(object):
                 os.chmod(os.path.join(self.temp_dir, name), stat.S_IWRITE)
         shutil.rmtree(self.temp_dir, True)
 
-    def create_readonly_file(self, filename):
+    def create_writable_file(self, filename):
         file_path = os.path.join(self.temp_dir, filename)
         with open(file_path, 'w', encoding="utf-8") as file:
             file.write(filename)
-        os.chmod(file_path, stat.S_IREAD)
+        return file_path
+
+    def create_readonly_file(self, filename):
+        os.chmod(self.create_writable_file(filename), stat.S_IREAD)
 
 class Sig(object):
 
@@ -97,13 +117,18 @@ def stderr_to_parser_error(parse_args, *args, **kwargs):
         try:
             result = parse_args(*args, **kwargs)
             for key in list(vars(result)):
-                if getattr(result, key) is sys.stdout:
+                attr = getattr(result, key)
+                if attr is sys.stdout:
                     setattr(result, key, old_stdout)
-                if getattr(result, key) is sys.stderr:
+                elif attr is sys.stdout.buffer:
+                    setattr(result, key, getattr(old_stdout, 'buffer', BIN_STDOUT_SENTINEL))
+                elif attr is sys.stderr:
                     setattr(result, key, old_stderr)
+                elif attr is sys.stderr.buffer:
+                    setattr(result, key, getattr(old_stderr, 'buffer', BIN_STDERR_SENTINEL))
             return result
-        except SystemExit:
-            code = sys.exc_info()[1].code
+        except SystemExit as e:
+            code = e.code
             stdout = sys.stdout.getvalue()
             stderr = sys.stderr.getvalue()
             raise ArgumentParserError(
@@ -1565,16 +1590,40 @@ class TestFileTypeRepr(TestCase):
         type = argparse.FileType('r', 1, errors='replace')
         self.assertEqual("FileType('r', 1, errors='replace')", repr(type))
 
+
+BIN_STDOUT_SENTINEL = object()
+BIN_STDERR_SENTINEL = object()
+
+
 class StdStreamComparer:
     def __init__(self, attr):
-        self.attr = attr
+        # We try to use the actual stdXXX.buffer attribute as our
+        # marker, but but under some test environments,
+        # sys.stdout/err are replaced by io.StringIO which won't have .buffer,
+        # so we use a sentinel simply to show that the tests do the right thing
+        # for any buffer supporting object
+        self.getattr = operator.attrgetter(attr)
+        if attr == 'stdout.buffer':
+            self.backupattr = BIN_STDOUT_SENTINEL
+        elif attr == 'stderr.buffer':
+            self.backupattr = BIN_STDERR_SENTINEL
+        else:
+            self.backupattr = object() # Not equal to anything
 
     def __eq__(self, other):
-        return other == getattr(sys, self.attr)
+        try:
+            return other == self.getattr(sys)
+        except AttributeError:
+            return other == self.backupattr
+
 
 eq_stdin = StdStreamComparer('stdin')
 eq_stdout = StdStreamComparer('stdout')
 eq_stderr = StdStreamComparer('stderr')
+eq_bstdin = StdStreamComparer('stdin.buffer')
+eq_bstdout = StdStreamComparer('stdout.buffer')
+eq_bstderr = StdStreamComparer('stderr.buffer')
+
 
 class RFile(object):
     seen = {}
@@ -1653,7 +1702,7 @@ class TestFileTypeRB(TempDirMixin, ParserTestCase):
         ('foo', NS(x=None, spam=RFile('foo'))),
         ('-x foo bar', NS(x=RFile('foo'), spam=RFile('bar'))),
         ('bar -x foo', NS(x=RFile('foo'), spam=RFile('bar'))),
-        ('-x - -', NS(x=eq_stdin, spam=eq_stdin)),
+        ('-x - -', NS(x=eq_bstdin, spam=eq_bstdin)),
     ]
 
 
@@ -1680,8 +1729,9 @@ class TestFileTypeW(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing files"""
 
     def setUp(self):
-        super(TestFileTypeW, self).setUp()
+        super().setUp()
         self.create_readonly_file('readonly')
+        self.create_writable_file('writable')
 
     argument_signatures = [
         Sig('-x', type=argparse.FileType('w')),
@@ -1690,13 +1740,37 @@ class TestFileTypeW(TempDirMixin, ParserTestCase):
     failures = ['-x', '', 'readonly']
     successes = [
         ('foo', NS(x=None, spam=WFile('foo'))),
+        ('writable', NS(x=None, spam=WFile('writable'))),
         ('-x foo bar', NS(x=WFile('foo'), spam=WFile('bar'))),
         ('bar -x foo', NS(x=WFile('foo'), spam=WFile('bar'))),
         ('-x - -', NS(x=eq_stdout, spam=eq_stdout)),
     ]
 
+@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
+                 "non-root user required")
+class TestFileTypeX(TempDirMixin, ParserTestCase):
+    """Test the FileType option/argument type for writing new files only"""
 
+    def setUp(self):
+        super().setUp()
+        self.create_readonly_file('readonly')
+        self.create_writable_file('writable')
+
+    argument_signatures = [
+        Sig('-x', type=argparse.FileType('x')),
+        Sig('spam', type=argparse.FileType('x')),
+    ]
+    failures = ['-x', '', 'readonly', 'writable']
+    successes = [
+        ('-x foo bar', NS(x=WFile('foo'), spam=WFile('bar'))),
+        ('-x - -', NS(x=eq_stdout, spam=eq_stdout)),
+    ]
+
+
+@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
+                 "non-root user required")
 class TestFileTypeWB(TempDirMixin, ParserTestCase):
+    """Test the FileType option/argument type for writing binary files"""
 
     argument_signatures = [
         Sig('-x', type=argparse.FileType('wb')),
@@ -1707,7 +1781,22 @@ class TestFileTypeWB(TempDirMixin, ParserTestCase):
         ('foo', NS(x=None, spam=WFile('foo'))),
         ('-x foo bar', NS(x=WFile('foo'), spam=WFile('bar'))),
         ('bar -x foo', NS(x=WFile('foo'), spam=WFile('bar'))),
-        ('-x - -', NS(x=eq_stdout, spam=eq_stdout)),
+        ('-x - -', NS(x=eq_bstdout, spam=eq_bstdout)),
+    ]
+
+
+@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
+                 "non-root user required")
+class TestFileTypeXB(TestFileTypeX):
+    "Test the FileType option/argument type for writing new binary files only"
+
+    argument_signatures = [
+        Sig('-x', type=argparse.FileType('xb')),
+        Sig('spam', type=argparse.FileType('xb')),
+    ]
+    successes = [
+        ('-x foo bar', NS(x=WFile('foo'), spam=WFile('bar'))),
+        ('-x - -', NS(x=eq_bstdout, spam=eq_bstdout)),
     ]
 
 
@@ -1850,8 +1939,7 @@ class TestActionUserDefined(ParserTestCase):
                     raise AssertionError('value: %s' % value)
                 assert expected_ns == namespace, ('expected %s, got %s' %
                                                   (expected_ns, namespace))
-            except AssertionError:
-                e = sys.exc_info()[1]
+            except AssertionError as e:
                 raise ArgumentParserError('opt_action failed: %s' % e)
             setattr(namespace, 'spam', value)
 
@@ -1876,8 +1964,7 @@ class TestActionUserDefined(ParserTestCase):
                     raise AssertionError('value: %s' % value)
                 assert expected_ns == namespace, ('expected %s, got %s' %
                                                   (expected_ns, namespace))
-            except AssertionError:
-                e = sys.exc_info()[1]
+            except AssertionError as e:
                 raise ArgumentParserError('arg_action failed: %s' % e)
             setattr(namespace, 'badger', value)
 
@@ -2163,6 +2250,42 @@ class TestAddSubparsers(TestCase):
               -h, --help      show this help message and exit
               --non-breaking  help message containing non-breaking spaces shall not
                               wrap\N{NO-BREAK SPACE}at non-breaking spaces
+        '''))
+
+    def test_help_blank(self):
+        # Issue 24444
+        parser = ErrorRaisingArgumentParser(
+            prog='PROG', description='main description')
+        parser.add_argument(
+            'foo',
+            help='    ')
+        self.assertEqual(parser.format_help(), textwrap.dedent('''\
+            usage: PROG [-h] foo
+
+            main description
+
+            positional arguments:
+              foo         
+
+            options:
+              -h, --help  show this help message and exit
+        '''))
+
+        parser = ErrorRaisingArgumentParser(
+            prog='PROG', description='main description')
+        parser.add_argument(
+            'foo', choices=[],
+            help='%(choices)s')
+        self.assertEqual(parser.format_help(), textwrap.dedent('''\
+            usage: PROG [-h] {}
+
+            main description
+
+            positional arguments:
+              {}          
+
+            options:
+              -h, --help  show this help message and exit
         '''))
 
     def test_help_alternate_prefix_chars(self):
@@ -2566,6 +2689,13 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
               '''
         self.assertEqual(parser.format_help(), textwrap.dedent(expected))
 
+    def test_empty_group(self):
+        # See issue 26952
+        parser = argparse.ArgumentParser()
+        group = parser.add_mutually_exclusive_group()
+        with self.assertRaises(ValueError):
+            parser.parse_args(['-h'])
+
 class MEMixin(object):
 
     def test_failures_when_not_required(self):
@@ -2931,15 +3061,24 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
 
 class TestMutuallyExclusiveNested(MEMixin, TestCase):
 
+    # Nesting mutually exclusive groups is an undocumented feature
+    # that came about by accident through inheritance and has been
+    # the source of many bugs. It is deprecated and this test should
+    # eventually be removed along with it.
+
     def get_parser(self, required):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         group = parser.add_mutually_exclusive_group(required=required)
         group.add_argument('-a')
         group.add_argument('-b')
-        group2 = group.add_mutually_exclusive_group(required=required)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            group2 = group.add_mutually_exclusive_group(required=required)
         group2.add_argument('-c')
         group2.add_argument('-d')
-        group3 = group2.add_mutually_exclusive_group(required=required)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            group3 = group2.add_mutually_exclusive_group(required=required)
         group3.add_argument('-e')
         group3.add_argument('-f')
         return parser
@@ -3576,6 +3715,8 @@ class TestHelpUsage(HelpTestCase):
         Sig('--bar', help='Whether to bar', default=True,
                      action=argparse.BooleanOptionalAction),
         Sig('-f', '--foobar', '--barfoo', action=argparse.BooleanOptionalAction),
+        Sig('--bazz', action=argparse.BooleanOptionalAction,
+                      default=argparse.SUPPRESS, help='Bazz!'),
     ]
     argument_group_signatures = [
         (Sig('group'), [
@@ -3588,8 +3729,8 @@ class TestHelpUsage(HelpTestCase):
     usage = '''\
         usage: PROG [-h] [-w W [W ...]] [-x [X ...]] [--foo | --no-foo]
                     [--bar | --no-bar]
-                    [-f | --foobar | --no-foobar | --barfoo | --no-barfoo] [-y [Y]]
-                    [-z Z Z Z]
+                    [-f | --foobar | --no-foobar | --barfoo | --no-barfoo]
+                    [--bazz | --no-bazz] [-y [Y]] [-z Z Z Z]
                     a b b [c] [d ...] e [e ...]
         '''
     help = usage + '''\
@@ -3606,6 +3747,7 @@ class TestHelpUsage(HelpTestCase):
           --foo, --no-foo       Whether to foo
           --bar, --no-bar       Whether to bar (default: True)
           -f, --foobar, --no-foobar, --barfoo, --no-barfoo
+          --bazz, --no-bazz     Bazz!
 
         group:
           -y [Y]                y
@@ -4281,6 +4423,9 @@ class TestHelpArgumentDefaults(HelpTestCase):
     argument_signatures = [
         Sig('--foo', help='foo help - oh and by the way, %(default)s'),
         Sig('--bar', action='store_true', help='bar help'),
+        Sig('--taz', action=argparse.BooleanOptionalAction,
+            help='Whether to taz it', default=True),
+        Sig('--quux', help="Set the quux", default=42),
         Sig('spam', help='spam help'),
         Sig('badger', nargs='?', default='wooden', help='badger help'),
     ]
@@ -4289,25 +4434,29 @@ class TestHelpArgumentDefaults(HelpTestCase):
          [Sig('--baz', type=int, default=42, help='baz help')]),
     ]
     usage = '''\
-        usage: PROG [-h] [--foo FOO] [--bar] [--baz BAZ] spam [badger]
+        usage: PROG [-h] [--foo FOO] [--bar] [--taz | --no-taz] [--quux QUUX]
+                    [--baz BAZ]
+                    spam [badger]
         '''
     help = usage + '''\
 
         description
 
         positional arguments:
-          spam        spam help
-          badger      badger help (default: wooden)
+          spam             spam help
+          badger           badger help (default: wooden)
 
         options:
-          -h, --help  show this help message and exit
-          --foo FOO   foo help - oh and by the way, None
-          --bar       bar help (default: False)
+          -h, --help       show this help message and exit
+          --foo FOO        foo help - oh and by the way, None
+          --bar            bar help (default: False)
+          --taz, --no-taz  Whether to taz it (default: True)
+          --quux QUUX      Set the quux (default: 42)
 
         title:
           description
 
-          --baz BAZ   baz help (default: 42)
+          --baz BAZ        baz help (default: 42)
         '''
     version = ''
 
@@ -5403,13 +5552,11 @@ class TestExitOnError(TestCase):
             self.parser.parse_args('--integers a'.split())
 
 
-def test_main():
-    support.run_unittest(__name__)
+def tearDownModule():
     # Remove global references to avoid looking like we have refleaks.
     RFile.seen = {}
     WFile.seen = set()
 
 
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

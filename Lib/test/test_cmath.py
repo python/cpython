@@ -1,4 +1,4 @@
-from test.support import requires_IEEE_754, cpython_only
+from test.support import requires_IEEE_754, cpython_only, import_helper
 from test.test_math import parse_testfile, test_file
 import test.test_math as test_math
 import unittest
@@ -452,13 +452,13 @@ class CMathTests(unittest.TestCase):
     @cpython_only
     def test_polar_errno(self):
         # Issue #24489: check a previously set C errno doesn't disturb polar()
-        from _testcapi import set_errno
+        _testcapi = import_helper.import_module('_testcapi')
         def polar_with_errno_set(z):
-            set_errno(11)
+            _testcapi.set_errno(11)
             try:
                 return polar(z)
             finally:
-                set_errno(0)
+                _testcapi.set_errno(0)
         self.check_polar(polar_with_errno_set)
 
     def test_phase(self):

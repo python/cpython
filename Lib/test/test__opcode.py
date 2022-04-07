@@ -11,7 +11,6 @@ class OpcodeTests(unittest.TestCase):
 
     def test_stack_effect(self):
         self.assertEqual(stack_effect(dis.opmap['POP_TOP']), -1)
-        self.assertEqual(stack_effect(dis.opmap['DUP_TOP_TWO']), 2)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 0), -1)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 1), -1)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 3), -2)
@@ -82,12 +81,13 @@ class SpecializationStatsTests(unittest.TestCase):
             self.assertCountEqual(stats.keys(), specialized_opcodes)
             self.assertCountEqual(
                 stats['load_attr'].keys(),
-                stat_names + ['fails'])
+                stat_names + ['failure_kinds'])
             for sn in stat_names:
                 self.assertIsInstance(stats['load_attr'][sn], int)
-            self.assertIsInstance(stats['load_attr']['fails'], dict)
-            for k,v in stats['load_attr']['fails'].items():
-                self.assertIsInstance(k, tuple)
+            self.assertIsInstance(
+                stats['load_attr']['failure_kinds'],
+                tuple)
+            for v in stats['load_attr']['failure_kinds']:
                 self.assertIsInstance(v, int)
 
 

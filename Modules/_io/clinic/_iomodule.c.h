@@ -36,7 +36,6 @@ PyDoc_STRVAR(_io_open__doc__,
 "\'b\'       binary mode\n"
 "\'t\'       text mode (default)\n"
 "\'+\'       open a disk file for updating (reading and writing)\n"
-"\'U\'       universal newline mode (deprecated)\n"
 "========= ===============================================================\n"
 "\n"
 "The default mode is \'rt\' (open for reading text). For binary random\n"
@@ -51,10 +50,6 @@ PyDoc_STRVAR(_io_open__doc__,
 "\'t\' is appended to the mode argument), the contents of the file are\n"
 "returned as strings, the bytes having been first decoded using a\n"
 "platform-dependent encoding or using the specified encoding if given.\n"
-"\n"
-"\'U\' mode is deprecated and will raise an exception in future versions\n"
-"of Python.  It has no effect in Python 3.  Use newline to control\n"
-"universal newlines mode.\n"
 "\n"
 "buffering is an optional integer used to set the buffering policy.\n"
 "Pass 0 to switch buffering off (only allowed in binary mode), 1 to select\n"
@@ -278,8 +273,9 @@ PyDoc_STRVAR(_io_text_encoding__doc__,
 "\n"
 "A helper function to choose the text encoding.\n"
 "\n"
-"When encoding is not None, just return it.\n"
-"Otherwise, return the default text encoding (i.e. \"locale\").\n"
+"When encoding is not None, this function returns it.\n"
+"Otherwise, this function returns the default text encoding\n"
+"(i.e. \"locale\" or \"utf-8\" depends on UTF-8 mode).\n"
 "\n"
 "This function emits an EncodingWarning if encoding is None and\n"
 "sys.flags.warn_default_encoding is true.\n"
@@ -359,4 +355,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=06e055d1d80b835d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1a7fd7755c9a9609 input=a9049054013a1b77]*/

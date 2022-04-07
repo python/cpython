@@ -33,6 +33,13 @@ def tearDownModule():
 class MimeTypesTestCase(unittest.TestCase):
     def setUp(self):
         self.db = mimetypes.MimeTypes()
+        
+    def test_case_sensitivity(self):
+        eq = self.assertEqual
+        eq(self.db.guess_type("foobar.HTML"), self.db.guess_type("foobar.html"))
+        eq(self.db.guess_type("foobar.TGZ"), self.db.guess_type("foobar.tgz"))
+        eq(self.db.guess_type("foobar.tar.Z"), ("application/x-tar", "compress"))
+        eq(self.db.guess_type("foobar.tar.z"), (None, None))
 
     def test_default_data(self):
         eq = self.assertEqual
@@ -113,20 +120,29 @@ class MimeTypesTestCase(unittest.TestCase):
         eq(self.db.guess_type(r" \"\`;b&b&c |.tar.gz"), gzip_expected)
 
     def test_guess_all_types(self):
-        eq = self.assertEqual
-        unless = self.assertTrue
         # First try strict.  Use a set here for testing the results because if
         # test_urllib2 is run before test_mimetypes, global state is modified
         # such that the 'all' set will have more items in it.
-        all = set(self.db.guess_all_extensions('text/plain', strict=True))
-        unless(all >= set(['.bat', '.c', '.h', '.ksh', '.pl', '.txt']))
+        all = self.db.guess_all_extensions('text/plain', strict=True)
+        self.assertTrue(set(all) >= {'.bat', '.c', '.h', '.ksh', '.pl', '.txt'})
+        self.assertEqual(len(set(all)), len(all))  # no duplicates
         # And now non-strict
         all = self.db.guess_all_extensions('image/jpg', strict=False)
-        all.sort()
-        eq(all, ['.jpg'])
+        self.assertEqual(all, ['.jpg'])
         # And now for no hits
         all = self.db.guess_all_extensions('image/jpg', strict=True)
-        eq(all, [])
+        self.assertEqual(all, [])
+        # And now for type existing in both strict and non-strict mappings.
+        self.db.add_type('test-type', '.strict-ext')
+        self.db.add_type('test-type', '.non-strict-ext', strict=False)
+        all = self.db.guess_all_extensions('test-type', strict=False)
+        self.assertEqual(all, ['.strict-ext', '.non-strict-ext'])
+        all = self.db.guess_all_extensions('test-type')
+        self.assertEqual(all, ['.strict-ext'])
+        # Test that changing the result list does not affect the global state
+        all.append('.no-such-ext')
+        all = self.db.guess_all_extensions('test-type')
+        self.assertNotIn('.no-such-ext', all)
 
     def test_encoding(self):
         getpreferredencoding = locale.getpreferredencoding
@@ -149,6 +165,15 @@ class MimeTypesTestCase(unittest.TestCase):
         mimetypes.init()
         # Poison should be gone.
         self.assertEqual(mimetypes.guess_extension('foo/bar'), None)
+
+    @unittest.skipIf(sys.platform.startswith("win"), "Non-Windows only")
+    def test_guess_known_extensions(self):
+        # Issue 37529
+        # The test fails on Windows because Windows adds mime types from the Registry
+        # and that creates some duplicates.
+        from mimetypes import types_map
+        for v in types_map.values():
+            self.assertIsNotNone(mimetypes.guess_extension(v))
 
     def test_preferred_extension(self):
         def check_extensions():

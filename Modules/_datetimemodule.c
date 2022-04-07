@@ -7,6 +7,11 @@
  * the capsule are defined below */
 #define _PY_DATETIME_IMPL
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+#define NEEDS_PY_IDENTIFIER
+
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
@@ -1013,7 +1018,7 @@ new_time_ex(int hour, int minute, int second, int usecond,
  * true.  Passing false is a speed optimization, if you know for sure
  * that seconds and microseconds are already in their proper ranges.  In any
  * case, raises OverflowError and returns NULL if the normalized days is out
- * of range).
+ * of range.
  */
 static PyObject *
 new_delta_ex(int days, int seconds, int microseconds, int normalize,
@@ -1621,7 +1626,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         goto Done;
     {
         PyObject *format;
-        PyObject *time = PyImport_ImportModuleNoBlock("time");
+        PyObject *time = PyImport_ImportModule("time");
 
         if (time == NULL)
             goto Done;
@@ -1651,7 +1656,7 @@ static PyObject *
 time_time(void)
 {
     PyObject *result = NULL;
-    PyObject *time = PyImport_ImportModuleNoBlock("time");
+    PyObject *time = PyImport_ImportModule("time");
 
     if (time != NULL) {
         _Py_IDENTIFIER(time);
@@ -1674,7 +1679,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
     PyObject *args;
 
 
-    time = PyImport_ImportModuleNoBlock("time");
+    time = PyImport_ImportModule("time");
     if (time == NULL) {
         return NULL;
     }
@@ -3731,9 +3736,8 @@ static PyObject *
 tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *args, *state;
-    PyObject *getinitargs, *getstate;
+    PyObject *getinitargs;
     _Py_IDENTIFIER(__getinitargs__);
-    _Py_IDENTIFIER(__getstate__);
 
     if (_PyObject_LookupAttrId(self, &PyId___getinitargs__, &getinitargs) < 0) {
         return NULL;
@@ -3749,34 +3753,13 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
-    if (_PyObject_LookupAttrId(self, &PyId___getstate__, &getstate) < 0) {
+    state = _PyObject_GetState(self);
+    if (state == NULL) {
         Py_DECREF(args);
         return NULL;
     }
-    if (getstate != NULL) {
-        state = PyObject_CallNoArgs(getstate);
-        Py_DECREF(getstate);
-        if (state == NULL) {
-            Py_DECREF(args);
-            return NULL;
-        }
-    }
-    else {
-        PyObject **dictptr;
-        state = Py_None;
-        dictptr = _PyObject_GetDictPtr(self);
-        if (dictptr && *dictptr && PyDict_GET_SIZE(*dictptr)) {
-            state = *dictptr;
-        }
-        Py_INCREF(state);
-    }
 
-    if (state == Py_None) {
-        Py_DECREF(state);
-        return Py_BuildValue("(ON)", Py_TYPE(self), args);
-    }
-    else
-        return Py_BuildValue("(ONN)", Py_TYPE(self), args, state);
+    return Py_BuildValue("(ONN)", Py_TYPE(self), args, state);
 }
 
 static PyMethodDef tzinfo_methods[] = {
@@ -5157,7 +5140,7 @@ datetime_strptime(PyObject *cls, PyObject *args)
         return NULL;
 
     if (module == NULL) {
-        module = PyImport_ImportModuleNoBlock("_strptime");
+        module = PyImport_ImportModule("_strptime");
         if (module == NULL)
             return NULL;
     }

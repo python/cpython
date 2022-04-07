@@ -48,6 +48,9 @@ except:
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
+
 mswindows = (sys.platform == "win32")
 
 #
@@ -170,6 +173,14 @@ class ProcessTestCase(BaseTestCase):
         output = subprocess.check_output(
                 [sys.executable, "-c", "print('BDFL')"])
         self.assertIn(b'BDFL', output)
+
+        with self.assertRaisesRegex(ValueError,
+                "stdout argument not allowed, it will be overridden"):
+            subprocess.check_output([], stdout=None)
+
+        with self.assertRaisesRegex(ValueError,
+                "check argument not allowed, it will be overridden"):
+            subprocess.check_output([], check=False)
 
     def test_check_output_nonzero(self):
         # check_call() function with non-zero return code
@@ -719,6 +730,8 @@ class ProcessTestCase(BaseTestCase):
             # However, this function is not yet in _winapi.
             p.stdin.write(b"pear")
             p.stdin.close()
+            p.stdout.close()
+            p.stderr.close()
         finally:
             p.kill()
             p.wait()
@@ -746,6 +759,8 @@ class ProcessTestCase(BaseTestCase):
             # On other platforms we cannot test the pipe size (yet). But above
             # code using pipesize=-1 should not crash.
             p.stdin.close()
+            p.stdout.close()
+            p.stderr.close()
         finally:
             p.kill()
             p.wait()
@@ -1790,7 +1805,7 @@ class POSIXProcessTestCase(BaseTestCase):
         def __del__(self):
             pass
 
-    @mock.patch("subprocess._posixsubprocess.fork_exec")
+    @mock.patch("subprocess._fork_exec")
     def test_exception_errpipe_normal(self, fork_exec):
         """Test error passing done through errpipe_write in the good case"""
         def proper_error(*args):
@@ -1807,7 +1822,7 @@ class POSIXProcessTestCase(BaseTestCase):
             with self.assertRaises(IsADirectoryError):
                 self.PopenNoDestructor(["non_existent_command"])
 
-    @mock.patch("subprocess._posixsubprocess.fork_exec")
+    @mock.patch("subprocess._fork_exec")
     def test_exception_errpipe_bad_data(self, fork_exec):
         """Test error passing done through errpipe_write where its not
         in the expected format"""
@@ -2097,7 +2112,7 @@ class POSIXProcessTestCase(BaseTestCase):
                                  preexec_fn=raise_it)
         except subprocess.SubprocessError as e:
             self.assertTrue(
-                    subprocess._posixsubprocess,
+                    subprocess._fork_exec,
                     "Expected a ValueError from the preexec_fn")
         except ValueError as e:
             self.assertIn("coconut", e.args[0])
@@ -2585,11 +2600,11 @@ class POSIXProcessTestCase(BaseTestCase):
                 preexec_fn=prepare)
         except ValueError as err:
             # Pure Python implementations keeps the message
-            self.assertIsNone(subprocess._posixsubprocess)
+            self.assertIsNone(subprocess._fork_exec)
             self.assertEqual(str(err), "surrogate:\uDCff")
         except subprocess.SubprocessError as err:
             # _posixsubprocess uses a default message
-            self.assertIsNotNone(subprocess._posixsubprocess)
+            self.assertIsNotNone(subprocess._fork_exec)
             self.assertEqual(str(err), "Exception occurred in preexec_fn.")
         else:
             self.fail("Expected ValueError or subprocess.SubprocessError")
@@ -3022,6 +3037,7 @@ class POSIXProcessTestCase(BaseTestCase):
         pid = p.pid
         with warnings_helper.check_warnings(('', ResourceWarning)):
             p = None
+            support.gc_collect()  # For PyPy or other GCs.
 
         os.kill(pid, signal.SIGKILL)
         if mswindows:
@@ -3243,6 +3259,7 @@ class POSIXProcessTestCase(BaseTestCase):
         with mock.patch.object(p, 'poll', new=lambda: None):
             p.returncode = None
             p.send_signal(signal.SIGTERM)
+        p.kill()
 
     def test_communicate_repeated_call_after_stdout_close(self):
         proc = subprocess.Popen([sys.executable, '-c',
