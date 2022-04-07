@@ -327,7 +327,7 @@ The :mod:`locale` module defines the following exception and functions:
    is not necessary or desired, *do_setlocale* should be set to ``False``.
 
    On Android or if the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled, always
-   return ``'UTF-8'``, the :term:`locale encoding` and the *do_setlocale*
+   return ``'utf-8'``, the :term:`locale encoding` and the *do_setlocale*
    argument are ignored.
 
    The :ref:`Python preinitialization <c-preinit>` configures the LC_CTYPE
@@ -337,18 +337,23 @@ The :mod:`locale` module defines the following exception and functions:
       The function now always returns ``"UTF-8"`` on Android or if the
       :ref:`Python UTF-8 Mode <utf8-mode>` is enabled.
 
+   .. versionchanged:: 3.11
+      The function now returns ``"utf-8"`` instead of ``"UTF-8"`` on Android
+      or if the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled.
+
 
 .. function:: getencoding()
 
    Get the current :term:`locale encoding`:
 
-   * On Android and VxWorks, return ``"UTF-8"``.
+   * On Android and VxWorks, return ``"utf-8"``.
    * On Unix, return the encoding of the current :data:`LC_CTYPE` locale.
-     Return ``"UTF-8"`` if ``nl_langinfo(CODESET)`` returns an empty string:
+     Return ``"utf-8"`` if ``nl_langinfo(CODESET)`` returns an empty string:
      for example, if the current LC_CTYPE locale is not supported.
    * On Windows, return the ANSI code page.
 
-   This function is similar to :func:`getpreferredencoding(False) <getpreferredencoding>` except this
+   This function is similar to
+   :func:`getpreferredencoding(False) <getpreferredencoding>` except this
    function ignores the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
    .. versionadded:: 3.11

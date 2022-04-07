@@ -643,11 +643,11 @@ except ImportError:
         if hasattr(sys, 'getandroidapilevel'):
             # On Android langinfo.h and CODESET are missing, and UTF-8 is
             # always used in mbstowcs() and wcstombs().
-            return 'UTF-8'
+            return 'utf-8'
         encoding = getdefaultlocale()[1]
         if encoding is None:
             # LANG not set, default to UTF-8
-            encoding = 'UTF-8'
+            encoding = 'utf-8'
         return encoding
 
 try:
@@ -656,7 +656,7 @@ except NameError:
     def getpreferredencoding(do_setlocale=True):
         """Return the charset that the user is likely using."""
         if sys.flags.utf8_mode:
-            return 'UTF-8'
+            return 'utf-8'
         return getencoding()
 else:
     # On Unix, if CODESET is available, use that.
@@ -664,7 +664,7 @@ else:
         """Return the charset that the user is likely using,
         according to the system configuration."""
         if sys.flags.utf8_mode:
-            return 'UTF-8'
+            return 'utf-8'
 
         if not do_setlocale:
             return getencoding()
