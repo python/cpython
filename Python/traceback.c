@@ -3,7 +3,6 @@
 
 #include "Python.h"
 
-#include "code.h"                 // PyCode_Addr2Line etc
 #include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_ast.h"           // asdl_seq_*
 #include "pycore_call.h"          // _PyObject_CallMethodFormat()

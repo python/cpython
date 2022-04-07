@@ -132,9 +132,6 @@
     <ClInclude Include="..\Include\objimpl.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\opcode.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\osdefs.h">
       <Filter>Include</Filter>
     </ClInclude>
