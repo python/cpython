@@ -49,13 +49,15 @@
 // and they're kind of important for performance.
 
 #undef Py_DECREF
-#define Py_DECREF(arg) do { PyObject *op = arg; if (--op->ob_refcnt == 0) { destructor d = Py_TYPE(op)->tp_dealloc; (*d)(op); } } while (0)
+#define Py_DECREF(arg) do { PyObject *op = _PyObject_CAST(arg); if (--op->ob_refcnt == 0) { destructor d = Py_TYPE(op)->tp_dealloc; (*d)(op); } } while (0)
 
 #undef Py_IS_TYPE
-#define Py_IS_TYPE(ob, type) ((PyObject *)(ob)->ob_type == (type))
+#define Py_IS_TYPE(ob, type) (_PyObject_CAST(ob)->ob_type == (type))
 
 #undef Py_XDECREF
-#define Py_XDECREF(arg) do { PyObject *op1 = arg; if (op1 != NULL) { Py_DECREF(op1); } } while (0)
+#define Py_XDECREF(arg) do { PyObject *op1 = _PyObject_CAST(arg); if (op1 != NULL) { Py_DECREF(op1); } } while (0)
+
+#define _Py_atomic_load_32bit_impl(value, order) (assert((order) == _Py_memory_order_relaxed), *(value))
 
 #endif
 
