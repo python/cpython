@@ -1178,11 +1178,12 @@ class UnraisableHookTest(unittest.TestCase):
         for moduleName in 'builtins', '__main__', 'some_module':
             with self.subTest(moduleName=moduleName):
                 A.B.X.__module__ = moduleName
-                with test.support.captured_stderr() as stderr, \
-                     test.support.swap_attr(sys, 'unraisablehook',
-                                            sys.__unraisablehook__):
+                with test.support.captured_stderr() as stderr, test.support.swap_attr(
+                    sys, 'unraisablehook', sys.__unraisablehook__
+                ):
                     expected = self.write_unraisable_exc(
-                        A.B.X(), "msg", "obj");
+                        A.B.X(), "msg", "obj"
+                    )
                 report = stderr.getvalue()
                 self.assertIn(A.B.X.__qualname__, report)
                 if moduleName in ['builtins', '__main__']:
