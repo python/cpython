@@ -46,16 +46,17 @@
 #endif
 
 #if !defined(Py_DEBUG)
-// The MSVC compiler fails to inline these, and they're kind of important.
+// bpo-45116: The MSVC compiler fails to inline these in PGO build,
+// and they're kind of important for performance.
 
 #undef Py_DECREF
-#define Py_DECREF(arg) { PyObject *op = arg; if (--op->ob_refcnt == 0) { destructor d = Py_TYPE(op)->tp_dealloc; (*d)(op); } }
+#define Py_DECREF(arg) do { PyObject *op = arg; if (--op->ob_refcnt == 0) { destructor d = Py_TYPE(op)->tp_dealloc; (*d)(op); } } while (0)
 
 #undef Py_IS_TYPE
 #define Py_IS_TYPE(ob, type) ((PyObject *)(ob)->ob_type == (type))
 
 #undef Py_XDECREF
-#define Py_XDECREF(arg) { PyObject *op1 = arg; if (op1 != NULL) { Py_DECREF(op1); } }
+#define Py_XDECREF(arg) do { PyObject *op1 = arg; if (op1 != NULL) { Py_DECREF(op1); } } while (0)
 
 #endif
 
@@ -1589,10 +1590,6 @@ typedef struct {
     PyObject *kwnames;
 } CallShape;
 
-static inline bool
-is_method(PyObject **stack_pointer, int args) {
-    return PEEK(args+2) != NULL;
-}
 #define is_method(stack_pointer, args) (PEEK((args)+2) != NULL)
 
 #define KWNAMES_LEN() \
