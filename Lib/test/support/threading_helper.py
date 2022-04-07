@@ -237,7 +237,7 @@ def _can_start_thread() -> bool:
 can_start_thread = _can_start_thread()
 
 def requires_working_threading(*, module=False):
-    """Skip tests or modules that require working threading
+    """Skip tests or modules that require working threading.
 
     Can be used as a function/class decorator or to skip an entire module.
     """
