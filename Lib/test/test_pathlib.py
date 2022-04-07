@@ -13,6 +13,7 @@ import unittest
 from unittest import mock
 
 from test.support import import_helper
+from test.support import is_emscripten
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 
@@ -1486,6 +1487,9 @@ class _BasePathTest(object):
         self.assertIs(type(p), type(q))
         self.assertTrue(p.is_absolute())
 
+    @unittest.skipIf(
+        pwd is None, reason="Test requires pwd module to get homedir."
+    )
     def test_home(self):
         with os_helper.EnvironmentVarGuard() as env:
             self._test_home(self.cls.home())
@@ -1850,8 +1854,10 @@ class _BasePathTest(object):
         it = p.iterdir()
         it2 = p.iterdir()
         next(it2)
-        with p:
-            pass
+        # bpo-46556: path context managers are deprecated in Python 3.11.
+        with self.assertWarns(DeprecationWarning):
+            with p:
+                pass
         # Using a path as a context manager is a no-op, thus the following
         # operations should still succeed after the context manage exits.
         next(it)
@@ -1859,8 +1865,9 @@ class _BasePathTest(object):
         p.exists()
         p.resolve()
         p.absolute()
-        with p:
-            pass
+        with self.assertWarns(DeprecationWarning):
+            with p:
+                pass
 
     def test_chmod(self):
         p = self.cls(BASE) / 'fileA'
@@ -2152,6 +2159,7 @@ class _BasePathTest(object):
         self.assertTrue(p.exists())
         self.assertEqual(p.stat().st_ctime, st_ctime_first)
 
+    @unittest.skipIf(is_emscripten, "FS root cannot be modified on Emscripten.")
     def test_mkdir_exist_ok_root(self):
         # Issue #25803: A drive root could raise PermissionError on Windows.
         self.cls('/').resolve().mkdir(exist_ok=True)
@@ -2336,6 +2344,9 @@ class _BasePathTest(object):
         self.assertIs((P / 'fileA\x00').is_socket(), False)
 
     @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
+    @unittest.skipIf(
+        is_emscripten, "Unix sockets are not implemented on Emscripten."
+    )
     def test_is_socket_true(self):
         P = self.cls(BASE, 'mysock')
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -2450,15 +2461,6 @@ class _BasePathTest(object):
     def test_complex_symlinks_relative_dot_dot(self):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
 
-    def test_class_getitem(self):
-        from types import GenericAlias
-
-        alias = self.cls[str]
-        self.assertIsInstance(alias, GenericAlias)
-        self.assertIs(alias.__origin__, self.cls)
-        self.assertEqual(alias.__args__, (str,))
-        self.assertEqual(alias.__parameters__, ())
-
 
 class PathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.Path
@@ -2500,6 +2502,9 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         with self.assertRaises(RuntimeError):
             print(path.resolve(strict))
 
+    @unittest.skipIf(
+        is_emscripten, "umask is not implemented on Emscripten."
+    )
     def test_open_mode(self):
         old_mask = os.umask(0)
         self.addCleanup(os.umask, old_mask)
@@ -2523,6 +2528,9 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         finally:
             os.chdir(current_directory)
 
+    @unittest.skipIf(
+        is_emscripten, "umask is not implemented on Emscripten."
+    )
     def test_touch_mode(self):
         old_mask = os.umask(0)
         self.addCleanup(os.umask, old_mask)

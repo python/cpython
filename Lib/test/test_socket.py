@@ -37,6 +37,8 @@ try:
 except ImportError:
     fcntl = None
 
+support.requires_working_socket(module=True)
+
 HOST = socket_helper.HOST
 # test unicode string and carriage return
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')

@@ -2802,8 +2802,6 @@ class TestSingleDispatch(unittest.TestCase):
             f.register(list[int] | str, lambda arg: "types.UnionTypes(types.GenericAlias)")
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
             f.register(typing.List[float] | bytes, lambda arg: "typing.Union[typing.GenericAlias]")
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(typing.Any, lambda arg: "typing.Any")
 
         self.assertEqual(f([1]), "default")
         self.assertEqual(f([1.0]), "default")
@@ -2823,8 +2821,6 @@ class TestSingleDispatch(unittest.TestCase):
             f.register(list[int] | str)
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
             f.register(typing.List[int] | str)
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(typing.Any)
 
     def test_register_genericalias_annotation(self):
         @functools.singledispatch
@@ -2847,10 +2843,6 @@ class TestSingleDispatch(unittest.TestCase):
             @f.register
             def _(arg: typing.List[float] | bytes):
                 return "typing.Union[typing.GenericAlias]"
-        with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
-            @f.register
-            def _(arg: typing.Any):
-                return "typing.Any"
 
         self.assertEqual(f([1]), "default")
         self.assertEqual(f([1.0]), "default")

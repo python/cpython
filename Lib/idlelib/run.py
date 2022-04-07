@@ -482,7 +482,7 @@ class StdInputFile(StdioFile):
         result = self._line_buffer
         self._line_buffer = ''
         if size < 0:
-            while (line := self.shell.readline()):
+            while line := self.shell.readline():
                 result += line
         else:
             while len(result) < size:

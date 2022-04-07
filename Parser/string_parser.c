@@ -357,7 +357,12 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
             break;
         }
     }
+    
     if (s == expr_end) {
+        if (*expr_end == '!' || *expr_end == ':' || *expr_end == '=') {
+            RAISE_SYNTAX_ERROR("f-string: expression required before '%c'", *expr_end);
+            return NULL;
+        }
         RAISE_SYNTAX_ERROR("f-string: empty expression not allowed");
         return NULL;
     }
@@ -666,12 +671,12 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
                     *str += 1;
                     continue;
                 }
-                /* Don't get out of the loop for these, if they're single
-                   chars (not part of 2-char tokens). If by themselves, they
-                   don't end an expression (unlike say '!'). */
-                if (ch == '>' || ch == '<') {
-                    continue;
-                }
+            }
+            /* Don't get out of the loop for these, if they're single
+               chars (not part of 2-char tokens). If by themselves, they
+               don't end an expression (unlike say '!'). */
+            if (ch == '>' || ch == '<') {
+                continue;
             }
 
             /* Normal way out of this loop. */
@@ -698,10 +703,10 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
         }
     }
     expr_end = *str;
-    /* If we leave this loop in a string or with mismatched parens, we
-       don't care. We'll get a syntax error when compiling the
-       expression. But, we can produce a better error message, so
-       let's just do that.*/
+    /* If we leave the above loop in a string or with mismatched parens, we
+       don't really care. We'll get a syntax error when compiling the
+       expression. But, we can produce a better error message, so let's just
+       do that.*/
     if (quote_char) {
         RAISE_SYNTAX_ERROR("f-string: unterminated string");
         goto error;

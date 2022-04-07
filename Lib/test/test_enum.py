@@ -3708,7 +3708,7 @@ class TestVerify(unittest.TestCase):
             triple = 3
             value = 4
 
-class TestHelpers(unittest.TestCase):
+class TestInternals(unittest.TestCase):
 
     sunder_names = '_bad_', '_good_', '_what_ho_'
     dunder_names = '__mal__', '__bien__', '__que_que__'

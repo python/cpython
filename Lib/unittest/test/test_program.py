@@ -196,6 +196,7 @@ class FakeRunner(object):
         return RESULT
 
 
+@support.requires_subprocess()
 class TestCommandLineArgs(unittest.TestCase):
 
     def setUp(self):

@@ -1,2 +1,0 @@
-The pathlib module's obsolete and internal ``_Accessor`` class has been
-removed to prepare the terrain for upcoming enhancements to the module.
