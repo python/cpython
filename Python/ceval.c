@@ -2112,7 +2112,7 @@ handle_eval_breaker:
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             bool is_list = PyList_CheckExact(sequence);
             bool is_tuple = PyTuple_CheckExact(sequence);
-            DEOPT_IF(!(is_tuple || is_tuple), BINARY_SUBSCR);
+            DEOPT_IF(!(is_list || is_tuple), BINARY_SUBSCR);
 
             // Deopt unless 0 <= sub < Py_SIZE(sequence)
             Py_ssize_t signed_magnitude = Py_SIZE(sub);
