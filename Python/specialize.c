@@ -1176,22 +1176,13 @@ _Py_Specialize_BinarySubscr(
            INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
     _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)(instr + 1);
     PyTypeObject *container_type = Py_TYPE(container);
-    if (container_type == &PyList_Type) {
+    if (container_type == &PyList_Type || container_type == &PyTuple_Type) {
         if (PyLong_CheckExact(sub)) {
-            _Py_SET_OPCODE(*instr, BINARY_SUBSCR_LIST_INT);
+            _Py_SET_OPCODE(*instr, BINARY_SUBSCR_LIST_OR_TUPLE_INT);
             goto success;
         }
         SPECIALIZATION_FAIL(BINARY_SUBSCR,
             PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_LIST_SLICE : SPEC_FAIL_OTHER);
-        goto fail;
-    }
-    if (container_type == &PyTuple_Type) {
-        if (PyLong_CheckExact(sub)) {
-            _Py_SET_OPCODE(*instr, BINARY_SUBSCR_TUPLE_INT);
-            goto success;
-        }
-        SPECIALIZATION_FAIL(BINARY_SUBSCR,
-            PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_TUPLE_SLICE : SPEC_FAIL_OTHER);
         goto fail;
     }
     if (container_type == &PyDict_Type) {

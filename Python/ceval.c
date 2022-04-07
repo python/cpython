@@ -2105,52 +2105,34 @@ handle_eval_breaker:
             }
         }
 
-        TARGET(BINARY_SUBSCR_LIST_INT) {
+        TARGET(BINARY_SUBSCR_LIST_OR_TUPLE_INT) {
             assert(cframe.use_tracing == 0);
             PyObject *sub = TOP();
-            PyObject *list = SECOND();
+            PyObject *sequence = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
-            DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
+            bool is_list = PyList_CheckExact(sequence);
+            bool is_tuple = PyTuple_CheckExact(sequence);
+            DEOPT_IF(!(is_tuple || is_tuple), BINARY_SUBSCR);
 
-            // Deopt unless 0 <= sub < PyList_Size(list)
+            // Deopt unless 0 <= sub < Py_SIZE(sequence)
             Py_ssize_t signed_magnitude = Py_SIZE(sub);
             DEOPT_IF(((size_t)signed_magnitude) > 1, BINARY_SUBSCR);
             assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
-            DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
+            DEOPT_IF(index >= Py_SIZE(sequence), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
-            PyObject *res = PyList_GET_ITEM(list, index);
+
+            PyObject* res;
+            if (is_list)
+              res = PyList_GET_ITEM(sequence, index);
+            else
+               res = PyTuple_GET_ITEM(sequence, index);
             assert(res != NULL);
             Py_INCREF(res);
             STACK_SHRINK(1);
             Py_DECREF(sub);
             SET_TOP(res);
-            Py_DECREF(list);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-            NOTRACE_DISPATCH();
-        }
-
-        TARGET(BINARY_SUBSCR_TUPLE_INT) {
-            assert(cframe.use_tracing == 0);
-            PyObject *sub = TOP();
-            PyObject *tuple = SECOND();
-            DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
-            DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
-
-            // Deopt unless 0 <= sub < PyTuple_Size(list)
-            Py_ssize_t signed_magnitude = Py_SIZE(sub);
-            DEOPT_IF(((size_t)signed_magnitude) > 1, BINARY_SUBSCR);
-            assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
-            Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
-            DEOPT_IF(index >= PyTuple_GET_SIZE(tuple), BINARY_SUBSCR);
-            STAT_INC(BINARY_SUBSCR, hit);
-            PyObject *res = PyTuple_GET_ITEM(tuple, index);
-            assert(res != NULL);
-            Py_INCREF(res);
-            STACK_SHRINK(1);
-            Py_DECREF(sub);
-            SET_TOP(res);
-            Py_DECREF(tuple);
+            Py_DECREF(sequence);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             NOTRACE_DISPATCH();
         }
