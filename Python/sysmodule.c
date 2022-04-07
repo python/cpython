@@ -31,7 +31,6 @@ Data members:
 #include "pycore_structseq.h"     // _PyStructSequence_InitType()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 
-#include "code.h"
 #include "frameobject.h"          // PyFrame_GetBack()
 #include "pydtrace.h"
 #include "osdefs.h"               // DELIM

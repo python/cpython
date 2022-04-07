@@ -22,6 +22,7 @@ extern "C" {
 #define MATCH_KEYS                              33
 #define PUSH_EXC_INFO                           35
 #define CHECK_EXC_MATCH                         36
+#define CHECK_EG_MATCH                          37
 #define WITH_EXCEPT_START                       49
 #define GET_AITER                               50
 #define GET_ANEXT                               51
@@ -80,14 +81,13 @@ extern "C" {
 #define LOAD_FAST                              124
 #define STORE_FAST                             125
 #define DELETE_FAST                            126
-#define JUMP_IF_NOT_EG_MATCH                   127
 #define POP_JUMP_IF_NOT_NONE                   128
 #define POP_JUMP_IF_NONE                       129
 #define RAISE_VARARGS                          130
 #define GET_AWAITABLE                          131
 #define MAKE_FUNCTION                          132
 #define BUILD_SLICE                            133
-#define JUMP_NO_INTERRUPT                      134
+#define JUMP_BACKWARD_NO_INTERRUPT             134
 #define MAKE_CELL                              135
 #define LOAD_CLOSURE                           136
 #define LOAD_DEREF                             137
@@ -136,39 +136,39 @@ extern "C" {
 #define COMPARE_OP_INT_JUMP                     28
 #define COMPARE_OP_STR_JUMP                     29
 #define JUMP_BACKWARD_QUICK                     34
-#define LOAD_ATTR_ADAPTIVE                      37
-#define LOAD_ATTR_INSTANCE_VALUE                38
-#define LOAD_ATTR_MODULE                        39
-#define LOAD_ATTR_SLOT                          40
-#define LOAD_ATTR_WITH_HINT                     41
-#define LOAD_CONST__LOAD_FAST                   42
-#define LOAD_FAST__LOAD_CONST                   43
-#define LOAD_FAST__LOAD_FAST                    44
-#define LOAD_GLOBAL_ADAPTIVE                    45
-#define LOAD_GLOBAL_BUILTIN                     46
-#define LOAD_GLOBAL_MODULE                      47
-#define LOAD_METHOD_ADAPTIVE                    48
-#define LOAD_METHOD_CLASS                       55
-#define LOAD_METHOD_MODULE                      56
-#define LOAD_METHOD_NO_DICT                     57
-#define LOAD_METHOD_WITH_DICT                   58
-#define LOAD_METHOD_WITH_VALUES                 59
-#define PRECALL_ADAPTIVE                        62
-#define PRECALL_BOUND_METHOD                    63
-#define PRECALL_BUILTIN_CLASS                   64
-#define PRECALL_BUILTIN_FAST_WITH_KEYWORDS      65
-#define PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS  66
-#define PRECALL_NO_KW_BUILTIN_FAST              67
-#define PRECALL_NO_KW_BUILTIN_O                 72
-#define PRECALL_NO_KW_ISINSTANCE                73
-#define PRECALL_NO_KW_LEN                       76
-#define PRECALL_NO_KW_LIST_APPEND               77
-#define PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST    78
-#define PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS  79
-#define PRECALL_NO_KW_METHOD_DESCRIPTOR_O       80
-#define PRECALL_NO_KW_STR_1                     81
-#define PRECALL_NO_KW_TUPLE_1                  113
-#define PRECALL_NO_KW_TYPE_1                   121
+#define LOAD_ATTR_ADAPTIVE                      38
+#define LOAD_ATTR_INSTANCE_VALUE                39
+#define LOAD_ATTR_MODULE                        40
+#define LOAD_ATTR_SLOT                          41
+#define LOAD_ATTR_WITH_HINT                     42
+#define LOAD_CONST__LOAD_FAST                   43
+#define LOAD_FAST__LOAD_CONST                   44
+#define LOAD_FAST__LOAD_FAST                    45
+#define LOAD_GLOBAL_ADAPTIVE                    46
+#define LOAD_GLOBAL_BUILTIN                     47
+#define LOAD_GLOBAL_MODULE                      48
+#define LOAD_METHOD_ADAPTIVE                    55
+#define LOAD_METHOD_CLASS                       56
+#define LOAD_METHOD_MODULE                      57
+#define LOAD_METHOD_NO_DICT                     58
+#define LOAD_METHOD_WITH_DICT                   59
+#define LOAD_METHOD_WITH_VALUES                 62
+#define PRECALL_ADAPTIVE                        63
+#define PRECALL_BOUND_METHOD                    64
+#define PRECALL_BUILTIN_CLASS                   65
+#define PRECALL_BUILTIN_FAST_WITH_KEYWORDS      66
+#define PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS  67
+#define PRECALL_NO_KW_BUILTIN_FAST              72
+#define PRECALL_NO_KW_BUILTIN_O                 73
+#define PRECALL_NO_KW_ISINSTANCE                76
+#define PRECALL_NO_KW_LEN                       77
+#define PRECALL_NO_KW_LIST_APPEND               78
+#define PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST    79
+#define PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS  80
+#define PRECALL_NO_KW_METHOD_DESCRIPTOR_O       81
+#define PRECALL_NO_KW_STR_1                    113
+#define PRECALL_NO_KW_TUPLE_1                  121
+#define PRECALL_NO_KW_TYPE_1                   127
 #define PRECALL_PYFUNC                         141
 #define RESUME_QUICK                           143
 #define STORE_ATTR_ADAPTIVE                    150
@@ -196,7 +196,7 @@ static const uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     536870912U,
     134234112U,
-    4096U,
+    4160U,
     0U,
     0U,
     0U,
@@ -205,7 +205,7 @@ static const uint32_t _PyOpcode_Jump[8] = {
     0U,
     0U,
     536870912U,
-    2282602496U,
+    135118848U,
     4163U,
     0U,
     0U,
@@ -259,6 +259,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [CALL_FUNCTION_EX] = CALL_FUNCTION_EX,
     [CALL_PY_EXACT_ARGS] = CALL,
     [CALL_PY_WITH_DEFAULTS] = CALL,
+    [CHECK_EG_MATCH] = CHECK_EG_MATCH,
     [CHECK_EXC_MATCH] = CHECK_EXC_MATCH,
     [COMPARE_OP] = COMPARE_OP,
     [COMPARE_OP_ADAPTIVE] = COMPARE_OP,
@@ -291,12 +292,11 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [IMPORT_STAR] = IMPORT_STAR,
     [IS_OP] = IS_OP,
     [JUMP_BACKWARD] = JUMP_BACKWARD,
+    [JUMP_BACKWARD_NO_INTERRUPT] = JUMP_BACKWARD_NO_INTERRUPT,
     [JUMP_BACKWARD_QUICK] = JUMP_BACKWARD,
     [JUMP_FORWARD] = JUMP_FORWARD,
     [JUMP_IF_FALSE_OR_POP] = JUMP_IF_FALSE_OR_POP,
-    [JUMP_IF_NOT_EG_MATCH] = JUMP_IF_NOT_EG_MATCH,
     [JUMP_IF_TRUE_OR_POP] = JUMP_IF_TRUE_OR_POP,
-    [JUMP_NO_INTERRUPT] = JUMP_NO_INTERRUPT,
     [KW_NAMES] = KW_NAMES,
     [LIST_APPEND] = LIST_APPEND,
     [LIST_EXTEND] = LIST_EXTEND,

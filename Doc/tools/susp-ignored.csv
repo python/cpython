@@ -393,3 +393,4 @@ whatsnew/changelog,,::,Lib/email/mime/nonmultipart.py::MIMENonMultipart
 library/typing,,`,"assert_type(name, str)  # OK, inferred type of `name` is `str`"
 library/typing,,`,# after which we hope the inferred type will be `int`
 whatsnew/changelog,,:company,-V:company/tag
+library/typing,,`,# are located in the `typing_extensions` backports package.

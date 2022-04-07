@@ -1435,7 +1435,10 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
             }
             PyInterpreterState *interp = _PyInterpreterState_GET();
             PyObject *list_append = interp->callable_cache.list_append;
-            if ((PyObject *)descr == list_append && oparg == 1) {
+            _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_PRECALL + 1
+                                      + INLINE_CACHE_ENTRIES_CALL + 1];
+            bool pop = (_Py_OPCODE(next) == POP_TOP);
+            if ((PyObject *)descr == list_append && oparg == 1 && pop) {
                 _Py_SET_OPCODE(*instr, PRECALL_NO_KW_LIST_APPEND);
                 return 0;
             }
