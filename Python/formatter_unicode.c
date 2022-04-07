@@ -889,7 +889,7 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                         "Precision not allowed in integer format specifier");
         goto done;
     }
-    /* no negatize zero coercion on integers */
+    /* no negative zero coercion on integers */
     if (format->no_neg_0) {
         PyErr_SetString(PyExc_ValueError,
                         "Negative zero coercion (z) not allowed in integer"
