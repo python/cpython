@@ -3973,16 +3973,10 @@ handle_eval_breaker:
         }
 
         TARGET(POP_JUMP_BACKWARD_IF_NOT_NONE) {
-            oparg = -oparg;
-            JUMP_TO_INSTRUCTION(POP_JUMP_FORWARD_IF_NOT_NONE);
-        }
-
-        TARGET(POP_JUMP_FORWARD_IF_NOT_NONE) {
-            PREDICTED(POP_JUMP_FORWARD_IF_NOT_NONE);
             PyObject *value = POP();
             if (!Py_IsNone(value)) {
                 Py_DECREF(value);
-                JUMPBY(oparg);
+                JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
             }
@@ -3990,19 +3984,31 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(POP_JUMP_BACKWARD_IF_NONE) {
-            oparg = -oparg;
-            JUMP_TO_INSTRUCTION(POP_JUMP_FORWARD_IF_NONE);
+        TARGET(POP_JUMP_FORWARD_IF_NOT_NONE) {
+            PyObject *value = POP();
+            if (!Py_IsNone(value)) {
+                JUMPBY(oparg);
+            }
+            Py_DECREF(value);
+            DISPATCH();
         }
 
-        TARGET(POP_JUMP_FORWARD_IF_NONE) {
-            PREDICTED(POP_JUMP_FORWARD_IF_NONE);
+        TARGET(POP_JUMP_BACKWARD_IF_NONE) {
             PyObject *value = POP();
             if (Py_IsNone(value)) {
                 Py_DECREF(value);
-                JUMPBY(oparg);
+                JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
+            }
+            Py_DECREF(value);
+            DISPATCH();
+        }
+
+        TARGET(POP_JUMP_FORWARD_IF_NONE) {
+            PyObject *value = POP();
+            if (Py_IsNone(value)) {
+                JUMPBY(oparg);
             }
             Py_DECREF(value);
             DISPATCH();
