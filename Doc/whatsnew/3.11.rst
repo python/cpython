@@ -833,6 +833,7 @@ Deprecated
   slated for removal in Python 3.13:
 
   * :mod:`aifc`
+  * :mod:`audioop`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
