@@ -1397,7 +1397,7 @@ SSL sockets also have the following additional methods and attributes:
 .. method:: SSLSocket.version()
 
    Return the actual SSL protocol version negotiated by the connection
-   as a string, or ``None`` is no secure connection is established.
+   as a string, or ``None`` if no secure connection is established.
    As of this writing, possible return values include ``"SSLv2"``,
    ``"SSLv3"``, ``"TLSv1"``, ``"TLSv1.1"`` and ``"TLSv1.2"``.
    Recent OpenSSL versions may define more return values.
