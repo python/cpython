@@ -1450,7 +1450,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/bytearrayobject.h \
 		$(srcdir)/Include/bytesobject.h \
 		$(srcdir)/Include/ceval.h \
-		$(srcdir)/Include/code.h \
 		$(srcdir)/Include/codecs.h \
 		$(srcdir)/Include/compile.h \
 		$(srcdir)/Include/complexobject.h \
