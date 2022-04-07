@@ -45,6 +45,20 @@
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
 
+#if !defined(Py_DEBUG)
+// The MSVC compiler fails to inline these, and they're kind of important.
+
+#undef Py_DECREF
+#define Py_DECREF(arg) { PyObject *op = arg; if (--op->ob_refcnt == 0) { destructor d = Py_TYPE(op)->tp_dealloc; (*d)(op); } }
+
+#undef Py_IS_TYPE
+#define Py_IS_TYPE(ob, type) ((PyObject *)(ob)->ob_type == (type))
+
+#undef Py_XDECREF
+#define Py_XDECREF(arg) { PyObject *op1 = arg; if (op1 != NULL) { Py_DECREF(op1); } }
+
+#endif
+
 /* Forward declarations */
 static PyObject *trace_call_function(
     PyThreadState *tstate, PyObject *callable, PyObject **stack,
@@ -1579,6 +1593,7 @@ static inline bool
 is_method(PyObject **stack_pointer, int args) {
     return PEEK(args+2) != NULL;
 }
+#define is_method(stack_pointer, args) (PEEK((args)+2) != NULL)
 
 #define KWNAMES_LEN() \
     (call_shape.kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(call_shape.kwnames)))
