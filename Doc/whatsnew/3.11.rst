@@ -187,6 +187,15 @@ Other Language Changes
   protocols correspondingly.
   (Contributed by Serhiy Storchaka in :issue:`12022`.)
 
+* Added :meth:`object.__getstate__` which provides the default
+  implementation of the ``__getstate__()`` method.  :mod:`Copying <copy>`
+  and :mod:`pickling <pickle>` instances of subclasses of builtin types
+  :class:`bytearray`, :class:`set`, :class:`frozenset`,
+  :class:`collections.OrderedDict`, :class:`collections.deque`,
+  :class:`weakref.WeakSet`, and :class:`datetime.tzinfo` now copies and
+  pickles instance attributes implemented as :term:`slots <__slots__>`.
+  (Contributed by Serhiy Storchaka in :issue:`26579`.)
+
 
 Other CPython Implementation Changes
 ====================================
@@ -1201,7 +1210,7 @@ Porting to Python 3.11
   explicitly include the header files after ``#include <Python.h>``.
   (Contributed by Victor Stinner in :issue:`45434`.)
 
-* The non-limited API files ``cellobject.h``, ``classobject.h``, ``context.h``,
+* The non-limited API files ``cellobject.h``, ``classobject.h``, ``code.h``, ``context.h``,
   ``funcobject.h``, ``genobject.h`` and ``longintrepr.h`` have been moved to
   the ``Include/cpython`` directory. Moreover, the ``eval.h`` header file was
   removed. These files must not be included directly, as they are already
@@ -1214,8 +1223,10 @@ Porting to Python 3.11
   which are not available in the limited C API.
   (Contributed by Victor Stinner in :issue:`46007`.)
 
-* The :c:type:`PyFrameObject` structure member has been moved to the internal C
-  API headers.
+.. _pyframeobject-3.11-hiding:
+
+* The :c:type:`PyFrameObject` structure members have been removed from the
+  public C API.
 
   While the documentation notes that the :c:type:`PyFrameObject` fields are
   subject to change at any time, they have been stable for a long time and were

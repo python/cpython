@@ -1450,7 +1450,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/bytearrayobject.h \
 		$(srcdir)/Include/bytesobject.h \
 		$(srcdir)/Include/ceval.h \
-		$(srcdir)/Include/code.h \
 		$(srcdir)/Include/codecs.h \
 		$(srcdir)/Include/compile.h \
 		$(srcdir)/Include/complexobject.h \
@@ -1522,6 +1521,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/classobject.h \
 		$(srcdir)/Include/cpython/code.h \
 		$(srcdir)/Include/cpython/compile.h \
+		$(srcdir)/Include/cpython/complexobject.h \
 		$(srcdir)/Include/cpython/context.h \
 		$(srcdir)/Include/cpython/descrobject.h \
 		$(srcdir)/Include/cpython/dictobject.h \
@@ -1550,6 +1550,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pystate.h \
 		$(srcdir)/Include/cpython/pythonrun.h \
 		$(srcdir)/Include/cpython/pytime.h \
+		$(srcdir)/Include/cpython/setobject.h \
 		$(srcdir)/Include/cpython/sysmodule.h \
 		$(srcdir)/Include/cpython/traceback.h \
 		$(srcdir)/Include/cpython/tupleobject.h \

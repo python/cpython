@@ -61,12 +61,11 @@ FLAGS = {
     "x": SRE_FLAG_VERBOSE,
     # extensions
     "a": SRE_FLAG_ASCII,
-    "t": SRE_FLAG_TEMPLATE,
     "u": SRE_FLAG_UNICODE,
 }
 
 TYPE_FLAGS = SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE
-GLOBAL_FLAGS = SRE_FLAG_DEBUG | SRE_FLAG_TEMPLATE
+GLOBAL_FLAGS = SRE_FLAG_DEBUG
 
 class Verbose(Exception):
     pass
@@ -336,7 +335,7 @@ def _class_escape(source, escape):
                 c = ord(unicodedata.lookup(charname))
             except KeyError:
                 raise source.error("undefined character name %r" % charname,
-                                   len(charname) + len(r'\N{}'))
+                                   len(charname) + len(r'\N{}')) from None
             return LITERAL, c
         elif c in OCTDIGITS:
             # octal escape (up to three digits)
@@ -396,7 +395,7 @@ def _escape(source, escape, state):
                 c = ord(unicodedata.lookup(charname))
             except KeyError:
                 raise source.error("undefined character name %r" % charname,
-                                   len(charname) + len(r'\N{}'))
+                                   len(charname) + len(r'\N{}')) from None
             return LITERAL, c
         elif c == "0":
             # octal escape
@@ -1015,7 +1014,7 @@ def parse_template(source, state):
                     try:
                         index = groupindex[name]
                     except KeyError:
-                        raise IndexError("unknown group name %r" % name)
+                        raise IndexError("unknown group name %r" % name) from None
                 else:
                     try:
                         index = int(name)
@@ -1054,7 +1053,7 @@ def parse_template(source, state):
                     this = chr(ESCAPES[this][1])
                 except KeyError:
                     if c in ASCIILETTERS:
-                        raise s.error('bad escape %s' % this, len(this))
+                        raise s.error('bad escape %s' % this, len(this)) from None
                 lappend(this)
         else:
             lappend(this)
@@ -1075,5 +1074,5 @@ def expand_template(template, match):
         for index, group in groups:
             literals[index] = g(group) or empty
     except IndexError:
-        raise error("invalid group reference %d" % index)
+        raise error("invalid group reference %d" % index) from None
     return empty.join(literals)
