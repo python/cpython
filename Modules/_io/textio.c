@@ -1147,8 +1147,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     if (encoding == NULL && self->encoding == NULL) {
         if (_PyRuntime.preconfig.utf8_mode) {
             _Py_DECLARE_STR(utf_8, "utf-8");
-            self->encoding = &_Py_STR(utf_8);
-            Py_INCREF(self->encoding);
+            self->encoding = Py_NewRef(&_Py_STR(utf_8));
         }
         else {
             self->encoding = _Py_GetLocaleEncodingObject();

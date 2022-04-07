@@ -348,8 +348,8 @@ The :mod:`locale` module defines the following exception and functions:
      for example, if the current LC_CTYPE locale is not supported.
    * On Windows, return the ANSI code page.
 
-   This function is same to ``getpreferredencoding(False)`` except this
-   function ignore the :ref:`UTF-8 Mode <utf8-mode>`.
+   This function is similar to :func:`getpreferredencoding(False) <getpreferredencoding>` except this
+   function ignores the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
    .. versionadded:: 3.11
 
