@@ -5030,7 +5030,6 @@ object_getstate_default(PyObject *obj, int required)
 
             name = PyList_GET_ITEM(slotnames, i);
             Py_INCREF(name);
-            value = PyObject_GetAttr(obj, name);
             if (_PyObject_LookupAttr(obj, name, &value) < 0) {
                 Py_DECREF(name);
                 goto error;
