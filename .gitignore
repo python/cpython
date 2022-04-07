@@ -28,8 +28,6 @@ __pycache__
 .hg/
 .svn/
 .idea/
-.project
-.settings/
 tags
 TAGS
 .vs/
