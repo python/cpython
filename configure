@@ -6311,7 +6311,15 @@ esac
 
 else
 
-  enable_wasm_dynamic_linking=missing
+  case $ac_sys_system in #(
+  Emscripten) :
+    enable_wasm_dynamic_linking=no ;; #(
+  WASI) :
+    enable_wasm_dynamic_linking=no ;; #(
+  *) :
+    enable_wasm_dynamic_linking=missing
+   ;;
+esac
 
 fi
 
