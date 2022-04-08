@@ -44,9 +44,12 @@
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
 
-#if !defined(Py_DEBUG)
-// bpo-45116: The MSVC compiler fails to inline these in PGO build,
-// and they're kind of important for performance.
+#ifndef Py_DEBUG
+// bpo-45116: The MSVC compiler does not inline these static inline functions
+// in PGO build in _PyEval_EvalFrameDefault(), because this function is over
+// the limit of PGO, and that limit cannot be configured.
+// Define them as macros to make sure that they are always inlined by the
+// preprocessor.
 
 #undef Py_DECREF
 #define Py_DECREF(arg) do { PyObject *op = _PyObject_CAST(arg); if (--op->ob_refcnt == 0) { destructor d = Py_TYPE(op)->tp_dealloc; (*d)(op); } } while (0)
@@ -57,9 +60,13 @@
 #undef Py_XDECREF
 #define Py_XDECREF(arg) do { PyObject *op1 = _PyObject_CAST(arg); if (op1 != NULL) { Py_DECREF(op1); } } while (0)
 
+#if SIZEOF_INT == 4
+#undef _Py_atomic_load_relaxed
+#define _Py_atomic_load_relaxed(ATOMIC_VAL) (*((volatile int*)&((ATOMIC_VAL)->_value)))
 #endif
 
-#define _Py_atomic_load_32bit_impl(value, order) (assert((order) == _Py_memory_order_relaxed), *(value))
+#endif
+
 
 /* Forward declarations */
 static PyObject *trace_call_function(
