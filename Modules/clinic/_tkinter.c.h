@@ -322,14 +322,6 @@ PyDoc_STRVAR(_tkinter_tkapp_splitlist__doc__,
 #define _TKINTER_TKAPP_SPLITLIST_METHODDEF    \
     {"splitlist", (PyCFunction)_tkinter_tkapp_splitlist, METH_O, _tkinter_tkapp_splitlist__doc__},
 
-PyDoc_STRVAR(_tkinter_tkapp_split__doc__,
-"split($self, arg, /)\n"
-"--\n"
-"\n");
-
-#define _TKINTER_TKAPP_SPLIT_METHODDEF    \
-    {"split", (PyCFunction)_tkinter_tkapp_split, METH_O, _tkinter_tkapp_split__doc__},
-
 PyDoc_STRVAR(_tkinter_tkapp_createcommand__doc__,
 "createcommand($self, name, func, /)\n"
 "--\n"
@@ -867,4 +859,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=ab311480dd044fe4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b6d2dcb488c13aa7 input=a9049054013a1b77]*/

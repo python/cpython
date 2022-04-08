@@ -187,8 +187,13 @@ attributes:
 |           | co_name           | name with which this code |
 |           |                   | object was defined        |
 +-----------+-------------------+---------------------------+
-|           | co_names          | tuple of names of local   |
-|           |                   | variables                 |
+|           | co_qualname       | fully-qualified name with |
+|           |                   | which this code object    |
+|           |                   | was defined               |
++-----------+-------------------+---------------------------+
+|           | co_names          | tuple of names other      |
+|           |                   | than arguments and        |
+|           |                   | function locals           |
 +-----------+-------------------+---------------------------+
 |           | co_nlocals        | number of local variables |
 +-----------+-------------------+---------------------------+
@@ -269,6 +274,24 @@ attributes:
       :func:`getmembers` will only return class attributes defined in the
       metaclass when the argument is a class and those attributes have been
       listed in the metaclass' custom :meth:`__dir__`.
+
+
+.. function:: getmembers_static(object[, predicate])
+
+    Return all the members of an object in a list of ``(name, value)``
+    pairs sorted by name without triggering dynamic lookup via the descriptor
+    protocol, __getattr__ or __getattribute__. Optionally, only return members
+    that satisfy a given predicate.
+
+    .. note::
+
+        :func:`getmembers_static` may not be able to retrieve all members
+        that getmembers can fetch (like dynamically created attributes)
+        and may find members that getmembers can't (like descriptors
+        that raise AttributeError). It can also return descriptor objects
+        instead of instance members in some cases.
+
+    .. versionadded:: 3.11
 
 
 .. function:: getmodulename(path)
@@ -405,6 +428,14 @@ attributes:
 .. function:: isbuiltin(object)
 
    Return ``True`` if the object is a built-in function or a bound built-in method.
+
+
+.. function:: ismethodwrapper(object)
+
+   Return ``True`` if the type of object is a :class:`~types.MethodWrapperType`.
+
+   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object().__str__`,
+   :meth:`~object().__eq__` and :meth:`~object().__repr__`
 
 
 .. function:: isroutine(object)
@@ -931,26 +962,6 @@ Classes and functions
    times.
 
 
-.. function:: getargspec(func)
-
-   Get the names and default values of a Python function's parameters. A
-   :term:`named tuple` ``ArgSpec(args, varargs, keywords, defaults)`` is
-   returned. *args* is a list of the parameter names. *varargs* and *keywords*
-   are the names of the ``*`` and ``**`` parameters or ``None``. *defaults* is a
-   tuple of default argument values or ``None`` if there are no default
-   arguments; if this tuple has *n* elements, they correspond to the last
-   *n* elements listed in *args*.
-
-   .. deprecated:: 3.0
-      Use :func:`getfullargspec` for an updated API that is usually a drop-in
-      replacement, but also correctly handles function annotations and
-      keyword-only parameters.
-
-      Alternatively, use :func:`signature` and
-      :ref:`Signature Object <inspect-signature-object>`, which provide a
-      more structured introspection API for callables.
-
-
 .. function:: getfullargspec(func)
 
    Get the names and default values of a Python function's parameters.  A
@@ -1009,33 +1020,6 @@ Classes and functions
 
    .. note::
       This function was inadvertently marked as deprecated in Python 3.5.
-
-
-.. function:: formatargspec(args[, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations[, formatarg, formatvarargs, formatvarkw, formatvalue, formatreturns, formatannotations]])
-
-   Format a pretty argument spec from the values returned by
-   :func:`getfullargspec`.
-
-   The first seven arguments are (``args``, ``varargs``, ``varkw``,
-   ``defaults``, ``kwonlyargs``, ``kwonlydefaults``, ``annotations``).
-
-   The other six arguments are functions that are called to turn argument names,
-   ``*`` argument name, ``**`` argument name, default values, return annotation
-   and individual annotations into strings, respectively.
-
-   For example:
-
-   >>> from inspect import formatargspec, getfullargspec
-   >>> def f(a: int, b: float):
-   ...     pass
-   ...
-   >>> formatargspec(*getfullargspec(f))
-   '(a: int, b: float)'
-
-   .. deprecated:: 3.5
-      Use :func:`signature` and
-      :ref:`Signature Object <inspect-signature-object>`, which provide a
-      better introspecting API for callables.
 
 
 .. function:: formatargvalues(args[, varargs, varkw, locals, formatarg, formatvarargs, formatvarkw, formatvalue])
@@ -1449,10 +1433,6 @@ the following flags:
 
    The flag is set when the code object is a generator function, i.e.
    a generator object is returned when the code object is executed.
-
-.. data:: CO_NOFREE
-
-   The flag is set if there are no free or cell variables.
 
 .. data:: CO_COROUTINE
 

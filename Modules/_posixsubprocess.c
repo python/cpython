@@ -1,4 +1,8 @@
 /* Authors: Gregory P. Smith & Jeffrey Yasskin */
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_fileutils.h"
 #if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)
@@ -451,7 +455,7 @@ reset_signal_handlers(const sigset_t *child_sigmask)
  * If vfork-unsafe functionality is desired after vfork(), consider using
  * syscall() to obtain it.
  */
-_Py_NO_INLINE static void
+Py_NO_INLINE static void
 child_exec(char *const exec_array[],
            char *const argv[],
            char *const envp[],
@@ -650,7 +654,7 @@ error:
  * child_exec() should not be inlined to avoid spurious -Wclobber warnings from
  * GCC (see bpo-35823).
  */
-_Py_NO_INLINE static pid_t
+Py_NO_INLINE static pid_t
 do_fork_exec(char *const exec_array[],
              char *const argv[],
              char *const envp[],
@@ -681,6 +685,12 @@ do_fork_exec(char *const exec_array[],
         assert(preexec_fn == Py_None);
 
         pid = vfork();
+        if (pid == -1) {
+            /* If vfork() fails, fall back to using fork(). When it isn't
+             * allowed in a process by the kernel, vfork can return -1
+             * with errno EINVAL. https://bugs.python.org/issue47151. */
+            pid = fork();
+        }
     } else
 #endif
     {

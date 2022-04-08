@@ -1,2 +1,0 @@
-The parser will prioritize tokenizer errors over custom syntax errors when
-raising exceptions. Patch by Pablo Galindo.

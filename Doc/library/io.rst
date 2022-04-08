@@ -131,7 +131,7 @@ explicitly when opening text files. If you want to use UTF-8, pass
 ``encoding="utf-8"``. To use the current locale encoding,
 ``encoding="locale"`` is supported in Python 3.10.
 
-When you need to run existing code on Windows that attempts to opens
+When you need to run existing code on Windows that attempts to open
 UTF-8 files using the default locale encoding, you can enable the UTF-8
 mode. See :ref:`UTF-8 mode on Windows <win-utf8-mode>`.
 
@@ -198,12 +198,13 @@ High-level Module Interface
    This is a helper function for callables that use :func:`open` or
    :class:`TextIOWrapper` and have an ``encoding=None`` parameter.
 
-   This function returns *encoding* if it is not ``None`` and ``"locale"`` if
-   *encoding* is ``None``.
+   This function returns *encoding* if it is not ``None``.
+   Otherwise, it returns ``"locale"`` or ``"utf-8"`` depending on
+   :ref:`UTF-8 Mode <utf8-mode>`.
 
    This function emits an :class:`EncodingWarning` if
    :data:`sys.flags.warn_default_encoding <sys.flags>` is true and *encoding*
-   is None. *stacklevel* specifies where the warning is emitted.
+   is ``None``. *stacklevel* specifies where the warning is emitted.
    For example::
 
       def read_text(path, encoding=None):
@@ -217,6 +218,10 @@ High-level Module Interface
    See :ref:`io-text-encoding` for more information.
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.11
+      :func:`text_encoding` returns "utf-8" when UTF-8 mode is enabled and
+      *encoding* is ``None``.
 
 
 .. exception:: BlockingIOError
@@ -306,8 +311,7 @@ I/O Base Classes
 
 .. class:: IOBase
 
-   The abstract base class for all I/O classes, acting on streams of bytes.
-   There is no public constructor.
+   The abstract base class for all I/O classes.
 
    This class provides empty abstract implementations for many methods
    that derived classes can override selectively; the default
@@ -391,6 +395,9 @@ I/O Base Classes
       to control the number of lines read: no more lines will be read if the
       total size (in bytes/characters) of all lines so far exceeds *hint*.
 
+      *hint* values of ``0`` or less, as well as ``None``, are treated as no
+      hint.
+
       Note that it's already possible to iterate on file objects using ``for
       line in file: ...`` without calling ``file.readlines()``.
 
@@ -458,8 +465,7 @@ I/O Base Classes
 
 .. class:: RawIOBase
 
-   Base class for raw binary streams.  It inherits :class:`IOBase`.  There is no
-   public constructor.
+   Base class for raw binary streams.  It inherits :class:`IOBase`.
 
    Raw binary streams typically provide low-level access to an underlying OS
    device or API, and do not try to encapsulate it in high-level primitives
@@ -512,7 +518,7 @@ I/O Base Classes
 .. class:: BufferedIOBase
 
    Base class for binary streams that support some kind of buffering.
-   It inherits :class:`IOBase`. There is no public constructor.
+   It inherits :class:`IOBase`.
 
    The main difference with :class:`RawIOBase` is that methods :meth:`read`,
    :meth:`readinto` and :meth:`write` will try (respectively) to read as much
@@ -849,8 +855,7 @@ Text I/O
 .. class:: TextIOBase
 
    Base class for text streams.  This class provides a character and line based
-   interface to stream I/O.  It inherits :class:`IOBase`.  There is no public
-   constructor.
+   interface to stream I/O.  It inherits :class:`IOBase`.
 
    :class:`TextIOBase` provides or overrides these data attributes and
    methods in addition to those from :class:`IOBase`:

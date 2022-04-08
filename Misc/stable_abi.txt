@@ -10,44 +10,111 @@
 # and PC/pythonXYstub.def
 
 
+# The current format is a simple line-based one with significant indentation.
+# Anything after a hash is a comment.
+
+# There are these kinds of top-level "items":
+# - struct: A C struct. Currently this file does not distinguish between:
+#   - opaque structs, which the Limited API only handles via pointers
+#     (so these can change at any time)
+#   - structs where only certain members are part of the stable ABI (e.g.
+#     PyObject)
+#   - structs which must not be changed at all (e.g. PyType_Slot, which is
+#     fully defined and used in arrays)
+# - function: A function that must be kept available (and exported, i.e. not
+#   converted to a macro).
+# - const: A simple value, defined with `#define`.
+# - macro: A preprocessor macro more complex than a simple `const` value.
+# - data: An exported object, which must continue to be available but its exact
+#   value may change.
+# - typedef: A C typedef which is used in other definitions in the limited API.
+#   Its size/layout/signature must not change.
+
+# Each top-level item can have details defined below it:
+# - added: The version in which the item was added to the stable ABI.
+# - ifdef: A feature macro: the item is only available if this macro is defined
+# - abi_only: If present, the item is not part of the Limited API, but it *is*
+#   part of the stable ABI. The item will not show up in user-facing docs.
+#   Typically used for:
+#   - private functions called by public macros, e.g. _Py_BuildValue_SizeT
+#   - items that were part of the limited API in the past, and must remain part
+#     of the stable ABI.
+#   - a combination of the above (functions that were called by macros that
+#     were public in the past)
+
+# For structs, one of the following must be set:
+# - opaque: The struct name is available in the Limited API, but its members
+#   are not. Users must manipulate it via pointers.
+# - members: Space-separated list of members which are part of the
+#   Limited API and Stable ABI.
+#   Members that aren't listed are not accessible to applications.
+# - full-abi: The entire struct -- all its members and its size -- is part of
+#   the Stable ABI, and must not change.
+
+# Removing items from this file is generally not allowed, and additions should
+# be considered with that in mind. See the devguide for exact rules:
+#    https://devguide.python.org/c-api/#limited-api
+
+# User-facing docs are at:
+#    https://docs.python.org/3/c-api/stable.html#stable
+
+
 # Mentioned in PEP 384:
 
 struct PyObject
     added 3.2
+    members ob_refcnt ob_type
 struct PyVarObject
     added 3.2
+    members ob_base ob_size
 struct PyMethodDef
     added 3.2
+    full-abi
 struct PyMemberDef
     added 3.2
+    full-abi
 struct PyGetSetDef
     added 3.2
+    full-abi
 struct PyModuleDef_Base
     added 3.2
+    full-abi
 struct PyModuleDef
     added 3.2
+    full-abi
 struct PyStructSequence_Field
     added 3.2
+    full-abi
 struct PyStructSequence_Desc
     added 3.2
+    full-abi
 struct PyType_Slot
     added 3.2
+    full-abi
 struct PyType_Spec
     added 3.2
+    full-abi
 struct PyThreadState
     added 3.2
+    opaque
 struct PyInterpreterState
     added 3.2
+    opaque
 struct PyFrameObject
     added 3.2
+    opaque
 struct symtable
     added 3.2
+    opaque
 struct PyWeakReference
     added 3.2
+    opaque
 struct PyLongObject
     added 3.2
+    opaque
 struct PyTypeObject
     added 3.2
+    opaque
 
 function PyType_FromSpec
     added 3.2
@@ -259,11 +326,11 @@ typedef newfunc
     added 3.2
 typedef allocfunc
     added 3.2
-struct PyCFunction
+typedef PyCFunction
     added 3.2
-struct PyCFunctionWithKeywords
+typedef PyCFunctionWithKeywords
     added 3.2
-struct PyCapsule_Destructor
+typedef PyCapsule_Destructor
     added 3.2
 typedef getter
     added 3.2
@@ -285,7 +352,7 @@ macro Py_UNBLOCK_THREADS
 macro Py_END_ALLOW_THREADS
     added 3.2
 
-# The following were added in PC/python3.def in the intial stable ABI commit,
+# The following were added in PC/python3.def in the initial stable ABI commit,
 # 4d0d471a8031de90a2b1ce99c4ac4780e60b3bc9,
 # and later amendments in 3.2:
 # 0d012f284be829c6217f60523db0e1671b7db9d9
@@ -619,6 +686,8 @@ data PyExc_AttributeError
     added 3.2
 data PyExc_BaseException
     added 3.2
+data PyExc_BaseExceptionGroup
+    added 3.11
 data PyExc_BufferError
     added 3.2
 data PyExc_BytesWarning
@@ -1575,9 +1644,6 @@ function _PyObject_CallFunction_SizeT
 function _PyObject_CallMethod_SizeT
     added 3.2
     abi_only
-function _PyObject_GC_Malloc
-    added 3.2
-    abi_only
 function _PyObject_GC_New
     added 3.2
     abi_only
@@ -1600,12 +1666,6 @@ function _PyThreadState_Init
     added 3.2
     abi_only
 function _PyThreadState_Prealloc
-    added 3.2
-    abi_only
-function _PyTrash_deposit_object
-    added 3.2
-    abi_only
-function _PyTrash_destroy_chain
     added 3.2
     abi_only
 data _PyWeakref_CallableProxyType
@@ -1647,6 +1707,17 @@ data _Py_TrueStruct
 function _Py_VaBuildValue_SizeT
     added 3.2
     abi_only
+
+# Old buffer protocol support (deprecated)
+
+function PyObject_AsCharBuffer
+    added 3.2
+function PyObject_AsReadBuffer
+    added 3.2
+function PyObject_AsWriteBuffer
+    added 3.2
+function PyObject_CheckReadBuffer
+    added 3.2
 
 # Flags are implicitly part of the ABI:
 
@@ -1716,6 +1787,7 @@ function PyThread_get_stacksize
 function PyThread_get_thread_ident
     added 3.2
 function PyThread_get_thread_native_id
+    ifdef PY_HAVE_THREAD_NATIVE_ID
     added 3.2
 function PyThread_init_thread
     added 3.2
@@ -1920,12 +1992,6 @@ function Py_EncodeLocale
     added 3.7  # (and 3.6.1 and 3.5.3)
 function Py_SetPath
     added 3.7  # (and 3.6.1 and 3.5.3)
-function _PyTrash_thread_deposit_object
-    added 3.7  # (and 3.6.1 and 3.5.3)
-    abi_only
-function _PyTrash_thread_destroy_chain
-    added 3.7  # (and 3.6.1 and 3.5.3)
-    abi_only
 function PyErr_SetExcFromWindowsErr
     added 3.7  # (and 3.6.1 and 3.5.3)
     ifdef MS_WINDOWS
@@ -2111,9 +2177,9 @@ function _Py_IncRef
 function _Py_DecRef
     added 3.10
     abi_only
-function PyAiter_Check
+function PyAIter_Check
     added 3.10
-function PyObject_GetAiter
+function PyObject_GetAIter
     added 3.10
 data PyExc_EncodingWarning
     added 3.10
@@ -2144,6 +2210,46 @@ function PyGC_Enable
 function PyGC_IsEnabled
     added 3.10
 
+# Add new C API in Python 3.11
+
+function PyType_GetName
+    added 3.11
+function PyType_GetQualName
+    added 3.11
+data PyStructSequence_UnnamedField
+    added 3.11
+
+# Add stable Py_buffer API in Python 3.11 (https://bugs.python.org/issue45459)
+struct Py_buffer
+    added 3.11
+    full-abi
+function PyObject_CheckBuffer
+    added 3.11
+function PyObject_GetBuffer
+    added 3.11
+function PyBuffer_GetPointer
+    added 3.11
+function PyBuffer_SizeFromFormat
+    added 3.11
+function PyBuffer_ToContiguous
+    added 3.11
+function PyBuffer_FromContiguous
+    added 3.11
+function PyObject_CopyData
+    added 3.11
+function PyBuffer_IsContiguous
+    added 3.11
+function PyBuffer_FillContiguousStrides
+    added 3.11
+function PyBuffer_FillInfo
+    added 3.11
+function PyBuffer_Release
+    added 3.11
+function PyMemoryView_FromBuffer
+    added 3.11
 
 # (Detailed comments aren't really needed for further entries: from here on
 #  we can use version control logs.)
+
+data Py_Version
+    added 3.11

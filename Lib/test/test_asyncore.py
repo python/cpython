@@ -1,4 +1,3 @@
-import asyncore
 import unittest
 import select
 import os
@@ -18,6 +17,13 @@ from io import BytesIO
 
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
+
+support.requires_working_socket(module=True)
+
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asyncore
 
 
 HAS_UNIX_SOCKETS = hasattr(socket, 'AF_UNIX')

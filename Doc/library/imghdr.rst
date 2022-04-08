@@ -3,8 +3,12 @@
 
 .. module:: imghdr
    :synopsis: Determine the type of image contained in a file or byte stream.
+   :deprecated:
 
 **Source code:** :source:`Lib/imghdr.py`
+
+.. deprecated:: 3.11
+   The :mod:`imghdr` module is deprecated (see :pep:`594` for details).
 
 --------------
 

@@ -2743,6 +2743,20 @@ message 2
         self.assertEqual(str(cm.exception),
                          'There may be at most 1 To headers in a message')
 
+
+# Test the NonMultipart class
+class TestNonMultipart(TestEmailBase):
+    def test_nonmultipart_is_not_multipart(self):
+        msg = MIMENonMultipart('text', 'plain')
+        self.assertFalse(msg.is_multipart())
+
+    def test_attach_raises_exception(self):
+        msg = Message()
+        msg['Subject'] = 'subpart 1'
+        r = MIMENonMultipart('text', 'plain')
+        self.assertRaises(errors.MultipartConversionError, r.attach, msg)
+
+
 # A general test of parser->model->generator idempotency.  IOW, read a message
 # in, parse it into a message object tree, then without touching the tree,
 # regenerate the plain text.  The original text and the transformed text
@@ -3003,10 +3017,13 @@ class TestMiscellaneous(TestEmailBase):
     def test_parsedate_returns_None_for_invalid_strings(self):
         self.assertIsNone(utils.parsedate(''))
         self.assertIsNone(utils.parsedate_tz(''))
+        self.assertIsNone(utils.parsedate(' '))
+        self.assertIsNone(utils.parsedate_tz(' '))
         self.assertIsNone(utils.parsedate('0'))
         self.assertIsNone(utils.parsedate_tz('0'))
         self.assertIsNone(utils.parsedate('A Complete Waste of Time'))
         self.assertIsNone(utils.parsedate_tz('A Complete Waste of Time'))
+        self.assertIsNone(utils.parsedate_tz('Wed, 3 Apr 2002 12.34.56.78+0800'))
         # Not a part of the spec but, but this has historically worked:
         self.assertIsNone(utils.parsedate(None))
         self.assertIsNone(utils.parsedate_tz(None))
@@ -3263,6 +3280,12 @@ Foo
         addrs = utils.getaddresses(['User ((nested comment)) <foo@bar.com>'])
         eq(addrs[0][1], 'foo@bar.com')
 
+    def test_getaddresses_header_obj(self):
+        """Test the handling of a Header object."""
+        addrs = utils.getaddresses([Header('Al Person <aperson@dom.ain>')])
+        self.assertEqual(addrs[0][1], 'aperson@dom.ain')
+
+    @threading_helper.requires_working_threading()
     def test_make_msgid_collisions(self):
         # Test make_msgid uniqueness, even with multiple threads
         class MsgidsThread(Thread):

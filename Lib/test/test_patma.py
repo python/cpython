@@ -3,6 +3,7 @@ import collections
 import dataclasses
 import enum
 import inspect
+import sys
 import unittest
 
 
@@ -24,7 +25,43 @@ class TestCompiler(unittest.TestCase):
 
 class TestInheritance(unittest.TestCase):
 
-    def test_multiple_inheritance(self):
+    @staticmethod
+    def check_sequence_then_mapping(x):
+        match x:
+            case [*_]:
+                return "seq"
+            case {}:
+                return "map"
+
+    @staticmethod
+    def check_mapping_then_sequence(x):
+        match x:
+            case {}:
+                return "map"
+            case [*_]:
+                return "seq"
+
+    def test_multiple_inheritance_mapping(self):
+        class C:
+            pass
+        class M1(collections.UserDict, collections.abc.Sequence):
+            pass
+        class M2(C, collections.UserDict, collections.abc.Sequence):
+            pass
+        class M3(collections.UserDict, C, list):
+            pass
+        class M4(dict, collections.abc.Sequence, C):
+            pass
+        self.assertEqual(self.check_sequence_then_mapping(M1()), "map")
+        self.assertEqual(self.check_sequence_then_mapping(M2()), "map")
+        self.assertEqual(self.check_sequence_then_mapping(M3()), "map")
+        self.assertEqual(self.check_sequence_then_mapping(M4()), "map")
+        self.assertEqual(self.check_mapping_then_sequence(M1()), "map")
+        self.assertEqual(self.check_mapping_then_sequence(M2()), "map")
+        self.assertEqual(self.check_mapping_then_sequence(M3()), "map")
+        self.assertEqual(self.check_mapping_then_sequence(M4()), "map")
+
+    def test_multiple_inheritance_sequence(self):
         class C:
             pass
         class S1(collections.UserList, collections.abc.Mapping):
@@ -35,32 +72,60 @@ class TestInheritance(unittest.TestCase):
             pass
         class S4(collections.UserList, dict, C):
             pass
-        class M1(collections.UserDict, collections.abc.Sequence):
+        self.assertEqual(self.check_sequence_then_mapping(S1()), "seq")
+        self.assertEqual(self.check_sequence_then_mapping(S2()), "seq")
+        self.assertEqual(self.check_sequence_then_mapping(S3()), "seq")
+        self.assertEqual(self.check_sequence_then_mapping(S4()), "seq")
+        self.assertEqual(self.check_mapping_then_sequence(S1()), "seq")
+        self.assertEqual(self.check_mapping_then_sequence(S2()), "seq")
+        self.assertEqual(self.check_mapping_then_sequence(S3()), "seq")
+        self.assertEqual(self.check_mapping_then_sequence(S4()), "seq")
+
+    def test_late_registration_mapping(self):
+        class Parent:
             pass
-        class M2(C, collections.UserDict, collections.abc.Sequence):
+        class ChildPre(Parent):
             pass
-        class M3(collections.UserDict, C, list):
+        class GrandchildPre(ChildPre):
             pass
-        class M4(dict, collections.abc.Sequence, C):
+        collections.abc.Mapping.register(Parent)
+        class ChildPost(Parent):
             pass
-        def f(x):
-            match x:
-                case []:
-                    return "seq"
-                case {}:
-                    return "map"
-        def g(x):
-            match x:
-                case {}:
-                    return "map"
-                case []:
-                    return "seq"
-        for Seq in (S1, S2, S3, S4):
-            self.assertEqual(f(Seq()), "seq")
-            self.assertEqual(g(Seq()), "seq")
-        for Map in (M1, M2, M3, M4):
-            self.assertEqual(f(Map()), "map")
-            self.assertEqual(g(Map()), "map")
+        class GrandchildPost(ChildPost):
+            pass
+        self.assertEqual(self.check_sequence_then_mapping(Parent()), "map")
+        self.assertEqual(self.check_sequence_then_mapping(ChildPre()), "map")
+        self.assertEqual(self.check_sequence_then_mapping(GrandchildPre()), "map")
+        self.assertEqual(self.check_sequence_then_mapping(ChildPost()), "map")
+        self.assertEqual(self.check_sequence_then_mapping(GrandchildPost()), "map")
+        self.assertEqual(self.check_mapping_then_sequence(Parent()), "map")
+        self.assertEqual(self.check_mapping_then_sequence(ChildPre()), "map")
+        self.assertEqual(self.check_mapping_then_sequence(GrandchildPre()), "map")
+        self.assertEqual(self.check_mapping_then_sequence(ChildPost()), "map")
+        self.assertEqual(self.check_mapping_then_sequence(GrandchildPost()), "map")
+
+    def test_late_registration_sequence(self):
+        class Parent:
+            pass
+        class ChildPre(Parent):
+            pass
+        class GrandchildPre(ChildPre):
+            pass
+        collections.abc.Sequence.register(Parent)
+        class ChildPost(Parent):
+            pass
+        class GrandchildPost(ChildPost):
+            pass
+        self.assertEqual(self.check_sequence_then_mapping(Parent()), "seq")
+        self.assertEqual(self.check_sequence_then_mapping(ChildPre()), "seq")
+        self.assertEqual(self.check_sequence_then_mapping(GrandchildPre()), "seq")
+        self.assertEqual(self.check_sequence_then_mapping(ChildPost()), "seq")
+        self.assertEqual(self.check_sequence_then_mapping(GrandchildPost()), "seq")
+        self.assertEqual(self.check_mapping_then_sequence(Parent()), "seq")
+        self.assertEqual(self.check_mapping_then_sequence(ChildPre()), "seq")
+        self.assertEqual(self.check_mapping_then_sequence(GrandchildPre()), "seq")
+        self.assertEqual(self.check_mapping_then_sequence(ChildPost()), "seq")
+        self.assertEqual(self.check_mapping_then_sequence(GrandchildPost()), "seq")
 
 
 class TestPatma(unittest.TestCase):
@@ -2576,6 +2641,19 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f((False, range(-1, -11, -1), True)), alts[3])
         self.assertEqual(f((False, range(10, 20), True)), alts[4])
 
+    def test_patma_248(self):
+        class C(dict):
+            @staticmethod
+            def get(key, default=None):
+                return 'bar'
+
+        x = C({'foo': 'bar'})
+        match x:
+            case {'foo': bar}:
+                y = bar
+
+        self.assertEqual(y, 'bar')
+
 
 class TestSyntaxErrors(unittest.TestCase):
 
@@ -2837,6 +2915,40 @@ class TestSyntaxErrors(unittest.TestCase):
                 pass
         """)
 
+    def test_mapping_pattern_duplicate_key(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {"a": _, "a": _}:
+                pass
+        """)
+
+    def test_mapping_pattern_duplicate_key_edge_case0(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0: _, False: _}:
+                pass
+        """)
+
+    def test_mapping_pattern_duplicate_key_edge_case1(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0: _, 0.0: _}:
+                pass
+        """)
+
+    def test_mapping_pattern_duplicate_key_edge_case2(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0: _, -0: _}:
+                pass
+        """)
+
+    def test_mapping_pattern_duplicate_key_edge_case3(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0: _, 0j: _}:
+                pass
+        """)
 
 class TestTypeErrors(unittest.TestCase):
 
@@ -2944,17 +3056,6 @@ class TestTypeErrors(unittest.TestCase):
 
 class TestValueErrors(unittest.TestCase):
 
-    def test_mapping_pattern_checks_duplicate_key_0(self):
-        x = {"a": 0, "b": 1}
-        w = y = z = None
-        with self.assertRaises(ValueError):
-            match x:
-                case {"a": y, "a": z}:
-                    w = 0
-        self.assertIs(w, None)
-        self.assertIs(y, None)
-        self.assertIs(z, None)
-
     def test_mapping_pattern_checks_duplicate_key_1(self):
         class Keys:
             KEY = "a"
@@ -2967,6 +3068,88 @@ class TestValueErrors(unittest.TestCase):
         self.assertIs(w, None)
         self.assertIs(y, None)
         self.assertIs(z, None)
+
+
+class TestTracing(unittest.TestCase):
+
+    @staticmethod
+    def _trace(func, *args, **kwargs):
+        actual_linenos = []
+
+        def trace(frame, event, arg):
+            if event == "line" and frame.f_code.co_name == func.__name__:
+                assert arg is None
+                relative_lineno = frame.f_lineno - func.__code__.co_firstlineno
+                actual_linenos.append(relative_lineno)
+            return trace
+
+        old_trace = sys.gettrace()
+        sys.settrace(trace)
+        try:
+            func(*args, **kwargs)
+        finally:
+            sys.settrace(old_trace)
+        return actual_linenos
+
+    def test_default_wildcard(self):
+        def f(command):                                         # 0
+            match command.split():                              # 1
+                case ["go", direction] if direction in "nesw":  # 2
+                    return f"go {direction}"                    # 3
+                case ["go", _]:                                 # 4
+                    return "no go"                              # 5
+                case _:                                         # 6
+                    return "default"                            # 7
+
+        self.assertListEqual(self._trace(f, "go n"), [1, 2, 3])
+        self.assertListEqual(self._trace(f, "go x"), [1, 2, 4, 5])
+        self.assertListEqual(self._trace(f, "spam"), [1, 2, 4, 6, 7])
+
+    def test_default_capture(self):
+        def f(command):                                         # 0
+            match command.split():                              # 1
+                case ["go", direction] if direction in "nesw":  # 2
+                    return f"go {direction}"                    # 3
+                case ["go", _]:                                 # 4
+                    return "no go"                              # 5
+                case x:                                         # 6
+                    return x                                    # 7
+
+        self.assertListEqual(self._trace(f, "go n"), [1, 2, 3])
+        self.assertListEqual(self._trace(f, "go x"), [1, 2, 4, 5])
+        self.assertListEqual(self._trace(f, "spam"), [1, 2, 4, 6, 7])
+
+    def test_no_default(self):
+        def f(command):                                         # 0
+            match command.split():                              # 1
+                case ["go", direction] if direction in "nesw":  # 2
+                    return f"go {direction}"                    # 3
+                case ["go", _]:                                 # 4
+                    return "no go"                              # 5
+
+        self.assertListEqual(self._trace(f, "go n"), [1, 2, 3])
+        self.assertListEqual(self._trace(f, "go x"), [1, 2, 4, 5])
+        self.assertListEqual(self._trace(f, "spam"), [1, 2, 4])
+
+    def test_only_default_wildcard(self):
+        def f(command):               # 0
+            match command.split():    # 1
+                case _:               # 2
+                    return "default"  # 3
+
+        self.assertListEqual(self._trace(f, "go n"), [1, 2, 3])
+        self.assertListEqual(self._trace(f, "go x"), [1, 2, 3])
+        self.assertListEqual(self._trace(f, "spam"), [1, 2, 3])
+
+    def test_only_default_capture(self):
+        def f(command):             # 0
+            match command.split():  # 1
+                case x:             # 2
+                    return x        # 3
+
+        self.assertListEqual(self._trace(f, "go n"), [1, 2, 3])
+        self.assertListEqual(self._trace(f, "go x"), [1, 2, 3])
+        self.assertListEqual(self._trace(f, "spam"), [1, 2, 3])
 
 
 if __name__ == "__main__":

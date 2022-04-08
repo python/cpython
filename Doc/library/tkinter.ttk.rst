@@ -13,9 +13,7 @@
 --------------
 
 The :mod:`tkinter.ttk` module provides access to the Tk themed widget set,
-introduced in Tk 8.5. If Python has not been compiled against Tk 8.5, this
-module can still be accessed if *Tile* has been installed.  The former
-method using Tk 8.5 provides additional benefits including anti-aliased font
+introduced in Tk 8.5. It provides additional benefits including anti-aliased font
 rendering under X11 and window transparency (requiring a composition
 window manager on X11).
 
@@ -759,7 +757,7 @@ ones inherited from :class:`ttk.Widget`.
 Platform-specific notes
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-* On MacOS X, toplevel windows automatically include a built-in size grip
+* On macOS, toplevel windows automatically include a built-in size grip
   by default. Adding a :class:`Sizegrip` is harmless, since the built-in
   grip will just mask the widget.
 
