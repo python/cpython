@@ -3649,10 +3649,6 @@ handle_eval_breaker:
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-            PREDICT(POP_JUMP_FORWARD_IF_FALSE);
-            PREDICT(POP_JUMP_BACKWARD_IF_FALSE);
-            PREDICT(POP_JUMP_FORWARD_IF_TRUE);
-            PREDICT(POP_JUMP_BACKWARD_IF_TRUE);
             DISPATCH();
         }
 
@@ -3811,10 +3807,6 @@ handle_eval_breaker:
             SET_TOP(b);
             Py_DECREF(left);
             Py_DECREF(right);
-            PREDICT(POP_JUMP_FORWARD_IF_FALSE);
-            PREDICT(POP_JUMP_BACKWARD_IF_FALSE);
-            PREDICT(POP_JUMP_FORWARD_IF_TRUE);
-            PREDICT(POP_JUMP_BACKWARD_IF_TRUE);
             DISPATCH();
         }
 
@@ -3830,10 +3822,6 @@ handle_eval_breaker:
             PyObject *b = (res^oparg) ? Py_True : Py_False;
             Py_INCREF(b);
             PUSH(b);
-            PREDICT(POP_JUMP_FORWARD_IF_FALSE);
-            PREDICT(POP_JUMP_BACKWARD_IF_FALSE);
-            PREDICT(POP_JUMP_FORWARD_IF_TRUE);
-            PREDICT(POP_JUMP_BACKWARD_IF_TRUE);
             DISPATCH();
         }
 
