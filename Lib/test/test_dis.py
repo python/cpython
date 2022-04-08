@@ -684,7 +684,8 @@ class DisTests(DisTestBase):
     def test_widths(self):
         for opcode, opname in enumerate(dis.opname):
             if opname in ('BUILD_MAP_UNPACK_WITH_CALL',
-                          'BUILD_TUPLE_UNPACK_WITH_CALL'):
+                          'BUILD_TUPLE_UNPACK_WITH_CALL',
+                          'JUMP_BACKWARD_NO_INTERRUPT'):
                 continue
             with self.subTest(opname=opname):
                 width = dis._OPNAME_WIDTH

@@ -77,14 +77,22 @@
 #define SETUP_WITH -3
 #define POP_BLOCK -4
 #define JUMP -5
+#define JUMP_NO_INTERRUPT -6
 
-#define MIN_VIRTUAL_OPCODE -5
+#define MIN_VIRTUAL_OPCODE -6
 #define MAX_ALLOWED_OPCODE 254
 
 #define IS_WITHIN_OPCODE_RANGE(opcode) \
         ((opcode) >= MIN_VIRTUAL_OPCODE && (opcode) <= MAX_ALLOWED_OPCODE)
 
 #define IS_VIRTUAL_OPCODE(opcode) ((opcode) < 0)
+
+/* opcodes which are not emitted in codegen stage, only by the assembler */
+#define IS_ASSEMBLER_OPCODE(opcode) \
+        ((opcode) == JUMP_FORWARD || \
+         (opcode) == JUMP_BACKWARD || \
+         (opcode) == JUMP_BACKWARD_NO_INTERRUPT)
+
 
 #define IS_TOP_LEVEL_AWAIT(c) ( \
         (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
@@ -1000,8 +1008,8 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case CHECK_EXC_MATCH:
             return 0;
-        case JUMP_IF_NOT_EG_MATCH:
-            return jump > 0 ? -1 : 0;
+        case CHECK_EG_MATCH:
+            return 0;
         case IMPORT_NAME:
             return -1;
         case IMPORT_FROM:
@@ -1011,6 +1019,7 @@ stack_effect(int opcode, int oparg, int jump)
         case JUMP_FORWARD:
         case JUMP_BACKWARD:
         case JUMP:
+        case JUMP_BACKWARD_NO_INTERRUPT:
         case JUMP_NO_INTERRUPT:
             return 0;
 
@@ -1199,6 +1208,7 @@ compiler_addop_line(struct compiler *c, int opcode, int line,
                     int end_line, int col_offset, int end_col_offset)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
+    assert(!IS_ASSEMBLER_OPCODE(opcode));
     assert(!HAS_ARG(opcode) || IS_ARTIFICIAL(opcode));
 
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
@@ -1442,6 +1452,7 @@ compiler_addop_i_line(struct compiler *c, int opcode, Py_ssize_t oparg,
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
+    assert(!IS_ASSEMBLER_OPCODE(opcode));
     assert(HAS_ARG(opcode));
     assert(0 <= oparg && oparg <= 2147483647);
 
@@ -1486,6 +1497,7 @@ static int add_jump_to_block(struct compiler *c, int opcode,
                              basicblock *target)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
+    assert(!IS_ASSEMBLER_OPCODE(opcode));
     assert(HAS_ARG(opcode) || IS_VIRTUAL_OPCODE(opcode));
     assert(target != NULL);
 
@@ -3533,14 +3545,18 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    []                                         POP_BLOCK
    []                                         JUMP                  L0
 
-   [exc]                            L1:       COPY 1      )  save copy of the original exception
+   [exc]                            L1:       COPY 1       )  save copy of the original exception
    [orig, exc]                                BUILD_LIST   )  list for raised/reraised excs ("result")
    [orig, exc, res]                           SWAP 2
 
    [orig, res, exc]                           <evaluate E1>
-   [orig, res, exc, E1]                       JUMP_IF_NOT_EG_MATCH L2
+   [orig, res, exc, E1]                       CHECK_EG_MATCH
+   [orig, red, rest/exc, match?]              COPY 1
+   [orig, red, rest/exc, match?, match?]      POP_JUMP_IF_NOT_NONE  H1
+   [orig, red, exc, None]                     POP_TOP
+   [orig, red, exc]                           JUMP L2
 
-   [orig, res, rest, match]                   <assign to V1>  (or POP if no V1)
+   [orig, res, rest, match]         H1:       <assign to V1>  (or POP if no V1)
 
    [orig, res, rest]                          SETUP_FINALLY         R1
    [orig, res, rest]                          <code for S1>
@@ -3622,6 +3638,10 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         if (except == NULL) {
             return 0;
         }
+        basicblock *handle_match = compiler_new_block(c);
+        if (handle_match == NULL) {
+            return 0;
+        }
         if (i == 0) {
             /* Push the original EG into the stack */
             /*
@@ -3641,8 +3661,14 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         }
         if (handler->v.ExceptHandler.type) {
             VISIT(c, expr, handler->v.ExceptHandler.type);
-            ADDOP_JUMP(c, JUMP_IF_NOT_EG_MATCH, except);
+            ADDOP(c, CHECK_EG_MATCH);
+            ADDOP_I(c, COPY, 1);
+            ADDOP_JUMP(c, POP_JUMP_IF_NOT_NONE, handle_match);
+            ADDOP(c, POP_TOP);  // match
+            ADDOP_JUMP(c, JUMP, except);
         }
+
+        compiler_use_next_block(c, handle_match);
 
         basicblock *cleanup_end = compiler_new_block(c);
         if (cleanup_end == NULL) {
@@ -3657,7 +3683,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
         }
         else {
-            ADDOP(c, POP_TOP);  // exc
+            ADDOP(c, POP_TOP);  // match
         }
 
         /*
@@ -7075,8 +7101,7 @@ stackdepth(struct compiler *c)
                 stackdepth_push(&sp, instr->i_target, target_depth);
             }
             depth = new_depth;
-            assert(instr->i_opcode != JUMP_FORWARD);
-            assert(instr->i_opcode != JUMP_BACKWARD);
+            assert(!IS_ASSEMBLER_OPCODE(instr->i_opcode));
             if (instr->i_opcode == JUMP_NO_INTERRUPT ||
                 instr->i_opcode == JUMP ||
                 instr->i_opcode == RETURN_VALUE ||
@@ -7583,15 +7608,15 @@ normalize_jumps(struct assembler *a)
             continue;
         }
         struct instr *last = &b->b_instr[b->b_iused-1];
-        assert(last->i_opcode != JUMP_FORWARD);
-        assert(last->i_opcode != JUMP_BACKWARD);
+        assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
         if (last->i_opcode == JUMP) {
-            if (last->i_target->b_visited == 0) {
-                last->i_opcode = JUMP_FORWARD;
-            }
-            else {
-                last->i_opcode = JUMP_BACKWARD;
-            }
+            bool is_forward = last->i_target->b_visited == 0;
+            last->i_opcode = is_forward ? JUMP_FORWARD : JUMP_BACKWARD;
+        }
+        if (last->i_opcode == JUMP_NO_INTERRUPT) {
+            bool is_forward = last->i_target->b_visited == 0;
+            last->i_opcode = is_forward ?
+                             JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
         }
     }
 }
@@ -7627,11 +7652,13 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
                     instr->i_oparg = instr->i_target->b_offset;
                     if (is_relative_jump(instr)) {
                         if (instr->i_oparg < bsize) {
-                            assert(instr->i_opcode == JUMP_BACKWARD);
+                            assert(instr->i_opcode == JUMP_BACKWARD ||
+                                   instr->i_opcode == JUMP_BACKWARD_NO_INTERRUPT);
                             instr->i_oparg = bsize - instr->i_oparg;
                         }
                         else {
                             assert(instr->i_opcode != JUMP_BACKWARD);
+                            assert(instr->i_opcode != JUMP_BACKWARD_NO_INTERRUPT);
                             instr->i_oparg -= bsize;
                         }
                     }
@@ -8653,14 +8680,12 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 inst->i_target = inst->i_target->b_next;
             }
             target = &inst->i_target->b_instr[0];
-            assert(target->i_opcode != JUMP_FORWARD);
-            assert(target->i_opcode != JUMP_BACKWARD);
+            assert(!IS_ASSEMBLER_OPCODE(target->i_opcode));
         }
         else {
             target = &nop;
         }
-        assert(inst->i_opcode != JUMP_FORWARD);
-        assert(inst->i_opcode != JUMP_BACKWARD);
+        assert(!IS_ASSEMBLER_OPCODE(inst->i_opcode));
         switch (inst->i_opcode) {
             /* Remove LOAD_CONST const; conditional jump */
             case LOAD_CONST:
@@ -8961,8 +8986,7 @@ normalize_basic_block(basicblock *bb) {
     /* Mark blocks as exit and/or nofallthrough.
      Raise SystemError if CFG is malformed. */
     for (int i = 0; i < bb->b_iused; i++) {
-        assert(bb->b_instr[i].i_opcode != JUMP_FORWARD);
-        assert(bb->b_instr[i].i_opcode != JUMP_BACKWARD);
+        assert(!IS_ASSEMBLER_OPCODE(bb->b_instr[i].i_opcode));
         switch(bb->b_instr[i].i_opcode) {
             case RETURN_VALUE:
             case RAISE_VARARGS:
@@ -9149,8 +9173,7 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         if (b->b_iused > 0) {
             struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
-            assert(b_last_instr->i_opcode != JUMP_FORWARD);
-            assert(b_last_instr->i_opcode != JUMP_BACKWARD);
+            assert(!IS_ASSEMBLER_OPCODE(b_last_instr->i_opcode));
             if (b_last_instr->i_opcode == JUMP ||
                 b_last_instr->i_opcode == JUMP_NO_INTERRUPT) {
                 if (b_last_instr->i_target == b->b_next) {

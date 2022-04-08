@@ -21,8 +21,8 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
-#include "code.h"
 #include "pycore_dict.h"
 #include "dictobject.h"
 #include "frameobject.h"
@@ -58,12 +58,10 @@ static int prtrace(PyThreadState *, PyObject *, const char *);
 static void lltrace_instruction(_PyInterpreterFrame *frame, int opcode, int oparg)
 {
     if (HAS_ARG(opcode)) {
-        printf("%d: %d, %d\n",
-                frame->f_lasti, opcode, oparg);
+        printf("%d: %d, %d\n", _PyInterpreterFrame_LASTI(frame), opcode, oparg);
     }
     else {
-        printf("%d: %d\n",
-                frame->f_lasti, opcode);
+        printf("%d: %d\n", _PyInterpreterFrame_LASTI(frame), opcode);
     }
 }
 #endif
@@ -1249,14 +1247,13 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #ifdef Py_STATS
 #define INSTRUCTION_START(op) \
     do { \
-        frame->f_lasti = INSTR_OFFSET(); \
-        next_instr++; \
+        frame->prev_instr = next_instr++; \
         OPCODE_EXE_INC(op); \
         _py_stats.opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
-#define INSTRUCTION_START(op) frame->f_lasti = INSTR_OFFSET(); next_instr++
+#define INSTRUCTION_START(op) (frame->prev_instr = next_instr++)
 #endif
 
 #if USE_COMPUTED_GOTOS
@@ -1292,6 +1289,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
     }
 
 #define CHECK_EVAL_BREAKER() \
+    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
     if (_Py_atomic_load_relaxed(eval_breaker)) { \
         goto handle_eval_breaker; \
     }
@@ -1645,9 +1643,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         consts = co->co_consts; \
         first_instr = _PyCode_CODE(co); \
     } \
-    assert(frame->f_lasti >= -1); \
+    assert(_PyInterpreterFrame_LASTI(frame) >= -1); \
     /* Jump back to the last instruction executed... */ \
-    next_instr = first_instr + frame->f_lasti + 1; \
+    next_instr = frame->prev_instr + 1; \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
     /* Set stackdepth to -1. \
         Update when returning or calling trace function. \
@@ -2203,7 +2201,8 @@ handle_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            frame->f_lasti += INLINE_CACHE_ENTRIES_BINARY_SUBSCR;
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            frame->prev_instr = next_instr - 1;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             CALL_STAT_INC(inlined_py_calls);
@@ -2604,7 +2603,7 @@ handle_eval_breaker:
             if (oparg) {
                 PyObject *lasti = PEEK(oparg + 1);
                 if (PyLong_Check(lasti)) {
-                    frame->f_lasti = PyLong_AsLong(lasti);
+                    frame->prev_instr = first_instr + PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
                 }
                 else {
@@ -3802,7 +3801,7 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(JUMP_IF_NOT_EG_MATCH) {
+        TARGET(CHECK_EG_MATCH) {
             PyObject *match_type = POP();
             if (check_except_star_type_valid(tstate, match_type) < 0) {
                 Py_DECREF(match_type);
@@ -3823,15 +3822,11 @@ handle_eval_breaker:
                 assert(rest == NULL);
                 goto error;
             }
-
             if (Py_IsNone(match)) {
-                Py_DECREF(match);
+                PUSH(match);
                 Py_XDECREF(rest);
-                /* no match - jump to target */
-                JUMPTO(oparg);
             }
             else {
-
                 /* Total or partial match - update the stack from
                  * [val]
                  * to
@@ -3839,17 +3834,11 @@ handle_eval_breaker:
                  * (rest can be Py_None)
                  */
 
-                PyObject *exc = TOP();
-
                 SET_TOP(rest);
                 PUSH(match);
-
                 PyErr_SetExcInfo(NULL, Py_NewRef(match), NULL);
-
-                Py_DECREF(exc);
-
+                Py_DECREF(exc_value);
             }
-
             DISPATCH();
         }
 
@@ -4053,13 +4042,13 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(JUMP_NO_INTERRUPT) {
+        TARGET(JUMP_BACKWARD_NO_INTERRUPT) {
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
              * generator or coroutine, so we deliberately do not check it here.
              * (see bpo-30039).
              */
-            JUMPTO(oparg);
+            JUMPBY(-oparg);
             DISPATCH();
         }
 
@@ -4612,7 +4601,8 @@ handle_eval_breaker:
                     goto error;
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                frame->f_lasti += INLINE_CACHE_ENTRIES_CALL;
+                JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+                frame->prev_instr = next_instr - 1;
                 new_frame->previous = frame;
                 cframe.current_frame = frame = new_frame;
                 CALL_STAT_INC(inlined_py_calls);
@@ -4717,7 +4707,8 @@ handle_eval_breaker:
             }
             STACK_SHRINK(2-is_meth);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            frame->f_lasti += INLINE_CACHE_ENTRIES_CALL;
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            frame->prev_instr = next_instr - 1;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             goto start_frame;
@@ -4757,7 +4748,8 @@ handle_eval_breaker:
             }
             STACK_SHRINK(2-is_meth);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            frame->f_lasti += INLINE_CACHE_ENTRIES_CALL;
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            frame->prev_instr = next_instr - 1;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             goto start_frame;
@@ -5038,15 +5030,15 @@ handle_eval_breaker:
             PyObject *list = SECOND();
             DEOPT_IF(!PyList_Check(list), PRECALL);
             STAT_INC(PRECALL, hit);
-            SKIP_CALL();
+            // PRECALL + CALL + POP_TOP
+            JUMPBY(INLINE_CACHE_ENTRIES_PRECALL + 1 + INLINE_CACHE_ENTRIES_CALL + 1);
+            assert(_Py_OPCODE(next_instr[-1]) == POP_TOP);
             PyObject *arg = POP();
             if (_PyList_AppendTakeRef((PyListObject *)list, arg) < 0) {
                 goto error;
             }
+            STACK_SHRINK(2);
             Py_DECREF(list);
-            STACK_SHRINK(1);
-            Py_INCREF(Py_None);
-            SET_TOP(Py_None);
             Py_DECREF(callable);
             NOTRACE_DISPATCH();
         }
@@ -5444,8 +5436,8 @@ handle_eval_breaker:
 #endif
     {
         if (tstate->tracing == 0) {
-            int instr_prev = frame->f_lasti;
-            frame->f_lasti = INSTR_OFFSET();
+            int instr_prev = _PyInterpreterFrame_LASTI(frame);
+            frame->prev_instr = next_instr;
             TRACING_NEXTOPARG();
             switch(opcode) {
                 case COPY_FREE_VARS:
@@ -5483,7 +5475,7 @@ handle_eval_breaker:
                             goto error;
                         }
                         /* Reload possibly changed frame fields */
-                        JUMPTO(frame->f_lasti);
+                        next_instr = frame->prev_instr;
 
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         frame->stacktop = -1;
@@ -5500,10 +5492,8 @@ handle_eval_breaker:
 #else
         default:
 #endif
-            fprintf(stderr,
-                "XXX lineno: %d, opcode: %d\n",
-                PyCode_Addr2Line(frame->f_code, frame->f_lasti*sizeof(_Py_CODEUNIT)),
-                opcode);
+            fprintf(stderr, "XXX lineno: %d, opcode: %d\n",
+                    _PyInterpreterFrame_GetLine(frame),  opcode);
             _PyErr_SetString(tstate, PyExc_SystemError, "unknown opcode");
             goto error;
 
@@ -5607,7 +5597,8 @@ exception_unwind:
             }
             PyObject *exc, *val, *tb;
             if (lasti) {
-                PyObject *lasti = PyLong_FromLong(frame->f_lasti);
+                int frame_lasti = _PyInterpreterFrame_LASTI(frame);
+                PyObject *lasti = PyLong_FromLong(frame_lasti);
                 if (lasti == NULL) {
                     goto exception_unwind;
                 }
@@ -6699,9 +6690,10 @@ call_trace(Py_tracefunc func, PyObject *obj,
     int old_what = tstate->tracing_what;
     tstate->tracing_what = what;
     PyThreadState_EnterTracing(tstate);
-    assert(frame->f_lasti >= 0);
+    assert(_PyInterpreterFrame_LASTI(frame) >= 0);
     initialize_trace_info(&tstate->trace_info, frame);
-    f->f_lineno = _PyCode_CheckLineNumber(frame->f_lasti*sizeof(_Py_CODEUNIT), &tstate->trace_info.bounds);
+    int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
+    f->f_lineno = _PyCode_CheckLineNumber(addr, &tstate->trace_info.bounds);
     result = func(obj, f, what, arg);
     f->f_lineno = 0;
     PyThreadState_LeaveTracing(tstate);
@@ -6751,7 +6743,8 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     else {
         lastline = _PyCode_CheckLineNumber(instr_prev*sizeof(_Py_CODEUNIT), &tstate->trace_info.bounds);
     }
-    int line = _PyCode_CheckLineNumber(frame->f_lasti*sizeof(_Py_CODEUNIT), &tstate->trace_info.bounds);
+    int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
+    int line = _PyCode_CheckLineNumber(addr, &tstate->trace_info.bounds);
     PyFrameObject *f = _PyFrame_GetFrameObject(frame);
     if (f == NULL) {
         return -1;
@@ -6759,10 +6752,10 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     if (line != -1 && f->f_trace_lines) {
         /* Trace backward edges (except in 'yield from') or if line number has changed */
         int trace = line != lastline ||
-            (frame->f_lasti < instr_prev &&
-            // SEND has no quickened forms, so no need to use _PyOpcode_Deopt
-            // here:
-            _Py_OPCODE(_PyCode_CODE(frame->f_code)[frame->f_lasti]) != SEND);
+            (_PyInterpreterFrame_LASTI(frame) < instr_prev &&
+             // SEND has no quickened forms, so no need to use _PyOpcode_Deopt
+             // here:
+             _Py_OPCODE(*frame->prev_instr) != SEND);
         if (trace) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
@@ -7694,7 +7687,7 @@ dtrace_function_entry(_PyInterpreterFrame *frame)
     PyCodeObject *code = frame->f_code;
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
-    lineno = PyCode_Addr2Line(frame->f_code, frame->f_lasti*sizeof(_Py_CODEUNIT));
+    lineno = _PyInterpreterFrame_GetLine(frame);
 
     PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
 }
@@ -7709,7 +7702,7 @@ dtrace_function_return(_PyInterpreterFrame *frame)
     PyCodeObject *code = frame->f_code;
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
-    lineno = PyCode_Addr2Line(frame->f_code, frame->f_lasti*sizeof(_Py_CODEUNIT));
+    lineno = _PyInterpreterFrame_GetLine(frame);
 
     PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
 }
@@ -7727,11 +7720,12 @@ maybe_dtrace_line(_PyInterpreterFrame *frame,
     */
     initialize_trace_info(trace_info, frame);
     int lastline = _PyCode_CheckLineNumber(instr_prev*sizeof(_Py_CODEUNIT), &trace_info->bounds);
-    int line = _PyCode_CheckLineNumber(frame->f_lasti*sizeof(_Py_CODEUNIT), &trace_info->bounds);
+    int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
+    int line = _PyCode_CheckLineNumber(addr, &trace_info->bounds);
     if (line != -1) {
         /* Trace backward edges or first instruction of a new line */
-        if (frame->f_lasti < instr_prev ||
-            (line != lastline && frame->f_lasti*sizeof(_Py_CODEUNIT) == (unsigned int)trace_info->bounds.ar_start))
+        if (_PyInterpreterFrame_LASTI(frame) < instr_prev ||
+            (line != lastline && addr == trace_info->bounds.ar_start))
         {
             co_filename = PyUnicode_AsUTF8(frame->f_code->co_filename);
             if (!co_filename) {

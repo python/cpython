@@ -635,6 +635,28 @@ iterations of the loop.
 
    .. versionadded:: 3.11
 
+.. opcode:: CHECK_EG_MATCH
+
+   Performs exception matching for ``except*``. Applies ``split(TOS)`` on
+   the exception group representing TOS1.
+
+   In case of a match, pops two items from the stack and pushes the
+   non-matching subgroup (``None`` in case of full match) followed by the
+   matching subgroup. When there is no match, pops one item (the match
+   type) and pushes ``None``.
+
+   .. versionadded:: 3.11
+
+.. opcode:: PREP_RERAISE_STAR
+
+   Combines the raised and reraised exceptions list from TOS, into an exception
+   group to propagate from a try-except* block. Uses the original exception
+   group from TOS1 to reconstruct the structure of reraised exceptions. Pops
+   two items from the stack and pushes the exception to reraise or ``None``
+   if there isn't one.
+
+   .. versionadded:: 3.11
+
 .. opcode:: WITH_EXCEPT_START
 
     Calls the function in position 4 on the stack with arguments (type, val, tb)
@@ -903,7 +925,14 @@ iterations of the loop.
 
 .. opcode:: JUMP_BACKWARD (delta)
 
-   Decrements bytecode counter by *delta*.
+   Decrements bytecode counter by *delta*. Checks for interrupts.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: JUMP_BACKWARD_NO_INTERRUPT (delta)
+
+   Decrements bytecode counter by *delta*. Does not check for interrupts.
 
    .. versionadded:: 3.11
 
@@ -922,18 +951,6 @@ iterations of the loop.
    .. versionadded:: 3.1
 
 
-.. opcode:: JUMP_IF_NOT_EG_MATCH (target)
-
-   Performs exception matching for ``except*``. Applies ``split(TOS)`` on
-   the exception group representing TOS1. Jumps if no match is found.
-
-   Pops one item from the stack (the match type). If a match was found,
-   next item (the exception) and pushes the non-matching part of the
-   exception group followed by the matching part.
-
-   .. versionadded:: 3.11
-
-
 .. opcode:: POP_JUMP_IF_NOT_NONE (target)
 
    If TOS is not none, sets the bytecode counter to *target*.  TOS is popped.
@@ -944,17 +961,6 @@ iterations of the loop.
 .. opcode:: POP_JUMP_IF_NONE (target)
 
    If TOS is none, sets the bytecode counter to *target*.  TOS is popped.
-
-   .. versionadded:: 3.11
-
-
-.. opcode:: PREP_RERAISE_STAR
-
-   Combines the raised and reraised exceptions list from TOS, into an exception
-   group to propagate from a try-except* block. Uses the original exception
-   group from TOS1 to reconstruct the structure of reraised exceptions. Pops
-   two items from the stack and pushes the exception to reraise or ``None``
-   if there isn't one.
 
    .. versionadded:: 3.11
 
@@ -973,13 +979,6 @@ iterations of the loop.
    stack.  Otherwise (TOS is true), TOS is popped.
 
    .. versionadded:: 3.1
-
-
-.. opcode:: JUMP_NO_INTERRUPT (target)
-
-   Set bytecode counter to *target*. Do not check for interrupts.
-
-   .. versionadded:: 3.11
 
 
 .. opcode:: FOR_ITER (delta)

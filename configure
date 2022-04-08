@@ -817,6 +817,8 @@ TRUE
 MACHDEP_OBJS
 DYNLOADFILE
 DLINCLDIR
+PLATFORM_OBJS
+PLATFORM_HEADERS
 DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
@@ -1015,6 +1017,7 @@ with_framework_name
 enable_framework
 with_cxx_main
 with_emscripten_target
+enable_wasm_dynamic_linking
 with_suffix
 enable_shared
 with_static_libpython
@@ -1728,6 +1731,9 @@ Optional Features:
                           Unix install. optional INSTALLDIR specifies the
                           installation path. see Mac/README.rst (default is
                           no)
+  --enable-wasm-dynamic-linking
+                          Enable dynamic linking support for WebAssembly
+                          (default is no)
   --enable-shared         enable building a shared Python library (default is
                           no)
   --enable-profiling      enable C-level code profiling with gprof (default is
@@ -1736,8 +1742,8 @@ Optional Features:
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-loadable-sqlite-extensions
-                          support loadable extensions in _sqlite module, see
-                          Doc/library/sqlite3.rst (default is no)
+                          support loadable extensions in the sqlite3 module,
+                          see Doc/library/sqlite3.rst (default is no)
   --enable-ipv6           enable ipv6 (with ipv4) support, see
                           Doc/library/socket.rst (default is yes if supported)
   --enable-big-digits[=15|30]
@@ -6288,6 +6294,30 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_sys_emscripten_target" >&5
 $as_echo "$ac_sys_emscripten_target" >&6; }
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-wasm-dynamic-linking" >&5
+$as_echo_n "checking for --enable-wasm-dynamic-linking... " >&6; }
+# Check whether --enable-wasm-dynamic-linking was given.
+if test "${enable_wasm_dynamic_linking+set}" = set; then :
+  enableval=$enable_wasm_dynamic_linking;
+  case $ac_sys_system in #(
+  Emscripten) :
+     ;; #(
+  WASI) :
+    as_fn_error $? "WASI dynamic linking is not implemented yet." "$LINENO" 5 ;; #(
+  *) :
+    as_fn_error $? "--enable-wasm-dynamic-linking only applies to Emscripten and WASI" "$LINENO" 5
+   ;;
+esac
+
+else
+
+  enable_wasm_dynamic_linking=missing
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_wasm_dynamic_linking" >&5
+$as_echo "$enable_wasm_dynamic_linking" >&6; }
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-suffix" >&5
 $as_echo_n "checking for --with-suffix... " >&6; }
 
@@ -6308,7 +6338,7 @@ else
 
   case $ac_sys_system/$ac_sys_emscripten_target in #(
   Emscripten/browser*) :
-    EXEEXT=.html ;; #(
+    EXEEXT=.js ;; #(
   Emscripten/node*) :
     EXEEXT=.js ;; #(
   WASI/*) :
@@ -7758,18 +7788,20 @@ then
 fi
 
 # WASM flags
-# TODO: Add -s MAIN_MODULE=2 for dlopen() support.
-# The option disables code elimination, which increases code size of main
-# binary. All objects must be built with -fPIC.
 case $ac_sys_system/$ac_sys_emscripten_target in #(
   Emscripten/browser*) :
 
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1"
-    LINKFORSHARED="--preload-file \$(WASM_ASSETS_DIR)"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH=1"
+    LINKFORSHARED="--preload-file=\$(WASM_ASSETS_DIR)"
+    if test "x$enable_wasm_dynamic_linking" = xyes; then :
+
+      as_fn_append LINKFORSHARED " -sMAIN_MODULE=1"
+
+fi
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
         if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "browser-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS=1"
       LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
     else
       LINKFORSHARED="$LINKFORSHARED -O2 -g0"
@@ -7777,11 +7809,16 @@ case $ac_sys_system/$ac_sys_emscripten_target in #(
    ;; #(
   Emscripten/node*) :
 
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s USE_PTHREADS=1"
-    LINKFORSHARED="-s PROXY_TO_PTHREAD=1 -s EXIT_RUNTIME=1"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH=1 -sNODERAWFS=1 -sUSE_PTHREADS=1"
+    LINKFORSHARED="-sPROXY_TO_PTHREAD=1 -sEXIT_RUNTIME=1"
+    if test "x$enable_wasm_dynamic_linking" = xyes; then :
+
+      as_fn_append LINKFORSHARED " -sMAIN_MODULE=1"
+
+fi
     CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
     if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "node-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1"
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS=1"
       LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
     else
       LINKFORSHARED="$LINKFORSHARED -O2 -g0"
@@ -7800,6 +7837,18 @@ $as_echo "#define _WASI_EMULATED_PROCESS_CLOCKS 1" >>confdefs.h
 
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
+
+ ;; #(
+  *) :
+     ;;
+esac
+
+case $enable_wasm_dynamic_linking in #(
+  yes) :
+    ac_cv_func_dlopen=yes ;; #(
+  no) :
+    ac_cv_func_dlopen=no ;; #(
+  missing) :
 
  ;; #(
   *) :
@@ -10467,10 +10516,6 @@ then
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
-	Emscripten*)
-		LDSHARED='$(CC) -shared -s SIDE_MODULE=1'
-		LDCXXSHARED='$(CXX) -shared -s SIDE_MODULE=1'
-    ;;
 	FreeBSD*)
 		if [ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]
 		then
@@ -10509,16 +10554,32 @@ then
 	SCO_SV*)
 		LDSHARED='$(CC) -Wl,-G,-Bexport'
 		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
+	WASI*)
+		if test "x$enable_wasm_dynamic_linking" = xyes; then :
+
+
+fi;;
 	CYGWIN*)
 		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
 		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
 	*)	LDSHARED="ld";;
 	esac
 fi
+
+if test "$enable_wasm_dynamic_linking" = "yes" -a "$ac_sys_system" = "Emscripten"; then
+  BLDSHARED='$(CC) -shared -sSIDE_MODULE=1 -sWASM=1'
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDSHARED" >&5
 $as_echo "$LDSHARED" >&6; }
 LDCXXSHARED=${LDCXXSHARED-$LDSHARED}
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking BLDSHARED flags" >&5
+$as_echo_n "checking BLDSHARED flags... " >&6; }
 BLDSHARED=${BLDSHARED-$LDSHARED}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $BLDSHARED" >&5
+$as_echo "$BLDSHARED" >&6; }
+
 # CCSHARED are the C *flags* used to create objects to go into a shared
 # library (module) -- this is only needed for a few systems
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking CCSHARED" >&5
@@ -10538,6 +10599,12 @@ then
 		 fi;;
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
+	Emscripten*|WASI*)
+		if test "x$enable_wasm_dynamic_linking" = xyes; then :
+
+			CCSHARED="-fPIC"
+
+fi;;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
@@ -10645,6 +10712,13 @@ then
 		CFLAGSFORSHARED='$(CCSHARED)'
 	esac
 fi
+
+if test "x$enable_wasm_dynamic_linking" = xyes; then :
+
+  CFLAGSFORSHARED='$(CCSHARED)'
+
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CFLAGSFORSHARED" >&5
 $as_echo "$CFLAGSFORSHARED" >&6; }
 
@@ -12188,10 +12262,13 @@ $as_echo "yes" >&6; }
 fi
 as_fn_append LIBSQLITE3_CFLAGS ' -I$(srcdir)/Modules/_sqlite'
 
+
+
 save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+
 
   CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
   LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
@@ -12199,9 +12276,33 @@ save_LIBS=$LIBS
   ac_fn_c_check_header_mongrel "$LINENO" "sqlite3.h" "ac_cv_header_sqlite3_h" "$ac_includes_default"
 if test "x$ac_cv_header_sqlite3_h" = xyes; then :
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_open_v2 in -lsqlite3" >&5
-$as_echo_n "checking for sqlite3_open_v2 in -lsqlite3... " >&6; }
-if ${ac_cv_lib_sqlite3_sqlite3_open_v2+:} false; then :
+    have_sqlite3=yes
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+        #include <sqlite3.h>
+        #if SQLITE_VERSION_NUMBER < 3007015
+        #  error "SQLite 3.7.15 or higher required"
+        #endif
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+      have_supported_sqlite3=yes
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_bind_double in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_bind_double in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_bind_double+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -12215,59 +12316,552 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char sqlite3_open_v2 ();
+char sqlite3_bind_double ();
 int
 main ()
 {
-return sqlite3_open_v2 ();
+return sqlite3_bind_double ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_sqlite3_sqlite3_open_v2=yes
+  ac_cv_lib_sqlite3_sqlite3_bind_double=yes
 else
-  ac_cv_lib_sqlite3_sqlite3_open_v2=no
+  ac_cv_lib_sqlite3_sqlite3_bind_double=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_open_v2" >&5
-$as_echo "$ac_cv_lib_sqlite3_sqlite3_open_v2" >&6; }
-if test "x$ac_cv_lib_sqlite3_sqlite3_open_v2" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_bind_double" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_bind_double" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_bind_double" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSQLITE3 1
+_ACEOF
 
-      have_sqlite3=yes
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  LIBS="-lsqlite3 $LIBS"
+
+else
+
+    have_supported_sqlite3=no
+
+fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_column_decltype in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_column_decltype in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_column_decltype+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-
-          #include <sqlite3.h>
-          #if SQLITE_VERSION_NUMBER < 3007015
-          #  error "SQLite 3.7.15 or higher required"
-          #endif
-
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_column_decltype ();
 int
 main ()
 {
-
+return sqlite3_column_decltype ();
   ;
   return 0;
 }
-
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  have_supported_sqlite3=yes
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_column_decltype=yes
 else
-  have_supported_sqlite3=no
+  ac_cv_lib_sqlite3_sqlite3_column_decltype=no
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_column_decltype" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_column_decltype" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_column_decltype" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSQLITE3 1
+_ACEOF
+
+  LIBS="-lsqlite3 $LIBS"
 
 else
-  have_sqlite3=no
+
+    have_supported_sqlite3=no
+
 fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_load_extension in -lsqlite3" >&5
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_column_double in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_column_double in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_column_double+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_column_double ();
+int
+main ()
+{
+return sqlite3_column_double ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_column_double=yes
+else
+  ac_cv_lib_sqlite3_sqlite3_column_double=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_column_double" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_column_double" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_column_double" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSQLITE3 1
+_ACEOF
+
+  LIBS="-lsqlite3 $LIBS"
+
+else
+
+    have_supported_sqlite3=no
+
+fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_complete in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_complete in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_complete+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_complete ();
+int
+main ()
+{
+return sqlite3_complete ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_complete=yes
+else
+  ac_cv_lib_sqlite3_sqlite3_complete=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_complete" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_complete" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_complete" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSQLITE3 1
+_ACEOF
+
+  LIBS="-lsqlite3 $LIBS"
+
+else
+
+    have_supported_sqlite3=no
+
+fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_enable_shared_cache in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_enable_shared_cache in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_enable_shared_cache+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_enable_shared_cache ();
+int
+main ()
+{
+return sqlite3_enable_shared_cache ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_enable_shared_cache=yes
+else
+  ac_cv_lib_sqlite3_sqlite3_enable_shared_cache=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_enable_shared_cache" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_enable_shared_cache" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_enable_shared_cache" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSQLITE3 1
+_ACEOF
+
+  LIBS="-lsqlite3 $LIBS"
+
+else
+
+    have_supported_sqlite3=no
+
+fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_progress_handler in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_progress_handler in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_progress_handler+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_progress_handler ();
+int
+main ()
+{
+return sqlite3_progress_handler ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_progress_handler=yes
+else
+  ac_cv_lib_sqlite3_sqlite3_progress_handler=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_progress_handler" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_progress_handler" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_progress_handler" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSQLITE3 1
+_ACEOF
+
+  LIBS="-lsqlite3 $LIBS"
+
+else
+
+    have_supported_sqlite3=no
+
+fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_result_double in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_result_double in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_result_double+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_result_double ();
+int
+main ()
+{
+return sqlite3_result_double ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_result_double=yes
+else
+  ac_cv_lib_sqlite3_sqlite3_result_double=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_result_double" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_result_double" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_result_double" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSQLITE3 1
+_ACEOF
+
+  LIBS="-lsqlite3 $LIBS"
+
+else
+
+    have_supported_sqlite3=no
+
+fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_set_authorizer in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_set_authorizer in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_set_authorizer+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_set_authorizer ();
+int
+main ()
+{
+return sqlite3_set_authorizer ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_set_authorizer=yes
+else
+  ac_cv_lib_sqlite3_sqlite3_set_authorizer=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_set_authorizer" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_set_authorizer" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_set_authorizer" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSQLITE3 1
+_ACEOF
+
+  LIBS="-lsqlite3 $LIBS"
+
+else
+
+    have_supported_sqlite3=no
+
+fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_trace_v2 in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_trace_v2 in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_trace_v2+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_trace_v2 ();
+int
+main ()
+{
+return sqlite3_trace_v2 ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_trace_v2=yes
+else
+  ac_cv_lib_sqlite3_sqlite3_trace_v2=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_trace_v2" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_trace_v2" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_trace_v2" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSQLITE3 1
+_ACEOF
+
+  LIBS="-lsqlite3 $LIBS"
+
+else
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_trace in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_trace in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_trace+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_trace ();
+int
+main ()
+{
+return sqlite3_trace ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_trace=yes
+else
+  ac_cv_lib_sqlite3_sqlite3_trace=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_trace" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_trace" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_trace" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSQLITE3 1
+_ACEOF
+
+  LIBS="-lsqlite3 $LIBS"
+
+else
+
+    have_supported_sqlite3=no
+
+fi
+
+
+
+
+fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_value_double in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_value_double in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_value_double+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_value_double ();
+int
+main ()
+{
+return sqlite3_value_double ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_value_double=yes
+else
+  ac_cv_lib_sqlite3_sqlite3_value_double=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_value_double" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_value_double" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_value_double" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSQLITE3 1
+_ACEOF
+
+  LIBS="-lsqlite3 $LIBS"
+
+else
+
+    have_supported_sqlite3=no
+
+fi
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_load_extension in -lsqlite3" >&5
 $as_echo_n "checking for sqlite3_load_extension in -lsqlite3... " >&6; }
 if ${ac_cv_lib_sqlite3_sqlite3_load_extension+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -12307,8 +12901,60 @@ if test "x$ac_cv_lib_sqlite3_sqlite3_load_extension" = xyes; then :
   have_sqlite3_load_extension=yes
 else
   have_sqlite3_load_extension=no
+
 fi
 
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_serialize in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_serialize in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_serialize+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_serialize ();
+int
+main ()
+{
+return sqlite3_serialize ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_serialize=yes
+else
+  ac_cv_lib_sqlite3_sqlite3_serialize=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_serialize" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_serialize" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_serialize" = xyes; then :
+
+
+$as_echo "#define PY_SQLITE_HAVE_SERIALIZE 1" >>confdefs.h
+
+
+fi
+
+
+else
+
+      have_supported_sqlite3=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
 
@@ -12321,29 +12967,36 @@ LIBS=$save_LIBS
 
 
 
-# Check for support for loadable sqlite extensions
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-loadable-sqlite-extensions" >&5
 $as_echo_n "checking for --enable-loadable-sqlite-extensions... " >&6; }
 # Check whether --enable-loadable-sqlite-extensions was given.
 if test "${enable_loadable_sqlite_extensions+set}" = set; then :
-  enableval=$enable_loadable_sqlite_extensions; if test "x$have_sqlite3_load_extension" = xno; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Your version of SQLite does not support loadable extensions" >&5
+  enableval=$enable_loadable_sqlite_extensions;
+    if test "x$have_sqlite3_load_extension" = xno; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Your version of SQLite does not support loadable extensions" >&5
 $as_echo "$as_me: WARNING: Your version of SQLite does not support loadable extensions" >&2;}
-fi
+
 else
-  enable_loadable_sqlite_extensions=no
-fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_loadable_sqlite_extensions" >&5
-$as_echo "$enable_loadable_sqlite_extensions" >&6; }
-
-if test "x$enable_loadable_sqlite_extensions" = xyes; then :
-
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
 
 $as_echo "#define PY_SQLITE_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
 
 
 fi
+
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+fi
+
 
 found_tcltk=no
 for _QUERY in \
@@ -13993,6 +14646,21 @@ $as_echo "$ac_cv_dtrace_link" >&6; }
     fi
 fi
 
+PLATFORM_HEADERS=
+PLATFORM_OBJS=
+
+case $ac_sys_system in #(
+  Emscripten) :
+
+    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o'
+    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h'
+   ;; #(
+  *) :
+     ;;
+esac
+
+
+
 # -I${DLINCLDIR} is added to the compile rule for importdl.o
 
 DLINCLDIR=.
@@ -15362,7 +16030,8 @@ $as_echo "yes" >&6; }
 fi
 
 if test "$have_zlib" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$ZLIB_LIBS" = "-lz"; then
-  ZLIB_LIBS="-s USE_ZLIB=1"
+  ZLIB_CFLAGS="-sUSE_ZLIB=1"
+  ZLIB_LIBS="-sUSE_ZLIB=1"
 fi
 
 if test "x$have_zlib" = xyes; then :
@@ -15595,7 +16264,8 @@ $as_echo "yes" >&6; }
 fi
 
 if test "$have_bzip2" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$BZIP2_LIBS" = "-lbz2"; then
-  BZIP2_LIBS="-s USE_BZIP2=1"
+  BZIP2_CFLAGS="-sUSE_BZIP2=1"
+  BZIP2_LIBS="-sUSE_BZIP2=1"
 fi
 
 
@@ -20540,6 +21210,7 @@ SRCDIRS="\
   Modules/_multiprocessing \
   Modules/_sha3 \
   Modules/_sqlite \
+  Modules/_sre \
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \

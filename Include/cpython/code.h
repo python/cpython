@@ -1,5 +1,10 @@
-#ifndef Py_CPYTHON_CODE_H
-#  error "this header file must not be included directly"
+/* Definitions for bytecode */
+
+#ifndef Py_LIMITED_API
+#ifndef Py_CODE_H
+#define Py_CODE_H
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /* Each instruction in a code object is a fixed-width value,
@@ -204,3 +209,9 @@ PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
                                  void **extra);
 PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
                                  void *extra);
+
+#ifdef __cplusplus
+}
+#endif
+#endif  // !Py_CODE_H
+#endif  // !Py_LIMITED_API

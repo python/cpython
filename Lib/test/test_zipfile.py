@@ -2637,6 +2637,59 @@ class TestWithDirectory(unittest.TestCase):
             self.assertTrue(os.path.isdir(os.path.join(target, "x")))
             self.assertEqual(os.listdir(target), ["x"])
 
+    def test_mkdir(self):
+        with zipfile.ZipFile(TESTFN, "w") as zf:
+            zf.mkdir("directory")
+            zinfo = zf.filelist[0]
+            self.assertEqual(zinfo.filename, "directory/")
+            self.assertEqual(zinfo.external_attr, (0o40777 << 16) | 0x10)
+
+            zf.mkdir("directory2/")
+            zinfo = zf.filelist[1]
+            self.assertEqual(zinfo.filename, "directory2/")
+            self.assertEqual(zinfo.external_attr, (0o40777 << 16) | 0x10)
+
+            zf.mkdir("directory3", mode=0o777)
+            zinfo = zf.filelist[2]
+            self.assertEqual(zinfo.filename, "directory3/")
+            self.assertEqual(zinfo.external_attr, (0o40777 << 16) | 0x10)
+
+            old_zinfo = zipfile.ZipInfo("directory4/")
+            old_zinfo.external_attr = (0o40777 << 16) | 0x10
+            old_zinfo.CRC = 0
+            old_zinfo.file_size = 0
+            old_zinfo.compress_size = 0
+            zf.mkdir(old_zinfo)
+            new_zinfo = zf.filelist[3]
+            self.assertEqual(old_zinfo.filename, "directory4/")
+            self.assertEqual(old_zinfo.external_attr, new_zinfo.external_attr)
+
+            target = os.path.join(TESTFN2, "target")
+            os.mkdir(target)
+            zf.extractall(target)
+            self.assertEqual(set(os.listdir(target)), {"directory", "directory2", "directory3", "directory4"})
+
+    def test_create_directory_with_write(self):
+        with zipfile.ZipFile(TESTFN, "w") as zf:
+            zf.writestr(zipfile.ZipInfo('directory/'), '')
+
+            zinfo = zf.filelist[0]
+            self.assertEqual(zinfo.filename, "directory/")
+
+            directory = os.path.join(TESTFN2, "directory2")
+            os.mkdir(directory)
+            mode = os.stat(directory).st_mode
+            zf.write(directory, arcname="directory2/")
+            zinfo = zf.filelist[1]
+            self.assertEqual(zinfo.filename, "directory2/")
+            self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
+
+            target = os.path.join(TESTFN2, "target")
+            os.mkdir(target)
+            zf.extractall(target)
+
+            self.assertEqual(set(os.listdir(target)), {"directory", "directory2"})
+
     def tearDown(self):
         rmtree(TESTFN2)
         if os.path.exists(TESTFN):

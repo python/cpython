@@ -13,7 +13,7 @@
 
 # update when constants are added or removed
 
-MAGIC = 20220318
+MAGIC = 20220402
 
 from _sre import MAXREPEAT, MAXGROUPS
 
@@ -202,7 +202,6 @@ CH_UNICODE = {
 }
 
 # flags
-SRE_FLAG_TEMPLATE = 1 # template mode (disable backtracking)
 SRE_FLAG_IGNORECASE = 2 # case insensitive
 SRE_FLAG_LOCALE = 4 # honour system locale
 SRE_FLAG_MULTILINE = 8 # treat target as multiline string
@@ -234,7 +233,7 @@ if __name__ == "__main__":
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
- * See the _sre.c file for information on usage and redistribution.
+ * See the sre.c file for information on usage and redistribution.
  */
 
 """)
@@ -245,7 +244,6 @@ if __name__ == "__main__":
         dump(f, ATCODES, "SRE")
         dump(f, CHCODES, "SRE")
 
-        f.write("#define SRE_FLAG_TEMPLATE %d\n" % SRE_FLAG_TEMPLATE)
         f.write("#define SRE_FLAG_IGNORECASE %d\n" % SRE_FLAG_IGNORECASE)
         f.write("#define SRE_FLAG_LOCALE %d\n" % SRE_FLAG_LOCALE)
         f.write("#define SRE_FLAG_MULTILINE %d\n" % SRE_FLAG_MULTILINE)

@@ -710,6 +710,7 @@ class TestPendingCalls(unittest.TestCase):
         if False and support.verbose:
             print("(%i)"%(len(l),))
 
+    @threading_helper.requires_working_threading()
     def test_pendingcalls_threaded(self):
 
         #do every callback on a separate thread
@@ -840,6 +841,7 @@ class SubinterpreterTest(unittest.TestCase):
 class TestThreadState(unittest.TestCase):
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_thread_state(self):
         # some extra thread-state tests driven via _testcapi
         def target():
@@ -1097,7 +1099,7 @@ class Test_FrameAPI(unittest.TestCase):
 
     def test_frame_getters(self):
         frame = self.getframe()
-        self.assertEquals(frame.f_locals, _testcapi.frame_getlocals(frame))
+        self.assertEqual(frame.f_locals, _testcapi.frame_getlocals(frame))
         self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
         self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
 
