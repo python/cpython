@@ -3697,22 +3697,22 @@ handle_eval_breaker:
                    opcode == POP_JUMP_BACKWARD_IF_FALSE ||
                    opcode == POP_JUMP_FORWARD_IF_TRUE ||
                    opcode == POP_JUMP_BACKWARD_IF_TRUE);
-            int jump = (1 << (sign + 1)) & when_to_jump_mask;
+            int jump = (9 << (sign + 1)) & when_to_jump_mask;
             if (!jump) {
                 next_instr++;
-                NOTRACE_DISPATCH();
+            }
+            else if (jump >= 8) {
+                assert(opcode == POP_JUMP_BACKWARD_IF_TRUE ||
+                       opcode == POP_JUMP_BACKWARD_IF_FALSE);
+                JUMPBY(1 - oparg);
+                CHECK_EVAL_BREAKER();
             }
             else {
-                if (opcode == POP_JUMP_BACKWARD_IF_FALSE ||
-                    opcode == POP_JUMP_BACKWARD_IF_TRUE) {
-                    JUMPBY(1 - oparg);
-                }
-                else {
-                    JUMPBY(1 + oparg);
-                }
-                CHECK_EVAL_BREAKER();
-                NOTRACE_DISPATCH();
+                assert(opcode == POP_JUMP_FORWARD_IF_TRUE ||
+                       opcode == POP_JUMP_FORWARD_IF_FALSE);
+                JUMPBY(1 + oparg);
             }
+            NOTRACE_DISPATCH();
         }
 
         TARGET(COMPARE_OP_INT_JUMP) {
@@ -3740,29 +3740,29 @@ handle_eval_breaker:
                    opcode == POP_JUMP_BACKWARD_IF_FALSE ||
                    opcode == POP_JUMP_FORWARD_IF_TRUE ||
                    opcode == POP_JUMP_BACKWARD_IF_TRUE);
-            int jump = (1 << (sign + 1)) & when_to_jump_mask;
+            int jump = (9 << (sign + 1)) & when_to_jump_mask;
             if (!jump) {
                 next_instr++;
-                NOTRACE_DISPATCH();
+            }
+            else if (jump >= 8) {
+                assert(opcode == POP_JUMP_BACKWARD_IF_TRUE ||
+                       opcode == POP_JUMP_BACKWARD_IF_FALSE);
+                JUMPBY(1 - oparg);
+                CHECK_EVAL_BREAKER();
             }
             else {
-                if (opcode == POP_JUMP_BACKWARD_IF_FALSE ||
-                    opcode == POP_JUMP_BACKWARD_IF_TRUE) {
-                    JUMPBY(1 - oparg);
-                }
-                else {
-                    JUMPBY(1 + oparg);
-                }
-                CHECK_EVAL_BREAKER();
-                NOTRACE_DISPATCH();
+                assert(opcode == POP_JUMP_FORWARD_IF_TRUE ||
+                       opcode == POP_JUMP_FORWARD_IF_FALSE);
+                JUMPBY(1 + oparg);
             }
+            NOTRACE_DISPATCH();
         }
 
         TARGET(COMPARE_OP_STR_JUMP) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_(direction)_IF_(true/false)
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            int invert = cache->mask;
+            int when_to_jump_mask = cache->mask;
             PyObject *right = TOP();
             PyObject *left = SECOND();
             DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
@@ -3783,23 +3783,23 @@ handle_eval_breaker:
             Py_DECREF(left);
             Py_DECREF(right);
             assert(res == 0 || res == 1);
-            assert(invert == 0 || invert == 1);
-            int jump = res ^ invert;
+            int sign = 1 - res;
+            int jump = (9 << (sign + 1)) & when_to_jump_mask;
             if (!jump) {
                 next_instr++;
-                NOTRACE_DISPATCH();
+            }
+            else if (jump >= 8) {
+                assert(opcode == POP_JUMP_BACKWARD_IF_TRUE ||
+                       opcode == POP_JUMP_BACKWARD_IF_FALSE);
+                JUMPBY(1 - oparg);
+                CHECK_EVAL_BREAKER();
             }
             else {
-                if (opcode == POP_JUMP_BACKWARD_IF_FALSE ||
-                    opcode == POP_JUMP_BACKWARD_IF_TRUE) {
-                    JUMPBY(1 - oparg);
-                }
-                else {
-                    JUMPBY(1 + oparg);
-                }
-                CHECK_EVAL_BREAKER();
-                NOTRACE_DISPATCH();
+                assert(opcode == POP_JUMP_FORWARD_IF_TRUE ||
+                       opcode == POP_JUMP_FORWARD_IF_FALSE);
+                JUMPBY(1 + oparg);
             }
+            NOTRACE_DISPATCH();
         }
 
         TARGET(IS_OP) {

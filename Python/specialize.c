@@ -1908,6 +1908,10 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         next_opcode == POP_JUMP_BACKWARD_IF_FALSE) {
         when_to_jump_mask = (1 | 2 | 4) & ~when_to_jump_mask;
     }
+    if (next_opcode == POP_JUMP_BACKWARD_IF_TRUE ||
+        next_opcode == POP_JUMP_BACKWARD_IF_FALSE) {
+        when_to_jump_mask <<= 3;
+    }
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
         SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
         goto failure;
@@ -1935,7 +1939,7 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         }
         else {
             _Py_SET_OPCODE(*instr, COMPARE_OP_STR_JUMP);
-            cache->mask = (when_to_jump_mask & 2) == 0;
+            cache->mask = when_to_jump_mask;
             goto success;
         }
     }
