@@ -57,7 +57,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: abs(x)
 
    Return the absolute value of a number.  The argument may be an
-   integer, a floating point number, or an object implementing :meth:`__abs__`.
+   integer, a floating point number, or an object implementing :meth:`~object.__abs__`.
    If the argument is a complex number, its magnitude is returned.
 
 
@@ -121,7 +121,7 @@ are always available.  They are listed here in alphabetical order.
 
    Convert an integer number to a binary string prefixed with "0b". The result
    is a valid Python expression. If *x* is not a Python :class:`int` object, it
-   has to define an :meth:`__index__` method that returns an integer. Some
+   has to define an :meth:`~object.__index__` method that returns an integer. Some
    examples:
 
       >>> bin(3)
@@ -221,7 +221,7 @@ are always available.  They are listed here in alphabetical order.
    :const:`False` if not.  If this returns ``True``, it is still possible that a
    call fails, but if it is ``False``, calling *object* will never succeed.
    Note that classes are callable (calling a class returns a new instance);
-   instances are callable if their class has a :meth:`__call__` method.
+   instances are callable if their class has a :meth:`~object.__call__` method.
 
    .. versionadded:: 3.2
       This function was first removed in Python 3.0 and then brought back
@@ -363,9 +363,9 @@ are always available.  They are listed here in alphabetical order.
    ``0j``.
 
    For a general Python object ``x``, ``complex(x)`` delegates to
-   ``x.__complex__()``.  If ``__complex__()`` is not defined then it falls back
-   to :meth:`__float__`.  If ``__float__()`` is not defined then it falls back
-   to :meth:`__index__`.
+   ``x.__complex__()``.  If :meth:`~object.__complex__` is not defined then it falls back
+   to :meth:`~object.__float__`.  If :meth:`~object.__float__` is not defined then it falls back
+   to :meth:`~object.__index__`.
 
    .. note::
 
@@ -380,8 +380,8 @@ are always available.  They are listed here in alphabetical order.
       Grouping digits with underscores as in code literals is allowed.
 
    .. versionchanged:: 3.8
-      Falls back to :meth:`__index__` if :meth:`__complex__` and
-      :meth:`__float__` are not defined.
+      Falls back to :meth:`~object.__index__` if :meth:`~object.__complex__` and
+      :meth:`~object.__float__` are not defined.
 
 
 .. function:: delattr(object, name)
@@ -410,15 +410,15 @@ are always available.  They are listed here in alphabetical order.
    Without arguments, return the list of names in the current local scope.  With an
    argument, attempt to return a list of valid attributes for that object.
 
-   If the object has a method named :meth:`__dir__`, this method will be called and
+   If the object has a method named :meth:`~object.__dir__`, this method will be called and
    must return the list of attributes. This allows objects that implement a custom
-   :func:`__getattr__` or :func:`__getattribute__` function to customize the way
+   :meth:`~object.__getattr__` or :meth:`~object.__getattribute__` function to customize the way
    :func:`dir` reports their attributes.
 
-   If the object does not provide :meth:`__dir__`, the function tries its best to
+   If the object does not provide :meth:`~object.__dir__`, the function tries its best to
    gather information from the object's :attr:`~object.__dict__` attribute, if defined, and
    from its type object.  The resulting list is not necessarily complete and may
-   be inaccurate when the object has a custom :func:`__getattr__`.
+   be inaccurate when the object has a custom :meth:`~object.__getattr__`.
 
    The default :func:`dir` mechanism behaves differently with different types of
    objects, as it attempts to produce the most relevant, rather than complete,
@@ -646,8 +646,8 @@ are always available.  They are listed here in alphabetical order.
    float, an :exc:`OverflowError` will be raised.
 
    For a general Python object ``x``, ``float(x)`` delegates to
-   ``x.__float__()``.  If ``__float__()`` is not defined then it falls back
-   to :meth:`__index__`.
+   :meth:`~object.__float__`.  If :meth:`~object.__float__` is not defined, it falls back
+   to :meth:`~object.__index__`.
 
    If no argument is given, ``0.0`` is returned.
 
@@ -673,7 +673,7 @@ are always available.  They are listed here in alphabetical order.
       *x* is now a positional-only parameter.
 
    .. versionchanged:: 3.8
-      Falls back to :meth:`__index__` if :meth:`__float__` is not defined.
+      Falls back to :meth:`~object.__index__` if :meth:`~object.__float__` is not defined.
 
 
 .. index::
@@ -692,7 +692,7 @@ are always available.  They are listed here in alphabetical order.
 
    A call to ``format(value, format_spec)`` is translated to
    ``type(value).__format__(value, format_spec)`` which bypasses the instance
-   dictionary when searching for the value's :meth:`__format__` method.  A
+   dictionary when searching for the value's :meth:`~object.__format__` method.  A
    :exc:`TypeError` exception is raised if the method search reaches
    :mod:`object` and the *format_spec* is non-empty, or if either the
    *format_spec* or the return value are not strings.
@@ -755,9 +755,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. note::
 
-      For objects with custom :meth:`__hash__` methods, note that :func:`hash`
+      For objects with custom :meth:`~object.__hash__` methods, note that :func:`hash`
       truncates the return value based on the bit width of the host machine.
-      See :meth:`__hash__` for details.
+      See :meth:`~object.__hash__` for details.
 
 .. function:: help([object])
 
@@ -784,7 +784,7 @@ are always available.  They are listed here in alphabetical order.
 
    Convert an integer number to a lowercase hexadecimal string prefixed with
    "0x". If *x* is not a Python :class:`int` object, it has to define an
-   :meth:`__index__` method that returns an integer. Some examples:
+   :meth:`~object.__index__` method that returns an integer. Some examples:
 
       >>> hex(255)
       '0xff'
@@ -854,9 +854,9 @@ are always available.  They are listed here in alphabetical order.
            int(x, base=10)
 
    Return an integer object constructed from a number or string *x*, or return
-   ``0`` if no arguments are given.  If *x* defines :meth:`__int__`,
-   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`__index__`,
-   it returns ``x.__index__()``.  If *x* defines :meth:`__trunc__`,
+   ``0`` if no arguments are given.  If *x* defines :meth:`~object.__int__`,
+   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`~object.__index__`,
+   it returns ``x.__index__()``.  If *x* defines :meth:`~object.__trunc__`,
    it returns ``x.__trunc__()``.
    For floating point numbers, this truncates towards zero.
 
@@ -889,10 +889,10 @@ are always available.  They are listed here in alphabetical order.
       *x* is now a positional-only parameter.
 
    .. versionchanged:: 3.8
-      Falls back to :meth:`__index__` if :meth:`__int__` is not defined.
+      Falls back to :meth:`~object.__index__` if :meth:`~object.__int__` is not defined.
 
    .. versionchanged:: 3.11
-      The delegation to :meth:`__trunc__` is deprecated.
+      The delegation to :meth:`~object.__trunc__` is deprecated.
 
 
 .. function:: isinstance(object, classinfo)
@@ -929,8 +929,8 @@ are always available.  They are listed here in alphabetical order.
    Return an :term:`iterator` object.  The first argument is interpreted very
    differently depending on the presence of the second argument. Without a
    second argument, *object* must be a collection object which supports the
-   :term:`iterable` protocol (the :meth:`__iter__` method), or it must support
-   the sequence protocol (the :meth:`__getitem__` method with integer arguments
+   :term:`iterable` protocol (the :meth:`~object.__iter__` method), or it must support
+   the sequence protocol (the :meth:`~object.__getitem__` method with integer arguments
    starting at ``0``).  If it does not support either of those protocols,
    :exc:`TypeError` is raised. If the second argument, *sentinel*, is given,
    then *object* must be a callable object.  The iterator created in this case
@@ -1081,7 +1081,7 @@ are always available.  They are listed here in alphabetical order.
 
   Convert an integer number to an octal string prefixed with "0o".  The result
   is a valid Python expression. If *x* is not a Python :class:`int` object, it
-  has to define an :meth:`__index__` method that returns an integer. For
+  has to define an :meth:`~object.__index__` method that returns an integer. For
   example:
 
       >>> oct(8)
@@ -1493,14 +1493,14 @@ are always available.  They are listed here in alphabetical order.
    representation is a string enclosed in angle brackets that contains the name
    of the type of the object together with additional information often
    including the name and address of the object.  A class can control what this
-   function returns for its instances by defining a :meth:`__repr__` method.
+   function returns for its instances by defining a :meth:`~object.__repr__` method.
 
 
 .. function:: reversed(seq)
 
    Return a reverse :term:`iterator`.  *seq* must be an object which has
-   a :meth:`__reversed__` method or supports the sequence protocol (the
-   :meth:`__len__` method and the :meth:`__getitem__` method with integer
+   a :meth:`~object.__reversed__` method or supports the sequence protocol (the
+   :meth:`~object.__len__` method and the :meth:`~object.__getitem__` method with integer
    arguments starting at ``0``).
 
 
@@ -1730,7 +1730,7 @@ are always available.  They are listed here in alphabetical order.
 
    Note that :func:`super` is implemented as part of the binding process for
    explicit dotted attribute lookups such as ``super().__getitem__(name)``.
-   It does so by implementing its own :meth:`__getattribute__` method for searching
+   It does so by implementing its own :meth:`~object.__getattribute__` method for searching
    classes in a predictable order that supports cooperative multiple inheritance.
    Accordingly, :func:`super` is undefined for implicit lookups using statements or
    operators such as ``super()[name]``.
