@@ -3941,30 +3941,23 @@ handle_eval_breaker:
 
         TARGET(POP_JUMP_BACKWARD_IF_FALSE) {
             PREDICTED(POP_JUMP_BACKWARD_IF_FALSE);
-            oparg = -oparg;
-            JUMP_TO_INSTRUCTION(POP_JUMP_FORWARD_IF_FALSE);
-        }
-
-        TARGET(POP_JUMP_FORWARD_IF_FALSE) {
-            PREDICTED(POP_JUMP_FORWARD_IF_FALSE);
             PyObject *cond = POP();
-            int err;
             if (Py_IsTrue(cond)) {
                 Py_DECREF(cond);
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
                 Py_DECREF(cond);
-                JUMPBY(oparg);
+                JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
             }
-            err = PyObject_IsTrue(cond);
+            int err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
             if (err > 0)
                 ;
             else if (err == 0) {
-                JUMPBY(oparg);
+                JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
             }
             else
@@ -3972,36 +3965,76 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(POP_JUMP_BACKWARD_IF_TRUE) {
-            PREDICTED(POP_JUMP_BACKWARD_IF_TRUE);
-            oparg = -oparg;
-            JUMP_TO_INSTRUCTION(POP_JUMP_FORWARD_IF_TRUE);
+        TARGET(POP_JUMP_FORWARD_IF_FALSE) {
+            PREDICTED(POP_JUMP_FORWARD_IF_FALSE);
+            PyObject *cond = POP();
+            if (Py_IsTrue(cond)) {
+                Py_DECREF(cond);
+            }
+            else if (Py_IsFalse(cond)) {
+                Py_DECREF(cond);
+                JUMPBY(oparg);
+            }
+            else {
+                int err = PyObject_IsTrue(cond);
+                Py_DECREF(cond);
+                if (err > 0)
+                    ;
+                else if (err == 0) {
+                    JUMPBY(oparg);
+                }
+                else
+                    goto error;
+            }
+            DISPATCH();
         }
 
-        TARGET(POP_JUMP_FORWARD_IF_TRUE) {
-            PREDICTED(POP_JUMP_FORWARD_IF_TRUE);
+        TARGET(POP_JUMP_BACKWARD_IF_TRUE) {
             PyObject *cond = POP();
-            int err;
             if (Py_IsFalse(cond)) {
                 Py_DECREF(cond);
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {
                 Py_DECREF(cond);
-                JUMPBY(oparg);
+                JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
             }
-            err = PyObject_IsTrue(cond);
+            int err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
             if (err > 0) {
-                JUMPBY(oparg);
+                JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
             }
             else if (err == 0)
                 ;
             else
                 goto error;
+            DISPATCH();
+        }
+
+        TARGET(POP_JUMP_FORWARD_IF_TRUE) {
+            PyObject *cond = POP();
+            if (Py_IsFalse(cond)) {
+                Py_DECREF(cond);
+            }
+            else if (Py_IsTrue(cond)) {
+                Py_DECREF(cond);
+                JUMPBY(oparg);
+            }
+            else {
+                int err = PyObject_IsTrue(cond);
+                Py_DECREF(cond);
+                if (err > 0) {
+                    JUMPBY(oparg);
+                    CHECK_EVAL_BREAKER();
+                }
+                else if (err == 0)
+                    ;
+                else
+                    goto error;
+            }
             DISPATCH();
         }
 
