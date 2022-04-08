@@ -834,6 +834,8 @@ Deprecated
 
   * :mod:`aifc`
   * :mod:`audioop`
+  * :mod:`cgi`
+  * :mod:`cgitb`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
