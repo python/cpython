@@ -1952,8 +1952,8 @@ can't be made to work because it cannot detect changes to the
 attributes.
 
 To make the *lru_cache* approach work when the *station_id* is mutable,
-the class needs to define *__eq__* and *__hash__* methods so the cache
-can detect relevant attribute updates::
+the class needs to define the *__eq__* and *__hash__* methods so that
+the cache can detect relevant attribute updates::
 
     class Weather:
         "Example with a mutable station identifier"
