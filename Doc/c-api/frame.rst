@@ -78,6 +78,17 @@ See also :ref:`Reflection <reflection>`.
    .. versionadded:: 3.11
 
 
+.. c:function:: int PyFrame_GetLasti(PyFrameObject *frame)
+
+   Get the *frame*'s ``f_lasti`` attribute (:class:`dict`).
+
+   Returns -1 if ``frame.f_lasti`` is ``None``.
+
+   *frame* must not be ``NULL``.
+
+   .. versionadded:: 3.11
+
+
 .. c:function:: PyObject* PyFrame_GetLocals(PyFrameObject *frame)
 
    Get the *frame*'s ``f_locals`` attribute (:class:`dict`).
