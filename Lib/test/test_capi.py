@@ -1102,6 +1102,7 @@ class Test_FrameAPI(unittest.TestCase):
         self.assertEqual(frame.f_locals, _testcapi.frame_getlocals(frame))
         self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
         self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
+        self.assertEqual(frame.f_lasti, _testcapi.frame_getlasti(frame))
 
     def test_frame_get_generator(self):
         gen = self.getgenframe()
