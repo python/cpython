@@ -63,7 +63,7 @@ set parallel=/m
 set verbose=/nologo /v:m /clp:summary
 set kill=
 set do_pgo=
-set pgo_job=-c0
+set pgo_job=-m test --pgo
 
 :CheckOpts
 if "%~1"=="-h" goto Usage
