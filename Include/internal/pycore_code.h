@@ -178,6 +178,7 @@ struct _PyCodeConstructor {
     PyObject *linetable;
     PyObject *endlinetable;
     PyObject *columntable;
+    PyObject *locationtable;
 
     /* used by the code */
     PyObject *consts;
@@ -221,23 +222,12 @@ extern PyObject* _PyCode_GetCellvars(PyCodeObject *);
 extern PyObject* _PyCode_GetFreevars(PyCodeObject *);
 extern PyObject* _PyCode_GetCode(PyCodeObject *);
 
-/* Return the ending source code line number from a bytecode index. */
-extern int _PyCode_Addr2EndLine(PyCodeObject *, int);
-
-/* Return the ending source code line number from a bytecode index. */
-extern int _PyCode_Addr2EndLine(PyCodeObject *, int);
-/* Return the starting source code column offset from a bytecode index. */
-extern int _PyCode_Addr2Offset(PyCodeObject *, int);
-/* Return the ending source code column offset from a bytecode index. */
-extern int _PyCode_Addr2EndOffset(PyCodeObject *, int);
-
 /** API for initializing the line number tables. */
 extern int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
-extern int _PyCode_InitEndAddressRange(PyCodeObject* co, PyCodeAddressRange* bounds);
 
-/** Out of process API for initializing the line number table. */
-extern void _PyLineTable_InitAddressRange(
-    const char *linetable,
+/** Out of process API for initializing the location table. */
+extern void _PyLocationTable_InitAddressRange(
+    const char *locationtable,
     Py_ssize_t length,
     int firstlineno,
     PyCodeAddressRange *range);

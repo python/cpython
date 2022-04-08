@@ -566,6 +566,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_linetable, p);
         w_object(co->co_endlinetable, p);
         w_object(co->co_columntable, p);
+        w_object(co->co_locationtable, p);
         w_object(co->co_exceptiontable, p);
         Py_DECREF(co_code);
     }
@@ -1360,6 +1361,7 @@ r_object(RFILE *p)
             PyObject *linetable = NULL;
             PyObject* endlinetable = NULL;
             PyObject* columntable = NULL;
+            PyObject* locationtable = NULL;
             PyObject *exceptiontable = NULL;
 
             idx = r_ref_reserve(flag, p);
@@ -1421,6 +1423,9 @@ r_object(RFILE *p)
             columntable = r_object(p);
             if (columntable == NULL)
                 goto code_error;
+            locationtable = r_object(p);
+            if (locationtable == NULL)
+                goto code_error;
             exceptiontable = r_object(p);
             if (exceptiontable == NULL)
                 goto code_error;
@@ -1436,6 +1441,7 @@ r_object(RFILE *p)
                 .linetable = linetable,
                 .endlinetable = endlinetable,
                 .columntable = columntable,
+                .locationtable = locationtable,
 
                 .consts = consts,
                 .names = names,
