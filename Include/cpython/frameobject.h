@@ -29,3 +29,4 @@ PyAPI_FUNC(PyObject *) PyFrame_GetGlobals(PyFrameObject *frame);
 PyAPI_FUNC(PyObject *) PyFrame_GetBuiltins(PyFrameObject *frame);
 
 PyAPI_FUNC(PyObject *) PyFrame_GetGenerator(PyFrameObject *frame);
+PyAPI_FUNC(int) PyFrame_GetLasti(PyFrameObject *frame);

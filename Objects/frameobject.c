@@ -890,7 +890,7 @@ _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
     // This only works when opcode is a non-quickened form:
     assert(_PyOpcode_Deopt[opcode] == opcode);
     int check_oparg = 0;
-    for (_Py_CODEUNIT *instruction = _PyCode_CODE(frame->f_code); 
+    for (_Py_CODEUNIT *instruction = _PyCode_CODE(frame->f_code);
          instruction < frame->prev_instr; instruction++)
     {
         int check_opcode = _PyOpcode_Deopt[_Py_OPCODE(*instruction)];
@@ -1143,6 +1143,16 @@ PyObject*
 PyFrame_GetBuiltins(PyFrameObject *frame)
 {
     return frame_getbuiltins(frame, NULL);
+}
+
+int
+PyFrame_GetLasti(PyFrameObject *frame)
+{
+    int lasti = _PyInterpreterFrame_LASTI(frame->f_frame);
+    if (lasti < 0) {
+        return -1;
+    }
+    return lasti*2;
 }
 
 PyObject *
