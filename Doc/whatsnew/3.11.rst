@@ -187,6 +187,15 @@ Other Language Changes
   protocols correspondingly.
   (Contributed by Serhiy Storchaka in :issue:`12022`.)
 
+* Added :meth:`object.__getstate__` which provides the default
+  implementation of the ``__getstate__()`` method.  :mod:`Copying <copy>`
+  and :mod:`pickling <pickle>` instances of subclasses of builtin types
+  :class:`bytearray`, :class:`set`, :class:`frozenset`,
+  :class:`collections.OrderedDict`, :class:`collections.deque`,
+  :class:`weakref.WeakSet`, and :class:`datetime.tzinfo` now copies and
+  pickles instance attributes implemented as :term:`slots <__slots__>`.
+  (Contributed by Serhiy Storchaka in :issue:`26579`.)
+
 
 Other CPython Implementation Changes
 ====================================
@@ -824,6 +833,7 @@ Deprecated
   slated for removal in Python 3.13:
 
   * :mod:`aifc`
+  * :mod:`audioop`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
@@ -1111,7 +1121,7 @@ New Features
 
 * Add new functions to get frame object attributes:
   :c:func:`PyFrame_GetBuiltins`, :c:func:`PyFrame_GetGenerator`,
-  :c:func:`PyFrame_GetGlobals`.
+  :c:func:`PyFrame_GetGlobals`, :c:func:`PyFrame_GetLasti`.
 
 Porting to Python 3.11
 ----------------------
@@ -1201,7 +1211,7 @@ Porting to Python 3.11
   explicitly include the header files after ``#include <Python.h>``.
   (Contributed by Victor Stinner in :issue:`45434`.)
 
-* The non-limited API files ``cellobject.h``, ``classobject.h``, ``context.h``,
+* The non-limited API files ``cellobject.h``, ``classobject.h``, ``code.h``, ``context.h``,
   ``funcobject.h``, ``genobject.h`` and ``longintrepr.h`` have been moved to
   the ``Include/cpython`` directory. Moreover, the ``eval.h`` header file was
   removed. These files must not be included directly, as they are already
@@ -1214,8 +1224,10 @@ Porting to Python 3.11
   which are not available in the limited C API.
   (Contributed by Victor Stinner in :issue:`46007`.)
 
-* The :c:type:`PyFrameObject` structure member has been moved to the internal C
-  API headers.
+.. _pyframeobject-3.11-hiding:
+
+* The :c:type:`PyFrameObject` structure members have been removed from the
+  public C API.
 
   While the documentation notes that the :c:type:`PyFrameObject` fields are
   subject to change at any time, they have been stable for a long time and were
@@ -1234,9 +1246,9 @@ Porting to Python 3.11
   * ``f_gen``: use :c:func:`PyFrame_GetGenerator`.
   * ``f_globals``: use :c:func:`PyFrame_GetGlobals`.
   * ``f_iblock``: removed.
-  * ``f_lasti``: use ``PyObject_GetAttrString((PyObject*)frame, "f_lasti")``.
+  * ``f_lasti``: use :c:func:`PyFrame_GetLasti`.
     Code using ``f_lasti`` with ``PyCode_Addr2Line()`` should use
-    :c:func:`PyFrame_GetLineNumber` instead.
+    :c:func:`PyFrame_GetLineNumber` instead; it may be faster.
   * ``f_lineno``: use :c:func:`PyFrame_GetLineNumber`
   * ``f_locals``: use :c:func:`PyFrame_GetLocals`.
   * ``f_stackdepth``: removed.
