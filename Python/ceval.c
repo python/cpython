@@ -4028,7 +4028,6 @@ handle_eval_breaker:
                 Py_DECREF(cond);
                 if (err > 0) {
                     JUMPBY(oparg);
-                    CHECK_EVAL_BREAKER();
                 }
                 else if (err == 0)
                     ;
