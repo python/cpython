@@ -74,6 +74,7 @@ rem Targets that don't require sphinx-build
 if "%1" EQU "" goto help
 if "%1" EQU "help" goto help
 if "%1" EQU "check" goto check
+if "%1" EQU "serve" goto serve
 if "%1" == "clean" (
     rmdir /q /s "%BUILDDIR%"
     goto end
@@ -180,6 +181,10 @@ goto end
 
 :check
 cmd /S /C "%SPHINXLINT% -i tools"
+goto end
+
+:serve
+echo.The serve target was removed, use htmlview instead (see bpo-36329)
 goto end
 
 :end

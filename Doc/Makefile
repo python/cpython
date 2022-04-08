@@ -22,7 +22,7 @@ ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) \
                 $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help build html htmlhelp latex text texinfo changes linkcheck \
-	suspicious coverage doctest pydoc-topics htmlview clean dist check \
+	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
 	autobuild-dev autobuild-stable venv
 
 help:
@@ -215,6 +215,9 @@ dist:
 check:
 	$(SPHINXLINT) -i tools -i $(VENVDIR) -i README.rst
 	$(SPHINXLINT) ../Misc/NEWS.d/next/
+
+serve:
+	@echo "The serve target was removed, use htmlview instead (see bpo-36329)"
 
 # Targets for daily automated doc build
 # By default, Sphinx only rebuilds pages where the page content has changed.
