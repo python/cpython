@@ -322,26 +322,31 @@ class ProcessTestCase(BaseTestCase):
         # parent's stdout.  This test checks that the message printed by the
         # child goes to the parent stdout.  The parent also checks that the
         # child's stdout is None.  See #11963.
-        code = ('import sys; from subprocess import Popen, PIPE;'
-                'p = Popen([sys.executable, "-c", "print(\'test_stdout_none\')"],'
-                '          stdin=PIPE, stderr=PIPE);'
-                'p.wait(); assert p.stdout is None;')
-        p = subprocess.Popen([sys.executable, "-c", code],
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        self.addCleanup(p.stdout.close)
-        self.addCleanup(p.stderr.close)
-        out, err = p.communicate()
-        self.assertEqual(p.returncode, 0, err)
-        self.assertEqual(out.rstrip(), b'test_stdout_none')
+        code = ('import sys\n'
+                'from subprocess import Popen, PIPE\n'
+                'with Popen([sys.executable, "-c", "print(\'test_stdout_none\')"],\n'
+                '          stdin=PIPE, stderr=PIPE) as p:\n'
+                '    p.wait()\n'
+                '    assert p.stdout is None\n')
+        with subprocess.Popen([sys.executable, "-c", code],
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE) as p:
+            self.addCleanup(p.stdout.close)
+            self.addCleanup(p.stderr.close)
+            out, err = p.communicate()
+            self.assertEqual(p.returncode, 0, err)
+            self.assertEqual(out.rstrip(), b'test_stdout_none')
+            self.assertEqual(err, b'')
 
     def test_stderr_none(self):
         # .stderr is None when not redirected
-        p = subprocess.Popen([sys.executable, "-c", 'print("banana")'],
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        self.addCleanup(p.stdout.close)
-        self.addCleanup(p.stdin.close)
-        p.wait()
-        self.assertEqual(p.stderr, None)
+        with subprocess.Popen([sys.executable, "-c", 'print("banana")'],
+                              stdin=subprocess.PIPE,
+                              stdout=subprocess.PIPE) as p:
+            self.addCleanup(p.stdout.close)
+            self.addCleanup(p.stdin.close)
+            p.wait()
+            self.assertEqual(p.stderr, None)
 
     def _assert_python(self, pre_args, **kwargs):
         # We include sys.exit() to prevent the test runner from hanging
