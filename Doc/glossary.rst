@@ -714,8 +714,7 @@ Glossary
 
       ``locale.getencoding()`` can be used to get the locale encoding.
 
-      Python uses the :term:`filesystem encoding and error handler` to convert
-      between Unicode filenames and bytes filenames.
+      See also the :term:`filesystem encoding and error handler`.
 
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin

@@ -334,12 +334,8 @@ The :mod:`locale` module defines the following exception and functions:
    locale. See also the :term:`filesystem encoding and error handler`.
 
    .. versionchanged:: 3.7
-      The function now always returns ``"UTF-8"`` on Android or if the
+      The function now always returns ``"utf-8"`` on Android or if the
       :ref:`Python UTF-8 Mode <utf8-mode>` is enabled.
-
-   .. versionchanged:: 3.11
-      The function now returns ``"utf-8"`` instead of ``"UTF-8"`` on Android
-      or if the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled.
 
 
 .. function:: getencoding()
@@ -351,6 +347,9 @@ The :mod:`locale` module defines the following exception and functions:
      Return ``"utf-8"`` if ``nl_langinfo(CODESET)`` returns an empty string:
      for example, if the current LC_CTYPE locale is not supported.
    * On Windows, return the ANSI code page.
+
+   The :ref:`Python preinitialization <c-preinit>` configures the LC_CTYPE
+   locale. See also the :term:`filesystem encoding and error handler`.
 
    This function is similar to
    :func:`getpreferredencoding(False) <getpreferredencoding>` except this

@@ -278,7 +278,8 @@ locale
 ------
 
 * Add :func:`locale.getencoding` to get the current locale encoding. It is similar to
-  ``locale.getpreferredencoding(False)`` but ignores :ref:`UTF-8 Mode <utf8-mode>`.
+  ``locale.getpreferredencoding(False)`` but ignores the
+  :ref:`Python UTF-8 Mode <utf8-mode>`.
 
 math
 ----
