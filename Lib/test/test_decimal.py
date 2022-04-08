@@ -39,6 +39,7 @@ from test.support import (TestFailed,
                           run_with_locale, cpython_only,
                           darwin_malloc_err_warning)
 from test.support.import_helper import import_fresh_module
+from test.support import threading_helper
 from test.support import warnings_helper
 import random
 import inspect
@@ -1591,6 +1592,8 @@ def thfunc2(cls):
     for sig in Overflow, Underflow, DivisionByZero, InvalidOperation:
         cls.assertFalse(thiscontext.flags[sig])
 
+
+@threading_helper.requires_working_threading()
 class ThreadingTest(unittest.TestCase):
     '''Unit tests for thread local contexts in Decimal.'''
 

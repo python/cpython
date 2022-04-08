@@ -25,7 +25,6 @@
 
 #include "token.h"                // INDENT
 #include "errcode.h"              // E_EOF
-#include "code.h"                 // PyCodeObject
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
 
 #ifdef MS_WINDOWS

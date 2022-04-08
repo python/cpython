@@ -73,7 +73,6 @@ is destroyed.
 
 from chunk import Chunk
 from collections import namedtuple
-import audioop
 import builtins
 import struct
 import sys
@@ -90,6 +89,16 @@ _array_fmts = None, 'b', 'h', None, 'i'
 
 _wave_params = namedtuple('_wave_params',
                      'nchannels sampwidth framerate nframes comptype compname')
+
+def _byteswap(data, width):
+    swapped_data = bytearray(len(data))
+
+    for i in range(0, len(data), width):
+        for j in range(width):
+            swapped_data[i + width - 1 - j] = data[i + j]
+
+    return bytes(swapped_data)
+
 
 class Wave_read:
     """Variables used in this class:
@@ -241,7 +250,7 @@ class Wave_read:
             return b''
         data = self._data_chunk.read(nframes * self._framesize)
         if self._sampwidth != 1 and sys.byteorder == 'big':
-            data = audioop.byteswap(data, self._sampwidth)
+            data = _byteswap(data, self._sampwidth)
         if self._convert and data:
             data = self._convert(data)
         self._soundpos = self._soundpos + len(data) // (self._nchannels * self._sampwidth)
@@ -428,7 +437,7 @@ class Wave_write:
         if self._convert:
             data = self._convert(data)
         if self._sampwidth != 1 and sys.byteorder == 'big':
-            data = audioop.byteswap(data, self._sampwidth)
+            data = _byteswap(data, self._sampwidth)
         self._file.write(data)
         self._datawritten += len(data)
         self._nframeswritten = self._nframeswritten + nframes

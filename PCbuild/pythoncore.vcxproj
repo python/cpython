@@ -129,7 +129,6 @@
     <ClInclude Include="..\Include\bytearrayobject.h" />
     <ClInclude Include="..\Include\bytesobject.h" />
     <ClInclude Include="..\Include\ceval.h" />
-    <ClInclude Include="..\Include\code.h" />
     <ClInclude Include="..\Include\codecs.h" />
     <ClInclude Include="..\Include\compile.h" />
     <ClInclude Include="..\Include\complexobject.h" />
@@ -141,6 +140,7 @@
     <ClInclude Include="..\Include\cpython\classobject.h" />
     <ClInclude Include="..\Include\cpython\code.h" />
     <ClInclude Include="..\Include\cpython\compile.h" />
+    <ClInclude Include="..\Include\cpython\complexobject.h" />
     <ClInclude Include="..\Include\cpython\context.h" />
     <ClInclude Include="..\Include\cpython\descrobject.h" />
     <ClInclude Include="..\Include\cpython\dictobject.h" />
@@ -171,6 +171,7 @@
     <ClInclude Include="..\Include\cpython\pystate.h" />
     <ClInclude Include="..\Include\cpython\pythonrun.h" />
     <ClInclude Include="..\Include\cpython\pytime.h" />
+    <ClInclude Include="..\Include\cpython\setobject.h" />
     <ClInclude Include="..\Include\cpython\sysmodule.h" />
     <ClInclude Include="..\Include\cpython\traceback.h" />
     <ClInclude Include="..\Include\cpython\tupleobject.h" />

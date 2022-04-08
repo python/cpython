@@ -710,6 +710,7 @@ class TestPendingCalls(unittest.TestCase):
         if False and support.verbose:
             print("(%i)"%(len(l),))
 
+    @threading_helper.requires_working_threading()
     def test_pendingcalls_threaded(self):
 
         #do every callback on a separate thread
@@ -840,6 +841,7 @@ class SubinterpreterTest(unittest.TestCase):
 class TestThreadState(unittest.TestCase):
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_thread_state(self):
         # some extra thread-state tests driven via _testcapi
         def target():

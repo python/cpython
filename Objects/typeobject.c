@@ -5030,7 +5030,6 @@ object_getstate_default(PyObject *obj, int required)
 
             name = PyList_GET_ITEM(slotnames, i);
             Py_INCREF(name);
-            value = PyObject_GetAttr(obj, name);
             if (_PyObject_LookupAttr(obj, name, &value) < 0) {
                 Py_DECREF(name);
                 goto error;
@@ -8980,7 +8979,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
     if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
         // "firstarg" is a cell here unless (very unlikely) super()
         // was called from the C-API before the first MAKE_CELL op.
-        if (cframe->f_lasti >= 0) {
+        if (_PyInterpreterFrame_LASTI(cframe) >= 0) {
             // MAKE_CELL and COPY_FREE_VARS have no quickened forms, so no need
             // to use _PyOpcode_Deopt here:
             assert(_Py_OPCODE(_PyCode_CODE(co)[0]) == MAKE_CELL ||
