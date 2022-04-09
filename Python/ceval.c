@@ -60,11 +60,11 @@
 #undef Py_XDECREF
 #define Py_XDECREF(arg) do { PyObject *op1 = _PyObject_CAST(arg); if (op1 != NULL) { Py_DECREF(op1); } } while (0)
 
-#if SIZEOF_INT == 4
-#undef _Py_atomic_load_relaxed
-#define _Py_atomic_load_relaxed(ATOMIC_VAL) (*((volatile int*)&((ATOMIC_VAL)->_value)))
 #endif
 
+#if defined(_MSC_VER) && SIZEOF_INT == 4
+#undef _Py_atomic_load_relaxed
+#define _Py_atomic_load_relaxed(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
 #endif
 
 
