@@ -1,0 +1,1 @@
+Fix a bug where `match` variable is used prior to being defined when an invalid markup is encountered and :meth:`ParserBase.error` is implemented as a NOP in a child class of :class:`ParserBase`.
