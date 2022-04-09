@@ -1,7 +1,10 @@
 """Constants and membership tests for ASCII characters"""
 
 NUL     = 0x00  # ^@
-SOH     = 0x01  # ^A
+SOH     = 0x01  # ^A  
+
+
+
 STX     = 0x02  # ^B
 ETX     = 0x03  # ^C
 EOT     = 0x04  # ^D
