@@ -203,12 +203,12 @@ class UTF8ModeTests(unittest.TestCase):
     def test_locale_getpreferredencoding(self):
         code = 'import locale; print(locale.getpreferredencoding(False), locale.getpreferredencoding(True))'
         out = self.get_output('-X', 'utf8', '-c', code)
-        self.assertEqual(out, 'UTF-8 UTF-8')
+        self.assertEqual(out, 'utf-8 utf-8')
 
         for loc in POSIX_LOCALES:
             with self.subTest(LC_ALL=loc):
                 out = self.get_output('-X', 'utf8', '-c', code, LC_ALL=loc)
-                self.assertEqual(out, 'UTF-8 UTF-8')
+                self.assertEqual(out, 'utf-8 utf-8')
 
     @unittest.skipIf(MS_WINDOWS, 'test specific to Unix')
     def test_cmd_line(self):
@@ -276,7 +276,7 @@ class UTF8ModeTests(unittest.TestCase):
         # In UTF-8 Mode, device_encoding(fd) returns "UTF-8" if fd is a TTY
         with open(filename, encoding="utf8") as fp:
             out = fp.read().rstrip()
-        self.assertEqual(out, 'True UTF-8')
+        self.assertEqual(out, 'True utf-8')
 
 
 if __name__ == "__main__":
