@@ -1705,11 +1705,7 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
             blocks = int(match.group(2))
             with self.subTest(frozen_modules=flag, stmt=stmt):
                 self.assertEqual(refs, 0, out)
-                if not MS_WINDOWS:
-                    self.assertEqual(blocks, 0, out)
-                else:
-                    # bpo-42658: on Windows, Python still leaks 1 memory block at exit
-                    self.assertEqual(blocks, 1, out)
+                self.assertEqual(blocks, 0, out)
 
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
