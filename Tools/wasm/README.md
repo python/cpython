@@ -9,7 +9,7 @@ possible to build for *wasm32-wasi* out-of-the-box yet.
 
 ## wasm32-emscripten build
 
-Cross compiling to wasm32-emscripten platform needs the
+Cross compiling to the wasm32-emscripten platform needs the
 [Emscripten](https://emscripten.org/) SDK and a build Python interpreter.
 Emscripten 3.1.8 or newer are recommended. All commands below are relative
 to a repository checkout.
@@ -184,9 +184,9 @@ linker options.
 
 The simple REPL terminal uses SharedArrayBuffer. For security reasons
 browsers only provide the feature in secure environents with cross-origin
-isolation. The webserver must sent cross-origin headers and correct mimetypes
+isolation. The webserver must send cross-origin headers and correct MIME types
 for the JavaScript and WASM files. Otherwise the terminal will fail to load
-an error message like ``Browsers disable shared array buffer``.
+with an error message like ``Browsers disable shared array buffer``.
 
 ## Apache HTTP .htaccess
 
