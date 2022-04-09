@@ -231,8 +231,7 @@ Directory and files operations
 
    Recursively copy an entire directory tree rooted at *src* to a directory
    named *dst* and return the destination directory.  All intermediate
-   directories needed to contain *dst* will also be created by default (see
-   kwarg *dirs_exist_ok*).
+   directories needed to contain *dst* will also be created by default.
 
    Permissions and times of directories are copied with :func:`copystat`,
    individual files are copied using :func:`~shutil.copy2`.
@@ -270,8 +269,7 @@ Directory and files operations
    :exc:`FileExistsError` is raised. If *dirs_exist_ok* is true, the copying
    operation will continue if it encounters existing directories, and files
    within the *dst* tree will be overwritten by corresponding files from the
-   *src* tree. Internally, this parameter is passed directly to
-   :func:`os.makedirs`.
+   *src* tree.
 
    .. audit-event:: shutil.copytree src,dst shutil.copytree
 
