@@ -3909,13 +3909,16 @@ class OverloadTests(BaseTestCase):
     @patch("typing._overload_registry",
         defaultdict(lambda: defaultdict(dict)))
     def test_overload_registry(self):
-        self.assertEqual(len(typing._overload_registry), 0)
+        # The registry starts out empty
+        self.assertEqual(typing._overload_registry, {})
 
         impl, overloads = self.set_up_overloads()
         self.assertNotEqual(typing._overload_registry, {})
         self.assertEqual(list(get_overloads(impl)), overloads)
 
         clear_overloads(impl)
+        # Clearing overloads for this function should also
+        # clear out entries for the module.
         self.assertEqual(typing._overload_registry, {})
         self.assertEqual(get_overloads(impl), [])
 
@@ -3923,9 +3926,26 @@ class OverloadTests(BaseTestCase):
         self.assertNotEqual(typing._overload_registry, {})
         self.assertEqual(list(get_overloads(impl)), overloads)
 
+        # Make sure that after we clear all overloads, the registry is
+        # completely empty.
         clear_overloads()
         self.assertEqual(typing._overload_registry, {})
         self.assertEqual(get_overloads(impl), [])
+
+        # If we create another function, its overloads won't be cleared
+        # if we call clear_overloads(impl)
+        impl, overloads = self.set_up_overloads()
+        self.assertEqual(list(get_overloads(impl)), overloads)
+
+        def some_other_func(): pass
+        overload(some_other_func)
+        other_overload = some_other_func
+        def some_other_func(): pass
+        self.assertEqual(list(get_overloads(some_other_func)), [other_overload])
+
+        clear_overloads(impl)
+        self.assertEqual(list(get_overloads(impl)), [])
+        self.assertEqual(list(get_overloads(some_other_func)), [other_overload])
 
     def test_overload_registry_repeated(self):
         for _ in range(2):
