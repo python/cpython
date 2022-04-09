@@ -28,7 +28,7 @@ __all__ = ["getlocale", "getdefaultlocale", "getpreferredencoding", "Error",
            "setlocale", "resetlocale", "localeconv", "strcoll", "strxfrm",
            "str", "atof", "atoi", "format", "format_string", "currency",
            "normalize", "LC_CTYPE", "LC_COLLATE", "LC_TIME", "LC_MONETARY",
-           "LC_NUMERIC", "LC_ALL", "CHAR_MAX"]
+           "LC_NUMERIC", "LC_ALL", "CHAR_MAX", "getencoding"]
 
 def _strcoll(a,b):
     """ strcoll(string,string) -> int.
@@ -637,19 +637,17 @@ def resetlocale(category=LC_ALL):
 
 
 try:
-    from _locale import _get_locale_encoding
+    from _locale import getencoding
 except ImportError:
-    def _get_locale_encoding():
+    def getencoding():
         if hasattr(sys, 'getandroidapilevel'):
             # On Android langinfo.h and CODESET are missing, and UTF-8 is
             # always used in mbstowcs() and wcstombs().
-            return 'UTF-8'
-        if sys.flags.utf8_mode:
-            return 'UTF-8'
+            return 'utf-8'
         encoding = getdefaultlocale()[1]
         if encoding is None:
-            # LANG not set, default conservatively to ASCII
-            encoding = 'ascii'
+            # LANG not set, default to UTF-8
+            encoding = 'utf-8'
         return encoding
 
 try:
@@ -657,17 +655,19 @@ try:
 except NameError:
     def getpreferredencoding(do_setlocale=True):
         """Return the charset that the user is likely using."""
-        return _get_locale_encoding()
+        if sys.flags.utf8_mode:
+            return 'utf-8'
+        return getencoding()
 else:
     # On Unix, if CODESET is available, use that.
     def getpreferredencoding(do_setlocale=True):
         """Return the charset that the user is likely using,
         according to the system configuration."""
         if sys.flags.utf8_mode:
-            return 'UTF-8'
+            return 'utf-8'
 
         if not do_setlocale:
-            return _get_locale_encoding()
+            return getencoding()
 
         old_loc = setlocale(LC_CTYPE)
         try:
@@ -675,7 +675,7 @@ else:
                 setlocale(LC_CTYPE, "")
             except Error:
                 pass
-            return _get_locale_encoding()
+            return getencoding()
         finally:
             setlocale(LC_CTYPE, old_loc)
 

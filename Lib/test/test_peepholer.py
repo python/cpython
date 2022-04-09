@@ -127,7 +127,7 @@ class TestTranforms(BytecodeTestCase):
             return list
         for elem in ('LOAD_CONST', 'POP_JUMP_IF_FALSE'):
             self.assertNotInBytecode(f, elem)
-        for elem in ('JUMP_ABSOLUTE',):
+        for elem in ('JUMP_BACKWARD',):
             self.assertInBytecode(f, elem)
         self.check_lnotab(f)
 
