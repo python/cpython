@@ -125,13 +125,14 @@ def _v(m1, m2, hue):
 def rgb_to_hsv(r, g, b):
     maxc = max(r, g, b)
     minc = min(r, g, b)
+    rangec = (maxc-minc)
     v = maxc
     if minc == maxc:
         return 0.0, 0.0, v
-    s = (maxc-minc) / maxc
-    rc = (maxc-r) / (maxc-minc)
-    gc = (maxc-g) / (maxc-minc)
-    bc = (maxc-b) / (maxc-minc)
+    s = rangec / maxc
+    rc = (maxc-r) / rangec
+    gc = (maxc-g) / rangec
+    bc = (maxc-b) / rangec
     if r == maxc:
         h = bc-gc
     elif g == maxc:
@@ -144,7 +145,7 @@ def rgb_to_hsv(r, g, b):
 def hsv_to_rgb(h, s, v):
     if s == 0.0:
         return v, v, v
-    i = int(h*6.0) # XXX assume int() truncates!
+    i = int(h*6.0)
     f = (h*6.0) - i
     p = v*(1.0 - s)
     q = v*(1.0 - s*f)
