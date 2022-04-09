@@ -21,6 +21,7 @@ At large scale, the structure of the module is following:
 
 from abc import abstractmethod, ABCMeta
 import collections
+from collections import defaultdict
 import collections.abc
 import contextlib
 import functools
@@ -2431,6 +2432,10 @@ def _overload_dummy(*args, **kwds):
         "by an implementation that is not @overload-ed.")
 
 
+# {module: {qualname: {firstlineno: func}}}
+_overload_registry = defaultdict(lambda: defaultdict(dict))
+
+
 def overload(func):
     """Decorator for overloaded functions/methods.
 
@@ -2460,85 +2465,26 @@ def overload(func):
     The overloads for a function can be retrieved at runtime using the
     get_overloads() function.
     """
-    # Inline version of _get_key_for_callable
     # classmethod and staticmethod
-    inner_func = getattr(func, "__func__", func)
+    f = getattr(func, "__func__", func)
     try:
-        key = (inner_func.__module__, inner_func.__qualname__)
+        _overload_registry[f.__module__][f.__qualname__][f.__code__.co_firstlineno] = func
     except AttributeError:
         # Not a normal function; ignore.
         pass
-    else:
-        # We're inlining get_overloads() here to avoid computing the key twice.
-        existing = _overload_registry[key]
-        if existing and len(existing) > 20:
-            # If we are registering an overload with a lineno below or equal to that of the
-            # most recent existing overload, we're probably re-creating overloads for a
-            # function that already exists. This can happen if the module is being reloaded
-            # or if the overloads are being created in a nested function.
-            # In that case, we clear the existing overloads
-            # to avoid leaking memory. But we do this only if there are already a lot of
-            # overloads, so we don't have to figure out the linenos in the common case
-            # where there are only a few overloads.
-            try:
-                firstlineno = inner_func.__code__.co_firstlineno
-            except AttributeError:
-                pass
-            else:
-                existing_func = existing[-1]
-                # classmethod and staticmethod
-                existing_func = getattr(existing_func, "__func__", existing_func)
-                try:
-                    existing_lineno = existing_func.__code__.co_firstlineno
-                except AttributeError:
-                    pass
-                else:
-                    if firstlineno <= existing_lineno:
-                        existing.clear()
-
-        existing.append(func)
     return _overload_dummy
-
-
-# {key: [overload]}
-_overload_registry = collections.defaultdict(list)
 
 
 def get_overloads(func):
     """Return all defined overloads for *func* as a sequence."""
-    key = _get_key_for_callable(func)
-    overloads = _overload_registry[key]
-
-    # We clear out overloads that have higher linenos than a later
-    # overload, because they're probably the result of a recreation of
-    # the function (see the comments in @overload). But we have to do it
-    # here too because @overload only clears out overloads when there are
-    # many.
-    final_overloads = []
-    last_lineno = -1
-    should_clear = False
-    for overloaded_func in overloads:
-        lineno = _get_firstlineno(overloaded_func)
-        if lineno is not None:
-            # If the same function is registered multiple times on the same line,
-            # we skip the duplicates.
-            if lineno <= last_lineno:
-                final_overloads.clear()
-                should_clear = True
-            last_lineno = lineno
-        final_overloads.append(overloaded_func)
-    if should_clear:
-        _overload_registry[key] = final_overloads
-    return final_overloads
-
-
-def _get_firstlineno(func):
-    # staticmethod, classmethod
-    func = getattr(func, "__func__", func)
-    if not hasattr(func, '__code__'):
-        return None
-    return func.__code__.co_firstlineno
-
+    # classmethod and staticmethod
+    f = getattr(func, "__func__", func)
+    if f.__module__ not in _overload_registry:
+        return []
+    mod_dict = _overload_registry[f.__module__]
+    if f.__qualname__ not in mod_dict:
+        return []
+    return list(mod_dict[f.__qualname__].values())
 
 
 def clear_overloads(func=None):
@@ -2546,24 +2492,13 @@ def clear_overloads(func=None):
     if func is None:
         _overload_registry.clear()
     else:
-        key = _get_key_for_callable(func)
-        _overload_registry.pop(key, None)
-
-
-def _get_key_for_callable(func):
-    """Return a key for the given callable.
-
-    This is used as a key in the overload registry.
-
-    If no key can be created (because the object is not of a supported type), raise
-    AttributeError.
-    """
-    # classmethod and staticmethod
-    func = getattr(func, "__func__", func)
-    try:
-        return (func.__module__, func.__qualname__)
-    except AttributeError:
-        raise TypeError(f"Cannot create key for {func!r}") from None
+        f = getattr(func, "__func__", func)
+        if f.__module__ not in _overload_registry:
+            return
+        mod_dict = _overload_registry[f.__module__]
+        mod_dict.pop(f.__qualname__, None)
+        if not mod_dict:
+            del _overload_registry[f.__module__]
 
 
 def final(f):

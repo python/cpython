@@ -1,5 +1,6 @@
 import contextlib
 import collections
+from collections import defaultdict
 from functools import lru_cache
 import inspect
 import pickle
@@ -7,6 +8,7 @@ import re
 import sys
 import warnings
 from unittest import TestCase, main, skipUnless, skip
+from unittest.mock import patch
 from copy import copy, deepcopy
 
 from typing import Any, NoReturn, Never, assert_never
@@ -3903,17 +3905,26 @@ class OverloadTests(BaseTestCase):
 
         return blah, [overload1, overload2]
 
+    # Make sure we don't clear the global overload registry
+    @patch("typing._overload_registry",
+        defaultdict(lambda: defaultdict(dict)))
     def test_overload_registry(self):
-        impl, overloads = self.set_up_overloads()
+        self.assertEqual(len(typing._overload_registry), 0)
 
+        impl, overloads = self.set_up_overloads()
+        self.assertNotEqual(typing._overload_registry, {})
         self.assertEqual(list(get_overloads(impl)), overloads)
+
         clear_overloads(impl)
+        self.assertEqual(typing._overload_registry, {})
         self.assertEqual(get_overloads(impl), [])
 
         impl, overloads = self.set_up_overloads()
-
+        self.assertNotEqual(typing._overload_registry, {})
         self.assertEqual(list(get_overloads(impl)), overloads)
+
         clear_overloads()
+        self.assertEqual(typing._overload_registry, {})
         self.assertEqual(get_overloads(impl), [])
 
     def test_overload_registry_repeated(self):
@@ -3921,28 +3932,6 @@ class OverloadTests(BaseTestCase):
             impl, overloads = self.set_up_overloads()
 
             self.assertEqual(list(get_overloads(impl)), overloads)
-
-    def test_get_key_for_callable(self):
-        self.assertEqual(
-            typing._get_key_for_callable(len),
-            ("builtins", "len"),
-        )
-        self.assertEqual(
-            typing._get_key_for_callable(cached_func),
-            (__name__, "cached_func"),
-        )
-        self.assertEqual(
-            typing._get_key_for_callable(MethodHolder.clsmethod),
-            (__name__, "MethodHolder.clsmethod"),
-        )
-        self.assertEqual(
-            typing._get_key_for_callable(MethodHolder.stmethod),
-            (__name__, "MethodHolder.stmethod"),
-        )
-        self.assertEqual(
-            typing._get_key_for_callable(MethodHolder.method),
-            (__name__, "MethodHolder.method"),
-        )
 
 
 # Definitions needed for features introduced in Python 3.6
