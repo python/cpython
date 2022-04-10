@@ -48,6 +48,7 @@ struct _Py_global_strings {
         STRUCT_FOR_STR(newline, "\n")
         STRUCT_FOR_STR(open_br, "{")
         STRUCT_FOR_STR(percent, "%")
+        STRUCT_FOR_STR(utf_8, "utf-8")
     } literals;
 
     struct {
@@ -156,6 +157,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__next__)
         STRUCT_FOR_ID(__note__)
         STRUCT_FOR_ID(__or__)
+        STRUCT_FOR_ID(__orig_class__)
         STRUCT_FOR_ID(__origin__)
         STRUCT_FOR_ID(__package__)
         STRUCT_FOR_ID(__parameters__)
@@ -199,6 +201,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__subclasshook__)
         STRUCT_FOR_ID(__truediv__)
         STRUCT_FOR_ID(__trunc__)
+        STRUCT_FOR_ID(__typing_subst__)
         STRUCT_FOR_ID(__warningregistry__)
         STRUCT_FOR_ID(__weakref__)
         STRUCT_FOR_ID(__xor__)
@@ -269,6 +272,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(inf)
         STRUCT_FOR_ID(intersection)
         STRUCT_FOR_ID(isatty)
+        STRUCT_FOR_ID(isinstance)
         STRUCT_FOR_ID(items)
         STRUCT_FOR_ID(iter)
         STRUCT_FOR_ID(join)
@@ -278,6 +282,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(last_type)
         STRUCT_FOR_ID(last_value)
         STRUCT_FOR_ID(latin1)
+        STRUCT_FOR_ID(len)
         STRUCT_FOR_ID(line)
         STRUCT_FOR_ID(lineno)
         STRUCT_FOR_ID(listcomp)
@@ -348,6 +353,14 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(write)
         STRUCT_FOR_ID(zipimporter)
     } identifiers;
+    struct {
+        PyASCIIObject _ascii;
+        uint8_t _data[2];
+    } ascii[128];
+    struct {
+        PyCompactUnicodeObject _latin1;
+        uint8_t _data[2];
+    } latin1[128];
 };
 /* End auto-generated code */
 
@@ -360,6 +373,16 @@ struct _Py_global_strings {
 #define _Py_STR(NAME) \
      (_Py_SINGLETON(strings.literals._ ## NAME._ascii.ob_base))
 
+/* _Py_DECLARE_STR() should precede all uses of _Py_STR() in a function.
+
+   This is true even if the same string has already been declared
+   elsewhere, even in the same file.  Mismatched duplicates are detected
+   by Tools/scripts/generate-global-objects.py.
+
+   Pairing _Py_DECLARE_STR() with every use of _Py_STR() makes sure the
+   string keeps working even if the declaration is removed somewhere
+   else.  It also makes it clear what the actual string is at every
+   place it is being used. */
 #define _Py_DECLARE_STR(name, str)
 
 #ifdef __cplusplus

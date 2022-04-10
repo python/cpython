@@ -44,8 +44,9 @@ def text_encoding(encoding, stacklevel=2):
     """
     A helper function to choose the text encoding.
 
-    When encoding is not None, just return it.
-    Otherwise, return the default text encoding (i.e. "locale").
+    When encoding is not None, this function returns it.
+    Otherwise, this function returns the default text encoding
+    (i.e. "locale" or "utf-8" depends on UTF-8 mode).
 
     This function emits an EncodingWarning if *encoding* is None and
     sys.flags.warn_default_encoding is true.
@@ -55,7 +56,10 @@ def text_encoding(encoding, stacklevel=2):
     However, please consider using encoding="utf-8" for new APIs.
     """
     if encoding is None:
-        encoding = "locale"
+        if sys.flags.utf8_mode:
+            encoding = "utf-8"
+        else:
+            encoding = "locale"
         if sys.flags.warn_default_encoding:
             import warnings
             warnings.warn("'encoding' argument not specified.",
@@ -326,8 +330,7 @@ except AttributeError:
 
 class IOBase(metaclass=abc.ABCMeta):
 
-    """The abstract base class for all I/O classes, acting on streams of
-    bytes. There is no public constructor.
+    """The abstract base class for all I/O classes.
 
     This class provides dummy implementations for many methods that
     derived classes can override selectively; the default implementations
@@ -1833,7 +1836,7 @@ class TextIOBase(IOBase):
     """Base class for text I/O.
 
     This class provides a character and line based interface to stream
-    I/O. There is no public constructor.
+    I/O.
     """
 
     def read(self, size=-1):

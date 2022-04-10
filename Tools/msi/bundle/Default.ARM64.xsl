@@ -10,6 +10,10 @@
         </xsl:copy>
     </xsl:template>
 
+    <!--
+    ** No longer need this change, but I'm leaving the snippets here as an example
+    ** in case we need to add another override in the future.
+
     <xsl:template match="*[local-name()='String' and @Id='InstallButtonNote']">
         <String Id="InstallButtonNote">[TargetDir]
 
@@ -20,4 +24,5 @@ Creates shortcuts but no file associations</String>
     <xsl:template match="*[local-name()='String' and @Id='Include_launcherHelp']">
         <String Id="Include_launcherHelp">(The 'py' launcher is currently unavailable on ARM64.)</String>
     </xsl:template>
+    -->
 </xsl:stylesheet>

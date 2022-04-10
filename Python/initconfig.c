@@ -1779,7 +1779,13 @@ static PyStatus
 config_get_locale_encoding(PyConfig *config, const PyPreConfig *preconfig,
                            wchar_t **locale_encoding)
 {
-    wchar_t *encoding = _Py_GetLocaleEncoding();
+    wchar_t *encoding;
+    if (preconfig->utf8_mode) {
+        encoding = _PyMem_RawWcsdup(L"utf-8");
+    }
+    else {
+        encoding = _Py_GetLocaleEncoding();
+    }
     if (encoding == NULL) {
         return _PyStatus_NO_MEMORY();
     }

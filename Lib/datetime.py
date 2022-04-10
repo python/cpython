@@ -1169,15 +1169,7 @@ class tzinfo:
             args = getinitargs()
         else:
             args = ()
-        getstate = getattr(self, "__getstate__", None)
-        if getstate:
-            state = getstate()
-        else:
-            state = getattr(self, "__dict__", None) or None
-        if state is None:
-            return (self.__class__, args)
-        else:
-            return (self.__class__, args, state)
+        return (self.__class__, args, self.__getstate__())
 
 
 class IsoCalendarDate(tuple):

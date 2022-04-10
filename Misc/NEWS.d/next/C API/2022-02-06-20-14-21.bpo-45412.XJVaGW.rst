@@ -1,2 +1,0 @@
-Remove the ``HAVE_PY_SET_53BIT_PRECISION`` macro (moved to the internal C API).
-Patch by Victor Stinner.

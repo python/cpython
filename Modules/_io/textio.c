@@ -30,7 +30,7 @@ PyDoc_STRVAR(textiobase_doc,
     "\n"
     "This class provides a character and line based interface to stream\n"
     "I/O. There is no readinto method because Python's character strings\n"
-    "are immutable. There is no public constructor.\n"
+    "are immutable.\n"
     );
 
 static PyObject *
@@ -1145,7 +1145,13 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         }
     }
     if (encoding == NULL && self->encoding == NULL) {
-        self->encoding = _Py_GetLocaleEncodingObject();
+        if (_PyRuntime.preconfig.utf8_mode) {
+            _Py_DECLARE_STR(utf_8, "utf-8");
+            self->encoding = Py_NewRef(&_Py_STR(utf_8));
+        }
+        else {
+            self->encoding = _Py_GetLocaleEncodingObject();
+        }
         if (self->encoding == NULL) {
             goto error;
         }

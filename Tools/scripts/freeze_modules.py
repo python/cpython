@@ -18,7 +18,7 @@ ROOT_DIR = os.path.abspath(ROOT_DIR)
 FROZEN_ONLY = os.path.join(ROOT_DIR, 'Tools', 'freeze', 'flag.py')
 
 STDLIB_DIR = os.path.join(ROOT_DIR, 'Lib')
-# If FROZEN_MODULES_DIR or DEEPFROZEN_MODULES_DIR is changed then the 
+# If FROZEN_MODULES_DIR or DEEPFROZEN_MODULES_DIR is changed then the
 # .gitattributes and .gitignore files needs to be updated.
 FROZEN_MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'frozen_modules')
 DEEPFROZEN_MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'deepfreeze')
@@ -606,7 +606,6 @@ def regen_makefile(modules):
         ])
         deepfreezerules.append(f"\t{frozen_header}:{src.frozenid} \\")
     deepfreezerules.append('\t-o Python/deepfreeze/deepfreeze.c')
-    deepfreezerules.append('')
     pyfiles[-1] = pyfiles[-1].rstrip(" \\")
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
 
@@ -732,4 +731,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()    
+    main()
