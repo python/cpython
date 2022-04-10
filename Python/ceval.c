@@ -1375,6 +1375,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 /* The stack can grow at most MAXINT deep, as co_nlocals and
    co_stacksize are ints. */
 #define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
+#define EMPTY()           (STACK_LEVEL() == 0)
 #define TOP()             (stack_pointer[-1])
 #define SECOND()          (stack_pointer[-2])
 #define THIRD()           (stack_pointer[-3])
@@ -1385,22 +1386,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define BASIC_STACKADJ(n) (stack_pointer += n)
 #define BASIC_PUSH(v)     (*stack_pointer++ = (v))
 #define BASIC_POP()       (*--stack_pointer)
-
-#ifdef Py_DEBUG
-#define ASSERT_EMPTY() do {                              \
-    if (STACK_LEVEL()) {                                 \
-        fprintf(stderr, "----\n");                       \
-        while (STACK_LEVEL()) {                          \
-            _PyObject_Dump(BASIC_POP());                 \
-            fprintf(stderr, "----\n");                   \
-        }                                                \
-        Py_FatalError("Unexpected items on the stack."); \
-    }                                                    \
-} while (0)
-#else
-#define ASSERT_EMPTY() ((void)0)
-#endif
-
 
 #ifdef LLTRACE
 #define PUSH(v)         { (void)(BASIC_PUSH(v), \
@@ -2381,7 +2366,7 @@ handle_eval_breaker:
 
         TARGET(RETURN_VALUE) {
             PyObject *retval = POP();
-            ASSERT_EMPTY();
+            assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
@@ -5281,7 +5266,7 @@ handle_eval_breaker:
             if (gen == NULL) {
                 goto error;
             }
-            ASSERT_EMPTY();
+            assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
             _PyFrame_Copy(frame, gen_frame);
@@ -6775,12 +6760,6 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         /* Trace backward edges (except in 'yield from') or if line number has changed */
         int prev = _PyOpcode_Deopt[_Py_OPCODE(code[instr_prev])];
         int opcode1 = _PyOpcode_Deopt[_Py_OPCODE(*frame->prev_instr)];
-
-#if 0
-        printf("%s (instr %d, line %d)  -->  %s (instr %d, line %d)\n",
-               opname[prev], instr_prev, lastline,
-               opname[opcode1], _PyInterpreterFrame_LASTI(frame), line);
-#endif
         int trace = (opcode1 == FOR_END && prev != JUMP_FORWARD) ||
             line != lastline ||
             (_PyInterpreterFrame_LASTI(frame) < instr_prev &&
@@ -6788,9 +6767,6 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
              // here:
              prev != SEND && prev != FOR_END);
         if (trace) {
-#if 0
-            printf("calling trace function\n");
-#endif
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
     }
