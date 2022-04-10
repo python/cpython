@@ -268,6 +268,9 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     int64_t target_stack = push_value(next_stack, Object);
                     stacks[i+1] = pop_value(next_stack);
                     j = get_arg(code, i);
+                    if (stacks[j] == UNINITIALIZED && j < i) {
+                        todo = 1;
+                    }
                     assert(j < len);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
                     stacks[j] = target_stack;
@@ -570,7 +573,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
             }
             else if (err < 0) {
                 if (start_stack == OVERFLOWED) {
-                    msg = "stack to deep to analyze";
+                    msg = "stack too deep to analyze";
                 }
                 else if (start_stack == UNINITIALIZED) {
                     msg = "can't jump from within an exception handler";
