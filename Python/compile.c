@@ -7657,12 +7657,14 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
                     if (is_relative_jump(instr)) {
                         if (instr->i_oparg < bsize) {
                             assert(instr->i_opcode == JUMP_BACKWARD ||
-                                   instr->i_opcode == JUMP_BACKWARD_NO_INTERRUPT);
+                                   instr->i_opcode == JUMP_BACKWARD_NO_INTERRUPT ||
+                                   instr->i_opcode == FOR_END);
                             instr->i_oparg = bsize - instr->i_oparg;
                         }
                         else {
                             assert(instr->i_opcode != JUMP_BACKWARD);
                             assert(instr->i_opcode != JUMP_BACKWARD_NO_INTERRUPT);
+                            assert(instr->i_opcode != FOR_END);
                             instr->i_oparg -= bsize;
                         }
                     }

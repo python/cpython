@@ -4193,7 +4193,7 @@ handle_eval_breaker:
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
                 PUSH(next);
-                JUMPTO(oparg);
+                JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
                 PREDICT(STORE_FAST);
                 PREDICT(UNPACK_SEQUENCE);

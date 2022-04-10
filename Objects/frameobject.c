@@ -267,7 +267,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 {
                     int64_t target_stack = push_value(next_stack, Object);
                     stacks[i+1] = pop_value(next_stack);
-                    j = get_arg(code, i);
+                    j = i + 1 - get_arg(code, i);
                     if (stacks[j] == UNINITIALIZED && j < i) {
                         todo = 1;
                     }

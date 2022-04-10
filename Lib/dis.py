@@ -30,7 +30,9 @@ MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 LOAD_CONST = opmap['LOAD_CONST']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
 BINARY_OP = opmap['BINARY_OP']
-JUMP_BACKWARD = opmap['JUMP_BACKWARD']
+
+BACK_JUMPS = {code for name, code in opmap.items()
+              if 'JUMP_BACKWARD' in name} | {opmap['FOR_END']}
 
 CACHE = opmap["CACHE"]
 
@@ -442,7 +444,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 argval = arg*2
                 argrepr = "to " + repr(argval)
             elif op in hasjrel:
-                signed_arg = -arg if op == JUMP_BACKWARD else arg
+                signed_arg = -arg if op in BACK_JUMPS else arg
                 argval = offset + 2 + signed_arg*2
                 argrepr = "to " + repr(argval)
             elif op in haslocal or op in hasfree:
@@ -568,7 +570,7 @@ def findlabels(code):
     for offset, op, arg in _unpack_opargs(code):
         if arg is not None:
             if op in hasjrel:
-                if op == JUMP_BACKWARD:
+                if op in BACK_JUMPS:
                     arg = -arg
                 label = offset + 2 + arg*2
             elif op in hasjabs:
