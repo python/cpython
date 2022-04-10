@@ -17,7 +17,6 @@
    section.
 
 
-
 Cross Platform
 --------------
 
