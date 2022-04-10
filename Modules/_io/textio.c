@@ -1061,6 +1061,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     _PyIO_State *state = NULL;
     PyObject *res;
     int r;
+    int use_locale_encoding = 0; // Use locale encoding even in UTF-8 mode.
 
     self->ok = 0;
     self->detached = 0;
@@ -1076,6 +1077,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     }
     else if (strcmp(encoding, "locale") == 0) {
         encoding = NULL;
+        use_locale_encoding = 1;
     }
 
     if (errors == Py_None) {
@@ -1113,6 +1115,11 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     self->encodefunc = NULL;
     self->b2cratio = 0.0;
 
+#ifdef MS_WINDOWS
+    // os.device_encoding() on Unix is the locale encoding or UTF-8
+    // according to UTF-8 Mode.
+    // Since UTF-8 mode shouldn't affect `encoding="locale"`, we call
+    // os.device_encoding() only on Windows.
     if (encoding == NULL) {
         /* Try os.device_encoding(fileno) */
         PyObject *fileno;
@@ -1144,8 +1151,10 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                 Py_CLEAR(self->encoding);
         }
     }
+#endif
+
     if (encoding == NULL && self->encoding == NULL) {
-        if (_PyRuntime.preconfig.utf8_mode) {
+        if (_PyRuntime.preconfig.utf8_mode && !use_locale_encoding) {
             _Py_DECLARE_STR(utf_8, "utf-8");
             self->encoding = Py_NewRef(&_Py_STR(utf_8));
         }
