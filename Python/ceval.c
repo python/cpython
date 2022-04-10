@@ -1470,7 +1470,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define TRACE_FUNCTION_UNWIND()  \
     if (cframe.use_tracing) { \
         /* Since we are already unwinding, \
-         * we dont't care if this raises */ \
+         * we don't care if this raises */ \
         trace_function_exit(tstate, frame, NULL); \
     }
 
