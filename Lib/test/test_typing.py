@@ -569,7 +569,7 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T]',                        '[*tuple_type[()]]',       'generic[*tuple_type[()]]'),       # Should raise TypeError
             ('generic[T]',                        '[*tuple_type[int]]',      'generic[*tuple_type[int]]'),      # Should be generic[int]
             ('generic[T]',                        '[*tuple_type[int, str]]', 'generic[*tuple_type[int, str]]'), # Should raise TypeError
-            ('generic[T]',                        '[*tuple_type[int, ...]]', 'generic[*tuple_type[int, ...]]'), # Should raise TypeError?
+            ('generic[T]',                        '[*tuple_type[int, ...]]', 'generic[*tuple_type[int, ...]]'), # Should be generic[int]?
             ('generic[T]',                        '[*Ts]',                   'generic[*Ts]'),                   # Should raise TypeError
             ('generic[T]',                        '[T, *Ts]',                'TypeError'),
             ('generic[T]',                        '[*Ts, T]',                'TypeError'),
@@ -718,9 +718,9 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('tuple[T, *Ts]',                          '[int, str, bool]',                               'TypeError'),  # Should be tuple[int, str, bool]
             ('Tuple[T, *Ts]',                          '[int, str, bool]',                               'Tuple[int, str, bool]'),
 
-            ('C[T, *Ts]',                              '[*tuple_type[int, ...]]',                        'C[*tuple_type[int, ...]]'),  # Should be C[int, *tuple_type[int, ...]]?
+            ('C[T, *Ts]',                              '[*tuple_type[int, ...]]',                        'C[*tuple_type[int, ...]]'),  # Should be C[int, *tuple_type[int, ...]]
             ('tuple[T, *Ts]',                          '[*tuple_type[int, ...]]',                        'TypeError'),  # Should be tuple[int, *tuple_type[int, ...]]?
-            ('Tuple[T, *Ts]',                          '[*tuple_type[int, ...]]',                        'Tuple[*tuple_type[int, ...]]'),  # Should be Tuple[int, *tuple_type[int, ...]]?
+            ('Tuple[T, *Ts]',                          '[*tuple_type[int, ...]]',                        'Tuple[*tuple_type[int, ...]]'),  # Should be Tuple[int, *tuple_type[int, ...]]
 
             ('C[*Ts, T]',                              '[int]',                                          'C[int]'),
             ('tuple[*Ts, T]',                          '[int]',                                          'TypeError'),  # Should be tuple[int]
