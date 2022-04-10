@@ -8,6 +8,11 @@ __all__ = ['MIMEImage']
 
 from email import encoders
 from email.mime.nonmultipart import MIMENonMultipart
+import warnings
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", DeprecationWarning)
+    import imghdr
 
 
 
@@ -36,7 +41,12 @@ class MIMEImage(MIMENonMultipart):
         header.
         """
         if _subtype is None:
-            import imghdr
+            fullname = f"{__name__}.{self.__class__.__qualname__}"
+            msg = ("The *_subtype* argument's default value for {name}"
+                   "is deprecated due to the deprecation of imghdr (slated for "
+                   "removal in Python {remove}); explicitly specify the image "
+                   "subtype")
+            warnings._deprecated(fullname, msg, remove=(3, 13))
             _subtype = imghdr.what(None, _imagedata)
         if _subtype is None:
             raise TypeError('Could not guess image MIME subtype')

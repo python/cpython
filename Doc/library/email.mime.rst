@@ -204,8 +204,8 @@ Here are the classes:
    .. versionchanged:: 3.6
       Added *policy* keyword-only parameter.
 
-   .. versionchanged:: 3.11
-      Deprecated the default value for *_subtype* due :mod:`imghdr` being
+   .. deprecated:: 3.11
+      The default argument for *_subtype* due :mod:`imghdr` being
       deprecated.
 
 .. currentmodule:: email.mime.message

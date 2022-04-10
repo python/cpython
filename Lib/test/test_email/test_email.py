@@ -7,6 +7,7 @@ import time
 import base64
 import unittest
 import textwrap
+import warnings
 
 from io import StringIO, BytesIO
 from itertools import chain
@@ -1589,6 +1590,12 @@ class TestMIMEImage(unittest.TestCase):
         self.assertIs(self._im.get_param('foobar', missing), missing)
         self.assertIs(self._im.get_param('attachment', missing,
                                          header='foobar'), missing)
+
+    def test_subtype_default_deprecation(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            with self.assertRaises(DeprecationWarning):
+                self._im = MIMEImage(self._imgdata)
 
 
 
