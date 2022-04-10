@@ -6763,9 +6763,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         int trace = (opcode1 == FOR_END && prev != JUMP_FORWARD) ||
             line != lastline ||
             (_PyInterpreterFrame_LASTI(frame) < instr_prev &&
-             // SEND has no quickened forms, so no need to use _PyOpcode_Deopt
-             // here:
-             prev != SEND && prev != FOR_END);
+             opcode1 != SEND && prev != FOR_END);
         if (trace) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
