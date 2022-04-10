@@ -41,7 +41,7 @@ Using the Python issue tracker
 ==============================
 
 Bug reports for Python itself should be submitted via the Python Bug Tracker
-(https://bugs.python.org/).  The bug tracker offers a web form which allows
+(https://github.com/python/cpython/issues).  The bug tracker offers a web form which allows
 pertinent information to be entered and submitted to the developers.
 
 The first step in filing a report is to determine whether the problem has
@@ -95,6 +95,6 @@ patching Python in the `Python Developer's Guide`_.  If you have questions,
 the `core-mentorship mailing list`_ is a friendly place to get answers to
 any and all questions pertaining to the process of fixing issues in Python.
 
-.. _Documentation bugs: https://bugs.python.org/issue?@filter=status&@filter=components&components=4&status=1&@columns=id,activity,title,status&@sort=-activity
+.. _Documentation bugs: https://github.com/python/cpython/issues?q=is%3Aissue+is%3Aopen+label%3Adocs
 .. _Python Developer's Guide: https://devguide.python.org/
 .. _core-mentorship mailing list: https://mail.python.org/mailman3/lists/core-mentorship.python.org/
