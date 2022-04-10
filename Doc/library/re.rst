@@ -166,15 +166,15 @@ The special characters are:
   back-tracking when the expression following it fails to match.
   These are known as :dfn:`possessive` quantifiers.
   For example, ``a*a`` will match ``'aaaa'`` because the ``a*`` will match
-  all 4 ``'a'``s, but, when the final ``'a'`` is encountered, the
+  all 4 ``'a'``\ s, but, when the final ``'a'`` is encountered, the
   expression is backtracked so that in the end the ``a*`` ends up matching
-  3 ``'a'``s total, and the fourth ``'a'`` is matched by the final ``'a'``.
+  3 ``'a'``\ s total, and the fourth ``'a'`` is matched by the final ``'a'``.
   However, when ``a*+a`` is used to match ``'aaaa'``, the ``a*+`` will
   match all 4 ``'a'``, but when the final ``'a'`` fails to find any more
   characters to match, the expression cannot be backtracked and will thus
   fail to match.
   ``x*+``, ``x++`` and ``x?+`` are equivalent to ``(?>x*)``, ``(?>x+)``
-  and ``(?>x?)`` correspondigly.
+  and ``(?>x?)`` correspondingly.
 
    .. versionadded:: 3.11
 
@@ -208,10 +208,10 @@ The special characters are:
    *without* establishing any backtracking points.
    This is the possessive version of the quantifier above.
    For example, on the 6-character string ``'aaaaaa'``, ``a{3,5}+aa``
-   attempt to match 5 ``'a'`` characters, then, requiring 2 more ``'a'``s,
+   attempt to match 5 ``'a'`` characters, then, requiring 2 more ``'a'``\ s,
    will need more characters than available and thus fail, while
-   ``a{3,5}aa`` will match with ``a{3,5}`` capturing 5, then 4 ``'a'``s
-   by backtracking and then the final 2 ``'a'``s are matched by the final
+   ``a{3,5}aa`` will match with ``a{3,5}`` capturing 5, then 4 ``'a'``\ s
+   by backtracking and then the final 2 ``'a'``\ s are matched by the final
    ``aa`` in the pattern.
    ``x{m,n}+`` is equivalent to ``(?>x{m,n})``.
 

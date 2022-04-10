@@ -299,6 +299,11 @@ PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject *);
 */
 PyAPI_FUNC(PyObject *) PyObject_Dir(PyObject *);
 
+/* Pickle support. */
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyObject *) _PyObject_GetState(PyObject *);
+#endif
+
 
 /* Helpers for printing recursive container types */
 PyAPI_FUNC(int) Py_ReprEnter(PyObject *);
