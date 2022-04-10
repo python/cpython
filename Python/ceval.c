@@ -6773,17 +6773,24 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     }
     if (line != -1 && f->f_trace_lines) {
         /* Trace backward edges (except in 'yield from') or if line number has changed */
+        int prev = _PyOpcode_Deopt[_Py_OPCODE(code[instr_prev])];
+        int opcode1 = _PyOpcode_Deopt[_Py_OPCODE(*frame->prev_instr)];
+
 #if 0
-        // SEND has no quickened forms, so no need to use _PyOpcode_Deopt here.
-        int opcode1 = _Py_OPCODE(_PyCode_CODE(frame->f_code)[frame->f_lasti]);
-        int opcode2 = _Py_OPCODE(_PyCode_CODE(frame->f_code)[instr_prev]);
+        printf("%s (instr %d, line %d)  -->  %s (instr %d, line %d)\n",
+               opname[prev], instr_prev, lastline,
+               opname[opcode1], _PyInterpreterFrame_LASTI(frame), line);
 #endif
-        int trace = line != lastline ||
+        int trace = (opcode1 == FOR_END && prev != JUMP_FORWARD) ||
+            line != lastline ||
             (_PyInterpreterFrame_LASTI(frame) < instr_prev &&
              // SEND has no quickened forms, so no need to use _PyOpcode_Deopt
              // here:
-             _Py_OPCODE(*frame->prev_instr) != SEND);
+             prev != SEND && prev != FOR_END);
         if (trace) {
+#if 0
+            printf("calling trace function\n");
+#endif
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
     }
