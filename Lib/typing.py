@@ -2906,7 +2906,7 @@ def Required(self, parameters):
     There is no runtime checking that a required key is actually provided
     when instantiating a related TypedDict.
     """
-    item = _type_check(parameters, f'{self._name} accepts only a single type')
+    item = _type_check(parameters, f'{self._name} accepts only a single type.')
     return _GenericAlias(self, (item,))
 
 
@@ -2924,7 +2924,7 @@ def NotRequired(self, parameters):
             year=1999,
         )
     """
-    item = _type_check(parameters, f'{self._name} accepts only a single type')
+    item = _type_check(parameters, f'{self._name} accepts only a single type.')
     return _GenericAlias(self, (item,))
 
 
