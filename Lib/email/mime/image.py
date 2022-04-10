@@ -6,13 +6,11 @@
 
 __all__ = ['MIMEImage']
 
-import imghdr
-
 from email import encoders
 from email.mime.nonmultipart import MIMENonMultipart
 
 
-
+
 class MIMEImage(MIMENonMultipart):
     """Class for generating image/* type MIME documents."""
 
@@ -21,10 +19,10 @@ class MIMEImage(MIMENonMultipart):
         """Create an image/* type MIME document.
 
         _imagedata is a string containing the raw image data.  If this data
-        can be decoded by the standard Python `imghdr' module, then the
-        subtype will be automatically included in the Content-Type header.
-        Otherwise, you can specify the specific image subtype via the _subtype
-        parameter.
+        can be decoded by the standard Python `imghdr' module
+        (which is deprecated), then the subtype will be automatically included
+        in the Content-Type header. Otherwise, you can specify the specific
+        image subtype via the _subtype parameter.
 
         _encoder is a function which will perform the actual encoding for
         transport of the image data.  It takes one argument, which is this
@@ -38,6 +36,7 @@ class MIMEImage(MIMENonMultipart):
         header.
         """
         if _subtype is None:
+            import imghdr
             _subtype = imghdr.what(None, _imagedata)
         if _subtype is None:
             raise TypeError('Could not guess image MIME subtype')
