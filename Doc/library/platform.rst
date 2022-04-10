@@ -17,11 +17,6 @@
    section.
 
 
-.. note::
-
-   Calling a platform-specific method on a mismatched platform will return their
-   default values, such as a tuple with empty string values.
-
 
 Cross Platform
 --------------
@@ -145,7 +140,7 @@ Cross Platform
 
 .. function:: release()
 
-   Returns the system's release, e.g. ``'2.2.0'`` or ``'NT'`` An empty string is
+   Returns the system's release, e.g. ``'2.2.0'`` or ``'NT'``. An empty string is
    returned if the value cannot be determined.
 
 
@@ -182,7 +177,7 @@ Cross Platform
    Entries which cannot be determined are set to ``''``.
 
    .. versionchanged:: 3.3
-      Result changed from a tuple to a namedtuple.
+      Result changed from a tuple to a :func:`~collections.namedtuple`.
 
 
 Java Platform
@@ -207,7 +202,9 @@ Windows Platform
 
    Get additional version information from the Windows Registry and return a tuple
    ``(release, version, csd, ptype)`` referring to OS release, version number,
-   CSD level (service pack) and OS type (multi/single processor).
+   CSD level (service pack) and OS type (multi/single processor). Values which
+   cannot be determined are set to the defaults given as parameters (which all
+   default to ``''``).
 
    As a hint: *ptype* is ``'Uniprocessor Free'`` on single processor NT machines
    and ``'Multiprocessor Free'`` on multi processor machines. The *'Free'* refers
@@ -217,9 +214,9 @@ Windows Platform
 
 .. function:: win32_edition()
 
-   Returns a string representing the current Windows edition.  Possible
-   values include but are not limited to ``'Enterprise'``, ``'IoTUAP'``,
-   ``'ServerStandard'``, and ``'nanoserver'``.
+   Returns a string representing the current Windows edition, or ``None`` if the
+   value cannot be determined.  Possible values include but are not limited to
+   ``'Enterprise'``, ``'IoTUAP'``, ``'ServerStandard'``, and ``'nanoserver'``.
 
    .. versionadded:: 3.8
 
