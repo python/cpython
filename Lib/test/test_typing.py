@@ -2,6 +2,7 @@ import contextlib
 import collections
 from functools import lru_cache
 import inspect
+import itertools
 import pickle
 import re
 import sys
@@ -447,147 +448,313 @@ class TypeVarTests(BaseTestCase):
                     list[T][arg]
 
 
+def template_replace(templates: list[str], replacements: dict[str, list[str]]) -> list[tuple[str]]:
+    """Renders templates with possible combinations of replacements.
+
+    Example 1: Suppose that:
+      templates = ["dog_breed are awesome", "dog_breed are cool"]
+      replacements = ["dog_breed": ["Huskies", "Beagles"]]
+    Then we would return:
+      [
+          ("Huskies are awesome", "Huskies are cool"),
+          ("Beagles are awesome", "Beagles are cool")
+      ]
+
+    Example 2: Suppose that:
+      templates = ["Huskies are word1 but also word2"]
+      replacements = {"word1": ["playful", "cute"],
+                      "word2": ["feisty", "tiring"]}
+    Then we would return:
+      [
+          ("Huskies are playful but also feisty"),
+          ("Huskies are playful but also tiring"),
+          ("Huskies are cute but also feisty"),
+          ("Huskies are cute but also tiring")
+      ]
+
+    Note that if any of the replacements do not occur in any template:
+      templates = ["Huskies are word1", "Beagles!"]
+      replacements = {"word1": ["playful", "cute"],
+                      "word2": ["feisty", "tiring"]}
+    Then we do not generate duplicates, returning:
+      [
+          ("Huskies are playful", "Beagles!"),
+          ("Huskies are cute", "Beagles!")
+      ]
+    """
+    # First, build a structure like:
+    #   [
+    #     [("word1", "playful"), ("word1", "cute")],
+    #     [("word2", "feisty"), ("word2", "tiring")]
+    #   ]
+    replacement_combos = []
+    for original, possible_replacements in replacements.items():
+        original_replacement_tuples = []
+        for replacement in possible_replacements:
+            original_replacement_tuples.append((original, replacement))
+        replacement_combos.append(original_replacement_tuples)
+
+    # Second, generate rendered templates, including possible duplicates.
+    rendered_templates = []
+    for replacement_combo in itertools.product(*replacement_combos):
+        # replacement_combo would be e.g.
+        #   [("word1", "playful"), ("word2", "feisty")]
+        templates_with_replacements = []
+        for template in templates:
+            for original, replacement in replacement_combo:
+                template = template.replace(original, replacement)
+            templates_with_replacements.append(template)
+        rendered_templates.append(tuple(templates_with_replacements))
+
+    # Finally, remove the duplicates (but keep the order).
+    rendered_templates_no_duplicates = []
+    for x in rendered_templates:
+        # Inefficient, but should be fine for our purposes.
+        if x not in rendered_templates_no_duplicates:
+            rendered_templates_no_duplicates.append(x)
+
+    return rendered_templates_no_duplicates
+
+
+class TemplateReplacementTests(BaseTestCase):
+
+    def test_two_templates_two_replacements_yields_correct_renders(self):
+        actual = template_replace(
+                templates=["Cats are word1", "Dogs are word2"],
+                replacements={
+                    "word1": ["small", "cute"],
+                    "word2": ["big", "fluffy"],
+                },
+        )
+        expected = [
+            ("Cats are small", "Dogs are big"),
+            ("Cats are small", "Dogs are fluffy"),
+            ("Cats are cute", "Dogs are big"),
+            ("Cats are cute", "Dogs are fluffy"),
+        ]
+        self.assertEqual(actual, expected)
+
+    def test_no_duplicates_if_replacement_not_in_templates(self):
+        actual = template_replace(
+                templates=["Cats are word1", "Dogs!"],
+                replacements={
+                    "word1": ["small", "cute"],
+                    "word2": ["big", "fluffy"],
+                },
+        )
+        expected = [
+            ("Cats are small", "Dogs!"),
+            ("Cats are cute", "Dogs!"),
+        ]
+        self.assertEqual(actual, expected)
+
+
 class TypeVarSubstitutionTests(BaseTestCase):
 
-    def test(self):
+    def test_one_parameter(self):
         T = TypeVar('T')
+        Ts = TypeVarTuple('Ts')
+
+        class C(Generic[T]): pass
+
+        generics = ['C', 'list', 'List']
+        tuple_types = ['tuple', 'Tuple']
+
+        tests = [
+            # Alias                               # Args                     # Expected result
+            ('generic[T]',                        '[()]',                    'TypeError'),
+            ('generic[T]',                        '[int]',                   'generic[int]'),
+            ('generic[T]',                        '[int, str]',              'TypeError'),
+            ('generic[T]',                        '[tuple_type[int, ...]]',  'generic[tuple_type[int, ...]]'),
+            ('generic[T]',                        '[*tuple_type[()]]',       'generic[*tuple_type[()]]'),       # Should raise TypeError
+            ('generic[T]',                        '[*tuple_type[int]]',      'generic[*tuple_type[int]]'),      # Should be generic[int]
+            ('generic[T]',                        '[*tuple_type[int, str]]', 'generic[*tuple_type[int, str]]'), # Should raise TypeError
+            ('generic[T]',                        '[*tuple_type[int, ...]]', 'generic[*tuple_type[int, ...]]'), # Should raise TypeError?
+            ('generic[T]',                        '[*Ts]',                   'generic[*Ts]'),                   # Should raise TypeError
+            ('generic[T]',                        '[T, *Ts]',                'TypeError'),
+            ('generic[T]',                        '[*Ts, T]',                'TypeError'),
+
+            # The following two cases work with list/List but not with C
+            # because list/List don't restrict to only a single type argument
+            # but C does.
+            ('list[T, *tuple_type[int, ...]]',    '[int]',                   'list[int, *tuple_type[int, ...]]'),
+            ('List[T, *tuple_type[int, ...]]',    '[int]',                   'TypeError'),                      # Should be List[int, *tuple_type[int, ...]]
+        ]
+
+        for alias_template, args_template, expected_template in tests:
+            rendered_templates = template_replace(
+                    templates=[alias_template, args_template, expected_template],
+                    replacements={'generic': generics, 'tuple_type': tuple_types}
+            )
+            for alias_str, args_str, expected_str in rendered_templates:
+                with self.subTest(alias=alias_str, args=args_str, expected=expected_str):
+                    if expected_str == 'TypeError':
+                        with self.assertRaises(TypeError):
+                            eval(alias_str + args_str)
+                    else:
+                        self.assertEqual(
+                            eval(alias_str + args_str),
+                            eval(expected_str)
+                        )
+
+
+    def test_two_parameters(self):
         T1 = TypeVar('T1')
         T2 = TypeVar('T2')
         Ts = TypeVarTuple('Ts')
-        class A(Generic[T]): pass
-        class B(Generic[T1, T2]): pass
-        class C(Generic[*Ts]): pass
+
+        class C(Generic[T1, T2]): pass
+
+        generics = ['C', 'dict', 'Dict']
+        tuple_types = ['tuple', 'Tuple']
+
         tests = [
-            ('A[T]',                            '[()]',                                     TypeError),
-            ('A[T]',                            '[int]',                                    A[int]),
-            ('A[T]',                            '[int, str]',                               TypeError),
-            ('A[T]',                            '[tuple[int, ...]]',                        A[tuple[int, ...]]),
-            ('A[T]',                            '[*tuple[()]]',                             A[*tuple[()]]),  # Should raise TypeError?
-            ('A[T]',                            '[*tuple[int]]',                            A[*tuple[int]]),  # Should be A[int]?
-            ('A[T]',                            '[*tuple[int, str]]',                       A[*tuple[int, str]]), # Should raise TypeError?
-            ('A[T]',                            '[*tuple[int, ...]]',                       A[*tuple[int, ...]]),  # Should raise TypeError?
-            ('A[T]',                            '[*Ts]',                                    A[T][*Ts]),  # Should raise TypeError?
-            ('A[T]',                            '[T, *Ts]',                                 TypeError),
-            ('A[T]',                            '[*Ts, T]',                                 TypeError),
-            ('A[T, *tuple[int, ...]]',          '[int]',                                    TypeError),
-
-            ('list[T]',                         '[()]',                                     TypeError),  # Should be list[()]?
-            ('list[T]',                         '[int]',                                    list[int]),
-            ('list[T]',                         '[int, str]',                               TypeError),
-            ('list[T]',                         '[tuple[int, ...]]',                        list[tuple[int, ...]]),
-            ('list[T]',                         '[*tuple[()]]',                             list[*tuple[()]]),  # Should be list[()]?
-            ('list[T]',                         '[*tuple[int]]',                            list[*tuple[int]]),  # Should be list[int]?
-            ('list[T]',                         '[*tuple[int, str]]',                       list[*tuple[int, str]]), # Should be list[int, str]?
-                                                                                            # Why list[*tuple[int, ...]] rather than list[int, ...]?
-                                                                                            # Because as of PEP 484, only tuple[int, ...] is explicitly
-                                                                                            # given a meaning - list[int, ...] is not, and we might want
-                                                                                            # to give a meaning other than "A list of ints of arbitrary
-                                                                                            # length" in the future.
-            ('list[T]',                         '[*tuple[int, ...]]',                       list[*tuple[int, ...]]),
-                                                                                            # Ok, technically list isn't a variadic type, but we should
-                                                                                            # allow this in line with our spirit of trying to be lenient
-                                                                                            # about types at runtime.
-            ('list[T]',                         '[*Ts]',                                    list[*Ts]),
-            ('list[T]',                         '[T, *Ts]',                                 TypeError),
-            ('list[T]',                         '[*Ts, T]',                                 TypeError),
-            ('list[T, *tuple[int, ...]]',       '[int]',                                    list[int, *tuple[int, ...]]),
-
-            ('B[T1, T2]',                       '[()]',                                     TypeError),
-            ('B[T1, T2]',                       '[int]',                                    TypeError),
-            ('B[T1, T2]',                       '[int, str]',                               B[int, str]),
-            ('B[T1, T2]',                       '[int, str, bool]',                         TypeError),
-            ('B[T1, T2]',                       '[*tuple[int]]',                            TypeError),
-            ('B[T1, T2]',                       '[*tuple[int, str]]',                       TypeError),  # Should be B[int, str]?
-            ('B[T1, T2]',                       '[*tuple[int, str, bool]]',                 TypeError),
-            ('B[T1, T2]',                       '[*tuple[int, str], *tuple[float, bool]]',  B[*tuple[int, str], *tuple[float, bool]]),  # Should raise TypeError?
-            ('B[T1, T2]',                       '[tuple[int, ...]]',                        TypeError),
-            ('B[T1, T2]',                       '[tuple[int, ...], tuple[str, ...]]',       B[tuple[int, ...], tuple[str, ...]]),
-            ('B[T1, T2]',                       '[*tuple[int, ...]]',                       TypeError),
-            ('B[T1, T2]',                       '[*tuple[int, ...], *tuple[str, ...]]',     B[*tuple[int, ...], *tuple[str, ...]]),  # Should raise TypeError?
-            ('B[T1, T2]',                       '[*Ts]',                                    TypeError),
-            ('B[T1, T2]',                       '[T, *Ts]',                                 B[T, *Ts]),  # Should raise TypeError?
-            ('B[T1, T2]',                       '[*Ts, T]',                                 B[*Ts, T]),  # Should raise TypeError?
-            ('B[T1, *tuple[int, ...]]',         '[str]',                                    B[str, *tuple[int, ...]]),  # Should raise TypeError?
-            ('B[T1, T2, *tuple[int, ...]]',     '[int, str]',                               TypeError),
-
-            ('dict[T1, T2]',                    '[()]',                                     TypeError),
-            ('dict[T1, T2]',                    '[int]',                                    TypeError),
-            ('dict[T1, T2]',                    '[int, str]',                               dict[int, str]),
-            ('dict[T1, T2]',                    '[int, str, bool]',                         TypeError),
-            ('dict[T1, T2]',                    '[*tuple[int]]',                            TypeError),
-            ('dict[T1, T2]',                    '[*tuple[int, str]]',                       TypeError),  # Should be dict[int, str]?
-            ('dict[T1, T2]',                    '[*tuple[int, str, bool]]',                 TypeError),
-            ('dict[T1, T2]',                    '[*tuple[int, str], *tuple[float, bool]]',  dict[*tuple[int, str], *tuple[float, bool]]),  # Should raise TypeError?
-            ('dict[T1, T2]',                    '[tuple[int, ...]]',                        TypeError),
-            ('dict[T1, T2]',                    '[tuple[int, ...], tuple[str, ...]]',       dict[tuple[int, ...], tuple[str, ...]]),
-                                                                                            # Should be dict[int, int]? This is a tricky one, because we might not
-                                                                                            # have exactly two ints. But static checkers accept `t: tuple[int, ...]; t[1]`,
-                                                                                            # so I think we should "Try to find to make it *work*" rather than
-                                                                                            # "Try to find a way to make it *not* work".
-            ('dict[T1, T2]',                    '[*tuple[int, ...]]',                       TypeError),
-            ('dict[T1, T2]',                    '[*tuple[int, ...], *tuple[str, ...]]',     dict[*tuple[int, ...], *tuple[str, ...]]),
-            ('dict[T1, T2]',                    '[*Ts]',                                    TypeError),
-            ('dict[T1, T2]',                    '[T, *Ts]',                                 dict[T, *Ts]),  # Should raise TypeError?
-            ('dict[T1, T2]',                    '[*Ts, T]',                                 dict[*Ts, T]),  # Should raise TypeError?
-            ('dict[T1, *tuple[int, ...]]',      '[str]',                                    dict[str, *tuple[int, ...]]),
-            ('dict[T1, T2, *tuple[int, ...]]',  '[int, str]',                               dict[int, str, *tuple[int, ...]]),
-
-            ('C[*Ts]',                          '[()]',                                     C[()]),
-            ('C[*Ts]',                          '[int]',                                    C[int]),
-            ('C[*Ts]',                          '[int, str]',                               C[int, str]),
-            ('C[*Ts]',                          '[*tuple[int]]',                            C[*tuple[int]]),  # Should be C[int]?
-            ('C[*Ts]',                          '[*tuple[int, str]]',                       C[*tuple[int, str]]),  # Should be C[int, str]?
-            ('C[*Ts]',                          '[tuple[int, ...]]',                        C[tuple[int, ...]]),
-            ('C[*Ts]',                          '[tuple[int, ...], tuple[str, ...]]',       C[tuple[int, ...], tuple[str, ...]]),
-            ('C[*Ts]',                          '[*tuple[int, ...]]',                       C[*tuple[int, ...]]),
-            ('C[*Ts]',                          '[*tuple[int, ...], *tuple[str, ...]]',     C[*tuple[int, ...], *tuple[str, ...]]),
-            ('C[*Ts]',                          '[*Ts]',                                    C[*Ts]),
-            ('C[*Ts]',                          '[T, *Ts]',                                 C[T, *Ts]),
-            ('C[*Ts]',                          '[*Ts, T]',                                 C[*Ts, T]),
-            ('C[T, *Ts]',                       '[int]',                                    C[int]),
-            ('C[T, *Ts]',                       '[int, str]',                               C[int, str]),
-            ('C[T, *Ts]',                       '[int, str, bool]',                         C[int, str, bool]),
-            ('C[*Ts, T]',                       '[int]',                                    C[int]),
-            ('C[*Ts, T]',                       '[int, str]',                               C[int, str]),
-            ('C[*Ts, T]',                       '[int, str, bool]',                         C[int, str, bool]),
-            ('C[T, *Ts]',                       '[*tuple[int, ...]]',                       C[*tuple[int, ...]]),  # Should be C[int, *tuple[int, ...]]?
-            ('C[T, *tuple[int, ...]]',          '[str]',                                    C[str, *tuple[int, ...]]),
-            ('C[T1, T2, *tuple[int, ...]]',     '[str, bool]',                              C[str, bool, *tuple[int, ...]]),
-            ('C[T1, *tuple[int, ...], T2]',     '[str, bool]',                              C[str, *tuple[int, ...], bool]),
-
-            ('tuple[*Ts]',                      '[()]',                                     TypeError),  # Should be tuple[()]?
-            ('tuple[*Ts]',                      '[int]',                                    tuple[(int,),]),  # Should be tuple[int]?
-            ('tuple[*Ts]',                      '[int, str]',                               TypeError),  # Should be tuple[int, str]?
-            ('tuple[*Ts]',                      '[*tuple[int]]',                            tuple[(*tuple[int],),]),  # Should be tuple[int]?
-            ('tuple[*Ts]',                      '[*tuple[int, str]]',                       tuple[(*tuple[int, str],),]),  # Should be tuple[int, str]?
-            ('tuple[*Ts]',                      '[tuple[int, ...]]',                        tuple[(tuple[int, ...],),]),  # Should be tuple[tuple[int, ...]]?
-            ('tuple[*Ts]',                      '[tuple[int, ...], tuple[str, ...]]',       TypeError),  # Should be tuple[tuple[int, ...], tuple[str, ...]]?
-            ('tuple[*Ts]',                      '[*tuple[int, ...]]',                       tuple[(*tuple[int, ...],),]),  # Should be tuple[int, ...]?
-            ('tuple[*Ts]',                      '[*tuple[int, ...], *tuple[str, ...]]',     TypeError),  # Should be tuple[*tuple[int, ...], *tuple[str, ...]]?
-            ('tuple[*Ts]',                      '[*Ts]',                                    tuple[(*Ts,),]),  # Should be tuple[*Ts]?
-            ('tuple[*Ts]',                      '[T, *Ts]',                                 TypeError),  # Should be tuple[T, *Ts]?
-            ('tuple[*Ts]',                      '[*Ts, T]',                                 TypeError),  # Should be tuple[*Ts, T]?
-            ('tuple[T, *Ts]',                   '[int]',                                    TypeError),  # Should be tuple[int]?
-            ('tuple[T, *Ts]',                   '[int, str]',                               tuple[int, (str,)]),  # Should be tuple[int, str]?
-            ('tuple[T, *Ts]',                   '[int, str, bool]',                         TypeError),  # Should be tuple[int, str, bool]?
-            ('tuple[*Ts, T]',                   '[int]',                                    TypeError),  # Should be tuple[int]?
-            ('tuple[*Ts, T]',                   '[int, str]',                               tuple[(int,), str]),  # Should be tuple[int, str]?
-            ('tuple[*Ts, T]',                   '[int, str, bool]',                         TypeError),  # Should be tuple[int, str, bool]?
-            ('tuple[T, *Ts]',                   '[*tuple[int, ...]]',                       TypeError),  # Should be tuple[int, *tuple[int, ...]]?
-            ('tuple[T, *tuple[int, ...]]',      '[str]',                                    tuple[str, *tuple[int, ...]]),
-            ('tuple[T1, T2, *tuple[int, ...]]', '[str, bool]',                              tuple[str, bool, *tuple[int, ...]]),
-            ('tuple[T1, *tuple[int, ...], T2]', '[str, bool]',                              tuple[str, *tuple[int, ...], bool]),
+            # Alias                                    # Args                                               # Expected result
+            ('generic[T1, T2]',                        '[()]',                                              'TypeError'),
+            ('generic[T1, T2]',                        '[int]',                                             'TypeError'),
+            ('generic[T1, T2]',                        '[int, str]',                                        'generic[int, str]'),
+            ('generic[T1, T2]',                        '[int, str, bool]',                                  'TypeError'),
+            ('generic[T1, T2]',                        '[*tuple_type[int]]',                                'TypeError'),
+            ('generic[T1, T2]',                        '[*tuple_type[int, str]]',                           'TypeError'),  # Should be generic[int, str]
+            ('generic[T1, T2]',                        '[*tuple_type[int, str, bool]]',                     'TypeError'),
+            ('generic[T1, T2]',                        '[*tuple_type[int, str], *tuple_type[float, bool]]', 'generic[*tuple_type[int, str], *tuple_type[float, bool]]'),  # Should raise TypeError
+            ('generic[T1, T2]',                        '[tuple_type[int, ...]]',                            'TypeError'),
+            ('generic[T1, T2]',                        '[tuple_type[int, ...], tuple_type[str, ...]]',      'generic[tuple_type[int, ...], tuple_type[str, ...]]'),
+            ('generic[T1, T2]',                        '[*tuple_type[int, ...]]',                           'TypeError'),  # Should be generic[int, int]?
+            ('generic[T1, T2]',                        '[*tuple_type[int, ...], *tuple_type[str, ...]]',    'generic[*tuple_type[int, ...], *tuple_type[str, ...]]'),  # No idea what to do here
+            ('generic[T1, T2]',                        '[*Ts]',                                             'TypeError'),
+            ('generic[T1, T2]',                        '[T, *Ts]',                                          'generic[T, *Ts]'),  # Should raise TypeError
+            ('generic[T1, T2]',                        '[*Ts, T]',                                          'generic[*Ts, T]'),  # Should raise TypeError
+            ('generic[T1, *tuple_type[int, ...]]',     '[str]',                                             'generic[str, *tuple_type[int, ...]]'),  # Should raise TypeError
         ]
-        for alias, args, expected in tests:
-            with self.subTest(alias=alias, args=args, expected=expected):
-                if inspect.isclass(expected) and issubclass(expected, Exception):
-                    with self.assertRaises(expected):
-                        eval(alias + args)
-                else:
-                    self.assertEqual(
-                        eval(alias + args),
-                        expected,
-                    )
+
+        for alias_template, args_template, expected_template in tests:
+            rendered_templates = template_replace(
+                    templates=[alias_template, args_template, expected_template],
+                    replacements={'generic': generics, 'tuple_type': tuple_types}
+            )
+            for alias_str, args_str, expected_str in rendered_templates:
+                with self.subTest(alias=alias_str, args=args_str, expected=expected_str):
+                    if expected_str == 'TypeError':
+                        with self.assertRaises(TypeError):
+                            eval(alias_str + args_str)
+                    else:
+                        self.assertEqual(
+                            eval(alias_str + args_str),
+                            eval(expected_str)
+                        )
+
+    def test_variadic_parameters(self):
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+        Ts = TypeVarTuple('Ts')
+
+        class C(Generic[*Ts]): pass
+
+        generics = ['C', 'tuple', 'Tuple']
+        tuple_types = ['tuple', 'Tuple']
+
+        # The majority of these have three separate cases for C, tuple and
+        # Tuple because tuple currently behaves differently.
+        tests = [
+            # Alias                                    # Args                                            # Expected result
+            ('C[*Ts]',                                 '[()]',                                           'C[()]'),
+            ('tuple[*Ts]',                             '[()]',                                           'TypeError'),  # Should be tuple[()]
+            ('Tuple[*Ts]',                             '[()]',                                           'Tuple[()]'),
+
+            ('C[*Ts]',                                 '[int]',                                          'C[int]'),
+            ('tuple[*Ts]',                             '[int]',                                          'tuple[(int,),]'),  # Should be tuple[int]
+            ('Tuple[*Ts]',                             '[int]',                                          'Tuple[int]'),
+
+            ('C[*Ts]',                                 '[int, str]',                                     'C[int, str]'),
+            ('tuple[*Ts]',                             '[int, str]',                                     'TypeError'),  # Should be tuple[int, str]
+            ('Tuple[*Ts]',                             '[int, str]',                                     'Tuple[int, str]'),
+
+            ('C[*Ts]',                                 '[*tuple_type[int]]',                             'C[*tuple_type[int]]'),  # Should be C[int]
+            ('tuple[*Ts]',                             '[*tuple_type[int]]',                             'tuple[(*tuple_type[int],),]'),  # Should be tuple[int]
+            ('Tuple[*Ts]',                             '[*tuple_type[int]]',                             'Tuple[*tuple_type[int]]'),  # Should be Tuple[int]
+
+            ('C[*Ts]',                                 '[*tuple_type[int, str]]',                        'C[*tuple_type[int, str]]'),  # Should be C[int, str]
+            ('tuple[*Ts]',                             '[*tuple_type[int, str]]',                        'tuple[(*tuple_type[int, str],),]'),  # Should be tuple[int, str]
+            ('Tuple[*Ts]',                             '[*tuple_type[int, str]]',                        'Tuple[*tuple_type[int, str]]'),  # Should be Tuple[int, str]
+
+            ('C[*Ts]',                                 '[tuple_type[int, ...]]',                         'C[tuple_type[int, ...]]'),
+            ('tuple[*Ts]',                             '[tuple_type[int, ...]]',                         'tuple[(tuple_type[int, ...],),]'),  # Should be tuple[tuple_type[int, ...]]
+            ('Tuple[*Ts]',                             '[tuple_type[int, ...]]',                         'Tuple[tuple_type[int, ...]]'),
+
+            ('C[*Ts]',                                 '[tuple_type[int, ...], tuple_type[str, ...]]',   'C[tuple_type[int, ...], tuple_type[str, ...]]'),
+            ('tuple[*Ts]',                             '[tuple_type[int, ...], tuple_type[str, ...]]',   'TypeError'),  # Should be tuple[tuple_type[int, ...], tuple_type[str, ...]]
+            ('Tuple[*Ts]',                             '[tuple_type[int, ...], tuple_type[str, ...]]',   'Tuple[tuple_type[int, ...], tuple_type[str, ...]]'),
+
+            ('C[*Ts]',                                 '[*tuple_type[int, ...]]',                        'C[*tuple_type[int, ...]]'),
+            ('tuple[*Ts]',                             '[*tuple_type[int, ...]]',                        'tuple[(*tuple_type[int, ...],),]'),  # Should be tuple[*tuple_tuple[int, ...]]
+            ('Tuple[*Ts]',                             '[*tuple_type[int, ...]]',                        'Tuple[*tuple_type[int, ...]]'),
+
+            ('C[*Ts]',                                 '[*tuple_type[int, ...], *tuple_type[str, ...]]', 'C[*tuple_type[int, ...], *tuple_type[str, ...]]'),
+            ('tuple[*Ts]',                             '[*tuple_type[int, ...], *tuple_type[str, ...]]', 'TypeError'),  # Should be tuple[*tuple_type[int, ...], *tuple_type[str, ...]]
+            ('Tuple[*Ts]',                             '[*tuple_type[int, ...], *tuple_type[str, ...]]', 'Tuple[*tuple_type[int, ...], *tuple_type[str, ...]]'),
+
+            ('C[*Ts]',                                 '[*Ts]',                                          'C[*Ts]'),
+            ('tuple[*Ts]',                             '[*Ts]',                                          'tuple[(*Ts,),]'),  # Should be tuple[*Ts]
+            ('Tuple[*Ts]',                             '[*Ts]',                                          'Tuple[*Ts]'),
+
+            ('C[*Ts]',                                 '[T, *Ts]',                                       'C[T, *Ts]'),
+            ('tuple[*Ts]',                             '[T, *Ts]',                                       'TypeError'),  # Should be tuple[T, *Ts]
+            ('Tuple[*Ts]',                             '[T, *Ts]',                                       'Tuple[T, *Ts]'),
+
+            ('C[*Ts]',                                 '[*Ts, T]',                                       'C[*Ts, T]'),
+            ('tuple[*Ts]',                             '[*Ts, T]',                                       'TypeError'),  # Should be tuple[*Ts, T]
+            ('Tuple[*Ts]',                             '[*Ts, T]',                                       'Tuple[*Ts, T]'),
+
+            ('C[T, *Ts]',                              '[int]',                                          'C[int]'),
+            ('tuple[T, *Ts]',                          '[int]',                                          'TypeError'),  # Should be tuple[int]
+            ('Tuple[T, *Ts]',                          '[int]',                                          'Tuple[int]'),
+
+            ('C[T, *Ts]',                              '[int, str]',                                     'C[int, str]'),
+            ('tuple[T, *Ts]',                          '[int, str]',                                     'tuple[int, (str,)]'),  # Should be tuple[int, str]
+            ('Tuple[T, *Ts]',                          '[int, str]',                                     'Tuple[int, str]'),
+
+            ('C[T, *Ts]',                              '[int, str, bool]',                               'C[int, str, bool]'),
+            ('tuple[T, *Ts]',                          '[int, str, bool]',                               'TypeError'),  # Should be tuple[int, str, bool]
+            ('Tuple[T, *Ts]',                          '[int, str, bool]',                               'Tuple[int, str, bool]'),
+
+            ('C[T, *Ts]',                              '[*tuple_type[int, ...]]',                        'C[*tuple_type[int, ...]]'),  # Should be C[int, *tuple_type[int, ...]]?
+            ('tuple[T, *Ts]',                          '[*tuple_type[int, ...]]',                        'TypeError'),  # Should be tuple[int, *tuple_type[int, ...]]?
+            ('Tuple[T, *Ts]',                          '[*tuple_type[int, ...]]',                        'Tuple[*tuple_type[int, ...]]'),  # Should be Tuple[int, *tuple_type[int, ...]]?
+
+            ('C[*Ts, T]',                              '[int]',                                          'C[int]'),
+            ('tuple[*Ts, T]',                          '[int]',                                          'TypeError'),  # Should be tuple[int]
+            ('Tuple[*Ts, T]',                          '[int]',                                          'Tuple[int]'),
+
+            ('C[*Ts, T]',                              '[int, str]',                                     'C[int, str]'),
+            ('tuple[*Ts, T]',                          '[int, str]',                                     'tuple[(int,), str]'),  # Should be tuple[int, str]
+            ('Tuple[*Ts, T]',                          '[int, str]',                                     'Tuple[int, str]'),
+
+            ('C[*Ts, T]',                              '[int, str, bool]',                               'C[int, str, bool]'),
+            ('tuple[*Ts, T]',                          '[int, str, bool]',                               'TypeError'),  # Should be tuple[int, str, bool]
+            ('Tuple[*Ts, T]',                          '[int, str, bool]',                               'Tuple[int, str, bool]'),
+
+            ('generic[T, *tuple_type[int, ...]]',      '[str]',                                          'generic[str, *tuple_type[int, ...]]'),
+            ('generic[T1, T2, *tuple_type[int, ...]]', '[str, bool]',                                    'generic[str, bool, *tuple_type[int, ...]]'),
+            ('generic[T1, *tuple_type[int, ...], T2]', '[str, bool]',                                    'generic[str, *tuple_type[int, ...], bool]'),
+        ]
+
+        for alias_template, args_template, expected_template in tests:
+            rendered_templates = template_replace(
+                    templates=[alias_template, args_template, expected_template],
+                    replacements={'generic': generics, 'tuple_type': tuple_types}
+            )
+            for alias_str, args_str, expected_str in rendered_templates:
+                with self.subTest(alias=alias_str, args=args_str, expected=expected_str):
+                    if expected_str == 'TypeError':
+                        with self.assertRaises(TypeError):
+                            eval(alias_str + args_str)
+                    else:
+                        self.assertEqual(
+                            eval(alias_str + args_str),
+                            eval(expected_str)
+                        )
+
 
 
 class UnpackTests(BaseTestCase):
