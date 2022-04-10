@@ -388,6 +388,10 @@ Constants
        Added ``TCP_KEEPALIVE``. On MacOS this constant can be used in the same
        way that ``TCP_KEEPIDLE`` is used on Linux.
 
+   .. versionchanged:: 3.11
+      Added ``TCP_CONNECTION_INFO``. On MacOS this constant can be used in the
+      same way that ``TCP_INFO`` is used on Linux and BSD.
+
 .. data:: AF_CAN
           PF_CAN
           SOL_CAN_*
