@@ -1325,6 +1325,12 @@ class Popen:
         # Prevent a double close of these handles/fds from __init__ on error.
         self._closed_child_pipe_fds = True
 
+    def tee_pipe_to(output_fh):
+        def _tee_handler(self, buffer, data):
+            buffer.append(data)
+            output_fh.write(data)
+        return _tee_handler
+
     def _read_common_handler(self, buffer, data):
         """Default handler for read_stdout_callback and read_stderr_callback."""
         buffer.append(data)

@@ -340,6 +340,36 @@ class ProcessTestCase(BaseTestCase):
             self.assertEqual(out, b'test_stdout_none' + NEWLINE)
             self.assertEqual(err, b'')
 
+    def test_stdout_tee(self):
+        # .stdout is PIPE when not redirected, and the child's stdout will
+        # be inherited from the parent.  In order to test this we run a
+        # subprocess in a subprocess:
+        # this_test
+        #   \-- subprocess created by this test (parent)
+        #          \-- subprocess created by the parent subprocess (child)
+        # The parent doesn't specify stdout, so the child will use the
+        # parent's stdout.  This test checks that the message printed by the
+        # child goes to the parent stdout.  The parent also checks that the
+        # child's stdout is cloned.  See #47222.
+        code = ('import sys\n'
+                'from subprocess import Popen, PIPE\n'
+                'with Popen([sys.executable, "-c", "print(\'test_stdout_teed\')"],\n'
+                '            stdout=PIPE, stderr=PIPE, read_stdout_callback=Popen.tee_pipe_to(sys.stdout.buffer)) as p:\n'
+                '    out, err = p.communicate()\n'
+                '    assert p.returncode == 0\n'
+                '    assert out.rstrip() == b\'test_stdout_teed\'\n'
+                '    assert err == b\'\'\n'
+                )
+        with subprocess.Popen([sys.executable, "-c", code],
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE) as p:
+            self.addCleanup(p.stdout.close)
+            self.addCleanup(p.stderr.close)
+            out, err = p.communicate()
+            self.assertEqual(p.returncode, 0, err.decode())
+            self.assertEqual(out, b'test_stdout_teed' + NEWLINE)
+            self.assertEqual(err, b'')
+
     def test_stderr_none(self):
         # .stderr is None when not redirected
         with subprocess.Popen([sys.executable, "-c", 'print("banana")'],

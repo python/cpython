@@ -699,6 +699,13 @@ functions.
       The ``read_stdout_callback`` and ``read_stderr_callback`` parameters
       were added.
 
+   Add a tee'ing handler that may be accessed by calling
+   ``tee_pipe_to(handle)``. It takes the handle of the file to clone to
+   as an argument, such as *sys.stdout* or *sys.stderr*.
+
+   .. versionadded: 3.11
+      The ``tee_pipe_to()`` method was added.
+
    Popen objects are supported as context managers via the :keyword:`with` statement:
    on exit, standard file descriptors are closed, and the process is waited for.
    ::
