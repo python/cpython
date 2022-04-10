@@ -930,9 +930,9 @@ ConfigParser Objects
    When *default_section* is given, it specifies the name for the special
    section holding default values for other sections and interpolation purposes
    (normally named ``"DEFAULT"``).  This value can be retrieved and changed at
-   runtime using the ``default_section`` instance attribute, allowing the parser
-   instance to write a modified config to a file. Note that this does not
-   reevaluate the already parsed config.
+   runtime using the ``default_section`` instance attribute. This won't
+   re-evaluate an already parsed config file, but will be used when writing
+   parsed settings to a new config file.
 
    Interpolation behaviour may be customized by providing a custom handler
    through the *interpolation* argument. ``None`` can be used to turn off
