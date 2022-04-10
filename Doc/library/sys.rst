@@ -1183,7 +1183,9 @@ always available.
    System           ``platform`` value
    ================ ===========================
    AIX              ``'aix'``
+   Emscripten       ``'emscripten'``
    Linux            ``'linux'``
+   WASI             ``'wasi'``
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
    macOS            ``'darwin'``

@@ -812,8 +812,9 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 # --preload-file turns a relative asset path into an absolute path.
 
 $(WASM_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
-                pybuilddir.txt $(srcdir)/Tools/wasm/wasm_assets.py \
-				python.html python.worker.js
+	    $(srcdir)/Tools/wasm/wasm_assets.py \
+	    Makefile pybuilddir.txt Modules/Setup.local \
+	    python.html python.worker.js
 	$(PYTHON_FOR_BUILD) $(srcdir)/Tools/wasm/wasm_assets.py \
 	    --builddir . --prefix $(prefix)
 
