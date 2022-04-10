@@ -547,6 +547,12 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     to copy each file. It will be called with the source path and the
     destination path as arguments. By default, copy2() is used, but any
     function that supports the same signature (like copy()) can be used.
+
+    If dirs_exist_ok is false (the default) and `dst` already exists, a
+    `FileExistsError` is raised. If `dirs_exist_ok` is true, the copying
+    operation will continue if it encounters existing directories, and files
+    within the `dst` tree will be overwritten by corresponding files from the
+    `src` tree.
     """
     sys.audit("shutil.copytree", src, dst)
     with os.scandir(src) as itr:
