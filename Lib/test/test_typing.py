@@ -549,7 +549,7 @@ class TemplateReplacementTests(BaseTestCase):
         self.assertEqual(actual, expected)
 
 
-class TypeVarSubstitutionTests(BaseTestCase):
+class GenericAliasSubstitutionTests(BaseTestCase):
 
     def test_one_parameter(self):
         T = TypeVar('T')
