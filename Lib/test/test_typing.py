@@ -3983,6 +3983,10 @@ class DeeplyAnnotatedMovie(TypedDict):
     title: Annotated[Annotated[Required[str], "foobar"], "another level"]
     year: NotRequired[Annotated[int, 2000]]
 
+class WeirdlyQuotedMovie(TypedDict):
+    title: Annotated['Annotated[Required[str], "foobar"]', "another level"]
+    year: NotRequired['Annotated[int, 2000]']
+
 class HasForeignBaseClass(mod_generics_cache.A):
     some_xrepr: 'XRepr'
     other_a: 'mod_generics_cache.A'
@@ -4271,22 +4275,35 @@ class GetTypeHintTests(BaseTestCase):
             get_type_hints(ann_module6)
 
     def test_get_type_hints_typeddict(self):
-        assert get_type_hints(TotalMovie) == {'title': str, 'year': int}
-        assert get_type_hints(TotalMovie, include_extras=True) == {
+        self.assertEqual(get_type_hints(TotalMovie), {'title': str, 'year': int})
+        self.assertEqual(get_type_hints(TotalMovie, include_extras=True), {
             'title': str,
             'year': NotRequired[int],
-        }
+        })
 
-        assert get_type_hints(AnnotatedMovie) == {'title': str, 'year': int}
-        assert get_type_hints(AnnotatedMovie, include_extras=True) == {
+        self.assertEqual(get_type_hints(AnnotatedMovie), {'title': str, 'year': int})
+        self.assertEqual(get_type_hints(AnnotatedMovie, include_extras=True), {
             'title': Annotated[Required[str], "foobar"],
             'year': NotRequired[Annotated[int, 2000]],
-        }
-        assert get_type_hints(DeeplyAnnotatedMovie) == {'title': str, 'year': int}
-        assert get_type_hints(DeeplyAnnotatedMovie, include_extras=True) == {
-            'title': Annotated[Annotated[Required[str], "foobar"], "another level"],
+        })
+
+        self.assertEqual(get_type_hints(DeeplyAnnotatedMovie), {'title': str, 'year': int})
+        self.assertEqual(get_type_hints(DeeplyAnnotatedMovie, include_extras=True), {
+            'title': Annotated[Required[str], "foobar", "another level"],
             'year': NotRequired[Annotated[int, 2000]],
-        }
+        })
+
+        self.assertEqual(get_type_hints(WeirdlyQuotedMovie), {'title': str, 'year': int})
+        self.assertEqual(get_type_hints(WeirdlyQuotedMovie, include_extras=True), {
+            'title': Annotated[Required[str], "foobar", "another level"],
+            'year': NotRequired[Annotated[int, 2000]],
+        })
+
+        self.assertEqual(get_type_hints(_typed_dict_helper.VeryAnnotated), {'a': int})
+        self.assertEqual(get_type_hints(_typed_dict_helper.VeryAnnotated, include_extras=True), {
+            'a': Annotated[Required[int], "a", "b", "c"]
+        })
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
@@ -5311,11 +5328,30 @@ class TypedDictTests(BaseTestCase):
         }
 
     def test_required_notrequired_keys(self):
-        assert NontotalMovie.__required_keys__ == frozenset({'title'})
-        assert NontotalMovie.__optional_keys__ == frozenset({'year'})
+        self.assertEqual(NontotalMovie.__required_keys__,
+                         frozenset({"title"}))
+        self.assertEqual(NontotalMovie.__optional_keys__,
+                         frozenset({"year"}))
 
-        assert TotalMovie.__required_keys__ == frozenset({'title'})
-        assert TotalMovie.__optional_keys__ == frozenset({'year'})
+        self.assertEqual(TotalMovie.__required_keys__,
+                         frozenset({"title"}))
+        self.assertEqual(TotalMovie.__optional_keys__,
+                         frozenset({"year"}))
+
+        self.assertEqual(_typed_dict_helper.VeryAnnotated.__required_keys__,
+                         frozenset())
+        self.assertEqual(_typed_dict_helper.VeryAnnotated.__optional_keys__,
+                         frozenset({"a"}))
+
+        self.assertEqual(AnnotatedMovie.__required_keys__,
+                         frozenset({"title"}))
+        self.assertEqual(AnnotatedMovie.__optional_keys__,
+                         frozenset({"year"}))
+
+        self.assertEqual(WeirdlyQuotedMovie.__required_keys__,
+                         frozenset({"title"}))
+        self.assertEqual(WeirdlyQuotedMovie.__optional_keys__,
+                         frozenset({"year"}))
 
     def test_multiple_inheritance(self):
         class One(TypedDict):
