@@ -3979,6 +3979,10 @@ class AnnotatedMovie(TypedDict):
     title: Annotated[Required[str], "foobar"]
     year: NotRequired[Annotated[int, 2000]]
 
+class DeeplyAnnotatedMovie(TypedDict):
+    title: Annotated[Annotated[Required[str], "foobar"], "another level"]
+    year: NotRequired[Annotated[int, 2000]]
+
 class HasForeignBaseClass(mod_generics_cache.A):
     some_xrepr: 'XRepr'
     other_a: 'mod_generics_cache.A'
@@ -4276,6 +4280,11 @@ class GetTypeHintTests(BaseTestCase):
         assert get_type_hints(AnnotatedMovie) == {'title': str, 'year': int}
         assert get_type_hints(AnnotatedMovie, include_extras=True) == {
             'title': Annotated[Required[str], "foobar"],
+            'year': NotRequired[Annotated[int, 2000]],
+        }
+        assert get_type_hints(DeeplyAnnotatedMovie) == {'title': str, 'year': int}
+        assert get_type_hints(DeeplyAnnotatedMovie, include_extras=True) == {
+            'title': Annotated[Annotated[Required[str], "foobar"], "another level"],
             'year': NotRequired[Annotated[int, 2000]],
         }
 
@@ -5432,6 +5441,12 @@ class RequiredTests(BaseTestCase):
         with self.assertRaises(TypeError):
             class C(type(Required[int])):
                 pass
+        with self.assertRaises(TypeError):
+            class C(Required):
+                pass
+        with self.assertRaises(TypeError):
+            class C(Required[int]):
+                pass
 
     def test_cannot_init(self):
         with self.assertRaises(TypeError):
@@ -5471,6 +5486,12 @@ class NotRequiredTests(BaseTestCase):
                 pass
         with self.assertRaises(TypeError):
             class C(type(NotRequired[int])):
+                pass
+        with self.assertRaises(TypeError):
+            class C(NotRequired):
+                pass
+        with self.assertRaises(TypeError):
+            class C(NotRequired[int]):
                 pass
 
     def test_cannot_init(self):
