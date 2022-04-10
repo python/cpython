@@ -1,0 +1,1 @@
+Add a ``peek()`` method to :class:`io.BytesIO`.
