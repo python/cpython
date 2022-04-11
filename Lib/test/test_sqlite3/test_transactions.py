@@ -23,7 +23,7 @@
 import os, unittest
 import sqlite3 as sqlite
 
-from .test_dbapi import memory_database
+from test.test_sqlite3.test_dbapi import memory_database
 
 def get_db_path():
     return "sqlite_testdb"

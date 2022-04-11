@@ -7,7 +7,7 @@ import sys
 import threading
 import unittest
 from unittest import mock
-
+from types import GenericAlias
 import asyncio
 from asyncio import futures
 from test.test_asyncio import utils as test_utils
@@ -108,6 +108,11 @@ class BaseFutureTests:
         super().setUp()
         self.loop = self.new_test_loop()
         self.addCleanup(self.loop.close)
+
+    def test_generic_alias(self):
+        future = self.cls[str]
+        self.assertEqual(future.__args__, (str,))
+        self.assertIsInstance(future, GenericAlias)
 
     def test_isfuture(self):
         class MyFuture:
@@ -223,14 +228,22 @@ class BaseFutureTests:
         self.assertTrue(hasattr(f, '_cancel_message'))
         self.assertEqual(f._cancel_message, None)
 
-        f.cancel('my message')
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "Passing 'msg' argument"
+        ):
+            f.cancel('my message')
         with self.assertRaises(asyncio.CancelledError):
             self.loop.run_until_complete(f)
         self.assertEqual(f._cancel_message, 'my message')
 
     def test_future_cancel_message_setter(self):
         f = self._new_future(loop=self.loop)
-        f.cancel('my message')
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "Passing 'msg' argument"
+        ):
+            f.cancel('my message')
         f._cancel_message = 'my new message'
         self.assertEqual(f._cancel_message, 'my new message')
 

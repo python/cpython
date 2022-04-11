@@ -154,17 +154,17 @@ The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
 
 .. productionlist:: python-grammar
-   for_stmt: "for" `target_list` "in" `expression_list` ":" `suite`
+   for_stmt: "for" `target_list` "in" `starred_list` ":" `suite`
            : ["else" ":" `suite`]
 
-The expression list is evaluated once; it should yield an iterable object.  An
-iterator is created for the result of the ``expression_list``.  The suite is
-then executed once for each item provided by the iterator, in the order returned
-by the iterator.  Each item in turn is assigned to the target list using the
-standard rules for assignments (see :ref:`assignment`), and then the suite is
-executed.  When the items are exhausted (which is immediately when the sequence
-is empty or an iterator raises a :exc:`StopIteration` exception), the suite in
-the :keyword:`!else` clause, if present, is executed, and the loop terminates.
+The ``starred_list`` expression is evaluated once; it should yield an
+:term:`iterable` object.  An :term:`iterator` is created for that iterable.
+The first item provided
+by the iterator is then assigned to the target list using the standard
+rules for assignments (see :ref:`assignment`), and the suite is executed.  This
+repeats for each item provided by the iterator.  When the iterator is exhausted,
+the suite in the :keyword:`!else` clause,
+if present, is executed, and the loop terminates.
 
 .. index::
    statement: break
@@ -196,6 +196,8 @@ the built-in function :func:`range` returns an iterator of integers suitable to
 emulate the effect of Pascal's ``for i := a to b do``; e.g., ``list(range(3))``
 returns the list ``[0, 1, 2]``.
 
+.. versionchanged:: 3.11
+   Starred elements are now allowed in the expression list.
 
 .. _try:
 .. _except:
@@ -238,9 +240,10 @@ is found that matches the exception.  An expression-less except clause, if
 present, must be last; it matches any exception.  For an except clause with an
 expression, that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
-compatible with an exception if the object is the class or a base class of the exception
-object, or a tuple containing an item that is the class or a base class of
-the exception object.
+compatible with an exception if the object is the class or a
+:term:`non-virtual base class <abstract base class>` of the exception object,
+or a tuple containing an item that is the class or a non-virtual base class
+of the exception object.
 
 If no except clause matches the exception, the search for an exception handler
 continues in the surrounding code and on the invocation stack.  [#]_
@@ -313,7 +316,7 @@ when leaving an exception handler::
    keyword: except_star
 
 The :keyword:`except*<except_star>` clause(s) are used for handling
-:exc:`ExceptionGroup`s. The exception type for matching is interpreted as in
+:exc:`ExceptionGroup`\ s. The exception type for matching is interpreted as in
 the case of :keyword:`except`, but in the case of exception groups we can have
 partial matches when the type matches some of the exceptions in the group.
 This means that multiple except* clauses can execute, each handling part of
