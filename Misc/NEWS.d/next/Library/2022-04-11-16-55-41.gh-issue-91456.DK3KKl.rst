@@ -1,0 +1,2 @@
+Fixed an issue with Enums where the default behavior of auto() was
+generating incorrect values following alias assignment
