@@ -29,6 +29,7 @@ import random
 import socket
 import datetime
 import urllib.parse
+import warnings
 
 from email._parseaddr import quote
 from email._parseaddr import AddressList as _AddressList
@@ -345,6 +346,8 @@ def localtime(dt=None, isdst=-1):
     to divine whether summer time is in effect for the specified time.
 
     """
+    if isdst != -1:
+        warnings.warn("The isdst parameter to localtime is deprecated.", DeprecationWarning, stacklevel=2)
     if dt is None:
         return datetime.datetime.now(datetime.timezone.utc).astimezone()
     if dt.tzinfo is not None:
