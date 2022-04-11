@@ -76,7 +76,7 @@ check_blob(pysqlite_Blob *self)
 /*[clinic input]
 _sqlite3.Blob.close as blob_close
 
-Close blob.
+Close the blob.
 [clinic start generated code]*/
 
 static PyObject *
@@ -146,9 +146,14 @@ inner_read(pysqlite_Blob *self, int length, int offset)
 _sqlite3.Blob.read as blob_read
 
     length: int = -1
+        Read length in bytes.
     /
 
-Read data from blob.
+Read data at the current offset position.
+
+If the end of the blob is reached, the data up to end of file will be returned.
+When length is not specified, or is negative, Blob.read() will read until the
+end of the blob.
 [clinic start generated code]*/
 
 static PyObject *
@@ -203,7 +208,10 @@ _sqlite3.Blob.write as blob_write
     data: Py_buffer
     /
 
-Write data to blob.
+Write data at the current offset.
+
+This function cannot change the blob length.  Writing beyond the end of the
+blob will result in an exception being raised.
 [clinic start generated code]*/
 
 static PyObject *
@@ -230,7 +238,11 @@ _sqlite3.Blob.seek as blob_seek
     origin: int = 0
     /
 
-Change the access position for a blob.
+Set the current access position to *offset*.
+
+The origin argument defaults to os.SEEK_SET (absolute blob positioning).
+Other values for origin are os.SEEK_CUR (seek relative to the current
+position) and os.SEEK_END (seek relative to the blob’s end).
 [clinic start generated code]*/
 
 static PyObject *
@@ -280,7 +292,7 @@ overflow:
 /*[clinic input]
 _sqlite3.Blob.tell as blob_tell
 
-Return current access position for a blob.
+Return the current access position for the blob.
 [clinic start generated code]*/
 
 static PyObject *

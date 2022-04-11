@@ -398,13 +398,13 @@ Connection Objects
 
       Open a :class:`Blob` handle to the :abbr:`BLOB (Binary Large OBject)`
       located in row *row*, column *column*, table *table* of database *name*.
-      When *readonly* is :const:`True` the BLOB is opened without write
+      When *readonly* is :const:`True` the blob is opened without write
       permissions.
 
       .. note::
 
-         The BLOB size cannot be changed using the :class:`Blob` class.
-         Use the SQL function ``zeroblob`` to create a BLOB with a fixed size.
+         The blob size cannot be changed using the :class:`Blob` class.
+         Use the SQL function ``zeroblob`` to create a blob with a fixed size.
 
       .. versionadded:: 3.11
 
@@ -1088,39 +1088,39 @@ Blob Objects
 
    .. method:: Blob.close()
 
-      Close the BLOB.
+      Close the blob.
 
-      The BLOB will be unusable from this point forward.  An
+      The blob will be unusable from this point onward.  An
       :class:`~sqlite3.Error` (or subclass) exception will be raised if any
-      further operation is attempted with the BLOB.
+      further operation is attempted with the blob.
 
    .. method:: Blob.__len__()
 
-      Return the BLOB size as length in bytes.
+      Return the blob size as length in bytes.
 
    .. method:: Blob.read(length=-1, /)
 
-      Read *length* bytes of data from the BLOB at the current offset position.
-      If the end of the BLOB is reached we will return the data up to end of
-      file.  When *size* is not specified or is negative, :meth:`~Blob.read`
-      will read till the end of the BLOB.
+      Read *length* bytes of data from the blob at the current offset position.
+      If the end of the blob is reached, the data up to end of file will be
+      returned.  When *length* is not specified, or is negative,
+      :meth:`~Blob.read` will read until the end of the blob.
 
    .. method:: Blob.write(data, /)
 
-      Write *data* to the BLOB at the current offset.  This function cannot
-      change the BLOB length.  Writing beyond the end of the blob will result in
+      Write *data* to the blob at the current offset.  This function cannot
+      change the blob length.  Writing beyond the end of the blob will result in
       an exception being raised.
 
    .. method:: Blob.tell()
 
-      Return the current access position of the BLOB.
+      Return the current access position of the blob.
 
-   .. method:: Blob.seek(offset, origin=sqlite3.BLOB_SEEK_START, /)
+   .. method:: Blob.seek(offset, origin=os.SEEK_SET, /)
 
-      Set the current access position of the BLOB to *offset*.  The *origin*
-      argument defaults to :data:`os.SEEK_SET` (absolute BLOB positioning).
+      Set the current access position of the blob to *offset*.  The *origin*
+      argument defaults to :data:`os.SEEK_SET` (absolute blob positioning).
       Other values for *origin* are :data:`os.SEEK_CUR` (seek relative to the
-      current position) and :data:`os.SEEK_END` (seek relative to the BLOB’s
+      current position) and :data:`os.SEEK_END` (seek relative to the blob’s
       end).
 
    :class:`Blob` example:
