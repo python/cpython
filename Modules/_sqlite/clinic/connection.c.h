@@ -149,7 +149,18 @@ PyDoc_STRVAR(blobopen__doc__,
 "blobopen($self, table, column, row, /, *, readonly=False, name=\'main\')\n"
 "--\n"
 "\n"
-"Return a blob object. Non-standard.");
+"Open and return a BLOB object.\n"
+"\n"
+"  table\n"
+"    Table name.\n"
+"  column\n"
+"    Column name.\n"
+"  row\n"
+"    Row index.\n"
+"  readonly\n"
+"    Open the BLOB without write permissions.\n"
+"  name\n"
+"    Database name.");
 
 #define BLOBOPEN_METHODDEF    \
     {"blobopen", (PyCFunction)(void(*)(void))blobopen, METH_FASTCALL|METH_KEYWORDS, blobopen__doc__},
@@ -1083,4 +1094,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=3e9aec1eac00c622 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a7e28d66dbbdea2d input=a9049054013a1b77]*/

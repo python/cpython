@@ -396,15 +396,15 @@ Connection Objects
 
    .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
 
-      On success, a :class:`Blob` handle to the :abbr:`BLOB (Binary Large
-      OBject)` located in row *row*, column *column*, table *table* in database
-      *name* will be returned.  When *readonly* is :const:`True` the blob is
-      opened without write permissions.
+      Open a :class:`Blob` handle to the :abbr:`BLOB (Binary Large OBject)`
+      located in row *row*, column *column*, table *table* of database *name*.
+      When *readonly* is :const:`True` the BLOB is opened without write
+      permissions.
 
       .. note::
 
          The BLOB size cannot be changed using the :class:`Blob` class. Use the
-         SQL function ``zeroblob`` to create a blob with a fixed size.
+         SQL function ``zeroblob`` to create a BLOB with a fixed size.
 
       .. versionadded:: 3.11
 

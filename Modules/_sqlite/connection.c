@@ -440,20 +440,25 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
 _sqlite3.Connection.blobopen as blobopen
 
     table: str
+        Table name.
     column as col: str
+        Column name.
     row: int
+        Row index.
     /
     *
     readonly: bool(accept={int}) = False
+        Open the BLOB without write permissions.
     name: str = "main"
+        Database name.
 
-Return a blob object. Non-standard.
+Open and return a BLOB object.
 [clinic start generated code]*/
 
 static PyObject *
 blobopen_impl(pysqlite_Connection *self, const char *table, const char *col,
               int row, int readonly, const char *name)
-/*[clinic end generated code: output=0c8e2e58516d0b5c input=1eec15d2b87bf09e]*/
+/*[clinic end generated code: output=0c8e2e58516d0b5c input=1e7052516acfc94d]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
