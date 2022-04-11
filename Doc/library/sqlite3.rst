@@ -1083,8 +1083,8 @@ Blob Objects
 .. class:: Blob
 
    A :class:`Blob` instance can read and write the data in a :abbr:`BLOB
-   (Binary Large OBject)`.  The :class:`Blob` class implements the file and
-   mapping protocols.
+   (Binary Large OBject)`.
+   The :class:`Blob` class implements the file protocol.
 
    .. method:: Blob.close()
 
