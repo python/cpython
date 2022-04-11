@@ -6,7 +6,7 @@ PyDoc_STRVAR(blob_close__doc__,
 "close($self, /)\n"
 "--\n"
 "\n"
-"Close blob.");
+"Close the blob.");
 
 #define BLOB_CLOSE_METHODDEF    \
     {"close", (PyCFunction)blob_close, METH_NOARGS, blob_close__doc__},
@@ -24,7 +24,14 @@ PyDoc_STRVAR(blob_read__doc__,
 "read($self, length=-1, /)\n"
 "--\n"
 "\n"
-"Read data from blob.");
+"Read data at the current offset position.\n"
+"\n"
+"  length\n"
+"    Read length in bytes.\n"
+"\n"
+"If the end of the blob is reached, the data up to end of file will be returned.\n"
+"When length is not specified, or is negative, Blob.read() will read until the\n"
+"end of the blob.");
 
 #define BLOB_READ_METHODDEF    \
     {"read", (PyCFunction)(void(*)(void))blob_read, METH_FASTCALL, blob_read__doc__},
@@ -59,7 +66,10 @@ PyDoc_STRVAR(blob_write__doc__,
 "write($self, data, /)\n"
 "--\n"
 "\n"
-"Write data to blob.");
+"Write data at the current offset.\n"
+"\n"
+"This function cannot change the blob length.  Writing beyond the end of the\n"
+"blob will result in an exception being raised.");
 
 #define BLOB_WRITE_METHODDEF    \
     {"write", (PyCFunction)blob_write, METH_O, blob_write__doc__},
@@ -95,7 +105,11 @@ PyDoc_STRVAR(blob_seek__doc__,
 "seek($self, offset, origin=0, /)\n"
 "--\n"
 "\n"
-"Change the access position for a blob.");
+"Set the current access position to offset.\n"
+"\n"
+"The origin argument defaults to os.SEEK_SET (absolute blob positioning).\n"
+"Other values for origin are os.SEEK_CUR (seek relative to the current position)\n"
+"and os.SEEK_END (seek relative to the blob\'s end).");
 
 #define BLOB_SEEK_METHODDEF    \
     {"seek", (PyCFunction)(void(*)(void))blob_seek, METH_FASTCALL, blob_seek__doc__},
@@ -135,7 +149,7 @@ PyDoc_STRVAR(blob_tell__doc__,
 "tell($self, /)\n"
 "--\n"
 "\n"
-"Return current access position for a blob.");
+"Return the current access position for the blob.");
 
 #define BLOB_TELL_METHODDEF    \
     {"tell", (PyCFunction)blob_tell, METH_NOARGS, blob_tell__doc__},
@@ -148,4 +162,4 @@ blob_tell(pysqlite_Blob *self, PyObject *Py_UNUSED(ignored))
 {
     return blob_tell_impl(self);
 }
-/*[clinic end generated code: output=ca77c9a76469a312 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d3a02b127f2cfa58 input=a9049054013a1b77]*/

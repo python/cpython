@@ -81,7 +81,7 @@ Close the blob.
 
 static PyObject *
 blob_close_impl(pysqlite_Blob *self)
-/*[clinic end generated code: output=848accc20a138d1b input=56c86df5cab22490]*/
+/*[clinic end generated code: output=848accc20a138d1b input=7bc178a402a40bd8]*/
 {
     if (!pysqlite_check_connection(self->connection) ||
         !pysqlite_check_thread(self->connection))
@@ -158,7 +158,7 @@ end of the blob.
 
 static PyObject *
 blob_read_impl(pysqlite_Blob *self, int length)
-/*[clinic end generated code: output=1fc99b2541360dde input=b4b443e99af5548f]*/
+/*[clinic end generated code: output=1fc99b2541360dde input=f2e4aa4378837250]*/
 {
     if (!check_blob(self)) {
         return NULL;
@@ -216,7 +216,7 @@ blob will result in an exception being raised.
 
 static PyObject *
 blob_write_impl(pysqlite_Blob *self, Py_buffer *data)
-/*[clinic end generated code: output=b34cf22601b570b2 input=0dcf4018286f55d2]*/
+/*[clinic end generated code: output=b34cf22601b570b2 input=a84712f24a028e6d]*/
 {
     if (!check_blob(self)) {
         return NULL;
@@ -238,16 +238,16 @@ _sqlite3.Blob.seek as blob_seek
     origin: int = 0
     /
 
-Set the current access position to *offset*.
+Set the current access position to offset.
 
 The origin argument defaults to os.SEEK_SET (absolute blob positioning).
-Other values for origin are os.SEEK_CUR (seek relative to the current
-position) and os.SEEK_END (seek relative to the blob’s end).
+Other values for origin are os.SEEK_CUR (seek relative to the current position)
+and os.SEEK_END (seek relative to the blob's end).
 [clinic start generated code]*/
 
 static PyObject *
 blob_seek_impl(pysqlite_Blob *self, int offset, int origin)
-/*[clinic end generated code: output=854c5a0e208547a5 input=cc33da6f28af0561]*/
+/*[clinic end generated code: output=854c5a0e208547a5 input=5da9a07e55fe6bb6]*/
 {
     if (!check_blob(self)) {
         return NULL;
@@ -297,7 +297,7 @@ Return the current access position for the blob.
 
 static PyObject *
 blob_tell_impl(pysqlite_Blob *self)
-/*[clinic end generated code: output=3d3ba484a90b3a99 input=aa1660f9aee18be4]*/
+/*[clinic end generated code: output=3d3ba484a90b3a99 input=7e34057aa303612c]*/
 {
     if (!check_blob(self)) {
         return NULL;
