@@ -1106,12 +1106,9 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(buf, self.data[:n])
         self.assertEqual(self.blob.tell(), n)
 
-    def test_blob_read_start_at_offset(self):
-        new_data = b"b" * 50
+    def test_blob_read_at_offset(self):
         self.blob.seek(10)
-        self.blob.write(new_data[:10])
-        self.blob.seek(10)
-        self.assertEqual(self.blob.read(10), new_data[:10])
+        self.assertEqual(self.blob.read(10), self.data[10:20])
 
     def test_blob_read_after_row_change(self):
         self.cx.execute("update test set b='aaaa' where rowid=1")
