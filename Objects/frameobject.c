@@ -206,11 +206,21 @@ mark_stacks(PyCodeObject *code_obj, int len)
             switch (opcode) {
                 case JUMP_IF_FALSE_OR_POP:
                 case JUMP_IF_TRUE_OR_POP:
-                case POP_JUMP_IF_FALSE:
-                case POP_JUMP_IF_TRUE:
+                case POP_JUMP_FORWARD_IF_FALSE:
+                case POP_JUMP_BACKWARD_IF_FALSE:
+                case POP_JUMP_FORWARD_IF_TRUE:
+                case POP_JUMP_BACKWARD_IF_TRUE:
                 {
                     int64_t target_stack;
                     int j = get_arg(code, i);
+                    if (opcode == POP_JUMP_FORWARD_IF_FALSE ||
+                        opcode == POP_JUMP_FORWARD_IF_TRUE) {
+                        j += i + 1;
+                    }
+                    else if (opcode == POP_JUMP_BACKWARD_IF_FALSE ||
+                             opcode == POP_JUMP_BACKWARD_IF_TRUE) {
+                        j = i + 1 - j;
+                    }
                     assert(j < len);
                     if (stacks[j] == UNINITIALIZED && j < i) {
                         todo = 1;

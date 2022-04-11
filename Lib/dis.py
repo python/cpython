@@ -31,9 +31,6 @@ LOAD_CONST = opmap['LOAD_CONST']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
 BINARY_OP = opmap['BINARY_OP']
 
-BACK_JUMPS = {code for name, code in opmap.items()
-              if 'JUMP_BACKWARD' in name} | {opmap['FOR_END']}
-
 CACHE = opmap["CACHE"]
 
 def _try_compile(source, name):
@@ -394,6 +391,10 @@ def parse_exception_table(code):
     except StopIteration:
         return entries
 
+def _is_backward_jump(op):
+    name = opname[op]
+    return 'JUMP_BACKWARD' in name or name == "FOR_END"
+
 def _get_instructions_bytes(code, varname_from_oparg=None,
                             names=None, co_consts=None,
                             linestarts=None, line_offset=0,
@@ -444,7 +445,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 argval = arg*2
                 argrepr = "to " + repr(argval)
             elif op in hasjrel:
-                signed_arg = -arg if op in BACK_JUMPS else arg
+                signed_arg = -arg if _is_backward_jump(op) else arg
                 argval = offset + 2 + signed_arg*2
                 argrepr = "to " + repr(argval)
             elif op in haslocal or op in hasfree:
@@ -570,7 +571,7 @@ def findlabels(code):
     for offset, op, arg in _unpack_opargs(code):
         if arg is not None:
             if op in hasjrel:
-                if op in BACK_JUMPS:
+                if _is_backward_jump(op):
                     arg = -arg
                 label = offset + 2 + arg*2
             elif op in hasjabs:

@@ -68,8 +68,8 @@ extern "C" {
 #define JUMP_FORWARD                           110
 #define JUMP_IF_FALSE_OR_POP                   111
 #define JUMP_IF_TRUE_OR_POP                    112
-#define POP_JUMP_IF_FALSE                      114
-#define POP_JUMP_IF_TRUE                       115
+#define POP_JUMP_FORWARD_IF_FALSE              114
+#define POP_JUMP_FORWARD_IF_TRUE               115
 #define LOAD_GLOBAL                            116
 #define IS_OP                                  117
 #define CONTAINS_OP                            118
@@ -80,8 +80,8 @@ extern "C" {
 #define LOAD_FAST                              124
 #define STORE_FAST                             125
 #define DELETE_FAST                            126
-#define POP_JUMP_IF_NOT_NONE                   128
-#define POP_JUMP_IF_NONE                       129
+#define POP_JUMP_FORWARD_IF_NOT_NONE           128
+#define POP_JUMP_FORWARD_IF_NONE               129
 #define RAISE_VARARGS                          130
 #define GET_AWAITABLE                          131
 #define MAKE_FUNCTION                          132
@@ -113,7 +113,11 @@ extern "C" {
 #define PRECALL                                166
 #define CALL                                   171
 #define KW_NAMES                               172
-#define FOR_END                                173
+#define POP_JUMP_BACKWARD_IF_NOT_NONE          173
+#define POP_JUMP_BACKWARD_IF_NONE              174
+#define POP_JUMP_BACKWARD_IF_FALSE             175
+#define POP_JUMP_BACKWARD_IF_TRUE              176
+#define FOR_END                                177
 #define BINARY_OP_ADAPTIVE                       3
 #define BINARY_OP_ADD_FLOAT                      4
 #define BINARY_OP_ADD_INT                        5
@@ -182,9 +186,9 @@ extern "C" {
 #define STORE_SUBSCR_DICT                      168
 #define STORE_SUBSCR_LIST_INT                  169
 #define UNPACK_SEQUENCE_ADAPTIVE               170
-#define UNPACK_SEQUENCE_LIST                   174
-#define UNPACK_SEQUENCE_TUPLE                  175
-#define UNPACK_SEQUENCE_TWO_TUPLE              176
+#define UNPACK_SEQUENCE_LIST                   178
+#define UNPACK_SEQUENCE_TUPLE                  179
+#define UNPACK_SEQUENCE_TWO_TUPLE              180
 #define DO_TRACING                             255
 
 extern const uint8_t _PyOpcode_Caches[256];
@@ -196,9 +200,9 @@ static const uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     0U,
     0U,
-    134234112U,
-    4160U,
-    8192U,
+    135020544U,
+    4163U,
+    253952U,
     0U,
     0U,
 };
@@ -208,7 +212,7 @@ static const uint32_t _PyOpcode_Jump[8] = {
     0U,
     135118848U,
     4163U,
-    8192U,
+    253952U,
     0U,
     0U,
 };
@@ -340,10 +344,14 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [MATCH_SEQUENCE] = MATCH_SEQUENCE,
     [NOP] = NOP,
     [POP_EXCEPT] = POP_EXCEPT,
-    [POP_JUMP_IF_FALSE] = POP_JUMP_IF_FALSE,
-    [POP_JUMP_IF_NONE] = POP_JUMP_IF_NONE,
-    [POP_JUMP_IF_NOT_NONE] = POP_JUMP_IF_NOT_NONE,
-    [POP_JUMP_IF_TRUE] = POP_JUMP_IF_TRUE,
+    [POP_JUMP_BACKWARD_IF_FALSE] = POP_JUMP_BACKWARD_IF_FALSE,
+    [POP_JUMP_BACKWARD_IF_NONE] = POP_JUMP_BACKWARD_IF_NONE,
+    [POP_JUMP_BACKWARD_IF_NOT_NONE] = POP_JUMP_BACKWARD_IF_NOT_NONE,
+    [POP_JUMP_BACKWARD_IF_TRUE] = POP_JUMP_BACKWARD_IF_TRUE,
+    [POP_JUMP_FORWARD_IF_FALSE] = POP_JUMP_FORWARD_IF_FALSE,
+    [POP_JUMP_FORWARD_IF_NONE] = POP_JUMP_FORWARD_IF_NONE,
+    [POP_JUMP_FORWARD_IF_NOT_NONE] = POP_JUMP_FORWARD_IF_NOT_NONE,
+    [POP_JUMP_FORWARD_IF_TRUE] = POP_JUMP_FORWARD_IF_TRUE,
     [POP_TOP] = POP_TOP,
     [PRECALL] = PRECALL,
     [PRECALL_ADAPTIVE] = PRECALL,
