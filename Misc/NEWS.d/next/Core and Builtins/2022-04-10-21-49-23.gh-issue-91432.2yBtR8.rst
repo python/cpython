@@ -1,4 +1,4 @@
-Replaced the ``FOR_ITER`` opcode that lived at the top of `for`-loops with a
+Replaced the ``FOR_ITER`` opcode that lived at the top of ``for``-loops with a
 ``FOR_END`` opcode that lives at the bottom. This form of `Loop Inversion
 <https://en.wikipedia.org/wiki/Loop_inversion>`_ replaces the (unconditional
 jump, conditional jump) pair with just one conditional jump during most

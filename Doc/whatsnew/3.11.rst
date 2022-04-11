@@ -763,6 +763,12 @@ CPython bytecode changes
 
 * Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`, which is used in certain loops where it is undesirable to handle interrupts.
 
+* Replaced :opcode:`FOR_ITER` (jumps if iterator exhausted)
+  with :opcode:`FOR_END` (jumps if iterator is not exhausted).
+  At the end of each ``for``-loop iteration, instead of an unconditional
+  jump targeted at a conditional jump, there is now
+  only one (conditional) jump.
+
 Deprecated
 ==========
 
