@@ -509,8 +509,8 @@ static const char *const _PyOpcode_OpName[256] = {
     [110] = "JUMP_FORWARD",
     [111] = "JUMP_IF_FALSE_OR_POP",
     [112] = "JUMP_IF_TRUE_OR_POP",
-    [114] = "POP_JUMP_IF_FALSE",
-    [115] = "POP_JUMP_IF_TRUE",
+    [114] = "POP_JUMP_FORWARD_IF_FALSE",
+    [115] = "POP_JUMP_FORWARD_IF_TRUE",
     [116] = "LOAD_GLOBAL",
     [117] = "IS_OP",
     [118] = "CONTAINS_OP",
@@ -521,8 +521,8 @@ static const char *const _PyOpcode_OpName[256] = {
     [124] = "LOAD_FAST",
     [125] = "STORE_FAST",
     [126] = "DELETE_FAST",
-    [128] = "POP_JUMP_IF_NOT_NONE",
-    [129] = "POP_JUMP_IF_NONE",
+    [128] = "POP_JUMP_FORWARD_IF_NOT_NONE",
+    [129] = "POP_JUMP_FORWARD_IF_NONE",
     [130] = "RAISE_VARARGS",
     [131] = "GET_AWAITABLE",
     [132] = "MAKE_FUNCTION",
@@ -554,6 +554,10 @@ static const char *const _PyOpcode_OpName[256] = {
     [166] = "PRECALL",
     [171] = "CALL",
     [172] = "KW_NAMES",
+    [173] = "POP_JUMP_BACKWARD_IF_NOT_NONE",
+    [174] = "POP_JUMP_BACKWARD_IF_NONE",
+    [175] = "POP_JUMP_BACKWARD_IF_FALSE",
+    [176] = "POP_JUMP_BACKWARD_IF_TRUE",
 };
 #endif
 
