@@ -7,6 +7,11 @@ extern "C" {
 #include <stdbool.h>
 #include <stddef.h>
 
+/* See Objects/frame_layout.md for an explanation of the frame stack
+ * including explanation of the PyFrameObject and _PyInterpreterFrame
+ * structs. */
+
+
 struct _frame {
     PyObject_HEAD
     PyFrameObject *f_back;      /* previous frame, or NULL */
@@ -40,12 +45,14 @@ enum _frameowner {
 };
 
 typedef struct _PyInterpreterFrame {
+    /* "Specials" section */
     PyFunctionObject *f_func; /* Strong reference */
     PyObject *f_globals; /* Borrowed reference */
     PyObject *f_builtins; /* Borrowed reference */
     PyObject *f_locals; /* Strong reference, may be NULL */
     PyCodeObject *f_code; /* Strong reference */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL */
+    /* Linkage section */
     struct _PyInterpreterFrame *previous;
     // NOTE: This is not necessarily the last instruction started in the given
     // frame. Rather, it is the code unit *prior to* the *next* instruction. For
@@ -55,6 +62,7 @@ typedef struct _PyInterpreterFrame {
     int stacktop;     /* Offset of TOS from localsplus  */
     bool is_entry;  // Whether this is the "root" frame for the current _PyCFrame.
     char owner;
+    /* Locals and stack */
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
 
