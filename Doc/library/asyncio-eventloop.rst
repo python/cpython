@@ -1360,9 +1360,7 @@ async/await code consider using the high-level
 
    * *stdin* can be any of these:
 
-     * a file-like object representing a pipe to be connected to the
-       subprocess's standard input stream using
-       :meth:`~loop.connect_write_pipe`
+     * a file-like object
      * the :const:`subprocess.PIPE` constant (default) which will create a new
        pipe and connect it,
      * the value ``None`` which will make the subprocess inherit the file
@@ -1372,9 +1370,7 @@ async/await code consider using the high-level
 
    * *stdout* can be any of these:
 
-     * a file-like object representing a pipe to be connected to the
-       subprocess's standard output stream using
-       :meth:`~loop.connect_write_pipe`
+     * a file-like object
      * the :const:`subprocess.PIPE` constant (default) which will create a new
        pipe and connect it,
      * the value ``None`` which will make the subprocess inherit the file
@@ -1384,9 +1380,7 @@ async/await code consider using the high-level
 
    * *stderr* can be any of these:
 
-     * a file-like object representing a pipe to be connected to the
-       subprocess's standard error stream using
-       :meth:`~loop.connect_write_pipe`
+     * a file-like object
      * the :const:`subprocess.PIPE` constant (default) which will create a new
        pipe and connect it,
      * the value ``None`` which will make the subprocess inherit the file
@@ -1404,6 +1398,11 @@ async/await code consider using the high-level
      The ``asyncio`` subprocess API does not support decoding the streams
      as text. :func:`bytes.decode` can be used to convert the bytes returned
      from the stream to text.
+
+   If a file-like object passed as *stdin*, *stdout* or *stderr* represents a
+   pipe, then the other side of this pipe should be registered with
+   :meth:`~loop.connect_write_pipe` or :meth:`~loop.connect_read_pipe` for use
+   with the event loop.
 
    See the constructor of the :class:`subprocess.Popen` class
    for documentation on other arguments.
