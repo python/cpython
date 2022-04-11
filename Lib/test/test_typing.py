@@ -566,11 +566,15 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T]',                        '[int]',                   'generic[int]'),
             ('generic[T]',                        '[int, str]',              'TypeError'),
             ('generic[T]',                        '[tuple_type[int, ...]]',  'generic[tuple_type[int, ...]]'),
-            ('generic[T]',                        '[*tuple_type[()]]',       'generic[*tuple_type[()]]'),       # Should raise TypeError
+            ('generic[T]',                        '[*tuple_type[()]]',       'generic[*tuple_type[()]]'),
             ('generic[T]',                        '[*tuple_type[int]]',      'generic[*tuple_type[int]]'),
-            ('generic[T]',                        '[*tuple_type[int, str]]', 'generic[*tuple_type[int, str]]'), # Should raise TypeError
+            # The one below technically isn't valid: after unpacking the tuple, it'd be giving two type
+            # arguments to an alias that only has one type parameters. But since we don't unpack
+            # tuples at runtime, we allow it, so the runtime doesn't have to somehow detect that
+            # *tuple[int, str] counts for two type arguments even though it only looks like one.
+            ('generic[T]',                        '[*tuple_type[int, str]]', 'generic[*tuple_type[int, str]]'),
             ('generic[T]',                        '[*tuple_type[int, ...]]', 'generic[*tuple_type[int, ...]]'),
-            ('generic[T]',                        '[*Ts]',                   'generic[*Ts]'),                   # Should raise TypeError
+            ('generic[T]',                        '[*Ts]',                   'generic[*Ts]'),  # Should raise TypeError
             ('generic[T]',                        '[T, *Ts]',                'TypeError'),
             ('generic[T]',                        '[*Ts, T]',                'TypeError'),
 
@@ -613,12 +617,12 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T1, T2]',                        '[int, str]',                                        'generic[int, str]'),
             ('generic[T1, T2]',                        '[int, str, bool]',                                  'TypeError'),
             ('generic[T1, T2]',                        '[*tuple_type[int]]',                                'TypeError'),
-            ('generic[T1, T2]',                        '[*tuple_type[int, str]]',                           'TypeError'),  # Should be generic[int, str]
+            ('generic[T1, T2]',                        '[*tuple_type[int, str]]',                           'TypeError'),  # Should be generic[*tuple_type[int, str]]
             ('generic[T1, T2]',                        '[*tuple_type[int, str, bool]]',                     'TypeError'),
-            ('generic[T1, T2]',                        '[*tuple_type[int, str], *tuple_type[float, bool]]', 'generic[*tuple_type[int, str], *tuple_type[float, bool]]'),  # Should raise TypeError
+            ('generic[T1, T2]',                        '[*tuple_type[int, str], *tuple_type[float, bool]]', 'generic[*tuple_type[int, str], *tuple_type[float, bool]]'),
             ('generic[T1, T2]',                        '[tuple_type[int, ...]]',                            'TypeError'),
             ('generic[T1, T2]',                        '[tuple_type[int, ...], tuple_type[str, ...]]',      'generic[tuple_type[int, ...], tuple_type[str, ...]]'),
-            ('generic[T1, T2]',                        '[*tuple_type[int, ...]]',                           'TypeError'),  # Should be generic[int, int]?
+            ('generic[T1, T2]',                        '[*tuple_type[int, ...]]',                           'TypeError'),  # Should be generic[*tuple_type[int, ...]]
             ('generic[T1, T2]',                        '[*tuple_type[int, ...], *tuple_type[str, ...]]',    'generic[*tuple_type[int, ...], *tuple_type[str, ...]]'),
             ('generic[T1, T2]',                        '[*Ts]',                                             'TypeError'),
             ('generic[T1, T2]',                        '[T, *Ts]',                                          'generic[T, *Ts]'),  # Should raise TypeError
