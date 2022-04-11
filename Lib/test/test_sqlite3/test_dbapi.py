@@ -1203,7 +1203,7 @@ class BlobTests(unittest.TestCase):
                                    "Cannot operate on a closed database",
                                    blob.close)
 
-    def test_closed_blob_read(self):
+    def test_blob_closed_read(self):
         with memory_database() as cx:
             cx.execute("create table test(b blob)")
             cx.execute("insert into test(b) values (zeroblob(100))")
