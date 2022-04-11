@@ -1083,8 +1083,8 @@ class BlobTests(unittest.TestCase):
             with self.subTest(exc=exc, msg=msg, fn=fn):
                 self.assertRaisesRegex(exc, msg, fn)
 
-        n = len(self.data) // 2
-        self.blob.seek(n, SEEK_SET)
+        # Force overflow errors
+        self.blob.seek(1, SEEK_SET)
         with self.assertRaisesRegex(OverflowError, msg_of):
             self.blob.seek(INT_MAX, SEEK_CUR)
         with self.assertRaisesRegex(OverflowError, msg_of):
@@ -1095,7 +1095,7 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(buf, self.data)
         self.assertEqual(len(buf), len(self.data))
 
-    def test_blob_read_too_much(self):
+    def test_blob_read_oversized(self):
         buf = self.blob.read(len(self.data) * 2)
         self.assertEqual(buf, self.data)
         self.assertEqual(len(buf), len(self.data))
@@ -1110,7 +1110,7 @@ class BlobTests(unittest.TestCase):
         self.blob.seek(10)
         self.assertEqual(self.blob.read(10), self.data[10:20])
 
-    def test_blob_read_after_row_change(self):
+    def test_blob_read_error_row_changed(self):
         self.cx.execute("update test set b='aaaa' where rowid=1")
         with self.assertRaises(sqlite.OperationalError):
             self.blob.read()
@@ -1122,16 +1122,15 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(row[0], new_data)
 
     def test_blob_write_at_offset(self):
-        new_data = b"c" * 50
+        new_data = b"c" * 25
         self.blob.seek(25)
-        self.blob.write(new_data[:25])
+        self.blob.write(new_data)
         row = self.cx.execute("select b from test").fetchone()
-        self.assertEqual(row[0], self.data[:25] + new_data[:25])
+        self.assertEqual(row[0], self.data[:25] + new_data)
 
     def test_blob_write_advance_offset(self):
-        new_data = b"d" * 50
-        self.blob.write(new_data[:25])
-        self.assertEqual(self.blob.tell(), 25)
+        self.blob.write(b"d"*10)
+        self.assertEqual(self.blob.tell(), 10)
 
     def test_blob_write_error_length(self):
         with self.assertRaisesRegex(ValueError, "data longer than blob"):
@@ -1190,17 +1189,7 @@ class BlobTests(unittest.TestCase):
                     with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
                         op()
 
-    def test_blob_close_bad_connection(self):
-        with memory_database() as cx:
-            cx.execute("create table test(b blob)")
-            cx.execute("insert into test values(zeroblob(1))")
-            blob = cx.blobopen("test", "b", 1)
-            cx.close()
-            self.assertRaisesRegex(sqlite.ProgrammingError,
-                                   "Cannot operate on a closed database",
-                                   blob.close)
-
-    def test_blob_closed_read(self):
+    def test_blob_closed_db_read(self):
         with memory_database() as cx:
             cx.execute("create table test(b blob)")
             cx.execute("insert into test(b) values (zeroblob(100))")
