@@ -6757,14 +6757,20 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         return -1;
     }
     if (line != -1 && f->f_trace_lines) {
-        /* Trace backward edges (except in 'yield from') or if line number has changed */
-        int prev = _PyOpcode_Deopt[_Py_OPCODE(code[instr_prev])];
-        int opcode1 = _PyOpcode_Deopt[_Py_OPCODE(*frame->prev_instr)];
-        int trace = (opcode1 == FOR_END && prev != JUMP_FORWARD) ||
-            line != lastline ||
-            (_PyInterpreterFrame_LASTI(frame) < instr_prev &&
-             opcode1 != SEND && prev != FOR_END);
-        if (trace) {
+        int prev_op = _PyOpcode_Deopt[_Py_OPCODE(code[instr_prev])];
+        int next_op = _PyOpcode_Deopt[_Py_OPCODE(*frame->prev_instr)];
+        // Trace before FOR_END, not after, even though a backwards
+        // jump happens after. However, don't trace on the first FOR_END
+        // of the for loop, since we're staying on the same line.
+        // Also don't trace JUMP_NO_INTERRUPT --> SEND.
+        bool line_number_changed = (line != lastline);
+        bool first_iteration = (next_op == FOR_END &&
+                                prev_op == JUMP_FORWARD &&
+                                !line_number_changed);
+        bool for_loop_end = (next_op == FOR_END && !first_iteration);
+        bool back_jump = (_PyInterpreterFrame_LASTI(frame) < instr_prev &&
+                          next_op != SEND && prev_op != FOR_END);
+        if (line_number_changed || for_loop_end || back_jump) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
     }
