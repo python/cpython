@@ -80,7 +80,7 @@ The specials sections contains the following pointers:
 
 The pointer to the function is not strictly required, but it is cheaper to
 store a strong reference to the function and borrowed references to the globals
-and builtins, that strong references to both globals and builtins.
+and builtins, than strong references to both globals and builtins.
 
 ### Frame objects
 
