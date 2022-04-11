@@ -392,6 +392,9 @@ def parse_exception_table(code):
     except StopIteration:
         return entries
 
+def _is_backward_jump(op):
+    return 'JUMP_BACKWARD' in opname[op]
+
 def _get_instructions_bytes(code, varname_from_oparg=None,
                             names=None, co_consts=None,
                             linestarts=None, line_offset=0,
@@ -442,7 +445,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 argval = arg*2
                 argrepr = "to " + repr(argval)
             elif op in hasjrel:
-                signed_arg = -arg if op == JUMP_BACKWARD else arg
+                signed_arg = -arg if _is_backward_jump(op) else arg
                 argval = offset + 2 + signed_arg*2
                 argrepr = "to " + repr(argval)
             elif op in haslocal or op in hasfree:
@@ -568,7 +571,7 @@ def findlabels(code):
     for offset, op, arg in _unpack_opargs(code):
         if arg is not None:
             if op in hasjrel:
-                if op == JUMP_BACKWARD:
+                if _is_backward_jump(op):
                     arg = -arg
                 label = offset + 2 + arg*2
             elif op in hasjabs:

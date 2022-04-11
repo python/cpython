@@ -750,9 +750,6 @@ CPython bytecode changes
   ``ROT_TWO``, ``ROT_THREE``, ``ROT_FOUR``, and ``ROT_N``) with new
   :opcode:`COPY` and :opcode:`SWAP` instructions.
 
-* Add :opcode:`POP_JUMP_IF_NOT_NONE` and :opcode:`POP_JUMP_IF_NONE` opcodes to
-  speed up conditional jumps.
-
 * Replaced :opcode:`JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH` which
   performs the check but does not jump.
 
@@ -761,7 +758,17 @@ CPython bytecode changes
 
 * Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
 
-* Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`, which is used in certain loops where it is undesirable to handle interrupts.
+* Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`, which is used in certain loops where it
+  is undesirable to handle interrupts.
+
+* Replaced :opcode:`POP_JUMP_IF_TRUE` and :opcode:`POP_JUMP_IF_FALSE` by
+  the relative :opcode:`POP_JUMP_FORWARD_IF_TRUE`, :opcode:`POP_JUMP_BACKWARD_IF_TRUE`,
+  :opcode:`POP_JUMP_FORWARD_IF_FALSE` and :opcode:`POP_JUMP_BACKWARD_IF_FALSE`.
+
+* Added :opcode:`POP_JUMP_FORWARD_IF_NOT_NONE`, :opcode:`POP_JUMP_BACKWARD_IF_NOT_NONE`,
+  :opcode:`POP_JUMP_FORWARD_IF_NONE` and :opcode:`POP_JUMP_BACKWARD_IF_NONE`
+  opcodes to speed up conditional jumps.
+
 
 Deprecated
 ==========
