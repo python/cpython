@@ -619,11 +619,15 @@ class WindowFunctionTests(unittest.TestCase):
                           self.query % "sumint")
 
     def test_win_redefine_function(self):
+        # Redefine WindowSumInt; adjust the expected results accordingly.
         class Redefined(WindowSumInt):
-            pass
+            def step(self, value): self.count += value * 2
+            def inverse(self, value): self.count -= value * 2
+        expected = [(v[0], v[1]*2) for v in self.expected]
+
         self.con.create_window_function("sumint", 1, Redefined)
         self.cur.execute(self.query % "sumint")
-        self.assertEqual(self.cur.fetchall(), self.expected)
+        self.assertEqual(self.cur.fetchall(), expected)
 
     def test_win_error_value_return(self):
         class ErrorValueReturn:
