@@ -37,17 +37,6 @@ _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
     return size;
 }
 
-#if 0
-static const char *
-token_name(int type)
-{
-    if (0 <= type && type <= N_TOKENS) {
-        return _PyParser_TokenNames[type];
-    }
-    return "<Huh?>";
-}
-#endif
-
 // Here, mark is the start of the node, while p->mark is the end.
 // If node==NULL, they should be the same.
 int
@@ -785,7 +774,6 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->known_err_token = NULL;
     p->level = 0;
     p->call_invalid_rules = 0;
-    p->in_raw_rule = 0;
     return p;
 }
 

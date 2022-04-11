@@ -33,6 +33,13 @@ def tearDownModule():
 class MimeTypesTestCase(unittest.TestCase):
     def setUp(self):
         self.db = mimetypes.MimeTypes()
+        
+    def test_case_sensitivity(self):
+        eq = self.assertEqual
+        eq(self.db.guess_type("foobar.HTML"), self.db.guess_type("foobar.html"))
+        eq(self.db.guess_type("foobar.TGZ"), self.db.guess_type("foobar.tgz"))
+        eq(self.db.guess_type("foobar.tar.Z"), ("application/x-tar", "compress"))
+        eq(self.db.guess_type("foobar.tar.z"), (None, None))
 
     def test_default_data(self):
         eq = self.assertEqual
@@ -158,6 +165,15 @@ class MimeTypesTestCase(unittest.TestCase):
         mimetypes.init()
         # Poison should be gone.
         self.assertEqual(mimetypes.guess_extension('foo/bar'), None)
+
+    @unittest.skipIf(sys.platform.startswith("win"), "Non-Windows only")
+    def test_guess_known_extensions(self):
+        # Issue 37529
+        # The test fails on Windows because Windows adds mime types from the Registry
+        # and that creates some duplicates.
+        from mimetypes import types_map
+        for v in types_map.values():
+            self.assertIsNotNone(mimetypes.guess_extension(v))
 
     def test_preferred_extension(self):
         def check_extensions():

@@ -44,7 +44,8 @@ from test.test_import import _ready_to_import
 # isbuiltin, isroutine, isgenerator, isgeneratorfunction, getmembers,
 # getdoc, getfile, getmodule, getsourcefile, getcomments, getsource,
 # getclasstree, getargvalues, formatargvalues,
-# currentframe, stack, trace, isdatadescriptor
+# currentframe, stack, trace, isdatadescriptor,
+# ismethodwrapper
 
 # NOTE: There are some additional tests relating to interaction with
 #       zipimport in the test_zipimport_support test module.
@@ -93,7 +94,8 @@ class IsTestBase(unittest.TestCase):
                       inspect.ismodule, inspect.istraceback,
                       inspect.isgenerator, inspect.isgeneratorfunction,
                       inspect.iscoroutine, inspect.iscoroutinefunction,
-                      inspect.isasyncgen, inspect.isasyncgenfunction])
+                      inspect.isasyncgen, inspect.isasyncgenfunction,
+                      inspect.ismethodwrapper])
 
     def istest(self, predicate, exp):
         obj = eval(exp)
@@ -169,6 +171,14 @@ class TestPredicates(IsTestBase):
             self.istest(inspect.ismemberdescriptor, 'datetime.timedelta.days')
         else:
             self.assertFalse(inspect.ismemberdescriptor(datetime.timedelta.days))
+        self.istest(inspect.ismethodwrapper, "object().__str__")
+        self.istest(inspect.ismethodwrapper, "object().__eq__")
+        self.istest(inspect.ismethodwrapper, "object().__repr__")
+        self.assertFalse(inspect.ismethodwrapper(type))
+        self.assertFalse(inspect.ismethodwrapper(int))
+        self.assertFalse(inspect.ismethodwrapper(type("AnyClass", (), {})))
+
+
 
     def test_iscoroutine(self):
         async_gen_coro = async_generator_function_example(1)
@@ -241,8 +251,38 @@ class TestPredicates(IsTestBase):
         coro.close(); gen_coro.close() # silence warnings
 
     def test_isroutine(self):
-        self.assertTrue(inspect.isroutine(mod.spam))
+        # method
+        self.assertTrue(inspect.isroutine(git.argue))
+        self.assertTrue(inspect.isroutine(mod.custom_method))
         self.assertTrue(inspect.isroutine([].count))
+        # function
+        self.assertTrue(inspect.isroutine(mod.spam))
+        self.assertTrue(inspect.isroutine(mod.StupidGit.abuse))
+        # slot-wrapper
+        self.assertTrue(inspect.isroutine(object.__init__))
+        self.assertTrue(inspect.isroutine(object.__str__))
+        self.assertTrue(inspect.isroutine(object.__lt__))
+        self.assertTrue(inspect.isroutine(int.__lt__))
+        # method-wrapper
+        self.assertTrue(inspect.isroutine(object().__init__))
+        self.assertTrue(inspect.isroutine(object().__str__))
+        self.assertTrue(inspect.isroutine(object().__lt__))
+        self.assertTrue(inspect.isroutine((42).__lt__))
+        # method-descriptor
+        self.assertTrue(inspect.isroutine(str.join))
+        self.assertTrue(inspect.isroutine(list.append))
+        self.assertTrue(inspect.isroutine(''.join))
+        self.assertTrue(inspect.isroutine([].append))
+        # object
+        self.assertFalse(inspect.isroutine(object))
+        self.assertFalse(inspect.isroutine(object()))
+        self.assertFalse(inspect.isroutine(str()))
+        # module
+        self.assertFalse(inspect.isroutine(mod))
+        # type
+        self.assertFalse(inspect.isroutine(type))
+        self.assertFalse(inspect.isroutine(int))
+        self.assertFalse(inspect.isroutine(type('some_class', (), {})))
 
     def test_isclass(self):
         self.istest(inspect.isclass, 'mod.StupidGit')

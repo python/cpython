@@ -14,8 +14,17 @@
 
 #include <stdbool.h>
 
+#ifdef MS_WIN32
+#  include <malloc.h>
+#endif
+
 #include <ffi.h>
 #include "ctypes.h"
+
+#ifdef HAVE_ALLOCA_H
+/* AIX needs alloca.h for alloca() */
+#include <alloca.h>
+#endif
 
 /**************************************************************/
 
@@ -148,7 +157,6 @@ static void _CallPythonObject(void *mem,
                               void **pArgs)
 {
     PyObject *result = NULL;
-    PyObject **args = NULL;
     Py_ssize_t i = 0, j = 0, nargs = 0;
     PyObject *error_object = NULL;
     int *space;
@@ -156,26 +164,8 @@ static void _CallPythonObject(void *mem,
 
     assert(PyTuple_Check(converters));
     nargs = PyTuple_GET_SIZE(converters);
-    /* Hm. What to return in case of error?
-       For COM, 0xFFFFFFFF seems better than 0.
-    */
-    if (nargs < 0) {
-        PrintError("BUG: PySequence_Length");
-        goto Done;
-    }
-
-    PyObject *args_stack[CTYPES_MAX_ARGCOUNT];
-    if (nargs <= CTYPES_MAX_ARGCOUNT) {
-        args = args_stack;
-    }
-    else {
-        args = PyMem_Malloc(nargs * sizeof(PyObject *));
-        if (args == NULL) {
-            PyErr_NoMemory();
-            goto Done;
-        }
-    }
-
+    assert(nargs <= CTYPES_MAX_ARGCOUNT);
+    PyObject **args = alloca(nargs * sizeof(PyObject *));
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
     for (i = 0; i < nargs; i++) {
         PyObject *cnv = cnvs[i]; // borrowed ref
@@ -199,7 +189,6 @@ static void _CallPythonObject(void *mem,
             CDataObject *obj = (CDataObject *)_PyObject_CallNoArgs(cnv);
             if (!obj) {
                 PrintError("create argument %zd:\n", i);
-                Py_DECREF(cnv);
                 goto Done;
             }
             if (!CDataObject_Check(obj)) {
@@ -309,9 +298,6 @@ static void _CallPythonObject(void *mem,
   Done:
     for (j = 0; j < i; j++) {
         Py_DECREF(args[j]);
-    }
-    if (args != args_stack) {
-        PyMem_Free(args);
     }
     PyGILState_Release(state);
 }

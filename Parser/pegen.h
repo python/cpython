@@ -78,7 +78,6 @@ typedef struct {
     Token *known_err_token;
     int level;
     int call_invalid_rules;
-    int in_raw_rule;
 } Parser;
 
 typedef struct {
@@ -325,6 +324,7 @@ int _PyPegen_check_barry_as_flufl(Parser *, Token *);
 int _PyPegen_check_legacy_stmt(Parser *p, expr_ty t);
 mod_ty _PyPegen_make_module(Parser *, asdl_stmt_seq *);
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
+expr_ty _PyPegen_get_last_comprehension_item(comprehension_ty comprehension);
 void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq *comprehensions);
 
 // Parser API

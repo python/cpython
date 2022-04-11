@@ -4,7 +4,7 @@ parameters:
 jobs:
 - job: Publish_Python
   displayName: Publish python.org packages
-  condition: and(succeeded(), and(eq(variables['DoMSI'], 'true'), eq(variables['DoEmbed'], 'true')))
+  condition: and(succeeded(), eq(variables['DoMSI'], 'true'), eq(variables['DoEmbed'], 'true'), ne(variables['SkipPythonOrgPublish'], 'true'))
 
   pool:
     #vmImage: windows-2022
@@ -81,13 +81,35 @@ jobs:
   - powershell: 'gci *embed-arm*.zip | %{ Write-Host "Not publishing: $($_.Name)"; gi $_ } | del'
     displayName: 'Prevent publishing ARM64 packages'
     workingDirectory: '$(Build.BinariesDirectory)\embed'
-    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
+    condition: and(succeeded(), ne(variables['PublishARM64'], 'true'))
 
 
-  - template: ./gpg-sign.yml
-    parameters:
-      GPGKeyFile: 'python-signing.key'
-      Files: 'doc\htmlhelp\*.chm, msi\*\*, embed\*.zip'
+  - task: DownloadSecureFile@1
+    name: gpgkey
+    inputs:
+      secureFile: 'python-signing.key'
+    displayName: 'Download GPG key'
+
+  - powershell: |
+      git clone https://github.com/python/cpython-bin-deps --branch gpg --single-branch --depth 1 --progress -v "gpg"
+      gpg/gpg2.exe --import "$(gpgkey.secureFilePath)"
+      $files = gci -File "msi\*\*", "embed\*.zip"
+      if ("$(DoCHM)" -ieq "true") {
+          $files = $files + (gci -File "doc\htmlhelp\*.chm")
+      }
+      $files.FullName | %{
+          gpg/gpg2.exe -ba --batch --passphrase $(GPGPassphrase) $_
+          "Made signature for $_"
+      }
+    displayName: 'Generate GPG signatures'
+    workingDirectory: $(Build.BinariesDirectory)
+
+  - powershell: |
+      $p = gps "gpg-agent" -EA 0
+      if ($p) { $p.Kill() }
+    displayName: 'Kill GPG agent'
+    condition: true
+
 
   - powershell: >
       $(Build.SourcesDirectory)\Tools\msi\uploadrelease.ps1
@@ -113,7 +135,7 @@ jobs:
 
   - powershell: |
       $failures = 0
-      gci "msi\*\*-webinstall.exe" -File | %{
+      gci "msi\*\*.exe" -File | %{
           $d = mkdir "tests\$($_.BaseName)" -Force
           gci $d -r -File | del
           $ic = copy $_ $d -PassThru
@@ -133,7 +155,11 @@ jobs:
     displayName: 'Test layouts'
 
   - powershell: |
-      $hashes = gci doc\htmlhelp\python*.chm, msi\*\*.exe, embed\*.zip | `
+      $files = gci -File "msi\*\*.exe", "embed\*.zip"
+      if ("$(DoCHM)" -ieq "true") {
+          $files = $files + (gci -File "doc\htmlhelp\python*.chm")
+      }
+      $hashes = $files  | `
           Sort-Object Name | `
           Format-Table Name, @{
             Label="MD5";
@@ -148,9 +174,13 @@ jobs:
 
   - powershell: |
       "Copying:"
-      (gci msi\*\python*.asc, doc\htmlhelp\*.asc, embed\*.asc).FullName
+      $files = gci -File "msi\*\python*.asc", "embed\*.asc"
+      if ("$(DoCHM)" -ieq "true") {
+          $files = $files + (gci -File "doc\htmlhelp\*.asc")
+      }
+      $files.FullName
       $d = mkdir "$(Build.ArtifactStagingDirectory)\hashes" -Force
-      move msi\*\python*.asc, doc\htmlhelp\*.asc, embed\*.asc $d -Force
+      move $files $d -Force
       gci msi -Directory | %{ move "msi\$_\*.asc" (mkdir "$d\$_" -Force) }
     workingDirectory: $(Build.BinariesDirectory)
     displayName: 'Copy GPG signatures for build'

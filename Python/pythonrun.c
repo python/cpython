@@ -25,7 +25,6 @@
 
 #include "token.h"                // INDENT
 #include "errcode.h"              // E_EOF
-#include "code.h"                 // PyCodeObject
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
 
 #ifdef MS_WINDOWS
@@ -515,6 +514,7 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
         goto finally;
     if (v == Py_None) {
         Py_DECREF(v);
+        _Py_DECLARE_STR(anon_string, "<string>");
         *filename = &_Py_STR(anon_string);
         Py_INCREF(*filename);
     }
@@ -1562,6 +1562,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     if (arena == NULL)
         return NULL;
 
+    _Py_DECLARE_STR(anon_string, "<string>");
     mod = _PyParser_ASTFromString(
             str, &_Py_STR(anon_string), start, flags, arena);
 

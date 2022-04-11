@@ -307,7 +307,7 @@ class Analyzed(_info.Analyzed):
         # XXX ???
         #if itemonly:
         #    yield from rendered
-        supported = self._supported
+        supported = self.supported
         if fmt in ('line', 'brief'):
             rendered, = rendered
             parts = [
