@@ -1214,7 +1214,8 @@ class Enum(metaclass=EnumType):
         count: the number of existing members
         last_value: the last value assigned or None
         """
-        for last_value in sorted(last_values, reverse=True):
+        numerical_last_values =  [x for x in last_values if isinstance(x, int) or isinstance(x, float)]
+        for last_value in sorted(numerical_last_values, reverse=True):
             try:
                 return last_value + 1
             except TypeError:
