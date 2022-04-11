@@ -7672,6 +7672,21 @@ normalize_jumps(struct assembler *a)
                     last->i_opcode = is_forward ?
                         POP_JUMP_FORWARD_IF_TRUE : POP_JUMP_BACKWARD_IF_TRUE;
                     break;
+                case JUMP_IF_TRUE_OR_POP:
+                case JUMP_IF_FALSE_OR_POP:
+                    if (!is_forward) {
+                        /* As far as we can tell, the compiler never emits
+                         * these jumps with a backwards target. If/when this
+                         * exception is raised, we have found a use case for
+                         * a backwards version of this jump (or to replace
+                         * it with the sequence (COPY 1, POP_JUMP_IF_T/F, POP)
+                         */
+                        PyErr_Format(PyExc_SystemError,
+                            "unexpected %s jumping backwards",
+                            last->i_opcode == JUMP_IF_TRUE_OR_POP ?
+                                "JUMP_IF_TRUE_OR_POP" : "JUMP_IF_FALSE_OR_POP");
+                    }
+                    break;
             }
         }
     }
