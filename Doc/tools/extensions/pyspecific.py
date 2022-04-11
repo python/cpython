@@ -35,7 +35,7 @@ from sphinx.domains.python import PyModulelevel, PyClassmember
 import suspicious
 
 
-ISSUE_URI = 'https://bugs.python.org/issue%s'
+ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
 SOURCE_URI = 'https://github.com/python/cpython/tree/3.7/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
