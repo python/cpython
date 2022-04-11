@@ -1093,12 +1093,10 @@ class BlobTests(unittest.TestCase):
     def test_blob_read(self):
         buf = self.blob.read()
         self.assertEqual(buf, self.data)
-        self.assertEqual(len(buf), len(self.data))
 
     def test_blob_read_oversized(self):
         buf = self.blob.read(len(self.data) * 2)
         self.assertEqual(buf, self.data)
-        self.assertEqual(len(buf), len(self.data))
 
     def test_blob_read_advance_offset(self):
         n = 10
