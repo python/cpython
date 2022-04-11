@@ -40,9 +40,10 @@ though it may take a while to be processed.
 Using the Python issue tracker
 ==============================
 
-Issue reports for Python itself should be submitted via the GitHub issues tracker
-(https://github.com/python/cpython/issues). The GitHub issues tracker offers a web form which allows
-pertinent information to be entered and submitted to the developers.
+Issue reports for Python itself should be submitted via the GitHub issues
+tracker (https://github.com/python/cpython/issues).
+The GitHub issues tracker offers a web form which allows pertinent information
+to be entered and submitted to the developers.
 
 The first step in filing a report is to determine whether the problem has
 already been reported.  The advantage in doing so, aside from saving the
@@ -52,16 +53,17 @@ information is needed (in which case you are welcome to provide it if you can!).
 To do this, search the tracker using the search box at the top of the page.
 
 If the problem you're reporting is not already in the list, log in to GitHub.
-If you don't already have a GitHub account, Create new account using the "Sign up" link,
+If you don't already have a GitHub account, create new account using the
+"Sign up" link.
 It is not possible to submit a bug report anonymously.
 
-Being now logged in, you can submit an issue.  Select the "New issue" link in the
-top bar to open the issue reporting form.
+Being now logged in, you can submit an issue.
+Select the "New issue" link in the top bar to open the issue reporting form.
 
 The submission form has two fields, "Title" and "Comment".
 
-For the "Title" field, enter a
-*very* short description of the problem; less than ten words is good.
+For the "Title" field, enter a *very* short description of the problem;
+less than ten words is good.
 
 In the "Comment" field, describe the problem in detail, including what you
 expected to happen and what did happen.  Be sure to include whether any
