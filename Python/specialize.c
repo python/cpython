@@ -1883,7 +1883,10 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     assert(_PyOpcode_Caches[COMPARE_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
     _PyCompareOpCache *cache = (_PyCompareOpCache *)(instr + 1);
     int next_opcode = _Py_OPCODE(instr[INLINE_CACHE_ENTRIES_COMPARE_OP + 1]);
-    if (next_opcode != POP_JUMP_IF_FALSE && next_opcode != POP_JUMP_IF_TRUE) {
+    if (next_opcode != POP_JUMP_FORWARD_IF_FALSE &&
+        next_opcode != POP_JUMP_BACKWARD_IF_FALSE &&
+        next_opcode != POP_JUMP_FORWARD_IF_TRUE &&
+        next_opcode != POP_JUMP_BACKWARD_IF_TRUE) {
         // Can't ever combine, so don't don't bother being adaptive (unless
         // we're collecting stats, where it's more important to get accurate hit
         // counts for the unadaptive version and each of the different failure
@@ -1901,8 +1904,13 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     }
     assert(oparg <= Py_GE);
     int when_to_jump_mask = compare_masks[oparg];
-    if (next_opcode == POP_JUMP_IF_FALSE) {
+    if (next_opcode == POP_JUMP_FORWARD_IF_FALSE ||
+        next_opcode == POP_JUMP_BACKWARD_IF_FALSE) {
         when_to_jump_mask = (1 | 2 | 4) & ~when_to_jump_mask;
+    }
+    if (next_opcode == POP_JUMP_BACKWARD_IF_TRUE ||
+        next_opcode == POP_JUMP_BACKWARD_IF_FALSE) {
+        when_to_jump_mask <<= 3;
     }
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
         SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
@@ -1931,7 +1939,7 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         }
         else {
             _Py_SET_OPCODE(*instr, COMPARE_OP_STR_JUMP);
-            cache->mask = (when_to_jump_mask & 2) == 0;
+            cache->mask = when_to_jump_mask;
             goto success;
         }
     }
