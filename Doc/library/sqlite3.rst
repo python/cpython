@@ -403,8 +403,8 @@ Connection Objects
 
       .. note::
 
-         The BLOB size cannot be changed using the :class:`Blob` class. Use the
-         SQL function ``zeroblob`` to create a BLOB with a fixed size.
+         The BLOB size cannot be changed using the :class:`Blob` class.
+         Use the SQL function ``zeroblob`` to create a BLOB with a fixed size.
 
       .. versionadded:: 3.11
 
