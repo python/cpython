@@ -1058,7 +1058,6 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
 /*[clinic end generated code: output=72267c0c01032ed2 input=77d8696d1a1f460b]*/
 {
     PyObject *raw, *codec_info = NULL;
-    _PyIO_State *state = NULL;
     PyObject *res;
     int r;
     int use_locale_encoding = 0; // Use locale encoding even in UTF-8 mode.
@@ -1123,7 +1122,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     if (encoding == NULL) {
         /* Try os.device_encoding(fileno) */
         PyObject *fileno;
-        state = IO_STATE();
+        _PyIO_State *state = IO_STATE();
         if (state == NULL)
             goto error;
         fileno = PyObject_CallMethodNoArgs(buffer, &_Py_ID(fileno));
