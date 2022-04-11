@@ -1157,11 +1157,11 @@ def buildPython():
         (' ', '--without-ensurepip ')[PYTHON_3],
         (' ', "--with-openssl='%s/libraries/usr/local'"%(
                             shellQuote(WORKDIR)[1:-1],))[PYTHON_3],
-        (' ', "--with-tcltk-includes='-I%s/libraries/usr/local/include'"%(
-                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
-        (' ', "--with-tcltk-libs='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
-                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
         (' ', "--enable-optimizations --with-lto")[compilerCanOptimize()],
+        (' ', "TCLTK_CFLAGS='-I%s/libraries/usr/local/include'"%(
+                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
+        (' ', "TCLTK_LIBS='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
+                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 

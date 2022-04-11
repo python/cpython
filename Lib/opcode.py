@@ -76,6 +76,8 @@ def_op('MATCH_SEQUENCE', 32)
 def_op('MATCH_KEYS', 33)
 
 def_op('PUSH_EXC_INFO', 35)
+def_op('CHECK_EXC_MATCH', 36)
+def_op('CHECK_EG_MATCH', 37)
 
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
@@ -131,14 +133,13 @@ name_op('IMPORT_FROM', 109)     # Index in name list
 jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
 jrel_op('JUMP_IF_FALSE_OR_POP', 111) # Number of words to skip
 jrel_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
-jabs_op('POP_JUMP_IF_FALSE', 114)    # Target byte offset from beginning of code
-jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
+jrel_op('POP_JUMP_FORWARD_IF_FALSE', 114)
+jrel_op('POP_JUMP_FORWARD_IF_TRUE', 115)
 name_op('LOAD_GLOBAL', 116, 5)     # Index in name list
 def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
-jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
 def_op('BINARY_OP', 122, 1)
 jrel_op('SEND', 123) # Number of bytes to skip
 def_op('LOAD_FAST', 124)        # Local variable number
@@ -147,14 +148,13 @@ def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
-jabs_op('JUMP_IF_NOT_EG_MATCH', 127)
-jabs_op('POP_JUMP_IF_NOT_NONE', 128)
-jabs_op('POP_JUMP_IF_NONE', 129)
+jrel_op('POP_JUMP_FORWARD_IF_NOT_NONE', 128)
+jrel_op('POP_JUMP_FORWARD_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('GET_AWAITABLE', 131)
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
-jabs_op('JUMP_NO_INTERRUPT', 134) # Target byte offset from beginning of code
+jrel_op('JUMP_BACKWARD_NO_INTERRUPT', 134) # Number of words to skip (backwards)
 def_op('MAKE_CELL', 135)
 hasfree.append(135)
 def_op('LOAD_CLOSURE', 136)
@@ -196,6 +196,11 @@ def_op('PRECALL', 166, 1)
 def_op('CALL', 171, 4)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
+
+jrel_op('POP_JUMP_BACKWARD_IF_NOT_NONE', 173)
+jrel_op('POP_JUMP_BACKWARD_IF_NONE', 174)
+jrel_op('POP_JUMP_BACKWARD_IF_FALSE', 175)
+jrel_op('POP_JUMP_BACKWARD_IF_TRUE', 176)
 
 
 del def_op, name_op, jrel_op, jabs_op

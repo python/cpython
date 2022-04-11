@@ -429,7 +429,8 @@ PYTHON_OBJS=	\
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
-		$(DTRACE_OBJS)
+		$(DTRACE_OBJS) \
+		@PLATFORM_OBJS@
 
 
 ##########################################################################
@@ -806,14 +807,22 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 	else true; \
 	fi
 
-# wasm32-emscripten build
+# wasm32-emscripten browser build
 # wasm assets directory is relative to current build dir, e.g. "./usr/local".
 # --preload-file turns a relative asset path into an absolute path.
 
 $(WASM_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
-                pybuilddir.txt $(srcdir)/Tools/wasm/wasm_assets.py
+	    $(srcdir)/Tools/wasm/wasm_assets.py \
+	    Makefile pybuilddir.txt Modules/Setup.local \
+	    python.html python.worker.js
 	$(PYTHON_FOR_BUILD) $(srcdir)/Tools/wasm/wasm_assets.py \
 	    --builddir . --prefix $(prefix)
+
+python.html: $(srcdir)/Tools/wasm/python.html python.worker.js
+	@cp $(srcdir)/Tools/wasm/python.html $@
+
+python.worker.js: $(srcdir)/Tools/wasm/python.worker.js
+	@cp $(srcdir)/Tools/wasm/python.worker.js $@
 
 ##########################################################################
 # Build static libmpdec.a
@@ -1161,8 +1170,9 @@ Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/__phello__.spam.h:__phello__.spam \
 	Python/frozen_modules/frozen_only.h:frozen_only \
 	-o Python/deepfreeze/deepfreeze.c
-
 # END: deepfreeze modules
+	@echo "Note: Deepfreeze may have added some global objects,"
+	@echo "      so run 'make regen-global-objects' if necessary."
 
 # We keep this renamed target around for folks with muscle memory.
 .PHONY: regen-importlib
@@ -1171,24 +1181,11 @@ regen-importlib: regen-frozen
 ############################################################################
 # Global objects
 
-GLOBAL_OBJECTS_TARGETS = \
-		$(srcdir)/Include/internal/pycore_global_objects.h \
-		$(srcdir)/Include/internal/pycore_global_strings.h
-
-# The global objects will get regenerated as soon these files
-# are required, including as a prerequisite for regen-deepfreeze.
-$(GLOBAL_OBJECTS_TARGETS): generate-global-objects
-
-.PHONY: generate-global-objects
-generate-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
-
-.PHONY: generate-global-objects-after-deepfreeze
-generate-global-objects-after-deepfreeze: regen-deepfreeze $(srcdir)/Tools/scripts/generate_global_objects.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
-
 .PHONY: regen-global-objects
-regen-global-objects: regen-deepfreeze generate-global-objects-after-deepfreeze
+regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
+	@echo "Note: Global objects can be added or removed by other tools (e.g. deepfreeze), "
+	@echo "      so be sure to re-run regen-global-objects after those tools."
 
 ############################################################################
 # ABI
@@ -1229,6 +1226,7 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h M
 		-DVERSION='"$(VERSION)"' \
 		-DVPATH='"$(VPATH)"' \
 		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
+		-DPYTHONFRAMEWORK='"$(PYTHONFRAMEWORK)"' \
 		-o $@ $(srcdir)/Modules/getpath.c
 
 Programs/python.o: $(srcdir)/Programs/python.c
@@ -1237,7 +1235,7 @@ Programs/python.o: $(srcdir)/Programs/python.c
 Programs/_testembed.o: $(srcdir)/Programs/_testembed.c Programs/test_frozenmain.h
 	$(MAINCC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/_testembed.c
 
-Modules/_sre.o: $(srcdir)/Modules/_sre.c $(srcdir)/Modules/sre.h $(srcdir)/Modules/sre_constants.h $(srcdir)/Modules/sre_lib.h
+Modules/_sre/sre.o: $(srcdir)/Modules/_sre/sre.c $(srcdir)/Modules/_sre/sre.h $(srcdir)/Modules/_sre/sre_constants.h $(srcdir)/Modules/_sre/sre_lib.h
 
 Modules/posixmodule.o: $(srcdir)/Modules/posixmodule.c $(srcdir)/Modules/posixmodule.h
 
@@ -1453,7 +1451,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/bytearrayobject.h \
 		$(srcdir)/Include/bytesobject.h \
 		$(srcdir)/Include/ceval.h \
-		$(srcdir)/Include/code.h \
 		$(srcdir)/Include/codecs.h \
 		$(srcdir)/Include/compile.h \
 		$(srcdir)/Include/complexobject.h \
@@ -1525,6 +1522,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/classobject.h \
 		$(srcdir)/Include/cpython/code.h \
 		$(srcdir)/Include/cpython/compile.h \
+		$(srcdir)/Include/cpython/complexobject.h \
 		$(srcdir)/Include/cpython/context.h \
 		$(srcdir)/Include/cpython/descrobject.h \
 		$(srcdir)/Include/cpython/dictobject.h \
@@ -1553,6 +1551,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pystate.h \
 		$(srcdir)/Include/cpython/pythonrun.h \
 		$(srcdir)/Include/cpython/pytime.h \
+		$(srcdir)/Include/cpython/setobject.h \
 		$(srcdir)/Include/cpython/sysmodule.h \
 		$(srcdir)/Include/cpython/traceback.h \
 		$(srcdir)/Include/cpython/tupleobject.h \
@@ -1620,6 +1619,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_unicodeobject.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(DTRACE_HEADERS) \
+		@PLATFORM_HEADERS@ \
 		\
 		$(srcdir)/Python/stdlib_module_names.h
 
@@ -1874,6 +1874,7 @@ LIBSUBDIRS=	asyncio \
 		logging \
 		multiprocessing multiprocessing/dummy \
 		pydoc_data \
+		re \
 		site-packages \
 		sqlite3 \
 		tkinter \

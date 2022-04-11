@@ -343,6 +343,11 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
 
+    def test_ucnhash_capi_reset(self):
+        # bpo-47182: unicodeobject.c:ucnhash_capi was not reset on shutdown.
+        code = "print('\\N{digit nine}')"
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, '9\n' * INIT_LOOPS)
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
@@ -1201,20 +1206,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             if MS_WINDOWS:
                 # Copy pythonXY.dll (or pythonXY_d.dll)
-                ver = sys.version_info
-                dll = f'python{ver.major}{ver.minor}'
-                dll3 = f'python{ver.major}'
-                if debug_build(sys.executable):
-                    dll += '_d'
-                    dll3 += '_d'
-                dll += '.dll'
-                dll3 += '.dll'
-                dll = os.path.join(os.path.dirname(self.test_exe), dll)
-                dll3 = os.path.join(os.path.dirname(self.test_exe), dll3)
-                dll_copy = os.path.join(tmpdir, os.path.basename(dll))
-                dll3_copy = os.path.join(tmpdir, os.path.basename(dll3))
-                shutil.copyfile(dll, dll_copy)
-                shutil.copyfile(dll3, dll3_copy)
+                import fnmatch
+                exedir = os.path.dirname(self.test_exe)
+                for f in os.listdir(exedir):
+                    if fnmatch.fnmatch(f, '*.dll'):
+                        shutil.copyfile(os.path.join(exedir, f), os.path.join(tmpdir, f))
 
             # Copy Python program
             exec_copy = os.path.join(tmpdir, os.path.basename(self.test_exe))
