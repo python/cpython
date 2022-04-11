@@ -20,9 +20,7 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import _testcapi
 import contextlib
-import os
 import sqlite3 as sqlite
 import subprocess
 import sys
@@ -35,6 +33,8 @@ from test.support import (
     check_disallow_instantiation,
     threading_helper,
 )
+from _testcapi import INT_MAX
+from os import SEEK_SET, SEEK_CUR, SEEK_END
 from test.support.os_helper import TESTFN, unlink, temp_dir
 
 
@@ -1059,13 +1059,13 @@ class BlobTests(unittest.TestCase):
         self.blob.seek(10)
         self.assertEqual(self.blob.tell(), 10)
 
-        self.blob.seek(10, os.SEEK_SET)
+        self.blob.seek(10, SEEK_SET)
         self.assertEqual(self.blob.tell(), 10)
 
-        self.blob.seek(10, os.SEEK_CUR)
+        self.blob.seek(10, SEEK_CUR)
         self.assertEqual(self.blob.tell(), 20)
 
-        self.blob.seek(-10, os.SEEK_END)
+        self.blob.seek(-10, SEEK_END)
         self.assertEqual(self.blob.tell(), 40)
 
     def test_blob_seek_error(self):
@@ -1084,11 +1084,11 @@ class BlobTests(unittest.TestCase):
                 self.assertRaisesRegex(exc, msg, fn)
 
         n = len(self.data) // 2
-        self.blob.seek(n, os.SEEK_SET)
+        self.blob.seek(n, SEEK_SET)
         with self.assertRaisesRegex(OverflowError, msg_of):
-            self.blob.seek(_testcapi.INT_MAX, os.SEEK_CUR)
+            self.blob.seek(INT_MAX, SEEK_CUR)
         with self.assertRaisesRegex(OverflowError, msg_of):
-            self.blob.seek( _testcapi.INT_MAX, os.SEEK_END)
+            self.blob.seek(INT_MAX, SEEK_END)
 
     def test_blob_read(self):
         buf = self.blob.read()
