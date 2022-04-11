@@ -25,14 +25,6 @@ extern PyFrameObject* _PyFrame_New_NoTrack(PyCodeObject *code);
 
 /* other API */
 
-typedef enum _framestate {
-    FRAME_CREATED = -2,
-    FRAME_SUSPENDED = -1,
-    FRAME_EXECUTING = 0,
-    FRAME_COMPLETED = 1,
-    FRAME_CLEARED = 4
-} PyFrameState;
-
 enum _frameowner {
     FRAME_OWNED_BY_THREAD = 0,
     FRAME_OWNED_BY_GENERATOR = 1,

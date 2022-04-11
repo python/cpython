@@ -5908,6 +5908,16 @@ frame_getlasti(PyObject *self, PyObject *frame)
     return PyLong_FromLong(lasti);
 }
 
+static PyObject *
+frame_getstate(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    return PyLong_FromLong(PyFrame_GetState((PyFrameObject *)frame));
+}
+
 
 static PyObject *negative_dictoffset(PyObject *, PyObject *);
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
@@ -6202,6 +6212,7 @@ static PyMethodDef TestMethods[] = {
     {"frame_getgenerator", frame_getgenerator, METH_O, NULL},
     {"frame_getbuiltins", frame_getbuiltins, METH_O, NULL},
     {"frame_getlasti", frame_getlasti, METH_O, NULL},
+    {"frame_getstate", frame_getstate, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 

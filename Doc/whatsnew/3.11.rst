@@ -1270,6 +1270,11 @@ Porting to Python 3.11
   in fact they should not call those functions. The necessary updating of the
   frame is now managed by the virtual machine.
 
+  Tools that need to distinguish between ``yield`` and ``return`` or
+  whether a "call" event is starting or resuming a generator can use the
+  :c:func:`PyFrame_GetState` which is equivalent to the new `f_state`
+  attribute for frame objects.
+
   Code defining ``PyFrame_GetCode()`` on Python 3.8 and older::
 
       #if PY_VERSION_HEX < 0x030900B1

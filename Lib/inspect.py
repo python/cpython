@@ -58,6 +58,11 @@ __all__ = [
     "EndOfBlock",
     "FrameInfo",
     "FullArgSpec",
+    "FRAME_CREATED",
+    "FRAME_SUSPENDED",
+    "FRAME_EXECUTING",
+    "FRAME_COMPLETED",
+    "FRAME_CLEARED",
     "GEN_CLOSED",
     "GEN_CREATED",
     "GEN_RUNNING",
@@ -1807,6 +1812,14 @@ def getattr_static(obj, attr, default=_sentinel):
         return default
     raise AttributeError(attr)
 
+
+# ---------------------------------------- frame introspection
+
+FRAME_CREATED = -2
+FRAME_SUSPENDED = -1
+FRAME_EXECUTING = 0
+FRAME_COMPLETED = 1
+FRAME_CLEARED = 2
 
 # ------------------------------------------------ generator introspection
 

@@ -105,3 +105,13 @@ See also :ref:`Reflection <reflection>`.
    Return the line number that *frame* is currently executing.
 
    *frame* must not be ``NULL``.
+
+
+.. c:function:: int PyFrame_GetState(PyFrameObject *frame)
+
+   Get the *frame*'s ``f_state`` attribute (:class:`dict`).
+
+   *frame* must not be ``NULL``.
+
+   .. versionadded:: 3.11
+

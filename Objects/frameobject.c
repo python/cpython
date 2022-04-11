@@ -88,6 +88,12 @@ frame_getbuiltins(PyFrameObject *f, void *closure)
 }
 
 static PyObject *
+frame_getstate(PyFrameObject *f, void *closure)
+{
+    return PyLong_FromLong(PyFrame_GetState(f));
+}
+
+static PyObject *
 frame_getcode(PyFrameObject *f, void *closure)
 {
     if (PySys_Audit("object.__getattr__", "Os", f, "f_code") < 0) {
@@ -406,8 +412,8 @@ frame_stack_pop(PyFrameObject *f)
     Py_DECREF(v);
 }
 
-static PyFrameState
-_PyFrame_GetState(PyFrameObject *frame)
+PyFrameState
+PyFrame_GetState(PyFrameObject *frame)
 {
     if (frame->f_frame->stacktop == 0) {
         return FRAME_CLEARED;
@@ -469,7 +475,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    PyFrameState state = _PyFrame_GetState(f);
+    PyFrameState state = PyFrame_GetState(f);
     /*
      * This code preserves the historical restrictions on
      * setting the line number of a frame.
@@ -638,6 +644,7 @@ static PyGetSetDef frame_getsetlist[] = {
     {"f_globals",       (getter)frame_getglobals, NULL, NULL},
     {"f_builtins",      (getter)frame_getbuiltins, NULL, NULL},
     {"f_code",          (getter)frame_getcode, NULL, NULL},
+    {"f_state",          (getter)frame_getstate, NULL, NULL},
     {0}
 };
 
@@ -1088,7 +1095,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
 void
 PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 {
-    if (f && f->f_fast_as_locals && _PyFrame_GetState(f) != FRAME_CLEARED) {
+    if (f && f->f_fast_as_locals && PyFrame_GetState(f) != FRAME_CLEARED) {
         _PyFrame_LocalsToFast(f->f_frame, clear);
         f->f_fast_as_locals = 0;
     }

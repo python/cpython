@@ -3,6 +3,7 @@ import sys
 import types
 import unittest
 import weakref
+import inspect
 
 from test import support
 
@@ -194,6 +195,43 @@ class FrameAttrsTest(unittest.TestCase):
         f, _, _ = self.make_frames()
         with self.assertRaises(AttributeError):
             del f.f_lineno
+
+
+class FrameAttributesTest(unittest.TestCase):
+    """
+    Tests for frame attributes
+    """
+
+    def test_func_f_state(self):
+        def func():
+            fr = sys._getframe()
+            self.assertEqual(fr.f_state, inspect.FRAME_EXECUTING)
+            return fr
+
+        ff = func()
+        self.assertEqual(ff.f_state, inspect.FRAME_COMPLETED)
+        ff.clear()
+        self.assertEqual(ff.f_state, inspect.FRAME_CLEARED)
+
+    def test_gen_f_state(self):
+        def gen():
+            nonlocal g
+            self.assertEqual(g.gi_frame.f_state, inspect.FRAME_EXECUTING)
+            yield 1
+            self.assertEqual(g.gi_frame.f_state, inspect.FRAME_EXECUTING)
+
+        g = gen()
+        self.assertEqual(g.gi_frame.f_state, inspect.FRAME_CREATED)
+        next(g)
+        self.assertEqual(g.gi_frame.f_state, inspect.FRAME_SUSPENDED)
+        gf = g.gi_frame
+        try:
+            next(g)
+        except StopIteration:
+            pass
+        self.assertEqual(gf.f_state, inspect.FRAME_COMPLETED)
+        gf.clear()
+        self.assertEqual(gf.f_state, inspect.FRAME_CLEARED)
 
 
 class ReprTest(unittest.TestCase):

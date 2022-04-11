@@ -30,3 +30,14 @@ PyAPI_FUNC(PyObject *) PyFrame_GetBuiltins(PyFrameObject *frame);
 
 PyAPI_FUNC(PyObject *) PyFrame_GetGenerator(PyFrameObject *frame);
 PyAPI_FUNC(int) PyFrame_GetLasti(PyFrameObject *frame);
+
+/* These values must be kept in sync with those in inspect.py */
+typedef enum _framestate {
+    FRAME_CREATED = -2,
+    FRAME_SUSPENDED = -1,
+    FRAME_EXECUTING = 0,
+    FRAME_COMPLETED = 1,
+    FRAME_CLEARED = 2
+} PyFrameState;
+
+PyAPI_FUNC(PyFrameState) PyFrame_GetState(PyFrameObject *frame);

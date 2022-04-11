@@ -1,0 +1,2 @@
+Add ``f_state`` attribute to frame objects, to allow coverage and other
+tools to distinguish between returns/yields and calls/resumes.
