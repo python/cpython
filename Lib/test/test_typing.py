@@ -574,11 +574,9 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T]',                        '[T, *Ts]',                'TypeError'),
             ('generic[T]',                        '[*Ts, T]',                'TypeError'),
 
-            # The following two cases work with list/List but not with C
-            # because list/List don't restrict to only a single type argument
-            # but C does.
-            ('list[T, *tuple_type[int, ...]]',    '[int]',                   'list[int, *tuple_type[int, ...]]'),
-            ('List[T, *tuple_type[int, ...]]',    '[int]',                   'TypeError'),                      # Should be List[int, *tuple_type[int, ...]]
+            ('C[T, *tuple_type[int, ...]]',       '[int]',                   'TypeError'),
+            ('list[T, *tuple_type[int, ...]]',    '[int]',                   'list[int, *tuple_type[int, ...]]'),  # Should raise TypeError
+            ('List[T, *tuple_type[int, ...]]',    '[int]',                   'TypeError'),
         ]
 
         for alias_template, args_template, expected_template in tests:
