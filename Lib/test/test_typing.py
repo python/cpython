@@ -672,6 +672,10 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('tuple[*Ts]',                             '[*tuple_type[int]]',                             'tuple[(*tuple_type[int],),]'),  # Should be tuple[*tuple_type[int]]
             ('Tuple[*Ts]',                             '[*tuple_type[int]]',                             'Tuple[*tuple_type[int]]'),  # Should be Tuple[*tuple_type[int]]
 
+            ('C[*Ts]',                                 '[*tuple_type[*Ts]]',                             'C[*tuple_type[*Ts]]'),
+            ('tuple[*Ts]',                             '[*tuple_type[*Ts]]',                             'tuple[(*tuple_type[*Ts],),]'),  # Should be tuple[*tuple_type[*Ts]]
+            ('Tuple[*Ts]',                             '[*tuple_type[*Ts]]',                             'Tuple[*tuple_type[*Ts]]'),
+
             ('C[*Ts]',                                 '[*tuple_type[int, str]]',                        'C[*tuple_type[int, str]]'),  # Should be C[int, str]
             ('tuple[*Ts]',                             '[*tuple_type[int, str]]',                        'tuple[(*tuple_type[int, str],),]'),  # Should be tuple[*tuple_type[int, str]]
             ('Tuple[*Ts]',                             '[*tuple_type[int, str]]',                        'Tuple[*tuple_type[int, str]]'),  # Should be Tuple[*tuple_type[int, str]]
