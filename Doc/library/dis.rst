@@ -981,12 +981,15 @@ iterations of the loop.
    .. versionadded:: 3.1
 
 
-.. opcode:: FOR_ITER (delta)
+.. opcode:: FOR_END (delta)
 
    TOS is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.  If
    this yields a new value, push it on the stack (leaving the iterator below
-   it).  If the iterator indicates it is exhausted, TOS is popped, and the byte
-   code counter is incremented by *delta*.
+   it), then decrement the bytecode counter by *delta*.  If the iterator
+   indicates it is exhausted, then pop TOS and do not decrement the bytecode
+   counter.
+
+   .. versionadded:: 3.11
 
 
 .. opcode:: LOAD_GLOBAL (namei)
