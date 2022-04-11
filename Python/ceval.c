@@ -45,7 +45,7 @@
 #endif
 
 #ifndef Py_DEBUG
-// bpo-45116: The MSVC compiler does not inline these static inline functions
+// GH-89279: The MSVC compiler does not inline these static inline functions
 // in PGO build in _PyEval_EvalFrameDefault(), because this function is over
 // the limit of PGO, and that limit cannot be configured.
 // Define them as macros to make sure that they are always inlined by the
@@ -62,6 +62,7 @@
 
 #endif
 
+// GH-89279: Similar to above, force inlining by using a macro.
 #if defined(_MSC_VER) && SIZEOF_INT == 4
 #define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
 #else
