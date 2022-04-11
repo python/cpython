@@ -9,9 +9,21 @@ possible to build for *wasm32-wasi* out-of-the-box yet.
 
 ## wasm32-emscripten build
 
-Cross compiling to wasm32-emscripten platform needs the [Emscripten](https://emscripten.org/)
-tool chain and a build Python interpreter.
-All commands below are relative to a repository checkout.
+Cross compiling to the wasm32-emscripten platform needs the
+[Emscripten](https://emscripten.org/) SDK and a build Python interpreter.
+Emscripten 3.1.8 or newer are recommended. All commands below are relative
+to a repository checkout.
+
+Christian Heimes maintains a container image with Emscripten SDK, Python
+build dependencies, WASI-SDK, wasmtime, and several additional tools.
+
+```
+# Fedora, RHEL, CentOS
+podman run --rm -ti -v $(pwd):/python-wasm/cpython:Z quay.io/tiran/cpythonbuild:emsdk3
+
+# other
+docker run --rm -ti -v $(pwd):/python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
+```
 
 ### Compile a build Python interpreter
 
@@ -167,3 +179,77 @@ linker options.
 - pthread support requires WASM threads and SharedArrayBuffer (bulk memory).
   The runtime keeps a pool of web workers around. Each web worker uses
   several file descriptors (eventfd, epoll, pipe).
+
+# Hosting Python WASM builds
+
+The simple REPL terminal uses SharedArrayBuffer. For security reasons
+browsers only provide the feature in secure environents with cross-origin
+isolation. The webserver must send cross-origin headers and correct MIME types
+for the JavaScript and WASM files. Otherwise the terminal will fail to load
+with an error message like ``Browsers disable shared array buffer``.
+
+## Apache HTTP .htaccess
+
+Place a ``.htaccess`` file in the same directory as ``python.wasm``.
+
+```
+# .htaccess
+Header set Cross-Origin-Opener-Policy same-origin
+Header set Cross-Origin-Embedder-Policy require-corp
+
+AddType application/javascript js
+AddType application/wasm wasm
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html application/javascript application/wasm
+</IfModule>
+```
+
+# Detect WebAssembly builds
+
+## Python code
+
+```# python
+import os, sys
+
+if sys.platform == "emscripten":
+    # Python on Emscripten
+if sys.platform == "wasi":
+    # Python on WASI
+
+if os.name == "posix":
+    # WASM platforms identify as POSIX-like.
+    # Windows does not provide os.uname().
+    machine = os.uname().machine
+    if machine.startswith("wasm"):
+        # WebAssembly (wasm32 or wasm64)
+```
+
+## C code
+
+Emscripten SDK and WASI SDK define several built-in macros. You can dump a
+full list of built-ins with ``emcc -dM -E - < /dev/null`` and
+``/path/to/wasi-sdk/bin/clang -dM -E - < /dev/null``.
+
+```# C
+#ifdef __EMSCRIPTEN__
+    // Python on Emscripten
+#endif
+```
+
+* WebAssembly ``__wasm__`` (also ``__wasm``)
+* wasm32 ``__wasm32__`` (also ``__wasm32``)
+* wasm64 ``__wasm64__``
+* Emscripten ``__EMSCRIPTEN__`` (also ``EMSCRIPTEN``)
+* Emscripten version ``__EMSCRIPTEN_major__``, ``__EMSCRIPTEN_minor__``, ``__EMSCRIPTEN_tiny__``
+* WASI ``__wasi__``
+
+Feature detection flags:
+
+* ``__EMSCRIPTEN_PTHREADS__``
+* ``__EMSCRIPTEN_SHARED_MEMORY__``
+* ``__wasm_simd128__``
+* ``__wasm_sign_ext__``
+* ``__wasm_bulk_memory__``
+* ``__wasm_atomics__``
+* ``__wasm_mutable_globals__``
