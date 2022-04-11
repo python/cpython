@@ -141,7 +141,7 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
 {
     /* Mark some opcodes as specializable for stats,
      * even though we don't specialize them yet. */
-    fprintf(out, "opcode[%d].specializable : 1\n", FOR_ITER);
+    fprintf(out, "opcode[%d].specializable : 1\n", FOR_END);
     for (int i = 0; i < 256; i++) {
         if (_PyOpcode_Adaptive[i]) {
             fprintf(out, "opcode[%d].specializable : 1\n", i);
@@ -454,21 +454,21 @@ initial_counter_value(void) {
 #define SPEC_FAIL_COMPARE_OP_LONG_FLOAT 23
 #define SPEC_FAIL_COMPARE_OP_EXTENDED_ARG 24
 
-/* FOR_ITER */
-#define SPEC_FAIL_FOR_ITER_GENERATOR 10
-#define SPEC_FAIL_FOR_ITER_COROUTINE 11
-#define SPEC_FAIL_FOR_ITER_ASYNC_GENERATOR 12
-#define SPEC_FAIL_FOR_ITER_LIST 13
-#define SPEC_FAIL_FOR_ITER_TUPLE 14
-#define SPEC_FAIL_FOR_ITER_SET 15
-#define SPEC_FAIL_FOR_ITER_STRING 16
-#define SPEC_FAIL_FOR_ITER_BYTES 17
-#define SPEC_FAIL_FOR_ITER_RANGE 18
-#define SPEC_FAIL_FOR_ITER_ITERTOOLS 19
-#define SPEC_FAIL_FOR_ITER_DICT_KEYS 20
-#define SPEC_FAIL_FOR_ITER_DICT_ITEMS 21
-#define SPEC_FAIL_FOR_ITER_DICT_VALUES 22
-#define SPEC_FAIL_FOR_ITER_ENUMERATE 23
+/* FOR_END */
+#define SPEC_FAIL_FOR_END_GENERATOR 10
+#define SPEC_FAIL_FOR_END_COROUTINE 11
+#define SPEC_FAIL_FOR_END_ASYNC_GENERATOR 12
+#define SPEC_FAIL_FOR_END_LIST 13
+#define SPEC_FAIL_FOR_END_TUPLE 14
+#define SPEC_FAIL_FOR_END_SET 15
+#define SPEC_FAIL_FOR_END_STRING 16
+#define SPEC_FAIL_FOR_END_BYTES 17
+#define SPEC_FAIL_FOR_END_RANGE 18
+#define SPEC_FAIL_FOR_END_ITERTOOLS 19
+#define SPEC_FAIL_FOR_END_DICT_KEYS 20
+#define SPEC_FAIL_FOR_END_DICT_ITEMS 21
+#define SPEC_FAIL_FOR_END_DICT_VALUES 22
+#define SPEC_FAIL_FOR_END_ENUMERATE 23
 
 // UNPACK_SEQUENCE
 
@@ -2004,48 +2004,48 @@ int
  _PySpecialization_ClassifyIterator(PyObject *iter)
 {
     if (PyGen_CheckExact(iter)) {
-        return SPEC_FAIL_FOR_ITER_GENERATOR;
+        return SPEC_FAIL_FOR_END_GENERATOR;
     }
     if (PyCoro_CheckExact(iter)) {
-        return SPEC_FAIL_FOR_ITER_COROUTINE;
+        return SPEC_FAIL_FOR_END_COROUTINE;
     }
     if (PyAsyncGen_CheckExact(iter)) {
-        return SPEC_FAIL_FOR_ITER_ASYNC_GENERATOR;
+        return SPEC_FAIL_FOR_END_ASYNC_GENERATOR;
     }
     PyTypeObject *t = Py_TYPE(iter);
     if (t == &PyListIter_Type) {
-        return SPEC_FAIL_FOR_ITER_LIST;
+        return SPEC_FAIL_FOR_END_LIST;
     }
     if (t == &PyTupleIter_Type) {
-        return SPEC_FAIL_FOR_ITER_TUPLE;
+        return SPEC_FAIL_FOR_END_TUPLE;
     }
     if (t == &PyDictIterKey_Type) {
-        return SPEC_FAIL_FOR_ITER_DICT_KEYS;
+        return SPEC_FAIL_FOR_END_DICT_KEYS;
     }
     if (t == &PyDictIterValue_Type) {
-        return SPEC_FAIL_FOR_ITER_DICT_VALUES;
+        return SPEC_FAIL_FOR_END_DICT_VALUES;
     }
     if (t == &PyDictIterItem_Type) {
-        return SPEC_FAIL_FOR_ITER_DICT_ITEMS;
+        return SPEC_FAIL_FOR_END_DICT_ITEMS;
     }
     if (t == &PySetIter_Type) {
-        return SPEC_FAIL_FOR_ITER_SET;
+        return SPEC_FAIL_FOR_END_SET;
     }
     if (t == &PyUnicodeIter_Type) {
-        return SPEC_FAIL_FOR_ITER_STRING;
+        return SPEC_FAIL_FOR_END_STRING;
     }
     if (t == &PyBytesIter_Type) {
-        return SPEC_FAIL_FOR_ITER_BYTES;
+        return SPEC_FAIL_FOR_END_BYTES;
     }
     if (t == &PyRangeIter_Type) {
-        return SPEC_FAIL_FOR_ITER_RANGE;
+        return SPEC_FAIL_FOR_END_RANGE;
     }
     if (t == &PyEnum_Type) {
-        return SPEC_FAIL_FOR_ITER_ENUMERATE;
+        return SPEC_FAIL_FOR_END_ENUMERATE;
     }
 
     if (strncmp(t->tp_name, "itertools", 8) == 0) {
-        return SPEC_FAIL_FOR_ITER_ITERTOOLS;
+        return SPEC_FAIL_FOR_END_ITERTOOLS;
     }
     return SPEC_FAIL_OTHER;
 }
