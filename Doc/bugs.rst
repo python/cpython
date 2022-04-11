@@ -53,12 +53,12 @@ information is needed (in which case you are welcome to provide it if you can!).
 To do this, search the tracker using the search box at the top of the page.
 
 If the problem you're reporting is not already in the list, log in to GitHub.
-If you don't already have a GitHub account, create new account using the
+If you don't already have a GitHub account, create a new account using the
 "Sign up" link.
 It is not possible to submit a bug report anonymously.
 
 Being now logged in, you can submit an issue.
-Select the "New issue" link in the top bar to open the issue reporting form.
+Click on the "New issue" button in the top bar to report a new issue.
 
 The submission form has two fields, "Title" and "Comment".
 
