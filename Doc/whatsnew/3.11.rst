@@ -850,6 +850,7 @@ Deprecated
   * :mod:`audioop`
   * :mod:`cgi`
   * :mod:`cgitb`
+  * :mod:`chunk`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
