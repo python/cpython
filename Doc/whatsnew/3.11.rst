@@ -1252,7 +1252,7 @@ Porting to Python 3.11
   * ``f_lineno``: use :c:func:`PyFrame_GetLineNumber`
   * ``f_locals``: use :c:func:`PyFrame_GetLocals`.
   * ``f_stackdepth``: removed.
-  * ``f_state``: no public API (renamed to ``f_frame.f_state``).
+  * ``f_state``: use `c:func:`PyFrame_GetState`.
   * ``f_trace``: no public API.
   * ``f_trace_lines``: use ``PyObject_GetAttrString((PyObject*)frame, "f_trace_lines")``.
   * ``f_trace_opcodes``: use ``PyObject_GetAttrString((PyObject*)frame, "f_trace_opcodes")``.
@@ -1271,9 +1271,9 @@ Porting to Python 3.11
   frame is now managed by the virtual machine.
 
   Tools that need to distinguish between ``yield`` and ``return`` or
-  whether a "call" event is starting or resuming a generator can use the
-  :c:func:`PyFrame_GetState` which is equivalent to the new `f_state`
-  attribute for frame objects.
+  whether a "call" event is starting or resuming a generator should call
+  :c:func:`PyFrame_GetState`, rather than trying to infer the state from
+  :c:func:`PyFrame_GetLasti`.
 
   Code defining ``PyFrame_GetCode()`` on Python 3.8 and older::
 
