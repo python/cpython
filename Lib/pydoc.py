@@ -2739,6 +2739,31 @@ def _get_revised_path(given_path, argv0):
     return revised_path
 
 
+def enhanced_dir(arg, categorize=True, show_types=False):
+    """modified dir with details related to the class a particular method belongs, the type of the method"""
+    from collections import defaultdict
+    if not categorize:
+        return dir(arg)
+    passed = defaultdict(lambda: defaultdict(set))
+    failed = defaultdict(set)
+    passed_ = defaultdict(lambda: defaultdict(set))
+    failed_ = defaultdict(lambda: defaultdict(set))
+
+    x = arg
+    for method in dir(x):
+        try:
+            qualname = eval(f'x.{method}.__qualname__').split('.')
+            passed['x'][qualname[0]].add(qualname[1])
+            type_ = type(eval(f'x.{method}'))
+            passed_['x'][type_].add(qualname[1])
+        except:
+            failed['x'].add(method)
+            failed_['x'][type_].add(method)
+    if show_types:
+        return [passed, passed_]
+    return passed
+
+
 # Note: the tests only cover _get_revised_path, not _adjust_cli_path itself
 def _adjust_cli_sys_path():
     """Ensures current directory is on sys.path, and __main__ directory is not.
