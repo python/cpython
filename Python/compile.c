@@ -78,8 +78,12 @@
 #define POP_BLOCK -4
 #define JUMP -5
 #define JUMP_NO_INTERRUPT -6
+#define POP_JUMP_IF_FALSE -7
+#define POP_JUMP_IF_TRUE -8
+#define POP_JUMP_IF_NONE -9
+#define POP_JUMP_IF_NOT_NONE -10
 
-#define MIN_VIRTUAL_OPCODE -6
+#define MIN_VIRTUAL_OPCODE -10
 #define MAX_ALLOWED_OPCODE 254
 
 #define IS_WITHIN_OPCODE_RANGE(opcode) \
@@ -87,11 +91,36 @@
 
 #define IS_VIRTUAL_OPCODE(opcode) ((opcode) < 0)
 
+#define IS_VIRTUAL_JUMP_OPCODE(opcode) \
+        ((opcode) == JUMP || \
+         (opcode) == JUMP_NO_INTERRUPT || \
+         (opcode) == POP_JUMP_IF_NONE || \
+         (opcode) == POP_JUMP_IF_NOT_NONE || \
+         (opcode) == POP_JUMP_IF_FALSE || \
+         (opcode) == POP_JUMP_IF_TRUE)
+
 /* opcodes which are not emitted in codegen stage, only by the assembler */
 #define IS_ASSEMBLER_OPCODE(opcode) \
         ((opcode) == JUMP_FORWARD || \
          (opcode) == JUMP_BACKWARD || \
-         (opcode) == JUMP_BACKWARD_NO_INTERRUPT)
+         (opcode) == JUMP_BACKWARD_NO_INTERRUPT || \
+         (opcode) == POP_JUMP_FORWARD_IF_NONE || \
+         (opcode) == POP_JUMP_BACKWARD_IF_NONE || \
+         (opcode) == POP_JUMP_FORWARD_IF_NOT_NONE || \
+         (opcode) == POP_JUMP_BACKWARD_IF_NOT_NONE || \
+         (opcode) == POP_JUMP_FORWARD_IF_TRUE || \
+         (opcode) == POP_JUMP_BACKWARD_IF_TRUE || \
+         (opcode) == POP_JUMP_FORWARD_IF_FALSE || \
+         (opcode) == POP_JUMP_BACKWARD_IF_FALSE)
+
+
+#define IS_BACKWARDS_JUMP_OPCODE(opcode) \
+        ((opcode) == JUMP_BACKWARD || \
+         (opcode) == JUMP_BACKWARD_NO_INTERRUPT || \
+         (opcode) == POP_JUMP_BACKWARD_IF_NONE || \
+         (opcode) == POP_JUMP_BACKWARD_IF_NOT_NONE || \
+         (opcode) == POP_JUMP_BACKWARD_IF_TRUE || \
+         (opcode) == POP_JUMP_BACKWARD_IF_FALSE)
 
 
 #define IS_TOP_LEVEL_AWAIT(c) ( \
@@ -156,7 +185,7 @@ is_block_push(struct instr *instr)
 static inline int
 is_jump(struct instr *i)
 {
-    return i->i_opcode == JUMP ||
+    return IS_VIRTUAL_JUMP_OPCODE(i->i_opcode) ||
            is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
 }
 
@@ -1027,10 +1056,18 @@ stack_effect(int opcode, int oparg, int jump)
         case JUMP_IF_FALSE_OR_POP:
             return jump ? 0 : -1;
 
-        case POP_JUMP_IF_FALSE:
-        case POP_JUMP_IF_TRUE:
+        case POP_JUMP_BACKWARD_IF_NONE:
+        case POP_JUMP_FORWARD_IF_NONE:
         case POP_JUMP_IF_NONE:
+        case POP_JUMP_BACKWARD_IF_NOT_NONE:
+        case POP_JUMP_FORWARD_IF_NOT_NONE:
         case POP_JUMP_IF_NOT_NONE:
+        case POP_JUMP_FORWARD_IF_FALSE:
+        case POP_JUMP_BACKWARD_IF_FALSE:
+        case POP_JUMP_IF_FALSE:
+        case POP_JUMP_FORWARD_IF_TRUE:
+        case POP_JUMP_BACKWARD_IF_TRUE:
+        case POP_JUMP_IF_TRUE:
             return -1;
 
         case LOAD_GLOBAL:
@@ -7609,14 +7646,33 @@ normalize_jumps(struct assembler *a)
         }
         struct instr *last = &b->b_instr[b->b_iused-1];
         assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
-        if (last->i_opcode == JUMP) {
+        if (is_jump(last)) {
             bool is_forward = last->i_target->b_visited == 0;
-            last->i_opcode = is_forward ? JUMP_FORWARD : JUMP_BACKWARD;
-        }
-        if (last->i_opcode == JUMP_NO_INTERRUPT) {
-            bool is_forward = last->i_target->b_visited == 0;
-            last->i_opcode = is_forward ?
-                             JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
+            switch(last->i_opcode) {
+                case JUMP:
+                    last->i_opcode = is_forward ? JUMP_FORWARD : JUMP_BACKWARD;
+                    break;
+                case JUMP_NO_INTERRUPT:
+                    last->i_opcode = is_forward ?
+                        JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
+                    break;
+                case POP_JUMP_IF_NOT_NONE:
+                    last->i_opcode = is_forward ?
+                        POP_JUMP_FORWARD_IF_NOT_NONE : POP_JUMP_BACKWARD_IF_NOT_NONE;
+                    break;
+                case POP_JUMP_IF_NONE:
+                    last->i_opcode = is_forward ?
+                        POP_JUMP_FORWARD_IF_NONE : POP_JUMP_BACKWARD_IF_NONE;
+                    break;
+                case POP_JUMP_IF_FALSE:
+                    last->i_opcode = is_forward ?
+                        POP_JUMP_FORWARD_IF_FALSE : POP_JUMP_BACKWARD_IF_FALSE;
+                    break;
+                case POP_JUMP_IF_TRUE:
+                    last->i_opcode = is_forward ?
+                        POP_JUMP_FORWARD_IF_TRUE : POP_JUMP_BACKWARD_IF_TRUE;
+                    break;
+            }
         }
     }
 }
@@ -7652,15 +7708,16 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
                     instr->i_oparg = instr->i_target->b_offset;
                     if (is_relative_jump(instr)) {
                         if (instr->i_oparg < bsize) {
-                            assert(instr->i_opcode == JUMP_BACKWARD ||
-                                   instr->i_opcode == JUMP_BACKWARD_NO_INTERRUPT);
+                            assert(IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
                             instr->i_oparg = bsize - instr->i_oparg;
                         }
                         else {
-                            assert(instr->i_opcode != JUMP_BACKWARD);
-                            assert(instr->i_opcode != JUMP_BACKWARD_NO_INTERRUPT);
+                            assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
                             instr->i_oparg -= bsize;
                         }
+                    }
+                    else {
+                        assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
                     }
                     if (instr_size(instr) != isize) {
                         extended_arg_recompile = 1;
@@ -8644,7 +8701,7 @@ apply_static_swaps(basicblock *block, int i)
 static bool
 jump_thread(struct instr *inst, struct instr *target, int opcode)
 {
-    assert(!IS_VIRTUAL_OPCODE(opcode) || opcode == JUMP);
+    assert(!IS_VIRTUAL_OPCODE(opcode) || IS_VIRTUAL_JUMP_OPCODE(opcode));
     assert(is_jump(inst));
     assert(is_jump(target));
     // bpo-45773: If inst->i_target == target->i_target, then nothing actually

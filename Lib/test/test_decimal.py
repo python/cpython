@@ -1072,6 +1072,57 @@ class FormatTest(unittest.TestCase):
             (',e', '123456', '1.23456e+5'),
             (',E', '123456', '1.23456E+5'),
 
+            # negative zero: default behavior
+            ('.1f', '-0', '-0.0'),
+            ('.1f', '-.0', '-0.0'),
+            ('.1f', '-.01', '-0.0'),
+
+            # negative zero: z option
+            ('z.1f', '0.', '0.0'),
+            ('z6.1f', '0.', '   0.0'),
+            ('z6.1f', '-1.', '  -1.0'),
+            ('z.1f', '-0.', '0.0'),
+            ('z.1f', '.01', '0.0'),
+            ('z.1f', '-.01', '0.0'),
+            ('z.2f', '0.', '0.00'),
+            ('z.2f', '-0.', '0.00'),
+            ('z.2f', '.001', '0.00'),
+            ('z.2f', '-.001', '0.00'),
+
+            ('z.1e', '0.', '0.0e+1'),
+            ('z.1e', '-0.', '0.0e+1'),
+            ('z.1E', '0.', '0.0E+1'),
+            ('z.1E', '-0.', '0.0E+1'),
+
+            ('z.2e', '-0.001', '-1.00e-3'),  # tests for mishandled rounding
+            ('z.2g', '-0.001', '-0.001'),
+            ('z.2%', '-0.001', '-0.10%'),
+
+            ('zf', '-0.0000', '0.0000'),  # non-normalized form is preserved
+
+            ('z.1f', '-00000.000001', '0.0'),
+            ('z.1f', '-00000.', '0.0'),
+            ('z.1f', '-.0000000000', '0.0'),
+
+            ('z.2f', '-00000.000001', '0.00'),
+            ('z.2f', '-00000.', '0.00'),
+            ('z.2f', '-.0000000000', '0.00'),
+
+            ('z.1f', '.09', '0.1'),
+            ('z.1f', '-.09', '-0.1'),
+
+            (' z.0f', '-0.', ' 0'),
+            ('+z.0f', '-0.', '+0'),
+            ('-z.0f', '-0.', '0'),
+            (' z.0f', '-1.', '-1'),
+            ('+z.0f', '-1.', '-1'),
+            ('-z.0f', '-1.', '-1'),
+
+            ('z>6.1f', '-0.', 'zz-0.0'),
+            ('z>z6.1f', '-0.', 'zzz0.0'),
+            ('x>z6.1f', '-0.', 'xxx0.0'),
+            ('🖤>z6.1f', '-0.', '🖤🖤🖤0.0'),  # multi-byte fill char
+
             # issue 6850
             ('a=-7.0', '0.12345', 'aaaa0.1'),
 
@@ -1085,6 +1136,15 @@ class FormatTest(unittest.TestCase):
 
         # bytes format argument
         self.assertRaises(TypeError, Decimal(1).__format__, b'-020')
+
+    def test_negative_zero_format_directed_rounding(self):
+        with self.decimal.localcontext() as ctx:
+            ctx.rounding = ROUND_CEILING
+            self.assertEqual(format(self.decimal.Decimal('-0.001'), 'z.2f'),
+                            '0.00')
+
+    def test_negative_zero_bad_format(self):
+        self.assertRaises(ValueError, format, self.decimal.Decimal('1.23'), 'fz')
 
     def test_n_format(self):
         Decimal = self.decimal.Decimal

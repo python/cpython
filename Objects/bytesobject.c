@@ -415,6 +415,7 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     PyObject *result;
     double x;
     size_t len;
+    int dtoa_flags = 0;
 
     x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred()) {
@@ -426,8 +427,13 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     if (prec < 0)
         prec = 6;
 
-    p = PyOS_double_to_string(x, type, prec,
-                              (flags & F_ALT) ? Py_DTSF_ALT : 0, NULL);
+    if (flags & F_ALT) {
+        dtoa_flags |= Py_DTSF_ALT;
+    }
+    if (flags & F_NO_NEG_0) {
+        dtoa_flags |= Py_DTSF_NO_NEG_0;
+    }
+    p = PyOS_double_to_string(x, type, prec, dtoa_flags, NULL);
 
     if (p == NULL)
         return NULL;
@@ -706,6 +712,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 case ' ': flags |= F_BLANK; continue;
                 case '#': flags |= F_ALT; continue;
                 case '0': flags |= F_ZERO; continue;
+                case 'z': flags |= F_NO_NEG_0; continue;
                 }
                 break;
             }
