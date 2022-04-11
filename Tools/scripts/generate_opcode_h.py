@@ -111,8 +111,8 @@ def main(opcode_py, outfile='Include/opcode.h'):
         fobj.write("\n")
         fobj.write("#ifdef Py_DEBUG\n")
         fobj.write("static const char *const _PyOpcode_OpName[256] = {\n")
-        for name, op in opmap.items():
-            fobj.write(f'''    [{op}] = "{name}",\n''')
+        for name in opmap:
+            fobj.write(f'''    [{name}] = "{name}",\n''')
         fobj.write("};\n")
         fobj.write("#endif\n")
 
