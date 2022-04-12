@@ -1006,21 +1006,17 @@ Now we plug :class:`Row` in::
 Exceptions
 ----------
 
+The exception hierarchy is defined by DB-API 2.0.
+
 .. exception:: Warning
 
-   Exception raised for important warnings like data truncations while
-   inserting, etc.  It is a subclass of :exc:`Exception`.
+   This exception is not raised by :mod:`sqlite3`.
 
 .. exception:: Error
 
    The base class of the other error exceptions in this module.  Use this to
    catch all errors with one single :keyword:`except` statement.  :exc:`Error`
    is a subclass of :exc:`Exception`.
-
-.. exception:: InterfaceError
-
-   Exception raised for errors that are related to the database interface
-   rather than the database itself.  It is a subclass of :exc:`Error`.
 
    .. attribute:: sqlite_errorcode
 
@@ -1035,6 +1031,11 @@ Exceptions
       from the `SQLite API <https://sqlite.org/rescode.html>`_
 
       .. versionadded:: 3.11
+
+.. exception:: InterfaceError
+
+   Exception raised for errors that are related to the database interface
+   rather than the database itself.  It is a subclass of :exc:`Error`.
 
 .. exception:: DatabaseError
 
