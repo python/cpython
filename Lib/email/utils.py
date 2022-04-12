@@ -347,7 +347,7 @@ def localtime(dt=None, isdst=-1):
 
     """
     if isdst != -1:
-        warnings.warn("The isdst parameter to localtime is deprecated.", DeprecationWarning, stacklevel=2)
+        warnings._deprecated("The isdst parameter to localtime is deprecated.", remove=(3,13))
     if dt is None:
         return datetime.datetime.now(datetime.timezone.utc).astimezone()
     if dt.tzinfo is not None:

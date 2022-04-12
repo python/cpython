@@ -11,7 +11,7 @@
 There are a couple of useful utilities provided in the :mod:`email.utils`
 module:
 
-.. function:: localtime(dt=None)
+.. function:: localtime(dt=None, isdst=-1)
 
     Return local time as an aware datetime object.  If called without
     arguments, return current time.  Otherwise *dt* argument should be a
@@ -25,7 +25,8 @@ module:
     is in effect for the specified time.
 
     .. versionadded:: 3.3
-
+    .. deprecated:: 3.11
+       Use of the ``isdst`` argument is deprecated. 
 
 .. function:: make_msgid(idstring=None, domain=None)
 
