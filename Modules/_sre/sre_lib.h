@@ -486,7 +486,7 @@ do { \
 
 #define DO_JUMPX(jumpvalue, jumplabel, nextpattern, toplevel_) \
     ctx->pattern = pattern; \
-    ctx->ptr = ptr;\
+    ctx->ptr = ptr; \
     DATA_ALLOC(SRE(match_context), nextctx); \
     nextctx->last_ctx_pos = ctx_pos; \
     nextctx->jump = jumpvalue; \
@@ -521,34 +521,34 @@ typedef struct {
     int toplevel;
 } SRE(match_context);
 
+#define MAYBE_CHECK_SIGNALS                                        \
+    do {                                                           \
+        if ((0 == (++sigcount & 0xfff)) && PyErr_CheckSignals()) { \
+            RETURN_ERROR(SRE_ERROR_INTERRUPTED);                   \
+        }                                                          \
+    } while (0)
+
 #ifdef HAVE_COMPUTED_GOTOS
     #ifndef USE_COMPUTED_GOTOS
     #define USE_COMPUTED_GOTOS 1
     #endif
-#else
-    #if defined(USE_COMPUTED_GOTOS) && USE_COMPUTED_GOTOS
+#elif defined(USE_COMPUTED_GOTOS) && USE_COMPUTED_GOTOS
     #error "Computed gotos are not supported on this compiler."
-    #endif
+#else
     #undef USE_COMPUTED_GOTOS
     #define USE_COMPUTED_GOTOS 0
 #endif
 
-#define CHECK_SIGNALS()                                        \
-do {                                                           \
-    if ((0 == (++sigcount & 0xfff)) && PyErr_CheckSignals()) { \
-         RETURN_ERROR(SRE_ERROR_INTERRUPTED);                  \
-    }                                                          \
-} while (0)
-
 #if USE_COMPUTED_GOTOS
-#define TARGET(OP) LABEL_ ## OP
-#define DISPATCH() do {               \
-    CHECK_SIGNALS();                  \
-    goto *sre_op_targets[*pattern++]; \
-} while (0)
+    #define TARGET(OP) TARGET_ ## OP
+    #define DISPATCH                       \
+        do {                               \
+            MAYBE_CHECK_SIGNALS;           \
+            goto *sre_targets[*pattern++]; \
+        } while (0)
 #else
-#define TARGET(OP) case OP
-#define DISPATCH() break
+    #define TARGET(OP) case OP
+    #define DISPATCH goto dispatch
 #endif
 
 /* check if string matches the given pattern.  returns <0 for
@@ -573,8 +573,13 @@ SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
     ctx->toplevel = toplevel;
     ctx_pos = alloc_pos;
 
-entrance:;
+#if USE_COMPUTED_GOTOS
+#include "sre_targets.h"
+#endif
 
+entrance:
+
+    ;  // Fashion statement.
     const SRE_CHAR *ptr = (SRE_CHAR *)state->ptr;
 
     if (pattern[0] == SRE_OP_INFO) {
@@ -589,274 +594,14 @@ entrance:;
     }
 
 #if USE_COMPUTED_GOTOS
-static void *sre_op_targets[256] = {
-    &&LABEL_SRE_OP_FAILURE,
-    &&LABEL_SRE_OP_SUCCESS,
-    &&LABEL_SRE_OP_ANY,
-    &&LABEL_SRE_OP_ANY_ALL,
-    &&LABEL_SRE_OP_ASSERT,
-    &&LABEL_SRE_OP_ASSERT_NOT,
-    &&LABEL_SRE_OP_AT,
-    &&LABEL_SRE_OP_BRANCH,
-    &&unknown,  // &&LABEL_SRE_OP_CALL,
-    &&LABEL_SRE_OP_CATEGORY,
-    &&unknown,  // &&LABEL_SRE_OP_CHARSET,
-    &&unknown,  // &&LABEL_SRE_OP_BIGCHARSET,
-    &&LABEL_SRE_OP_GROUPREF,
-    &&LABEL_SRE_OP_GROUPREF_EXISTS,
-    &&LABEL_SRE_OP_IN,
-    &&LABEL_SRE_OP_INFO,
-    &&LABEL_SRE_OP_JUMP,
-    &&LABEL_SRE_OP_LITERAL,
-    &&LABEL_SRE_OP_MARK,
-    &&LABEL_SRE_OP_MAX_UNTIL,
-    &&LABEL_SRE_OP_MIN_UNTIL,
-    &&LABEL_SRE_OP_NOT_LITERAL,
-    &&unknown,  // &&LABEL_SRE_OP_NEGATE,
-    &&unknown,  // &&LABEL_SRE_OP_RANGE,
-    &&LABEL_SRE_OP_REPEAT,
-    &&LABEL_SRE_OP_REPEAT_ONE,
-    &&unknown,  // &&LABEL_SRE_OP_SUBPATTERN,
-    &&LABEL_SRE_OP_MIN_REPEAT_ONE,
-    &&LABEL_SRE_OP_ATOMIC_GROUP,
-    &&LABEL_SRE_OP_POSSESSIVE_REPEAT,
-    &&LABEL_SRE_OP_POSSESSIVE_REPEAT_ONE,
-    &&LABEL_SRE_OP_GROUPREF_IGNORE,
-    &&LABEL_SRE_OP_IN_IGNORE,
-    &&LABEL_SRE_OP_LITERAL_IGNORE,
-    &&LABEL_SRE_OP_NOT_LITERAL_IGNORE,
-    &&LABEL_SRE_OP_GROUPREF_LOC_IGNORE,
-    &&LABEL_SRE_OP_IN_LOC_IGNORE,
-    &&LABEL_SRE_OP_LITERAL_LOC_IGNORE,
-    &&LABEL_SRE_OP_NOT_LITERAL_LOC_IGNORE,
-    &&LABEL_SRE_OP_GROUPREF_UNI_IGNORE,
-    &&LABEL_SRE_OP_IN_UNI_IGNORE,
-    &&LABEL_SRE_OP_LITERAL_UNI_IGNORE,
-    &&LABEL_SRE_OP_NOT_LITERAL_UNI_IGNORE,
-    &&unknown,  // &&LABEL_SRE_OP_RANGE_UNI_IGNORE,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-    &&unknown,
-};
-#endif
-
-    for (;;) {
-#if USE_COMPUTED_GOTOS
-        DISPATCH();
+    DISPATCH;
 #else
-        CHECK_SIGNALS();
-        switch (*pattern++)
+dispatch:
+    MAYBE_CHECK_SIGNALS;
+    switch (*pattern++)
 #endif
-        {
+    {
+
         TARGET(SRE_OP_MARK):
             /* set mark */
             /* <MARK> <gid> */
@@ -877,7 +622,7 @@ static void *sre_op_targets[256] = {
             }
             state->mark[i] = ptr;
             pattern++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_LITERAL):
             /* match literal string */
@@ -888,7 +633,7 @@ static void *sre_op_targets[256] = {
                 RETURN_FAILURE;
             pattern++;
             ptr++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_NOT_LITERAL):
             /* match anything that is not literal character */
@@ -899,7 +644,7 @@ static void *sre_op_targets[256] = {
                 RETURN_FAILURE;
             pattern++;
             ptr++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_SUCCESS):
             /* end of pattern */
@@ -920,7 +665,7 @@ static void *sre_op_targets[256] = {
             if (!SRE(at)(state, ptr, *pattern))
                 RETURN_FAILURE;
             pattern++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_CATEGORY):
             /* match at given category */
@@ -931,7 +676,7 @@ static void *sre_op_targets[256] = {
                 RETURN_FAILURE;
             pattern++;
             ptr++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_ANY):
             /* match anything (except a newline) */
@@ -940,7 +685,7 @@ static void *sre_op_targets[256] = {
             if (ptr >= end || SRE_IS_LINEBREAK(ptr[0]))
                 RETURN_FAILURE;
             ptr++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_ANY_ALL):
             /* match anything */
@@ -949,7 +694,7 @@ static void *sre_op_targets[256] = {
             if (ptr >= end)
                 RETURN_FAILURE;
             ptr++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_IN):
             /* match set member (or non_member) */
@@ -960,7 +705,7 @@ static void *sre_op_targets[256] = {
                 RETURN_FAILURE;
             pattern += pattern[0];
             ptr++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_LITERAL_IGNORE):
             TRACE(("|%p|%p|LITERAL_IGNORE %d\n",
@@ -970,7 +715,7 @@ static void *sre_op_targets[256] = {
                 RETURN_FAILURE;
             pattern++;
             ptr++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_LITERAL_UNI_IGNORE):
             TRACE(("|%p|%p|LITERAL_UNI_IGNORE %d\n",
@@ -980,7 +725,7 @@ static void *sre_op_targets[256] = {
                 RETURN_FAILURE;
             pattern++;
             ptr++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_LITERAL_LOC_IGNORE):
             TRACE(("|%p|%p|LITERAL_LOC_IGNORE %d\n",
@@ -990,7 +735,7 @@ static void *sre_op_targets[256] = {
                 RETURN_FAILURE;
             pattern++;
             ptr++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_NOT_LITERAL_IGNORE):
             TRACE(("|%p|%p|NOT_LITERAL_IGNORE %d\n",
@@ -1000,7 +745,7 @@ static void *sre_op_targets[256] = {
                 RETURN_FAILURE;
             pattern++;
             ptr++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_NOT_LITERAL_UNI_IGNORE):
             TRACE(("|%p|%p|NOT_LITERAL_UNI_IGNORE %d\n",
@@ -1010,7 +755,7 @@ static void *sre_op_targets[256] = {
                 RETURN_FAILURE;
             pattern++;
             ptr++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_NOT_LITERAL_LOC_IGNORE):
             TRACE(("|%p|%p|NOT_LITERAL_LOC_IGNORE %d\n",
@@ -1020,7 +765,7 @@ static void *sre_op_targets[256] = {
                 RETURN_FAILURE;
             pattern++;
             ptr++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_IN_IGNORE):
             TRACE(("|%p|%p|IN_IGNORE\n", pattern, ptr));
@@ -1030,7 +775,7 @@ static void *sre_op_targets[256] = {
                 RETURN_FAILURE;
             pattern += pattern[0];
             ptr++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_IN_UNI_IGNORE):
             TRACE(("|%p|%p|IN_UNI_IGNORE\n", pattern, ptr));
@@ -1040,7 +785,7 @@ static void *sre_op_targets[256] = {
                 RETURN_FAILURE;
             pattern += pattern[0];
             ptr++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_IN_LOC_IGNORE):
             TRACE(("|%p|%p|IN_LOC_IGNORE\n", pattern, ptr));
@@ -1049,7 +794,7 @@ static void *sre_op_targets[256] = {
                 RETURN_FAILURE;
             pattern += pattern[0];
             ptr++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_JUMP):
         TARGET(SRE_OP_INFO):
@@ -1058,7 +803,7 @@ static void *sre_op_targets[256] = {
             TRACE(("|%p|%p|JUMP %d\n", pattern,
                    ptr, pattern[0]));
             pattern += pattern[0];
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_BRANCH):
             /* alternation */
@@ -1322,7 +1067,7 @@ static void *sre_op_targets[256] = {
             }
 
             /* Attempt to match the rest of the string */
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_REPEAT):
             /* create repeat context.  all the hard work is done
@@ -1590,7 +1335,7 @@ static void *sre_op_targets[256] = {
                the SUCCESS op code that follows it. */
             pattern += pattern[0] + 1;
             ptr = state->ptr;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_ATOMIC_GROUP):
             /* Atomic Group Sub Pattern */
@@ -1622,7 +1367,7 @@ static void *sre_op_targets[256] = {
                the SUCCESS op code that follows it. */
             pattern += pattern[0];
             ptr = state->ptr;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_GROUPREF):
             /* match backreference */
@@ -1647,7 +1392,7 @@ static void *sre_op_targets[256] = {
                 }
             }
             pattern++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_GROUPREF_IGNORE):
             /* match backreference */
@@ -1673,7 +1418,7 @@ static void *sre_op_targets[256] = {
                 }
             }
             pattern++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_GROUPREF_UNI_IGNORE):
             /* match backreference */
@@ -1699,7 +1444,7 @@ static void *sre_op_targets[256] = {
                 }
             }
             pattern++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_GROUPREF_LOC_IGNORE):
             /* match backreference */
@@ -1725,7 +1470,7 @@ static void *sre_op_targets[256] = {
                 }
             }
             pattern++;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_GROUPREF_EXISTS):
             TRACE(("|%p|%p|GROUPREF_EXISTS %d\n", pattern,
@@ -1736,18 +1481,18 @@ static void *sre_op_targets[256] = {
                 Py_ssize_t groupref = i+i;
                 if (groupref >= state->lastmark) {
                     pattern += pattern[1];
-                    DISPATCH();
+                    DISPATCH;
                 } else {
                     SRE_CHAR* p = (SRE_CHAR*) state->mark[groupref];
                     SRE_CHAR* e = (SRE_CHAR*) state->mark[groupref+1];
                     if (!p || !e || e < p) {
                         pattern += pattern[1];
-                        DISPATCH();
+                        DISPATCH;
                     }
                 }
             }
             pattern += 2;
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_ASSERT):
             /* assert subpattern */
@@ -1760,7 +1505,7 @@ static void *sre_op_targets[256] = {
             DO_JUMP0(JUMP_ASSERT, jump_assert, pattern+2);
             RETURN_ON_FAILURE(ret);
             pattern += pattern[0];
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_ASSERT_NOT):
             /* assert not subpattern */
@@ -1785,7 +1530,7 @@ static void *sre_op_targets[256] = {
                 LASTMARK_RESTORE();
             }
             pattern += pattern[0];
-            DISPATCH();
+            DISPATCH;
 
         TARGET(SRE_OP_FAILURE):
             /* immediate failure */
@@ -1793,14 +1538,22 @@ static void *sre_op_targets[256] = {
             RETURN_FAILURE;
 
 #if USE_COMPUTED_GOTOS
-        unknown:
+        _unknown:
 #else
         default:
 #endif
+        // Also any unused opcodes:
+        TARGET(SRE_OP_RANGE_UNI_IGNORE):
+        TARGET(SRE_OP_SUBPATTERN):
+        TARGET(SRE_OP_RANGE):
+        TARGET(SRE_OP_NEGATE):
+        TARGET(SRE_OP_BIGCHARSET):
+        TARGET(SRE_OP_CHARSET):
+        TARGET(SRE_OP_CALL):
             TRACE(("|%p|%p|UNKNOWN %d\n", pattern, ptr,
                    pattern[-1]));
             RETURN_ERROR(SRE_ERROR_ILLEGAL);
-        }
+
     }
 
 exit:
