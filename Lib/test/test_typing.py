@@ -23,7 +23,7 @@ from typing import is_typeddict
 from typing import reveal_type
 from typing import no_type_check, no_type_check_decorator
 from typing import Type
-from typing import NamedTuple, TypedDict
+from typing import NamedTuple, NotRequired, Required, TypedDict
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
 from typing import Annotated, ForwardRef
@@ -3993,6 +3993,26 @@ class Options(TypedDict, total=False):
     log_level: int
     log_path: str
 
+class TotalMovie(TypedDict):
+    title: str
+    year: NotRequired[int]
+
+class NontotalMovie(TypedDict, total=False):
+    title: Required[str]
+    year: int
+
+class AnnotatedMovie(TypedDict):
+    title: Annotated[Required[str], "foobar"]
+    year: NotRequired[Annotated[int, 2000]]
+
+class DeeplyAnnotatedMovie(TypedDict):
+    title: Annotated[Annotated[Required[str], "foobar"], "another level"]
+    year: NotRequired[Annotated[int, 2000]]
+
+class WeirdlyQuotedMovie(TypedDict):
+    title: Annotated['Annotated[Required[str], "foobar"]', "another level"]
+    year: NotRequired['Annotated[int, 2000]']
+
 class HasForeignBaseClass(mod_generics_cache.A):
     some_xrepr: 'XRepr'
     other_a: 'mod_generics_cache.A'
@@ -4280,6 +4300,36 @@ class GetTypeHintTests(BaseTestCase):
         ):
             get_type_hints(ann_module6)
 
+    def test_get_type_hints_typeddict(self):
+        self.assertEqual(get_type_hints(TotalMovie), {'title': str, 'year': int})
+        self.assertEqual(get_type_hints(TotalMovie, include_extras=True), {
+            'title': str,
+            'year': NotRequired[int],
+        })
+
+        self.assertEqual(get_type_hints(AnnotatedMovie), {'title': str, 'year': int})
+        self.assertEqual(get_type_hints(AnnotatedMovie, include_extras=True), {
+            'title': Annotated[Required[str], "foobar"],
+            'year': NotRequired[Annotated[int, 2000]],
+        })
+
+        self.assertEqual(get_type_hints(DeeplyAnnotatedMovie), {'title': str, 'year': int})
+        self.assertEqual(get_type_hints(DeeplyAnnotatedMovie, include_extras=True), {
+            'title': Annotated[Required[str], "foobar", "another level"],
+            'year': NotRequired[Annotated[int, 2000]],
+        })
+
+        self.assertEqual(get_type_hints(WeirdlyQuotedMovie), {'title': str, 'year': int})
+        self.assertEqual(get_type_hints(WeirdlyQuotedMovie, include_extras=True), {
+            'title': Annotated[Required[str], "foobar", "another level"],
+            'year': NotRequired[Annotated[int, 2000]],
+        })
+
+        self.assertEqual(get_type_hints(_typed_dict_helper.VeryAnnotated), {'a': int})
+        self.assertEqual(get_type_hints(_typed_dict_helper.VeryAnnotated, include_extras=True), {
+            'a': Annotated[Required[int], "a", "b", "c"]
+        })
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
@@ -4305,6 +4355,8 @@ class GetUtilitiesTestCase(TestCase):
         self.assertIs(get_origin(list | str), types.UnionType)
         self.assertIs(get_origin(P.args), P)
         self.assertIs(get_origin(P.kwargs), P)
+        self.assertIs(get_origin(Required[int]), Required)
+        self.assertIs(get_origin(NotRequired[int]), NotRequired)
 
     def test_get_args(self):
         T = TypeVar('T')
@@ -4342,6 +4394,8 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(Callable[Concatenate[int, P], int]),
                          (Concatenate[int, P], int))
         self.assertEqual(get_args(list | str), (list, str))
+        self.assertEqual(get_args(Required[int]), (int,))
+        self.assertEqual(get_args(NotRequired[int]), (int,))
 
 
 class CollectionsAbcTests(BaseTestCase):
@@ -5299,6 +5353,32 @@ class TypedDictTests(BaseTestCase):
             'voice': str,
         }
 
+    def test_required_notrequired_keys(self):
+        self.assertEqual(NontotalMovie.__required_keys__,
+                         frozenset({"title"}))
+        self.assertEqual(NontotalMovie.__optional_keys__,
+                         frozenset({"year"}))
+
+        self.assertEqual(TotalMovie.__required_keys__,
+                         frozenset({"title"}))
+        self.assertEqual(TotalMovie.__optional_keys__,
+                         frozenset({"year"}))
+
+        self.assertEqual(_typed_dict_helper.VeryAnnotated.__required_keys__,
+                         frozenset())
+        self.assertEqual(_typed_dict_helper.VeryAnnotated.__optional_keys__,
+                         frozenset({"a"}))
+
+        self.assertEqual(AnnotatedMovie.__required_keys__,
+                         frozenset({"title"}))
+        self.assertEqual(AnnotatedMovie.__optional_keys__,
+                         frozenset({"year"}))
+
+        self.assertEqual(WeirdlyQuotedMovie.__required_keys__,
+                         frozenset({"title"}))
+        self.assertEqual(WeirdlyQuotedMovie.__optional_keys__,
+                         frozenset({"year"}))
+
     def test_multiple_inheritance(self):
         class One(TypedDict):
             one: int
@@ -5397,6 +5477,98 @@ class TypedDictTests(BaseTestCase):
             get_type_hints(Bar),
             {'a': typing.Optional[int], 'b': int}
         )
+
+
+class RequiredTests(BaseTestCase):
+
+    def test_basics(self):
+        with self.assertRaises(TypeError):
+            Required[NotRequired]
+        with self.assertRaises(TypeError):
+            Required[int, str]
+        with self.assertRaises(TypeError):
+            Required[int][str]
+
+    def test_repr(self):
+        self.assertEqual(repr(Required), 'typing.Required')
+        cv = Required[int]
+        self.assertEqual(repr(cv), 'typing.Required[int]')
+        cv = Required[Employee]
+        self.assertEqual(repr(cv), f'typing.Required[{__name__}.Employee]')
+
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class C(type(Required)):
+                pass
+        with self.assertRaises(TypeError):
+            class C(type(Required[int])):
+                pass
+        with self.assertRaises(TypeError):
+            class C(Required):
+                pass
+        with self.assertRaises(TypeError):
+            class C(Required[int]):
+                pass
+
+    def test_cannot_init(self):
+        with self.assertRaises(TypeError):
+            Required()
+        with self.assertRaises(TypeError):
+            type(Required)()
+        with self.assertRaises(TypeError):
+            type(Required[Optional[int]])()
+
+    def test_no_isinstance(self):
+        with self.assertRaises(TypeError):
+            isinstance(1, Required[int])
+        with self.assertRaises(TypeError):
+            issubclass(int, Required)
+
+
+class NotRequiredTests(BaseTestCase):
+
+    def test_basics(self):
+        with self.assertRaises(TypeError):
+            NotRequired[Required]
+        with self.assertRaises(TypeError):
+            NotRequired[int, str]
+        with self.assertRaises(TypeError):
+            NotRequired[int][str]
+
+    def test_repr(self):
+        self.assertEqual(repr(NotRequired), 'typing.NotRequired')
+        cv = NotRequired[int]
+        self.assertEqual(repr(cv), 'typing.NotRequired[int]')
+        cv = NotRequired[Employee]
+        self.assertEqual(repr(cv), f'typing.NotRequired[{__name__}.Employee]')
+
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class C(type(NotRequired)):
+                pass
+        with self.assertRaises(TypeError):
+            class C(type(NotRequired[int])):
+                pass
+        with self.assertRaises(TypeError):
+            class C(NotRequired):
+                pass
+        with self.assertRaises(TypeError):
+            class C(NotRequired[int]):
+                pass
+
+    def test_cannot_init(self):
+        with self.assertRaises(TypeError):
+            NotRequired()
+        with self.assertRaises(TypeError):
+            type(NotRequired)()
+        with self.assertRaises(TypeError):
+            type(NotRequired[Optional[int]])()
+
+    def test_no_isinstance(self):
+        with self.assertRaises(TypeError):
+            isinstance(1, NotRequired[int])
+        with self.assertRaises(TypeError):
+            issubclass(int, NotRequired)
 
 
 class IOTests(BaseTestCase):
