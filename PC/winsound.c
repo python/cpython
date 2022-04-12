@@ -95,13 +95,15 @@ winsound_PlaySound_impl(PyObject *module, PyObject *sound, int flags)
         }
         wsound = (wchar_t *)view.buf;
     } else {
-        if (!PyUnicode_Check(sound)) {
+        PyObject *obj = PyOS_FSPath(sound);
+        if (obj == NULL || PyBytes_Check(sound)) {
             PyErr_Format(PyExc_TypeError,
-                         "'sound' must be str or None, not '%s'",
+                         "'sound' must be str, pathlib.Path, or None; not '%s'",
                          Py_TYPE(sound)->tp_name);
             return NULL;
         }
-        wsound = PyUnicode_AsWideCharString(sound, NULL);
+        wsound = PyUnicode_AsWideCharString(obj, NULL);
+        Py_DECREF(obj);
         if (wsound == NULL) {
             return NULL;
         }
