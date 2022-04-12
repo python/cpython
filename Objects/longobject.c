@@ -4494,7 +4494,7 @@ static PyObject *
 long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 {
     PyLongObject *z = NULL;
-    Py_ssize_t newsize, hishift, i, j, size_a;
+    Py_ssize_t newsize, hishift, size_a;
     twodigits accum;
     int a_negative;
 
@@ -4566,14 +4566,13 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     }
 
     accum >>= remshift;
-    for (i = 0, j = wordshift + 1; j < size_a; i++, j++) {
+    for (Py_ssize_t i = 0, j = wordshift + 1; j < size_a; i++, j++) {
         accum += (twodigits)a->ob_digit[j] << hishift;
         z->ob_digit[i] = (digit)(accum & PyLong_MASK);
         accum >>= PyLong_SHIFT;
     }
-    assert(i == newsize - 1);
     assert(accum <= PyLong_MASK);
-    z->ob_digit[i] = (digit)accum;
+    z->ob_digit[newsize - 1] = (digit)accum;
     z = maybe_small_long(long_normalize(z));
     return (PyObject *)z;
 }
