@@ -265,7 +265,6 @@ test_list_api(PyObject *self, PyObject *Py_UNUSED(ignored))
         PyErr_Clear();                                          \
     } while(0)
 
-// Test Set Objects C API
 static PyObject *
 test_set_api(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
@@ -390,6 +389,8 @@ test_set_api(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_DECREF(ob);
     Py_RETURN_TRUE;
 }
+
+#undef assertRaises
 
 static int
 test_dict_inner(int count)
