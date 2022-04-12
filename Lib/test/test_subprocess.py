@@ -53,6 +53,8 @@ if not support.has_subprocess_support:
 
 mswindows = (sys.platform == "win32")
 
+NEWLINE = b'\r\n' if mswindows else b'\n'
+
 #
 # Depends on the following external programs: Python
 #
@@ -335,7 +337,7 @@ class ProcessTestCase(BaseTestCase):
             self.addCleanup(p.stderr.close)
             out, err = p.communicate()
             self.assertEqual(p.returncode, 0, err)
-            self.assertEqual(out.rstrip(), b'test_stdout_none')
+            self.assertEqual(out, b'test_stdout_none' + NEWLINE)
             self.assertEqual(err, b'')
 
     def test_stderr_none(self):
@@ -684,7 +686,7 @@ class ProcessTestCase(BaseTestCase):
         self.addCleanup(p.stderr.close)
         out, err = p.communicate()
         self.assertEqual(p.returncode, 0, err)
-        self.assertEqual(out.rstrip(), b'test with stdout=1')
+        self.assertEqual(out, b'test with stdout=1')
 
     def test_stdout_devnull(self):
         p = subprocess.Popen([sys.executable, "-c",
@@ -2683,8 +2685,7 @@ class POSIXProcessTestCase(BaseTestCase):
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
                 env=env)
-            stdout = stdout.rstrip(b'\n\r')
-            self.assertEqual(stdout.decode('ascii'), ascii(decoded_value))
+            self.assertEqual(stdout.decode('ascii'), ascii(decoded_value) + NEWLINE.decode())
 
             # test bytes
             key = key.encode("ascii", "surrogateescape")
@@ -2694,8 +2695,7 @@ class POSIXProcessTestCase(BaseTestCase):
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
                 env=env)
-            stdout = stdout.rstrip(b'\n\r')
-            self.assertEqual(stdout.decode('ascii'), ascii(encoded_value))
+            self.assertEqual(stdout.decode('ascii'), ascii(encoded_value) + NEWLINE.decode())
 
     def test_bytes_program(self):
         abs_program = os.fsencode(ZERO_RETURN_CMD[0])
