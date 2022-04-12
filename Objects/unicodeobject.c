@@ -8354,8 +8354,8 @@ static PyObject *
 EncodingMap_size_impl(struct encoding_map *self)
 /*[clinic end generated code: output=c4c969e4c99342a4 input=004ff13f26bb5366]*/
 {
-    return PyLong_FromLong((sizeof(*self) - 1) + 16 * self->count2 +
-                           128 * self->count3);
+    return PyLong_FromLong((sizeof(*self) - 1) + 16*self->count2 +
+                           128*self->count3);
 }
 
 static PyMethodDef encoding_map_methods[] = {
