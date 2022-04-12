@@ -851,6 +851,7 @@ Deprecated
   * :mod:`cgi`
   * :mod:`cgitb`
   * :mod:`chunk`
+  * :mod:`crypt`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
