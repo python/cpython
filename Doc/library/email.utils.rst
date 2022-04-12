@@ -26,7 +26,7 @@ module:
 
     .. versionadded:: 3.3
     .. deprecated:: 3.11
-       Use of the ``isdst`` argument is deprecated. 
+       Use of the ``isdst`` argument is deprecated.
 
 .. function:: make_msgid(idstring=None, domain=None)
 
