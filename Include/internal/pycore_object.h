@@ -49,7 +49,7 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 }
 
 static inline void
-_Py_DECREF_IMMORTAL(PyObject *op)
+_Py_DECREF_NO_DEALLOC(PyObject *op)
 {
 #ifdef Py_REF_DEBUG
     _Py_RefTotal--;
@@ -57,7 +57,7 @@ _Py_DECREF_IMMORTAL(PyObject *op)
     op->ob_refcnt--;
 #ifdef Py_DEBUG
     if (op->ob_refcnt <= 0) {
-        _Py_FatalRefcountError("deallocating a singleton");
+        _Py_FatalRefcountError("Expected a positive remaining refcount");
     }
 #endif
 }

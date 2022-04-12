@@ -2018,7 +2018,7 @@ handle_eval_breaker:
              * that the string is safe to mutate.
              */
             assert(Py_REFCNT(left) >= 2);
-            Py_DECREF(left); // XXX never need to dealloc
+            _Py_DECREF_NO_DEALLOC(left);
             STACK_SHRINK(2);
             PyUnicode_Append(target_local, right);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
@@ -3940,11 +3940,11 @@ handle_eval_breaker:
             PREDICTED(POP_JUMP_BACKWARD_IF_FALSE);
             PyObject *cond = POP();
             if (Py_IsTrue(cond)) {
-                _Py_DECREF_IMMORTAL(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
-                _Py_DECREF_IMMORTAL(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -3966,10 +3966,10 @@ handle_eval_breaker:
             PREDICTED(POP_JUMP_FORWARD_IF_FALSE);
             PyObject *cond = POP();
             if (Py_IsTrue(cond)) {
-                _Py_DECREF_IMMORTAL(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
             }
             else if (Py_IsFalse(cond)) {
-                _Py_DECREF_IMMORTAL(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(oparg);
             }
             else {
@@ -3989,11 +3989,11 @@ handle_eval_breaker:
         TARGET(POP_JUMP_BACKWARD_IF_TRUE) {
             PyObject *cond = POP();
             if (Py_IsFalse(cond)) {
-                _Py_DECREF_IMMORTAL(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {
-                _Py_DECREF_IMMORTAL(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -4014,10 +4014,10 @@ handle_eval_breaker:
         TARGET(POP_JUMP_FORWARD_IF_TRUE) {
             PyObject *cond = POP();
             if (Py_IsFalse(cond)) {
-                _Py_DECREF_IMMORTAL(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
             }
             else if (Py_IsTrue(cond)) {
-                _Py_DECREF_IMMORTAL(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 JUMPBY(oparg);
             }
             else {
@@ -4042,7 +4042,7 @@ handle_eval_breaker:
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
             }
-            _Py_DECREF_IMMORTAL(value);
+            _Py_DECREF_NO_DEALLOC(value);
             DISPATCH();
         }
 
@@ -4058,7 +4058,7 @@ handle_eval_breaker:
         TARGET(POP_JUMP_BACKWARD_IF_NONE) {
             PyObject *value = POP();
             if (Py_IsNone(value)) {
-                _Py_DECREF_IMMORTAL(value);
+                _Py_DECREF_NO_DEALLOC(value);
                 JUMPBY(-oparg);
                 CHECK_EVAL_BREAKER();
             }
@@ -4071,7 +4071,7 @@ handle_eval_breaker:
         TARGET(POP_JUMP_FORWARD_IF_NONE) {
             PyObject *value = POP();
             if (Py_IsNone(value)) {
-                _Py_DECREF_IMMORTAL(value);
+                _Py_DECREF_NO_DEALLOC(value);
                 JUMPBY(oparg);
             }
             else {
@@ -4085,7 +4085,7 @@ handle_eval_breaker:
             int err;
             if (Py_IsTrue(cond)) {
                 STACK_SHRINK(1);
-                _Py_DECREF_IMMORTAL(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
@@ -4109,7 +4109,7 @@ handle_eval_breaker:
             int err;
             if (Py_IsFalse(cond)) {
                 STACK_SHRINK(1);
-                _Py_DECREF_IMMORTAL(cond);
+                _Py_DECREF_NO_DEALLOC(cond);
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {
