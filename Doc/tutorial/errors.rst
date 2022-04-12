@@ -20,7 +20,7 @@ complaint you get while you are still learning Python::
    >>> while True print('Hello world')
      File "<stdin>", line 1
        while True print('Hello world')
-                      ^
+                  ^^^^^
    SyntaxError: invalid syntax
 
 The parser repeats the offending line and displays a little 'arrow' pointing at
