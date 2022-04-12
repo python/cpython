@@ -1125,7 +1125,7 @@ Blob Objects
 
    .. method:: Blob.__len__()
 
-      Return the blob size as length in bytes.
+      Return the blob size in bytes.
 
    .. method:: Blob.read(length=-1, /)
 
