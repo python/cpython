@@ -6875,9 +6875,10 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         // of the for loop, since we're staying on the same line.
         // Also don't trace JUMP_NO_INTERRUPT --> SEND.
         bool line_number_changed = (line != lastline);
+        bool for_loop_end = (next_op == FOR_END);
         bool back_jump = (_PyInterpreterFrame_LASTI(frame) < instr_prev &&
                           next_op != SEND && prev_op != FOR_END);
-        if (line_number_changed || back_jump) {
+        if (line_number_changed || for_loop_end || back_jump) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
     }
