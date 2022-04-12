@@ -271,7 +271,8 @@ blob_seek_impl(pysqlite_Blob *self, int offset, int origin)
             break;
         default:
             PyErr_SetString(PyExc_ValueError,
-                            "'origin' should be 0, 1, or 2");
+                            "'origin' should be os.SEEK_SET, os.SEEK_CUR, or "
+                            "os.SEEK_END");
             return NULL;
     }
 
