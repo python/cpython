@@ -491,7 +491,6 @@ static const char *const _PyOpcode_OpName[256] = {
     [STORE_NAME] = "STORE_NAME",
     [DELETE_NAME] = "DELETE_NAME",
     [UNPACK_SEQUENCE] = "UNPACK_SEQUENCE",
-    [FOR_ITER] = "FOR_ITER",
     [UNPACK_EX] = "UNPACK_EX",
     [STORE_ATTR] = "STORE_ATTR",
     [DELETE_ATTR] = "DELETE_ATTR",
@@ -560,6 +559,7 @@ static const char *const _PyOpcode_OpName[256] = {
     [POP_JUMP_BACKWARD_IF_NONE] = "POP_JUMP_BACKWARD_IF_NONE",
     [POP_JUMP_BACKWARD_IF_FALSE] = "POP_JUMP_BACKWARD_IF_FALSE",
     [POP_JUMP_BACKWARD_IF_TRUE] = "POP_JUMP_BACKWARD_IF_TRUE",
+    [FOR_END] = "FOR_END",
 };
 #endif
 
