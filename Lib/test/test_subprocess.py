@@ -3107,7 +3107,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         1, 2, 3, 4,
                         True, True,
                         False, [], 0, -1,
-                        func)
+                        func, "")
                 # Attempt to prevent
                 # "TypeError: fork_exec() takes exactly N arguments (M given)"
                 # from passing the test.  More refactoring to have us start
@@ -3156,7 +3156,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         1, 2, 3, 4,
                         True, True,
                         None, None, None, -1,
-                        None)
+                        None, "no vfork")
                 self.assertIn('fds_to_keep', str(c.exception))
         finally:
             if not gc_enabled:
@@ -3614,7 +3614,8 @@ class MiscTests(unittest.TestCase):
 
     def test__all__(self):
         """Ensure that __all__ is populated properly."""
-        intentionally_excluded = {"list2cmdline", "Handle", "pwd", "grp", "fcntl"}
+        intentionally_excluded = {"list2cmdline", "Handle", "pwd", "grp",
+                                  "fcntl", "disable_vfork_reason"}
         exported = set(subprocess.__all__)
         possible_exports = set()
         import types

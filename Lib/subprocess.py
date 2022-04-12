@@ -107,6 +107,14 @@ else:
     import selectors
 
 
+# This is purely a failsafe. If non-empty the _posixsubprocess code will never
+# consider using vfork(). While any true value will trigger this, set it to a
+# description of why it is being disabled. With a link to a bug report
+# explaining how to setup an environment with code to reproduce the issue this
+# is working around. Otherwise nobody will understand when they can unset it.
+disable_vfork_reason = ""
+
+
 # Exception classes used by this module.
 class SubprocessError(Exception): pass
 
@@ -1792,7 +1800,7 @@ class Popen:
                             errpipe_read, errpipe_write,
                             restore_signals, start_new_session,
                             gid, gids, uid, umask,
-                            preexec_fn)
+                            preexec_fn, disable_vfork_reason)
                     self._child_created = True
                 finally:
                     # be sure the FD is closed no matter what

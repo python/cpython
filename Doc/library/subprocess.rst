@@ -1529,3 +1529,29 @@ runtime):
 
    :mod:`shlex`
       Module which provides function to parse and escape command lines.
+
+
+.. _disable_vfork:
+
+Disabling potential use of ``vfork()``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
+internally when it is safe to do so rather than ``fork()``. This greatly
+improves performance.
+
+If you ever encounter a presumed highly-unusual situation where you need to
+prevent ``vfork()`` from being used by Python, you can set the
+:attr:`subprocess.disable_vfork_reason` attribute to a non-empty string.
+Ideally one describing why and linking to a bug report explaining how to setup
+an environment with code to reproduce the issue preventing it from working
+properly. Without recording that information, nobody will understand when they
+can unset it in your code in the future.
+
+Setting this has no impact on use of ``posix_spawn()`` which could use
+``vfork()`` within its libc implementation.
+
+It is safe to set this attribute on older Python versions. Do not assume it
+exists to be read until 3.11.
+
+.. versionadded:: 3.11 ``disable_vfork_reason``
