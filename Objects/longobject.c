@@ -4540,6 +4540,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     }
     hishift = PyLong_SHIFT - remshift;
 
+    accum = a->ob_digit[wordshift];
     if (a_negative) {
         /*
             For a positive integer a and nonnegative shift, we have:
@@ -4558,11 +4559,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
         for (Py_ssize_t j = 0; j < wordshift; j++) {
             sticky |= a->ob_digit[j];
         }
-        accum = a->ob_digit[wordshift] + (PyLong_MASK >> hishift)
-              + (digit)(sticky != 0);
-    }
-    else {
-        accum = a->ob_digit[wordshift];
+        accum += (PyLong_MASK >> hishift) + (digit)(sticky != 0);
     }
 
     accum >>= remshift;
@@ -4573,6 +4570,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     }
     assert(accum <= PyLong_MASK);
     z->ob_digit[newsize - 1] = (digit)accum;
+
     z = maybe_small_long(long_normalize(z));
     return (PyObject *)z;
 }
