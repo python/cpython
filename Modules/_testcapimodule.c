@@ -6041,8 +6041,6 @@ frame_getlasti(PyObject *self, PyObject *frame)
     return PyLong_FromLong(lasti);
 }
 
->>>>>>> main
-
 static PyObject *negative_dictoffset(PyObject *, PyObject *);
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
