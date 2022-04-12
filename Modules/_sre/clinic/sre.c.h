@@ -461,17 +461,17 @@ PyDoc_STRVAR(_sre_SRE_Pattern_sub__doc__,
 
 static PyObject *
 _sre_SRE_Pattern_sub_impl(PatternObject *self, PyTypeObject *cls,
-                          PyObject *repl, PyObject *string, Py_ssize_t count);
+                          PyObject *repl, PyObject *string, PyObject *count);
 
 static PyObject *
 _sre_SRE_Pattern_sub(PatternObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"repl", "string", "count", NULL};
-    static _PyArg_Parser _parser = {"OO|n:sub", _keywords, 0};
+    static _PyArg_Parser _parser = {"OO|O:sub", _keywords, 0};
     PyObject *repl;
     PyObject *string;
-    Py_ssize_t count = 0;
+    PyObject *count = NULL;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &repl, &string, &count)) {
@@ -494,18 +494,17 @@ PyDoc_STRVAR(_sre_SRE_Pattern_subn__doc__,
 
 static PyObject *
 _sre_SRE_Pattern_subn_impl(PatternObject *self, PyTypeObject *cls,
-                           PyObject *repl, PyObject *string,
-                           Py_ssize_t count);
+                           PyObject *repl, PyObject *string, PyObject *count);
 
 static PyObject *
 _sre_SRE_Pattern_subn(PatternObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"repl", "string", "count", NULL};
-    static _PyArg_Parser _parser = {"OO|n:subn", _keywords, 0};
+    static _PyArg_Parser _parser = {"OO|O:subn", _keywords, 0};
     PyObject *repl;
     PyObject *string;
-    Py_ssize_t count = 0;
+    PyObject *count = NULL;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &repl, &string, &count)) {
@@ -954,4 +953,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e2ed5ff97ee831e2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0cc8e966db112d6e input=a9049054013a1b77]*/

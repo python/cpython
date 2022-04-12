@@ -1250,19 +1250,36 @@ _sre.SRE_Pattern.sub
     /
     repl: object
     string: object
-    count: Py_ssize_t = 0
+    count: object(c_default="NULL") = 0
 
 Return the string obtained by replacing the leftmost non-overlapping occurrences of pattern in string by the replacement repl.
 [clinic start generated code]*/
 
 static PyObject *
 _sre_SRE_Pattern_sub_impl(PatternObject *self, PyTypeObject *cls,
-                          PyObject *repl, PyObject *string, Py_ssize_t count)
-/*[clinic end generated code: output=4be141ab04bca60d input=d8d1d4ac2311a07c]*/
+                          PyObject *repl, PyObject *string, PyObject *count)
+/*[clinic end generated code: output=9f7f5eca541878cb input=8b48c662991e844f]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
+    Py_ssize_t count_value;
 
-    return pattern_subx(module_state, self, repl, string, count, 0);
+    /* Some users mistakenly pass flags to count parameter */
+    if (count == NULL) {
+        count_value = 0;
+    } else if (Py_TYPE(count) == module_state->RegexFlag_Type) {
+        PyErr_SetString(PyExc_TypeError,
+                        "count argument should not be RegexFlag.");
+        return NULL;
+    } else {
+        count_value = PyLong_AsSsize_t(count);
+        if (count_value == -1 && PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count arguemnt wrong type.");
+            return NULL;
+        }
+    }
+
+    return pattern_subx(module_state, self, repl, string, count_value, 0);
 }
 
 /*[clinic input]
@@ -1272,20 +1289,36 @@ _sre.SRE_Pattern.subn
     /
     repl: object
     string: object
-    count: Py_ssize_t = 0
+    count: object(c_default="NULL") = 0
 
 Return the tuple (new_string, number_of_subs_made) found by replacing the leftmost non-overlapping occurrences of pattern with the replacement repl.
 [clinic start generated code]*/
 
 static PyObject *
 _sre_SRE_Pattern_subn_impl(PatternObject *self, PyTypeObject *cls,
-                           PyObject *repl, PyObject *string,
-                           Py_ssize_t count)
-/*[clinic end generated code: output=da02fd85258b1e1f input=8b78a65b8302e58d]*/
+                           PyObject *repl, PyObject *string, PyObject *count)
+/*[clinic end generated code: output=7d66d9c3696121e6 input=3c0642c0ba657dc1]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
+    Py_ssize_t count_value;
 
-    return pattern_subx(module_state, self, repl, string, count, 1);
+    /* Some users mistakenly pass flags to count parameter */
+    if (count == NULL) {
+        count_value = 0;
+    } else if (Py_TYPE(count) == module_state->RegexFlag_Type) {
+        PyErr_SetString(PyExc_TypeError,
+                        "count argument should not be RegexFlag.");
+        return NULL;
+    } else {
+        count_value = PyLong_AsSsize_t(count);
+        if (count_value == -1 && PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count arguemnt wrong type.");
+            return NULL;
+        }
+    }
+
+    return pattern_subx(module_state, self, repl, string, count_value, 1);
 }
 
 /*[clinic input]
