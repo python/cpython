@@ -7,10 +7,12 @@ Frame Objects
 
    The C structure of the objects used to describe frame objects.
 
-   The structure is not part of the C API.
+   There are no public members in this structure.
 
    .. versionchanged:: 3.11
-      The structure moved to the internal C API headers.
+      The members of this structure were removed from the public C API.
+      Refer to the :ref:`What's New entry <pyframeobject-3.11-hiding>`
+      for details.
 
 The :c:func:`PyEval_GetFrame` and :c:func:`PyThreadState_GetFrame` functions
 can be used to get a frame object.
@@ -70,6 +72,17 @@ See also :ref:`Reflection <reflection>`.
    Get the *frame*'s ``f_globals`` attribute.
 
    Return a :term:`strong reference`. The result cannot be ``NULL``.
+
+   *frame* must not be ``NULL``.
+
+   .. versionadded:: 3.11
+
+
+.. c:function:: int PyFrame_GetLasti(PyFrameObject *frame)
+
+   Get the *frame*'s ``f_lasti`` attribute (:class:`dict`).
+
+   Returns -1 if ``frame.f_lasti`` is ``None``.
 
    *frame* must not be ``NULL``.
 

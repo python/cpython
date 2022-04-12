@@ -33,6 +33,7 @@ explicitly given directories.
 __all__ = ['what', 'whathdr']
 
 from collections import namedtuple
+import warnings
 
 SndHeaders = namedtuple('SndHeaders',
                         'filetype framerate nchannels nframes sampwidth')
@@ -73,7 +74,9 @@ def whathdr(filename):
 tests = []
 
 def test_aifc(h, f):
-    import aifc
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        import aifc
     if not h.startswith(b'FORM'):
         return None
     if h[8:12] == b'AIFC':

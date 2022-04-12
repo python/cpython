@@ -211,6 +211,8 @@ directory. This is an error unless the replacement is intended.  See section
 .. %
     Do we need stuff on zip files etc. ? DUBOIS
 
+.. _tut-pycache:
+
 "Compiled" Python files
 -----------------------
 

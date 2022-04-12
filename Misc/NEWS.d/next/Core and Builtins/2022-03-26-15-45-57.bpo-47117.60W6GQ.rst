@@ -1,2 +1,0 @@
-Fix a crash if we fail to decode characters in interactive mode if the
-tokenizer buffers are uninitialized. Patch by Pablo Galindo.
