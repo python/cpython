@@ -309,7 +309,7 @@ non-empty format specification typically modifies the result.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: format-spec
-   format_spec: [[`fill`]`align`][`sign`][#][0][`width`][`grouping_option`][.`precision`][`type`]
+   format_spec: [[`fill`]`align`][`sign`][z][#][0][`width`][`grouping_option`][.`precision`][`type`]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
@@ -380,6 +380,15 @@ following:
    +---------+----------------------------------------------------------+
 
 
+.. index:: single: z; in string formatting
+
+The ``'z'`` option coerces negative zero floating-point values to positive
+zero after rounding to the format precision.  This option is only valid for
+floating-point presentation types.
+
+.. versionchanged:: 3.11
+   Added the ``'z'`` option (see also :pep:`682`).
+
 .. index:: single: # (hash); in string formatting
 
 The ``'#'`` option causes the "alternate form" to be used for the
@@ -428,12 +437,13 @@ character of ``'0'`` with an *alignment* type of ``'='``.
    Preceding the *width* field by ``'0'`` no longer affects the default
    alignment for strings.
 
-The *precision* is a decimal number indicating how many digits should be
-displayed after the decimal point for a floating point value formatted with
-``'f'`` and ``'F'``, or before and after the decimal point for a floating point
-value formatted with ``'g'`` or ``'G'``.  For non-number types the field
+The *precision* is a decimal integer indicating how many digits should be
+displayed after the decimal point for presentation types
+``'f'`` and ``'F'``, or before and after the decimal point for presentation
+types ``'g'`` or ``'G'``.  For string presentation types the field
 indicates the maximum field size - in other words, how many characters will be
-used from the field content. The *precision* is not allowed for integer values.
+used from the field content.  The *precision* is not allowed for integer
+presentation types.
 
 Finally, the *type* determines how the data should be presented.
 
