@@ -15738,10 +15738,8 @@ unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
         return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
                              it->it_seq, it->it_index);
     } else {
-        PyObject *u = (PyObject *)_PyUnicode_New(0);
-        if (u == NULL)
-            return NULL;
-        return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(iter)), u);
+        return Py_BuildValue("N(O)", _PyEval_GetBuiltin(&_Py_ID(iter)),
+                             &_Py_STR(empty));
     }
 }
 

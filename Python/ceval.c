@@ -3151,13 +3151,8 @@ handle_eval_breaker:
         }
 
         TARGET(BUILD_STRING) {
-            PyObject *str;
-            PyObject *empty = PyUnicode_New(0, 0);
-            if (empty == NULL) {
-                goto error;
-            }
-            str = _PyUnicode_JoinArray(empty, stack_pointer - oparg, oparg);
-            Py_DECREF(empty);
+            PyObject *str = _PyUnicode_JoinArray(&_Py_STR(empty),
+                                                 stack_pointer - oparg, oparg);
             if (str == NULL)
                 goto error;
             while (--oparg >= 0) {

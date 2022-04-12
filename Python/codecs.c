@@ -692,7 +692,7 @@ PyObject *PyCodec_IgnoreErrors(PyObject *exc)
         wrong_exception_type(exc);
         return NULL;
     }
-    return Py_BuildValue("(Nn)", PyUnicode_New(0, 0), end);
+    return Py_BuildValue("(On)", &_Py_STR(empty), end);
 }
 
 

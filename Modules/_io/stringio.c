@@ -351,7 +351,7 @@ _stringio_readline(stringio *self, Py_ssize_t limit)
 
     /* In case of overseek, return the empty string */
     if (self->pos >= self->string_size)
-        return PyUnicode_New(0, 0);
+        return Py_NewRef(&_Py_STR(empty));
 
     start = self->buf + self->pos;
     if (limit < 0 || limit > self->string_size - self->pos)
