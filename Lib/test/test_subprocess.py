@@ -350,6 +350,43 @@ class ProcessTestCase(BaseTestCase):
             p.wait()
             self.assertEqual(p.stderr, None)
 
+    def test_invalid_read_callback(self):
+        with self.assertRaises(ValueError) as cm:
+            with subprocess.Popen([sys.executable, '-c',
+                                   'import sys\n'
+                                   'print(\'foo\')\n'
+                                   'print(\'bar\', file=sys.stderr)\n'],
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  read_stdout_callback=True) as p:
+                self.addCleanup(p.stdout.close)
+                self.addCleanup(p.stderr.close)
+                out, err = p.communicate()
+                self.assertEqual(p.returncode, 0, err.decode())
+        e = cm.exception
+        self.assertEqual(e.args, ('read_stdout_callback not a callable', ))
+
+    def test_custom_read_callback(self):
+        def my_read_stdout_callback(self, buffer, data):
+            buffer.append(b'<' + data + b'>')
+        def my_read_stderr_callback(self, buffer, data):
+            buffer.append(b'[' + data + b']')
+
+        with subprocess.Popen([sys.executable, '-c',
+                               'import sys\n'
+                               'print(\'foo\')\n'
+                               'print(\'bar\', file=sys.stderr)\n'],
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE,
+                              read_stdout_callback=my_read_stdout_callback,
+                              read_stderr_callback=my_read_stderr_callback) as p:
+            self.addCleanup(p.stdout.close)
+            self.addCleanup(p.stderr.close)
+            out, err = p.communicate()
+            self.assertEqual(p.returncode, 0, err.decode())
+            self.assertEqual(out, b'<foo' + NEWLINE + b'>')
+            self.assertEqual(err, b'[bar' + NEWLINE + b']')
+
     def _assert_python(self, pre_args, **kwargs):
         # We include sys.exit() to prevent the test runner from hanging
         # whenever python is found.
