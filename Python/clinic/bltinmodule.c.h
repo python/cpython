@@ -2,6 +2,85 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(builtin___import____doc__,
+"__import__($module, /, name, globals=None, locals=None, fromlist=(),\n"
+"           level=0)\n"
+"--\n"
+"\n"
+"Import a module.\n"
+"\n"
+"Because this function is meant for use by the Python\n"
+"interpreter and not for general use, it is better to use\n"
+"importlib.import_module() to programmatically import a module.\n"
+"\n"
+"The globals argument is only used to determine the context;\n"
+"they are not modified.  The locals argument is unused.  The fromlist\n"
+"should be a list of names to emulate ``from name import ...\'\', or an\n"
+"empty list to emulate ``import name\'\'.\n"
+"When importing a module from a package, note that __import__(\'A.B\', ...)\n"
+"returns package A when fromlist is empty, but its submodule B when\n"
+"fromlist is not empty.  The level argument is used to determine whether to\n"
+"perform absolute or relative imports: 0 is absolute, while a positive number\n"
+"is the number of parent directories to search relative to the current module.");
+
+#define BUILTIN___IMPORT___METHODDEF    \
+    {"__import__", (PyCFunction)(void(*)(void))builtin___import__, METH_FASTCALL|METH_KEYWORDS, builtin___import____doc__},
+
+static PyObject *
+builtin___import___impl(PyObject *module, PyObject *name, PyObject *globals,
+                        PyObject *locals, PyObject *fromlist, int level);
+
+static PyObject *
+builtin___import__(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"name", "globals", "locals", "fromlist", "level", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "__import__", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *name;
+    PyObject *globals = NULL;
+    PyObject *locals = NULL;
+    PyObject *fromlist = NULL;
+    int level = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 5, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    name = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        globals = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[2]) {
+        locals = args[2];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[3]) {
+        fromlist = args[3];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    level = _PyLong_AsInt(args[4]);
+    if (level == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = builtin___import___impl(module, name, globals, locals, fromlist, level);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_abs__doc__,
 "abs($module, x, /)\n"
 "--\n"
@@ -951,4 +1030,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=77ace832b3fb38e0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d341fa7525f30070 input=a9049054013a1b77]*/

@@ -7,8 +7,6 @@ extern "C" {
 
 /* Long (arbitrary precision) integer object interface */
 
-typedef struct _longobject PyLongObject; /* Revealed in longintrepr.h */
-
 PyAPI_DATA(PyTypeObject) PyLong_Type;
 
 #define PyLong_Check(op) \

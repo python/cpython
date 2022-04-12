@@ -345,6 +345,11 @@ Options:  -v       verbose (print all checked file names)
 
     count = defaultdict(int)
 
+    print("""⚠ rstlint.py is no longer maintained here and will be removed
+⚠ in a future release.
+⚠ Please use https://pypi.org/p/sphinx-lint instead.
+""")
+
     for root, dirs, files in os.walk(path):
         # ignore subdirs in ignore list
         if abspath(root) in ignore:
