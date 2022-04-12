@@ -3005,7 +3005,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("False",                 Py_False);
     SETBUILTIN("True",                  Py_True);
     SETBUILTIN("bool",                  &PyBool_Type);
-    SETBUILTIN("memoryview",        &PyMemoryView_Type);
+    SETBUILTIN("memoryview",            &PyMemoryView_Type);
     SETBUILTIN("bytearray",             &PyByteArray_Type);
     SETBUILTIN("bytes",                 &PyBytes_Type);
     SETBUILTIN("classmethod",           &PyClassMethod_Type);
