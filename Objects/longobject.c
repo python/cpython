@@ -4691,6 +4691,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 
     /* Total number of bits shifted must be nonnegative. */
     assert(wordshift >= 0);
+    assert(remshift < PyLong_SHIFT);
 
     /* Fast path for small a. */
     if (IS_MEDIUM_VALUE(a)) {
