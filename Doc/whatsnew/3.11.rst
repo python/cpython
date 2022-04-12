@@ -157,12 +157,15 @@ The :option:`-X` ``no_debug_ranges`` option and the environment variable
 See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
 and Ammar Askar in :issue:`43950`.)
 
-Exceptions can be enriched with a string ``__note__``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Exceptions can be enriched with notes (PEP 678)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``__note__`` field was added to :exc:`BaseException`. It is ``None``
-by default but can be set to a string which is added to the exception's
-traceback. (Contributed by Irit Katriel in :issue:`45607`.)
+The :meth:`add_note` method was added to :exc:`BaseException`. It can be
+used to enrich exceptions with context information which is not available
+at the time when the exception is raised. The notes added appear in the
+default traceback. See :pep:`678` for more details. (Contributed by
+Irit Katriel in :issue:`45607`.)
+
 
 Other Language Changes
 ======================
