@@ -66,11 +66,12 @@ dump_stack(_PyInterpreterFrame *frame, int stack_level)
         if (PyObject_Print(obj, stdout, 0) != 0) {
             PyErr_Clear();
             printf("???\n");
-            return;
+            goto done;
         }
         printf(", ");
     }
     printf("]\n");
+  done:
     PyErr_Restore(type, value, traceback);
 }
 
