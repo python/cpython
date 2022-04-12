@@ -132,9 +132,11 @@ __all__ = [
     'no_type_check',
     'no_type_check_decorator',
     'NoReturn',
+    'NotRequired',
     'overload',
     'ParamSpecArgs',
     'ParamSpecKwargs',
+    'Required',
     'reveal_type',
     'runtime_checkable',
     'Self',
@@ -2262,6 +2264,8 @@ def _strip_annotations(t):
     """
     if isinstance(t, _AnnotatedAlias):
         return _strip_annotations(t.__origin__)
+    if hasattr(t, "__origin__") and t.__origin__ in (Required, NotRequired):
+        return _strip_annotations(t.__args__[0])
     if isinstance(t, _GenericAlias):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
@@ -2786,10 +2790,22 @@ class _TypedDictMeta(type):
             optional_keys.update(base.__dict__.get('__optional_keys__', ()))
 
         annotations.update(own_annotations)
-        if total:
-            required_keys.update(own_annotation_keys)
-        else:
-            optional_keys.update(own_annotation_keys)
+        for annotation_key, annotation_type in own_annotations.items():
+            annotation_origin = get_origin(annotation_type)
+            if annotation_origin is Annotated:
+                annotation_args = get_args(annotation_type)
+                if annotation_args:
+                    annotation_type = annotation_args[0]
+                    annotation_origin = get_origin(annotation_type)
+
+            if annotation_origin is Required:
+                required_keys.add(annotation_key)
+            elif annotation_origin is NotRequired:
+                optional_keys.add(annotation_key)
+            elif total:
+                required_keys.add(annotation_key)
+            else:
+                optional_keys.add(annotation_key)
 
         tp_dict.__annotations__ = annotations
         tp_dict.__required_keys__ = frozenset(required_keys)
@@ -2872,6 +2888,45 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
 
 _TypedDict = type.__new__(_TypedDictMeta, 'TypedDict', (), {})
 TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)
+
+
+@_SpecialForm
+def Required(self, parameters):
+    """A special typing construct to mark a key of a total=False TypedDict
+    as required. For example:
+
+        class Movie(TypedDict, total=False):
+            title: Required[str]
+            year: int
+
+        m = Movie(
+            title='The Matrix',  # typechecker error if key is omitted
+            year=1999,
+        )
+
+    There is no runtime checking that a required key is actually provided
+    when instantiating a related TypedDict.
+    """
+    item = _type_check(parameters, f'{self._name} accepts only a single type.')
+    return _GenericAlias(self, (item,))
+
+
+@_SpecialForm
+def NotRequired(self, parameters):
+    """A special typing construct to mark a key of a TypedDict as
+    potentially missing. For example:
+
+        class Movie(TypedDict):
+            title: str
+            year: NotRequired[int]
+
+        m = Movie(
+            title='The Matrix',  # typechecker error if key is omitted
+            year=1999,
+        )
+    """
+    item = _type_check(parameters, f'{self._name} accepts only a single type.')
+    return _GenericAlias(self, (item,))
 
 
 class NewType:
