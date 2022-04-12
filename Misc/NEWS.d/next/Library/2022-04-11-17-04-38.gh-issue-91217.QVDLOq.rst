@@ -1,0 +1,2 @@
+Deprecate the imghdr module. Along the way, deprecate the default argument
+for email.mime.MIMEImage's *_subtype* parameter.
