@@ -4515,9 +4515,9 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     size_a = Py_ABS(Py_SIZE(a));
 
     if (a_negative) {
-        /* For 'a', adjust so that 0 < remshift <= PyLong_SHIFT, while keeping
-           PyLong_SHIFt * wordshift + remshift the same. This ensures
-           that 'newsize' is computed correctly below. */
+        /* For negative 'a', adjust so that 0 < remshift <= PyLong_SHIFT,
+           while keeping PyLong_SHIFT*wordshift + remshift the same. This
+           ensures that 'newsize' is computed correctly below. */
         if (remshift == 0) {
             if (wordshift == 0) {
                 /* Can only happen if the original shift was 0. */
