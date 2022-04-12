@@ -852,6 +852,7 @@ Deprecated
   * :mod:`cgitb`
   * :mod:`chunk`
   * :mod:`crypt`
+  * :mod:`imghdr`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
