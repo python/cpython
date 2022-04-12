@@ -75,6 +75,7 @@ try:
 except ImportError:
     pass
 
+
 class BaseTest(unittest.TestCase):
 
     """Base class for logging tests."""
@@ -626,6 +627,10 @@ class HandlerTest(BaseTest):
             os.unlink(fn)
 
     @unittest.skipIf(os.name == 'nt', 'WatchedFileHandler not appropriate for Windows.')
+    @unittest.skipIf(
+        support.is_emscripten, "Emscripten cannot fstat unlinked files."
+    )
+    @threading_helper.requires_working_threading()
     def test_race(self):
         # Issue #14632 refers.
         def remove_loop(fname, tries):
@@ -674,7 +679,8 @@ class HandlerTest(BaseTest):
     # based on os.fork existing because that is what users and this test use.
     # This helps ensure that when fork exists (the important concept) that the
     # register_at_fork mechanism is also present and used.
-    @unittest.skipIf(not hasattr(os, 'fork'), 'Test requires os.fork().')
+    @support.requires_fork()
+    @threading_helper.requires_working_threading()
     def test_post_fork_child_no_deadlock(self):
         """Ensure child logging locks are not held; bpo-6721 & bpo-36533."""
         class _OurHandler(logging.Handler):
@@ -1058,6 +1064,8 @@ if hasattr(socket, "AF_UNIX"):
 
 # - end of server_helper section
 
+@support.requires_working_socket()
+@threading_helper.requires_working_threading()
 class SMTPHandlerTest(BaseTest):
     # bpo-14314, bpo-19665, bpo-34092: don't wait forever
     TIMEOUT = support.LONG_TIMEOUT
@@ -1167,6 +1175,7 @@ class MemoryHandlerTest(BaseTest):
         # assert that no new lines have been added
         self.assert_log_lines(lines)  # no change
 
+    @threading_helper.requires_working_threading()
     def test_race_between_set_target_and_flush(self):
         class MockRaceConditionHandler:
             def __init__(self, mem_hdlr):
@@ -1681,6 +1690,8 @@ class ConfigFileTest(BaseTest):
             os.unlink(fn)
 
 
+@support.requires_working_socket()
+@threading_helper.requires_working_threading()
 class SocketHandlerTest(BaseTest):
 
     """Test for SocketHandler objects."""
@@ -1795,6 +1806,8 @@ class UnixSocketHandlerTest(SocketHandlerTest):
         SocketHandlerTest.tearDown(self)
         os_helper.unlink(self.address)
 
+@support.requires_working_socket()
+@threading_helper.requires_working_threading()
 class DatagramHandlerTest(BaseTest):
 
     """Test for DatagramHandler."""
@@ -1876,6 +1889,8 @@ class UnixDatagramHandlerTest(DatagramHandlerTest):
         DatagramHandlerTest.tearDown(self)
         os_helper.unlink(self.address)
 
+@support.requires_working_socket()
+@threading_helper.requires_working_threading()
 class SysLogHandlerTest(BaseTest):
 
     """Test for SysLogHandler using UDP."""
@@ -1985,6 +2000,8 @@ class IPv6SysLogHandlerTest(SysLogHandlerTest):
         self.server_class.address_family = socket.AF_INET
         super(IPv6SysLogHandlerTest, self).tearDown()
 
+@support.requires_working_socket()
+@threading_helper.requires_working_threading()
 class HTTPHandlerTest(BaseTest):
     """Test for HTTPHandler."""
 
@@ -3261,6 +3278,7 @@ class ConfigDictTest(BaseTest):
             logging.config.stopListening()
             threading_helper.join_thread(t)
 
+    @support.requires_working_socket()
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:
             self.setup_via_listener(json.dumps(self.config10))
@@ -3280,6 +3298,7 @@ class ConfigDictTest(BaseTest):
                 ('ERROR', '4'),
             ], stream=output)
 
+    @support.requires_working_socket()
     def test_listen_config_1_ok(self):
         with support.captured_stdout() as output:
             self.setup_via_listener(textwrap.dedent(ConfigFileTest.config1))
@@ -3294,6 +3313,7 @@ class ConfigDictTest(BaseTest):
             # Original logger output is empty.
             self.assert_log_lines([])
 
+    @support.requires_working_socket()
     def test_listen_verify(self):
 
         def verify_fail(stuff):
@@ -3563,6 +3583,7 @@ class LogRecordFactoryTest(BaseTest):
         ])
 
 
+@threading_helper.requires_working_threading()
 class QueueHandlerTest(BaseTest):
     # Do not bother with a logger name group.
     expected_log_pat = r"^[\w.]+ -> (\w+): (\d+)$"
@@ -3672,6 +3693,7 @@ if hasattr(logging.handlers, 'QueueListener'):
     import multiprocessing
     from unittest.mock import patch
 
+    @threading_helper.requires_working_threading()
     class QueueListenerTest(BaseTest):
         """
         Tests based on patch submitted for issue #27930. Ensure that
@@ -4493,6 +4515,7 @@ class LogRecordTest(BaseTest):
             return results
 
     def test_multiprocessing(self):
+        support.skip_if_broken_multiprocessing_synchronize()
         multiprocessing_imported = 'multiprocessing' in sys.modules
         try:
             # logMultiprocessing is True by default
@@ -5037,9 +5060,10 @@ class LoggerTest(BaseTest, AssertErrorMessage):
 
     def test_find_caller_with_stacklevel(self):
         the_level = 1
+        trigger = self.logger.warning
 
         def innermost():
-            self.logger.warning('test', stacklevel=the_level)
+            trigger('test', stacklevel=the_level)
 
         def inner():
             innermost()
@@ -5061,6 +5085,13 @@ class LoggerTest(BaseTest, AssertErrorMessage):
         self.assertEqual(records[-1].funcName, 'outer')
         self.assertGreater(records[-1].lineno, lineno)
         lineno = records[-1].lineno
+        root_logger = logging.getLogger()
+        root_logger.addHandler(self.recording)
+        trigger = logging.warning
+        outer()
+        self.assertEqual(records[-1].funcName, 'outer')
+        root_logger.removeHandler(self.recording)
+        trigger = self.logger.warning
         the_level += 1
         outer()
         self.assertEqual(records[-1].funcName, 'test_find_caller_with_stacklevel')

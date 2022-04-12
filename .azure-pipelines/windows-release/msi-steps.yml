@@ -1,3 +1,6 @@
+parameters:
+  ARM64TclTk: true
+
 steps:
   - template: ./checkout.yml
 
@@ -18,8 +21,6 @@ steps:
     inputs:
       sourceFolder: $(Build.BinariesDirectory)\doc
       targetFolder: $(Build.SourcesDirectory)\Doc\build
-      contents: |
-        htmlhelp\*.chm
 
   - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: bin_win32'
@@ -71,6 +72,14 @@ steps:
       artifactName: tcltk_lib_amd64
       targetPath: $(Build.BinariesDirectory)\tcltk_lib_amd64
 
+  - ${{ if eq(parameters.ARM64TclTk, true) }}:
+    - task: DownloadPipelineArtifact@1
+      displayName: 'Download artifact: tcltk_lib_arm64'
+      condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
+      inputs:
+        artifactName: tcltk_lib_arm64
+        targetPath: $(Build.BinariesDirectory)\tcltk_lib_arm64
+
   - powershell: |
       copy $(Build.BinariesDirectory)\amd64\Activate.ps1 Lib\venv\scripts\common\Activate.ps1 -Force
     displayName: 'Copy signed files into sources'
@@ -107,7 +116,6 @@ steps:
       PYTHONHOME: $(Build.SourcesDirectory)
       TclTkLibraryDir: $(Build.BinariesDirectory)\tcltk_lib_win32
       BuildForRelease: true
-      SuppressMinGWLib: true
 
   - script: |
       %MSBUILD% Tools\msi\bundle\releaselocal.wixproj /t:Rebuild /p:RebuildAll=true
@@ -120,7 +128,6 @@ steps:
       PYTHONHOME: $(Build.SourcesDirectory)
       TclTkLibraryDir: $(Build.BinariesDirectory)\tcltk_lib_amd64
       BuildForRelease: true
-      SuppressMinGWLib: true
 
   - script: |
       %MSBUILD% Tools\msi\bundle\releaselocal.wixproj /t:Rebuild /p:RebuildAll=true
@@ -133,7 +140,8 @@ steps:
       PythonForBuild: $(Build.BinariesDirectory)\win32\python.exe
       PYTHONHOME: $(Build.SourcesDirectory)
       BuildForRelease: true
-      SuppressMinGWLib: true
+      ${{ if eq(parameters.ARM64TclTk, true) }}:
+        TclTkLibraryDir: $(Build.BinariesDirectory)\tcltk_lib_arm64
 
   - task: CopyFiles@2
     displayName: 'Assemble artifact: msi (win32)'

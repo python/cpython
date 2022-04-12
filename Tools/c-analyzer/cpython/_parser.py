@@ -148,7 +148,7 @@ Modules/_io/*.c	Py_BUILD_CORE	1
 Modules/_localemodule.c	Py_BUILD_CORE	1
 Modules/_operator.c	Py_BUILD_CORE	1
 Modules/_posixsubprocess.c	Py_BUILD_CORE	1
-Modules/_sre.c	Py_BUILD_CORE	1
+Modules/_sre/sre.c	Py_BUILD_CORE	1
 Modules/_threadmodule.c	Py_BUILD_CORE	1
 Modules/_tracemalloc.c	Py_BUILD_CORE	1
 Modules/_weakref.c	Py_BUILD_CORE	1
@@ -262,8 +262,8 @@ Modules/expat/xmlparse.c	XML_POOR_ENTROPY	1
 Modules/_dbmmodule.c	HAVE_GDBM_DASH_NDBM_H	1
 
 # others
-Modules/sre_lib.h	LOCAL(type)	static inline type
-Modules/sre_lib.h	SRE(F)	sre_ucs2_##F
+Modules/_sre/sre_lib.h	LOCAL(type)	static inline type
+Modules/_sre/sre_lib.h	SRE(F)	sre_ucs2_##F
 Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
 Include/internal/pycore_bitutils.h	_Py__has_builtin(B)	0
 

@@ -60,7 +60,6 @@ _csv_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(module_state->dialect_type);
     Py_VISIT(module_state->reader_type);
     Py_VISIT(module_state->writer_type);
-    Py_VISIT(module_state->str_write);
     return 0;
 }
 

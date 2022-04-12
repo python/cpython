@@ -3,10 +3,14 @@
 
 .. module:: sunau
    :synopsis: Provide an interface to the Sun AU sound format.
+   :deprecated:
 
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 **Source code:** :source:`Lib/sunau.py`
+
+.. deprecated:: 3.11
+   The :mod:`sunau` module is deprecated (see :pep:`594` for details).
 
 --------------
 

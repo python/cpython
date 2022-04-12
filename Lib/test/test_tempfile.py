@@ -341,6 +341,9 @@ def _mock_candidate_names(*names):
 
 class TestBadTempdir:
 
+    @unittest.skipIf(
+        support.is_emscripten, "Emscripten cannot remove write bits."
+    )
     def test_read_only_directory(self):
         with _inside_empty_temp_dir():
             oldmode = mode = os.stat(tempfile.tempdir).st_mode
@@ -465,6 +468,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         self.assertEqual(mode, expected)
 
     @unittest.skipUnless(has_spawnl, 'os.spawnl not available')
+    @support.requires_subprocess()
     def test_noinherit(self):
         # _mkstemp_inner file handles are not inherited by child processes
 
@@ -1282,6 +1286,9 @@ class TestSpooledTemporaryFile(BaseTestCase):
                 pass
         self.assertRaises(ValueError, use_closed)
 
+    @unittest.skipIf(
+        support.is_emscripten, "Emscripten cannot fstat renamed files."
+    )
     def test_truncate_with_size_parameter(self):
         # A SpooledTemporaryFile can be truncated to zero size
         f = tempfile.SpooledTemporaryFile(max_size=10)

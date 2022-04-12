@@ -641,7 +641,7 @@ if 1:
         self.check_constant(f1, frozenset({0}))
         self.assertTrue(f1(0))
 
-    # Merging equal co_linetable and co_code is not a strict requirement
+    # Merging equal co_linetable is not a strict requirement
     # for the Python semantics, it's a more an implementation detail.
     @support.cpython_only
     def test_merge_code_attrs(self):
@@ -650,7 +650,6 @@ if 1:
         f2 = lambda a: a.b.c
 
         self.assertIs(f1.__code__.co_linetable, f2.__code__.co_linetable)
-        self.assertIs(f1.__code__.co_code, f2.__code__.co_code)
 
     # Stripping unused constants is not a strict requirement for the
     # Python semantics, it's a more an implementation detail.
@@ -1002,7 +1001,9 @@ if 1:
             'JUMP_FORWARD',
         )
 
-        for line, instr in enumerate(dis.Bytecode(if_else_break)):
+        for line, instr in enumerate(
+            dis.Bytecode(if_else_break, show_caches=True)
+        ):
             if instr.opname == 'JUMP_FORWARD':
                 self.assertNotEqual(instr.arg, 0)
             elif instr.opname in HANDLED_JUMPS:
@@ -1062,7 +1063,9 @@ class TestSourcePositions(unittest.TestCase):
     def assertOpcodeSourcePositionIs(self, code, opcode,
             line, end_line, column, end_column, occurrence=1):
 
-        for instr, position in zip(dis.Bytecode(code), code.co_positions()):
+        for instr, position in zip(
+            dis.Bytecode(code, show_caches=True), code.co_positions(), strict=True
+        ):
             if instr.opname == opcode:
                 occurrence -= 1
                 if not occurrence:
@@ -1185,7 +1188,7 @@ class TestExpressionStackSize(unittest.TestCase):
         kwargs = (f'a{i}=x' for i in range(self.N))
         self.check_stack_size("f(" +  ", ".join(kwargs) + ")")
 
-    def test_func_args(self):
+    def test_meth_args(self):
         self.check_stack_size("o.m(" + "x, " * self.N + ")")
 
     def test_meth_kwargs(self):

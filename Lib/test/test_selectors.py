@@ -19,6 +19,10 @@ except ImportError:
     resource = None
 
 
+if support.is_emscripten:
+    raise unittest.SkipTest("Cannot create socketpair on Emscripten.")
+
+
 if hasattr(socket, 'socketpair'):
     socketpair = socket.socketpair
 else:

@@ -286,12 +286,6 @@ the same library that the Python runtime is using.
    <keyword-only_parameter>` arguments and a closure tuple of cells.
 
 
-.. c:type:: PyFrameObject
-
-   The C structure of the objects used to describe frame objects. The
-   fields of this type are subject to change at any time.
-
-
 .. c:function:: PyObject* PyEval_EvalFrame(PyFrameObject *f)
 
    Evaluate an execution frame.  This is a simplified interface to

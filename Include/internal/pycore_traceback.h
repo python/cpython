@@ -8,9 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-/* Forward declaration */
-struct _is;
-
 /* Write the Python traceback into the file 'fd'. For example:
 
        Traceback (most recent call first):
@@ -57,7 +54,7 @@ PyAPI_FUNC(void) _Py_DumpTraceback(
 
 PyAPI_FUNC(const char*) _Py_DumpTracebackThreads(
     int fd,
-    struct _is *interp,
+    PyInterpreterState *interp,
     PyThreadState *current_tstate);
 
 /* Write a Unicode object into the file descriptor fd. Encode the string to

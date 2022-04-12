@@ -113,7 +113,7 @@ c_infj(void)
     return r;
 }
 
-#if _PY_SHORT_FLOAT_REPR == 1 || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
 
 static double
 m_nan(void)
@@ -1282,7 +1282,7 @@ cmath_exec(PyObject *mod)
                            PyComplex_FromCComplex(c_infj())) < 0) {
         return -1;
     }
-#if _PY_SHORT_FLOAT_REPR == 1 || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
     if (PyModule_AddObject(mod, "nan", PyFloat_FromDouble(m_nan())) < 0) {
         return -1;
     }
