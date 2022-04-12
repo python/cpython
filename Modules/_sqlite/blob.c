@@ -284,7 +284,7 @@ blob_seek_impl(pysqlite_Blob *self, int offset, int origin)
     Py_RETURN_NONE;
 
 overflow:
-    PyErr_SetString(PyExc_OverflowError, "seek offset result in overflow");
+    PyErr_SetString(PyExc_OverflowError, "seek offset results in overflow");
     return NULL;
 }
 
