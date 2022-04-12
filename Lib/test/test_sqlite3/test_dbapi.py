@@ -1159,14 +1159,12 @@ class BlobTests(unittest.TestCase):
                     self.cx.blobopen(*args, **kwds)
 
     def test_blob_sequence_not_supported(self):
-        ops = (
-            lambda: self.blob + self.blob,
-            lambda: self.blob * 5,
-            lambda: b"a" in self.blob,
-        )
-        for op in ops:
-            with self.subTest(op=op):
-                self.assertRaises(TypeError, op)
+        with self.assertRaises(TypeError):
+            self.blob + self.blob
+        with self.assertRaises(TypeError):
+            self.blob * 5
+        with self.assertRaises(TypeError):
+            b"a" in self.blob
 
     def test_blob_closed(self):
         with memory_database() as cx:
@@ -1175,17 +1173,15 @@ class BlobTests(unittest.TestCase):
             blob = cx.blobopen("test", "b", 1)
             blob.close()
 
-            ops = [
-                lambda: blob.read(),
-                lambda: blob.write(b""),
-                lambda: blob.seek(0),
-                lambda: blob.tell(),
-            ]
             msg = "Cannot operate on a closed blob"
-            for op in ops:
-                with self.subTest(op=op):
-                    with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
-                        op()
+            with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+                blob.read()
+            with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+                blob.write(b"")
+            with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+                blob.seek(0)
+            with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+                blob.tell()
 
     def test_blob_closed_db_read(self):
         with memory_database() as cx:
