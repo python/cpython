@@ -625,6 +625,37 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_sre__set_RegexFlag_type__doc__,
+"_set_RegexFlag_type($module, /, RegexFlag_Type)\n"
+"--\n"
+"\n");
+
+#define _SRE__SET_REGEXFLAG_TYPE_METHODDEF    \
+    {"_set_RegexFlag_type", (PyCFunction)(void(*)(void))_sre__set_RegexFlag_type, METH_FASTCALL|METH_KEYWORDS, _sre__set_RegexFlag_type__doc__},
+
+static PyObject *
+_sre__set_RegexFlag_type_impl(PyObject *module, PyObject *RegexFlag_Type);
+
+static PyObject *
+_sre__set_RegexFlag_type(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"RegexFlag_Type", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_set_RegexFlag_type", 0};
+    PyObject *argsbuf[1];
+    PyObject *RegexFlag_Type;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    RegexFlag_Type = args[0];
+    return_value = _sre__set_RegexFlag_type_impl(module, RegexFlag_Type);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_sre_SRE_Match_expand__doc__,
 "expand($self, /, template)\n"
 "--\n"
@@ -923,4 +954,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9d7510a57a157a38 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e2ed5ff97ee831e2 input=a9049054013a1b77]*/

@@ -2004,6 +2004,32 @@ _validate(PatternObject *self)
     return 1;
 }
 
+/*[clinic input]
+_sre._set_RegexFlag_type
+
+    RegexFlag_Type: object
+
+[clinic start generated code]*/
+
+static PyObject *
+_sre__set_RegexFlag_type_impl(PyObject *module, PyObject *RegexFlag_Type)
+/*[clinic end generated code: output=1276fbd158d1c5b2 input=fa4eabcd03dd9819]*/
+{
+    _sremodulestate *module_state = get_sre_module_state(module);
+
+    if (!PyType_Check(RegexFlag_Type)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "The argument should be RegexFlag type.");
+        return NULL;
+    }
+
+    Py_INCREF(RegexFlag_Type);
+    module_state->RegexFlag_Type = (PyTypeObject*) RegexFlag_Type;
+
+    Py_RETURN_NONE;
+}
+
+
 /* -------------------------------------------------------------------- */
 /* match methods */
 
@@ -2952,6 +2978,7 @@ static PyMethodDef _functions[] = {
     _SRE_UNICODE_ISCASED_METHODDEF
     _SRE_ASCII_TOLOWER_METHODDEF
     _SRE_UNICODE_TOLOWER_METHODDEF
+    _SRE__SET_REGEXFLAG_TYPE_METHODDEF
     {NULL, NULL}
 };
 

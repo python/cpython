@@ -122,6 +122,7 @@ This module also defines an exception 'error'.
 """
 
 import enum
+from _sre import _set_RegexFlag_type
 from . import _compiler, _parser
 import functools
 
@@ -151,6 +152,9 @@ class RegexFlag:
     DEBUG = _compiler.SRE_FLAG_DEBUG # dump pattern after compilation
     __str__ = object.__str__
     _numeric_repr_ = hex
+
+# register the type of RegexFlag
+_set_RegexFlag_type(RegexFlag)
 
 # sre exception
 error = _compiler.error
