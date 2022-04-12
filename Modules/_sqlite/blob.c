@@ -255,15 +255,15 @@ blob_seek_impl(pysqlite_Blob *self, int offset, int origin)
 
     int blob_len = sqlite3_blob_bytes(self->blob);
     switch (origin) {
-        case 0:
+        case SEEK_SET:
             break;
-        case 1:
+        case SEEK_CUR:
             if (offset > INT_MAX - self->offset) {
                 goto overflow;
             }
             offset += self->offset;
             break;
-        case 2:
+        case SEEK_END:
             if (offset > INT_MAX - blob_len) {
                 goto overflow;
             }
