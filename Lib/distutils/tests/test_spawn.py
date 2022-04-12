@@ -3,7 +3,7 @@ import os
 import stat
 import sys
 import unittest.mock
-from test.support import run_unittest, unix_shell
+from test.support import run_unittest, unix_shell, requires_subprocess
 from test.support import os_helper
 
 from distutils.spawn import find_executable
@@ -11,6 +11,8 @@ from distutils.spawn import spawn
 from distutils.errors import DistutilsExecError
 from distutils.tests import support
 
+
+@requires_subprocess()
 class SpawnTestCase(support.TempdirManager,
                     support.LoggingSilencer,
                     unittest.TestCase):
@@ -131,7 +133,7 @@ class SpawnTestCase(support.TempdirManager,
 
 
 def test_suite():
-    return unittest.makeSuite(SpawnTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(SpawnTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

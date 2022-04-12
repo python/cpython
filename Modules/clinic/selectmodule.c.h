@@ -92,7 +92,7 @@ select_poll_register(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("register", nargs, 1, 2)) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     if (nargs < 2) {
@@ -140,7 +140,7 @@ select_poll_modify(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("modify", nargs, 2, 2)) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
@@ -174,7 +174,7 @@ select_poll_unregister(pollObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!fildes_converter(arg, &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
         goto exit;
     }
     return_value = select_poll_unregister_impl(self, fd);
@@ -192,6 +192,10 @@ PyDoc_STRVAR(select_poll_poll__doc__,
 "--\n"
 "\n"
 "Polls the set of registered file descriptors.\n"
+"\n"
+"  timeout\n"
+"    The maximum time to wait in milliseconds, or else None (or a negative\n"
+"    value) to wait indefinitely.\n"
 "\n"
 "Returns a list containing any descriptors that have events or errors to\n"
 "report, as a list of (fd, event) 2-tuples.");
@@ -256,7 +260,7 @@ select_devpoll_register(devpollObject *self, PyObject *const *args, Py_ssize_t n
     if (!_PyArg_CheckPositional("register", nargs, 1, 2)) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     if (nargs < 2) {
@@ -306,7 +310,7 @@ select_devpoll_modify(devpollObject *self, PyObject *const *args, Py_ssize_t nar
     if (!_PyArg_CheckPositional("modify", nargs, 1, 2)) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     if (nargs < 2) {
@@ -344,7 +348,7 @@ select_devpoll_unregister(devpollObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!fildes_converter(arg, &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
         goto exit;
     }
     return_value = select_devpoll_unregister_impl(self, fd);
@@ -362,6 +366,10 @@ PyDoc_STRVAR(select_devpoll_poll__doc__,
 "--\n"
 "\n"
 "Polls the set of registered file descriptors.\n"
+"\n"
+"  timeout\n"
+"    The maximum time to wait in milliseconds, or else None (or a negative\n"
+"    value) to wait indefinitely.\n"
 "\n"
 "Returns a list containing any descriptors that have events or errors to\n"
 "report, as a list of (fd, event) 2-tuples.");
@@ -668,7 +676,7 @@ select_epoll_register(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t na
     if (!args) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     if (!noptargs) {
@@ -721,7 +729,7 @@ select_epoll_modify(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t narg
     if (!args) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
@@ -766,7 +774,7 @@ select_epoll_unregister(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t 
     if (!args) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     return_value = select_epoll_unregister_impl(self, fd);
@@ -933,11 +941,13 @@ select_kqueue(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
 
-    if ((type == _selectstate_global->kqueue_queue_Type) &&
+    if ((type == _selectstate_by_type(type)->kqueue_queue_Type ||
+         type->tp_init == _selectstate_by_type(type)->kqueue_queue_Type->tp_init) &&
         !_PyArg_NoPositional("kqueue", args)) {
         goto exit;
     }
-    if ((type == _selectstate_global->kqueue_queue_Type) &&
+    if ((type == _selectstate_by_type(type)->kqueue_queue_Type ||
+         type->tp_init == _selectstate_by_type(type)->kqueue_queue_Type->tp_init) &&
         !_PyArg_NoKeywords("kqueue", kwargs)) {
         goto exit;
     }
@@ -1179,4 +1189,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=7144233c42e18279 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=09ff9484c1b092fb input=a9049054013a1b77]*/

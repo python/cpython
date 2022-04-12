@@ -2,6 +2,7 @@
 
 #include "pycore_bitutils.h"      // _Py_popcount32
 #include "pycore_hamt.h"
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include <stddef.h>               // offsetof()
 
@@ -2844,14 +2845,14 @@ hamt_py_values(PyHamtObject *self, PyObject *args)
 }
 
 static PyObject *
-hamt_py_keys(PyHamtObject *self, PyObject *args)
+hamt_py_keys(PyHamtObject *self, PyObject *Py_UNUSED(args))
 {
     return _PyHamt_NewIterKeys(self);
 }
 
 #ifdef Py_DEBUG
 static PyObject *
-hamt_py_dump(PyHamtObject *self, PyObject *args)
+hamt_py_dump(PyHamtObject *self, PyObject *Py_UNUSED(args))
 {
     return hamt_dump(self);
 }
@@ -2859,14 +2860,14 @@ hamt_py_dump(PyHamtObject *self, PyObject *args)
 
 
 static PyMethodDef PyHamt_methods[] = {
-    {"set", (PyCFunction)hamt_py_set, METH_VARARGS, NULL},
-    {"get", (PyCFunction)hamt_py_get, METH_VARARGS, NULL},
-    {"delete", (PyCFunction)hamt_py_delete, METH_O, NULL},
-    {"items", (PyCFunction)hamt_py_items, METH_NOARGS, NULL},
-    {"keys", (PyCFunction)hamt_py_keys, METH_NOARGS, NULL},
-    {"values", (PyCFunction)hamt_py_values, METH_NOARGS, NULL},
+    {"set", _PyCFunction_CAST(hamt_py_set), METH_VARARGS, NULL},
+    {"get", _PyCFunction_CAST(hamt_py_get), METH_VARARGS, NULL},
+    {"delete", _PyCFunction_CAST(hamt_py_delete), METH_O, NULL},
+    {"items", _PyCFunction_CAST(hamt_py_items), METH_NOARGS, NULL},
+    {"keys", _PyCFunction_CAST(hamt_py_keys), METH_NOARGS, NULL},
+    {"values", _PyCFunction_CAST(hamt_py_values), METH_NOARGS, NULL},
 #ifdef Py_DEBUG
-    {"__dump__", (PyCFunction)hamt_py_dump, METH_NOARGS, NULL},
+    {"__dump__", _PyCFunction_CAST(hamt_py_dump), METH_NOARGS, NULL},
 #endif
     {NULL, NULL}
 };
@@ -2952,25 +2953,8 @@ PyTypeObject _PyHamt_CollisionNode_Type = {
 };
 
 
-int
-_PyHamt_Init(void)
-{
-    if ((PyType_Ready(&_PyHamt_Type) < 0) ||
-        (PyType_Ready(&_PyHamt_ArrayNode_Type) < 0) ||
-        (PyType_Ready(&_PyHamt_BitmapNode_Type) < 0) ||
-        (PyType_Ready(&_PyHamt_CollisionNode_Type) < 0) ||
-        (PyType_Ready(&_PyHamtKeys_Type) < 0) ||
-        (PyType_Ready(&_PyHamtValues_Type) < 0) ||
-        (PyType_Ready(&_PyHamtItems_Type) < 0))
-    {
-        return 0;
-    }
-
-    return 1;
-}
-
 void
-_PyHamt_Fini(void)
+_PyHamt_Fini(PyInterpreterState *interp)
 {
     Py_CLEAR(_empty_hamt);
     Py_CLEAR(_empty_bitmap_node);

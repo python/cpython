@@ -31,7 +31,7 @@ Future Functions
    .. versionadded:: 3.5
 
 
-.. function:: ensure_future(obj, \*, loop=None)
+.. function:: ensure_future(obj, *, loop=None)
 
    Return:
 
@@ -54,20 +54,31 @@ Future Functions
       See also the :func:`create_task` function which is the
       preferred way for creating new Tasks.
 
+      Save a reference to the result of this function, to avoid
+      a task disappearing mid execution.
+
    .. versionchanged:: 3.5.1
       The function accepts any :term:`awaitable` object.
 
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if *obj* is not a Future-like object
+      and *loop* is not specified and there is no running event loop.
 
-.. function:: wrap_future(future, \*, loop=None)
+
+.. function:: wrap_future(future, *, loop=None)
 
    Wrap a :class:`concurrent.futures.Future` object in a
    :class:`asyncio.Future` object.
+
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if *future* is not a Future-like object
+      and *loop* is not specified and there is no running event loop.
 
 
 Future Object
 =============
 
-.. class:: Future(\*, loop=None)
+.. class:: Future(*, loop=None)
 
    A Future represents an eventual result of an asynchronous
    operation.  Not thread-safe.
@@ -89,6 +100,10 @@ Future Object
 
    .. versionchanged:: 3.7
       Added support for the :mod:`contextvars` module.
+
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if *loop* is not specified
+      and there is no running event loop.
 
    .. method:: result()
 
@@ -179,7 +194,12 @@ Future Object
       schedule the callbacks, and return ``True``.
 
       .. versionchanged:: 3.9
-         Added the ``msg`` parameter.
+         Added the *msg* parameter.
+
+      .. deprecated-removed:: 3.11 3.14
+         *msg* parameter is ambiguous when multiple :meth:`cancel`
+         are called with different cancellation messages.
+         The argument will be removed.
 
    .. method:: exception()
 
@@ -261,3 +281,8 @@ the Future has a result::
 
    - :meth:`asyncio.Future.cancel` accepts an optional ``msg`` argument,
      but :func:`concurrent.futures.cancel` does not.
+
+     .. deprecated-removed:: 3.11 3.14
+        *msg* parameter is ambiguous when multiple :meth:`cancel`
+        are called with different cancellation messages.
+        The argument will be removed.

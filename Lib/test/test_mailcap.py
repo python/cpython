@@ -4,6 +4,7 @@ import copy
 import test.support
 from test.support import os_helper
 import unittest
+import sys
 
 # Location of mailcap file
 MAILCAPFILE = test.support.findfile("mailcap.txt")
@@ -214,6 +215,7 @@ class FindmatchTest(unittest.TestCase):
         self._run_cases(cases)
 
     @unittest.skipUnless(os.name == "posix", "Requires 'test' command on system")
+    @unittest.skipIf(sys.platform == "vxworks", "'test' command is not supported on VxWorks")
     def test_test(self):
         # findmatch() will automatically check any "test" conditions and skip
         # the entry if the check fails.

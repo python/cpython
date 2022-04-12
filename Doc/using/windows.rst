@@ -23,8 +23,8 @@ available for application-local distributions.
 
 As specified in :pep:`11`, a Python release only supports a Windows platform
 while Microsoft considers the platform under extended support. This means that
-Python |version| supports Windows Vista and newer. If you require Windows XP
-support then please install Python 3.4.
+Python |version| supports Windows 8.1 and newer. If you require Windows 7
+support, please install Python 3.8.
 
 There are a number of different installers available for Windows, each with
 certain benefits and downsides.
@@ -103,9 +103,9 @@ paths longer than this would not resolve and errors would result.
 
 In the latest versions of Windows, this limitation can be expanded to
 approximately 32,000 characters. Your administrator will need to activate the
-"Enable Win32 long paths" group policy, or set the registry value
-``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem@LongPathsEnabled``
-to ``1``.
+"Enable Win32 long paths" group policy, or set ``LongPathsEnabled`` to ``1``
+in the registry key
+``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem``.
 
 This allows the :func:`open` function, the :mod:`os` module and most other
 path functionality to accept and return paths longer than 260 characters.
@@ -129,8 +129,8 @@ suppressing the UI in order to change some of the defaults.
 To completely hide the installer UI and install Python silently, pass the
 ``/quiet`` option. To skip past the user interaction but still display
 progress and errors, pass the ``/passive`` option. The ``/uninstall``
-option may be passed to immediately begin removing Python - no prompt will be
-displayed.
+option may be passed to immediately begin removing Python - no confirmation
+prompt will be displayed.
 
 All other options are passed as ``name=value``, where the value is usually
 ``0`` to disable a feature, ``1`` to enable a feature, or a path. The full list
@@ -165,9 +165,13 @@ of available options is shown below.
 | CompileAll                | Compile all ``.py`` files to         | 0                        |
 |                           | ``.pyc``.                            |                          |
 +---------------------------+--------------------------------------+--------------------------+
-| PrependPath               | Add install and Scripts directories  | 0                        |
-|                           | to :envvar:`PATH` and ``.PY`` to     |                          |
-|                           | :envvar:`PATHEXT`                    |                          |
+| PrependPath               | Prepend install and Scripts          | 0                        |
+|                           | directories  to :envvar:`PATH` and   |                          |
+|                           | add ``.PY`` to :envvar:`PATHEXT`     |                          |
++---------------------------+--------------------------------------+--------------------------+
+| AppendPath                | Append install and Scripts           | 0                        |
+|                           | directories  to :envvar:`PATH` and   |                          |
+|                           | add ``.PY`` to :envvar:`PATHEXT`     |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Shortcuts                 | Create shortcuts for the interpreter,| 1                        |
 |                           | documentation and IDLE if installed. |                          |
@@ -338,6 +342,11 @@ Because of restrictions on Microsoft Store apps, Python scripts may not have
 full write access to shared locations such as ``TEMP`` and the registry.
 Instead, it will write to a private copy. If your scripts must modify the
 shared locations, you will need to install the full installer.
+
+For more detail on the technical basis for these limitations, please consult
+Microsoft's documentation on packaged full-trust apps, currently available at
+`docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes
+<https://docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes>`_
 
 
 .. _windows-nuget:
@@ -614,21 +623,14 @@ Page).  Python uses it for the default encoding of text files (e.g.
 This may cause issues because UTF-8 is widely used on the internet
 and most Unix systems, including WSL (Windows Subsystem for Linux).
 
-You can use UTF-8 mode to change the default text encoding to UTF-8.
-You can enable UTF-8 mode via the ``-X utf8`` command line option, or
-the ``PYTHONUTF8=1`` environment variable.  See :envvar:`PYTHONUTF8` for
-enabling UTF-8 mode, and :ref:`setting-envvars` for how to modify
-environment variables.
+You can use the :ref:`Python UTF-8 Mode <utf8-mode>` to change the default text
+encoding to UTF-8. You can enable the :ref:`Python UTF-8 Mode <utf8-mode>` via
+the ``-X utf8`` command line option, or the ``PYTHONUTF8=1`` environment
+variable.  See :envvar:`PYTHONUTF8` for enabling UTF-8 mode, and
+:ref:`setting-envvars` for how to modify environment variables.
 
-When UTF-8 mode is enabled:
-
-* :func:`locale.getpreferredencoding` returns ``'UTF-8'`` instead of
-  the system encoding.  This function is used for the default text
-  encoding in many places, including :func:`open`, :class:`Popen`,
-  :meth:`Path.read_text`, etc.
-* :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr`
-  all use UTF-8 as their text encoding.
-* You can still use the system encoding via the "mbcs" codec.
+When the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled, you can still use the
+system encoding (the ANSI Code Page) via the "mbcs" codec.
 
 Note that adding ``PYTHONUTF8=1`` to the default environment variables
 will affect all Python 3.7+ applications on your system.
@@ -641,7 +643,8 @@ temporarily or use the ``-X utf8`` command line option.
    on Windows for:
 
    * Console I/O including standard I/O (see :pep:`528` for details).
-   * The filesystem encoding (see :pep:`529` for details).
+   * The :term:`filesystem encoding <filesystem encoding and error handler>`
+     (see :pep:`529` for details).
 
 
 .. _launcher:
@@ -710,6 +713,12 @@ If you see the following error, you do not have the launcher installed:
 
 Per-user installations of Python do not add the launcher to :envvar:`PATH`
 unless the option was selected on installation.
+
+::
+
+  py --list
+
+You should see the currently installed versions of Python.
 
 Virtual environments
 ^^^^^^^^^^^^^^^^^^^^
@@ -813,6 +822,13 @@ minor version. I.e. ``/usr/bin/python2.7-32`` will request usage of the
    Beginning with python launcher 3.7 it is possible to request 64-bit version
    by the "-64" suffix. Furthermore it is possible to specify a major and
    architecture without minor (i.e. ``/usr/bin/python3-64``).
+
+.. versionchanged:: 3.11
+
+   The "-64" suffix is deprecated, and now implies "any architecture that is
+   not provably i386/32-bit". To request a specific environment, use the new
+   ``-V:<TAG>`` argument with the complete tag.
+
 
 The ``/usr/bin/env`` form of shebang line has one further special property.
 Before looking for installed Python interpreters, this form will search the
@@ -934,41 +950,74 @@ For example:
 Diagnostics
 -----------
 
-If an environment variable ``PYLAUNCH_DEBUG`` is set (to any value), the
+If an environment variable :envvar:`PYLAUNCHER_DEBUG` is set (to any value), the
 launcher will print diagnostic information to stderr (i.e. to the console).
 While this information manages to be simultaneously verbose *and* terse, it
 should allow you to see what versions of Python were located, why a
 particular version was chosen and the exact command-line used to execute the
-target Python.
+target Python. It is primarily intended for testing and debugging.
+
+Dry Run
+-------
+
+If an environment variable :envvar:`PYLAUNCHER_DRYRUN` is set (to any value),
+the launcher will output the command it would have run, but will not actually
+launch Python. This may be useful for tools that want to use the launcher to
+detect and then launch Python directly. Note that the command written to
+standard output is always encoded using UTF-8, and may not render correctly in
+the console.
+
+Install on demand
+-----------------
+
+If an environment variable :envvar:`PYLAUNCHER_ALLOW_INSTALL` is set (to any
+value), and the requested Python version is not installed but is available on
+the Microsoft Store, the launcher will attempt to install it. This may require
+user interaction to complete, and you may need to run the command again.
+
+An additional :envvar:`PYLAUNCHER_ALWAYS_INSTALL` variable causes the launcher
+to always try to install Python, even if it is detected. This is mainly intended
+for testing (and should be used with :envvar:`PYLAUNCHER_DRYRUN`).
+
+Return codes
+------------
+
+The following exit codes may be returned by the Python launcher. Unfortunately,
+there is no way to distinguish these from the exit code of Python itself.
+
+The names of codes are as used in the sources, and are only for reference. There
+is no way to access or resolve them apart from reading this page. Entries are
+listed in alphabetical order of names.
+
++-------------------+-------+-----------------------------------------------+
+| Name              | Value | Description                                   |
++===================+=======+===============================================+
+| RC_BAD_VENV_CFG   | 107   | A :file:`pyvenv.cfg` was found but is corrupt.|
++-------------------+-------+-----------------------------------------------+
+| RC_CREATE_PROCESS | 101   | Failed to launch Python.                      |
++-------------------+-------+-----------------------------------------------+
+| RC_INSTALLING     | 111   | An install was started, but the command will  |
+|                   |       | need to be re-run after it completes.         |
++-------------------+-------+-----------------------------------------------+
+| RC_INTERNAL_ERROR | 109   | Unexpected error. Please report a bug.        |
++-------------------+-------+-----------------------------------------------+
+| RC_NO_COMMANDLINE | 108   | Unable to obtain command line from the        |
+|                   |       | operating system.                             |
++-------------------+-------+-----------------------------------------------+
+| RC_NO_PYTHON      | 103   | Unable to locate the requested version.       |
++-------------------+-------+-----------------------------------------------+
+| RC_NO_VENV_CFG    | 106   | A :file:`pyvenv.cfg` was required but not     |
+|                   |       | found.                                        |
++-------------------+-------+-----------------------------------------------+
 
 
-
-.. _finding_modules:
+.. _windows_finding_modules:
 
 Finding modules
 ===============
 
-Python usually stores its library (and thereby your site-packages folder) in the
-installation directory.  So, if you had installed Python to
-:file:`C:\\Python\\`, the default library would reside in
-:file:`C:\\Python\\Lib\\` and third-party modules should be stored in
-:file:`C:\\Python\\Lib\\site-packages\\`.
-
-To completely override :data:`sys.path`, create a ``._pth`` file with the same
-name as the DLL (``python37._pth``) or the executable (``python._pth``) and
-specify one line for each path to add to :data:`sys.path`. The file based on the
-DLL name overrides the one based on the executable, which allows paths to be
-restricted for any program loading the runtime if desired.
-
-When the file exists, all registry and environment variables are ignored,
-isolated mode is enabled, and :mod:`site` is not imported unless one line in the
-file specifies ``import site``. Blank paths and lines starting with ``#`` are
-ignored. Each path may be absolute or relative to the location of the file.
-Import statements other than to ``site`` are not permitted, and arbitrary code
-cannot be specified.
-
-Note that ``.pth`` files (without leading underscore) will be processed normally
-by the :mod:`site` module when ``import site`` has been specified.
+These notes supplement the description at :ref:`sys-path-init` with
+detailed Windows notes.
 
 When no ``._pth`` file is found, this is how :data:`sys.path` is populated on
 Windows:
@@ -1107,7 +1156,7 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 cx_Freeze
 ---------
 
-`cx_Freeze <https://anthony-tuininga.github.io/cx_Freeze/>`_ is a :mod:`distutils`
+`cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ is a :mod:`distutils`
 extension (see :ref:`extending-distutils`) which wraps Python scripts into
 executable Windows programs (:file:`{*}.exe` files).  When you have done this,
 you can distribute your application without requiring your users to install
@@ -1149,8 +1198,6 @@ For extension modules, consult :ref:`building-on-windows`.
       or "Creating Python extensions in C/C++ with SWIG and compiling them with
       MinGW gcc under Windows" or "Installing Python extension with distutils
       and without Microsoft Visual C++" by Sébastien Sauvage, 2003
-
-   `MingW -- Python extensions <http://www.mingw.org/wiki/FAQ#toc14>`_
 
 
 Other Platforms

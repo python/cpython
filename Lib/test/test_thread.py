@@ -9,6 +9,8 @@ import weakref
 
 from test import lock_tests
 
+threading_helper.requires_working_threading(module=True)
+
 NUMTASKS = 10
 NUMTRIPS = 3
 POLL_SLEEP = 0.010 # seconds = 10 ms
@@ -132,6 +134,7 @@ class ThreadRunningTests(BasicThreadTest):
             del task
             while not done:
                 time.sleep(POLL_SLEEP)
+                support.gc_collect()  # For PyPy or other GCs.
             self.assertEqual(thread._count(), orig)
 
     def test_unraisable_exception(self):
@@ -223,7 +226,7 @@ class TestForkInThread(unittest.TestCase):
     def setUp(self):
         self.read_fd, self.write_fd = os.pipe()
 
-    @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork')
+    @support.requires_fork()
     @threading_helper.reap_threads
     def test_forkinthread(self):
         pid = None

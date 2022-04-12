@@ -158,7 +158,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             # end then it may fail with ERROR_NETNAME_DELETED if we
             # just close our end.  First calling shutdown() seems to
             # cure it, but maybe using DisconnectEx() would be better.
-            if hasattr(self._sock, 'shutdown'):
+            if hasattr(self._sock, 'shutdown') and self._sock.fileno() != -1:
                 self._sock.shutdown(socket.SHUT_RDWR)
             self._sock.close()
             self._sock = None
@@ -221,7 +221,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         length = self._pending_data_length
         self._pending_data_length = -1
         if length > -1:
-            # Call the protocol methode after calling _loop_reading(),
+            # Call the protocol method after calling _loop_reading(),
             # since the protocol can decide to pause reading again.
             self._loop.call_soon(self._data_received, self._data[:length], length)
 
@@ -452,7 +452,8 @@ class _ProactorWritePipeTransport(_ProactorBaseWritePipeTransport):
             self.close()
 
 
-class _ProactorDatagramTransport(_ProactorBasePipeTransport):
+class _ProactorDatagramTransport(_ProactorBasePipeTransport,
+                                 transports.DatagramTransport):
     max_size = 256 * 1024
     def __init__(self, loop, sock, protocol, address=None,
                  waiter=None, extra=None):
@@ -642,11 +643,13 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             self, rawsock, protocol, sslcontext, waiter=None,
             *, server_side=False, server_hostname=None,
             extra=None, server=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None):
         ssl_protocol = sslproto.SSLProtocol(
                 self, protocol, sslcontext, waiter,
                 server_side, server_hostname,
-                ssl_handshake_timeout=ssl_handshake_timeout)
+                ssl_handshake_timeout=ssl_handshake_timeout,
+                ssl_shutdown_timeout=ssl_shutdown_timeout)
         _ProactorSocketTransport(self, rawsock, ssl_protocol,
                                  extra=extra, server=server)
         return ssl_protocol._app_transport
@@ -697,8 +700,20 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     async def sock_recv_into(self, sock, buf):
         return await self._proactor.recv_into(sock, buf)
 
+    async def sock_recvfrom(self, sock, bufsize):
+        return await self._proactor.recvfrom(sock, bufsize)
+
+    async def sock_recvfrom_into(self, sock, buf, nbytes=0):
+        if not nbytes:
+            nbytes = len(buf)
+
+        return await self._proactor.recvfrom_into(sock, buf, nbytes)
+
     async def sock_sendall(self, sock, data):
         return await self._proactor.send(sock, data)
+
+    async def sock_sendto(self, sock, data, address):
+        return await self._proactor.sendto(sock, data, 0, address)
 
     async def sock_connect(self, sock, address):
         return await self._proactor.connect(sock, address)
@@ -768,6 +783,14 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         try:
             if f is not None:
                 f.result()  # may raise
+            if self._self_reading_future is not f:
+                # When we scheduled this Future, we assigned it to
+                # _self_reading_future. If it's not there now, something has
+                # tried to cancel the loop while this callback was still in the
+                # queue (see windows_events.ProactorEventLoop.run_forever). In
+                # that case stop here instead of continuing to schedule a new
+                # iteration.
+                return
             f = self._proactor.recv(self._ssock, 4096)
         except exceptions.CancelledError:
             # _close_self_pipe() has been called, stop waiting for data
@@ -785,8 +808,17 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             f.add_done_callback(self._loop_self_reading)
 
     def _write_to_self(self):
+        # This may be called from a different thread, possibly after
+        # _close_self_pipe() has been called or even while it is
+        # running.  Guard for self._csock being None or closed.  When
+        # a socket is closed, send() raises OSError (with errno set to
+        # EBADF, but let's not rely on the exact error code).
+        csock = self._csock
+        if csock is None:
+            return
+
         try:
-            self._csock.send(b'\0')
+            csock.send(b'\0')
         except OSError:
             if self._debug:
                 logger.debug("Fail to write a null byte into the "
@@ -795,7 +827,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,
-                       ssl_handshake_timeout=None):
+                       ssl_handshake_timeout=None,
+                       ssl_shutdown_timeout=None):
 
         def loop(f=None):
             try:
@@ -809,7 +842,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                         self._make_ssl_transport(
                             conn, protocol, sslcontext, server_side=True,
                             extra={'peername': addr}, server=server,
-                            ssl_handshake_timeout=ssl_handshake_timeout)
+                            ssl_handshake_timeout=ssl_handshake_timeout,
+                            ssl_shutdown_timeout=ssl_shutdown_timeout)
                     else:
                         self._make_socket_transport(
                             conn, protocol,

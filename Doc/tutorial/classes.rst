@@ -797,7 +797,7 @@ using the :func:`next` built-in function; this example shows how it all works::
    >>> s = 'abc'
    >>> it = iter(s)
    >>> it
-   <iterator object at 0x00A1DB50>
+   <str_iterator object at 0x10c90e650>
    >>> next(it)
    'a'
    >>> next(it)
@@ -849,7 +849,7 @@ defines :meth:`__next__`, then :meth:`__iter__` can just return ``self``::
 Generators
 ==========
 
-:term:`Generator`\s are a simple and powerful tool for creating iterators.  They
+:term:`Generators <generator>` are a simple and powerful tool for creating iterators.  They
 are written like regular functions but use the :keyword:`yield` statement
 whenever they want to return data.  Each time :func:`next` is called on it, the
 generator resumes where it left off (it remembers all the data values and which

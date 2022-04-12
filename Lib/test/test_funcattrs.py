@@ -1,3 +1,4 @@
+import textwrap
 import types
 import unittest
 
@@ -72,6 +73,37 @@ class FunctionPropertiesTest(FuncAttrsTest):
         self.assertIs(self.b.__globals__, globals())
         self.cannot_set_attr(self.b, '__globals__', 2,
                              (AttributeError, TypeError))
+
+    def test___builtins__(self):
+        self.assertIs(self.b.__builtins__, __builtins__)
+        self.cannot_set_attr(self.b, '__builtins__', 2,
+                             (AttributeError, TypeError))
+
+        # bpo-42990: If globals is specified and has no "__builtins__" key,
+        # a function inherits the current builtins namespace.
+        def func(s): return len(s)
+        ns = {}
+        func2 = type(func)(func.__code__, ns)
+        self.assertIs(func2.__globals__, ns)
+        self.assertIs(func2.__builtins__, __builtins__)
+
+        # Make sure that the function actually works.
+        self.assertEqual(func2("abc"), 3)
+        self.assertEqual(ns, {})
+
+        # Define functions using exec() with different builtins,
+        # and test inheritance when globals has no "__builtins__" key
+        code = textwrap.dedent("""
+            def func3(s): pass
+            func4 = type(func3)(func3.__code__, {})
+        """)
+        safe_builtins = {'None': None}
+        ns = {'type': type, '__builtins__': safe_builtins}
+        exec(code, ns)
+        self.assertIs(ns['func3'].__builtins__, safe_builtins)
+        self.assertIs(ns['func4'].__builtins__, safe_builtins)
+        self.assertIs(ns['func3'].__globals__['__builtins__'], safe_builtins)
+        self.assertNotIn('__builtins__', ns['func4'].__globals__)
 
     def test___closure__(self):
         a = 12

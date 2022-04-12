@@ -25,9 +25,12 @@
  * SUCH DAMAGE.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include <Python.h>
-#include "longintrepr.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "complexobject.h"
 #include "mpdecimal.h"
 
@@ -696,8 +699,7 @@ static PyTypeObject PyDecSignalDictMixin_Type =
     PyObject_GenericGetAttr,                  /* tp_getattro */
     (setattrofunc) 0,                         /* tp_setattro */
     (PyBufferProcs *) 0,                      /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE|
-    Py_TPFLAGS_HAVE_GC,                       /* tp_flags */
+    Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE,   /* tp_flags */
     0,                                        /* tp_doc */
     0,                                        /* tp_traverse */
     0,                                        /* tp_clear */
@@ -1512,18 +1514,20 @@ static PyGetSetDef context_getsets [] =
 static PyObject *
 current_context_from_dict(void)
 {
-    PyObject *dict;
-    PyObject *tl_context;
-    PyThreadState *tstate;
+    PyThreadState *tstate = _PyThreadState_GET();
+#ifdef Py_DEBUG
+    // The caller must hold the GIL
+    _Py_EnsureTstateNotNULL(tstate);
+#endif
 
-    dict = PyThreadState_GetDict();
+    PyObject *dict = _PyThreadState_GetDict(tstate);
     if (dict == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
             "cannot get thread state");
         return NULL;
     }
 
-    tl_context = PyDict_GetItemWithError(dict, tls_context_key);
+    PyObject *tl_context = PyDict_GetItemWithError(dict, tls_context_key);
     if (tl_context != NULL) {
         /* We already have a thread local context. */
         CONTEXT_CHECK(tl_context);
@@ -1549,11 +1553,8 @@ current_context_from_dict(void)
 
     /* Cache the context of the current thread, assuming that it
      * will be accessed several times before a thread switch. */
-    tstate = PyThreadState_GET();
-    if (tstate) {
-        cached_context = (PyDecContextObject *)tl_context;
-        cached_context->tstate = tstate;
-    }
+    cached_context = (PyDecContextObject *)tl_context;
+    cached_context->tstate = tstate;
 
     /* Borrowed reference with refcount==1 */
     return tl_context;
@@ -1563,9 +1564,7 @@ current_context_from_dict(void)
 static PyObject *
 current_context(void)
 {
-    PyThreadState *tstate;
-
-    tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (cached_context && cached_context->tstate == tstate) {
         return (PyObject *)cached_context;
     }
@@ -1763,7 +1762,7 @@ ctxmanager_dealloc(PyDecContextManagerObject *self)
 {
     Py_XDECREF(self->local);
     Py_XDECREF(self->global);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 static PyObject *
@@ -3184,6 +3183,81 @@ dotsep_as_utf8(const char *s)
     return utf8;
 }
 
+/* copy of libmpdec _mpd_round() */
+static void
+_mpd_round(mpd_t *result, const mpd_t *a, mpd_ssize_t prec,
+           const mpd_context_t *ctx, uint32_t *status)
+{
+    mpd_ssize_t exp = a->exp + a->digits - prec;
+
+    if (prec <= 0) {
+        mpd_seterror(result, MPD_Invalid_operation, status);
+        return;
+    }
+    if (mpd_isspecial(a) || mpd_iszero(a)) {
+        mpd_qcopy(result, a, status);
+        return;
+    }
+
+    mpd_qrescale_fmt(result, a, exp, ctx, status);
+    if (result->digits > prec) {
+        mpd_qrescale_fmt(result, result, exp+1, ctx, status);
+    }
+}
+
+/* Locate negative zero "z" option within a UTF-8 format spec string.
+ * Returns pointer to "z", else NULL.
+ * The portion of the spec we're working with is [[fill]align][sign][z] */
+static const char *
+format_spec_z_search(char const *fmt, Py_ssize_t size) {
+    char const *pos = fmt;
+    char const *fmt_end = fmt + size;
+    /* skip over [[fill]align] (fill may be multi-byte character) */
+    pos += 1;
+    while (pos < fmt_end && *pos & 0x80) {
+        pos += 1;
+    }
+    if (pos < fmt_end && strchr("<>=^", *pos) != NULL) {
+        pos += 1;
+    } else {
+        /* fill not present-- skip over [align] */
+        pos = fmt;
+        if (pos < fmt_end && strchr("<>=^", *pos) != NULL) {
+            pos += 1;
+        }
+    }
+    /* skip over [sign] */
+    if (pos < fmt_end && strchr("+- ", *pos) != NULL) {
+        pos += 1;
+    }
+    return pos < fmt_end && *pos == 'z' ? pos : NULL;
+}
+
+static int
+dict_get_item_string(PyObject *dict, const char *key, PyObject **valueobj, const char **valuestr)
+{
+    *valueobj = NULL;
+    PyObject *keyobj = PyUnicode_FromString(key);
+    if (keyobj == NULL) {
+        return -1;
+    }
+    PyObject *value = PyDict_GetItemWithError(dict, keyobj);
+    Py_DECREF(keyobj);
+    if (value == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+    value = PyUnicode_AsUTF8String(value);
+    if (value == NULL) {
+        return -1;
+    }
+    *valueobj = value;
+    *valuestr = PyBytes_AS_STRING(value);
+    return 0;
+}
+
 /* Formatted representation of a PyDecObject. */
 static PyObject *
 dec_format(PyObject *dec, PyObject *args)
@@ -3196,11 +3270,16 @@ dec_format(PyObject *dec, PyObject *args)
     PyObject *fmtarg;
     PyObject *context;
     mpd_spec_t spec;
-    char *fmt;
+    char const *fmt;
+    char *fmt_copy = NULL;
     char *decstring = NULL;
     uint32_t status = 0;
     int replace_fillchar = 0;
+    int no_neg_0 = 0;
     Py_ssize_t size;
+    mpd_t *mpd = MPD(dec);
+    mpd_uint_t dt[MPD_MINALLOC_MAX];
+    mpd_t tmp = {MPD_STATIC|MPD_STATIC_DATA,0,0,0,MPD_MINALLOC_MAX,dt};
 
 
     CURRENT_CONTEXT(context);
@@ -3209,19 +3288,39 @@ dec_format(PyObject *dec, PyObject *args)
     }
 
     if (PyUnicode_Check(fmtarg)) {
-        fmt = (char *)PyUnicode_AsUTF8AndSize(fmtarg, &size);
+        fmt = PyUnicode_AsUTF8AndSize(fmtarg, &size);
         if (fmt == NULL) {
             return NULL;
         }
+        /* NOTE: If https://github.com/python/cpython/pull/29438 lands, the
+         *   format string manipulation below can be eliminated by enhancing
+         *   the forked mpd_parse_fmt_str(). */
         if (size > 0 && fmt[0] == '\0') {
             /* NUL fill character: must be replaced with a valid UTF-8 char
                before calling mpd_parse_fmt_str(). */
             replace_fillchar = 1;
-            fmt = dec_strdup(fmt, size);
-            if (fmt == NULL) {
+            fmt = fmt_copy = dec_strdup(fmt, size);
+            if (fmt_copy == NULL) {
                 return NULL;
             }
-            fmt[0] = '_';
+            fmt_copy[0] = '_';
+        }
+        /* Strip 'z' option, which isn't understood by mpd_parse_fmt_str().
+         * NOTE: fmt is always null terminated by PyUnicode_AsUTF8AndSize() */
+        char const *z_position = format_spec_z_search(fmt, size);
+        if (z_position != NULL) {
+            no_neg_0 = 1;
+            size_t z_index = z_position - fmt;
+            if (fmt_copy == NULL) {
+                fmt = fmt_copy = dec_strdup(fmt, size);
+                if (fmt_copy == NULL) {
+                    return NULL;
+                }
+            }
+            /* Shift characters (including null terminator) left,
+               overwriting the 'z' option. */
+            memmove(fmt_copy + z_index, fmt_copy + z_index + 1, size - z_index);
+            size -= 1;
         }
     }
     else {
@@ -3254,23 +3353,11 @@ dec_format(PyObject *dec, PyObject *args)
                 "optional argument must be a dict");
             goto finish;
         }
-        if ((dot = PyDict_GetItemString(override, "decimal_point"))) {
-            if ((dot = PyUnicode_AsUTF8String(dot)) == NULL) {
-                goto finish;
-            }
-            spec.dot = PyBytes_AS_STRING(dot);
-        }
-        if ((sep = PyDict_GetItemString(override, "thousands_sep"))) {
-            if ((sep = PyUnicode_AsUTF8String(sep)) == NULL) {
-                goto finish;
-            }
-            spec.sep = PyBytes_AS_STRING(sep);
-        }
-        if ((grouping = PyDict_GetItemString(override, "grouping"))) {
-            if ((grouping = PyUnicode_AsUTF8String(grouping)) == NULL) {
-                goto finish;
-            }
-            spec.grouping = PyBytes_AS_STRING(grouping);
+        if (dict_get_item_string(override, "decimal_point", &dot, &spec.dot) ||
+            dict_get_item_string(override, "thousands_sep", &sep, &spec.sep) ||
+            dict_get_item_string(override, "grouping", &grouping, &spec.grouping))
+        {
+            goto finish;
         }
         if (mpd_validate_lconv(&spec) < 0) {
             PyErr_SetString(PyExc_ValueError,
@@ -3280,7 +3367,7 @@ dec_format(PyObject *dec, PyObject *args)
     }
     else {
         size_t n = strlen(spec.dot);
-        if (n > 1 || (n == 1 && !isascii((uchar)spec.dot[0]))) {
+        if (n > 1 || (n == 1 && !isascii((unsigned char)spec.dot[0]))) {
             /* fix locale dependent non-ascii characters */
             dot = dotsep_as_utf8(spec.dot);
             if (dot == NULL) {
@@ -3289,7 +3376,7 @@ dec_format(PyObject *dec, PyObject *args)
             spec.dot = PyBytes_AS_STRING(dot);
         }
         n = strlen(spec.sep);
-        if (n > 1 || (n == 1 && !isascii((uchar)spec.sep[0]))) {
+        if (n > 1 || (n == 1 && !isascii((unsigned char)spec.sep[0]))) {
             /* fix locale dependent non-ascii characters */
             sep = dotsep_as_utf8(spec.sep);
             if (sep == NULL) {
@@ -3299,8 +3386,45 @@ dec_format(PyObject *dec, PyObject *args)
         }
     }
 
+    if (no_neg_0 && mpd_isnegative(mpd) && !mpd_isspecial(mpd)) {
+        /* Round into a temporary (carefully mirroring the rounding
+           of mpd_qformat_spec()), and check if the result is negative zero.
+           If so, clear the sign and format the resulting positive zero. */
+        mpd_ssize_t prec;
+        mpd_qcopy(&tmp, mpd, &status);
+        if (spec.prec >= 0) {
+            switch (spec.type) {
+              case 'f':
+                  mpd_qrescale(&tmp, &tmp, -spec.prec, CTX(context), &status);
+                  break;
+              case '%':
+                  tmp.exp += 2;
+                  mpd_qrescale(&tmp, &tmp, -spec.prec, CTX(context), &status);
+                  break;
+              case 'g':
+                  prec = (spec.prec == 0) ? 1 : spec.prec;
+                  if (tmp.digits > prec) {
+                      _mpd_round(&tmp, &tmp, prec, CTX(context), &status);
+                  }
+                  break;
+              case 'e':
+                  if (!mpd_iszero(&tmp)) {
+                      _mpd_round(&tmp, &tmp, spec.prec+1, CTX(context), &status);
+                  }
+                  break;
+            }
+        }
+        if (status & MPD_Errors) {
+            PyErr_SetString(PyExc_ValueError, "unexpected error when rounding");
+            goto finish;
+        }
+        if (mpd_iszero(&tmp)) {
+            mpd_set_positive(&tmp);
+            mpd = &tmp;
+        }
+    }
 
-    decstring = mpd_qformat_spec(MPD(dec), &spec, CTX(context), &status);
+    decstring = mpd_qformat_spec(mpd, &spec, CTX(context), &status);
     if (decstring == NULL) {
         if (status & MPD_Malloc_error) {
             PyErr_NoMemory();
@@ -3323,7 +3447,7 @@ finish:
     Py_XDECREF(grouping);
     Py_XDECREF(sep);
     Py_XDECREF(dot);
-    if (replace_fillchar) PyMem_Free(fmt);
+    if (fmt_copy) PyMem_Free(fmt_copy);
     if (decstring) mpd_free(decstring);
     return result;
 }
@@ -3380,6 +3504,13 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
         PyErr_NoMemory();
         mpd_del(x);
         return NULL;
+    }
+
+    if (n == 1) {
+        sdigit val = mpd_arith_sign(x) * ob_digit[0];
+        mpd_free(ob_digit);
+        mpd_del(x);
+        return PyLong_FromLong(val);
     }
 
     assert(n > 0);
@@ -4523,7 +4654,6 @@ _dec_hash(PyDecObject *v)
     #error "No valid combination of CONFIG_64, CONFIG_32 and _PyHASH_BITS"
 #endif
     const Py_hash_t py_hash_inf = 314159;
-    const Py_hash_t py_hash_nan = 0;
     mpd_uint_t ten_data[1] = {10};
     mpd_t ten = {MPD_POS|MPD_STATIC|MPD_CONST_DATA,
                  0, 2, 1, 1, ten_data};
@@ -4542,7 +4672,7 @@ _dec_hash(PyDecObject *v)
             return -1;
         }
         else if (mpd_isnan(MPD(v))) {
-            return py_hash_nan;
+            return _Py_HashPointer(v);
         }
         else {
             return py_hash_inf * mpd_arith_sign(MPD(v));
@@ -5926,5 +6056,3 @@ error:
 
     return NULL; /* GCOV_NOT_REACHED */
 }
-
-

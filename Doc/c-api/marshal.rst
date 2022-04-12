@@ -43,7 +43,7 @@ The following functions allow marshalled values to be read back in.
 
 .. c:function:: long PyMarshal_ReadLongFromFile(FILE *file)
 
-   Return a C :c:type:`long` from the data stream in a :c:type:`FILE\*` opened
+   Return a C :c:type:`long` from the data stream in a :c:type:`FILE*` opened
    for reading.  Only a 32-bit value can be read in using this function,
    regardless of the native size of :c:type:`long`.
 
@@ -53,7 +53,7 @@ The following functions allow marshalled values to be read back in.
 
 .. c:function:: int PyMarshal_ReadShortFromFile(FILE *file)
 
-   Return a C :c:type:`short` from the data stream in a :c:type:`FILE\*` opened
+   Return a C :c:type:`short` from the data stream in a :c:type:`FILE*` opened
    for reading.  Only a 16-bit value can be read in using this function,
    regardless of the native size of :c:type:`short`.
 
@@ -63,7 +63,7 @@ The following functions allow marshalled values to be read back in.
 
 .. c:function:: PyObject* PyMarshal_ReadObjectFromFile(FILE *file)
 
-   Return a Python object from the data stream in a :c:type:`FILE\*` opened for
+   Return a Python object from the data stream in a :c:type:`FILE*` opened for
    reading.
 
    On error, sets the appropriate exception (:exc:`EOFError`, :exc:`ValueError`
@@ -72,7 +72,7 @@ The following functions allow marshalled values to be read back in.
 
 .. c:function:: PyObject* PyMarshal_ReadLastObjectFromFile(FILE *file)
 
-   Return a Python object from the data stream in a :c:type:`FILE\*` opened for
+   Return a Python object from the data stream in a :c:type:`FILE*` opened for
    reading.  Unlike :c:func:`PyMarshal_ReadObjectFromFile`, this function
    assumes that no further objects will be read from the file, allowing it to
    aggressively load file data into memory so that the de-serialization can

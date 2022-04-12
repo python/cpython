@@ -61,15 +61,15 @@ class ModuleBrowserTest(unittest.TestCase):
 # Nested tree same as in test_pyclbr.py except for supers on C0. C1.
 mb = pyclbr
 module, fname = 'test', 'test.py'
-C0 = mb.Class(module, 'C0', ['base'], fname, 1)
-F1 = mb._nest_function(C0, 'F1', 3)
-C1 = mb._nest_class(C0, 'C1', 6, [''])
-C2 = mb._nest_class(C1, 'C2', 7)
-F3 = mb._nest_function(C2, 'F3', 9)
-f0 = mb.Function(module, 'f0', fname, 11)
-f1 = mb._nest_function(f0, 'f1', 12)
-f2 = mb._nest_function(f1, 'f2', 13)
-c1 = mb._nest_class(f0, 'c1', 15)
+C0 = mb.Class(module, 'C0', ['base'], fname, 1, end_lineno=9)
+F1 = mb._nest_function(C0, 'F1', 3, 5)
+C1 = mb._nest_class(C0, 'C1', 6, 9, [''])
+C2 = mb._nest_class(C1, 'C2', 7, 9)
+F3 = mb._nest_function(C2, 'F3', 9, 9)
+f0 = mb.Function(module, 'f0', fname, 11, end_lineno=15)
+f1 = mb._nest_function(f0, 'f1', 12, 14)
+f2 = mb._nest_function(f1, 'f2', 13, 13)
+c1 = mb._nest_class(f0, 'c1', 15, 15)
 mock_pyclbr_tree = {'C0': C0, 'f0': f0}
 
 # Adjust C0.name, C1.name so tests do not depend on order.

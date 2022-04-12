@@ -11,10 +11,10 @@
  */
 
 #include "Python.h"
-#include "pycore_abstract.h"   // _PyIndex_Check()
-#include "pycore_object.h"
-#include "pystrhex.h"
-#include <stddef.h>
+#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_strhex.h"        // _Py_strhex_with_sep()
+#include <stddef.h>               // offsetof()
 
 /*[clinic input]
 class memoryview "PyMemoryViewObject *" "&PyMemoryView_Type"
@@ -65,14 +65,6 @@ class memoryview "PyMemoryViewObject *" "&PyMemoryView_Type"
      PyBuffer_Release() decrements view.obj (if non-NULL), so the
      releasebufferprocs must NOT decrement view.obj.
 */
-
-
-#define CHECK_MBUF_RELEASED(mbuf) \
-    if (((_PyManagedBufferObject *)mbuf)->flags&_Py_MANAGED_BUFFER_RELEASED) { \
-        PyErr_SetString(PyExc_ValueError,                                      \
-            "operation forbidden on released memoryview object");              \
-        return NULL;                                                           \
-    }
 
 
 static inline _PyManagedBufferObject *
@@ -389,7 +381,7 @@ copy_rec(const Py_ssize_t *shape, Py_ssize_t ndim, Py_ssize_t itemsize,
 
 /* Faster copying of one-dimensional arrays. */
 static int
-copy_single(Py_buffer *dest, Py_buffer *src)
+copy_single(const Py_buffer *dest, const Py_buffer *src)
 {
     char *mem = NULL;
 
@@ -421,7 +413,7 @@ copy_single(Py_buffer *dest, Py_buffer *src)
    structure. Copying is atomic, the function never fails with a partial
    copy. */
 static int
-copy_buffer(Py_buffer *dest, Py_buffer *src)
+copy_buffer(const Py_buffer *dest, const Py_buffer *src)
 {
     char *mem = NULL;
 
@@ -479,7 +471,7 @@ init_fortran_strides_from_shape(Py_buffer *view)
    or 'A' (Any). Assumptions: src has PyBUF_FULL information, src->ndim >= 1,
    len(mem) == src->len. */
 static int
-buffer_to_contiguous(char *mem, Py_buffer *src, char order)
+buffer_to_contiguous(char *mem, const Py_buffer *src, char order)
 {
     Py_buffer dest;
     Py_ssize_t *strides;
@@ -755,7 +747,7 @@ PyMemoryView_FromMemory(char *mem, Py_ssize_t size, int flags)
    without full information. Because of this fact init_shape_strides()
    must be able to reconstruct missing values.  */
 PyObject *
-PyMemoryView_FromBuffer(Py_buffer *info)
+PyMemoryView_FromBuffer(const Py_buffer *info)
 {
     _PyManagedBufferObject *mbuf;
     PyObject *mv;
@@ -840,7 +832,7 @@ mbuf_copy_format(_PyManagedBufferObject *mbuf, const char *fmt)
         passes the altered format pointer to PyBuffer_Release().
 */
 static PyObject *
-memory_from_contiguous_copy(Py_buffer *src, char order)
+memory_from_contiguous_copy(const Py_buffer *src, char order)
 {
     _PyManagedBufferObject *mbuf;
     PyMemoryViewObject *mv;
@@ -982,7 +974,7 @@ typedef struct {
 } Py_buffer_full;
 
 int
-PyBuffer_ToContiguous(void *buf, Py_buffer *src, Py_ssize_t len, char order)
+PyBuffer_ToContiguous(void *buf, const Py_buffer *src, Py_ssize_t len, char order)
 {
     Py_buffer_full *fb = NULL;
     int ret;
@@ -2271,7 +2263,7 @@ memory_repr(PyMemoryViewObject *self)
 /**************************************************************************/
 
 static char *
-lookup_dimension(Py_buffer *view, char *ptr, int dim, Py_ssize_t index)
+lookup_dimension(const Py_buffer *view, char *ptr, int dim, Py_ssize_t index)
 {
     Py_ssize_t nitems; /* items in the given dimension */
 
@@ -2297,7 +2289,7 @@ lookup_dimension(Py_buffer *view, char *ptr, int dim, Py_ssize_t index)
 
 /* Get the pointer to the item at index. */
 static char *
-ptr_from_index(Py_buffer *view, Py_ssize_t index)
+ptr_from_index(const Py_buffer *view, Py_ssize_t index)
 {
     char *ptr = (char *)view->buf;
     return lookup_dimension(view, ptr, 0, index);
@@ -2305,7 +2297,7 @@ ptr_from_index(Py_buffer *view, Py_ssize_t index)
 
 /* Get the pointer to the item at tuple. */
 static char *
-ptr_from_tuple(Py_buffer *view, PyObject *tup)
+ptr_from_tuple(const Py_buffer *view, PyObject *tup)
 {
     char *ptr = (char *)view->buf;
     Py_ssize_t dim, nindices = PyTuple_GET_SIZE(tup);
@@ -3160,6 +3152,112 @@ static PyMethodDef memory_methods[] = {
     {NULL,          NULL}
 };
 
+/**************************************************************************/
+/*                          Memoryview Iterator                           */
+/**************************************************************************/
+
+static PyTypeObject PyMemoryIter_Type;
+
+typedef struct {
+    PyObject_HEAD
+    Py_ssize_t it_index;
+    PyMemoryViewObject *it_seq; // Set to NULL when iterator is exhausted
+    Py_ssize_t it_length;
+    const char *it_fmt;
+} memoryiterobject;
+
+static void
+memoryiter_dealloc(memoryiterobject *it)
+{
+    _PyObject_GC_UNTRACK(it);
+    Py_XDECREF(it->it_seq);
+    PyObject_GC_Del(it);
+}
+
+static int
+memoryiter_traverse(memoryiterobject *it, visitproc visit, void *arg)
+{
+    Py_VISIT(it->it_seq);
+    return 0;
+}
+
+static PyObject *
+memoryiter_next(memoryiterobject *it)
+{
+    PyMemoryViewObject *seq;
+    seq = it->it_seq;
+    if (seq == NULL) {
+        return NULL;
+    }
+
+    if (it->it_index < it->it_length) {
+        CHECK_RELEASED(seq);
+        Py_buffer *view = &(seq->view);
+        char *ptr = (char *)seq->view.buf;
+
+        ptr += view->strides[0] * it->it_index++;
+        ptr = ADJUST_PTR(ptr, view->suboffsets, 0);
+        if (ptr == NULL) {
+            return NULL;
+        }
+        return unpack_single(ptr, it->it_fmt);
+    }
+
+    it->it_seq = NULL;
+    Py_DECREF(seq);
+    return NULL;
+}
+
+static PyObject *
+memory_iter(PyObject *seq)
+{
+    if (!PyMemoryView_Check(seq)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    PyMemoryViewObject *obj = (PyMemoryViewObject *)seq;
+    int ndims = obj->view.ndim;
+    if (ndims == 0) {
+        PyErr_SetString(PyExc_TypeError, "invalid indexing of 0-dim memory");
+        return NULL;
+    }
+    if (ndims != 1) {
+        PyErr_SetString(PyExc_NotImplementedError,
+            "multi-dimensional sub-views are not implemented");
+        return NULL;
+    }
+
+    const char *fmt = adjust_fmt(&obj->view);
+    if (fmt == NULL) {
+        return NULL;
+    }
+
+    memoryiterobject *it;
+    it = PyObject_GC_New(memoryiterobject, &PyMemoryIter_Type);
+    if (it == NULL) {
+        return NULL;
+    }
+    it->it_fmt = fmt;
+    it->it_length = memory_length(obj);
+    it->it_index = 0;
+    Py_INCREF(seq);
+    it->it_seq = obj;
+    _PyObject_GC_TRACK(it);
+    return (PyObject *)it;
+}
+
+static PyTypeObject PyMemoryIter_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "memory_iterator",
+    .tp_basicsize = sizeof(memoryiterobject),
+    // methods
+    .tp_dealloc = (destructor)memoryiter_dealloc,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = (traverseproc)memoryiter_traverse,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)memoryiter_next,
+};
 
 PyTypeObject PyMemoryView_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -3181,13 +3279,14 @@ PyTypeObject PyMemoryView_Type = {
     PyObject_GenericGetAttr,                  /* tp_getattro */
     0,                                        /* tp_setattro */
     &memory_as_buffer,                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,  /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+       Py_TPFLAGS_SEQUENCE,                   /* tp_flags */
     memoryview__doc__,                        /* tp_doc */
     (traverseproc)memory_traverse,            /* tp_traverse */
     (inquiry)memory_clear,                    /* tp_clear */
     memory_richcompare,                       /* tp_richcompare */
     offsetof(PyMemoryViewObject, weakreflist),/* tp_weaklistoffset */
-    0,                                        /* tp_iter */
+    memory_iter,                              /* tp_iter */
     0,                                        /* tp_iternext */
     memory_methods,                           /* tp_methods */
     0,                                        /* tp_members */

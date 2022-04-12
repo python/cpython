@@ -1,2 +1,0 @@
-Updated Documentation to comprehensively elaborate on the behaviour of
-gather.cancel()
