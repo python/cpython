@@ -1111,9 +1111,8 @@ Blob Objects
 
 .. class:: Blob
 
-   A :class:`Blob` instance can read and write the data in a :abbr:`BLOB
-   (Binary Large OBject)`.
-   The :class:`Blob` class implements the file protocol.
+   A :class:`Blob` instance is a :term:`file-like object` that can read and write
+   data in a SQLite :abbr:`BLOB (Binary Large OBject)`.
 
    .. method:: Blob.close()
 
