@@ -858,7 +858,7 @@ Deprecated
 
 * The default argument for *_subtype* for :class:`email.mime.MIMEImage`
   has been deprecated due to the deprecation of :mod:`imghdr`. Please
-  explicitly provide a an image subtype.
+  explicitly provide an image subtype.
 
 (Contributed by Brett Cannon in :issue:`47061`.)
 
