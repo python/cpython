@@ -1112,7 +1112,7 @@ Blob Objects
 .. class:: Blob
 
    A :class:`Blob` instance is a :term:`file-like object` that can read and write
-   data in a SQLite :abbr:`BLOB (Binary Large OBject)`.
+   data in an SQLite :abbr:`BLOB (Binary Large OBject)`.
 
    .. method:: Blob.close()
 
