@@ -49,6 +49,7 @@ extern "C" {
 #define STORE_NAME                              90
 #define DELETE_NAME                             91
 #define UNPACK_SEQUENCE                         92
+#define FOR_ITER                                93
 #define UNPACK_EX                               94
 #define STORE_ATTR                              95
 #define DELETE_ATTR                             96
@@ -170,25 +171,25 @@ extern "C" {
 #define PRECALL_NO_KW_LIST_APPEND               79
 #define PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST    80
 #define PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS  81
-#define PRECALL_NO_KW_METHOD_DESCRIPTOR_O       93
-#define PRECALL_NO_KW_STR_1                    113
-#define PRECALL_NO_KW_TUPLE_1                  121
-#define PRECALL_NO_KW_TYPE_1                   127
-#define PRECALL_PYFUNC                         141
-#define RESUME_QUICK                           143
-#define STORE_ATTR_ADAPTIVE                    150
-#define STORE_ATTR_INSTANCE_VALUE              153
-#define STORE_ATTR_SLOT                        154
-#define STORE_ATTR_WITH_HINT                   158
-#define STORE_FAST__LOAD_FAST                  159
-#define STORE_FAST__STORE_FAST                 161
-#define STORE_SUBSCR_ADAPTIVE                  167
-#define STORE_SUBSCR_DICT                      168
-#define STORE_SUBSCR_LIST_INT                  169
-#define UNPACK_SEQUENCE_ADAPTIVE               170
-#define UNPACK_SEQUENCE_LIST                   178
-#define UNPACK_SEQUENCE_TUPLE                  179
-#define UNPACK_SEQUENCE_TWO_TUPLE              180
+#define PRECALL_NO_KW_METHOD_DESCRIPTOR_O      113
+#define PRECALL_NO_KW_STR_1                    121
+#define PRECALL_NO_KW_TUPLE_1                  127
+#define PRECALL_NO_KW_TYPE_1                   141
+#define PRECALL_PYFUNC                         143
+#define RESUME_QUICK                           150
+#define STORE_ATTR_ADAPTIVE                    153
+#define STORE_ATTR_INSTANCE_VALUE              154
+#define STORE_ATTR_SLOT                        158
+#define STORE_ATTR_WITH_HINT                   159
+#define STORE_FAST__LOAD_FAST                  161
+#define STORE_FAST__STORE_FAST                 167
+#define STORE_SUBSCR_ADAPTIVE                  168
+#define STORE_SUBSCR_DICT                      169
+#define STORE_SUBSCR_LIST_INT                  170
+#define UNPACK_SEQUENCE_ADAPTIVE               178
+#define UNPACK_SEQUENCE_LIST                   179
+#define UNPACK_SEQUENCE_TUPLE                  180
+#define UNPACK_SEQUENCE_TWO_TUPLE              181
 #define DO_TRACING                             255
 
 extern const uint8_t _PyOpcode_Caches[256];
@@ -199,7 +200,7 @@ extern const uint8_t _PyOpcode_Deopt[256];
 static const uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     0U,
-    0U,
+    536870912U,
     135020544U,
     4163U,
     253952U,
@@ -209,7 +210,7 @@ static const uint32_t _PyOpcode_RelativeJump[8] = {
 static const uint32_t _PyOpcode_Jump[8] = {
     0U,
     0U,
-    0U,
+    536870912U,
     135118848U,
     4163U,
     253952U,
@@ -287,6 +288,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [FORMAT_VALUE] = FORMAT_VALUE,
     [FOR_END] = FOR_END,
     [FOR_END_QUICK] = FOR_END,
+    [FOR_ITER] = FOR_ITER,
     [GET_AITER] = GET_AITER,
     [GET_ANEXT] = GET_ANEXT,
     [GET_AWAITABLE] = GET_AWAITABLE,
@@ -491,6 +493,7 @@ static const char *const _PyOpcode_OpName[256] = {
     [STORE_NAME] = "STORE_NAME",
     [DELETE_NAME] = "DELETE_NAME",
     [UNPACK_SEQUENCE] = "UNPACK_SEQUENCE",
+    [FOR_ITER] = "FOR_ITER",
     [UNPACK_EX] = "UNPACK_EX",
     [STORE_ATTR] = "STORE_ATTR",
     [DELETE_ATTR] = "DELETE_ATTR",

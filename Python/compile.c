@@ -1004,6 +1004,9 @@ stack_effect(int opcode, int oparg, int jump)
             return oparg-1;
         case UNPACK_EX:
             return (oparg&0xFF) + (oparg>>8);
+        case FOR_ITER:
+            /* -1 at end of iterator, 1 if continue iterating. */
+            return jump > 0 ? -1 : 1;
         case FOR_END:
             /* -1 at end of iterator, 1 if continue iterating. */
             return jump == 0 ? -1 : 1;
@@ -3102,7 +3105,7 @@ compiler_for(struct compiler *c, stmt_ty s)
     VISIT(c, expr, s->v.For.iter);
     ADDOP(c, GET_ITER);
     compiler_use_next_block(c, start);
-    ADDOP_JUMP_NOLINE(c, JUMP, back_jump);
+    ADDOP_JUMP(c, FOR_ITER, cleanup);
     compiler_use_next_block(c, body);
     VISIT(c, expr, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
@@ -5221,7 +5224,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
     if (start) {
         depth++;
         compiler_use_next_block(c, start);
-        ADDOP_JUMP_NOLINE(c, JUMP, if_cleanup);
+        ADDOP_JUMP(c, FOR_ITER, anchor);
         compiler_use_next_block(c, body);
     }
     VISIT(c, expr, gen->target);
