@@ -1,0 +1,1 @@
+Accept pathlib.Path for the argument to winsound.PlaySound
