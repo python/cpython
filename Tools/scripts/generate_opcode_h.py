@@ -59,8 +59,22 @@ def main(opcode_py, outfile='Include/opcode.h'):
     hasjabs = opcode['hasjabs']
     used = [ False ] * 256
     next_op = 1
+
     for name, op in opmap.items():
         used[op] = True
+
+    specialized_opmap = {}
+    opname_including_specialized = opname.copy()
+    for name in opcode['_specialized_instructions']:
+        while used[next_op]:
+            next_op += 1
+        specialized_opmap[name] = next_op
+        opname_including_specialized[next_op] = name
+        used[next_op] = True
+    specialized_opmap['DO_TRACING'] = 255
+    opname_including_specialized[255] = 'DO_TRACING'
+    used[255] = True
+
     with open(outfile, 'w') as fobj:
         fobj.write(header)
         for name in opname:
@@ -69,12 +83,9 @@ def main(opcode_py, outfile='Include/opcode.h'):
             if name == 'POP_EXCEPT': # Special entry for HAVE_ARGUMENT
                 fobj.write(DEFINE.format("HAVE_ARGUMENT", opcode["HAVE_ARGUMENT"]))
 
-        for name in opcode['_specialized_instructions']:
-            while used[next_op]:
-                next_op += 1
-            fobj.write(DEFINE.format(name, next_op))
-            used[next_op] = True
-        fobj.write(DEFINE.format('DO_TRACING', 255))
+        for name, op in specialized_opmap.items():
+            fobj.write(DEFINE.format(name, op))
+
         fobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
         fobj.write("\nextern const uint8_t _PyOpcode_Deopt[256];\n")
         fobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
@@ -111,8 +122,10 @@ def main(opcode_py, outfile='Include/opcode.h'):
         fobj.write("\n")
         fobj.write("#ifdef Py_DEBUG\n")
         fobj.write("static const char *const _PyOpcode_OpName[256] = {\n")
-        for name in opmap:
-            fobj.write(f'''    [{name}] = "{name}",\n''')
+        for op, name in enumerate(opname_including_specialized):
+            if name[0] != "<":
+                op = name
+            fobj.write(f'''    [{op}] = "{name}",\n''')
         fobj.write("};\n")
         fobj.write("#endif\n")
 
