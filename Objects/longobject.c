@@ -4487,7 +4487,8 @@ divmod_shift(PyObject *shiftby, Py_ssize_t *wordshift, digit *remshift)
 }
 
 /* Inner function for both long_rshift and _PyLong_Rshift, shifting an
-   integer right by a nonnegative shift. */
+   integer right by PyLong_SHIFT*wordshift + remshift bits.
+   wordshift should be nonnegative. */
 
 static PyObject *
 long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
@@ -4496,6 +4497,9 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     Py_ssize_t newsize, hishift, i, j, size_a;
     twodigits accum;
     int a_negative;
+
+    /* Total number of bits shifted must be nonnegative. */
+    assert(wordshift >= 0);
 
     /* Fast path for small a. */
     if (IS_MEDIUM_VALUE(a)) {
@@ -4511,15 +4515,16 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     size_a = Py_ABS(Py_SIZE(a));
 
     if (a_negative) {
-        /* For 'a', adjust so that 0 < remshift <= PyLong_SHIFT. This ensures
+        /* For 'a', adjust so that 0 < remshift <= PyLong_SHIFT, while keeping
+           PyLong_SHIFt * wordshift + remshift the same. This ensures
            that 'newsize' is computed correctly below. */
         if (remshift == 0) {
-            remshift = PyLong_SHIFT;
-            --wordshift;
-            if (wordshift < 0) {
+            if (wordshift == 0) {
                 /* Can only happen if the original shift was 0. */
                 return long_long((PyObject *)a);
             }
+            remshift = PyLong_SHIFT;
+            --wordshift;
         }
     }
 
@@ -4550,20 +4555,18 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
         Py_SET_SIZE(z, -newsize);
 
         digit sticky = 0;
-        for (j = 0; j < wordshift; j++) {
+        for (Py_ssize_t j = 0; j < wordshift; j++) {
             sticky |= a->ob_digit[j];
         }
-        accum = a->ob_digit[j++] + (PyLong_MASK >> hishift)
+        accum = a->ob_digit[wordshift] + (PyLong_MASK >> hishift)
               + (digit)(sticky != 0);
     }
     else {
-        j = wordshift;
-        accum = a->ob_digit[j++];
+        accum = a->ob_digit[wordshift];
     }
 
     accum >>= remshift;
-    assert(j == wordshift+1);
-    for (i = 0; j < size_a; i++, j++) {
+    for (i = 0, j = wordshift + 1; j < size_a; i++, j++) {
         accum += (twodigits)a->ob_digit[j] << hishift;
         z->ob_digit[i] = (digit)(accum & PyLong_MASK);
         accum >>= PyLong_SHIFT;
