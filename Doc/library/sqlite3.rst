@@ -473,6 +473,35 @@ Connection Objects
       .. literalinclude:: ../includes/sqlite3/mysumaggr.py
 
 
+   .. method:: create_window_function(name, num_params, aggregate_class, /)
+
+      Creates user-defined aggregate window function *name*.
+
+      *aggregate_class* must implement the following methods:
+
+      * ``step``: adds a row to the current window
+      * ``value``: returns the current value of the aggregate
+      * ``inverse``: removes a row from the current window
+      * ``finalize``: returns the final value of the aggregate
+
+      ``step`` and ``value`` accept *num_params* number of parameters,
+      unless *num_params* is ``-1``, in which case they may take any number of
+      arguments.  ``finalize`` and ``value`` can return any of the types
+      supported by SQLite:
+      :class:`bytes`, :class:`str`, :class:`int`, :class:`float`, and
+      :const:`None`.  Call :meth:`create_window_function` with
+      *aggregate_class* set to :const:`None` to clear window function *name*.
+
+      Aggregate window functions are supported by SQLite 3.25.0 and higher.
+      :exc:`NotSupportedError` will be raised if used with older versions.
+
+      .. versionadded:: 3.11
+
+      Example:
+
+      .. literalinclude:: ../includes/sqlite3/sumintwindow.py
+
+
    .. method:: create_collation(name, callable)
 
       Creates a collation with the specified *name* and *callable*. The callable will
