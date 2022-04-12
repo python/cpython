@@ -733,8 +733,7 @@ class StreamTests(test_utils.TestCase):
                 sock = socket.create_server(('127.0.0.1', 0))
                 self.server = self.loop.run_until_complete(
                     asyncio.start_server(self.handle_client,
-                                         sock=sock,
-                                         loop=self.loop))
+                                         sock=sock))
                 return sock.getsockname()
 
             def stop(self):
@@ -744,8 +743,7 @@ class StreamTests(test_utils.TestCase):
                     self.server = None
 
         async def client(addr):
-            reader, writer = await asyncio.open_connection(
-                *addr, loop=self.loop)
+            reader, writer = await asyncio.open_connection(*addr)
             writer.write(b"hello world 1!\n")
             await writer.drain()
             msgback1 = await reader.readline()
@@ -764,8 +762,7 @@ class StreamTests(test_utils.TestCase):
 
         server = MyServer(self.loop)
         addr = server.start()
-        msg1, msg2 = self.loop.run_until_complete(
-            asyncio.Task(client(addr), loop=self.loop))
+        msg1, msg2 = self.loop.run_until_complete(client(addr))
         server.stop()
 
         self.assertEqual(messages, [])
