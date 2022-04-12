@@ -44,7 +44,7 @@ comments they leave and their "Details" links, respectively. The key points of
 our workflow that are not covered by a bot or status check are:
 
 - All discussions that are not directly related to the code in the pull request
-  should happen on bugs.python.org
+  should happen on `GitHub Issues <https://github.com/python/cpython/issues>`_.
 - Upon your first non-trivial pull request (which includes documentation changes),
   feel free to add yourself to ``Misc/ACKS``
 
