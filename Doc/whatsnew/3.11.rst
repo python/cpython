@@ -860,6 +860,7 @@ Deprecated
   has been deprecated due to the deprecation of :mod:`imghdr`. Please
   explicitly provide a an image subtype.
 
+(Contributed by Brett Cannon in :issue:`47061`.)
 
 Removed
 =======
