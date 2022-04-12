@@ -1821,7 +1821,7 @@ class BaseExceptionReportingTests:
                     f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 10}, in exc\n'
                     f'  |     raise ExceptionGroup("nested", excs)\n'
                     f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
-                    f'  | ExceptionGroup: nested\n'
+                    f'  | ExceptionGroup: nested (2 sub-exceptions)\n'
                     f'  | >> Multi line note\n'
                     f'  | >> Because I am such\n'
                     f'  | >> an important exception.\n'
