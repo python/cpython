@@ -689,7 +689,7 @@ class NestedExceptionGroupSplitTest(ExceptionGroupSplitTestBase):
         # __notes__ should be a sequence, which is shallow copied.
         # If it is not a sequence, the split parts don't get any notes.
         eg = ExceptionGroup("eg", [ValueError(1), TypeError(2)])
-        eg__notes__ = 123
+        eg.__notes__ = 123
         match, rest = eg.split(TypeError)
         self.assertFalse(hasattr(match, '__notes__'))
         self.assertFalse(hasattr(rest, '__notes__'))
