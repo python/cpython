@@ -254,6 +254,7 @@ typedef struct {
     PyTypeObject *Pattern_Type;
     PyTypeObject *Match_Type;
     PyTypeObject *Scanner_Type;
+    PyTypeObject *RegexFlag_Type;
 } _sremodulestate;
 
 static _sremodulestate *
@@ -2962,6 +2963,7 @@ sre_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->Pattern_Type);
     Py_VISIT(state->Match_Type);
     Py_VISIT(state->Scanner_Type);
+    Py_VISIT(state->RegexFlag_Type);
 
     return 0;
 }
@@ -2974,6 +2976,7 @@ sre_clear(PyObject *module)
     Py_CLEAR(state->Pattern_Type);
     Py_CLEAR(state->Match_Type);
     Py_CLEAR(state->Scanner_Type);
+    Py_CLEAR(state->RegexFlag_Type);
 
     return 0;
 }
@@ -3014,6 +3017,7 @@ sre_exec(PyObject *m)
     CREATE_TYPE(m, state->Pattern_Type, &pattern_spec);
     CREATE_TYPE(m, state->Match_Type, &match_spec);
     CREATE_TYPE(m, state->Scanner_Type, &scanner_spec);
+    state->RegexFlag_Type = NULL;
 
     if (PyModule_AddIntConstant(m, "MAGIC", SRE_MAGIC) < 0) {
         goto error;
