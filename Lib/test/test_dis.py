@@ -1244,7 +1244,7 @@ expected_opinfo_jumpy = [
   Instruction(opname='POP_JUMP_FORWARD_IF_FALSE', opcode=114, arg=2, argval=96, argrepr='to 96', offset=90, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=92, starts_line=8, is_jump_target=False, positions=None),
   Instruction(opname='JUMP_FORWARD', opcode=110, arg=16, argval=128, argrepr='to 128', offset=94, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='FOR_END', opcode=173, arg=32, argval=34, argrepr='to 34', offset=96, starts_line=3, is_jump_target=True, positions=None),
+  Instruction(opname='FOR_END', opcode=177, arg=32, argval=34, argrepr='to 34', offset=96, starts_line=3, is_jump_target=True, positions=None),
   Instruction(opname='LOAD_GLOBAL', opcode=116, arg=3, argval='print', argrepr='NULL + print', offset=98, starts_line=10, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_CONST', opcode=100, arg=4, argval='I can haz else clause?', argrepr="'I can haz else clause?'", offset=110, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='PRECALL', opcode=166, arg=1, argval=1, argrepr='', offset=112, starts_line=None, is_jump_target=False, positions=None),
