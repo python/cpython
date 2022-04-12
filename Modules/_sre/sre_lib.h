@@ -1537,9 +1537,7 @@ dispatch:
             TRACE(("|%p|%p|FAILURE\n", pattern, ptr));
             RETURN_FAILURE;
 
-#if USE_COMPUTED_GOTOS
-        _unknown:
-#else
+#if !USE_COMPUTED_GOTOS
         default:
 #endif
         // Also any unused opcodes:
