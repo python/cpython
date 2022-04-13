@@ -1070,8 +1070,8 @@ class BlobTests(unittest.TestCase):
 
     def test_blob_seek_error(self):
         msg_oor = "offset out of blob range"
-        msg_orig = "'origin' should be 0, 1, or 2"
-        msg_of = "seek offset result in overflow"
+        msg_orig = "'origin' should be os.SEEK_SET, os.SEEK_CUR, or os.SEEK_END"
+        msg_of = "seek offset results in overflow"
 
         dataset = (
             (ValueError, msg_oor, lambda: self.blob.seek(1000)),
