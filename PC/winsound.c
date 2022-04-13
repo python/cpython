@@ -95,8 +95,8 @@ winsound_PlaySound_impl(PyObject *module, PyObject *sound, int flags)
         }
         wsound = (wchar_t *)view.buf;
     } else {
-        PyObject *obj = PyOS_FSPath(sound);
-        if (obj == NULL || PyBytes_Check(sound)) {
+        PyObject *obj;
+        if (PyBytes_Check(sound) || (obj = PyOS_FSPath(sound)) == NULL) {
             PyErr_Format(PyExc_TypeError,
                          "'sound' must be str, pathlib.Path, or None; not '%s'",
                          Py_TYPE(sound)->tp_name);
