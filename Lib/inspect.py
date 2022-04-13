@@ -1260,6 +1260,16 @@ def getsourcelines(object):
     else:
         return getblock(lines[lnum:]), lnum + 1
 
+
+def isinheritable(arg):
+    try:
+        class X(arg):
+            pass
+        return True
+    except:
+        return False
+
+
 def getsource(object):
     """Return the text of the source code for an object.
 
