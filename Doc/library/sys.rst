@@ -1117,15 +1117,16 @@ always available.
    current directory first.  Notice that the script directory is inserted *before*
    the entries inserted as a result of :envvar:`PYTHONPATH`.
 
+   The initialization of :data:`sys.path` is documented at :ref:`sys-path-init`.
+
    A program is free to modify this list for its own purposes.  Only strings
    and bytes should be added to :data:`sys.path`; all other data types are
    ignored during import.
 
 
    .. seealso::
-      Module :mod:`site` This describes how to use .pth files to extend
-      :data:`sys.path`.
-
+      * Module :mod:`site` This describes how to use .pth files to
+        extend :data:`sys.path`.
 
 .. data:: path_hooks
 
@@ -1175,7 +1176,9 @@ always available.
    System           ``platform`` value
    ================ ===========================
    AIX              ``'aix'``
+   Emscripten       ``'emscripten'``
    Linux            ``'linux'``
+   WASI             ``'wasi'``
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
    macOS            ``'darwin'``

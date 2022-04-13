@@ -4,7 +4,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_bytesobject.h"   // _PyBytes_Find()
+#include "pycore_bytesobject.h"   // _PyBytes_Find(), _PyBytes_Repeat()
 #include "pycore_bytes_methods.h" // _Py_bytes_startswith()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_format.h"        // F_LJUST
@@ -415,6 +415,7 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     PyObject *result;
     double x;
     size_t len;
+    int dtoa_flags = 0;
 
     x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred()) {
@@ -426,8 +427,13 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     if (prec < 0)
         prec = 6;
 
-    p = PyOS_double_to_string(x, type, prec,
-                              (flags & F_ALT) ? Py_DTSF_ALT : 0, NULL);
+    if (flags & F_ALT) {
+        dtoa_flags |= Py_DTSF_ALT;
+    }
+    if (flags & F_NO_NEG_0) {
+        dtoa_flags |= Py_DTSF_NO_NEG_0;
+    }
+    p = PyOS_double_to_string(x, type, prec, dtoa_flags, NULL);
 
     if (p == NULL)
         return NULL;
@@ -706,6 +712,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 case ' ': flags |= F_BLANK; continue;
                 case '#': flags |= F_ALT; continue;
                 case '0': flags |= F_ZERO; continue;
+                case 'z': flags |= F_NO_NEG_0; continue;
                 }
                 break;
             }
@@ -1421,8 +1428,6 @@ bytes_concat(PyObject *a, PyObject *b)
 static PyObject *
 bytes_repeat(PyBytesObject *a, Py_ssize_t n)
 {
-    Py_ssize_t i;
-    Py_ssize_t j;
     Py_ssize_t size;
     PyBytesObject *op;
     size_t nbytes;
@@ -1457,20 +1462,9 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     op->ob_shash = -1;
 _Py_COMP_DIAG_POP
     op->ob_sval[size] = '\0';
-    if (Py_SIZE(a) == 1 && n > 0) {
-        memset(op->ob_sval, a->ob_sval[0] , n);
-        return (PyObject *) op;
-    }
-    i = 0;
-    if (i < size) {
-        memcpy(op->ob_sval, a->ob_sval, Py_SIZE(a));
-        i = Py_SIZE(a);
-    }
-    while (i < size) {
-        j = (i <= size-i)  ?  i  :  size-i;
-        memcpy(op->ob_sval+i, op->ob_sval, j);
-        i += j;
-    }
+
+    _PyBytes_Repeat(op->ob_sval, size, a->ob_sval, Py_SIZE(a));
+
     return (PyObject *) op;
 }
 
@@ -1487,7 +1481,7 @@ bytes_item(PyBytesObject *a, Py_ssize_t i)
         PyErr_SetString(PyExc_IndexError, "index out of range");
         return NULL;
     }
-    return PyLong_FromLong((unsigned char)a->ob_sval[i]);
+    return _PyLong_FromUnsignedChar((unsigned char)a->ob_sval[i]);
 }
 
 static int
@@ -1595,7 +1589,7 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
                             "index out of range");
             return NULL;
         }
-        return PyLong_FromLong((unsigned char)self->ob_sval[i]);
+        return _PyLong_FromUnsignedChar((unsigned char)self->ob_sval[i]);
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelength, i;
@@ -3133,7 +3127,7 @@ striter_next(striterobject *it)
     assert(PyBytes_Check(seq));
 
     if (it->it_index < PyBytes_GET_SIZE(seq)) {
-        return PyLong_FromLong(
+        return _PyLong_FromUnsignedChar(
             (unsigned char)seq->ob_sval[it->it_index++]);
     }
 
@@ -3528,3 +3522,28 @@ _PyBytesWriter_WriteBytes(_PyBytesWriter *writer, void *ptr,
 
     return str;
 }
+
+
+void
+_PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
+    const char* src, Py_ssize_t len_src)
+{
+    if (len_dest == 0) {
+        return;
+    }
+    if (len_src == 1) {
+        memset(dest, src[0], len_dest);
+    }
+    else {
+        if (src != dest) {
+            memcpy(dest, src, len_src);
+        }
+        Py_ssize_t copied = len_src;
+        while (copied < len_dest) {
+            Py_ssize_t bytes_to_copy = Py_MIN(copied, len_dest - copied);
+            memcpy(dest + copied, dest, bytes_to_copy);
+            copied += bytes_to_copy;
+        }
+    }
+}
+

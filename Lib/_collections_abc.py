@@ -1022,10 +1022,10 @@ class Sequence(Reversible, Collection):
         while stop is None or i < stop:
             try:
                 v = self[i]
-                if v is value or v == value:
-                    return i
             except IndexError:
                 break
+            if v is value or v == value:
+                return i
             i += 1
         raise ValueError
 

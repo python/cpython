@@ -876,6 +876,11 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 #else
         !decode_to_dict(dict, "os_name", "posix") ||
 #endif
+#ifdef WITH_NEXT_FRAMEWORK
+        !int_to_dict(dict, "WITH_NEXT_FRAMEWORK", 1) ||
+#else
+        !int_to_dict(dict, "WITH_NEXT_FRAMEWORK", 0) ||
+#endif
         !decode_to_dict(dict, "PREFIX", PREFIX) ||
         !decode_to_dict(dict, "EXEC_PREFIX", EXEC_PREFIX) ||
         !decode_to_dict(dict, "PYTHONPATH", PYTHONPATH) ||
@@ -943,3 +948,4 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     return _PyStatus_OK();
 }
+

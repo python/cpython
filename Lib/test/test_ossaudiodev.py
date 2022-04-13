@@ -1,16 +1,16 @@
 from test import support
-from test.support import import_helper
+from test.support import import_helper, warnings_helper
 support.requires('audio')
 
 from test.support import findfile
 
 ossaudiodev = import_helper.import_module('ossaudiodev')
+audioop = warnings_helper.import_deprecated('audioop')
 
 import errno
 import sys
 import sunau
 import time
-import audioop
 import unittest
 
 # Arggh, AFMT_S16_NE not defined on all platforms -- seems to be a

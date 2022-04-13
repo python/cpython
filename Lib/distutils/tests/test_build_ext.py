@@ -17,6 +17,7 @@ import unittest
 from test import support
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok
+from test.support import threading_helper
 
 # http://bugs.python.org/issue4373
 # Don't load the xx module more than once.
@@ -165,6 +166,7 @@ class BuildExtTestCase(TempdirManager,
         self.assertIn(lib, cmd.rpath)
         self.assertIn(incl, cmd.include_dirs)
 
+    @threading_helper.requires_working_threading()
     def test_optional_extension(self):
 
         # this extension will fail, but let's ignore this failure

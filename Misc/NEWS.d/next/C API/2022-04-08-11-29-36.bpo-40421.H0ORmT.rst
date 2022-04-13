@@ -1,0 +1,2 @@
+Add ``PyFrame_GetLasti`` C-API function to access frame object's ``lasti``
+attribute safely from C code.
