@@ -1,0 +1,1 @@
+Fix a potential integer overflow in _Py_DecodeUTF8Ex.
