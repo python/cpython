@@ -389,6 +389,10 @@ sqlite3
   serializing and deserializing databases.
   (Contributed by Erlend E. Aasland in :issue:`41930`.)
 
+* Add :meth:`~sqlite3.Connection.create_window_function` to
+  :class:`sqlite3.Connection` for creating aggregate window functions.
+  (Contributed by Erlend E. Aasland in :issue:`34916`.)
+
 
 sys
 ---
@@ -850,6 +854,8 @@ Deprecated
   * :mod:`audioop`
   * :mod:`cgi`
   * :mod:`cgitb`
+  * :mod:`chunk`
+  * :mod:`crypt`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
