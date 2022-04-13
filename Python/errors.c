@@ -500,7 +500,7 @@ _PyErr_GetExcInfo(PyThreadState *tstate,
 }
 
 PyObject*
-_PyErr_GetActiveException(PyThreadState *tstate)
+_PyErr_GetHandledException(PyThreadState *tstate)
 {
     _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
     PyObject *exc = exc_info->exc_value;
@@ -511,14 +511,14 @@ _PyErr_GetActiveException(PyThreadState *tstate)
 }
 
 PyObject*
-PyErr_GetActiveException(void)
+PyErr_GetHandledException(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return _PyErr_GetActiveException(tstate);
+    return _PyErr_GetHandledException(tstate);
 }
 
 void
-_PyErr_SetActiveException(PyThreadState *tstate, PyObject *exc)
+_PyErr_SetHandledException(PyThreadState *tstate, PyObject *exc)
 {
     PyObject *oldexc = tstate->exc_info->exc_value;
     tstate->exc_info->exc_value = Py_XNewRef(exc);
@@ -526,10 +526,10 @@ _PyErr_SetActiveException(PyThreadState *tstate, PyObject *exc)
 }
 
 void
-PyErr_SetActiveException(PyObject *exc)
+PyErr_SetHandledException(PyObject *exc)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyErr_SetActiveException(tstate, exc);
+    _PyErr_SetHandledException(tstate, exc);
 }
 
 void
@@ -542,7 +542,7 @@ PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 void
 PyErr_SetExcInfo(PyObject *type, PyObject *value, PyObject *traceback)
 {
-    PyErr_SetActiveException(value);
+    PyErr_SetHandledException(value);
     /* These args are no longer used, but we still need to steal a ref */
     Py_XDECREF(type);
     Py_XDECREF(traceback);

@@ -2565,10 +2565,10 @@ set_errno(PyObject *self, PyObject *args)
 static PyObject *
 test_set_exception(PyObject *self, PyObject *new_exc)
 {
-    PyObject *exc = PyErr_GetActiveException();
+    PyObject *exc = PyErr_GetHandledException();
     assert(PyExceptionInstance_Check(exc) || exc == NULL);
 
-    PyErr_SetActiveException(new_exc);
+    PyErr_SetHandledException(new_exc);
     return exc;
 }
 

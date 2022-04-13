@@ -19,8 +19,8 @@ PyAPI_FUNC(void) PyErr_Clear(void);
 PyAPI_FUNC(void) PyErr_Fetch(PyObject **, PyObject **, PyObject **);
 PyAPI_FUNC(void) PyErr_Restore(PyObject *, PyObject *, PyObject *);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030b0000
-PyAPI_FUNC(PyObject*) PyErr_GetActiveException(void);
-PyAPI_FUNC(void) PyErr_SetActiveException(PyObject *);
+PyAPI_FUNC(PyObject*) PyErr_GetHandledException(void);
+PyAPI_FUNC(void) PyErr_SetHandledException(PyObject *);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(void) PyErr_GetExcInfo(PyObject **, PyObject **, PyObject **);

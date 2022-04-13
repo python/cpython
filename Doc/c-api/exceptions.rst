@@ -460,7 +460,7 @@ Querying the error indicator
          }
 
 
-.. c:function:: PyObject* PyErr_GetActiveException(void)
+.. c:function:: PyObject* PyErr_GetHandledException(void)
 
    Retrieve the active exception instance, as would be returned by :func:`sys.exception`.
    This refers to an exception that was *already caught*, not to an exception that was
@@ -471,12 +471,12 @@ Querying the error indicator
 
       This function is not normally used by code that wants to handle exceptions.
       Rather, it can be used when code needs to save and restore the exception
-      state temporarily.  Use :c:func:`PyErr_SetActiveException` to restore or
+      state temporarily.  Use :c:func:`PyErr_SetHandledException` to restore or
       clear the exception state.
 
    .. versionadded:: 3.11
 
-.. c:function:: void PyErr_SetActiveException(PyObject *exc)
+.. c:function:: void PyErr_SetHandledException(PyObject *exc)
 
    Set the active exception, as known from ``sys.exception()``.  This refers
    to an exception that was *already caught*, not to an exception that was
@@ -487,7 +487,7 @@ Querying the error indicator
 
       This function is not normally used by code that wants to handle exceptions.
       Rather, it can be used when code needs to save and restore the exception
-      state temporarily.  Use :c:func:`PyErr_GetActiveException` to get the exception
+      state temporarily.  Use :c:func:`PyErr_GetHandledException` to get the exception
       state.
 
    .. versionadded:: 3.11
@@ -499,7 +499,7 @@ Querying the error indicator
    not to an exception that was freshly raised.  Returns new references for the
    three objects, any of which may be ``NULL``.  Does not modify the exception
    info state.  This function is kept for backwards compatibility. Prefer using
-   :c:func:`PyErr_GetActiveException`.
+   :c:func:`PyErr_GetHandledException`.
 
    .. note::
 
@@ -518,7 +518,7 @@ Querying the error indicator
    freshly raised.  This function steals the references of the arguments.
    To clear the exception state, pass ``NULL`` for all three arguments.
    This function is kept for backwards compatibility. Prefer using
-   :c:func:`PyErr_SetActiveException`.
+   :c:func:`PyErr_SetHandledException`.
 
    .. note::
 
