@@ -120,14 +120,14 @@ The module defines the following items:
       methods, and may either refuse to process the ZIP file altogether,
       or fail to extract individual files.
 
-.. data:: PERMS_PRESERVE_NONE
+.. data:: PreserveMode.NONE
 
     Constant for use in :meth:`extractall` and :meth:`extract` methods. Do not
     preserve permissions of zipped files.
 
     .. versionadded:: 3.11
 
-.. data:: PERMS_PRESERVE_SAFE
+.. data:: PreserveMode.SAFE
 
     Constant for use in :meth:`extractall` and :meth:`extract` methods.
     Preserve safe subset of permissions of the zipped files only: permissions
@@ -135,7 +135,7 @@ The module defines the following items:
 
     .. versionadded:: 3.11
 
-.. data:: PERMS_PRESERVE_ALL
+.. data:: PreserveMode.ALL
 
     Constant for use in :meth:`extractall` and :meth:`extract` methods.
     Preserve all the permissions of the zipped files, including unsafe ones:
@@ -343,7 +343,7 @@ ZipFile Objects
 
 
 .. method:: ZipFile.extract(member, path=None, pwd=None, \
-                            preserve_permissions=zipfile.PERMS_PRESERVE_NONE)
+                            preserve_permissions=zipfile.PreserveMode.NONE)
 
    Extract a member from the archive to the current working directory; *member*
    must be its full name or a :class:`ZipInfo` object.  Its file information is
@@ -351,10 +351,10 @@ ZipFile Objects
    to extract to.  *member* can be a filename or a :class:`ZipInfo` object.
    *pwd* is the password used for encrypted files.  *preserve_permissions*
    controls how the permissions of zipped files are preserved.  The default is
-   :data:`PERMS_PRESERVE_NONE` --- do not preserve any permissions. Other
+   :data:`PreserveMode.NONE` --- do not preserve any permissions. Other
    options are to preserve a safe subset of permissions
-   (:data:`PERMS_PRESERVE_SAFE`) or all permissions
-   (:data:`PERMS_PRESERVE_ALL`).
+   (:data:`PreserveMode.SAFE`) or all permissions
+   (:data:`PreserveMode.ALL`).
 
    Returns the normalized path created (a directory or new file).
 
@@ -377,16 +377,16 @@ ZipFile Objects
 
 
 .. method:: ZipFile.extractall(path=None, members=None, pwd=None, \
-                            preserve_permissions=zipfile.PERMS_PRESERVE_NONE)
+                            preserve_permissions=zipfile.PreserveMode.NONE)
 
    Extract all members from the archive to the current working directory.  *path*
    specifies a different directory to extract to.  *members* is optional and must
    be a subset of the list returned by :meth:`namelist`.  *pwd* is the password
    used for encrypted files.  *preserve_permissions* controls how the permissions
-   of zipped files are preserved.  The default is :data:`PERMS_PRESERVE_NONE`
+   of zipped files are preserved.  The default is :data:`PreserveMode.NONE`
    --- do not preserve any permissions. Other options are to preserve a safe
-   subset of permissions (:data:`PERMS_PRESERVE_SAFE`) or all permissions
-   (:data:`PERMS_PRESERVE_ALL`).
+   subset of permissions (:data:`PreserveMode.SAFE`) or all permissions
+   (:data:`PreserveMode.ALL`).
 
 
    .. warning::
