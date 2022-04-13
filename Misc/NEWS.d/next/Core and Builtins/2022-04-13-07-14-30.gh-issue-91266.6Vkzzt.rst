@@ -1,1 +1,1 @@
-Refactor the `bytearray` strips method `strip`, `lstrip` and `rstrip` to use a common implementation.
+Refactor the ``bytearray`` strip methods ``strip``, ``lstrip`` and ``rstrip`` to use a common implementation.
