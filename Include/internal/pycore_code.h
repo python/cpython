@@ -92,6 +92,12 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_STORE_SUBSCR CACHE_ENTRIES(_PyStoreSubscrCache)
 
+typedef struct {
+    _Py_CODEUNIT counter;
+} _PyJumpBackwardCache;
+
+#define INLINE_CACHE_ENTRIES_JUMP_BACKWARD CACHE_ENTRIES(_PyStoreSubscrCache)
+
 #define QUICKENING_WARMUP_DELAY 8
 
 /* We want to compare to zero for efficiency, so we offset values accordingly */

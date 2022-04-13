@@ -139,7 +139,7 @@ extern "C" {
 #define COMPARE_OP_FLOAT_JUMP                   27
 #define COMPARE_OP_INT_JUMP                     28
 #define COMPARE_OP_STR_JUMP                     29
-#define JUMP_BACKWARD_QUICK                     34
+#define JUMP_BACKWARD_ADAPTIVE                  34
 #define LOAD_ATTR_ADAPTIVE                      38
 #define LOAD_ATTR_INSTANCE_VALUE                39
 #define LOAD_ATTR_MODULE                        40
@@ -225,6 +225,7 @@ const uint8_t _PyOpcode_Caches[256] = {
     [COMPARE_OP] = 2,
     [LOAD_GLOBAL] = 5,
     [BINARY_OP] = 1,
+    [JUMP_BACKWARD] = 1,
     [LOAD_METHOD] = 10,
     [PRECALL] = 1,
     [CALL] = 4,
@@ -296,8 +297,8 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [IMPORT_STAR] = IMPORT_STAR,
     [IS_OP] = IS_OP,
     [JUMP_BACKWARD] = JUMP_BACKWARD,
+    [JUMP_BACKWARD_ADAPTIVE] = JUMP_BACKWARD,
     [JUMP_BACKWARD_NO_INTERRUPT] = JUMP_BACKWARD_NO_INTERRUPT,
-    [JUMP_BACKWARD_QUICK] = JUMP_BACKWARD,
     [JUMP_FORWARD] = JUMP_FORWARD,
     [JUMP_IF_FALSE_OR_POP] = JUMP_IF_FALSE_OR_POP,
     [JUMP_IF_TRUE_OR_POP] = JUMP_IF_TRUE_OR_POP,

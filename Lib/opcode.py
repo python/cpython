@@ -165,7 +165,7 @@ def_op('STORE_DEREF', 138)
 hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
-jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
+jrel_op('JUMP_BACKWARD', 140, 1)    # Number of words to skip (backwards)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
@@ -265,7 +265,7 @@ _specializations = {
         "COMPARE_OP_STR_JUMP",
     ],
     "JUMP_BACKWARD": [
-        "JUMP_BACKWARD_QUICK",
+        "JUMP_BACKWARD_ADAPTIVE",
     ],
     "LOAD_ATTR": [
         "LOAD_ATTR_ADAPTIVE",

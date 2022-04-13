@@ -29,6 +29,7 @@ uint8_t _PyOpcode_Adaptive[256] = {
     [BINARY_OP] = BINARY_OP_ADAPTIVE,
     [COMPARE_OP] = COMPARE_OP_ADAPTIVE,
     [UNPACK_SEQUENCE] = UNPACK_SEQUENCE_ADAPTIVE,
+    [JUMP_BACKWARD] = JUMP_BACKWARD_ADAPTIVE,
 };
 
 Py_ssize_t _Py_QuickenedCount = 0;
@@ -270,9 +271,6 @@ _PyCode_Quicken(PyCodeObject *code)
         else {
             assert(!_PyOpcode_Caches[opcode]);
             switch (opcode) {
-                case JUMP_BACKWARD:
-                    _Py_SET_OPCODE(instructions[i], JUMP_BACKWARD_QUICK);
-                    break;
                 case RESUME:
                     _Py_SET_OPCODE(instructions[i], RESUME_QUICK);
                     break;

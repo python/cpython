@@ -2214,7 +2214,6 @@ handle_eval_breaker:
             PyObject *list = PEEK(oparg);
             if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0)
                 goto error;
-            PREDICT(JUMP_BACKWARD_QUICK);
             DISPATCH();
         }
 
@@ -2226,7 +2225,6 @@ handle_eval_breaker:
             Py_DECREF(v);
             if (err != 0)
                 goto error;
-            PREDICT(JUMP_BACKWARD_QUICK);
             DISPATCH();
         }
 
@@ -3392,7 +3390,6 @@ handle_eval_breaker:
             if (_PyDict_SetItem_Take2((PyDictObject *)map, key, value) != 0) {
                 goto error;
             }
-            PREDICT(JUMP_BACKWARD_QUICK);
             DISPATCH();
         }
 
@@ -3933,7 +3930,17 @@ handle_eval_breaker:
 
         TARGET(JUMP_BACKWARD) {
             _PyCode_Warmup(frame->f_code);
-            JUMP_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+            assert(oparg < INSTR_OFFSET()+(int)INLINE_CACHE_ENTRIES_JUMP_BACKWARD);
+            JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg);
+            CHECK_EVAL_BREAKER();
+            DISPATCH();
+        }
+
+        TARGET(JUMP_BACKWARD_ADAPTIVE) {
+            assert(oparg < INSTR_OFFSET()+(int)INLINE_CACHE_ENTRIES_JUMP_BACKWARD);
+            JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD - oparg);
+            CHECK_EVAL_BREAKER();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(POP_JUMP_BACKWARD_IF_FALSE) {
@@ -4132,14 +4139,6 @@ handle_eval_breaker:
              * (see bpo-30039).
              */
             JUMPBY(-oparg);
-            DISPATCH();
-        }
-
-        TARGET(JUMP_BACKWARD_QUICK) {
-            PREDICTED(JUMP_BACKWARD_QUICK);
-            assert(oparg < INSTR_OFFSET());
-            JUMPBY(-oparg);
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
