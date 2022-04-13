@@ -167,6 +167,15 @@ See :ref:`__slots__ documentation <slots>` for details.
    application without adding attributes to those objects.  This can be especially
    useful with objects that override attribute accesses.
 
+   Note that when a key with equal value to an existing key (but not equal identity)
+   is inserted into the dictionary, it replaces the value but does not replace the
+   existing key::
+
+      d = WeakKeyDictionary()
+      d[k1] = 1   # d = {k1: 1}
+      d[k2] = 2   # d = {k1: 2}
+      del k1      # d = {}
+
    .. versionchanged:: 3.9
       Added support for ``|`` and ``|=`` operators, specified in :pep:`584`.
 
