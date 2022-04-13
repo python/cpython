@@ -260,8 +260,17 @@ _PyCode_Quicken(PyCodeObject *code)
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     for (int i = 0; i < Py_SIZE(code); i++) {
         int opcode = _Py_OPCODE(instructions[i]);
+        int oparg = _Py_OPARG(instructions[i]);
         uint8_t adaptive_opcode = _PyOpcode_Adaptive[opcode];
         if (adaptive_opcode) {
+            if (opcode == JUMP_BACKWARD) {
+                int j = i + 1 + INLINE_CACHE_ENTRIES_JUMP_BACKWARD - oparg;
+                if (previous_opcode == EXTENDED_ARG ||
+                    _Py_OPCODE(instructions[j]) != FOR_ITER)
+                {
+                    adaptive_opcode = JUMP_BACKWARD_QUICK;
+                }
+            }
             _Py_SET_OPCODE(instructions[i], adaptive_opcode);
             // Make sure the adaptive counter is zero:
             assert(instructions[i + 1] == 0);
@@ -2054,3 +2063,27 @@ int
 }
 
 #endif
+
+
+
+void
+_Py_Specialize_JumpBackward(PyObject *iter, _Py_CODEUNIT *instr)
+{
+    assert(_PyOpcode_Caches[JUMP_BACKWARD] ==
+           INLINE_CACHE_ENTRIES_JUMP_BACKWARD);
+    _PyJumpBackwardCache *cache = (_PyJumpBackwardCache *)(instr + 1);
+    if (Py_TYPE(iter) == &PyListIter_Type) {
+        _Py_SET_OPCODE(*instr, JUMP_BACKWARD_FOR_ITER_LIST);
+        goto success;
+    }
+    else {
+        goto failure;
+    }
+failure:
+    STAT_INC(JUMP_BACKWARD, failure);
+    cache->counter = ADAPTIVE_CACHE_BACKOFF;
+    return;
+success:
+    STAT_INC(JUMP_BACKWARD, success);
+    cache->counter = initial_counter_value();
+}

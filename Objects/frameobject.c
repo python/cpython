@@ -258,6 +258,16 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[j] = next_stack;
                     break;
                 case JUMP_BACKWARD:
+                    j = i + 1 + INLINE_CACHE_ENTRIES_JUMP_BACKWARD - get_arg(code, i);
+                    assert(j >= 0);
+                    assert(j < len);
+                    if (stacks[j] == UNINITIALIZED && j < i) {
+                        todo = 1;
+                    }
+                    assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
+                    stacks[j] = next_stack;
+                    i++;
+                    break;
                 case JUMP_BACKWARD_NO_INTERRUPT:
                     j = i + 1 - get_arg(code, i);
                     assert(j >= 0);

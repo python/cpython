@@ -266,6 +266,9 @@ _specializations = {
     ],
     "JUMP_BACKWARD": [
         "JUMP_BACKWARD_ADAPTIVE",
+        "JUMP_BACKWARD_QUICK",
+        "JUMP_BACKWARD_FOR_ITER_LIST",
+        "JUMP_BACKWARD_FOR_ITER_RANGE",
     ],
     "LOAD_ATTR": [
         "LOAD_ATTR_ADAPTIVE",

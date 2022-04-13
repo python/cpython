@@ -79,7 +79,7 @@ static void
 lltrace_instruction(_PyInterpreterFrame *frame,
                     int opcode, int oparg, int stack_level)
 {
-    dump_stack(frame, stack_level);
+    // dump_stack(frame, stack_level);
     const char *opname = _PyOpcode_OpName[opcode];
     int lasti = _PyInterpreterFrame_LASTI(frame);
     if (opname == NULL) {
@@ -4001,35 +4001,36 @@ handle_eval_breaker:
 
         TARGET(JUMP_BACKWARD_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
-            printf("*** JUMP_BACKWARD_ADAPTIVE\n");
-
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
-            CHECK_EVAL_BREAKER();
-            _Py_CODEUNIT *for_iter;
-            for_iter = next_instr + INLINE_CACHE_ENTRIES_JUMP_BACKWARD - oparg;
-            assert(_Py_OPCODE(*for_iter) == FOR_ITER);
-            PyObject *iter = TOP();
+            assert(_Py_OPCODE(
+                next_instr[INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg])
+                == FOR_ITER);
 
             /* Adaptiveness is for the for FOR_ITER operation */
             if (cache->counter == 0) {
                 next_instr--;
-                _Py_Specialize_JumpBackward(iter, next_instr);
+                _Py_Specialize_JumpBackward(TOP(), next_instr);
                 DISPATCH();
             }
             STAT_INC(JUMP_BACKWARD, deferred);
             cache->counter--;
 
-            /* Do FOR_ITER right here, no need to jump first. */
-            /* before: [iter]; after: [iter, iter()] *or* [] */
-            printf("iternext\n");
+            // JUMP_BACKWARD
+            assert(oparg < INSTR_OFFSET()+(int)INLINE_CACHE_ENTRIES_JUMP_BACKWARD);
+            JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg);
+            CHECK_EVAL_BREAKER();
+            NEXTOPARG();
+
+            // FOR_ITER
+            INSTRUCTION_START(_);
+            PyObject *iter = TOP();
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
-                printf("iter produced result\n");
                 PUSH(next);
-                next_instr = for_iter + 1;
                 NOTRACE_DISPATCH();
             }
-            printf("iter exhausted\n");
+
+        iterator_exhausted:
             if (_PyErr_Occurred(tstate)) {
                 if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                     goto error;
@@ -4039,38 +4040,39 @@ handle_eval_breaker:
                 }
                 _PyErr_Clear(tstate);
             }
-            printf("iter exhausted without error\n");
-        iterator_exhausted:
-            // iterator ended normally.
-            // Jump to FOR_ITER, then jump to where FOR_ITER jumps.
+        iterator_exhausted_no_error:
             assert(!_PyErr_Occurred(tstate));
             Py_DECREF(POP());
-            JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD - oparg);
-            NEXTOPARG();
-            JUMPBY(1+oparg);
+            JUMPBY(oparg);
             DISPATCH();
         }
 
         TARGET(JUMP_BACKWARD_FOR_ITER_LIST) {
             assert(cframe.use_tracing == 0);
-            printf("JUMP_BACKWARD_FOR_ITER_LIST\n");
-            CHECK_EVAL_BREAKER();
             _PyListIterObject *it = (_PyListIterObject *)TOP();
             DEOPT_IF(Py_TYPE(it) != &PyListIter_Type, JUMP_BACKWARD);
+            assert(_Py_OPCODE(
+                next_instr[INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg])
+                == FOR_ITER);
+
+            JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg);
+            CHECK_EVAL_BREAKER();
+            NEXTOPARG();
+            INSTRUCTION_START(FOR_ITER);
+
             PyListObject *seq = it->it_seq;
             if (seq == NULL) {
-                goto iterator_exhausted;
+                goto iterator_exhausted_no_error;
             }
             if (it->it_index < PyList_GET_SIZE(seq)) {
-                PyObject *res = PyList_GET_ITEM(seq, it->it_index++);
-                Py_INCREF(res);
-                PUSH(res);
-                JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD - oparg + 1);
+                PyObject *next = PyList_GET_ITEM(seq, it->it_index++);
+                Py_INCREF(next);
+                PUSH(next);
                 NOTRACE_DISPATCH();
             }
             it->it_seq = NULL;
             Py_DECREF(seq);
-            goto iterator_exhausted;
+            goto iterator_exhausted_no_error;
         }
 
         TARGET(POP_JUMP_BACKWARD_IF_FALSE) {
@@ -4405,20 +4407,7 @@ handle_eval_breaker:
                 PREDICT(UNPACK_SEQUENCE);
                 DISPATCH();
             }
-            if (_PyErr_Occurred(tstate)) {
-                if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                    goto error;
-                }
-                else if (tstate->c_tracefunc != NULL) {
-                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
-                }
-                _PyErr_Clear(tstate);
-            }
-            /* iterator ended normally */
-            STACK_SHRINK(1);
-            Py_DECREF(iter);
-            JUMPBY(oparg);
-            DISPATCH();
+            goto iterator_exhausted;
         }
 
         TARGET(BEFORE_ASYNC_WITH) {
