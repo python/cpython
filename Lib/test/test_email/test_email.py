@@ -800,7 +800,7 @@ class TestEncoders(unittest.TestCase):
     def test_EncodersEncode_base64(self):
         with openfile('PyBanner048.gif', 'rb') as fp:
             bindata = fp.read()
-        mimed = email.mime.image.MIMEImage(bindata, 'gif')
+        mimed = email.mime.image.MIMEImage(bindata)
         base64ed = mimed.get_payload()
         # the transfer-encoded body lines should all be <=76 characters
         lines = base64ed.split('\n')
@@ -1558,7 +1558,7 @@ class TestMIMEImage(unittest.TestCase):
     def setUp(self):
         with openfile('PyBanner048.gif', 'rb') as fp:
             self._imgdata = fp.read()
-        self._im = MIMEImage(self._imgdata, _subtype='gif')
+        self._im = MIMEImage(self._imgdata)
 
     def test_guess_minor_type(self):
         self.assertEqual(self._im.get_content_type(), 'image/gif')
@@ -1590,13 +1590,6 @@ class TestMIMEImage(unittest.TestCase):
         self.assertIs(self._im.get_param('foobar', missing), missing)
         self.assertIs(self._im.get_param('attachment', missing,
                                          header='foobar'), missing)
-
-    def test_subtype_default_deprecation(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            with self.assertRaises(DeprecationWarning):
-                self._im = MIMEImage(self._imgdata)
-
 
 
 # Test the basic MIMEApplication class
@@ -1757,7 +1750,7 @@ class TestMultipart(TestEmailBase):
         with openfile('PyBanner048.gif', 'rb') as fp:
             data = fp.read()
         container = MIMEBase('multipart', 'mixed', boundary='BOUNDARY')
-        image = MIMEImage(data, name='dingusfish.gif', _subtype="gif")
+        image = MIMEImage(data, name='dingusfish.gif')
         image.add_header('content-disposition', 'attachment',
                          filename='dingusfish.gif')
         intro = MIMEText('''\
@@ -3456,7 +3449,7 @@ multipart/report
         classes = [
             (MIMEApplication, ('',)),
             (MIMEAudio, (audiodata,)),
-            (MIMEImage, (bindata, 'gif')),
+            (MIMEImage, (bindata,)),
             (MIMEMessage, (Message(),)),
             (MIMENonMultipart, ('multipart', 'mixed')),
             (MIMEText, ('',)),

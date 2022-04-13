@@ -180,11 +180,12 @@ Here are the classes:
    A subclass of :class:`~email.mime.nonmultipart.MIMENonMultipart`, the
    :class:`MIMEImage` class is used to create MIME message objects of major type
    :mimetype:`image`. *_imagedata* is a string containing the raw image data.  If
-   this data can be decoded by the standard Python module :mod:`imghdr`
-   (which is deprecated), then the subtype will be automatically included in the
-   :mailheader:`Content-Type` header. Otherwise you can explicitly specify the
-   image subtype via the *_subtype* argument.  If the minor type could not be
-   guessed and *_subtype* was not given, then :exc:`TypeError` is raised.
+   this data type can be detected (jpeg, png, gif, tiff, rgb, pbm, pgm, ppm,
+   rast, xbm, bmp, webp, and exr attempted), then the subtype will be
+   automatically included in the :mailheader:`Content-Type` header. Otherwise
+   you can explicitly specify the image subtype via the *_subtype* argument.
+   If the minor type could not be guessed and *_subtype* was not given, then
+   :exc:`TypeError` is raised.
 
    Optional *_encoder* is a callable (i.e. function) which will perform the actual
    encoding of the image data for transport.  This callable takes one argument,
@@ -203,10 +204,6 @@ Here are the classes:
 
    .. versionchanged:: 3.6
       Added *policy* keyword-only parameter.
-
-   .. deprecated:: 3.11
-      The default argument for *_subtype* due :mod:`imghdr` being
-      deprecated.
 
 .. currentmodule:: email.mime.message
 
