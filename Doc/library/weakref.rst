@@ -169,7 +169,8 @@ See :ref:`__slots__ documentation <slots>` for details.
 
    Note that when a key with equal value to an existing key (but not equal identity)
    is inserted into the dictionary, it replaces the value but does not replace the
-   existing key::
+   existing key. Due to this, when the reference to the original key is deleted, it
+   also deletes entry in the dictionary::
 
       d = WeakKeyDictionary()
       d[k1] = 1   # d = {k1: 1}
