@@ -285,6 +285,13 @@ inspect
 * Add :func:`inspect.ismethodwrapper` for checking if the type of an object is a
   :class:`~types.MethodWrapperType`. (Contributed by Hakan Çelik in :issue:`29418`.)
 
+locale
+------
+
+* Add :func:`locale.getencoding` to get the current locale encoding. It is similar to
+  ``locale.getpreferredencoding(False)`` but ignores the
+  :ref:`Python UTF-8 Mode <utf8-mode>`.
+
 math
 ----
 
@@ -381,6 +388,10 @@ sqlite3
   :meth:`~sqlite3.Connection.deserialize` to :class:`sqlite3.Connection` for
   serializing and deserializing databases.
   (Contributed by Erlend E. Aasland in :issue:`41930`.)
+
+* Add :meth:`~sqlite3.Connection.create_window_function` to
+  :class:`sqlite3.Connection` for creating aggregate window functions.
+  (Contributed by Erlend E. Aasland in :issue:`34916`.)
 
 
 sys
@@ -743,9 +754,6 @@ CPython bytecode changes
   ``ROT_TWO``, ``ROT_THREE``, ``ROT_FOUR``, and ``ROT_N``) with new
   :opcode:`COPY` and :opcode:`SWAP` instructions.
 
-* Add :opcode:`POP_JUMP_IF_NOT_NONE` and :opcode:`POP_JUMP_IF_NONE` opcodes to
-  speed up conditional jumps.
-
 * Replaced :opcode:`JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH` which
   performs the check but does not jump.
 
@@ -754,7 +762,17 @@ CPython bytecode changes
 
 * Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
 
-* Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`, which is used in certain loops where it is undesirable to handle interrupts.
+* Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`, which is used in certain loops where it
+  is undesirable to handle interrupts.
+
+* Replaced :opcode:`POP_JUMP_IF_TRUE` and :opcode:`POP_JUMP_IF_FALSE` by
+  the relative :opcode:`POP_JUMP_FORWARD_IF_TRUE`, :opcode:`POP_JUMP_BACKWARD_IF_TRUE`,
+  :opcode:`POP_JUMP_FORWARD_IF_FALSE` and :opcode:`POP_JUMP_BACKWARD_IF_FALSE`.
+
+* Added :opcode:`POP_JUMP_FORWARD_IF_NOT_NONE`, :opcode:`POP_JUMP_BACKWARD_IF_NOT_NONE`,
+  :opcode:`POP_JUMP_FORWARD_IF_NONE` and :opcode:`POP_JUMP_BACKWARD_IF_NONE`
+  opcodes to speed up conditional jumps.
+
 
 Deprecated
 ==========
@@ -833,6 +851,12 @@ Deprecated
   slated for removal in Python 3.13:
 
   * :mod:`aifc`
+  * :mod:`audioop`
+  * :mod:`cgi`
+  * :mod:`cgitb`
+  * :mod:`chunk`
+  * :mod:`crypt`
+  * :mod:`imghdr`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
@@ -1120,7 +1144,7 @@ New Features
 
 * Add new functions to get frame object attributes:
   :c:func:`PyFrame_GetBuiltins`, :c:func:`PyFrame_GetGenerator`,
-  :c:func:`PyFrame_GetGlobals`.
+  :c:func:`PyFrame_GetGlobals`, :c:func:`PyFrame_GetLasti`.
 
 Porting to Python 3.11
 ----------------------
@@ -1245,9 +1269,9 @@ Porting to Python 3.11
   * ``f_gen``: use :c:func:`PyFrame_GetGenerator`.
   * ``f_globals``: use :c:func:`PyFrame_GetGlobals`.
   * ``f_iblock``: removed.
-  * ``f_lasti``: use ``PyObject_GetAttrString((PyObject*)frame, "f_lasti")``.
+  * ``f_lasti``: use :c:func:`PyFrame_GetLasti`.
     Code using ``f_lasti`` with ``PyCode_Addr2Line()`` should use
-    :c:func:`PyFrame_GetLineNumber` instead.
+    :c:func:`PyFrame_GetLineNumber` instead; it may be faster.
   * ``f_lineno``: use :c:func:`PyFrame_GetLineNumber`
   * ``f_locals``: use :c:func:`PyFrame_GetLocals`.
   * ``f_stackdepth``: removed.

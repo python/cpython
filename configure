@@ -6311,15 +6311,7 @@ esac
 
 else
 
-  case $ac_sys_system in #(
-  Emscripten) :
-    enable_wasm_dynamic_linking=no ;; #(
-  WASI) :
-    enable_wasm_dynamic_linking=no ;; #(
-  *) :
-    enable_wasm_dynamic_linking=missing
-   ;;
-esac
+  enable_wasm_dynamic_linking=missing
 
 fi
 
@@ -6472,7 +6464,7 @@ $as_echo "$EXPORTSYMS" >&6; }
 # make sure we default having it set to "no": this is used by
 # distutils.unixccompiler to know if it should add --enable-new-dtags
 # to linker command lines, and failing to detect GNU ld simply results
-# in the same bahaviour as before.
+# in the same behaviour as before.
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GNU ld" >&5
 $as_echo_n "checking for GNU ld... " >&6; }

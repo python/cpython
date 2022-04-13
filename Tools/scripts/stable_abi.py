@@ -49,7 +49,16 @@ IFDEF_DOC_NOTES = {
     'MS_WINDOWS': 'on Windows',
     'HAVE_FORK': 'on platforms with fork()',
     'USE_STACKCHECK': 'on platforms with USE_STACKCHECK',
+    'PY_HAVE_THREAD_NATIVE_ID': 'on platforms with native thread IDs',
 }
+
+# To generate the DLL definition, we need to know which feature macros are
+# defined on Windows. On all platforms.
+# Best way to do that is to hardcode the list (and later test in on Windows).
+WINDOWS_IFDEFS = frozenset({
+    'MS_WINDOWS',
+    'PY_HAVE_THREAD_NATIVE_ID',
+})
 
 # The stable ABI manifest (Misc/stable_abi.txt) exists only to fill the
 # following dataclasses.
@@ -232,7 +241,7 @@ def gen_python3dll(manifest, args, outfile):
 
     for item in sorted(
             manifest.select(
-                {'function'}, include_abi_only=True, ifdef={'MS_WINDOWS'}),
+                {'function'}, include_abi_only=True, ifdef=WINDOWS_IFDEFS),
             key=sort_key):
         write(f'EXPORT_FUNC({item.name})')
 
@@ -240,7 +249,7 @@ def gen_python3dll(manifest, args, outfile):
 
     for item in sorted(
             manifest.select(
-                {'data'}, include_abi_only=True, ifdef={'MS_WINDOWS'}),
+                {'data'}, include_abi_only=True, ifdef=WINDOWS_IFDEFS),
             key=sort_key):
         write(f'EXPORT_DATA({item.name})')
 

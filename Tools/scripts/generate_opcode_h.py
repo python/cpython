@@ -108,6 +108,14 @@ def main(opcode_py, outfile='Include/opcode.h'):
         for i, (op, _) in enumerate(opcode["_nb_ops"]):
             fobj.write(DEFINE.format(op, i))
 
+        fobj.write("\n")
+        fobj.write("#ifdef Py_DEBUG\n")
+        fobj.write("static const char *const _PyOpcode_OpName[256] = {\n")
+        for name in opmap:
+            fobj.write(f'''    [{name}] = "{name}",\n''')
+        fobj.write("};\n")
+        fobj.write("#endif\n")
+
         fobj.write(footer)
 
 
