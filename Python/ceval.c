@@ -54,15 +54,74 @@ static PyObject * do_call_core(
 
 #ifdef LLTRACE
 static int lltrace;
-static int prtrace(PyThreadState *, PyObject *, const char *);
-static void lltrace_instruction(_PyInterpreterFrame *frame, int opcode, int oparg)
+static void
+dump_stack(_PyInterpreterFrame *frame, int stack_level)
 {
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
+    PyObject **stack = _PyFrame_Stackbase(frame);
+    printf("[");
+    for (int i = 0; i < stack_level; i++) {
+        PyObject *obj = stack[i];
+        if (PyObject_Print(obj, stdout, 0) != 0) {
+            PyErr_Clear();
+            printf("???\n");
+            goto done;
+        }
+        printf(", ");
+    }
+    printf("]\n");
+  done:
+    PyErr_Restore(type, value, traceback);
+}
+
+static void
+lltrace_instruction(_PyInterpreterFrame *frame,
+                    int opcode, int oparg, int stack_level)
+{
+    dump_stack(frame, stack_level);
+    const char *opname = _PyOpcode_OpName[opcode];
+    int lasti = _PyInterpreterFrame_LASTI(frame);
+    if (opname == NULL) {
+        printf("%d: unknown opcode %d, %d",
+               lasti, opcode, oparg);
+    }
     if (HAS_ARG(opcode)) {
-        printf("%d: %d, %d\n", _PyInterpreterFrame_LASTI(frame), opcode, oparg);
+        printf("%d: %s %d\n", lasti, opname, oparg);
     }
     else {
-        printf("%d: %d\n", _PyInterpreterFrame_LASTI(frame), opcode);
+        printf("%d: %s\n", lasti, opname);
     }
+}
+static void
+lltrace_resume_frame(_PyInterpreterFrame *frame)
+{
+    PyFunctionObject *f = frame->f_func;
+    if (f == NULL) {
+        printf("Resuming frame.");
+        return;
+    }
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
+    PyObject *name = f->func_qualname;
+    if (name == NULL) {
+        name = f->func_name;
+    }
+    printf("Resuming frame");
+    if (name) {
+        printf(" for ");
+        if (PyObject_Print(name, stdout, 0) < 0) {
+            PyErr_Clear();
+        }
+    }
+    if (f->func_module) {
+        printf(" in module ");
+        if (PyObject_Print(f->func_module, stdout, 0) < 0) {
+            PyErr_Clear();
+        }
+    }
+    printf("\n");
+    PyErr_Restore(type, value, traceback);
 }
 #endif
 static int call_trace(Py_tracefunc, PyObject *,
@@ -1266,7 +1325,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
-#define PRE_DISPATCH_GOTO() if (lltrace) { lltrace_instruction(frame, opcode, oparg); }
+#define PRE_DISPATCH_GOTO() if (lltrace) { lltrace_instruction(frame, opcode, oparg, STACK_LEVEL()); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
@@ -1358,13 +1417,13 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #else
 #define PREDICT(op) \
     do { \
-        _Py_CODEUNIT word = *next_instr; \
+        /*_Py_CODEUNIT word = *next_instr; \
         opcode = _Py_OPCODE(word) | cframe.use_tracing OR_DTRACE_LINE; \
         if (opcode == op) { \
             oparg = _Py_OPARG(word); \
             INSTRUCTION_START(op); \
             goto PREDICT_ID(op); \
-        } \
+        }*/ \
     } while(0)
 #endif
 #define PREDICTED(op)           PREDICT_ID(op):
@@ -1388,20 +1447,16 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define BASIC_POP()       (*--stack_pointer)
 
 #ifdef LLTRACE
-#define PUSH(v)         { (void)(BASIC_PUSH(v), \
-                          lltrace && prtrace(tstate, TOP(), "push")); \
+#define PUSH(v)         { (void)(BASIC_PUSH(v));\
                           assert(STACK_LEVEL() <= frame->f_code->co_stacksize); }
-#define POP()           ((void)(lltrace && prtrace(tstate, TOP(), "pop")), \
-                         BASIC_POP())
+#define POP()           (BASIC_POP())
 #define STACK_GROW(n)   do { \
                           assert(n >= 0); \
-                          (void)(BASIC_STACKADJ(n), \
-                          lltrace && prtrace(tstate, TOP(), "stackadj")); \
+                          (void)(BASIC_STACKADJ(n));\
                           assert(STACK_LEVEL() <= frame->f_code->co_stacksize); \
                         } while (0)
 #define STACK_SHRINK(n) do { \
                             assert(n >= 0); \
-                            (void)(lltrace && prtrace(tstate, TOP(), "stackadj")); \
                             (void)(BASIC_STACKADJ(-(n))); \
                             assert(STACK_LEVEL() <= frame->f_code->co_stacksize); \
                         } while (0)
@@ -1672,6 +1727,9 @@ resume_frame:
             goto exit_unwind;
         }
         lltrace = r;
+    }
+    if (lltrace) {
+        lltrace_resume_frame(frame);
     }
 #endif
 
@@ -3930,6 +3988,11 @@ handle_eval_breaker:
 
         TARGET(JUMP_BACKWARD) {
             _PyCode_Warmup(frame->f_code);
+            JUMP_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+        }
+
+        TARGET(JUMP_BACKWARD_QUICK) {
+            PREDICTED(JUMP_BACKWARD_QUICK);
             assert(oparg < INSTR_OFFSET()+(int)INLINE_CACHE_ENTRIES_JUMP_BACKWARD);
             JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg);
             CHECK_EVAL_BREAKER();
@@ -3937,10 +4000,77 @@ handle_eval_breaker:
         }
 
         TARGET(JUMP_BACKWARD_ADAPTIVE) {
-            assert(oparg < INSTR_OFFSET()+(int)INLINE_CACHE_ENTRIES_JUMP_BACKWARD);
-            JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD - oparg);
+            assert(cframe.use_tracing == 0);
+            printf("*** JUMP_BACKWARD_ADAPTIVE\n");
+
+            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
             CHECK_EVAL_BREAKER();
-            NOTRACE_DISPATCH();
+            _Py_CODEUNIT *for_iter;
+            for_iter = next_instr + INLINE_CACHE_ENTRIES_JUMP_BACKWARD - oparg;
+            assert(_Py_OPCODE(*for_iter) == FOR_ITER);
+            PyObject *iter = TOP();
+
+            /* Adaptiveness is for the for FOR_ITER operation */
+            if (cache->counter == 0) {
+                next_instr--;
+                _Py_Specialize_JumpBackward(iter, next_instr);
+                DISPATCH();
+            }
+            STAT_INC(JUMP_BACKWARD, deferred);
+            cache->counter--;
+
+            /* Do FOR_ITER right here, no need to jump first. */
+            /* before: [iter]; after: [iter, iter()] *or* [] */
+            printf("iternext\n");
+            PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            if (next != NULL) {
+                printf("iter produced result\n");
+                PUSH(next);
+                next_instr = for_iter + 1;
+                NOTRACE_DISPATCH();
+            }
+            printf("iter exhausted\n");
+            if (_PyErr_Occurred(tstate)) {
+                if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                    goto error;
+                }
+                else if (tstate->c_tracefunc != NULL) {
+                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
+                }
+                _PyErr_Clear(tstate);
+            }
+            printf("iter exhausted without error\n");
+        iterator_exhausted:
+            // iterator ended normally.
+            // Jump to FOR_ITER, then jump to where FOR_ITER jumps.
+            assert(!_PyErr_Occurred(tstate));
+            Py_DECREF(POP());
+            JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD - oparg);
+            NEXTOPARG();
+            JUMPBY(1+oparg);
+            DISPATCH();
+        }
+
+        TARGET(JUMP_BACKWARD_FOR_ITER_LIST) {
+            assert(cframe.use_tracing == 0);
+            printf("JUMP_BACKWARD_FOR_ITER_LIST\n");
+            CHECK_EVAL_BREAKER();
+            _PyListIterObject *it = (_PyListIterObject *)TOP();
+            DEOPT_IF(Py_TYPE(it) != &PyListIter_Type, JUMP_BACKWARD);
+            PyListObject *seq = it->it_seq;
+            if (seq == NULL) {
+                goto iterator_exhausted;
+            }
+            if (it->it_index < PyList_GET_SIZE(seq)) {
+                PyObject *res = PyList_GET_ITEM(seq, it->it_index++);
+                Py_INCREF(res);
+                PUSH(res);
+                JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD - oparg + 1);
+                NOTRACE_DISPATCH();
+            }
+            it->it_seq = NULL;
+            Py_DECREF(seq);
+            goto iterator_exhausted;
         }
 
         TARGET(POP_JUMP_BACKWARD_IF_FALSE) {
