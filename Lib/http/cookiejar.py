@@ -1050,7 +1050,7 @@ class DefaultCookiePolicy(CookiePolicy):
                 return False
             if cookie.version == 0:
                 if (not (erhn.endswith(domain) or
-                         (erhn.endswith(".local") and erhn[:len(erhn)-6].endswith(undotted_domain))) and
+                         erhn.endswith(f"{undotted_domain}.local")) and
                     (not erhn.startswith(".") and
                      not ("."+erhn).endswith(domain))):
                     _debug("   effective request-host %s (even with added "
