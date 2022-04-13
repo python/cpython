@@ -25,6 +25,7 @@ module:
     is in effect for the specified time.
 
     .. versionadded:: 3.3
+
     .. deprecated:: 3.11
        Use of the ``isdst`` argument is deprecated.
 

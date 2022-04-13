@@ -853,6 +853,9 @@ Deprecated
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
+* Deprecated the ``isdst`` parameter in :func:`email.utils.localtime`.
+  (Contributed by Alan Williams in :issue:`72346`.)
+
 
 Removed
 =======
@@ -1389,8 +1392,6 @@ Deprecated
 * Deprecate the ``ob_shash`` member of the :c:type:`PyBytesObject`. Use :c:func:`PyObject_Hash` instead.
   (Contributed by Inada Naoki in :issue:`46864`.)
 
-* Deprecate the ``isdst`` parameter in :func:`email.utils.localtime`.
-  (Contributed by Alan Williams in :issue:`72346`.)
 
 Removed
 -------
