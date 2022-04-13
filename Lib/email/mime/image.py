@@ -8,7 +8,6 @@ __all__ = ['MIMEImage']
 
 from email import encoders
 from email.mime.nonmultipart import MIMENonMultipart
-import warnings
 
 
 # Originally from the imghdr module.
