@@ -1708,7 +1708,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         }
         addr->sun_family = s->sock_family;
         memcpy(addr->sun_path, path.buf, path.len);
-        
+
         retval = 1;
     unix_out:
         PyBuffer_Release(&path);
@@ -8212,6 +8212,9 @@ PyInit__socket(void)
 #endif
 #ifdef  TCP_INFO
     PyModule_AddIntMacro(m, TCP_INFO);
+#endif
+#ifdef  TCP_CONNECTION_INFO
+    PyModule_AddIntMacro(m, TCP_CONNECTION_INFO);
 #endif
 #ifdef  TCP_QUICKACK
     PyModule_AddIntMacro(m, TCP_QUICKACK);

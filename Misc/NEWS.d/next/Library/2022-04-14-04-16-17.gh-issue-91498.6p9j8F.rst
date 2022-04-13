@@ -1,0 +1,2 @@
+Add the ``TCP_CONNECTION_INFO`` macOS/ FreeBSD constant to the socket
+module. Patch by Dong-hee Na.
