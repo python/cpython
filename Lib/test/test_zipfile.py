@@ -50,6 +50,12 @@ def get_files(test):
         yield f
         test.assertFalse(f.closed)
 
+def isroot():
+    if sys.platform == "win32":
+        return False
+
+    return os.getuid() == 0
+
 class AbstractTestsWithSourceFile:
     @classmethod
     def setUpClass(cls):
@@ -2058,20 +2064,22 @@ class OtherTests(unittest.TestCase):
 @unittest.skipIf(sys.platform == "win32", "Requires file permissions")
 class TestsPermissionExtraction(unittest.TestCase):
     def setUp(self):
+        os.mkdir(TESTFNDIR)
         self.files = []
 
         with zipfile.ZipFile(TESTFN2, 'w', zipfile.ZIP_STORED) as zf:
-            for mode in range(1, 0o1000):
-                filename = str(mode)
-                zinfo = zipfile.ZipInfo(filename)
-                zinfo.external_attr = mode << 16
-                zf.writestr(zinfo, filename)
-                self.files.append((filename, mode))
+            for base_mode in range(1, 0o1000):
+                for special_mask in range(0o10):
+                    mode = base_mode | special_mask << 9
+                    filename = os.path.join(TESTFNDIR, str(mode))
+                    zinfo = zipfile.ZipInfo(filename)
+                    zinfo.external_attr = mode << 16
+                    zf.writestr(zinfo, filename)
+                    self.files.append((filename, mode))
 
     def tearDown(self):
         os.unlink(TESTFN2)
-        for filename, _mode in self.files:
-            os.unlink(filename)
+        rmtree(TESTFNDIR)
 
     def test_extractall_preserve_none(self):
         with zipfile.ZipFile(TESTFN2, 'r') as zf:
@@ -2108,22 +2116,24 @@ class TestsPermissionExtraction(unittest.TestCase):
                 self.assertEqual(os.stat(filename).st_mode,
                                  stat.S_IFREG | (expected_mode & 0o777))
 
-    @unittest.skipUnless(os.getuid() == 0, "requires root")
+    @unittest.skipUnless(isroot(), "requires root")
     def test_extractall_preserve_all(self):
         with zipfile.ZipFile(TESTFN2, 'r') as zf:
             zf.extractall(preserve_permissions=zipfile.PERMS_PRESERVE_ALL)
-            for filename, mode in self.files:
+            for filename, expected_mode in self.files:
                 self.assertTrue(os.path.exists(filename))
-                self.assertEqual(os.stat(filename).st_mode, mode)
+                self.assertEqual(os.stat(filename).st_mode,
+                                 stat.S_IFREG | expected_mode)
 
-    @unittest.skipUnless(os.getuid() == 0, "requires root")
+    @unittest.skipUnless(isroot(), "requires root")
     def test_extract_preserve_all(self):
         with zipfile.ZipFile(TESTFN2, 'r') as zf:
-            for filename, mode in self.files:
+            for filename, expected_mode in self.files:
                 zf.extract(filename,
                               preserve_permissions=zipfile.PERMS_PRESERVE_ALL)
                 self.assertTrue(os.path.exists(filename))
-                self.assertEqual(os.stat(filename).st_mode, mode)
+                self.assertEqual(os.stat(filename).st_mode,
+                                 stat.S_IFREG | expected_mode)
 
 class AbstractBadCrcTests:
     def test_testzip_with_bad_crc(self):
