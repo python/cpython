@@ -1471,7 +1471,7 @@ C API:
 * :c:type:`PyUnicodeObject`
 * :c:func:`PyUnicode_InternImmortal()`
 
-* Deprecated the ``isdst`` parameter in :func:`email.utils.localtime`.
+* Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
   (Contributed by Alan Williams in :issue:`72346`.)
 
 
@@ -2082,7 +2082,6 @@ Deprecated
 
 * Deprecate the ``ob_shash`` member of the :c:type:`PyBytesObject`. Use :c:func:`PyObject_Hash` instead.
   (Contributed by Inada Naoki in :issue:`46864`.)
-
 
 Removed
 -------
