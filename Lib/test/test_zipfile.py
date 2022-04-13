@@ -2101,7 +2101,7 @@ class TestsPermissionExtraction(unittest.TestCase):
 
     def test_extractall_preserve_safe(self):
         with zipfile.ZipFile(TESTFN2, 'r') as zf:
-            zf.extractall(preserve_permissions=zipfile.PERMS_PRESERVE_SAFE)
+            zf.extractall(preserve_permissions=zipfile.PreserveMode.SAFE)
             for filename, mode in self.files:
                 self.assertTrue(os.path.exists(filename))
                 self.assertEqual(os.stat(filename).st_mode,
@@ -2111,7 +2111,7 @@ class TestsPermissionExtraction(unittest.TestCase):
         with zipfile.ZipFile(TESTFN2, 'r') as zf:
             for filename, mode in self.files:
                 zf.extract(filename,
-                              preserve_permissions=zipfile.PERMS_PRESERVE_SAFE)
+                              preserve_permissions=zipfile.PreserveMode.SAFE)
                 self.assertTrue(os.path.exists(filename))
                 self.assertEqual(os.stat(filename).st_mode,
                                  stat.S_IFREG | (mode & 0o777))
@@ -2119,7 +2119,7 @@ class TestsPermissionExtraction(unittest.TestCase):
     @unittest.skipUnless(isroot(), "requires root")
     def test_extractall_preserve_all(self):
         with zipfile.ZipFile(TESTFN2, 'r') as zf:
-            zf.extractall(preserve_permissions=zipfile.PERMS_PRESERVE_ALL)
+            zf.extractall(preserve_permissions=zipfile.PreserveMode.ALL)
             for filename, mode in self.files:
                 self.assertTrue(os.path.exists(filename))
                 self.assertEqual(os.stat(filename).st_mode,
@@ -2130,7 +2130,7 @@ class TestsPermissionExtraction(unittest.TestCase):
         with zipfile.ZipFile(TESTFN2, 'r') as zf:
             for filename, mode in self.files:
                 zf.extract(filename,
-                              preserve_permissions=zipfile.PERMS_PRESERVE_ALL)
+                              preserve_permissions=zipfile.PreserveMode.ALL)
                 self.assertTrue(os.path.exists(filename))
                 self.assertEqual(os.stat(filename).st_mode,
                                  stat.S_IFREG | mode)

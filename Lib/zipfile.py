@@ -17,6 +17,7 @@ import threading
 import time
 import contextlib
 import pathlib
+import enum
 
 try:
     import zlib # We may need its compression method
@@ -37,9 +38,8 @@ except ImportError:
 
 __all__ = ["BadZipFile", "BadZipfile", "error",
            "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA",
-           "PERMS_PRESERVE_NONE", "PERMS_PRESERVE_SAFE", "PERMS_PRESERVE_ALL",
-           "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile",
-           "Path"]
+           "PreserveMode", "is_zipfile", "ZipInfo", "ZipFile",
+           "PyZipFile", "LargeZipFile", "Path"]
 
 class BadZipFile(Exception):
     pass
@@ -64,11 +64,6 @@ ZIP_DEFLATED = 8
 ZIP_BZIP2 = 12
 ZIP_LZMA = 14
 # Other ZIP compression methods not supported
-
-# Options for preserving file permissions upon extraction
-PERMS_PRESERVE_NONE = 0
-PERMS_PRESERVE_SAFE = 1
-PERMS_PRESERVE_ALL = 2
 
 DEFAULT_VERSION = 20
 ZIP64_VERSION = 45
@@ -346,6 +341,11 @@ def _EndRecData(fpin):
     # Unable to find a valid end of central directory structure
     return None
 
+# Options for preserving file permissions upon extraction
+class PreserveMode(enum.Enum):
+    NONE = enum.auto()
+    SAFE = enum.auto()
+    ALL = enum.auto()
 
 class ZipInfo (object):
     """Class with attributes describing each file in the ZIP archive."""
@@ -1651,7 +1651,7 @@ class ZipFile:
         return _ZipWriteFile(self, zinfo, zip64)
 
     def extract(self, member, path=None, pwd=None,
-                preserve_permissions=PERMS_PRESERVE_NONE):
+                preserve_permissions=PreserveMode.NONE):
         """Extract a member from the archive to the current working directory,
            using its full name. Its file information is extracted as accurately
            as possible. `member' may be a filename or a ZipInfo object. You can
@@ -1666,7 +1666,7 @@ class ZipFile:
         return self._extract_member(member, path, pwd, preserve_permissions)
 
     def extractall(self, path=None, members=None, pwd=None,
-                   preserve_permissions=PERMS_PRESERVE_NONE):
+                   preserve_permissions=PreserveMode.NONE):
         """Extract all members from the archive to the current working
            directory. `path' specifies a different directory to extract to.
            `members' is optional and must be a subset of the list returned
@@ -1700,7 +1700,7 @@ class ZipFile:
         return arcname
 
     def _extract_member(self, member, targetpath, pwd,
-                        preserve_permissions=PERMS_PRESERVE_NONE):
+                        preserve_permissions=PreserveMode.NONE):
         """Extract the ZipInfo object 'member' to a physical
            file on the path targetpath.
         """
@@ -1740,13 +1740,13 @@ class ZipFile:
              open(targetpath, "wb") as target:
             shutil.copyfileobj(source, target)
 
-        if preserve_permissions == PERMS_PRESERVE_NONE:
+        if preserve_permissions == PreserveMode.NONE:
             return targetpath
 
-        if preserve_permissions == PERMS_PRESERVE_SAFE:
+        if preserve_permissions == PreserveMode.SAFE:
             mode = (member.external_attr >> 16) & 0o777
 
-        if preserve_permissions == PERMS_PRESERVE_ALL:
+        if preserve_permissions == PreserveMode.ALL:
             mode = (member.external_attr >> 16) & 0xFFFF
 
         os.chmod(targetpath, mode)
