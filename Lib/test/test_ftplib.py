@@ -29,6 +29,7 @@ with warnings.catch_warnings():
     import asyncore
     import asynchat
 
+support.requires_working_socket(module=True)
 
 TIMEOUT = support.LOOPBACK_TIMEOUT
 DEFAULT_ENCODING = 'utf-8'

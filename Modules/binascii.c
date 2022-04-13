@@ -737,6 +737,21 @@ static const unsigned int crc_32_tab[256] = {
 0x5d681b02U, 0x2a6f2b94U, 0xb40bbe37U, 0xc30c8ea1U, 0x5a05df1bU,
 0x2d02ef8dU
 };
+
+static unsigned int
+internal_crc32(const unsigned char *bin_data, Py_ssize_t len, unsigned int crc)
+{ /* By Jim Ahlstrom; All rights transferred to CNRI */
+    unsigned int result;
+
+    crc = ~ crc;
+    while (len-- > 0) {
+        crc = crc_32_tab[(crc ^ *bin_data++) & 0xff] ^ (crc >> 8);
+        /* Note:  (crc >> 8) MUST zero fill on left */
+    }
+
+    result = (crc ^ 0xFFFFFFFF);
+    return result & 0xffffffff;
+}
 #endif  /* USE_ZLIB_CRC32 */
 
 /*[clinic input]
@@ -754,34 +769,46 @@ binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
 /*[clinic end generated code: output=52cf59056a78593b input=bbe340bc99d25aa8]*/
 
 #ifdef USE_ZLIB_CRC32
-/* This was taken from zlibmodule.c PyZlib_crc32 (but is PY_SSIZE_T_CLEAN) */
+/* This is the same as zlibmodule.c zlib_crc32_impl. It exists in two
+ * modules for historical reasons. */
 {
-    const Byte *buf;
-    Py_ssize_t len;
-    int signed_val;
+    /* Releasing the GIL for very small buffers is inefficient
+       and may lower performance */
+    if (data->len > 1024*5) {
+        unsigned char *buf = data->buf;
+        Py_ssize_t len = data->len;
 
-    buf = (Byte*)data->buf;
-    len = data->len;
-    signed_val = crc32(crc, buf, len);
-    return (unsigned int)signed_val & 0xffffffffU;
+        Py_BEGIN_ALLOW_THREADS
+        /* Avoid truncation of length for very large buffers. crc32() takes
+           length as an unsigned int, which may be narrower than Py_ssize_t. */
+        while ((size_t)len > UINT_MAX) {
+            crc = crc32(crc, buf, UINT_MAX);
+            buf += (size_t) UINT_MAX;
+            len -= (size_t) UINT_MAX;
+        }
+        crc = crc32(crc, buf, (unsigned int)len);
+        Py_END_ALLOW_THREADS
+    } else {
+        crc = crc32(crc, data->buf, (unsigned int)data->len);
+    }
+    return crc & 0xffffffff;
 }
 #else  /* USE_ZLIB_CRC32 */
-{ /* By Jim Ahlstrom; All rights transferred to CNRI */
-    const unsigned char *bin_data;
-    Py_ssize_t len;
-    unsigned int result;
+{
+    const unsigned char *bin_data = data->buf;
+    Py_ssize_t len = data->len;
 
-    bin_data = data->buf;
-    len = data->len;
-
-    crc = ~ crc;
-    while (len-- > 0) {
-        crc = crc_32_tab[(crc ^ *bin_data++) & 0xff] ^ (crc >> 8);
-        /* Note:  (crc >> 8) MUST zero fill on left */
+    /* Releasing the GIL for very small buffers is inefficient
+       and may lower performance */
+    if (len > 1024*5) {
+        unsigned int result;
+        Py_BEGIN_ALLOW_THREADS
+        result = internal_crc32(bin_data, len, crc);
+        Py_END_ALLOW_THREADS
+        return result;
+    } else {
+        return internal_crc32(bin_data, len, crc);
     }
-
-    result = (crc ^ 0xFFFFFFFF);
-    return result & 0xffffffff;
 }
 #endif  /* USE_ZLIB_CRC32 */
 

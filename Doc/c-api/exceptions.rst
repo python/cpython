@@ -253,6 +253,14 @@ For convenience, some of these functions will always return a
    .. versionadded:: 3.3
 
 
+.. c:function:: PyObject* PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg, PyObject *name, PyObject *path)
+
+   Much like :c:func:`PyErr_SetImportError` but this function allows for
+   specifying a subclass of :exc:`ImportError` to raise.
+
+   .. versionadded:: 3.6
+
+
 .. c:function:: void PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset)
 
    Set file, line, and offset information for the current exception.  If the
@@ -273,7 +281,7 @@ For convenience, some of these functions will always return a
 
 .. c:function:: void PyErr_SyntaxLocation(const char *filename, int lineno)
 
-   Like :c:func:`PyErr_SyntaxLocationEx`, but the col_offset parameter is
+   Like :c:func:`PyErr_SyntaxLocationEx`, but the *col_offset* parameter is
    omitted.
 
 
@@ -320,19 +328,12 @@ an error value).
    :mod:`warnings` module and the :option:`-W` option in the command line
    documentation.  There is no C API for warning control.
 
-.. c:function:: PyObject* PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg, PyObject *name, PyObject *path)
-
-   Much like :c:func:`PyErr_SetImportError` but this function allows for
-   specifying a subclass of :exc:`ImportError` to raise.
-
-   .. versionadded:: 3.6
-
 
 .. c:function:: int PyErr_WarnExplicitObject(PyObject *category, PyObject *message, PyObject *filename, int lineno, PyObject *module, PyObject *registry)
 
    Issue a warning message with explicit control over all warning attributes.  This
    is a straightforward wrapper around the Python function
-   :func:`warnings.warn_explicit`, see there for more information.  The *module*
+   :func:`warnings.warn_explicit`; see there for more information.  The *module*
    and *registry* arguments may be set to ``NULL`` to get the default effect
    described there.
 
@@ -440,7 +441,7 @@ Querying the error indicator
       error indicator.
 
 
-.. c:function:: void PyErr_NormalizeException(PyObject**exc, PyObject**val, PyObject**tb)
+.. c:function:: void PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 
    Under certain circumstances, the values returned by :c:func:`PyErr_Fetch` below
    can be "unnormalized", meaning that ``*exc`` is a class object but ``*val`` is

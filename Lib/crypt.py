@@ -12,8 +12,12 @@ except ModuleNotFoundError:
 
 import errno
 import string as _string
+import warnings
 from random import SystemRandom as _SystemRandom
 from collections import namedtuple as _namedtuple
+
+
+warnings._deprecated(__name__, remove=(3, 13))
 
 
 _saltchars = _string.ascii_letters + _string.digits + './'
