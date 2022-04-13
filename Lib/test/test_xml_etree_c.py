@@ -1,7 +1,8 @@
 # xml.etree test for cElementTree
+import io
 import struct
 from test import support
-from test.support import import_fresh_module
+from test.support.import_helper import import_fresh_module
 import types
 import unittest
 
@@ -116,6 +117,69 @@ class MiscTests(unittest.TestCase):
 
         elem.tail = X()
         elem.__setstate__({'tag': 42})  # shouldn't cause an assertion failure
+
+    @support.cpython_only
+    def test_uninitialized_parser(self):
+        # The interpreter shouldn't crash in case of calling methods or
+        # accessing attributes of uninitialized XMLParser objects.
+        parser = cET.XMLParser.__new__(cET.XMLParser)
+        self.assertRaises(ValueError, parser.close)
+        self.assertRaises(ValueError, parser.feed, 'foo')
+        class MockFile:
+            def read(*args):
+                return ''
+        self.assertRaises(ValueError, parser._parse_whole, MockFile())
+        self.assertRaises(ValueError, parser._setevents, None)
+        self.assertIsNone(parser.entity)
+        self.assertIsNone(parser.target)
+
+    def test_setstate_leaks(self):
+        # Test reference leaks
+        elem = cET.Element.__new__(cET.Element)
+        for i in range(100):
+            elem.__setstate__({'tag': 'foo', 'attrib': {'bar': 42},
+                               '_children': [cET.Element('child')],
+                               'text': 'text goes here',
+                               'tail': 'opposite of head'})
+
+        self.assertEqual(elem.tag, 'foo')
+        self.assertEqual(elem.text, 'text goes here')
+        self.assertEqual(elem.tail, 'opposite of head')
+        self.assertEqual(list(elem.attrib.items()), [('bar', 42)])
+        self.assertEqual(len(elem), 1)
+        self.assertEqual(elem[0].tag, 'child')
+
+    def test_iterparse_leaks(self):
+        # Test reference leaks in TreeBuilder (issue #35502).
+        # The test is written to be executed in the hunting reference leaks
+        # mode.
+        XML = '<a></a></b>'
+        parser = cET.iterparse(io.StringIO(XML))
+        next(parser)
+        del parser
+        support.gc_collect()
+
+    def test_xmlpullparser_leaks(self):
+        # Test reference leaks in TreeBuilder (issue #35502).
+        # The test is written to be executed in the hunting reference leaks
+        # mode.
+        XML = '<a></a></b>'
+        parser = cET.XMLPullParser()
+        parser.feed(XML)
+        del parser
+        support.gc_collect()
+
+    def test_dict_disappearing_during_get_item(self):
+        # test fix for seg fault reported in issue 27946
+        class X:
+            def __hash__(self):
+                e.attrib = {} # this frees e->extra->attrib
+                [{i: i} for i in range(1000)] # exhaust the dict keys cache
+                return 13
+
+        e = cET.Element("elem", {1: 2})
+        r = e.get(X())
+        self.assertIsNone(r)
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')

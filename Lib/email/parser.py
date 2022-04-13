@@ -13,7 +13,6 @@ from email.feedparser import FeedParser, BytesFeedParser
 from email._policybase import compat32
 
 
-
 class Parser:
     def __init__(self, _class=None, *, policy=compat32):
         """Parser of RFC 2822 and MIME email messages.

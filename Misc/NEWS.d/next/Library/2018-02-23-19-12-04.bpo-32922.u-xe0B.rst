@@ -1,2 +1,0 @@
-dbm.open() now encodes filename with the filesystem encoding rather than
-default encoding.

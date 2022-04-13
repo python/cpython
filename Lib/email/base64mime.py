@@ -84,7 +84,7 @@ def body_encode(s, maxlinelen=76, eol=NL):
     in an email.
     """
     if not s:
-        return s
+        return ""
 
     encvec = []
     max_unencoded = maxlinelen * 3 // 4

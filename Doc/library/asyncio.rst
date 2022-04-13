@@ -4,10 +4,24 @@
 .. module:: asyncio
    :synopsis: Asynchronous I/O.
 
---------------
+-------------------------------
+
+.. sidebar:: Hello World!
+
+   ::
+
+       import asyncio
+
+       async def main():
+           print('Hello ...')
+           await asyncio.sleep(1)
+           print('... World!')
+
+       # Python 3.7+
+       asyncio.run(main())
 
 asyncio is a library to write **concurrent** code using
-**async/await** syntax.
+the **async/await** syntax.
 
 asyncio is used as a foundation for multiple Python asynchronous
 frameworks that provide high-performance network and web-servers,
@@ -29,11 +43,13 @@ asyncio provides a set of **high-level** APIs to:
 
 * :ref:`synchronize <asyncio-sync>` concurrent code;
 
-as well as **low-level** APIs for *library and framework developers* to:
+Additionally, there are **low-level** APIs for
+*library and framework developers* to:
 
 * create and manage :ref:`event loops <asyncio-event-loop>`, which
-  provide asynchronous APIs for networking, subprocesses, OS signals,
-  etc;
+  provide asynchronous APIs for :meth:`networking <loop.create_server>`,
+  running :meth:`subprocesses <loop.subprocess_exec>`,
+  handling :meth:`OS signals <loop.add_signal_handler>`, etc;
 
 * implement efficient protocols using
   :ref:`transports <asyncio-transports-protocols>`;
@@ -42,14 +58,16 @@ as well as **low-level** APIs for *library and framework developers* to:
   with async/await syntax.
 
 
-Reference
----------
+.. We use the "rubric" directive here to avoid creating
+   the "Reference" subsection in the TOC.
 
-.. rubric:: High-level APIs
+.. rubric:: Reference
 
 .. toctree::
+   :caption: High-level APIs
    :maxdepth: 1
 
+   asyncio-runner.rst
    asyncio-task.rst
    asyncio-stream.rst
    asyncio-sync.rst
@@ -57,9 +75,8 @@ Reference
    asyncio-queue.rst
    asyncio-exceptions.rst
 
-.. rubric:: Low-level APIs
-
 .. toctree::
+   :caption: Low-level APIs
    :maxdepth: 1
 
    asyncio-eventloop.rst
@@ -67,19 +84,15 @@ Reference
    asyncio-protocol.rst
    asyncio-policy.rst
    asyncio-platforms.rst
-
-.. rubric:: Guides and Tutorials
+   asyncio-extending.rst
 
 .. toctree::
+   :caption: Guides and Tutorials
    :maxdepth: 1
 
    asyncio-api-index.rst
+   asyncio-llapi-index.rst
    asyncio-dev.rst
 
-
-.. seealso::
-
-   The :mod:`asyncio` module was proposed in :PEP:`3156`.
-   Since the acceptance of the PEP many new APIs were added and many
-   original APIs were altered.  The PEP should be treated as a
-   historical document.
+.. note::
+   The source code for asyncio can be found in :source:`Lib/asyncio/`.

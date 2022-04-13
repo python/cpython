@@ -15,7 +15,7 @@ There are four basic concrete server classes:
 
 .. class:: TCPServer(server_address, RequestHandlerClass, bind_and_activate=True)
 
-   This uses the Internet TCP protocol, which provides for
+   This uses the internet TCP protocol, which provides for
    continuous streams of data between the client and server.
    If *bind_and_activate* is true, the constructor automatically attempts to
    invoke :meth:`~BaseServer.server_bind` and
@@ -57,7 +57,7 @@ the server in a :keyword:`with` statement. Then call the
 :meth:`~BaseServer.handle_request` or
 :meth:`~BaseServer.serve_forever` method of the server object to
 process one or many requests.  Finally, call :meth:`~BaseServer.server_close`
-to close the socket (unless you used a :keyword:`with` statement).
+to close the socket (unless you used a :keyword:`!with` statement).
 
 When inheriting from :class:`ThreadingMixIn` for threaded connection behavior,
 you should explicitly declare how you want your threads to behave on an abrupt
@@ -237,6 +237,8 @@ Server Objects
    .. method:: shutdown()
 
       Tell the :meth:`serve_forever` loop to stop and wait until it does.
+      :meth:`shutdown` must be called while :meth:`serve_forever` is running in a
+      different thread otherwise it will deadlock.
 
 
    .. method:: server_close()
@@ -261,7 +263,7 @@ Server Objects
       The address on which the server is listening.  The format of addresses varies
       depending on the protocol family;
       see the documentation for the :mod:`socket` module
-      for details.  For Internet protocols, this is a tuple containing a string giving
+      for details.  For internet protocols, this is a tuple containing a string giving
       the address, and an integer port number: ``('127.0.0.1', 80)``, for example.
 
 

@@ -10,8 +10,8 @@ Transports and Protocols
 
 .. rubric:: Preface
 
-Transports and Protocols are used by **low-level** event loop
-APIs such as :meth:`loop.create_connection`.  They require using
+Transports and Protocols are used by the **low-level** event loop
+APIs such as :meth:`loop.create_connection`.  They use
 callback-based programming style and enable high-performance
 implementations of network or IPC protocols (e.g. HTTP).
 
@@ -69,11 +69,15 @@ This documentation page contains the following sections:
 Transports
 ==========
 
+**Source code:** :source:`Lib/asyncio/transports.py`
+
+----------------------------------------------------
+
 Transports are classes provided by :mod:`asyncio` in order to abstract
 various kinds of communication channels.
 
 Transport objects are always instantiated by an
-ref:`asyncio event loop <asyncio-event-loop>`.
+:ref:`asyncio event loop <asyncio-event-loop>`.
 
 asyncio implements transports for TCP, UDP, SSL, and subprocess pipes.
 The methods available on a transport depend on the transport's kind.
@@ -282,7 +286,7 @@ Write-only Transports
 
 .. method:: WriteTransport.get_write_buffer_limits()
 
-   Get the *high*- and *low*-water limits for write flow control. Return a
+   Get the *high* and *low* watermarks for write flow control. Return a
    tuple ``(low, high)`` where *low* and *high* are positive number of
    bytes.
 
@@ -292,14 +296,14 @@ Write-only Transports
 
 .. method:: WriteTransport.set_write_buffer_limits(high=None, low=None)
 
-   Set the *high*- and *low*-water limits for write flow control.
+   Set the *high* and *low* watermarks for write flow control.
 
    These two values (measured in number of
    bytes) control when the protocol's
    :meth:`protocol.pause_writing() <BaseProtocol.pause_writing>`
    and :meth:`protocol.resume_writing() <BaseProtocol.resume_writing>`
-   methods are called. If specified, the low-water limit must be less
-   than or equal to the high-water limit.  Neither *high* nor *low*
+   methods are called. If specified, the low watermark must be less
+   than or equal to the high watermark.  Neither *high* nor *low*
    can be negative.
 
    :meth:`~BaseProtocol.pause_writing` is called when the buffer size
@@ -308,9 +312,9 @@ Write-only Transports
    the buffer size becomes less than or equal to the *low* value.
 
    The defaults are implementation-specific.  If only the
-   high-water limit is given, the low-water limit defaults to an
+   high watermark is given, the low watermark defaults to an
    implementation-specific value less than or equal to the
-   high-water limit.  Setting *high* to zero forces *low* to zero as
+   high watermark.  Setting *high* to zero forces *low* to zero as
    well, and causes :meth:`~BaseProtocol.pause_writing` to be called
    whenever the buffer becomes non-empty.  Setting *low* to zero causes
    :meth:`~BaseProtocol.resume_writing` to be called only once the
@@ -337,11 +341,11 @@ Write-only Transports
 
 .. method:: WriteTransport.write_eof()
 
-   Close the write end of the transport after flushing buffered data.
+   Close the write end of the transport after flushing all buffered data.
    Data may still be received.
 
    This method can raise :exc:`NotImplementedError` if the transport
-   (e.g. SSL) doesn't support half-closes.
+   (e.g. SSL) doesn't support half-closed connections.
 
 
 Datagram Transports
@@ -431,6 +435,10 @@ Subprocess Transports
 Protocols
 =========
 
+**Source code:** :source:`Lib/asyncio/protocols.py`
+
+---------------------------------------------------
+
 asyncio provides a set of abstract base classes that should be used
 to implement network protocols.  Those classes are meant to be used
 together with :ref:`transports <asyncio-transport>`.
@@ -506,18 +514,18 @@ method for more details.
 
 .. method:: BaseProtocol.pause_writing()
 
-   Called when the transport's buffer goes over the high-water mark.
+   Called when the transport's buffer goes over the high watermark.
 
 .. method:: BaseProtocol.resume_writing()
 
-   Called when the transport's buffer drains below the low-water mark.
+   Called when the transport's buffer drains below the low watermark.
 
-If the buffer size equals the high-water mark,
+If the buffer size equals the high watermark,
 :meth:`~BaseProtocol.pause_writing` is not called: the buffer size must
 go strictly over.
 
 Conversely, :meth:`~BaseProtocol.resume_writing` is called when the
-buffer size is equal or lower than the low-water mark.  These end
+buffer size is equal or lower than the low watermark.  These end
 conditions are important to ensure that things go as expected when
 either mark is zero.
 
@@ -541,13 +549,12 @@ accept factories that return streaming protocols.
    and instead make your parsing generic and flexible. However,
    data is always received in the correct order.
 
-   The method can be called an arbitrary number of times during
-   a connection.
+   The method can be called an arbitrary number of times while
+   a connection is open.
 
    However, :meth:`protocol.eof_received() <Protocol.eof_received>`
-   is called at most once and, if called,
-   :meth:`protocol.data_received() <Protocol.data_received>`
-   won't be called after it.
+   is called at most once.  Once `eof_received()` is called,
+   ``data_received()`` is not called anymore.
 
 .. method:: Protocol.eof_received()
 
@@ -562,9 +569,9 @@ accept factories that return streaming protocols.
    Since the default implementation returns ``None``, it implicitly closes the
    connection.
 
-   Some transports such as SSL don't support half-closed connections,
-   in which case returning true from this method will result in closing
-   the connection.
+   Some transports, including SSL, don't support half-closed connections,
+   in which case returning true from this method will result in the connection
+   being closed.
 
 
 State machine:
@@ -581,19 +588,16 @@ Buffered Streaming Protocols
 ----------------------------
 
 .. versionadded:: 3.7
-   **Important:** this has been added to asyncio in Python 3.7
-   *on a provisional basis*!  This is as an experimental API that
-   might be changed or removed completely in Python 3.8.
 
 Buffered Protocols can be used with any event loop method
 that supports `Streaming Protocols`_.
 
-The idea of ``BufferedProtocol`` is that it allows manual allocation
+``BufferedProtocol`` implementations allow explicit manual allocation
 and control of the receive buffer.  Event loops can then use the buffer
 provided by the protocol to avoid unnecessary data copies.  This
 can result in noticeable performance improvement for protocols that
-receive big amounts of data.  Sophisticated protocols implementations
-can allocate the buffer only once at creation time.
+receive big amounts of data.  Sophisticated protocol implementations
+can significantly reduce the number of buffer allocations.
 
 The following callbacks are called on :class:`BufferedProtocol`
 instances:
@@ -602,12 +606,12 @@ instances:
 
    Called to allocate a new receive buffer.
 
-   *sizehint* is a recommended minimal size for the returned
-   buffer.  It is acceptable to return smaller or bigger buffers
+   *sizehint* is the recommended minimum size for the returned
+   buffer.  It is acceptable to return smaller or larger buffers
    than what *sizehint* suggests.  When set to -1, the buffer size
-   can be arbitrary. It is an error to return a zero-sized buffer.
+   can be arbitrary. It is an error to return a buffer with a zero size.
 
-   Must return an object that implements the
+   ``get_buffer()`` must return an object implementing the
    :ref:`buffer protocol <bufferobjects>`.
 
 .. method:: BufferedProtocol.buffer_updated(nbytes)
@@ -658,14 +662,14 @@ factories passed to the :meth:`loop.create_datagram_endpoint` method.
    :class:`OSError`.  *exc* is the :class:`OSError` instance.
 
    This method is called in rare conditions, when the transport (e.g. UDP)
-   detects that a datagram couldn't be delivered to its recipient.
+   detects that a datagram could not be delivered to its recipient.
    In many conditions though, undeliverable datagrams will be silently
    dropped.
 
 .. note::
 
    On BSD systems (macOS, FreeBSD, etc.) flow control is not supported
-   for datagram protocols, because it is difficult to detect easily send
+   for datagram protocols, because there is no reliable way to detect send
    failures caused by writing too many packets.
 
    The socket always appears 'ready' and excess packets are dropped. An
@@ -679,7 +683,7 @@ factories passed to the :meth:`loop.create_datagram_endpoint` method.
 Subprocess Protocols
 --------------------
 
-Datagram Protocol instances should be constructed by protocol
+Subprocess Protocol instances should be constructed by protocol
 factories passed to the :meth:`loop.subprocess_exec` and
 :meth:`loop.subprocess_shell` methods.
 
@@ -707,7 +711,7 @@ factories passed to the :meth:`loop.subprocess_exec` and
 Examples
 ========
 
-.. _asyncio-tcp-echo-server-protocol:
+.. _asyncio_example_tcp_echo_server_protocol:
 
 TCP Echo Server
 ---------------
@@ -718,7 +722,7 @@ received data, and close the connection::
     import asyncio
 
 
-    class EchoServerClientProtocol(asyncio.Protocol):
+    class EchoServerProtocol(asyncio.Protocol):
         def connection_made(self, transport):
             peername = transport.get_extra_info('peername')
             print('Connection from {}'.format(peername))
@@ -741,7 +745,7 @@ received data, and close the connection::
         loop = asyncio.get_running_loop()
 
         server = await loop.create_server(
-            lambda: EchoServerClientProtocol(),
+            lambda: EchoServerProtocol(),
             '127.0.0.1', 8888)
 
         async with server:
@@ -756,7 +760,7 @@ received data, and close the connection::
    The :ref:`TCP echo server using streams <asyncio-tcp-echo-server-streams>`
    example uses the high-level :func:`asyncio.start_server` function.
 
-.. _asyncio-tcp-echo-client-protocol:
+.. _asyncio_example_tcp_echo_client_protocol:
 
 TCP Echo Client
 ---------------
@@ -768,9 +772,8 @@ data, and waits until the connection is closed::
 
 
     class EchoClientProtocol(asyncio.Protocol):
-        def __init__(self, message, on_con_lost, loop):
+        def __init__(self, message, on_con_lost):
             self.message = message
-            self.loop = loop
             self.on_con_lost = on_con_lost
 
         def connection_made(self, transport):
@@ -794,7 +797,7 @@ data, and waits until the connection is closed::
         message = 'Hello World!'
 
         transport, protocol = await loop.create_connection(
-            lambda: EchoClientProtocol(message, on_con_lost, loop),
+            lambda: EchoClientProtocol(message, on_con_lost),
             '127.0.0.1', 8888)
 
         # Wait until the protocol signals that the connection
@@ -870,11 +873,10 @@ method, sends data and closes the transport when it receives the answer::
 
 
     class EchoClientProtocol:
-        def __init__(self, message, loop):
+        def __init__(self, message, on_con_lost):
             self.message = message
-            self.loop = loop
+            self.on_con_lost = on_con_lost
             self.transport = None
-            self.on_con_lost = loop.create_future()
 
         def connection_made(self, transport):
             self.transport = transport
@@ -900,13 +902,15 @@ method, sends data and closes the transport when it receives the answer::
         # low-level APIs.
         loop = asyncio.get_running_loop()
 
+        on_con_lost = loop.create_future()
         message = "Hello World!"
+
         transport, protocol = await loop.create_datagram_endpoint(
-            lambda: EchoClientProtocol(message, loop),
+            lambda: EchoClientProtocol(message, on_con_lost),
             remote_addr=('127.0.0.1', 9999))
 
         try:
-            await protocol.on_con_lost
+            await on_con_lost
         finally:
             transport.close()
 
@@ -914,7 +918,7 @@ method, sends data and closes the transport when it receives the answer::
     asyncio.run(main())
 
 
-.. _asyncio-register-socket:
+.. _asyncio_example_create_connection:
 
 Connecting Existing Sockets
 ---------------------------
@@ -928,9 +932,9 @@ Wait until a socket receives data using the
 
     class MyProtocol(asyncio.Protocol):
 
-        def __init__(self, loop):
+        def __init__(self, on_con_lost):
             self.transport = None
-            self.on_con_lost = loop.create_future()
+            self.on_con_lost = on_con_lost
 
         def connection_made(self, transport):
             self.transport = transport
@@ -951,13 +955,14 @@ Wait until a socket receives data using the
         # Get a reference to the event loop as we plan to use
         # low-level APIs.
         loop = asyncio.get_running_loop()
+        on_con_lost = loop.create_future()
 
         # Create a pair of connected sockets
         rsock, wsock = socket.socketpair()
 
         # Register the socket to wait for data.
         transport, protocol = await loop.create_connection(
-            lambda: MyProtocol(loop), sock=rsock)
+            lambda: MyProtocol(on_con_lost), sock=rsock)
 
         # Simulate the reception of data from the network.
         loop.call_soon(wsock.send, 'abc'.encode())
@@ -973,14 +978,14 @@ Wait until a socket receives data using the
 .. seealso::
 
    The :ref:`watch a file descriptor for read events
-   <asyncio-watch-read-event>` example uses the low-level
+   <asyncio_example_watch_fd>` example uses the low-level
    :meth:`loop.add_reader` method to register an FD.
 
    The :ref:`register an open socket to wait for data using streams
-   <asyncio-register-socket-streams>` example uses high-level streams
+   <asyncio_example_create_connection-streams>` example uses high-level streams
    created by the :func:`open_connection` function in a coroutine.
 
-.. _asyncio-subprocess-proto-example:
+.. _asyncio_example_subprocess_proto:
 
 loop.subprocess_exec() and SubprocessProtocol
 ---------------------------------------------
@@ -988,7 +993,7 @@ loop.subprocess_exec() and SubprocessProtocol
 An example of a subprocess protocol used to get the output of a
 subprocess and to wait for the subprocess exit.
 
-The subprocess is created by th :meth:`loop.subprocess_exec` method::
+The subprocess is created by the :meth:`loop.subprocess_exec` method::
 
     import asyncio
     import sys
@@ -1031,9 +1036,8 @@ The subprocess is created by th :meth:`loop.subprocess_exec` method::
         data = bytes(protocol.output)
         return data.decode('ascii').rstrip()
 
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(
-            asyncio.WindowsProactorEventLoopPolicy())
-
     date = asyncio.run(get_date())
     print(f"Current date: {date}")
+
+See also the :ref:`same example <asyncio_example_create_subprocess_exec>`
+written using high-level APIs.

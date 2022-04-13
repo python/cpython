@@ -1,3 +1,0 @@
-Update valgrind suppression list to use
-``_PyObject_Free``/``_PyObject_Realloc``
-instead of ``PyObject_Free``/``PyObject_Realloc``.

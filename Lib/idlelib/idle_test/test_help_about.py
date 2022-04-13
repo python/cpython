@@ -61,6 +61,8 @@ class LiveDialogTest(unittest.TestCase):
                 button.invoke()
                 get = dialog._current_textview.viewframe.textframe.text.get
                 lines = printer._Printer__lines
+                if len(lines) < 2:
+                    self.fail(name + ' full text was not found')
                 self.assertEqual(lines[0], get('1.0', '1.end'))
                 self.assertEqual(lines[1], get('2.0', '2.end'))
                 dialog._current_textview.destroy()
@@ -132,7 +134,7 @@ class CloseTest(unittest.TestCase):
             self.dialog.winfo_class()
 
 
-class Dummy_about_dialog():
+class Dummy_about_dialog:
     # Dummy class for testing file display functions.
     idle_credits = About.show_idle_credits
     idle_readme = About.show_readme

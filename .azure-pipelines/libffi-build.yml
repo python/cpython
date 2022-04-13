@@ -1,0 +1,86 @@
+name: $(SourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
+
+variables:
+  IntDir: '$(Build.BinariesDirectory)'
+  OutDir: '$(Build.ArtifactStagingDirectory)'
+
+  # MUST BE SET AT QUEUE TIME
+  # SigningCertificate: 'Python Software Foundation'
+  # SourcesRepo: 'https://github.com/python/cpython-source-deps'
+  # SourceTag: 'libffi-3.4.2'
+
+jobs:
+- job: Build_LibFFI
+  displayName: LibFFI
+  pool:
+    vmImage: windows-latest
+
+  workspace:
+    clean: all
+
+  steps:
+    - checkout: none
+
+    - template: ./find-tools.yml
+
+    - powershell: |
+       mkdir -Force "$(IntDir)\script"
+       iwr "https://github.com/python/cpython/raw/main/PCbuild/prepare_libffi.bat" `
+           -outfile "$(IntDir)\script\prepare_libffi.bat"
+      displayName: 'Download build script'
+
+    - powershell: |
+        git clone $(SourcesRepo) -b $(SourceTag) --depth 1 -c core.autocrlf=false -c core.eol=lf .
+      displayName: 'Check out LibFFI sources'
+
+    - script: 'prepare_libffi.bat --install-cygwin'
+      workingDirectory: '$(IntDir)\script'
+      displayName: 'Install Cygwin and build'
+      env:
+        VCVARSALL: '$(vcvarsall)'
+        LIBFFI_SOURCE: '$(Build.SourcesDirectory)'
+        LIBFFI_OUT: '$(OutDir)'
+
+    - powershell: |
+       if ((gci *\*.dll).Count -lt 4) {
+           Write-Error "Did not generate enough DLL files"
+       }
+       if ((gci *\Include\ffi.h).Count -lt 4) {
+           Write-Error "Did not generate enough include files"
+       }
+      failOnStderr: true
+      workingDirectory: '$(OutDir)'
+      displayName: 'Verify files were created'
+
+    - publish: '$(OutDir)'
+      artifact: 'unsigned'
+      displayName: 'Publish unsigned build'
+
+- job: Sign_LibFFI
+  displayName: Sign LibFFI
+  dependsOn: Build_LibFFI
+  pool:
+    name: 'Windows Release'
+
+  workspace:
+    clean: all
+
+  steps:
+    - checkout: none
+    - download: current
+      artifact: unsigned
+
+    - template: ./find-tools.yml
+
+    - powershell: |
+        signtool sign /q /a `
+            /n "Python Software Foundation" `
+            /fd sha256 `
+            /tr http://timestamp.digicert.com/ /td sha256 `
+            /d "LibFFI for Python" `
+            (gci "$(Pipeline.Workspace)\unsigned\*.dll" -r)
+      displayName: 'Sign files'
+
+    - publish: '$(Pipeline.Workspace)\unsigned'
+      artifact: 'libffi'
+      displayName: 'Publish libffi'

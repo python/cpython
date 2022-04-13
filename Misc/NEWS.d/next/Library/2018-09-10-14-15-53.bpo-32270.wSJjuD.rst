@@ -1,2 +1,0 @@
-The subprocess module no longer mistakenly closes redirected fds even when
-they were in pass_fds when outside of the default {0, 1, 2} set.

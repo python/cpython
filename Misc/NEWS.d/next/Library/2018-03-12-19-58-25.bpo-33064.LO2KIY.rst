@@ -1,2 +1,0 @@
-lib2to3 now properly supports trailing commas after ``*args`` and
-``**kwargs`` in function signatures.

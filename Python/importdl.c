@@ -2,6 +2,9 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
+#include "pycore_call.h"
+#include "pycore_pystate.h"
+#include "pycore_runtime.h"
 
 /* ./configure sets HAVE_DYNAMIC_LOADING if dynamic loading of modules is
    supported on this platform. configure will then compile and link in one
@@ -38,10 +41,12 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
     PyObject *encoded = NULL;
     PyObject *modname = NULL;
     Py_ssize_t name_len, lastdot;
-    _Py_IDENTIFIER(replace);
 
     /* Get the short name (substring after last dot) */
     name_len = PyUnicode_GetLength(name);
+    if (name_len < 0) {
+        return NULL;
+    }
     lastdot = PyUnicode_FindChar(name, '.', 0, name_len, -1);
     if (lastdot < -1) {
         return NULL;
@@ -73,7 +78,7 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
     }
 
     /* Replace '-' by '_' */
-    modname = _PyObject_CallMethodId(encoded, &PyId_replace, "cc", '-', '_');
+    modname = _PyObject_CallMethod(encoded, &_Py_ID(replace), "cc", '-', '_');
     if (modname == NULL)
         goto error;
 
@@ -97,7 +102,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     const char *oldcontext;
     dl_funcptr exportfunc;
     PyModuleDef *def;
-    PyObject *(*p0)(void);
+    PyModInitFunction p0;
 
     name_unicode = PyObject_GetAttrString(spec, "name");
     if (name_unicode == NULL) {
@@ -118,6 +123,11 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     path = PyObject_GetAttrString(spec, "origin");
     if (path == NULL)
         goto error;
+
+    if (PySys_Audit("import", "OOOOO", name_unicode, path,
+                    Py_None, Py_None, Py_None) < 0) {
+        goto error;
+    }
 
 #ifdef MS_WINDOWS
     exportfunc = _PyImport_FindSharedFuncptrWindows(hook_prefix, name_buf,
@@ -147,7 +157,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
         goto error;
     }
 
-    p0 = (PyObject *(*)(void))exportfunc;
+    p0 = (PyModInitFunction)exportfunc;
 
     /* Package context is needed for single-phase init */
     oldcontext = _Py_PackageContext;
@@ -156,7 +166,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
         _Py_PackageContext = oldcontext;
         goto error;
     }
-    m = p0();
+    m = _PyImport_InitFunc_TrampolineCall(p0);
     _Py_PackageContext = oldcontext;
 
     if (m == NULL) {
@@ -176,7 +186,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
         m = NULL;
         goto error;
     }
-    if (Py_TYPE(m) == NULL) {
+    if (Py_IS_TYPE(m, NULL)) {
         /* This can happen when a PyModuleDef is returned without calling
          * PyModuleDef_Init on it
          */
@@ -199,7 +209,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
         /* don't allow legacy init for non-ASCII module names */
         PyErr_Format(
             PyExc_SystemError,
-            "initialization of * did not return PyModuleDef",
+            "initialization of %s did not return PyModuleDef",
             name_buf);
         goto error;
     }
@@ -215,10 +225,9 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     def->m_base.m_init = p0;
 
     /* Remember the filename as the __file__ attribute */
-    if (PyModule_AddObject(m, "__file__", path) < 0)
+    if (PyModule_AddObjectRef(m, "__file__", path) < 0) {
         PyErr_Clear(); /* Not important enough to report */
-    else
-        Py_INCREF(path);
+    }
 
     PyObject *modules = PyImport_GetModuleDict();
     if (_PyImport_FixupExtensionObject(m, name_unicode, path, modules) < 0)

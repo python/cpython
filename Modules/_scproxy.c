@@ -231,20 +231,17 @@ static PyMethodDef mod_methods[] = {
     { 0, 0, 0, 0 }
 };
 
-
-
-static struct PyModuleDef mod_module = {
-    PyModuleDef_HEAD_INIT,
-    "_scproxy",
-    NULL,
-    -1,
-    mod_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+static PyModuleDef_Slot _scproxy_slots[] = {
+    {0, NULL}
 };
 
+static struct PyModuleDef _scproxy_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_scproxy",
+    .m_size = 0,
+    .m_methods = mod_methods,
+    .m_slots = _scproxy_slots,
+};
 
 #ifdef __cplusplus
 extern "C" {
@@ -253,10 +250,9 @@ extern "C" {
 PyMODINIT_FUNC
 PyInit__scproxy(void)
 {
-    return PyModule_Create(&mod_module);
+    return PyModuleDef_Init(&_scproxy_module);
 }
 
 #ifdef __cplusplus
 }
 #endif
-

@@ -29,7 +29,8 @@ printing space-separated values. There are several ways to format output.
 
   ::
 
-     >>> year = 2016 ; event = 'Referendum'
+     >>> year = 2016
+     >>> event = 'Referendum'
      >>> f'Results of the {year} {event}'
      'Results of the 2016 Referendum'
 
@@ -40,8 +41,9 @@ printing space-separated values. There are several ways to format output.
 
   ::
 
-     >>> yes_votes = 42_572_654 ; no_votes = 43_132_495
-     >>> percentage = yes_votes/(yes_votes+no_votes)
+     >>> yes_votes = 42_572_654
+     >>> no_votes = 43_132_495
+     >>> percentage = yes_votes / (yes_votes + no_votes)
      >>> '{:-9} YES votes  {:2.2%}'.format(yes_votes, percentage)
      ' 42572654 YES votes  49.67%'
 
@@ -108,6 +110,7 @@ three places after the decimal::
 
    >>> import math
    >>> print(f'The value of pi is approximately {math.pi:.3f}.')
+   The value of pi is approximately 3.142.
 
 Passing an integer after the ``':'`` will cause that field to be a minimum
 number of characters wide.  This is useful for making columns line up. ::
@@ -127,7 +130,7 @@ applies :func:`repr`::
    >>> animals = 'eels'
    >>> print(f'My hovercraft is full of {animals}.')
    My hovercraft is full of eels.
-   >>> print(f'My hovercraft is full of {animals !r}.')
+   >>> print(f'My hovercraft is full of {animals!r}.')
    My hovercraft is full of 'eels'.
 
 For a reference on these format specifications, see
@@ -169,7 +172,7 @@ Positional and keyword arguments can be arbitrarily combined::
 If you have a really long format string that you don't want to split up, it
 would be nice if you could reference the variables to be formatted by name
 instead of by position.  This can be done by simply passing the dict and using
-square brackets ``'[]'`` to access the keys ::
+square brackets ``'[]'`` to access the keys. ::
 
    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
    >>> print('Jack: {0[Jack]:d}; Sjoerd: {0[Sjoerd]:d}; '
@@ -254,10 +257,10 @@ left with zeros.  It understands about plus and minus signs::
 Old string formatting
 ---------------------
 
-The ``%`` operator can also be used for string formatting. It interprets the
-left argument much like a :c:func:`sprintf`\ -style format string to be applied
-to the right argument, and returns the string resulting from this formatting
-operation. For example::
+The % operator (modulo) can also be used for string formatting. Given ``'string'
+% values``, instances of ``%`` in ``string`` are replaced with zero or more
+elements of ``values``. This operation is commonly known as string
+interpolation. For example::
 
    >>> import math
    >>> print('The value of pi is approximately %5.3f.' % math.pi)
@@ -314,21 +317,28 @@ reading and writing such files.
 It is good practice to use the :keyword:`with` keyword when dealing
 with file objects.  The advantage is that the file is properly closed
 after its suite finishes, even if an exception is raised at some
-point.  Using :keyword:`with` is also much shorter than writing
+point.  Using :keyword:`!with` is also much shorter than writing
 equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
 
     >>> with open('workfile') as f:
     ...     read_data = f.read()
+
+    >>> # We can check that the file has been automatically closed.
     >>> f.closed
     True
 
 If you're not using the :keyword:`with` keyword, then you should call
 ``f.close()`` to close the file and immediately free up any system
-resources used by it. If you don't explicitly close a file, Python's
-garbage collector will eventually destroy the object and close the
-open file for you, but the file may stay open for a while.  Another
-risk is that different Python implementations will do this clean-up at
-different times.
+resources used by it.
+
+.. warning::
+   Calling ``f.write()`` without using the :keyword:`!with` keyword or calling
+   ``f.close()`` **might** result in the arguments
+   of ``f.write()`` not being completely written to the disk, even if the
+   program exits successfully.
+
+..
+   See also https://bugs.python.org/issue17852
 
 After a file object is closed, either by a :keyword:`with` statement
 or by calling ``f.close()``, attempts to use the file object will
@@ -353,8 +363,8 @@ To read a file's contents, call ``f.read(size)``, which reads some quantity of
 data and returns it as a string (in text mode) or bytes object (in binary mode).
 *size* is an optional numeric argument.  When *size* is omitted or negative, the
 entire contents of the file will be read and returned; it's your problem if the
-file is twice as large as your machine's memory. Otherwise, at most *size* bytes
-are read and returned.
+file is twice as large as your machine's memory. Otherwise, at most *size*
+characters (in text mode) or *size* bytes (in binary mode) are read and returned.
 If the end of the file has been reached, ``f.read()`` will return an empty
 string (``''``).  ::
 
@@ -407,11 +417,11 @@ or a bytes object (in binary mode) -- before writing them::
 represented as number of bytes from the beginning of the file when in binary mode and
 an opaque number when in text mode.
 
-To change the file object's position, use ``f.seek(offset, from_what)``.  The position is computed
+To change the file object's position, use ``f.seek(offset, whence)``.  The position is computed
 from adding *offset* to a reference point; the reference point is selected by
-the *from_what* argument.  A *from_what* value of 0 measures from the beginning
+the *whence* argument.  A *whence* value of 0 measures from the beginning
 of the file, 1 uses the current file position, and 2 uses the end of the file as
-the reference point.  *from_what* can be omitted and defaults to 0, using the
+the reference point.  *whence* can be omitted and defaults to 0, using the
 beginning of the file as the reference point. ::
 
    >>> f = open('workfile', 'rb+')
@@ -470,7 +480,8 @@ If you have an object ``x``, you can view its JSON string representation with a
 simple line of code::
 
    >>> import json
-   >>> json.dumps([1, 'simple', 'list'])
+   >>> x = [1, 'simple', 'list']
+   >>> json.dumps(x)
    '[1, "simple", "list"]'
 
 Another variant of the :func:`~json.dumps` function, called :func:`~json.dump`,

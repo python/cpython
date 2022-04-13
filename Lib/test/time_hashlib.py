@@ -14,26 +14,26 @@ def test_scaled_msg(scale, name):
     longStr = b'Z'*scale
 
     localCF = creatorFunc
-    start = time.time()
+    start = time.perf_counter()
     for f in range(iterations):
         x = localCF(longStr).digest()
-    end = time.time()
+    end = time.perf_counter()
 
     print(('%2.2f' % (end-start)), "seconds", iterations, "x", len(longStr), "bytes", name)
 
 def test_create():
-    start = time.time()
+    start = time.perf_counter()
     for f in range(20000):
         d = creatorFunc()
-    end = time.time()
+    end = time.perf_counter()
 
     print(('%2.2f' % (end-start)), "seconds", '[20000 creations]')
 
 def test_zero():
-    start = time.time()
+    start = time.perf_counter()
     for f in range(20000):
         x = creatorFunc().digest()
-    end = time.time()
+    end = time.perf_counter()
 
     print(('%2.2f' % (end-start)), "seconds", '[20000 "" digests]')
 
