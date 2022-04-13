@@ -1153,6 +1153,10 @@ Blob Objects
 
       .. literalinclude:: ../includes/sqlite3/blob.py
 
+   A :class:`Blob` can also be used as a :term:`context manager`:
+
+      .. literalinclude:: ../includes/sqlite3/blob_with.py
+
 
 .. _sqlite3-types:
 
