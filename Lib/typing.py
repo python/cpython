@@ -2440,7 +2440,7 @@ def _overload_dummy(*args, **kwds):
 
 
 # {module: {qualname: {firstlineno: func}}}
-_overload_registry = defaultdict(lambda: defaultdict(dict))
+_overload_registry = defaultdict(functools.partial(defaultdict, dict))
 
 
 def overload(func):
