@@ -175,7 +175,6 @@ struct _PyCodeConstructor {
     /* the code */
     PyObject *code;
     int firstlineno;
-    PyObject *linetable;
     PyObject *locationtable;
 
     /* used by the code */

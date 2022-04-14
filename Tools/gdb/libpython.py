@@ -634,6 +634,63 @@ class PyCFunctionObjectPtr(PyObjectPtr):
         else:
             return BuiltInMethodProxy(ml_name, pyop_m_self)
 
+# Python implementation of location table parsing algorithm
+def read(it):
+    return next(it)
+
+def read_varint(it):
+    b = read(it)
+    val = b & 63;
+    shift = 0;
+    while b & 64:
+        b = read(it)
+        shift += 6
+        val |= (b&63) << shift
+    return val
+
+def read_signed_varint(it):
+    uval = read_varint(it)
+    if uval & 1:
+        return -(uval >> 1)
+    else:
+        return uval >> 1
+
+def parse_location_table(firstlineno, locationtable):
+    line = firstlineno
+    addr = 0
+    it = iter(locationtable)
+    while True:
+        try:
+            first_byte = read(it)
+        except StopIteration:
+            return
+        code = (first_byte >> 3) & 15
+        length = (first_byte & 7) + 1
+        end_addr = addr + length
+        if code == 15:
+            yield addr, end_addr, None
+            addr = end_addr
+            continue
+        elif code == 14:
+            line_delta = read_signed_varint(it)
+            line += line_delta
+            end_line = line + read_varint(it)
+            col = read_varint(it)
+            end_col = read_varint(it)
+        elif code == 13: # No column
+            line_delta = read_signed_varint(it)
+            line += line_delta
+        elif code in (10, 11, 12): # new line
+            line_delta = code - 10
+            line += line_delta
+            column = read(it)
+            end_column = read(it)
+        else:
+            assert (0 <= code < 10)
+            second_byte = read(it)
+            column = code << 3 | (second_byte >> 4)
+        yield addr, end_addr, line
+        addr = end_addr
 
 class PyCodeObjectPtr(PyObjectPtr):
     """
@@ -649,7 +706,7 @@ class PyCodeObjectPtr(PyObjectPtr):
         Analogous to PyCode_Addr2Line; translated from pseudocode in
         Objects/lnotab_notes.txt
         '''
-        co_linetable = self.pyop_field('co_linetable').proxyval(set())
+        co_locationtable = self.pyop_field('co_locationtable').proxyval(set())
 
         # Initialize lineno to co_firstlineno as per PyCode_Addr2Line
         # not 0, as lnotab_notes.txt has it:
@@ -658,18 +715,9 @@ class PyCodeObjectPtr(PyObjectPtr):
         if addrq < 0:
             return lineno
         addr = 0
-        for addr_incr, line_incr in zip(co_linetable[::2], co_linetable[1::2]):
-            if addr_incr == 255:
-                break
-            addr += ord(addr_incr)
-            line_delta = ord(line_incr)
-            if line_delta == 128:
-                line_delta = 0
-            elif line_delta > 128:
-                line_delta -= 256
-            lineno += line_delta
-            if addr > addrq:
-                return lineno
+        for addr, end_addr, line in parse_location_table(lineno, co_locationtable):
+            if addr <= addrq and end_addr > addrq:
+                return line
         assert False, "Unreachable"
 
 

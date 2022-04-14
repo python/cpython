@@ -8066,7 +8066,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
 
         .code = a->a_bytecode,
         .firstlineno = c->u->u_firstlineno,
-        .linetable = a->a_lnotab,
         .locationtable = a->a_locationtable,
 
         .consts = consts,
@@ -8543,7 +8542,7 @@ assemble(struct compiler *c, int addNone)
     if (_PyBytes_Resize(&a.a_locationtable, a.a_location_off) < 0) {
         goto error;
     }
-    if (!merge_const_one(c, &a.a_cnotab)) {
+    if (!merge_const_one(c, &a.a_locationtable)) {
         goto error;
     }
     if (_PyBytes_Resize(&a.a_bytecode, a.a_offset * sizeof(_Py_CODEUNIT)) < 0) {
