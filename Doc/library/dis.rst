@@ -937,30 +937,58 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
-.. opcode:: POP_JUMP_IF_TRUE (target)
+.. opcode:: POP_JUMP_FORWARD_IF_TRUE (delta)
 
-   If TOS is true, sets the bytecode counter to *target*.  TOS is popped.
-
-   .. versionadded:: 3.1
-
-
-.. opcode:: POP_JUMP_IF_FALSE (target)
-
-   If TOS is false, sets the bytecode counter to *target*.  TOS is popped.
-
-   .. versionadded:: 3.1
-
-
-.. opcode:: POP_JUMP_IF_NOT_NONE (target)
-
-   If TOS is not none, sets the bytecode counter to *target*.  TOS is popped.
+   If TOS is true, increments the bytecode counter by *delta*.  TOS is popped.
 
    .. versionadded:: 3.11
 
 
-.. opcode:: POP_JUMP_IF_NONE (target)
+.. opcode:: POP_JUMP_BACKWARD_IF_TRUE (delta)
 
-   If TOS is none, sets the bytecode counter to *target*.  TOS is popped.
+   If TOS is true, decrements the bytecode counter by *delta*.  TOS is popped.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: POP_JUMP_FORWARD_IF_FALSE (delta)
+
+   If TOS is false, increments the bytecode counter by *delta*.  TOS is popped.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: POP_JUMP_BACKWARD_IF_FALSE (delta)
+
+   If TOS is false, decrements the bytecode counter by *delta*.  TOS is popped.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: POP_JUMP_FORWARD_IF_NOT_NONE (delta)
+
+   If TOS is not ``None``, increments the bytecode counter by *delta*.  TOS is popped.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: POP_JUMP_BACKWARD_IF_NOT_NONE (delta)
+
+   If TOS is not ``None``, decrements the bytecode counter by *delta*.  TOS is popped.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: POP_JUMP_FORWARD_IF_NONE (delta)
+
+   If TOS is ``None``, increments the bytecode counter by *delta*.  TOS is popped.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: POP_JUMP_BACKWARD_IF_NONE (delta)
+
+   If TOS is ``None``, decrements the bytecode counter by *delta*.  TOS is popped.
 
    .. versionadded:: 3.11
 
