@@ -246,8 +246,8 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
         con->linetable == NULL || !PyBytes_Check(con->linetable) ||
         con->endlinetable == NULL ||
         (con->endlinetable != Py_None && !PyBytes_Check(con->endlinetable)) ||
-        con->columntable == NULL ||
-        (con->columntable != Py_None && !PyBytes_Check(con->columntable)) ||
+        con->locationtable == NULL ||
+        (con->locationtable != Py_None && !PyBytes_Check(con->locationtable)) ||
         con->exceptiontable == NULL || !PyBytes_Check(con->exceptiontable)
         ) {
         PyErr_BadInternalCall();
@@ -309,8 +309,6 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_linetable = con->linetable;
     Py_INCREF(con->endlinetable);
     co->co_endlinetable = con->endlinetable;
-    Py_INCREF(con->columntable);
-    co->co_columntable = con->columntable;
     Py_INCREF(con->locationtable);
     co->co_locationtable = con->locationtable;
 
@@ -488,7 +486,7 @@ _PyCode_New(struct _PyCodeConstructor *con)
     }
 
     PyObject *replacement_locations = NULL;
-    // Discard the endlinetable and columntable if we are opted out of debug
+    // Compact the locationtable if we are opted out of debug
     // ranges.
     if (!_Py_GetConfig()->code_debug_ranges) {
         replacement_locations = remove_column_info(con->locationtable);
@@ -522,7 +520,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
                           PyObject *filename, PyObject *name,
                           PyObject *qualname, int firstlineno,
                           PyObject *linetable, PyObject *endlinetable,
-                          PyObject *columntable, PyObject *locationtable,
+                          PyObject *locationtable,
                           PyObject *exceptiontable)
 {
     PyCodeObject *co = NULL;
@@ -602,7 +600,6 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         .firstlineno = firstlineno,
         .linetable = linetable,
         .endlinetable = endlinetable,
-        .columntable = columntable,
         .locationtable = locationtable,
 
         .consts = consts,
@@ -649,14 +646,14 @@ PyCode_New(int argcount, int kwonlyargcount,
            PyObject *varnames, PyObject *freevars, PyObject *cellvars,
            PyObject *filename, PyObject *name, PyObject *qualname,
            int firstlineno, PyObject *linetable, PyObject *endlinetable,
-           PyObject *columntable, PyObject *locationtable,
+           PyObject *locationtable,
            PyObject *exceptiontable)
 {
     return PyCode_NewWithPosOnlyArgs(argcount, 0, kwonlyargcount, nlocals,
                                      stacksize, flags, code, consts, names,
                                      varnames, freevars, cellvars, filename,
                                      name, qualname, firstlineno, linetable,
-                                     endlinetable, columntable, locationtable,
+                                     endlinetable, locationtable,
                                      exceptiontable);
 }
 
@@ -690,7 +687,6 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
         .firstlineno = firstlineno,
         .linetable = emptystring,
         .endlinetable = emptystring,
-        .columntable = emptystring,
         .locationtable = emptystring,
         .consts = nulltuple,
         .names = nulltuple,
@@ -1424,7 +1420,6 @@ code.__new__ as code_new
     firstlineno: int
     linetable: object(subclass_of="&PyBytes_Type")
     endlinetable: object
-    columntable: object
     locationtable: object
     exceptiontable: object(subclass_of="&PyBytes_Type")
     freevars: object(subclass_of="&PyTuple_Type", c_default="NULL") = ()
@@ -1440,10 +1435,10 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
               PyObject *code, PyObject *consts, PyObject *names,
               PyObject *varnames, PyObject *filename, PyObject *name,
               PyObject *qualname, int firstlineno, PyObject *linetable,
-              PyObject *endlinetable, PyObject *columntable,
-              PyObject *locationtable, PyObject *exceptiontable,
-              PyObject *freevars, PyObject *cellvars)
-/*[clinic end generated code: output=25d03c9913c257fd input=e4d7c37197830e7f]*/
+              PyObject *endlinetable, PyObject *locationtable,
+              PyObject *exceptiontable, PyObject *freevars,
+              PyObject *cellvars)
+/*[clinic end generated code: output=dbd73788cdc93d56 input=b803baf5513eecd1]*/
 {
     PyObject *co = NULL;
     PyObject *ournames = NULL;
@@ -1489,9 +1484,9 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
                         "code: endlinetable must be None or bytes");
         goto cleanup;
     }
-    if (!Py_IsNone(columntable) && !PyBytes_Check(columntable)) {
+    if (!Py_IsNone(locationtable) && !PyBytes_Check(locationtable)) {
         PyErr_SetString(PyExc_ValueError,
-                        "code: columntable must be None or bytes");
+                        "code: locationtable must be None or bytes");
         goto cleanup;
     }
 
@@ -1522,7 +1517,7 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
                                                ourcellvars, filename,
                                                name, qualname, firstlineno,
                                                linetable, endlinetable,
-                                               columntable, locationtable,
+                                               locationtable,
                                                exceptiontable
                                               );
   cleanup:
@@ -1560,7 +1555,6 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_qualname);
     Py_XDECREF(co->co_linetable);
     Py_XDECREF(co->co_endlinetable);
-    Py_XDECREF(co->co_columntable);
     Py_XDECREF(co->co_locationtable);
     Py_XDECREF(co->co_exceptiontable);
     if (co->co_weakreflist != NULL) {
@@ -1712,7 +1706,6 @@ static PyMemberDef code_memberlist[] = {
     {"co_firstlineno",     T_INT,    OFF(co_firstlineno),     READONLY},
     {"co_linetable",       T_OBJECT, OFF(co_linetable),       READONLY},
     {"co_endlinetable",    T_OBJECT, OFF(co_endlinetable),    READONLY},
-    {"co_columntable",     T_OBJECT, OFF(co_columntable),     READONLY},
     {"co_locationtable",   T_OBJECT, OFF(co_locationtable),   READONLY},
     {"co_exceptiontable",  T_OBJECT, OFF(co_exceptiontable),  READONLY},
     {NULL}      /* Sentinel */
@@ -1810,7 +1803,6 @@ code.replace
     co_qualname: unicode(c_default="self->co_qualname") = None
     co_linetable: PyBytesObject(c_default="(PyBytesObject *)self->co_linetable") = None
     co_endlinetable: object(c_default="self->co_endlinetable") = None
-    co_columntable: object(c_default="self->co_columntable") = None
     co_locationtable: object(c_default="self->co_locationtable") = None
     co_exceptiontable: PyBytesObject(c_default="(PyBytesObject *)self->co_exceptiontable") = None
 
@@ -1827,9 +1819,9 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_cellvars, PyObject *co_filename,
                   PyObject *co_name, PyObject *co_qualname,
                   PyBytesObject *co_linetable, PyObject *co_endlinetable,
-                  PyObject *co_columntable, PyObject *co_locationtable,
+                  PyObject *co_locationtable,
                   PyBytesObject *co_exceptiontable)
-/*[clinic end generated code: output=4d1492921dd31aef input=3e19c37f55c87e86]*/
+/*[clinic end generated code: output=38cfe38ae5d3f341 input=33f50be85d1286b1]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \
@@ -1895,9 +1887,9 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                         "co_endlinetable must be None or bytes");
         goto error;
     }
-    if (!Py_IsNone(co_columntable) && !PyBytes_Check(co_columntable)) {
+    if (!Py_IsNone(co_locationtable) && !PyBytes_Check(co_locationtable)) {
         PyErr_SetString(PyExc_ValueError,
-                        "co_columntable must be None or bytes");
+                        "co_locationtable must be None or bytes");
         goto error;
     }
 
@@ -1906,7 +1898,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
         co_stacksize, co_flags, (PyObject*)co_code, co_consts, co_names,
         co_varnames, co_freevars, co_cellvars, co_filename, co_name,
         co_qualname, co_firstlineno, (PyObject*)co_linetable,
-        (PyObject*)co_endlinetable, (PyObject*)co_columntable,
+        (PyObject*)co_endlinetable,
         (PyObject*)co_locationtable, (PyObject*)co_exceptiontable);
 
 error:

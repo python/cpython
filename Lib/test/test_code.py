@@ -232,9 +232,8 @@ class CodeTest(unittest.TestCase):
                         co.co_firstlineno,
                         co.co_lnotab,
                         co.co_endlinetable,
-                        co.co_columntable,
-                        co.co_exceptiontable,
                         co.co_locationtable,
+                        co.co_exceptiontable,
                         co.co_freevars,
                         co.co_cellvars)
 
@@ -275,7 +274,6 @@ class CodeTest(unittest.TestCase):
             ("co_name", "newname"),
             ("co_linetable", code2.co_linetable),
             ("co_endlinetable", code2.co_endlinetable),
-            ("co_columntable", code2.co_columntable),
         ):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
@@ -314,9 +312,8 @@ class CodeTest(unittest.TestCase):
                          co.co_firstlineno,
                          co.co_lnotab,
                          co.co_endlinetable,
-                         co.co_columntable,
-                         co.co_exceptiontable,
                          co.co_locationtable,
+                         co.co_exceptiontable,
                          co.co_freevars,
                          co.co_cellvars,
                          )
@@ -393,14 +390,17 @@ class CodeTest(unittest.TestCase):
         )
 
     def test_endline_and_columntable_none_when_no_debug_ranges(self):
-        # Make sure that if `-X no_debug_ranges` is used, the endlinetable and
-        # columntable are None.
+        # Make sure that if `-X no_debug_ranges` is used, there is
+        # minimal debug info
         code = textwrap.dedent("""
             def f():
                 pass
 
-            assert f.__code__.co_endlinetable is None
-            assert f.__code__.co_columntable is None
+            positions = f.__code__.co_positions()
+            for line, end_line, column, end_column in positions:
+                assert line == end_line
+                assert column is None
+                assert end_column is None
             """)
         assert_python_ok('-X', 'no_debug_ranges', '-c', code)
 
@@ -410,8 +410,11 @@ class CodeTest(unittest.TestCase):
             def f():
                 pass
 
-            assert f.__code__.co_endlinetable is None
-            assert f.__code__.co_columntable is None
+            positions = f.__code__.co_positions()
+            for line, end_line, column, end_column in positions:
+                assert line == end_line
+                assert column is None
+                assert end_column is None
             """)
         assert_python_ok('-c', code, PYTHONNODEBUGRANGES='1')
 

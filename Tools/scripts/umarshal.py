@@ -290,7 +290,6 @@ class Reader:
             retval.co_firstlineno = self.r_long()
             retval.co_linetable = self.r_object()
             retval.co_endlinetable = self.r_object()
-            retval.co_columntable = self.r_object()
             retval.co_locationtable = self.r_object()
             retval.co_exceptiontable = self.r_object()
             return retval

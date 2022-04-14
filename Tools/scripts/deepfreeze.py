@@ -239,7 +239,6 @@ class Printer:
         co_qualname = self.generate(name + "_qualname", code.co_qualname)
         co_linetable = self.generate(name + "_linetable", code.co_linetable)
         co_endlinetable = self.generate(name + "_endlinetable", code.co_endlinetable)
-        co_columntable = self.generate(name + "_columntable", code.co_columntable)
         co_locationtable = self.generate(name + "_locationtable", code.co_locationtable)
         co_exceptiontable = self.generate(name + "_exceptiontable", code.co_exceptiontable)
         # These fields are not directly accessible
@@ -280,7 +279,6 @@ class Printer:
             self.write(f".co_qualname = {co_qualname},")
             self.write(f".co_linetable = {co_linetable},")
             self.write(f".co_endlinetable = {co_endlinetable},")
-            self.write(f".co_columntable = {co_columntable},")
             self.write(f".co_locationtable = {co_locationtable},")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
         name_as_code = f"(PyCodeObject *)&{name}"
