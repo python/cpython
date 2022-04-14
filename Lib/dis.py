@@ -245,7 +245,7 @@ _Instruction.positions.__doc__ = "dis.Positions object holding the span of sourc
 _ExceptionTableEntry = collections.namedtuple("_ExceptionTableEntry",
     "start end target depth lasti")
 
-_OPNAME_WIDTH = 20
+_OPNAME_WIDTH = max(map(len, opmap))
 _OPARG_WIDTH = 5
 
 class Instruction(_Instruction):

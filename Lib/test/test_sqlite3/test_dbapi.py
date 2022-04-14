@@ -1084,6 +1084,8 @@ class ThreadTests(unittest.TestCase):
         if hasattr(sqlite.Connection, "serialize"):
             fns.append(lambda: self.con.serialize())
             fns.append(lambda: self.con.deserialize(b""))
+        if sqlite.sqlite_version_info >= (3, 25, 0):
+            fns.append(lambda: self.con.create_window_function("foo", 0, None))
 
         for fn in fns:
             with self.subTest(fn=fn):
