@@ -138,7 +138,7 @@ provide the public methods described below.
 
 .. method:: Queue.put_nowait(item)
 
-   Equivalent to ``put(item, False)``.
+   Equivalent to ``put(item, block=False)``.
 
 
 .. method:: Queue.get(block=True, timeout=None)
@@ -248,7 +248,7 @@ SimpleQueue Objects
 
 .. method:: SimpleQueue.put_nowait(item)
 
-   Equivalent to ``put(item)``, provided for compatibility with
+   Equivalent to ``put(item, block=False)``, provided for compatibility with
    :meth:`Queue.put_nowait`.
 
 
