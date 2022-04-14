@@ -1537,6 +1537,7 @@ _PyErr_Display(PyObject *file, PyObject *exception, PyObject *value, PyObject *t
     struct exception_print_context ctx;
     ctx.file = file;
     ctx.exception_group_depth = 0;
+    ctx.need_close = false;
     ctx.max_group_width = PyErr_MAX_GROUP_WIDTH;
     ctx.max_group_depth = PyErr_MAX_GROUP_DEPTH;
 

@@ -1,9 +1,6 @@
 # Import smtplib for the actual sending function
 import smtplib
 
-# And imghdr to find the types of our images
-import imghdr
-
 # Here are the email package modules we'll need
 from email.message import EmailMessage
 
@@ -22,7 +19,7 @@ for file in pngfiles:
     with open(file, 'rb') as fp:
         img_data = fp.read()
     msg.add_attachment(img_data, maintype='image',
-                                 subtype=imghdr.what(None, img_data))
+                                 subtype='jpeg')
 
 # Send the email via our own SMTP server.
 with smtplib.SMTP('localhost') as s:
