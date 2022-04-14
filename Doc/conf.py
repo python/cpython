@@ -22,6 +22,7 @@ extensions = [
     'pyspecific',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
+    'sphinx.ext.linkcode',
 ]
 
 # Skip if downstream redistributors haven't installed them
@@ -503,3 +504,11 @@ ogp_custom_meta_tags = [
     '<meta property="og:image:height" content="200" />',
     '<meta name="theme-color" content="#3776ab" />',
 ]
+
+# Link to source code on GitHub
+try:
+    from link_to_source import linkcode_resolve
+except Exception as e:
+    print("Failed to generate links to source: ", e, file=sys.stderr)
+    def linkcode_resolve(domain, info):
+        return None
