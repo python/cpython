@@ -248,7 +248,7 @@ SimpleQueue Objects
 
 .. method:: SimpleQueue.put_nowait(item)
 
-   Equivalent to ``put(item)``, provided for compatibility with
+   Equivalent to ``put(item, False)``, provided for compatibility with
    :meth:`Queue.put_nowait`.
 
 
