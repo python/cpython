@@ -1,7 +1,7 @@
-# Import smtplib for the actual sending function
+# Import smtplib for the actual sending function.
 import smtplib
 
-# Here are the email package modules we'll need
+# Here are the email package modules we'll need.
 from email.message import EmailMessage
 
 # Create the container email message.
@@ -13,8 +13,8 @@ msg['From'] = me
 msg['To'] = ', '.join(family)
 msg.preamble = 'You will not see this in a MIME-aware mail reader.\n'
 
-# Open the files in binary mode.  Use imghdr to figure out the
-# MIME subtype for each specific image.
+# Open the files in binary mode.  You can also omit the subtype
+# if you want MIMEImage to guess it.
 for file in pngfiles:
     with open(file, 'rb') as fp:
         img_data = fp.read()
