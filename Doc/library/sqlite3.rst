@@ -1129,15 +1129,16 @@ Blob Objects
    .. method:: Blob.read(length=-1, /)
 
       Read *length* bytes of data from the blob at the current offset position.
-      If the end of the blob is reached, the data up to end of file will be
-      returned.  When *length* is not specified, or is negative,
-      :meth:`~Blob.read` will read until the end of the blob.
+      If the end of the blob is reached, the data up to
+      :abbr:`EOF (End of File)` will be returned.  When *length* is not
+      specified, or is negative, :meth:`~Blob.read` will read until the end of
+      the blob.
 
    .. method:: Blob.write(data, /)
 
       Write *data* to the blob at the current offset.  This function cannot
-      change the blob length.  Writing beyond the end of the blob will result in
-      an exception being raised.
+      change the blob length.  Writing beyond the end of the blob will raise
+      :exc:`ValueError`.
 
    .. method:: Blob.tell()
 
