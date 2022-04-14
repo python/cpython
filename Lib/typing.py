@@ -2494,18 +2494,9 @@ def get_overloads(func):
     return list(mod_dict[f.__qualname__].values())
 
 
-def clear_overloads(func=None):
-    """Clear all overloads for the given function (or all functions)."""
-    if func is None:
-        _overload_registry.clear()
-    else:
-        f = getattr(func, "__func__", func)
-        if f.__module__ not in _overload_registry:
-            return
-        mod_dict = _overload_registry[f.__module__]
-        mod_dict.pop(f.__qualname__, None)
-        if not mod_dict:
-            del _overload_registry[f.__module__]
+def clear_overloads():
+    """Clear all overloads in the registry."""
+    _overload_registry.clear()
 
 
 def final(f):
