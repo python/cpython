@@ -194,11 +194,12 @@ _PyBaseExceptionObject_cast(PyObject *exc)
 }
 
 static PyObject *
-BaseException_add_note(PyObject *self, PyObject *args, PyObject *kwds)
+BaseException_add_note(PyObject *self, PyObject *note)
 {
-    PyObject *note = NULL;
-
-    if (!PyArg_ParseTuple(args, "U:add_note", &note)) {
+    if (!PyUnicode_Check(note)) {
+        PyErr_Format(PyExc_TypeError,
+                     "note must be a str, not '%s'",
+                     Py_TYPE(note)->tp_name);
         return NULL;
     }
 
