@@ -615,7 +615,6 @@ SYMBOL_NAMES = (
     "PyThread_get_key_value",
     "PyThread_get_stacksize",
     "PyThread_get_thread_ident",
-    "PyThread_get_thread_native_id",
     "PyThread_init_thread",
     "PyThread_release_lock",
     "PyThread_set_key_value",
