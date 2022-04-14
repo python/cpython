@@ -1112,7 +1112,8 @@ Blob Objects
 .. class:: Blob
 
    A :class:`Blob` instance is a :term:`file-like object` that can read and write
-   data in an SQLite :abbr:`BLOB (Binary Large OBject)`.
+   data in an SQLite :abbr:`BLOB (Binary Large OBject)`.  Call ``len(blob)`` to
+   get the size (number of bytes) of the blob.
 
    .. method:: close()
 
@@ -1121,10 +1122,6 @@ Blob Objects
       The blob will be unusable from this point onward.  An
       :class:`~sqlite3.Error` (or subclass) exception will be raised if any
       further operation is attempted with the blob.
-
-   .. method:: __len__()
-
-      Return the blob size in bytes.
 
    .. method:: read(length=-1, /)
 
