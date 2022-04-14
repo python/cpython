@@ -3968,6 +3968,11 @@ class OverloadTests(BaseTestCase):
         self.assertEqual(typing._overload_registry, {})
         self.assertEqual(get_overloads(impl), [])
 
+        # Querying a function with no overloads shouldn't change the registry.
+        def the_only_one(): pass
+        self.assertEqual(get_overloads(the_only_one), [])
+        self.assertEqual(typing._overload_registry, {})
+
     def test_overload_registry_repeated(self):
         for _ in range(2):
             impl, overloads = self.set_up_overloads()
