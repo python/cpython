@@ -1,0 +1,1 @@
+Fixed CVE-2015-20107 reported against :mod:`mailcap`.  Contributed by Oleg Iarygin.
