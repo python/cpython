@@ -239,7 +239,7 @@ static PyMethodDef BaseException_methods[] = {
    {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
    {"with_traceback", (PyCFunction)BaseException_with_traceback, METH_O,
     with_traceback_doc},
-   {"add_note", (PyCFunction)BaseException_add_note, METH_VARARGS,
+   {"add_note", (PyCFunction)BaseException_add_note, METH_O,
     add_note_doc},
    {NULL, NULL, 0, NULL},
 };
