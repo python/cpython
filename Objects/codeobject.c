@@ -349,6 +349,118 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
            PyBytes_GET_SIZE(con->code));
 }
 
+static int
+scan_varint(const uint8_t *ptr)
+{
+    int read = *ptr++;
+    int val = read & 63;
+    int shift = 0;
+    while (read & 64) {
+        read = *ptr++;
+        shift += 6;
+        val |= (read & 63) << shift;
+    }
+    return val;
+}
+
+static int
+scan_signed_varint(const uint8_t *ptr)
+{
+    int uval = scan_varint(ptr);
+    if (uval & 1) {
+        return -(int)(uval >> 1);
+    }
+    else {
+        return uval >> 1;
+    }
+}
+
+static int
+get_line_delta(const uint8_t *ptr)
+{
+    int code = ((*ptr) >> 3) & 15;
+    switch (code) {
+        case 15:
+            return 0;
+        case 13: /* No column */
+        case 14: /* Long form */
+            return scan_signed_varint(ptr+1);
+        case 10:
+        case 11:
+        case 12:
+            /* One line forms */
+            return code - 10;
+        default:
+            /* Same line */
+            return 0;
+    }
+}
+
+static uint8_t *
+write_varint(uint8_t *ptr, unsigned int val)
+{
+    while (val >= 64) {
+        *ptr++ = 64 | (val & 63);
+        val >>= 6;
+    }
+    *ptr++ = val;
+    return ptr;
+}
+
+static uint8_t *
+write_signed_varint(uint8_t *ptr, int val)
+{
+    if (val < 0) {
+        val = ((-val)<<1) | 1;
+    }
+    else {
+        val = val << 1;
+    }
+    return write_varint(ptr, val);
+}
+
+static PyObject *
+remove_column_info(PyObject *locations)
+{
+    int offset = 0;
+    const uint8_t *data = (const uint8_t *)PyBytes_AS_STRING(locations);
+    PyObject *res = PyBytes_FromStringAndSize(NULL, 32);
+    if (res == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    uint8_t *output = (uint8_t *)PyBytes_AS_STRING(res);
+    while (offset < PyBytes_GET_SIZE(locations)) {
+        Py_ssize_t len = PyBytes_GET_SIZE(res);
+        Py_ssize_t write_offset = output - (uint8_t *)PyBytes_AS_STRING(res);
+        if (write_offset + 16 >= PyBytes_GET_SIZE(res)) {
+            if (_PyBytes_Resize(&res, len * 2) < 0) {
+                return NULL;
+            }
+            output = (uint8_t *)PyBytes_AS_STRING(res) + write_offset;
+        }
+        int blength = data[offset] & 7;
+        int code = (data[offset] >> 3) & 15;
+        if (code == 15) {
+            *output++ = 0xf8 | blength;
+        }
+        else {
+            int ldelta = get_line_delta(&data[offset]);
+            *output++ = 0xe8 | blength;
+            output = write_signed_varint(output, ldelta);
+        }
+        offset++;
+        while ((data[offset] & 128) == 0) {
+            offset++;
+        }
+    }
+    Py_ssize_t write_offset = output - (uint8_t *)PyBytes_AS_STRING(res);
+    if (_PyBytes_Resize(&res, write_offset)) {
+        return NULL;
+    }
+    return res;
+}
+
 /* The caller is responsible for ensuring that the given data is valid. */
 
 PyCodeObject *
@@ -375,11 +487,15 @@ _PyCode_New(struct _PyCodeConstructor *con)
         return NULL;
     }
 
+    PyObject *replacement_locations = NULL;
     // Discard the endlinetable and columntable if we are opted out of debug
     // ranges.
     if (!_Py_GetConfig()->code_debug_ranges) {
-        con->endlinetable = Py_None;
-        con->columntable = Py_None;
+        replacement_locations = remove_column_info(con->locationtable);
+        if (replacement_locations == NULL) {
+            return NULL;
+        }
+        con->locationtable = replacement_locations;
     }
 
     Py_ssize_t size = PyBytes_GET_SIZE(con->code) / sizeof(_Py_CODEUNIT);
@@ -389,7 +505,7 @@ _PyCode_New(struct _PyCodeConstructor *con)
         return NULL;
     }
     init_code(co, con);
-
+    Py_XDECREF(replacement_locations);
     return co;
 }
 
@@ -652,56 +768,9 @@ _PyCode_CheckLineNumber(int lasti, PyCodeAddressRange *bounds)
 }
 
 static int
-scan_varint(const uint8_t *ptr)
-{
-    int read = *ptr++;
-    int val = read & 63;
-    int shift = 0;
-    while (read & 64) {
-        read = *ptr++;
-        shift += 6;
-        val |= (read & 63) << shift;
-    }
-    return val;
-}
-
-static int
-scan_signed_varint(const uint8_t *ptr)
-{
-    int uval = scan_varint(ptr);
-    if (uval & 1) {
-        return -(int)(uval >> 1);
-    }
-    else {
-        return uval >> 1;
-    }
-}
-
-static int
-get_next_line_delta(PyCodeAddressRange *bounds)
-{
-    int code = ((*bounds->opaque.lo_next) >> 3) & 15;
-    switch (code) {
-        case 15:
-            return 0;
-        case 13: /* No column */
-        case 14: /* Long form */
-            return scan_signed_varint(bounds->opaque.lo_next+1);
-        case 10:
-        case 11:
-        case 12:
-            /* One line forms */
-            return code - 10;
-        default:
-            /* Same line */
-            return 0;
-    }
-}
-
-static int
 is_no_line_marker(uint8_t b)
 {
-    return (b >> 3) == 31;
+    return (b >> 3) == 0x1f;
 }
 
 
@@ -716,6 +785,16 @@ next_code_delta(PyCodeAddressRange *bounds)
 {
     assert((*bounds->opaque.lo_next) & 128);
     return (((*bounds->opaque.lo_next) & 7) + 1) * sizeof(_Py_CODEUNIT);
+}
+
+static int
+previous_code_delta(PyCodeAddressRange *bounds)
+{
+    const uint8_t *ptr = bounds->opaque.lo_next-1;
+    while (((*ptr) & 128) == 0) {
+        ptr--;
+    }
+    return (((*ptr) & 7) + 1) * sizeof(_Py_CODEUNIT);
 }
 
 static int
@@ -758,9 +837,9 @@ retreat(PyCodeAddressRange *bounds)
     do {
         bounds->opaque.lo_next--;
     } while (((*bounds->opaque.lo_next) & 128) == 0);
-    bounds->opaque.computed_line -= get_next_line_delta(bounds);
+    bounds->opaque.computed_line -= get_line_delta(bounds->opaque.lo_next);
     bounds->ar_end = bounds->ar_start;
-    bounds->ar_start -= next_code_delta(bounds);
+    bounds->ar_start -= previous_code_delta(bounds);
     if (is_no_line_marker(bounds->opaque.lo_next[-1])) {
         bounds->ar_line = -1;
     }
@@ -774,7 +853,7 @@ static void
 advance(PyCodeAddressRange *bounds)
 {
     ASSERT_VALID_BOUNDS(bounds);
-    bounds->opaque.computed_line += get_next_line_delta(bounds);
+    bounds->opaque.computed_line += get_line_delta(bounds->opaque.lo_next);
     if (is_no_line_marker(*bounds->opaque.lo_next)) {
         bounds->ar_line = -1;
     }
@@ -846,7 +925,6 @@ advance_with_locations(PyCodeAddressRange *bounds, int *endline, int *column, in
     }
     ASSERT_VALID_BOUNDS(bounds);
 }
-
 int
 PyCode_Addr2Location(PyCodeObject *co, int addrq,
                      int *start_line, int *start_column,

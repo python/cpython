@@ -7175,6 +7175,7 @@ error:
     Py_XDECREF(a->a_lnotab);
     Py_XDECREF(a->a_enotab);
     Py_XDECREF(a->a_cnotab);
+    Py_XDECREF(a->a_locationtable);
     Py_XDECREF(a->a_except_table);
     return 0;
 }
@@ -7186,6 +7187,7 @@ assemble_free(struct assembler *a)
     Py_XDECREF(a->a_lnotab);
     Py_XDECREF(a->a_enotab);
     Py_XDECREF(a->a_cnotab);
+    Py_XDECREF(a->a_locationtable);
     Py_XDECREF(a->a_except_table);
 }
 

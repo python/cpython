@@ -1481,6 +1481,7 @@ r_object(RFILE *p)
             Py_XDECREF(linetable);
             Py_XDECREF(endlinetable);
             Py_XDECREF(columntable);
+            Py_XDECREF(locationtable);
             Py_XDECREF(exceptiontable);
         }
         retval = v;
