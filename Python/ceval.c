@@ -19,6 +19,7 @@
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_range.h"         // _PyRangeIterObject
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
@@ -4074,6 +4075,32 @@ handle_eval_breaker:
             Py_DECREF(seq);
             goto iterator_exhausted_no_error;
         }
+
+        TARGET(JUMP_BACKWARD_FOR_ITER_RANGE) {
+            assert(cframe.use_tracing == 0);
+            _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();
+            DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type);
+            assert(_Py_OPCODE(
+                next_instr[INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg])
+                == FOR_ITER);
+
+            JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg);
+            CHECK_EVAL_BREAKER();
+            NEXTOPARG();
+            INSTRUCTION_START(FOR_ITER);
+
+            if (r->index < r->len) {
+                PyObject *res = PyLong_FromLong(
+                    (long)(r->start + (unsigned long)(r->index++) * r->step));
+                if (res == NULL) {
+                    goto error;
+                }
+                PUSH(res);
+                NOTRACE_DISPATCH();
+            }
+            goto iterator_exhausted_no_error;
+        }
+
 
         TARGET(POP_JUMP_BACKWARD_IF_FALSE) {
             PREDICTED(POP_JUMP_BACKWARD_IF_FALSE);
