@@ -265,8 +265,8 @@ _specializations = {
         "COMPARE_OP_STR_JUMP",
     ],
     "JUMP_BACKWARD": [
-        "JUMP_BACKWARD_ADAPTIVE",
         "JUMP_BACKWARD_QUICK",
+        "JUMP_BACKWARD_FOR_ITER_ADAPTIVE",
         "JUMP_BACKWARD_FOR_ITER_LIST",
         "JUMP_BACKWARD_FOR_ITER_RANGE",
     ],
