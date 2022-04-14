@@ -433,7 +433,8 @@ class MiscNews(Directive):
             text = 'The NEWS file is not available.'
             node = nodes.strong(text, text)
             return [node]
-        content = issue_re.sub(r'`bpo-\1 <https://bugs.python.org/issue\1>`__',
+        content = issue_re.sub(r'`bpo-\1 <https://bugs.python.org/'
+                               r'issue?@action=redirect&bpo=\1>`__',
                                content)
         content = whatsnew_re.sub(r'\1', content)
         # remove first 3 lines as they are the main heading
