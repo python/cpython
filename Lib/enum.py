@@ -1212,7 +1212,7 @@ class Enum(metaclass=EnumType):
         name: the name of the member
         start: the initial start value or None
         count: the number of existing members
-        last_value: the last value assigned or None
+        last_values: the list of values assigned
         """
         incrementable_last_values = []
         for val in last_values:
