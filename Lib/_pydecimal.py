@@ -506,11 +506,13 @@ def localcontext(ctx=None, **kwargs):
     """
     if ctx is None:
         ctx = getcontext()
-    for key, value in kwargs.items():
-        if key not in _context_attributes:
-            raise TypeError(f"'{key}' is an invalid keyword argument for this function")
-        setattr(ctx, key, value)
-    return _ContextManager(ctx)
+    ctx_manager = _ContextManager(ctx)
+    with ctx_manager as ctx:
+        for key, value in kwargs.items():
+            if key not in _context_attributes:
+                raise TypeError(f"'{key}' is an invalid keyword argument for this function")
+            setattr(ctx, key, value)
+    return ctx_manager
 
 
 ##### Decimal class #######################################################

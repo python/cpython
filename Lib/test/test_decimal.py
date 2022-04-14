@@ -3693,6 +3693,12 @@ class ContextWithStatement(unittest.TestCase):
         self.assertRaises(TypeError, self.decimal.localcontext, Emin="")
         self.assertRaises(TypeError, self.decimal.localcontext, Emax="")
 
+    def test_local_context_kwargs_does_not_overwrite_existing_argument(self):
+        ctx = self.decimal.getcontext()
+        ctx.prec = 28
+        with self.decimal.localcontext(prec=10) as ctx2:
+            self.assertEqual(ctx.prec, 28)
+
     def test_nested_with_statements(self):
         # Use a copy of the supplied context in the block
         Decimal = self.decimal.Decimal
