@@ -235,6 +235,53 @@ exit:
     return return_value;
 }
 
+#if defined(HAVE_WINDOW_FUNCTIONS)
+
+PyDoc_STRVAR(create_window_function__doc__,
+"create_window_function($self, name, num_params, aggregate_class, /)\n"
+"--\n"
+"\n"
+"Creates or redefines an aggregate window function. Non-standard.\n"
+"\n"
+"  name\n"
+"    The name of the SQL aggregate window function to be created or\n"
+"    redefined.\n"
+"  num_params\n"
+"    The number of arguments the step and inverse methods takes.\n"
+"  aggregate_class\n"
+"    A class with step(), finalize(), value(), and inverse() methods.\n"
+"    Set to None to clear the window function.");
+
+#define CREATE_WINDOW_FUNCTION_METHODDEF    \
+    {"create_window_function", (PyCFunction)(void(*)(void))create_window_function, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, create_window_function__doc__},
+
+static PyObject *
+create_window_function_impl(pysqlite_Connection *self, PyTypeObject *cls,
+                            const char *name, int num_params,
+                            PyObject *aggregate_class);
+
+static PyObject *
+create_window_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "", "", NULL};
+    static _PyArg_Parser _parser = {"siO:create_window_function", _keywords, 0};
+    const char *name;
+    int num_params;
+    PyObject *aggregate_class;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &name, &num_params, &aggregate_class)) {
+        goto exit;
+    }
+    return_value = create_window_function_impl(self, cls, name, num_params, aggregate_class);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_WINDOW_FUNCTIONS) */
+
 PyDoc_STRVAR(pysqlite_connection_create_aggregate__doc__,
 "create_aggregate($self, /, name, n_arg, aggregate_class)\n"
 "--\n"
@@ -975,6 +1022,10 @@ exit:
     return return_value;
 }
 
+#ifndef CREATE_WINDOW_FUNCTION_METHODDEF
+    #define CREATE_WINDOW_FUNCTION_METHODDEF
+#endif /* !defined(CREATE_WINDOW_FUNCTION_METHODDEF) */
+
 #ifndef PYSQLITE_CONNECTION_ENABLE_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_ENABLE_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_ENABLE_LOAD_EXTENSION_METHODDEF) */
@@ -990,4 +1041,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=d965a68f9229a56c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b9af1b52fda808bf input=a9049054013a1b77]*/

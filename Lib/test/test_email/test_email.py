@@ -7,6 +7,7 @@ import time
 import base64
 import unittest
 import textwrap
+import warnings
 
 from io import StringIO, BytesIO
 from itertools import chain
@@ -1589,7 +1590,6 @@ class TestMIMEImage(unittest.TestCase):
         self.assertIs(self._im.get_param('foobar', missing), missing)
         self.assertIs(self._im.get_param('attachment', missing,
                                          header='foobar'), missing)
-
 
 
 # Test the basic MIMEApplication class
@@ -3285,6 +3285,7 @@ Foo
         addrs = utils.getaddresses([Header('Al Person <aperson@dom.ain>')])
         self.assertEqual(addrs[0][1], 'aperson@dom.ain')
 
+    @threading_helper.requires_working_threading()
     def test_make_msgid_collisions(self):
         # Test make_msgid uniqueness, even with multiple threads
         class MsgidsThread(Thread):
