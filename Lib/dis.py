@@ -447,6 +447,8 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             elif op in hasjrel:
                 signed_arg = -arg if _is_backward_jump(op) else arg
                 argval = offset + 2 + signed_arg*2
+                if op == JUMP_BACKWARD:
+                    argval += 2
                 argrepr = "to " + repr(argval)
             elif op in haslocal or op in hasfree:
                 argval, argrepr = _get_name_info(arg, varname_from_oparg)
@@ -574,6 +576,8 @@ def findlabels(code):
                 if _is_backward_jump(op):
                     arg = -arg
                 label = offset + 2 + arg*2
+                if op == JUMP_BACKWARD:
+                    label += 2
             elif op in hasjabs:
                 label = arg*2
             else:
