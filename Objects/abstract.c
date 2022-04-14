@@ -792,7 +792,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
 
     /* If no format_spec is provided, use an empty string */
     if (format_spec == NULL) {
-        empty = Py_NewRef(&_Py_STR(empty));
+        empty = PyUnicode_New(0, 0);
         format_spec = empty;
     }
 

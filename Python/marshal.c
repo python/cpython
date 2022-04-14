@@ -1180,13 +1180,12 @@ r_object(RFILE *p)
             if (buffer == NULL)
                 break;
             v = PyUnicode_DecodeUTF8(buffer, n, "surrogatepass");
-            if (v == NULL) {
-                break;
-            }
         }
         else {
-            v = Py_NewRef(&_Py_STR(empty));
+            v = PyUnicode_New(0, 0);
         }
+        if (v == NULL)
+            break;
         if (is_interned)
             PyUnicode_InternInPlace(&v);
         retval = v;

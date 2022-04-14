@@ -740,9 +740,9 @@ get_locale_info(enum LocaleType type, LocaleInfo *locale_info)
         break;
     case LT_NO_LOCALE:
         locale_info->decimal_point = PyUnicode_FromOrdinal('.');
-        if (!locale_info->decimal_point)
+        locale_info->thousands_sep = PyUnicode_New(0, 0);
+        if (!locale_info->decimal_point || !locale_info->thousands_sep)
             return -1;
-        locale_info->thousands_sep = Py_NewRef(&_Py_STR(empty));
         locale_info->grouping = no_grouping;
         break;
     }

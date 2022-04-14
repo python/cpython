@@ -72,7 +72,7 @@ Py_LOCAL_INLINE(PyObject *)
 SubString_new_object_or_empty(SubString *str)
 {
     if (str->str == NULL) {
-        return Py_NewRef(&_Py_STR(empty));
+        return PyUnicode_New(0, 0);
     }
     return SubString_new_object(str);
 }
@@ -526,17 +526,14 @@ render_field(PyObject *fieldobj, SubString *format_spec, _PyUnicodeWriter *write
     else {
         /* We need to create an object out of the pointers we have, because
            __format__ takes a string/unicode object for format_spec. */
-        if (format_spec->str) {
+        if (format_spec->str)
             format_spec_object = PyUnicode_Substring(format_spec->str,
                                                      format_spec->start,
                                                      format_spec->end);
-            if (format_spec_object == NULL) {
-                goto done;
-            }
-        }
-        else {
-            format_spec_object = Py_NewRef(&_Py_STR(empty));
-        }
+        else
+            format_spec_object = PyUnicode_New(0, 0);
+        if (format_spec_object == NULL)
+            goto done;
 
         result = PyObject_Format(fieldobj, format_spec_object);
     }
