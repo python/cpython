@@ -112,7 +112,7 @@ Text Encoding
 -------------
 
 The default encoding of :class:`TextIOWrapper` and :func:`open` is
-locale-specific (:func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`).
+locale-specific (:func:`locale.getencoding`).
 
 However, many developers forget to specify the encoding when opening text files
 encoded in UTF-8 (e.g. JSON, TOML, Markdown, etc...) since most Unix
@@ -948,8 +948,7 @@ Text I/O
    :class:`TextIOBase`.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
-   encoded with.  It defaults to
-   :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`.
+   encoded with.  It defaults to :func:`locale.getencoding()`.
    ``encoding="locale"`` can be used to specify the current locale's encoding
    explicitly. See :ref:`io-text-encoding` for more information.
 

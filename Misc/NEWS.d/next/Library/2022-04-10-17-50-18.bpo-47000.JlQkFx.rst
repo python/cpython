@@ -1,0 +1,2 @@
+Make :class:`TextIOWrapper` uses locale encoding when ``encoding="locale"``
+is specified even in UTF-8 mode.

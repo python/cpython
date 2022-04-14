@@ -859,6 +859,8 @@ Deprecated
   * :mod:`cgitb`
   * :mod:`chunk`
   * :mod:`crypt`
+  * :mod:`imghdr`
+  * :mod:`msilib`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
