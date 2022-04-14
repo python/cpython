@@ -8067,7 +8067,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         .code = a->a_bytecode,
         .firstlineno = c->u->u_firstlineno,
         .linetable = a->a_lnotab,
-        .endlinetable = a->a_enotab,
         .locationtable = a->a_locationtable,
 
         .consts = consts,

@@ -564,7 +564,6 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_qualname, p);
         w_long(co->co_firstlineno, p);
         w_object(co->co_linetable, p);
-        w_object(co->co_endlinetable, p);
         w_object(co->co_locationtable, p);
         w_object(co->co_exceptiontable, p);
         Py_DECREF(co_code);
@@ -1358,7 +1357,6 @@ r_object(RFILE *p)
             PyObject *qualname = NULL;
             int firstlineno;
             PyObject *linetable = NULL;
-            PyObject* endlinetable = NULL;
             PyObject* locationtable = NULL;
             PyObject *exceptiontable = NULL;
 
@@ -1415,9 +1413,6 @@ r_object(RFILE *p)
             linetable = r_object(p);
             if (linetable == NULL)
                 goto code_error;
-            endlinetable = r_object(p);
-            if (endlinetable == NULL)
-                goto code_error;
             locationtable = r_object(p);
             if (locationtable == NULL)
                 goto code_error;
@@ -1434,7 +1429,6 @@ r_object(RFILE *p)
                 .code = code,
                 .firstlineno = firstlineno,
                 .linetable = linetable,
-                .endlinetable = endlinetable,
                 .locationtable = locationtable,
 
                 .consts = consts,
@@ -1473,7 +1467,6 @@ r_object(RFILE *p)
             Py_XDECREF(name);
             Py_XDECREF(qualname);
             Py_XDECREF(linetable);
-            Py_XDECREF(endlinetable);
             Py_XDECREF(locationtable);
             Py_XDECREF(exceptiontable);
         }

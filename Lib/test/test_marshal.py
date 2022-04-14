@@ -129,7 +129,7 @@ class CodeTestCase(unittest.TestCase):
         self.assertEqual(co2.co_filename, "f2")
 
     @requires_debug_ranges()
-    def test_no_columntable_and_endlinetable_with_no_debug_ranges(self):
+    def test_minimal_locationtable_with_no_debug_ranges(self):
         # Make sure when demarshalling objects with `-X no_debug_ranges`
         # that the columns are None.
         co = ExceptionTestCase.test_exceptions.__code__

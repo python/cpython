@@ -231,7 +231,6 @@ class CodeTest(unittest.TestCase):
                         co.co_qualname,
                         co.co_firstlineno,
                         co.co_lnotab,
-                        co.co_endlinetable,
                         co.co_locationtable,
                         co.co_exceptiontable,
                         co.co_freevars,
@@ -273,7 +272,6 @@ class CodeTest(unittest.TestCase):
             ("co_filename", "newfilename"),
             ("co_name", "newname"),
             ("co_linetable", code2.co_linetable),
-            ("co_endlinetable", code2.co_endlinetable),
         ):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
@@ -311,7 +309,6 @@ class CodeTest(unittest.TestCase):
                          co.co_qualname,
                          co.co_firstlineno,
                          co.co_lnotab,
-                         co.co_endlinetable,
                          co.co_locationtable,
                          co.co_exceptiontable,
                          co.co_freevars,
