@@ -61,7 +61,7 @@ def rule(rulefunc):
 
 
 @rule
-def jpeg(h):
+def _jpeg(h):
     """JPEG data with JFIF or Exif markers; and raw JPEG"""
     if h[6:10] in (b'JFIF', b'Exif'):
         return 'jpeg'
@@ -70,34 +70,34 @@ def jpeg(h):
 
 
 @rule
-def png(h):
+def _png(h):
     if h.startswith(b'\211PNG\r\n\032\n'):
         return 'png'
 
 
 @rule
-def gif(h):
+def _gif(h):
     """GIF ('87 and '89 variants)"""
     if h[:6] in (b'GIF87a', b'GIF89a'):
         return 'gif'
 
 
 @rule
-def tiff(h):
+def _tiff(h):
     """TIFF (can be in Motorola or Intel byte order)"""
     if h[:2] in (b'MM', b'II'):
         return 'tiff'
 
 
 @rule
-def rgb(h):
+def _rgb(h):
     """SGI image library"""
     if h.startswith(b'\001\332'):
         return 'rgb'
 
 
 @rule
-def pbm(h):
+def _pbm(h):
     """PBM (portable bitmap)"""
     if len(h) >= 3 and \
             h[0] == ord(b'P') and h[1] in b'14' and h[2] in b' \t\n\r':
@@ -105,7 +105,7 @@ def pbm(h):
 
 
 @rule
-def pgm(h):
+def _pgm(h):
     """PGM (portable graymap)"""
     if len(h) >= 3 and \
             h[0] == ord(b'P') and h[1] in b'25' and h[2] in b' \t\n\r':
@@ -113,7 +113,7 @@ def pgm(h):
 
 
 @rule
-def ppm(h):
+def _ppm(h):
     """PPM (portable pixmap)"""
     if len(h) >= 3 and \
             h[0] == ord(b'P') and h[1] in b'36' and h[2] in b' \t\n\r':
@@ -121,32 +121,32 @@ def ppm(h):
 
 
 @rule
-def rast(h):
+def _rast(h):
     """Sun raster file"""
     if h.startswith(b'\x59\xA6\x6A\x95'):
         return 'rast'
 
 
 @rule
-def _test_xbm(h):
+def _xbm(h):
     """X bitmap (X10 or X11)"""
     if h.startswith(b'#define '):
         return 'xbm'
 
 
 @rule
-def bmp(h):
+def _bmp(h):
     if h.startswith(b'BM'):
         return 'bmp'
 
 
 @rule
-def webp(h):
+def _webp(h):
     if h.startswith(b'RIFF') and h[8:12] == b'WEBP':
         return 'webp'
 
 
 @rule
-def _test_exr(h):
+def _exr(h):
     if h.startswith(b'\x76\x2f\x31\x01'):
         return 'exr'
