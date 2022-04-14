@@ -231,8 +231,8 @@ BaseException_add_note(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(add_note_doc,
-"Exception.add_note(note, replace=False) --\n\
-    add note to the exception. If replace is true, clear previous notes.");
+"Exception.add_note(note) --\n\
+    add a note to the exception");
 
 static PyMethodDef BaseException_methods[] = {
    {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS },
