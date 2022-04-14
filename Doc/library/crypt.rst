@@ -96,8 +96,7 @@ The :mod:`crypt` module defines the following functions:
    :func:`mksalt`, one of the ``crypt.METHOD_*`` values (though not all
    may be available on all platforms), or a full encrypted password
    including salt, as returned by this function.  If *salt* is not
-   provided, the strongest method will be used (as returned by
-   :func:`methods`).
+   provided, the strongest method available in :attr:`methods` will be used.
 
    Checking a password is usually done by passing the plain-text password
    as *word* and the full results of a previous :func:`crypt` call,
@@ -125,8 +124,8 @@ The :mod:`crypt` module defines the following functions:
 .. function:: mksalt(method=None, *, rounds=None)
 
    Return a randomly generated salt of the specified method.  If no
-   *method* is given, the strongest method available as returned by
-   :func:`methods` is used.
+   *method* is given, the strongest method available in :attr:`methods` is
+   used.
 
    The return value is a string suitable for passing as the *salt* argument
    to :func:`crypt`.

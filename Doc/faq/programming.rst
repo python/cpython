@@ -1951,9 +1951,9 @@ relevant instance attributes are mutable, the *cached_property* approach
 can't be made to work because it cannot detect changes to the
 attributes.
 
-The *lru_cache* approach can be made to work, but the class needs to define the
-*__eq__* and *__hash__* methods so the cache can detect relevant attribute
-updates::
+To make the *lru_cache* approach work when the *station_id* is mutable,
+the class needs to define the *__eq__* and *__hash__* methods so that
+the cache can detect relevant attribute updates::
 
     class Weather:
         "Example with a mutable station identifier"

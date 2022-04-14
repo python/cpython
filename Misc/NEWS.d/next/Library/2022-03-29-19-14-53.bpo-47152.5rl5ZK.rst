@@ -1,2 +1,0 @@
-Convert the :mod:`re` module into a package. Deprecate modules ``sre_compile``,
-``sre_constants`` and ``sre_parse``.

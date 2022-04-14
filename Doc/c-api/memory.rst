@@ -403,7 +403,7 @@ Customize Memory Allocators
 .. c:type:: PyMemAllocatorEx
 
    Structure used to describe a memory block allocator. The structure has
-   four fields:
+   the following fields:
 
    +----------------------------------------------------------+---------------------------------------+
    | Field                                                    | Meaning                               |

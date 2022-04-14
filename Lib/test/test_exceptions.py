@@ -198,12 +198,17 @@ class ExceptionTests(unittest.TestCase):
         s = '''if True:\n        print()\n\texec "mixed tabs and spaces"'''
         ckmsg(s, "inconsistent use of tabs and spaces in indentation", TabError)
 
-    def check(self, src, lineno, offset, encoding='utf-8'):
+    def check(self, src, lineno, offset, end_lineno=None, end_offset=None, encoding='utf-8'):
         with self.subTest(source=src, lineno=lineno, offset=offset):
             with self.assertRaises(SyntaxError) as cm:
                 compile(src, '<fragment>', 'exec')
             self.assertEqual(cm.exception.lineno, lineno)
             self.assertEqual(cm.exception.offset, offset)
+            if end_lineno is not None:
+                self.assertEqual(cm.exception.end_lineno, end_lineno)
+            if end_offset is not None:
+                self.assertEqual(cm.exception.end_offset, end_offset)
+
             if cm.exception.text is not None:
                 if not isinstance(src, str):
                     src = src.decode(encoding, 'replace')
@@ -235,6 +240,10 @@ class ExceptionTests(unittest.TestCase):
         check('match ...:\n    case {**rest, "key": value}:\n        ...', 2, 19)
         check("[a b c d e f]", 1, 2)
         check("for x yfff:", 1, 7)
+        check("f(a for a in b, c)", 1, 3, 1, 15)
+        check("f(a for a in b if a, c)", 1, 3, 1, 20)
+        check("f(a, b for b in c)", 1, 6, 1, 18)
+        check("f(a, b for b in c, d)", 1, 6, 1, 18)
 
         # Errors thrown by compile.c
         check('class foo:return 1', 1, 11)
