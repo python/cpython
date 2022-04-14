@@ -965,6 +965,8 @@ class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _root=True):
     def __typing_subst__(self, arg):
         msg = "Parameters to generic types must be types."
         arg = _type_check(arg, msg, is_argument=True)
+        if (isinstance(arg, _GenericAlias) and arg.__origin__ is Unpack):
+            raise TypeError(f"{arg} is not valid as type argument")
         return arg
 
 

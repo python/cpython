@@ -562,6 +562,20 @@ class TypeVarTupleTests(BaseTestCase):
             self.assertEqual(E[float, str, int, bytes],
                              Tuple[List[float], A[str, int], List[bytes]])
 
+    def test_bad_var_substitution(self):
+        Ts = TypeVarTuple('Ts')
+        T = TypeVar('T')
+        T2 = TypeVar('T2')
+        class G(Generic[Unpack[Ts]]): pass
+
+        for A in G, Tuple:
+            B = A[T, Unpack[Ts], str, T2]
+            with self.assertRaises(TypeError):
+                B[int, Unpack[Ts]]
+            C = A[T, Unpack[Ts], str, T2]
+            with self.assertRaises(TypeError):
+                C[int, Unpack[Ts], Unpack[Ts]]
+
     def test_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
         self.assertEqual(repr(Ts), 'Ts')
