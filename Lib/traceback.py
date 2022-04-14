@@ -917,7 +917,7 @@ class TracebackException:
                 # format exception group
                 is_toplevel = (_ctx.exception_group_depth == 0)
                 if is_toplevel:
-                     _ctx.exception_group_depth += 1
+                    _ctx.exception_group_depth += 1
 
                 if exc.stack:
                     yield from _ctx.emit(
