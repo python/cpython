@@ -1,2 +1,0 @@
-Add :c:func:`PyThreadState_GetID` function: get the unique identifier of a
-Python thread state.

@@ -6,6 +6,7 @@ import errno
 import re
 import sys
 import traceback
+import unittest
 import warnings
 
 
@@ -96,6 +97,7 @@ def collect_sys(info_add):
         'maxunicode',
         'path',
         'platform',
+        'platlibdir',
         'prefix',
         'thread_info',
         'version',
@@ -376,6 +378,9 @@ def collect_gdb(info_add):
                                 stderr=subprocess.PIPE,
                                 universal_newlines=True)
         version = proc.communicate()[0]
+        if proc.returncode:
+            # ignore gdb failure: test_gdb will log the error
+            return
     except OSError:
         return
 
@@ -428,6 +433,15 @@ def collect_time(info_add):
                 pass
             else:
                 info_add('time.get_clock_info(%s)' % clock, clock_info)
+
+
+def collect_curses(info_add):
+    try:
+        import curses
+    except ImportError:
+        return
+
+    copy_attr(info_add, 'curses.ncurses_version', curses, 'ncurses_version')
 
 
 def collect_datetime(info_add):
@@ -501,7 +515,7 @@ def collect_ssl(info_add):
     copy_attributes(info_add, ssl, 'ssl.%s', attributes, formatter=format_attr)
 
     for name, ctx in (
-        ('SSLContext', ssl.SSLContext()),
+        ('SSLContext', ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)),
         ('default_https_context', ssl._create_default_https_context()),
         ('stdlib_context', ssl._create_stdlib_context()),
     ):
@@ -602,7 +616,7 @@ def collect_resource(info_add):
 def collect_test_socket(info_add):
     try:
         from test import test_socket
-    except ImportError:
+    except (ImportError, unittest.SkipTest):
         return
 
     # all check attributes like HAVE_SOCKET_CAN
@@ -716,6 +730,67 @@ def collect_windows(info_add):
     except (ImportError, AttributeError):
         pass
 
+    import subprocess
+    try:
+        # When wmic.exe output is redirected to a pipe,
+        # it uses the OEM code page
+        proc = subprocess.Popen(["wmic", "os", "get", "Caption,Version", "/value"],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                encoding="oem",
+                                text=True)
+        output, stderr = proc.communicate()
+        if proc.returncode:
+            output = ""
+    except OSError:
+        pass
+    else:
+        for line in output.splitlines():
+            line = line.strip()
+            if line.startswith('Caption='):
+                line = line.removeprefix('Caption=').strip()
+                if line:
+                    info_add('windows.version_caption', line)
+            elif line.startswith('Version='):
+                line = line.removeprefix('Version=').strip()
+                if line:
+                    info_add('windows.version', line)
+
+    try:
+        proc = subprocess.Popen(["ver"], shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                text=True)
+        output = proc.communicate()[0]
+        if proc.returncode:
+            output = ""
+    except OSError:
+        return
+    else:
+        output = output.strip()
+        line = output.splitlines()[0]
+        if line:
+            info_add('windows.ver', line)
+
+
+def collect_fips(info_add):
+    try:
+        import _hashlib
+    except ImportError:
+        _hashlib = None
+
+    if _hashlib is not None:
+        call_func(info_add, 'fips.openssl_fips_mode', _hashlib, 'get_fips_mode')
+
+    try:
+        with open("/proc/sys/crypto/fips_enabled", encoding="utf-8") as fp:
+            line = fp.readline().rstrip()
+
+        if line:
+            info_add('fips.linux_crypto_fips_enabled', line)
+    except OSError:
+        pass
+
 
 def collect_info(info):
     error = False
@@ -729,9 +804,11 @@ def collect_info(info):
 
         collect_builtins,
         collect_cc,
+        collect_curses,
         collect_datetime,
         collect_decimal,
         collect_expat,
+        collect_fips,
         collect_gdb,
         collect_gdbm,
         collect_get_config,

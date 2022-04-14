@@ -1,2 +1,0 @@
-In :meth:`ShareableList.__setitem__`, check the size of a new string item
-after encoding it to utf-8, not before.

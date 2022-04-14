@@ -1,1 +1,0 @@
-Allow ``random.getrandbits(0)`` to succeed and to return 0.

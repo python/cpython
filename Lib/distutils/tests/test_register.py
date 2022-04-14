@@ -5,7 +5,8 @@ import getpass
 import urllib
 import warnings
 
-from test.support import check_warnings, run_unittest
+from test.support import run_unittest
+from test.support.warnings_helper import check_warnings
 
 from distutils.command import register as register_module
 from distutils.command.register import register
@@ -317,7 +318,7 @@ class RegisterTestCase(BasePyPIRCCommandTestCase):
 
 
 def test_suite():
-    return unittest.makeSuite(RegisterTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(RegisterTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

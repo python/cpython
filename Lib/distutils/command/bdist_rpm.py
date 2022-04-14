@@ -6,7 +6,6 @@ distributions)."""
 import subprocess, sys, os
 from distutils.core import Command
 from distutils.debug import DEBUG
-from distutils.util import get_platform
 from distutils.file_util import write_file
 from distutils.errors import *
 from distutils.sysconfig import get_python_version

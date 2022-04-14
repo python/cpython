@@ -219,7 +219,6 @@ def favk(
 """
 
 
-@support.skip_if_new_parser("Pegen does not support type comments yet")
 class TypeCommentTests(unittest.TestCase):
 
     lowest = 4  # Lowest minor version supported
@@ -399,6 +398,14 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.argtypes[1].id, "str")
         self.assertEqual(tree.argtypes[2].id, "Any")
         self.assertEqual(tree.returns.id, "float")
+
+        tree = parse_func_type_input("(*int) -> None")
+        self.assertEqual(tree.argtypes[0].id, "int")
+        tree = parse_func_type_input("(**int) -> None")
+        self.assertEqual(tree.argtypes[0].id, "int")
+        tree = parse_func_type_input("(*int, **str) -> None")
+        self.assertEqual(tree.argtypes[0].id, "int")
+        self.assertEqual(tree.argtypes[1].id, "str")
 
         with self.assertRaises(SyntaxError):
             tree = parse_func_type_input("(int, *str, *Any) -> float")

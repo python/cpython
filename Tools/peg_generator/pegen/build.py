@@ -1,10 +1,10 @@
+import itertools
 import pathlib
-import shutil
-import tokenize
 import sys
 import sysconfig
-
-from typing import Optional, Tuple
+import tempfile
+import tokenize
+from typing import IO, Dict, List, Optional, Set, Tuple
 
 from pegen.c_generator import CParserGenerator
 from pegen.grammar import Grammar
@@ -14,15 +14,17 @@ from pegen.parser_generator import ParserGenerator
 from pegen.python_generator import PythonParserGenerator
 from pegen.tokenizer import Tokenizer
 
-MOD_DIR = pathlib.Path(__file__).parent
+MOD_DIR = pathlib.Path(__file__).resolve().parent
+
+TokenDefinitions = Tuple[Dict[int, str], Dict[str, int], Set[str]]
 
 
-def get_extra_flags(compiler_flags, compiler_py_flags_nodist):
+def get_extra_flags(compiler_flags: str, compiler_py_flags_nodist: str) -> List[str]:
     flags = sysconfig.get_config_var(compiler_flags)
     py_flags_nodist = sysconfig.get_config_var(compiler_py_flags_nodist)
     if flags is None or py_flags_nodist is None:
         return []
-    return f'{flags} {py_flags_nodist}'.split()
+    return f"{flags} {py_flags_nodist}".split()
 
 
 def compile_c_extension(
@@ -30,6 +32,8 @@ def compile_c_extension(
     build_dir: Optional[str] = None,
     verbose: bool = False,
     keep_asserts: bool = True,
+    disable_optimization: bool = False,
+    library_dir: Optional[str] = None,
 ) -> str:
     """Compile the generated source for a parser generator into an extension module.
 
@@ -40,60 +44,125 @@ def compile_c_extension(
 
     If *build_dir* is provided, that path will be used as the temporary build directory
     of distutils (this is useful in case you want to use a temporary directory).
+
+    If *library_dir* is provided, that path will be used as the directory for a
+    static library of the common parser sources (this is useful in case you are
+    creating multiple extensions).
     """
     import distutils.log
     from distutils.core import Distribution, Extension
-    from distutils.command.clean import clean  # type: ignore
-    from distutils.command.build_ext import build_ext  # type: ignore
-    from distutils.tests.support import fixup_build_ext
+    from distutils.tests.support import fixup_build_ext  # type: ignore
+
+    from distutils.ccompiler import new_compiler
+    from distutils.dep_util import newer_group
+    from distutils.sysconfig import customize_compiler
 
     if verbose:
-        distutils.log.set_verbosity(distutils.log.DEBUG)
+        distutils.log.set_threshold(distutils.log.DEBUG)
 
     source_file_path = pathlib.Path(generated_source_path)
     extension_name = source_file_path.stem
-    extra_compile_args = get_extra_flags('CFLAGS', 'PY_CFLAGS_NODIST')
-    extra_link_args = get_extra_flags('LDFLAGS', 'PY_LDFLAGS_NODIST')
+    extra_compile_args = get_extra_flags("CFLAGS", "PY_CFLAGS_NODIST")
+    extra_compile_args.append("-DPy_BUILD_CORE_MODULE")
+    # Define _Py_TEST_PEGEN to not call PyAST_Validate() in Parser/pegen.c
+    extra_compile_args.append("-D_Py_TEST_PEGEN")
+    extra_link_args = get_extra_flags("LDFLAGS", "PY_LDFLAGS_NODIST")
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")
-    extension = [
-        Extension(
-            extension_name,
-            sources=[
-                str(MOD_DIR.parent.parent.parent / "Python" / "Python-ast.c"),
-                str(MOD_DIR.parent.parent.parent / "Python" / "asdl.c"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer.c"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen" / "pegen.c"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen" / "parse_string.c"),
-                str(MOD_DIR.parent / "peg_extension" / "peg_extension.c"),
-                generated_source_path,
-            ],
-            include_dirs=[
-                str(MOD_DIR.parent.parent.parent / "Include" / "internal"),
-                str(MOD_DIR.parent.parent.parent / "Parser"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen"),
-            ],
-            extra_compile_args=extra_compile_args,
-            extra_link_args=extra_link_args,
-        )
+    if disable_optimization:
+        if sys.platform == 'win32':
+            extra_compile_args.append("/Od")
+            extra_link_args.append("/LTCG:OFF")
+        else:
+            extra_compile_args.append("-O0")
+            if sysconfig.get_config_var("GNULD") == "yes":
+                extra_link_args.append("-fno-lto")
+
+    common_sources = [
+        str(MOD_DIR.parent.parent.parent / "Python" / "Python-ast.c"),
+        str(MOD_DIR.parent.parent.parent / "Python" / "asdl.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "pegen.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "pegen_errors.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "action_helpers.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "string_parser.c"),
+        str(MOD_DIR.parent / "peg_extension" / "peg_extension.c"),
     ]
-    dist = Distribution({"name": extension_name, "ext_modules": extension})
-    cmd = build_ext(dist)
+    include_dirs = [
+        str(MOD_DIR.parent.parent.parent / "Include" / "internal"),
+        str(MOD_DIR.parent.parent.parent / "Parser"),
+    ]
+    extension = Extension(
+        extension_name,
+        sources=[generated_source_path],
+        extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
+    )
+    dist = Distribution({"name": extension_name, "ext_modules": [extension]})
+    cmd = dist.get_command_obj("build_ext")
     fixup_build_ext(cmd)
-    cmd.inplace = True
+    cmd.build_lib = str(source_file_path.parent)
+    cmd.include_dirs = include_dirs
     if build_dir:
         cmd.build_temp = build_dir
     cmd.ensure_finalized()
-    cmd.run()
 
-    extension_path = source_file_path.parent / cmd.get_ext_filename(extension_name)
-    shutil.move(cmd.get_ext_fullpath(extension_name), extension_path)
+    compiler = new_compiler()
+    customize_compiler(compiler)
+    compiler.set_include_dirs(cmd.include_dirs)
+    compiler.set_library_dirs(cmd.library_dirs)
+    # build static lib
+    if library_dir:
+        library_filename = compiler.library_filename(extension_name,
+                                                     output_dir=library_dir)
+        if newer_group(common_sources, library_filename, 'newer'):
+            if sys.platform == 'win32':
+                pdb = compiler.static_lib_format % (extension_name, '.pdb')
+                compile_opts = [f"/Fd{library_dir}\\{pdb}"]
+                compile_opts.extend(extra_compile_args)
+            else:
+                compile_opts = extra_compile_args
+            objects = compiler.compile(common_sources,
+                                       output_dir=library_dir,
+                                       debug=cmd.debug,
+                                       extra_postargs=compile_opts)
+            compiler.create_static_lib(objects, extension_name,
+                                       output_dir=library_dir,
+                                       debug=cmd.debug)
+        if sys.platform == 'win32':
+            compiler.add_library_dir(library_dir)
+            extension.libraries = [extension_name]
+        elif sys.platform == 'darwin':
+            compiler.set_link_objects([
+                '-Wl,-force_load', library_filename,
+            ])
+        else:
+            compiler.set_link_objects([
+                '-Wl,--whole-archive', library_filename, '-Wl,--no-whole-archive',
+            ])
+    else:
+        extension.sources[0:0] = common_sources
 
-    cmd = clean(dist)
-    cmd.finalize_options()
-    cmd.run()
+    # Compile the source code to object files.
+    ext_path = cmd.get_ext_fullpath(extension_name)
+    if newer_group(extension.sources, ext_path, 'newer'):
+        objects = compiler.compile(extension.sources,
+                                    output_dir=cmd.build_temp,
+                                    debug=cmd.debug,
+                                    extra_postargs=extra_compile_args)
+    else:
+        objects = compiler.object_filenames(extension.sources,
+                                            output_dir=cmd.build_temp)
+    # Now link the object files together into a "shared object"
+    compiler.link_shared_object(
+        objects, ext_path,
+        libraries=cmd.get_libraries(extension),
+        extra_postargs=extra_link_args,
+        export_symbols=cmd.get_export_symbols(extension),
+        debug=cmd.debug,
+        build_temp=cmd.build_temp)
 
-    return extension_path
+    return pathlib.Path(ext_path)
 
 
 def build_parser(
@@ -110,39 +179,79 @@ def build_parser(
     return grammar, parser, tokenizer
 
 
-def build_generator(
-    tokenizer: Tokenizer,
+def generate_token_definitions(tokens: IO[str]) -> TokenDefinitions:
+    all_tokens = {}
+    exact_tokens = {}
+    non_exact_tokens = set()
+    numbers = itertools.count(0)
+
+    for line in tokens:
+        line = line.strip()
+
+        if not line or line.startswith("#"):
+            continue
+
+        pieces = line.split()
+        index = next(numbers)
+
+        if len(pieces) == 1:
+            (token,) = pieces
+            non_exact_tokens.add(token)
+            all_tokens[index] = token
+        elif len(pieces) == 2:
+            token, op = pieces
+            exact_tokens[op.strip("'")] = index
+            all_tokens[index] = token
+        else:
+            raise ValueError(f"Unexpected line found in Tokens file: {line}")
+
+    return all_tokens, exact_tokens, non_exact_tokens
+
+
+def build_c_generator(
     grammar: Grammar,
     grammar_file: str,
+    tokens_file: str,
     output_file: str,
     compile_extension: bool = False,
     verbose_c_extension: bool = False,
     keep_asserts_in_extension: bool = True,
     skip_actions: bool = False,
 ) -> ParserGenerator:
-    # TODO: Allow other extensions; pass the output type as an argument.
-    if not output_file.endswith((".c", ".py")):
-        raise RuntimeError("Your output file must either be a .c or .py file")
+    with open(tokens_file, "r") as tok_file:
+        all_tokens, exact_tok, non_exact_tok = generate_token_definitions(tok_file)
     with open(output_file, "w") as file:
-        gen: ParserGenerator
-        if output_file.endswith(".c"):
-            gen = CParserGenerator(grammar, file, skip_actions=skip_actions)
-        elif output_file.endswith(".py"):
-            gen = PythonParserGenerator(grammar, file)  # TODO: skip_actions
-        else:
-            assert False  # Should have been checked above
+        gen: ParserGenerator = CParserGenerator(
+            grammar, all_tokens, exact_tok, non_exact_tok, file, skip_actions=skip_actions
+        )
         gen.generate(grammar_file)
 
-    if compile_extension and output_file.endswith(".c"):
-        compile_c_extension(
-            output_file, verbose=verbose_c_extension, keep_asserts=keep_asserts_in_extension
-        )
-
+    if compile_extension:
+        with tempfile.TemporaryDirectory() as build_dir:
+            compile_c_extension(
+                output_file,
+                build_dir=build_dir,
+                verbose=verbose_c_extension,
+                keep_asserts=keep_asserts_in_extension,
+            )
     return gen
 
 
-def build_parser_and_generator(
+def build_python_generator(
+    grammar: Grammar,
     grammar_file: str,
+    output_file: str,
+    skip_actions: bool = False,
+) -> ParserGenerator:
+    with open(output_file, "w") as file:
+        gen: ParserGenerator = PythonParserGenerator(grammar, file)  # TODO: skip_actions
+        gen.generate(grammar_file)
+    return gen
+
+
+def build_c_parser_and_generator(
+    grammar_file: str,
+    tokens_file: str,
     output_file: str,
     compile_extension: bool = False,
     verbose_tokenizer: bool = False,
@@ -151,10 +260,11 @@ def build_parser_and_generator(
     keep_asserts_in_extension: bool = True,
     skip_actions: bool = False,
 ) -> Tuple[Grammar, Parser, Tokenizer, ParserGenerator]:
-    """Generate rules, parser, tokenizer, parser generator for a given grammar
+    """Generate rules, C parser, tokenizer, parser generator for a given grammar
 
     Args:
         grammar_file (string): Path for the grammar file
+        tokens_file (string): Path for the tokens file
         output_file (string): Path for the output file
         compile_extension (bool, optional): Whether to compile the C extension.
           Defaults to False.
@@ -169,10 +279,10 @@ def build_parser_and_generator(
         skip_actions (bool, optional): Whether to pretend no rule has any actions.
     """
     grammar, parser, tokenizer = build_parser(grammar_file, verbose_tokenizer, verbose_parser)
-    gen = build_generator(
-        tokenizer,
+    gen = build_c_generator(
         grammar,
         grammar_file,
+        tokens_file,
         output_file,
         compile_extension,
         verbose_c_extension,
@@ -180,4 +290,32 @@ def build_parser_and_generator(
         skip_actions=skip_actions,
     )
 
+    return grammar, parser, tokenizer, gen
+
+
+def build_python_parser_and_generator(
+    grammar_file: str,
+    output_file: str,
+    verbose_tokenizer: bool = False,
+    verbose_parser: bool = False,
+    skip_actions: bool = False,
+) -> Tuple[Grammar, Parser, Tokenizer, ParserGenerator]:
+    """Generate rules, python parser, tokenizer, parser generator for a given grammar
+
+    Args:
+        grammar_file (string): Path for the grammar file
+        output_file (string): Path for the output file
+        verbose_tokenizer (bool, optional): Whether to display additional output
+          when generating the tokenizer. Defaults to False.
+        verbose_parser (bool, optional): Whether to display additional output
+          when generating the parser. Defaults to False.
+        skip_actions (bool, optional): Whether to pretend no rule has any actions.
+    """
+    grammar, parser, tokenizer = build_parser(grammar_file, verbose_tokenizer, verbose_parser)
+    gen = build_python_generator(
+        grammar,
+        grammar_file,
+        output_file,
+        skip_actions=skip_actions,
+    )
     return grammar, parser, tokenizer, gen

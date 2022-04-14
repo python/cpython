@@ -791,7 +791,7 @@ integer handle, and also disconnect the Windows handle from the handle object.
 
 
 .. method:: PyHKEY.__enter__()
-            PyHKEY.__exit__(\*exc_info)
+            PyHKEY.__exit__(*exc_info)
 
    The HKEY object implements :meth:`~object.__enter__` and
    :meth:`~object.__exit__` and thus supports the context protocol for the

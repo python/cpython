@@ -4,14 +4,13 @@
 # environment
 
 import ftplib
-import asyncore
-import asynchat
 import socket
 import io
 import errno
 import os
 import threading
 import time
+import unittest
 try:
     import ssl
 except ImportError:
@@ -19,7 +18,18 @@ except ImportError:
 
 from unittest import TestCase, skipUnless
 from test import support
-from test.support import HOST, HOSTv6
+from test.support import threading_helper
+from test.support import socket_helper
+from test.support import warnings_helper
+from test.support.socket_helper import HOST, HOSTv6
+
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asyncore
+    import asynchat
+
+support.requires_working_socket(module=True)
 
 TIMEOUT = support.LOOPBACK_TIMEOUT
 DEFAULT_ENCODING = 'utf-8'
@@ -45,6 +55,13 @@ MLSD_DATA = ("type=cdir;perm=el;unique==keVO1+ZF4; test\r\n"
              "type=file;perm=r;unique==keVO1+1G4; file4\r\n"
              "type=dir;perm=cpmel;unique==SGP1; dir \xAE non-ascii char\r\n"
              "type=file;perm=r;unique==SGP2; file \xAE non-ascii char\r\n")
+
+
+def default_error_handler():
+    # bpo-44359: Silently ignore socket errors. Such errors occur when a client
+    # socket is closed, in TestFTPClass.tearDown() and makepasv() tests, and
+    # the server gets an error on its side.
+    pass
 
 
 class DummyDTPHandler(asynchat.async_chat):
@@ -78,7 +95,7 @@ class DummyDTPHandler(asynchat.async_chat):
         super(DummyDTPHandler, self).push(what.encode(self.encoding))
 
     def handle_error(self):
-        raise Exception
+        default_error_handler()
 
 
 class DummyFTPHandler(asynchat.async_chat):
@@ -100,6 +117,10 @@ class DummyFTPHandler(asynchat.async_chat):
         self.next_retr_data = RETR_DATA
         self.push('220 welcome')
         self.encoding = encoding
+        # We use this as the string IPv4 address to direct the client
+        # to in response to a PASV command.  To test security behavior.
+        # https://bugs.python.org/issue43285/.
+        self.fake_pasv_server_ip = '252.253.254.255'
 
     def collect_incoming_data(self, data):
         self.in_buffer.append(data)
@@ -124,7 +145,7 @@ class DummyFTPHandler(asynchat.async_chat):
             self.push('550 command "%s" not understood.' %cmd)
 
     def handle_error(self):
-        raise Exception
+        default_error_handler()
 
     def push(self, data):
         asynchat.async_chat.push(self, data.encode(self.encoding) + b'\r\n')
@@ -140,7 +161,8 @@ class DummyFTPHandler(asynchat.async_chat):
     def cmd_pasv(self, arg):
         with socket.create_server((self.socket.getsockname()[0], 0)) as sock:
             sock.settimeout(TIMEOUT)
-            ip, port = sock.getsockname()[:2]
+            port = sock.getsockname()[1]
+            ip = self.fake_pasv_server_ip
             ip = ip.replace('.', ','); p1 = port / 256; p2 = port % 256
             self.push('227 entering passive mode (%s,%d,%d)' %(ip, p1, p2))
             conn, addr = sock.accept()
@@ -301,7 +323,7 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
         return 0
 
     def handle_error(self):
-        raise Exception
+        default_error_handler()
 
 
 if ssl is not None:
@@ -316,7 +338,7 @@ if ssl is not None:
         _ssl_closing = False
 
         def secure_connection(self):
-            context = ssl.SSLContext()
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             context.load_cert_chain(CERTFILE)
             socket = context.wrap_socket(self.socket,
                                          suppress_ragged_eofs=False,
@@ -404,7 +426,7 @@ if ssl is not None:
                 raise
 
         def handle_error(self):
-            raise Exception
+            default_error_handler()
 
         def close(self):
             if (isinstance(self.socket, ssl.SSLSocket) and
@@ -621,7 +643,7 @@ class TestFTPClass(TestCase):
 
         f = io.StringIO(RETR_DATA.replace('\r\n', '\n'))
         # storlines() expects a binary file, not a text file
-        with support.check_warnings(('', BytesWarning), quiet=True):
+        with warnings_helper.check_warnings(('', BytesWarning), quiet=True):
             self.assertRaises(TypeError, self.client.storlines, 'stor foo', f)
 
     def test_nlst(self):
@@ -704,6 +726,26 @@ class TestFTPClass(TestCase):
         # IPv4 is in use, just make sure send_epsv has not been used
         self.assertEqual(self.server.handler_instance.last_received_cmd, 'pasv')
 
+    def test_makepasv_issue43285_security_disabled(self):
+        """Test the opt-in to the old vulnerable behavior."""
+        self.client.trust_server_pasv_ipv4_address = True
+        bad_host, port = self.client.makepasv()
+        self.assertEqual(
+                bad_host, self.server.handler_instance.fake_pasv_server_ip)
+        # Opening and closing a connection keeps the dummy server happy
+        # instead of timing out on accept.
+        socket.create_connection((self.client.sock.getpeername()[0], port),
+                                 timeout=TIMEOUT).close()
+
+    def test_makepasv_issue43285_security_enabled_default(self):
+        self.assertFalse(self.client.trust_server_pasv_ipv4_address)
+        trusted_host, port = self.client.makepasv()
+        self.assertNotEqual(
+                trusted_host, self.server.handler_instance.fake_pasv_server_ip)
+        # Opening and closing a connection keeps the dummy server happy
+        # instead of timing out on accept.
+        socket.create_connection((trusted_host, port), timeout=TIMEOUT).close()
+
     def test_with_statement(self):
         self.client.quit()
 
@@ -751,7 +793,7 @@ class TestFTPClass(TestCase):
 
     def test_source_address(self):
         self.client.quit()
-        port = support.find_unused_port()
+        port = socket_helper.find_unused_port()
         try:
             self.client.connect(self.server.host, self.server.port,
                                 source_address=(HOST, port))
@@ -763,7 +805,7 @@ class TestFTPClass(TestCase):
             raise
 
     def test_source_address_passive_connection(self):
-        port = support.find_unused_port()
+        port = socket_helper.find_unused_port()
         self.client.source_address = (HOST, port)
         try:
             with self.client.transfercmd('list') as sock:
@@ -816,7 +858,7 @@ class TestFTPClass(TestCase):
         self.assertEqual(DEFAULT_ENCODING, client.encoding)
 
 
-@skipUnless(support.IPV6_ENABLED, "IPv6 not enabled")
+@skipUnless(socket_helper.IPV6_ENABLED, "IPv6 not enabled")
 class TestIPv6Environment(TestCase):
 
     def setUp(self):
@@ -1007,7 +1049,7 @@ class TestTimeouts(TestCase):
         self.evt = threading.Event()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(20)
-        self.port = support.bind_port(self.sock)
+        self.port = socket_helper.bind_port(self.sock)
         self.server_thread = threading.Thread(target=self.server)
         self.server_thread.daemon = True
         self.server_thread.start()
@@ -1033,7 +1075,7 @@ class TestTimeouts(TestCase):
         self.evt.set()
         try:
             conn, addr = self.sock.accept()
-        except socket.timeout:
+        except TimeoutError:
             pass
         else:
             conn.sendall(b"1 Hola mundo\n")
@@ -1104,24 +1146,17 @@ class TestTimeouts(TestCase):
 
 class MiscTestCase(TestCase):
     def test__all__(self):
-        blacklist = {'MSG_OOB', 'FTP_PORT', 'MAXLINE', 'CRLF', 'B_CRLF',
-                     'Error', 'parse150', 'parse227', 'parse229', 'parse257',
-                     'print_line', 'ftpcp', 'test'}
-        support.check__all__(self, ftplib, blacklist=blacklist)
+        not_exported = {
+            'MSG_OOB', 'FTP_PORT', 'MAXLINE', 'CRLF', 'B_CRLF', 'Error',
+            'parse150', 'parse227', 'parse229', 'parse257', 'print_line',
+            'ftpcp', 'test'}
+        support.check__all__(self, ftplib, not_exported=not_exported)
 
 
-def test_main():
-    tests = [TestFTPClass, TestTimeouts,
-             TestIPv6Environment,
-             TestTLS_FTPClassMixin, TestTLS_FTPClass,
-             MiscTestCase]
-
-    thread_info = support.threading_setup()
-    try:
-        support.run_unittest(*tests)
-    finally:
-        support.threading_cleanup(*thread_info)
+def setUpModule():
+    thread_info = threading_helper.threading_setup()
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -6,16 +6,21 @@ import glob
 import tarfile
 import zipfile
 import shutil
+import pathlib
 import sys
 
 from typing import Generator, Any
 
 sys.path.insert(0, ".")
+
 from pegen import build
 from scripts import test_parse_directory
 
+HERE = pathlib.Path(__file__).resolve().parent
+
 argparser = argparse.ArgumentParser(
-    prog="test_pypi_packages", description="Helper program to test parsing PyPI packages",
+    prog="test_pypi_packages",
+    description="Helper program to test parsing PyPI packages",
 )
 argparser.add_argument(
     "-t", "--tree", action="count", help="Compare parse tree to official AST", default=0
@@ -50,24 +55,15 @@ def find_dirname(package_name: str) -> str:
     assert False  # This is to fix mypy, should never be reached
 
 
-def run_tests(dirname: str, tree: int, extension: Any) -> int:
+def run_tests(dirname: str, tree: int) -> int:
     return test_parse_directory.parse_directory(
         dirname,
-        "data/python.gram",
         verbose=False,
-        excluded_files=[
-            "*/failset/*",
-            "*/failset/**",
-            "*/failset/**/*",
-            "*/test2to3/*",
-            "*/test2to3/**/*",
-            "*/bad*",
-            "*/lib2to3/tests/data/*",
-        ],
-        skip_actions=False,
+        excluded_files=[],
         tree_arg=tree,
         short=True,
-        extension=extension,
+        mode=1 if tree else 0,
+        parser="pegen",
     )
 
 
@@ -75,9 +71,6 @@ def main() -> None:
     args = argparser.parse_args()
     tree = args.tree
 
-    extension = build.build_parser_and_generator(
-        "data/python.gram", "peg_parser/parse.c", compile_extension=True
-    )
     for package in get_packages():
         print(f"Extracting files from {package}... ", end="")
         try:
@@ -89,9 +82,8 @@ def main() -> None:
 
         print(f"Trying to parse all python files ... ")
         dirname = find_dirname(package)
-        status = run_tests(dirname, tree, extension)
+        status = run_tests(dirname, tree)
         if status == 0:
-            print("Done")
             shutil.rmtree(dirname)
         else:
             print(f"Failed to parse {dirname}")
