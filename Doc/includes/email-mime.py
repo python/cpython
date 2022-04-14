@@ -19,7 +19,7 @@ for file in pngfiles:
     with open(file, 'rb') as fp:
         img_data = fp.read()
     msg.add_attachment(img_data, maintype='image',
-                                 subtype='jpeg')
+                                 subtype='png')
 
 # Send the email via our own SMTP server.
 with smtplib.SMTP('localhost') as s:
