@@ -1,0 +1,2 @@
+:meth:`os.defpath` stopped reporting :data:`C:\bin` as a default search path
+on Windows.
