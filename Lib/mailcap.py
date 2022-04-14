@@ -251,7 +251,7 @@ def test():
             print("No viewer found for", type)
         else:
             print("Executing:", command)
-            sts = subprocess.run(command).returncode
+            sts = subprocess.run(command, capture_output=True).returncode
             if sts:
                 print("Exit status:", sts)
 
