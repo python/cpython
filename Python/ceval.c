@@ -4023,7 +4023,7 @@ handle_eval_breaker:
             NEXTOPARG();
 
             // FOR_ITER
-            INSTRUCTION_START(_);
+            frame->prev_instr = next_instr++;
             PyObject *iter = TOP();
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
@@ -4059,7 +4059,7 @@ handle_eval_breaker:
             JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg);
             CHECK_EVAL_BREAKER();
             NEXTOPARG();
-            INSTRUCTION_START(FOR_ITER);
+            frame->prev_instr = next_instr++;
 
             PyListObject *seq = it->it_seq;
             if (seq == NULL) {
@@ -4087,7 +4087,7 @@ handle_eval_breaker:
             JUMPBY(INLINE_CACHE_ENTRIES_JUMP_BACKWARD-oparg);
             CHECK_EVAL_BREAKER();
             NEXTOPARG();
-            INSTRUCTION_START(FOR_ITER);
+            frame->prev_instr = next_instr++;
 
             if (r->index < r->len) {
                 PyObject *res = PyLong_FromLong(

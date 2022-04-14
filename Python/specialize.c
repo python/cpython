@@ -2072,11 +2072,17 @@ _Py_Specialize_JumpBackward(PyObject *iter, _Py_CODEUNIT *instr)
     assert(_PyOpcode_Caches[JUMP_BACKWARD] ==
            INLINE_CACHE_ENTRIES_JUMP_BACKWARD);
     _PyJumpBackwardCache *cache = (_PyJumpBackwardCache *)(instr + 1);
-    if (Py_TYPE(iter) == &PyListIter_Type) {
+    PyTypeObject *tp = Py_TYPE(iter);
+    if (tp == &PyListIter_Type) {
         _Py_SET_OPCODE(*instr, JUMP_BACKWARD_FOR_ITER_LIST);
         goto success;
     }
+    else if (tp == &PyRangeIter_Type) {
+        _Py_SET_OPCODE(*instr, JUMP_BACKWARD_FOR_ITER_RANGE);
+        goto success;
+    }
     else {
+        SPECIALIZATION_FAIL(JUMP_BACKWARD, _PySpecialization_ClassifyIterator(iter));
         goto failure;
     }
 failure:
