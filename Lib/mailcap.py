@@ -1,6 +1,7 @@
 """Mailcap file handling.  See RFC 1524."""
 
 import os
+import shlex
 import subprocess
 import warnings
 
@@ -171,7 +172,7 @@ def findmatch(caps, MIMEtype, key='view', filename="/dev/null", plist=[]):
     for e in entries:
         if 'test' in e:
             test = subst(e['test'], filename, plist)
-            if test and subprocess.run(test).returncode != 0:
+            if test and subprocess.run(shlex.split(test)).returncode != 0:
                 continue
         command = subst(e[key], MIMEtype, filename, plist)
         return command, e
@@ -251,7 +252,8 @@ def test():
             print("No viewer found for", type)
         else:
             print("Executing:", command)
-            sts = subprocess.run(command, capture_output=True).returncode
+            arguments = shlex.split(command)
+            sts = subprocess.run(arguments, capture_output=True).returncode
             if sts:
                 print("Exit status:", sts)
 
