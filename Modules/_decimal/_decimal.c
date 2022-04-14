@@ -1752,7 +1752,6 @@ ctxmanager_new(PyTypeObject *type UNUSED, PyObject *args, PyObject *kwds)
     PyObject *flags = Py_None;
     PyObject *traps = Py_None;
 
-
     CURRENT_CONTEXT(global);
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOOOOOOOO", kwlist, &local,
           &prec, &rounding, &Emin, &Emax, &capitals, &clamp, &flags, &traps)) {
