@@ -2739,8 +2739,7 @@ def _get_revised_path(given_path, argv0):
     return revised_path
 
 
-def enhanced_dir(arg, categorize=True, show_types=False):
-    """modified dir with details related to the class a particular method belongs, the type of the method"""
+def enhanced_dir(arg, categorize=True, show_types=False, checks=False):
     from collections import defaultdict
     if not categorize:
         return dir(arg)
@@ -2748,21 +2747,55 @@ def enhanced_dir(arg, categorize=True, show_types=False):
     failed = defaultdict(set)
     passed_ = defaultdict(lambda: defaultdict(set))
     failed_ = defaultdict(lambda: defaultdict(set))
-
     x = arg
-    for method in dir(x):
+    for method in dir(arg):
+        type_ = type(eval(f'x.{method}'))
         try:
-            qualname = eval(f'x.{method}.__qualname__').split('.')
+            qualname = eval(f'x.{method}.__qualname__')
+            qualname = qualname.split('.')
             passed['x'][qualname[0]].add(qualname[1])
-            type_ = type(eval(f'x.{method}'))
             passed_['x'][type_].add(qualname[1])
+
         except:
             failed['x'].add(method)
             failed_['x'][type_].add(method)
-    if show_types:
-        return [passed, passed_]
-    return passed
 
+    if checks:
+        checks_ = {}
+        try:
+            class A(x):
+                pass
+
+            checks_['inheritable'] = True
+        except:
+            checks_['inheritable'] = False
+
+        try:
+            a = defaultdict(arg)
+            checks_['defaultdict_arg'] = True
+        except:
+            checks_['defaultdict_arg'] = False
+
+        try:
+            d = {arg: 1}
+            checks_['dict_key'] = True
+        except:
+            checks_['dict_key'] = False
+
+        try:
+            for i in arg:
+                pass
+            checks_['iterable'] = True
+        except:
+            checks_['iterable'] = False
+    if show_types and checks:
+        return [[passed], [passed_], [checks_]]
+    elif show_types == False and checks == True:
+        return [[passed], [checks_]]
+    elif show_types == True and checks == False:
+        return [[passed], [passed_]]
+
+    return passed
 
 # Note: the tests only cover _get_revised_path, not _adjust_cli_path itself
 def _adjust_cli_sys_path():
