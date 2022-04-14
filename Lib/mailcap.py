@@ -1,6 +1,7 @@
 """Mailcap file handling.  See RFC 1524."""
 
 import os
+import subprocess
 import warnings
 
 __all__ = ["getcaps","findmatch"]
@@ -170,7 +171,7 @@ def findmatch(caps, MIMEtype, key='view', filename="/dev/null", plist=[]):
     for e in entries:
         if 'test' in e:
             test = subst(e['test'], filename, plist)
-            if test and os.system(test) != 0:
+            if test and subprocess.run(test).returncode != 0:
                 continue
         command = subst(e[key], MIMEtype, filename, plist)
         return command, e
@@ -250,8 +251,7 @@ def test():
             print("No viewer found for", type)
         else:
             print("Executing:", command)
-            sts = os.system(command)
-            sts = os.waitstatus_to_exitcode(sts)
+            sts = subprocess.run(command).returncode
             if sts:
                 print("Exit status:", sts)
 
