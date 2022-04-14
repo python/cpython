@@ -497,14 +497,16 @@ and ``spam/__init__.py`` has the following lines in it::
     from .foo import Foo
     from .bar import Bar
 
-then executing the following puts a name binding to ``foo`` and ``bar`` in the
-``spam`` module::
+then executing the following puts a name binding to ``foo`` and ``bar`` (as well
+as ``Foo`` and ``Bar``) in the ``spam`` module::
 
     >>> import spam
     >>> spam.foo
     <module 'spam.foo' from '/tmp/imports/spam/foo.py'>
-    >>> spam.bar
-    <module 'spam.bar' from '/tmp/imports/spam/bar.py'>
+    >>> spam.Bar
+    <class 'spam.bar.Bar'>
+
+
 
 Given Python's familiar name binding rules this might seem surprising, but
 it's actually a fundamental feature of the import system.  The invariant
