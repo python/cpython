@@ -507,11 +507,10 @@ def localcontext(ctx=None, **kwargs):
     if ctx is None:
         ctx = getcontext()
     ctx_manager = _ContextManager(ctx)
-    with ctx_manager as ctx:
-        for key, value in kwargs.items():
-            if key not in _context_attributes:
-                raise TypeError(f"'{key}' is an invalid keyword argument for this function")
-            setattr(ctx, key, value)
+    for key, value in kwargs.items():
+        if key not in _context_attributes:
+            raise TypeError(f"'{key}' is an invalid keyword argument for this function")
+        setattr(ctx_manager.new_context, key, value)
     return ctx_manager
 
 
