@@ -14,7 +14,7 @@ extsep = '.'
 sep = '\\'
 pathsep = ';'
 altsep = '/'
-defpath = '.;C:\\bin'
+defpath = '.'
 devnull = 'nul'
 
 import os
