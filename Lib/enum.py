@@ -1214,12 +1214,15 @@ class Enum(metaclass=EnumType):
         count: the number of existing members
         last_value: the last value assigned or None
         """
-        numerical_last_values =  [x for x in last_values if isinstance(x, int) or isinstance(x, float)]
-        for last_value in sorted(numerical_last_values, reverse=True):
+        incrementable_last_values = []
+        for val in last_values:
             try:
-                return last_value + 1
+                incrementable_last_values.append(val + 1)
             except TypeError:
                 pass
+
+        if incrementable_last_values:
+            return sorted(incrementable_last_values)[-1]
         else:
             return start
 
