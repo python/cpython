@@ -1114,7 +1114,7 @@ Blob Objects
    A :class:`Blob` instance is a :term:`file-like object` that can read and write
    data in an SQLite :abbr:`BLOB (Binary Large OBject)`.
 
-   .. method:: Blob.close()
+   .. method:: close()
 
       Close the blob.
 
@@ -1122,11 +1122,11 @@ Blob Objects
       :class:`~sqlite3.Error` (or subclass) exception will be raised if any
       further operation is attempted with the blob.
 
-   .. method:: Blob.__len__()
+   .. method:: __len__()
 
       Return the blob size in bytes.
 
-   .. method:: Blob.read(length=-1, /)
+   .. method:: read(length=-1, /)
 
       Read *length* bytes of data from the blob at the current offset position.
       If the end of the blob is reached, the data up to
@@ -1134,17 +1134,17 @@ Blob Objects
       specified, or is negative, :meth:`~Blob.read` will read until the end of
       the blob.
 
-   .. method:: Blob.write(data, /)
+   .. method:: write(data, /)
 
       Write *data* to the blob at the current offset.  This function cannot
       change the blob length.  Writing beyond the end of the blob will raise
       :exc:`ValueError`.
 
-   .. method:: Blob.tell()
+   .. method:: tell()
 
       Return the current access position of the blob.
 
-   .. method:: Blob.seek(offset, origin=os.SEEK_SET, /)
+   .. method:: seek(offset, origin=os.SEEK_SET, /)
 
       Set the current access position of the blob to *offset*.  The *origin*
       argument defaults to :data:`os.SEEK_SET` (absolute blob positioning).
