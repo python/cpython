@@ -2419,9 +2419,10 @@ Functions and decorators
    overloaded function. For example, given the definition of ``process`` in
    the documentation for :func:`@overload <overload>`,
    ``get_overloads(process)`` will return a sequence of three function objects
-   for the three defined overloads.
+   for the three defined overloads. If called on a function with no overloads,
+   ``get_overloads`` returns an empty sequence.
 
-   This function can be used for introspecting an overloaded function at
+   ``get_overloads`` can be used for introspecting an overloaded function at
    runtime.
 
    .. versionadded:: 3.11
