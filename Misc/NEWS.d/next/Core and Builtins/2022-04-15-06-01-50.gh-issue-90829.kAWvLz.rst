@@ -1,0 +1,6 @@
+When passing an empty iterable to min/max function, such
+as min(set()), it returns the error 'arg is an empty sequence'.
+'arg' does not match any argument of the functions signature.
+Also, the iterable argument does not need to be a sequence.
+This commit changes that error message to:
+'iterable argument is an empty sequence'.
