@@ -646,6 +646,38 @@ class GenericAliasSubstitutionTests(BaseTestCase):
                             eval(expected_str)
                         )
 
+    def test_three_parameters(self):
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+        T3 = TypeVar('T3')
+
+        class C(Generic[T1, T2, T3]): pass
+
+        generics = ['C']
+        tuple_types = ['tuple', 'Tuple']
+
+        tests = [
+            # Alias                                    # Args                                               # Expected result
+            ('generic[T1, bool, T2]',                  '[int, str]',                                        'generic[int, bool, str]'),
+            ('generic[T1, bool, T2]',                  '[*tuple_type[int, str]]',                           'TypeError'),  # Should be generic[int, bool, str]
+        ]
+
+        for alias_template, args_template, expected_template in tests:
+            rendered_templates = template_replace(
+                templates=[alias_template, args_template, expected_template],
+                replacements={'generic': generics, 'tuple_type': tuple_types}
+            )
+            for alias_str, args_str, expected_str in rendered_templates:
+                with self.subTest(alias=alias_str, args=args_str, expected=expected_str):
+                    if expected_str == 'TypeError':
+                        with self.assertRaises(TypeError):
+                            eval(alias_str + args_str)
+                    else:
+                        self.assertEqual(
+                            eval(alias_str + args_str),
+                            eval(expected_str)
+                        )
+
     def test_variadic_parameters(self):
         T1 = TypeVar('T1')
         T2 = TypeVar('T2')
