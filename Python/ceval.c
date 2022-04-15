@@ -58,6 +58,7 @@ static void
 dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
     if (Py_EnterRecursiveCall("lltrace") < 0) {
+        PyErr_Clear();
         return;
     }
     PyObject **stack_base = _PyFrame_Stackbase(frame);
