@@ -15706,12 +15706,6 @@ unicodeiter_next(unicodeiterobject *it)
     assert(_PyUnicode_CHECK(seq));
 
     if (it->it_index < PyUnicode_GET_LENGTH(seq)) {
-        // if (PyUnicode_IS_COMPACT_ASCII(seq)) {
-        //     const void *data = ((void*)(_PyASCIIObject_CAST(seq) + 1));
-        //     Py_UCS1 chr = PyUnicode_READ(PyUnicode_1BYTE_KIND, data, it->it_index++);
-        //     item = LATIN1(chr);
-        //     return item;
-        // }
         int kind = PyUnicode_KIND(seq);
         const void *data = PyUnicode_DATA(seq);
         Py_UCS4 chr = PyUnicode_READ(kind, data, it->it_index);
@@ -15738,7 +15732,7 @@ unicode_ascii_iter_next(unicodeiterobject *it)
     if (it->it_index < PyUnicode_GET_LENGTH(seq)) {
         const void *data = ((void*)(_PyASCIIObject_CAST(seq) + 1));
         Py_UCS1 chr = PyUnicode_READ(PyUnicode_1BYTE_KIND, data, it->it_index++);
-        PyObject *item = LATIN1(chr);
+        PyObject *item = (PyObject*)&_Py_SINGLETON(strings).ascii[chr];
         return item;
     }
     it->it_seq = NULL;
