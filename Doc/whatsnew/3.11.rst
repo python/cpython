@@ -393,6 +393,10 @@ sqlite3
   :class:`sqlite3.Connection` for creating aggregate window functions.
   (Contributed by Erlend E. Aasland in :issue:`34916`.)
 
+* Add :meth:`~sqlite3.Connection.blobopen` to :class:`sqlite3.Connection`.
+  :class:`sqlite3.Blob` allows incremental I/O operations on blobs.
+  (Contributed by Aviv Palivoda and Erlend E. Aasland in :issue:`24905`)
+
 
 sys
 ---
@@ -857,6 +861,7 @@ Deprecated
   * :mod:`chunk`
   * :mod:`crypt`
   * :mod:`imghdr`
+  * :mod:`msilib`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 

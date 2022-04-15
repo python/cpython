@@ -1,0 +1,3 @@
+Add :meth:`~sqlite3.Connection.blobopen` to :class:`sqlite3.Connection`.
+:class:`sqlite3.Blob` allows incremental I/O operations on blobs.
+Patch by Aviv Palivoda and Erlend E. Aasland.
