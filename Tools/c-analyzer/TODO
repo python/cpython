@@ -251,7 +251,6 @@ Modules/_io/textio.c:PyId_close                                  _Py_IDENTIFIER(
 Modules/_io/textio.c:PyId_decode                                 _Py_IDENTIFIER(decode)
 Modules/_io/textio.c:PyId_fileno                                 _Py_IDENTIFIER(fileno)
 Modules/_io/textio.c:PyId_flush                                  _Py_IDENTIFIER(flush)
-Modules/_io/textio.c:PyId_getpreferredencoding                   _Py_IDENTIFIER(getpreferredencoding)
 Modules/_io/textio.c:PyId_isatty                                 _Py_IDENTIFIER(isatty)
 Modules/_io/textio.c:PyId_mode                                   _Py_IDENTIFIER(mode)
 Modules/_io/textio.c:PyId_name                                   _Py_IDENTIFIER(name)

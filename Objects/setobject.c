@@ -1240,6 +1240,10 @@ set_intersection(PySetObject *so, PyObject *other)
         if (rv) {
             if (set_add_entry(result, key, hash))
                 goto error;
+            if (PySet_GET_SIZE(result) >= PySet_GET_SIZE(so)) {
+                Py_DECREF(key);
+                break;
+            }
         }
         Py_DECREF(key);
     }
@@ -1378,14 +1382,7 @@ set_isdisjoint(PySetObject *so, PyObject *other)
         return NULL;
 
     while ((key = PyIter_Next(it)) != NULL) {
-        Py_hash_t hash = PyObject_Hash(key);
-
-        if (hash == -1) {
-            Py_DECREF(key);
-            Py_DECREF(it);
-            return NULL;
-        }
-        rv = set_contains_entry(so, key, hash);
+        rv = set_contains_key(so, key);
         Py_DECREF(key);
         if (rv < 0) {
             Py_DECREF(it);
@@ -1769,17 +1766,31 @@ PyDoc_STRVAR(issubset_doc, "Report whether another set contains this set.");
 static PyObject *
 set_issuperset(PySetObject *so, PyObject *other)
 {
-    PyObject *tmp, *result;
-
-    if (!PyAnySet_Check(other)) {
-        tmp = make_new_set(&PySet_Type, other);
-        if (tmp == NULL)
-            return NULL;
-        result = set_issuperset(so, tmp);
-        Py_DECREF(tmp);
-        return result;
+    if (PyAnySet_Check(other)) {
+        return set_issubset((PySetObject *)other, (PyObject *)so);
     }
-    return set_issubset((PySetObject *)other, (PyObject *)so);
+
+    PyObject *key, *it = PyObject_GetIter(other);
+    if (it == NULL) {
+        return NULL;
+    }
+    while ((key = PyIter_Next(it)) != NULL) {
+        int rv = set_contains_key(so, key);
+        Py_DECREF(key);
+        if (rv < 0) {
+            Py_DECREF(it);
+            return NULL;
+        }
+        if (!rv) {
+            Py_DECREF(it);
+            Py_RETURN_FALSE;
+        }
+    }
+    Py_DECREF(it);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+    Py_RETURN_TRUE;
 }
 
 PyDoc_STRVAR(issuperset_doc, "Report whether this set contains another set.");
@@ -1936,7 +1947,7 @@ an exception when an element is missing from the set.");
 static PyObject *
 set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *keys=NULL, *args=NULL, *result=NULL, *dict=NULL;
+    PyObject *keys=NULL, *args=NULL, *result=NULL, *state=NULL;
 
     keys = PySequence_List((PyObject *)so);
     if (keys == NULL)
@@ -1944,18 +1955,14 @@ set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
     args = PyTuple_Pack(1, keys);
     if (args == NULL)
         goto done;
-    if (_PyObject_LookupAttr((PyObject *)so, &_Py_ID(__dict__), &dict) < 0) {
+    state = _PyObject_GetState((PyObject *)so);
+    if (state == NULL)
         goto done;
-    }
-    if (dict == NULL) {
-        dict = Py_None;
-        Py_INCREF(dict);
-    }
-    result = PyTuple_Pack(3, Py_TYPE(so), args, dict);
+    result = PyTuple_Pack(3, Py_TYPE(so), args, state);
 done:
     Py_XDECREF(args);
     Py_XDECREF(keys);
-    Py_XDECREF(dict);
+    Py_XDECREF(state);
     return result;
 }
 
