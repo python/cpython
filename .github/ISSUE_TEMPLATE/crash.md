@@ -1,5 +1,5 @@
 ---
-name: Crash Report
+name: Crash report
 about: A hard crash of the interpreter, possibly with a core dump
 labels: "type-crash"
 ---
@@ -12,7 +12,7 @@ labels: "type-crash"
   For CPython, a "crash" is when Python itself fails, leading to a traceback in the C stack.
 -->
 
-**Crash Report**
+**Crash report**
 
 Tell us what happened, ideally including a minimal, reproducible example (https://stackoverflow.com/help/minimal-reproducible-example).
 
@@ -20,7 +20,7 @@ Tell us what happened, ideally including a minimal, reproducible example (https:
 
 Enter the full traceback caused by the crash.
 
-**Your Environment**
+**Your environment**
 
 <!-- Include as many relevant details about the environment you experienced the bug in -->
 

@@ -9,11 +9,11 @@ labels: "type-security"
   See here for further details: https://www.python.org/dev/security/
 -->
 
-**Security Vulnerability Report**
+**Security vulnerability report**
 
 A description of what the security vulnerability is.
 
-**Environment details**
+**Your environment**
 
 <!-- Include as many relevant details about your environment -->
 

@@ -1,5 +1,5 @@
 ---
-name: Bug Report
+name: Bug report
 about: Submit a bug report
 labels: "type-bug"
 ---
@@ -15,12 +15,12 @@ labels: "type-bug"
     your problem has already been reported
 -->
 
-**Bug Report**
+**Bug report**
 
 A clear and concise description of what the bug is.
 Please include a minimal, reproducible example (https://stackoverflow.com/help/minimal-reproducible-example), if possible.
 
-**Environment details**
+**Your environment**
 
 <!-- Include as many relevant details about the environment you experienced the bug in -->
 
