@@ -1115,6 +1115,9 @@ Blob Objects
    data in an SQLite :abbr:`BLOB (Binary Large OBject)`.  Call ``len(blob)`` to
    get the size (number of bytes) of the blob.
 
+   Use the :class:`Blob` as a :term:`context manager` to ensure that the blob
+   handle is closed after use.
+
    .. method:: close()
 
       Close the blob.
@@ -1152,10 +1155,6 @@ Blob Objects
    :class:`Blob` example:
 
       .. literalinclude:: ../includes/sqlite3/blob.py
-
-   A :class:`Blob` can also be used as a :term:`context manager`:
-
-      .. literalinclude:: ../includes/sqlite3/blob_with.py
 
 
 .. _sqlite3-types:

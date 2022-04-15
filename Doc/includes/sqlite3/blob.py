@@ -10,3 +10,6 @@ blob.write(b"World")
 blob.seek(0)
 print(blob.read())  # will print b"HelloWorld"
 blob.close()
+
+with con.blobopen("test", "blob_col", 1) as blob:
+    blob.write(b"UpdateBlob")
