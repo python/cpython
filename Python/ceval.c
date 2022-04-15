@@ -64,7 +64,8 @@ dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
     for (PyObject **ptr = stack_base; ptr < stack_pointer; ptr++) {
         if (PyObject_Print(*ptr, stdout, 0) != 0) {
             PyErr_Clear();
-            printf("<???>");
+            printf("<%s object at %p>",
+                   Py_TYPE(*ptr)->tp_name, (void *)(*ptr));
         }
         printf(", ");
     }
