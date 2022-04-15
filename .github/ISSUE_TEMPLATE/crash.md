@@ -28,6 +28,6 @@ Enter the full traceback caused by the crash.
 - Operating system and version:
 
 <!--
-You can freely edit this text, please remove all the lines
+You can freely edit this text. Remove any lines
 you believe are unnecessary.
 -->

@@ -23,6 +23,6 @@ labels: "type-feature"
 
 
 <!--
-You can freely edit this text, please remove all the lines
+You can freely edit this text. Remove any lines
 you believe are unnecessary.
 -->

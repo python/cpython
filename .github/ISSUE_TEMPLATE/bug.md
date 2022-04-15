@@ -28,6 +28,6 @@ Include a minimal, reproducible example (https://stackoverflow.com/help/minimal-
 - Operating system and version:
 
 <!--
-You can freely edit this text, please remove all the lines
+You can freely edit this text. Remove any lines
 you believe are unnecessary.
 -->
