@@ -520,6 +520,12 @@ Optimizations
   becomes 272 bytes from 352 bytes on 64bit platform.
   (Contributed by Inada Naoki in :issue:`46845`.)
 
+* :mod:`re`'s regular expression matching engine has been partially refactored,
+  and now uses computed gotos (or "threaded code") on supported platforms. As a
+  result, Python 3.11 executes the `pyperformance regular expression benchmarks
+  <https://pyperformance.readthedocs.io/benchmarks.html#regex-dna>`_ up to 10%
+  faster than Python 3.10.
+
 
 Faster CPython
 ==============
