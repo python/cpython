@@ -913,19 +913,19 @@ class TypeVarTuplePicklingTests(BaseTestCase):
     # statements at the start of each test.
 
     @all_pickle_protocols
-    def test_pickling_then_unpickling_results_in_equality(self, proto):
+    def test_pickling_then_unpickling_results_in_same_identity(self, proto):
         global Ts1  # See explanation at start of class.
         Ts1 = TypeVarTuple('Ts1')
         Ts2 = pickle.loads(pickle.dumps(Ts1, proto))
-        self.assertEqual(Ts1, Ts2)
+        self.assertIs(Ts1, Ts2)
 
     @all_pickle_protocols
-    def test_pickling_then_unpickling_unpacked_results_in_equality(self, proto):
+    def test_pickling_then_unpickling_unpacked_results_in_same_identity(self, proto):
         global Ts  # See explanation at start of class.
         Ts = TypeVarTuple('Ts')
         unpacked1 = Unpack[Ts]
         unpacked2 = pickle.loads(pickle.dumps(unpacked1, proto))
-        self.assertEqual(unpacked1, unpacked2)
+        self.assertIs(unpacked1, unpacked2)
 
     @all_pickle_protocols
     def test_pickling_then_unpickling_tuple_with_typevartuple_equality(
