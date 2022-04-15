@@ -798,7 +798,7 @@ class TestMessageAPI(TestEmailBase):
 class TestEncoders(unittest.TestCase):
 
     def test_EncodersEncode_base64(self):
-        with openfile('PyBanner048.gif', 'rb') as fp:
+        with openfile('python.gif', 'rb') as fp:
             bindata = fp.read()
         mimed = email.mime.image.MIMEImage(bindata)
         base64ed = mimed.get_payload()
@@ -1555,24 +1555,44 @@ class TestMIMEAudio(unittest.TestCase):
 
 # Test the basic MIMEImage class
 class TestMIMEImage(unittest.TestCase):
-    def setUp(self):
-        with openfile('PyBanner048.gif', 'rb') as fp:
+    def _make_image(self, ext):
+        with openfile(f'python.{ext}', 'rb') as fp:
             self._imgdata = fp.read()
         self._im = MIMEImage(self._imgdata)
 
     def test_guess_minor_type(self):
-        self.assertEqual(self._im.get_content_type(), 'image/gif')
+        for ext, subtype in {
+            'bmp': None,
+            'exr': None,
+            'gif': None,
+            'jpg': 'jpeg',
+            'pbm': None,
+            'pgm': None,
+            'png': None,
+            'ppm': None,
+            'ras': 'rast',
+            'sgi': 'rgb',
+            'tiff': None,
+            'webp': None,
+            'xbm': None,
+        }.items():
+            self._make_image(ext)
+            subtype = ext if subtype is None else subtype
+            self.assertEqual(self._im.get_content_type(), f'image/{subtype}')
 
     def test_encoding(self):
+        self._make_image('gif')
         payload = self._im.get_payload()
         self.assertEqual(base64.decodebytes(bytes(payload, 'ascii')),
-                self._imgdata)
+                         self._imgdata)
 
     def test_checkSetMinor(self):
+        self._make_image('gif')
         im = MIMEImage(self._imgdata, 'fish')
         self.assertEqual(im.get_content_type(), 'image/fish')
 
     def test_add_header(self):
+        self._make_image('gif')
         eq = self.assertEqual
         self._im.add_header('Content-Disposition', 'attachment',
                             filename='dingusfish.gif')
@@ -1747,7 +1767,7 @@ class TestMIMEText(unittest.TestCase):
 # Test complicated multipart/* messages
 class TestMultipart(TestEmailBase):
     def setUp(self):
-        with openfile('PyBanner048.gif', 'rb') as fp:
+        with openfile('python.gif', 'rb') as fp:
             data = fp.read()
         container = MIMEBase('multipart', 'mixed', boundary='BOUNDARY')
         image = MIMEImage(data, name='dingusfish.gif')
@@ -3444,7 +3464,7 @@ multipart/report
     def test_mime_classes_policy_argument(self):
         with openfile('audiotest.au', 'rb') as fp:
             audiodata = fp.read()
-        with openfile('PyBanner048.gif', 'rb') as fp:
+        with openfile('python.gif', 'rb') as fp:
             bindata = fp.read()
         classes = [
             (MIMEApplication, ('',)),
