@@ -56,11 +56,12 @@ typedef struct {
 
 typedef struct {
     PyObject_VAR_HEAD
-    Py_ssize_t chunks;
+    Py_ssize_t chunks;  /* the number of group references and non-NULL literals
+                         * self->chunks <= 2*Py_SIZE(self) + 1 */
     PyObject *literal;
     struct {
         Py_ssize_t index;
-        PyObject *literal;
+        PyObject *literal;  /* NULL if empty */
     } items[0];
 } TemplateObject;
 

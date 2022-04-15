@@ -1114,14 +1114,14 @@ pattern_subx(_sremodulestate* module_state,
     Py_ssize_t n;
     Py_ssize_t i, b, e;
     int isbytes, charsize;
-    int filter_type;
+    enum {LITERAL, TEMPLATE, CALLABLE} filter_type;
     Py_buffer view;
 
     if (PyCallable_Check(ptemplate)) {
         /* sub/subn takes either a function or a template */
         filter = ptemplate;
         Py_INCREF(filter);
-        filter_type = -1;
+        filter_type = CALLABLE;
     } else {
         /* if not callable, check if it's a literal string */
         int literal;
@@ -1141,7 +1141,7 @@ pattern_subx(_sremodulestate* module_state,
         if (literal) {
             filter = ptemplate;
             Py_INCREF(filter);
-            filter_type = 0;
+            filter_type = LITERAL;
         } else {
             /* not a literal; hand it over to the template compiler */
             filter = compile_template(module_state, self, ptemplate);
@@ -1152,10 +1152,10 @@ pattern_subx(_sremodulestate* module_state,
             if (Py_SIZE(filter) == 0) {
                 Py_INCREF(((TemplateObject *)filter)->literal);
                 Py_SETREF(filter, ((TemplateObject *)filter)->literal);
-                filter_type = 0;
+                filter_type = LITERAL;
             }
             else {
-                filter_type = 1;
+                filter_type = TEMPLATE;
             }
         }
     }
@@ -1207,16 +1207,17 @@ pattern_subx(_sremodulestate* module_state,
 
         }
 
-        if (filter_type) {
+        if (filter_type != LITERAL) {
             /* pass match object through filter */
             match = pattern_new_match(module_state, self, &state, 1);
             if (!match)
                 goto error;
-            if (filter_type > 0) {
+            if (filter_type == TEMPLATE) {
                 item = expand_template((TemplateObject *)filter,
                                        (MatchObject *)match);
             }
             else {
+                assert(filter_type == CALLABLE);
                 item = PyObject_CallOneArg(filter, match);
             }
             Py_DECREF(match);
@@ -1566,6 +1567,10 @@ static PyObject *
 _sre_template_impl(PyObject *module, PyObject *pattern, PyObject *template)
 /*[clinic end generated code: output=d51290e596ebca86 input=56d2d1895cd04d9a]*/
 {
+    /* template is a list containing interleaved literal strings (str or bytes)
+     * and group indices (int), as returned by _parser.parse_template:
+     * [literal1, group1, literal2, ..., literalN].
+     */
     _sremodulestate *module_state = get_sre_module_state(module);
     TemplateObject *self = NULL;
     Py_ssize_t n = PyList_GET_SIZE(template);
@@ -2867,11 +2872,16 @@ expand_template(TemplateObject *self, MatchObject *match)
         return self->literal;
     }
 
+    PyObject *result = NULL;
+    Py_ssize_t count = 0;  // the number of non-empty chunks
+    /* For small number of strings use a buffer allocated on the stack,
+     * otherwise use a list object. */
     PyObject *buffer[10];
     PyObject **out = buffer;
-    Py_ssize_t count = 0;
     PyObject *list = NULL;
-    if (self->chunks > 10 || !PyUnicode_Check(self->literal)) {
+    if (self->chunks > (int)Py_ARRAY_LENGTH(buffer) ||
+        !PyUnicode_Check(self->literal))
+    {
         list = PyList_New(self->chunks);
         if (!list) {
             return NULL;
@@ -2885,12 +2895,11 @@ expand_template(TemplateObject *self, MatchObject *match)
         Py_ssize_t index = self->items[i].index;
         if (index >= match->groups) {
             PyErr_SetString(PyExc_IndexError, "no such group");
-            Py_DECREF(list);
-            return NULL;
+            goto cleanup;
         }
         PyObject *item = match_getslice_by_index(match, index, Py_None);
         if (item == NULL) {
-            Py_DECREF(list);
+            goto cleanup;
         }
         if (item != Py_None) {
             Py_INCREF(item);
@@ -2905,7 +2914,6 @@ expand_template(TemplateObject *self, MatchObject *match)
         }
     }
 
-    PyObject *result;
     if (PyUnicode_Check(self->literal)) {
         result = _PyUnicode_JoinArray(&_Py_STR(empty), out, count);
     }
@@ -2913,6 +2921,8 @@ expand_template(TemplateObject *self, MatchObject *match)
         Py_SET_SIZE(list, count);
         result = _PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), list);
     }
+
+cleanup:
     if (list) {
         Py_DECREF(list);
     }
@@ -3190,6 +3200,7 @@ sre_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->Match_Type);
     Py_VISIT(state->Scanner_Type);
     Py_VISIT(state->Template_Type);
+    Py_VISIT(state->compile_template);
 
     return 0;
 }
@@ -3203,6 +3214,7 @@ sre_clear(PyObject *module)
     Py_CLEAR(state->Match_Type);
     Py_CLEAR(state->Scanner_Type);
     Py_CLEAR(state->Template_Type);
+    Py_CLEAR(state->compile_template);
 
     return 0;
 }
