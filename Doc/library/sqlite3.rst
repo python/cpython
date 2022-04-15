@@ -397,9 +397,12 @@ Connection Objects
    .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
 
       Open a :class:`Blob` handle to the :abbr:`BLOB (Binary Large OBject)`
-      located in row *row*, column *column*, table *table* of database *name*.
+      located in table name *table*, column name *column*, and row index *row*
+      of database *name*.
       When *readonly* is :const:`True` the blob is opened without write
       permissions.
+      Trying to open a blob in a WITHOUT ROWID table will raise
+      :exc:`OperationalError`.
 
       .. note::
 
