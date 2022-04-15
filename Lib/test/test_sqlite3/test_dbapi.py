@@ -356,6 +356,7 @@ class ModuleTests(unittest.TestCase):
     def test_disallow_instantiation(self):
         cx = sqlite.connect(":memory:")
         check_disallow_instantiation(self, type(cx("select 1")))
+        check_disallow_instantiation(self, sqlite.Blob)
 
     def test_complete_statement(self):
         self.assertFalse(sqlite.complete_statement("select t"))
