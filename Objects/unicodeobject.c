@@ -5296,7 +5296,7 @@ _Py_DecodeUTF8Ex(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
 
     /* Note: size will always be longer than the resulting Unicode
        character count */
-    if (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t) < (size + 1)) {
+    if (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t) - 1 < size) {
         return -1;
     }
 
@@ -14372,7 +14372,7 @@ formatfloat(PyObject *v, struct unicode_format_arg_t *arg,
     double x;
     Py_ssize_t len;
     int prec;
-    int dtoa_flags;
+    int dtoa_flags = 0;
 
     x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred())
@@ -14383,9 +14383,9 @@ formatfloat(PyObject *v, struct unicode_format_arg_t *arg,
         prec = 6;
 
     if (arg->flags & F_ALT)
-        dtoa_flags = Py_DTSF_ALT;
-    else
-        dtoa_flags = 0;
+        dtoa_flags |= Py_DTSF_ALT;
+    if (arg->flags & F_NO_NEG_0)
+        dtoa_flags |= Py_DTSF_NO_NEG_0;
     p = PyOS_double_to_string(x, arg->ch, prec, dtoa_flags, NULL);
     if (p == NULL)
         return -1;

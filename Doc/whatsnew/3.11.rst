@@ -246,6 +246,10 @@ asyncio
   :meth:`~asyncio.AbstractEventLoop.sock_recvfrom_into`.
   (Contributed by Alex Grönholm in :issue:`46805`.)
 
+* Add :meth:`~asyncio.streams.StreamWriter.start_tls` method for upgrading
+  existing stream-based connections to TLS. (Contributed by Ian Good in
+  :issue:`34975`.)
+
 fractions
 ---------
 
@@ -389,6 +393,14 @@ sqlite3
   serializing and deserializing databases.
   (Contributed by Erlend E. Aasland in :issue:`41930`.)
 
+* Add :meth:`~sqlite3.Connection.create_window_function` to
+  :class:`sqlite3.Connection` for creating aggregate window functions.
+  (Contributed by Erlend E. Aasland in :issue:`34916`.)
+
+* Add :meth:`~sqlite3.Connection.blobopen` to :class:`sqlite3.Connection`.
+  :class:`sqlite3.Blob` allows incremental I/O operations on blobs.
+  (Contributed by Aviv Palivoda and Erlend E. Aasland in :issue:`24905`)
+
 
 sys
 ---
@@ -507,6 +519,12 @@ Optimizations
   This reduces dict size. For example, ``sys.getsizeof(dict.fromkeys("abcdefg"))``
   becomes 272 bytes from 352 bytes on 64bit platform.
   (Contributed by Inada Naoki in :issue:`46845`.)
+
+* :mod:`re`'s regular expression matching engine has been partially refactored,
+  and now uses computed gotos (or "threaded code") on supported platforms. As a
+  result, Python 3.11 executes the `pyperformance regular expression benchmarks
+  <https://pyperformance.readthedocs.io/benchmarks.html#regex-dna>`_ up to 10%
+  faster than Python 3.10.
 
 
 Faster CPython
@@ -750,9 +768,6 @@ CPython bytecode changes
   ``ROT_TWO``, ``ROT_THREE``, ``ROT_FOUR``, and ``ROT_N``) with new
   :opcode:`COPY` and :opcode:`SWAP` instructions.
 
-* Add :opcode:`POP_JUMP_IF_NOT_NONE` and :opcode:`POP_JUMP_IF_NONE` opcodes to
-  speed up conditional jumps.
-
 * Replaced :opcode:`JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH` which
   performs the check but does not jump.
 
@@ -761,7 +776,17 @@ CPython bytecode changes
 
 * Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
 
-* Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`, which is used in certain loops where it is undesirable to handle interrupts.
+* Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`, which is used in certain loops where it
+  is undesirable to handle interrupts.
+
+* Replaced :opcode:`POP_JUMP_IF_TRUE` and :opcode:`POP_JUMP_IF_FALSE` by
+  the relative :opcode:`POP_JUMP_FORWARD_IF_TRUE`, :opcode:`POP_JUMP_BACKWARD_IF_TRUE`,
+  :opcode:`POP_JUMP_FORWARD_IF_FALSE` and :opcode:`POP_JUMP_BACKWARD_IF_FALSE`.
+
+* Added :opcode:`POP_JUMP_FORWARD_IF_NOT_NONE`, :opcode:`POP_JUMP_BACKWARD_IF_NOT_NONE`,
+  :opcode:`POP_JUMP_FORWARD_IF_NONE` and :opcode:`POP_JUMP_BACKWARD_IF_NONE`
+  opcodes to speed up conditional jumps.
+
 
 Deprecated
 ==========
@@ -843,6 +868,10 @@ Deprecated
   * :mod:`audioop`
   * :mod:`cgi`
   * :mod:`cgitb`
+  * :mod:`chunk`
+  * :mod:`crypt`
+  * :mod:`imghdr`
+  * :mod:`msilib`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 
