@@ -1,3 +1,4 @@
+import dis
 import sys
 import textwrap
 import unittest
@@ -6,6 +7,9 @@ from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 
 def example():
+    x = []
+    for i in range(2):
+        x.append(i)
     x = "this is"
     y = "an example"
     print(x, y)
@@ -61,6 +65,23 @@ class TestLLTrace(unittest.TestCase):
         """)
         self.assertIn(b"'example' in module 'test.test_lltrace'", stdout)
         self.assertIn(b'this is an example', stdout)
+
+        # check that offsets match the output of dis.dis()
+        instr_map = {i.offset: i for i in dis.get_instructions(example)}
+        for line in stdout.splitlines():
+            offset, colon, opname_oparg = line.decode("utf-8").partition(":")
+            if not colon:
+                continue
+            offset = int(offset)
+            opname_oparg = opname_oparg.split()
+            if len(opname_oparg) == 2:
+                opname, oparg = opname_oparg
+                oparg = int(oparg)
+            else:
+                (opname,) = opname_oparg
+                oparg = None
+            self.assertEqual(instr_map[offset].opname, opname)
+            self.assertEqual(instr_map[offset].arg, oparg)
 
     def test_lltrace_does_not_crash_on_subscript_operator(self):
         # If this test fails, it will reproduce a crash reported as

@@ -76,21 +76,20 @@ dump_stack(_PyInterpreterFrame *frame, int stack_level)
 }
 
 static void
-lltrace_instruction(_PyInterpreterFrame *frame,
-                    int opcode, int oparg, int stack_level)
+lltrace_instruction(_PyInterpreterFrame *frame, int opcode, int oparg,
+                   int stack_level, int offset)
 {
     dump_stack(frame, stack_level);
     const char *opname = _PyOpcode_OpName[opcode];
-    int lasti = _PyInterpreterFrame_LASTI(frame);
     if (opname == NULL) {
         printf("%d: unknown opcode %d, %d",
-               lasti, opcode, oparg);
+               offset * 2, opcode, oparg);
     }
     if (HAS_ARG(opcode)) {
-        printf("%d: %s %d\n", lasti, opname, oparg);
+        printf("%d: %s %d\n", offset * 2, opname, oparg);
     }
     else {
-        printf("%d: %s\n", lasti, opname);
+        printf("%d: %s\n", offset * 2, opname);
     }
 }
 static void
@@ -1325,7 +1324,8 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
-#define PRE_DISPATCH_GOTO() if (lltrace) { lltrace_instruction(frame, opcode, oparg, STACK_LEVEL()); }
+#define PRE_DISPATCH_GOTO() if (lltrace) { \
+    lltrace_instruction(frame, opcode, oparg, STACK_LEVEL(), INSTR_OFFSET()); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
