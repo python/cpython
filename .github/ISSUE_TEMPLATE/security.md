@@ -1,5 +1,5 @@
 ---
-name: Security vulberability report
+name: Security vulnerability report
 about: Submit a report regarding a security vulnerability
 labels: "type-security"
 ---

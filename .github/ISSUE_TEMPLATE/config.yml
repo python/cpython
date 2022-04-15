@@ -1,5 +1,5 @@
 contact_links:
-  - about: "Ask and answer user questions about Python on discuss.python.org."
+  - about: "Ask questions about using Python and debugging errors on Discourse."
     name: "Getting help"
     url: "https://discuss.python.org/c/users/7"
   - about: "Large feature proposals, for example proposals for new syntax, should be discussed on an ideas forum rather than the issue tracker."
