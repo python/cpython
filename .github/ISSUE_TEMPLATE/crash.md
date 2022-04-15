@@ -5,7 +5,7 @@ labels: "type-crash"
 ---
 
 <!--
-  Please do not submit this form if you encounter an exception being raised in an unexpected place.
+  Please do not submit this form if you encounter an exception being unexectedly raised from a Python function.
   Most of the time, these should be filed as bugs, rather than crashes.
 
   The CPython interpreter is itself written in a different programming language, C.
@@ -18,7 +18,7 @@ Tell us what happened, ideally including a minimal, reproducible example (https:
 
 **Traceback**
 
-
+Enter the full traceback caused by the crash.
 
 **Your Environment**
 

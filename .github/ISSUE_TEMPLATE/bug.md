@@ -5,14 +5,14 @@ labels: "type-bug"
 ---
 
 <!--
-  If you're new to Python and you're not sure whether what you're experiencing is a bug, the Python issue tracker is not
+  If you're new to Python and you're not sure whether what you're experiencing is a bug, the CPython issue tracker is not
   the right place to seek help. Please consider one of the following options instead:
 
   - reading the Python tutorial: https://docs.python.org/3/tutorial/
-  - posting in the Users category here on discuss.python.org: https://discuss.python.org/c/users/7
+  - posting in the "Users" category on discuss.python.org: https://discuss.python.org/c/users/7
   - emailing the Python-list mailing list: https://mail.python.org/mailman/listinfo/python-list
-  - searching our issue tracker: https://github.com/python/cpython/issues to see if
-    it's already been reported
+  - searching our issue tracker (https://github.com/python/cpython/issues) to see if
+    your problem has already been reported
 -->
 
 **Bug Report**

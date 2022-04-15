@@ -20,3 +20,9 @@ labels: "type-feature"
   or the python-ideas mailing list (https://mail.python.org/mailman3/lists/python-ideas.python.org/).
   Use this space to post links to the places where you have already discussed this feature proposal:
 -->
+
+
+<!--
+You can freely edit this text, please remove all the lines
+you believe are unnecessary.
+-->
