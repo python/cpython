@@ -15850,7 +15850,7 @@ unicode_iter(PyObject *seq)
     }
     if (PyUnicode_READY(seq) == -1)
         return NULL;
-    if(PyUnicode_IS_COMPACT_ASCII(seq)) {
+    if (PyUnicode_IS_COMPACT_ASCII(seq)) {
         it = PyObject_GC_New(unicodeiterobject, &PyUnicodeASCIIIter_Type);
     } else {
         it = PyObject_GC_New(unicodeiterobject, &PyUnicodeIter_Type);
