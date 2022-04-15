@@ -1,5 +1,5 @@
 ---
-name: Security Report
+name: Security vulberability report
 about: Submit a report regarding a security vulnerability
 labels: "type-security"
 ---
@@ -15,7 +15,7 @@ A description of what the security vulnerability is.
 
 **Your environment**
 
-<!-- Include as many relevant details about your environment -->
+<!-- Include as many relevant details about your environment as possible -->
 
 - CPython versions tested on:
 - Operating system and version:
