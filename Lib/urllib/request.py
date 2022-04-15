@@ -2492,33 +2492,34 @@ class ftpwrapper:
 # Proxy handling
 def getproxies_environment():
     """Return a dictionary of scheme -> proxy server URL mappings.
-
     Scan the environment for variables named <scheme>_proxy;
     this seems to be the standard convention.  If you need a
     different way, you can pass a proxies dictionary to the
     [Fancy]URLopener constructor.
-
     """
-    proxies = {}
     # in order to prefer lowercase variables, process environment in
     # two passes: first matches any, second pass matches lowercase only
-    for name, value in os.environ.items():
-        name = name.lower()
-        if value and name[-6:] == '_proxy':
-            proxies[name[:-6]] = value
+
+    # select only environment variables which end in (after making lowercase) _proxy 
+    candidate_names = [name for name in os.environ.keys() if name[-6:]=='_'] # fast selection of candidates
+    environment = [(name, os.environ[name], name.lower()) for name in candidate_names if name[-6:].lower()=='_proxy'] 
+    
+    proxies = {}
+    for name, value, name_lower in environment:
+        if value and name_lower[-6:] == '_proxy':
+            proxies[name_lower[:-6]] = value
     # CVE-2016-1000110 - If we are running as CGI script, forget HTTP_PROXY
     # (non-all-lowercase) as it may be set from the web server by a "Proxy:"
     # header from the client
     # If "proxy" is lowercase, it will still be used thanks to the next block
     if 'REQUEST_METHOD' in os.environ:
         proxies.pop('http', None)
-    for name, value in os.environ.items():
+    for name, value, name_lower in environment:
         if name[-6:] == '_proxy':
-            name = name.lower()
             if value:
-                proxies[name[:-6]] = value
+                proxies[name_lower[:-6]] = value
             else:
-                proxies.pop(name[:-6], None)
+                proxies.pop(name_lower[:-6], None)
     return proxies
 
 def proxy_bypass_environment(host, proxies=None):
