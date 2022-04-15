@@ -1,0 +1,7 @@
+contact_links:
+  - about: "Please ask and answer any user questions about Python on discuss.python.org."
+    name: "Getting help"
+    url: "https://discuss.python.org/c/users/7"
+  - about: "Large feature proposals, for example proposals for new syntax, should be discussed on an ideas forum rather than the issue tracker."
+    name: "Proposing new features"
+    url: "https://discuss.python.org/c/ideas/6"
