@@ -23,6 +23,5 @@ labels: "type-feature"
 
 
 <!--
-You can freely edit this text. Remove any lines
-you believe are unnecessary.
+You can freely edit this text. Remove any lines you believe are unnecessary.
 -->

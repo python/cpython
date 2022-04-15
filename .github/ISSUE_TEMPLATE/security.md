@@ -21,6 +21,5 @@ A description of what the security vulnerability is.
 - Operating system and version:
 
 <!--
-You can freely edit this text. Remove any lines
-you believe are unnecessary.
+You can freely edit this text. Remove any lines you believe are unnecessary.
 -->
