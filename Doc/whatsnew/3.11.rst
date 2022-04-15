@@ -787,6 +787,9 @@ CPython bytecode changes
   :opcode:`POP_JUMP_FORWARD_IF_NONE` and :opcode:`POP_JUMP_BACKWARD_IF_NONE`
   opcodes to speed up conditional jumps.
 
+* :opcode:`JUMP_IF_TRUE_OR_POP` and :opcode:`JUMP_IF_FALSE_OR_POP` are now
+  relative rather than absolute.
+
 
 Deprecated
 ==========
