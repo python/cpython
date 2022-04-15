@@ -5,7 +5,7 @@ labels: "type-security"
 ---
 
 <!--
-  Please note that security issues should generally first be sent to the "security at python dot org" email address.
+  Note that security issues should generally first be sent to the "security at python dot org" email address.
   See here for further details: https://www.python.org/dev/security/
 -->
 

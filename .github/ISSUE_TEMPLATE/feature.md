@@ -10,7 +10,7 @@ labels: "type-feature"
 
 **Pitch**
 
-(Please explain why this feature should be implemented and how it would be used. Add examples, if applicable.)
+(Explain why this feature should be implemented and how it would be used. Add examples, if applicable.)
 
 **Previous discussion**
 
