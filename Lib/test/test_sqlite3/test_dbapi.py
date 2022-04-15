@@ -1055,6 +1055,9 @@ class BlobTests(unittest.TestCase):
         self.blob.close()
         self.cx.close()
 
+    def test_blob_is_a_blob(self):
+        self.assertIsInstance(self.blob, sqlite.Blob)
+
     def test_blob_seek_and_tell(self):
         self.blob.seek(10)
         self.assertEqual(self.blob.tell(), 10)
