@@ -1023,7 +1023,7 @@ _io.TextIOWrapper.__init__
 Character and line based layer over a BufferedIOBase object, buffer.
 
 encoding gives the name of the encoding that the stream will be
-decoded or encoded with. It defaults to locale.getpreferredencoding(False).
+decoded or encoded with. It defaults to locale.getencoding().
 
 errors determines the strictness of encoding and decoding (see
 help(codecs.Codec) or the documentation for codecs.register) and
@@ -1055,12 +1055,12 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                                 const char *encoding, PyObject *errors,
                                 const char *newline, int line_buffering,
                                 int write_through)
-/*[clinic end generated code: output=72267c0c01032ed2 input=77d8696d1a1f460b]*/
+/*[clinic end generated code: output=72267c0c01032ed2 input=72590963698f289b]*/
 {
     PyObject *raw, *codec_info = NULL;
-    _PyIO_State *state = NULL;
     PyObject *res;
     int r;
+    int use_locale_encoding = 0; // Use locale encoding even in UTF-8 mode.
 
     self->ok = 0;
     self->detached = 0;
@@ -1076,6 +1076,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     }
     else if (strcmp(encoding, "locale") == 0) {
         encoding = NULL;
+        use_locale_encoding = 1;
     }
 
     if (errors == Py_None) {
@@ -1113,10 +1114,15 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     self->encodefunc = NULL;
     self->b2cratio = 0.0;
 
+#ifdef MS_WINDOWS
+    // os.device_encoding() on Unix is the locale encoding or UTF-8
+    // according to UTF-8 Mode.
+    // Since UTF-8 mode shouldn't affect `encoding="locale"`, we call
+    // os.device_encoding() only on Windows.
     if (encoding == NULL) {
         /* Try os.device_encoding(fileno) */
         PyObject *fileno;
-        state = IO_STATE();
+        _PyIO_State *state = IO_STATE();
         if (state == NULL)
             goto error;
         fileno = PyObject_CallMethodNoArgs(buffer, &_Py_ID(fileno));
@@ -1144,8 +1150,10 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                 Py_CLEAR(self->encoding);
         }
     }
+#endif
+
     if (encoding == NULL && self->encoding == NULL) {
-        if (_PyRuntime.preconfig.utf8_mode) {
+        if (_PyRuntime.preconfig.utf8_mode && !use_locale_encoding) {
             _Py_DECLARE_STR(utf_8, "utf-8");
             self->encoding = Py_NewRef(&_Py_STR(utf_8));
         }

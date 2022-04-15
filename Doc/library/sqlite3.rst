@@ -394,6 +394,20 @@ Connection Objects
       supplied, this must be a callable returning an instance of :class:`Cursor`
       or its subclasses.
 
+   .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
+
+      Open a :class:`Blob` handle to the :abbr:`BLOB (Binary Large OBject)`
+      located in row *row*, column *column*, table *table* of database *name*.
+      When *readonly* is :const:`True` the blob is opened without write
+      permissions.
+
+      .. note::
+
+         The blob size cannot be changed using the :class:`Blob` class.
+         Use the SQL function ``zeroblob`` to create a blob with a fixed size.
+
+      .. versionadded:: 3.11
+
    .. method:: commit()
 
       This method commits the current transaction. If you don't call this method,
@@ -471,6 +485,35 @@ Connection Objects
       Example:
 
       .. literalinclude:: ../includes/sqlite3/mysumaggr.py
+
+
+   .. method:: create_window_function(name, num_params, aggregate_class, /)
+
+      Creates user-defined aggregate window function *name*.
+
+      *aggregate_class* must implement the following methods:
+
+      * ``step``: adds a row to the current window
+      * ``value``: returns the current value of the aggregate
+      * ``inverse``: removes a row from the current window
+      * ``finalize``: returns the final value of the aggregate
+
+      ``step`` and ``value`` accept *num_params* number of parameters,
+      unless *num_params* is ``-1``, in which case they may take any number of
+      arguments.  ``finalize`` and ``value`` can return any of the types
+      supported by SQLite:
+      :class:`bytes`, :class:`str`, :class:`int`, :class:`float`, and
+      :const:`None`.  Call :meth:`create_window_function` with
+      *aggregate_class* set to :const:`None` to clear window function *name*.
+
+      Aggregate window functions are supported by SQLite 3.25.0 and higher.
+      :exc:`NotSupportedError` will be raised if used with older versions.
+
+      .. versionadded:: 3.11
+
+      Example:
+
+      .. literalinclude:: ../includes/sqlite3/sumintwindow.py
 
 
    .. method:: create_collation(name, callable)
@@ -1057,6 +1100,58 @@ Exceptions
    supported by the database, e.g. calling the :meth:`~Connection.rollback`
    method on a connection that does not support transaction or has
    transactions turned off.  It is a subclass of :exc:`DatabaseError`.
+
+
+.. _sqlite3-blob-objects:
+
+Blob Objects
+------------
+
+.. versionadded:: 3.11
+
+.. class:: Blob
+
+   A :class:`Blob` instance is a :term:`file-like object` that can read and write
+   data in an SQLite :abbr:`BLOB (Binary Large OBject)`.  Call ``len(blob)`` to
+   get the size (number of bytes) of the blob.
+
+   .. method:: close()
+
+      Close the blob.
+
+      The blob will be unusable from this point onward.  An
+      :class:`~sqlite3.Error` (or subclass) exception will be raised if any
+      further operation is attempted with the blob.
+
+   .. method:: read(length=-1, /)
+
+      Read *length* bytes of data from the blob at the current offset position.
+      If the end of the blob is reached, the data up to
+      :abbr:`EOF (End of File)` will be returned.  When *length* is not
+      specified, or is negative, :meth:`~Blob.read` will read until the end of
+      the blob.
+
+   .. method:: write(data, /)
+
+      Write *data* to the blob at the current offset.  This function cannot
+      change the blob length.  Writing beyond the end of the blob will raise
+      :exc:`ValueError`.
+
+   .. method:: tell()
+
+      Return the current access position of the blob.
+
+   .. method:: seek(offset, origin=os.SEEK_SET, /)
+
+      Set the current access position of the blob to *offset*.  The *origin*
+      argument defaults to :data:`os.SEEK_SET` (absolute blob positioning).
+      Other values for *origin* are :data:`os.SEEK_CUR` (seek relative to the
+      current position) and :data:`os.SEEK_END` (seek relative to the blob’s
+      end).
+
+   :class:`Blob` example:
+
+      .. literalinclude:: ../includes/sqlite3/blob.py
 
 
 .. _sqlite3-types:

@@ -233,19 +233,23 @@ typedef struct basicblock_ {
        reverse order that the block are allocated.  b_list points to the next
        block, not to be confused with b_next, which is next by control flow. */
     struct basicblock_ *b_list;
-    /* number of instructions used */
-    int b_iused;
-    /* length of instruction array (b_instr) */
-    int b_ialloc;
+    /* Exception stack at start of block, used by assembler to create the exception handling table */
+    ExceptStack *b_exceptstack;
     /* pointer to an array of instructions, initially NULL */
     struct instr *b_instr;
     /* If b_next is non-NULL, it is a pointer to the next
        block reached by normal control flow. */
     struct basicblock_ *b_next;
-    /* b_return is true if a RETURN_VALUE opcode is inserted. */
-    unsigned b_return : 1;
+    /* number of instructions used */
+    int b_iused;
+    /* length of instruction array (b_instr) */
+    int b_ialloc;
     /* Number of predecssors that a block has. */
     int b_predecessors;
+    /* depth of stack upon entry of block, computed by stackdepth() */
+    int b_startdepth;
+    /* instruction offset for block, computed by assemble_jump_offsets() */
+    int b_offset;
     /* Basic block has no fall through (it ends with a return, raise or jump) */
     unsigned b_nofallthrough : 1;
     /* Basic block is an exception handler that preserves lasti */
@@ -254,12 +258,8 @@ typedef struct basicblock_ {
     unsigned b_visited : 1;
     /* Basic block exits scope (it ends with a return or raise) */
     unsigned b_exit : 1;
-    /* depth of stack upon entry of block, computed by stackdepth() */
-    int b_startdepth;
-    /* instruction offset for block, computed by assemble_jump_offsets() */
-    int b_offset;
-    /* Exception stack at start of block, used by assembler to create the exception handling table */
-    ExceptStack *b_exceptstack;
+    /* b_return is true if a RETURN_VALUE opcode is inserted. */
+    unsigned b_return : 1;
 } basicblock;
 
 /* fblockinfo tracks the current frame block.
@@ -7051,23 +7051,23 @@ compiler_match(struct compiler *c, stmt_ty s)
 
 struct assembler {
     PyObject *a_bytecode;  /* bytes containing bytecode */
+    PyObject *a_lnotab;    /* bytes containing lnotab */
+    PyObject *a_enotab;    /* bytes containing enotab */
+    PyObject *a_cnotab;    /* bytes containing cnotab */
+    PyObject *a_except_table;  /* bytes containing exception table */
+    basicblock *a_entry;
     int a_offset;              /* offset into bytecode */
     int a_nblocks;             /* number of reachable blocks */
-    PyObject *a_lnotab;    /* bytes containing lnotab */
-    PyObject* a_enotab;    /* bytes containing enotab */
-    PyObject* a_cnotab;    /* bytes containing cnotab */
+    int a_except_table_off;    /* offset into exception table */
     int a_lnotab_off;      /* offset into lnotab */
     int a_enotab_off;      /* offset into enotab */
     int a_cnotab_off;      /* offset into cnotab */
-    PyObject *a_except_table;  /* bytes containing exception table */
-    int a_except_table_off;    /* offset into exception table */
     int a_prevlineno;     /* lineno of last emitted line in line table */
     int a_prev_end_lineno; /* end_lineno of last emitted line in line table */
     int a_lineno;          /* lineno of last emitted instruction */
     int a_end_lineno;      /* end_lineno of last emitted instruction */
     int a_lineno_start;    /* bytecode start offset of current lineno */
     int a_end_lineno_start; /* bytecode start offset of current end_lineno */
-    basicblock *a_entry;
 };
 
 Py_LOCAL_INLINE(void)

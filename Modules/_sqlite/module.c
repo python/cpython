@@ -27,6 +27,7 @@
 #include "prepare_protocol.h"
 #include "microprotocols.h"
 #include "row.h"
+#include "blob.h"
 
 #if SQLITE_VERSION_NUMBER < 3007015
 #error "SQLite 3.7.15 or higher required"
@@ -582,6 +583,7 @@ module_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->Warning);
 
     // Types
+    Py_VISIT(state->BlobType);
     Py_VISIT(state->ConnectionType);
     Py_VISIT(state->CursorType);
     Py_VISIT(state->PrepareProtocolType);
@@ -614,6 +616,7 @@ module_clear(PyObject *module)
     Py_CLEAR(state->Warning);
 
     // Types
+    Py_CLEAR(state->BlobType);
     Py_CLEAR(state->ConnectionType);
     Py_CLEAR(state->CursorType);
     Py_CLEAR(state->PrepareProtocolType);
@@ -630,8 +633,10 @@ module_clear(PyObject *module)
     Py_CLEAR(state->str___conform__);
     Py_CLEAR(state->str_executescript);
     Py_CLEAR(state->str_finalize);
+    Py_CLEAR(state->str_inverse);
     Py_CLEAR(state->str_step);
     Py_CLEAR(state->str_upper);
+    Py_CLEAR(state->str_value);
 
     return 0;
 }
@@ -685,7 +690,8 @@ module_exec(PyObject *module)
         (pysqlite_cursor_setup_types(module) < 0) ||
         (pysqlite_connection_setup_types(module) < 0) ||
         (pysqlite_statement_setup_types(module) < 0) ||
-        (pysqlite_prepare_protocol_setup_types(module) < 0)
+        (pysqlite_prepare_protocol_setup_types(module) < 0) ||
+        (pysqlite_blob_setup_types(module) < 0)
        ) {
         goto error;
     }
@@ -717,8 +723,10 @@ module_exec(PyObject *module)
     ADD_INTERNED(state, __conform__);
     ADD_INTERNED(state, executescript);
     ADD_INTERNED(state, finalize);
+    ADD_INTERNED(state, inverse);
     ADD_INTERNED(state, step);
     ADD_INTERNED(state, upper);
+    ADD_INTERNED(state, value);
 
     /* Set error constants */
     if (add_error_constants(module) < 0) {
