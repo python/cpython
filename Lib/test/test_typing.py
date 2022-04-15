@@ -907,11 +907,10 @@ class TypeVarTupleTests(BaseTestCase):
 
 
 class TypeVarTuplePicklingTests(BaseTestCase):
-    # These are slightly awkward tests to run, because TypeVarTuples (and things
-    # made generic using TypeVarTuples) are only picklable if defined in the
-    # global scope. We therefore need to push various things defined in these
-    # tests into the global scope with `global` statements at the start of each
-    # test.
+    # These are slightly awkward tests to run, because TypeVarTuples are only
+    # picklable if defined in the global scope. We therefore need to push
+    # various things defined in these tests into the global scope with `global`
+    # statements at the start of each test.
 
     @all_pickle_protocols
     def test_pickling_then_unpickling_results_in_equality(self, proto):
