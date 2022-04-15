@@ -355,7 +355,8 @@ process and user.
 
    Return list of group ids that *user* belongs to. If *group* is not in the
    list, it is included; typically, *group* is specified as the group ID
-   field from the password record for *user*.
+   field from the password record for *user*, because that group ID will
+   otherwise be potentially omitted.
 
    .. availability:: Unix.
 
