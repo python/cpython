@@ -10,7 +10,7 @@ m4_define(PYTHON_VERSION, 3.11)
 
 AC_PREREQ([2.69])
 
-AC_INIT([python],[PYTHON_VERSION],[https://bugs.python.org/])
+AC_INIT([python],[PYTHON_VERSION],[https://devguide.python.org/tracker/])
 
 m4_ifdef(
     [AX_C_FLOAT_WORDS_BIGENDIAN],
@@ -5193,7 +5193,7 @@ AS_VAR_IF([ac_cv_gcc_asm_for_mc68881], [yes], [
 # rounding issues.  The result of this test has little meaning on non
 # IEEE 754 platforms.  On IEEE 754, test should return 1 if rounding
 # mode is round-to-nearest and double rounding issues are present, and
-# 0 otherwise.  See http://bugs.python.org/issue2937 for more info.
+# 0 otherwise.  See https://github.com/python/cpython/issues/47186 for details.
 AC_CACHE_CHECK([for x87-style double rounding], [ac_cv_x87_double_rounding], [
 # $BASECFLAGS may affect the result
 ac_save_cc="$CC"
