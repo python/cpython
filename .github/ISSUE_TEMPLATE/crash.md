@@ -18,7 +18,7 @@ Tell us what happened, ideally including a minimal, reproducible example (https:
 
 **Traceback**
 
-Enter the full traceback caused by the crash.
+Enter the full traceback caused by the crash, if there is one.
 
 **Your environment**
 
