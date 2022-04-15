@@ -22,7 +22,7 @@ Enter the full traceback caused by the crash.
 
 **Your environment**
 
-<!-- Include as many relevant details about the environment you experienced the bug in -->
+<!-- Include as many relevant details as possible about the environment you experienced the bug in -->
 
 - CPython versions tested on:
 - Operating system and version:
