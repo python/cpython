@@ -2501,7 +2501,7 @@ def getproxies_environment():
     # two passes: first matches any, second pass matches lowercase only
 
     # select only environment variables which end in (after making lowercase) _proxy 
-    candidate_names = [name for name in os.environ.keys() if name[-6:]=='_'] # fast selection of candidates
+    candidate_names = [name for name in os.environ.keys() if len(name)>5 and name[-6]=='_'] # fast selection of candidates
     environment = [(name, os.environ[name], name.lower()) for name in candidate_names if name[-6:].lower()=='_proxy'] 
     
     proxies = {}
