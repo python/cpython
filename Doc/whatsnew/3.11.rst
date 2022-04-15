@@ -246,6 +246,10 @@ asyncio
   :meth:`~asyncio.AbstractEventLoop.sock_recvfrom_into`.
   (Contributed by Alex Grönholm in :issue:`46805`.)
 
+* Add :meth:`~asyncio.streams.StreamWriter.start_tls` method for upgrading
+  existing stream-based connections to TLS. (Contributed by Ian Good in
+  :issue:`34975`.)
+
 fractions
 ---------
 
@@ -393,6 +397,10 @@ sqlite3
   :class:`sqlite3.Connection` for creating aggregate window functions.
   (Contributed by Erlend E. Aasland in :issue:`34916`.)
 
+* Add :meth:`~sqlite3.Connection.blobopen` to :class:`sqlite3.Connection`.
+  :class:`sqlite3.Blob` allows incremental I/O operations on blobs.
+  (Contributed by Aviv Palivoda and Erlend E. Aasland in :issue:`24905`)
+
 
 sys
 ---
@@ -511,6 +519,12 @@ Optimizations
   This reduces dict size. For example, ``sys.getsizeof(dict.fromkeys("abcdefg"))``
   becomes 272 bytes from 352 bytes on 64bit platform.
   (Contributed by Inada Naoki in :issue:`46845`.)
+
+* :mod:`re`'s regular expression matching engine has been partially refactored,
+  and now uses computed gotos (or "threaded code") on supported platforms. As a
+  result, Python 3.11 executes the `pyperformance regular expression benchmarks
+  <https://pyperformance.readthedocs.io/benchmarks.html#regex-dna>`_ up to 10%
+  faster than Python 3.10.
 
 * Speed up the regular expression substitution (functions :func:`re.sub` and
   :func:`re.subn` and corresponding :class:`re.Pattern` methods) for
@@ -861,6 +875,8 @@ Deprecated
   * :mod:`cgitb`
   * :mod:`chunk`
   * :mod:`crypt`
+  * :mod:`imghdr`
+  * :mod:`msilib`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
 

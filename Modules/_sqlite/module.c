@@ -27,6 +27,7 @@
 #include "prepare_protocol.h"
 #include "microprotocols.h"
 #include "row.h"
+#include "blob.h"
 
 #if SQLITE_VERSION_NUMBER < 3007015
 #error "SQLite 3.7.15 or higher required"
@@ -582,6 +583,7 @@ module_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->Warning);
 
     // Types
+    Py_VISIT(state->BlobType);
     Py_VISIT(state->ConnectionType);
     Py_VISIT(state->CursorType);
     Py_VISIT(state->PrepareProtocolType);
@@ -614,6 +616,7 @@ module_clear(PyObject *module)
     Py_CLEAR(state->Warning);
 
     // Types
+    Py_CLEAR(state->BlobType);
     Py_CLEAR(state->ConnectionType);
     Py_CLEAR(state->CursorType);
     Py_CLEAR(state->PrepareProtocolType);
@@ -687,12 +690,14 @@ module_exec(PyObject *module)
         (pysqlite_cursor_setup_types(module) < 0) ||
         (pysqlite_connection_setup_types(module) < 0) ||
         (pysqlite_statement_setup_types(module) < 0) ||
-        (pysqlite_prepare_protocol_setup_types(module) < 0)
+        (pysqlite_prepare_protocol_setup_types(module) < 0) ||
+        (pysqlite_blob_setup_types(module) < 0)
        ) {
         goto error;
     }
 
     pysqlite_state *state = pysqlite_get_state(module);
+    ADD_TYPE(module, state->BlobType);
     ADD_TYPE(module, state->ConnectionType);
     ADD_TYPE(module, state->CursorType);
     ADD_TYPE(module, state->PrepareProtocolType);
