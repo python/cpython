@@ -20,6 +20,7 @@ extern void _PyUnicode_Fini(PyInterpreterState *);
 extern void _PyUnicode_FiniTypes(PyInterpreterState *);
 extern void _PyStaticUnicode_Dealloc(PyObject *);
 
+PyTypeObject _PyUnicodeASCIIIter_Type;
 
 /* other API */
 

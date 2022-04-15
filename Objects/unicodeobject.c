@@ -15826,7 +15826,7 @@ PyTypeObject PyUnicodeIter_Type = {
     0,
 };
 
-static PyTypeObject PyUnicodeASCIIIter_Type = {
+PyTypeObject _PyUnicodeASCIIIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "str_ascii_iterator",
     .tp_basicsize = sizeof(unicodeiterobject),
@@ -15851,7 +15851,7 @@ unicode_iter(PyObject *seq)
     if (PyUnicode_READY(seq) == -1)
         return NULL;
     if (PyUnicode_IS_COMPACT_ASCII(seq)) {
-        it = PyObject_GC_New(unicodeiterobject, &PyUnicodeASCIIIter_Type);
+        it = PyObject_GC_New(unicodeiterobject, &_PyUnicodeASCIIIter_Type);
     } else {
         it = PyObject_GC_New(unicodeiterobject, &PyUnicodeIter_Type);
     }
