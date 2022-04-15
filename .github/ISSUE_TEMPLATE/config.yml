@@ -7,4 +7,4 @@ contact_links:
     url: "https://discuss.python.org/c/ideas/6"
   - about: "Please see here for details on reporting security vulnerabilities in CPython"
     name: "Reporting security vulnerabilities"
-    url: https://www.python.org/dev/security/
+    url: "https://www.python.org/dev/security/"
