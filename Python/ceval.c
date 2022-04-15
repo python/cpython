@@ -55,33 +55,38 @@ static PyObject * do_call_core(
 #ifdef LLTRACE
 static int lltrace;
 static void
-dump_stack(_PyInterpreterFrame *frame, int stack_level)
+dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
+    if (Py_EnterRecursiveCall("lltrace") < 0) {
+        return;
+    }
+    PyObject **stack_base = _PyFrame_Stackbase(frame);
     PyObject *type, *value, *traceback;
     PyErr_Fetch(&type, &value, &traceback);
-    PyObject **stack = _PyFrame_Stackbase(frame);
-    printf("[");
-    for (int i = 0; i < stack_level; i++) {
-        PyObject *obj = stack[i];
-        if (PyObject_Print(obj, stdout, 0) != 0) {
+    printf("stack=[");
+    for (PyObject **ptr = stack_base; ptr < stack_pointer; ptr++) {
+        if (PyObject_Print(*ptr, stdout, 0) != 0) {
             PyErr_Clear();
-            printf("???\n");
-            goto done;
+            printf("<???>");
         }
         printf(", ");
     }
     printf("]\n");
-  done:
     PyErr_Restore(type, value, traceback);
+    Py_LeaveRecursiveCall();
 }
 
 static void
-lltrace_instruction(_PyInterpreterFrame *frame, int opcode, int oparg,
-                   int stack_level, int offset)
+lltrace_instruction(_PyInterpreterFrame *frame,
+                    PyObject **stack_pointer,
+                    _Py_CODEUNIT *next_instr)
 {
-    dump_stack(frame, stack_level);
+    dump_stack(frame, stack_pointer);
+    int oparg = _Py_OPARG(*next_instr);
+    int opcode = _Py_OPCODE(*next_instr);
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
+    int offset = (int)(next_instr - _PyCode_CODE(frame->f_code));
     if (HAS_ARG(opcode)) {
         printf("%d: %s %d\n", offset * 2, opname, oparg);
     }
@@ -1322,7 +1327,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
 #define PRE_DISPATCH_GOTO() if (lltrace) { \
-    lltrace_instruction(frame, opcode, oparg, STACK_LEVEL(), INSTR_OFFSET()); }
+    lltrace_instruction(frame, stack_pointer, next_instr); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
