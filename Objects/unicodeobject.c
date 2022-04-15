@@ -15708,10 +15708,8 @@ unicodeiter_next(unicodeiterobject *it)
     if (it->it_index < PyUnicode_GET_LENGTH(seq)) {
         int kind = PyUnicode_KIND(seq);
         const void *data = PyUnicode_DATA(seq);
-        Py_UCS4 chr = PyUnicode_READ(kind, data, it->it_index);
-        item = PyUnicode_FromOrdinal(chr);
-        if (item != NULL)
-            ++it->it_index;
+        Py_UCS4 chr = PyUnicode_READ(kind, data, it->it_index++);
+        item = unicode_char(chr);
         return item;
     }
 
