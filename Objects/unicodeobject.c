@@ -15826,7 +15826,7 @@ PyTypeObject PyUnicodeIter_Type = {
     0,
 };
 
-PyTypeObject PyUnicodeASCIIIter_Type = {
+static PyTypeObject PyUnicodeASCIIIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "str_ascii_iterator",
     .tp_basicsize = sizeof(unicodeiterobject),
