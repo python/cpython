@@ -85,6 +85,10 @@ Local naming conventions:
 
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #ifdef __APPLE__
 // Issue #35569: Expose RFC 3542 socket options.
 #define __APPLE_USE_RFC_3542 1
@@ -103,6 +107,7 @@ Local naming conventions:
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "structmember.h"         // PyMemberDef
 
 #ifdef _Py_MEMORY_SANITIZER
@@ -1684,6 +1689,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                                 "AF_UNIX path too long");
                 goto unix_out;
             }
+
+            *len_ret = path.len + offsetof(struct sockaddr_un, sun_path);
         }
         else
 #endif /* linux */
@@ -1695,10 +1702,13 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 goto unix_out;
             }
             addr->sun_path[path.len] = 0;
+
+            /* including the tailing NUL */
+            *len_ret = path.len + offsetof(struct sockaddr_un, sun_path) + 1;
         }
         addr->sun_family = s->sock_family;
         memcpy(addr->sun_path, path.buf, path.len);
-        *len_ret = path.len + offsetof(struct sockaddr_un, sun_path);
+        
         retval = 1;
     unix_out:
         PyBuffer_Release(&path);
@@ -7576,6 +7586,12 @@ PyInit__socket(void)
 #ifdef SO_PROTOCOL
     PyModule_AddIntMacro(m, SO_PROTOCOL);
 #endif
+#ifdef LOCAL_CREDS
+    PyModule_AddIntMacro(m, LOCAL_CREDS);
+#endif
+#ifdef LOCAL_CREDS_PERSISTENT
+    PyModule_AddIntMacro(m, LOCAL_CREDS_PERSISTENT);
+#endif
 
     /* Maximum number of connections for "listen" */
 #ifdef  SOMAXCONN
@@ -7593,6 +7609,9 @@ PyInit__socket(void)
 #endif
 #ifdef  SCM_CREDS
     PyModule_AddIntMacro(m, SCM_CREDS);
+#endif
+#ifdef  SCM_CREDS2
+    PyModule_AddIntMacro(m, SCM_CREDS2);
 #endif
 
     /* Flags for send, recv */
@@ -7698,7 +7717,7 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, SOL_CAN_RAW);
     PyModule_AddIntMacro(m, CAN_RAW);
 #endif
-#ifdef HAVE_LINUX_CAN_H
+#if defined(HAVE_LINUX_CAN_H) || defined(HAVE_NETCAN_CAN_H)
     PyModule_AddIntMacro(m, CAN_EFF_FLAG);
     PyModule_AddIntMacro(m, CAN_RTR_FLAG);
     PyModule_AddIntMacro(m, CAN_ERR_FLAG);
@@ -7713,9 +7732,11 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, CAN_J1939);
 #endif
 #endif
-#ifdef HAVE_LINUX_CAN_RAW_H
+#if defined(HAVE_LINUX_CAN_RAW_H) || defined(HAVE_NETCAN_CAN_H)
     PyModule_AddIntMacro(m, CAN_RAW_FILTER);
+#ifdef CAN_RAW_ERR_FILTER
     PyModule_AddIntMacro(m, CAN_RAW_ERR_FILTER);
+#endif
     PyModule_AddIntMacro(m, CAN_RAW_LOOPBACK);
     PyModule_AddIntMacro(m, CAN_RAW_RECV_OWN_MSGS);
 #endif
@@ -8064,6 +8085,9 @@ PyInit__socket(void)
 #endif
 #ifdef  IP_TRANSPARENT
     PyModule_AddIntMacro(m, IP_TRANSPARENT);
+#endif
+#ifdef IP_BIND_ADDRESS_NO_PORT
+    PyModule_AddIntMacro(m, IP_BIND_ADDRESS_NO_PORT);
 #endif
 
     /* IPv6 [gs]etsockopt options, defined in RFC2553 */

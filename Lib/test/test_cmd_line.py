@@ -15,6 +15,8 @@ from test.support.script_helper import (
     interpreter_requires_environment
 )
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 # Debug build?
 Py_DEBUG = hasattr(sys, "gettotalrefcount")
@@ -116,10 +118,13 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(out.rstrip(), b'{}')
         self.assertEqual(err, b'')
         # "-X showrefcount" shows the refcount, but only in debug builds
-        rc, out, err = run_python('-X', 'showrefcount', '-c', code)
+        rc, out, err = run_python('-I', '-X', 'showrefcount', '-c', code)
         self.assertEqual(out.rstrip(), b"{'showrefcount': True}")
         if Py_DEBUG:
-            self.assertRegex(err, br'^\[\d+ refs, \d+ blocks\]')
+            # bpo-46417: Tolerate negative reference count which can occur
+            # because of bugs in C extensions. This test is only about checking
+            # the showrefcount feature.
+            self.assertRegex(err, br'^\[-?\d+ refs, \d+ blocks\]')
         else:
             self.assertEqual(err, b'')
 
@@ -160,6 +165,17 @@ class CmdLineTest(unittest.TestCase):
         data = kill_python(p)
         self.assertTrue(data.find(b'1 loop') != -1)
         self.assertTrue(data.find(b'__main__.Timer') != -1)
+
+    def test_relativedir_bug46421(self):
+        # Test `python -m unittest` with a relative directory beginning with ./
+        # Note: We have to switch to the project's top module's directory, as per
+        # the python unittest wiki. We will switch back when we are done.
+        defaultwd = os.getcwd()
+        projectlibpath = os.path.dirname(__file__).removesuffix("test")
+        with os_helper.change_cwd(projectlibpath):
+            # Testing with and without ./
+            assert_python_ok('-m', 'unittest', "test/test_longexp.py")
+            assert_python_ok('-m', 'unittest', "./test/test_longexp.py")
 
     def test_run_code(self):
         # Test expected operation of the '-c' switch

@@ -33,6 +33,7 @@
 # PREFIX            -- [in] sysconfig.get_config_var(...)
 # EXEC_PREFIX       -- [in] sysconfig.get_config_var(...)
 # PYTHONPATH        -- [in] sysconfig.get_config_var(...)
+# WITH_NEXT_FRAMEWORK   -- [in] sysconfig.get_config_var(...)
 # VPATH             -- [in] sysconfig.get_config_var(...)
 # PLATLIBDIR        -- [in] sysconfig.get_config_var(...)
 # PYDEBUGEXT        -- [in, opt] '_d' on Windows for debug builds
@@ -127,7 +128,7 @@
 # checked by looking for the BUILDDIR_TXT file, which contains the
 # relative path to the platlib dir. The executable_dir value is
 # derived from joining the VPATH preprocessor variable to the
-# directory containing pybuilddir.txt. If it is not found, the 
+# directory containing pybuilddir.txt. If it is not found, the
 # BUILD_LANDMARK file is found, which is part of the source tree.
 # prefix is then found by searching up for a file that should only
 # exist in the source tree, and the stdlib dir is set to prefix/Lib.
@@ -277,7 +278,7 @@ elif os_name == 'darwin':
     # executable path was provided in the config.
     real_executable = executable
 
-if not executable and program_name:
+if not executable and program_name and ENV_PATH:
     # Resolve names against PATH.
     # NOTE: The use_environment value is ignored for this lookup.
     # To properly isolate, launch Python with a full path.
@@ -301,9 +302,19 @@ if ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__:
     # If set, these variables imply that we should be using them as
     # sys.executable and when searching for venvs. However, we should
     # use the argv0 path for prefix calculation
-    base_executable = executable
+
+    if os_name == 'darwin' and WITH_NEXT_FRAMEWORK:
+        # In a framework build the binary in {sys.exec_prefix}/bin is
+        # a stub executable that execs the real interpreter in an
+        # embedded app bundle. That bundle is an implementation detail
+        # and should not affect base_executable.
+        base_executable = f"{dirname(library)}/bin/python{VERSION_MAJOR}.{VERSION_MINOR}"
+    else:
+        base_executable = executable
+
     if not real_executable:
-        real_executable = executable
+        real_executable = base_executable
+        #real_executable_dir = dirname(real_executable)
     executable = ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__
     executable_dir = dirname(executable)
 
@@ -351,7 +362,18 @@ if not home and not py_setpath:
         key, had_equ, value = line.partition('=')
         if had_equ and key.strip().lower() == 'home':
             executable_dir = real_executable_dir = value.strip()
-            base_executable = joinpath(executable_dir, basename(executable))
+            if not base_executable:
+                # First try to resolve symlinked executables, since that may be
+                # more accurate than assuming the executable in 'home'.
+                try:
+                    base_executable = realpath(executable)
+                    if base_executable == executable:
+                        # No change, so probably not a link. Clear it and fall back
+                        base_executable = ''
+                except OSError:
+                    pass
+                if not base_executable:
+                    base_executable = joinpath(executable_dir, basename(executable))
             break
     else:
         venv_prefix = None
@@ -407,24 +429,22 @@ pth_dir = None
 # Calling Py_SetPythonHome() or Py_SetPath() will override ._pth search,
 # but environment variables and command-line options cannot.
 if not py_setpath and not home_was_set:
-    # Check adjacent to the main DLL/dylib/so
-    if library:
-        try:
-            pth = readlines(library.rpartition('.')[0] + '._pth')
-            pth_dir = dirname(library)
-        except FileNotFoundError:
-            pass
-
-    # Check adjacent to the original executable, even if we
-    # redirected to actually launch Python. This may allow a
-    # venv to override the base_executable's ._pth file, but
-    # it cannot override the library's one.
-    if not pth_dir:
-        try:
-            pth = readlines(executable.rpartition('.')[0] + '._pth')
-            pth_dir = dirname(executable)
-        except FileNotFoundError:
-            pass
+    # 1. Check adjacent to the main DLL/dylib/so (if set)
+    # 2. Check adjacent to the original executable
+    # 3. Check adjacent to our actual executable
+    # This may allow a venv to override the base_executable's
+    # ._pth file, but it cannot override the library's one.
+    for p in [library, executable, real_executable]:
+        if p:
+            if os_name == 'nt' and (hassuffix(p, 'exe') or hassuffix(p, 'dll')):
+                p = p.rpartition('.')[0]
+            p += '._pth'
+            try:
+                pth = readlines(p)
+                pth_dir = dirname(p)
+                break
+            except OSError:
+                pass
 
     # If we found a ._pth file, disable environment and home
     # detection now. Later, we will do the rest.
@@ -644,19 +664,12 @@ elif not pythonpath:
                     i = 0
                     while True:
                         try:
-                            keyname = winreg.EnumKey(key, i)
-                            subkey = winreg.OpenKeyEx(key, keyname)
-                            if not subkey:
-                                continue
-                            try:
-                                v = winreg.QueryValue(subkey)
-                            finally:
-                                winreg.CloseKey(subkey)
-                            if isinstance(v, str):
-                                pythonpath.append(v)
-                            i += 1
+                            v = winreg.QueryValue(key, winreg.EnumKey(key, i))
                         except OSError:
                             break
+                        if isinstance(v, str):
+                            pythonpath.append(v)
+                        i += 1
                 finally:
                     winreg.CloseKey(key)
             except OSError:

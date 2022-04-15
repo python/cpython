@@ -914,7 +914,7 @@ call fails (for example because the path doesn't exist).
 
    The children are yielded in arbitrary order, and the special entries
    ``'.'`` and ``'..'`` are not included.  If a file is removed from or added
-   to the directory after creating the iterator, whether an path object for
+   to the directory after creating the iterator, whether a path object for
    that file be included is unspecified.
 
 .. method:: Path.lchmod(mode)
@@ -1050,6 +1050,18 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.8
       Added return value, return the new Path instance.
+
+
+.. method:: Path.absolute()
+
+   Make the path absolute, without normalization or resolving symlinks.
+   Returns a new path object::
+
+      >>> p = Path('tests')
+      >>> p
+      PosixPath('tests')
+      >>> p.absolute()
+      PosixPath('/home/antoine/pathlib/tests')
 
 
 .. method:: Path.resolve(strict=False)
@@ -1239,13 +1251,14 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 
    Not all pairs of functions/methods below are equivalent. Some of them,
    despite having some overlapping use-cases, have different semantics. They
-   include :func:`os.path.abspath` and :meth:`Path.resolve`,
+   include :func:`os.path.abspath` and :meth:`Path.absolute`,
    :func:`os.path.relpath` and :meth:`PurePath.relative_to`.
 
 ====================================   ==============================
 :mod:`os` and :mod:`os.path`           :mod:`pathlib`
 ====================================   ==============================
-:func:`os.path.abspath`                :meth:`Path.resolve` [#]_
+:func:`os.path.abspath`                :meth:`Path.absolute` [#]_
+:func:`os.path.realpath`               :meth:`Path.resolve`
 :func:`os.chmod`                       :meth:`Path.chmod`
 :func:`os.mkdir`                       :meth:`Path.mkdir`
 :func:`os.makedirs`                    :meth:`Path.mkdir`
@@ -1278,5 +1291,5 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 
 .. rubric:: Footnotes
 
-.. [#] :func:`os.path.abspath` does not resolve symbolic links while :meth:`Path.resolve` does.
+.. [#] :func:`os.path.abspath` normalizes the resulting path, which may change its meaning in the presence of symlinks, while :meth:`Path.absolute` does not.
 .. [#] :meth:`Path.relative_to` requires ``self`` to be the subpath of the argument, but :func:`os.path.relpath` does not.

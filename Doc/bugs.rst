@@ -40,38 +40,39 @@ though it may take a while to be processed.
 Using the Python issue tracker
 ==============================
 
-Bug reports for Python itself should be submitted via the Python Bug Tracker
-(https://bugs.python.org/).  The bug tracker offers a web form which allows
-pertinent information to be entered and submitted to the developers.
+Issue reports for Python itself should be submitted via the GitHub issues
+tracker (https://github.com/python/cpython/issues).
+The GitHub issues tracker offers a web form which allows pertinent information
+to be entered and submitted to the developers.
 
 The first step in filing a report is to determine whether the problem has
 already been reported.  The advantage in doing so, aside from saving the
-developers time, is that you learn what has been done to fix it; it may be that
+developers' time, is that you learn what has been done to fix it; it may be that
 the problem has already been fixed for the next release, or additional
 information is needed (in which case you are welcome to provide it if you can!).
-To do this, search the bug database using the search box on the top of the page.
+To do this, search the tracker using the search box at the top of the page.
 
-If the problem you're reporting is not already in the bug tracker, go back to
-the Python Bug Tracker and log in.  If you don't already have a tracker account,
-select the "Register" link or, if you use OpenID, one of the OpenID provider
-logos in the sidebar.  It is not possible to submit a bug report anonymously.
+If the problem you're reporting is not already in the list, log in to GitHub.
+If you don't already have a GitHub account, create a new account using the
+"Sign up" link.
+It is not possible to submit a bug report anonymously.
 
-Being now logged in, you can submit a bug.  Select the "Create New" link in the
-sidebar to open the bug reporting form.
+Being now logged in, you can submit an issue.
+Click on the "New issue" button in the top bar to report a new issue.
 
-The submission form has a number of fields.  For the "Title" field, enter a
-*very* short description of the problem; less than ten words is good.  In the
-"Type" field, select the type of your problem; also select the "Component" and
-"Versions" to which the bug relates.
+The submission form has two fields, "Title" and "Comment".
+
+For the "Title" field, enter a *very* short description of the problem;
+less than ten words is good.
 
 In the "Comment" field, describe the problem in detail, including what you
 expected to happen and what did happen.  Be sure to include whether any
 extension modules were involved, and what hardware and software platform you
 were using (including version information as appropriate).
 
-Each bug report will be assigned to a developer who will determine what needs to
-be done to correct the problem.  You will receive an update each time action is
-taken on the bug.
+Each issue report will be reviewed by a developer who will determine what needs to
+be done to correct the problem. You will receive an update each time an action is
+taken on the issue.
 
 
 .. seealso::
@@ -95,6 +96,6 @@ patching Python in the `Python Developer's Guide`_.  If you have questions,
 the `core-mentorship mailing list`_ is a friendly place to get answers to
 any and all questions pertaining to the process of fixing issues in Python.
 
-.. _Documentation bugs: https://bugs.python.org/issue?@filter=status&@filter=components&components=4&status=1&@columns=id,activity,title,status&@sort=-activity
+.. _Documentation bugs: https://github.com/python/cpython/issues?q=is%3Aissue+is%3Aopen+label%3Adocs
 .. _Python Developer's Guide: https://devguide.python.org/
 .. _core-mentorship mailing list: https://mail.python.org/mailman3/lists/core-mentorship.python.org/
