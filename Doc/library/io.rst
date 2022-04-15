@@ -112,7 +112,7 @@ Text Encoding
 -------------
 
 The default encoding of :class:`TextIOWrapper` and :func:`open` is
-locale-specific (:func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`).
+locale-specific (:func:`locale.getencoding`).
 
 However, many developers forget to specify the encoding when opening text files
 encoded in UTF-8 (e.g. JSON, TOML, Markdown, etc...) since most Unix
@@ -198,12 +198,13 @@ High-level Module Interface
    This is a helper function for callables that use :func:`open` or
    :class:`TextIOWrapper` and have an ``encoding=None`` parameter.
 
-   This function returns *encoding* if it is not ``None`` and ``"locale"`` if
-   *encoding* is ``None``.
+   This function returns *encoding* if it is not ``None``.
+   Otherwise, it returns ``"locale"`` or ``"utf-8"`` depending on
+   :ref:`UTF-8 Mode <utf8-mode>`.
 
    This function emits an :class:`EncodingWarning` if
    :data:`sys.flags.warn_default_encoding <sys.flags>` is true and *encoding*
-   is None. *stacklevel* specifies where the warning is emitted.
+   is ``None``. *stacklevel* specifies where the warning is emitted.
    For example::
 
       def read_text(path, encoding=None):
@@ -217,6 +218,10 @@ High-level Module Interface
    See :ref:`io-text-encoding` for more information.
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.11
+      :func:`text_encoding` returns "utf-8" when UTF-8 mode is enabled and
+      *encoding* is ``None``.
 
 
 .. exception:: BlockingIOError
@@ -943,8 +948,7 @@ Text I/O
    :class:`TextIOBase`.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
-   encoded with.  It defaults to
-   :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`.
+   encoded with.  It defaults to :func:`locale.getencoding()`.
    ``encoding="locale"`` can be used to specify the current locale's encoding
    explicitly. See :ref:`io-text-encoding` for more information.
 

@@ -47,10 +47,13 @@ extern "C" {
 static PyThreadState *_PyGILState_GetThisThreadState(struct _gilstate_runtime_state *gilstate);
 static void _PyThreadState_Delete(PyThreadState *tstate, int check_current);
 
-
+/* Suppress deprecation warning for PyBytesObject.ob_shash */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
 /* We use "initial" if the runtime gets re-used
    (e.g. Py_Finalize() followed by Py_Initialize(). */
 static const _PyRuntimeState initial = _PyRuntimeState_INIT;
+_Py_COMP_DIAG_POP
 
 static int
 alloc_for_runtime(PyThread_type_lock *plock1, PyThread_type_lock *plock2,
@@ -1332,23 +1335,6 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
     HEAD_UNLOCK(runtime);
     return 0;
 }
-
-
-void
-PyThreadState_EnterTracing(PyThreadState *tstate)
-{
-    tstate->tracing++;
-    _PyThreadState_PauseTracing(tstate);
-}
-
-void
-PyThreadState_LeaveTracing(PyThreadState *tstate)
-{
-    tstate->tracing--;
-    _PyThreadState_ResumeTracing(tstate);
-}
-
-
 
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */

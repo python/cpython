@@ -44,8 +44,9 @@ def text_encoding(encoding, stacklevel=2):
     """
     A helper function to choose the text encoding.
 
-    When encoding is not None, just return it.
-    Otherwise, return the default text encoding (i.e. "locale").
+    When encoding is not None, this function returns it.
+    Otherwise, this function returns the default text encoding
+    (i.e. "locale" or "utf-8" depends on UTF-8 mode).
 
     This function emits an EncodingWarning if *encoding* is None and
     sys.flags.warn_default_encoding is true.
@@ -55,7 +56,10 @@ def text_encoding(encoding, stacklevel=2):
     However, please consider using encoding="utf-8" for new APIs.
     """
     if encoding is None:
-        encoding = "locale"
+        if sys.flags.utf8_mode:
+            encoding = "utf-8"
+        else:
+            encoding = "locale"
         if sys.flags.warn_default_encoding:
             import warnings
             warnings.warn("'encoding' argument not specified.",
@@ -1984,7 +1988,7 @@ class TextIOWrapper(TextIOBase):
     r"""Character and line based layer over a BufferedIOBase object, buffer.
 
     encoding gives the name of the encoding that the stream will be
-    decoded or encoded with. It defaults to locale.getpreferredencoding(False).
+    decoded or encoded with. It defaults to locale.getencoding().
 
     errors determines the strictness of encoding and decoding (see the
     codecs.register) and defaults to "strict".
@@ -2017,7 +2021,9 @@ class TextIOWrapper(TextIOBase):
         self._check_newline(newline)
         encoding = text_encoding(encoding)
 
-        if encoding == "locale":
+        if encoding == "locale" and sys.platform == "win32":
+            # On Unix, os.device_encoding() returns "utf-8" instead of locale encoding
+            # in the UTF-8 mode. So we use os.device_encoding() only on Windows.
             try:
                 encoding = os.device_encoding(buffer.fileno()) or "locale"
             except (AttributeError, UnsupportedOperation):
@@ -2030,7 +2036,7 @@ class TextIOWrapper(TextIOBase):
                 # Importing locale may fail if Python is being built
                 encoding = "utf-8"
             else:
-                encoding = locale.getpreferredencoding(False)
+                encoding = locale.getencoding()
 
         if not isinstance(encoding, str):
             raise ValueError("invalid encoding: %r" % encoding)
