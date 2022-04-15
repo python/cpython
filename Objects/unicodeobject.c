@@ -15731,7 +15731,7 @@ unicode_ascii_iter_next(unicodeiterobject *it)
         const void *data = ((void*)(_PyASCIIObject_CAST(seq) + 1));
         Py_UCS1 chr = PyUnicode_READ(PyUnicode_1BYTE_KIND, data, it->it_index++);
         PyObject *item = (PyObject*)&_Py_SINGLETON(strings).ascii[chr];
-        return item;
+        return Py_NewRef(item);
     }
     it->it_seq = NULL;
     Py_DECREF(seq);
