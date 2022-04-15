@@ -8,7 +8,7 @@ from test.support.script_helper import assert_python_ok
 
 def example():
     x = []
-    for i in range(2):
+    for i in range(1):
         x.append(i)
     x = "this is"
     y = "an example"
@@ -27,7 +27,7 @@ class TestLLTrace(unittest.TestCase):
         status, stdout, stderr = assert_python_ok(os_helper.TESTFN)
         self.assertEqual(stderr, b"")
         self.assertEqual(status, 0)
-        return stdout
+        return stdout.decode('utf-8')
 
     def test_lltrace(self):
         stdout = self.run_code("""
@@ -46,16 +46,16 @@ class TestLLTrace(unittest.TestCase):
             del __ltrace__
             dont_trace_2()
         """)
-        self.assertIn(b"GET_ITER", stdout)
-        self.assertIn(b"FOR_ITER", stdout)
-        self.assertIn(b"UNARY_POSITIVE", stdout)
-        self.assertIn(b"POP_TOP", stdout)
-        self.assertNotIn(b"BINARY_OP", stdout)
-        self.assertNotIn(b"UNARY_NEGATIVE", stdout)
+        self.assertIn("GET_ITER", stdout)
+        self.assertIn("FOR_ITER", stdout)
+        self.assertIn("UNARY_POSITIVE", stdout)
+        self.assertIn("POP_TOP", stdout)
+        self.assertNotIn("BINARY_OP", stdout)
+        self.assertNotIn("UNARY_NEGATIVE", stdout)
 
-        self.assertIn(b"'trace_me' in module '__main__'", stdout)
-        self.assertNotIn(b"dont_trace_1", stdout)
-        self.assertNotIn(b"'dont_trace_2' in module", stdout)
+        self.assertIn("'trace_me' in module '__main__'", stdout)
+        self.assertNotIn("dont_trace_1", stdout)
+        self.assertNotIn("'dont_trace_2' in module", stdout)
 
     def test_lltrace_different_module(self):
         stdout = self.run_code("""
@@ -63,13 +63,14 @@ class TestLLTrace(unittest.TestCase):
             test_lltrace.__ltrace__ = 1
             test_lltrace.example()
         """)
-        self.assertIn(b"'example' in module 'test.test_lltrace'", stdout)
-        self.assertIn(b'this is an example', stdout)
+        self.assertIn("'example' in module 'test.test_lltrace'", stdout)
+        self.assertIn('LOAD_CONST', stdout)
+        self.assertIn('this is an example', stdout)
 
         # check that offsets match the output of dis.dis()
         instr_map = {i.offset: i for i in dis.get_instructions(example)}
         for line in stdout.splitlines():
-            offset, colon, opname_oparg = line.decode("utf-8").partition(":")
+            offset, colon, opname_oparg = line.partition(":")
             if not colon:
                 continue
             offset = int(offset)
@@ -97,7 +98,7 @@ class TestLLTrace(unittest.TestCase):
             console.push('a[0] = 1')
             print('unreachable if bug exists')
         """)
-        self.assertIn(b"unreachable if bug exists", stdout)
+        self.assertIn("unreachable if bug exists", stdout)
 
 if __name__ == "__main__":
     unittest.main()

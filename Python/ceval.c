@@ -81,10 +81,7 @@ lltrace_instruction(_PyInterpreterFrame *frame, int opcode, int oparg,
 {
     dump_stack(frame, stack_level);
     const char *opname = _PyOpcode_OpName[opcode];
-    if (opname == NULL) {
-        printf("%d: unknown opcode %d, %d",
-               offset * 2, opcode, oparg);
-    }
+    assert(opname != NULL);
     if (HAS_ARG(opcode)) {
         printf("%d: %s %d\n", offset * 2, opname, oparg);
     }
