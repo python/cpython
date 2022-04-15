@@ -57,10 +57,6 @@ static int lltrace;
 static void
 dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
-    if (Py_EnterRecursiveCall("lltrace") < 0) {
-        PyErr_Clear();
-        return;
-    }
     PyObject **stack_base = _PyFrame_Stackbase(frame);
     PyObject *type, *value, *traceback;
     PyErr_Fetch(&type, &value, &traceback);
@@ -74,7 +70,6 @@ dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
     }
     printf("]\n");
     PyErr_Restore(type, value, traceback);
-    Py_LeaveRecursiveCall();
 }
 
 static void
