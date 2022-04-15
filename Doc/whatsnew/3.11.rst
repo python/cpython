@@ -246,6 +246,10 @@ asyncio
   :meth:`~asyncio.AbstractEventLoop.sock_recvfrom_into`.
   (Contributed by Alex Grönholm in :issue:`46805`.)
 
+* Add :meth:`~asyncio.streams.StreamWriter.start_tls` method for upgrading
+  existing stream-based connections to TLS. (Contributed by Ian Good in
+  :issue:`34975`.)
+
 fractions
 ---------
 
