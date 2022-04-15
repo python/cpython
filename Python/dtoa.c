@@ -72,7 +72,7 @@
 /* Please send bug reports for the original dtoa.c code to David M. Gay (dmg
  * at acm dot org, with " at " changed at "@" and " dot " changed to ".").
  * Please report bugs for this modified version using the Python issue tracker
- * (https://github.com/python/cpython/issues). */
+ * (https://devguide.python.org/tracker/). */
 
 /* On a machine with IEEE extended-precision registers, it is
  * necessary to specify double-precision (53-bit) rounding precision
