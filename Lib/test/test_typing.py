@@ -929,22 +929,6 @@ class TypeVarTuplePicklingTests(BaseTestCase):
         self.assertEqual(unpacked1, unpacked2)
 
     @all_pickle_protocols
-    def test_pickling_then_unpickling_variadic_class_results_in_equality(
-            self, proto
-    ):
-        global T, Ts, A1, B1  # See explanation at start of class.
-        T = TypeVar('T')
-        Ts = TypeVarTuple('Ts')
-
-        class A1(Generic[Unpack[Ts]]): pass
-        A2 = pickle.loads(pickle.dumps(A1, proto))
-        self.assertEqual(A1, A2)
-
-        class B1(Generic[T, Unpack[Ts]]): pass
-        B2 = pickle.loads(pickle.dumps(B1, proto))
-        self.assertEqual(B1, B2)
-
-    @all_pickle_protocols
     def test_pickling_then_unpickling_tuple_with_typevartuple_equality(
             self, proto
     ):
