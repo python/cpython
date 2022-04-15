@@ -57,6 +57,22 @@ _equivalences = (
     (0x3c2, 0x3c3), # ςσ
     # GREEK SMALL LETTER PHI, GREEK PHI SYMBOL
     (0x3c6, 0x3d5), # φϕ
+    # CYRILLIC SMALL LETTER VE, CYRILLIC SMALL LETTER ROUNDED VE
+    (0x432, 0x1c80), # вᲀ
+    # CYRILLIC SMALL LETTER DE, CYRILLIC SMALL LETTER LONG-LEGGED DE
+    (0x434, 0x1c81), # дᲁ
+    # CYRILLIC SMALL LETTER O, CYRILLIC SMALL LETTER NARROW O
+    (0x43e, 0x1c82), # оᲂ
+    # CYRILLIC SMALL LETTER ES, CYRILLIC SMALL LETTER WIDE ES
+    (0x441, 0x1c83), # сᲃ
+    # CYRILLIC SMALL LETTER TE, CYRILLIC SMALL LETTER TALL TE, CYRILLIC SMALL LETTER THREE-LEGGED TE
+    (0x442, 0x1c84, 0x1c85), # тᲄᲅ
+    # CYRILLIC SMALL LETTER HARD SIGN, CYRILLIC SMALL LETTER TALL HARD SIGN
+    (0x44a, 0x1c86), # ъᲆ
+    # CYRILLIC SMALL LETTER YAT, CYRILLIC SMALL LETTER TALL YAT
+    (0x463, 0x1c87), # ѣᲇ
+    # CYRILLIC SMALL LETTER UNBLENDED UK, CYRILLIC SMALL LETTER MONOGRAPH UK
+    (0x1c88, 0xa64b), # ᲈꙋ
     # LATIN SMALL LETTER S WITH DOT ABOVE, LATIN SMALL LETTER LONG S WITH DOT ABOVE
     (0x1e61, 0x1e9b), # ṡẛ
     # LATIN SMALL LIGATURE LONG S T, LATIN SMALL LIGATURE ST
@@ -339,11 +355,20 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
                     charmap += b'\0' * 0xff00
                     continue
                 # Character set contains non-BMP character codes.
+                # For range, all BMP characters in the range are already
+                # proceeded.
                 if fixup:
                     hascased = True
-                    # There are only two ranges of cased non-BMP characters:
-                    # 10400-1044F (Deseret) and 118A0-118DF (Warang Citi),
-                    # and for both ranges RANGE_UNI_IGNORE works.
+                    # For now, IN_IGNORE and RANGE_UNI_IGNORE work for all
+                    # non-BMP characters, because for all non-BMP characters:
+                    #
+                    # 1) c.upper() and c.lower() are non-BMP characters.
+                    # 2) c.lower() == c2.lower() if and only if c equals
+                    #    (ignoring case) to c2.
+                    # 3) c.lower().upper() == c.upper().
+                    # 4) c.lower() in the range R or c.upper() in the range R
+                    #    if and only if c equals (ignoring case) to any
+                    #    character in the range R.
                     if op is RANGE:
                         op = RANGE_UNI_IGNORE
                 tail.append((op, av))
