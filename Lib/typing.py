@@ -993,7 +993,7 @@ class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
 
     For more details, see PEP 646.
 
-    Note that only type variables tuples defined in global scope can be pickled.
+    Note that only TypeVarTuples defined in global scope can be pickled.
     """
 
     def __init__(self, name):
