@@ -18,7 +18,7 @@ A description of what the security vulnerability is.
 <!-- Include as many relevant details about your environment as possible -->
 
 - CPython versions tested on:
-- Operating system and version:
+- Operating system and architecture:
 
 <!--
 You can freely edit this text. Remove any lines you believe are unnecessary.
