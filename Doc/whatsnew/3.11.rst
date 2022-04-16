@@ -882,6 +882,7 @@ Deprecated
   * :mod:`crypt`
   * :mod:`imghdr`
   * :mod:`msilib`
+  * :mod:`nis`
   * :mod:`nntplib`
 
   (Contributed by Brett Cannon in :issue:`47061`.)
