@@ -1,2 +1,0 @@
-Fixed an issue where the :mod:`zoneinfo` module and its tests were not
-included when Python is installed with ``make``.

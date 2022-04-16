@@ -58,6 +58,7 @@ class TestCase(unittest.TestCase):
         scheduler.run()
         self.assertEqual(l, [0.01, 0.02, 0.03, 0.04, 0.05])
 
+    @threading_helper.requires_working_threading()
     def test_enter_concurrent(self):
         q = queue.Queue()
         fun = q.put
@@ -111,6 +112,7 @@ class TestCase(unittest.TestCase):
         scheduler.run()
         self.assertEqual(l, [0.02, 0.03, 0.04])
 
+    @threading_helper.requires_working_threading()
     def test_cancel_concurrent(self):
         q = queue.Queue()
         fun = q.put
@@ -141,6 +143,17 @@ class TestCase(unittest.TestCase):
         threading_helper.join_thread(t)
         self.assertTrue(q.empty())
         self.assertEqual(timer.time(), 4)
+
+    def test_cancel_correct_event(self):
+        # bpo-19270
+        events = []
+        scheduler = sched.scheduler()
+        scheduler.enterabs(1, 1, events.append, ("a",))
+        b = scheduler.enterabs(1, 1, events.append, ("b",))
+        scheduler.enterabs(1, 1, events.append, ("c",))
+        scheduler.cancel(b)
+        scheduler.run()
+        self.assertEqual(events, ["a", "c"])
 
     def test_empty(self):
         l = []

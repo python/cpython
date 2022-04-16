@@ -590,6 +590,24 @@ exit:
 
 #endif /* defined(_DEBUG) */
 
+PyDoc_STRVAR(msvcrt_GetErrorMode__doc__,
+"GetErrorMode($module, /)\n"
+"--\n"
+"\n"
+"Wrapper around GetErrorMode.");
+
+#define MSVCRT_GETERRORMODE_METHODDEF    \
+    {"GetErrorMode", (PyCFunction)msvcrt_GetErrorMode, METH_NOARGS, msvcrt_GetErrorMode__doc__},
+
+static PyObject *
+msvcrt_GetErrorMode_impl(PyObject *module);
+
+static PyObject *
+msvcrt_GetErrorMode(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return msvcrt_GetErrorMode_impl(module);
+}
+
 PyDoc_STRVAR(msvcrt_SetErrorMode__doc__,
 "SetErrorMode($module, mode, /)\n"
 "--\n"
@@ -629,4 +647,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=ab3b5ce5c1447f0e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=20dfbc768edce7c0 input=a9049054013a1b77]*/

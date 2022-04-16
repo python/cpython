@@ -247,41 +247,6 @@ The :mod:`test.support` module defines the following constants:
    Path for shell if not on Windows; otherwise ``None``.
 
 
-.. data:: FS_NONASCII
-
-   A non-ASCII character encodable by :func:`os.fsencode`.
-
-
-.. data:: TESTFN
-
-   Set to a name that is safe to use as the name of a temporary file.  Any
-   temporary file that is created should be closed and unlinked (removed).
-
-
-.. data:: TESTFN_UNICODE
-
-    Set to a non-ASCII name for a temporary file.
-
-
-.. data:: TESTFN_UNENCODABLE
-
-   Set to a filename (str type) that should not be able to be encoded by file
-   system encoding in strict mode.  It may be ``None`` if it's not possible to
-   generate such a filename.
-
-
-.. data:: TESTFN_UNDECODABLE
-
-   Set to a filename (bytes type) that should not be able to be decoded by
-   file system encoding in strict mode.  It may be ``None`` if it's not
-   possible to generate such a filename.
-
-
-.. data:: TESTFN_NONASCII
-
-   Set to a filename containing the :data:`FS_NONASCII` character.
-
-
 .. data:: LOOPBACK_TIMEOUT
 
    Timeout in seconds for tests using a network server listening on the network
@@ -302,10 +267,10 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: INTERNET_TIMEOUT
 
-   Timeout in seconds for network requests going to the Internet.
+   Timeout in seconds for network requests going to the internet.
 
    The timeout is short enough to prevent a test to wait for too long if the
-   Internet request is blocked for whatever reason.
+   internet request is blocked for whatever reason.
 
    Usually, a timeout using :data:`INTERNET_TIMEOUT` should not mark a test as
    failed, but skip the test instead: see
@@ -341,11 +306,6 @@ The :mod:`test.support` module defines the following constants:
 
    See also :data:`LOOPBACK_TIMEOUT`, :data:`INTERNET_TIMEOUT` and
    :data:`SHORT_TIMEOUT`.
-
-
-.. data:: SAVEDCWD
-
-   Set to :func:`os.getcwd`.
 
 
 .. data:: PGO
@@ -438,44 +398,6 @@ The :mod:`test.support` module defines the following constants:
 
 The :mod:`test.support` module defines the following functions:
 
-.. function:: forget(module_name)
-
-   Remove the module named *module_name* from ``sys.modules`` and delete any
-   byte-compiled files of the module.
-
-
-.. function:: unload(name)
-
-   Delete *name* from ``sys.modules``.
-
-
-.. function:: unlink(filename)
-
-   Call :func:`os.unlink` on *filename*.  On Windows platforms, this is
-   wrapped with a wait loop that checks for the existence fo the file.
-
-
-.. function:: rmdir(filename)
-
-   Call :func:`os.rmdir` on *filename*.  On Windows platforms, this is
-   wrapped with a wait loop that checks for the existence of the file.
-
-
-.. function:: rmtree(path)
-
-   Call :func:`shutil.rmtree` on *path* or call :func:`os.lstat` and
-   :func:`os.rmdir` to remove a path and its contents.  On Windows platforms,
-   this is wrapped with a wait loop that checks for the existence of the files.
-
-
-.. function:: make_legacy_pyc(source)
-
-   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
-   system path to the legacy pyc file.  The *source* value is the file system
-   path to the source file.  It does not need to exist, however the PEP
-   3147/488 pyc file must exist.
-
-
 .. function:: is_resource_enabled(resource)
 
    Return ``True`` if *resource* is enabled and available. The list of
@@ -521,16 +443,6 @@ The :mod:`test.support` module defines the following functions:
    rather than looking directly in the path directories.
 
 
-.. function:: create_empty_file(filename)
-
-   Create an empty file with *filename*.  If it already exists, truncate it.
-
-
-.. function:: fd_count()
-
-   Count the number of open file descriptors.
-
-
 .. function:: match_test(test)
 
    Match *test* to patterns set in :func:`set_match_tests`.
@@ -541,7 +453,7 @@ The :mod:`test.support` module defines the following functions:
    Define match test with regular expression *patterns*.
 
 
-.. function:: run_unittest(\*classes)
+.. function:: run_unittest(*classes)
 
    Execute :class:`unittest.TestCase` subclasses passed to the function. The
    function scans the classes for methods starting with the prefix ``test_``
@@ -583,79 +495,6 @@ The :mod:`test.support` module defines the following functions:
       check_impl_detail()               # Only on CPython (default).
       check_impl_detail(jython=True)    # Only on Jython.
       check_impl_detail(cpython=False)  # Everywhere except CPython.
-
-
-.. function:: check_warnings(\*filters, quiet=True)
-
-   A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
-   easier to test that a warning was correctly raised.  It is approximately
-   equivalent to calling ``warnings.catch_warnings(record=True)`` with
-   :meth:`warnings.simplefilter` set to ``always`` and with the option to
-   automatically validate the results that are recorded.
-
-   ``check_warnings`` accepts 2-tuples of the form ``("message regexp",
-   WarningCategory)`` as positional arguments. If one or more *filters* are
-   provided, or if the optional keyword argument *quiet* is ``False``,
-   it checks to make sure the warnings are as expected:  each specified filter
-   must match at least one of the warnings raised by the enclosed code or the
-   test fails, and if any warnings are raised that do not match any of the
-   specified filters the test fails.  To disable the first of these checks,
-   set *quiet* to ``True``.
-
-   If no arguments are specified, it defaults to::
-
-      check_warnings(("", Warning), quiet=True)
-
-   In this case all warnings are caught and no errors are raised.
-
-   On entry to the context manager, a :class:`WarningRecorder` instance is
-   returned. The underlying warnings list from
-   :func:`~warnings.catch_warnings` is available via the recorder object's
-   :attr:`warnings` attribute.  As a convenience, the attributes of the object
-   representing the most recent warning can also be accessed directly through
-   the recorder object (see example below).  If no warning has been raised,
-   then any of the attributes that would otherwise be expected on an object
-   representing a warning will return ``None``.
-
-   The recorder object also has a :meth:`reset` method, which clears the
-   warnings list.
-
-   The context manager is designed to be used like this::
-
-      with check_warnings(("assertion is always true", SyntaxWarning),
-                          ("", UserWarning)):
-          exec('assert(False, "Hey!")')
-          warnings.warn(UserWarning("Hide me!"))
-
-   In this case if either warning was not raised, or some other warning was
-   raised, :func:`check_warnings` would raise an error.
-
-   When a test needs to look more deeply into the warnings, rather than
-   just checking whether or not they occurred, code like this can be used::
-
-      with check_warnings(quiet=True) as w:
-          warnings.warn("foo")
-          assert str(w.args[0]) == "foo"
-          warnings.warn("bar")
-          assert str(w.args[0]) == "bar"
-          assert str(w.warnings[0].args[0]) == "foo"
-          assert str(w.warnings[1].args[0]) == "bar"
-          w.reset()
-          assert len(w.warnings) == 0
-
-
-   Here all warnings will be caught, and the test code tests the captured
-   warnings directly.
-
-   .. versionchanged:: 3.2
-      New optional arguments *filters* and *quiet*.
-
-
-.. function:: check_no_resource_warning(testcase)
-
-   Context manager to check that no :exc:`ResourceWarning` was raised.  You
-   must remove the object which may emit :exc:`ResourceWarning` before the
-   end of the context manager.
 
 
 .. function:: set_memlimit(limit)
@@ -713,47 +552,6 @@ The :mod:`test.support` module defines the following functions:
       self.assertEqual(captured, "hello")
 
 
-.. function:: temp_dir(path=None, quiet=False)
-
-   A context manager that creates a temporary directory at *path* and
-   yields the directory.
-
-   If *path* is ``None``, the temporary directory is created using
-   :func:`tempfile.mkdtemp`.  If *quiet* is ``False``, the context manager
-   raises an exception on error.  Otherwise, if *path* is specified and
-   cannot be created, only a warning is issued.
-
-
-.. function:: change_cwd(path, quiet=False)
-
-   A context manager that temporarily changes the current working
-   directory to *path* and yields the directory.
-
-   If *quiet* is ``False``, the context manager raises an exception
-   on error.  Otherwise, it issues only a warning and keeps the current
-   working directory the same.
-
-
-.. function:: temp_cwd(name='tempcwd', quiet=False)
-
-   A context manager that temporarily creates a new directory and
-   changes the current working directory (CWD).
-
-   The context manager creates a temporary directory in the current
-   directory with name *name* before temporarily changing the current
-   working directory.  If *name* is ``None``, the temporary directory is
-   created using :func:`tempfile.mkdtemp`.
-
-   If *quiet* is ``False`` and it is not possible to create or change
-   the CWD, an error is raised.  Otherwise, only a warning is raised
-   and the original CWD is used.
-
-
-.. function:: temp_umask(umask)
-
-   A context manager that temporarily sets the process umask.
-
-
 .. function:: disable_faulthandler()
 
    A context manager that replaces ``sys.stderr`` with ``sys.__stderr__``.
@@ -809,6 +607,15 @@ The :mod:`test.support` module defines the following functions:
    target of the "as" clause, if there is one.
 
 
+.. function:: flush_std_streams()
+
+   Call the ``flush()`` method on :data:`sys.stdout` and then on
+   :data:`sys.stderr`. It can be used to make sure that the logs order is
+   consistent before writing into stderr.
+
+   .. versionadded:: 3.11
+
+
 .. function:: print_warning(msg)
 
    Print a warning into :data:`sys.__stderr__`. Format the message as:
@@ -851,28 +658,6 @@ The :mod:`test.support` module defines the following functions:
    header size equals *size*.
 
 
-.. function:: can_symlink()
-
-   Return ``True`` if the OS supports symbolic links, ``False``
-   otherwise.
-
-
-.. function:: can_xattr()
-
-   Return ``True`` if the OS supports xattr, ``False``
-   otherwise.
-
-
-.. decorator:: skip_unless_symlink
-
-   A decorator for running tests that require support for symbolic links.
-
-
-.. decorator:: skip_unless_xattr
-
-   A decorator for running tests that require support for xattr.
-
-
 .. decorator:: anticipate_failure(condition)
 
    A decorator to conditionally mark tests with
@@ -908,8 +693,8 @@ The :mod:`test.support` module defines the following functions:
 
 .. decorator:: requires_mac_version(*min_version)
 
-   Decorator for the minimum version when running test on Mac OS X.  If the
-   MAC OS X version is less than the minimum, raise :exc:`unittest.SkipTest`.
+   Decorator for the minimum version when running test on macOS.  If the
+   macOS version is less than the minimum, raise :exc:`unittest.SkipTest`.
 
 
 .. decorator:: requires_IEEE_754
@@ -992,12 +777,6 @@ The :mod:`test.support` module defines the following functions:
    wrap.
 
 
-.. function:: make_bad_fd()
-
-   Create an invalid file descriptor by opening and closing a temporary file,
-   and returning its descriptor.
-
-
 .. function:: check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=None)
 
    Test for syntax errors in *statement* by attempting to compile *statement*.
@@ -1008,84 +787,9 @@ The :mod:`test.support` module defines the following functions:
    the offset of the exception.
 
 
-.. function:: check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=None)
-
-   Test for syntax warning in *statement* by attempting to compile *statement*.
-   Test also that the :exc:`SyntaxWarning` is emitted only once, and that it
-   will be converted to a :exc:`SyntaxError` when turned into error.
-   *testcase* is the :mod:`unittest` instance for the test.  *errtext* is the
-   regular expression which should match the string representation of the
-   emitted :exc:`SyntaxWarning` and raised :exc:`SyntaxError`.  If *lineno*
-   is not ``None``, compares to the line of the warning and exception.
-   If *offset* is not ``None``, compares to the offset of the exception.
-
-   .. versionadded:: 3.8
-
-
 .. function:: open_urlresource(url, *args, **kw)
 
    Open *url*.  If open fails, raises :exc:`TestFailed`.
-
-
-.. function:: import_module(name, deprecated=False, *, required_on())
-
-   This function imports and returns the named module. Unlike a normal
-   import, this function raises :exc:`unittest.SkipTest` if the module
-   cannot be imported.
-
-   Module and package deprecation messages are suppressed during this import
-   if *deprecated* is ``True``.  If a module is required on a platform but
-   optional for others, set *required_on* to an iterable of platform prefixes
-   which will be compared against :data:`sys.platform`.
-
-   .. versionadded:: 3.1
-
-
-.. function:: import_fresh_module(name, fresh=(), blocked=(), deprecated=False)
-
-   This function imports and returns a fresh copy of the named Python module
-   by removing the named module from ``sys.modules`` before doing the import.
-   Note that unlike :func:`reload`, the original module is not affected by
-   this operation.
-
-   *fresh* is an iterable of additional module names that are also removed
-   from the ``sys.modules`` cache before doing the import.
-
-   *blocked* is an iterable of module names that are replaced with ``None``
-   in the module cache during the import to ensure that attempts to import
-   them raise :exc:`ImportError`.
-
-   The named module and any modules named in the *fresh* and *blocked*
-   parameters are saved before starting the import and then reinserted into
-   ``sys.modules`` when the fresh import is complete.
-
-   Module and package deprecation messages are suppressed during this import
-   if *deprecated* is ``True``.
-
-   This function will raise :exc:`ImportError` if the named module cannot be
-   imported.
-
-   Example use::
-
-      # Get copies of the warnings module for testing without affecting the
-      # version being used by the rest of the test suite. One copy uses the
-      # C implementation, the other is forced to use the pure Python fallback
-      # implementation
-      py_warnings = import_fresh_module('warnings', blocked=['_warnings'])
-      c_warnings = import_fresh_module('warnings', fresh=['_warnings'])
-
-   .. versionadded:: 3.1
-
-
-.. function:: modules_setup()
-
-   Return a copy of :data:`sys.modules`.
-
-
-.. function:: modules_cleanup(oldmodules)
-
-   Remove modules except for *oldmodules* and ``encodings`` in order to
-   preserve internal cache.
 
 
 .. function:: reap_children()
@@ -1144,11 +848,6 @@ The :mod:`test.support` module defines the following functions:
           return load_package_tests(os.path.dirname(__file__), *args)
 
 
-.. function:: fs_is_case_insensitive(directory)
-
-   Return ``True`` if the file system for *directory* is case-insensitive.
-
-
 .. function:: detect_api_mismatch(ref_api, other_api, *, ignore=())
 
    Returns the set of attributes, functions or methods of *ref_api* not
@@ -1188,7 +887,7 @@ The :mod:`test.support` module defines the following functions:
    missing.
 
 
-.. function:: check__all__(test_case, module, name_of_module=None, extra=(), blacklist=())
+.. function:: check__all__(test_case, module, name_of_module=None, extra=(), not_exported=())
 
    Assert that the ``__all__`` variable of *module* contains all public names.
 
@@ -1205,8 +904,8 @@ The :mod:`test.support` module defines the following functions:
    detected as "public", like objects without a proper ``__module__``
    attribute. If provided, it will be added to the automatically detected ones.
 
-   The *blacklist* argument can be a set of names that must not be treated as part of
-   the public API even though their names indicate otherwise.
+   The *not_exported* argument can be a set of names that must not be treated
+   as part of the public API even though their names indicate otherwise.
 
    Example use::
 
@@ -1222,45 +921,30 @@ The :mod:`test.support` module defines the following functions:
       class OtherTestCase(unittest.TestCase):
           def test__all__(self):
               extra = {'BAR_CONST', 'FOO_CONST'}
-              blacklist = {'baz'}  # Undocumented name.
+              not_exported = {'baz'}  # Undocumented name.
               # bar imports part of its API from _bar.
               support.check__all__(self, bar, ('bar', '_bar'),
-                                   extra=extra, blacklist=blacklist)
+                                   extra=extra, not_exported=not_exported)
 
    .. versionadded:: 3.6
 
+.. function:: skip_if_broken_multiprocessing_synchronize()
+
+   Skip tests if the :mod:`multiprocessing.synchronize` module is missing, if
+   there is no available semaphore implementation, or if creating a lock raises
+   an :exc:`OSError`.
+
+   .. versionadded:: 3.10
+
+
+.. function:: check_disallow_instantiation(test_case, tp, *args, **kwds)
+
+   Assert that type *tp* cannot be instantiated using *args* and *kwds*.
+
+   .. versionadded:: 3.10
+
 
 The :mod:`test.support` module defines the following classes:
-
-.. class:: TransientResource(exc, **kwargs)
-
-   Instances are a context manager that raises :exc:`ResourceDenied` if the
-   specified exception type is raised.  Any keyword arguments are treated as
-   attribute/value pairs to be compared against any exception raised within the
-   :keyword:`with` statement.  Only if all pairs match properly against
-   attributes on the exception is :exc:`ResourceDenied` raised.
-
-
-.. class:: EnvironmentVarGuard()
-
-   Class used to temporarily set or unset environment variables.  Instances can
-   be used as a context manager and have a complete dictionary interface for
-   querying/modifying the underlying ``os.environ``. After exit from the
-   context manager all changes to environment variables done through this
-   instance will be rolled back.
-
-   .. versionchanged:: 3.1
-      Added dictionary interface.
-
-.. method:: EnvironmentVarGuard.set(envvar, value)
-
-   Temporarily set the environment variable ``envvar`` to the value of
-   ``value``.
-
-
-.. method:: EnvironmentVarGuard.unset(envvar)
-
-   Temporarily unset the environment variable ``envvar``.
 
 
 .. class:: SuppressCrashReport()
@@ -1276,29 +960,6 @@ The :mod:`test.support` module defines the following classes:
    creation.
 
    On both platforms, the old value is restored by :meth:`__exit__`.
-
-
-.. class:: CleanImport(*module_names)
-
-   A context manager to force import to return a new module reference.  This
-   is useful for testing module-level behaviors, such as the emission of a
-   DeprecationWarning on import.  Example usage::
-
-      with CleanImport('foo'):
-          importlib.import_module('foo')  # New reference.
-
-
-.. class:: DirsOnSysPath(*paths)
-
-   A context manager to temporarily add directories to sys.path.
-
-   This makes a copy of :data:`sys.path`, appends any directories given
-   as positional arguments, then reverts :data:`sys.path` to the copied
-   settings when the context ends.
-
-   Note that *all* :data:`sys.path` modifications in the body of the
-   context manager, including replacement of the object,
-   will be reverted at the end of the block.
 
 
 .. class:: SaveSignals()
@@ -1319,24 +980,11 @@ The :mod:`test.support` module defines the following classes:
       Try to match a single stored value (*dv*) with a supplied value (*v*).
 
 
-.. class:: WarningsRecorder()
-
-   Class used to record warnings for unit tests. See documentation of
-   :func:`check_warnings` above for more details.
-
-
 .. class:: BasicTestRunner()
 
    .. method:: run(test)
 
       Run *test* and return the result.
-
-
-.. class:: FakePath(path)
-
-   Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
-   method which just returns the *path* argument.  If *path* is an exception,
-   it will be raised in :meth:`!__fspath__`.
 
 
 :mod:`test.support.socket_helper` --- Utilities for socket tests
@@ -1537,6 +1185,8 @@ script execution tests.
 The :mod:`test.support.bytecode_helper` module provides support for testing
 and inspecting bytecode generation.
 
+.. versionadded:: 3.9
+
 The module defines the following class:
 
 .. class:: BytecodeTestCase(unittest.TestCase)
@@ -1608,7 +1258,7 @@ The :mod:`test.support.threading_helper` module provides support for threading t
    Context manager catching :class:`threading.Thread` exception using
    :func:`threading.excepthook`.
 
-   Attributes set when an exception is catched:
+   Attributes set when an exception is caught:
 
    * ``exc_type``
    * ``exc_value``
@@ -1634,3 +1284,405 @@ The :mod:`test.support.threading_helper` module provides support for threading t
        # (to avoid reference cycles)
 
    .. versionadded:: 3.8
+
+
+:mod:`test.support.os_helper` --- Utilities for os tests
+========================================================================
+
+.. module:: test.support.os_helper
+   :synopsis: Support for os tests.
+
+The :mod:`test.support.os_helper` module provides support for os tests.
+
+.. versionadded:: 3.10
+
+
+.. data:: FS_NONASCII
+
+   A non-ASCII character encodable by :func:`os.fsencode`.
+
+
+.. data:: SAVEDCWD
+
+   Set to :func:`os.getcwd`.
+
+
+.. data:: TESTFN
+
+   Set to a name that is safe to use as the name of a temporary file.  Any
+   temporary file that is created should be closed and unlinked (removed).
+
+
+.. data:: TESTFN_NONASCII
+
+   Set to a filename containing the :data:`FS_NONASCII` character.
+
+
+.. data:: TESTFN_UNENCODABLE
+
+   Set to a filename (str type) that should not be able to be encoded by file
+   system encoding in strict mode.  It may be ``None`` if it's not possible to
+   generate such a filename.
+
+
+.. data:: TESTFN_UNDECODABLE
+
+   Set to a filename (bytes type) that should not be able to be decoded by
+   file system encoding in strict mode.  It may be ``None`` if it's not
+   possible to generate such a filename.
+
+
+.. data:: TESTFN_UNICODE
+
+    Set to a non-ASCII name for a temporary file.
+
+
+.. class:: EnvironmentVarGuard()
+
+   Class used to temporarily set or unset environment variables.  Instances can
+   be used as a context manager and have a complete dictionary interface for
+   querying/modifying the underlying ``os.environ``. After exit from the
+   context manager all changes to environment variables done through this
+   instance will be rolled back.
+
+   .. versionchanged:: 3.1
+      Added dictionary interface.
+
+
+.. class:: FakePath(path)
+
+   Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
+   method which just returns the *path* argument.  If *path* is an exception,
+   it will be raised in :meth:`!__fspath__`.
+
+
+.. method:: EnvironmentVarGuard.set(envvar, value)
+
+   Temporarily set the environment variable ``envvar`` to the value of
+   ``value``.
+
+
+.. method:: EnvironmentVarGuard.unset(envvar)
+
+   Temporarily unset the environment variable ``envvar``.
+
+
+.. function:: can_symlink()
+
+   Return ``True`` if the OS supports symbolic links, ``False``
+   otherwise.
+
+
+.. function:: can_xattr()
+
+   Return ``True`` if the OS supports xattr, ``False``
+   otherwise.
+
+
+.. function:: change_cwd(path, quiet=False)
+
+   A context manager that temporarily changes the current working
+   directory to *path* and yields the directory.
+
+   If *quiet* is ``False``, the context manager raises an exception
+   on error.  Otherwise, it issues only a warning and keeps the current
+   working directory the same.
+
+
+.. function:: create_empty_file(filename)
+
+   Create an empty file with *filename*.  If it already exists, truncate it.
+
+
+.. function:: fd_count()
+
+   Count the number of open file descriptors.
+
+
+.. function:: fs_is_case_insensitive(directory)
+
+   Return ``True`` if the file system for *directory* is case-insensitive.
+
+
+.. function:: make_bad_fd()
+
+   Create an invalid file descriptor by opening and closing a temporary file,
+   and returning its descriptor.
+
+
+.. function:: rmdir(filename)
+
+   Call :func:`os.rmdir` on *filename*.  On Windows platforms, this is
+   wrapped with a wait loop that checks for the existence of the file.
+
+
+.. function:: rmtree(path)
+
+   Call :func:`shutil.rmtree` on *path* or call :func:`os.lstat` and
+   :func:`os.rmdir` to remove a path and its contents.  On Windows platforms,
+   this is wrapped with a wait loop that checks for the existence of the files.
+
+
+.. decorator:: skip_unless_symlink
+
+   A decorator for running tests that require support for symbolic links.
+
+
+.. decorator:: skip_unless_xattr
+
+   A decorator for running tests that require support for xattr.
+
+
+.. function:: temp_cwd(name='tempcwd', quiet=False)
+
+   A context manager that temporarily creates a new directory and
+   changes the current working directory (CWD).
+
+   The context manager creates a temporary directory in the current
+   directory with name *name* before temporarily changing the current
+   working directory.  If *name* is ``None``, the temporary directory is
+   created using :func:`tempfile.mkdtemp`.
+
+   If *quiet* is ``False`` and it is not possible to create or change
+   the CWD, an error is raised.  Otherwise, only a warning is raised
+   and the original CWD is used.
+
+
+.. function:: temp_dir(path=None, quiet=False)
+
+   A context manager that creates a temporary directory at *path* and
+   yields the directory.
+
+   If *path* is ``None``, the temporary directory is created using
+   :func:`tempfile.mkdtemp`.  If *quiet* is ``False``, the context manager
+   raises an exception on error.  Otherwise, if *path* is specified and
+   cannot be created, only a warning is issued.
+
+
+.. function:: temp_umask(umask)
+
+   A context manager that temporarily sets the process umask.
+
+
+.. function:: unlink(filename)
+
+   Call :func:`os.unlink` on *filename*.  On Windows platforms, this is
+   wrapped with a wait loop that checks for the existence of the file.
+
+
+:mod:`test.support.import_helper` --- Utilities for import tests
+================================================================
+
+.. module:: test.support.import_helper
+   :synopsis: Support for import tests.
+
+The :mod:`test.support.import_helper` module provides support for import tests.
+
+.. versionadded:: 3.10
+
+
+.. function:: forget(module_name)
+
+   Remove the module named *module_name* from ``sys.modules`` and delete any
+   byte-compiled files of the module.
+
+
+.. function:: import_fresh_module(name, fresh=(), blocked=(), deprecated=False)
+
+   This function imports and returns a fresh copy of the named Python module
+   by removing the named module from ``sys.modules`` before doing the import.
+   Note that unlike :func:`reload`, the original module is not affected by
+   this operation.
+
+   *fresh* is an iterable of additional module names that are also removed
+   from the ``sys.modules`` cache before doing the import.
+
+   *blocked* is an iterable of module names that are replaced with ``None``
+   in the module cache during the import to ensure that attempts to import
+   them raise :exc:`ImportError`.
+
+   The named module and any modules named in the *fresh* and *blocked*
+   parameters are saved before starting the import and then reinserted into
+   ``sys.modules`` when the fresh import is complete.
+
+   Module and package deprecation messages are suppressed during this import
+   if *deprecated* is ``True``.
+
+   This function will raise :exc:`ImportError` if the named module cannot be
+   imported.
+
+   Example use::
+
+      # Get copies of the warnings module for testing without affecting the
+      # version being used by the rest of the test suite. One copy uses the
+      # C implementation, the other is forced to use the pure Python fallback
+      # implementation
+      py_warnings = import_fresh_module('warnings', blocked=['_warnings'])
+      c_warnings = import_fresh_module('warnings', fresh=['_warnings'])
+
+   .. versionadded:: 3.1
+
+
+.. function:: import_module(name, deprecated=False, *, required_on())
+
+   This function imports and returns the named module. Unlike a normal
+   import, this function raises :exc:`unittest.SkipTest` if the module
+   cannot be imported.
+
+   Module and package deprecation messages are suppressed during this import
+   if *deprecated* is ``True``.  If a module is required on a platform but
+   optional for others, set *required_on* to an iterable of platform prefixes
+   which will be compared against :data:`sys.platform`.
+
+   .. versionadded:: 3.1
+
+
+.. function:: modules_setup()
+
+   Return a copy of :data:`sys.modules`.
+
+
+.. function:: modules_cleanup(oldmodules)
+
+   Remove modules except for *oldmodules* and ``encodings`` in order to
+   preserve internal cache.
+
+
+.. function:: unload(name)
+
+   Delete *name* from ``sys.modules``.
+
+
+.. function:: make_legacy_pyc(source)
+
+   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
+   system path to the legacy pyc file.  The *source* value is the file system
+   path to the source file.  It does not need to exist, however the PEP
+   3147/488 pyc file must exist.
+
+
+.. class:: CleanImport(*module_names)
+
+   A context manager to force import to return a new module reference.  This
+   is useful for testing module-level behaviors, such as the emission of a
+   DeprecationWarning on import.  Example usage::
+
+      with CleanImport('foo'):
+          importlib.import_module('foo')  # New reference.
+
+
+.. class:: DirsOnSysPath(*paths)
+
+   A context manager to temporarily add directories to sys.path.
+
+   This makes a copy of :data:`sys.path`, appends any directories given
+   as positional arguments, then reverts :data:`sys.path` to the copied
+   settings when the context ends.
+
+   Note that *all* :data:`sys.path` modifications in the body of the
+   context manager, including replacement of the object,
+   will be reverted at the end of the block.
+
+
+:mod:`test.support.warnings_helper` --- Utilities for warnings tests
+====================================================================
+
+.. module:: test.support.warnings_helper
+   :synopsis: Support for warnings tests.
+
+The :mod:`test.support.warnings_helper` module provides support for warnings tests.
+
+.. versionadded:: 3.10
+
+
+.. function:: check_no_resource_warning(testcase)
+
+   Context manager to check that no :exc:`ResourceWarning` was raised.  You
+   must remove the object which may emit :exc:`ResourceWarning` before the
+   end of the context manager.
+
+
+.. function:: check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=None)
+
+   Test for syntax warning in *statement* by attempting to compile *statement*.
+   Test also that the :exc:`SyntaxWarning` is emitted only once, and that it
+   will be converted to a :exc:`SyntaxError` when turned into error.
+   *testcase* is the :mod:`unittest` instance for the test.  *errtext* is the
+   regular expression which should match the string representation of the
+   emitted :exc:`SyntaxWarning` and raised :exc:`SyntaxError`.  If *lineno*
+   is not ``None``, compares to the line of the warning and exception.
+   If *offset* is not ``None``, compares to the offset of the exception.
+
+   .. versionadded:: 3.8
+
+
+.. function:: check_warnings(*filters, quiet=True)
+
+   A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
+   easier to test that a warning was correctly raised.  It is approximately
+   equivalent to calling ``warnings.catch_warnings(record=True)`` with
+   :meth:`warnings.simplefilter` set to ``always`` and with the option to
+   automatically validate the results that are recorded.
+
+   ``check_warnings`` accepts 2-tuples of the form ``("message regexp",
+   WarningCategory)`` as positional arguments. If one or more *filters* are
+   provided, or if the optional keyword argument *quiet* is ``False``,
+   it checks to make sure the warnings are as expected:  each specified filter
+   must match at least one of the warnings raised by the enclosed code or the
+   test fails, and if any warnings are raised that do not match any of the
+   specified filters the test fails.  To disable the first of these checks,
+   set *quiet* to ``True``.
+
+   If no arguments are specified, it defaults to::
+
+      check_warnings(("", Warning), quiet=True)
+
+   In this case all warnings are caught and no errors are raised.
+
+   On entry to the context manager, a :class:`WarningRecorder` instance is
+   returned. The underlying warnings list from
+   :func:`~warnings.catch_warnings` is available via the recorder object's
+   :attr:`warnings` attribute.  As a convenience, the attributes of the object
+   representing the most recent warning can also be accessed directly through
+   the recorder object (see example below).  If no warning has been raised,
+   then any of the attributes that would otherwise be expected on an object
+   representing a warning will return ``None``.
+
+   The recorder object also has a :meth:`reset` method, which clears the
+   warnings list.
+
+   The context manager is designed to be used like this::
+
+      with check_warnings(("assertion is always true", SyntaxWarning),
+                          ("", UserWarning)):
+          exec('assert(False, "Hey!")')
+          warnings.warn(UserWarning("Hide me!"))
+
+   In this case if either warning was not raised, or some other warning was
+   raised, :func:`check_warnings` would raise an error.
+
+   When a test needs to look more deeply into the warnings, rather than
+   just checking whether or not they occurred, code like this can be used::
+
+      with check_warnings(quiet=True) as w:
+          warnings.warn("foo")
+          assert str(w.args[0]) == "foo"
+          warnings.warn("bar")
+          assert str(w.args[0]) == "bar"
+          assert str(w.warnings[0].args[0]) == "foo"
+          assert str(w.warnings[1].args[0]) == "bar"
+          w.reset()
+          assert len(w.warnings) == 0
+
+
+   Here all warnings will be caught, and the test code tests the captured
+   warnings directly.
+
+   .. versionchanged:: 3.2
+      New optional arguments *filters* and *quiet*.
+
+
+.. class:: WarningsRecorder()
+
+   Class used to record warnings for unit tests. See documentation of
+   :func:`check_warnings` above for more details.

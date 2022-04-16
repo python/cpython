@@ -36,7 +36,8 @@ The module defines the following functions:
        Added negative *limit* support.
 
 
-.. function:: print_exception(etype, value, tb, limit=None, file=None, chain=True)
+.. function:: print_exception(exc, /[, value, tb], limit=None, \
+                              file=None, chain=True)
 
    Print exception information and stack trace entries from traceback object
    *tb* to *file*. This differs from :func:`print_tb` in the following
@@ -45,13 +46,17 @@ The module defines the following functions:
    * if *tb* is not ``None``, it prints a header ``Traceback (most recent
      call last):``
 
-   * it prints the exception *etype* and *value* after the stack trace
+   * it prints the exception type and *value* after the stack trace
 
    .. index:: single: ^ (caret); marker
 
    * if *type(value)* is :exc:`SyntaxError` and *value* has the appropriate
      format, it prints the line where the syntax error occurred with a caret
      indicating the approximate position of the error.
+
+   Since Python 3.10, instead of passing *value* and *tb*, an exception object
+   can be passed as the first argument. If *value* and *tb* are provided, the
+   first argument is ignored in order to provide backwards compatibility.
 
    The optional *limit* argument has the same meaning as for :func:`print_tb`.
    If *chain* is true (the default), then chained exceptions (the
@@ -61,6 +66,10 @@ The module defines the following functions:
 
    .. versionchanged:: 3.5
       The *etype* argument is ignored and inferred from the type of *value*.
+
+   .. versionchanged:: 3.10
+      The *etype* parameter has been renamed to *exc* and is now
+      positional-only.
 
 
 .. function:: print_exc(limit=None, file=None, chain=True)
@@ -121,18 +130,26 @@ The module defines the following functions:
    text line is not ``None``.
 
 
-.. function:: format_exception_only(etype, value)
+.. function:: format_exception_only(exc, /[, value])
 
-   Format the exception part of a traceback.  The arguments are the exception
-   type and value such as given by ``sys.last_type`` and ``sys.last_value``.
-   The return value is a list of strings, each ending in a newline.  Normally,
-   the list contains a single string; however, for :exc:`SyntaxError`
-   exceptions, it contains several lines that (when printed) display detailed
-   information about where the syntax error occurred.  The message indicating
-   which exception occurred is the always last string in the list.
+   Format the exception part of a traceback using an exception value such as
+   given by ``sys.last_value``.  The return value is a list of strings, each
+   ending in a newline.  Normally, the list contains a single string; however,
+   for :exc:`SyntaxError` exceptions, it contains several lines that (when
+   printed) display detailed information about where the syntax error occurred.
+   The message indicating which exception occurred is the always last string in
+   the list.
+
+   Since Python 3.10, instead of passing *value*, an exception object
+   can be passed as the first argument.  If *value* is provided, the first
+   argument is ignored in order to provide backwards compatibility.
+
+   .. versionchanged:: 3.10
+      The *etype* parameter has been renamed to *exc* and is now
+      positional-only.
 
 
-.. function:: format_exception(etype, value, tb, limit=None, chain=True)
+.. function:: format_exception(exc, /[, value, tb], limit=None, chain=True)
 
    Format a stack trace and the exception information.  The arguments  have the
    same meaning as the corresponding arguments to :func:`print_exception`.  The
@@ -142,6 +159,10 @@ The module defines the following functions:
 
    .. versionchanged:: 3.5
       The *etype* argument is ignored and inferred from the type of *value*.
+
+   .. versionchanged:: 3.10
+      This function's behavior and signature were modified to match
+      :func:`print_exception`.
 
 
 .. function:: format_exc(limit=None, chain=True)
@@ -191,10 +212,15 @@ The module also defines the following classes:
 :class:`TracebackException` objects are created from actual exceptions to
 capture data for later printing in a lightweight fashion.
 
-.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False)
+.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, compact=False)
 
    Capture an exception for later rendering. *limit*, *lookup_lines* and
    *capture_locals* are as for the :class:`StackSummary` class.
+
+   If *compact* is true, only data that is required by :class:`TracebackException`'s
+   ``format`` method is saved in the class attributes. In particular, the
+   ``__context__`` field is calculated only if ``__cause__`` is ``None`` and
+   ``__suppress_context__`` is false.
 
    Note that when locals are captured, they are also shown in the traceback.
 
@@ -245,6 +271,13 @@ capture data for later printing in a lightweight fashion.
 
       Note that when locals are captured, they are also shown in the traceback.
 
+   .. method::  print(*, file=None, chain=True)
+
+      Print to *file* (default ``sys.stderr``) the exception information returned by
+      :meth:`format`.
+
+      .. versionadded:: 3.11
+
    .. method:: format(*, chain=True)
 
       Format the exception.
@@ -272,6 +305,9 @@ capture data for later printing in a lightweight fashion.
 
       The message indicating which exception occurred is always the last
       string in the output.
+
+   .. versionchanged:: 3.10
+      Added the *compact* parameter.
 
 
 :class:`StackSummary` Objects
@@ -317,13 +353,22 @@ capture data for later printing in a lightweight fashion.
       .. versionchanged:: 3.6
          Long sequences of repeated frames are now abbreviated.
 
+   .. method:: format_frame_summary(frame_summary)
+
+      Returns a string for printing one of the frames involved in the stack.
+      This method is called for each :class:`FrameSummary` object to be
+      printed by :meth:`StackSummary.format`. If it returns ``None``, the
+      frame is omitted from the output.
+
+      .. versionadded:: 3.11
+
 
 :class:`FrameSummary` Objects
 -----------------------------
 
 .. versionadded:: 3.5
 
-:class:`FrameSummary` objects represent a single frame in a traceback.
+A :class:`FrameSummary` object represents a single frame in a traceback.
 
 .. class:: FrameSummary(filename, lineno, name, lookup_line=True, locals=None, line=None)
 
@@ -411,37 +456,42 @@ The output for the example would look similar to this:
    *** print_tb:
      File "<doctest...>", line 10, in <module>
        lumberjack()
+       ^^^^^^^^^^^^
    *** print_exception:
    Traceback (most recent call last):
      File "<doctest...>", line 10, in <module>
        lumberjack()
+       ^^^^^^^^^^^^
      File "<doctest...>", line 4, in lumberjack
        bright_side_of_death()
+       ^^^^^^^^^^^^^^^^^^^^^^
    IndexError: tuple index out of range
    *** print_exc:
    Traceback (most recent call last):
      File "<doctest...>", line 10, in <module>
        lumberjack()
+       ^^^^^^^^^^^^
      File "<doctest...>", line 4, in lumberjack
        bright_side_of_death()
+       ^^^^^^^^^^^^^^^^^^^^^^
    IndexError: tuple index out of range
    *** format_exc, first and last line:
    Traceback (most recent call last):
    IndexError: tuple index out of range
    *** format_exception:
    ['Traceback (most recent call last):\n',
-    '  File "<doctest...>", line 10, in <module>\n    lumberjack()\n',
-    '  File "<doctest...>", line 4, in lumberjack\n    bright_side_of_death()\n',
-    '  File "<doctest...>", line 7, in bright_side_of_death\n    return tuple()[0]\n',
+    '  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n    ^^^^^^^^^^^^\n',
+    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_death()\n    ^^^^^^^^^^^^^^^^^^^^^^\n',
+    '  File "<doctest default[0]>", line 7, in bright_side_of_death\n    return tuple()[0]\n           ~~~~~~~^^^\n',
     'IndexError: tuple index out of range\n']
    *** extract_tb:
    [<FrameSummary file <doctest...>, line 10 in <module>>,
     <FrameSummary file <doctest...>, line 4 in lumberjack>,
     <FrameSummary file <doctest...>, line 7 in bright_side_of_death>]
    *** format_tb:
-   ['  File "<doctest...>", line 10, in <module>\n    lumberjack()\n',
-    '  File "<doctest...>", line 4, in lumberjack\n    bright_side_of_death()\n',
-    '  File "<doctest...>", line 7, in bright_side_of_death\n    return tuple()[0]\n']
+   ['  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n    ^^^^^^^^^^^^\n',
+    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_death()\n    ^^^^^^^^^^^^^^^^^^^^^^\n',
+    '  File "<doctest default[0]>", line 7, in bright_side_of_death\n    return tuple()[0]\n           ~~~~~~~^^^\n']
    *** tb_lineno: 10
 
 

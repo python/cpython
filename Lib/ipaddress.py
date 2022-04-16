@@ -16,6 +16,7 @@ import functools
 IPV4LENGTH = 32
 IPV6LENGTH = 128
 
+
 class AddressValueError(ValueError):
     """A Value Error related to the address."""
 
@@ -134,7 +135,7 @@ def v4_int_to_packed(address):
 
     """
     try:
-        return address.to_bytes(4, 'big')
+        return address.to_bytes(4)  # big endian
     except OverflowError:
         raise ValueError("Address negative or too large for IPv4")
 
@@ -150,7 +151,7 @@ def v6_int_to_packed(address):
 
     """
     try:
-        return address.to_bytes(16, 'big')
+        return address.to_bytes(16)  # big endian
     except OverflowError:
         raise ValueError("Address negative or too large for IPv6")
 
@@ -1214,7 +1215,7 @@ class _BaseV4:
         """
         if not octet_str:
             raise ValueError("Empty octet not permitted")
-        # Whitelist the characters, since int() allows a lot of bizarre stuff.
+        # Reject non-ASCII digits.
         if not (octet_str.isascii() and octet_str.isdigit()):
             msg = "Only decimal digits permitted in %r"
             raise ValueError(msg % octet_str)
@@ -1222,6 +1223,11 @@ class _BaseV4:
         # is likely to be more informative for the user
         if len(octet_str) > 3:
             msg = "At most 3 characters permitted in %r"
+            raise ValueError(msg % octet_str)
+        # Handle leading zeros as strict as glibc's inet_pton()
+        # See security bug bpo-36384
+        if octet_str != '0' and octet_str[0] == '0':
+            msg = "Leading zeros are not permitted in %r"
             raise ValueError(msg % octet_str)
         # Convert to integer (we know digits are legal)
         octet_int = int(octet_str, 10)
@@ -1291,7 +1297,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
         # Constructing from a packed address
         if isinstance(address, bytes):
             self._check_packed_address(address, 4)
-            self._ip = int.from_bytes(address, 'big')
+            self._ip = int.from_bytes(address)  # big endian
             return
 
         # Assume input argument to be string or any object representation
@@ -1420,7 +1426,7 @@ class IPv4Interface(IPv4Address):
             return False
 
     def __hash__(self):
-        return self._ip ^ self._prefixlen ^ int(self.network.network_address)
+        return hash((self._ip, self._prefixlen, int(self.network.network_address)))
 
     __reduce__ = _IPAddressBase.__reduce__
 
@@ -1466,7 +1472,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
             address: A string or integer representing the IP [& network].
               '192.0.2.0/24'
               '192.0.2.0/255.255.255.0'
-              '192.0.0.2/0.0.0.255'
+              '192.0.2.0/0.0.0.255'
               are all functionally the same in IPv4. Similarly,
               '192.0.2.1'
               '192.0.2.1/255.255.255.255'
@@ -1719,7 +1725,7 @@ class _BaseV6:
               [0..FFFF].
 
         """
-        # Whitelist the characters, since int() allows a lot of bizarre stuff.
+        # Reject non-ASCII digits.
         if not cls._HEX_DIGITS.issuperset(hextet_str):
             raise ValueError("Only hex digits permitted in %r" % hextet_str)
         # We do the length check second, since the invalid character error
@@ -1997,9 +2003,13 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
         Returns:
             A boolean, True if the address is reserved per
-            iana-ipv6-special-registry.
+            iana-ipv6-special-registry, or is ipv4_mapped and is
+            reserved in the iana-ipv4-special-registry.
 
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_private
         return any(self in net for net in self._constants._private_networks)
 
     @property
@@ -2120,7 +2130,7 @@ class IPv6Interface(IPv6Address):
             return False
 
     def __hash__(self):
-        return self._ip ^ self._prefixlen ^ int(self.network.network_address)
+        return hash((self._ip, self._prefixlen, int(self.network.network_address)))
 
     __reduce__ = _IPAddressBase.__reduce__
 

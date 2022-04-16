@@ -3,33 +3,31 @@
 import argparse
 import pprint
 import sys
-from typing import Set, Dict
+from typing import Dict, Set
 
 from pegen.build import build_parser
 from pegen.grammar import (
     Alt,
     Cut,
     Gather,
-    Grammar,
     GrammarVisitor,
     Group,
-    Leaf,
     Lookahead,
     NamedItem,
     NameLeaf,
     NegativeLookahead,
     Opt,
-    Repeat,
     Repeat0,
     Repeat1,
     Rhs,
     Rule,
     StringLeaf,
-    PositiveLookahead,
 )
+from pegen.parser_generator import compute_nullables
 
 argparser = argparse.ArgumentParser(
-    prog="calculate_first_sets", description="Calculate the first sets of a grammar",
+    prog="calculate_first_sets",
+    description="Calculate the first sets of a grammar",
 )
 argparser.add_argument("grammar_file", help="The grammar file")
 
@@ -37,8 +35,7 @@ argparser.add_argument("grammar_file", help="The grammar file")
 class FirstSetCalculator(GrammarVisitor):
     def __init__(self, rules: Dict[str, Rule]) -> None:
         self.rules = rules
-        for rule in rules.values():
-            rule.nullable_visit(rules)
+        self.nullables = compute_nullables(rules)
         self.first_sets: Dict[str, Set[str]] = dict()
         self.in_process: Set[str] = set()
 
@@ -59,7 +56,7 @@ class FirstSetCalculator(GrammarVisitor):
                 result -= to_remove
 
             # If the set of new terminals can start with the empty string,
-            # it means that the item is completelly nullable and we should
+            # it means that the item is completely nullable and we should
             # also considering at least the next item in case the current
             # one fails to parse.
 
@@ -128,7 +125,7 @@ class FirstSetCalculator(GrammarVisitor):
         elif item.name not in self.first_sets:
             self.in_process.add(item.name)
             terminals = self.visit(item.rhs)
-            if item.nullable:
+            if item in self.nullables:
                 terminals.add("")
             self.first_sets[item.name] = terminals
             self.in_process.remove(item.name)

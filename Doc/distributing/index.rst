@@ -31,7 +31,7 @@ installing other Python projects, refer to the
 Key terms
 =========
 
-* the `Python Packaging Index <https://pypi.org>`__ is a public
+* the `Python Package Index <https://pypi.org>`__ is a public
   repository of open source licensed packages made available for use by
   other Python users
 * the `Python Packaging Authority
@@ -101,7 +101,7 @@ by invoking the ``pip`` module at the command line::
 
 .. note::
 
-   For POSIX users (including Mac OS X and Linux users), these instructions
+   For POSIX users (including macOS and Linux users), these instructions
    assume the use of a :term:`virtual environment`.
 
    For Windows users, these instructions assume that the option to
@@ -127,14 +127,17 @@ involved in creating and publishing a project:
 
 * `Project structure`_
 * `Building and packaging the project`_
-* `Uploading the project to the Python Packaging Index`_
+* `Uploading the project to the Python Package Index`_
+* `The .pypirc file`_
 
 .. _Project structure: \
-    https://packaging.python.org/tutorials/distributing-packages/
+    https://packaging.python.org/tutorials/packaging-projects/#packaging-python-projects
 .. _Building and packaging the project: \
-   https://packaging.python.org/tutorials/distributing-packages/#packaging-your-project
-.. _Uploading the project to the Python Packaging Index: \
-   https://packaging.python.org/tutorials/distributing-packages/#uploading-your-project-to-pypi
+   https://packaging.python.org/tutorials/packaging-projects/#creating-the-package-files
+.. _Uploading the project to the Python Package Index: \
+   https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives
+.. _The .pypirc file: \
+   https://packaging.python.org/specifications/pypirc/
 
 
 How do I...?
@@ -147,7 +150,7 @@ These are quick answers or links for some common tasks.
 
 This isn't an easy topic, but here are a few tips:
 
-* check the Python Packaging Index to see if the name is already in use
+* check the Python Package Index to see if the name is already in use
 * check popular hosting sites like GitHub, Bitbucket, etc to see if there
   is already a project with that name
 * check what comes up in a web search for the name you're considering

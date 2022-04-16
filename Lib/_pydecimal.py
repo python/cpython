@@ -951,7 +951,7 @@ class Decimal(object):
             if self.is_snan():
                 raise TypeError('Cannot hash a signaling NaN value.')
             elif self.is_nan():
-                return _PyHASH_NAN
+                return object.__hash__(self)
             else:
                 if self._sign:
                     return -_PyHASH_INF
@@ -2230,7 +2230,7 @@ class Decimal(object):
             if xe != 0 and len(str(abs(yc*xe))) <= -ye:
                 return None
             xc_bits = _nbits(xc)
-            if xc != 1 and len(str(abs(yc)*xc_bits)) <= -ye:
+            if len(str(abs(yc)*xc_bits)) <= -ye:
                 return None
             m, n = yc, 10**(-ye)
             while m % 2 == n % 2 == 0:
@@ -2243,7 +2243,7 @@ class Decimal(object):
         # compute nth root of xc*10**xe
         if n > 1:
             # if 1 < xc < 2**n then xc isn't an nth power
-            if xc != 1 and xc_bits <= n:
+            if xc_bits <= n:
                 return None
 
             xe, rem = divmod(xe, n)
@@ -3795,6 +3795,10 @@ class Decimal(object):
         # represented in fixed point; rescale them to 0e0.
         if not self and self._exp > 0 and spec['type'] in 'fF%':
             self = self._rescale(0, rounding)
+        if not self and spec['no_neg_0'] and self._sign:
+            adjusted_sign = 0
+        else:
+            adjusted_sign = self._sign
 
         # figure out placement of the decimal point
         leftdigits = self._exp + len(self._int)
@@ -3825,7 +3829,7 @@ class Decimal(object):
 
         # done with the decimal-specific stuff;  hand over the rest
         # of the formatting to the _format_number function
-        return _format_number(self._sign, intpart, fracpart, exp, spec)
+        return _format_number(adjusted_sign, intpart, fracpart, exp, spec)
 
 def _dec_from_triple(sign, coefficient, exponent, special=False):
     """Create a decimal instance directly, without any validation,
@@ -6143,7 +6147,7 @@ _exact_half = re.compile('50*$').match
 #
 # A format specifier for Decimal looks like:
 #
-#   [[fill]align][sign][#][0][minimumwidth][,][.precision][type]
+#   [[fill]align][sign][z][#][0][minimumwidth][,][.precision][type]
 
 _parse_format_specifier_regex = re.compile(r"""\A
 (?:
@@ -6151,6 +6155,7 @@ _parse_format_specifier_regex = re.compile(r"""\A
    (?P<align>[<>=^])
 )?
 (?P<sign>[-+ ])?
+(?P<no_neg_0>z)?
 (?P<alt>\#)?
 (?P<zeropad>0)?
 (?P<minimumwidth>(?!0)\d+)?

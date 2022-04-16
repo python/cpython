@@ -14,8 +14,7 @@ INITIAL_NESTING_DEPTH, or NESTED_INCR_AMT variables.
 Usage: python -m scripts.find_max_nesting
 """
 import sys
-
-from _peg_parser import parse_string
+import ast
 
 GRAMMAR_FILE = "data/python.gram"
 INITIAL_NESTING_DEPTH = 10
@@ -28,9 +27,8 @@ ENDC = "\033[0m"
 
 def check_nested_expr(nesting_depth: int) -> bool:
     expr = f"{'(' * nesting_depth}0{')' * nesting_depth}"
-
     try:
-        parse_string(expr)
+        ast.parse(expr)
         print(f"Nesting depth of {nesting_depth} is successful")
         return True
     except Exception as err:
