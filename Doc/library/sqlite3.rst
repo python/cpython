@@ -401,7 +401,7 @@ Connection Objects
       of database *name*.
       When *readonly* is :const:`True` the blob is opened without write
       permissions.
-      Trying to open a blob in a WITHOUT ROWID table will raise
+      Trying to open a blob in a ``WITHOUT ROWID`` table will raise
       :exc:`OperationalError`.
 
       .. note::
