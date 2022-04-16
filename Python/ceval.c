@@ -60,16 +60,19 @@ dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
     PyObject **stack_base = _PyFrame_Stackbase(frame);
     PyObject *type, *value, *traceback;
     PyErr_Fetch(&type, &value, &traceback);
-    printf("stack=[");
+    printf("    stack=[");
     for (PyObject **ptr = stack_base; ptr < stack_pointer; ptr++) {
+        if (ptr != stack_base) {
+            printf(", ");
+        }
         if (PyObject_Print(*ptr, stdout, 0) != 0) {
             PyErr_Clear();
             printf("<%s object at %p>",
                    Py_TYPE(*ptr)->tp_name, (void *)(*ptr));
         }
-        printf(", ");
     }
     printf("]\n");
+    fflush(stdout);
     PyErr_Restore(type, value, traceback);
 }
 
@@ -90,13 +93,14 @@ lltrace_instruction(_PyInterpreterFrame *frame,
     else {
         printf("%d: %s\n", offset * 2, opname);
     }
+    fflush(stdout);
 }
 static void
 lltrace_resume_frame(_PyInterpreterFrame *frame)
 {
     PyFunctionObject *f = frame->f_func;
     if (f == NULL) {
-        printf("Resuming frame.");
+        printf("\nResuming frame.");
         return;
     }
     PyObject *type, *value, *traceback;
@@ -105,7 +109,7 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
     if (name == NULL) {
         name = f->func_name;
     }
-    printf("Resuming frame");
+    printf("\nResuming frame");
     if (name) {
         printf(" for ");
         if (PyObject_Print(name, stdout, 0) < 0) {
@@ -119,6 +123,7 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
         }
     }
     printf("\n");
+    fflush(stdout);
     PyErr_Restore(type, value, traceback);
 }
 #endif
