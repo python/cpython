@@ -5,6 +5,3 @@ contact_links:
   - name: "Proposing new features"
     about: "Submit major feature proposal (e.g. syntax changes) to an ideas forum first."
     url: "https://discuss.python.org/c/ideas/6"
-  - name: "Reporting security vulnerabilities"
-    about: "See here for details on reporting security vulnerabilities in CPython"
-    url: "https://www.python.org/dev/security/"
