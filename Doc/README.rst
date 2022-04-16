@@ -129,8 +129,8 @@ language is lost during the process.
 Contributing
 ============
 
-Bugs in the content should be reported to the
-`Python issue tracker <https://devguide.python.org/tracker/>`_.
+Bugs in the content should be reported as detailed in the
+`Python devguide <https://devguide.python.org/tracker/>`_.
 
 Bugs in the toolset should be reported to the tools themselves.
 

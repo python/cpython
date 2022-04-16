@@ -1,7 +1,7 @@
 dnl ***************************************************
 dnl * Please run autoreconf -if to test your changes! *
 dnl ***************************************************
-dnl
+dnl 
 dnl Python's configure script requires autoconf 2.69 and autoconf-archive.
 dnl
 
