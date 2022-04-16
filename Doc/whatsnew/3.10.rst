@@ -1227,7 +1227,7 @@ itertools
 ---------
 
 Add :func:`itertools.pairwise()`.
-(Contributed by Brett Cannon in :issue:`38200`.)
+(Contributed by Raymond Hettinger in :issue:`38200`.)
 
 linecache
 ---------
