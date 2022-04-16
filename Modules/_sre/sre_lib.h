@@ -488,10 +488,10 @@ do { \
     ctx->pattern = pattern; \
     ctx->ptr = ptr; \
     DATA_ALLOC(SRE(match_context), nextctx); \
-    nextctx->last_ctx_pos = ctx_pos; \
-    nextctx->jump = jumpvalue; \
     nextctx->pattern = nextpattern; \
     nextctx->toplevel = toplevel_; \
+    nextctx->jump = jumpvalue; \
+    nextctx->last_ctx_pos = ctx_pos; \
     pattern = nextpattern; \
     ctx_pos = alloc_pos; \
     ctx = nextctx; \
@@ -507,18 +507,18 @@ do { \
     DO_JUMPX(jumpvalue, jumplabel, nextpattern, 0)
 
 typedef struct {
-    Py_ssize_t last_ctx_pos;
-    Py_ssize_t jump;
-    const SRE_CHAR* ptr;
-    const SRE_CODE* pattern;
     Py_ssize_t count;
-    int lastmark;
-    int lastindex;
     union {
         SRE_CODE chr;
         SRE_REPEAT* rep;
     } u;
+    int lastmark;
+    int lastindex;
+    const SRE_CODE* pattern;
+    const SRE_CHAR* ptr;
     int toplevel;
+    int jump;
+    Py_ssize_t last_ctx_pos;
 } SRE(match_context);
 
 #define MAYBE_CHECK_SIGNALS                                        \
@@ -559,7 +559,7 @@ SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
     const SRE_CHAR* end = (const SRE_CHAR *)state->end;
     Py_ssize_t alloc_pos, ctx_pos = -1;
     Py_ssize_t i, ret = 0;
-    Py_ssize_t jump;
+    int jump;
     unsigned int sigcount=0;
 
     SRE(match_context)* ctx;
