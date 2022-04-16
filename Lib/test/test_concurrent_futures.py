@@ -26,10 +26,10 @@ from concurrent.futures._base import (
     PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future,
     BrokenExecutor)
 from concurrent.futures.process import BrokenProcessPool, _check_system_limits
-from multiprocessing import get_context
 
 import multiprocessing.process
 import multiprocessing.util
+import multiprocessing as mp
 
 
 if support.check_sanitizer(address=True, memory=True):
@@ -143,7 +143,7 @@ class ExecutorMixin:
         super().tearDown()
 
     def get_context(self):
-        return get_context(self.ctx)
+        return mp.get_context(self.ctx)
 
 
 class ThreadPoolMixin(ExecutorMixin):
@@ -922,7 +922,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
             pool.submit(submit, pool)
 
             for _ in range(50):
-                with futures.ProcessPoolExecutor(1, mp_context=get_context('fork')) as workers:
+                with futures.ProcessPoolExecutor(1, mp_context=mp.get_context('fork')) as workers:
                     workers.submit(tuple)
 
 
@@ -992,7 +992,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
     def test_ressources_gced_in_workers(self):
         # Ensure that argument for a job are correctly gc-ed after the job
         # is finished
-        mgr = get_context(self.ctx).Manager()
+        mgr = self.get_context().Manager()
         obj = EventfulGCObj(mgr)
         future = self.executor.submit(id, obj)
         future.result()
@@ -1039,6 +1039,8 @@ class ProcessPoolExecutorTest(ExecutorTest):
         executor.shutdown()
 
     def test_max_tasks_per_child(self):
+        # not using self.executor as we need to control construction.
+        # arguably this could go in another class w/o that mixin.
         executor = self.executor_type(
                 1, mp_context=self.get_context(), max_tasks_per_child=3)
         f1 = executor.submit(os.getpid)
@@ -1060,6 +1062,8 @@ class ProcessPoolExecutorTest(ExecutorTest):
         executor.shutdown()
 
     def test_max_tasks_early_shutdown(self):
+        # not using self.executor as we need to control construction.
+        # arguably this could go in another class w/o that mixin.
         executor = self.executor_type(
                 3, mp_context=self.get_context(), max_tasks_per_child=1)
         futures = []
@@ -1171,7 +1175,7 @@ class ExecutorDeadlockTest:
         self.executor.shutdown(wait=True)
 
         executor = self.executor_type(
-            max_workers=2, mp_context=get_context(self.ctx))
+            max_workers=2, mp_context=self.get_context())
         res = executor.submit(func, *args)
 
         if ignore_stderr:
@@ -1250,7 +1254,7 @@ class ExecutorDeadlockTest:
         # if a worker fails after the shutdown call.
         self.executor.shutdown(wait=True)
         with self.executor_type(max_workers=2,
-                                mp_context=get_context(self.ctx)) as executor:
+                                mp_context=self.get_context()) as executor:
             self.executor = executor  # Allow clean up in fail_on_deadlock
             f = executor.submit(_crash, delay=.1)
             executor.shutdown(wait=True)
@@ -1263,7 +1267,7 @@ class ExecutorDeadlockTest:
         # Reported in bpo-39104.
         self.executor.shutdown(wait=True)
         with self.executor_type(max_workers=2,
-                                mp_context=get_context(self.ctx)) as executor:
+                                mp_context=self.get_context()) as executor:
             self.executor = executor  # Allow clean up in fail_on_deadlock
 
             # Start the executor and get the executor_manager_thread to collect
