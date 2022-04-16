@@ -21,6 +21,7 @@ At large scale, the structure of the module is following:
 
 from abc import abstractmethod, ABCMeta
 import collections
+from collections import defaultdict
 import collections.abc
 import contextlib
 import functools
@@ -121,9 +122,11 @@ __all__ = [
     'assert_type',
     'assert_never',
     'cast',
+    'clear_overloads',
     'final',
     'get_args',
     'get_origin',
+    'get_overloads',
     'get_type_hints',
     'is_typeddict',
     'LiteralString',
@@ -2450,6 +2453,10 @@ def _overload_dummy(*args, **kwds):
         "by an implementation that is not @overload-ed.")
 
 
+# {module: {qualname: {firstlineno: func}}}
+_overload_registry = defaultdict(functools.partial(defaultdict, dict))
+
+
 def overload(func):
     """Decorator for overloaded functions/methods.
 
@@ -2475,8 +2482,35 @@ def overload(func):
       def utf8(value: str) -> bytes: ...
       def utf8(value):
           # implementation goes here
+
+    The overloads for a function can be retrieved at runtime using the
+    get_overloads() function.
     """
+    # classmethod and staticmethod
+    f = getattr(func, "__func__", func)
+    try:
+        _overload_registry[f.__module__][f.__qualname__][f.__code__.co_firstlineno] = func
+    except AttributeError:
+        # Not a normal function; ignore.
+        pass
     return _overload_dummy
+
+
+def get_overloads(func):
+    """Return all defined overloads for *func* as a sequence."""
+    # classmethod and staticmethod
+    f = getattr(func, "__func__", func)
+    if f.__module__ not in _overload_registry:
+        return []
+    mod_dict = _overload_registry[f.__module__]
+    if f.__qualname__ not in mod_dict:
+        return []
+    return list(mod_dict[f.__qualname__].values())
+
+
+def clear_overloads():
+    """Clear all overloads in the registry."""
+    _overload_registry.clear()
 
 
 def final(f):
