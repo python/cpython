@@ -34,4 +34,4 @@ _copy_deepcopy(PyObject * module, PyObject * args)
         exit:
     return return_value;
     }
-/*[clinic end generated code: output=109d1c1e3af83785 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c6b3eb60e1908c6 input=a9049054013a1b77]*/

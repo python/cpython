@@ -181,7 +181,7 @@ def _deepcopy_fallback(x, memo=None, _nil=[]):
 
 try:
     from _copy import deepcopy
-except ImportError:
+except ImportError as ex:
     deepcopy = _deepcopy_fallback
 
 _deepcopy_dispatch = d = {}
