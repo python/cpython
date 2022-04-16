@@ -512,8 +512,8 @@ typedef struct {
     const SRE_CHAR* ptr;
     const SRE_CODE* pattern;
     Py_ssize_t count;
-    Py_ssize_t lastmark;
-    Py_ssize_t lastindex;
+    int lastmark;
+    int lastindex;
     union {
         SRE_CODE chr;
         SRE_REPEAT* rep;
