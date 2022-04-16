@@ -1170,6 +1170,25 @@ class BlobTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             b"a" in self.blob
 
+    def test_blob_context_manager(self):
+        data = b"a" * 50
+        with self.cx.blobopen("test", "b", 1) as blob:
+            blob.write(data)
+        actual = self.cx.execute("select b from test").fetchone()[0]
+        self.assertEqual(actual, data)
+
+        # Check that __exit__ closed the blob
+        with self.assertRaisesRegex(sqlite.ProgrammingError, "closed blob"):
+            blob.read()
+
+    def test_blob_context_manager_reraise_exceptions(self):
+        class DummyException(Exception):
+            pass
+        with self.assertRaisesRegex(DummyException, "reraised"):
+            with self.cx.blobopen("test", "b", 1) as blob:
+                raise DummyException("reraised")
+
+
     def test_blob_closed(self):
         with memory_database() as cx:
             cx.execute("create table test(b blob)")
@@ -1186,6 +1205,10 @@ class BlobTests(unittest.TestCase):
                 blob.seek(0)
             with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
                 blob.tell()
+            with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+                blob.__enter__()
+            with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+                blob.__exit__(None, None, None)
 
     def test_blob_closed_db_read(self):
         with memory_database() as cx:
