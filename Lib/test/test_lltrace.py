@@ -48,9 +48,9 @@ class TestLLTrace(unittest.TestCase):
                 x = 42
                 y = -x
             dont_trace_1()
-            __ltrace__ = 1
+            __lltrace__ = 1
             trace_me()
-            del __ltrace__
+            del __lltrace__
             dont_trace_2()
         """)
         self.assertIn("GET_ITER", stdout)
@@ -67,7 +67,7 @@ class TestLLTrace(unittest.TestCase):
     def test_lltrace_different_module(self):
         stdout = self.run_code("""
             from test import test_lltrace
-            test_lltrace.__ltrace__ = 1
+            test_lltrace.__lltrace__ = 1
             test_lltrace.example()
         """)
         self.assertIn("'example' in module 'test.test_lltrace'", stdout)
@@ -95,13 +95,13 @@ class TestLLTrace(unittest.TestCase):
     def test_lltrace_does_not_crash_on_subscript_operator(self):
         # If this test fails, it will reproduce a crash reported as
         # bpo-34113. The crash happened at the command line console of
-        # debug Python builds with __ltrace__ enabled (only possible in console),
+        # debug Python builds with __lltrace__ enabled (only possible in console),
         # when the internal Python stack was negatively adjusted
         stdout = self.run_code("""
             import code
 
             console = code.InteractiveConsole()
-            console.push('__ltrace__ = 1')
+            console.push('__lltrace__ = 1')
             console.push('a = [1, 2, 3]')
             console.push('a[0] = 1')
             print('unreachable if bug exists')
