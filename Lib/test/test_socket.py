@@ -5181,7 +5181,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
         port = socket_helper.find_unused_port()
         try:
             socket.create_connection((HOST, port), all_errors=True)
-        except* OSError as e:
+        except ExceptionGroup as e:
             eg = e
         else:
             self.fail('expected connection to fail')
