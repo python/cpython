@@ -1047,6 +1047,57 @@ Now we plug :class:`Row` in::
    35.14
 
 
+Blob Objects
+------------
+
+.. versionadded:: 3.11
+
+.. class:: Blob
+
+   A :class:`Blob` instance is a :term:`file-like object` that can read and write
+   data in an SQLite :abbr:`BLOB (Binary Large OBject)`.  Call ``len(blob)`` to
+   get the size (number of bytes) of the blob.
+
+   Use the :class:`Blob` as a :term:`context manager` to ensure that the blob
+   handle is closed after use.
+
+   .. literalinclude:: ../includes/sqlite3/blob.py
+
+   .. method:: close()
+
+      Close the blob.
+
+      The blob will be unusable from this point onward.  An
+      :class:`~sqlite3.Error` (or subclass) exception will be raised if any
+      further operation is attempted with the blob.
+
+   .. method:: read(length=-1, /)
+
+      Read *length* bytes of data from the blob at the current offset position.
+      If the end of the blob is reached, the data up to
+      :abbr:`EOF (End of File)` will be returned.  When *length* is not
+      specified, or is negative, :meth:`~Blob.read` will read until the end of
+      the blob.
+
+   .. method:: write(data, /)
+
+      Write *data* to the blob at the current offset.  This function cannot
+      change the blob length.  Writing beyond the end of the blob will raise
+      :exc:`ValueError`.
+
+   .. method:: tell()
+
+      Return the current access position of the blob.
+
+   .. method:: seek(offset, origin=os.SEEK_SET, /)
+
+      Set the current access position of the blob to *offset*.  The *origin*
+      argument defaults to :data:`os.SEEK_SET` (absolute blob positioning).
+      Other values for *origin* are :data:`os.SEEK_CUR` (seek relative to the
+      current position) and :data:`os.SEEK_END` (seek relative to the blob’s
+      end).
+
+
 .. _sqlite3-exceptions:
 
 Exceptions
@@ -1106,57 +1157,6 @@ Exceptions
 
 
 .. _sqlite3-blob-objects:
-
-Blob Objects
-------------
-
-.. versionadded:: 3.11
-
-.. class:: Blob
-
-   A :class:`Blob` instance is a :term:`file-like object` that can read and write
-   data in an SQLite :abbr:`BLOB (Binary Large OBject)`.  Call ``len(blob)`` to
-   get the size (number of bytes) of the blob.
-
-   Use the :class:`Blob` as a :term:`context manager` to ensure that the blob
-   handle is closed after use.
-
-   .. literalinclude:: ../includes/sqlite3/blob.py
-
-   .. method:: close()
-
-      Close the blob.
-
-      The blob will be unusable from this point onward.  An
-      :class:`~sqlite3.Error` (or subclass) exception will be raised if any
-      further operation is attempted with the blob.
-
-   .. method:: read(length=-1, /)
-
-      Read *length* bytes of data from the blob at the current offset position.
-      If the end of the blob is reached, the data up to
-      :abbr:`EOF (End of File)` will be returned.  When *length* is not
-      specified, or is negative, :meth:`~Blob.read` will read until the end of
-      the blob.
-
-   .. method:: write(data, /)
-
-      Write *data* to the blob at the current offset.  This function cannot
-      change the blob length.  Writing beyond the end of the blob will raise
-      :exc:`ValueError`.
-
-   .. method:: tell()
-
-      Return the current access position of the blob.
-
-   .. method:: seek(offset, origin=os.SEEK_SET, /)
-
-      Set the current access position of the blob to *offset*.  The *origin*
-      argument defaults to :data:`os.SEEK_SET` (absolute blob positioning).
-      Other values for *origin* are :data:`os.SEEK_CUR` (seek relative to the
-      current position) and :data:`os.SEEK_END` (seek relative to the blob’s
-      end).
-
 
 .. _sqlite3-types:
 
