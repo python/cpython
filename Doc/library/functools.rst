@@ -436,7 +436,7 @@ The :mod:`functools` module defines the following functions:
      ...     for i, elem in enumerate(arg):
      ...         print(i, elem)
 
-   :data:`types.UnionType` and :data:`typing.Union` also can be used::
+   :data:`types.UnionType` and :data:`typing.Union` can also be used::
 
     >>> @fun.register
     ... def _(arg: int | float, verbose=False):
