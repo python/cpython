@@ -450,20 +450,23 @@ do { \
 
 #define MARK_PUSH(lastmark) \
     do if (lastmark >= 0) { \
-        i = lastmark; /* ctx->lastmark may change if reallocated */ \
-        DATA_STACK_PUSH(state, state->mark, (i+1)*sizeof(void*)); \
+        size_t _marks_size = (lastmark+1) * sizeof(void*); \
+        DATA_STACK_PUSH(state, state->mark, _marks_size); \
     } while (0)
 #define MARK_POP(lastmark) \
     do if (lastmark >= 0) { \
-        DATA_STACK_POP(state, state->mark, (lastmark+1)*sizeof(void*), 1); \
+        size_t _marks_size = (lastmark+1) * sizeof(void*); \
+        DATA_STACK_POP(state, state->mark, _marks_size, 1); \
     } while (0)
 #define MARK_POP_KEEP(lastmark) \
     do if (lastmark >= 0) { \
-        DATA_STACK_POP(state, state->mark, (lastmark+1)*sizeof(void*), 0); \
+        size_t _marks_size = (lastmark+1) * sizeof(void*); \
+        DATA_STACK_POP(state, state->mark, _marks_size, 0); \
     } while (0)
 #define MARK_POP_DISCARD(lastmark) \
     do if (lastmark >= 0) { \
-        DATA_STACK_POP_DISCARD(state, (lastmark+1)*sizeof(void*)); \
+        size_t _marks_size = (lastmark+1) * sizeof(void*); \
+        DATA_STACK_POP_DISCARD(state, _marks_size); \
     } while (0)
 
 #define JUMP_NONE            0
