@@ -2080,6 +2080,17 @@ class Annotated:
 
         OptimizedList = Annotated[List[T], runtime.Optimize()]
         OptimizedList[int] == Annotated[List[int], runtime.Optimize()]
+
+    - Annotated cannot be used with an unpacked TypeVarTuple::
+
+        Annotated[*Ts, Ann1]  # NOT valid
+
+      This would be equivalent to
+
+        Annotated[T1, T2, T3, ..., Ann1]
+
+      where T1, T2 etc. are TypeVars, which would be invalid, because
+      only one type should be passed to Annotated.
     """
 
     __slots__ = ()
@@ -2093,6 +2104,9 @@ class Annotated:
             raise TypeError("Annotated[...] should be used "
                             "with at least two arguments (a type and an "
                             "annotation).")
+        if _is_unpacked_typevartuple(params[0]):
+            raise TypeError("Annotated[...] should not be used with an "
+                            "unpacked TypeVarTuple")
         msg = "Annotated[t, ...]: t must be a type."
         origin = _type_check(params[0], msg, allow_special_forms=True)
         metadata = tuple(params[1:])
