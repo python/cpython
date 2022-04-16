@@ -495,7 +495,8 @@ and ``spam/__init__.py`` has the following lines in it::
 
     from .foo import Foo
 
-then executing the following puts a name binding to ``foo`` and ``Foo`` in the ``spam`` module::
+then executing the following puts a name binding to ``foo`` and ``Foo`` in the
+``spam`` module::
 
     >>> import spam
     >>> spam.foo
