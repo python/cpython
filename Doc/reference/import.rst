@@ -490,21 +490,18 @@ submodule.  Let's say you have the following directory structure::
     spam/
         __init__.py
         foo.py
-        bar.py
 
 and ``spam/__init__.py`` has the following lines in it::
 
     from .foo import Foo
-    from .bar import Bar
 
-then executing the following puts a name binding to ``foo`` and ``bar`` (as well
-as ``Foo`` and ``Bar``) in the ``spam`` module::
+then executing the following puts a name binding to ``foo`` and ``Foo`` in the ``spam`` module::
 
     >>> import spam
     >>> spam.foo
     <module 'spam.foo' from '/tmp/imports/spam/foo.py'>
-    >>> spam.Bar
-    <class 'spam.bar.Bar'>
+    >>> spam.Foo
+    <class 'spam.foo.Foo'>
 
 
 
