@@ -273,7 +273,7 @@ Effects of a debug build:
 * Add :func:`sys.gettotalrefcount` function.
 * Add :option:`-X showrefcount <-X>` command line option.
 * Add :envvar:`PYTHONTHREADDEBUG` environment variable.
-* Add support for the ``__ltrace__`` variable: enable low-level tracing in the
+* Add support for the ``__lltrace__`` variable: enable low-level tracing in the
   bytecode evaluation loop if the variable is defined.
 * Install :ref:`debug hooks on memory allocators <default-memory-allocators>`
   to detect buffer overflow and other memory errors.

@@ -1729,7 +1729,7 @@ resume_frame:
 
 #ifdef LLTRACE
     {
-        int r = PyDict_Contains(GLOBALS(), &_Py_ID(__ltrace__));
+        int r = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
         if (r < 0) {
             goto exit_unwind;
         }
