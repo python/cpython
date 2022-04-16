@@ -576,7 +576,7 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T]',                        '[*Ts]',                   'generic[*Ts]'),  # Should raise TypeError
             ('generic[T]',                        '[T, *Ts]',                'TypeError'),
             ('generic[T]',                        '[*Ts, T]',                'TypeError'),
-
+            # Raises TypeError because C is not variadic.
             ('C[T, *tuple_type[int, ...]]',       '[int]',                   'TypeError'),
             ('list[T, *tuple_type[int, ...]]',    '[int]',                   'list[int, *tuple_type[int, ...]]'),  # Should raise TypeError
             ('List[T, *tuple_type[int, ...]]',    '[int]',                   'TypeError'),
