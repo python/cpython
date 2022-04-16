@@ -2357,7 +2357,7 @@ waiting for clients to connect::
    context.load_cert_chain(certfile="mycertfile", keyfile="mykeyfile")
 
    bindsocket = socket.socket()
-   bindsocket.bind(('myaddr.mydomain.com', 10023))
+   bindsocket.bind(('myaddr.example.com', 10023))
    bindsocket.listen(5)
 
 When a client connects, you'll call :meth:`accept` on the socket to get the
