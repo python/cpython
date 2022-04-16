@@ -13,8 +13,8 @@ __all__ = [
     "FileWrapper",
 ]
 
-_ExcInfo = tuple[type[BaseException], BaseException, TracebackType]
-_OptExcInfo = _ExcInfo | tuple[None, None, None]
+_ExcInfo: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
+_OptExcInfo: TypeAlias = _ExcInfo | tuple[None, None, None]
 
 class StartResponse(Protocol):
     """start_response() callable as defined in PEP 3333"""
