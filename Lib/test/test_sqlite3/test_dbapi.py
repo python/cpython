@@ -1178,6 +1178,15 @@ class BlobTests(unittest.TestCase):
         actual = self.cx.execute("select b from test").fetchone()[0]
         self.assertEqual(actual, expected)
 
+    def test_blob_set_buffer_object(self):
+        from array import array
+        self.blob[0] = memoryview(b"1")
+        self.blob[0] = bytearray(b"1")
+        self.blob[0] = array("b", [1])
+        self.blob[0:5] = memoryview(b"12345")
+        self.blob[0:5] = bytearray(b"12345")
+        self.blob[0:5] = array("b", [1, 2, 3, 4, 5])
+
     def test_blob_set_item_negative_index(self):
         self.blob[-1] = b"z"
         self.assertEqual(self.blob[-1], b"z")

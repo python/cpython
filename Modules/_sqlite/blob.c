@@ -455,18 +455,24 @@ ass_subscript_index(pysqlite_Blob *self, PyObject *item, PyObject *value)
                         "Blob doesn't support item deletion");
         return -1;
     }
-    if (!PyBytes_Check(value) || PyBytes_Size(value) != 1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Blob assignment must be a single byte");
-        return -1;
-    }
-
     Py_ssize_t i = get_subscript_index(self, item);
     if (i < 0) {
         return -1;
     }
-    const char *buf = PyBytes_AS_STRING(value);
-    return inner_write(self, buf, 1, i);
+
+    Py_buffer vbuf;
+    if (PyObject_GetBuffer(value, &vbuf, PyBUF_SIMPLE) < 0) {
+        return -1;
+    }
+    int rc = -1;
+    if (vbuf.len != 1) {
+        PyErr_SetString(PyExc_ValueError, "Blob assignment must be a single byte");
+    }
+    else {
+        rc = inner_write(self, (const char *)vbuf.buf, 1, i);
+    }
+    PyBuffer_Release(&vbuf);
+    return rc;
 }
 
 static int
