@@ -783,6 +783,7 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T, *tuple_type[int, ...]]',      '[str]',                                          'generic[str, *tuple_type[int, ...]]'),
             ('generic[T1, T2, *tuple_type[int, ...]]', '[str, bool]',                                    'generic[str, bool, *tuple_type[int, ...]]'),
             ('generic[T1, *tuple_type[int, ...], T2]', '[str, bool]',                                    'generic[str, *tuple_type[int, ...], bool]'),
+            ('generic[T1, *tuple_type[int, ...], T2]', '[str, bool, float]',                             'TypeError'),
         ]
 
         for alias_template, args_template, expected_template in tests:
